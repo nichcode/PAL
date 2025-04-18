@@ -4,16 +4,16 @@
 
 PAL_Texture* PAL_CreateTexture(PAL_TextureDesc desc)
 {
-    CHECK_CONTEXT(return nullptr);
+    CHECK_CONTEXT(return nullptr)
     PAL_Texture* texture = new PAL_Texture();
-    CHECK_ERR(texture, "failed to create texture", return nullptr);
+    CHECK_ERR(texture, "failed to create texture", return nullptr)
 
     texture->flag = desc.flag;
     texture->width = desc.width;
     texture->height = desc.height;
     texture->path = nullptr;
     texture->handle = s_ActiveContext->api.createTexture(desc);
-    CHECK_ERR(texture, "failed to create texture handle", delete texture; return nullptr);
+    CHECK_ERR(texture, "failed to create texture handle", delete texture; return nullptr)
 
     // rebind the previous active texture
     if (s_ActiveContext->state.activeTexture) {
@@ -26,16 +26,16 @@ PAL_Texture* PAL_CreateTexture(PAL_TextureDesc desc)
 
 PAL_Texture* PAL_LoadTexture(const char* filepath)
 {
-    CHECK_CONTEXT(return nullptr);
+    CHECK_CONTEXT(return nullptr)
     PAL_Texture* texture = new PAL_Texture();
-    CHECK_ERR(texture, "failed to create texture", return nullptr);
+    CHECK_ERR(texture, "failed to create texture", return nullptr)
 
     texture->flag = 0;
     texture->path = filepath;
 
     u32 width, height;
     texture->handle = s_ActiveContext->api.loadTexture(filepath, &width, &height);
-    CHECK_ERR(texture->handle, 
+    CHECK_ERR(texture->handle,
               "failed to create texture handle. Check texture path",
                delete texture; return nullptr);
 
@@ -48,8 +48,8 @@ PAL_Texture* PAL_LoadTexture(const char* filepath)
 
 void PAL_DestroyTexture(PAL_Texture* texture)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(texture, "texture is null");
+    CHECK_CONTEXT(return)
+    CHECK_ERR(texture, "texture is null", return)
     PAL_Context* context = s_ActiveContext;
 
     auto it = std::find(context->data.textures.begin(), context->data.textures.end(), texture);
@@ -72,9 +72,9 @@ void PAL_DestroyTexture(PAL_Texture* texture)
 
 void PAL_BindTexture(PAL_Texture* texture, u32 slot)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(texture, "texture is null");
-    CHECK_ERR(slot > PAL_MAX_TEXTURE_SLOTS, "texture slots out of bounds");
+    CHECK_CONTEXT(return)
+    CHECK_ERR(texture, "texture is null", return)
+    CHECK_ERR(slot < PAL_MAX_TEXTURE_SLOTS, "texture slots out of bounds")
     PAL_Context* context = s_ActiveContext;
 
     if (context->state.activeTexture != texture) {
@@ -85,8 +85,8 @@ void PAL_BindTexture(PAL_Texture* texture, u32 slot)
 
 void PAL_BindTarget(PAL_Texture* texture)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(texture, "texture is null");
+    CHECK_CONTEXT(return)
+    CHECK_ERR(texture, "texture is null", return)
     PAL_Context* context = s_ActiveContext;
 
     if (context->state.activeTarget != texture) {
@@ -100,8 +100,8 @@ void PAL_BindTarget(PAL_Texture* texture)
 
 void PAL_UnbindTarget(PAL_Texture* texture)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(texture, "texture is null");
+    CHECK_CONTEXT(return)
+    CHECK_ERR(texture, "texture is null", return)
     PAL_Context* context = s_ActiveContext;
 
     if (texture->flag & PAL_TextureFlags_Target) {
@@ -112,24 +112,25 @@ void PAL_UnbindTarget(PAL_Texture* texture)
 
 u32 PAL_GetTextureWidth(PAL_Texture* texture)
 {
+    CHECK_ERR(texture, "texture is null", return 0)
     return texture->width;
-    CHECK_ERR(texture, "texture is null");
 }
 
 u32 PAL_GetTextureHeight(PAL_Texture* texture)
 {
+    CHECK_ERR(texture, "texture is null", return 0)
     return texture->height;
-    CHECK_ERR(texture, "texture is null");
 }
 
 const char* PAL_GetTexturePath(PAL_Texture* texture)
 {
+    CHECK_ERR(texture, "texture is null", return nullptr)
     return texture->path;
-    CHECK_ERR(texture, "texture is null");
 }
 
 PAL_Rect PAL_GetTextureRect(PAL_Texture* texture)
 {
+    CHECK_ERR(texture, "texture is null", return {})
     PAL_Rect rect;
     rect.x = 0.0f;
     rect.y = 0.0f;

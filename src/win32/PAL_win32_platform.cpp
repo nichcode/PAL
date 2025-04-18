@@ -21,13 +21,16 @@ b8 PAL_Init()
     wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
 
     ATOM success = RegisterClassExW(&wc);
-    if (!success) { _SetError("Window Registration Failed"); return false; }
+    CHECK_ERR(success, "Window registration failed", return false)
 
     _InitInput();
     _WGLCreateDummyContext();
 
     int freetype_success = FT_Init_FreeType(&s_Library);
-    if (freetype_success != 0) { _SetError("Freetype initialization failed!"); return false; }
+    if (freetype_success != 0) {
+        _SetError("Freetype initialization failed");
+        return false;
+    }   
 
     u64 time = 0;
     QueryPerformanceFrequency((LARGE_INTEGER*)&s_ClockFrequency);
@@ -46,10 +49,7 @@ void PAL_Shutdown()
 
 char* PAL_Format(const char* fmt, ...)
 {
-    if (!fmt) {
-        _SetError("fmt is null");
-        return nullptr;
-    }
+    CHECK_ERR(fmt, "fmt is null", return nullptr)
     va_list arg_ptr;
     va_start(arg_ptr, fmt);
     char* result = PAL_FormatArgs(fmt, arg_ptr);
@@ -59,10 +59,7 @@ char* PAL_Format(const char* fmt, ...)
 
 char* PAL_FormatArgs(const char* fmt, va_list args_list)
 {
-    if (!fmt) {
-        _SetError("fmt is null");
-        return nullptr;
-    }
+    CHECK_ERR(fmt, "fmt is null", return nullptr)
     va_list list_copy;
 
 #ifdef _MSC_VER
@@ -76,10 +73,7 @@ char* PAL_FormatArgs(const char* fmt, va_list args_list)
     i32 length = vsnprintf(0, 0, fmt, list_copy);
     va_end(list_copy);
     char* result = new char[length + 1];
-    if (!result) {
-        _SetError("failed to create buffer");
-        return nullptr;
-    }
+    CHECK_ERR(result, "failed to allocate buffer", return nullptr)
 
     vsnprintf(result, length + 1, fmt, args_list);
     result[length] = 0;
@@ -88,21 +82,14 @@ char* PAL_FormatArgs(const char* fmt, va_list args_list)
 
 char* PAL_ToString(const wchar_t* wstring)
 {
-    if (!wstring) {
-        _SetError("wstring is null");
-        return nullptr;
-    }
-    
+    CHECK_ERR(wstring, "wstring is null", return nullptr)
     int len = WideCharToMultiByte(CP_UTF8, 0, wstring, -1, nullptr, 0, 0, 0);
     if (len == 0) {
         return nullptr;
     }
     
     char* result = new char[len + 1];
-    if (!result) {
-        _SetError("failed to create buffer");
-        return nullptr;
-    }
+    CHECK_ERR(result, "failed to allocate buffer", return nullptr)
 
     WideCharToMultiByte(CP_UTF8, 0, wstring, -1, result, len, 0, 0);
     return result;
@@ -110,21 +97,14 @@ char* PAL_ToString(const wchar_t* wstring)
 
 wchar_t* PAL_ToWstring(const char* string)
 {
-    if (!string) {
-        _SetError("string is null");
-        return nullptr;
-    }
-
+    CHECK_ERR(string, "string is null", return nullptr)
     int len = MultiByteToWideChar(CP_UTF8, 0, string, -1, nullptr, 0);
     if (len == 0) {
         return nullptr;
     }
 
     wchar_t* result = new wchar_t[len + sizeof(wchar_t)];
-    if (!result) {
-        _SetError("failed to create buffer");
-        return nullptr;
-    }
+    CHECK_ERR(result, "failed to allocate buffer", return nullptr)
 
     MultiByteToWideChar(CP_UTF8, 0, string, -1, result, len);
     return result;
@@ -132,13 +112,13 @@ wchar_t* PAL_ToWstring(const char* string)
 
 void PAL_FreeString(char* string)
 {
-    CHECK_ERR(string, "string is null");
+    CHECK_ERR(string, "string is null", return)
     delete[] string;
 }
 
 void PAL_FreeWstring(wchar_t* wstring)
 {
-    CHECK_ERR(wstring, "wstring is null");
+    CHECK_ERR(wstring, "wstring is null", return)
     delete[] wstring;
 }
 
@@ -177,10 +157,7 @@ void* PAL_LoadLibrary(const char* dll)
 
 void* PAL_LoadProc(void* dll, const char* func_name)
 {
-    if (!dll) {
-        _SetError("dll is null");
-        return nullptr;
-    }
+    CHECK_ERR(dll, "dll is null", return nullptr)
     HMODULE dll_lib = (HMODULE)dll;
     FARPROC proc = GetProcAddress((HMODULE)dll_lib, func_name);
     if (!proc) {
@@ -192,7 +169,7 @@ void* PAL_LoadProc(void* dll, const char* func_name)
 
 void PAL_FreeLibrary(void* dll)
 {
-    CHECK_ERR(dll, "dll is null");
+    CHECK_ERR(dll, "dll is null", return)
     FreeLibrary((HMODULE)dll);
 }
 

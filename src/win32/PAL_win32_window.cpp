@@ -21,7 +21,6 @@ void _CenterWindow(PAL_Window* window)
 {
     MONITORINFO monitor_info;
     monitor_info.cbSize = sizeof(MONITORINFO);
-    //HWND handle = (HWND)window->handle;
     GetMonitorInfo(MonitorFromWindow((HWND)window->handle, MONITOR_DEFAULTTONEAREST), &monitor_info);
     u32 max_hwidth = monitor_info.rcMonitor.right;
     u32 max_hheight = monitor_info.rcMonitor.bottom;
@@ -149,11 +148,8 @@ void _MapKeys(PAL_Window* window)
 
 void _ProcessKey(PAL_Window* window, u32 key, i32 scancode, u32 action)
 {
-    if (key < 0 || key > PAL_Keys_Max) { _SetError("Invalid Key"); }
-    if (action != PAL_Actions_Release || action != PAL_Actions_Press) {
-        _SetError("Invalid action");
-    }
-    
+    CHECK_ERR(key > 0 || key < PAL_Keys_Max, "Invalid key", return)
+    CHECK_ERR(action == PAL_Actions_Release || action == PAL_Actions_Press, "Invalid action", return)
     b8 repeated = false;
     if (action == PAL_Actions_Release && window->keys[key] == PAL_Actions_Release) {
         return;
@@ -181,10 +177,8 @@ void _ProcessKey(PAL_Window* window, u32 key, i32 scancode, u32 action)
 
 void _ProcessButton(PAL_Window* window, u16 button, u8 action)
 {
-    if (button < 0 || button > PAL_Buttons_Max) { _SetError("Invalid button"); }
-    if (action != PAL_Actions_Release || action != PAL_Actions_Press) {
-        _SetError("Invalid action");
-    }
+    CHECK_ERR(button > 0 || button < PAL_Buttons_Max, "Invalid button", return)
+    CHECK_ERR(action == PAL_Actions_Release || action == PAL_Actions_Press, "Invalid action", return)
 
     if (action == PAL_Actions_Press && window->buttons[button] == PAL_Actions_Release) {
         window->buttons[button] = PAL_Actions_Press;
@@ -245,7 +239,7 @@ PAL_Window* PAL_CreateWindow(const char* title, u32 width, u32 height, u32 flags
     wchar_t* wstr = PAL_ToWstring(title);
 
     PAL_Window* window = new PAL_Window();
-    CHECK_ERR(window, "failed to create window", return nullptr);
+    CHECK_ERR(window, "failed to create window", return nullptr)
     window->x = CW_USEDEFAULT;
     window->y = CW_USEDEFAULT;
     window->title = title;
@@ -257,7 +251,7 @@ PAL_Window* PAL_CreateWindow(const char* title, u32 width, u32 height, u32 flags
         window->y, rect.right - rect.left, rect.bottom - rect.top, 
         NULL, NULL, s_Instance,  NULL);
 
-    CHECK_ERR(handle, "failed to create window handle", delete window; return nullptr);
+    CHECK_ERR(handle, "failed to create window handle", delete window; return nullptr)
     window->handle = handle;
 
     if (flags & PAL_WindowFlags_Center) {
@@ -283,7 +277,7 @@ PAL_Window* PAL_CreateWindow(const char* title, u32 width, u32 height, u32 flags
 
 void PAL_DestroyWindow(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return)
     DestroyWindow((HWND)window->handle);
     delete window;
     window = nullptr;
@@ -327,19 +321,19 @@ void PAL_PullEvents()
 
 void PAL_HideWindow(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return)
     ShowWindow((HWND)window->handle, SW_HIDE);
 }
 
 void PAL_ShowWindow(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return)
     ShowWindow((HWND)window->handle, SW_SHOW);
 }
 
 void PAL_SetWindowTitle(PAL_Window* window, const char* title)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return)
     window->title = title;
     wchar_t* wstr = PAL_ToWstring(title);
     SetWindowText((HWND)window->handle, wstr);
@@ -348,8 +342,8 @@ void PAL_SetWindowTitle(PAL_Window* window, const char* title)
 
 void PAL_SetWindowSize(PAL_Window* window, u32 width, u32 height)
 {
-    CHECK_ERR(window, "window is null");
-    if (width < 0 && height < 0) { _SetError("invalid Parameter"); }
+    CHECK_ERR(window, "window is null", return)
+    CHECK_ERR(width > 0 && height > 0, "invalid Parameter", return)
 
     RECT rect = { 0, 0, 0, 0 };
     rect.right = width;
@@ -366,7 +360,7 @@ void PAL_SetWindowSize(PAL_Window* window, u32 width, u32 height)
 
 void PAL_SetWindowPos(PAL_Window* window, i32 x, i32 y)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return)
     RECT rect = { x, y, x, y };
     AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, 0, WS_EX_OVERLAPPEDWINDOW);
     window->x = x;
@@ -431,63 +425,57 @@ void PAL_WindowResetCallbacks()
 
 b8 PAL_WindowShouldClose(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return false)
     return window->shouldClose;
 }
 
 b8 PAL_GetKeyState(PAL_Window* window, u32 key)
 {
-    CHECK_ERR(window, "window is null");
-    if (key < 0 || key > PAL_Keys_Max) {
-        _SetError("Invalid key"); 
-        return false; 
-    }
+    CHECK_ERR(window, "window is null", return false)
+    CHECK_ERR(key > 0 || key < PAL_Keys_Max, "Invalid key", return false)
     return window->keys[key] == PAL_Actions_Press;
 }
 
 b8 PAL_GetButtonState(PAL_Window* window, u32 button)
 {
-    CHECK_ERR(window, "window is null");
-    if (button < 0 || button > PAL_Buttons_Max) {
-        _SetError("Invalid button"); 
-        return false; 
-    }
+    CHECK_ERR(window, "window is null", return false)
+    CHECK_ERR(button > 0 || button < PAL_Buttons_Max, "Invalid button", return false)
     return window->buttons[button] == PAL_Actions_Press;
 }
 
 const char* PAL_GetWindowTitle(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return nullptr)
     return window->title;
 }
 
 void* PAL_GetWindowHandle(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return nullptr)
     return window->handle;
 }
 
 u32 PAL_GetWindowWidth(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return 0)
     return window->width;
 }
 
 u32 PAL_GetWindowHeight(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return 0)
     return window->height;
 }
 
 i32 PAL_GetWindowPosX(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return 0)
     return window->x;
 }
 
 i32 PAL_GetWindowPosY(PAL_Window* window)
 {
-    CHECK_ERR(window, "window is null");
+    CHECK_ERR(window, "window is null", return 0)
     return window->y;
 }
 

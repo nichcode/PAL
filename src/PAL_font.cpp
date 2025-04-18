@@ -4,9 +4,9 @@
 
 PAL_Font* PAL_LoadFont(const char* filepath, u32 size)
 {
-    CHECK_CONTEXT(return nullptr);
+    CHECK_CONTEXT(return nullptr)
     PAL_Font* font = new PAL_Font();
-    CHECK_ERR(font, "font is null", return nullptr);
+    CHECK_ERR(font, "failed to create font", return nullptr)
    
     FT_Face font_face;
     i32 error = FT_New_Face(s_Library, filepath, 0, &font_face);
@@ -69,7 +69,7 @@ PAL_Font* PAL_LoadFont(const char* filepath, u32 size)
     desc.width = texture_size;
     desc.height = texture_size;
     font->texture = PAL_CreateTexture(desc);
-    CHECK_ERR(font->texture, "failed to create font texture atlas", delete font; return nullptr);
+    CHECK_ERR(font->texture, "failed to create font texture atlas", delete font; return nullptr)
 
     font->path = filepath;
     font->size = size;
@@ -82,8 +82,8 @@ PAL_Font* PAL_LoadFont(const char* filepath, u32 size)
 
 void PAL_DestroyFont(PAL_Font* font)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(font, "font is null");
+    CHECK_CONTEXT(return)
+    CHECK_ERR(font, "font is null", return)
     PAL_Context* context = s_ActiveContext;
 
     auto it = std::find(context->data.fonts.begin(), context->data.fonts.end(), font);
@@ -98,30 +98,30 @@ void PAL_DestroyFont(PAL_Font* font)
 
 u32 PAL_GetFontSize(PAL_Font* font)
 {
-    CHECK_ERR(font, "font is null");
+    CHECK_ERR(font, "font is null", return 0)
     return font->size;
 }
 
 const char* PAL_GetFontPath(PAL_Font* font)
 {
-    CHECK_ERR(font, "font is null");
+    CHECK_ERR(font, "font is null", return nullptr)
     return font->path;
 }
 
 f32 PAL_GetFontBaseLine(PAL_Font* font)
 {
-    CHECK_ERR(font, "font is null");
+    CHECK_ERR(font, "font is null", return 0.0f)
     return font->baseline;
 }
 
 PAL_Texture* PAL_GetFontTexture(PAL_Font* font)
 {
-    CHECK_ERR(font, "font is null");
+    CHECK_ERR(font, "font is null", return nullptr)
     return font->texture;
 }
 
 PAL_Glyph* PAL_GetFontGlyph(PAL_Font* font, u8 c)
 {
-    CHECK_ERR(font, "font is null");
+    CHECK_ERR(font, "font is null", return nullptr)
     return &font->glyphs.at(c);
 }

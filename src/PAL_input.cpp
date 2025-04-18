@@ -131,18 +131,18 @@ void _InitInput()
 
 const char* PAL_GetKeyName(u32 key)
 {
-    CHECK_ERR(key < 0 || key > PAL_Keys_Max, "Invalid key", return nullptr);
+    CHECK_ERR(key > 0 || key < PAL_Keys_Max, "Invalid key", return nullptr);
     return s_KeyNames[key].c_str();
 }
 
 const char* PAL_GetButtonName(u32 button)
 {
-    CHECK_ERR(button < 0 || button > PAL_Buttons_Max, "Invalid button", return nullptr);
+    CHECK_ERR(button > 0 || button < PAL_Buttons_Max, "Invalid button", return nullptr);
     return s_ButtonNames[button].c_str();
 }
 
 const char* PAL_GetActionName(u32 action)
 {
-    CHECK_ERR(action < 0 || action > PAL_Actions_Max, "Invalid action", return nullptr);
+    CHECK_ERR(action > 0 || action < PAL_Actions_Max, "Invalid action", return nullptr);
     return s_ActionNames[action].c_str();
 }

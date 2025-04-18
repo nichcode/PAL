@@ -150,11 +150,12 @@ struct PAL_Renderer
 {
     u32 indexCount = 0;
     u32 texIndex = 1;
-    u32 drawCalls;
     
     PAL_Buffer* vbo = nullptr;
     PAL_Buffer* ibo = nullptr;
     PAL_Shader* shader = nullptr;
+
+    PAL_Texture* whiteTexture;
 
     PAL_Vec4 vertices[4];
     PAL_Vec2 texCoords[4];
@@ -170,5 +171,5 @@ void _InitInput();
 void _ConsoleWrite(u32 level, const char* message);
 void _SetError(const char* msg, ...);
 
-#define CHECK_CONTEXT(...) if (!s_ActiveContext) {_SetError("no active context"); __VA_ARGS__; }
-#define CHECK_ERR(expr, msg, ...) if (!expr) {_SetError(msg); __VA_ARGS__; }
+#define CHECK_CONTEXT(...) if (s_ActiveContext) {} else {_SetError("no active context"); __VA_ARGS__;}                                                       
+#define CHECK_ERR(expr, msg, ...) if (expr) {} else {_SetError(msg); __VA_ARGS__;}

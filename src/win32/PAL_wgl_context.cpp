@@ -32,7 +32,7 @@ void _WGLCreateDummyContext()
         window_class.hInstance,
         0);
 
-    CHECK_ERR(dummy_window, "Win32 dummy window creation failed");
+    CHECK_ERR(dummy_window, "Win32 dummy window creation failed", return);
     HDC dummy_dc = GetDC(dummy_window);
 
     PIXELFORMATDESCRIPTOR pfd = {};
@@ -54,13 +54,13 @@ void _WGLCreateDummyContext()
 
     // wgl
     wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)LOAD_WGL_FUNC("wglChoosePixelFormatARB");
-    CHECK_ERR(wglChoosePixelFormatARB, "failed to load wglChoosePixelFormatARB");
+    CHECK_ERR(wglChoosePixelFormatARB, "failed to load wglChoosePixelFormatARB", return);
     
     wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)LOAD_WGL_FUNC("wglCreateContextAttribsARB");
-    CHECK_ERR(wglCreateContextAttribsARB, "failed to load wglCreateContextAttribs ARB");
+    CHECK_ERR(wglCreateContextAttribsARB, "failed to load wglCreateContextAttribs ARB", return);
     
     wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)LOAD_WGL_FUNC("wglSwapIntervalEXT");
-    CHECK_ERR(wglSwapIntervalEXT, "failed to load wglSwapIntervalEXT");
+    CHECK_ERR(wglSwapIntervalEXT, "failed to load wglSwapIntervalEXT", return);
 
     _LoadGL();
 
@@ -89,7 +89,7 @@ HGLRC _WGLCreateContext(HWND window, i32 major, i32 minor)
     int pixel_format = 0;
     UINT num_format = 0;
     wglChoosePixelFormatARB(hdc, pixel_format_attrib, nullptr, 1, &pixel_format, &num_format);
-    if (!num_format) { _SetError("failed to find pixel format"); return nullptr; }
+    CHECK_ERR(num_format, "failed to find pixel format", return nullptr);
 
     PIXELFORMATDESCRIPTOR pixel_format_desc = {};
     DescribePixelFormat(hdc, pixel_format, sizeof(PIXELFORMATDESCRIPTOR), &pixel_format_desc);
@@ -110,7 +110,7 @@ HGLRC _WGLCreateContext(HWND window, i32 major, i32 minor)
     };
 
     HGLRC context = wglCreateContextAttribsARB(hdc, 0, opengl_attrib);
-    if (!context) { _SetError("wgl context creation failed"); return nullptr; }
+    CHECK_ERR(context, "wgl context creation failed", return nullptr)
     ReleaseDC(window, hdc);
     return context;
 }

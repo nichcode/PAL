@@ -6,12 +6,12 @@ PAL_Buffer* PAL_CreateBuffer(PAL_BufferDesc desc)
 {
     CHECK_CONTEXT(return nullptr) 
     PAL_Buffer* buffer = new PAL_Buffer();
-    CHECK_ERR(buffer, "failed to create buffer", return nullptr);
+    CHECK_ERR(buffer, "failed to create buffer", return nullptr)
 
     buffer->dataSent = false;
     buffer->type = desc.type;
     buffer->handle = s_ActiveContext->api.createBuffer(desc);
-    CHECK_ERR(buffer, "failed to create buffer handle", delete buffer; return nullptr);
+    CHECK_ERR(buffer, "failed to create buffer handle", delete buffer; return nullptr)
 
     // rebind the previous active buffer
     if (buffer->type == PAL_BufferTypes_Vertex) {
@@ -44,8 +44,8 @@ PAL_Buffer* PAL_CreateBuffer(PAL_BufferDesc desc)
 
 void PAL_DestroyBuffer(PAL_Buffer* buffer)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(buffer, "buffer is null", return);
+    CHECK_CONTEXT(return)
+    CHECK_ERR(buffer, "buffer is null", return)
     PAL_Context* context = s_ActiveContext;
 
     auto it = std::find(context->data.buffers.begin(), context->data.buffers.end(), buffer);
@@ -84,8 +84,9 @@ void PAL_DestroyBuffer(PAL_Buffer* buffer)
 
 void PAL_BindBuffer(PAL_Buffer* buffer)
 {
-    CHECK_CONTEXT(return);
-    CHECK_ERR(buffer, "buffer is null", return);
+    CHECK_CONTEXT(return)
+    CHECK_ERR(buffer, "buffer is null", return)
+
     PAL_Context* context = s_ActiveContext;
     if (buffer->type == PAL_BufferTypes_Vertex) {
         if (context->state.activeVBuffer != buffer) {
@@ -118,8 +119,9 @@ void PAL_BindBuffer(PAL_Buffer* buffer)
 
 void PAL_SetBufferData(u32 type, void* data, u32 size)
 {
-    CHECK_CONTEXT(return);
+    CHECK_CONTEXT(return)
     PAL_Context* context = s_ActiveContext;
+    
     if (type == PAL_BufferTypes_Vertex) {
         CHECK_ERR(context->state.activeVBuffer, "no active vertex buffer")
         context->api.setBufferData(context->state.activeVBuffer->handle, data, size);
