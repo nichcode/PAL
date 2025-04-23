@@ -243,7 +243,7 @@ void PAL_DrawArraysInstanced(u32 mode, u32 count, u32 instance_count)
     s_ActiveContext->api.drawArraysInstanced(s_ActiveContext->handle, mode, count, instance_count);
 }
 
-PAL_Viewport PAL_GetView()
+PAL_Viewport PAL_GetViewport()
 {
     CHECK_CONTEXT(return {})
     return s_ActiveContext->view;

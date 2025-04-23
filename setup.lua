@@ -38,6 +38,7 @@ if (_OPTIONS["with-tests"]) then
     include "tests/window_test.lua"
     include "tests/context_test.lua"
     include "tests/renderer_test.lua"
+    include "tests/collision_test.lua"
 end
 
     include "PAL.lua"
