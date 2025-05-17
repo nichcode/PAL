@@ -1,0 +1,23 @@
+{
+    "tasks": [
+        {
+            // build debug
+            "type": "shell",
+            "label": "build debug",
+            "command": "call make all config=debug",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "detail": "build debug.",
+                "isDefault": true
+            }
+        }
+
+    ],
+    "version": "2.0.0"
+}
