@@ -3,6 +3,7 @@
 
 #include "PAL_error.h"
 #include "PAL_log.h"
+#include "PAL_window.h"
 
 PAL_API void PAL_Init();
 PAL_API void PAL_Terminate();

@@ -5,6 +5,36 @@
 #include "PAL_win32_platform.h"
 #include "PAL/PAL.h"
 
+void PAL_Win32Init()
+{
+    s_Instance = GetModuleHandleW(nullptr);
+
+    WNDCLASSEXW wc = {};
+    wc.cbClsExtra = 0;
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.cbWndExtra = 0;
+    wc.hbrBackground = NULL;
+    wc.hCursor = LoadCursorW(s_Instance, IDC_ARROW);
+    wc.hIcon = LoadIconW(s_Instance, IDI_APPLICATION);
+    wc.hIconSm = LoadIconW(s_Instance, IDI_APPLICATION);
+    wc.hInstance = s_Instance;
+    wc.lpfnWndProc = PAL_Win32Proc;
+    wc.lpszClassName = s_ClassName;
+    wc.lpszMenuName = NULL;
+    wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+
+    ATOM success = RegisterClassExW(&wc);
+    if (!success) {
+        PAL_ERROR(PAL_PLATFORM_ERROR);
+        return;
+    }
+}
+
+void PAL_Win32Terminate()
+{
+    UnregisterClassW(s_ClassName, s_Instance);
+}
+
 i32 PAL_MultibyteToWchar(const char* str, u32 str_len, wchar_t* wstr)
 {
     return MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, str_len);

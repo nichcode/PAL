@@ -2,13 +2,25 @@
 #include "PAL_pch.h"
 #include "PAL_internal.h"
 
+#ifdef PAL_PLATFORM_WINDOWS
+#include "win32/PAL_win32_platform.h"
+#endif // PAL_PLATFORM_WINDOWS
+
 void PAL_Init()
 {
+#ifdef PAL_PLATFORM_WINDOWS
+    PAL_Win32Init();
+#endif // PAL_PLATFORM_WINDOWS
+
     PAL_LOG_INFO("PAL Platform Initialized");
 }
 
 void PAL_Terminate()
 {
+#ifdef PAL_PLATFORM_WINDOWS
+    PAL_Win32Terminate();
+#endif // PAL_PLATFORM_WINDOWS
+
     PAL_LOG_INFO("PAL Platform Terminated");
 }
 
