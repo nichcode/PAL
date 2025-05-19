@@ -41,5 +41,6 @@ end
 
 if (_OPTIONS["with-tests"]) then
     include "tests/window_test.lua"
+    include "tests/gl_device_test.lua"
 end
     include "PAL.lua"

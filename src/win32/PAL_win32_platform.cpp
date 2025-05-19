@@ -2,10 +2,10 @@
 #pragma once
 
 #include "PAL_pch.h"
-#include "PAL_win32_platform.h"
-#include "PAL/PAL.h"
+#include "PAL/PAL_platform.h"
+#include "PAL_wgl_context.h"
 
-void PAL_Win32Init()
+void PAL_Init()
 {
     s_Instance = GetModuleHandleW(nullptr);
 
@@ -28,21 +28,97 @@ void PAL_Win32Init()
         PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to register win32 window class");
         return;
     }
+
+    s_Data.gdi = LoadLibraryA("gdi32.dll");
+    if (!s_Data.gdi) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to load gdi32.dll"); return;
+    }
+    s_Data.opengl = LoadLibraryA("opengl32.dll");
+    if (!s_Data.opengl) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to load opengl.dll"); return;
+    }
+
+    PAL_WGLCreateDummyContext();
+    PAL_InitInput();
+    s_Data.init = true;
+
+    PAL_LOG_INFO("PAL Platform Initialized");
 }
 
-void PAL_Win32Terminate()
+void PAL_Terminate()
 {
     UnregisterClassW(s_ClassName, s_Instance);
+
+    if (s_Data.gdi) {
+        FreeLibrary((HMODULE)s_Data.gdi);
+    }
+    if (s_Data.opengl) {
+        FreeLibrary((HMODULE)s_Data.opengl);
+    }
 }
 
-i32 PAL_MultibyteToWchar(const char* str, u32 str_len, wchar_t* wstr)
+char* PAL_ToString(const wchar_t* wide_string)
 {
-    return MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, str_len);
+    int len = WideCharToMultiByte(CP_UTF8, 0, wide_string, -1, nullptr, 0, 0, 0);
+    if (!len) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Wide string is null or empty");
+        return nullptr;
+    }
+
+    char* string = new char[len + 1];
+    if (!string) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for the string");
+        return nullptr;
+    }
+    
+    WideCharToMultiByte(CP_UTF8, 0, wide_string, -1, string, len, 0, 0);
+    return string;
 }
 
-i32 PAL_WcharToMultibyte(const wchar_t* wstr, u32 wstr_len, char* str)
+wchar_t* PAL_ToWideString(const char* string)
 {
-    return WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, wstr_len, 0, 0);
+    int len = MultiByteToWideChar(CP_UTF8, 0, string, -1, nullptr, 0);
+    if (!len) {
+        PAL_ERROR(PAL_INVALID_POINTER, "String is null or empty");
+        return nullptr;
+    }
+
+    wchar_t* wstring = new wchar_t[sizeof(wchar_t) + len];
+    if (!string) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for the wide string");
+        return nullptr;
+    }
+
+    MultiByteToWideChar(CP_UTF8, 0, string, -1, wstring, len);
+    return wstring;
+}
+
+char* PAL_Format(const char* fmt, ...)
+{
+    va_list arg_ptr;
+    va_start(arg_ptr, fmt);
+    char* result = PAL_FormatArgs(fmt, arg_ptr);
+    va_end(arg_ptr);
+    return result;
+}
+
+char* PAL_FormatArgs(const char* fmt, va_list args_list)
+{
+    va_list list_copy;
+    __builtin_va_copy(list_copy, args_list);
+    
+    i32 len = vsnprintf(0, 0, fmt, list_copy);
+    va_end(list_copy);
+
+    char* string = new char[len + 1];
+    if (!string) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for the string");
+        return nullptr;
+    }
+
+    vsnprintf(string, len + 1, fmt, args_list);
+    string[len] = 0;
+    return string;
 }
 
 void PAL_WriteConsole(u32 log_level, const char* msg)
@@ -66,4 +142,42 @@ void PAL_WriteConsole(u32 log_level, const char* msg)
     WriteConsoleW(console, wstring, (DWORD)len, &number_written, 0);
     SetConsoleTextAttribute(console, 15);
     delete[] wstring;
+}
+
+void* PAL_LoadLibrary(const char* dll)
+{
+    void* library = LoadLibraryA(dll);
+    if (!library) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to load library. Check library path");
+        return nullptr;
+    }
+    return library;
+}
+
+void* PAL_GetProcAddress(void* dll, const char* func_name)
+{
+    if (!dll) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Library is null");
+        return nullptr;
+    }
+
+    HMODULE library = (HMODULE)dll;
+    FARPROC proc = GetProcAddress((HMODULE)library, func_name);
+    if (!proc) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to get addrress of %s", func_name);
+        return nullptr;
+    }
+
+    return (void*)proc;
+}
+
+void PAL_FreeLibrary(void* dll)
+{
+    if (!dll) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Library is null");
+        return;
+    }
+
+    HMODULE library = (HMODULE)dll;
+    FreeLibrary(library);
 }

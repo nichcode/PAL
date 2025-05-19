@@ -1,10 +1,10 @@
 
 #include "PAL_pch.h"
-#include "PAL_win32_platform.h"
-#include "PAL/PAL.h"
+#include "PAL_win32.h"
+#include "PAL/PAL_platform.h"
 
 #define WINDOW_ERROR(window, ret) if (!window) \
-                    { PAL_ERROR(PAL_INVALID_POINTER, "Window is null or empty "); return ret; }
+                { PAL_ERROR(PAL_INVALID_POINTER, "Window is null "); return ret; }
 
 void PAL_CenterWindow(PAL_Window* window)
 {

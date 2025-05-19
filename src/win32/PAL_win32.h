@@ -7,7 +7,6 @@
 
 #include "PAL_internal.h"
 #include "PAL/PAL_input.h"
-
 #include <windows.h>
 #include <windowsx.h>
 
@@ -15,10 +14,9 @@ static HINSTANCE s_Instance;
 static const wchar_t* s_ClassName = L"WindowClass";
 static const wchar_t* s_PropName = L"WindowProp";
 
-LRESULT CALLBACK PAL_Win32Proc(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param);
-
 void PAL_Win32Init();
 void PAL_Win32Terminate();
+LRESULT CALLBACK PAL_Win32Proc(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param);
 
 struct PAL_Window
 {

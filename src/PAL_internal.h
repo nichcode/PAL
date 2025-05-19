@@ -4,8 +4,7 @@
 #include "PAL/PAL_log.h"
 #include "PAL/PAL_error.h"
 #include "PAL/PAL_window.h"
-
-#include <stdarg.h>
+#include "PAL_api.h"
 
 struct Callbacks
 {
@@ -20,22 +19,28 @@ struct Callbacks
     PAL_ScrollFun scroll = nullptr;
 };
 
+struct PAL_Device
+{
+    PAL_DynAPI* api;
+    void* handle = nullptr;
+    u32 type = 0;
+};
+
 struct PAL_Data
 {
     Callbacks callbacks;
     PAL_Window* activeWindow = nullptr;
+    void* opengl = nullptr;
+    void* gdi = nullptr;
+
     i32 windowCount = 0;
+    u32 directXFlags = 0;
     b8 init = false;
 };
 
 static PAL_Data s_Data;
 
 void PAL_SetError(u32 error_code, b8 print, const char* error_msg, ...);
-char* PAL_FormatArgs(const char* fmt, va_list args_list);
-
-i32 PAL_MultibyteToWchar(const char* str, u32 str_len, wchar_t* wstr);
-i32 PAL_WcharToMultibyte(const wchar_t* wstr, u32 wstr_len, char* str);
-
 void PAL_WriteConsole(u32 log_level, const char* msg);
 void PAL_InitInput();
 

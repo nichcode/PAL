@@ -3,7 +3,7 @@
 
 #include "PAL_pch.h"
 #include "PAL_internal.h"
-#include "PAL/PAL.h"
+#include "PAL/PAL_platform.h"
 
 static const char* levels[4] = { "[TRACE]: ", "[INFO]: ", "[WARN]: ", "[ERROR]: " };
 
