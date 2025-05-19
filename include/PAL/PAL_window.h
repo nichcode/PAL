@@ -24,6 +24,7 @@ PAL_API void PAL_ShowWindow(PAL_Window* window);
 
 PAL_API void PAL_MaximizeWindow(PAL_Window* window);
 PAL_API void PAL_MinimizeWindow(PAL_Window* window);
+PAL_API void PAL_MakeWindowActive(PAL_Window* window);
 
 PAL_API void PAL_SetWindowTitle(PAL_Window* window, const char* title);
 PAL_API void PAL_SetWindowPos(PAL_Window* window, i32 x, i32 y, b8 center);

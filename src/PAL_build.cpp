@@ -3,6 +3,7 @@
 
 #include "PAL_error.cpp"
 #include "PAL_log.cpp"
+#include "PAL_input.cpp"
 #include "PAL.cpp"
 
 #ifdef PAL_PLATFORM_WINDOWS

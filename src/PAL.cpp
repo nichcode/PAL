@@ -12,6 +12,8 @@ void PAL_Init()
     PAL_Win32Init();
 #endif // PAL_PLATFORM_WINDOWS
 
+    PAL_InitInput();
+    s_Data.init = true;
     PAL_LOG_INFO("PAL Platform Initialized");
 }
 
@@ -21,25 +23,21 @@ void PAL_Terminate()
     PAL_Win32Terminate();
 #endif // PAL_PLATFORM_WINDOWS
 
+    s_Data.init = false;
     PAL_LOG_INFO("PAL Platform Terminated");
 }
 
 char* PAL_ToString(const wchar_t* wide_string)
 {
-    if (!wide_string) {
-        PAL_ERROR(PAL_INVALID_POINTER);
-        return nullptr;
-    }
-
     int len = PAL_WcharToMultibyte(wide_string, 0, nullptr);
     if (!len) {
-        PAL_ERROR(PAL_INVALID_POINTER);
+        PAL_ERROR(PAL_INVALID_POINTER, "Wide string is null or empty");
         return nullptr;
     }
 
     char* string = new char[len + 1];
     if (!string) {
-        PAL_ERROR(PAL_OUT_OF_MEMORY);
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for the string");
         return nullptr;
     }
     
@@ -49,20 +47,15 @@ char* PAL_ToString(const wchar_t* wide_string)
 
 wchar_t* PAL_ToWideString(const char* string)
 {
-    if (!string) {
-        PAL_ERROR(PAL_INVALID_POINTER);
-        return nullptr;
-    }
-
     int len = PAL_MultibyteToWchar(string, 0, nullptr);
     if (!len) {
-        PAL_ERROR(PAL_INVALID_POINTER);
+        PAL_ERROR(PAL_INVALID_POINTER, "String is null or empty");
         return nullptr;
     }
 
     wchar_t* wstring = new wchar_t[sizeof(wchar_t) + len];
     if (!string) {
-        PAL_ERROR(PAL_OUT_OF_MEMORY);
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for the wide string");
         return nullptr;
     }
 
@@ -72,11 +65,6 @@ wchar_t* PAL_ToWideString(const char* string)
 
 char* PAL_FormatArgs(const char* fmt, va_list args_list)
 {
-    if (!fmt) {
-        PAL_ERROR(PAL_INVALID_POINTER);
-        return nullptr;
-    }
-
     va_list list_copy;
     __builtin_va_copy(list_copy, args_list);
     
@@ -85,7 +73,7 @@ char* PAL_FormatArgs(const char* fmt, va_list args_list)
 
     char* string = new char[len + 1];
     if (!string) {
-        PAL_ERROR(PAL_OUT_OF_MEMORY);
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for the string");
         return nullptr;
     }
 
@@ -96,11 +84,6 @@ char* PAL_FormatArgs(const char* fmt, va_list args_list)
 
 char* PAL_Format(const char* fmt, ...)
 {
-    if (!fmt) {
-        PAL_ERROR(PAL_INVALID_POINTER);
-        return nullptr;
-    }
-
     va_list arg_ptr;
     va_start(arg_ptr, fmt);
     char* result = PAL_FormatArgs(fmt, arg_ptr);

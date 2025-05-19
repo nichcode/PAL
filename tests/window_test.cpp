@@ -5,7 +5,7 @@ int main(int argc, char** argv)
 {
     PAL_Init();
     u32 flags = PAL_APP_WINDOW | PAL_WINDOW_CENTER;
-    PAL_Window* window = PAL_CreateWindow("window", 640, 480, flags);
+    PAL_Window* window = PAL_CreateWindow("PAL Window", 640, 480, flags);
 
     while (!PAL_WindowShouldClose(window)) {
         PAL_PullEvents();

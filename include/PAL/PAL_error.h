@@ -13,4 +13,5 @@ enum PAL_ErrorCodes
 };
 
 PAL_API u32 PAL_GetError();
-PAL_API const char* PAL_GetErrorMessage(u32 error);
+PAL_API const char* PAL_GetErrorMessage();
+PAL_API const char* PAL_GetErrorDescription(u32 error_code);

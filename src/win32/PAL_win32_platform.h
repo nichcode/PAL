@@ -6,6 +6,7 @@
 #endif // WIN32_LEAN_AND_MEAN
 
 #include "PAL_internal.h"
+#include "PAL/PAL_input.h"
 
 #include <windows.h>
 
@@ -26,4 +27,11 @@ struct PAL_Window
     i32 x, y;
     b8 shouldClose, focused, hidden;
     b8 maximized, minimized;
+
+    u32 keycodes[512];
+    i32 scancodes[PAL_KEY_MAX + 1];
+
+    u32 keys[PAL_KEY_MAX + 1];
+    u32 mouseButtons[PAL_MOUSE_BUTTON_MAX + 1];
+    i32 mousePos[2];
 };

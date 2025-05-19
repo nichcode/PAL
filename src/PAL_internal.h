@@ -6,22 +6,39 @@
 
 #include <stdarg.h>
 
-void PAL_SetError(u32 error_code);
+struct PAL_Window;
+struct PAL_Data
+{
+    PAL_Window* activeWindow = nullptr;
+    i32 windowCount = 0;
+    b8 init = false;
+};
+
+static PAL_Data s_Data;
+
+void PAL_SetError(u32 error_code, b8 print, const char* error_msg, ...);
 char* PAL_FormatArgs(const char* fmt, va_list args_list);
 
 i32 PAL_MultibyteToWchar(const char* str, u32 str_len, wchar_t* wstr);
 i32 PAL_WcharToMultibyte(const wchar_t* wstr, u32 wstr_len, char* str);
 
 void PAL_WriteConsole(u32 log_level, const char* msg);
+void PAL_InitInput();
 
 #ifdef PAL_CONFIG_DEBUG
-#define PAL_ERROR(error) PAL_SetError(error); PAL_BREAK;
+#define PAL_CHECK_INIT() if (!s_Data.init) \
+            { PAL_SetError(PAL_PLATFORM_ERROR, true, "PAL is not initialized"); PAL_BREAK; }
+
+#define PAL_ERROR(error_code, ...) PAL_SetError(error_code, true, __VA_ARGS__); PAL_BREAK;
 #define PAL_LOG_TRACE(...)   PAL_LogTrace(__VA_ARGS__)
 #define PAL_LOG_INFO(...)    PAL_LogInfo(__VA_ARGS__)
 #define PAL_LOG_WARN(...)    PAL_LogWarn(__VA_ARGS__)
 #define PAL_LOG_ERROR(...)   PAL_LogError(__VA_ARGS__)
 #else
-#define PAL_ERROR(error) PAL_SetError(error);
+#define PAL_CHECK_INIT() if (!s_Data.init) \
+            { PAL_SetError(PAL_PLATFORM_ERROR, true, "PAL is not initialized"); }
+
+#define PAL_ERROR(error, ...) PAL_SetError(error_code, false, __VA_ARGS__);
 #define PAL_LOG_TRACE(...)   
 #define PAL_LOG_INFO(...)    
 #define PAL_LOG_WARN(...)    

@@ -25,7 +25,7 @@ void PAL_Win32Init()
 
     ATOM success = RegisterClassExW(&wc);
     if (!success) {
-        PAL_ERROR(PAL_PLATFORM_ERROR);
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to register win32 window class");
         return;
     }
 }
