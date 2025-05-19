@@ -8,14 +8,8 @@
 
 void PAL_CenterWindow(PAL_Window* window)
 {
-    MONITORINFO monitor_info;
-    monitor_info.cbSize = sizeof(MONITORINFO);
-    GetMonitorInfo(MonitorFromWindow(window->handle, MONITOR_DEFAULTTONEAREST), &monitor_info);
-    u32 max_hwidth = monitor_info.rcMonitor.right;
-    u32 max_hheight = monitor_info.rcMonitor.bottom;
-
-    i32 x = (max_hwidth - window->width) / 2;
-    i32 y = (max_hheight - window->height) / 2;
+    i32 x = (window->max_width - window->width) / 2;
+    i32 y = (window->max_height - window->height) / 2;
     window->x = x;
     window->y = y;
     i32 show_flags = SWP_HIDEWINDOW;
@@ -120,12 +114,15 @@ void PAL_MapKeys(PAL_Window* window)
 
 void PAL_ProcessKey(PAL_Window* window, u32 key, i32 scancode, u32 action)
 {
-    if (!key >=0 || !key < PAL_KEY_MAX) {
+    b8 valid_key = key >=0 || key < PAL_KEY_MAX;
+    b8 valid_action = action >=0 || action < PAL_ACTION_MAX;
+
+    if (!valid_key) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid key");
         return;
     }
 
-    if (!action >=0 || !action < PAL_ACTION_MAX) {
+    if (!valid_action) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid action");
         return;
     }
@@ -149,14 +146,76 @@ void PAL_ProcessKey(PAL_Window* window, u32 key, i32 scancode, u32 action)
     if (repeated) {
         action = PAL_REPEAT;
     }
+
+    if (s_Data.callbacks.key) {
+        s_Data.callbacks.key(window, key, scancode, action);
+    }
+}
+
+void PAL_ProcessMouseButton(PAL_Window* window, u16 mouse_button, u8 action)
+{
+    b8 valid_mouse_button = mouse_button >=0 || mouse_button < PAL_MOUSE_BUTTON_MAX;
+    b8 valid_action = action >=0 || action < PAL_ACTION_MAX;
+
+    if (!valid_mouse_button) {
+        PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid mouse button");
+        return;
+    }
+
+    if (!valid_action) {
+        PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid action");
+        return;
+    }
+
+    if (action == PAL_PRESS && window->mouseButtons[mouse_button] == PAL_RELEASE) {
+        window->mouseButtons[mouse_button] = PAL_PRESS;
+    }
+    else {
+        window->mouseButtons[mouse_button] = action;
+    }
+
+    if (s_Data.callbacks.mouseButton) {
+        s_Data.callbacks.mouseButton(window, mouse_button, action);
+    }
+}
+
+void PAL_ProcessMousePos(PAL_Window* window, i32 x, i32 y)
+{
+    window->mousePos[0] = x;
+    window->mousePos[1] = y;
+
+    if (s_Data.callbacks.mousePos) {
+        s_Data.callbacks.mousePos(window, x, y);
+    }
+}
+
+void PAL_ProcessFocus(PAL_Window* window, b8 focused)
+{
+    window->focused = focused;
+    if (focused == false) {
+        // process keys
+        for (u32 key = 0; key <= PAL_KEY_MAX; key++) {
+            if (window->keys[key] == PAL_PRESS) {
+                const i32 scancode = window->scancodes[key];
+                PAL_ProcessKey(window, key, scancode, PAL_RELEASE);
+            }
+        }
+
+        // proces mouse buttons
+        for (u32 button = 0; button <= PAL_MOUSE_BUTTON_MAX; button++) {
+            if (window->mouseButtons[button] == PAL_PRESS) {
+                PAL_ProcessMouseButton(window, button, PAL_RELEASE);
+            }
+        }
+    }
 }
 
 PAL_Window* PAL_CreateWindow(const char* title, u32 width, u32 height, u32 flags)
 {
     PAL_CHECK_INIT()
 
-    if (!width || !height) {
-        PAL_ERROR(PAL_INVALID_PARAMETER, "The width and height of the window cannot be less or equal to 0");
+    if (!(width && height >= 1)) {
+        PAL_ERROR(PAL_INVALID_PARAMETER, "Width and height cannot be less or equal to 0");
         return nullptr;
     }
 
@@ -209,6 +268,18 @@ PAL_Window* PAL_CreateWindow(const char* title, u32 width, u32 height, u32 flags
         PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to create win32 window");
         return nullptr;
     }
+
+    window->monitor = MonitorFromWindow(window->handle, MONITOR_DEFAULTTONEAREST);
+    if (!window->monitor) {
+        PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to create win32 monitor");
+        return nullptr;
+    }
+
+    MONITORINFO monitor_info;
+    monitor_info.cbSize = sizeof(MONITORINFO);
+    GetMonitorInfoW(window->monitor, &monitor_info);
+    window->max_width = monitor_info.rcMonitor.right; 
+    window->max_height = monitor_info.rcMonitor.bottom; 
 
     i32 show_flag = SW_HIDE;
     if (flags & PAL_WINDOW_MAXIMIZE) { show_flag = SW_SHOWMAXIMIZED; }
@@ -359,8 +430,8 @@ void PAL_SetWindowPos(PAL_Window* window, i32 x, i32 y, b8 center)
 void PAL_SetWindowSize(PAL_Window* window, u32 width, u32 height)
 {
     WINDOW_ERROR(window,)
-    if (!width && !height) {
-        PAL_ERROR(PAL_INVALID_PARAMETER, "Width and height cannot be 0");
+    if (!(width && height >= 1)) {
+        PAL_ERROR(PAL_INVALID_PARAMETER, "Width and height cannot be less or equal to 0");
         return;
     }
 
@@ -380,6 +451,41 @@ void PAL_SetWindowSize(PAL_Window* window, u32 width, u32 height)
         rect.bottom - rect.top,
         SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER
     );
+}
+
+void PAL_SetWindowCloseCallback(PAL_WindowCloseFun callback)
+{
+    s_Data.callbacks.close = callback;
+}
+
+void PAL_SetWindowPosCallback(PAL_WindowPosFun callback)
+{
+    s_Data.callbacks.pos = callback;
+}
+
+void PAL_SetWindowSizeCallback(PAL_WindowSizeFun callback)
+{
+    s_Data.callbacks.size = callback;
+}
+
+void PAL_SetKeyCallback(PAL_KeyFun callback)
+{
+    s_Data.callbacks.key = callback;
+}
+
+void PAL_SetMouseButtonCallback(PAL_MouseButtonFun callback)
+{
+    s_Data.callbacks.mouseButton = callback;
+}
+
+void PAL_SetMousePosCallback(PAL_MousePosFun callback)
+{
+    s_Data.callbacks.mousePos = callback;
+}
+
+void PAL_SetScrollCallback(PAL_ScrollFun callback)
+{
+    s_Data.callbacks.scroll = callback;
 }
 
 const char* PAL_GetWindowTitle(PAL_Window* window)
@@ -443,12 +549,13 @@ b8 PAL_WindowIsMinimized(PAL_Window* window)
 // input.h
 b8 PAL_GetKeyState(u32 key)
 {
+    b8 valid = key >=0 || key < PAL_KEY_MAX;
     if (!s_Data.activeWindow) {
         PAL_ERROR(PAL_PLATFORM_ERROR, "No active window set for input");
         return false;
     }
 
-    if (!key >=0 || !key < PAL_KEY_MAX) {
+    if (!valid) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid key");
         return false;
     }
@@ -458,12 +565,13 @@ b8 PAL_GetKeyState(u32 key)
 
 b8 PAL_GetMouseButtonState(u32 mouse_button)
 {
+    b8 valid = mouse_button >=0 || mouse_button < PAL_MOUSE_BUTTON_MAX;
     if (!s_Data.activeWindow) {
         PAL_ERROR(PAL_PLATFORM_ERROR, "No active window set for input");
         return false;
     }
 
-    if (!mouse_button >=0 || !mouse_button < PAL_MOUSE_BUTTON_MAX) {
+    if (!valid) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid mouse button");
         return false;
     }
@@ -479,10 +587,202 @@ LRESULT CALLBACK PAL_Win32Proc(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_para
     switch (msg) {
         case WM_CLOSE: {
             window->shouldClose = true;
+            if (s_Data.callbacks.close) {
+                s_Data.callbacks.close(window);
+            }
             return 0;
             break;
         }
-    }
 
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYUP: {
+            u32 key;
+            u8 action;
+            i32 scancode;
+
+            // from GLFW
+            action = (HIWORD(l_param) & KF_UP) ? PAL_RELEASE : PAL_PRESS;
+            scancode = (HIWORD(l_param) & (KF_EXTENDED | 0xff));
+            if (!scancode) {
+                // NOTE: Some synthetic key messages have a scancode of zero
+                // HACK: Map the virtual key back to a usable scancode
+                scancode = MapVirtualKeyW((UINT)w_param, MAPVK_VK_TO_VSC);
+            }
+
+            // HACK: Alt+PrtSc has a different scancode than just PrtSc
+            if (scancode == 0x54) { scancode = 0x137; }
+
+            // HACK: Ctrl+Pause has a different scancode than just Pause
+            if (scancode == 0x146) { scancode = 0x45; }
+
+            // HACK: CJK IME sets the extended bit for right Shift
+            if (scancode == 0x136) { scancode = 0x36; }
+
+            key = window->keycodes[scancode];
+
+            // The Ctrl keys require special handling
+            if (w_param == VK_CONTROL) {
+                if (HIWORD(l_param) & KF_EXTENDED) {
+                    // Right side keys have the extended key bit set
+                    key = PAL_KEY_RIGHT_CONTROL;
+                }
+                else {
+                    // NOTE: Alt Gr sends Left Ctrl followed by Right Alt
+                    // HACK: We only want one event for Alt Gr, so if we detect
+                    //       this sequence we discard this Left Ctrl message now
+                    //       and later report Right Alt normally
+                    MSG next;
+                    const DWORD time = GetMessageTime();
+
+                    if (PeekMessageW(&next, NULL, 0, 0, PM_NOREMOVE)) {
+                        if (next.message == WM_KEYDOWN ||
+                            next.message == WM_SYSKEYDOWN ||
+                            next.message == WM_KEYUP ||
+                            next.message == WM_SYSKEYUP) {
+                            if (next.wParam == VK_MENU &&
+                                (HIWORD(next.lParam) & KF_EXTENDED) &&
+                                next.time == time) {
+                                // Next message is Right Alt down so discard this
+                                break;
+                            }
+                        }
+                    }
+
+                    // This is a regular Left Ctrl message
+                    key = PAL_KEY_LEFT_CONTROL;
+                }
+            }
+            else if (w_param == VK_PROCESSKEY) {
+                // IME notifies that keys have been filtered by setting the
+                // virtual key-code to VK_PROCESSKEY
+                break;
+            }
+
+            if (action == PAL_RELEASE && w_param == VK_SHIFT) {
+                // HACK: Release both Shift keys on Shift up event, as when both
+                //       are pressed the first release does not emit any event
+                // NOTE: The other half of this is in _glfwPollEventsWin32
+                PAL_ProcessKey(window, PAL_KEY_LEFT_SHIFT, scancode, action);
+                PAL_ProcessKey(window, PAL_KEY_RIGHT_SHIFT, scancode, action);
+            }
+            else if (w_param == VK_SNAPSHOT) {
+                // HACK: Key down is not reported for the Print Screen key
+                PAL_ProcessKey(window, key, scancode, PAL_PRESS);
+                PAL_ProcessKey(window, key, scancode, PAL_RELEASE);
+            }
+            else {
+                PAL_ProcessKey(window, key, scancode, action);
+            }
+            break;
+        }
+
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        case WM_XBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+        case WM_XBUTTONUP: {
+            u8 action;
+            u16 button;
+
+            if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) {
+                button = PAL_MOUSE_BUTTON_LEFT;
+            }
+
+            else if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONUP) {
+                button = PAL_MOUSE_BUTTON_RIGHT;
+            }
+
+            else if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONUP) {
+                button = PAL_MOUSE_BUTTON_MIDDLE;
+            }
+
+            if (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN ||
+                msg == WM_MBUTTONDOWN || msg == WM_XBUTTONDOWN) {
+                action = PAL_PRESS;
+            }
+            else {
+                action = PAL_RELEASE;
+            }
+
+            if (msg == WM_LBUTTONDOWN) {
+                SetCapture(hwnd);
+            }
+            else if (msg == WM_LBUTTONUP) {
+                ReleaseCapture();
+            }
+
+            PAL_ProcessMouseButton(window, button, action);
+            if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONUP) { return true; }
+
+            return 0;
+            break;
+        }
+
+        case WM_MOUSEMOVE: {
+            const int x = GET_X_LPARAM(l_param);
+            const int y = GET_Y_LPARAM(l_param);
+
+            if (window->focused) { PAL_ProcessMousePos(window, x, y); }
+            return 0;
+            break;
+        }
+
+        case WM_MOUSEWHEEL: {
+            if (s_Data.callbacks.scroll) {
+                s_Data.callbacks.scroll(window, 0.0, (f32)HIWORD(w_param) / (f32)WHEEL_DELTA);
+            }
+
+            return 0;
+            break;
+        }
+
+        case WM_MOVE: {
+            i32 x = GET_X_LPARAM(l_param);
+            i32 y = GET_Y_LPARAM(l_param);
+            window->x = x;
+            window->y = y;
+
+            if (s_Data.callbacks.pos) {
+                s_Data.callbacks.pos(window, x, y);
+            }
+
+            return 0;
+            break;
+        }
+
+        case WM_SIZE: {
+            const u32 width = (u32)LOWORD(l_param);
+            const u32 height = (u32)HIWORD(l_param);
+
+            if (width != window->width || height != window->height) {
+                window->width = width;
+                window->height = height;
+
+                if (s_Data.callbacks.size) {
+                    s_Data.callbacks.size(window, width, height);
+                }
+            }
+            return 0;
+            break;
+        }
+
+        case WM_SETFOCUS: {
+            PAL_ProcessFocus(window, true);
+            return 0;
+            break;
+        }
+
+        case WM_KILLFOCUS: {
+            PAL_ProcessFocus(window, false);
+            return 0;
+            break;
+        } 
+    }
+    
     return DefWindowProcW(hwnd, msg, w_param, l_param);
 }

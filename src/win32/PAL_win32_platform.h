@@ -9,6 +9,7 @@
 #include "PAL/PAL_input.h"
 
 #include <windows.h>
+#include <windowsx.h>
 
 static HINSTANCE s_Instance;
 static const wchar_t* s_ClassName = L"WindowClass";
@@ -22,8 +23,10 @@ void PAL_Win32Terminate();
 struct PAL_Window
 {
     HWND handle;
+    HMONITOR monitor;
     const char* title;
     u32 width, height, flags;
+    u32 max_width, max_height = 0;
     i32 x, y;
     b8 shouldClose, focused, hidden;
     b8 maximized, minimized;

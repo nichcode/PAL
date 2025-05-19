@@ -3,12 +3,26 @@
 
 #include "PAL/PAL_log.h"
 #include "PAL/PAL_error.h"
+#include "PAL/PAL_window.h"
 
 #include <stdarg.h>
 
-struct PAL_Window;
+struct Callbacks
+{
+    PAL_WindowCloseFun close = nullptr;
+    PAL_WindowPosFun pos = nullptr;
+    PAL_WindowSizeFun size = nullptr;
+
+    PAL_KeyFun key = nullptr;
+
+    PAL_MouseButtonFun mouseButton = nullptr;
+    PAL_MousePosFun mousePos = nullptr;
+    PAL_ScrollFun scroll = nullptr;
+};
+
 struct PAL_Data
 {
+    Callbacks callbacks;
     PAL_Window* activeWindow = nullptr;
     i32 windowCount = 0;
     b8 init = false;

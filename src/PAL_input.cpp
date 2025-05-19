@@ -102,9 +102,9 @@ void PAL_InitInput()
     s_KeyNames[PAL_KEY_8] = "Key 8";
     s_KeyNames[PAL_KEY_9] = "Key 9";
 
-    s_MouseButtonNames[PAL_MOUSE_BUTTON_LEFT] = "Button Left";
-    s_MouseButtonNames[PAL_MOUSE_BUTTON_RIGHT] = "Button Right";
-    s_MouseButtonNames[PAL_MOUSE_BUTTON_MIDDLE] = "Button Middle";
+    s_MouseButtonNames[PAL_MOUSE_BUTTON_LEFT] = "MouseButton Left";
+    s_MouseButtonNames[PAL_MOUSE_BUTTON_RIGHT] = "MouseButton Right";
+    s_MouseButtonNames[PAL_MOUSE_BUTTON_MIDDLE] = "MouseButton Middle";
 
     s_ActionNames[PAL_RELEASE] = "Release";
     s_ActionNames[PAL_PRESS] = "Press";
@@ -113,7 +113,8 @@ void PAL_InitInput()
 
 const char* PAL_GetKeyName(u32 key)
 {
-    if (!key >=0 || !key < PAL_KEY_MAX) {
+    b8 valid = key >=0 || key < PAL_KEY_MAX;
+    if (!valid) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid key");
         return "";
     }
@@ -122,7 +123,8 @@ const char* PAL_GetKeyName(u32 key)
 
 const char* PAL_GetMouseButtonName(u32 mouse_button)
 {
-    if (!mouse_button >=0 || !mouse_button < PAL_MOUSE_BUTTON_MAX) {
+    b8 valid = mouse_button >=0 || mouse_button < PAL_MOUSE_BUTTON_MAX;
+    if (!valid) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid mouse button");
         return "";
     }
@@ -131,7 +133,8 @@ const char* PAL_GetMouseButtonName(u32 mouse_button)
 
 const char* PAL_GetActionName(u32 action)
 {
-    if (!action >=0 || !action < PAL_ACTION_MAX) {
+    b8 valid = action >=0 || action < PAL_ACTION_MAX;
+    if (!valid) {
         PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid action");
         return "";
     }
