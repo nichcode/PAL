@@ -2,6 +2,7 @@
 #include "PAL_pch.h"
 #include "PAL_glapi.h"
 #include "PAL_glfuncs.h"
+#include "PAL/PAL_platform.h"
 
 #ifdef PAL_PLATFORM_WINDOWS
 #include "PAL_glwin32context.h"
@@ -75,6 +76,33 @@ inline u32 PAL_GetGLFormatCount(u32 format)
     return 0;
 }
 
+GLuint PAL_GenGLShader(i32 type, const char* source)
+{
+    i32 status = GL_FALSE;
+    i32 max_length = 0;
+
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, 0);
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
+
+    if (status != GL_TRUE) {
+        std::vector<GLchar> info_log(max_length);
+        glGetShaderInfoLog(shader, max_length, &max_length, info_log.data());
+        if (type == GL_VERTEX_SHADER) {
+            PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to create opengl vertex shader %s", info_log.data());
+            return 0;
+        }
+
+        else if (type == GL_FRAGMENT_SHADER) {
+            PAL_ERROR(PAL_PLATFORM_ERROR, "Failed to create opengl pixel shader %s", info_log.data());
+            return 0;
+        }
+    }
+    return shader;
+}
+
 void* PAL_GLDynAPI::CreateDevice(void* window_handle, PAL_DeviceDesc* desc)
 {
     PAL_GLDevice* device = new PAL_GLDevice();
@@ -97,12 +125,14 @@ void* PAL_GLDynAPI::CreateDevice(void* window_handle, PAL_DeviceDesc* desc)
         PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to create WGL context");
     }
 
+    device->program = glCreateProgram();
     return device;
 }
 
 void PAL_GLDynAPI::DestroyDevice(void* handle)
 {
     PAL_GLDevice* device = (PAL_GLDevice*)handle;
+    glDeleteProgram(device->program);
     device->context->Destroy();
     delete device;    
 }
@@ -268,6 +298,73 @@ void PAL_GLDynAPI::SetLayout(void* handle)
             }
         }
     }
+}
+
+void* PAL_GLDynAPI::CreateVertexShader(void* device_handle, void* layout_handle, const char* source, b8 load)
+{
+    PAL_GLVertexShader* shader = new PAL_GLVertexShader();
+    if (!shader) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for opengl vertex shader");
+        return nullptr;
+    }
+
+    if (load) {
+        char* src = PAL_ReadFile(source);
+        shader->id = PAL_GenGLShader(GL_VERTEX_SHADER, src);
+        delete[] src;
+    }
+    else {
+        shader->id = PAL_GenGLShader(GL_VERTEX_SHADER, source);
+    }
+
+    return shader;
+}
+
+void PAL_GLDynAPI::DestroyVertexShader(void* handle)
+{
+    PAL_GLVertexShader* shader = (PAL_GLVertexShader*)handle;
+    glDeleteShader(shader->id);
+    delete shader;
+}
+
+void* PAL_GLDynAPI::CreatePixelShader(void* device_handle, const char* source, b8 load)
+{
+    PAL_GLPixelShader* shader = new PAL_GLPixelShader();
+    if (!shader) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for opengl pixel shader");
+        return nullptr;
+    }
+
+    if (load) {
+        const char* src = PAL_ReadFile(source);
+        shader->id = PAL_GenGLShader(GL_FRAGMENT_SHADER, src);
+        delete[] src;
+    }
+    else {
+        shader->id = PAL_GenGLShader(GL_FRAGMENT_SHADER, source);
+    }
+
+    return shader;
+}
+
+void PAL_GLDynAPI::DestroyPixelShader(void* handle)
+{
+    PAL_GLPixelShader* shader = (PAL_GLPixelShader*)handle;
+    glDeleteShader(shader->id);
+    delete shader;
+}
+
+void PAL_GLDynAPI::SetShaders(void* device, void* vertex_shader, void* pixel_shader)
+{
+    PAL_GLDevice* gl_device = (PAL_GLDevice*)device;
+    PAL_GLVertexShader* gl_vertex_shader = (PAL_GLVertexShader*)vertex_shader;
+    PAL_GLPixelShader* gl_pixel_shader = (PAL_GLPixelShader*)pixel_shader;
+
+    glAttachShader(gl_device->program, gl_vertex_shader->id);
+    glAttachShader(gl_device->program, gl_pixel_shader->id);
+    glLinkProgram(gl_device->program);
+
+    glUseProgram(gl_device->program);
 }
 
 PAL_GLContext* CreateGLContext(void* window_handle, b8 debug, u32 major, u32 minor)

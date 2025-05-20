@@ -13,6 +13,7 @@ public:
 struct PAL_GLDevice
 {
     PAL_GLContext* context = nullptr;
+    u32 program = 0;
 };
 
 struct PAL_GLBuffer
@@ -29,6 +30,16 @@ struct PAL_GLLayout
     PAL_Element* elements = nullptr;
     u32 count = 0;
     u32 bindingIndex = 0;
+    u32 id = 0;
+};
+
+struct PAL_GLVertexShader
+{
+    u32 id = 0;
+};
+
+struct PAL_GLPixelShader
+{
     u32 id = 0;
 };
 
@@ -56,6 +67,13 @@ public:
     void* CreateLayout(void* device_handle, PAL_Element* elements, u32 count, u32 binding_index) override;
     void DestroyLayout(void* handle) override;
     void SetLayout(void* handle) override;
+
+    // shaders
+    void* CreateVertexShader(void* device_handle, void* layout_handle, const char* source, b8 load) override;
+    void DestroyVertexShader(void* handle) override;
+    void* CreatePixelShader(void* device_handle, const char* source, b8 load) override;
+    void DestroyPixelShader(void* handle) override;
+    void SetShaders(void* device, void* vertex_shader, void* pixel_shader) override;
 };
 
 PAL_GLContext* CreateGLContext(void* window_handle, b8 debug, u32 major, u32 minor);

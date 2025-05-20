@@ -16,9 +16,9 @@ int main(int argc, char** argv)
 
     // buffers
     f32 vertices[] = {
-		-0.5f, -0.5f,
-		 0.5f, -0.5f,
-		 0.0f,  0.5f
+		-0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+		 0.0f,  0.5f, 0.0f, 0.0f, 1.0f
 	};
 
     u32 indices[] = { 0, 1, 2 };
@@ -36,21 +36,43 @@ int main(int argc, char** argv)
     buffer_desc.indexFormat = PAL_INDEX_U32;
     PAL_Buffer* index_buffer = PAL_CreateBuffer(device, &buffer_desc);
 
-    PAL_Element element;
-    element.format = PAL_FORMAT_FLOAT2;
-    element.index = 0;
-    element.instanceStepRate = 0;
-    element.name = "a_Position";
-    element.offset = 0; // will be set internally
-    element.type = PAL_PER_VERTEX;
+    PAL_Element elements[2];
+    elements[0].format = PAL_FORMAT_FLOAT2;
+    elements[0].index = 0;
+    elements[0].instanceStepRate = 0;
+    elements[0].name = "a_Position";
+    elements[0].offset = 0; // will be set internally
+    elements[0].type = PAL_PER_VERTEX;
 
-    PAL_Layout* layout = PAL_CreateLayout(device, &element, 1, 0);
+    elements[1].format = PAL_FORMAT_FLOAT3;
+    elements[1].index = 1;
+    elements[1].instanceStepRate = 0;
+    elements[1].name = "a_Color";
+    elements[1].offset = 0; // will be set internally
+    elements[1].type = PAL_PER_VERTEX;
+
+    PAL_Layout* layout = PAL_CreateLayout(device, elements, 2, 0);
+
+    PAL_VertexShader* vertex_shader = PAL_CreateVertexShader(
+        device,
+        layout,
+        "shaders/device_vertex.glsl",
+        true
+    );
+
+    PAL_PixelShader* pixel_shader = PAL_CreatePixelShader(
+        device,
+        "shaders/device_pixel.glsl",
+        true
+    );
 
     // set pipeline
     PAL_PipeLine* pipeline = PAL_GetPipeLine(device);
     pipeline->layout = layout;
     pipeline->vertexBuffer = vertex_buffer;
     pipeline->indexBuffer = index_buffer;
+    pipeline->vertexShader = vertex_shader;
+    pipeline->pixelShader = pixel_shader;
 
     pipeline->vertexBufferSlot = 0;
     pipeline->vertexBufferOffset = 0;
@@ -64,6 +86,9 @@ int main(int argc, char** argv)
         PAL_Flush(device);
         PAL_Present(device);
     }
+
+    PAL_DestroyVertexShader(vertex_shader);
+    PAL_DestroyPixelShader(pixel_shader);
 
     PAL_DestroyLayout(layout);
     PAL_DestroyBuffer(vertex_buffer);

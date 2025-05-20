@@ -27,4 +27,11 @@ public:
     virtual void* CreateLayout(void* device_handle, PAL_Element* elements, u32 count, u32 binding_index) = 0;
     virtual void DestroyLayout(void* handle) = 0;
     virtual void SetLayout(void* handle) = 0;
+
+    // shaders
+    virtual void* CreateVertexShader(void* device_handle, void* layout_handle, const char* source, b8 load) = 0;
+    virtual void DestroyVertexShader(void* handle) = 0;
+    virtual void* CreatePixelShader(void* device_handle, const char* source, b8 load) = 0;
+    virtual void DestroyPixelShader(void* handle) = 0;
+    virtual void SetShaders(void* device, void* vertex_shader, void* pixel_shader) = 0;
 };

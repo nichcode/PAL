@@ -16,3 +16,5 @@ PAL_API char* PAL_Format(const char* fmt, ...);
 PAL_API void* PAL_LoadLibrary(const char* dll);
 PAL_API void* PAL_GetProcAddress(void* dll, const char* func_name);
 PAL_API void PAL_FreeLibrary(void* dll);
+
+PAL_API char* PAL_ReadFile(const char* filepath);

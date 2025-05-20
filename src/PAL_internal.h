@@ -45,6 +45,18 @@ struct PAL_Layout
     u32 bindingIndex = 0;
 };
 
+struct PAL_VertexShader
+{
+    PAL_Device* device = nullptr;
+    void* handle = nullptr;
+};
+
+struct PAL_PixelShader
+{
+    PAL_Device* device = nullptr;
+    void* handle = nullptr;
+};
+
 struct PAL_Data
 {
     Callbacks callbacks;

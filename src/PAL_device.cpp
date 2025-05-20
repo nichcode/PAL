@@ -115,10 +115,11 @@ void PAL_Flush(PAL_Device* device)
     PAL_Layout* layout = device->pipeline.layout;
     PAL_Buffer* vertexBuffer = device->pipeline.vertexBuffer;
     PAL_Buffer* indexBuffer = device->pipeline.indexBuffer;
+    PAL_VertexShader* vertexShader = device->pipeline.vertexShader;
+    PAL_PixelShader* pixelShader = device->pipeline.pixelShader;
     
     // TODO: primitive type
     // TODO: draw type
-    // shaders
 
     if (layout) {
         device->api->SetLayout(layout->handle);
@@ -135,14 +136,18 @@ void PAL_Flush(PAL_Device* device)
         }
     }
 
-    // if (layout) {
-    //     device->api->SetLayout(layout->handle);
-    // }
-
     if (indexBuffer) {
         if (indexBuffer->type == PAL_INDEX_BUFFER) {
             device->api->SetIndexBuffer(indexBuffer->handle);
         }
+    }
+
+    if (vertexShader && pixelShader) {
+        device->api->SetShaders(
+            device->handle,
+            vertexShader->handle,
+            pixelShader->handle
+        );
     }
 
     device->api->DrawIndexed(device->handle, device->pipeline.indexCount);
@@ -242,4 +247,72 @@ u32 PAL_GetLayoutStride(PAL_Layout* layout)
     }
 
     return layout->stride;
+}
+
+PAL_VertexShader* PAL_CreateVertexShader(PAL_Device* device, PAL_Layout* layout, const char* source, b8 load)
+{
+    PAL_CHECK_INIT()
+    DEVICE_ERROR(device, nullptr)
+
+    if (!layout) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Layout is null");
+        return nullptr;
+    }
+
+    PAL_VertexShader* shader = new PAL_VertexShader();
+    if (!shader) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for vertex shader");
+        return nullptr;
+    }
+
+    shader->device = device;
+    shader->handle = device->api->CreateVertexShader(
+        device->handle,
+        layout->handle,
+        source,
+        load  
+    );
+
+    return shader;
+}
+
+void PAL_DestroyVertexShader(PAL_VertexShader* vertex_shader)
+{
+    if (!vertex_shader) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Vertex shader is null");
+        return;
+    }
+
+    vertex_shader->device->api->DestroyVertexShader(vertex_shader->handle);
+}
+
+PAL_PixelShader* PAL_CreatePixelShader(PAL_Device* device, const char* source, b8 load)
+{
+    PAL_CHECK_INIT()
+    DEVICE_ERROR(device, nullptr)
+
+    PAL_PixelShader* shader = new PAL_PixelShader();
+    if (!shader) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for pixel shader");
+        return nullptr;
+    }
+
+    shader->device = device;
+    shader->handle = device->api->CreatePixelShader(
+        device->handle,
+        source,
+        load  
+    );
+
+    return shader;
+}
+
+void PAL_DestroyPixelShader(PAL_PixelShader* pixel_shader)
+{
+    if (!pixel_shader) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Pixel shader is null");
+        return;
+    }
+
+    pixel_shader->device->api->DestroyVertexShader(pixel_shader->handle);
 }

@@ -181,3 +181,33 @@ void PAL_FreeLibrary(void* dll)
     HMODULE library = (HMODULE)dll;
     FreeLibrary(library);
 }
+
+char* PAL_ReadFile(const char* filepath)
+{
+    std::string result;
+    std::ifstream file(filepath, std::ios::in | std::ios::binary);
+    if (file) {
+        file.seekg(0, std::ios::end);
+        size_t size = file.tellg();
+        if (size != -1) {
+            result.resize(size);
+            file.seekg(0, std::ios::beg);
+            file.read(&result[0], size);
+        }
+        else {
+            PAL_ERROR(PAL_INVALID_POINTER, "Could not read from file %s", filepath);
+            return nullptr;
+        }
+    }
+    else {
+        PAL_ERROR(PAL_INVALID_POINTER, "Could not read from file %s", filepath);
+        return nullptr;
+    }
+
+    u64 len = result.length();
+    char* out_string = new char[len + 1];
+    memcpy(out_string, result.c_str(), len);
+    out_string[len] = 0;
+    
+    return out_string;
+}
