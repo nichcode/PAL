@@ -26,6 +26,14 @@ struct PAL_Device
     u32 type = 0;
 };
 
+struct PAL_Buffer
+{
+    PAL_Device* device = nullptr;
+    void* handle = nullptr;
+    u32 type = 0;
+    u32 usage = 0;
+};
+
 struct PAL_Data
 {
     Callbacks callbacks;

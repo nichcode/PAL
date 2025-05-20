@@ -21,6 +21,7 @@
 #define GL_FRAGMENT_SHADER                0x8B30
 #define GL_VERTEX_SHADER                  0x8B31
 #define GL_VERSION                        0x1F02
+#define GL_DYNAMIC_DRAW                   0x88E8
 
 typedef signed   long long int khronos_intptr_t;
 typedef unsigned long long int khronos_uintptr_t;

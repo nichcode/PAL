@@ -14,12 +14,36 @@ int main(int argc, char** argv)
 
     PAL_SetClearColor(device, .2f, .2f, .2f, 1.0f);
 
+    // buffers
+    f32 vertices[] = {
+		-0.5f, -0.5f,
+		 0.5f, -0.5f,
+		 0.0f,  0.5f
+	};
+
+    u32 indices[] = { 0, 1, 2 };
+
+    PAL_BufferDesc buffer_desc;
+    buffer_desc.data = vertices;
+    buffer_desc.size = sizeof(vertices);
+    buffer_desc.type = PAL_VERTEX_BUFFER;
+    buffer_desc.usage = PAL_USAGE_STATIC;
+    PAL_Buffer* vertex_buffer = PAL_CreateBuffer(device, &buffer_desc);
+
+    buffer_desc.type = PAL_INDEX_BUFFER;
+    buffer_desc.indexCount = 3;
+    buffer_desc.indexFormat = PAL_INDEX_U32;
+    PAL_Buffer* index_buffer = PAL_CreateBuffer(device, &buffer_desc);
+
     while (!PAL_WindowShouldClose(window)) {
         PAL_PullEvents();
 
         PAL_Clear(device);
         PAL_Present(device);
     }
+
+    PAL_DestroyBuffer(vertex_buffer);
+    PAL_DestroyBuffer(index_buffer);
     
     PAL_DestroyDevice(device);
     PAL_DestroyWindow(window);
