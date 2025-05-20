@@ -12,9 +12,19 @@ public:
     virtual void Clear(void* handle) = 0;
     virtual void Present(void* handle) = 0;
 
+    virtual void Draw(void* handle, u32 count) = 0;
+    virtual void DrawInstanced(void* handle, u32 count, u32 instance_count) = 0;
+    virtual void DrawIndexed(void* handle, u32 count) = 0;
+    virtual void DrawIndexedInstance(void* handle, u32 count, u32 instance_count) = 0;
+
     // buffer
     virtual void* CreateBuffer(void* device_handle, PAL_BufferDesc* desc) = 0;
     virtual void DestroyBuffer(void* handle) = 0;
     virtual void SetVertexBuffer(void* handle, u32 binding_slot, u32 stride, u32 offset) = 0;
     virtual void SetIndexBuffer(void* handle) = 0;
+
+    // layout
+    virtual void* CreateLayout(void* device_handle, PAL_Element* elements, u32 count, u32 binding_index) = 0;
+    virtual void DestroyLayout(void* handle) = 0;
+    virtual void SetLayout(void* handle) = 0;
 };

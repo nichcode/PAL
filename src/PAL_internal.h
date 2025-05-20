@@ -22,6 +22,7 @@ struct Callbacks
 struct PAL_Device
 {
     PAL_DynAPI* api;
+    PAL_PipeLine pipeline;
     void* handle = nullptr;
     u32 type = 0;
 };
@@ -32,6 +33,16 @@ struct PAL_Buffer
     void* handle = nullptr;
     u32 type = 0;
     u32 usage = 0;
+};
+
+struct PAL_Layout
+{
+    PAL_Device* device = nullptr;
+    PAL_Element elements[PAL_MAX_SLOTS];
+    void* handle = nullptr;
+    u32 stride = 0;
+    u32 count = 0;
+    u32 bindingIndex = 0;
 };
 
 struct PAL_Data

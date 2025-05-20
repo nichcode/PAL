@@ -10,6 +10,35 @@
 #define DEVICE_ERROR(device, ret) if (!device) \
             { PAL_ERROR(PAL_INVALID_POINTER, "Device is null "); return ret; }
 
+inline u32 PAL_GetFormatSize(u32 format)
+{
+    switch (format)
+    {
+        case PAL_FORMAT_INT:
+        case PAL_FORMAT_FLOAT: {
+            return 4;
+        }
+
+        case PAL_FORMAT_INT2:
+        case PAL_FORMAT_FLOAT2: {
+            return 8;
+        }
+
+        case PAL_FORMAT_INT3:
+        case PAL_FORMAT_FLOAT3: {
+            return 12;
+        }
+
+        case PAL_FORMAT_INT4:
+        case PAL_FORMAT_FLOAT4: {
+            return 16;
+        }
+    }
+
+    PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid element format");
+    return 0;
+}
+
 PAL_Device* PAL_CreateDevice(PAL_Window* window, PAL_DeviceDesc* device_desc)
 {
     PAL_CHECK_INIT()
@@ -71,8 +100,54 @@ void PAL_Present(PAL_Device* device)
     device->api->Present(device->handle);
 }
 
+PAL_PipeLine* PAL_GetPipeLine(PAL_Device* device)
+{
+    PAL_CHECK_INIT()
+    DEVICE_ERROR(device, nullptr)
+    return &device->pipeline;
+}
 
-//************************buffer**************************
+void PAL_Flush(PAL_Device* device)
+{
+    PAL_CHECK_INIT()
+    DEVICE_ERROR(device,)
+
+    PAL_Layout* layout = device->pipeline.layout;
+    PAL_Buffer* vertexBuffer = device->pipeline.vertexBuffer;
+    PAL_Buffer* indexBuffer = device->pipeline.indexBuffer;
+    
+    // TODO: primitive type
+    // TODO: draw type
+    // shaders
+
+    if (layout) {
+        device->api->SetLayout(layout->handle);
+    }
+
+    if (vertexBuffer) {
+        if (vertexBuffer->type == PAL_VERTEX_BUFFER) {
+            device->api->SetVertexBuffer(
+                vertexBuffer->handle,
+                device->pipeline.vertexBufferSlot,
+                device->pipeline.vertexBufferStride,
+                device->pipeline.vertexBufferOffset
+            ); 
+        }
+    }
+
+    // if (layout) {
+    //     device->api->SetLayout(layout->handle);
+    // }
+
+    if (indexBuffer) {
+        if (indexBuffer->type == PAL_INDEX_BUFFER) {
+            device->api->SetIndexBuffer(indexBuffer->handle);
+        }
+    }
+
+    device->api->DrawIndexed(device->handle, device->pipeline.indexCount);
+}
+
 PAL_Buffer* PAL_CreateBuffer(PAL_Device* device, PAL_BufferDesc* buffer_desc)
 {
     PAL_CHECK_INIT()
@@ -111,36 +186,60 @@ void PAL_DestroyBuffer(PAL_Buffer* buffer)
     buffer = nullptr;
 }
 
-void PAL_SetVertexBuffer(PAL_Buffer* vertex_buffer, u32 binding_slot, u32 stride, u32 offset)
+PAL_Layout* PAL_CreateLayout(PAL_Device* device, PAL_Element* elements, u32 count, u32 binding_index)
 {
-    if (!vertex_buffer) {
-        PAL_ERROR(PAL_INVALID_POINTER, "Vertexbuffer is null"); return;
+    PAL_CHECK_INIT()
+    DEVICE_ERROR(device, nullptr)
+
+    if (!elements || count <= 0) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Elements is null or count is less or equal to zero");
+        return nullptr;
     }
 
-    if (!vertex_buffer->type == PAL_VERTEX_BUFFER) {
-        PAL_ERROR(PAL_INVALID_POINTER, "The specified buffer is not a vertex buffer"); return;
+    PAL_Layout* layout = new PAL_Layout();
+    if (!layout) {
+        PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to allocate memory for layout");
+        return nullptr;
     }
 
-    vertex_buffer->device->api->SetVertexBuffer(
-        vertex_buffer->handle,
-        binding_slot,
-        stride,
-        offset
+    layout->device = device;
+    layout->bindingIndex = binding_index;
+    layout->count = count;
+    layout->stride = 0;
+    for (u32 i = 0; i < count; i++) {
+        layout->elements[i] = elements[i];
+        layout->elements[i].offset = layout->stride;
+        layout->stride += PAL_GetFormatSize(elements[i].format);
+    }
+
+    layout->handle = device->api->CreateLayout(
+        device->handle,
+        layout->elements,
+        count,
+        binding_index
     );
+
+    return layout;
 }
 
-void PAL_SetIndexBuffer(PAL_Buffer* index_buffer)
+void PAL_DestroyLayout(PAL_Layout* layout)
 {
-    if (!index_buffer) {
-        PAL_ERROR(PAL_INVALID_POINTER, "Indexbuffer is null "); return;
+    if (!layout) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Layout is null "); return;
     }
 
-    if (!index_buffer->type == PAL_INDEX_BUFFER) {
-        PAL_ERROR(PAL_INVALID_POINTER, "The specified buffer is not an index buffer"); return;
-    }
-
-    index_buffer->device->api->SetIndexBuffer(
-        index_buffer->handle
+    layout->device->api->DestroyLayout(
+        layout->handle 
     );
+    delete layout;
+    layout = nullptr;
+}
 
+u32 PAL_GetLayoutStride(PAL_Layout* layout)
+{
+    if (!layout) {
+        PAL_ERROR(PAL_INVALID_POINTER, "Layout is null "); return 0;
+    }
+
+    return layout->stride;
 }

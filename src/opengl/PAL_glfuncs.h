@@ -22,6 +22,9 @@
 #define GL_VERTEX_SHADER                  0x8B31
 #define GL_VERSION                        0x1F02
 #define GL_DYNAMIC_DRAW                   0x88E8
+#define GL_INT                            0x1404
+#define GL_TRUE 1
+#define GL_FALSE 0
 
 typedef signed   long long int khronos_intptr_t;
 typedef unsigned long long int khronos_uintptr_t;
@@ -85,6 +88,7 @@ typedef void (APIENTRYP PFNGLBINDVERTEXBUFFERPROC) (GLuint bindingindex, GLuint 
 typedef void (APIENTRYP PFNGLVERTEXATTRIBBINDINGPROC) (GLuint attribindex, GLuint bindingindex);
 typedef void (APIENTRYP PFNGLVERTEXBINDINGDIVISORPROC) (GLuint bindingindex, GLuint divisor);
 typedef void (APIENTRYP PFNGLVERTEXATTRIBFORMATPROC) (GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset);
+typedef void (APIENTRYP PFNGLVERTEXATTRIBIFORMATPROC) (GLuint attribindex, GLint size, GLenum type, GLuint relativeoffset);
 
 typedef void (APIENTRYP PFNGLVIEWPORTPROC) (GLint x, GLint y, GLsizei width, GLsizei height);
 
@@ -128,11 +132,12 @@ PFNGLDELETESHADERPROC glDeleteShader = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
 
 // GL_ARB_vertex_attrib_binding extension
-PFNGLBINDVERTEXBUFFERSPROC glBindVertexBuffers;
-PFNGLBINDVERTEXBUFFERPROC glBindVertexBuffer;
-PFNGLVERTEXBINDINGDIVISORPROC glVertexBindingDivisor;
-PFNGLVERTEXATTRIBFORMATPROC glVertexAttribFormat;
-PFNGLVERTEXATTRIBBINDINGPROC glVertexAttribBinding;
+PFNGLBINDVERTEXBUFFERSPROC glBindVertexBuffers = nullptr;
+PFNGLBINDVERTEXBUFFERPROC glBindVertexBuffer = nullptr;
+PFNGLVERTEXBINDINGDIVISORPROC glVertexBindingDivisor = nullptr;
+PFNGLVERTEXATTRIBFORMATPROC glVertexAttribFormat = nullptr;
+PFNGLVERTEXATTRIBIFORMATPROC glVertexAttribIFormat = nullptr;
+PFNGLVERTEXATTRIBBINDINGPROC glVertexAttribBinding = nullptr;
 
 static GLVersion glVersion;
 

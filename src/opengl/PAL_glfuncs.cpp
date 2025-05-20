@@ -64,6 +64,7 @@ void LoadGL()
     glBindVertexBuffer = (PFNGLBINDVERTEXBUFFERPROC)Load("glBindVertexBuffer");
     glVertexBindingDivisor = (PFNGLVERTEXBINDINGDIVISORPROC)Load("glVertexBindingDivisor");
     glVertexAttribFormat = (PFNGLVERTEXATTRIBFORMATPROC)Load("glVertexAttribFormat");
+    glVertexAttribIFormat = (PFNGLVERTEXATTRIBIFORMATPROC)Load("glVertexAttribIFormat");
     glVertexAttribBinding = (PFNGLVERTEXATTRIBBINDINGPROC)Load("glVertexAttribBinding");
 
     glViewport = (PFNGLVIEWPORTPROC)Load("glViewport");

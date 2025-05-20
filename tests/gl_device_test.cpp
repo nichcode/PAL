@@ -30,18 +30,42 @@ int main(int argc, char** argv)
     buffer_desc.usage = PAL_USAGE_STATIC;
     PAL_Buffer* vertex_buffer = PAL_CreateBuffer(device, &buffer_desc);
 
+    buffer_desc.data = indices;
     buffer_desc.type = PAL_INDEX_BUFFER;
     buffer_desc.indexCount = 3;
     buffer_desc.indexFormat = PAL_INDEX_U32;
     PAL_Buffer* index_buffer = PAL_CreateBuffer(device, &buffer_desc);
 
+    PAL_Element element;
+    element.format = PAL_FORMAT_FLOAT2;
+    element.index = 0;
+    element.instanceStepRate = 0;
+    element.name = "a_Position";
+    element.offset = 0; // will be set internally
+    element.type = PAL_PER_VERTEX;
+
+    PAL_Layout* layout = PAL_CreateLayout(device, &element, 1, 0);
+
+    // set pipeline
+    PAL_PipeLine* pipeline = PAL_GetPipeLine(device);
+    pipeline->layout = layout;
+    pipeline->vertexBuffer = vertex_buffer;
+    pipeline->indexBuffer = index_buffer;
+
+    pipeline->vertexBufferSlot = 0;
+    pipeline->vertexBufferOffset = 0;
+    pipeline->vertexBufferStride = PAL_GetLayoutStride(layout);
+    pipeline->indexCount = 3;
+
     while (!PAL_WindowShouldClose(window)) {
         PAL_PullEvents();
 
         PAL_Clear(device);
+        PAL_Flush(device);
         PAL_Present(device);
     }
 
+    PAL_DestroyLayout(layout);
     PAL_DestroyBuffer(vertex_buffer);
     PAL_DestroyBuffer(index_buffer);
     

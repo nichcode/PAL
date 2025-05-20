@@ -55,6 +55,7 @@ using b32 = int;
 using b8 = bool;
 
 #define PAL_BIT(x) 1 << x
+#define PAL_MAX_SLOTS 16
 
 #ifdef PAL_PLATFORM_WINDOWS
 #define PAL_EXPORT __declspec(dllexport)

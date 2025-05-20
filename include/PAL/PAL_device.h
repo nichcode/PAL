@@ -6,6 +6,7 @@
 struct PAL_Window;
 struct PAL_Device;
 struct PAL_Buffer;
+struct PAL_Layout;
 
 enum PAL_DeviceType
 {
@@ -30,6 +31,24 @@ enum PAL_IndexFormat
     PAL_INDEX_U16
 };
 
+enum PAL_ElementType
+{
+    PAL_PER_VERTEX = 1,
+    PAL_PER_INSTANCE
+};
+
+enum PAL_ElementFormat
+{
+    PAL_FORMAT_INT = 1,
+    PAL_FORMAT_INT2,
+    PAL_FORMAT_INT3,
+    PAL_FORMAT_INT4,
+    PAL_FORMAT_FLOAT,
+    PAL_FORMAT_FLOAT2,
+    PAL_FORMAT_FLOAT3,
+    PAL_FORMAT_FLOAT4
+};
+
 struct PAL_DeviceDesc
 {
     u32 type = 0;
@@ -52,6 +71,28 @@ struct PAL_BufferDesc
     void* data = nullptr;
 };
 
+struct PAL_Element
+{
+    const char* name = nullptr;
+    u32 format = 0;
+    u32 index = 0;
+    u32 offset = 0; // internal use only
+    u32 type = 0;
+    u32 instanceStepRate = 0;
+};
+
+struct PAL_PipeLine
+{
+    PAL_Layout* layout = nullptr;
+    PAL_Buffer* vertexBuffer = nullptr;
+    PAL_Buffer* indexBuffer = nullptr;
+
+    u32 vertexBufferSlot = 0;
+    u32 vertexBufferStride = 0;
+    u32 vertexBufferOffset = 0;
+    u32 indexCount = 0;
+};
+
 PAL_API PAL_Device* PAL_CreateDevice(PAL_Window* window, PAL_DeviceDesc* device_desc);
 PAL_API void PAL_DestroyDevice(PAL_Device* device);
 
@@ -60,9 +101,13 @@ PAL_API void PAL_SetClearColor(PAL_Device* device, f32 r, f32 g, f32 b, f32 a);
 PAL_API void PAL_Clear(PAL_Device* device); 
 PAL_API void PAL_Present(PAL_Device* device); 
 
-//****************************************************//
+PAL_API PAL_PipeLine* PAL_GetPipeLine(PAL_Device* device);
+PAL_API void PAL_Flush(PAL_Device* device);
+
 PAL_API PAL_Buffer* PAL_CreateBuffer(PAL_Device* device, PAL_BufferDesc* buffer_desc);
 PAL_API void PAL_DestroyBuffer(PAL_Buffer* buffer);
 
-PAL_API void PAL_SetVertexBuffer(PAL_Buffer* vertex_buffer, u32 binding_slot, u32 stride, u32 offset);
-PAL_API void PAL_SetIndexBuffer(PAL_Buffer* index_buffer);
+PAL_API PAL_Layout* PAL_CreateLayout(PAL_Device* device, PAL_Element* elements, u32 count, u32 binding_index);
+PAL_API void PAL_DestroyLayout(PAL_Layout* layout);
+
+PAL_API u32 PAL_GetLayoutStride(PAL_Layout* layout);
