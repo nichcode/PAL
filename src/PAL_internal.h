@@ -21,8 +21,9 @@ struct Callbacks
 
 struct PAL_Device
 {
-    PAL_DynAPI* api;
     PAL_PipeLine pipeline;
+    PAL_DynAPI* api;
+    PAL_Window* window = nullptr;
     void* handle = nullptr;
     u32 type = 0;
 };

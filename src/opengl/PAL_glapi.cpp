@@ -125,6 +125,7 @@ void* PAL_GLDynAPI::CreateDevice(void* window_handle, PAL_DeviceDesc* desc)
         PAL_ERROR(PAL_OUT_OF_MEMORY, "Failed to create WGL context");
     }
 
+    glViewport(0, 0, 0, 0);
     device->program = glCreateProgram();
     return device;
 }
@@ -153,6 +154,30 @@ void PAL_GLDynAPI::Present(void* dhandle)
     device->context->Present();
 }
 
+void PAL_GLDynAPI::SetPrimitive(void* handle, u32 primitive)
+{
+    PAL_GLDevice* device = (PAL_GLDevice*)handle;
+    switch (primitive) {
+        case PAL_TRIANGLES: {
+            device->mode = GL_TRIANGLES;
+            return;
+        }
+    }
+
+    PAL_ERROR(PAL_INVALID_PARAMETER, "Invalid primitve");
+}
+
+void PAL_GLDynAPI::SetViewport(void* handle, u32 window_height, PAL_Viewport* viewport)
+{
+    i32 y = window_height - (viewport->height + viewport->y);
+    glViewport(
+        viewport->x,
+        y,
+        viewport->width,
+        viewport->height
+    );
+}
+
 void PAL_GLDynAPI::Draw(void* handle, u32 count)
 {
     
@@ -165,8 +190,8 @@ void PAL_GLDynAPI::DrawInstanced(void* handle, u32 count, u32 instance_count)
 
 void PAL_GLDynAPI::DrawIndexed(void* handle, u32 count)
 {
-    // TODO: change type
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+    PAL_GLDevice* device = (PAL_GLDevice*)handle;
+    glDrawElements(device->mode, count, GL_UNSIGNED_INT, nullptr);
 }
 
 void PAL_GLDynAPI::DrawIndexedInstance(void* handle, u32 count, u32 instance_count)

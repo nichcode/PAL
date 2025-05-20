@@ -51,6 +51,19 @@ enum PAL_ElementFormat
     PAL_FORMAT_FLOAT4
 };
 
+enum PAL_Primitive
+{
+    PAL_TRIANGLES = 1
+};
+
+enum PAL_DrawType
+{
+    PAL_VERTEX_DRAW = 1,
+    PAL_VERTEX_INSTANCED_DRAW,
+    PAL_INDEX_DRAW,
+    PAL_INDEX_INSTANCED_DRAW,
+};
+
 struct PAL_DeviceDesc
 {
     u32 type = 0;
@@ -83,6 +96,14 @@ struct PAL_Element
     u32 instanceStepRate = 0;
 };
 
+struct PAL_Viewport
+{
+    i32 x = 0;
+    i32 y = 0;
+    u32 width = 0;
+    u32 height = 0;
+};
+
 struct PAL_PipeLine
 {
     PAL_Layout* layout = nullptr;
@@ -90,11 +111,16 @@ struct PAL_PipeLine
     PAL_Buffer* indexBuffer = nullptr;
     PAL_VertexShader* vertexShader = nullptr;
     PAL_PixelShader* pixelShader = nullptr;
+    PAL_Viewport* viewport = nullptr;
 
     u32 vertexBufferSlot = 0;
     u32 vertexBufferStride = 0;
     u32 vertexBufferOffset = 0;
-    u32 indexCount = 0;
+    
+    u32 count = 0;
+    u32 instanceCount = 0;
+    u32 drawType = 0;
+    u32 primitive = 0;
 };
 
 PAL_API PAL_Device* PAL_CreateDevice(PAL_Window* window, PAL_DeviceDesc* device_desc);

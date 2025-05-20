@@ -12,6 +12,9 @@ public:
     virtual void Clear(void* handle) = 0;
     virtual void Present(void* handle) = 0;
 
+    virtual void SetPrimitive(void* handle, u32 primitive) = 0;
+    virtual void SetViewport(void* handle, u32 window_height, PAL_Viewport* viewport) = 0;
+
     virtual void Draw(void* handle, u32 count) = 0;
     virtual void DrawInstanced(void* handle, u32 count, u32 instance_count) = 0;
     virtual void DrawIndexed(void* handle, u32 count) = 0;

@@ -66,6 +66,10 @@ int main(int argc, char** argv)
         true
     );
 
+    PAL_Viewport viewport;
+    viewport.width = 640;
+    viewport.height = 480;
+
     // set pipeline
     PAL_PipeLine* pipeline = PAL_GetPipeLine(device);
     pipeline->layout = layout;
@@ -73,11 +77,14 @@ int main(int argc, char** argv)
     pipeline->indexBuffer = index_buffer;
     pipeline->vertexShader = vertex_shader;
     pipeline->pixelShader = pixel_shader;
+    pipeline->viewport = &viewport;
 
     pipeline->vertexBufferSlot = 0;
     pipeline->vertexBufferOffset = 0;
     pipeline->vertexBufferStride = PAL_GetLayoutStride(layout);
-    pipeline->indexCount = 3;
+    pipeline->count = 3;
+    pipeline->drawType = PAL_INDEX_DRAW;
+    pipeline->primitive = PAL_TRIANGLES;
 
     while (!PAL_WindowShouldClose(window)) {
         PAL_PullEvents();

@@ -60,6 +60,7 @@ PAL_Device* PAL_CreateDevice(PAL_Window* window, PAL_DeviceDesc* device_desc)
     }
 
     device->type = device_desc->type;
+    device->window = window;
     switch (device->type) {
         case PAL_OPENGL_DEVICE: {
             device->api = new PAL_GLDynAPI();
@@ -117,10 +118,19 @@ void PAL_Flush(PAL_Device* device)
     PAL_Buffer* indexBuffer = device->pipeline.indexBuffer;
     PAL_VertexShader* vertexShader = device->pipeline.vertexShader;
     PAL_PixelShader* pixelShader = device->pipeline.pixelShader;
-    
-    // TODO: primitive type
-    // TODO: draw type
+    PAL_Viewport* viewport = device->pipeline.viewport;
 
+    device->api->SetPrimitive(device->handle, device->pipeline.primitive);
+    u32 windowHeight = 0;
+    PAL_GetWindowSize(device->window, nullptr, &windowHeight);
+    if (viewport) {
+        device->api->SetViewport(
+            device->handle,
+            windowHeight,
+            viewport
+        );
+    }
+    
     if (layout) {
         device->api->SetLayout(layout->handle);
     }
@@ -150,7 +160,39 @@ void PAL_Flush(PAL_Device* device)
         );
     }
 
-    device->api->DrawIndexed(device->handle, device->pipeline.indexCount);
+    if (device->pipeline.drawType == PAL_VERTEX_DRAW) {
+        device->api->Draw(
+            device->handle, 
+            device->pipeline.count
+        );
+        return;
+    }
+
+    if (device->pipeline.drawType == PAL_VERTEX_INSTANCED_DRAW) {
+        device->api->DrawInstanced(
+            device->handle, 
+            device->pipeline.count,
+            device->pipeline.instanceCount
+        );
+        return;
+    }
+
+    if (device->pipeline.drawType == PAL_INDEX_DRAW) {
+        device->api->DrawIndexed(
+            device->handle, 
+            device->pipeline.count
+        );
+        return;
+    }
+
+    if (device->pipeline.drawType == PAL_INDEX_INSTANCED_DRAW) {
+        device->api->DrawIndexedInstance(
+            device->handle, 
+            device->pipeline.count,
+            device->pipeline.instanceCount
+        );
+        return;
+    }
 }
 
 PAL_Buffer* PAL_CreateBuffer(PAL_Device* device, PAL_BufferDesc* buffer_desc)

@@ -14,6 +14,7 @@ struct PAL_GLDevice
 {
     PAL_GLContext* context = nullptr;
     u32 program = 0;
+    u32 mode = 0;
 };
 
 struct PAL_GLBuffer
@@ -51,6 +52,9 @@ public:
     void SetClearColor(void* handle, f32 r, f32 g, f32 b, f32 a) override;
     void Clear(void* handle) override;
     void Present(void* device_handle) override;
+
+    void SetPrimitive(void* handle, u32 primitive) override;
+    void SetViewport(void* handle, u32 window_height, PAL_Viewport* viewport) override;
 
     void Draw(void* handle, u32 count) override;
     void DrawInstanced(void* handle, u32 count, u32 instance_count) override;
