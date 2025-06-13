@@ -4,6 +4,7 @@
 
 #include "PAL_allocator.h"
 #include "PAL_error.h"
+#include "PAL_log.h"
 
 typedef enum PAL_InitFlags
 {

@@ -26,6 +26,8 @@ static PAL_PlatformData s_PAL;
 
 PAL_Allocator PAL_PlatformGetAllocator();
 
+void PAL_WriteConsole(Uint32 level, const char* msg);
+
 //**********************************************
 //************Platform Agnostic API*************
 //**********************************************

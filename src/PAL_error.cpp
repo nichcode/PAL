@@ -40,7 +40,13 @@ PAL_BOOL PAL_SetError(Uint32 code, const char* fmt, ...)
     s_PAL.errorCode = code;
     if (!s_PAL.debug) { return PAL_FALSE; }
 
-    PAL_Format(s_PAL.errorString, "%s: %s", getErrorString(code), fmt);
+    char tmp[PAL_MESSAGE_SIZE] = {};
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    PAL_FormatArgs(fmt, argPtr, tmp);
+    va_end(argPtr);
+
+    PAL_Format(s_PAL.errorString, "%s: %s", getErrorString(code), tmp);
     if (s_PAL.errorCallback) {
         s_PAL.errorCallback(code, s_PAL.errorString);
     }

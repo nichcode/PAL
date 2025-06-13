@@ -15,4 +15,6 @@
 
 #include "PAL_platform.h"
 
+PAL_BOOL PAL_ToWideStringUTF8Win32(wchar_t* buffer, const char* string);
+
 #endif // PAL_WIN32_PLATFORM_H
