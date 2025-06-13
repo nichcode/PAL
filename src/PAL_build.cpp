@@ -1,2 +1,10 @@
 
+#include "PAL/PAL_defines.h"
+
 #include "PAL.cpp"
+#include "PAL_allocator.cpp"
+
+// windows specific files
+#if PAL_PLATFORM_WINDOWS
+#include "win32/PAL_win32platform.cpp"
+#endif // PAL_PLATFORM_WINDOWS
