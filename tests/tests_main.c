@@ -1,5 +1,6 @@
 
-#include "PAL/PAL.h"
+#include "tests.h"
+#include "tests.c"
 
 void onPALError(Uint32 code, const char* description)
 {
@@ -10,15 +11,8 @@ int main(int argc, char** argv)
 {
     PAL_SetErrorCallback(onPALError);
 
-    PAL_InitDesc initDesc;
-    initDesc.flags = PAL_DEBUG;
-    PAL_BOOL success = PAL_Init(&initDesc);
-    if (success) {
-        PAL_LogInfo("Hello from PAL float %f", 20.0f);
+    addTest("Allocator Test", allocatorTest);
+    runTests();
 
-        PAL_Terminate();
-        return 0;
-    }
-
-    return -1;
+    return 0;
 }

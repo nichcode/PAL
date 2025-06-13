@@ -17,4 +17,7 @@ typedef struct PAL_Allocator
 PAL_API PAL_Allocator* PAL_GetAllocator();
 PAL_API PAL_BOOL PAL_SetAllocator(PAL_Allocator* allocator);
 
+PAL_API void* PAL_Alloc(Uint64 size);
+PAL_API void PAL_Free(void* memoryBlock);
+
 #endif // PAL_ALLOCATOR_H

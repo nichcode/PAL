@@ -13,14 +13,7 @@ typedef enum PAL_InitFlags
 
 } PAL_InitFlags;
 
-typedef struct PAL_InitDesc
-{
-    Uint32 flags;
-    PAL_Allocator* allocator;
-
-} PAL_InitDesc;
-
-PAL_API PAL_BOOL PAL_Init(PAL_InitDesc* desc);
+PAL_API PAL_BOOL PAL_Init(Uint32 flags);
 PAL_API void PAL_Terminate();
 
 #endif // PAL_H
