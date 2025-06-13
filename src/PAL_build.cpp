@@ -3,6 +3,8 @@
 
 #include "PAL.cpp"
 #include "PAL_allocator.cpp"
+#include "PAL_error.cpp"
+#include "PAL_platform.cpp"
 
 // windows specific files
 #if PAL_PLATFORM_WINDOWS

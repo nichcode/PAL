@@ -3,6 +3,7 @@
 #define PAL_H
 
 #include "PAL_allocator.h"
+#include "PAL_error.h"
 
 typedef enum PAL_InitFlags
 {

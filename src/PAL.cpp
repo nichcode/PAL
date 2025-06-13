@@ -12,7 +12,13 @@ PAL_BOOL PAL_Init(PAL_InitDesc* desc)
     }
 
     if (desc->flags & PAL_INIT_FLAGS_CUSTOM_ALLOCATOR) {
-        if (desc->allocator) { return PAL_FALSE; }
+        if (desc->allocator) { 
+            PAL_SetError(
+                PAL_PLATFORM_ERROR, 
+                "User requested a custom allocator with an invalid allocator"
+            );
+            return PAL_FALSE;
+        }
         s_PAL.allocator = desc->allocator;
     } else {
         s_PAL.allocator = &s_PAL.defaultAllocator;

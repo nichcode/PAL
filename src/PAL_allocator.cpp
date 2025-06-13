@@ -4,7 +4,10 @@
 
 PAL_BOOL PAL_SetAllocator(PAL_Allocator* allocator)
 {
-    if (!allocator) { return PAL_FALSE; }
+    if (!allocator) { 
+        PAL_SetError(PAL_INVALID_ERROR, "PAL_SetAllocator expects a valid allocator");
+        return PAL_FALSE; 
+    }
     s_PAL.allocator = allocator;
     return PAL_TRUE;
 }
