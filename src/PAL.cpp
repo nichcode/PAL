@@ -7,11 +7,11 @@ PAL_BOOL PAL_Init(PAL_InitDesc* desc)
     // get platform  allocator
     s_PAL.defaultAllocator = PAL_PlatformGetAllocator();
 
-    if (desc->flags & PAL_INIT_FLAGS_DEBUG) {
+    if (desc->flags & PAL_DEBUG) {
         s_PAL.debug = PAL_TRUE;
     }
 
-    if (desc->flags & PAL_INIT_FLAGS_CUSTOM_ALLOCATOR) {
+    if (desc->flags & PAL_CUSTOM_ALLOCATOR) {
         if (desc->allocator) { 
             PAL_SetError(
                 PAL_PLATFORM_ERROR, 

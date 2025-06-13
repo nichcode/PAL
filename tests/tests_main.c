@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     PAL_SetErrorCallback(onPALError);
 
     PAL_InitDesc initDesc;
-    initDesc.flags = PAL_INIT_FLAGS_DEBUG;
+    initDesc.flags = PAL_DEBUG;
     PAL_BOOL success = PAL_Init(&initDesc);
     if (success) {
         PAL_LogInfo("Hello from PAL float %f", 20.0f);

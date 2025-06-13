@@ -34,5 +34,6 @@ void PAL_WriteConsole(Uint32 level, const char* msg);
 
 void PAL_FormatArgs(const char* fmt, va_list argsList, char* buffer);
 void PAL_Format(char* buffer, const char* fmt, ...);
+const char* PAL_GetErrorString(Uint32 code);
 
 #endif // PAL_PLATFORM_H

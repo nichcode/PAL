@@ -16,7 +16,7 @@ typedef enum PAL_Error
 } PAL_Error;
 
 PAL_API void PAL_SetErrorCallback(PAL_ErrorFun callback);
-PAL_API PAL_BOOL PAL_SetError(Uint32 code, const char* fmt, ...);
+PAL_API void PAL_SetError(Uint32 code, const char* fmt, ...);
 
 PAL_API PAL_ErrorFun PAL_GetErrorCallback();
 PAL_API Uint32 PAL_GetError();

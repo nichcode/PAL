@@ -25,3 +25,31 @@ void PAL_Format(char* buffer, const char* fmt, ...)
     PAL_FormatArgs(fmt, argPtr, buffer);
     va_end(argPtr);
 }
+
+const char* PAL_GetErrorString(Uint32 code)
+{
+    const char* name = NULL;
+    switch (code) {
+    case PAL_NO_ERROR: {
+        name = "PAL_NO_ERROR";
+        break;
+    } // PAL_NO_ERROR
+
+    case PAL_ALLOCATION_ERROR: {
+        name = "PAL_ALLOCATION_ERROR";
+        break;
+    } // PAL_ALLOCATION_ERROR
+
+    case PAL_PLATFORM_ERROR: {
+        name = "PAL_PLATFORM_ERROR";
+        break;
+    } // PAL_PLATFORM_ERROR
+
+    case PAL_INVALID_ERROR: {
+        name = "PAL_INVALID_ERROR";
+        break;
+    } // PAL_INVALID_ERROR
+
+    } // end of switch
+    return name;
+}
