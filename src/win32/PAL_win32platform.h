@@ -27,9 +27,16 @@ struct PAL_Win32Data
 
 static PAL_Win32Data s_PALWin32;
 
+struct PAL_Win32Monitor
+{
+    HMONITOR handle = nullptr;
+    Uint32 w, h = 0;
+};
+
 struct PAL_Window
 {
     HWND handle = nullptr;
+    PAL_Win32Monitor monitor;
     int x, y = 0;
     Uint32 w, h = 0;
 };

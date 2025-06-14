@@ -57,6 +57,30 @@ PAL_Window* PAL_CreateWindow(const char* title, Uint32 w, Uint32 h, Uint32 flags
         return PAL_NULL;
     }
 
+    if (flags & PAL_WINDOW_CENTER) {
+        // Get monitor
+        window->monitor.handle = MonitorFromWindow(
+            window->handle, 
+            MONITOR_DEFAULTTONEAREST
+        );
+
+        if (window->monitor.handle) {
+            MONITORINFO monitorInfo;
+            monitorInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfoW(window->monitor.handle, &monitorInfo);
+
+            window->monitor.w = monitorInfo.rcMonitor.right;
+            window->monitor.h = monitorInfo.rcMonitor.bottom;
+            window->x = (window->monitor.w - w) / 2;
+            window->y = (window->monitor.h - h) / 2;
+            SetWindowPos(
+                window->handle,
+                0, window->x, window->y, 0, 0, 
+                SWP_NOZORDER | SWP_NOSIZE
+            );
+        }
+    }
+
     window->w = width;
     window->h = height;
     window->x = x;
@@ -87,5 +111,5 @@ void PAL_DestroyWindow(PAL_Window* window)
     }
 
     DestroyWindow(window->handle);
-    s_PAL.allocator->free(window);
+    PAL_Free(window);
 }

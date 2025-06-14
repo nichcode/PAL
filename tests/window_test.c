@@ -16,7 +16,7 @@ PAL_BOOL windowTest()
     PAL_BOOL success = PAL_Init(flags);
     if (success) {
         PAL_BOOL running = PAL_TRUE;
-        Uint32 windowFlags = PAL_APP_WINDOW;
+        Uint32 windowFlags = PAL_APP_WINDOW | PAL_WINDOW_CENTER;
         PAL_Window* window = PAL_CreateWindow("Window", 640, 480, windowFlags);
 
         // if not using polling, set event callbacks here
