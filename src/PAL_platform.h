@@ -8,6 +8,11 @@
 
 #define PAL_MESSAGE_SIZE 1024
 
+struct PAL_Callbacks
+{
+    PAL_CloseFun close;
+};
+
 struct PAL_PlatformData
 {
     char errorString[PAL_MESSAGE_SIZE] = {};
@@ -16,17 +21,23 @@ struct PAL_PlatformData
     PAL_ErrorFun errorCallback = nullptr;
     Uint32 errorCode = 0;
     bool debug, initialized, customAllocator  = false;
+    bool eventPolling = false;
 };
 
 static PAL_PlatformData s_PAL;
+static PAL_Callbacks s_Callbacks;
 
 //**********************************************
 //************Platform Specific API*************
 //**********************************************
 
-PAL_Allocator PAL_PlatformGetAllocator();
+bool PAL_PlatformInit();
+void PAL_PlatformTerminate();
 
 void PAL_WriteConsole(Uint32 level, const char* msg);
+void PAL_PlatformPollEvents();
+void PAL_PlatformWaitEvents();
+PAL_Allocator PAL_PlatformGetAllocator();
 
 //**********************************************
 //************Platform Agnostic API*************

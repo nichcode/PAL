@@ -17,7 +17,7 @@ void PAL_SetErrorWin32(const char* fmt, ...)
     if (!s_PAL.debug) { return; }
 
     DWORD error = GetLastError();
-    //if (error == 0) { return; } // no error
+    if (error == 0) { return; } // no error
 
     wchar_t tmp[PAL_MESSAGE_SIZE] = {};
     char buffer[PAL_MESSAGE_SIZE] = {};
@@ -45,10 +45,53 @@ void PAL_SetErrorWin32(const char* fmt, ...)
     PAL_FormatArgs(fmt, argPtr, fmtBuffer);
     va_end(argPtr);
 
-    PAL_Format(s_PAL.errorString, "%s: %s", PAL_GetErrorString(PAL_PLATFORM_ERROR), fmtBuffer);
+    PAL_Format(
+        s_PAL.errorString, 
+        "%s: %s - %s", 
+        PAL_GetErrorString(PAL_PLATFORM_ERROR), 
+        fmtBuffer,
+        buffer
+    );
+
     if (s_PAL.errorCallback) {
         s_PAL.errorCallback(PAL_PLATFORM_ERROR, s_PAL.errorString);
     }
+}
+
+//**********************************************
+//************Platform API**********************
+//**********************************************
+
+bool PAL_PlatformInit()
+{
+    s_PALWin32.instance = GetModuleHandleW(nullptr);
+
+    WNDCLASSEXW wc = {};
+    wc.cbClsExtra = 0;
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.cbWndExtra = 0;
+    wc.hbrBackground = NULL;
+    wc.hCursor = LoadCursorW(s_PALWin32.instance, IDC_ARROW);
+    wc.hIcon = LoadIconW(s_PALWin32.instance, IDI_APPLICATION);
+    wc.hIconSm = LoadIconW(s_PALWin32.instance, IDI_APPLICATION);
+    wc.hInstance = s_PALWin32.instance;
+    wc.lpfnWndProc = PAL_Win32Proc;
+    wc.lpszClassName = s_PALWin32.className;
+    wc.lpszMenuName = NULL;
+    wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+
+    ATOM success = RegisterClassExW(&wc);
+    if (!success) {
+        PAL_SetErrorWin32("Win32: Window class registration failed");
+        return false;
+    }
+
+    return true;
+}
+
+void PAL_PlatformTerminate()
+{
+    UnregisterClassW(s_PALWin32.className, s_PALWin32.instance);
 }
 
 PAL_Allocator PAL_PlatformGetAllocator()

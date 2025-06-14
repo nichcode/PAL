@@ -29,3 +29,4 @@ void runTests()
 // tests sources
 
 #include "allocator_test.c"
+#include "window_test.c"

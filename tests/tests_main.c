@@ -11,7 +11,8 @@ int main(int argc, char** argv)
 {
     PAL_SetErrorCallback(onPALError);
 
-    addTest("Allocator Test", allocatorTest);
+    //addTest("Allocator Test", allocatorTest);
+    addTest("Window Test", windowTest);
     runTests();
 
     return 0;

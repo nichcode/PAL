@@ -19,11 +19,19 @@ PAL_BOOL PAL_Init(Uint32 flags)
         s_PAL.customAllocator = PAL_FALSE;
     }
 
+    if (flags & PAL_EVENT_POLLING) {
+        s_PAL.eventPolling = PAL_TRUE;
+    }
+
+    bool platformInit = PAL_PlatformInit();
+    if (!platformInit) { return PAL_FALSE; }
+
     s_PAL.initialized = PAL_TRUE;
     return PAL_TRUE;
 }
 
 void PAL_Terminate()
 {
+    PAL_PlatformTerminate();
     s_PAL.initialized = PAL_FALSE;
 }

@@ -12,5 +12,6 @@ void runTests();
 // tests headers
 
 PAL_BOOL allocatorTest();
+PAL_BOOL windowTest();
 
 #endif // TESTS_H
