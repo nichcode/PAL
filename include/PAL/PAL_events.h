@@ -21,6 +21,8 @@ typedef struct PAL_Event
 } PAL_Event;
 
 PAL_API void PAL_SetCloseCallback(PAL_CloseFun callback);
+PAL_API void PAL_SetEventsData(void* data);
+PAL_API void* PAL_GetEventsData();
 
 PAL_API PAL_BOOL PAL_PollEvents(PAL_Event* event);
 PAL_API PAL_BOOL PAL_WaitEvents(PAL_Event* event);

@@ -19,6 +19,7 @@ struct PAL_PlatformData
     PAL_Allocator defaultAllocator;
     PAL_Allocator* allocator = nullptr;
     PAL_ErrorFun errorCallback = nullptr;
+    void* eventsData = nullptr;
     Uint32 errorCode = 0;
     bool debug, initialized, customAllocator  = false;
     bool eventPolling = false;

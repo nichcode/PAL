@@ -8,6 +8,16 @@ void PAL_SetCloseCallback(PAL_CloseFun callback)
     s_Callbacks.close = callback;
 }
 
+void PAL_SetEventsData(void* data)
+{
+    s_PAL.eventsData = data;
+}
+
+void* PAL_GetEventsData()
+{
+    return s_PAL.eventsData;
+}
+
 PAL_BOOL PAL_PollEvents(PAL_Event* event)
 {
     PAL_PlatformPollEvents();
