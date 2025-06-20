@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef PAL_DEFINES_H
+#define PAL_DEFINES_H
 
 // using from Cpp
 #ifdef __cplusplus
@@ -64,6 +65,36 @@ typedef unsigned long long Uint64;
 
 typedef enum PAL_Result
 {
-    PAL_RESULT_OK
+    PAL_RESULT_OK,
+    PAL_RESULT_PLATFORM_ERROR,
+    PAL_RESULT_DEVICE_ERROR,
+    PAL_RESULT_INVALID_ERROR,
+    PAL_RESULT_OUT_OF_MEMORY,
 
 } PAL_Result;
+
+typedef void* (*PalAllocFn)(Uint64 size);
+typedef void (*PalFreeFn)(void* memory);
+
+typedef enum PAL_InitFlag
+{
+    PAL_INIT_FLAG_NONE = 0,
+    PAL_INIT_FLAG_DEBUG = PAL_BIT(1),
+
+} PAL_InitFlag;
+
+typedef struct PalAllocator
+{
+    PalAllocFn allocate;
+    PalFreeFn free;
+
+} PalAllocator;
+
+typedef struct PalInitInfo
+{
+    Uint32 flags;
+    PalAllocator* allocator;
+
+} PalInitInfo;
+
+#endif // PAL_DEFINES_H
