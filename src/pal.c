@@ -42,27 +42,35 @@ PAL_Result PAL_CALL palInit(const PalInitInfo* pInfo)
     s_PAL.flags = pInfo->flags;
     s_PAL.initialized = PAL_TRUE;
 
+    PAL_LOG("PAL initialized successfully")
     return PAL_SUCCESS;
 }
 
 void PAL_CALL palTerminate()
 {
-    s_PAL.flags = 0;
     s_PAL.initialized = PAL_FALSE;
+    PAL_LOG("PAL terminated successfully")
+    s_PAL.flags = 0;
 }
 
 PAL_Result PAL_CALL palAllocate(Uint64 size, void** ppMemory)
 {
     void* block = palPlatformAlloc(size);
     if (block) {
+        PAL_LOG(
+            "%llu byte of memory allocated at %p", 
+            size, block
+        );
+
         palPlatformMemZero(block, size);
         *ppMemory = block;
-    } else {
-        PAL_SET_ERROR(
-            PAL_OUT_OF_MEMORY,
-            "Memory allocation failed"
-        )
+        return PAL_SUCCESS;
     }
+
+    PAL_SET_ERROR(
+        PAL_OUT_OF_MEMORY,
+        "Memory allocation failed"
+    )
     return PAL_OUT_OF_MEMORY;
 }
 
@@ -70,6 +78,7 @@ void PAL_CALL palFree(void* pMemory)
 {
     if (pMemory) {
         palPlatformFree(pMemory);
+        PAL_LOG("%p freed successfully", pMemory);
     }
 }
 

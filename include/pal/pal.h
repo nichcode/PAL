@@ -1,8 +1,8 @@
 
 #ifndef PAL_H
-#define PAL_H
+    #define PAL_H
 
-#include "pal_defines.h"
+#include "pal/pal_log.h"
 
 PAL_API PAL_Result PAL_CALL palInit(const PalInitInfo* pInfo);
 PAL_API void PAL_CALL palTerminate();

@@ -1,12 +1,9 @@
 
 #include "allocator.h"
 
-// TODO: remove use our own logger 
-#include <stdio.h>
-
 void onPALError(PAL_Result code, const char* msg)
 {
-    printf("%s\n", msg);
+    palLogError(msg);
 }
 
 int main(int argc, char** argv)
@@ -28,6 +25,14 @@ int main(int argc, char** argv)
 
     result = palInit(&initInfo);
     if (result == PAL_SUCCESS) {
+        int* pInt;
+        result = palAllocate(sizeof(int), (void*)&pInt);
+
+        if (result == PAL_SUCCESS) {
+            *pInt = 10;
+            palLogInfo("%p - %i", pInt, *pInt);
+            palFree(pInt);
+        }
 
         palTerminate();
         return 0;

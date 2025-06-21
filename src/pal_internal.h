@@ -1,6 +1,6 @@
 
 #ifndef PAL_INTERNAL_H
-#define PAL_INTERNAL_H
+    #define PAL_INTERNAL_H
 
 #include "pal/pal.h"
 
@@ -27,6 +27,12 @@ const char* palGetResultString(PAL_Result code);
 #define PAL_SET_ERROR(code, ...) {                       \
     if (s_PAL.flags & PAL_DEBUG_BIT) {                   \
         palSetError(code, __VA_ARGS__);                  \
+    }                                                    \
+} 
+
+#define PAL_LOG(...) {                                   \
+    if (s_PAL.flags & PAL_DEBUG_BIT) {                   \
+        palLogInfo(__VA_ARGS__);                         \
     }                                                    \
 } 
 

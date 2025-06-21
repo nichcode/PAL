@@ -1,6 +1,6 @@
 
 #ifndef PAL_DEFINES_H
-#define PAL_DEFINES_H
+    #define PAL_DEFINES_H
 
 // using from Cpp
 #ifdef __cplusplus
