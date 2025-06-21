@@ -6,6 +6,7 @@
 
 static void* allocatorAlloc(Uint64 size)
 {
+    // you can use a static variable to track your memory
     void* block = PAL_NULL;
     palAllocate(size, &block);
     return block;

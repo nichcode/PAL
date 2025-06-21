@@ -58,28 +58,29 @@
 
 #define PAL_BIT(x) 1 << x
 
-// types
-
 typedef unsigned int Uint32;
 typedef unsigned long long Uint64;
 
 typedef enum PAL_Result
 {
-    PAL_RESULT_OK,
-    PAL_RESULT_PLATFORM_ERROR,
-    PAL_RESULT_DEVICE_ERROR,
-    PAL_RESULT_INVALID_ERROR,
-    PAL_RESULT_OUT_OF_MEMORY,
+    PAL_SUCCESS,
+    PAL_PLATFORM_ERROR,
+    PAL_PLATFORM_WARN,
+    PAL_DEVICE_ERROR,
+    PAL_DEVICE_WARN,
+    PAL_INVALID_ERROR,
+    PAL_OUT_OF_MEMORY,
 
 } PAL_Result;
 
 typedef void* (*PalAllocFn)(Uint64 size);
 typedef void (*PalFreeFn)(void* memory);
+typedef void (*PalDebugMessageFn)(PAL_Result code, const char* msg);
 
 typedef enum PAL_InitFlag
 {
-    PAL_INIT_FLAG_NONE = 0,
-    PAL_INIT_FLAG_DEBUG = PAL_BIT(1),
+    PAL_NONE = 0,
+    PAL_DEBUG_BIT = PAL_BIT(1),
 
 } PAL_InitFlag;
 
