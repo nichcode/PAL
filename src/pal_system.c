@@ -21,8 +21,8 @@ bool _PCALL palInitSystem(const PAlAllocator* allocator, bool debug)
     s_System.sysAllocator = palPlatformGetAllocator();
     
     if (allocator) {
-        if (!allocator->alignAlloc || !allocator->alloc ||
-            !allocator->alignFree || !allocator->free) {
+        if (!allocator->alignedAlloc || !allocator->alloc ||
+            !allocator->alignedFree || !allocator->free) {
             palSetError(PAL_ERROR_INVALID_ALLOCATOR);
             return PAL_FALSE;
         }
@@ -36,9 +36,10 @@ bool _PCALL palInitSystem(const PAlAllocator* allocator, bool debug)
     }
 
     s_System.version.major = PAL_VERSION_MAJOR;
-    s_System.version.minir = PAL_VERSION_MINOR;
+    s_System.version.minor = PAL_VERSION_MINOR;
     s_System.version.patch = PAL_VERSION_PATCH;
 
+    palSetError(PAL_ERROR_OUT_OF_MEMORY);
     s_System.initialized = PAL_TRUE;
     return PAL_TRUE;
 }
@@ -65,4 +66,50 @@ const PAlAllocator* _PCALL palGetSysAllocator()
         return PAL_NULL;
     }
     return &s_System.sysAllocator;
+}
+
+void* _PCALL palAllocate(Uint64 size)
+{
+    if (!s_System.initialized) {
+        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
+        return NULL;
+    }
+    return s_System.allocator->alloc(size);
+}
+
+void* _PCALL palAlignAllocate(Uint64 size, Uint64 alignment)
+{
+    if (!s_System.initialized) {
+        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
+        return NULL;
+    }
+    return s_System.allocator->alignedAlloc(size, alignment);
+}
+
+void _PCALL palFree(void* memory)
+{
+    if (!s_System.initialized) {
+        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
+        return;
+    }
+
+    if (!memory) {
+        palSetError(PAL_ERROR_NULL_POINTER);
+        return;
+    }
+    s_System.allocator->free(memory);
+}
+
+void _PCALL palAlignFree(void* memory)
+{
+    if (!s_System.initialized) {
+        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
+        return;
+    }
+
+    if (!memory) {
+        palSetError(PAL_ERROR_NULL_POINTER);
+        return;
+    }
+    s_System.allocator->alignedFree(memory);
 }

@@ -61,6 +61,9 @@ typedef unsigned short Uint16;
 typedef unsigned int Uint32;
 typedef unsigned long long Uint64;
 
+// Tiny Local storage thread id
+typedef int PalTLSID;
+
 typedef enum PalError
 {
     PAL_ERROR_NONE = 0,
@@ -72,21 +75,26 @@ typedef enum PalError
 } PalError;
 
 typedef void* (*PalAllocFn)(Uint64 size);
-typedef void* (*PalAlignAllocFn)(Uint64 size, Uint64 alignment);
+typedef void* (*PalAlignedAllocFn)(Uint64 size, Uint64 alignment);
 typedef void (*PalFreeFn)(void* memory);
-typedef void (*PalAlignFreeFn)(void* memory);
+typedef void (*PalAlignedFreeFn)(void* memory);
 
 typedef struct PAlAllocator
 {
     PalAllocFn alloc;
-    PalAlignAllocFn alignAlloc;
+    PalAlignedAllocFn alignedAlloc;
     PalFreeFn free;
-    PalFreeFn alignFree;
+    PalAlignedFreeFn alignedFree;
     void* userData;
 
 } PAlAllocator;
 
 _PAPI void _PCALL palSetError(PalError error);
 _PAPI PalError _PCALL palGetError();
+
+_PAPI PalTLSID _PCALL palCreateTLS();
+_PAPI bool _PCALL palDestroyTLS(PalTLSID id);
+_PAPI void* _PCALL palGetTLS(PalTLSID id);
+_PAPI bool _PCALL palSetTLS(PalTLSID id, void* data, void (*destructor)(void*));
 
 #endif // _PAL_CORE_H
