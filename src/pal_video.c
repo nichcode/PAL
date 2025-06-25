@@ -12,7 +12,7 @@ bool _PCALL palInitVideoSystem(const PalAllocator* allocator)
             return PAL_FALSE;
         }
 
-        s_PALVideo.allocator = s_PAL.allocator;
+        s_Video.allocator = s_PAL.allocator;
 
     } else {
         // core system initialized already
@@ -25,22 +25,23 @@ bool _PCALL palInitVideoSystem(const PalAllocator* allocator)
                 palSetError(PAL_INVALID_ALLOCATOR);
                 return PAL_FALSE;
             }
-            s_PALVideo.allocator = s_PAL.allocator;
         }
+
+        s_Video.allocator = s_PAL.allocator;
     }
 
     if (!_palPlatformVideoInit()) {
         return PAL_FALSE;
     }
 
-    s_PALVideo.initialized = PAL_TRUE;
+    s_Video.initialized = PAL_TRUE;
     return PAL_TRUE;
 }
 
 void _PCALL palShutdownVideoSystem()
 {
     _palPlatformVideoShutdown();
-    s_PALVideo.initialized = PAL_FALSE;
+    s_Video.initialized = PAL_FALSE;
     
     // shutdown core system 
     if (s_PAL.initialized) {
@@ -50,5 +51,26 @@ void _PCALL palShutdownVideoSystem()
 
 bool _PCALL palIsVideoSystemInitialized()
 {
-    return s_PALVideo.initialized;
+    return s_Video.initialized;
+}
+
+int _PCALL palGetDisplayCount()
+{
+    return s_Video.displayCount;
+}
+
+const PalDisplay* _PCALL palGetPrimaryDisplay()
+{
+    if (s_Video.displayCount) {
+        return &s_Video.displays[0];
+    }
+    return PAL_NULL;
+}
+
+const PalDisplay* _PCALL palGetDisplay(int index)
+{
+    if (s_Video.displayCount && (index > 0 && index < s_Video.displayCount)) {
+        return &s_Video.displays[index];
+    }
+    return PAL_NULL;
 }

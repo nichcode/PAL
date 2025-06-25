@@ -24,7 +24,8 @@ void palToWstrUTF8Win32(wchar_t* buffer, const char* string);
 bool _palIsVersionWin32(int major, int minor, int servicePack);
 Uint32 _palGetBuildWin32();
 
-LRESULT CALLBACK palWin32Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK palProcWin32(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM);
 
 #define PAL_WINDOWS_XP                 (_palIsVersionWin32(5, 1, 0))
 #define PAL_WINDOWS_VISTA              (_palIsVersionWin32(6, 0, 0))

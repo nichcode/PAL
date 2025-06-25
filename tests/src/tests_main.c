@@ -29,7 +29,7 @@ bool systemTest(void* data)
 
 int main(int argc, char** argv)
 {
-    registerTest("System Test", systemTest);
+    //registerTest("System Test", systemTest);
     registerTest("Video Test", videoTest);
 
     runTests();

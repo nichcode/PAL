@@ -7,6 +7,10 @@
 //********************Win32 platform API**********************
 //************************************************************
 
+bool compareMode(const PalDisplayMode* a, const PalDisplayMode* b);
+void addMode(const PalDisplayMode* mode);
+void getColorBits(PalDisplayMode* mode, int bpp);
+
 void palToWstrUTF8Win32(wchar_t* buffer, const char* string)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, string, -1, PAL_NULL, 0);
@@ -30,7 +34,7 @@ bool _palIsVersionWin32(int major, int minor, int servicePack)
 Uint32 _palGetBuildWin32()
 {
     RtlGetVersionPtr RtlGetVersion = PAL_NULL;
-    RtlGetVersion = (RtlGetVersionPtr)GetProcAddress(s_PALVideo.ntdllLibrary, "RtlGetVersion");
+    RtlGetVersion = (RtlGetVersionPtr)GetProcAddress(s_Video.ntdllLibrary, "RtlGetVersion");
     if (!RtlGetVersion) return 0;
 
     RTL_OSVERSIONINFOW ver = { 0 };
@@ -154,7 +158,7 @@ bool _palPlatformVideoInit()
     wc.hIcon = LoadIconW(instance, IDI_APPLICATION);
     wc.hIconSm = LoadIconW(instance, IDI_APPLICATION);
     wc.hInstance = instance;
-    wc.lpfnWndProc = palWin32Proc;
+    wc.lpfnWndProc = palProcWin32;
     wc.lpszClassName = WIN32_CLASS;
     wc.lpszMenuName = NULL;
     wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
@@ -171,17 +175,130 @@ bool _palPlatformVideoInit()
         return PAL_FALSE;
     }
 
-    s_PALVideo.instance = instance;
+    s_Video.displayCount = 0;
+    EnumDisplayMonitors(PAL_NULL, PAL_NULL, palMonitorProcWin32, 0);
+
+    s_Video.instance = instance;
+    s_Video.ntdllLibrary = ntdllLib;
     return PAL_TRUE;
 }
 
 void _palPlatformVideoShutdown()
 {
-    if (s_PALVideo.instance) {
-        UnregisterClassW(WIN32_CLASS, (HINSTANCE)s_PALVideo.instance);
+    if (s_Video.instance) {
+        UnregisterClassW(WIN32_CLASS, (HINSTANCE)s_Video.instance);
     }
 
-    if (s_PALVideo.ntdllLibrary) {
-        FreeLibrary((HINSTANCE)s_PALVideo.ntdllLibrary);
+    if (s_Video.ntdllLibrary) {
+        FreeLibrary((HINSTANCE)s_Video.ntdllLibrary);
     }
+}
+
+BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
+{
+    if (s_Video.displayCount >= _PAL_MAX_DISPLAYS) { 
+        return PAL_FALSE; 
+    }
+
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        return TRUE; 
+    }
+
+    PalDisplay* info = &s_Video.displays[s_Video.displayCount];
+    info->index = s_Video.displayCount;
+    info->handle = (void*)monitor;
+
+    // size and pos
+    info->x = mi.rcMonitor.left;
+    info->y = mi.rcMonitor.top;
+    info->width = mi.rcMonitor.right - mi.rcMonitor.left;
+    info->height = mi.rcMonitor.bottom - mi.rcWork.top;
+
+    // change into a UTF8 string
+    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
+
+    // TODO: get DPI
+    info->dpiScaleX = 96.0f;
+    info->dpiScaleY = 96.0f;
+
+    // get modes
+    DEVMODEW dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    int i = 0;
+    for (i = 0; EnumDisplaySettingsW(mi.szDevice, i, &dm); i++) {
+        if (i >= PAL_MAX_MODES) {
+            break;
+        }
+
+        PalDisplayMode mode;
+        mode.refreshRate = dm.dmDisplayFrequency;
+        mode.width = dm.dmPelsWidth;
+        mode.height = dm.dmPelsHeight;
+        getColorBits(&mode, dm.dmBitsPerPel);
+        addMode(&mode);
+    }
+
+    info->modeCount--;
+    s_Video.displayCount++;
+    return PAL_TRUE;
+}
+
+void getColorBits(PalDisplayMode* mode, int bpp)
+{
+    switch (bpp) {
+        case 16: {
+            mode->redBits = 5;
+            mode->greenBits = 6;
+            mode->blueBits = 5;
+            mode->alphaBits = 0;
+            return;
+        }
+
+        case 24: {
+            mode->redBits = mode->greenBits = 8;
+            mode->blueBits = 8;
+            mode->alphaBits = 0;
+            return;
+        }
+
+        case 32: {
+            mode->redBits = mode->greenBits = 8;
+            mode->blueBits = mode->alphaBits = 8;
+            return;
+        }
+    }
+    mode->redBits = mode->greenBits = 0;
+    mode->blueBits = mode->alphaBits = 0;
+}
+
+void addMode(const PalDisplayMode* mode)
+{
+    PalDisplay* display = &s_Video.displays[s_Video.displayCount];
+    for (int i = 0; i < display->modeCount; i++) {
+        if (compareMode(&display->modes[i], mode) == PAL_TRUE) {
+            return;
+        }
+    }
+
+    display->modes[display->modeCount] = *mode;
+    display->modeCount++;
+}
+
+bool compareMode(const PalDisplayMode* a, const PalDisplayMode* b)
+{
+    int same = a->alphaBits == b->alphaBits &&
+           a->redBits == b->redBits         &&
+           a->greenBits == b->greenBits     &&
+           a->blueBits == b->blueBits       &&
+           a->alphaBits == b->alphaBits     &&
+           a->width == b->width             &&
+           a->height == b->height           &&
+           a->refreshRate == b->refreshRate;
+
+    if (same) {
+        return PAL_TRUE;
+    }
+    return PAL_FALSE;
 }

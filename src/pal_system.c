@@ -48,10 +48,11 @@ bool _PCALL palInit(const PalAllocator* allocator, Uint32 flags)
 
 void _PCALL palShutdown()
 {
+    s_PAL.initialized = PAL_FALSE;
+
     if (s_PAL.flags & PAL_INIT_VIDEO) {
         palShutdownVideoSystem();
     }
-    s_PAL.initialized = PAL_FALSE;
 }
 
 bool _PCALL palIsSystemInitialized()

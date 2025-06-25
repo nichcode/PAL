@@ -11,6 +11,10 @@ bool videoTest(void* data)
         return PAL_FALSE;
     }
 
+    int displayCount = palGetDisplayCount();
+    const PalDisplay* display = palGetPrimaryDisplay();
+    int displayModeCount = display->modeCount;
+
     palShutdownVideoSystem();
     return PAL_TRUE;
 }
