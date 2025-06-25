@@ -1,167 +1,101 @@
 
 #include "pal_pch.h"
-#include "pal/pal_system.h"
-#include "pal_platform.h"
+#include "pal/pal.h"
 #include "pal_internal.h"
 
-#define PAL_VERSION_MAJOR 1
-#define PAL_VERSION_MINOR 0
-#define PAL_VERSION_PATCH 0
+static PalTLSID s_ErrorTLSID = 0;
 
-struct PalSystem
+typedef struct ErrorTLSData
 {
-    PAlAllocator* allocator, sysAllocator;
-    PalVersion version;
-    bool initialized, debug;
-};
+    PalError error;
 
-static struct PalSystem s_System = {};
+} ErrorTLSData;
 
-#define SYS_LOG(...) {                     \
-    if (s_System.debug) {                  \
-        PAL_INFO(__VA_ARGS__);             \
-    }                                      \
-} 
-
-#define SYS_ERROR(...) {                   \
-    if (s_System.debug) {                  \
-        PAL_ERROR(__VA_ARGS__);            \
-    }                                      \
-} 
-
-bool _PCALL palInitSystem(const PAlAllocator* allocator, bool debug)
+bool _PCALL palInit(PAlAllocator* allocator, Uint32 flags)
 {
-    s_System.sysAllocator = palPlatformGetAllocator();
-    s_System.debug = PAL_TRUE;
-    
+    s_PAL.tmpAllocator = palGetDefaultAllocator();
+    if (flags & PAL_INIT_VIDEO) {
+        // TODO: video system
+    }
+
     if (allocator) {
-        if (!allocator->alignedAlloc || !allocator->alloc ||
-            !allocator->alignedFree || !allocator->free) {
+        if (!allocator->alignedAlloc || 
+            !allocator->alignedAlloc ||
+            !allocator->alloc        || 
+            !allocator->free) 
+        {
+            palSetError(PAL_INVALID_ALLOCATOR);
             return PAL_FALSE;
         }
-        s_System.allocator = (PAlAllocator*)allocator;
-        SYS_LOG("User allocator set");
-
-    } else {
-        s_System.allocator = &s_System.sysAllocator;
-        SYS_LOG("Default allocator set");
     }
 
-    if (debug) {
-        SYS_LOG("Debug enabled");
+    // set allocator
+    s_PAL.allocator = &s_PAL.tmpAllocator;
+    s_PAL.version.major = PAL_VMAJOR;
+    s_PAL.version.minor = PAL_VMINOR;
+    s_PAL.version.patch = PAL_VPATCH;    
+    s_PAL.initialized = PAL_TRUE;
 
-    } else {
-        SYS_LOG("Debug disabled");
-    }
-
-    s_System.version.major = PAL_VERSION_MAJOR;
-    s_System.version.minor = PAL_VERSION_MINOR;
-    s_System.version.patch = PAL_VERSION_PATCH;
-
-    s_System.debug = PAL_TRUE;
-    s_System.initialized = PAL_TRUE;
-
-    SYS_LOG("System initialized");
-    SYS_LOG(
-        "Version: (%i.%i.%i)", 
-        PAL_VERSION_MAJOR, 
-        PAL_VERSION_MINOR, 
-        PAL_VERSION_PATCH
-    );
-    return PAL_TRUE;
+    return PAL_TRUE; 
 }
 
-void _PCALL palShutdownSystem()
+void _PCALL palShutdown()
 {
-    s_System.initialized = PAL_FALSE;
-    SYS_LOG("System shutdown");
+    s_PAL.initialized = PAL_TRUE;
+    s_PAL.videoInitialized = PAL_FALSE;
 }
 
-const PalVersion* _PCALL palGetVersion()
+PalVersion _PCALL palGetVersion()
 {
-    if (!s_System.initialized) { 
-        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
-        SYS_ERROR("System is not initialized");
-        return PAL_NULL;
+    if (!s_PAL.initialized) {
+        PalVersion version;
+        palZeroMemory(&version, sizeof(PalVersion));
+        return version;
     }
-
-    return &s_System.version;
+    return s_PAL.version;
 }
 
-const PAlAllocator* _PCALL palGetSysAllocator()
+const char* _PCALL palFormatError(PalError error)
 {
-    if (!s_System.initialized) {
-        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
-        SYS_ERROR("System is not initialized");
-        return PAL_NULL;
+    switch (error) {
+        case PAL_ERROR_NONE: 
+        return "The operation was successful";
+
+        case PAL_NULL_POINTER: 
+        return "The pointer is invalid.";
+
+        case PAL_INVALID_ALLOCATOR: 
+        return "The allocator function pointers are not set. You must set all the function pointers";
+
+        case PAL_NOT_INITIALIZED: 
+        return "PAL core system is not intialized";
+
+        case PAL_VIDEO_NOT_INITIALIZED:
+        return "PAL video subsystem is not intialized";
+
+        case PAL_OUT_OF_MEMORY: 
+        return "The operating system has run out of memory";
     }
-    return &s_System.sysAllocator;
+
+    return PAL_NULL;
 }
 
-void* _PCALL palAllocate(Uint64 size)
+void _PCALL palSetError(PalError error)
 {
-    if (!s_System.initialized) {
-        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
-        SYS_ERROR("System is not initialized");
-        return NULL;
+    PAlAllocator allocator = palGetDefaultAllocator();
+    ErrorTLSData* errorData = palGetTLS(s_ErrorTLSID);
+    if (!errorData) {
+        errorData = allocator.alloc(sizeof(ErrorTLSData));
+        errorData->error = error;
     }
-
-    void* block = s_System.allocator->alloc(size);
-    if (!block) {
-        palSetError(PAL_ERROR_OUT_OF_MEMORY);
-        SYS_ERROR("Failed to allocate memory");
-        return PAL_NULL;
-    }
-
-    return block;
+    palSetTLS(s_ErrorTLSID, errorData, allocator.free);
 }
 
-void* _PCALL palAlignAllocate(Uint64 size, Uint64 alignment)
+PalError _PCALL palGetError()
 {
-    if (!s_System.initialized) {
-        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
-        SYS_ERROR("System is not initialized");
-        return NULL;
+    ErrorTLSData* errorData = palGetTLS(s_ErrorTLSID);
+    if (!errorData) {
+        return PAL_ERROR_NONE;
     }
-
-    void* block = s_System.allocator->alignedAlloc(size, alignment);
-    if (!block) {
-        palSetError(PAL_ERROR_OUT_OF_MEMORY);
-        SYS_ERROR("Failed to allocate aligned memory");
-        return PAL_NULL;
-    }
-
-    return block;
-}
-
-void _PCALL palFree(void* memory)
-{
-    if (!s_System.initialized) {
-        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
-        SYS_ERROR("System is not initialized");
-        return;
-    }
-
-    if (!memory) {
-        palSetError(PAL_ERROR_NULL_POINTER);
-        SYS_ERROR("palFree function expects a valid memory pointer");
-        return;
-    }
-    s_System.allocator->free(memory);
-}
-
-void _PCALL palAlignFree(void* memory)
-{
-    if (!s_System.initialized) {
-        palSetError(PAL_ERROR_SYSTEM_NOT_INITIALIZED);
-        SYS_ERROR("System is not initialized");
-        return;
-    }
-
-    if (!memory) {
-        palSetError(PAL_ERROR_NULL_POINTER);
-        SYS_ERROR("palAlignFree function expects a valid memory pointer");
-        return;
-    }
-    s_System.allocator->alignedFree(memory);
+    return errorData->error;
 }

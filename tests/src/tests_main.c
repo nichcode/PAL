@@ -1,21 +1,27 @@
 
 #include "pal/pal.h"
 
-void onLog(PalError code, PalLogLevel level, const char* msg)
+void onLog(PalLogLevel level, const char* msg)
 {
     palLogInfo(msg);
 }
 
 int main(int argc, char** argv)
 {
-    palSetLogCallback(onLog);
+    PalError error = PAL_ERROR_NONE;
+    PAlAllocator allocator;
+    palZeroMemory(&allocator, sizeof(PAlAllocator));
+    Uint32 flags = PAL_INIT_EVERYTHING;
 
-    if (palInitSystem(PAL_NULL, PAL_TRUE)) {
-        const PalVersion* version = palGetVersion();
+    if (palInit(PAL_NULL, flags)) {
+        PalVersion version = palGetVersion();
+        palLogInfo("PAL Version (%i.%i.%i)", version.major, version.minor, version.patch);
 
-        palShutdownSystem();
+        palShutdown();
         return 0;
     }
 
+    error = palGetError();
+    palLogError(palFormatError(error));
     return -1;
 }

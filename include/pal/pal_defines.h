@@ -1,8 +1,7 @@
 
-#ifndef _PAL_CORE_H
- #define _PAL_CORE_H
 
-#include <stdarg.h>
+#ifndef _PAL_DEFINES_H
+ #define _PAL_DEFINES_H
 
 // using from Cpp
 #ifdef __cplusplus
@@ -63,61 +62,18 @@ typedef unsigned short Uint16;
 typedef unsigned int Uint32;
 typedef unsigned long long Uint64;
 
-// Tiny Local storage thread id
-typedef int PalTLSID;
-
 typedef enum PalError
 {
     PAL_ERROR_NONE = 0,
-    PAL_ERROR_NULL_POINTER,
-    PAL_ERROR_SYSTEM_NOT_INITIALIZED,
-    PAL_ERROR_INVALID_ALLOCATOR,
-    PAL_ERROR_OUT_OF_MEMORY
+    PAL_NULL_POINTER,
+    PAL_INVALID_ALLOCATOR,
+    PAL_NOT_INITIALIZED,
+    PAL_VIDEO_NOT_INITIALIZED,
+    PAL_OUT_OF_MEMORY
 
 } PalError;
-
-typedef enum PalLogLevel
-{
-    PAL_LOG_TRACE,
-    PAL_LOG_INFO,
-    PAL_LOG_WARN,
-    PAL_LOG_ERROR
-
-} PalLogLevel;
-
-typedef void* (*PalAllocFn)(Uint64 size);
-typedef void* (*PalAlignedAllocFn)(Uint64 size, Uint64 alignment);
-typedef void (*PalFreeFn)(void* memory);
-typedef void (*PalAlignedFreeFn)(void* memory);
-
-typedef void (*PalLogCallback)(PalError code, PalLogLevel level, const char* msg);
-
-typedef struct PAlAllocator
-{
-    PalAllocFn alloc;
-    PalAlignedAllocFn alignedAlloc;
-    PalFreeFn free;
-    PalAlignedFreeFn alignedFree;
-    void* userData;
-
-} PAlAllocator;
 
 _PAPI void _PCALL palSetError(PalError error);
 _PAPI PalError _PCALL palGetError();
 
-_PAPI PalTLSID _PCALL palCreateTLS();
-_PAPI bool _PCALL palDestroyTLS(PalTLSID id);
-_PAPI void* _PCALL palGetTLS(PalTLSID id);
-_PAPI bool _PCALL palSetTLS(PalTLSID id, void* data, void (*destructor)(void*));
-
-_PAPI void _PCALL palSetLogCallback(PalLogCallback callback);
-_PAPI void _PCALL palLog(PalLogLevel level, const char* fmt, ...);
-_PAPI bool _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer);
-_PAPI bool _PCALL palFormat(char* buffer, const char* fmt, ...);
-
-#define palLogTrace(...)    palLog(PAL_LOG_TRACE, __VA_ARGS__);
-#define palLogInfo(...)     palLog(PAL_LOG_INFO, __VA_ARGS__);
-#define palLogWarn(...)     palLog(PAL_LOG_WARN, __VA_ARGS__);
-#define palLogError(...)    palLog(PAL_LOG_ERROR, __VA_ARGS__);
-
-#endif // _PAL_CORE_H
+#endif // _PAL_DEFINES_H

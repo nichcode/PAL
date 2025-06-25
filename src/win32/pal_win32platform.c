@@ -1,5 +1,7 @@
 
 #include "pal_win32platform.h"
+#include "pal/pal_thread.h"
+#include "pal/pal_log.h"
 
 //************************************************************
 //********************Win32 platform API**********************
@@ -11,21 +13,26 @@ void palToWstrUTF8Win32(wchar_t* buffer, const char* string)
     MultiByteToWideChar(CP_UTF8, 0, string, -1, buffer, len);
 }
 
+// memory
 
-//************************************************************
-//************************Platform API************************
-//************************************************************
-
-PAlAllocator palPlatformGetAllocator()
+PAlAllocator palGetDefaultAllocator()
 {
     PAlAllocator allocator;
     allocator.alloc = malloc;
     allocator.free = free;
     allocator.alignedAlloc = _aligned_malloc;
     allocator.alignedFree = _aligned_free;
-
     return allocator;
 }
+
+void _PCALL palSetMemory(void* memory, int value, Uint64 size)
+{
+    if (memory) {
+        memset(memory, value, size);
+    }
+}
+
+// thread
 
 PalTLSID _PCALL palCreateTLS()
 {
@@ -52,12 +59,14 @@ bool _PCALL palSetTLS(PalTLSID id, void* data, void (*destructor)(void*))
     return TlsSetValue((DWORD)id, data);
 }
 
-void palWriteConsole(PalLogLevel level, const char* msg)
+// platform
+
+void _palPlatformWriteConsole(Uint32 level, const char* msg)
 {
-    wchar_t buffer[MAX_LOG_SIZE] = {};
+    wchar_t buffer[_PAL_MSG_SIZE] = {};
     palToWstrUTF8Win32(buffer, msg);
 
-    bool error = level > PAL_LOG_WARN;
+    bool error = level > PAL_LOG_LEVEL_WARN;
     HANDLE console = PAL_NULL;
     static int levels[4] = { 8, 2, 6, 4 };
 

@@ -2,7 +2,7 @@
 #ifndef _PAL_SYSTEM_H
  #define _PAL_SYSTEM_H
 
-#include "pal_core.h"
+#include "pal_memory.h"
 
 typedef struct PalVersion
 {
@@ -12,15 +12,17 @@ typedef struct PalVersion
 
 } PalVersion;
 
-_PAPI bool _PCALL palInitSystem(const PAlAllocator* allocator, bool debug);
-_PAPI void _PCALL palShutdownSystem();
+typedef enum PalInitFlags
+{
+    PAL_INIT_VIDEO = PAL_BIT(0),
+    PAL_INIT_EVERYTHING = PAL_INIT_VIDEO
 
-_PAPI const PalVersion* _PCALL palGetVersion();
-_PAPI const PAlAllocator* _PCALL palGetSysAllocator();
+} PalInitFlags;
 
-_PAPI void* _PCALL palAllocate(Uint64 size);
-_PAPI void* _PCALL palAlignAllocate(Uint64 size, Uint64 alignment);
-_PAPI void _PCALL palFree(void* memory);
-_PAPI void _PCALL palAlignFree(void* memory);
+_PAPI bool _PCALL palInit(PAlAllocator* allocator, Uint32 flags);
+_PAPI void _PCALL palShutdown();
+
+_PAPI PalVersion _PCALL palGetVersion();
+_PAPI const char* _PCALL palFormatError(PalError error);
 
 #endif // _PAL_SYSTEM_H

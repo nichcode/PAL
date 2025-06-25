@@ -12,7 +12,7 @@
 
 #include <windows.h>
 
-#include "pal_platform.h"
+#include "pal_internal.h"
 
 void palToWstrUTF8Win32(wchar_t* buffer, const char* string);
 

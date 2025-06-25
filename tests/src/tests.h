@@ -2,7 +2,7 @@
 #ifndef _TESTS_H
 #define _TESTS_H
 
-#include "pal/pal_core.h"
+#include "pal/pal.h"
 
 typedef bool (*TestFn)(void* pData);
 
