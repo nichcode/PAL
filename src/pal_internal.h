@@ -25,6 +25,7 @@ typedef struct PalVideoLibrary
     // read only 
     PalAllocator* allocator;
     void* instance;
+    void* ntdllLibrary;
     bool initialized;
 
 } PalVideoLibrary;

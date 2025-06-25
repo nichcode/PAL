@@ -16,6 +16,7 @@ bool systemTest(void* data)
     if (palInit(PAL_NULL, flags)) {
         PalVersion version = palGetVersion();
         palLogInfo("PAL Version (%i.%i.%i)", version.major, version.minor, version.patch);
+        palLogInfo(palGetPlatformString());
 
         palShutdown();
         return PAL_TRUE;
@@ -28,7 +29,7 @@ bool systemTest(void* data)
 
 int main(int argc, char** argv)
 {
-    //registerTest("System Test", systemTest);
+    registerTest("System Test", systemTest);
     registerTest("Video Test", videoTest);
 
     runTests();

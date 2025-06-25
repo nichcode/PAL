@@ -27,4 +27,6 @@ _PAPI bool _PCALL palIsSystemInitialized();
 _PAPI PalVersion _PCALL palGetVersion();
 _PAPI const char* _PCALL palFormatError(PalError error);
 
+_PAPI const char* _PCALL palGetPlatformString();
+
 #endif // _PAL_SYSTEM_H

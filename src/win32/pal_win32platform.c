@@ -13,6 +13,35 @@ void palToWstrUTF8Win32(wchar_t* buffer, const char* string)
     MultiByteToWideChar(CP_UTF8, 0, string, -1, buffer, len);
 }
 
+bool _palIsVersionWin32(int major, int minor, int servicePack)
+{
+    OSVERSIONINFOEXW osvi = { 0 };
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+    osvi.dwMajorVersion = major;
+    osvi.dwMinorVersion = minor;
+    osvi.wServicePackMajor = servicePack;
+
+    DWORDLONG mask = 0;
+    mask = VerSetConditionMask(mask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+    mask = VerSetConditionMask(mask, VER_MINORVERSION, VER_GREATER_EQUAL);
+    mask = VerSetConditionMask(mask, VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
+}
+
+Uint32 _palGetBuildWin32()
+{
+    RtlGetVersionPtr RtlGetVersion = PAL_NULL;
+    RtlGetVersion = (RtlGetVersionPtr)GetProcAddress(s_PALVideo.ntdllLibrary, "RtlGetVersion");
+    if (!RtlGetVersion) return 0;
+
+    RTL_OSVERSIONINFOW ver = { 0 };
+    ver.dwOSVersionInfoSize = sizeof(ver);
+    if (RtlGetVersion(&ver) == 0) {
+        return ver.dwBuildNumber;
+    }
+
+    return 0;
+}
+
 // memory
 
 PalAllocator palGetDefaultAllocator()
@@ -57,6 +86,36 @@ void* _PCALL palGetTLS(PalTLSID id)
 bool _PCALL palSetTLS(PalTLSID id, void* data, void (*destructor)(void*))
 {
     return TlsSetValue((DWORD)id, data);
+}
+
+// system
+
+const char* palGetPlatformString()
+{
+    if (PAL_WINDOWS_11) {
+        return "Windows 11";
+
+    } else if (PAL_WINDOWS_10) {
+        return "Windows 10";
+
+    } else if (PAL_WINDOWS_8_1) {
+        return "Windows 8.1";
+
+    } else if (PAL_WINDOWS_8) {
+        return "Windows 8";
+
+    } else if (PAL_WINDOWS_7) {
+        return "Windows 7";
+
+    } else if (PAL_WINDOWS_VISTA) {
+        return "Windows Vista";
+
+    } else if (PAL_WINDOWS_XP) {
+        return "Windows XP";
+        
+    } else {
+        return PAL_NULL;
+    }
 }
 
 // platform
@@ -106,6 +165,12 @@ bool _palPlatformVideoInit()
         return PAL_FALSE;
     }
 
+    HINSTANCE ntdllLib = GetModuleHandleA("ntdll.dll");
+    if (!ntdllLib) {
+        palSetError(PAL_PLATFORM_ERROR);
+        return PAL_FALSE;
+    }
+
     s_PALVideo.instance = instance;
     return PAL_TRUE;
 }
@@ -114,5 +179,9 @@ void _palPlatformVideoShutdown()
 {
     if (s_PALVideo.instance) {
         UnregisterClassW(WIN32_CLASS, (HINSTANCE)s_PALVideo.instance);
+    }
+
+    if (s_PALVideo.ntdllLibrary) {
+        FreeLibrary((HINSTANCE)s_PALVideo.ntdllLibrary);
     }
 }
