@@ -12,19 +12,33 @@
 typedef struct PalLibrary
 {
     // read only 
+    PalAllocator tmpAllocator;
     PalVersion version;
-    PAlAllocator tmpAllocator;
-    PAlAllocator* allocator;
-    bool initialized, videoInitialized;
+    PalAllocator* allocator;
+    Uint32 flags;
+    bool initialized;
 
 } PalLibrary;
 
+typedef struct PalVideoLibrary
+{
+    // read only 
+    PalAllocator* allocator;
+    void* instance;
+    bool initialized;
+
+} PalVideoLibrary;
+
 static PalLibrary s_PAL;
+static PalVideoLibrary s_PALVideo;
 
 void _palFormatArgs(const char* fmt, va_list argsList, char* buffer);
 void _palFormat(char* buffer, const char* fmt, ...);
 
 // platform
 void _palPlatformWriteConsole(Uint32 level, const char* msg);
+
+bool _palPlatformVideoInit();
+void _palPlatformVideoShutdown();
 
 #endif // _PAL_INTERNAL_H

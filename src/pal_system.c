@@ -2,6 +2,7 @@
 #include "pal_pch.h"
 #include "pal/pal.h"
 #include "pal_internal.h"
+#include "pal/pal_video.h"
 
 static PalTLSID s_ErrorTLSID = 0;
 
@@ -11,13 +12,9 @@ typedef struct ErrorTLSData
 
 } ErrorTLSData;
 
-bool _PCALL palInit(PAlAllocator* allocator, Uint32 flags)
+bool _PCALL palInit(const PalAllocator* allocator, Uint32 flags)
 {
     s_PAL.tmpAllocator = palGetDefaultAllocator();
-    if (flags & PAL_INIT_VIDEO) {
-        // TODO: video system
-    }
-
     if (allocator) {
         if (!allocator->alignedAlloc || 
             !allocator->alignedAlloc ||
@@ -31,18 +28,35 @@ bool _PCALL palInit(PAlAllocator* allocator, Uint32 flags)
 
     // set allocator
     s_PAL.allocator = &s_PAL.tmpAllocator;
+
     s_PAL.version.major = PAL_VMAJOR;
     s_PAL.version.minor = PAL_VMINOR;
     s_PAL.version.patch = PAL_VPATCH;    
     s_PAL.initialized = PAL_TRUE;
+    s_PAL.flags = flags;
+
+    if (flags & PAL_INIT_VIDEO) {
+        if (!palInitVideoSystem(allocator)) {
+            palSetError(PAL_VIDEO_NOT_INITIALIZED);
+            s_PAL.initialized = PAL_FALSE;
+            return PAL_FALSE;
+        }
+    }
 
     return PAL_TRUE; 
 }
 
 void _PCALL palShutdown()
 {
-    s_PAL.initialized = PAL_TRUE;
-    s_PAL.videoInitialized = PAL_FALSE;
+    if (s_PAL.flags & PAL_INIT_VIDEO) {
+        palShutdownVideoSystem();
+    }
+    s_PAL.initialized = PAL_FALSE;
+}
+
+bool _PCALL palIsSystemInitialized()
+{
+    return s_PAL.initialized;
 }
 
 PalVersion _PCALL palGetVersion()
@@ -68,10 +82,10 @@ const char* _PCALL palFormatError(PalError error)
         return "The allocator function pointers are not set. You must set all the function pointers";
 
         case PAL_NOT_INITIALIZED: 
-        return "PAL core system is not intialized";
+        return "Core system is not intialized";
 
         case PAL_VIDEO_NOT_INITIALIZED:
-        return "PAL video subsystem is not intialized";
+        return "Video subsystem is not intialized";
 
         case PAL_OUT_OF_MEMORY: 
         return "The operating system has run out of memory";
@@ -82,7 +96,7 @@ const char* _PCALL palFormatError(PalError error)
 
 void _PCALL palSetError(PalError error)
 {
-    PAlAllocator allocator = palGetDefaultAllocator();
+    PalAllocator allocator = palGetDefaultAllocator();
     ErrorTLSData* errorData = palGetTLS(s_ErrorTLSID);
     if (!errorData) {
         errorData = allocator.alloc(sizeof(ErrorTLSData));

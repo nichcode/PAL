@@ -1,16 +1,16 @@
 
-#include "pal/pal.h"
+#include "tests.h"
 
 void onLog(PalLogLevel level, const char* msg)
 {
     palLogInfo(msg);
 }
 
-int main(int argc, char** argv)
+bool systemTest(void* data)
 {
     PalError error = PAL_ERROR_NONE;
-    PAlAllocator allocator;
-    palZeroMemory(&allocator, sizeof(PAlAllocator));
+    PalAllocator allocator;
+    palZeroMemory(&allocator, sizeof(PalAllocator));
     Uint32 flags = PAL_INIT_EVERYTHING;
 
     if (palInit(PAL_NULL, flags)) {
@@ -18,10 +18,19 @@ int main(int argc, char** argv)
         palLogInfo("PAL Version (%i.%i.%i)", version.major, version.minor, version.patch);
 
         palShutdown();
-        return 0;
+        return PAL_TRUE;
     }
 
     error = palGetError();
     palLogError(palFormatError(error));
-    return -1;
+    return PAL_FALSE;
+}
+
+int main(int argc, char** argv)
+{
+    //registerTest("System Test", systemTest);
+    registerTest("Video Test", videoTest);
+
+    runTests();
+    return 0;
 }

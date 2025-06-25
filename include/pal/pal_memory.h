@@ -9,7 +9,7 @@ typedef void* (*PalAlignedAllocFn)(Uint64 size, Uint64 alignment);
 typedef void (*PalFreeFn)(void* memory);
 typedef void (*PalAlignedFreeFn)(void* memory);
 
-typedef struct PAlAllocator
+typedef struct PalAllocator
 {
     PalAllocFn alloc;
     PalAlignedAllocFn alignedAlloc;
@@ -17,9 +17,9 @@ typedef struct PAlAllocator
     PalAlignedFreeFn alignedFree;
     void* userData;
 
-} PAlAllocator;
+} PalAllocator;
 
-_PAPI PAlAllocator _PCALL palGetDefaultAllocator();
+_PAPI PalAllocator _PCALL palGetDefaultAllocator();
 _PAPI void _PCALL palSetMemory(void* memory, int value, Uint64 size);
 
 _PAPI void* _PCALL palAllocate(Uint64 size);

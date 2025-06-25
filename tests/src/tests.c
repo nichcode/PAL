@@ -20,7 +20,7 @@ static struct TestEntry s_Tests[MAX_TESTS] = {};
 static void* s_TestData = PAL_NULL;
 static int s_Count = 0;
 
-void registerTests(const char* pName, TestFn pTestFn)
+void registerTest(const char* pName, TestFn pTestFn)
 {
     struct TestEntry entry;
     entry.name = pName;

@@ -15,9 +15,9 @@ void palToWstrUTF8Win32(wchar_t* buffer, const char* string)
 
 // memory
 
-PAlAllocator palGetDefaultAllocator()
+PalAllocator palGetDefaultAllocator()
 {
-    PAlAllocator allocator;
+    PalAllocator allocator;
     allocator.alloc = malloc;
     allocator.free = free;
     allocator.alignedAlloc = _aligned_malloc;
@@ -81,4 +81,38 @@ void _palPlatformWriteConsole(Uint32 level, const char* msg)
     DWORD written = 0;
     WriteConsoleW(console, buffer, (DWORD)len, &written, 0);
     OutputDebugStringW(buffer);
+}
+
+bool _palPlatformVideoInit()
+{
+    HINSTANCE instance = GetModuleHandleW(PAL_NULL);
+    WNDCLASSEXW wc = {};
+    wc.cbClsExtra = 0;
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.cbWndExtra = 0;
+    wc.hbrBackground = NULL;
+    wc.hCursor = LoadCursorW(instance, IDC_ARROW);
+    wc.hIcon = LoadIconW(instance, IDI_APPLICATION);
+    wc.hIconSm = LoadIconW(instance, IDI_APPLICATION);
+    wc.hInstance = instance;
+    wc.lpfnWndProc = palWin32Proc;
+    wc.lpszClassName = WIN32_CLASS;
+    wc.lpszMenuName = NULL;
+    wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+
+    ATOM success = RegisterClassExW(&wc);
+    if (!success) {
+        palSetError(PAL_PLATFORM_ERROR);
+        return PAL_FALSE;
+    }
+
+    s_PALVideo.instance = instance;
+    return PAL_TRUE;
+}
+
+void _palPlatformVideoShutdown()
+{
+    if (s_PALVideo.instance) {
+        UnregisterClassW(WIN32_CLASS, (HINSTANCE)s_PALVideo.instance);
+    }
 }

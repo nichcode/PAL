@@ -14,14 +14,16 @@ typedef struct PalVersion
 
 typedef enum PalInitFlags
 {
+    PAL_INIT_NONE = 0,
     PAL_INIT_VIDEO = PAL_BIT(0),
     PAL_INIT_EVERYTHING = PAL_INIT_VIDEO
 
 } PalInitFlags;
 
-_PAPI bool _PCALL palInit(PAlAllocator* allocator, Uint32 flags);
+_PAPI bool _PCALL palInit(const PalAllocator* allocator, Uint32 flags);
 _PAPI void _PCALL palShutdown();
 
+_PAPI bool _PCALL palIsSystemInitialized();
 _PAPI PalVersion _PCALL palGetVersion();
 _PAPI const char* _PCALL palFormatError(PalError error);
 
