@@ -90,6 +90,15 @@ const char* _PCALL palFormatError(PalError error)
 
         case PAL_OUT_OF_MEMORY: 
         return "The operating system has run out of memory";
+
+        case PAL_DISPLAY_ERROR: 
+        return "The display index is invalid. Use 0 for primary display.";
+
+        case PAL_PLATFORM_ERROR: 
+        return "An operation failed on the platform(Win32, Linux etc) level.";
+
+        case PAL_INVALID_ARG:
+        return "The argument provided is invalid. eg an unsigned int set to -1";
     }
 
     return PAL_NULL;

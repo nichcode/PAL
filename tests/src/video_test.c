@@ -11,10 +11,25 @@ bool videoTest(void* data)
         return PAL_FALSE;
     }
 
-    int displayCount = palGetDisplayCount();
     const PalDisplay* display = palGetPrimaryDisplay();
-    int displayModeCount = display->modeCount;
+    PalWindowDesc desc;
+    desc.displayIndex = display->index;
+    desc.flags = PAL_WINDOW_DEAFULT | PAL_WINDOW_CENTER;
+    desc.width = 640;
+    desc.height = 480;
+    desc.title = "PAL Window";
+    PalWindow* window = palCreateWindow(&desc);
 
+    if (!window) {
+        error = palGetError();
+        palLogError(palFormatError(error));
+        return PAL_FALSE;
+    }
+
+    // while loop
+
+    // cleanup
+    palDestroyWindow(window);
     palShutdownVideoSystem();
     return PAL_TRUE;
 }

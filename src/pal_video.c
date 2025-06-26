@@ -69,7 +69,7 @@ const PalDisplay* _PCALL palGetPrimaryDisplay()
 
 const PalDisplay* _PCALL palGetDisplay(int index)
 {
-    if (s_Video.displayCount && (index > 0 && index < s_Video.displayCount)) {
+    if (s_Video.displayCount && (index >= 0 && index < s_Video.displayCount)) {
         return &s_Video.displays[index];
     }
     return PAL_NULL;

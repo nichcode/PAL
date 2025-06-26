@@ -38,6 +38,27 @@ static HINSTANCE s_HInstance;
 static HINSTANCE s_Ntdll;
 static HINSTANCE s_Shcore;
 
+// PalWin32 window
+typedef struct PalWindow
+{
+    HWND handle;
+    const char* title;
+
+    Uint32 flags;
+    Uint32 style;
+    Uint32 exStyle;
+    Uint32 width;
+    Uint32 height;
+    int x;
+    int y;
+
+    bool maximized;
+    bool minimized;
+    bool fullscreen;
+    bool hidden;
+
+} PalWindow;
+
 void palToWstrUTF8Win32(wchar_t* buffer, const char* string);
 bool _palIsVersionWin32(int major, int minor, int servicePack);
 Uint32 _palGetBuildWin32();
