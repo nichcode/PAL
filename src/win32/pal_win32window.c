@@ -114,6 +114,11 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
     window->x = x;
     window->y = y;
 
+    // fullscreen
+    if (desc->flags & PAL_WINDOW_FULLSCREEN) {
+        palSetWindowFullScreen(window, desc->displayIndex, PAL_TRUE);
+    }
+
     return window;
 }
 
@@ -157,6 +162,37 @@ void _PCALL palHideWindow(PalWindow* window)
     window->hidden = PAL_TRUE;
 }
 
+void _PCALL palCenterWindow(PalWindow* window, int displayIndex)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return;
+    }
+
+    if (window->fullscreen || window->maximized) {
+        return;
+    }
+
+    // get display
+    const PalDisplay* display = palGetDisplay(displayIndex);
+    if (!display) {
+        palSetError(PAL_DISPLAY_ERROR);
+        return;
+    }
+
+    int x = display->x + (display->width - window->width) / 2;
+    int y = display->y + (display->height - window->height) / 2;
+
+    SetWindowPos(
+        window->handle, NULL, x, y, 
+        0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE
+    );
+
+    window->flags |= PAL_WINDOW_CENTER;
+    window->x = x;
+    window->y = y;
+}
+
 void _PCALL palMaximizeWindow(PalWindow* window)
 {
     if (!window) {
@@ -189,9 +225,84 @@ void _PCALL palMinimizeWindow(PalWindow* window)
     window->maximized = PAL_FALSE;
 }
 
-void _PCALL palSetWindowFullScreen(PalWindow* window, bool enable)
+void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool enable)
 {
-    // TODO: fullscreen
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return;
+    }
+
+    if (window->fullscreen && enable) {
+        return;
+    }
+
+    if (!window->fullscreen && !enable) {
+        return;
+    }
+
+    const PalDisplay* display = palGetDisplay(displayIndex);
+    if (!display) {
+        palSetError(PAL_DISPLAY_ERROR);
+        return;
+    }
+
+    if (enable) {
+        // toggle fullscreen
+        SetWindowLongPtrW(
+            window->handle,
+            GWL_STYLE,
+            WS_POPUP | WS_VISIBLE
+        );
+
+        SetWindowLongPtrW(
+            window->handle,
+            GWL_EXSTYLE,
+            WS_EX_APPWINDOW
+        );
+
+        SetWindowPos(
+            window->handle,
+            HWND_TOP,
+            display->x,
+            display->y,
+            display->width,
+            display->height,
+            SWP_FRAMECHANGED | SWP_SHOWWINDOW
+        );
+
+        window->fullscreen = PAL_TRUE;
+
+    } else {
+        // set everything back to normal
+        SetWindowLongPtrW(
+            window->handle,
+            GWL_STYLE,
+            window->style
+        );
+
+        SetWindowLongPtrW(
+            window->handle,
+            GWL_EXSTYLE,
+            window->exStyle
+        );
+
+        int showFlag = SWP_HIDEWINDOW;
+        if (!window->hidden || !window->minimized) {
+            showFlag = SWP_SHOWWINDOW;
+        }
+
+        SetWindowPos(
+            window->handle,
+            HWND_TOP,
+            window->x,
+            window->y,
+            window->width,
+            window->height,
+            SWP_FRAMECHANGED | SWP_NOOWNERZORDER | showFlag
+        );
+
+        window->fullscreen = PAL_FALSE;
+    }
 }
 
 const char* _PCALL palGetWindowTitle(PalWindow* window)
@@ -243,6 +354,30 @@ PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window)
         return 0;
     }
     return window->flags;
+}
+
+int _PCALL palGetWindowDisplayIndex(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return -1;
+    }
+
+    HMONITOR monitor = MonitorFromWindow(window->handle, MONITOR_DEFAULTTONEAREST);
+    if (!monitor) { 
+        return -1; 
+    }
+
+    MONITORINFO info = {};
+    info.cbSize = sizeof(MONITORINFO);
+    GetMonitorInfoW(monitor, &info);
+
+    for (int i = 0; i < s_Video.displayCount; i++) {
+        PalDisplay* display = &s_Video.displays[i];
+        if (monitor == display->handle) {
+            return i;
+        }
+    }
 }
 
 void _PCALL palSetWindowTitle(PalWindow* window, const char* title)

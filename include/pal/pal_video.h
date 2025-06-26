@@ -15,7 +15,8 @@ typedef enum PalWindowFlags
     PAL_WINDOW_RESIZABLE = PAL_BIT(2),
     PAL_WINDOW_CENTER = PAL_BIT(3),
     PAL_WINDOW_MINIMIZEBOX = PAL_BIT(4),
-    PAL_WINDOW_DEAFULT = PAL_WINDOW_RESIZABLE | PAL_WINDOW_MINIMIZEBOX | PAL_WINDOW_SHOWN
+    PAL_WINDOW_FULLSCREEN = PAL_BIT(5),
+    PAL_APPWINDOW = PAL_WINDOW_RESIZABLE | PAL_WINDOW_MINIMIZEBOX | PAL_WINDOW_SHOWN
 
 } PalWindowFlags;
 
@@ -75,15 +76,18 @@ _PAPI void _PCALL palDestroyWindow(PalWindow* window);
 
 _PAPI void _PCALL palShowWindow(PalWindow* window);
 _PAPI void _PCALL palHideWindow(PalWindow* window);
+_PAPI void _PCALL palCenterWindow(PalWindow* window, int displayIndex);
 
 _PAPI void _PCALL palMaximizeWindow(PalWindow* window);
 _PAPI void _PCALL palMinimizeWindow(PalWindow* window);
-_PAPI void _PCALL palSetWindowFullScreen(PalWindow* window, bool enable);
+_PAPI void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool enable);
 
 _PAPI const char* _PCALL palGetWindowTitle(PalWindow* window);
 _PAPI void _PCALL palGetWindowPos(PalWindow* window, int* x, int* y);
 _PAPI void _PCALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height);
 _PAPI PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window);
+
+_PAPI int _PCALL palGetWindowDisplayIndex(PalWindow* window);
 
 _PAPI void _PCALL palSetWindowTitle(PalWindow* window, const char* title);
 _PAPI void _PCALL palSetWindowPos(PalWindow* window, int x, int y);

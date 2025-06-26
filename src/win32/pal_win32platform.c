@@ -213,19 +213,19 @@ BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
         return TRUE; 
     }
 
-    PalDisplay* info = &s_Video.displays[s_Video.displayCount];
-    info->index = s_Video.displayCount;
-    info->handle = (void*)monitor;
+    PalDisplay* display = &s_Video.displays[s_Video.displayCount];
+    display->index = s_Video.displayCount;
+    display->handle = (void*)monitor;
 
     // size and pos
-    info->x = mi.rcMonitor.left;
-    info->y = mi.rcMonitor.top;
-    info->width = mi.rcMonitor.right - mi.rcMonitor.left;
-    info->height = mi.rcMonitor.bottom - mi.rcWork.top;
+    display->x = mi.rcMonitor.left;
+    display->y = mi.rcMonitor.top;
+    display->width = mi.rcMonitor.right - mi.rcMonitor.left;
+    display->height = mi.rcMonitor.bottom - mi.rcWork.top;
 
     // change into a UTF8 string
-    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
-    getDisplayDPI(info);
+    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, display->name, 32, NULL, NULL);
+    getDisplayDPI(display);
 
     // get modes
     DEVMODEW dm = {};
@@ -244,8 +244,8 @@ BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
         addMode(&mode);
     }
 
-    info->modeCount--;
-    info->refreshRate = info->modes[info->modeCount].refreshRate;
+    display->modeCount--;
+    display->refreshRate = display->modes[display->modeCount].refreshRate;
     s_Video.displayCount++;
     return PAL_TRUE;
 }

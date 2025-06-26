@@ -14,7 +14,7 @@ bool videoTest(void* data)
     const PalDisplay* display = palGetPrimaryDisplay();
     PalWindowDesc desc;
     desc.displayIndex = display->index;
-    desc.flags = PAL_WINDOW_DEAFULT | PAL_WINDOW_CENTER;
+    desc.flags = PAL_APPWINDOW | PAL_WINDOW_CENTER;
     desc.width = 640;
     desc.height = 480;
     desc.title = "PAL Window";
@@ -25,6 +25,8 @@ bool videoTest(void* data)
         palLogError(palFormatError(error));
         return PAL_FALSE;
     }
+
+    //palIsWindowFullScreen(window);
 
     // while loop
 
