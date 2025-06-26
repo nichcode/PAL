@@ -48,6 +48,8 @@ typedef struct PalDisplay
     float dpiScaleX;
     float dpiScaleY;
 
+    Uint16 refreshRate;
+
 } PalDisplay;
 
 typedef struct PalWindowDesc

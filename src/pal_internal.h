@@ -28,8 +28,6 @@ typedef struct PalVideoLibrary
     // read only 
     PalDisplay displays[_PAL_MAX_DISPLAYS];
     PalAllocator* allocator;
-    void* instance;
-    void* ntdllLibrary;
     int displayCount;
     bool initialized;
 

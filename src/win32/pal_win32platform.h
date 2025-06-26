@@ -17,8 +17,26 @@
 
 #define WIN32_CLASS L"PALClass"
 #define WIN32_PROP L"PAL"
+#define WIN32_DPI 0
+#define WIN32_DPI_AWARE 2
 
+// osversioninfo
 typedef LONG (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+
+// monitor, dpiType, &dpiX, &dpiY
+typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, int, UINT*, UINT*);
+
+// PROCESS_DPI_AWARENESS
+typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
+
+// function pointers
+static GetDpiForMonitorFn s_GetDpiForMonitor;
+static SetProcessAwarenessFn s_SetProcessAwareness;
+
+// libraries
+static HINSTANCE s_HInstance;
+static HINSTANCE s_Ntdll;
+static HINSTANCE s_Shcore;
 
 void palToWstrUTF8Win32(wchar_t* buffer, const char* string);
 bool _palIsVersionWin32(int major, int minor, int servicePack);

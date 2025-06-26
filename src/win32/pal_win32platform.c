@@ -10,6 +10,7 @@
 bool compareMode(const PalDisplayMode* a, const PalDisplayMode* b);
 void addMode(const PalDisplayMode* mode);
 void getColorBits(PalDisplayMode* mode, int bpp);
+void getDisplayDPI(PalDisplay* display);
 
 void palToWstrUTF8Win32(wchar_t* buffer, const char* string)
 {
@@ -34,7 +35,7 @@ bool _palIsVersionWin32(int major, int minor, int servicePack)
 Uint32 _palGetBuildWin32()
 {
     RtlGetVersionPtr RtlGetVersion = PAL_NULL;
-    RtlGetVersion = (RtlGetVersionPtr)GetProcAddress(s_Video.ntdllLibrary, "RtlGetVersion");
+    RtlGetVersion = (RtlGetVersionPtr)GetProcAddress(s_Ntdll, "RtlGetVersion");
     if (!RtlGetVersion) return 0;
 
     RTL_OSVERSIONINFOW ver = { 0 };
@@ -148,16 +149,16 @@ void _palPlatformWriteConsole(Uint32 level, const char* msg)
 
 bool _palPlatformVideoInit()
 {
-    HINSTANCE instance = GetModuleHandleW(PAL_NULL);
+    s_HInstance = GetModuleHandleW(PAL_NULL);
     WNDCLASSEXW wc = {};
     wc.cbClsExtra = 0;
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.cbWndExtra = 0;
     wc.hbrBackground = NULL;
-    wc.hCursor = LoadCursorW(instance, IDC_ARROW);
-    wc.hIcon = LoadIconW(instance, IDI_APPLICATION);
-    wc.hIconSm = LoadIconW(instance, IDI_APPLICATION);
-    wc.hInstance = instance;
+    wc.hCursor = LoadCursorW(s_HInstance, IDC_ARROW);
+    wc.hIcon = LoadIconW(s_HInstance, IDI_APPLICATION);
+    wc.hIconSm = LoadIconW(s_HInstance, IDI_APPLICATION);
+    wc.hInstance = s_HInstance;
     wc.lpfnWndProc = palProcWin32;
     wc.lpszClassName = WIN32_CLASS;
     wc.lpszMenuName = NULL;
@@ -169,28 +170,34 @@ bool _palPlatformVideoInit()
         return PAL_FALSE;
     }
 
-    HINSTANCE ntdllLib = GetModuleHandleA("ntdll.dll");
-    if (!ntdllLib) {
+    s_Shcore = LoadLibraryA("shcore.dll");
+    if (!s_Shcore) {
         palSetError(PAL_PLATFORM_ERROR);
         return PAL_FALSE;
     }
 
+    s_Ntdll = GetModuleHandleA("ntdll.dll");
+
+    // // load function pointers
+    s_GetDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
+        s_Shcore, 
+        "GetDpiForMonitor"
+    );
+
+    s_SetProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
+        s_Shcore, 
+        "SetProcessDpiAwareness"
+    );
+
     s_Video.displayCount = 0;
     EnumDisplayMonitors(PAL_NULL, PAL_NULL, palMonitorProcWin32, 0);
-
-    s_Video.instance = instance;
-    s_Video.ntdllLibrary = ntdllLib;
     return PAL_TRUE;
 }
 
 void _palPlatformVideoShutdown()
 {
-    if (s_Video.instance) {
-        UnregisterClassW(WIN32_CLASS, (HINSTANCE)s_Video.instance);
-    }
-
-    if (s_Video.ntdllLibrary) {
-        FreeLibrary((HINSTANCE)s_Video.ntdllLibrary);
+    if (s_HInstance) {
+        UnregisterClassW(WIN32_CLASS, s_HInstance);
     }
 }
 
@@ -218,10 +225,7 @@ BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
 
     // change into a UTF8 string
     WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
-
-    // TODO: get DPI
-    info->dpiScaleX = 96.0f;
-    info->dpiScaleY = 96.0f;
+    getDisplayDPI(info);
 
     // get modes
     DEVMODEW dm = {};
@@ -241,6 +245,7 @@ BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
     }
 
     info->modeCount--;
+    info->refreshRate = info->modes[info->modeCount].refreshRate;
     s_Video.displayCount++;
     return PAL_TRUE;
 }
@@ -301,4 +306,28 @@ bool compareMode(const PalDisplayMode* a, const PalDisplayMode* b)
         return PAL_TRUE;
     }
     return PAL_FALSE;
+}
+
+void getDisplayDPI(PalDisplay* display)
+{
+    UINT dpiX, dpiY;
+    if (s_SetProcessAwareness) {
+        s_SetProcessAwareness(WIN32_DPI_AWARE);
+    }
+
+    if (s_GetDpiForMonitor) {
+        s_GetDpiForMonitor(
+            (HMONITOR)display->handle,
+            WIN32_DPI,
+            &dpiX,
+            &dpiY
+        );
+
+        display->dpiScaleX = dpiX / 96.0f;
+        display->dpiScaleY = dpiY / 96.0f;
+
+    } else {
+        display->dpiScaleX = 1.0f;
+        display->dpiScaleY = 1.0f;
+    }
 }
