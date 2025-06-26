@@ -99,6 +99,9 @@ const char* _PCALL palFormatError(PalError error)
 
         case PAL_INVALID_ARG:
         return "The argument provided is invalid. eg an unsigned int set to -1";
+
+        case PAL_INVALID_EVENT:
+        return "The event or event type is invalid";
     }
 
     return PAL_NULL;

@@ -1,6 +1,7 @@
 
 #include "tests.h"
 #include "pal/pal_video.h"
+#include "pal/pal_events.h"
 
 bool videoTest(void* data)
 {
@@ -26,9 +27,27 @@ bool videoTest(void* data)
         return PAL_FALSE;
     }
 
-    //palIsWindowFullScreen(window);
+    // register your interested events. you can check for return value
+    palRegisterEvent(PAL_EVENT_QUIT, PAL_EVENT_DISPATCH_POLL);
 
-    // while loop
+    bool running = PAL_TRUE;
+    while (running) {
+        PalEvent event;
+        while (palPollEvent(&event)) {
+            // we got an event.
+            // Now if you haven't registered an event you won't be notified if it happens
+            switch (event.type) {
+                case PAL_EVENT_QUIT: {
+                    // quit event
+                    running = PAL_FALSE;
+                }
+            }
+        }
+        
+        // you can event put event handling into a different function
+        // update
+        // render
+    }
 
     // cleanup
     palDestroyWindow(window);
