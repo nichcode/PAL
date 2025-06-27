@@ -87,6 +87,35 @@ LRESULT CALLBACK palProcWin32(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
 
+        case WM_MOVE: {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            window->x = x;
+            window->y = y;
+
+            PalDispatch dispatch;
+            dispatch = palGetDispatch(PAL_EVENT_WINDOW_MOVE);
+            if (dispatch == PAL_DISPATCH_NONE) { 
+                return 0; 
+                break; 
+            }
+
+            PalEvent event;
+            event.type = PAL_EVENT_WINDOW_MOVE;
+            event.windowID = window->id;
+            event.windowPos.x = x;
+            event.windowPos.y = y;
+
+            if (dispatch == PAL_DISPATCH_CALLBACK) {
+                palTriggerEvent(&event);
+            } else {
+                palPushEvent(event);
+            }
+
+            return 0;
+            break;
+        }
+
     }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);

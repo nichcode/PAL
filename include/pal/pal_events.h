@@ -8,6 +8,7 @@ typedef enum PalEventType
 {
     PAL_EVENT_QUIT,
     PAL_EVENT_WINDOW_RESIZE,
+    PAL_EVENT_WINDOW_MOVE,
     PAL_EVENT_MAX
 
 } PalEventType;
@@ -27,6 +28,7 @@ typedef struct PalEvent
 
     union {
         struct { Uint32 width; Uint32 height; } size;
+        struct { int x; int y; } windowPos;
     };
 
 } PalEvent;

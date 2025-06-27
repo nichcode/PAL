@@ -11,6 +11,7 @@
 #endif // NOMINMAX
 
 #include <windows.h>
+#include <windowsx.h>
 #include <winnt.h>
 
 #include "pal_internal.h"

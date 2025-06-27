@@ -6,7 +6,11 @@
 void onEvent(const PalEvent* event)
 {
     if (event->type == PAL_EVENT_WINDOW_RESIZE) {
-        palLogInfo("Size (%i, %i)", event->size.width, event->size.height);
+        palLogInfo("Window Size (%i, %i)", event->size.width, event->size.height);
+    }
+
+    if (event->type == PAL_EVENT_WINDOW_MOVE) {
+        palLogInfo("Window Pos (%i, %i)", event->windowPos.x, event->windowPos.y);
     }
 }
 
@@ -37,6 +41,7 @@ bool videoTest(void* data)
     // register your interested events. you can check for return value
     palRegisterEvent(PAL_EVENT_QUIT, PAL_DISPATCH_POLL);
     palRegisterEvent(PAL_EVENT_WINDOW_RESIZE, PAL_DISPATCH_CALLBACK);
+    palRegisterEvent(PAL_EVENT_WINDOW_MOVE, PAL_DISPATCH_CALLBACK);
 
     // set event callback for callback dispatch
     palSetEventCallback(onEvent);
@@ -54,11 +59,17 @@ bool videoTest(void* data)
                     PalWindowID id = palGetWindowID(window);
                     if (id == event.windowID) {
                         running = PAL_FALSE;
+                        break;
                     }
                 }
 
                 case PAL_EVENT_WINDOW_RESIZE: {
-                    // resize event. We handle as a callback for real time events
+                    // window resize event. We handle as a callback for real time events
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_MOVE: {
+                    // window move event. We handle as a callback for real time events
                     break;
                 }
             }
