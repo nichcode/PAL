@@ -27,6 +27,9 @@ _PAPI void* _PCALL palAlignAllocate(Uint64 size, Uint64 alignment);
 _PAPI void _PCALL palFree(void* memory);
 _PAPI void _PCALL palAlignFree(void* memory);
 
-#define palZeroMemory(memory, size) palSetMemory(memory, 0, size)
+static void _PCALL palZeroMemory(void* memory, Uint64 size)
+{
+    palSetMemory(memory, 0, size);
+}
 
 #endif // _PAL_MEMORY_H

@@ -9,10 +9,26 @@
 #define _PAL_MSG_SIZE 1024
 #define _PAL_MAX_DISPLAYS 16
 #define _PAL_MAX_EVENTS 256
+#define _PAL_MAX_WINDOWS 16
 
 #define PAL_VMAJOR 1
 #define PAL_VMINOR 0
 #define PAL_VPATCH 0
+
+// hash entry
+typedef struct PalHashEntry {
+    Uint32 key;
+    void* value;
+    struct PalHashEntry* next;
+} PalHashEntry;
+
+// hash map
+typedef struct PalHashMap {
+    PalAllocator* allocator;
+    PalHashEntry** data;
+    Uint64 count;
+
+} PalHashMap;
 
 typedef struct PalLibrary
 {
@@ -27,9 +43,10 @@ typedef struct PalLibrary
 
 typedef struct PalVideoLibrary
 {
-    // read only 
     PalDisplay displays[_PAL_MAX_DISPLAYS];
+    PalHashMap windowHashMap;
     PalAllocator* allocator;
+    PalWindowID nextWindowID;
     int displayCount;
     bool initialized;
 
@@ -38,7 +55,7 @@ typedef struct PalVideoLibrary
 typedef struct PalEventQueue
 {
     // Not Thread safe
-    PalEvent events[_PAL_MAX_EVENTS];
+    PalEvent data[_PAL_MAX_EVENTS];
     PalEventDispatchType dispatchTypes[_PAL_MAX_EVENTS];
     PalEventCallback callback;
     int head, tail;
@@ -58,5 +75,13 @@ void _palPlatformPollEvents();
 
 bool _palPlatformVideoInit();
 void _palPlatformVideoShutdown();
+
+// hash map
+PalHashMap _palCreateHashMap(PalAllocator* allocator, Uint64 count);
+void _palDestroyHashMap(PalHashMap* map);
+
+bool _palHashMapInsert(PalHashMap* map, Uint32 key, void* value);
+void* _palHashMapGet(PalHashMap* map, Uint32 key);
+bool _palHashMapPop(PalHashMap* map, Uint32 key);
 
 #endif // _PAL_INTERNAL_H

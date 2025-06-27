@@ -43,6 +43,7 @@ typedef struct PalWindow
 {
     HWND handle;
     const char* title;
+    PalWindowID id;
 
     Uint32 flags;
     Uint32 style;

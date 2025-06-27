@@ -114,6 +114,15 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
     window->x = x;
     window->y = y;
 
+    // set windowID
+    window->id = s_Video.nextWindowID;
+    s_Video.nextWindowID++;
+    _palHashMapInsert(
+        &s_Video.windowHashMap,
+        window->id,
+        window
+    );
+
     // fullscreen
     if (desc->flags & PAL_WINDOW_FULLSCREEN) {
         palSetWindowFullScreen(window, desc->displayIndex, PAL_TRUE);
@@ -130,6 +139,7 @@ void _PCALL palDestroyWindow(PalWindow* window)
     }
 
     DestroyWindow(window->handle);
+    _palHashMapPop(&s_Video.windowHashMap, window->id);
     s_Video.allocator->free(window);
     window = PAL_NULL;
 }
@@ -354,6 +364,15 @@ PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window)
         return 0;
     }
     return window->flags;
+}
+
+PalWindowID _PCALL palGetWindowID(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return 0;
+    }
+    return window->id;
 }
 
 int _PCALL palGetWindowDisplayIndex(PalWindow* window)

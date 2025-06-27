@@ -39,7 +39,11 @@ bool videoTest(void* data)
             switch (event.type) {
                 case PAL_EVENT_QUIT: {
                     // quit event
-                    running = PAL_FALSE;
+                    // optional, check the window
+                    PalWindowID id = palGetWindowID(window);
+                    if (id == event.windowID) {
+                        running = PAL_FALSE;
+                    }
                 }
             }
         }

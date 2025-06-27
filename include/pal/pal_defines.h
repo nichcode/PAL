@@ -60,6 +60,7 @@
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 typedef unsigned int Uint32;
+typedef unsigned int PalWindowID;
 typedef unsigned long long Uint64;
 
 typedef enum PalError

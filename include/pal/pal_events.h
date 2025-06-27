@@ -21,8 +21,8 @@ typedef enum PalEventDispatchType
 
 typedef struct PalEvent
 {
-    PalWindow* window;
     PalEventType type;
+    PalWindowID windowID;
 
 } PalEvent;
 

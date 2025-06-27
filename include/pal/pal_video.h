@@ -85,8 +85,9 @@ _PAPI void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bo
 _PAPI const char* _PCALL palGetWindowTitle(PalWindow* window);
 _PAPI void _PCALL palGetWindowPos(PalWindow* window, int* x, int* y);
 _PAPI void _PCALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height);
-_PAPI PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window);
 
+_PAPI PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window);
+_PAPI PalWindowID _PCALL palGetWindowID(PalWindow* window);
 _PAPI int _PCALL palGetWindowDisplayIndex(PalWindow* window);
 
 _PAPI void _PCALL palSetWindowTitle(PalWindow* window, const char* title);

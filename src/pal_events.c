@@ -47,7 +47,7 @@ void _PCALL palPushEvent(PalEvent event)
         // and search the event queue for duplicates
         if (isEventRepeat(event.type)) {
             for (int i = s_EventQueue.tail - 1; i >= s_EventQueue.head; --i) {
-                PalEvent* e = &s_EventQueue.events[i & _PAL_MAX_EVENTS];
+                PalEvent* e = &s_EventQueue.data[i & _PAL_MAX_EVENTS];
                 if (e->type == event.type) {
                     // event found. Copy the new event into the existing one
                     *e = event;
@@ -57,7 +57,7 @@ void _PCALL palPushEvent(PalEvent event)
         }
 
         // event is not a repeating event
-        s_EventQueue.events[s_EventQueue.tail++ & _PAL_MAX_EVENTS] = event;
+        s_EventQueue.data[s_EventQueue.tail++ & _PAL_MAX_EVENTS] = event;
     }
 }
 
@@ -71,7 +71,7 @@ bool _PCALL palPollEvent(PalEvent* event)
         return PAL_FALSE;
     }
 
-    *event = s_EventQueue.events[s_EventQueue.head++ & _PAL_MAX_EVENTS];
+    *event = s_EventQueue.data[s_EventQueue.head++ & _PAL_MAX_EVENTS];
     return PAL_TRUE;
 }
 

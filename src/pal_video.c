@@ -34,6 +34,10 @@ bool _PCALL palInitVideoSystem(const PalAllocator* allocator)
         return PAL_FALSE;
     }
 
+    // init window hashmap
+    s_Video.windowHashMap = _palCreateHashMap(s_Video.allocator, _PAL_MAX_WINDOWS);
+    s_Video.nextWindowID = 1;
+
     s_Video.initialized = PAL_TRUE;
     return PAL_TRUE;
 }
@@ -41,6 +45,7 @@ bool _PCALL palInitVideoSystem(const PalAllocator* allocator)
 void _PCALL palShutdownVideoSystem()
 {
     _palPlatformVideoShutdown();
+    _palDestroyHashMap(&s_Video.windowHashMap);
     s_Video.initialized = PAL_FALSE;
     
     // shutdown core system 

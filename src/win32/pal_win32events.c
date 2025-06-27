@@ -31,7 +31,7 @@ LRESULT CALLBACK palProcWin32(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
             PalEvent event;
             event.type = PAL_EVENT_QUIT;
-            event.window = window;
+            event.windowID = window->id;
             palPushEvent(event);
 
             return 0;
