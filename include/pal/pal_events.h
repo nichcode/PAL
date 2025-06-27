@@ -7,31 +7,38 @@
 typedef enum PalEventType
 {
     PAL_EVENT_QUIT,
+    PAL_EVENT_WINDOW_RESIZE,
     PAL_EVENT_MAX
 
 } PalEventType;
 
-typedef enum PalEventDispatchType
+typedef enum PalDispatch
 {
-    PAL_EVENT_DISPATCH_NONE,
-    PAL_EVENT_DISPATCH_POLL,
-    PAL_EVENT_DISPATCH_CALLBACK
+    PAL_DISPATCH_NONE,
+    PAL_DISPATCH_POLL,
+    PAL_DISPATCH_CALLBACK
 
-} PalEventDispatchType;
+} PalDispatch;
 
 typedef struct PalEvent
 {
     PalEventType type;
     PalWindowID windowID;
 
+    union {
+        struct { Uint32 width; Uint32 height; } size;
+    };
+
 } PalEvent;
 
 typedef void (*PalEventCallback)(const PalEvent* event);
 
-_PAPI bool _PCALL palRegisterEvent(PalEventType type, PalEventDispatchType dispatch);
-_PAPI PalEventDispatchType _PCALL palGeteventDispatchType(PalEventType type);
+_PAPI bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch);
+_PAPI PalDispatch _PCALL palGetDispatch(PalEventType type);
 
 _PAPI void _PCALL palSetEventCallback(PalEventCallback callback);
+_PAPI void _PCALL palTriggerEvent(const PalEvent* event);
+
 _PAPI void _PCALL palPushEvent(PalEvent event);
 _PAPI bool _PCALL palPollEvent(PalEvent* event);
 

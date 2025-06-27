@@ -32,7 +32,6 @@ typedef struct PalHashMap {
 
 typedef struct PalLibrary
 {
-    // read only 
     PalAllocator tmpAllocator;
     PalVersion version;
     PalAllocator* allocator;
@@ -56,7 +55,7 @@ typedef struct PalEventQueue
 {
     // Not Thread safe
     PalEvent data[_PAL_MAX_EVENTS];
-    PalEventDispatchType dispatchTypes[_PAL_MAX_EVENTS];
+    PalDispatch dispatchs[_PAL_MAX_EVENTS];
     PalEventCallback callback;
     int head, tail;
 

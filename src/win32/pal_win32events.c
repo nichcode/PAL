@@ -22,9 +22,9 @@ LRESULT CALLBACK palProcWin32(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg) {
         case WM_CLOSE: {
             // get dispatch type and do nothing if is PAL_EVENT_DISPATCH_NONE
-            PalEventDispatchType dispatchType;
-            dispatchType = palGeteventDispatchType(PAL_EVENT_QUIT);
-            if (dispatchType == PAL_EVENT_DISPATCH_NONE) { 
+            PalDispatch dispatch;
+            dispatch = palGetDispatch(PAL_EVENT_QUIT);
+            if (dispatch == PAL_DISPATCH_NONE) { 
                 return 0; 
                 break; 
             }
@@ -32,7 +32,56 @@ LRESULT CALLBACK palProcWin32(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             PalEvent event;
             event.type = PAL_EVENT_QUIT;
             event.windowID = window->id;
-            palPushEvent(event);
+
+            if (dispatch == PAL_DISPATCH_CALLBACK) {
+                palTriggerEvent(&event);
+            } else {
+                palPushEvent(event);
+            }
+
+            return 0;
+            break;
+        }
+
+        case WM_SIZE: {
+            const Uint32 width = (Uint32)LOWORD(lParam);
+            const Uint32 height = (Uint32)HIWORD(lParam);
+
+            if (width != window->width || height != window->height) {
+                window->width = width;
+                window->height = height;
+
+                if (wParam == SIZE_MAXIMIZED) {
+                    window->maximized = PAL_TRUE;
+                    window->minimized = PAL_FALSE;
+                    window->fullscreen = PAL_FALSE;
+
+                } else if (wParam == SIZE_MINIMIZED) {
+                    window->minimized = PAL_TRUE;
+                    window->maximized = PAL_FALSE;
+                    window->fullscreen = PAL_FALSE;
+                }
+
+                // not the same size
+                PalDispatch dispatch;
+                dispatch = palGetDispatch(PAL_EVENT_WINDOW_RESIZE);
+                if (dispatch == PAL_DISPATCH_NONE) { 
+                    return 0; 
+                    break; 
+                }
+
+                PalEvent event;
+                event.type = PAL_EVENT_WINDOW_RESIZE;
+                event.windowID = window->id;
+                event.size.width = width;
+                event.size.height = height;
+
+                if (dispatch == PAL_DISPATCH_CALLBACK) {
+                    palTriggerEvent(&event);
+                } else {
+                    palPushEvent(event);
+                }
+            }
 
             return 0;
             break;

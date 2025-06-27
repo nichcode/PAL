@@ -214,6 +214,8 @@ void _PCALL palMaximizeWindow(PalWindow* window)
         return;
     }
 
+    int displayIndex = palGetWindowDisplayIndex(window);
+    palSetWindowFullScreen(window, displayIndex, PAL_FALSE);
     ShowWindow(window->handle, SW_SHOWMAXIMIZED);
     window->maximized = PAL_TRUE;
     window->minimized = PAL_FALSE;
@@ -230,6 +232,8 @@ void _PCALL palMinimizeWindow(PalWindow* window)
         return;
     }
 
+    int displayIndex = palGetWindowDisplayIndex(window);
+    palSetWindowFullScreen(window, displayIndex, PAL_FALSE);
     ShowWindow(window->handle, SW_MINIMIZE);
     window->minimized = PAL_TRUE;
     window->maximized = PAL_FALSE;

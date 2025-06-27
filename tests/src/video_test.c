@@ -3,6 +3,13 @@
 #include "pal/pal_video.h"
 #include "pal/pal_events.h"
 
+void onEvent(const PalEvent* event)
+{
+    if (event->type == PAL_EVENT_WINDOW_RESIZE) {
+        palLogInfo("Size (%i, %i)", event->size.width, event->size.height);
+    }
+}
+
 bool videoTest(void* data)
 {
     PalError error = PAL_ERROR_NONE;
@@ -28,7 +35,11 @@ bool videoTest(void* data)
     }
 
     // register your interested events. you can check for return value
-    palRegisterEvent(PAL_EVENT_QUIT, PAL_EVENT_DISPATCH_POLL);
+    palRegisterEvent(PAL_EVENT_QUIT, PAL_DISPATCH_POLL);
+    palRegisterEvent(PAL_EVENT_WINDOW_RESIZE, PAL_DISPATCH_CALLBACK);
+
+    // set event callback for callback dispatch
+    palSetEventCallback(onEvent);
 
     bool running = PAL_TRUE;
     while (running) {
@@ -44,6 +55,11 @@ bool videoTest(void* data)
                     if (id == event.windowID) {
                         running = PAL_FALSE;
                     }
+                }
+
+                case PAL_EVENT_WINDOW_RESIZE: {
+                    // resize event. We handle as a callback for real time events
+                    break;
                 }
             }
         }

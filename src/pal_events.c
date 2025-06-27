@@ -5,44 +5,53 @@
 
 bool isEventRepeat(PalEventType type);
 
-bool _PCALL palRegisterEvent(PalEventType type, PalEventDispatchType dispatch)
+bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch)
 {
     if (type < 0 || type > PAL_EVENT_MAX) {
         palSetError(PAL_INVALID_EVENT);
         return PAL_FALSE;
     }
 
-    s_EventQueue.dispatchTypes[type] = dispatch;
+    s_EventQueue.dispatchs[type] = dispatch;
     return PAL_TRUE;
 }
 
-PalEventDispatchType _PCALL palGeteventDispatchType(PalEventType type)
+PalDispatch _PCALL palGetDispatch(PalEventType type)
 {
     if (type < 0 || type > PAL_EVENT_MAX) {
         palSetError(PAL_INVALID_EVENT);
         return PAL_FALSE;
     }
-    return s_EventQueue.dispatchTypes[type];
+    return s_EventQueue.dispatchs[type];
 }
 
 void _PCALL palSetEventCallback(PalEventCallback callback)
 {
     s_EventQueue.callback = callback;
+}
 
+void _PCALL palTriggerEvent(const PalEvent* event)
+{
+    if (!event) {
+        palSetError(PAL_NULL_POINTER);
+        return;
+    }
+
+    PalDispatch dispatchType;
+    dispatchType = s_EventQueue.dispatchs[event->type];
+    if (dispatchType == PAL_DISPATCH_CALLBACK) {
+        if (s_EventQueue.callback) {
+            s_EventQueue.callback(event);
+        } 
+    }
 }
 
 void _PCALL palPushEvent(PalEvent event)
 {
-    PalEventDispatchType dispatchType = s_EventQueue.dispatchTypes[event.type];
-    if (dispatchType == PAL_EVENT_DISPATCH_CALLBACK) {
-        // check if we have a valid callback
-        if (s_EventQueue.callback) {
-            s_EventQueue.callback(&event);
-        }
-        return;
-    }
+    PalDispatch dispatchType;
+    dispatchType = s_EventQueue.dispatchs[event.type];
 
-    if (dispatchType == PAL_EVENT_DISPATCH_POLL) { 
+    if (dispatchType == PAL_DISPATCH_POLL) { 
         // check if the event is a repeating event. eg. window pos, window size
         // and search the event queue for duplicates
         if (isEventRepeat(event.type)) {
@@ -51,7 +60,7 @@ void _PCALL palPushEvent(PalEvent event)
                 if (e->type == event.type) {
                     // event found. Copy the new event into the existing one
                     *e = event;
-                    break;
+                    return;
                 }
             }
         }
@@ -78,7 +87,8 @@ bool _PCALL palPollEvent(PalEvent* event)
 bool isEventRepeat(PalEventType type)
 {
     switch (type) {
-        // TODO:
+        case PAL_EVENT_WINDOW_RESIZE:
+        return PAL_TRUE;
     }
     return PAL_FALSE;
 }
