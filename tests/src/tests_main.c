@@ -41,6 +41,7 @@ int main(int argc, char** argv)
     registerTest("Core Test", coreTest);
     registerTest("Display Test", displayTest);
     registerTest("Window Test", windowTest);
+    registerTest("Events Test", eventsTest);
 
     runTests();
     return 0;

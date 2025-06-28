@@ -6,6 +6,7 @@
 
 typedef enum PalEventType
 {
+    //PAL_EVENT_NONE,
     PAL_EVENT_QUIT,
     PAL_EVENT_WINDOW_RESIZE,
     PAL_EVENT_WINDOW_MOVE,
