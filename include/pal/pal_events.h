@@ -2,7 +2,7 @@
 #ifndef _PAL_EVENTS_H
  #define _PAL_EVENTS_H
 
-#include "pal_video.h"
+#include "pal_core.h"
 
 typedef enum PalEventType
 {
@@ -34,6 +34,10 @@ typedef struct PalEvent
 } PalEvent;
 
 typedef void (*PalEventCallback)(const PalEvent* event);
+
+_PAPI bool _PCALL palInitEvent(const PalAllocator* allocator);
+_PAPI void _PCALL palShutdownEvent();
+_PAPI bool _PCALL palIsEventInit();
 
 _PAPI bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch);
 _PAPI PalDispatch _PCALL palGetDispatch(PalEventType type);

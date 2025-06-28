@@ -1,10 +1,9 @@
 
 #include "pal_pch.h"
-#include "pal_internal.h"
+#include "pal_shared.h"
+#include "pal/pal_core.h"
 
-Uint64 hash(Uint32 key, Uint64 count);
-
-void _palFormatArgs(const char* fmt, va_list argsList, char* buffer)
+void palFormatArgs(const char* fmt, va_list argsList, char* buffer)
 {
     va_list listCopy;
 #ifdef _MSC_VER
@@ -20,15 +19,15 @@ void _palFormatArgs(const char* fmt, va_list argsList, char* buffer)
     buffer[len] = 0;
 }
 
-void _palFormat(char* buffer, const char* fmt, ...)
+void palFormat(char* buffer, const char* fmt, ...)
 {
     va_list argPtr;
     va_start(argPtr, fmt);
-    _palFormatArgs(fmt, argPtr, buffer);
+    palFormatArgs(fmt, argPtr, buffer);
     va_end(argPtr);
 }
 
-PalHashMap _palCreateHashMap(PalAllocator* allocator, Uint64 count)
+PalHashMap palCreateHashMap(PalAllocator* allocator, Uint64 count)
 {
     PalHashMap map;
     map.allocator = allocator;
@@ -41,7 +40,7 @@ PalHashMap _palCreateHashMap(PalAllocator* allocator, Uint64 count)
     return map;
 }
 
-void _palDestroyHashMap(PalHashMap* map)
+void palDestroyHashMap(PalHashMap* map)
 {
     for (Uint64 i = 0; i < map->count; ++i) {
         PalHashEntry* entry = map->data[i];
@@ -57,9 +56,14 @@ void _palDestroyHashMap(PalHashMap* map)
     map->allocator = PAL_NULL;
 }
 
-bool _palHashMapInsert(PalHashMap* map, Uint32 key, void* value)
+Uint64 palHashUint32(Uint32 key, Uint64 count)
 {
-    Uint64 index = hash(key, map->count);
+    return (key * 2654435761u) % count;
+}
+
+bool palHashMapInsert(PalHashMap* map, Uint32 key, void* value)
+{
+    Uint64 index = palHashUint32(key, map->count);
     PalHashEntry* head = map->data[index];
 
     for (PalHashEntry* e = head; e; e = e->next) {
@@ -81,9 +85,9 @@ bool _palHashMapInsert(PalHashMap* map, Uint32 key, void* value)
     return PAL_TRUE;
 }
 
-void* _palHashMapGet(PalHashMap* map, Uint32 key)
+void* palHashMapGet(PalHashMap* map, Uint32 key)
 {
-    Uint64 index = hash(key, map->count);
+    Uint64 index = palHashUint32(key, map->count);
     for (PalHashEntry* e = map->data[index]; e; e = e->next) {
         if (e->key == key) {
             return e->value;
@@ -92,9 +96,9 @@ void* _palHashMapGet(PalHashMap* map, Uint32 key)
     return PAL_NULL;
 }
 
-bool _palHashMapPop(PalHashMap* map, Uint32 key)
+bool palHashMapPop(PalHashMap* map, Uint32 key)
 {
-    Uint64 index = hash(key, map->count);
+    Uint64 index = palHashUint32(key, map->count);
     PalHashEntry** ptr = &map->data[index];
 
     while (*ptr) {
@@ -109,8 +113,27 @@ bool _palHashMapPop(PalHashMap* map, Uint32 key)
     return PAL_FALSE;
 }
 
-Uint64 hash(Uint32 key, Uint64 count) 
+bool palSetAllocator(PalAllocator* dest, const PalAllocator* src)
 {
-    // Knuth's multiplicative hash
-    return (key * 2654435761u) % count;  
+    if (src) {
+        if (!src->alignedAlloc || 
+            !src->alignedAlloc ||
+            !src->alloc        || 
+            !src->free) 
+        {
+            palSetError(PAL_INVALID_ALLOCATOR);
+            return PAL_FALSE;
+        }
+
+        dest->alloc = src->alloc;
+        dest->alignedAlloc = src->alignedAlloc;
+        dest->free = src->free;
+        dest->alignedFree = src->alignedFree;
+
+    } else {
+        dest->alloc = palAllocate;
+        dest->alignedAlloc = palAlignAllocate;
+        dest->free = palAlignFree;
+        dest->alignedFree = palAlignFree;
+    }
 }

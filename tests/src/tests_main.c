@@ -1,36 +1,44 @@
 
 #include "tests.h"
 
-void onLog(PalLogLevel level, const char* msg)
+#define MAX_TESTS 16 // will change
+
+struct TestEntry
 {
-    palLogInfo(msg);
+    const char* name;
+    TestFn testFn;
+};
+
+struct Tests
+{
+    int count;
+    struct TestEntry tests[MAX_TESTS];
+};
+
+// tests array
+static struct TestEntry s_Tests[MAX_TESTS] = {};
+static void* s_TestData = PAL_NULL;
+static int s_Count = 0;
+
+void registerTest(const char* pName, TestFn pTestFn)
+{
+    struct TestEntry entry;
+    entry.name = pName;
+    entry.testFn = pTestFn;
+
+    s_Tests[s_Count++] = entry;
 }
 
-bool systemTest(void* data)
+void runTests()
 {
-    PalError error = PAL_ERROR_NONE;
-    PalAllocator allocator;
-    palZeroMemory(&allocator, sizeof(PalAllocator));
-    Uint32 flags = PAL_INIT_EVERYTHING;
-
-    if (palInit(PAL_NULL, flags)) {
-        PalVersion version = palGetVersion();
-        palLogInfo("PAL Version (%i.%i.%i)", version.major, version.minor, version.patch);
-        palLogInfo(palGetPlatformString());
-
-        palShutdown();
-        return PAL_TRUE;
+    for (int i = 0; i < s_Count; i++) {
+        s_Tests[i].testFn();
     }
-
-    error = palGetError();
-    palLogError(palFormatError(error));
-    return PAL_FALSE;
 }
 
 int main(int argc, char** argv)
 {
-    //registerTest("System Test", systemTest);
-    registerTest("Video Test", videoTest);
+    registerTest("Core Test", coreTest);
 
     runTests();
     return 0;

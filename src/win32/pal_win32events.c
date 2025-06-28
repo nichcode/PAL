@@ -1,15 +1,52 @@
 
 #include "pal_pch.h"
-#include "pal_win32platform.h"
-#include "pal/pal_events.h"
+#include "pal_win32.h"
+#include "pal_events_c.h"
 
-void _palPlatformPollEvents()
+bool palCreateHiddenWindow()
+{
+    HINSTANCE instance = GetModuleHandleW(PAL_NULL);
+    s_Event.hiddenWindow = CreateWindowExW(
+        0,
+        WIN32_CLASS,
+        L"PalEventWindow",
+        WS_OVERLAPPEDWINDOW, 
+        0,
+        0,
+        1,
+        1,
+        PAL_NULL, 
+        PAL_NULL, 
+        instance,
+        PAL_NULL
+    );
+
+    if (!s_Event.hiddenWindow) {
+        return PAL_FALSE;
+    }
+    return PAL_TRUE;
+}
+
+void palDestroyHiddenWindow()
+{
+    DestroyWindow((HWND)s_Event.hiddenWindow);
+}
+
+bool _PCALL palPollEvent(PalEvent* event)
 {
     MSG msg;
     while (PeekMessageA(&msg, PAL_NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }
+
+    if (!event || s_Event.head == s_Event.tail) {
+        // no events registered with PAL_EVENT_DISPATCH_POLL
+        return PAL_FALSE;
+    }
+
+    *event = s_Event.queue[s_Event.head++ & PAL_MAX_EVENTS];
+    return PAL_TRUE;
 }
 
 LRESULT CALLBACK palProcWin32(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

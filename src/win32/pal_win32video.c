@@ -1,8 +1,221 @@
 
 #include "pal_pch.h"
-#include "pal_win32platform.h"
-#include "pal/pal_video.h"
+#include "pal_win32.h"
+#include "pal_video_c.h"
 
+static int s_RegCount = 0;
+
+bool palRegisterWindowClass()
+{
+    if (!s_RegCount) {
+        s_Win32.hInstance = GetModuleHandleW(PAL_NULL);
+        WNDCLASSEXW wc = {};
+        wc.cbClsExtra = 0;
+        wc.cbSize = sizeof(WNDCLASSEXW);
+        wc.cbWndExtra = 0;
+        wc.hbrBackground = NULL;
+        wc.hCursor = LoadCursorW(s_Win32.hInstance, IDC_ARROW);
+        wc.hIcon = LoadIconW(s_Win32.hInstance, IDI_APPLICATION);
+        wc.hIconSm = LoadIconW(s_Win32.hInstance, IDI_APPLICATION);
+        wc.hInstance = s_Win32.hInstance;
+        wc.lpfnWndProc = palProcWin32;
+        wc.lpszClassName = WIN32_CLASS;
+        wc.lpszMenuName = NULL;
+        wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+
+        ATOM success = RegisterClassExW(&wc);
+        if (!success) {
+            return PAL_FALSE;
+        }
+        
+        s_RegCount++;
+        return PAL_TRUE;
+    }
+}
+
+void palUnregisterWindowClass()
+{
+    s_RegCount--;
+    if (s_RegCount <= 0) {
+        UnregisterClassW(WIN32_CLASS, s_Win32.hInstance);
+    }
+}
+
+bool palLoadLibraries()
+{
+    // shcore.dll
+    s_Win32.shcore = LoadLibraryA("shcore.dll");
+    if (!s_Win32.shcore) {
+        palSetError(PAL_PLATFORM_ERROR);
+        return PAL_FALSE;
+    }
+
+    // ntdll.dll
+    s_Win32.ntdll = GetModuleHandleA("ntdll.dll");
+
+    // load function pointers
+    s_Win32.getDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
+        s_Win32.shcore, 
+        "GetDpiForMonitor"
+    );
+
+    s_Win32.setProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
+        s_Win32.shcore, 
+        "SetProcessDpiAwareness"
+    );
+
+    s_Video.displayCount = 0;
+    EnumDisplayMonitors(PAL_NULL, PAL_NULL, palMonitorProcWin32, 0);
+    return PAL_TRUE;
+}
+
+void palUnloadLibraries()
+{
+    for (int i = 0; i < s_Video.displayCount; i++) {
+        PalDisplay* display = &s_Video.displays[i];
+        s_Video.allocator.free(display->name);
+        s_Video.allocator.free(display->modes);
+    }
+}
+
+bool palCompareDisplayMode(const PalDisplayMode* a, const PalDisplayMode* b)
+{
+    int same = a->alphaBits == b->alphaBits &&
+           a->redBits == b->redBits         &&
+           a->greenBits == b->greenBits     &&
+           a->blueBits == b->blueBits       &&
+           a->alphaBits == b->alphaBits     &&
+           a->width == b->width             &&
+           a->height == b->height           &&
+           a->refreshRate == b->refreshRate;
+
+    if (same) {
+        return PAL_TRUE;
+    }
+    return PAL_FALSE;
+}
+
+void palAddDisplayMode(const PalDisplayMode* mode)
+{
+    PalDisplay* display = &s_Video.displays[s_Video.displayCount];
+    for (int i = 0; i < display->modeCount; i++) {
+        if (palCompareDisplayMode(&display->modes[i], mode) == PAL_TRUE) {
+            return;
+        }
+    }
+
+    display->modes[display->modeCount] = *mode;
+    display->modeCount++;
+}
+
+void palGetColorBits(PalDisplayMode* mode, int bpp)
+{
+    switch (bpp) {
+        case 16: {
+            mode->redBits = 5;
+            mode->greenBits = 6;
+            mode->blueBits = 5;
+            mode->alphaBits = 0;
+            return;
+        }
+
+        case 24: {
+            mode->redBits = mode->greenBits = 8;
+            mode->blueBits = 8;
+            mode->alphaBits = 0;
+            return;
+        }
+
+        case 32: {
+            mode->redBits = mode->greenBits = 8;
+            mode->blueBits = mode->alphaBits = 8;
+            return;
+        }
+    }
+    mode->redBits = mode->greenBits = 0;
+    mode->blueBits = mode->alphaBits = 0;
+
+}
+
+void palGetDisplayDPI(PalDisplay* display)
+{
+    UINT dpiX, dpiY;
+    if (s_Win32.setProcessAwareness) {
+        s_Win32.setProcessAwareness(WIN32_DPI_AWARE);
+    }
+
+    if (s_Win32.getDpiForMonitor) {
+        s_Win32.getDpiForMonitor(
+            (HMONITOR)display->handle,
+            WIN32_DPI,
+            &dpiX,
+            &dpiY
+        );
+
+        display->dpiScaleX = dpiX / 96.0f;
+        display->dpiScaleY = dpiY / 96.0f;
+
+    } else {
+        display->dpiScaleX = 1.0f;
+        display->dpiScaleY = 1.0f;
+    }
+}
+
+BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
+{
+    if (s_Video.displayCount >= PAL_MAX_DISPLAYS) { 
+        return PAL_FALSE; 
+    }
+
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        return TRUE; 
+    }
+
+    PalDisplay* display = &s_Video.displays[s_Video.displayCount];
+    display->index = s_Video.displayCount;
+    display->handle = (void*)monitor;
+
+    // size and pos
+    display->x = mi.rcMonitor.left;
+    display->y = mi.rcMonitor.top;
+    display->width = mi.rcMonitor.right - mi.rcMonitor.left;
+    display->height = mi.rcMonitor.bottom - mi.rcWork.top;
+
+    display->name = s_Video.allocator.alloc(PAL_DISPLAY_NAME_SIZE);
+    display->modes = s_Video.allocator.alloc(
+        PAL_MAX_DISPLAY_MODES * sizeof(PalDisplayMode)
+    );
+
+    // change into a UTF8 string
+    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, display->name, 32, NULL, NULL);
+    palGetDisplayDPI(display);
+
+    // get modes
+    DEVMODEW dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    int i = 0;
+    for (i = 0; EnumDisplaySettingsW(mi.szDevice, i, &dm); i++) {
+        if (i >= PAL_MAX_DISPLAY_MODES) {
+            break;
+        }
+
+        PalDisplayMode mode;
+        mode.refreshRate = dm.dmDisplayFrequency;
+        mode.width = dm.dmPelsWidth;
+        mode.height = dm.dmPelsHeight;
+        palGetColorBits(&mode, dm.dmBitsPerPel);
+        palAddDisplayMode(&mode);
+    }
+
+    display->modeCount--;
+    display->refreshRate = display->modes[display->modeCount].refreshRate;
+    s_Video.displayCount++;
+    return PAL_TRUE;
+}
+
+// Window
 PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
 {
     if (!s_Video.initialized) {
@@ -54,18 +267,18 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
         y = display->y + 100;
     }
 
-    window = s_Video.allocator->alloc(sizeof(PalWindow));
+    window = s_Video.allocator.alloc(sizeof(PalWindow));
     palZeroMemory(window, sizeof(PalWindow));
     if (!window) {
         palSetError(PAL_OUT_OF_MEMORY);
         return PAL_NULL;
     }
 
-    wchar_t buffer[_PAL_MSG_SIZE] = {};
+    wchar_t buffer[PAL_MSG_SIZE] = {};
     palToWstrUTF8Win32(buffer, desc->title);
     window->hidden = PAL_TRUE;
 
-    window->handle = CreateWindowExW(
+    HWND handle = CreateWindowExW(
         exStyle,
         WIN32_CLASS,
         buffer,
@@ -76,13 +289,13 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
         height,
         PAL_NULL, 
         PAL_NULL, 
-        s_HInstance,
+        s_Win32.hInstance,
         PAL_NULL
     );
 
-    if (!window->handle) {
+    if (!handle) {
         palSetError(PAL_PLATFORM_ERROR);
-        s_Video.allocator->free(window);
+        s_Video.allocator.free(window);
         return PAL_NULL;
     }
 
@@ -102,9 +315,10 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
         window->hidden = PAL_FALSE;
     }
 
-    ShowWindow(window->handle, showFlag);
-    SetPropW(window->handle, WIN32_PROP, window);
+    ShowWindow(handle, showFlag);
+    SetPropW(handle, WIN32_PROP, window);
 
+    window->handle = handle;
     window->title = desc->title;
     window->style = style;
     window->exStyle = exStyle;
@@ -117,11 +331,7 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
     // set windowID
     window->id = s_Video.nextWindowID;
     s_Video.nextWindowID++;
-    _palHashMapInsert(
-        &s_Video.windowHashMap,
-        window->id,
-        window
-    );
+    palHashMapInsert(&s_Video.map, window->id, window);
 
     // fullscreen
     if (desc->flags & PAL_WINDOW_FULLSCREEN) {
@@ -138,10 +348,9 @@ void _PCALL palDestroyWindow(PalWindow* window)
         return;
     }
 
-    DestroyWindow(window->handle);
-    _palHashMapPop(&s_Video.windowHashMap, window->id);
-    s_Video.allocator->free(window);
-    window = PAL_NULL;
+    DestroyWindow((HWND)window->handle);
+    palHashMapPop(&s_Video.map, window->id);
+    s_Video.allocator.free(window);
 }
 
 void _PCALL palShowWindow(PalWindow* window)
@@ -152,12 +361,11 @@ void _PCALL palShowWindow(PalWindow* window)
     }
 
     if (window->maximized) {
-        ShowWindow(window->handle, SW_SHOWMAXIMIZED);
+        ShowWindow((HWND)window->handle, SW_SHOWMAXIMIZED);
 
     } else {
-        ShowWindow(window->handle, SW_SHOW);
+        ShowWindow((HWND)window->handle, SW_SHOW);
     }
-
     window->hidden = PAL_FALSE;
 }
 
@@ -168,7 +376,7 @@ void _PCALL palHideWindow(PalWindow* window)
         return;
     }
 
-    ShowWindow(window->handle, SW_HIDE);
+    ShowWindow((HWND)window->handle, SW_HIDE);
     window->hidden = PAL_TRUE;
 }
 
@@ -194,7 +402,7 @@ void _PCALL palCenterWindow(PalWindow* window, int displayIndex)
     int y = display->y + (display->height - window->height) / 2;
 
     SetWindowPos(
-        window->handle, NULL, x, y, 
+        (HWND)window->handle, NULL, x, y, 
         0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE
     );
 
@@ -216,7 +424,7 @@ void _PCALL palMaximizeWindow(PalWindow* window)
 
     int displayIndex = palGetWindowDisplayIndex(window);
     palSetWindowFullScreen(window, displayIndex, PAL_FALSE);
-    ShowWindow(window->handle, SW_SHOWMAXIMIZED);
+    ShowWindow((HWND)window->handle, SW_SHOWMAXIMIZED);
     window->maximized = PAL_TRUE;
     window->minimized = PAL_FALSE;
 }
@@ -234,7 +442,7 @@ void _PCALL palMinimizeWindow(PalWindow* window)
 
     int displayIndex = palGetWindowDisplayIndex(window);
     palSetWindowFullScreen(window, displayIndex, PAL_FALSE);
-    ShowWindow(window->handle, SW_MINIMIZE);
+    ShowWindow((HWND)window->handle, SW_MINIMIZE);
     window->minimized = PAL_TRUE;
     window->maximized = PAL_FALSE;
 }
@@ -263,19 +471,19 @@ void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool ena
     if (enable) {
         // toggle fullscreen
         SetWindowLongPtrW(
-            window->handle,
+            (HWND)window->handle,
             GWL_STYLE,
             WS_POPUP | WS_VISIBLE
         );
 
         SetWindowLongPtrW(
-            window->handle,
+            (HWND)window->handle,
             GWL_EXSTYLE,
             WS_EX_APPWINDOW
         );
 
         SetWindowPos(
-            window->handle,
+            (HWND)window->handle,
             HWND_TOP,
             display->x,
             display->y,
@@ -289,13 +497,13 @@ void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool ena
     } else {
         // set everything back to normal
         SetWindowLongPtrW(
-            window->handle,
+            (HWND)window->handle,
             GWL_STYLE,
             window->style
         );
 
         SetWindowLongPtrW(
-            window->handle,
+            (HWND)window->handle,
             GWL_EXSTYLE,
             window->exStyle
         );
@@ -306,7 +514,7 @@ void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool ena
         }
 
         SetWindowPos(
-            window->handle,
+            (HWND)window->handle,
             HWND_TOP,
             window->x,
             window->y,
@@ -319,66 +527,6 @@ void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool ena
     }
 }
 
-const char* _PCALL palGetWindowTitle(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_NULL;
-    }
-
-    return window->title;
-}
-
-void _PCALL palGetWindowPos(PalWindow* window, int* x, int* y)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
-    if (x) {
-        *x = window->x;
-    }
-
-    if (y) {
-        *y = window->y;
-    }
-}
-
-void _PCALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
-    if (width) {
-        *width = window->width;
-    }
-
-    if (height) {
-        *height = window->height;
-    }
-}
-
-PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return 0;
-    }
-    return window->flags;
-}
-
-PalWindowID _PCALL palGetWindowID(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return 0;
-    }
-    return window->id;
-}
-
 int _PCALL palGetWindowDisplayIndex(PalWindow* window)
 {
     if (!window) {
@@ -386,7 +534,7 @@ int _PCALL palGetWindowDisplayIndex(PalWindow* window)
         return -1;
     }
 
-    HMONITOR monitor = MonitorFromWindow(window->handle, MONITOR_DEFAULTTONEAREST);
+    HMONITOR monitor = MonitorFromWindow((HWND)window->handle, MONITOR_DEFAULTTONEAREST);
     if (!monitor) { 
         return -1; 
     }
@@ -410,9 +558,9 @@ void _PCALL palSetWindowTitle(PalWindow* window, const char* title)
         return;
     }
 
-    wchar_t buffer[_PAL_MSG_SIZE] = {};
+    wchar_t buffer[PAL_MSG_SIZE] = {};
     palToWstrUTF8Win32(buffer, title);
-    SetWindowTextW(window->handle, buffer);
+    SetWindowTextW((HWND)window->handle, buffer);
     window->title = title;
 }
 
@@ -434,7 +582,7 @@ void _PCALL palSetWindowPos(PalWindow* window, int x, int y)
     window->y = y;
 
     SetWindowPos(
-        window->handle, NULL, rect.left, rect.top, 
+        (HWND)window->handle, NULL, rect.left, rect.top, 
         0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE
     );
 }
@@ -458,44 +606,8 @@ void _PCALL palSetWindowSize(PalWindow* window, Uint32 width, Uint32 height)
     window->width = width;
     window->height = height;
 
-    SetWindowPos(window->handle, HWND_TOP, 0, 0, 
+    SetWindowPos((HWND)window->handle, HWND_TOP, 0, 0, 
         rect.right - rect.left, rect.bottom - rect.top,
         SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER
     );
-}
-
-bool _PCALL palIsWindowMaximized(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
-    return window->maximized;
-}
-
-bool _PCALL palIsWindowMinimized(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
-    return window->minimized;
-}
-
-bool _PCALL palIsWindowHidden(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
-    return window->hidden;
-}
-
-bool _PCALL palIsWindowFullScreen(PalWindow* window)
-{
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
-    return window->fullscreen;
 }

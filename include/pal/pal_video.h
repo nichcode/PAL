@@ -2,10 +2,9 @@
 #ifndef _PAL_VIDEO_H
  #define _PAL_VIDEO_H
 
-#include "pal_memory.h"
+#include "pal_core.h"
 
-#define PAL_MAX_MODES 64
-
+typedef unsigned int PalWindowID;
 typedef struct PalWindow PalWindow;
 
 typedef enum PalWindowFlags
@@ -35,8 +34,8 @@ typedef struct PalDisplayMode
 
 typedef struct PalDisplay
 {
-    PalDisplayMode modes[PAL_MAX_MODES];
-    char name[32];
+    PalDisplayMode* modes;
+    char* name;
     void* handle;
     int index;
     int modeCount;
@@ -63,9 +62,9 @@ typedef struct PalWindowDesc
 
 } PalWindowDesc;
 
-_PAPI bool _PCALL palInitVideoSystem(const PalAllocator* allocator);
-_PAPI void _PCALL palShutdownVideoSystem();
-_PAPI bool _PCALL palIsVideoSystemInitialized();
+_PAPI bool _PCALL palInitVideo(const PalAllocator* allocator);
+_PAPI void _PCALL palShutdownVideo();
+_PAPI bool _PCALL palIsVideoInit();
 
 _PAPI int _PCALL palGetDisplayCount();
 _PAPI const PalDisplay* _PCALL palGetPrimaryDisplay();

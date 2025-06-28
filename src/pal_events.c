@@ -1,9 +1,44 @@
 
 #include "pal_pch.h"
-#include "pal/pal_events.h"
-#include "pal_internal.h"
+#include "pal_events_c.h"
 
-bool isEventRepeat(PalEventType type);
+bool _PCALL palInitEvent(const PalAllocator* allocator)
+{
+    bool success = PAL_FALSE;
+    palSetAllocator(&s_Event.allocator, allocator);
+    if (!success) {
+        return PAL_FALSE;
+    }
+    
+    success = palRegisterWindowClass();
+    if (!success) {
+        palSetError(PAL_PLATFORM_ERROR);
+        return PAL_FALSE;
+    }
+
+    success = palCreateHiddenWindow();
+    if (!success) {
+        palSetError(PAL_PLATFORM_ERROR);
+        return PAL_FALSE;
+    }
+    
+    return success;
+}
+
+void _PCALL palShutdownEvent()
+{
+    if (s_Event.initialized) {
+        palDestroyHiddenWindow();
+    }
+
+    palUnregisterWindowClass();
+    s_Event.initialized = PAL_FALSE;
+}
+
+bool _PCALL palIsEventInit()
+{
+    return s_Event.initialized;
+}
 
 bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch)
 {
@@ -12,7 +47,7 @@ bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch)
         return PAL_FALSE;
     }
 
-    s_EventQueue.dispatchs[type] = dispatch;
+    s_Event.dispatchs[type] = dispatch;
     return PAL_TRUE;
 }
 
@@ -22,12 +57,12 @@ PalDispatch _PCALL palGetDispatch(PalEventType type)
         palSetError(PAL_INVALID_EVENT);
         return PAL_FALSE;
     }
-    return s_EventQueue.dispatchs[type];
+    return s_Event.dispatchs[type];
 }
 
 void _PCALL palSetEventCallback(PalEventCallback callback)
 {
-    s_EventQueue.callback = callback;
+    s_Event.callback = callback;
 }
 
 void _PCALL palTriggerEvent(const PalEvent* event)
@@ -38,10 +73,10 @@ void _PCALL palTriggerEvent(const PalEvent* event)
     }
 
     PalDispatch dispatchType;
-    dispatchType = s_EventQueue.dispatchs[event->type];
+    dispatchType = s_Event.dispatchs[event->type];
     if (dispatchType == PAL_DISPATCH_CALLBACK) {
-        if (s_EventQueue.callback) {
-            s_EventQueue.callback(event);
+        if (s_Event.callback) {
+            s_Event.callback(event);
         } 
     }
 }
@@ -49,14 +84,12 @@ void _PCALL palTriggerEvent(const PalEvent* event)
 void _PCALL palPushEvent(PalEvent event)
 {
     PalDispatch dispatchType;
-    dispatchType = s_EventQueue.dispatchs[event.type];
+    dispatchType = s_Event.dispatchs[event.type];
 
     if (dispatchType == PAL_DISPATCH_POLL) { 
-        // check if the event is a repeating event. eg. window pos, window size
-        // and search the event queue for duplicates
-        if (isEventRepeat(event.type)) {
-            for (int i = s_EventQueue.tail - 1; i >= s_EventQueue.head; --i) {
-                PalEvent* e = &s_EventQueue.data[i & _PAL_MAX_EVENTS];
+        if (palIsEventCoalesce(event.type)) {
+            for (int i = s_Event.tail - 1; i >= s_Event.head; --i) {
+                PalEvent* e = &s_Event.queue[i & PAL_MAX_EVENTS];
                 if (e->type == event.type) {
                     // event found. Copy the new event into the existing one
                     *e = event;
@@ -66,25 +99,11 @@ void _PCALL palPushEvent(PalEvent event)
         }
 
         // event is not a repeating event
-        s_EventQueue.data[s_EventQueue.tail++ & _PAL_MAX_EVENTS] = event;
+        s_Event.queue[s_Event.tail++ & PAL_MAX_EVENTS] = event;
     }
 }
 
-bool _PCALL palPollEvent(PalEvent* event)
-{
-    // poll platform events for both the callbacks and queue
-    _palPlatformPollEvents();
-
-    if (!event || s_EventQueue.head == s_EventQueue.tail) {
-        // no events registered with PAL_EVENT_DISPATCH_POLL
-        return PAL_FALSE;
-    }
-
-    *event = s_EventQueue.data[s_EventQueue.head++ & _PAL_MAX_EVENTS];
-    return PAL_TRUE;
-}
-
-bool isEventRepeat(PalEventType type)
+bool palIsEventCoalesce(PalEventType type)
 {
     switch (type) {
         case PAL_EVENT_WINDOW_RESIZE:

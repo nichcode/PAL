@@ -1,60 +1,47 @@
 
 #include "pal_pch.h"
-#include "pal/pal_video.h"
-#include "pal_internal.h"
+#include "pal_video_c.h"
 
-bool _PCALL palInitVideoSystem(const PalAllocator* allocator)
+bool _PCALL palInitVideo(const PalAllocator* allocator)
 {
-    // check if we have not initialized PAL core system
-    if (!s_PAL.initialized) {
-        if (!palInit(allocator, PAL_INIT_NONE)) {
-            palSetError(PAL_NOT_INITIALIZED);
-            return PAL_FALSE;
-        }
-
-        s_Video.allocator = s_PAL.allocator;
-
-    } else {
-        // core system initialized already
-        if (allocator) {
-            if (!allocator->alignedAlloc || 
-                !allocator->alignedAlloc ||
-                !allocator->alloc        || 
-                !allocator->free) 
-            {
-                palSetError(PAL_INVALID_ALLOCATOR);
-                return PAL_FALSE;
-            }
-        }
-
-        s_Video.allocator = s_PAL.allocator;
+    bool success = PAL_FALSE;
+    success = palSetAllocator(&s_Video.allocator, allocator);
+    if (!success) {
+        return PAL_FALSE;
     }
 
-    if (!_palPlatformVideoInit()) {
+    success = palRegisterWindowClass();
+    if (!success) {
+        palSetError(PAL_PLATFORM_ERROR);
+        return PAL_FALSE;
+    }
+
+    success = palLoadLibraries();
+    if (!success) {
+        palSetError(PAL_PLATFORM_ERROR);
         return PAL_FALSE;
     }
 
     // init window hashmap
-    s_Video.windowHashMap = _palCreateHashMap(s_Video.allocator, _PAL_MAX_WINDOWS);
+    s_Video.map = palCreateHashMap(&s_Video.allocator, PAL_MAX_WINDOWS);
     s_Video.nextWindowID = 1;
 
     s_Video.initialized = PAL_TRUE;
-    return PAL_TRUE;
+    return success;
 }
 
-void _PCALL palShutdownVideoSystem()
+void _PCALL palShutdownVideo()
 {
-    _palPlatformVideoShutdown();
-    _palDestroyHashMap(&s_Video.windowHashMap);
+    if (s_Video.initialized) {
+        palUnloadLibraries();
+        palDestroyHashMap(&s_Video.map);
+    }
+
+    palUnregisterWindowClass();
     s_Video.initialized = PAL_FALSE;
-    
-    // shutdown core system 
-    if (s_PAL.initialized) {
-        palShutdown();
-    }  
 }
 
-bool _PCALL palIsVideoSystemInitialized()
+bool _PCALL palIsVideoInit()
 {
     return s_Video.initialized;
 }
@@ -78,4 +65,100 @@ const PalDisplay* _PCALL palGetDisplay(int index)
         return &s_Video.displays[index];
     }
     return PAL_NULL;
+}
+
+const char* _PCALL palGetWindowTitle(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return PAL_NULL;
+    }
+
+    return window->title;
+}
+
+void _PCALL palGetWindowPos(PalWindow* window, int* x, int* y)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return;
+    }
+
+    if (x) {
+        *x = window->x;
+    }
+
+    if (y) {
+        *y = window->y;
+    }
+}
+
+void _PCALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return;
+    }
+
+    if (width) {
+        *width = window->width;
+    }
+
+    if (height) {
+        *height = window->height;
+    }
+}
+
+PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return 0;
+    }
+    return window->flags;
+}
+
+PalWindowID _PCALL palGetWindowID(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return 0;
+    }
+    return window->id;
+}
+
+bool _PCALL palIsWindowMaximized(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return PAL_FALSE;
+    }
+    return window->maximized;
+}
+
+bool _PCALL palIsWindowMinimized(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return PAL_FALSE;
+    }
+    return window->minimized;
+}
+
+bool _PCALL palIsWindowHidden(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return PAL_FALSE;
+    }
+    return window->hidden;
+}
+
+bool _PCALL palIsWindowFullScreen(PalWindow* window)
+{
+    if (!window) {
+        palSetError(PAL_NULL_POINTER);
+        return PAL_FALSE;
+    }
+    return window->fullscreen;
 }

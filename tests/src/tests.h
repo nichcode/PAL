@@ -4,16 +4,13 @@
 
 #include "pal/pal.h"
 
-typedef bool (*TestFn)(void* data);
+typedef bool (*TestFn)();
 
 void registerTest(const char* name, TestFn testFn);
 void runTests();
 
-void setTestsData(void* data);
-void* getTestsData();
-
 // Tests
-bool systemTest(void* data);
-bool videoTest(void* data);
+bool coreTest();
+//bool videoTest(void* data);
 
 #endif // _TESTS_H
