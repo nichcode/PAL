@@ -4,8 +4,12 @@
 
 bool _PCALL palInitEvent(const PalAllocator* allocator)
 {
+    if (s_Event.initialized) {
+        return PAL_TRUE;
+    }
+
     bool success = PAL_FALSE;
-    palSetAllocator(&s_Event.allocator, allocator);
+    success = palSetAllocator(&s_Event.allocator, allocator);
     if (!success) {
         return PAL_FALSE;
     }
@@ -21,7 +25,8 @@ bool _PCALL palInitEvent(const PalAllocator* allocator)
         palSetError(PAL_PLATFORM_ERROR);
         return PAL_FALSE;
     }
-    
+
+    s_Event.initialized = PAL_TRUE;
     return success;
 }
 
@@ -42,6 +47,7 @@ bool _PCALL palIsEventInit()
 
 bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch)
 {
+    PAL_CHECK_EVENTS(PAL_FALSE);
     if (type < 0 || type > PAL_EVENT_MAX) {
         palSetError(PAL_INVALID_EVENT);
         return PAL_FALSE;
@@ -53,6 +59,7 @@ bool _PCALL palRegisterEvent(PalEventType type, PalDispatch dispatch)
 
 PalDispatch _PCALL palGetDispatch(PalEventType type)
 {
+    PAL_CHECK_EVENTS(PAL_DISPATCH_NONE);
     if (type < 0 || type > PAL_EVENT_MAX) {
         palSetError(PAL_INVALID_EVENT);
         return PAL_FALSE;
@@ -62,11 +69,13 @@ PalDispatch _PCALL palGetDispatch(PalEventType type)
 
 void _PCALL palSetEventCallback(PalEventCallback callback)
 {
+    PAL_CHECK_EVENTS();
     s_Event.callback = callback;
 }
 
 void _PCALL palTriggerEvent(const PalEvent* event)
 {
+    PAL_CHECK_EVENTS();
     if (!event) {
         palSetError(PAL_NULL_POINTER);
         return;
@@ -83,6 +92,7 @@ void _PCALL palTriggerEvent(const PalEvent* event)
 
 void _PCALL palPushEvent(PalEvent event)
 {
+    PAL_CHECK_EVENTS();
     PalDispatch dispatchType;
     dispatchType = s_Event.dispatchs[event.type];
 

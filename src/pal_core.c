@@ -55,7 +55,7 @@ const char* _PCALL palFormatError(PalError error)
         return "Video system is not intialized";
 
         case PAL_EVENT_NOT_INITIALIZED:
-        return "Events system is not intialized";
+        return "Event system is not intialized";
 
         case PAL_OUT_OF_MEMORY: 
         return "Windows has run out of memory";

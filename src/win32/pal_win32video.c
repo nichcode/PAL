@@ -7,7 +7,7 @@ static int s_RegCount = 0;
 
 bool palRegisterWindowClass()
 {
-    if (!s_RegCount) {
+    if (s_RegCount == 0) {
         s_Win32.hInstance = GetModuleHandleW(PAL_NULL);
         WNDCLASSEXW wc = {};
         wc.cbClsExtra = 0;
@@ -27,16 +27,15 @@ bool palRegisterWindowClass()
         if (!success) {
             return PAL_FALSE;
         }
-        
-        s_RegCount++;
-        return PAL_TRUE;
     }
+    s_RegCount++;
+    return PAL_TRUE;
 }
 
 void palUnregisterWindowClass()
 {
     s_RegCount--;
-    if (s_RegCount <= 0) {
+    if (s_RegCount == 0) {
         UnregisterClassW(WIN32_CLASS, s_Win32.hInstance);
     }
 }
@@ -218,10 +217,7 @@ BOOL CALLBACK palMonitorProcWin32(HMONITOR monitor, HDC, LPRECT, LPARAM)
 // Window
 PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
 {
-    if (!s_Video.initialized) {
-        palSetError(PAL_VIDEO_NOT_INITIALIZED);
-        return PAL_NULL;
-    }
+    PAL_CHECK_VIDEO(PAL_NULL);
 
     PalWindow* window = PAL_NULL;
     if (!desc) {
@@ -343,11 +339,7 @@ PalWindow* _PCALL palCreateWindow(PalWindowDesc* desc)
 
 void _PCALL palDestroyWindow(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     DestroyWindow((HWND)window->handle);
     palHashMapPop(&s_Video.map, window->id);
     s_Video.allocator.free(window);
@@ -355,11 +347,7 @@ void _PCALL palDestroyWindow(PalWindow* window)
 
 void _PCALL palShowWindow(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (window->maximized) {
         ShowWindow((HWND)window->handle, SW_SHOWMAXIMIZED);
 
@@ -371,22 +359,14 @@ void _PCALL palShowWindow(PalWindow* window)
 
 void _PCALL palHideWindow(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     ShowWindow((HWND)window->handle, SW_HIDE);
     window->hidden = PAL_TRUE;
 }
 
 void _PCALL palCenterWindow(PalWindow* window, int displayIndex)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (window->fullscreen || window->maximized) {
         return;
     }
@@ -413,11 +393,7 @@ void _PCALL palCenterWindow(PalWindow* window, int displayIndex)
 
 void _PCALL palMaximizeWindow(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (window->maximized) {
         return;
     }
@@ -431,11 +407,7 @@ void _PCALL palMaximizeWindow(PalWindow* window)
 
 void _PCALL palMinimizeWindow(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (window->minimized) {
         return;
     }
@@ -449,11 +421,7 @@ void _PCALL palMinimizeWindow(PalWindow* window)
 
 void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool enable)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (window->fullscreen && enable) {
         return;
     }
@@ -529,11 +497,7 @@ void _PCALL palSetWindowFullScreen(PalWindow* window, int displayIndex, bool ena
 
 int _PCALL palGetWindowDisplayIndex(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return -1;
-    }
-
+    PAL_CHECK_WINDOW(window, -1);
     HMONITOR monitor = MonitorFromWindow((HWND)window->handle, MONITOR_DEFAULTTONEAREST);
     if (!monitor) { 
         return -1; 
@@ -553,11 +517,7 @@ int _PCALL palGetWindowDisplayIndex(PalWindow* window)
 
 void _PCALL palSetWindowTitle(PalWindow* window, const char* title)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     wchar_t buffer[PAL_MSG_SIZE] = {};
     palToWstrUTF8Win32(buffer, title);
     SetWindowTextW((HWND)window->handle, buffer);
@@ -566,11 +526,7 @@ void _PCALL palSetWindowTitle(PalWindow* window, const char* title)
 
 void _PCALL palSetWindowPos(PalWindow* window, int x, int y)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (!x && !y) {
         palSetError(PAL_INVALID_ARG);
         return;
@@ -589,11 +545,7 @@ void _PCALL palSetWindowPos(PalWindow* window, int x, int y)
 
 void _PCALL palSetWindowSize(PalWindow* window, Uint32 width, Uint32 height)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (!width && !height) {
         palSetError(PAL_INVALID_ARG);
         return;

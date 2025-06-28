@@ -23,4 +23,11 @@ bool palIsEventCoalesce(PalEventType type);
 bool palCreateHiddenWindow();
 void palDestroyHiddenWindow();
 
+#define PAL_CHECK_EVENTS(ret) {                     \
+    if (!s_Event.initialized) {                     \
+        palSetError(PAL_EVENT_NOT_INITIALIZED);     \
+        return ret;                                 \
+    }                                               \
+} 
+
 #endif // _PAL_EVENT_C_H

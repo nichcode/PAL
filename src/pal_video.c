@@ -4,6 +4,10 @@
 
 bool _PCALL palInitVideo(const PalAllocator* allocator)
 {
+    if (s_Video.initialized) {
+        return PAL_TRUE;
+    }
+
     bool success = PAL_FALSE;
     success = palSetAllocator(&s_Video.allocator, allocator);
     if (!success) {
@@ -48,6 +52,7 @@ bool _PCALL palIsVideoInit()
 
 int _PCALL palGetDisplayCount()
 {
+    PAL_CHECK_VIDEO(0);
     return s_Video.displayCount;
 }
 
@@ -69,21 +74,13 @@ const PalDisplay* _PCALL palGetDisplay(int index)
 
 const char* _PCALL palGetWindowTitle(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_NULL;
-    }
-
+    PAL_CHECK_WINDOW(window, PAL_NULL);
     return window->title;
 }
 
 void _PCALL palGetWindowPos(PalWindow* window, int* x, int* y)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (x) {
         *x = window->x;
     }
@@ -95,11 +92,7 @@ void _PCALL palGetWindowPos(PalWindow* window, int* x, int* y)
 
 void _PCALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return;
-    }
-
+    PAL_CHECK_WINDOW(window, );
     if (width) {
         *width = window->width;
     }
@@ -111,54 +104,36 @@ void _PCALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height)
 
 PalWindowFlags _PCALL palGetWindowFlags(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return 0;
-    }
+    PAL_CHECK_WINDOW(window, 0);
     return window->flags;
 }
 
 PalWindowID _PCALL palGetWindowID(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return 0;
-    }
+    PAL_CHECK_WINDOW(window, 0);
     return window->id;
 }
 
 bool _PCALL palIsWindowMaximized(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
+    PAL_CHECK_WINDOW(window, PAL_FALSE);
     return window->maximized;
 }
 
 bool _PCALL palIsWindowMinimized(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
+    PAL_CHECK_WINDOW(window, PAL_FALSE);
     return window->minimized;
 }
 
 bool _PCALL palIsWindowHidden(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
+    PAL_CHECK_WINDOW(window, PAL_FALSE);
     return window->hidden;
 }
 
 bool _PCALL palIsWindowFullScreen(PalWindow* window)
 {
-    if (!window) {
-        palSetError(PAL_NULL_POINTER);
-        return PAL_FALSE;
-    }
+    PAL_CHECK_WINDOW(window, PAL_FALSE);
     return window->fullscreen;
 }

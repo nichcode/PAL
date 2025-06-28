@@ -26,5 +26,18 @@ void palAddDisplayMode(const PalDisplayMode* mode);
 void palGetColorBits(PalDisplayMode* mode, int bpp);
 void palGetDisplayDPI(PalDisplay* display);
 
+#define PAL_CHECK_VIDEO(ret) {                      \
+    if (!s_Video.initialized) {                     \
+        palSetError(PAL_VIDEO_NOT_INITIALIZED);     \
+        return ret;                                 \
+    }                                               \
+} 
+
+#define PAL_CHECK_WINDOW(window, ret) {             \
+    if (!window) {                                  \
+        palSetError(PAL_NULL_POINTER);              \
+        return ret;                                 \
+    }                                               \
+} 
 
 #endif // _PAL_VIDEO_C_H

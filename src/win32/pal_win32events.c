@@ -34,6 +34,7 @@ void palDestroyHiddenWindow()
 
 bool _PCALL palPollEvent(PalEvent* event)
 {
+    PAL_CHECK_EVENTS(PAL_FALSE);
     MSG msg;
     while (PeekMessageA(&msg, PAL_NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
