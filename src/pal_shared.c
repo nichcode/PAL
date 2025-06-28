@@ -133,7 +133,9 @@ bool palSetAllocator(PalAllocator* dest, const PalAllocator* src)
     } else {
         dest->alloc = palAllocate;
         dest->alignedAlloc = palAlignAllocate;
-        dest->free = palAlignFree;
+        dest->free = palFree;
         dest->alignedFree = palAlignFree;
+
+        return PAL_TRUE;
     }
 }

@@ -39,6 +39,7 @@ void runTests()
 int main(int argc, char** argv)
 {
     registerTest("Core Test", coreTest);
+    registerTest("Display Test", displayTest);
 
     runTests();
     return 0;

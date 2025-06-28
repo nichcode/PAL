@@ -11,6 +11,7 @@ void runTests();
 
 // Tests
 bool coreTest();
+bool displayTest();
 //bool videoTest(void* data);
 
 #endif // _TESTS_H
