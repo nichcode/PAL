@@ -1,42 +1,17 @@
 
 #include "pal_pch.h"
-#include "pal_shared.h"
-#include "pal/pal_core.h"
-
-void palFormatArgs(const char* fmt, va_list argsList, char* buffer)
-{
-    va_list listCopy;
-#ifdef _MSC_VER
-        listCopy = argsList;
-#elif defined(P_PLATFORM_APPLE)
-        listCopy = argsList;
-#else
-        __builtin_va_copy(listCopy, argsList);
-#endif // _MSC_VER
-
-    int len = vsnprintf(0, 0, fmt, listCopy);
-    vsnprintf(buffer, len + 1, fmt, listCopy);
-    buffer[len] = 0;
-}
-
-void palFormat(char* buffer, const char* fmt, ...)
-{
-    va_list argPtr;
-    va_start(argPtr, fmt);
-    palFormatArgs(fmt, argPtr, buffer);
-    va_end(argPtr);
-}
+#include "pal_hashmap.h"
 
 PalHashMap palCreateHashMap(PalAllocator* allocator, Uint64 count)
 {
     PalHashMap map;
-    map.allocator = allocator;
     map.count = count;
-    map.data = (PalHashEntry**)map.allocator->alloc(
+    map.data = (PalHashEntry**)allocator->alloc(
         count * sizeof(PalHashEntry*)
     );
 
     palZeroMemory(map.data, count * sizeof(PalHashEntry*));
+    map.allocator = allocator;
     return map;
 }
 
@@ -53,7 +28,6 @@ void palDestroyHashMap(PalHashMap* map)
     map->allocator->free(map->data);
     map->data = PAL_NULL;
     map->count = 0;
-    map->allocator = PAL_NULL;
 }
 
 Uint64 palHashUint32(Uint32 key, Uint64 count)
@@ -111,31 +85,4 @@ bool palHashMapPop(PalHashMap* map, Uint32 key)
         ptr = &(*ptr)->next;
     }
     return PAL_FALSE;
-}
-
-bool palSetAllocator(PalAllocator* dest, const PalAllocator* src)
-{
-    if (src) {
-        if (!src->alignedAlloc || 
-            !src->alignedAlloc ||
-            !src->alloc        || 
-            !src->free) 
-        {
-            palSetError(PAL_INVALID_ALLOCATOR);
-            return PAL_FALSE;
-        }
-
-        dest->alloc = src->alloc;
-        dest->alignedAlloc = src->alignedAlloc;
-        dest->free = src->free;
-        dest->alignedFree = src->alignedFree;
-
-    } else {
-        dest->alloc = palAllocate;
-        dest->alignedAlloc = palAlignAllocate;
-        dest->free = palFree;
-        dest->alignedFree = palAlignFree;
-
-        return PAL_TRUE;
-    }
 }

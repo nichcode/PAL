@@ -62,7 +62,6 @@ bool displayTest()
         );
 
     }
-    
     palShutdownVideo();
     return PAL_TRUE;
 }

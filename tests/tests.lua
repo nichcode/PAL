@@ -6,6 +6,6 @@ project "tests"
     targetdir(target_dir)
     objdir(obj_dir) 
 
-    files { "src/tests_build.c" }
+    files { "src/**.c" }
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

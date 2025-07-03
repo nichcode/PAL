@@ -10,9 +10,7 @@ void registerTest(const char* name, TestFn testFn);
 void runTests();
 
 // Tests
-bool coreTest();
 bool displayTest();
 bool windowTest();
-bool eventsTest();
 
 #endif // _TESTS_H

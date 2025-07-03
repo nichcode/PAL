@@ -31,36 +31,12 @@ bool windowTest()
         return PAL_FALSE;
     }
 
-    if (!palInitEvent(PAL_NULL)) {
-        error = palGetError();
-        palLogError(palFormatError(error));
-        return PAL_FALSE;
-    }
-
-    // event system must be initialized
-    if (!palRegisterEvent(PAL_EVENT_QUIT, PAL_DISPATCH_POLL)) {
-        error = palGetError();
-        palLogError(palFormatError(error));
-        return PAL_FALSE;
-    }
-
     bool running = PAL_TRUE;
     while (running) {
-        PalEvent event;
-        while (palPollEvent(&event)) {
-            switch (event.type) {
-                case PAL_EVENT_QUIT: {
-                    running = PAL_FALSE;
-                }
-            }
-        }
-
-        // update
+        palUpdateWindows();
     }
 
     palDestroyWindow(window);
-
     palShutdownVideo();
-    palShutdownEvent();
     return PAL_TRUE;
 }
