@@ -14,12 +14,13 @@ project "pal"
 
     pchheader "src/pal_pch.h"
     files {
-        "src/core/pal_version.c",
+        "src/core/pal_version.c"
     }
 
     filter {"system:windows", "configurations:*"}
         files {
             "src/core/pal_win32memory.c",
+            "src/core/pal_win32tls.c"
         }
 
     filter {}
