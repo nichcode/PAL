@@ -9,6 +9,15 @@ typedef int PalTLSID;
 typedef void* (*PalAllocFn)(void*, Uint64);
 typedef void (*PalFreeFn)(void*, void*);
 
+typedef enum PalError
+{
+    PAL_ERROR_NONE,
+    PAL_ERROR_NULL_POINTER,
+    PAL_ERROR_INVALID_ARGUMENT,
+    PAL_ERROR_INVALID_ALLOCATOR,
+    PAL_ERROR_ALLOCATION_FAILED,
+} PalError;
+
 typedef struct PalVersion
 {
     int major;
@@ -34,5 +43,8 @@ _PAPI PalTLSID _PCALL palCreateTLS();
 _PAPI void _PCALL palDestroyTLS(PalTLSID id);
 _PAPI void* _PCALL palGetTLS(PalTLSID id);
 _PAPI void _PCALL palSetTLS(PalTLSID id, void* data);
+
+_PAPI void _PCALL palSetError(PalError error);
+_PAPI PalError _PCALL palGetError();
 
 #endif // _PAL_CORE_H

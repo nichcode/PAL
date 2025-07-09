@@ -14,7 +14,8 @@ project "pal"
 
     pchheader "src/pal_pch.h"
     files {
-        "src/core/pal_version.c"
+        "src/core/pal_version.c",
+        "src/core/pal_error.c"
     }
 
     filter {"system:windows", "configurations:*"}
