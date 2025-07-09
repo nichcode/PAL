@@ -8,6 +8,7 @@ static PalTLSID s_LogTLSID = 0;
 typedef struct LogTLSData
 {
     char buffer[1024];
+    bool isLogging;
 
 } LogTLSData;
 
@@ -40,6 +41,81 @@ void palLogConsoleV(PalLogLevel level, const char* fmt)
     }
     palFormat(data->buffer, "%s%s\n", s_levelStrings[level], fmt);
     consoleWrite(level, data->buffer);
+}
+
+void palLogV(PalLogger* logger, PalLogLevel level, const char* fmt)
+{
+    LogTLSData* data = palGetTLS(s_LogTLSID);
+    if (!data) {
+        data = palAlloc(PAL_NULL, sizeof(LogTLSData));
+        memset(data, 0, sizeof(LogTLSData));
+    }
+
+    // prevent recursive calls
+    if (data->isLogging) {
+        return; 
+    }
+
+    if (logger && logger->callback) {
+        data->isLogging = PAL_TRUE;
+        palSetTLS(s_LogTLSID, data);
+
+        logger->callback(logger->userData, level, fmt);
+        data->isLogging = PAL_FALSE;
+        palSetTLS(s_LogTLSID, data);
+    } else {
+        palLogConsoleV(level, fmt);
+    }
+}
+
+void _PCALL palLog(PalLogger* logger, PalLogLevel level, const char* fmt, ...)
+{
+    char buffer[1024] = {};
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    palFormatArgs(fmt, argPtr, buffer);
+    va_end(argPtr);
+    palLogV(logger, level, buffer);
+}
+
+void _PCALL palLogTrace(PalLogger* logger, const char* fmt, ...)
+{
+    char buffer[1024] = {};
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    palFormatArgs(fmt, argPtr, buffer);
+    va_end(argPtr);
+    palLogV(logger, PAL_LOG_LEVEL_TRACE, buffer);
+}
+
+void _PCALL palLogInfo(PalLogger* logger, const char* fmt, ...)
+{
+    char buffer[1024] = {};
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    palFormatArgs(fmt, argPtr, buffer);
+    va_end(argPtr);
+    palLogV(logger, PAL_LOG_LEVEL_INFO, buffer);
+}
+
+void _PCALL palLogWarn(PalLogger* logger, const char* fmt, ...)
+{
+    char buffer[1024] = {};
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    palFormatArgs(fmt, argPtr, buffer);
+    va_end(argPtr);
+    palLogV(logger, PAL_LOG_LEVEL_WARN, buffer);
+}
+
+void _PCALL palLogError(PalLogger* logger, const char* fmt, ...)
+{
+    char buffer[1024] = {};
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    palFormatArgs(fmt, argPtr, buffer);
+    va_end(argPtr);
+    palLogV(logger, PAL_LOG_LEVEL_ERROR, buffer);
 }
 
 void _PCALL palLogConsole(PalLogLevel level, const char* fmt, ...)

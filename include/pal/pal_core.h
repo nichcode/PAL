@@ -11,6 +11,9 @@ typedef int PalTLSID;
 typedef void* (*PalAllocFn)(void*, Uint64);
 typedef void (*PalFreeFn)(void*, void*);
 
+typedef enum PalLogLevel PalLogLevel;
+typedef void (*PalLogCallbackFn)(void*, PalLogLevel, const char*);
+
 typedef enum PalError
 {
     PAL_ERROR_NONE,
@@ -43,6 +46,12 @@ typedef struct PalAllocator
 
 } PalAllocator;
 
+typedef struct PalLogger
+{
+    PalLogCallbackFn callback;
+    void* userData;
+} PalLogger;
+
 _PAPI void _PCALL palGetVerion(PalVersion* version);
 _PAPI Uint32 _PCALL palGetVerionInt();
 
@@ -59,6 +68,12 @@ _PAPI PalError _PCALL palGetError();
 
 _PAPI void _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer);
 _PAPI void _PCALL palFormat(char* buffer, const char* fmt, ...);
+
+_PAPI void _PCALL palLog(PalLogger* logger, PalLogLevel level, const char* fmt, ...);
+_PAPI void _PCALL palLogTrace(PalLogger* logger, const char* fmt, ...);
+_PAPI void _PCALL palLogInfo(PalLogger* logger, const char* fmt, ...);
+_PAPI void _PCALL palLogWarn(PalLogger* logger, const char* fmt, ...);
+_PAPI void _PCALL palLogError(PalLogger* logger, const char* fmt, ...);
 
 _PAPI void _PCALL palLogConsole(PalLogLevel level, const char* fmt, ...);
 _PAPI void _PCALL palLogConsoleTrace(const char* fmt, ...);
