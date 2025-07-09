@@ -4,6 +4,8 @@
 
 #include "pal_defines.h"
 
+#include <stdarg.h>
+
 typedef int PalTLSID;
 
 typedef void* (*PalAllocFn)(void*, Uint64);
@@ -17,6 +19,14 @@ typedef enum PalError
     PAL_ERROR_INVALID_ALLOCATOR,
     PAL_ERROR_ALLOCATION_FAILED,
 } PalError;
+
+typedef enum PalLogLevel
+{
+    PAL_LOG_LEVEL_TRACE,
+    PAL_LOG_LEVEL_INFO,
+    PAL_LOG_LEVEL_WARN,
+    PAL_LOG_LEVEL_ERROR
+} PalLogLevel;
 
 typedef struct PalVersion
 {
@@ -46,5 +56,14 @@ _PAPI void _PCALL palSetTLS(PalTLSID id, void* data);
 
 _PAPI void _PCALL palSetError(PalError error);
 _PAPI PalError _PCALL palGetError();
+
+_PAPI void _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer);
+_PAPI void _PCALL palFormat(char* buffer, const char* fmt, ...);
+
+_PAPI void _PCALL palLogConsole(PalLogLevel level, const char* fmt, ...);
+_PAPI void _PCALL palLogConsoleTrace(const char* fmt, ...);
+_PAPI void _PCALL palLogConsoleInfo(const char* fmt, ...);
+_PAPI void _PCALL palLogConsoleWarn(const char* fmt, ...);
+_PAPI void _PCALL palLogConsoleError(const char* fmt, ...);
 
 #endif // _PAL_CORE_H
