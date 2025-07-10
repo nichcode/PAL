@@ -27,3 +27,28 @@ PalError _PCALL palGetError()
     }
     return data->error;
 }
+
+const char* _PCALL palErrorToString(PalError error)
+{
+    switch (error)
+    {
+    case PAL_ERROR_NONE:
+    return "No Error";
+
+    case PAL_ERROR_NULL_POINTER:
+    return "Null pointer";
+
+    case PAL_ERROR_INVALID_ARGUMENT:
+    return "Invalid argument";
+
+    case PAL_ERROR_INVALID_ALLOCATOR:
+    return "Invalid Allocator";
+
+    case PAL_ERROR_ALLOCATION_FAILED:
+    return "Allocation failed";
+
+    case PAL_ERROR_INVALID_DISPLAY:
+    return "Invalid display";
+
+    }
+}

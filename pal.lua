@@ -28,6 +28,20 @@ project "pal"
 
     filter {}
 
+    -- video system
+    if (PAL_BUILD_VIDEO) then
+        files { 
+            "src/video/pal_video.c",
+        }
+
+        filter {"system:windows", "configurations:*"}
+            files {
+                "src/video/pal_win32display.c"
+            }
+
+        filter {}
+    end
+
     includedirs {
         "include",
         "src"

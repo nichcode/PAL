@@ -48,6 +48,8 @@ typedef _Bool bool;
 
 #define PAL_VERSION_1_0 PAL_MAKE_VERSION(1, 0, 0)
 
+#define PAL_DEFINE_HANDLE(name) typedef struct name name;
+
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 typedef unsigned int Uint32;

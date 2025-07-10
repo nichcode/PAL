@@ -21,6 +21,8 @@ typedef enum PalError
     PAL_ERROR_INVALID_ARGUMENT,
     PAL_ERROR_INVALID_ALLOCATOR,
     PAL_ERROR_ALLOCATION_FAILED,
+
+    PAL_ERROR_INVALID_DISPLAY
 } PalError;
 
 typedef enum PalLogLevel
@@ -65,6 +67,7 @@ _PAPI void _PCALL palSetTLS(PalTLSID id, void* data);
 
 _PAPI void _PCALL palSetError(PalError error);
 _PAPI PalError _PCALL palGetError();
+_PAPI const char* _PCALL palErrorToString(PalError error);
 
 _PAPI void _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer);
 _PAPI void _PCALL palFormat(char* buffer, const char* fmt, ...);
