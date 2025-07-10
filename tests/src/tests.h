@@ -40,5 +40,6 @@ static inline void runTests()
 // Tests
 PalResult loggingTest();
 PalResult displayTest();
+PalResult displayModeTest();
 
 #endif // _TESTS_H

@@ -27,6 +27,12 @@ void OnLogger3(void* userData, PalLogLevel level, const char* msg)
 
 PalResult loggingTest()
 {
+    palLogConsoleInfo("");
+    palLogConsoleInfo("===========================================");
+    palLogConsoleInfo("Logger Test");
+    palLogConsoleInfo("===========================================");
+    palLogConsoleInfo("");
+
     PalLogger loggers[3];
     loggers[0].callback = OnLogger1;
     loggers[0].userData = PAL_NULL;

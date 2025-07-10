@@ -10,6 +10,7 @@ int main(int argc, char** argv)
 
     registerTest("Logging Test", loggingTest);
     registerTest("Display Test", displayTest);
+    registerTest("Display Mode Test", displayModeTest);
 
     runTests();
     return 0;
