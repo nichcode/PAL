@@ -11,7 +11,7 @@ PalResult displayModeTest()
     palLogConsoleInfo("");
 
     PalResult result;
-    PalVideo* video;
+    PalVideo* video = PAL_NULL;
     PalDisplayInfo displayInfo;
     Uint32 displayCount = 0;
     Uint32 displayModeCount = 0;

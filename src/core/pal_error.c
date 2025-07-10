@@ -50,5 +50,8 @@ const char* _PCALL palErrorToString(PalError error)
     case PAL_ERROR_INVALID_DISPLAY:
     return "Invalid display";
 
+    case PAL_ERROR_VIDEO_DEVICE_NOT_FOUND:
+    return "Video device not found";
+
     }
 }

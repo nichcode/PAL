@@ -10,11 +10,12 @@ typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
 
 typedef struct DisplayData
 {
-    Uint32 count, maxCount;
     PalDisplay** displays;
+    Uint32 count, maxCount;
+    bool primaryOnly;
 } DisplayData;
 
-BOOL CALLBACK palMonitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam)
+BOOL CALLBACK MonitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam)
 {
     DisplayData* data = (DisplayData*)lParam;
     if (!data) {
@@ -153,7 +154,7 @@ PalResult _PCALL palEnumerateDisplays(
     EnumDisplayMonitors(
         PAL_NULL, 
         PAL_NULL, 
-        palMonitorProc, 
+        MonitorProc, 
         (LPARAM)&data
     );
 

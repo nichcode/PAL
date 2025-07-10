@@ -40,3 +40,19 @@ void _PCALL palDestroyVideo(PalVideo* video)
     PalAllocator* allocator = video->allocator;
     palFree(video->allocator, video);
 }
+
+PalResult _PCALL palUpdateWindows(PalVideo* video)
+{
+    if (!video) {
+        palSetError(PAL_ERROR_NULL_POINTER);
+        return PAL_RESULT_FAIL;
+    }
+
+#ifdef _WIN32
+    MSG msg;
+    while (PeekMessageA(&msg, PAL_NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+#endif // _WIN32
+}

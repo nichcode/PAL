@@ -36,7 +36,8 @@ project "pal"
 
         filter {"system:windows", "configurations:*"}
             files {
-                "src/video/pal_win32display.c"
+                "src/video/pal_win32display.c",
+                "src/video/pal_win32window.c"
             }
 
         filter {}

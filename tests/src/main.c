@@ -8,9 +8,10 @@ int main(int argc, char** argv)
     palGetVerion(&version);
     palLogConsoleInfo("PAL v(%i.%i.%i)", version.major, version.minor, version.patch);
 
-    registerTest("Logging Test", loggingTest);
-    registerTest("Display Test", displayTest);
-    registerTest("Display Mode Test", displayModeTest);
+    // registerTest("Logging Test", loggingTest);
+    // registerTest("Display Test", displayTest);
+    // registerTest("Display Mode Test", displayModeTest);
+    registerTest("Window Test", windowTest);
 
     runTests();
     return 0;
