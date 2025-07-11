@@ -11,19 +11,23 @@ PalResult displayModeTest()
     palLogConsoleInfo("");
 
     PalResult result;
-    PalVideo* video = PAL_NULL;
+    PalVideoInstance* videoInstance = PAL_NULL;
     PalDisplayInfo displayInfo;
     Uint32 displayCount = 0;
     Uint32 displayModeCount = 0;
 
-    result = palCreateVideo(PAL_NULL, &video);
+    PalVideoInstanceDesc desc;
+    desc.allocator = PAL_NULL;
+    desc.eventinstance = PAL_NULL;
+
+    result = palCreateVideoInstance(&desc, &videoInstance);
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
         return -1;
     }
 
-    result = palEnumerateDisplays(video, &displayCount, PAL_NULL);
+    result = palEnumerateDisplays(videoInstance, &displayCount, PAL_NULL);
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
@@ -32,7 +36,7 @@ PalResult displayModeTest()
     palLogConsoleInfo("Display Count: %i", displayCount);
 
     PalDisplay* displays[displayCount];
-    result = palEnumerateDisplays(video, &displayCount, displays);
+    result = palEnumerateDisplays(videoInstance, &displayCount, displays);
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
@@ -82,6 +86,6 @@ PalResult displayModeTest()
         }
     }
 
-    palDestroyVideo(video);
+    palDestroyVideoInstance(videoInstance);
     return result;
 }

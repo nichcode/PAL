@@ -128,11 +128,11 @@ void addMode(PalDisplayMode* modes, const PalDisplayMode* mode, int* count)
 }
 
 PalResult _PCALL palEnumerateDisplays(
-    PalVideo* video, 
+    PalVideoInstance* videoInstance, 
     Uint32* count, 
     PalDisplay** displays)
 {
-    if (!video) {
+    if (!videoInstance) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return PAL_RESULT_FAIL;
     }
@@ -237,9 +237,11 @@ PalResult _PCALL palEnumerateDisplayModes(
     return PAL_RESULT_OK;
 }
 
-PalResult _PCALL palGetPrimaryDisplay(PalVideo* video, PalDisplay** outDisplay)
+PalResult _PCALL palGetPrimaryDisplay(
+    PalVideoInstance* videoInstance, 
+    PalDisplay** outDisplay)
 {
-    if (!video || !outDisplay) {
+    if (!videoInstance || !outDisplay) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return PAL_RESULT_FAIL;
     }

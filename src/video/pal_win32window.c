@@ -9,7 +9,7 @@ typedef struct PalWindow
 {
     HWND handle;
     const char* title;
-    PalVideo* video;
+    PalVideoInstance* videoInstance;
 
     Uint32 style;
     Uint32 exStyle;
@@ -72,11 +72,11 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 PalResult _PCALL palCreateWindow(
-    PalVideo* video, 
+    PalVideoInstance* videoInstance, 
     PalWindowDesc* desc, 
     PalWindow** outWindow)
 {
-    if (!video || !outWindow || !desc) {
+    if (!videoInstance || !outWindow || !desc) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return PAL_RESULT_FAIL;
     }
@@ -159,7 +159,7 @@ PalResult _PCALL palCreateWindow(
         return PAL_RESULT_FAIL;
     }
 
-    window = palAlloc(video->allocator, sizeof(PalWindow));
+    window = palAlloc(videoInstance->allocator, sizeof(PalWindow));
     if (!window) {
         palSetError(PAL_ERROR_ALLOCATION_FAILED);
         return PAL_RESULT_FAIL;
@@ -186,7 +186,7 @@ PalResult _PCALL palCreateWindow(
     ShowWindow(handle, showFlag);
     SetPropW(handle, WIN32_PROP, window);
 
-    window->video = video;
+    window->videoInstance = videoInstance;
     window->handle = handle;
     window->title = desc->title;
     window->style = style;
@@ -202,13 +202,13 @@ PalResult _PCALL palCreateWindow(
 
 void _PCALL palDestroyWindow(PalWindow* window)
 {
-    if (!window || (window && !window->video)) {
+    if (!window || (window && !window->videoInstance)) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return;
     }
 
-    PalVideo* video = window->video;
+    PalVideoInstance* videoInstance = window->videoInstance;
     DestroyWindow(window->handle);
-    palFree(video->allocator, window);
+    palFree(videoInstance->allocator, window);
     unRegisterWindowClass();
 }

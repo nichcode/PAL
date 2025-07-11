@@ -4,11 +4,10 @@
 
 #include "pal_core.h"
 
-PAL_DEFINE_HANDLE(PalVideo);
+PAL_DEFINE_HANDLE(PalVideoInstance);
+PAL_DEFINE_HANDLE(PalEventInstance);
 PAL_DEFINE_HANDLE(PalDisplay);
 PAL_DEFINE_HANDLE(PalWindow);
-
-#define PAL_UNDEFINED -1
 
 typedef enum PalWindowFlags
 {
@@ -57,12 +56,21 @@ typedef struct PalDisplayMode
 
 } PalDisplayMode;
 
-_PAPI PalResult _PCALL palCreateVideo(PalAllocator* allocator, PalVideo** outVideo);
-_PAPI void _PCALL palDestroyVideo(PalVideo* video);
-_PAPI PalResult _PCALL palUpdateWindows(PalVideo* video);
+typedef struct PalVideoInstanceDesc
+{
+    PalAllocator* allocator;
+    PalEventInstance* eventinstance;
+} PalVideoInstanceDesc;
+
+_PAPI PalResult _PCALL palCreateVideoInstance(
+    PalVideoInstanceDesc* desc, 
+    PalVideoInstance** outVideoInstance);
+
+_PAPI void _PCALL palDestroyVideoInstance(PalVideoInstance* videoInstance);
+_PAPI PalResult _PCALL palUpdateWindows(PalVideoInstance* videoInstance);
 
 _PAPI PalResult _PCALL palEnumerateDisplays(
-    PalVideo* video, 
+    PalVideoInstance* videoInstance, 
     Uint32* count, 
     PalDisplay** displays);
 
@@ -71,11 +79,14 @@ _PAPI PalResult _PCALL palEnumerateDisplayModes(
     Uint32* count, 
     PalDisplayMode* modes);
 
-_PAPI PalResult _PCALL palGetPrimaryDisplay(PalVideo* video, PalDisplay** outDisplay);
+_PAPI PalResult _PCALL palGetPrimaryDisplay(
+    PalVideoInstance* videoInstance, 
+    PalDisplay** outDisplay);
+
 _PAPI PalResult _PCALL palGetDisplayInfo(PalDisplay* display, PalDisplayInfo* info);
 
 _PAPI PalResult _PCALL palCreateWindow(
-    PalVideo* video, 
+    PalVideoInstance* videoInstance, 
     PalWindowDesc* desc, 
     PalWindow** outWindow);
 

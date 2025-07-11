@@ -58,8 +58,8 @@ typedef long long Int64;
 
 typedef enum PalResult
 {
-    PAL_RESULT_OK,
-    PAL_RESULT_FAIL
+    PAL_RESULT_FAIL,
+    PAL_RESULT_OK
 } PalResult;
 
 #endif // _PAL_DEFINES_H

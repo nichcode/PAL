@@ -2,48 +2,52 @@
 #include "pal_pch.h"
 #include "pal_video_internal.h"
 
-PalResult _PCALL palCreateVideo(PalAllocator* allocator, PalVideo** outVideo)
+PalResult _PCALL palCreateVideoInstance(
+    PalVideoInstanceDesc* desc, 
+    PalVideoInstance** outVideoInstance)
 {
-    PalVideo* video = PAL_NULL;
-    if (!outVideo) {
+    PalVideoInstance* videoInstance = PAL_NULL;
+    if (!outVideoInstance || !desc) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return PAL_RESULT_FAIL;
     }
 
-    if (allocator) {
-        if (!allocator->alloc && !allocator->free) {
+    if (desc->allocator) {
+        if (!desc->allocator->alloc && !desc->allocator->free) {
             palSetError(PAL_ERROR_INVALID_ALLOCATOR);
             return PAL_RESULT_FAIL;
         }
     }
 
-    video = palAlloc(allocator, sizeof(PalVideo));
-    if (!video) {
+    videoInstance = palAlloc(desc->allocator, sizeof(PalVideoInstance));
+    if (!videoInstance) {
         palSetError(PAL_ERROR_ALLOCATION_FAILED);
         return PAL_RESULT_FAIL;
     }
 
-    memset(video, 0, sizeof(PalVideo));
-    video->allocator = allocator;
+    memset(videoInstance, 0, sizeof(PalVideoInstance));
+    if (desc->allocator) {
+        videoInstance->eventInstance = desc->eventinstance;
+    }
 
-    *outVideo = video;
+    *outVideoInstance = videoInstance;
     return PAL_RESULT_OK;
 }
 
-void _PCALL palDestroyVideo(PalVideo* video)
+void _PCALL palDestroyVideoInstance(PalVideoInstance* videoInstance)
 {
-    if (!video) {
+    if (!videoInstance) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return;
     }
     
-    PalAllocator* allocator = video->allocator;
-    palFree(video->allocator, video);
+    PalAllocator* allocator = videoInstance->allocator;
+    palFree(allocator, videoInstance);
 }
 
-PalResult _PCALL palUpdateWindows(PalVideo* video)
+PalResult _PCALL palUpdateWindows(PalVideoInstance* videoInstance)
 {
-    if (!video) {
+    if (!videoInstance) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return PAL_RESULT_FAIL;
     }

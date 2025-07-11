@@ -43,6 +43,13 @@ project "pal"
         filter {}
     end
 
+    -- event system
+    if (PAL_BUILD_EVENT) then
+        files { 
+            "src/event/pal_event.c",
+        }
+    end
+
     includedirs {
         "include",
         "src"

@@ -4,10 +4,10 @@
 
 #include "pal/pal_video.h"
 
-typedef struct PalVideo
+typedef struct PalVideoInstance
 {
     PalAllocator* allocator;
-
-} PalVideo;
+    PalEventInstance* eventInstance;
+} PalVideoInstance;
 
 #endif // _PAL_VIDEO_INTERNAL_H

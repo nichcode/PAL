@@ -7,3 +7,6 @@ PAL_BUILD_STATIC = false
 
 -- build video module
 PAL_BUILD_VIDEO = true
+
+-- build event module
+PAL_BUILD_EVENT = true
