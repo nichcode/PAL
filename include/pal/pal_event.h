@@ -7,13 +7,14 @@
 PAL_DEFINE_HANDLE(PalEventInstance);
 PAL_DEFINE_HANDLE(PalEvent);
 
-typedef void (*PalEventCallback)(const PalEvent*);
+typedef void (*PalEventCallback)(PalEvent*);
 typedef void (*PalPushFn)(void*, PalEvent*);
 typedef PalResult (*PalPollFn)(void*, PalEvent*);
 
 typedef enum PalEventType
 {
     PAL_EVENT_QUIT,
+    PAL_EVENT_WINDOW_MOVE,
     PAL_EVENT_MAX
 } PalEventType;
 
@@ -28,7 +29,15 @@ typedef struct PalEvent
 {
     PalEventType type;
     Uint32 id;
+    Int64 data;
+    Int64 data2;
 } PalEvent;
+
+typedef struct PalEventPosInfo
+{
+    int x;
+    int y;
+} PalEventPosInfo;
 
 typedef struct PalEventQueue
 {
@@ -68,5 +77,60 @@ _PAPI PalResult _PCALL palPushEvent(
 _PAPI PalResult _PCALL palPollEvent(
     PalEventInstance* eventInstance, 
     PalEvent* event);
+
+static inline Int64 palPackUint32(
+    Uint32 low,
+    Uint32 high)
+{
+    return (Int64) (((Uint64)high << 32) | (Uint64)low);
+}
+
+static inline Int64 palPackInt32(
+    int low,
+    int high)
+{
+    return ((Int64) (Uint32)high << 32) | (Uint32)low;
+}
+
+static inline void palUnpackUint32(
+    Int64 data,
+    Uint32* outLow,
+    Uint32* outHigh)
+{
+    if (outLow) {
+        *outLow = (Uint32)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (Uint32)((Uint64)data >> 32);
+    }
+}
+
+static inline void palUnpackInt32(
+    Int64 data,
+    int* outLow,
+    int* outHigh)
+{
+    if (outLow) {
+        *outLow = (int)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (int)((Uint64)data >> 32);
+    }
+}
+
+static inline void palGetEventPosInfo(
+    PalEvent* event,
+    PalEventPosInfo* info)
+{
+    if (!event || !info) {
+        return;
+    }
+    int x, y;
+    palUnpackInt32(event->data, &x, &y);
+    info->x = x;
+    info->y = y;
+}
 
 #endif // _PAL_EVENTS_H

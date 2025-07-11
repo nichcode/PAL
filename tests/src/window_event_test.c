@@ -3,6 +3,17 @@
 #include "pal/pal_event.h"
 #include "pal/pal_video.h"
 
+#define REAL_TIME_POSITION 0
+
+void onEvent(PalEvent* event)
+{
+    if (event->type == PAL_EVENT_WINDOW_MOVE) {
+        PalEventPosInfo posInfo;
+        palGetEventPosInfo(event, &posInfo);
+        palLogConsoleInfo("Window Pos (%i, %i)", posInfo.x, posInfo.y);
+    }
+}
+
 PalResult windowEventTest()
 {
     palLogConsoleInfo("");
@@ -19,7 +30,7 @@ PalResult windowEventTest()
     // create an event instance
     PalEventInstanceDesc eventInstanceDesc;
     eventInstanceDesc.allocator = PAL_NULL;
-    eventInstanceDesc.callback = PAL_NULL; // for callback event mode
+    eventInstanceDesc.callback = onEvent;
     eventInstanceDesc.queue = PAL_NULL; // use internal event queue
 
     result = palCreateEventInstance(&eventInstanceDesc, &eventInstance);
@@ -59,6 +70,12 @@ PalResult windowEventTest()
     // register for window close event
     palEnableEvent(eventInstance, PAL_EVENT_QUIT, PAL_MODE_POLL);
 
+#if REAL_TIME_POSITION
+    palEnableEvent(eventInstance, PAL_EVENT_WINDOW_MOVE, PAL_MODE_CALLBACK);
+#else 
+    palEnableEvent(eventInstance, PAL_EVENT_WINDOW_MOVE, PAL_MODE_POLL);
+#endif // REAL_TIME_POSITION
+
     bool running = PAL_TRUE;
     while (running) {
         // update all windows to get events
@@ -73,6 +90,12 @@ PalResult windowEventTest()
                 if (event.id == id) {
                     running = PAL_FALSE;
                 }
+            }
+
+            if (event.type == PAL_EVENT_WINDOW_MOVE) {
+                PalEventPosInfo posInfo;
+                palGetEventPosInfo(&event, &posInfo);
+                palLogConsoleInfo("Window Pos (%i, %i)", posInfo.x, posInfo.y);
             }
         }
     }

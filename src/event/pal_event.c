@@ -5,6 +5,10 @@
 PalResult coalesce(
     PalEventType type)
 {
+    switch (type) {
+        case PAL_EVENT_WINDOW_MOVE:
+        return PAL_RESULT_OK;
+    }
     return PAL_RESULT_FAIL;
 }
 
@@ -14,7 +18,7 @@ void palDefaultPushFunction(
 {
     PalEventData* queue = (PalEventData*)data;
     // check for coalesce event
-    if (coalesce(event->type)) {
+    if (coalesce(event->type) == PAL_RESULT_OK) {
         for (int i = queue->tail - 1; i >= queue->head; --i) {
             PalEvent* e = &queue->data[i & PAL_MAX_EVENTS];
             if (e->type == event->type) {

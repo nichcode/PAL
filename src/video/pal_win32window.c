@@ -1,7 +1,8 @@
 
 #include "pal_pch.h"
 #include "pal_video_internal.h"
-#include "event/pal_event_internal.h"
+#include "pal/pal_event.h"
+//#include "event/pal_event_internal.h"
 
 #define WIN32_CLASS L"PALClass"
 #define WIN32_PROP L"PAL"
@@ -87,24 +88,44 @@ LRESULT CALLBACK windowProc(
     }
 
     PalVideoInstance* video = window->instance;
+    PalMode mode;
+    PalEvent event;
     switch (msg) {
         case WM_CLOSE: {
             if (video->eventInstance) {
                 PalEventInstance* eventInstance = video->eventInstance;
-                PalMode mode = eventInstance->modes[PAL_EVENT_QUIT];
+                palGetEventMode(eventInstance, PAL_EVENT_QUIT, &mode);
                 if (mode != PAL_MODE_NONE) {
-                    PalEvent event;
                     event.id = window->id;
                     event.type = PAL_EVENT_QUIT;
-                    eventInstance->queue->push(eventInstance->eventData, &event);
+                    palPushEvent(eventInstance, &event);
                 }
             }
             return 0;
             break;
         }
+
+        case WM_MOVE: {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            window->x = x;
+            window->y = y;
+
+            if (video->eventInstance) {
+                PalEventInstance* eventInstance = video->eventInstance;
+                palGetEventMode(eventInstance, PAL_EVENT_WINDOW_MOVE, &mode);
+                if (mode != PAL_MODE_NONE) {
+                    event.id = window->id;
+                    event.data = palPackInt32(x, y);
+                    event.type = PAL_EVENT_WINDOW_MOVE;
+                    palPushEvent(eventInstance, &event);
+                }
+            }
+
+            return 0;
+            break;
+        }
     }
-
-
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
