@@ -43,7 +43,9 @@ PalResult windowTest()
     }
 
     // we are selecting the primary display
-    primaryDisplay = displays[0];
+    // we can use palGetPrimaryDisplay to get it or use index 0 in the display array
+    palGetPrimaryDisplay(video, &primaryDisplay);
+    //primaryDisplay = displays[0];
 
     // window descriptor
     PalWindowDesc windowDesc;

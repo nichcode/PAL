@@ -237,6 +237,18 @@ PalResult _PCALL palEnumerateDisplayModes(
     return PAL_RESULT_OK;
 }
 
+PalResult _PCALL palGetPrimaryDisplay(PalVideo* video, PalDisplay** outDisplay)
+{
+    if (!video || !outDisplay) {
+        palSetError(PAL_ERROR_NULL_POINTER);
+        return PAL_RESULT_FAIL;
+    }
+
+    HMONITOR monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    *outDisplay = (PalDisplay*)monitor;
+    return PAL_RESULT_OK;
+}
+
 PalResult _PCALL palGetDisplayInfo(PalDisplay* display, PalDisplayInfo* info)
 {
     if (!display || !info) {

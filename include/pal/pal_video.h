@@ -71,6 +71,7 @@ _PAPI PalResult _PCALL palEnumerateDisplayModes(
     Uint32* count, 
     PalDisplayMode* modes);
 
+_PAPI PalResult _PCALL palGetPrimaryDisplay(PalVideo* video, PalDisplay** outDisplay);
 _PAPI PalResult _PCALL palGetDisplayInfo(PalDisplay* display, PalDisplayInfo* info);
 
 _PAPI PalResult _PCALL palCreateWindow(
