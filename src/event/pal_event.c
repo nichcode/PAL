@@ -7,6 +7,7 @@ PalResult coalesce(
 {
     switch (type) {
         case PAL_EVENT_WINDOW_MOVE:
+        case PAL_EVENT_WINDOW_RESIZE:
         return PAL_RESULT_OK;
     }
     return PAL_RESULT_FAIL;

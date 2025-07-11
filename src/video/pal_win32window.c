@@ -2,7 +2,6 @@
 #include "pal_pch.h"
 #include "pal_video_internal.h"
 #include "pal/pal_event.h"
-//#include "event/pal_event_internal.h"
 
 #define WIN32_CLASS L"PALClass"
 #define WIN32_PROP L"PAL"
@@ -122,6 +121,29 @@ LRESULT CALLBACK windowProc(
                 }
             }
 
+            return 0;
+            break;
+        }
+
+        case WM_SIZE: {
+            const Uint32 width = (Uint32)LOWORD(lParam);
+            const Uint32 height = (Uint32)HIWORD(lParam);
+
+            if (width != window->width || height != window->height) {
+                window->width = width;
+                window->height = height;
+
+                if (video->eventInstance) {
+                    PalEventInstance* eventInstance = video->eventInstance;
+                    palGetEventMode(eventInstance, PAL_EVENT_WINDOW_RESIZE, &mode);
+                    if (mode != PAL_MODE_NONE) {
+                        event.id = window->id;
+                        event.data = palPackUint32(width, height);
+                        event.type = PAL_EVENT_WINDOW_RESIZE;
+                        palPushEvent(eventInstance, &event);
+                    }
+                }
+            }
             return 0;
             break;
         }

@@ -3,7 +3,8 @@
 #include "pal/pal_event.h"
 #include "pal/pal_video.h"
 
-#define REAL_TIME_POSITION 0
+#define REAL_TIME_POSITION 1
+#define REAL_TIME_SIZE 1
 
 void onEvent(PalEvent* event)
 {
@@ -11,6 +12,12 @@ void onEvent(PalEvent* event)
         PalEventPosInfo posInfo;
         palGetEventPosInfo(event, &posInfo);
         palLogConsoleInfo("Window Pos (%i, %i)", posInfo.x, posInfo.y);
+    }
+
+    if (event->type == PAL_EVENT_WINDOW_RESIZE) {
+        PalEventSizeInfo sizeInfo;
+        palGetEventSizeInfo(event, &sizeInfo);
+        palLogConsoleInfo("Window Size (%u, %u)", sizeInfo.width, sizeInfo.height);
     }
 }
 
@@ -76,6 +83,12 @@ PalResult windowEventTest()
     palEnableEvent(eventInstance, PAL_EVENT_WINDOW_MOVE, PAL_MODE_POLL);
 #endif // REAL_TIME_POSITION
 
+#if REAL_TIME_SIZE
+    palEnableEvent(eventInstance, PAL_EVENT_WINDOW_RESIZE, PAL_MODE_CALLBACK);
+#else 
+    palEnableEvent(eventInstance, PAL_EVENT_WINDOW_RESIZE, PAL_MODE_POLL);
+#endif // REAL_TIME_SIZE
+
     bool running = PAL_TRUE;
     while (running) {
         // update all windows to get events
@@ -90,12 +103,21 @@ PalResult windowEventTest()
                 if (event.id == id) {
                     running = PAL_FALSE;
                 }
+                break;
             }
 
             if (event.type == PAL_EVENT_WINDOW_MOVE) {
                 PalEventPosInfo posInfo;
                 palGetEventPosInfo(&event, &posInfo);
                 palLogConsoleInfo("Window Pos (%i, %i)", posInfo.x, posInfo.y);
+                break;
+            }
+
+            if (event.type == PAL_EVENT_WINDOW_RESIZE) {
+                PalEventSizeInfo sizeInfo;
+                palGetEventSizeInfo(&event, &sizeInfo);
+                palLogConsoleInfo("Window Size (%u, %u)", sizeInfo.width, sizeInfo.height);
+                break;
             }
         }
     }

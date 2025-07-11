@@ -15,6 +15,7 @@ typedef enum PalEventType
 {
     PAL_EVENT_QUIT,
     PAL_EVENT_WINDOW_MOVE,
+    PAL_EVENT_WINDOW_RESIZE,
     PAL_EVENT_MAX
 } PalEventType;
 
@@ -38,6 +39,12 @@ typedef struct PalEventPosInfo
     int x;
     int y;
 } PalEventPosInfo;
+
+typedef struct PalEventSizeInfo
+{
+    Uint32 width;
+    Uint32 height;
+} PalEventSizeInfo;
 
 typedef struct PalEventQueue
 {
@@ -131,6 +138,19 @@ static inline void palGetEventPosInfo(
     palUnpackInt32(event->data, &x, &y);
     info->x = x;
     info->y = y;
+}
+
+static inline void palGetEventSizeInfo(
+    PalEvent* event,
+    PalEventSizeInfo* info)
+{
+    if (!event || !info) {
+        return;
+    }
+    Uint32 width, height;
+    palUnpackUint32(event->data, &width, &height);
+    info->width = width;
+    info->height = height;
 }
 
 #endif // _PAL_EVENTS_H
