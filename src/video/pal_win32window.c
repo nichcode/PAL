@@ -1,6 +1,7 @@
 
 #include "pal_pch.h"
 #include "pal_video_internal.h"
+#include "event/pal_event_internal.h"
 
 #define WIN32_CLASS L"PALClass"
 #define WIN32_PROP L"PAL"
@@ -9,12 +10,13 @@ typedef struct PalWindow
 {
     HWND handle;
     const char* title;
-    PalVideoInstance* videoInstance;
+    PalVideoInstance* instance;
 
     Uint32 style;
     Uint32 exStyle;
     Uint32 width;
     Uint32 height;
+    Uint32 id;
     int x;
     int y;
 
@@ -68,6 +70,31 @@ void unRegisterWindowClass()
 
 LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    PalWindow* window = (PalWindow*)GetPropW(hwnd, WIN32_PROP);
+    if (!window) {
+        return DefWindowProcW(hwnd, msg, wParam, lParam);
+    }
+
+    PalVideoInstance* video = window->instance;
+    switch (msg) {
+        case WM_CLOSE: {
+            if (video->eventInstance) {
+                PalEventInstance* eventInstance = video->eventInstance;
+                PalMode mode = eventInstance->modes[PAL_EVENT_QUIT];
+                if (mode != PAL_MODE_NONE) {
+                    PalEvent event;
+                    event.id = window->id;
+                    event.type = PAL_EVENT_QUIT;
+                    eventInstance->queue->push(eventInstance->eventData, &event);
+                }
+            }
+            return 0;
+            break;
+        }
+    }
+
+
+
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
@@ -186,7 +213,7 @@ PalResult _PCALL palCreateWindow(
     ShowWindow(handle, showFlag);
     SetPropW(handle, WIN32_PROP, window);
 
-    window->videoInstance = videoInstance;
+    window->instance = videoInstance;
     window->handle = handle;
     window->title = desc->title;
     window->style = style;
@@ -195,20 +222,33 @@ PalResult _PCALL palCreateWindow(
     window->height = desc->height;
     window->x = x;
     window->y = y;
+    window->id = videoInstance->nextWindowID;
 
+    videoInstance->nextWindowID++;
     *outWindow = window;
     return PAL_RESULT_OK;
 }
 
 void _PCALL palDestroyWindow(PalWindow* window)
 {
-    if (!window || (window && !window->videoInstance)) {
+    if (!window || (window && !window->instance)) {
         palSetError(PAL_ERROR_NULL_POINTER);
         return;
     }
 
-    PalVideoInstance* videoInstance = window->videoInstance;
+    PalVideoInstance* videoInstance = window->instance;
     DestroyWindow(window->handle);
     palFree(videoInstance->allocator, window);
     unRegisterWindowClass();
+}
+
+PalResult _PCALL palGetWindowID(PalWindow* window, Uint32* id)
+{
+    if (!window || !id || (window && !window->instance)) {
+        palSetError(PAL_ERROR_NULL_POINTER);
+        return PAL_RESULT_FAIL;
+    }
+
+    *id = window->id;
+    return PAL_RESULT_OK;
 }

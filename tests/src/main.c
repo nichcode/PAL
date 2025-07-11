@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     // registerTest("Display Test", displayTest);
     // registerTest("Display Mode Test", displayModeTest);
     // registerTest("Window Test", windowTest);
-    registerTest("Event Test", eventTest);
+    registerTest("Window Event Test", windowEventTest);
 
     runTests();
     return 0;

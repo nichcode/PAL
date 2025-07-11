@@ -59,7 +59,7 @@ typedef struct PalDisplayMode
 typedef struct PalVideoInstanceDesc
 {
     PalAllocator* allocator;
-    PalEventInstance* eventinstance;
+    PalEventInstance* eventInstance;
 } PalVideoInstanceDesc;
 
 _PAPI PalResult _PCALL palCreateVideoInstance(
@@ -91,5 +91,7 @@ _PAPI PalResult _PCALL palCreateWindow(
     PalWindow** outWindow);
 
 _PAPI void _PCALL palDestroyWindow(PalWindow* window);
+
+_PAPI PalResult _PCALL palGetWindowID(PalWindow* window, Uint32* id);
 
 #endif // _PAL_VIDEO_H

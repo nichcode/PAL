@@ -18,7 +18,7 @@ PalResult displayModeTest()
 
     PalVideoInstanceDesc desc;
     desc.allocator = PAL_NULL;
-    desc.eventinstance = PAL_NULL;
+    desc.eventInstance = PAL_NULL;
 
     result = palCreateVideoInstance(&desc, &videoInstance);
     if (result != PAL_RESULT_OK) {

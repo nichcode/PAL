@@ -8,6 +8,7 @@ typedef struct PalVideoInstance
 {
     PalAllocator* allocator;
     PalEventInstance* eventInstance;
+    Uint32 nextWindowID;
 } PalVideoInstance;
 
 #endif // _PAL_VIDEO_INTERNAL_H

@@ -43,5 +43,6 @@ PalResult displayTest();
 PalResult displayModeTest();
 PalResult windowTest();
 PalResult eventTest();
+PalResult windowEventTest();
 
 #endif // _TESTS_H

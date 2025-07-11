@@ -27,9 +27,14 @@ PalResult _PCALL palCreateVideoInstance(
 
     memset(videoInstance, 0, sizeof(PalVideoInstance));
     if (desc->allocator) {
-        videoInstance->eventInstance = desc->eventinstance;
+        videoInstance->eventInstance = desc->eventInstance;
     }
 
+    if (desc->eventInstance) {
+        videoInstance->eventInstance = desc->eventInstance;
+    }
+
+    videoInstance->nextWindowID = 1;
     *outVideoInstance = videoInstance;
     return PAL_RESULT_OK;
 }

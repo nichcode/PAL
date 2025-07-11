@@ -56,11 +56,10 @@ typedef unsigned int Uint32;
 typedef unsigned long long Uint64;
 typedef long long Int64;
 
-// this can use like a bool
 typedef enum PalResult
 {
-    PAL_RESULT_FAIL,
-    PAL_RESULT_OK
+    PAL_RESULT_OK,
+    PAL_RESULT_FAIL
 } PalResult;
 
 #endif // _PAL_DEFINES_H

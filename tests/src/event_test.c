@@ -1,4 +1,5 @@
 
+#include "tests.h"
 #include "pal/pal_event.h"
 
 #define QUIT_TIME 100
@@ -20,7 +21,7 @@ PalResult eventTest()
     desc.queue = PAL_NULL; // use internal event queue
     result = palCreateEventInstance(&desc, &eventInstance);
     if (result == PAL_RESULT_FAIL) {
-        PalError error =palGetError();
+        PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
         return PAL_RESULT_FAIL;
     }
