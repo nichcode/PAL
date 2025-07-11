@@ -30,6 +30,7 @@ PalResult palDefaultPollFunction(void* data, PalEvent* event)
         return PAL_RESULT_FAIL;
     }
     *event = queue->data[queue->head++ & PAL_MAX_EVENTS];    
+    return PAL_RESULT_OK;
 }
 
 PalResult _PCALL palCreateEventInstance(
@@ -68,9 +69,17 @@ PalResult _PCALL palCreateEventInstance(
 
         // allocate the event queue and event data struct
         eventInstance->queue = palAlloc(desc->allocator, sizeof(PalEventQueue));
+        if (!eventInstance->queue) {
+            palSetError(PAL_ERROR_ALLOCATION_FAILED);
+            return PAL_RESULT_FAIL;
+        }
         memset(eventInstance->queue, 0, sizeof(PalEventQueue));
 
         eventInstance->eventData = palAlloc(desc->allocator, sizeof(PalEventData));
+        if (!eventInstance->eventData) {
+            palSetError(PAL_ERROR_ALLOCATION_FAILED);
+            return PAL_RESULT_FAIL;
+        }
         memset(eventInstance->eventData, 0, sizeof(PalEventData));
 
         // set functions
@@ -95,6 +104,7 @@ void _PCALL palDestroyEventInstance(PalEventInstance* eventInstance)
     PalAllocator* allocator = eventInstance->allocator;
     if (eventInstance->free) {
         palFree(allocator, eventInstance->queue);
+        palFree(allocator, eventInstance->eventData);
     }
     palFree(allocator, eventInstance);
 }

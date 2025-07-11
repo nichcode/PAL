@@ -24,14 +24,14 @@ PalResult displayModeTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     result = palEnumerateDisplays(videoInstance, &displayCount, PAL_NULL);
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
     palLogConsoleInfo("Display Count: %i", displayCount);
 
@@ -40,7 +40,7 @@ PalResult displayModeTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     // get display info
@@ -50,7 +50,7 @@ PalResult displayModeTest()
         if (result != PAL_RESULT_OK) {
             PalError error = palGetError();
             palLogConsoleError(palErrorToString(error));
-            return -1;
+            return PAL_RESULT_FAIL;
         }
 
         // log display info
@@ -61,7 +61,7 @@ PalResult displayModeTest()
             if (result != PAL_RESULT_OK) {
             PalError error = palGetError();
             palLogConsoleError(palErrorToString(error));
-            return -1;
+            return PAL_RESULT_FAIL;
         }
         palLogConsoleInfo(" Display Mode Count: %i", displayModeCount);
 
@@ -70,7 +70,7 @@ PalResult displayModeTest()
             if (result != PAL_RESULT_OK) {
             PalError error = palGetError();
             palLogConsoleError(palErrorToString(error));
-            return -1;
+            return PAL_RESULT_FAIL;
         }
 
         for (Uint32 i = 0; i < displayModeCount; i++) {

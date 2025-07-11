@@ -27,9 +27,7 @@ typedef enum PalMode
 typedef struct PalEvent
 {
     PalEventType type;
-    void* id;
-    Int64 data1;
-    Int64 data2;
+    Uint32 id;
 } PalEvent;
 
 typedef struct PalEventQueue

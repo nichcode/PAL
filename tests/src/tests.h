@@ -42,5 +42,6 @@ PalResult loggingTest();
 PalResult displayTest();
 PalResult displayModeTest();
 PalResult windowTest();
+PalResult eventTest();
 
 #endif // _TESTS_H

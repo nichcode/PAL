@@ -24,7 +24,7 @@ PalResult windowTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     // get connected displays(monitors)
@@ -32,7 +32,7 @@ PalResult windowTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     // enumerate and get a display. 
@@ -43,7 +43,7 @@ PalResult windowTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     // we are selecting the primary display
@@ -64,7 +64,7 @@ PalResult windowTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     bool running = PAL_TRUE;

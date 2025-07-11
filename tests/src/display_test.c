@@ -23,14 +23,14 @@ PalResult displayTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     result = palEnumerateDisplays(videoInstance, &displayCount, PAL_NULL);
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
     palLogConsoleInfo("Display Count: %i", displayCount);
 
@@ -39,7 +39,7 @@ PalResult displayTest()
     if (result != PAL_RESULT_OK) {
         PalError error = palGetError();
         palLogConsoleError(palErrorToString(error));
-        return -1;
+        return PAL_RESULT_FAIL;
     }
 
     // get display info
@@ -49,7 +49,7 @@ PalResult displayTest()
         if (result != PAL_RESULT_OK) {
             PalError error = palGetError();
             palLogConsoleError(palErrorToString(error));
-            return -1;
+            return PAL_RESULT_FAIL;
         }
 
         // log display info
