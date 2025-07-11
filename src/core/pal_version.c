@@ -7,7 +7,8 @@
 #define PAL_VERSION_MINOR 0
 #define PAL_VERSION_PATCH 0
 
-void _PCALL palGetVerion(PalVersion* version)
+void _PCALL palGetVerion(
+    PalVersion* version)
 {
     if (!version) {
         return;
@@ -16,13 +17,4 @@ void _PCALL palGetVerion(PalVersion* version)
     version->major = PAL_VERSION_MAJOR;
     version->minor = PAL_VERSION_MINOR;
     version->patch = PAL_VERSION_PATCH;
-}
-
-Uint32 _PCALL palGetVerionInt()
-{
-    return PAL_MAKE_VERSION(
-        PAL_VERSION_MAJOR, 
-        PAL_VERSION_MINOR, 
-        PAL_VERSION_PATCH
-    );
 }

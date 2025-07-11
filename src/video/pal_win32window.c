@@ -24,15 +24,22 @@ typedef struct PalWindow
 
 } PalWindow;
 
-LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK windowProc(
+    HWND hwnd, 
+    UINT msg, 
+    WPARAM wParam, 
+    LPARAM lParam);
 
-void toWideString(wchar_t* buffer, const char* string)
+void toWideString(
+    wchar_t* buffer, 
+    const char* string)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, string, -1, PAL_NULL, 0);
     MultiByteToWideChar(CP_UTF8, 0, string, -1, buffer, len);
 }
 
-bool registerWindowClass(HINSTANCE instance)
+bool registerWindowClass(
+    HINSTANCE instance)
 {
     static bool init = PAL_FALSE;
     if (!init) {
@@ -68,7 +75,11 @@ void unRegisterWindowClass()
     }
 }
 
-LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK windowProc(
+    HWND hwnd, 
+    UINT msg, 
+    WPARAM wParam, 
+    LPARAM lParam)
 {
     PalWindow* window = (PalWindow*)GetPropW(hwnd, WIN32_PROP);
     if (!window) {
@@ -229,7 +240,8 @@ PalResult _PCALL palCreateWindow(
     return PAL_RESULT_OK;
 }
 
-void _PCALL palDestroyWindow(PalWindow* window)
+void _PCALL palDestroyWindow(
+    PalWindow* window)
 {
     if (!window || (window && !window->instance)) {
         palSetError(PAL_ERROR_NULL_POINTER);
@@ -242,7 +254,9 @@ void _PCALL palDestroyWindow(PalWindow* window)
     unRegisterWindowClass();
 }
 
-PalResult _PCALL palGetWindowID(PalWindow* window, Uint32* id)
+PalResult _PCALL palGetWindowID(
+    PalWindow* window, 
+    Uint32* id)
 {
     if (!window || !id || (window && !window->instance)) {
         palSetError(PAL_ERROR_NULL_POINTER);

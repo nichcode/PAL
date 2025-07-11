@@ -15,7 +15,11 @@ typedef struct DisplayData
     bool primaryOnly;
 } DisplayData;
 
-BOOL CALLBACK MonitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam)
+BOOL CALLBACK MonitorProc(
+    HMONITOR monitor, 
+    HDC, 
+    LPRECT, 
+    LPARAM lParam)
 {
     DisplayData* data = (DisplayData*)lParam;
     if (!data) {
@@ -38,7 +42,10 @@ BOOL CALLBACK MonitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam)
     return PAL_TRUE;
 }
 
-void getMonitorDPI(HMONITOR monitor, float* x, float* y)
+void getMonitorDPI(
+    HMONITOR monitor, 
+    float* x, 
+    float* y)
 {
     static HINSTANCE shcore;
     static GetDpiForMonitorFn getDpiForMonitor;
@@ -70,7 +77,9 @@ void getMonitorDPI(HMONITOR monitor, float* x, float* y)
     }
 }
 
-bool compareMode(const PalDisplayMode* a, const PalDisplayMode* b)
+bool compareMode(
+    const PalDisplayMode* a, 
+    const PalDisplayMode* b)
 {
     return 
         a->alphaBits == b->alphaBits   &&
@@ -83,7 +92,9 @@ bool compareMode(const PalDisplayMode* a, const PalDisplayMode* b)
         a->refreshRate == b->refreshRate;
 }
 
-void getColorBits(PalDisplayMode* mode, int bpp)
+void getColorBits(
+    PalDisplayMode* mode, 
+    int bpp)
 {
     switch (bpp) {
         case 16: {
@@ -111,7 +122,10 @@ void getColorBits(PalDisplayMode* mode, int bpp)
     mode->blueBits = mode->alphaBits = 0;
 }
 
-void addMode(PalDisplayMode* modes, const PalDisplayMode* mode, int* count)
+void addMode(
+    PalDisplayMode* modes, 
+    const PalDisplayMode* mode, 
+    int* count)
 {
     // check if we have a duplicate mode
     for (int i = 0; i < *count; i++) {
@@ -251,7 +265,9 @@ PalResult _PCALL palGetPrimaryDisplay(
     return PAL_RESULT_OK;
 }
 
-PalResult _PCALL palGetDisplayInfo(PalDisplay* display, PalDisplayInfo* info)
+PalResult _PCALL palGetDisplayInfo(
+    PalDisplay* display, 
+    PalDisplayInfo* info)
 {
     if (!display || !info) {
         palSetError(PAL_ERROR_NULL_POINTER);

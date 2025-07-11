@@ -11,17 +11,21 @@ PalTLSID _PCALL palCreateTLS()
     return slot;
 }
 
-void _PCALL palDestroyTLS(PalTLSID id)
+void _PCALL palDestroyTLS(
+    PalTLSID id)
 {
     TlsFree((DWORD)id);
 }
 
-void* _PCALL palGetTLS(PalTLSID id)
+void* _PCALL palGetTLS(
+    PalTLSID id)
 {
     return TlsGetValue((DWORD)id);
 }
 
-void _PCALL palSetTLS(PalTLSID id, void* data)
+void _PCALL palSetTLS(
+    PalTLSID id, 
+    void* data)
 {
     TlsSetValue((DWORD)id, data);
 }

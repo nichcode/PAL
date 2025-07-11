@@ -4,21 +4,30 @@
 
 #define SIZE 1024
 
-void OnLogger1(void* userData, PalLogLevel level, const char* msg)
+void OnLogger1(
+    void* userData, 
+    PalLogLevel level, 
+    const char* msg)
 {
     char buffer[SIZE] = {};
     palFormat(buffer, "%s: %s", "Logger 1", msg);
     palLogConsole(level, buffer);
 }
 
-void OnLogger2(void* userData, PalLogLevel level, const char* msg)
+void OnLogger2(
+    void* userData, 
+    PalLogLevel level, 
+    const char* msg)
 {
     char buffer[SIZE] = {};
     palFormat(buffer, "%s: %s", "Logger 2", msg);
     palLogConsole(level, buffer);
 }
 
-void OnLogger3(void* userData, PalLogLevel level, const char* msg)
+void OnLogger3(
+    void* userData, 
+    PalLogLevel level, 
+    const char* msg)
 {
     char buffer[SIZE] = {};
     palFormat(buffer, "%s: %s", "Logger 3", msg);

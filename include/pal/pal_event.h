@@ -48,7 +48,8 @@ _PAPI PalResult _PCALL palCreateEventInstance(
     PalEventInstanceDesc* desc, 
     PalEventInstance** outEventInstance);
 
-_PAPI void _PCALL palDestroyEventInstance(PalEventInstance* eventInstance);
+_PAPI void _PCALL palDestroyEventInstance(
+    PalEventInstance* eventInstance);
 
 _PAPI PalResult _PCALL palEnableEvent(
     PalEventInstance* eventInstance, 

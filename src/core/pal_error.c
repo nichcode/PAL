@@ -9,7 +9,8 @@ typedef struct ErrorTLSData
 
 } ErrorTLSData;
 
-void _PCALL palSetError(PalError error)
+void _PCALL palSetError(
+    PalError error)
 {
     ErrorTLSData* data = palGetTLS(s_ErrorTLSID);
     if (!data) {
@@ -28,7 +29,8 @@ PalError _PCALL palGetError()
     return data->error;
 }
 
-const char* _PCALL palErrorToString(PalError error)
+const char* _PCALL palErrorToString(
+    PalError error)
 {
     switch (error)
     {

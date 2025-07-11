@@ -39,7 +39,8 @@ PalResult _PCALL palCreateVideoInstance(
     return PAL_RESULT_OK;
 }
 
-void _PCALL palDestroyVideoInstance(PalVideoInstance* videoInstance)
+void _PCALL palDestroyVideoInstance(
+    PalVideoInstance* videoInstance)
 {
     if (!videoInstance) {
         palSetError(PAL_ERROR_NULL_POINTER);
@@ -50,7 +51,8 @@ void _PCALL palDestroyVideoInstance(PalVideoInstance* videoInstance)
     palFree(allocator, videoInstance);
 }
 
-PalResult _PCALL palUpdateWindows(PalVideoInstance* videoInstance)
+PalResult _PCALL palUpdateWindows(
+    PalVideoInstance* videoInstance)
 {
     if (!videoInstance) {
         palSetError(PAL_ERROR_NULL_POINTER);

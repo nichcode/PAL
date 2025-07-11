@@ -2,7 +2,9 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
-void* _PCALL palAlloc(PalAllocator* allocator, Uint64 size)
+void* _PCALL palAlloc(
+    PalAllocator* allocator, 
+    Uint64 size)
 {
     if (!allocator) {
         return malloc(size);
@@ -13,7 +15,9 @@ void* _PCALL palAlloc(PalAllocator* allocator, Uint64 size)
     }
 }
 
-void _PCALL palFree(PalAllocator* allocator, void* ptr)
+void _PCALL palFree(
+    PalAllocator* allocator, 
+    void* ptr)
 {
     if (!allocator) {
         return free(ptr);

@@ -12,7 +12,9 @@ typedef struct LogTLSData
 
 } LogTLSData;
 
-void consoleWrite(PalLogLevel level, const char* msg)
+void consoleWrite(
+    PalLogLevel level, 
+    const char* msg)
 {
 #ifdef _WIN32
     HANDLE console = PAL_NULL;
@@ -32,7 +34,9 @@ void consoleWrite(PalLogLevel level, const char* msg)
 #endif // _WIN32    
 }
 
-void palLogConsoleV(PalLogLevel level, const char* fmt)
+void palLogConsoleV(
+    PalLogLevel level, 
+    const char* fmt)
 {
     LogTLSData* data = palGetTLS(s_LogTLSID);
     if (!data) {
@@ -43,7 +47,10 @@ void palLogConsoleV(PalLogLevel level, const char* fmt)
     consoleWrite(level, data->buffer);
 }
 
-void palLogV(PalLogger* logger, PalLogLevel level, const char* fmt)
+void palLogV(
+    PalLogger* logger, 
+    PalLogLevel level, 
+    const char* fmt)
 {
     LogTLSData* data = palGetTLS(s_LogTLSID);
     if (!data) {
@@ -68,7 +75,10 @@ void palLogV(PalLogger* logger, PalLogLevel level, const char* fmt)
     }
 }
 
-void _PCALL palLog(PalLogger* logger, PalLogLevel level, const char* fmt, ...)
+void _PCALL palLog(
+    PalLogger* logger, 
+    PalLogLevel level, 
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -78,7 +88,9 @@ void _PCALL palLog(PalLogger* logger, PalLogLevel level, const char* fmt, ...)
     palLogV(logger, level, buffer);
 }
 
-void _PCALL palLogTrace(PalLogger* logger, const char* fmt, ...)
+void _PCALL palLogTrace(
+    PalLogger* logger, 
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -88,7 +100,9 @@ void _PCALL palLogTrace(PalLogger* logger, const char* fmt, ...)
     palLogV(logger, PAL_LOG_LEVEL_TRACE, buffer);
 }
 
-void _PCALL palLogInfo(PalLogger* logger, const char* fmt, ...)
+void _PCALL palLogInfo(
+    PalLogger* logger, 
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -98,7 +112,9 @@ void _PCALL palLogInfo(PalLogger* logger, const char* fmt, ...)
     palLogV(logger, PAL_LOG_LEVEL_INFO, buffer);
 }
 
-void _PCALL palLogWarn(PalLogger* logger, const char* fmt, ...)
+void _PCALL palLogWarn(
+    PalLogger* logger, 
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -108,7 +124,9 @@ void _PCALL palLogWarn(PalLogger* logger, const char* fmt, ...)
     palLogV(logger, PAL_LOG_LEVEL_WARN, buffer);
 }
 
-void _PCALL palLogError(PalLogger* logger, const char* fmt, ...)
+void _PCALL palLogError(
+    PalLogger* logger, 
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -118,7 +136,9 @@ void _PCALL palLogError(PalLogger* logger, const char* fmt, ...)
     palLogV(logger, PAL_LOG_LEVEL_ERROR, buffer);
 }
 
-void _PCALL palLogConsole(PalLogLevel level, const char* fmt, ...)
+void _PCALL palLogConsole(
+    PalLogLevel level, 
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -128,7 +148,8 @@ void _PCALL palLogConsole(PalLogLevel level, const char* fmt, ...)
     palLogConsoleV(level, buffer);
 }
 
-void _PCALL palLogConsoleTrace(const char* fmt, ...)
+void _PCALL palLogConsoleTrace(
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -138,7 +159,8 @@ void _PCALL palLogConsoleTrace(const char* fmt, ...)
     palLogConsoleV(PAL_LOG_LEVEL_TRACE, buffer);
 }
 
-void _PCALL palLogConsoleInfo(const char* fmt, ...)
+void _PCALL palLogConsoleInfo(
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -148,7 +170,8 @@ void _PCALL palLogConsoleInfo(const char* fmt, ...)
     palLogConsoleV(PAL_LOG_LEVEL_INFO, buffer);
 }
 
-void _PCALL palLogConsoleWarn(const char* fmt, ...)
+void _PCALL palLogConsoleWarn(
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;
@@ -158,7 +181,8 @@ void _PCALL palLogConsoleWarn(const char* fmt, ...)
     palLogConsoleV(PAL_LOG_LEVEL_WARN, buffer);
 }
 
-void _PCALL palLogConsoleError(const char* fmt, ...)
+void _PCALL palLogConsoleError(
+    const char* fmt, ...)
 {
     char buffer[1024] = {};
     va_list argPtr;

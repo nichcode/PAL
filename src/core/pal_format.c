@@ -2,7 +2,10 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
-void _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer)
+void _PCALL palFormatArgs(
+    const char* fmt, 
+    va_list argsList, 
+    char* buffer)
 {
     if (!buffer || !fmt) {
         return;
@@ -22,7 +25,9 @@ void _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer)
     buffer[len] = 0;
 }
 
-void _PCALL palFormat(char* buffer, const char* fmt, ...)
+void _PCALL palFormat(
+    char* buffer, 
+    const char* fmt, ...)
 {
     if (!buffer || !fmt) {
         return;

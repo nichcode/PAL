@@ -22,7 +22,9 @@ typedef struct Tests
 
 static Tests s_Test;
 
-static inline void registerTest(const char* name, TestFn fn)
+static inline void registerTest(
+    const char* name, 
+    TestFn fn)
 {
     TestEntry entry;
     entry.name = name;

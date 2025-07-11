@@ -56,33 +56,79 @@ typedef struct PalLogger
 } PalLogger;
 
 _PAPI void _PCALL palGetVerion(PalVersion* version);
-_PAPI Uint32 _PCALL palGetVerionInt();
 
-_PAPI void* _PCALL palAlloc(PalAllocator* allocator, Uint64 size);
-_PAPI void _PCALL palFree(PalAllocator* allocator, void* ptr);
+_PAPI void* _PCALL palAlloc(
+    PalAllocator* allocator, 
+    Uint64 size);
+
+_PAPI void _PCALL palFree(
+    PalAllocator* allocator, 
+    void* ptr);
 
 _PAPI PalTLSID _PCALL palCreateTLS();
-_PAPI void _PCALL palDestroyTLS(PalTLSID id);
-_PAPI void* _PCALL palGetTLS(PalTLSID id);
-_PAPI void _PCALL palSetTLS(PalTLSID id, void* data);
 
-_PAPI void _PCALL palSetError(PalError error);
+_PAPI void _PCALL palDestroyTLS(
+    PalTLSID id);
+
+_PAPI void* _PCALL palGetTLS(
+    PalTLSID id);
+
+_PAPI void _PCALL palSetTLS(
+    PalTLSID id, 
+    void* data);
+
+_PAPI void _PCALL palSetError(
+    PalError error);
+
 _PAPI PalError _PCALL palGetError();
-_PAPI const char* _PCALL palErrorToString(PalError error);
 
-_PAPI void _PCALL palFormatArgs(const char* fmt, va_list argsList, char* buffer);
-_PAPI void _PCALL palFormat(char* buffer, const char* fmt, ...);
+_PAPI const char* _PCALL palErrorToString(
+    PalError error);
 
-_PAPI void _PCALL palLog(PalLogger* logger, PalLogLevel level, const char* fmt, ...);
-_PAPI void _PCALL palLogTrace(PalLogger* logger, const char* fmt, ...);
-_PAPI void _PCALL palLogInfo(PalLogger* logger, const char* fmt, ...);
-_PAPI void _PCALL palLogWarn(PalLogger* logger, const char* fmt, ...);
-_PAPI void _PCALL palLogError(PalLogger* logger, const char* fmt, ...);
+_PAPI void _PCALL palFormatArgs(
+    const char* fmt, 
+    va_list argsList, 
+    char* buffer);
 
-_PAPI void _PCALL palLogConsole(PalLogLevel level, const char* fmt, ...);
-_PAPI void _PCALL palLogConsoleTrace(const char* fmt, ...);
-_PAPI void _PCALL palLogConsoleInfo(const char* fmt, ...);
-_PAPI void _PCALL palLogConsoleWarn(const char* fmt, ...);
-_PAPI void _PCALL palLogConsoleError(const char* fmt, ...);
+_PAPI void _PCALL palFormat(
+    char* buffer, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLog(
+    PalLogger* logger, 
+    PalLogLevel level, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogTrace(
+    PalLogger* logger, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogInfo(
+    PalLogger* logger, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogWarn(
+    PalLogger* logger, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogError(
+    PalLogger* logger, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogConsole(
+    PalLogLevel level, 
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogConsoleTrace(
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogConsoleInfo(
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogConsoleWarn(
+    const char* fmt, ...);
+
+_PAPI void _PCALL palLogConsoleError(
+    const char* fmt, ...);
 
 #endif // _PAL_CORE_H

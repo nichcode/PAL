@@ -2,12 +2,15 @@
 #include "pal_pch.h"
 #include "pal_event_internal.h"
 
-PalResult coalesce(PalEventType type)
+PalResult coalesce(
+    PalEventType type)
 {
     return PAL_RESULT_FAIL;
 }
 
-void palDefaultPushFunction(void* data, PalEvent* event)
+void palDefaultPushFunction(
+    void* data, 
+    PalEvent* event)
 {
     PalEventData* queue = (PalEventData*)data;
     // check for coalesce event
@@ -23,7 +26,9 @@ void palDefaultPushFunction(void* data, PalEvent* event)
     queue->data[queue->tail++ & PAL_MAX_EVENTS] = *event;
 }
 
-PalResult palDefaultPollFunction(void* data, PalEvent* event)
+PalResult palDefaultPollFunction(
+    void* data, 
+    PalEvent* event)
 {
     PalEventData* queue = (PalEventData*)data;
     if (queue->head == queue->tail) {
@@ -94,7 +99,8 @@ PalResult _PCALL palCreateEventInstance(
     return PAL_RESULT_OK;
 }
 
-void _PCALL palDestroyEventInstance(PalEventInstance* eventInstance)
+void _PCALL palDestroyEventInstance(
+    PalEventInstance* eventInstance)
 {
     if (!eventInstance) {
         palSetError(PAL_ERROR_NULL_POINTER);

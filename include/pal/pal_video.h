@@ -66,8 +66,11 @@ _PAPI PalResult _PCALL palCreateVideoInstance(
     PalVideoInstanceDesc* desc, 
     PalVideoInstance** outVideoInstance);
 
-_PAPI void _PCALL palDestroyVideoInstance(PalVideoInstance* videoInstance);
-_PAPI PalResult _PCALL palUpdateWindows(PalVideoInstance* videoInstance);
+_PAPI void _PCALL palDestroyVideoInstance(
+    PalVideoInstance* videoInstance);
+
+_PAPI PalResult _PCALL palUpdateWindows(
+    PalVideoInstance* videoInstance);
 
 _PAPI PalResult _PCALL palEnumerateDisplays(
     PalVideoInstance* videoInstance, 
@@ -83,15 +86,20 @@ _PAPI PalResult _PCALL palGetPrimaryDisplay(
     PalVideoInstance* videoInstance, 
     PalDisplay** outDisplay);
 
-_PAPI PalResult _PCALL palGetDisplayInfo(PalDisplay* display, PalDisplayInfo* info);
+_PAPI PalResult _PCALL palGetDisplayInfo(
+    PalDisplay* display, 
+    PalDisplayInfo* info);
 
 _PAPI PalResult _PCALL palCreateWindow(
     PalVideoInstance* videoInstance, 
     PalWindowDesc* desc, 
     PalWindow** outWindow);
 
-_PAPI void _PCALL palDestroyWindow(PalWindow* window);
+_PAPI void _PCALL palDestroyWindow(
+    PalWindow* window);
 
-_PAPI PalResult _PCALL palGetWindowID(PalWindow* window, Uint32* id);
+_PAPI PalResult _PCALL palGetWindowID(
+    PalWindow* window, 
+    Uint32* id);
 
 #endif // _PAL_VIDEO_H
