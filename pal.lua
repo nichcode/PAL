@@ -13,7 +13,12 @@ project "Pal"
     objdir(obj_dir)
 
     pchheader "src/pal_pch.h"
-    files { "src/core/**.c" }
+    files { 
+        -- core
+        "src/core/pal_memory.c", 
+        "src/core/pal_result.c", 
+        "src/core/pal_version.c" 
+    }
 
     filter {"system:windows", "configurations:*"}
         files { "src/core/win32/**.c" }

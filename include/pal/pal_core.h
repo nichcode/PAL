@@ -48,6 +48,8 @@ typedef unsigned int Uint32;
 typedef unsigned long long Uint64;
 typedef long long Int64;
 
+typedef int PalTlsID;
+
 typedef void* (*PalAllocFn)(void*, Uint64);
 typedef void (*PalFreeFn)(void*, void*);
 
@@ -86,5 +88,10 @@ _PAPI void _PCALL palSetMemory(void* memory, int value, Uint64 size);
 _PAPI void _PCALL palZeroMemory(void* memory, Uint64 size);
 _PAPI void _PCALL palCopyMemory(void* dest, const void* src, Uint64 size);
 _PAPI void _PCALL palMoveMemory(void* dest, const void* src, Uint64 size);
+
+_PAPI PalTlsID _PCALL palCreateTls();
+_PAPI void _PCALL palDestroyTls(PalTlsID id);
+_PAPI void* _PCALL palGetTls(PalTlsID id);
+_PAPI void _PCALL palSetTls(PalTlsID id, void* data);
 
 #endif // _PAL_CORE_H
