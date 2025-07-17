@@ -14,9 +14,9 @@ typedef struct LogTLSData {
     bool isLogging;
 } LogTLSData;
 
-LogTLSData* getLogTls();
+static LogTLSData* getLogTls();
 
-void logV(
+static void logV(
     LogTLSData* data, 
     PalLogger* logger, 
     PalLogLevel level);
@@ -87,7 +87,7 @@ void _PCALL palLogError(
     logV(data, logger, PAL_LOG_LEVEL_ERROR);
 }
 
-LogTLSData* getLogTls() {
+static LogTLSData* getLogTls() {
 
     LogTLSData* data = palGetTls(s_TlsID);
     if (!data) {
@@ -102,7 +102,7 @@ LogTLSData* getLogTls() {
     return data;
 }
 
-void logV(
+static void logV(
     LogTLSData* data, 
     PalLogger* logger, 
     PalLogLevel level) {

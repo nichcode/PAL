@@ -2,6 +2,8 @@
 #include "pal_pch.h"
 #include "core/pal_console.h"
 
+#ifdef _WIN32
+
 void palWriteConsole(PalLogLevel level, wchar_t* buffer, const char* msg) {
 
     HANDLE console = PAL_NULL;
@@ -22,3 +24,5 @@ void palWriteConsole(PalLogLevel level, wchar_t* buffer, const char* msg) {
     WriteConsoleW(console, buffer, (DWORD)len - 1, &written, 0);
     OutputDebugStringW(buffer);
 }
+
+#endif // _WIN32

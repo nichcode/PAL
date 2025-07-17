@@ -2,6 +2,8 @@
 #include "pal_pch.h"
 #include "video/pal_video_internal.h"
 
+#ifdef _WIN32
+
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -21,24 +23,24 @@ static HINSTANCE s_Shcore;
 static GetDpiForMonitorFn s_GetDpiForMonitor;
 static SetProcessAwarenessFn s_SetProcessAwareness;
 
-void getMonitorDPI(HMONITOR monitor, float* x, float* y);
+static void getMonitorDPI(HMONITOR monitor, float* x, float* y);
 
-void getModes(
+static void getModes(
     HMONITOR monitor, 
     const wchar_t* name, 
     PalDisplayMode* modes,
     int* count,
     int maxCount);
 
-bool compareMode(
+static bool compareMode(
     const PalDisplayMode* a, 
     const PalDisplayMode* b);
 
-void getColorBits(
+static void getColorBits(
     PalDisplayMode* mode, 
     int bpp);
 
-void addMode(
+static void addMode(
     PalDisplayMode* modes, 
     const PalDisplayMode* mode, 
     int* count);
@@ -183,7 +185,7 @@ BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
     return PAL_TRUE;
 }
 
-void getMonitorDPI(HMONITOR monitor, float* x, float* y) {
+static void getMonitorDPI(HMONITOR monitor, float* x, float* y) {
 
     if (!s_Shcore) {
         s_Shcore = LoadLibraryA("shcore.dll");
@@ -215,7 +217,7 @@ void getMonitorDPI(HMONITOR monitor, float* x, float* y) {
     }
 }
 
-void getModes(
+static void getModes(
     HMONITOR monitor, 
     const wchar_t* name, 
     PalDisplayMode* modes,
@@ -239,7 +241,7 @@ void getModes(
     }
 }
 
-bool compareMode(
+static bool compareMode(
     const PalDisplayMode* a, 
     const PalDisplayMode* b) {
 
@@ -254,7 +256,7 @@ bool compareMode(
         a->refreshRate == b->refreshRate;
 }
 
-void getColorBits(
+static void getColorBits(
     PalDisplayMode* mode, 
     int bpp) {
 
@@ -284,7 +286,7 @@ void getColorBits(
     mode->blueBits = mode->alphaBits = 0;
 }
 
-void addMode(
+static void addMode(
     PalDisplayMode* modes, 
     const PalDisplayMode* mode, 
     int* count) {
@@ -301,3 +303,5 @@ void addMode(
     modes[*count] = *mode;
     *count += 1;
 }
+
+#endif // _WIN32

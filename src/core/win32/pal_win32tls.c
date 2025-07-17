@@ -2,6 +2,8 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
+#ifdef _WIN32
+
 PalTlsID _PCALL palCreateTls() {
 
     DWORD slot = TlsAlloc();
@@ -25,3 +27,5 @@ void _PCALL palSetTls(PalTlsID id, void* data) {
 
     TlsSetValue((DWORD)id, data);
 }
+
+#endif // _WIN32
