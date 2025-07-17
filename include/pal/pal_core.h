@@ -73,7 +73,8 @@ typedef enum PalResult {
     PAL_ERROR_UNSUPPORTED,
     PAL_ERROR_RESOURCE_IN_USE,
     PAL_ERROR_TIMEOUT,
-    PAL_ERROR_INSUFFICIENT_BUFFER
+
+    PAL_ERROR_INVALID_DISPLAY
 } PalResult;
 
 typedef struct PalVersion {

@@ -42,5 +42,6 @@ static inline void runTests()
 // Tests
 void logTest();
 void videoTest();
+void displayTest();
 
 #endif // _TESTS_H

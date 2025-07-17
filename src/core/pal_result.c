@@ -26,8 +26,11 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_ERROR_RESOURCE_IN_USE:
         return "Resource in use";
 
-        case PAL_ERROR_INSUFFICIENT_BUFFER:
-        return "Insufficient buffer";
+        case PAL_ERROR_TIMEOUT:
+        return "Operation timeout";
+
+        case PAL_ERROR_INVALID_DISPLAY:
+        return "Invalid display";
     }
 
 }
