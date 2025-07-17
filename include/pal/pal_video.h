@@ -18,6 +18,17 @@ typedef struct PalDisplayInfo {
     float dpiScaleY;
 } PalDisplayInfo;
 
+typedef struct PalDisplayMode {
+    int width;
+    int height;
+    int refreshRate;
+
+    int redBits;
+    int greenBits;
+    int blueBits;
+    int alphaBits;
+} PalDisplayMode;
+
 typedef struct PalVideoConfig {
     PalAllocator* allocator;
 } PalVideoConfig;
@@ -41,5 +52,11 @@ _PAPI PalResult _PCALL palGetDisplayInfo(
 _PAPI PalResult _PCALL palGetPrimaryDisplay(
     PalVideo* video, 
     PalDisplay** outDisplay);
+
+_PAPI PalResult _PCALL palEnumerateDisplayModes(
+    PalDisplay* display,
+    int* count,
+    PalDisplayMode* modes);
+
 
 #endif // _PAL_VIDEO_H

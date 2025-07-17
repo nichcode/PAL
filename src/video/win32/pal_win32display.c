@@ -4,6 +4,7 @@
 
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
+#define MAX_MODE_COUNT 128
 
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, int, UINT*, UINT*);
 typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
@@ -21,6 +22,26 @@ static GetDpiForMonitorFn s_GetDpiForMonitor;
 static SetProcessAwarenessFn s_SetProcessAwareness;
 
 void getMonitorDPI(HMONITOR monitor, float* x, float* y);
+
+void getModes(
+    HMONITOR monitor, 
+    const wchar_t* name, 
+    PalDisplayMode* modes,
+    int* count,
+    int maxCount);
+
+bool compareMode(
+    const PalDisplayMode* a, 
+    const PalDisplayMode* b);
+
+void getColorBits(
+    PalDisplayMode* mode, 
+    int bpp);
+
+void addMode(
+    PalDisplayMode* modes, 
+    const PalDisplayMode* mode, 
+    int* count);
 
 PalResult _PCALL palEnumerateDisplays(
     PalVideo* video,
@@ -92,6 +113,59 @@ PalResult _PCALL palGetPrimaryDisplay(
     return PAL_SUCCESS;
 }
 
+PalResult _PCALL palEnumerateDisplayModes(
+    PalDisplay* display,
+    int* count,
+    PalDisplayMode* modes) {
+
+    if (!display || !count) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    int modeCount = 0;
+    int maxModes = 0;
+    HMONITOR monitor = (HMONITOR)display;
+    PalDisplayMode* displayModes = PAL_NULL;
+    bool free = PAL_FALSE;
+
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        return PAL_ERROR_INVALID_DISPLAY;
+    }
+
+    if (!modes) {
+        // allocate and store tmp display modes
+        // and check for the interested fields.
+        displayModes = palAllocate(PAL_NULL, sizeof(PalDisplayMode) * MAX_MODE_COUNT);
+        if (!displayModes) {
+            return PAL_ERROR_OUT_OF_MEMORY;
+        }
+
+        palZeroMemory(displayModes, sizeof(PalDisplayMode) * MAX_MODE_COUNT);
+        free = PAL_TRUE;
+        maxModes = MAX_MODE_COUNT;
+
+    } else {
+        free = PAL_FALSE;
+        displayModes = modes;
+        maxModes = *count;
+    }
+
+    getModes(
+        monitor, 
+        mi.szDevice, 
+        displayModes,
+        &modeCount,
+        maxModes);
+
+    *count = modeCount;
+    if (free) {
+        palFree(PAL_NULL, displayModes);
+    }
+    return PAL_SUCCESS;
+}
+
 BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
 
     DisplayData* data = (DisplayData*)lParam;
@@ -139,4 +213,91 @@ void getMonitorDPI(HMONITOR monitor, float* x, float* y) {
         *x = (float)dpiX / 96.0f;
         *y = (float)dpiY / 96.0f;
     }
+}
+
+void getModes(
+    HMONITOR monitor, 
+    const wchar_t* name, 
+    PalDisplayMode* modes,
+    int* count,
+    int maxCount) {
+
+    DEVMODEW dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    for (int i = 0; EnumDisplaySettingsW(name, i, &dm); i++) {
+        // Pal support up to 128 modes
+        if (*count > maxCount) {
+            break;
+        }
+
+        PalDisplayMode* mode = &modes[*count];
+        mode->refreshRate = dm.dmDisplayFrequency;
+        mode->width = dm.dmPelsWidth;
+        mode->height = dm.dmPelsHeight;
+        getColorBits(mode, dm.dmBitsPerPel);
+        addMode(modes, mode, count);
+    }
+}
+
+bool compareMode(
+    const PalDisplayMode* a, 
+    const PalDisplayMode* b) {
+
+    return 
+        a->alphaBits == b->alphaBits   &&
+        a->redBits == b->redBits       &&
+        a->greenBits == b->greenBits   &&
+        a->blueBits == b->blueBits     &&
+        a->alphaBits == b->alphaBits   &&
+        a->width == b->width           &&
+        a->height == b->height         &&
+        a->refreshRate == b->refreshRate;
+}
+
+void getColorBits(
+    PalDisplayMode* mode, 
+    int bpp) {
+
+    switch (bpp) {
+        case 16: {
+            mode->redBits = 5;
+            mode->greenBits = 6;
+            mode->blueBits = 5;
+            mode->alphaBits = 0;
+            return;
+        }
+
+        case 24: {
+            mode->redBits = mode->greenBits = 8;
+            mode->blueBits = 8;
+            mode->alphaBits = 0;
+            return;
+        }
+
+        case 32: {
+            mode->redBits = mode->greenBits = 8;
+            mode->blueBits = mode->alphaBits = 8;
+            return;
+        }
+    }
+    mode->redBits = mode->greenBits = 0;
+    mode->blueBits = mode->alphaBits = 0;
+}
+
+void addMode(
+    PalDisplayMode* modes, 
+    const PalDisplayMode* mode, 
+    int* count) {
+
+    // check if we have a duplicate mode
+    for (int i = 0; i < *count; i++) {
+        PalDisplayMode* oldMode = &modes[i];
+        if (compareMode(oldMode, mode)) {
+            return;
+        }
+    }
+
+    // new mode
+    modes[*count] = *mode;
+    *count += 1;
 }

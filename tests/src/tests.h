@@ -43,5 +43,6 @@ static inline void runTests()
 void logTest();
 void videoTest();
 void displayTest();
+void displayModeTest();
 
 #endif // _TESTS_H
