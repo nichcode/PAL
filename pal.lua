@@ -17,7 +17,9 @@ project "Pal"
         -- core
         "src/core/pal_memory.c", 
         "src/core/pal_result.c", 
-        "src/core/pal_version.c" 
+        "src/core/pal_version.c",
+        "src/core/pal_format.c",
+        "src/core/pal_log.c"
     }
 
     filter {"system:windows", "configurations:*"}

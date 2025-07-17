@@ -25,6 +25,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_ERROR_RESOURCE_IN_USE:
         return "Resource in use";
+
+        case PAL_ERROR_INSUFFICIENT_BUFFER:
+        return "Insufficient buffer";
     }
 
 }
