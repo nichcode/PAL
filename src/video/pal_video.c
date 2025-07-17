@@ -1,0 +1,41 @@
+
+#include "pal_pch.h"
+#include "pal_video_internal.h"
+
+PalResult _PCALL palCreateVideo(
+    PalVideoConfig* config,
+    PalVideo** outVideo) {
+
+    PalVideo* video;
+    if (!config || !outVideo) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    if (config->allocator && (!config->allocator->alloc || !config->allocator->free)) {
+        return PAL_ERROR_INVALID_ALLOCATOR;
+    }
+
+    video = palAllocate(config->allocator, sizeof(PalVideo));
+    if (!video) {
+        return PAL_ERROR_OUT_OF_MEMORY;
+    }
+
+    palZeroMemory(video, sizeof(PalVideo));
+    if (config->allocator) {
+        video->allocator = config->allocator;
+    }
+
+    *outVideo = video;
+    return PAL_SUCCESS;
+}
+
+void _PCALL palDestroyVideo(
+    PalVideo* video) {
+    
+    if (!video) {
+        return;
+    }
+
+    PalAllocator* allocator = video->allocator;
+    palFree(allocator, video);
+}

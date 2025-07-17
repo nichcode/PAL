@@ -107,18 +107,19 @@ void logV(
     PalLogger* logger, 
     PalLogLevel level) {
 
-    // prevent recursive calls
-    if (data->isLogging) {
-        return; 
-    }
-
     if (logger && logger->callback) {
+        // prevent recursive calls
+        if (data->isLogging) {
+            return; 
+        }
+
         data->isLogging = PAL_TRUE;
         palSetTls(s_TlsID, data);
 
         logger->callback(logger->userData, level, data->tmpBuffer);
         data->isLogging = PAL_FALSE;
         palSetTls(s_TlsID, data);
+        
     } else {
         // log to console
         Uint64 size = LOG_SIZE;

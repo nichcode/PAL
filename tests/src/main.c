@@ -1,10 +1,11 @@
 
-#include "pal/pal.h"
+#include "tests.h"
 
 int main(int argc, char** argv) {
 
-    palLogInfo(PAL_NULL, "Pal v(%s)", palGetVersionString());
-    palLogInfo(PAL_NULL, "àà");
+    registerTest("Log Test", logTest);
+    registerTest("Video Test", videoTest);
 
+    runTests();
     return 0;
 }
