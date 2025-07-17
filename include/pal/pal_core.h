@@ -48,6 +48,9 @@ typedef unsigned int Uint32;
 typedef unsigned long long Uint64;
 typedef long long Int64;
 
+typedef void* (*PalAllocFn)(void*, Uint64);
+typedef void (*PalFreeFn)(void*, void*);
+
 typedef enum PalResult {
     PAL_SUCCESS,
     PAL_ERROR_NULL_POINTER,
@@ -65,9 +68,23 @@ typedef struct PalVersion {
     int patch;
 } PalVersion;
 
+typedef struct PalAllocator {
+    PalAllocFn alloc;
+    PalFreeFn free;
+    void* userData;
+
+} PalAllocator;
+
 _PAPI PalVersion _PCALL palGetVersion();
 _PAPI const char* _PCALL palGetVersionString();
-
 _PAPI const char* _PCALL palResultToString(PalResult result);
+
+_PAPI void* _PCALL palAllocate(Uint64 size);
+_PAPI void _PCALL palFree(void* memory);
+
+_PAPI void _PCALL palSetMemory(void* memory, int value, Uint64 size);
+_PAPI void _PCALL palZeroMemory(void* memory, Uint64 size);
+_PAPI void _PCALL palCopyMemory(void* dest, const void* src, Uint64 size);
+_PAPI void _PCALL palMoveMemory(void* dest, const void* src, Uint64 size);
 
 #endif // _PAL_CORE_H

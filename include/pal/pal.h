@@ -1,7 +1,7 @@
 
-#ifndef _PAL_CORE_H
-#define _PAL_CORE_H
+#ifndef _PAL_H
+#define _PAL_H
 
 #include "pal_core.h"
 
-#endif // _PAL_CORE_H
+#endif // _PAL_H
