@@ -42,7 +42,7 @@ extern "C" {
 #endif // __cplusplus
 
 #define PAL_BIT(x) 1 << x
-#define PAL_DECLARE_HANDLE(name) typedef struct name name;
+#define PAL_DECLARE_HANDLE(name) typedef struct name##_T* name;
 
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
@@ -74,6 +74,8 @@ typedef enum PalResult {
     PAL_ERROR_RESOURCE_IN_USE,
     PAL_ERROR_TIMEOUT,
 
+    PAL_ERROR_MODULE_NOT_FOUND,
+    PAL_ERROR_DEVICE_NOT_FOUND,
     PAL_ERROR_INVALID_DISPLAY
 } PalResult;
 

@@ -4,9 +4,8 @@
 
 #include "pal/pal_video.h"
 
-typedef struct PalVideo {
+struct PalVideo_T {
     PalAllocator* allocator;
-
-} PalVideo;
+};
 
 #endif // _PAL_VIDEO_INTERNAL_H

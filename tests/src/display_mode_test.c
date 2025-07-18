@@ -11,7 +11,7 @@ void displayModeTest()
     palLogInfo(PAL_NULL, "");
 
     PalResult result;
-    PalVideo* video = PAL_NULL;
+    PalVideo video;
     PalDisplayInfo displayInfo;
     PalDisplayMode displayMode;
     int displayCount = 0;
@@ -36,7 +36,7 @@ void displayModeTest()
 
     palLogInfo(PAL_NULL, "Display Count: %i", displayCount);
 
-    PalDisplay* displays[displayCount];
+    PalDisplay displays[displayCount];
     result = palEnumerateDisplays(video, &displayCount, displays);
     if (result != PAL_SUCCESS) {
         const char* resultString = palResultToString(result);
@@ -46,7 +46,7 @@ void displayModeTest()
 
     // get display info
     for (int i = 0; i < displayCount; i++) {
-        PalDisplay* display = displays[i];
+        PalDisplay display = displays[i];
         result = palGetDisplayInfo(display, &displayInfo);
         if (result != PAL_SUCCESS) {
             const char* resultString = palResultToString(result);

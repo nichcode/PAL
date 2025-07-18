@@ -29,6 +29,12 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_ERROR_TIMEOUT:
         return "Operation timeout";
 
+        case PAL_ERROR_MODULE_NOT_FOUND:
+        return "Module or dll not found";
+
+        case PAL_ERROR_DEVICE_NOT_FOUND:
+        return "Device not found";
+
         case PAL_ERROR_INVALID_DISPLAY:
         return "Invalid display";
     }

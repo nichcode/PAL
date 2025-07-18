@@ -24,7 +24,10 @@ project "Pal"
     }
 
     filter {"system:windows", "configurations:*"}
-        files { "src/core/win32/**.c" }
+        files { 
+            "src/core/win32/**.c",
+            "src/platform/win32/**.c"
+        }
     filter {}
 
     if (PAL_BUILD_VIDEO) then

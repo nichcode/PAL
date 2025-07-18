@@ -14,7 +14,7 @@ BOOL CALLBACK monitorProc(HMONITOR, HDC, LPRECT, LPARAM);
 
 typedef struct DisplayData
 {
-    PalDisplay** displays;
+    PalDisplay* displays;
     int count;
     int maxCount;
 } DisplayData;
@@ -46,9 +46,9 @@ static void addMode(
     int* count);
 
 PalResult _PCALL palEnumerateDisplays(
-    PalVideo* video,
+    PalVideo video,
     int* count,
-    PalDisplay** displays) {
+    PalDisplay* displays) {
 
     if (!video || !count) {
         return PAL_ERROR_NULL_POINTER;
@@ -65,7 +65,7 @@ PalResult _PCALL palEnumerateDisplays(
 }
 
 PalResult _PCALL palGetDisplayInfo(
-    PalDisplay* display, 
+    PalDisplay display, 
     PalDisplayInfo* info) {
 
     if (!display || !info) {
@@ -103,20 +103,20 @@ PalResult _PCALL palGetDisplayInfo(
 }
 
 PalResult _PCALL palGetPrimaryDisplay(
-    PalVideo* video, 
-    PalDisplay** outDisplay) {
+    PalVideo video, 
+    PalDisplay* outDisplay) {
 
     if (!video || !outDisplay) {
         return PAL_ERROR_NULL_POINTER;
     }
 
     HMONITOR monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
-    *outDisplay = (PalDisplay*)monitor;
+    *outDisplay = (PalDisplay)monitor;
     return PAL_SUCCESS;
 }
 
 PalResult _PCALL palEnumerateDisplayModes(
-    PalDisplay* display,
+    PalDisplay display,
     int* count,
     PalDisplayMode* modes) {
 
@@ -177,7 +177,7 @@ BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
 
     if (data->displays) {
         if (data->count < data->maxCount) {
-            data->displays[data->count] = (PalDisplay*)monitor;
+            data->displays[data->count] = (PalDisplay)monitor;
         }
     }
 

@@ -49,30 +49,30 @@ typedef struct PalVideoConfig {
 
 _PAPI PalResult _PCALL palCreateVideo(
     PalVideoConfig* config,
-    PalVideo** outVideo);
+    PalVideo* outVideo);
 
 _PAPI void _PCALL palDestroyVideo(
-    PalVideo* video);
+    PalVideo video);
 
 _PAPI PalResult _PCALL palGetVideoFeatures(
-    PalVideo* video,
+    PalVideo video,
     PalVideoFeatureFlags* features);
 
 _PAPI PalResult _PCALL palEnumerateDisplays(
-    PalVideo* video,
+    PalVideo video,
     int* count,
-    PalDisplay** displays);
+    PalDisplay* displays);
 
 _PAPI PalResult _PCALL palGetDisplayInfo(
-    PalDisplay* display, 
+    PalDisplay display, 
     PalDisplayInfo* info);
 
 _PAPI PalResult _PCALL palGetPrimaryDisplay(
-    PalVideo* video, 
-    PalDisplay** outDisplay);
+    PalVideo video, 
+    PalDisplay* outDisplay);
 
 _PAPI PalResult _PCALL palEnumerateDisplayModes(
-    PalDisplay* display,
+    PalDisplay display,
     int* count,
     PalDisplayMode* modes);
 

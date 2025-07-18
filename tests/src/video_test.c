@@ -11,7 +11,7 @@ void videoTest() {
     palLogInfo(PAL_NULL, "");
 
     PalResult result;
-    PalVideo* video = PAL_NULL;
+    PalVideo video;
     PalVideoConfig config;
     config.allocator = PAL_NULL;
 

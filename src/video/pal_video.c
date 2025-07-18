@@ -4,9 +4,9 @@
 
 PalResult _PCALL palCreateVideo(
     PalVideoConfig* config,
-    PalVideo** outVideo) {
+    PalVideo* outVideo) {
 
-    PalVideo* video;
+    PalVideo video;
     if (!config || !outVideo) {
         return PAL_ERROR_NULL_POINTER;
     }
@@ -15,12 +15,12 @@ PalResult _PCALL palCreateVideo(
         return PAL_ERROR_INVALID_ALLOCATOR;
     }
 
-    video = palAllocate(config->allocator, sizeof(PalVideo));
+    video = palAllocate(config->allocator, sizeof(struct PalVideo_T));
     if (!video) {
         return PAL_ERROR_OUT_OF_MEMORY;
     }
 
-    palZeroMemory(video, sizeof(PalVideo));
+    palZeroMemory(video, sizeof(struct PalVideo_T));
     if (config->allocator) {
         video->allocator = config->allocator;
     }
@@ -30,7 +30,7 @@ PalResult _PCALL palCreateVideo(
 }
 
 void _PCALL palDestroyVideo(
-    PalVideo* video) {
+    PalVideo video) {
     
     if (!video) {
         return;

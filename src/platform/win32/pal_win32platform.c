@@ -1,0 +1,107 @@
+
+#include "pal_pch.h"
+#include "platform/pal_platform.h"
+
+#ifdef _WIN32
+
+palVersionsWin32 g_VersionsWin32;
+
+typedef LONG (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+
+bool palGetOsVersionWin32(PalVersion* version) {
+
+    OSVERSIONINFOEXW ver = { 0 };
+    ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+
+    HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
+    RtlGetVersionPtr getVer = (RtlGetVersionPtr)GetProcAddress(ntdll, "RtlGetVersion");
+    if (!getVer) {
+        return PAL_FALSE;
+    }
+
+    if (getVer((PRTL_OSVERSIONINFOW)&ver)) {
+        return PAL_FALSE;
+    }
+
+    version->major = ver.dwMajorVersion;
+    version->minor = ver.dwMinorVersion;
+    version->patch = ver.dwBuildNumber;
+
+    if (g_VersionsWin32.window10.major) {
+        return PAL_TRUE;
+    }
+
+    // windows XP
+    g_VersionsWin32.windowXP = (PalVersion) {
+        .major = 5,
+        .minor = 1,
+        .patch = 0
+    };
+
+    // windows Vista
+    g_VersionsWin32.windowVista = (PalVersion) {
+        .major = 6,
+        .minor = 0,
+        .patch = 0
+    };
+
+    // windows 7
+    g_VersionsWin32.window7 = (PalVersion) {
+        .major = 6,
+        .minor = 1,
+        .patch = 0
+    };
+
+    // windows 8
+    g_VersionsWin32.window8 = (PalVersion) {
+        .major = 6,
+        .minor = 2,
+        .patch = 0
+    };
+
+    // windows 8_1
+    g_VersionsWin32.window8_1 = (PalVersion) {
+        .major = 6,
+        .minor = 3,
+        .patch = 0
+    };
+
+    // windows 10
+    g_VersionsWin32.window10 = (PalVersion) {
+        .major = 10,
+        .minor = 0,
+        .patch = 0
+    };
+
+    // windows 11
+    g_VersionsWin32.window11 = (PalVersion) {
+        .major = 10,
+        .minor = 0,
+        .patch = 22000
+    };
+
+    return PAL_TRUE;
+}
+
+bool palIsOsVersionWin32(PalVersion* osVersion, PalVersion* version) {
+
+    if (osVersion->major > version->major) {
+        return PAL_TRUE;
+    }
+
+    if (osVersion->major < version->major) {
+        return PAL_FALSE;
+    }
+
+    if (osVersion->minor > version->minor) {
+        return PAL_TRUE;
+    }
+
+    if (osVersion->minor < version->minor) {
+        return PAL_FALSE;
+    }
+
+    return osVersion->patch >= version->patch;
+}
+
+#endif // _WIN32
