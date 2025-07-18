@@ -44,5 +44,6 @@ void logTest();
 void videoTest();
 void displayTest();
 void displayModeTest();
+void windowTest();
 
 #endif // _TESTS_H

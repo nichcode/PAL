@@ -6,6 +6,7 @@
 
 bool palGetOsVersionWin32(PalVersion* version);
 bool palIsOsVersionWin32(PalVersion* osVersion, PalVersion* version);
+int palStringToWideString(wchar_t* buffer, const char* string);
 
 typedef struct palVersionsWin32 {
     PalVersion windowXP;

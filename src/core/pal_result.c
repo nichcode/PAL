@@ -20,7 +20,7 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_ERROR_OUT_OF_MEMORY:
         return "Out of memory";
 
-        case PAL_ERROR_UNSUPPORTED:
+        case PAL_ERROR_FEATURE_UNSUPPORTED:
         return "Feature not supported";
 
         case PAL_ERROR_RESOURCE_IN_USE:

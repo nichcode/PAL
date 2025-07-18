@@ -5,13 +5,23 @@
 
 #ifdef _WIN32
 
-PalResult _PCALL palGetVideoFeatures(
-    PalVideo video,
-    PalVideoFeatureFlags* features) {
+PalResult _PCALL palUpdateVideo(
+    PalVideo video) {
 
-    if (!features || !video) {
+    if (!video) {
         return PAL_ERROR_NULL_POINTER;
     }
+    
+    MSG msg;
+    while (PeekMessageA(&msg, PAL_NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+
+    return PAL_SUCCESS;
+}
+
+Uint32 palGetSupportedFeatures() {
 
     PalVideoFeatureFlags flags = 0;
     flags |= PAL_VIDEO_DISPLAY_ORIENTATION;
@@ -34,9 +44,7 @@ PalResult _PCALL palGetVideoFeatures(
         flags |= PAL_VIDEO_PER_DISPLAY_DPI;
         flags |= PAL_VIDEO_HIGH_DPI;
     }
-    
-    *features = flags;
-    return PAL_SUCCESS;
+    return flags;   
 }
 
 #endif // _WIN32

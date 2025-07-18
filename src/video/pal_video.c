@@ -25,6 +25,7 @@ PalResult _PCALL palCreateVideo(
         video->allocator = config->allocator;
     }
 
+    video->featureFlags = palGetSupportedFeatures();
     *outVideo = video;
     return PAL_SUCCESS;
 }
@@ -38,4 +39,16 @@ void _PCALL palDestroyVideo(
 
     PalAllocator* allocator = video->allocator;
     palFree(allocator, video);
+}
+
+PalResult _PCALL palGetVideoFeatures(
+    PalVideo video,
+    PalVideoFeatureFlags* features) {
+
+    if (!video || !features) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    *features = video->featureFlags;
+    return PAL_SUCCESS;
 }

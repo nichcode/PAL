@@ -1,6 +1,7 @@
 
 #include "pal_pch.h"
 #include "core/pal_console.h"
+#include "platform/pal_platform.h"
 
 #ifdef _WIN32
 
@@ -15,10 +16,7 @@ void palWriteConsole(PalLogLevel level, wchar_t* buffer, const char* msg) {
         console = GetStdHandle(STD_OUTPUT_HANDLE);
     }
 
-    // convert to wide string
-    int len = MultiByteToWideChar(CP_UTF8, 0, msg, -1, PAL_NULL, 0);
-    MultiByteToWideChar(CP_UTF8, 0, msg, -1, buffer, len);
-
+    int len = palStringToWideString(buffer, msg);
     SetConsoleTextAttribute(console, levels[level]);
     DWORD written = 0;
     WriteConsoleW(console, buffer, (DWORD)len - 1, &written, 0);

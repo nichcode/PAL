@@ -104,4 +104,11 @@ bool palIsOsVersionWin32(PalVersion* osVersion, PalVersion* version) {
     return osVersion->patch >= version->patch;
 }
 
+int palStringToWideString(wchar_t* buffer, const char* string) {
+
+    int len = MultiByteToWideChar(CP_UTF8, 0, string, -1, PAL_NULL, 0);
+    MultiByteToWideChar(CP_UTF8, 0, string, -1, buffer, len);
+    return len;
+}
+
 #endif // _WIN32
