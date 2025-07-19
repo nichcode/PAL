@@ -257,6 +257,49 @@ LRESULT CALLBACK windowProc(
             }
             break;
         }
+
+        case WM_MOVE: {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            window->x = x;
+            window->y = y;
+
+            if (window->video && window->video->eventDriver) {
+                PalEventDriver driver = window->video->eventDriver;
+                if (driver->modes[PAL_EVENT_WINDOW_MOVE] != PAL_EVENT_MODE_DISABLED) {
+                    PalEvent event;
+                    event.sourceID = window->id;
+                    event.type = PAL_EVENT_WINDOW_MOVE;
+                    event.data = palPackInt32(x, y);
+                    palPushEvent(driver, &event);
+                }
+            }
+            return 0;
+            break;
+        }
+
+        case WM_SIZE: {
+            const Uint32 width = (Uint32)LOWORD(lParam);
+            const Uint32 height = (Uint32)HIWORD(lParam);
+
+            if (width != window->width || height != window->height) {
+                window->width = width;
+                window->height = height;
+
+                if (window->video && window->video->eventDriver) {
+                    PalEventDriver driver = window->video->eventDriver;
+                    if (driver->modes[PAL_EVENT_WINDOW_RESIZE] != PAL_EVENT_MODE_DISABLED) {
+                        PalEvent event;
+                        event.sourceID = window->id;
+                        event.type = PAL_EVENT_WINDOW_RESIZE;
+                        event.data = palPackUint32(width, height);
+                        palPushEvent(driver, &event);
+                    }
+                }
+            }
+            return 0;
+            break;
+        }
     }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);

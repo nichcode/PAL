@@ -13,6 +13,8 @@ typedef bool (*PalPollFn)(void*, PalEvent*);
 
 typedef enum PalEventType {
     PAL_EVENT_QUIT,
+    PAL_EVENT_WINDOW_RESIZE,
+    PAL_EVENT_WINDOW_MOVE,
     PAL_EVENT_EVENT,
     PAL_EVENT_MAX
 } PalEventType;
@@ -22,6 +24,16 @@ typedef enum PalEventMode {
     PAL_EVENT_MODE_POLL,
     PAL_EVENT_MODE_CALLBACK
 } PalEventMode;
+
+typedef struct PalEventPosInfo {
+    int x;
+    int y;
+} PalEventPosInfo;
+
+typedef struct PalEventSizeInfo {
+    Uint32 width;
+    Uint32 height;
+} PalEventSizeInfo;
 
 typedef struct PalEvent {
     PalEventType type;
@@ -72,5 +84,67 @@ _PAPI PalResult _PCALL palPushEvent(
 _PAPI bool _PCALL palPollEvent(
     PalEventDriver eventDriver,
     PalEvent* outEvent);
+
+static inline Int64 palPackUint32(
+    Uint32 low,
+    Uint32 high) {
+    return (Int64) (((Uint64)high << 32) | (Uint64)low);
+}
+
+static inline Int64 palPackInt32(
+    int low,
+    int high) {
+    return ((Int64) (Uint32)high << 32) | (Uint32)low;
+}
+
+static inline void palUnpackUint32(
+    Int64 data,
+    Uint32* outLow,
+    Uint32* outHigh) {
+    if (outLow) {
+        *outLow = (Uint32)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (Uint32)((Uint64)data >> 32);
+    }
+}
+
+static inline void palUnpackInt32(
+    Int64 data,
+    int* outLow,
+    int* outHigh) {
+    if (outLow) {
+        *outLow = (int)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (int)((Uint64)data >> 32);
+    }
+}
+
+static inline void palGetEventPosInfo(
+    PalEvent* event,
+    PalEventPosInfo* info) {
+    if (!event || !info) {
+        return;
+    }
+    int x, y;
+    palUnpackInt32(event->data, &x, &y);
+    info->x = x;
+    info->y = y;
+}
+
+static inline void palGetEventSizeInfo(
+    PalEvent* event,
+    PalEventSizeInfo* info) {
+    if (!event || !info) {
+        return;
+    }
+    Uint32 width, height;
+    palUnpackUint32(event->data, &width, &height);
+    info->width = width;
+    info->height = height;
+}
 
 #endif // _PAL_EVENT_H
