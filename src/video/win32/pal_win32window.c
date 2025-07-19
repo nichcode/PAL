@@ -21,7 +21,6 @@ struct PalWindow_T {
     int y;
 
     bool hidden;
-    bool hasDPI;
 };
 
 LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -37,7 +36,7 @@ PalResult _PCALL palCreateWindow(
     PalDisplay display = PAL_NULL;
     PalDisplayInfo displayInfo;
     HINSTANCE instance;
-    bool hidden, hasDPI = 0;
+    bool hidden;
 
     PalVideoFeatureFlags features = video->featureFlags;
     instance = GetModuleHandleW(PAL_NULL);
@@ -85,13 +84,14 @@ PalResult _PCALL palCreateWindow(
         y = displayInfo.y + 100;
     }
 
+    float scale;
     // set window size
     if (config->flags & PAL_WINDOW_HIGH_DPI) {
         // check for support
         if (features & PAL_VIDEO_HIGH_DPI) {
-            width = (Uint32)((float)config->width * displayInfo.dpiScaleX);
-            height = (Uint32)((float)config->height * displayInfo.dpiScaleY);
-            hasDPI = PAL_TRUE;
+            scale = (float)displayInfo.dpi / 96.0f;
+            width = (Uint32)((float)config->width * scale);
+            height = (Uint32)((float)config->height * scale);
         } else {
             return PAL_ERROR_FEATURE_UNSUPPORTED;
         }
@@ -99,7 +99,6 @@ PalResult _PCALL palCreateWindow(
     } else {
         width = config->width;
         height = config->height;
-        hasDPI = PAL_FALSE;
     }
 
     RECT rect = { 0, 0, 0, 0 };
@@ -167,7 +166,6 @@ PalResult _PCALL palCreateWindow(
     window->x = x;
     window->y = y;
     window->hidden = hidden;
-    window->hasDPI = hasDPI;
 
     window->id = ++video->nextWindowID;
     video->windowCount++;
@@ -226,8 +224,10 @@ LRESULT CALLBACK windowProc(
 
     switch (msg) {
         case WM_DPICHANGED: {
-            if (window->hasDPI) {
+            if (window->video->featureFlags & PAL_VIDEO_HIGH_DPI) {
                 RECT* rect = (RECT*)lParam;
+                UINT dpi = HIWORD(wParam);
+
                 int x = rect->left;
                 int y = rect->top;
                 int w = rect->right - rect->left;
@@ -241,6 +241,18 @@ LRESULT CALLBACK windowProc(
                 window->y = y;
                 window->width = w;
                 window->height = h;
+
+                if (window->video && window->video->eventDriver) {
+                PalEventDriver driver = window->video->eventDriver;
+                if (driver->modes[PAL_EVENT_DPI_CHANGED] != PAL_EVENT_MODE_DISABLED) {
+                    PalEvent event;
+                    event.sourceID = window->id;
+                    event.type = PAL_EVENT_DPI_CHANGED;
+                    event.data = dpi;
+                    palPushEvent(driver, &event);
+                }
+            }
+
             }
             break;
         }

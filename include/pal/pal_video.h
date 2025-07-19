@@ -40,8 +40,7 @@ typedef struct PalDisplayInfo {
     int width;
     int height;
     int refreshRate;
-    float dpiScaleX;
-    float dpiScaleY;
+    int dpi;
 } PalDisplayInfo;
 
 typedef struct PalDisplayMode {

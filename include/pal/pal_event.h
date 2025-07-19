@@ -15,6 +15,7 @@ typedef enum PalEventType {
     PAL_EVENT_QUIT,
     PAL_EVENT_WINDOW_RESIZE,
     PAL_EVENT_WINDOW_MOVE,
+    PAL_EVENT_DPI_CHANGED,
     PAL_EVENT_EVENT,
     PAL_EVENT_MAX
 } PalEventType;

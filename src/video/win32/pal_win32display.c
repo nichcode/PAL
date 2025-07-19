@@ -23,7 +23,7 @@ static HINSTANCE s_Shcore;
 static GetDpiForMonitorFn s_GetDpiForMonitor;
 static SetProcessAwarenessFn s_SetProcessAwareness;
 
-static void getMonitorDPI(HMONITOR monitor, float* x, float* y);
+static void getMonitorDPI(HMONITOR monitor, int* dpi);
 
 static void getModes(
     HMONITOR monitor, 
@@ -98,7 +98,7 @@ PalResult _PCALL palGetDisplayInfo(
     }
 
     // get dpi scale
-    getMonitorDPI(monitor, &info->dpiScaleX, &info->dpiScaleY);
+    getMonitorDPI(monitor, &info->dpi);
     return PAL_SUCCESS;
 }
 
@@ -185,13 +185,12 @@ BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
     return PAL_TRUE;
 }
 
-static void getMonitorDPI(HMONITOR monitor, float* x, float* y) {
+static void getMonitorDPI(HMONITOR monitor, int* dpi) {
 
     if (!s_Shcore) {
         s_Shcore = LoadLibraryA("shcore.dll");
         if (!s_Shcore) {
-            *x = 1.0f;
-            *y = 1.0f;
+            *dpi = 96;
             return;
         }
 
@@ -212,8 +211,7 @@ static void getMonitorDPI(HMONITOR monitor, float* x, float* y) {
         int dpiX, dpiY;
         s_SetProcessAwareness(WIN32_DPI_AWARE);
         s_GetDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
-        *x = (float)dpiX / 96.0f;
-        *y = (float)dpiY / 96.0f;
+        *dpi = dpiX;
     }
 }
 
