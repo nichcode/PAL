@@ -96,6 +96,11 @@ typedef struct PalLogger {
     void* userData;
 } PalLogger;
 
+typedef struct PalTimer {
+    Uint64 frequency;
+    Uint64 startTime;
+} PalTimer;
+
 _PAPI PalVersion _PCALL palGetVersion();
 _PAPI const char* _PCALL palGetVersionString();
 _PAPI const char* _PCALL palResultToString(PalResult result);
@@ -144,5 +149,10 @@ _PAPI void _PCALL palLogWarn(
 _PAPI void _PCALL palLogError(
     PalLogger* logger,  
     const char* fmt, ...);
+
+_PAPI PalTimer _PCALL palGetSysTimer();
+_PAPI double _PCALL palGetTime(PalTimer* timer);
+_PAPI Uint64 _PCALL palGetPerformanceCounter();
+_PAPI Uint64 _PCALL palGetPerformanceFrequency();
 
 #endif // _PAL_CORE_H
