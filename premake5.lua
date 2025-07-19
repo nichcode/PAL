@@ -9,6 +9,11 @@ newoption {
     description = "build PAL as a static library"
 }
 
+newoption {
+    trigger = "with-examples",
+    description = "build PAL with example applications"
+}
+
 target_dir = "%{wks.location}/bin"
 obj_dir = "%{wks.location}/build"
 
@@ -45,6 +50,10 @@ workspace "PAL"
 
     if (_OPTIONS["with-tests"]) then
         include "tests/tests.lua"
+    end
+
+    if (_OPTIONS["with-examples"]) then
+        include "examples/app_window.lua"
     end
 
     include "pal.lua"

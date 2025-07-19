@@ -125,7 +125,7 @@ static inline void palUnpackInt32(
 }
 
 static inline void palGetEventPosInfo(
-    PalEvent* event,
+    const PalEvent* event,
     PalEventPosInfo* info) {
     if (!event || !info) {
         return;
@@ -137,7 +137,7 @@ static inline void palGetEventPosInfo(
 }
 
 static inline void palGetEventSizeInfo(
-    PalEvent* event,
+    const PalEvent* event,
     PalEventSizeInfo* info) {
     if (!event || !info) {
         return;
