@@ -6,6 +6,7 @@
 
 struct PalVideo_T {
     PalAllocator* allocator;
+    PalEventDriver eventDriver;
     Uint32 nextWindowID;
     Uint32 windowCount;
     PalVideoFeatureFlags featureFlags;

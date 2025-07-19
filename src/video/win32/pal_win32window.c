@@ -2,6 +2,7 @@
 #include "pal_pch.h"
 #include "video/pal_video_internal.h"
 #include "platform/pal_platform.h"
+#include "event/pal_event_internal.h"
 
 #define WIN32_CLASS L"PALClass"
 #define WIN32_PROP L"PAL"
@@ -240,6 +241,19 @@ LRESULT CALLBACK windowProc(
                 window->y = y;
                 window->width = w;
                 window->height = h;
+            }
+            break;
+        }
+
+        case WM_CLOSE: {
+            if (window->video && window->video->eventDriver) {
+                PalEventDriver driver = window->video->eventDriver;
+                if (driver->modes[PAL_EVENT_QUIT] != PAL_EVENT_MODE_DISABLED) {
+                    PalEvent event;
+                    event.sourceID = window->id;
+                    event.type = PAL_EVENT_QUIT;
+                    palPushEvent(driver, &event);
+                }
             }
             break;
         }

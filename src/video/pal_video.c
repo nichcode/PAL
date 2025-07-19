@@ -25,6 +25,10 @@ PalResult _PCALL palCreateVideo(
         video->allocator = config->allocator;
     }
 
+    if (config->eventDriver) {
+        video->eventDriver = config->eventDriver;
+    }
+
     video->featureFlags = palGetSupportedFeatures();
     *outVideo = video;
     return PAL_SUCCESS;
@@ -36,9 +40,7 @@ void _PCALL palDestroyVideo(
     if (!video) {
         return;
     }
-
-    PalAllocator* allocator = video->allocator;
-    palFree(allocator, video);
+    palFree(video->allocator, video);
 }
 
 PalResult _PCALL palGetVideoFeatures(

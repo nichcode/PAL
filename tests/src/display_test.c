@@ -2,8 +2,8 @@
 #include "tests.h"
 #include "pal/pal_video.h"
 
-void displayTest()
-{
+void displayTest() {
+
     palLogInfo(PAL_NULL, "");
     palLogInfo(PAL_NULL, "===========================================");
     palLogInfo(PAL_NULL, "Display Test");

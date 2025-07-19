@@ -1,16 +1,24 @@
 
-dofile("pal_config.lua")
+newoption {
+    trigger = "with-tests",
+    description = "build PAL with test applications"
+}
+
+newoption {
+    trigger = "with-static",
+    description = "build PAL as a static library"
+}
 
 target_dir = "%{wks.location}/bin"
 obj_dir = "%{wks.location}/build"
 
 workspace "PAL"
-    if PAL_BUILD_TESTS then
+    if (_OPTIONS["with-tests"]) then
         startproject("tests")
     end
 
-    if PAL_BUILD_STATIC then
-        staticruntime "on" 
+    if (_OPTIONS["with-static"]) then
+        staticruntime "on"
     else
         staticruntime "off"
     end
@@ -35,7 +43,7 @@ workspace "PAL"
         runtime "Release"
         optimize "full"
 
-    if PAL_BUILD_TESTS then
+    if (_OPTIONS["with-tests"]) then
         include "tests/tests.lua"
     end
 

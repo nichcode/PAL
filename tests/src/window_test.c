@@ -2,9 +2,6 @@
 #include "tests.h"
 #include "pal/pal_video.h"
 
-// TODO: remove
-#define CLOSE_TIME 1000000
-
 void windowTest() {
 
     palLogInfo(PAL_NULL, "");
@@ -61,18 +58,6 @@ void windowTest() {
         const char* resultString = palResultToString(result);
         palLogError(PAL_NULL, resultString);
         return;
-    }
-
-    bool running = PAL_TRUE;
-    int timer =  0;
-    while (running) {
-        palUpdateVideo(video);
-
-        // TODO: fixme(with timers or events)
-        timer++;
-        if (timer >= CLOSE_TIME) {
-            running = PAL_FALSE;
-        }
     }
 
     palDestroyWindow(window);

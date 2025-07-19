@@ -7,6 +7,7 @@
 PAL_DECLARE_HANDLE(PalVideo);
 PAL_DECLARE_HANDLE(PalDisplay);
 PAL_DECLARE_HANDLE(PalWindow);
+PAL_DECLARE_HANDLE(PalEventDriver);
 
 typedef enum PalVideoFeatureFlags {
     PAL_VIDEO_PER_DISPLAY_DPI = PAL_BIT(0),
@@ -56,6 +57,7 @@ typedef struct PalDisplayMode {
 
 typedef struct PalVideoConfig {
     PalAllocator* allocator;
+    PalEventDriver eventDriver;
 } PalVideoConfig;
 
 typedef struct PalWindowConfig {

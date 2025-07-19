@@ -2,7 +2,7 @@
 project "Pal"
     language "C"
 
-    if PAL_BUILD_STATIC then
+    if (_OPTIONS["with-static"]) then
         kind "StaticLib"
     else
         kind "SharedLib"
@@ -14,31 +14,24 @@ project "Pal"
 
     pchheader "src/pal_pch.h"
 
-    -- core
     files { 
         "src/core/pal_memory.c", 
         "src/core/pal_result.c", 
         "src/core/pal_version.c",
         "src/core/pal_format.c",
-        "src/core/pal_log.c"
+        "src/core/pal_log.c",
+        "src/video/pal_video.c", 
+        "src/event/pal_event.c", 
+        "src/event/pal_event_queue.c"
     }
 
     filter {"system:windows", "configurations:*"}
         files { 
             "src/core/win32/**.c",
-            "src/platform/win32/**.c"
+            "src/platform/win32/**.c",
+            "src/video/win32/**.c"
         }
     filter {}
-
-    if (PAL_BUILD_VIDEO) then
-        files { 
-            "src/video/pal_video.c", 
-        }
-        
-        filter {"system:windows", "configurations:*"}
-        files { "src/video/win32/**.c" }
-        filter {}
-    end
 
     includedirs {
         "include",
