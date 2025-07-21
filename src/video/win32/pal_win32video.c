@@ -3,8 +3,6 @@
 #include "pal/pal_video.h"
 #include "platform/pal_platform.h"
 
-#ifdef _WIN32
-
 PalResult _PCALL palUpdateVideo(
     PalVideo video) {
 
@@ -46,5 +44,3 @@ Uint32 palGetSupportedFeatures() {
     }
     return flags;   
 }
-
-#endif // _WIN32

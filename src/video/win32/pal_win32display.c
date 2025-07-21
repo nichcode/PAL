@@ -2,8 +2,6 @@
 #include "pal_pch.h"
 #include "video/pal_video_internal.h"
 
-#ifdef _WIN32
-
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -301,5 +299,3 @@ static void addMode(
     modes[*count] = *mode;
     *count += 1;
 }
-
-#endif // _WIN32

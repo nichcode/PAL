@@ -16,7 +16,7 @@ typedef enum PalEventType {
     PAL_EVENT_WINDOW_RESIZE,
     PAL_EVENT_WINDOW_MOVE,
     PAL_EVENT_DPI_CHANGED,
-    PAL_EVENT_EVENT,
+    PAL_EVENT_USER,
     PAL_EVENT_MAX
 } PalEventType;
 
@@ -85,44 +85,6 @@ _PAPI PalResult _PCALL palPushEvent(
 _PAPI bool _PCALL palPollEvent(
     PalEventDriver eventDriver,
     PalEvent* outEvent);
-
-static inline Int64 palPackUint32(
-    Uint32 low,
-    Uint32 high) {
-    return (Int64) (((Uint64)high << 32) | (Uint64)low);
-}
-
-static inline Int64 palPackInt32(
-    int low,
-    int high) {
-    return ((Int64) (Uint32)high << 32) | (Uint32)low;
-}
-
-static inline void palUnpackUint32(
-    Int64 data,
-    Uint32* outLow,
-    Uint32* outHigh) {
-    if (outLow) {
-        *outLow = (Uint32)(data & 0xFFFFFFFF);
-    }
-
-    if (outHigh) {
-        *outHigh = (Uint32)((Uint64)data >> 32);
-    }
-}
-
-static inline void palUnpackInt32(
-    Int64 data,
-    int* outLow,
-    int* outHigh) {
-    if (outLow) {
-        *outLow = (int)(data & 0xFFFFFFFF);
-    }
-
-    if (outHigh) {
-        *outHigh = (int)((Uint64)data >> 32);
-    }
-}
 
 static inline void palGetEventPosInfo(
     const PalEvent* event,

@@ -1,6 +1,8 @@
 
 #include "pal/pal.h"
 
+// this examples builds only of video and event systems was built
+
 void onEvent(void* userData, const PalEvent* event) {
 
     if (event->type == PAL_EVENT_WINDOW_MOVE) {

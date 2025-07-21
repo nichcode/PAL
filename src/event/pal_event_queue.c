@@ -69,5 +69,11 @@ bool palPollQueue(
 
 bool eventIsCoalesce(PalEventType type)
 {
+    switch (type) {
+        case PAL_EVENT_WINDOW_MOVE:
+        case PAL_EVENT_WINDOW_RESIZE: {
+            return PAL_TRUE;
+        }
+    }
     return PAL_FALSE;
 }

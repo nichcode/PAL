@@ -4,6 +4,8 @@
 
 #include <stdarg.h>
 
+#include "pal_config.h"
+
 // using from Cpp
 #ifdef __cplusplus
 extern "C" {
@@ -11,7 +13,7 @@ extern "C" {
 
 #ifdef _WIN32
 #define _PCALL __stdcall
-#ifdef PAL_EXPORT
+#ifdef _PAL_EXPORT
 #define _PAPI __declspec(dllexport)
 #else 
 #define _PAPI __declspec(dllimport)
@@ -154,5 +156,44 @@ _PAPI PalTimer _PCALL palGetSysTimer();
 _PAPI double _PCALL palGetTime(PalTimer* timer);
 _PAPI Uint64 _PCALL palGetPerformanceCounter();
 _PAPI Uint64 _PCALL palGetPerformanceFrequency();
+
+
+static inline Int64 palPackUint32(
+    Uint32 low,
+    Uint32 high) {
+    return (Int64) (((Uint64)high << 32) | (Uint64)low);
+}
+
+static inline Int64 palPackInt32(
+    int low,
+    int high) {
+    return ((Int64) (Uint32)high << 32) | (Uint32)low;
+}
+
+static inline void palUnpackUint32(
+    Int64 data,
+    Uint32* outLow,
+    Uint32* outHigh) {
+    if (outLow) {
+        *outLow = (Uint32)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (Uint32)((Uint64)data >> 32);
+    }
+}
+
+static inline void palUnpackInt32(
+    Int64 data,
+    int* outLow,
+    int* outHigh) {
+    if (outLow) {
+        *outLow = (int)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (int)((Uint64)data >> 32);
+    }
+}
 
 #endif // _PAL_CORE_H

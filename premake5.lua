@@ -1,33 +1,21 @@
 
-newoption {
-    trigger = "with-tests",
-    description = "build PAL with test applications"
-}
-
-newoption {
-    trigger = "with-static",
-    description = "build PAL as a static library"
-}
-
-newoption {
-    trigger = "with-examples",
-    description = "build PAL with example applications"
-}
+local gen = require("pal_generate_config")
+dofile("pal_config.lua")
 
 target_dir = "%{wks.location}/bin"
 obj_dir = "%{wks.location}/build"
 
 workspace "PAL"
-    if (_OPTIONS["with-tests"]) then
-        startproject("tests")
+    if PAL_BUILD_TESTS then
+        startproject("Tests")
     end
 
-    if (_OPTIONS["with-static"]) then
+    if PAL_BUILD_STATIC then
         staticruntime "on"
     else
         staticruntime "off"
     end
-
+ 
     configurations { "Debug", "Release" }
     flags { "MultiProcessorCompile" }
    
@@ -48,13 +36,19 @@ workspace "PAL"
         runtime "Release"
         optimize "full"
 
-    if (_OPTIONS["with-tests"]) then
+    filter {}
+
+    if (PAL_BUILD_EXAMPLES) then
+        if PAL_BUILD_VIDEO and PAL_BUILD_EVENT then
+            include "examples/app_window.lua"
+        end
+    end
+
+    if (PAL_BUILD_TESTS) then
         include "tests/tests.lua"
     end
 
-    if (_OPTIONS["with-examples"]) then
-        include "examples/app_window.lua"
-    end
-
     include "pal.lua"
-    
+
+    gen.writeConfigHeader("include/pal/pal_config.h")
+    gen.writeProperties(".vscode/c_cpp_properties.json")    

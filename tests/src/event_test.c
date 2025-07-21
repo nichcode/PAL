@@ -2,7 +2,7 @@
 #include "tests.h"
 #include "pal/pal_event.h"
 
-#define QUIT_TIME 100
+#define QUIT_TIME 6
 
 void eventTest() {
 
@@ -36,23 +36,28 @@ void eventTest() {
         return;
     }
 
+    PalTimer sysTimer = palGetSysTimer();
+    double startTime = palGetTime(&sysTimer);
     bool running = PAL_TRUE;
-    int timer = 0;
+
     while (running) {
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
-            if (event.type == PAL_EVENT_EVENT) {
+            if (event.type == PAL_EVENT_USER) {
                 running = PAL_FALSE;
-                timer = 0;
                 break;
             }
         }
 
-        timer++;
-        if (timer >= QUIT_TIME) {
+        // check for 3 seconds and push a user event
+        double currentTime = palGetTime(&sysTimer);
+        double timePassed = currentTime - startTime;
+
+        if (running && (timePassed > QUIT_TIME)) {
+            palLogInfo(PAL_NULL, "6 seconds have passed");
             PalEvent event = {};
             event.sourceID = 120; // can be a window id or anything;
-            event.type = PAL_EVENT_EVENT;
+            event.type = PAL_EVENT_USER;
 
             // push the event. this either calls the callback or push to the queue
             // depending on the event mode

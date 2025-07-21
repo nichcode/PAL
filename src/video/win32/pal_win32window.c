@@ -2,7 +2,7 @@
 #include "pal_pch.h"
 #include "video/pal_video_internal.h"
 #include "platform/pal_platform.h"
-#include "event/pal_event_internal.h"
+#include "event/pal_window_event.h"
 
 #define WIN32_CLASS L"PALClass"
 #define WIN32_PROP L"PAL"
@@ -224,9 +224,9 @@ LRESULT CALLBACK windowProc(
 
     switch (msg) {
         case WM_DPICHANGED: {
+            UINT dpi = HIWORD(wParam);
             if (window->video->featureFlags & PAL_VIDEO_HIGH_DPI) {
                 RECT* rect = (RECT*)lParam;
-                UINT dpi = HIWORD(wParam);
 
                 int x = rect->left;
                 int y = rect->top;
@@ -241,32 +241,25 @@ LRESULT CALLBACK windowProc(
                 window->y = y;
                 window->width = w;
                 window->height = h;
-
-                if (window->video && window->video->eventDriver) {
-                PalEventDriver driver = window->video->eventDriver;
-                if (driver->modes[PAL_EVENT_DPI_CHANGED] != PAL_EVENT_MODE_DISABLED) {
-                    PalEvent event;
-                    event.sourceID = window->id;
-                    event.type = PAL_EVENT_DPI_CHANGED;
-                    event.data = dpi;
-                    palPushEvent(driver, &event);
-                }
             }
 
+            
+#if PAL_HAS_EVENT
+            if (window->video && window->video->eventDriver) {
+            PalEventDriver driver = window->video->eventDriver;
+            palWindowDpiChangeEvent(driver, dpi, window->id);
             }
+#endif // PAL_HAS_EVENT
             break;
         }
 
         case WM_CLOSE: {
+#if PAL_HAS_EVENT
             if (window->video && window->video->eventDriver) {
                 PalEventDriver driver = window->video->eventDriver;
-                if (driver->modes[PAL_EVENT_QUIT] != PAL_EVENT_MODE_DISABLED) {
-                    PalEvent event;
-                    event.sourceID = window->id;
-                    event.type = PAL_EVENT_QUIT;
-                    palPushEvent(driver, &event);
-                }
+                palWindowQuitEvent(driver, window->id);
             }
+#endif // PAL_HAS_EVENT
             break;
         }
 
@@ -276,16 +269,12 @@ LRESULT CALLBACK windowProc(
             window->x = x;
             window->y = y;
 
+#if PAL_HAS_EVENT
             if (window->video && window->video->eventDriver) {
                 PalEventDriver driver = window->video->eventDriver;
-                if (driver->modes[PAL_EVENT_WINDOW_MOVE] != PAL_EVENT_MODE_DISABLED) {
-                    PalEvent event;
-                    event.sourceID = window->id;
-                    event.type = PAL_EVENT_WINDOW_MOVE;
-                    event.data = palPackInt32(x, y);
-                    palPushEvent(driver, &event);
-                }
+                palWindowMoveEvent(driver, x, y, window->id);
             }
+#endif // PAL_HAS_EVENT
             return 0;
             break;
         }
@@ -298,16 +287,12 @@ LRESULT CALLBACK windowProc(
                 window->width = width;
                 window->height = height;
 
+#if PAL_HAS_EVENT
                 if (window->video && window->video->eventDriver) {
                     PalEventDriver driver = window->video->eventDriver;
-                    if (driver->modes[PAL_EVENT_WINDOW_RESIZE] != PAL_EVENT_MODE_DISABLED) {
-                        PalEvent event;
-                        event.sourceID = window->id;
-                        event.type = PAL_EVENT_WINDOW_RESIZE;
-                        event.data = palPackUint32(width, height);
-                        palPushEvent(driver, &event);
-                    }
+                    palWindowResizeEvent(driver, width, height, window->id);
                 }
+#endif // PAL_HAS_EVENT
             }
             return 0;
             break;
