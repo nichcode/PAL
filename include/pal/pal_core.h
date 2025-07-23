@@ -78,7 +78,8 @@ typedef enum PalResult {
 
     PAL_ERROR_MODULE_NOT_FOUND,
     PAL_ERROR_DEVICE_NOT_FOUND,
-    PAL_ERROR_INVALID_DISPLAY
+    PAL_ERROR_INVALID_DISPLAY,
+    PAL_ERROR_INVALID_INPUT_DEVICE
 } PalResult;
 
 typedef struct PalVersion {
@@ -156,7 +157,6 @@ _PAPI PalTimer _PCALL palGetSysTimer();
 _PAPI double _PCALL palGetTime(PalTimer* timer);
 _PAPI Uint64 _PCALL palGetPerformanceCounter();
 _PAPI Uint64 _PCALL palGetPerformanceFrequency();
-
 
 static inline Int64 palPackUint32(
     Uint32 low,

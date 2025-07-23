@@ -29,5 +29,11 @@ project "Tests"
         }
     end
 
+    if PAL_BUILD_INPUT then
+        files {
+            "src/input_test.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

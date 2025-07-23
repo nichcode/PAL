@@ -3,9 +3,7 @@
 #include "video/pal_video_internal.h"
 #include "platform/pal_platform.h"
 #include "event/pal_window_event.h"
-
-#define WIN32_CLASS L"PALClass"
-#define WIN32_PROP L"PAL"
+#include "pal_win32video.h"
 
 struct PalWindow_T {
     PalVideo video;
@@ -23,10 +21,6 @@ struct PalWindow_T {
     bool hidden;
 };
 
-LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-bool registerWindowClass(HINSTANCE instance);
-void unRegisterWindowClass(HINSTANCE instance);
-
 PalResult _PCALL palCreateWindow(
     PalVideo video, 
     PalWindowConfig* config,
@@ -39,13 +33,6 @@ PalResult _PCALL palCreateWindow(
     bool hidden;
 
     PalVideoFeatureFlags features = video->featureFlags;
-    instance = GetModuleHandleW(PAL_NULL);
-    if (video->windowCount == 0) {
-        if (!registerWindowClass(instance)) {
-            return PAL_ERROR_DEVICE_NOT_FOUND;
-        }
-    }
-
     Uint32 style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
     Uint32 exStyle = WS_EX_OVERLAPPEDWINDOW;
 
@@ -113,7 +100,7 @@ PalResult _PCALL palCreateWindow(
 
     HWND handle = CreateWindowExW(
         exStyle,
-        WIN32_CLASS,
+        WIN32_VIDEO_CLASS,
         buffer,
         style, 
         x,
@@ -154,7 +141,7 @@ PalResult _PCALL palCreateWindow(
     }
 
     ShowWindow(handle, showFlag);
-    SetPropW(handle, WIN32_PROP, window);
+    SetPropW(handle, WIN32_VIDEO_PROP, window);
 
     window->video = video;
     window->handle = handle;
@@ -168,7 +155,6 @@ PalResult _PCALL palCreateWindow(
     window->hidden = hidden;
 
     window->id = ++video->nextWindowID;
-    video->windowCount++;
     *outWindow = window;
     return PAL_SUCCESS;
 }
@@ -180,44 +166,16 @@ void _PCALL palDestroyWindow(PalWindow window) {
     }
 
     DestroyWindow(window->handle);
-    window->video->windowCount--;
     palFree(window->video->allocator, window);
 }
 
-bool registerWindowClass(HINSTANCE instance) {
-
-    WNDCLASSEXW wc = {};
-    wc.cbClsExtra = 0;
-    wc.cbSize = sizeof(WNDCLASSEXW);
-    wc.cbWndExtra = 0;
-    wc.hbrBackground = NULL;
-    wc.hCursor = LoadCursorW(instance, IDC_ARROW);
-    wc.hIcon = LoadIconW(instance, IDI_APPLICATION);
-    wc.hIconSm = LoadIconW(instance, IDI_APPLICATION);
-    wc.hInstance = instance;
-    wc.lpfnWndProc = windowProc;
-    wc.lpszClassName = WIN32_CLASS;
-    wc.lpszMenuName = NULL;
-    wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-
-    if (!RegisterClassExW(&wc)) {
-        return PAL_FALSE;
-    }
-    return PAL_TRUE;
-}
-
-void unRegisterWindowClass(HINSTANCE instance) {
-
-    UnregisterClassW(WIN32_CLASS, instance);
-}
-
-LRESULT CALLBACK windowProc(
+LRESULT CALLBACK palVideoProc(
     HWND hwnd, 
     UINT msg, 
     WPARAM wParam, 
     LPARAM lParam) {
 
-    PalWindow window = (PalWindow)GetPropW(hwnd, WIN32_PROP);
+    PalWindow window = (PalWindow)GetPropW(hwnd, WIN32_VIDEO_PROP);
     if (!window) {
         return DefWindowProcW(hwnd, msg, wParam, lParam);
     }

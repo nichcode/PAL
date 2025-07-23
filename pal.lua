@@ -44,6 +44,15 @@ project "Pal"
         }
     end
 
+    if (PAL_BUILD_INPUT) then
+        files { 
+            "src/input/pal_input.c"
+        }
+        filter {"system:windows", "configurations:*"}
+            files { "src/input/win32/**.c" }
+        filter {}
+    end
+
     includedirs {
         "include",
         "src"

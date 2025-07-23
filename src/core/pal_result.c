@@ -37,6 +37,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_ERROR_INVALID_DISPLAY:
         return "Invalid display";
+
+        case PAL_ERROR_INVALID_INPUT_DEVICE:
+        return "Invalid input device";
     }
 
 }

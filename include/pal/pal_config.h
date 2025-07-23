@@ -3,3 +3,4 @@
 
 #define PAL_HAS_VIDEO 1
 #define PAL_HAS_EVENT 1
+#define PAL_HAS_INPUT 1

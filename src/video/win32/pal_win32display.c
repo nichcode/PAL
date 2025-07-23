@@ -1,6 +1,7 @@
 
 #include "pal_pch.h"
 #include "video/pal_video_internal.h"
+#include "pal_win32video.h"
 
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
@@ -8,18 +9,18 @@
 
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, int, UINT*, UINT*);
 typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
+
+static GetDpiForMonitorFn s_GetDpiForMonitor;
+static SetProcessAwarenessFn s_SetProcessAwareness;
+
 BOOL CALLBACK monitorProc(HMONITOR, HDC, LPRECT, LPARAM);
 
-typedef struct DisplayData
-{
+typedef struct DisplayData {
+    PalVideoDataWin32* videoData;
     PalDisplay* displays;
     int count;
     int maxCount;
 } DisplayData;
-
-static HINSTANCE s_Shcore;
-static GetDpiForMonitorFn s_GetDpiForMonitor;
-static SetProcessAwarenessFn s_SetProcessAwareness;
 
 static void getMonitorDPI(HMONITOR monitor, int* dpi);
 
@@ -56,9 +57,24 @@ PalResult _PCALL palEnumerateDisplays(
     data.count = 0;
     data.displays = displays;
     data.maxCount = displays ? *count : 0;
+    data.videoData = video->platformData;
+
+    // load function pointers
+    s_GetDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
+        data.videoData->shcore,
+        "GetDpiForMonitor"
+    );
+
+    s_SetProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
+        data.videoData->shcore,
+        "SetProcessDpiAwareness"
+    );
 
     EnumDisplayMonitors(PAL_NULL, PAL_NULL, monitorProc, (LPARAM)&data);
-    *count = data.count;
+
+    if (!displays) {
+        *count = data.count;
+    }
     return PAL_SUCCESS;
 }
 
@@ -169,10 +185,6 @@ PalResult _PCALL palEnumerateDisplayModes(
 BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
 
     DisplayData* data = (DisplayData*)lParam;
-    if (!data) {
-        return PAL_FALSE;
-    }
-
     if (data->displays) {
         if (data->count < data->maxCount) {
             data->displays[data->count] = (PalDisplay)monitor;
@@ -185,32 +197,15 @@ BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
 
 static void getMonitorDPI(HMONITOR monitor, int* dpi) {
 
-    if (!s_Shcore) {
-        s_Shcore = LoadLibraryA("shcore.dll");
-        if (!s_Shcore) {
-            *dpi = 96;
-            return;
-        }
-
-        if (!s_GetDpiForMonitor) {
-            s_GetDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
-                s_Shcore, 
-                "GetDpiForMonitor"
-            );
-        }
-
-        if (!s_SetProcessAwareness) {
-            s_SetProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
-                s_Shcore, 
-                "SetProcessDpiAwareness"
-            );
-        }
-
-        int dpiX, dpiY;
-        s_SetProcessAwareness(WIN32_DPI_AWARE);
-        s_GetDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
-        *dpi = dpiX;
+    if (!s_GetDpiForMonitor || !s_SetProcessAwareness) {
+        *dpi = 96;
+        return;
     }
+
+    int dpiX, dpiY;
+    s_SetProcessAwareness(WIN32_DPI_AWARE);
+    s_GetDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
+    *dpi = dpiX;
 }
 
 static void getModes(

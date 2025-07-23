@@ -13,3 +13,6 @@ PAL_BUILD_VIDEO = true
 
 -- build event system
 PAL_BUILD_EVENT = true
+
+-- build input system
+PAL_BUILD_INPUT = true

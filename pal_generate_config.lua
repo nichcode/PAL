@@ -13,6 +13,10 @@ local function writeConfig(path)
         file:write("#define PAL_HAS_EVENT 1\n")
     end
 
+    if (PAL_BUILD_INPUT) then
+        file:write("#define PAL_HAS_INPUT 1\n")
+    end
+
     file:close()
 end
 
@@ -28,6 +32,10 @@ local function writeCppProperties(path)
 
     if (PAL_BUILD_EVENT) then
         table.insert(defines, "PAL_HAS_EVENT = 1")
+    end
+
+    if (PAL_BUILD_INPUT) then
+        table.insert(defines, "PAL_HAS_INPUT = 1")
     end
 
     if not (PAL_BUILD_STATIC) then
@@ -53,7 +61,7 @@ local function writeCppProperties(path)
         version = 4
     }
 
-    local json = require("json-lua/json")
+    local json = require("lua-json/json")
     local out = json.encode(properties, {index = 4})
     
     local f = io.open(path, "w")

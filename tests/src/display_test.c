@@ -55,7 +55,7 @@ void displayTest() {
         // log display info
         palLogInfo(PAL_NULL, "Display Name: %s", displayInfo.name);
         palLogInfo(PAL_NULL, " Size: (%i, %i)", displayInfo.width, displayInfo.height);
-        palLogInfo(PAL_NULL, " DPI: %i,", displayInfo.dpi);
+        palLogInfo(PAL_NULL, " DPI: %i", displayInfo.dpi);
         palLogInfo(PAL_NULL, " RefreshRate: %i", displayInfo.refreshRate);
     }
 

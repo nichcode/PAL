@@ -47,5 +47,6 @@ void displayModeTest();
 void windowTest();
 void timerTest();
 void eventTest();
+void inputTest();
 
 #endif // _TESTS_H
