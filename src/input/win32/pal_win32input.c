@@ -346,11 +346,18 @@ LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             RAWINPUT* raw = (RAWINPUT*)buffer;
             // keyboard
             if (raw->header.dwType == RIM_TYPEKEYBOARD) {
+                PalScancode scancode = PAL_SCANCODE_UNKNOWN;
                 RAWKEYBOARD* keyboard = &raw->data.keyboard;
                 bool extended = (keyboard->Flags & RI_KEY_E0) != 0;
-                Uint16 index = keyboard->MakeCode | (extended << 8);
-                PalScancode scancode = input->scancodes[index];
 
+                if (!extended && keyboard->MakeCode == 0x045) {
+                    scancode = PAL_SCANCODE_NUMLOCK;
+
+                } else {
+                    Uint16 index = keyboard->MakeCode | (extended << 8);
+                    scancode = input->scancodes[index];
+                }
+                
                 // TODO: remove
                 const char* name;
                 palGetScancodeName(input, scancode, &name);

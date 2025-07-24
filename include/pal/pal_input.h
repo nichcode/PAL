@@ -25,6 +25,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_UNKNOWN = 0,
 
     // Letters
+    
     PAL_SCANCODE_A,
     PAL_SCANCODE_B,
     PAL_SCANCODE_C,
@@ -53,6 +54,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_Z,
 
     // Numbers (top row)
+    
     PAL_SCANCODE_0,
     PAL_SCANCODE_1,
     PAL_SCANCODE_2,
@@ -65,6 +67,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_9,
 
     // Function
+    
     PAL_SCANCODE_F1,
     PAL_SCANCODE_F2,
     PAL_SCANCODE_F3,
@@ -79,6 +82,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_F12,
 
     // Control
+    
     PAL_SCANCODE_ESCAPE,
     PAL_SCANCODE_ENTER,
     PAL_SCANCODE_TAB,
@@ -95,12 +99,14 @@ typedef enum PalScancode {
     PAL_SCANCODE_RALT,
 
     // Arrows
+    
     PAL_SCANCODE_LEFT,
     PAL_SCANCODE_RIGHT,
     PAL_SCANCODE_UP,
     PAL_SCANCODE_DOWN,
 
     // Navigation
+    
     PAL_SCANCODE_INSERT,
     PAL_SCANCODE_DELETE,
     PAL_SCANCODE_HOME,
@@ -109,6 +115,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_PAGEDOWN,
 
     // Keypad
+    
     PAL_SCANCODE_KP_0,
     PAL_SCANCODE_KP_1,
     PAL_SCANCODE_KP_2,
@@ -128,6 +135,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_KP_EQUAL,
 
     // Misc
+
     PAL_SCANCODE_PRINTSCREEN,
     PAL_SCANCODE_PAUSE,
     PAL_SCANCODE_MENU,
