@@ -1,6 +1,6 @@
 
 #include "pal_pch.h"
-#include "pal_console.h"
+#include "platform/pal_platform.h"
 
 #define LOG_SIZE 1024
 
@@ -20,6 +20,10 @@ static void logV(
     LogTLSData* data, 
     PalLogger* logger, 
     PalLogLevel level);
+
+// ==================================================
+// Public API
+// ==================================================
 
 void _PCALL palLog(
     PalLogger* logger, 
@@ -86,6 +90,10 @@ void _PCALL palLogError(
     va_end(argPtr);
     logV(data, logger, PAL_LOG_LEVEL_ERROR);
 }
+
+// ==================================================
+// Internal API
+// ==================================================
 
 static LogTLSData* getLogTls() {
 

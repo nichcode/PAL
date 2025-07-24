@@ -4,6 +4,10 @@
 #include "platform/pal_platform.h"
 #include "pal_win32video.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palUpdateVideo(
     PalVideo video) {
 
@@ -19,6 +23,10 @@ PalResult _PCALL palUpdateVideo(
 
     return PAL_SUCCESS;
 }
+
+// ==================================================
+// Internal API
+// ==================================================
 
 Uint32 palGetSupportedFeatures() {
 

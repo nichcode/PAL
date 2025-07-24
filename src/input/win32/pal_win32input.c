@@ -7,6 +7,10 @@
 #define XINPUT_1_3 "xinput1_3.dll"
 #define XINPUT_9_1_0 "xinput9_1_0.dll"
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palUpdateInput(
     PalInput input) {
 
@@ -192,6 +196,10 @@ PalResult _PCALL palRegisterInputDevice(
         }
     }
 }
+
+// ==================================================
+// Internal API
+// ==================================================
 
 PalResult palCreateInputData(PalInput input) {
 

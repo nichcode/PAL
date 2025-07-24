@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal_win32input.h"
 
+// ==================================================
+// Internal API
+// ==================================================
+
 bool palGetRawDeviceInfo(
     PalInputDevice device, 
     PalInputDeviceInfo* info) {

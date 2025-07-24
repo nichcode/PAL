@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal_input_internal.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palCreateInput(
     PalInputConfig* config,
     PalInput* outInput) {

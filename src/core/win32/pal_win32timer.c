@@ -2,7 +2,9 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
-#ifdef _WIN32
+// ==================================================
+// Public API
+// ==================================================
 
 PalTimer _PCALL palGetSysTimer() {
 
@@ -39,5 +41,3 @@ Uint64 _PCALL palGetPerformanceFrequency() {
     QueryPerformanceFrequency(&frequency);
     return (Uint64)frequency.QuadPart;
 }
-
-#endif // _WIN32

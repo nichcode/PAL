@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal_input_internal.h"
 
+// ==================================================
+// Internal API
+// ==================================================
+
 void palMapScancodeNames(PalInput input) {
 
     // Letters

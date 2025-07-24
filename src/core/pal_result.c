@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 const char* _PCALL palResultToString(PalResult result) {
 
     switch (result) {

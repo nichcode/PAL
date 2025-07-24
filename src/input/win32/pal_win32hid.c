@@ -3,6 +3,10 @@
 #include "pal_win32input.h"
 #include "platform/pal_platform.h"
 
+// ==================================================
+// Internal API
+// ==================================================
+
 HidDataWin32 g_HidData;
 
 PalInputDeviceType getHidDeviceType(int vid, int pid, bool gamepad);

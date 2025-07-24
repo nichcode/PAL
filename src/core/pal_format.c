@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 bool _PCALL palFormatV(
     const char* fmt, 
     va_list argsList, 

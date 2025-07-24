@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal_video_internal.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palCreateVideo(
     PalVideoConfig* config,
     PalVideo* outVideo) {

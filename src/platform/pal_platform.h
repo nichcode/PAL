@@ -8,6 +8,8 @@ bool palGetOsVersionWin32(PalVersion* version);
 bool palIsOsVersionWin32(PalVersion* osVersion, PalVersion* version);
 int palStringToWideString(wchar_t* buffer, const char* string);
 
+void palWriteConsole(PalLogLevel level, wchar_t* buffer, const char* msg);
+
 typedef struct palVersionsWin32 {
     PalVersion windowXP;
     PalVersion windowVista;

@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 void* _PCALL palAllocate(PalAllocator* allocator, Uint64 size) {
     
     if (allocator && allocator->alloc) {

@@ -31,6 +31,7 @@ project "Pal"
 
     if (PAL_BUILD_VIDEO) then
         files { "src/video/pal_video.c" }    
+
         filter {"system:windows", "configurations:*"}
             files { "src/video/win32/**.c" }
         filter {}
@@ -49,6 +50,7 @@ project "Pal"
             "src/input/pal_input.c",
             "src/input/pal_scancode_names.c"
         }
+        
         filter {"system:windows", "configurations:*"}
             files { "src/input/win32/**.c" }
         filter {}

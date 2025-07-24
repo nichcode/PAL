@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal_event_internal.h"
 
+// ==================================================
+// Internal API
+// ==================================================
+
 bool eventIsCoalesce(PalEventType type);
 
 PalResult palCreateEventQueue(

@@ -3,6 +3,10 @@
 #include "pal_window_event.h"
 #include "pal_event_internal.h"
 
+// ==================================================
+// Internal API
+// ==================================================
+
 void palWindowQuitEvent(
     PalEventDriver driver,
     Uint32 windowID) {

@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "input/pal_input_internal.h"
 
+// ==================================================
+// Internal API
+// ==================================================
+
 #define SC_INDEX(sc, ext) ((Uint16) (sc) | ((ext) << 8))
 #define MAP_SC(sc, ext, input, code) input->scancodes[SC_INDEX((sc), (ext))] = (code);
 

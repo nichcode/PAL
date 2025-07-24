@@ -5,7 +5,12 @@
 #define PAL_VMAJOR 1
 #define PAL_VMINOR 0
 #define PAL_VPATCH 0
+
 #define PAL_VERSION_STRING "1.0.0"
+
+// ==================================================
+// Public API
+// ==================================================
 
 PalVersion _PCALL palGetVersion() {
 

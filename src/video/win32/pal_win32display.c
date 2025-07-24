@@ -44,6 +44,10 @@ static void addMode(
     const PalDisplayMode* mode, 
     int* count);
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palEnumerateDisplays(
     PalVideo video,
     int* count,
@@ -181,6 +185,10 @@ PalResult _PCALL palEnumerateDisplayModes(
     }
     return PAL_SUCCESS;
 }
+
+// ==================================================
+// Internal API
+// ==================================================
 
 BOOL CALLBACK monitorProc(HMONITOR monitor, HDC, LPRECT, LPARAM lParam) {
 

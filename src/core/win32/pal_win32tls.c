@@ -2,7 +2,9 @@
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
-#ifdef _WIN32
+// ==================================================
+// Public API
+// ==================================================
 
 PalTlsID _PCALL palCreateTls() {
 
@@ -27,5 +29,3 @@ void _PCALL palSetTls(PalTlsID id, void* data) {
 
     TlsSetValue((DWORD)id, data);
 }
-
-#endif // _WIN32

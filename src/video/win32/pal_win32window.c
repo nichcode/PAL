@@ -21,6 +21,10 @@ struct PalWindow_T {
     bool hidden;
 };
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palCreateWindow(
     PalVideo video, 
     PalWindowConfig* config,
@@ -168,6 +172,10 @@ void _PCALL palDestroyWindow(PalWindow window) {
     DestroyWindow(window->handle);
     palFree(window->video->allocator, window);
 }
+
+// ==================================================
+// Internal API
+// ==================================================
 
 LRESULT CALLBACK palVideoProc(
     HWND hwnd, 

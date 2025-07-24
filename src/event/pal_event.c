@@ -2,6 +2,10 @@
 #include "pal_pch.h"
 #include "pal_event_internal.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palCreateEventDriver(
     PalEventDriverConfig* config, 
     PalEventDriver* outEventDriver) {
