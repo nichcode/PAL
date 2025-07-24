@@ -12,12 +12,18 @@ typedef enum PalInputDeviceType {
     PAL_INPUT_DEVICE_UNKNOWN = 0,
     PAL_INPUT_DEVICE_KEYBOARD,
     PAL_INPUT_DEVICE_MOUSE,
+    PAL_INPUT_DEVICE_DUALSHOCK4,
+    PAL_INPUT_DEVICE_DUALSENSE,
+    PAL_INPUT_DEVICE_XBOX_360,
+    PAL_INPUT_DEVICE_XBOX_ONE,
+    PAL_INPUT_DEVICE_SWITCH_PRO,
     PAL_INPUT_DEVICE_GAMEPAD,
     PAL_INPUT_DEVICE_HID
 } PalInputDeviceType;
 
 typedef struct PalInputDeviceInfo {
     char name[64];
+    char path[128];
     Uint32 vendorID;
     Uint32 productID;
     PalInputDeviceType type;

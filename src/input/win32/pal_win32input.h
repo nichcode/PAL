@@ -18,21 +18,36 @@
 
 #include <windows.h>
 #include <xinput.h>
+#include <hidsdi.h>
 
 #include "input/pal_input_internal.h"
 
 typedef DWORD (WINAPI* XInputGetStateFn)(DWORD, XINPUT_STATE*);
 typedef DWORD (WINAPI* XInputSetStateFn)(DWORD, XINPUT_VIBRATION*);
 
+typedef BOOLEAN (WINAPI* GetProductStringFn)(HANDLE, PVOID, ULONG);
+typedef BOOLEAN (WINAPI* GetManufacturerStringFn)(HANDLE, PVOID, ULONG);
+typedef BOOLEAN (WINAPI* GetAttributesFn)(HANDLE, PHIDD_ATTRIBUTES);
+
 typedef struct InputDataWin32 {
     HINSTANCE instance;
     HINSTANCE xInput;
+    HINSTANCE hid;
     HWND window;
 
     XInputGetStateFn getXinputState;
     XInputSetStateFn setXinputState;
     bool XinputSupport;
 } InputDataWin32;
+
+typedef struct HidDataWin32 {
+    GetProductStringFn getProductString;
+    GetManufacturerStringFn getManufacturerString;
+    GetAttributesFn getAttributes;
+    bool loaded;
+} HidDataWin32;
+
+extern HidDataWin32 g_HidData;
 
 LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 bool palRegisterInputClass(HINSTANCE instance);
@@ -45,6 +60,10 @@ bool palGetRawDeviceInfo(
 bool palGetXinputDeviceInfo(
     PalInputDevice device, 
     PalInputDeviceInfo* info);
+
+void palGetHidProperties( 
+    PalInputDeviceInfo* info,
+    bool isGamepad);
 
 static inline PalInputDevice palMakeXinputHandle(Uint32 index) {
 

@@ -5,8 +5,8 @@
 const char* inputDeviceTypeToString(PalInputDeviceType type) {
 
     switch (type) {
-        case PAL_INPUT_DEVICE_GAMEPAD: 
-        return "Gamepad";
+        case PAL_INPUT_DEVICE_UNKNOWN: 
+        return "Unknown";
 
         case PAL_INPUT_DEVICE_KEYBOARD: 
         return "Keyboard";
@@ -14,11 +14,26 @@ const char* inputDeviceTypeToString(PalInputDeviceType type) {
         case PAL_INPUT_DEVICE_MOUSE: 
         return "Mouse";
 
+        case PAL_INPUT_DEVICE_DUALSHOCK4: 
+        return "Dualshock 4(PS4)";
+
+        case PAL_INPUT_DEVICE_DUALSENSE: 
+        return "Dual Sense";
+
+        case PAL_INPUT_DEVICE_XBOX_360: 
+        return "Xbox 360";
+
+        case PAL_INPUT_DEVICE_XBOX_ONE: 
+        return "Xbox One";
+
+        case PAL_INPUT_DEVICE_SWITCH_PRO:
+        return "Switch Pro";
+
+        case PAL_INPUT_DEVICE_GAMEPAD:
+        return "Gamepad";
+
         case PAL_INPUT_DEVICE_HID: 
         return "HID";
-
-        case PAL_INPUT_DEVICE_UNKNOWN: 
-        return "Unknown";
     }
     return PAL_NULL;
 }
@@ -78,6 +93,7 @@ void inputTest() {
 
         // log device info
         palLogInfo(PAL_NULL, "Input Device Name: %s", inputDeviceInfo.name);
+        palLogInfo(PAL_NULL, " Path: %s", inputDeviceInfo.path);
         palLogInfo(PAL_NULL, " Type: %s", inputDeviceTypeToString(inputDeviceInfo.type));
         palLogInfo(PAL_NULL, " Vender ID: %i", inputDeviceInfo.vendorID);
         palLogInfo(PAL_NULL, " Product ID: %i", inputDeviceInfo.productID);

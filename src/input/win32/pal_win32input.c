@@ -36,6 +36,27 @@ PalResult _PCALL palEnumerateInputDevices(
     Uint32 deviceCount = 0;
     Uint32 maxDeviceCount = inputDevices ? *count : 0;
 
+    // load function pointers
+    if (!g_HidData.loaded) {
+        g_HidData.getAttributes = (GetAttributesFn)GetProcAddress(
+            data->hid,
+            "HidD_GetAttributes"
+        );
+
+         g_HidData.getManufacturerString = (GetManufacturerStringFn)GetProcAddress(
+            data->hid,
+            "HidD_GetManufacturerString"
+        );
+
+        g_HidData.getProductString = (GetProductStringFn)GetProcAddress(
+            data->hid,
+            "HidD_GetProductString"
+        );
+
+        g_HidData.loaded = PAL_TRUE;
+
+    }
+
     // get count
     GetRawInputDeviceList(
         PAL_NULL, 
@@ -165,6 +186,9 @@ PalResult palCreateInputData(PalAllocator* allocator, void** outData) {
         );
     }
 
+    // hid
+    data->hid = LoadLibraryA("hid.dll");
+
     ShowWindow(data->window, SW_HIDE);
     *outData = data;
     return PAL_SUCCESS;
@@ -178,6 +202,10 @@ void palDestroyInputData(PalAllocator* allocator, void* data) {
 
     if (inputData->xInput) {
         FreeLibrary(inputData->xInput);
+    }
+
+     if (inputData->hid) {
+        FreeLibrary(inputData->hid);
     }
     palFree(allocator, inputData);
 }

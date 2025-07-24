@@ -18,6 +18,15 @@ bool palGetRawDeviceInfo(
         return PAL_FALSE;
     }
 
+    size = sizeof(info->path);
+    if (GetRawInputDeviceInfoA(
+        device,
+        RIDI_DEVICENAME,
+        &info->path,
+        &size) == (UINT)-1) {
+        return PAL_FALSE;
+    }
+
     switch (deviceInfo.dwType) {
         case RIM_TYPEKEYBOARD: {
             strcpy(info->name, "Standard Keyboard");
@@ -36,7 +45,8 @@ bool palGetRawDeviceInfo(
 
         case RIM_TYPEHID: {
             int usagePage = deviceInfo.hid.usUsagePage;
-            int usage = usage;
+            int usage = deviceInfo.hid.usUsage;
+            bool isGamepad = PAL_FALSE;
 
             if (usagePage == 0x01 && usage == 0x06) {
                 info->type = PAL_INPUT_DEVICE_KEYBOARD;
@@ -46,16 +56,13 @@ bool palGetRawDeviceInfo(
                 info->type = PAL_INPUT_DEVICE_MOUSE;
                 break;
 
-            } else if (usagePage == 0x01 && usage == 0x05) {
-                info->type = PAL_INPUT_DEVICE_GAMEPAD;
-                break;
-                
-            } else {
-                info->type = PAL_INPUT_DEVICE_HID;
+            } else if (usagePage == 0x01 && (usage == 0x05 || usage == 0x04)) {
+                isGamepad = PAL_TRUE;
                 break;
             }
 
-            // TODO: HIDAPI
+            // get properties from hid
+            palGetHidProperties(info, isGamepad);
             break;
         }
     }
