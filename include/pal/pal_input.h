@@ -184,4 +184,9 @@ _PAPI PalResult _PCALL palRegisterInputDevice(
     PalInput input,
     PalInputDevice inputDevice);
 
+_PAPI PalResult _PCALL palGetScancodeName(
+    PalInput input,
+    PalScancode scancode,
+    const char** outName);
+
 #endif // _PAL_INPUT_H

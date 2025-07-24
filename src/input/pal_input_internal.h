@@ -7,10 +7,15 @@
 struct PalInput_T {
     PalAllocator* allocator;
     PalEventDriver eventDriver;
+    PalScancode scancodes[512];
+    const char* scancodeNames[PAL_SCANCODE_MAX];
     void* platformData;
 };
 
-PalResult palCreateInputData(PalAllocator* allocator, void** outData);
-void palDestroyInputData(PalAllocator* allocator, void* data);
+PalResult palCreateInputData(PalInput input);
+void palDestroyInputData(PalInput input);
+
+void palMapScancodes(PalInput input);
+void palMapScancodeNames(PalInput input);
 
 #endif // _PAL_INPUT_INTERNAL_H

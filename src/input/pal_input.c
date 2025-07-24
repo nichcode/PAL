@@ -29,10 +29,13 @@ PalResult _PCALL palCreateInput(
         input->eventDriver = config->eventDriver;
     }
 
-    PalResult result = palCreateInputData(input->allocator, &input->platformData);
+    PalResult result = palCreateInputData(input);
     if (result != PAL_SUCCESS) {
         return result;
     }
+
+    palMapScancodes(input);
+    palMapScancodeNames(input);
 
     *outInput = input;
     return PAL_SUCCESS;
@@ -44,6 +47,23 @@ void _PCALL palDestroyInput(
     if (!input) {
         return;
     }
-    palDestroyInputData(input->allocator, input->platformData);
+    palDestroyInputData(input);
     palFree(input->allocator, input);
+}
+
+PalResult _PCALL palGetScancodeName(
+    PalInput input,
+    PalScancode scancode,
+    const char** outName) {
+
+    if (!input || !outName) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    if (scancode < 1 || scancode > PAL_SCANCODE_MAX) {
+        return PAL_ERROR_INVALID_SCANCODE;
+    }
+
+    *outName = input->scancodeNames[scancode];
+    return PAL_SUCCESS;
 }

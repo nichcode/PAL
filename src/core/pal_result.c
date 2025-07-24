@@ -40,6 +40,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_ERROR_INVALID_INPUT_DEVICE:
         return "Invalid input device";
+
+        case PAL_ERROR_INVALID_SCANCODE:
+        return "Invalid scancode";
     }
 
 }

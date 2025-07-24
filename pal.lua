@@ -46,7 +46,8 @@ project "Pal"
 
     if (PAL_BUILD_INPUT) then
         files { 
-            "src/input/pal_input.c"
+            "src/input/pal_input.c",
+            "src/input/pal_scancode_names.c"
         }
         filter {"system:windows", "configurations:*"}
             files { "src/input/win32/**.c" }

@@ -190,13 +190,12 @@ PalResult _PCALL palRegisterInputDevice(
             }
 
         }
-       
     }
 }
 
-PalResult palCreateInputData(PalAllocator* allocator, void** outData) {
+PalResult palCreateInputData(PalInput input) {
 
-    InputDataWin32* data = palAllocate(allocator, sizeof(InputDataWin32));
+    InputDataWin32* data = palAllocate(input->allocator, sizeof(InputDataWin32));
     if (!data) {
         return PAL_ERROR_OUT_OF_MEMORY;
     }
@@ -220,7 +219,7 @@ PalResult palCreateInputData(PalAllocator* allocator, void** outData) {
     );
 
     if (!data->window) {
-        palFree(allocator, data);
+        palFree(input->allocator, data);
         return PAL_ERROR_DEVICE_NOT_FOUND;
     }
 
@@ -256,13 +255,14 @@ PalResult palCreateInputData(PalAllocator* allocator, void** outData) {
     data->hid = LoadLibraryA("hid.dll");
 
     ShowWindow(data->window, SW_HIDE);
-    *outData = data;
+    input->platformData = data;
+    SetPropW(data->window, WIN32_INPUT_PROP, input);
     return PAL_SUCCESS;
 }
 
-void palDestroyInputData(PalAllocator* allocator, void* data) {
+void palDestroyInputData(PalInput input) {
 
-    InputDataWin32* inputData = data;
+    InputDataWin32* inputData = input->platformData;
     DestroyWindow(inputData->window);
     palUnregisterInputClass(inputData->instance);
 
@@ -273,7 +273,7 @@ void palDestroyInputData(PalAllocator* allocator, void* data) {
      if (inputData->hid) {
         FreeLibrary(inputData->hid);
     }
-    palFree(allocator, inputData);
+    palFree(input->allocator, inputData);
 }
 
 bool palRegisterInputClass(HINSTANCE instance) {
@@ -305,6 +305,53 @@ void palUnregisterInputClass(HINSTANCE instance) {
 }
 
 LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
+    PalInput input = GetPropW(hwnd, WIN32_INPUT_PROP);
+    if (!input) {
+        return DefWindowProcW(hwnd, msg, wParam, lParam);
+    }
+
+    switch (msg) {
+        case WM_INPUT: {
+            UINT size;
+            GetRawInputData(
+                (HRAWINPUT)lParam, 
+                RID_INPUT, 
+                NULL, 
+                &size, 
+                sizeof(RAWINPUTHEADER)
+            );
+
+            BYTE buffer[sizeof(RAWINPUT)];
+            UINT ret = GetRawInputData(
+                (HRAWINPUT)lParam, 
+                RID_INPUT, 
+                buffer, 
+                &size, 
+                sizeof(RAWINPUTHEADER)
+            );
+
+            if (ret != size) {
+                break;
+            }
+
+            RAWINPUT* raw = (RAWINPUT*)buffer;
+            // keyboard
+            if (raw->header.dwType == RIM_TYPEKEYBOARD) {
+                RAWKEYBOARD* keyboard = &raw->data.keyboard;
+                bool extended = (keyboard->Flags & RI_KEY_E0) != 0;
+                Uint16 index = keyboard->MakeCode | (extended << 8);
+                PalScancode scancode = input->scancodes[index];
+
+                // TODO: remove
+                const char* name;
+                palGetScancodeName(input, scancode, &name);
+                palLogInfo(PAL_NULL, name);
+            }
+            
+            break;
+        }
+    }
     
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }

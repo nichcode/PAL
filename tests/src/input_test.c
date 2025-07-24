@@ -125,5 +125,10 @@ void inputTest() {
         return;
     }
 
+    bool running = PAL_TRUE;
+    while (running) {
+        palUpdateInput(input);
+    }
+
     palDestroyInput(input);
 }
