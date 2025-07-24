@@ -51,6 +51,10 @@ void inputTest() {
     Uint32 inputDeviceCount = 0;
     PalInputDeviceInfo inputDeviceInfo;
 
+    // devices
+    PalInputDevice mouse;
+    PalInputDevice keyboard;
+
     PalInputConfig inputConfig;
     inputConfig.allocator = PAL_NULL;
     inputConfig.eventDriver = PAL_NULL;
@@ -97,6 +101,28 @@ void inputTest() {
         palLogInfo(PAL_NULL, " Type: %s", inputDeviceTypeToString(inputDeviceInfo.type));
         palLogInfo(PAL_NULL, " Vender ID: %i", inputDeviceInfo.vendorID);
         palLogInfo(PAL_NULL, " Product ID: %i", inputDeviceInfo.productID);
+
+        if (inputDeviceInfo.type == PAL_INPUT_DEVICE_KEYBOARD) {
+            keyboard = device;
+
+        } else if (inputDeviceInfo.type == PAL_INPUT_DEVICE_MOUSE) {
+            mouse = device;
+        }
+    }
+
+    // register devices for input
+    result = palRegisterInputDevice(input, keyboard);
+    if (result != PAL_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLogError(PAL_NULL, resultString);
+        return;
+    }
+
+    result = palRegisterInputDevice(input, mouse);
+    if (result != PAL_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLogError(PAL_NULL, resultString);
+        return;
     }
 
     palDestroyInput(input);

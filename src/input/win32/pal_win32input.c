@@ -128,6 +128,72 @@ PalResult _PCALL palGetInputDeviceInfo(
     return PAL_SUCCESS;
 }
 
+PalResult _PCALL palRegisterInputDevice(
+    PalInput input,
+    PalInputDevice inputDevice) {
+
+    if (!input || !inputDevice) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    InputDataWin32* data = input->platformData;
+    if (!data) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    if (palIsXinputHandle(inputDevice)) {
+        // TODO: Xinput
+
+    } else {
+        RID_DEVICE_INFO deviceInfo = {};
+        deviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
+        Uint32 size = sizeof(RID_DEVICE_INFO);
+        if (GetRawInputDeviceInfoA(
+            (HANDLE)inputDevice,
+            RIDI_DEVICEINFO,
+            &deviceInfo,
+            &size) == (UINT)-1) {
+            return PAL_ERROR_INVALID_INPUT_DEVICE;
+        }
+
+        switch (deviceInfo.dwType) {
+            case RIM_TYPEKEYBOARD: {
+                RAWINPUTDEVICE rid = {};
+                rid.dwFlags = RIDEV_INPUTSINK;
+                rid.hwndTarget = data->window;
+                rid.usUsage = 0x02; 
+                rid.usUsagePage = 0x01;
+
+                if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+                    return PAL_ERROR_DEVICE_NOT_FOUND;
+                }
+                return PAL_SUCCESS;
+            }
+
+            case RIM_TYPEMOUSE: {
+                RAWINPUTDEVICE rid = {};
+                rid.dwFlags = RIDEV_INPUTSINK;
+                rid.hwndTarget = data->window;
+                rid.usUsage = 0x06; 
+                rid.usUsagePage = 0x01;
+
+                if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+                    return PAL_ERROR_DEVICE_NOT_FOUND;
+                }
+                return PAL_SUCCESS;
+            }
+
+            case RIM_TYPEHID: {
+                // TODO: HID
+
+                return PAL_ERROR_DEVICE_NOT_FOUND;
+            }
+
+        }
+       
+    }
+}
+
 PalResult palCreateInputData(PalAllocator* allocator, void** outData) {
 
     InputDataWin32* data = palAllocate(allocator, sizeof(InputDataWin32));
