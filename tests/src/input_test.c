@@ -55,6 +55,9 @@ void inputTest() {
     PalInputDevice mouse;
     PalInputDevice keyboard;
 
+    // state
+    PalKeyboardState keyboardState;
+
     PalInputConfig inputConfig;
     inputConfig.allocator = PAL_NULL;
     inputConfig.eventDriver = PAL_NULL;
@@ -125,9 +128,26 @@ void inputTest() {
         return;
     }
 
+    // get jeyboard state
+    // this will be false for all keys or scancods if no keybaord device is registered
+    palGetKeyboardState(input, &keyboardState);
+    if (result != PAL_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLogError(PAL_NULL, resultString);
+        return;
+    }
+
     bool running = PAL_TRUE;
     while (running) {
         palUpdateInput(input);
+
+        if (keyboardState.scancodes[PAL_SCANCODE_RIGHT]) {
+            palLogInfo(PAL_NULL, "Right Arrow is down");
+        }
+
+        if (keyboardState.scancodes[PAL_SCANCODE_LEFT]) {
+            palLogInfo(PAL_NULL, "Left Arrow is down");
+        }
     }
 
     palDestroyInput(input);

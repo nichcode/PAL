@@ -169,6 +169,11 @@ typedef struct PalInputConfig {
     PalEventDriver eventDriver;
 } PalInputConfig;
 
+typedef struct PalKeyboardState {
+    const bool* scancodes;
+    const bool* keys;
+} PalKeyboardState;
+
 _PAPI PalResult _PCALL palCreateInput(
     PalInputConfig* config,
     PalInput* outInput);
@@ -196,5 +201,9 @@ _PAPI PalResult _PCALL palGetScancodeName(
     PalInput input,
     PalScancode scancode,
     const char** outName);
+
+_PAPI PalResult _PCALL palGetKeyboardState(
+    PalInput input,
+    PalKeyboardState* state);
 
 #endif // _PAL_INPUT_H

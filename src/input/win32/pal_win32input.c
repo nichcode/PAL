@@ -357,11 +357,12 @@ LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     Uint16 index = keyboard->MakeCode | (extended << 8);
                     scancode = input->scancodes[index];
                 }
-                
-                // TODO: remove
-                const char* name;
-                palGetScancodeName(input, scancode, &name);
-                palLogInfo(PAL_NULL, name);
+
+                if (keyboard->Flags & RI_KEY_BREAK) {
+                    input->keyState[scancode] = PAL_FALSE;
+                } else {
+                    input->keyState[scancode] = PAL_TRUE;
+                }
             }
             
             break;

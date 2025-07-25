@@ -8,6 +8,7 @@ struct PalInput_T {
     PalAllocator* allocator;
     PalEventDriver eventDriver;
     PalScancode scancodes[512];
+    bool keyState[PAL_SCANCODE_MAX];
     const char* scancodeNames[PAL_SCANCODE_MAX];
     void* platformData;
 };

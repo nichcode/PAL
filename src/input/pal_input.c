@@ -55,7 +55,7 @@ void _PCALL palDestroyInput(
     palFree(input->allocator, input);
 }
 
-PalResult _PCALL palGetScancodeName(
+_PAPI PalResult _PCALL palGetScancodeName(
     PalInput input,
     PalScancode scancode,
     const char** outName) {
@@ -67,7 +67,15 @@ PalResult _PCALL palGetScancodeName(
     if (scancode < 1 || scancode > PAL_SCANCODE_MAX) {
         return PAL_ERROR_INVALID_SCANCODE;
     }
-
     *outName = input->scancodeNames[scancode];
-    return PAL_SUCCESS;
+}
+
+PalResult _PCALL palGetKeyboardState(
+    PalInput input,
+    PalKeyboardState* state) {
+    
+    if (!input || !state) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+    state->scancodes = input->keyState;
 }
