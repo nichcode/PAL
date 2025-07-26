@@ -57,6 +57,7 @@ void inputTest() {
 
     // state
     PalKeyboardState keyboardState;
+    PalMouseState mouseState;
 
     PalInputConfig inputConfig;
     inputConfig.allocator = PAL_NULL;
@@ -129,8 +130,17 @@ void inputTest() {
     }
 
     // get jeyboard state
-    // this will be false for all keys or scancods if no keybaord device is registered
+    // a keyboard device must be registered
     palGetKeyboardState(input, &keyboardState);
+    if (result != PAL_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLogError(PAL_NULL, resultString);
+        return;
+    }
+
+    // get jeyboard state
+    // a mouse device must be registered
+    palGetMouseState(input, &mouseState);
     if (result != PAL_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLogError(PAL_NULL, resultString);
@@ -151,6 +161,11 @@ void inputTest() {
 
         if (keyboardState.keys[PAL_KEY_DOWN]) {
             palLogInfo(PAL_NULL, "Down Arrow(Key) is down");
+        }
+
+        // check for mouse button
+        if (mouseState.buttons[PAL_MOUSE_BUTTON_LEFT]) {
+            palLogInfo(PAL_NULL, "Mouse Button Left is down");
         }
     }
 

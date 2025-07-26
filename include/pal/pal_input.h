@@ -291,6 +291,19 @@ typedef enum PalKey {
     PAL_KEY_MAX
 } PalKey;
 
+typedef enum PalMouseButton {
+    PAL_MOUSE_BUTTON_UNKNOWN = 0,
+
+    PAL_MOUSE_BUTTON_LEFT,
+    PAL_MOUSE_BUTTON_RIGHT,
+    PAL_MOUSE_BUTTON_MIDDLE,
+    PAL_MOUSE_BUTTON_X1,
+    PAL_MOUSE_BUTTON_X2,
+
+    PAL_MOUSE_BUTTON_MAX
+
+} PalMouseButton;
+
 typedef struct PalInputDeviceInfo {
     char name[64];
     char path[128];
@@ -308,6 +321,16 @@ typedef struct PalKeyboardState {
     const bool* scancodes;
     const bool* keys;
 } PalKeyboardState;
+
+typedef struct PalMouseState {
+    int x;
+    int y;
+    int dx;
+    int dy;
+    int wheelDeltaX;
+    int wheelDeltaY;
+    const bool* buttons;
+} PalMouseState;
 
 _PAPI PalResult _PCALL palCreateInput(
     PalInputConfig* config,
@@ -337,8 +360,17 @@ _PAPI PalResult _PCALL palGetScancodeName(
     PalScancode scancode,
     const char** outName);
 
+_PAPI PalResult _PCALL palGetMouseButtonName(
+    PalInput input,
+    PalMouseButton button,
+    const char** outName);
+
 _PAPI PalResult _PCALL palGetKeyboardState(
     PalInput input,
     PalKeyboardState* state);
+
+_PAPI PalResult _PCALL palGetMouseState(
+    PalInput input,
+    PalMouseState* state);
 
 #endif // _PAL_INPUT_H

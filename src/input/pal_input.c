@@ -56,7 +56,7 @@ void _PCALL palDestroyInput(
     palFree(input->allocator, input);
 }
 
-_PAPI PalResult _PCALL palGetScancodeName(
+PalResult _PCALL palGetScancodeName(
     PalInput input,
     PalScancode scancode,
     const char** outName) {
@@ -69,6 +69,23 @@ _PAPI PalResult _PCALL palGetScancodeName(
         return PAL_ERROR_INVALID_SCANCODE;
     }
     *outName = input->scancodeNames[scancode];
+    return PAL_SUCCESS;
+}
+
+PalResult _PCALL palGetMouseButtonName(
+    PalInput input,
+    PalMouseButton button,
+    const char** outName) {
+
+    if (!input || !outName) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    if (button < 1 || button > PAL_MOUSE_BUTTON_MAX) {
+        return PAL_ERROR_INVALID_MOUSE_BUTTON;
+    }
+    *outName = input->mouseButtonNames[button];
+    return PAL_SUCCESS;
 }
 
 PalResult _PCALL palGetKeyboardState(
@@ -80,4 +97,23 @@ PalResult _PCALL palGetKeyboardState(
     }
     state->keys = input->keyState;
     state->scancodes = input->scancodeState;
+    return PAL_SUCCESS;
+}
+
+PalResult _PCALL palGetMouseState(
+    PalInput input,
+    PalMouseState* state) {
+    
+    if (!input || !state) {
+        return PAL_ERROR_NULL_POINTER;
+    }
+
+    state->x = input->mouseX;
+    state->y = input->mouseY;
+    state->dx = input->mouseDX;
+    state->dy = input->mouseDY;
+    state->wheelDeltaX = input->mouseWheelDeltaX;
+    state->wheelDeltaY = input->mouseWheelDeltaY;
+    state->buttons = input->mouseButtonState;
+    return PAL_SUCCESS;
 }

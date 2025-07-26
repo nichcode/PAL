@@ -18,6 +18,12 @@ PalResult _PCALL palUpdateInput(
         return PAL_ERROR_NULL_POINTER;
     }
 
+    // reset
+    input->mouseDX = 0;
+    input->mouseDY = 0;
+    input->mouseWheelDeltaX = 0;
+    input->mouseWheelDeltaY = 0;
+
     InputDataWin32* data = input->platformData;
     MSG msg;
     while (PeekMessageA(&msg, data->window, 0, 0, PM_REMOVE)) {
@@ -375,6 +381,65 @@ LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 } else {
                     input->keyState[key] = PAL_TRUE;
                     input->scancodeState[scancode] = PAL_TRUE;
+                }
+            }
+
+            // mouse
+            if (raw->header.dwType == RIM_TYPEMOUSE) {
+                RAWMOUSE* mouse = &raw->data.mouse;
+                USHORT flags = mouse->usButtonFlags;
+                input->mouseDX += mouse->lLastX;
+                input->mouseDX += mouse->lLastY;
+
+                // left
+                if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_LEFT] = PAL_TRUE;
+
+                } else {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_LEFT] = PAL_FALSE;
+                }
+
+                // right
+                if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_RIGHT] = PAL_TRUE;
+
+                } else {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_RIGHT] = PAL_FALSE;
+                }
+
+                // middle
+                if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_MIDDLE] = PAL_TRUE;
+
+                } else {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_MIDDLE] = PAL_FALSE;
+                }
+
+                // x1
+                if (flags & RI_MOUSE_BUTTON_4_DOWN) {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_X1] = PAL_TRUE;
+
+                } else {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_X1] = PAL_FALSE;
+                }
+
+                // x2
+                if (flags & RI_MOUSE_BUTTON_5_DOWN) {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_X2] = PAL_TRUE;
+
+                } else {
+                    input->mouseButtonState[PAL_MOUSE_BUTTON_X2] = PAL_FALSE;
+                }
+
+                // wheel delta
+                if (flags & RI_MOUSE_WHEEL) {
+                    SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
+                    input->mouseWheelDeltaY += (delta / WHEEL_DELTA);
+                }
+
+                if (flags & RI_MOUSE_HWHEEL) {
+                    SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
+                    input->mouseWheelDeltaX += (delta / WHEEL_DELTA);
                 }
             }
             

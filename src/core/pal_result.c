@@ -47,6 +47,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_ERROR_INVALID_SCANCODE:
         return "Invalid scancode";
+
+        case PAL_ERROR_INVALID_MOUSE_BUTTON:
+        return "Invalid mouse button";
     }
 
 }
