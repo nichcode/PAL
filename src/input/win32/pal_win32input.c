@@ -359,10 +359,10 @@ LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     scancode = input->scancodes[index];
                 }
 
-                if (!extended && keyboard->VKey == VK_RETURN) {
+                if (extended && keyboard->VKey == VK_RETURN) {
                     key = PAL_KEY_KP_ENTER;
 
-                } else if (!extended && keyboard->VKey == VK_OEM_PLUS) {
+                } else if (extended && keyboard->VKey == VK_OEM_PLUS) {
                     key = PAL_KEY_KP_EQUAL;
 
                 } else {
