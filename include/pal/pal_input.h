@@ -127,8 +127,8 @@ typedef enum PalScancode {
     PAL_SCANCODE_KP_8,
     PAL_SCANCODE_KP_9,
     PAL_SCANCODE_KP_ENTER,
-    PAL_SCANCODE_KP_PLUS,
-    PAL_SCANCODE_KP_MINUS,
+    PAL_SCANCODE_KP_ADD,
+    PAL_SCANCODE_KP_SUBTRACT,
     PAL_SCANCODE_KP_MULTIPLY,
     PAL_SCANCODE_KP_DIVIDE,
     PAL_SCANCODE_KP_DECIMAL,
@@ -144,7 +144,7 @@ typedef enum PalScancode {
     PAL_SCANCODE_COMMA,
     PAL_SCANCODE_EQUAL,
     PAL_SCANCODE_GRAVEACCENT,
-    PAL_SCANCODE_MINUS,
+    PAL_SCANCODE_SUBTRACT,
     PAL_SCANCODE_PERIOD,
     PAL_SCANCODE_SEMICOLON,
     PAL_SCANCODE_SLASH,
@@ -155,6 +155,141 @@ typedef enum PalScancode {
 
     PAL_SCANCODE_MAX
 } PalScancode;
+
+typedef enum PalKey {
+    PAL_KEY_UNKNOWN = 0,
+
+    // Letters
+    
+    PAL_KEY_A,
+    PAL_KEY_B,
+    PAL_KEY_C,
+    PAL_KEY_D,
+    PAL_KEY_E,
+    PAL_KEY_F,
+    PAL_KEY_G,
+    PAL_KEY_H,
+    PAL_KEY_I,
+    PAL_KEY_J,
+    PAL_KEY_K,
+    PAL_KEY_L,
+    PAL_KEY_M,
+    PAL_KEY_N,
+    PAL_KEY_O,
+    PAL_KEY_P,
+    PAL_KEY_Q,
+    PAL_KEY_R,
+    PAL_KEY_S,
+    PAL_KEY_T,
+    PAL_KEY_U,
+    PAL_KEY_V,
+    PAL_KEY_W,
+    PAL_KEY_X,
+    PAL_KEY_Y,
+    PAL_KEY_Z,
+
+    // Numbers (top row)
+    
+    PAL_KEY_0,
+    PAL_KEY_1,
+    PAL_KEY_2,
+    PAL_KEY_3,
+    PAL_KEY_4,
+    PAL_KEY_5,
+    PAL_KEY_6,
+    PAL_KEY_7,
+    PAL_KEY_8,
+    PAL_KEY_9,
+
+    // Function
+    
+    PAL_KEY_F1,
+    PAL_KEY_F2,
+    PAL_KEY_F3,
+    PAL_KEY_F4,
+    PAL_KEY_F5,
+    PAL_KEY_F6,
+    PAL_KEY_F7,
+    PAL_KEY_F8,
+    PAL_KEY_F9,
+    PAL_KEY_F10,
+    PAL_KEY_F11,
+    PAL_KEY_F12,
+
+    // Control
+    
+    PAL_KEY_ESCAPE,
+    PAL_KEY_ENTER,
+    PAL_KEY_TAB,
+    PAL_KEY_BACKSPACE,
+    PAL_KEY_SPACE,
+    PAL_KEY_CAPSLOCK,
+    PAL_KEY_NUMLOCK,
+    PAL_KEY_SCROLLLOCK,
+    PAL_KEY_LSHIFT,
+    PAL_KEY_RSHIFT,
+    PAL_KEY_LCTRL,
+    PAL_KEY_RCTRL,
+    PAL_KEY_LALT,
+    PAL_KEY_RALT,
+
+    // Arrows
+    
+    PAL_KEY_LEFT,
+    PAL_KEY_RIGHT,
+    PAL_KEY_UP,
+    PAL_KEY_DOWN,
+
+    // Navigation
+    
+    PAL_KEY_INSERT,
+    PAL_KEY_DELETE,
+    PAL_KEY_HOME,
+    PAL_KEY_END,
+    PAL_KEY_PAGEUP,
+    PAL_KEY_PAGEDOWN,
+
+    // Keypad
+    
+    PAL_KEY_KP_0,
+    PAL_KEY_KP_1,
+    PAL_KEY_KP_2,
+    PAL_KEY_KP_3,
+    PAL_KEY_KP_4,
+    PAL_KEY_KP_5,
+    PAL_KEY_KP_6,
+    PAL_KEY_KP_7,
+    PAL_KEY_KP_8,
+    PAL_KEY_KP_9,
+    PAL_KEY_KP_ENTER,
+    PAL_KEY_KP_ADD,
+    PAL_KEY_KP_SUBTRACT,
+    PAL_KEY_KP_MULTIPLY,
+    PAL_KEY_KP_DIVIDE,
+    PAL_KEY_KP_DECIMAL,
+    PAL_KEY_KP_EQUAL,
+
+    // Misc
+
+    PAL_KEY_PRINTSCREEN,
+    PAL_KEY_PAUSE,
+    PAL_KEY_MENU,
+    PAL_KEY_APOSTROPHE,
+    PAL_KEY_BACKSLASH,
+    PAL_KEY_COMMA,
+    PAL_KEY_EQUAL,
+    PAL_KEY_GRAVEACCENT,
+    PAL_KEY_SUBTRACT,
+    PAL_KEY_PERIOD,
+    PAL_KEY_SEMICOLON,
+    PAL_KEY_SLASH,
+    PAL_KEY_LBRACKET,
+    PAL_KEY_RBRACKET,
+    PAL_KEY_LSUPER,
+    PAL_KEY_RSUPER,
+
+    PAL_KEY_MAX
+} PalKey;
 
 typedef struct PalInputDeviceInfo {
     char name[64];

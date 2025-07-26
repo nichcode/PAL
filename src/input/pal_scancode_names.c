@@ -104,8 +104,8 @@ void palMapScancodeNames(PalInput input) {
     input->scancodeNames[PAL_SCANCODE_KP_8] = "Scancode KP_8";
     input->scancodeNames[PAL_SCANCODE_KP_9] = "Scancode KP_9";
     input->scancodeNames[PAL_SCANCODE_KP_ENTER] = "Scancode KP_Enter";
-    input->scancodeNames[PAL_SCANCODE_KP_PLUS] = "Scancode KP_Plus";
-    input->scancodeNames[PAL_SCANCODE_KP_MINUS] = "Scancode KP_Minus";
+    input->scancodeNames[PAL_SCANCODE_KP_ADD] = "Scancode KP_Add";
+    input->scancodeNames[PAL_SCANCODE_KP_SUBTRACT] = "Scancode KP_Subtract";
     input->scancodeNames[PAL_SCANCODE_KP_MULTIPLY] = "Scancode KP_Multiply";
     input->scancodeNames[PAL_SCANCODE_KP_DIVIDE] = "Scancode KP_Divide";
     input->scancodeNames[PAL_SCANCODE_KP_DECIMAL] = "Scancode KP_Decimal";
@@ -120,7 +120,7 @@ void palMapScancodeNames(PalInput input) {
     input->scancodeNames[PAL_SCANCODE_COMMA] = "Scancode Comma";
     input->scancodeNames[PAL_SCANCODE_EQUAL] = "Scancode Equal";
     input->scancodeNames[PAL_SCANCODE_GRAVEACCENT] = "Scancode Graveaccent";
-    input->scancodeNames[PAL_SCANCODE_MINUS] = "Scancode Minus";
+    input->scancodeNames[PAL_SCANCODE_SUBTRACT] = "Scancode Subtract";
     input->scancodeNames[PAL_SCANCODE_PERIOD] = "Scancode Period";
     input->scancodeNames[PAL_SCANCODE_SEMICOLON] = "Scancode Semicolon";
     input->scancodeNames[PAL_SCANCODE_SLASH] = "Scancode Slash";

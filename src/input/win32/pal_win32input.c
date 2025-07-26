@@ -347,6 +347,7 @@ LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // keyboard
             if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                 PalScancode scancode = PAL_SCANCODE_UNKNOWN;
+                PalKey key = PAL_KEY_UNKNOWN;
                 RAWKEYBOARD* keyboard = &raw->data.keyboard;
                 bool extended = (keyboard->Flags & RI_KEY_E0) != 0;
 
@@ -358,10 +359,22 @@ LRESULT CALLBACK palInputProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     scancode = input->scancodes[index];
                 }
 
-                if (keyboard->Flags & RI_KEY_BREAK) {
-                    input->keyState[scancode] = PAL_FALSE;
+                if (!extended && keyboard->VKey == VK_RETURN) {
+                    key = PAL_KEY_KP_ENTER;
+
+                } else if (!extended && keyboard->VKey == VK_OEM_PLUS) {
+                    key = PAL_KEY_KP_EQUAL;
+
                 } else {
-                    input->keyState[scancode] = PAL_TRUE;
+                    key = input->keycodes[keyboard->VKey];
+                }
+
+                if (keyboard->Flags & RI_KEY_BREAK) {
+                    input->keyState[key] = PAL_FALSE;
+                    input->scancodeState[scancode] = PAL_FALSE;
+                } else {
+                    input->keyState[key] = PAL_TRUE;
+                    input->scancodeState[scancode] = PAL_TRUE;
                 }
             }
             

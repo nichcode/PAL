@@ -142,11 +142,15 @@ void inputTest() {
         palUpdateInput(input);
 
         if (keyboardState.scancodes[PAL_SCANCODE_RIGHT]) {
-            palLogInfo(PAL_NULL, "Right Arrow is down");
+            palLogInfo(PAL_NULL, "Right Arrow(Scancode) is down");
         }
 
         if (keyboardState.scancodes[PAL_SCANCODE_LEFT]) {
-            palLogInfo(PAL_NULL, "Left Arrow is down");
+            palLogInfo(PAL_NULL, "Left Arrow(Scancode) is down");
+        }
+
+        if (keyboardState.keys[PAL_KEY_DOWN]) {
+            palLogInfo(PAL_NULL, "Down Arrow(Key) is down");
         }
     }
 

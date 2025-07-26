@@ -39,6 +39,7 @@ PalResult _PCALL palCreateInput(
     }
 
     palMapScancodes(input);
+    palMapKeycodes(input);
     palMapScancodeNames(input);
 
     *outInput = input;
@@ -77,5 +78,6 @@ PalResult _PCALL palGetKeyboardState(
     if (!input || !state) {
         return PAL_ERROR_NULL_POINTER;
     }
-    state->scancodes = input->keyState;
+    state->keys = input->keyState;
+    state->scancodes = input->scancodeState;
 }

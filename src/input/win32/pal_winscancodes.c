@@ -113,8 +113,8 @@ void palMapScancodes(PalInput input) {
     input->scancodes[0x048] = PAL_SCANCODE_KP_8;
     input->scancodes[0x049] = PAL_SCANCODE_KP_9;
     input->scancodes[0x11C] = PAL_SCANCODE_KP_ENTER;
-    input->scancodes[0x04E] = PAL_SCANCODE_KP_PLUS;
-    input->scancodes[0x04A] = PAL_SCANCODE_KP_MINUS;
+    input->scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
+    input->scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
     input->scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
     input->scancodes[0x135] = PAL_SCANCODE_KP_DIVIDE;
     input->scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
@@ -131,7 +131,7 @@ void palMapScancodes(PalInput input) {
     input->scancodes[0x033] = PAL_SCANCODE_COMMA;
     input->scancodes[0x00D] = PAL_SCANCODE_EQUAL;
     input->scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
-    input->scancodes[0x00C] = PAL_SCANCODE_MINUS;
+    input->scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
     input->scancodes[0x034] = PAL_SCANCODE_PERIOD;
     input->scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
     input->scancodes[0x035] = PAL_SCANCODE_SLASH;
