@@ -63,4 +63,5 @@ Uint64 _PCALL palGetPerformanceFrequency() {
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     return (Uint64)frequency.QuadPart;
+
 }

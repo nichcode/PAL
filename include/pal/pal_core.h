@@ -86,8 +86,8 @@ typedef struct {
  * @ingroup core
  */
 typedef struct {
-   Uint64 frequency;        /** < cycles per second*/
-   Uint64 startTime;        /** < the start time for time calculations*/
+   Uint64 frequency;        /** < Cycles per second*/
+   Uint64 startTime;        /** < Start time of the timer*/
 } PalTimer;
 
 /**
@@ -226,6 +226,10 @@ _PAPI void _PCALL palLog(const char* fmt, ...);
  * @brief Get the system timer.
  * 
  * This is a reflects of the OS current time and frequency
+ * 
+ * Every time you query the system's timer, the start time will be the current time the OS started running
+ * 
+ * So when you query two different timers, their start time will be different
  * 
  * @note This function is thread-safe
  * @return The system timer

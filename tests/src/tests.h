@@ -41,5 +41,6 @@ static inline void runTests() {
 
 // Tests
 void allocatorTest();
+void timeTest();
 
 #endif // _TESTS_H
