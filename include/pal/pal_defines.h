@@ -79,6 +79,7 @@ extern "C" {
  * @brief A typedef or alias for `nullptr`
  * @ingroup defines
  */
+
 #define PAL_NULL ((void *)0)
 
 /**
@@ -95,7 +96,7 @@ extern "C" {
 
 /**
  * @brief A typedef or alias for `bool`
- * @note this should work from C99
+ * @warning This works from C99
  * @ingroup defines
  */
 typedef _Bool bool;
@@ -126,7 +127,7 @@ typedef unsigned short Uint16;
  * @brief A typedef or alias for a signed 16-bit integer
  * @ingroup defines
  */
-typedef signed short Uint16;
+typedef signed short Int16;
 
 /**
  * @brief A typedef or alias for an unsigned 32-bit integer
@@ -153,6 +154,7 @@ typedef unsigned long long Uint64;
 typedef signed long long Int64;
 
 /**
+ * @enum PalResult
  * @brief A type used to identify return codes from functions
  * All result codes start from `PAL_RESULT_**` for consistency and API use
  * @ingroup defines

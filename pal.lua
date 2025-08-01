@@ -23,6 +23,7 @@ project "PAL"
         
         -- core
         "src/core/pal_version.c",
+        "src/core/pal_memory.c"
     }
 
     filter {"system:windows", "configurations:*"}

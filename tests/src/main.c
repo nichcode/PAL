@@ -3,7 +3,16 @@
 
 int main(int argc, char** argv) {
 
-    Uint32 Int32bit = 120000000;
+    PalVersion version = palGetVersion();
+    const char* versionString = palGetVersionString();
+
+    Int32* pInt = palAllocate(PAL_NULL, sizeof(Int32));
+
+    *pInt = 100;
+
+    if (pInt) {
+        palFree(PAL_NULL, pInt);
+    }
 
     return 0;
 }
