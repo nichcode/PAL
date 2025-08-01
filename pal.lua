@@ -27,5 +27,8 @@ project "PAL"
     }
 
     filter {"system:windows", "configurations:*"}
+    files { 
+        "src/core/win32/**.c"
+    }
 
     filter {}

@@ -155,8 +155,9 @@ typedef signed long long Int64;
 
 /**
  * @enum PalResult
- * @brief A type used to identify return codes from functions
- * All result codes start from `PAL_RESULT_**` for consistency and API use
+ * @brief A type used to identify return codes from functions.
+ * 
+ * All result codes follow the format `PAL_RESULT_**` for consistency and API use
  * @ingroup defines
  */
 typedef enum {
@@ -169,7 +170,7 @@ typedef enum {
 /**
  * @brief Convert the result code to a UTF-8 encoding string
  * 
- * @param result The result code
+ * @param[in] result The result code
  * @note This function is thread-safe and the memory should not be freed.
  * 
  * @return A string in UTF-8 encoding

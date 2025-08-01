@@ -39,8 +39,8 @@ freely, subject to the following restrictions:
  * @typedef PalAllocateFn
  * @brief A type used to identify an allocate function pointer
  * 
- * @param userData The user data
- * @param size The size in bytes of memory to allocate
+ * @param[in] userData The user data
+ * @param[in] size The size in bytes of memory to allocate
  * @ingroup core
  */
 typedef void* (*PalAllocateFn)(void* userData, Uint64 size);
@@ -49,8 +49,8 @@ typedef void* (*PalAllocateFn)(void* userData, Uint64 size);
  * @typedef PalFreeFn
  * @brief A type used to identify a free function pointer
  * 
- * @param userData The user data
- * @param ptr The pointer to the memory block to free
+ * @param[in] userData The user data
+ * @param[in] ptr The pointer to the memory block to free
  * @ingroup core
  */
 typedef void (*PalFreeFn)(void* userData, void* ptr);
@@ -108,8 +108,8 @@ _PAPI const char* _PCALL palGetVersionString();
 /**
  * @brief Allocate memory with a custom or default allocator
  * 
- * @param allocator This can be custom(user provided) or PAL_NULL to use default
- * @param size The size in bytes of memory to allocate
+ * @param[in] allocator This can be custom(user provided) or PAL_NULL to use default
+ * @param[in] size The size in bytes of memory to allocate
  * 
  * @sa palFree()
  * @note This function is thread-safe
@@ -126,8 +126,8 @@ _PAPI void* _PCALL palAllocate(
  * 
  * @warning free the memory with the same allocator used for the allocation
  * 
- * @param allocator This can be custom(user provided) or PAL_NULL to use default
- * @param ptr The pointer to the memory block to free
+ * @param[in] allocator This can be custom(user provided) or PAL_NULL to use default
+ * @param[in] ptr The pointer to the memory block to free
  * 
  * @note This function is thread-safe
  * @ingroup core
@@ -139,9 +139,9 @@ _PAPI void _PCALL palFree(
 /**
  * @brief Set a block of memory to a specific byte value
  * 
- * @param ptr The pointer to the memory block to fill
- * @param value The byte value to set(casted to unsigned char)
- * @param size The number or size of bytes to set
+ * @param[in] ptr The pointer to the memory block to fill
+ * @param[in] value The byte value to set(casted to unsigned char)
+ * @param[in] size The number or size of bytes to set
  * 
  * @note This function is thread-safe
  * @ingroup core
@@ -154,8 +154,8 @@ _PAPI void _PCALL palSetMemory(
 /**
  * @brief Set a block of memory to zero
  * 
- * @param ptr The pointer to the memory block to fill
- * @param size The number or size of bytes to set
+ * @param[in] ptr The pointer to the memory block to fill
+ * @param[in] size The number or size of bytes to set
  * 
  * @note This function is thread-safe
  * @ingroup core
@@ -167,9 +167,9 @@ _PAPI void _PCALL palZeroMemory(
 /**
  * @brief Copy a block of memory to another block of memory
  * 
- * @param dest The pointer to the memory block to copy to
- * @param src The pointer to the memory block to copy from
- * @param size The number or size of bytes to copy
+ * @param[in] dest The pointer to the memory block to copy to
+ * @param[in] src The pointer to the memory block to copy from
+ * @param[in] size The number or size of bytes to copy
  * 
  * @note This function is thread-safe
  * @ingroup core
@@ -182,9 +182,9 @@ _PAPI void _PCALL palCopyMemory(
 /**
  * @brief Move a block of memory to another block of memory
  * 
- * @param dest The pointer to the memory block to move to
- * @param src The pointer to the memory block to move from
- * @param size The number or size of bytes to move
+ * @param[in] dest The pointer to the memory block to move to
+ * @param[in] src The pointer to the memory block to move from
+ * @param[in] size The number or size of bytes to move
  * 
  * @note This function is thread-safe
  * @ingroup core
@@ -193,5 +193,22 @@ _PAPI void _PCALL palMoveMemory(
    void* dest, 
    const void* src, 
    Uint64 size);
+
+/**
+ * @brief Log a message on the stdout console or debug console
+ * 
+ * This supports unicode characters
+ * 
+ * @param[in] fmt The UTF-8 encoding printf-style format
+ * 
+ * Example:
+ * @code
+ * palLog("%s - %f", sting, float);
+ * @endcode
+ * 
+ * @note This function is thread-safe. This will do nothing if there's no console
+ * @ingroup core
+ */
+_PAPI void _PCALL palLog(const char* fmt, ...);
 
 #endif // _PAL_CORE_H

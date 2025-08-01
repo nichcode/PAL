@@ -9,6 +9,8 @@ int main(int argc, char** argv) {
     Int32* pInt = palAllocate(PAL_NULL, sizeof(Int32));
 
     *pInt = 100;
+    palLog("%i", *pInt);
+    palLog("Unicode - àà");
 
     if (pInt) {
         palFree(PAL_NULL, pInt);
