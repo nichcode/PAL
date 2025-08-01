@@ -80,6 +80,17 @@ typedef struct {
 } PalAllocator;
 
 /**
+ * @struct PalTimer
+ * @brief A type used to identify a timer
+ * 
+ * @ingroup core
+ */
+typedef struct {
+   Uint64 frequency;        /** < cycles per second*/
+   Uint64 startTime;        /** < the start time for time calculations*/
+} PalTimer;
+
+/**
  * @brief Get the compiled runtime version of the library
  * 
  * @note This function is thread-safe
@@ -203,12 +214,51 @@ _PAPI void _PCALL palMoveMemory(
  * 
  * Example:
  * @code
- * palLog("%s - %f", sting, float);
+ * palLog("%s - %f", string, float);
  * @endcode
  * 
  * @note This function is thread-safe. This will do nothing if there's no console
  * @ingroup core
  */
 _PAPI void _PCALL palLog(const char* fmt, ...);
+
+/**
+ * @brief Get the system timer.
+ * 
+ * This is a reflects of the OS current time and frequency
+ * 
+ * @note This function is thread-safe
+ * @return The system timer
+ * @ingroup core
+ */
+_PAPI PalTimer _PCALL palGetSystemTimer();
+
+/**
+ * @brief Get the current time in seconds using a timer
+ * 
+ * @param[in] timer The timer to use
+ * @note This function is thread-safe
+ * @return the time in seconds or 0 if the timer is invalid
+ * @ingroup core
+ */
+_PAPI double _PCALL palGetTime(PalTimer* timer);
+
+/**
+ * @brief Get the system performance counter
+ * 
+ * @note This function is thread-safe
+ * @return the performance counter
+ * @ingroup core
+ */
+_PAPI Uint64 _PCALL palGetPerformanceCounter();
+
+/**
+ * @brief Get the system performance frequency
+ * 
+ * @note This function is thread-safe
+ * @return the performance frequency
+ * @ingroup core
+ */
+_PAPI Uint64 _PCALL palGetPerformanceFrequency();
 
 #endif // _PAL_CORE_H
