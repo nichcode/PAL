@@ -7,7 +7,9 @@ project "Tests"
     objdir(obj_dir)
 
     files { 
-        "src/main.c"
+        "src/main.c",
+
+        "src/allocator_test.c"
     }
 
     includedirs { "%{wks.location}/include" }

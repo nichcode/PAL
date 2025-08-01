@@ -59,9 +59,6 @@ void _PCALL palLog(const char* fmt, ...) {
 #endif // _MSC_VER
 
     int len = vsnprintf(0, 0, fmt, listCopy);
-    if (!len) {
-        return;
-    }
 
     vsnprintf(data->buffer, len + 1, fmt, listCopy);
     data->buffer[len] = 0;
@@ -99,5 +96,7 @@ static LogTLSDataWin32* getLogTlsData() {
         s_TlsID = TlsAlloc();
         TlsSetValue(s_TlsID, data);
     }
+
+    palZeroMemory(data, sizeof(LogTLSDataWin32));
     return data;
 }

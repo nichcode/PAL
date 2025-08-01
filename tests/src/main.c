@@ -1,20 +1,14 @@
 
-#include "pal/pal.h"
+#include "pal/pal_core.h"
+#include "tests.h"
 
 int main(int argc, char** argv) {
 
-    PalVersion version = palGetVersion();
     const char* versionString = palGetVersionString();
+    palLog("PAL v(%s)", versionString);
 
-    Int32* pInt = palAllocate(PAL_NULL, sizeof(Int32));
+    registerTest("Allocator Test", allocatorTest);
 
-    *pInt = 100;
-    palLog("%i", *pInt);
-    palLog("Unicode - àà");
-
-    if (pInt) {
-        palFree(PAL_NULL, pInt);
-    }
-
+    runTests();
     return 0;
 }
