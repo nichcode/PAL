@@ -46,7 +46,7 @@ extern "C" {
 #define _PAPI __declspec(dllimport)
 #endif // PAL_EXPORT
 #else
-    // other platforms
+// other platforms
 #define _PCALL
 #ifdef PAL_EXPORT
 #define _PAPI extern "C" __attribute__((visibility("default")))
@@ -54,6 +54,13 @@ extern "C" {
 #define _PAPI
 #endif // PAL_EXPORT
 #endif // _WIN32
+
+// systems reflection
+#ifdef _PAL_BUILD_VIDEO
+#define PAL_HAS_VIDEO 1
+#else 
+#define PAL_HAS_VIDEO 0
+#endif // 
 
 // Set up typedefs for C/C++
 #ifdef __cplusplus
@@ -101,9 +108,6 @@ extern "C" {
  */
 typedef _Bool bool;
 #endif // __cplusplus
-
-#define PAL_DECLARE_HANDLE_TYPE(name) typedef struct name##_T* name;
-#define PAL_DECLARE_HANDLE(name) typedef struct name *name;
 
 /**
  * @brief A typedef or alias for an unsigned 8-bit integer
@@ -161,10 +165,10 @@ typedef signed long long Int64;
  * @ingroup defines
  */
 typedef enum {
-   PAL_SUCCESS,                          /** < Operation was successful*/
-   PAL_RESULT_NULL_POINTER,              /** < Pointer was invalid*/
-   PAL_RESULT_INVALID_ARGUMENT,          /** < Argument was invalid*/
-   PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory*/
+    PAL_SUCCESS,                          /** < Operation was successful*/
+    PAL_RESULT_NULL_POINTER,              /** < Pointer was invalid*/
+    PAL_RESULT_INVALID_ARGUMENT,          /** < Argument was invalid*/
+    PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory*/
 } PalResult;
 
 /**

@@ -32,3 +32,10 @@ project "PAL"
     }
 
     filter {}
+
+    if (PAL_BUILD_VIDEO) then
+        defines { "_PAL_BUILD_VIDEO" }
+
+        filter {"system:windows", "configurations:*"}
+        filter {}
+    end

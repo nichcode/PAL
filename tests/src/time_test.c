@@ -38,5 +38,5 @@ void timeTest() {
         palLog("Frame %i, Total Time - %f seconds", frameCount++, totalTime);
     }
 
-    palLog("Loop finished after %.2f seconds and %i frames", totalTime, frameCount);
+    palLog("Loop finished after %f seconds and %i frames", totalTime, frameCount);
 }

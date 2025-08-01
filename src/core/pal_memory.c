@@ -31,7 +31,7 @@ freely, subject to the following restrictions:
 void* _PCALL palAllocate(
     PalAllocator* allocator, 
     Uint64 size) {
-
+    
     if (allocator && allocator->allocate) {
         return allocator->allocate(allocator->userData, size);
     }

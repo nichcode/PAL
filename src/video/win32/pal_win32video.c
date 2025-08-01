@@ -22,28 +22,15 @@ freely, subject to the following restrictions:
  */
 
 #include "pal_pch.h"
-#include "pal/pal_core.h"
+#include "pal_win32video.h"
 
-#define PAL_VMAJOR 1
-#define PAL_VMINOR 0
-#define PAL_VREVISION 0
+PalResult _PCALL palCreateVideoSystem(
+    const PalVideoSystemCreateInfo* info,
+    PalVideoSystem** outVideoSystem) {
 
-#define PAL_VERSION_STRING "1.0.0"
-
-// ==================================================
-// Public API
-// ==================================================
-
-PalVersion _PCALL palGetVersion() { 
-
-    return (PalVersion){
-        .major = PAL_VMAJOR,
-        .minor = PAL_VMINOR,
-        .revision = PAL_VREVISION
-    };
 }
 
-const char* _PCALL palGetVersionString() {
-    
-    return PAL_VERSION_STRING;
+void _PCALL palDestroyVideoSystem(
+    PalVideoSystem* videoSystem) {
+
 }

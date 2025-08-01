@@ -25,20 +25,20 @@ freely, subject to the following restrictions:
 #include "pal/pal_defines.h"
 
 const char* _PCALL palResultToString(PalResult result) {
+        
+    switch (result) {
+        case PAL_SUCCESS:
+        return "Success";
 
-   switch (result) {
-      case PAL_SUCCESS:
-      return "Success";
+        case PAL_RESULT_NULL_POINTER:
+        return "Invalid pointer";
 
-      case PAL_RESULT_NULL_POINTER:
-      return "Invalid pointer";
+        case PAL_RESULT_INVALID_ARGUMENT:
+        return "Invalid argument";
 
-      case PAL_RESULT_INVALID_ARGUMENT:
-      return "Invalid argument";
-
-      case PAL_RESULT_OUT_OF_MEMORY:
-      return "Out of memory";
+        case PAL_RESULT_OUT_OF_MEMORY:
+        return "Out of memory";
    }
 
-   return PAL_NULL;
+    return PAL_NULL;
 }
