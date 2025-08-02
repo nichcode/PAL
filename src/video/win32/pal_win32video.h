@@ -26,8 +26,16 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_video.h"
 
+#define WIN32_VIDEO_CLASS L"PALVideoClass"
+#define WIN32_VIDEO_PROP L"PALVideo"
+
 typedef struct {
     PalAllocator* allocator;
+    HINSTANCE instance;
+    HINSTANCE shcore;
+    bool hasShcore;
 } PalVideoSystem;
+
+LRESULT CALLBACK palVideoProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif // _PAL_WIN32_VIDEO_H

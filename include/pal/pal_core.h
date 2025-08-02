@@ -160,35 +160,7 @@ _PAPI void* _PCALL palAllocate(
     PalAllocator* allocator,
     Uint64 size,
     Uint64 alignment);
-
-/**
- * @brief Reallocates a memory block to a new size with a custom or default allocator.
- * 
- * If a valid allocator is provided, 
- * the function allocates and frees using the provided allocator's `allocate` and `free` functions.
- * Otherwise, the default allocator is used.
- * 
- * If `oldPtr` is a `nullptr`, the `newSize` is allocated.
- * If the `newSize` is `0`, the `oldPtr` is freed.
- *
- * @param[in] allocator Optional pointer to an allocator. The default allocator will be used if it is a `nullptr`.
- * @param[in] oldPtr Pointer to the previously allocated memory.
- * @param[in] newSize Size in bytes to allocate for the new memory.
- * @param[in] alignment Must be power of two and at least `8` or `16`. If zero `16` will be used.
- * 
- * @return Pointer to the allocated memory or nullptr if allocation failed.
- *
- * @note This does not initialize the allocated memory.
- * This function is thread safe if the provided allocator is thread safe.
- * @sa palFree(), palAllocate(), PalAllocator
- * @ingroup core
- */
-_PAPI void* _PCALL palRealloc(
-    PalAllocator* allocator,
-    void* oldPtr,
-    Uint64 newSize,
-    Uint64 alignment);
-
+    
 /**
  * @brief Free memory with a custom or default allocator.
  * 

@@ -24,13 +24,76 @@ freely, subject to the following restrictions:
 #include "pal_pch.h"
 #include "pal_win32video.h"
 
+// ==================================================
+// Public API
+// ==================================================
+
 PalResult _PCALL palCreateVideoSystem(
     const PalVideoSystemCreateInfo* info,
-    PalVideoSystem** outVideoSystem) {
+    PalVideoSystem** outVideo) {
 
+    PalVideoSystem* video;
+    if (!info || !outVideo) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->allocator && 
+    (!info->allocator->allocate || !info->allocator->free)) {
+        return PAL_RESULT_INVALID_ALLOCATOR;
+    }
+
+    video = palAllocate(info->allocator, sizeof(PalVideoSystem), 0);
+    if (!video) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(video, 0, sizeof(PalVideoSystem));
+    if (info->allocator) {
+        video->allocator = info->allocator;
+    }
+
+    // register class
+    video->instance = GetModuleHandleW(nullptr);
+    WNDCLASSEXW wc = {0};
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    if (!GetClassInfoExW(video->instance, WIN32_VIDEO_CLASS, &wc)) {
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = 0;
+        wc.hbrBackground = NULL;
+        wc.hCursor = LoadCursorW(video->instance, IDC_ARROW);
+        wc.hIcon = LoadIconW(video->instance, IDI_APPLICATION);
+        wc.hIconSm = LoadIconW(video->instance, IDI_APPLICATION);
+        wc.hInstance = video->instance;
+        wc.lpfnWndProc = palVideoProc;
+        wc.lpszClassName = WIN32_VIDEO_CLASS;
+        wc.lpszMenuName = NULL;
+        wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+
+        if (!RegisterClassExW(&wc)) {
+            return PAL_RESULT_ACCESS_DENIED;
+        }
+    }
+
+    // load shared libraries
+    video->shcore = LoadLibraryA("shcore.dll");
+    if (video->shcore) {
+        video->hasShcore = true;
+    }
+
+    *outVideo = video;
+    return PAL_SUCCESS;
 }
 
 void _PCALL palDestroyVideoSystem(
-    PalVideoSystem* videoSystem) {
+    PalVideoSystem* video) {
 
+    if (!video || (video && !video->instance)) {
+        return;
+    }
+
+    UnregisterClassW(WIN32_VIDEO_CLASS, video->instance);
+    if (video->hasShcore) {
+        FreeLibrary(video->shcore);
+    }
+    palFree(video->allocator, video);
 }

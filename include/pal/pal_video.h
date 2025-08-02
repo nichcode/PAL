@@ -36,7 +36,7 @@ freely, subject to the following restrictions:
 
 /**
  * @struct PalVideoSystem
- * @brief An opaque type used to identify a video system
+ * @brief Opaque handle to a video system.
  *
  * @ingroup video
  */
@@ -44,60 +44,66 @@ typedef struct PalVideoSystem PalVideoSystem;
 
 /**
  * @struct PalVideoSystemCreateInfo
- * @brief A type used to identify a video system create info
+ * @brief Specifies options for creating an instance of the video system.
+ * 
+ * This struct must be initialized and passed to palCreateVideoSystem().
+ * 
+ * All fields must be explicitly set by the user.
+ * 
+ * @note Uninitialized fields may result in undefined behavior.
  *
  * @ingroup video
  */
 typedef struct {
-    PalAllocator* allocator;         /** < custom allocator or null for default*/
+    PalAllocator* allocator;         /** < user allocator or nullptr for default.*/
 } PalVideoSystemCreateInfo;
 
 /**
- * @brief Create an instance of the video system
+ * @brief Create an instance of the video system.
  * 
- * A video system is neeed to query displays, query supported video features,
- * query supported window stylesm enumerate displays and other platform-specific video capabilities
+ * A video system is neeed to enumerate connected displays (monitors), 
+ * get supported video features, get supported window styles 
+ * and window creation.
  * 
- * The caller must call this function before any other video related functionality.
+ * The user must call this function before any other video related functionality,
+ * to obtain the video system handle which will be passed in other video related functions.
  *
- * @param[in] info A pointer to a PalVideoSystemCreateInfo struct with creation parameters
- * @param[out] outVideoSystem A pointer to a PalVideoSystem* 
- * that will receive the created video system instance
+ * @param[in] info A pointer to a PalVideoSystemCreateInfo struct with creation options.
+ * @param[out] outVideo Pointer to the created video system handle.
  * 
- * @return PAL_SUCESS on success or a result code on failure
+ * @return PAL_SUCCESS on success or an appropriate result code on failure.
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
- * then the caller is responsible for synchronization
+ * then the user is responsible for synchronization.
  * 
- * @note The created PalVideoSystem must be destroyed using `PalDestroyVideoSystem()`
- * when no longer needed
+ * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()`
+ * when no longer needed.
  * 
- * @sa PalVideoSystemCreateInfo
- * @sa palDestroyVideoSystem()
+ * @sa PalVideoSystemCreateInfo, palDestroyVideoSystem()
  * @ingroup video
  */
 _PAPI PalResult _PCALL palCreateVideoSystem(
     const PalVideoSystemCreateInfo* info,
-    PalVideoSystem** outVideoSystem);
+    PalVideoSystem** outVideo);
 
 /**
- * @brief Destroy an instance of the video system
+ * @brief Destroy the instance of the video system.
  * 
- * After this call, the pointer will be invalid and should not be used anymore
+ * After this call, the pointer will be invalid and should not be used anymore.
  * 
- * If the pointer is invalid, the function returns silently without doing anything
+ * This function can be called multiple times without any undefined behavior.
+ * If the video system handle is invalid or a nullptr, the function returns silently.
  * 
- * @param[in] videoSystem A pointer to the PalVideoSystem to destroy. 
+ * @param[in] video A pointer to the video system handle to destroy.
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
  * then the caller is responsible for synchronization.
- * 
- * @note All resources created through the video system should be destroyed before this function.
+ * All resources created through the video system must be destroyed before this call.
  * 
  * @sa palCreateVideoSystem()
  * @ingroup video
  */
 _PAPI void _PCALL palDestroyVideoSystem(
-    PalVideoSystem* videoSystem);
+    PalVideoSystem* video);
 
 #endif // _PAL_VIDEO_H

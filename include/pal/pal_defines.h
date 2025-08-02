@@ -128,10 +128,12 @@ typedef signed long long Int64;
  * @note All result codes follow the format `PAL_RESULT_**` for consistency and API use.
  */
 typedef enum {
-    PAL_SUCCESS,                          /** < Operation was successful*/
-    PAL_RESULT_NULL_POINTER,              /** < A nullptr was used where it is not allowed*/
-    PAL_RESULT_INVALID_ARGUMENT,          /** < One or more arguments were invalid*/
-    PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory or memory allocation failed*/
+    PAL_SUCCESS,                          /** < Operation was successful.*/
+    PAL_RESULT_NULL_POINTER,              /** < A nullptr was used where it is not allowed.*/
+    PAL_RESULT_INVALID_ARGUMENT,          /** < One or more arguments were invalid.*/
+    PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory or memory allocation failed.*/
+    PAL_RESULT_INVALID_ALLOCATOR,         /** < A partially defined custom allocator.*/
+    PAL_RESULT_ACCESS_DENIED              /** < OS denied PAL access.*/
 } PalResult;
 
 /**

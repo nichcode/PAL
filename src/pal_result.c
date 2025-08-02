@@ -38,6 +38,12 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_OUT_OF_MEMORY:
         return "Out of memory";
+
+        case PAL_RESULT_INVALID_ALLOCATOR:
+        return "Invalid allocator";
+
+        case PAL_RESULT_ACCESS_DENIED:
+        return "Access denied";
    }
 
     return nullptr;

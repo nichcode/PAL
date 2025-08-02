@@ -37,5 +37,8 @@ project "PAL"
         defines { "_PAL_BUILD_VIDEO" }
 
         filter {"system:windows", "configurations:*"}
+        files {
+            "src/video/win32/**.c"
+        }
         filter {}
     end
