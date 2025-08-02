@@ -4,7 +4,6 @@ dofile("pal_config.lua")
 target_dir = "%{wks.location}/bin/%{cfg.buildcfg}"
 obj_dir = "%{wks.location}/build"
 
-
 workspace "PAL Workspace"
     if PAL_BUILD_TESTS then
         startproject("Tests")
@@ -40,3 +39,4 @@ workspace "PAL Workspace"
     end
 
     include "pal.lua"
+    

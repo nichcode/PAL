@@ -44,6 +44,6 @@ PalVersion _PCALL palGetVersion() {
 }
 
 const char* _PCALL palGetVersionString() {
-    
+
     return PAL_VERSION_STRING;
 }

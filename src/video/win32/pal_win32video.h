@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #define WIN32_VIDEO_CLASS L"PALVideoClass"
 #define WIN32_VIDEO_PROP L"PALVideo"
 
-typedef struct {
+typedef struct PalVideoSystem {
     PalAllocator* allocator;
     HINSTANCE instance;
     HINSTANCE shcore;

@@ -60,9 +60,9 @@ PalResult _PCALL palCreateVideoSystem(
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;
         wc.hbrBackground = NULL;
-        wc.hCursor = LoadCursorW(video->instance, IDC_ARROW);
-        wc.hIcon = LoadIconW(video->instance, IDI_APPLICATION);
-        wc.hIconSm = LoadIconW(video->instance, IDI_APPLICATION);
+        wc.hCursor = LoadCursorW(video->instance, (LPCWSTR)IDC_ARROW);
+        wc.hIcon = LoadIconW(video->instance, (LPCWSTR)IDI_APPLICATION);
+        wc.hIconSm = LoadIconW(video->instance, (LPCWSTR)IDI_APPLICATION);
         wc.hInstance = video->instance;
         wc.lpfnWndProc = palVideoProc;
         wc.lpszClassName = WIN32_VIDEO_CLASS;
@@ -81,7 +81,7 @@ PalResult _PCALL palCreateVideoSystem(
     }
 
     *outVideo = video;
-    return PAL_SUCCESS;
+    return PAL_RESULT_SUCCESS;
 }
 
 void _PCALL palDestroyVideoSystem(
@@ -92,8 +92,11 @@ void _PCALL palDestroyVideoSystem(
     }
 
     UnregisterClassW(WIN32_VIDEO_CLASS, video->instance);
-    if (video->hasShcore) {
-        FreeLibrary(video->shcore);
-    }
     palFree(video->allocator, video);
+}
+
+// TODO: remove
+LRESULT CALLBACK palVideoProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
 }

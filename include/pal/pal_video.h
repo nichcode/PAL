@@ -71,7 +71,7 @@ typedef struct {
  * @param[in] info A pointer to a PalVideoSystemCreateInfo struct with creation options.
  * @param[out] outVideo Pointer to the created video system handle.
  * 
- * @return PAL_SUCCESS on success or an appropriate result code on failure.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
  * then the user is responsible for synchronization.

@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
 const char* _PCALL palResultToString(PalResult result) {
         
     switch (result) {
-        case PAL_SUCCESS:
+        case PAL_RESULT_SUCCESS:
         return "Success";
 
         case PAL_RESULT_NULL_POINTER:

@@ -55,10 +55,8 @@ extern "C" {
 
 // systems reflection
 #ifdef _PAL_BUILD_VIDEO
-#define PAL_HAS_VIDEO 1
-#else 
-#define PAL_HAS_VIDEO 0
-#endif // 
+#define PAL_HAS_VIDEO
+#endif // _PAL_BUILD_VIDEO
 
 // Set up typedefs for C
 #ifndef __cplusplus
@@ -119,7 +117,7 @@ typedef signed long long Int64;
  * 
  * Aside from the core system, PAL functions return a PalResult.
  * 
- * PAL_SUCCESS code means the operation completed successfully. 
+ * `PAL_RESULT_SUCCESS` code means the operation completed successfully. 
  * Any other value indicates an error.
  * 
  * @note For clarity, always use the named constants like 
@@ -128,7 +126,7 @@ typedef signed long long Int64;
  * @note All result codes follow the format `PAL_RESULT_**` for consistency and API use.
  */
 typedef enum {
-    PAL_SUCCESS,                          /** < Operation was successful.*/
+    PAL_RESULT_SUCCESS,                   /** < Operation was successful.*/
     PAL_RESULT_NULL_POINTER,              /** < A nullptr was used where it is not allowed.*/
     PAL_RESULT_INVALID_ARGUMENT,          /** < One or more arguments were invalid.*/
     PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory or memory allocation failed.*/

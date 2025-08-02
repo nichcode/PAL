@@ -1,4 +1,18 @@
 
+function writeConfig(path)
+    local file = io.open(path, "w")
+    file:write("\n// Auto Generated Config Header\n")
+    file:write("// Must not be edited manually\n\n")
+
+    if (PAL_BUILD_VIDEO) then
+        file:write("#define PAL_HAS_VIDEO 1\n")
+    else
+        file:write("#define PAL_HAS_VIDEO 0\n")
+    end
+    
+    file:close()
+end
+
 project "PAL"
     language "C"
 
@@ -42,3 +56,5 @@ project "PAL"
         }
         filter {}
     end
+
+    writeConfig("include/pal/pal_config.h")

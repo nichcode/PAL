@@ -42,5 +42,6 @@ static inline void runTests() {
 // Tests
 void allocatorTest();
 void timeTest();
+void videoTest();
 
 #endif // _TESTS_H
