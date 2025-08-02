@@ -24,18 +24,29 @@ freely, subject to the following restrictions:
 #include "pal_pch.h"
 #include "pal/pal_core.h"
 
+#define PAL_DEFAULT_ALIGNMENT 16
+
 // ==================================================
 // Public API
 // ==================================================
 
 void* _PCALL palAllocate(
     PalAllocator* allocator, 
-    Uint64 size) {
+    Uint64 size,
+    Uint64 alignment) {
+
+    Uint64 align = alignment;
+    if (align == 0) {
+        align = PAL_DEFAULT_ALIGNMENT;
+    }
     
     if (allocator && allocator->allocate) {
-        return allocator->allocate(allocator->userData, size);
+        return allocator->allocate(allocator->userData, size, align);
     }
-    return malloc(size);
+
+#ifdef _WIN32
+    return _aligned_malloc(size, align);
+#endif // _WIN32
 }
 
 void _PCALL palFree(
@@ -46,44 +57,8 @@ void _PCALL palFree(
         allocator->free(allocator->userData, ptr);
         return;
     }
-    free(ptr);
-}
 
-void _PCALL palSetMemory(
-    void* ptr, 
-    int value, 
-    Uint64 size) {
-
-    if (ptr) {
-        memset(ptr, value, size);
-    }
-}
-
-void _PCALL palZeroMemory(
-    void* ptr, 
-    Uint64 size) {
-
-    if (ptr) {
-        memset(ptr, 0, size);
-    }
-}
-
-void _PCALL palCopyMemory(
-    void* dest, 
-    const void* src, 
-    Uint64 size) {
-
-    if (dest && src) {
-        memcpy(dest, src, size);
-    }
-}
-
-void _PCALL palMoveMemory(
-    void* dest, 
-    const void* src, 
-    Uint64 size) {
-
-    if (dest && src) {
-        memmove(dest, src, size);
-    }
+#ifdef _WIN32
+    _aligned_free(ptr);
+#endif // _WIN32
 }

@@ -40,5 +40,5 @@ const char* _PCALL palResultToString(PalResult result) {
         return "Out of memory";
    }
 
-    return PAL_NULL;
+    return nullptr;
 }

@@ -26,8 +26,6 @@ freely, subject to the following restrictions:
  * 
  * Header file for defines and shared macros for all systems
  * 
- * @defgroup defines
- * 
  */
 
 #ifndef _PAL_DEFINES_H
@@ -62,122 +60,90 @@ extern "C" {
 #define PAL_HAS_VIDEO 0
 #endif // 
 
-// Set up typedefs for C/C++
-#ifdef __cplusplus
-/**
- * @brief A typedef or alias for `nullptr`
- * @ingroup defines
- */
-#define PAL_NULL nullptr
+// Set up typedefs for C
+#ifndef __cplusplus
+#define nullptr ((void *)0)
+#define true 1
+#define false 0
 
 /**
- * @brief A typedef or alias for `true` or `1`
- * @ingroup defines
- */
-#define PAL_TRUE true
-
-/**
- * @brief A typedef or alias for `false` or `0`
- * @ingroup defines
- */
-#define PAL_FALSE false
-#else
-/**
- * @brief A typedef or alias for `nullptr`
- * @ingroup defines
- */
-
-#define PAL_NULL ((void *)0)
-
-/**
- * @brief A typedef or alias for `true` or `1`
- * @ingroup defines
- */
-#define PAL_TRUE 1
-
-/**
- * @brief A typedef or alias for `false` or `0`
- * @ingroup defines
- */
-#define PAL_FALSE 0
-
-/**
- * @brief A typedef or alias for `bool`
+ * @brief A bool
  * @warning This works from C99
- * @ingroup defines
  */
 typedef _Bool bool;
 #endif // __cplusplus
 
 /**
- * @brief A typedef or alias for an unsigned 8-bit integer
- * @ingroup defines
+ * @brief An unsigned 8-bit integer
  */
 typedef unsigned char Uint8;
 
 /**
- * @brief A typedef or alias for a signed 8-bit integer
- * @ingroup defines
+ * @brief An signed 8-bit integer
  */
 typedef signed char Int8;
 
 /**
- * @brief A typedef or alias for an unsigned 16-bit integer
- * @ingroup defines
+ * @brief Ann unsigned 16-bit integer
  */
 typedef unsigned short Uint16;
 
 /**
- * @brief A typedef or alias for a signed 16-bit integer
- * @ingroup defines
+ * @brief An signed 16-bit integer
  */
 typedef signed short Int16;
 
 /**
- * @brief A typedef or alias for an unsigned 32-bit integer
- * @ingroup defines
+ * @brief Ann unsigned 32-bit integer
  */
 typedef unsigned int Uint32;
 
 /**
- * @brief A typedef or alias for a signed 32-bit integer
- * @ingroup defines
+ * @brief An signed 32-bit integer
  */
 typedef signed int Int32;
 
 /**
- * @brief A typedef or alias for an unsigned 64-bit integer
- * @ingroup defines
+ * @brief Ann unsigned 64-bit integer
  */
 typedef unsigned long long Uint64;
 
 /**
- * @brief A typedef or alias for an unsigned 64-bit integer
- * @ingroup defines
+ * @brief Ann unsigned 64-bit integer
  */
 typedef signed long long Int64;
 
 /**
  * @enum PalResult
- * @brief A type used to identify return codes from functions.
+ * @brief codes returned by PAL functions.
  * 
- * All result codes follow the format `PAL_RESULT_**` for consistency and API use
- * @ingroup defines
+ * Aside from the core system, PAL functions return a PalResult.
+ * 
+ * PAL_SUCCESS code means the operation completed successfully. 
+ * Any other value indicates an error.
+ * 
+ * @note For clarity, always use the named constants like 
+ * `PAL_RESULT_OUT_OF_MEMORY` not their numeric values.
+ * 
+ * @note All result codes follow the format `PAL_RESULT_**` for consistency and API use.
  */
 typedef enum {
     PAL_SUCCESS,                          /** < Operation was successful*/
-    PAL_RESULT_NULL_POINTER,              /** < Pointer was invalid*/
-    PAL_RESULT_INVALID_ARGUMENT,          /** < Argument was invalid*/
-    PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory*/
+    PAL_RESULT_NULL_POINTER,              /** < A nullptr was used where it is not allowed*/
+    PAL_RESULT_INVALID_ARGUMENT,          /** < One or more arguments were invalid*/
+    PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory or memory allocation failed*/
 } PalResult;
 
 /**
- * @brief Convert the result code to a UTF-8 encoding string
+ * @brief Return a human readable string for a specified result code.
  * 
- * @param[in] result The result code
- * @note This function is thread-safe and the memory should not be freed.
+ * This returns a constant, null-terminated string describing the result.
  * 
- * @return A string in UTF-8 encoding
+ * @param[in] result The result code to describe
+ * @return A pointer to the null-terminated result string.
+ * 
+ * @note This function is thread-safe and the pointer should not be freed.
+ * @sa PalResult
  */
 _PAPI const char* _PCALL palResultToString(PalResult result);
 

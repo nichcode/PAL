@@ -26,7 +26,7 @@ freely, subject to the following restrictions:
 
 #define PAL_VMAJOR 1
 #define PAL_VMINOR 0
-#define PAL_VREVISION 0
+#define PAL_VPATCH 0
 
 #define PAL_VERSION_STRING "1.0.0"
 
@@ -39,7 +39,7 @@ PalVersion _PCALL palGetVersion() {
     return (PalVersion){
         .major = PAL_VMAJOR,
         .minor = PAL_VMINOR,
-        .revision = PAL_VREVISION
+        .patch = PAL_VPATCH
     };
 }
 

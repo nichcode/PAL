@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define ALIGNMENT 16
+
 // struct to pass in allocator
 typedef struct {
     Int64 numAllocations;
@@ -16,18 +18,18 @@ typedef struct {
     Int16 id;
 } AllocationData;
 
-void* allocatorAlloc(void* userData, Uint64 size) {
+void* allocatorAlloc(void* userData, Uint64 size, Uint64 alignment) {
 
     AllocatorData* data = userData;
     if (!data) {
-        return PAL_NULL;
+        return nullptr;
     }
 
     void* memory = malloc(size);
     if (memory) {
-        palZeroMemory(memory, size);
+        memset(memory, 0, size);
     } else {
-        return PAL_NULL;
+        return nullptr;
     }
 
     data->numAllocations++;
@@ -56,43 +58,43 @@ void allocatorTest() {
     palLog("===========================================");
     palLog("");
 
-    AllocatorData* data = palAllocate(NULL, sizeof(AllocatorData));
+    AllocatorData* data = palAllocate(NULL, sizeof(AllocatorData), ALIGNMENT);
     if (!data) {
         palLog("allocation failed - Out of memory");
         return;
     }
 
-    palZeroMemory(data, sizeof(AllocatorData));
+    memset(data, 0, sizeof(AllocatorData));
 
     PalAllocator allocator;
     allocator.allocate = allocatorAlloc;
     allocator.free = allocatorFree;
     allocator.userData = data;
 
-    Int32* pInt32 = PAL_NULL;
-    Int64* pInt64 = PAL_NULL;
-    AllocationData* allocatedData1 = PAL_NULL;
-    AllocationData* allocatedData2 = PAL_NULL;
+    Int32* pInt32 = nullptr;
+    Int64* pInt64 = nullptr;
+    AllocationData* allocatedData1 = nullptr;
+    AllocationData* allocatedData2 = nullptr;
 
-    pInt32 = palAllocate(&allocator, sizeof(Int32));
+    pInt32 = palAllocate(&allocator, sizeof(Int32), ALIGNMENT);
     if (!pInt32) {
         palLog("allocation failed - Out of memory");
         return;
     }
 
-    pInt64 = palAllocate(&allocator, sizeof(Int64));
+    pInt64 = palAllocate(&allocator, sizeof(Int64), ALIGNMENT);
     if (!pInt64) {
         palLog("allocation failed - Out of memory");
         return;
     }
 
-    allocatedData1 = palAllocate(&allocator, sizeof(AllocationData));
+    allocatedData1 = palAllocate(&allocator, sizeof(AllocationData), ALIGNMENT);
     if (!allocatedData1) {
         palLog("allocation failed - Out of memory");
         return;
     }
 
-    allocatedData2 = palAllocate(&allocator, sizeof(AllocationData));
+    allocatedData2 = palAllocate(&allocator, sizeof(AllocationData), ALIGNMENT);
     if (!allocatedData2) {
         palLog("allocation failed - Out of memory");
         return;
@@ -117,5 +119,5 @@ void allocatorTest() {
     palFree(&allocator, allocatedData1);
     palFree(&allocator, allocatedData2);
 
-    palFree(PAL_NULL, data);
+    palFree(nullptr, data);
 }

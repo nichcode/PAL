@@ -66,7 +66,7 @@ void _PCALL palLog(const char* fmt, ...) {
 
     // log to console
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    len = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, PAL_NULL, 0);
+    len = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, nullptr, 0);
     if (!len) {
         return;
     }
@@ -89,14 +89,14 @@ static LogTLSDataWin32* getLogTlsData() {
 
     LogTLSDataWin32* data = TlsGetValue(s_TlsID);
     if (!data) {
-        data = palAllocate(PAL_NULL, sizeof(LogTLSDataWin32));
-        palZeroMemory(data, sizeof(LogTLSDataWin32));
+        data = palAllocate(nullptr, sizeof(LogTLSDataWin32), 16);
+        memset(data, 0, sizeof(LogTLSDataWin32));
 
         // create TLS
         s_TlsID = TlsAlloc();
         TlsSetValue(s_TlsID, data);
     }
 
-    palZeroMemory(data, sizeof(LogTLSDataWin32));
+    memset(data, 0, sizeof(LogTLSDataWin32));
     return data;
 }

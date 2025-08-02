@@ -37,110 +37,170 @@ freely, subject to the following restrictions:
 
 /**
  * @typedef PalAllocateFn
- * @brief A type used to identify an allocate function pointer
- *
- * @param[in] userData The user data
- * @param[in] size The size in bytes of memory to allocate
+ * @brief Function pointer type used for memory allocations.
+ * 
+ * Allocates `size` bytes with `alignment` and return a pointer or nullptr on failure.
+ * The `userData` is the same pointer passed into the allocator struct.
+ * 
+ * @param[in] userData Pointer provided by the user.
+ * @param[in] size Size in bytes to allocate.
+ * @param[in] alignment Must be power of two and at least `8` or `16`. If zero `16` will be used.
+ * 
+ * @return Pointer to the allocated memory or nullptr if allocation failed.
+ * 
+ * @sa PalAllocator, PalFreeFn, palAllocate
  * @ingroup core
  */
-typedef void* (*PalAllocateFn)(void* userData, Uint64 size);
+typedef void* (*PalAllocateFn)(
+    void* userData, 
+    Uint64 size, 
+    Uint64 alignment);
 
 /**
  * @typedef PalFreeFn
- * @brief A type used to identify a free function pointer
+ * @brief Function pointer type used for memory deallocations.
+ * 
+ * Deallocate memory allocated by PalAllocateFn. 
+ * Passing nullptr or an invalid pointer for `ptr` must be safe.
  *
- * @param[in] userData The user data
- * @param[in] ptr The pointer to the memory block to free
+ * @param[in] userData Optional pointer provided by the user. May be a nullptr.
+ * @param[in] ptr Pointer to the memory to free. May be a nullptr.
+ * 
+ * @sa PalAllocateFn, PalAllocator
  * @ingroup core
  */
 typedef void (*PalFreeFn)(void* userData, void* ptr);
 
 /**
  * @struct PalVersion
- * @brief A type used to identify version
+ * @brief Describes the version of the PAL library.
  *
  * @ingroup core
  */
 typedef struct {
-    int major;         /** < Major version*/
-    int minor;         /** < Minor version */
-    int revision;      /** < Revision version */
+    int major;         /** < Major version (breaking changes).*/
+    int minor;         /** < Minor version (features additions).*/
+    int patch;         /** < Patch version (bug fixes only). */
 } PalVersion;
 
 /**
  * @struct PalAllocator
- * @brief A type used to identify an allocator
+ * @brief Describes a user provided memory allocator.
+ * 
+ * Allows the user to override the default allocator for PAL.
  *
  * @ingroup core
  */
 typedef struct {
-    PalAllocateFn allocate;    /** < Allocate function pointer*/
-    PalFreeFn free;            /** < Free function pointer*/
-    void* userData;            /** < Data passed in function pointers*/
+    PalAllocateFn allocate;    /** < Allocation function pointer.*/
+    PalFreeFn free;            /** < Free function pointer.*/
+    void* userData;            /** < Optional user data passed to allocation functions.*/
 } PalAllocator;
 
 /**
  * @struct PalTimer
- * @brief A type used to identify a timer
+ * @brief Describes a high resolution timer
  *
  * @ingroup core
  */
 typedef struct {
-    Uint64 frequency;        /** < Cycles per second*/
-    Uint64 startTime;        /** < Start time of the timer*/
+    Uint64 frequency;        /** < Ticks per second.*/
+    Uint64 startTime;        /** < Start time of the timer.*/
 } PalTimer;
 
 /**
- * @brief Get the compiled runtime version of the library
+ * @brief Get the runtime version of PAL.
+ * 
+ * This returns a copy of PALVersion struct, 
+ * which contains the major, minor and patch of the PAL runtime version.
+ * 
+ * This version reflects the compiled PAL library and it can be used to validate compatibility.
  *
- * @note This function is thread-safe
+ * @return A copy of PAL runtime version.
+ * @note This function is thread-safe.
  *
- * @sa palGetVersionString()
+ * @sa palGetVersionString(), PalVersion
  * @ingroup core
- * @return A copy of the version
  */
 _PAPI PalVersion _PCALL palGetVersion();
 
 /**
- * @brief Get the compiled runtime version string of the library.
+ * @brief Get the human readable string representing the runtime version PAL.
  *
- * The format of the string will be: `1.2.3`.
+ * This returns a constant, null-terminated string describing the PAL runtime version
+ * in the format: `1.2.3`, where `1` is the major, `2` is the minor and `3` is the patch versions respectively.
  *
- * Where `1` is the major, `2` is the minor and `3` is the revision versions respectively
+ * @return A pointer to the null-terminated version string.
+ * @note This function is thread-safe and the pointer should not be freed.
  *
- * @sa palGetVersion()
+ * @sa palGetVersion(), PalVersion
  * @ingroup core
- * @note This function is thread-safe
- *
- * @return A copy of the version string
  */
 _PAPI const char* _PCALL palGetVersionString();
 
 /**
- * @brief Allocate memory with a custom or default allocator
+ * @brief Allocate memory with a custom or default allocator.
+ * 
+ * If a valid allocator is provided, 
+ * its `allocate` function is called with the provided size and user data.
+ * Otherwise, the default allocator is used.
  *
- * @param[in] allocator This can be custom(user provided) or PAL_NULL to use default
- * @param[in] size The size in bytes of memory to allocate
+ * @param[in] allocator Optional pointer to an allocator. The default allocator will be used if it is a `nullptr`.
+ * @param[in] size Size in bytes to allocate.
+ * @param[in] alignment Must be power of two and at least `8` or `16`. If zero `16` will be used.
+ * 
+ * @return Pointer to the allocated memory or a nullptr if allocation failed.
  *
- * @sa palFree()
- * @note This function is thread-safe
+ * @note This does not initialize the allocated memory.
+ * This function is thread safe if the provided allocator is thread safe.
+ * @sa palFree(), PalAllocator
  * @ingroup core
- *
- * @return A memory block or PAL_NULL if failed
  */
 _PAPI void* _PCALL palAllocate(
     PalAllocator* allocator,
-    Uint64 size);
+    Uint64 size,
+    Uint64 alignment);
 
 /**
- * @brief Free memory with a custom or default allocator
+ * @brief Reallocates a memory block to a new size with a custom or default allocator.
+ * 
+ * If a valid allocator is provided, 
+ * the function allocates and frees using the provided allocator's `allocate` and `free` functions.
+ * Otherwise, the default allocator is used.
+ * 
+ * If `oldPtr` is a `nullptr`, the `newSize` is allocated.
+ * If the `newSize` is `0`, the `oldPtr` is freed.
  *
- * @warning free the memory with the same allocator used for the allocation
+ * @param[in] allocator Optional pointer to an allocator. The default allocator will be used if it is a `nullptr`.
+ * @param[in] oldPtr Pointer to the previously allocated memory.
+ * @param[in] newSize Size in bytes to allocate for the new memory.
+ * @param[in] alignment Must be power of two and at least `8` or `16`. If zero `16` will be used.
+ * 
+ * @return Pointer to the allocated memory or nullptr if allocation failed.
  *
- * @param[in] allocator This can be custom(user provided) or PAL_NULL to use default
- * @param[in] ptr The pointer to the memory block to free
+ * @note This does not initialize the allocated memory.
+ * This function is thread safe if the provided allocator is thread safe.
+ * @sa palFree(), palAllocate(), PalAllocator
+ * @ingroup core
+ */
+_PAPI void* _PCALL palRealloc(
+    PalAllocator* allocator,
+    void* oldPtr,
+    Uint64 newSize,
+    Uint64 alignment);
+
+/**
+ * @brief Free memory with a custom or default allocator.
+ * 
+ * If a valid allocator is provided, 
+ * its `free` function is called with the provided ptr and user data.
+ * Otherwise, the default allocator is used.
  *
- * @note This function is thread-safe
+ * @param[in] allocator Optional pointer to an allocator. The default allocator will be used if it is a `nullptr`.
+ * @param[in] ptr The pointer to the memory block to free.
+ *
+ * @note This function is thread safe if the provided allocator is thread safe.
+ * @sa PalAllocator, palAllocate
  * @ingroup core
  */
 _PAPI void _PCALL palFree(
@@ -148,117 +208,79 @@ _PAPI void _PCALL palFree(
     void* ptr);
 
 /**
- * @brief Set a block of memory to a specific byte value
+ * @brief Log a formatted message.
  *
- * @param[in] ptr The pointer to the memory block to fill
- * @param[in] value The byte value to set(casted to unsigned char)
- * @param[in] size The number or size of bytes to set
+ * This supports unicode characters.
  *
- * @note This function is thread-safe
- * @ingroup core
- */
-_PAPI void _PCALL palSetMemory(
-    void* ptr,
-    int value,
-    Uint64 size);
-
-/**
- * @brief Set a block of memory to zero
- *
- * @param[in] ptr The pointer to the memory block to fill
- * @param[in] size The number or size of bytes to set
- *
- * @note This function is thread-safe
- * @ingroup core
- */
-_PAPI void _PCALL palZeroMemory(
-    void* ptr,
-    Uint64 size);
-
-/**
- * @brief Copy a block of memory to another block of memory
- *
- * @param[in] dest The pointer to the memory block to copy to
- * @param[in] src The pointer to the memory block to copy from
- * @param[in] size The number or size of bytes to copy
- *
- * @note This function is thread-safe
- * @ingroup core
- */
-_PAPI void _PCALL palCopyMemory(
-    void* dest,
-    const void* src,
-    Uint64 size);
-
-/**
- * @brief Move a block of memory to another block of memory
- *
- * @param[in] dest The pointer to the memory block to move to
- * @param[in] src The pointer to the memory block to move from
- * @param[in] size The number or size of bytes to move
- *
- * @note This function is thread-safe
- * @ingroup core
- */
-_PAPI void _PCALL palMoveMemory(
-    void* dest,
-    const void* src,
-    Uint64 size);
-
-/**
- * @brief Log a message on the stdout console or debug console
- *
- * This supports unicode characters
- *
- * @param[in] fmt The UTF-8 encoding printf-style format
+ * @param[in] fmt UTF-8 encoding printf-style format string.
  *
  * Example:
  * @code
  * palLog("%s - %f", string, float);
  * @endcode
  *
- * @note This function is thread-safe. This will do nothing if there's no console
+ * @note This function is thread-safe. 
+ * This will do nothing if there's no console on the OS.
  * @ingroup core
  */
 _PAPI void _PCALL palLog(const char* fmt, ...);
 
 /**
- * @brief Get the system timer.
+ * @brief Get the current system timer.
+ * 
+ * This is used to measure elasped time and for time related calculations.
+ * You can use multiple timers for different use cases.
+ * 
+ * Example: one timer for total application time which you don't reset.
+ * And another to calculate delta time which you reset every frame 
+ * using palGetTime(). See `tests/src/time_test.c`.
+ * 
+ * @return A PalTimer struct cintaining the system frequency and current time.
+ * 
+ * @sa palGetTime(), PalTimer, palGetPerformanceCounter(), palGetPerformanceFrequency()
  *
- * This is a reflects of the OS current time and frequency
- *
- * @sa palGetTime()
- *
- * @note This function is thread-safe
- * @return The system timer
+ * @note This function is thread-safe.
  * @ingroup core
  */
 _PAPI PalTimer _PCALL palGetSystemTimer();
 
 /**
- * @brief Get the current time in seconds using a timer
+ * @brief Get the current time in seconds using a timer.
+ * 
+ * This returns the current absolute time in seconds using a high resolution timer.
  *
- * @param[in] timer The timer to use
- * @note This function is thread-safe
- * @return the time in seconds or 0 if the timer is invalid
+ * @param[in] timer High resolution timer to use.
+ * @return Current high resolution time in seconds or `0.0` if `timer` is nullptr.
+ * 
+ * @note This function is thread-safe. This should not be used to measure calender time
+ * @sa palGetPerformanceCounter(), palGetPerformanceFrequency()
  * @ingroup core
  */
 _PAPI double _PCALL palGetTime(PalTimer* timer);
 
 /**
- * @brief Get the system performance counter
- *
- * @note This function is thread-safe
- * @return the performance counter
+ * @brief Get the system performance counter value in ticks
+ * 
+ * This can be used to measure elasped time when divided by the performance frequency.
+ * This is done by `palGetTime()`
+ * 
+ * @return Current tick count from the system
+ * @sa palGetTime(), palGetPerformanceFrequency
+ * @note This function is thread-safe.
  * @ingroup core
  */
 _PAPI Uint64 _PCALL palGetPerformanceCounter();
 
 /**
- * @brief Get the system performance frequency
- *
- * @note This function is thread-safe
- * @return the performance frequency
+ * @brief Get the frequency of the system performance counter.
+ * 
+ * This function returns the number of ticks per second of the system performance counter.
+ * @return Frequency in ticks per second.
+ * 
+ * @sa palGetTime(), palGetPerformanceCounter
+ * @note This function is thread-safe. 
+ * 
+ * @note The returned frequency is constant for the duration of the application.
  * @ingroup core
  */
 _PAPI Uint64 _PCALL palGetPerformanceFrequency();
