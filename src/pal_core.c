@@ -35,6 +35,11 @@ freely, subject to the following restrictions:
 #define NOMINMAX
 #endif // NOMINMAX
 
+// set unicode
+#ifndef UNICODE
+#define UNICODE
+#endif // UNICODE
+
 #include <windows.h>
 #endif // _WIN32
 
@@ -79,6 +84,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_ACCESS_DENIED:
         return "Access denied";
+
+        case PAL_RESULT_INVALID_DISPLAY:
+        return "Invalid display";
    }
 
     return nullptr;
@@ -166,7 +174,7 @@ void _PCALL palLog(const char* fmt, ...) {
     MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, data->wideBuffer, len);
     if (console) {
         WriteConsoleW(console, data->wideBuffer, (DWORD)len - 1, NULL, 0);
-        WriteConsoleA(console, s_NewlineString, 1, NULL, 0);
+        WriteConsoleW(console, s_NewlineString, 1, NULL, 0);
     } else {
         OutputDebugStringW(data->wideBuffer);
         OutputDebugStringA(s_NewlineString);

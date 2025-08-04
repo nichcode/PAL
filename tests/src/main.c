@@ -14,7 +14,8 @@ int main(int argc, char** argv) {
     // registerTest("Time Test", timeTest);
 
 #if PAL_HAS_VIDEO
-    registerTest("Video Test", videoTest);
+    //registerTest("Video Test", videoTest);
+    registerTest("Display Test", displayTest);
 #endif // PAL_HAS_VIDEO
 
     runTests();

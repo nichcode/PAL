@@ -9,11 +9,15 @@ project "Tests"
     files { 
         "src/main.c",
         "src/allocator_test.c",
-        "src/time_test.c",
-
-        -- video
-        "src/video_test.c"
+        "src/time_test.c"
     }
+
+    if (PAL_BUILD_VIDEO) then
+        files { 
+            "src/video_test.c",
+            "src/display_test.c"
+        }
+    end
 
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

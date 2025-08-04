@@ -137,7 +137,8 @@ typedef enum {
     PAL_RESULT_INVALID_ARGUMENT,          /** < One or more arguments were invalid.*/
     PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory or memory allocation failed.*/
     PAL_RESULT_INVALID_ALLOCATOR,         /** < A partially defined custom allocator.*/
-    PAL_RESULT_ACCESS_DENIED              /** < OS denied PAL access.*/
+    PAL_RESULT_ACCESS_DENIED,             /** < OS denied PAL access.*/
+    PAL_RESULT_INVALID_DISPLAY            /** < An invalid display*/
 } PalResult;
 
 /**
