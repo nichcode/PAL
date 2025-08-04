@@ -1,7 +1,7 @@
 
 function writeConfig(path)
     local file = io.open(path, "w")
-    file:write("\n// Auto Generated Config Header\n")
+    file:write("\n// Auto Generated Config Header From pal_config.lua\n")
     file:write("// Must not be edited manually\n\n")
 
     if (PAL_BUILD_VIDEO) then
@@ -26,34 +26,15 @@ project "PAL"
     targetdir(target_dir)
     objdir(obj_dir)
 
-    pchheader "src/pal_pch.h"
+    files { "src/pal_core.c" }
     includedirs {
         "include",
         "src"
     }
 
-    files {
-        "src/pal_result.c",
-        
-        -- core
-        "src/core/pal_version.c",
-        "src/core/pal_memory.c"
-    }
-
-    filter {"system:windows", "configurations:*"}
-    files { 
-        "src/core/win32/**.c"
-    }
-
-    filter {}
-
     if (PAL_BUILD_VIDEO) then
-        defines { "_PAL_BUILD_VIDEO" }
-
         filter {"system:windows", "configurations:*"}
-        files {
-            "src/video/win32/**.c"
-        }
+        files { "src/pal_win32video.c" }
         filter {}
     end
 

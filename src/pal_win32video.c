@@ -21,8 +21,37 @@ freely, subject to the following restrictions:
 
  */
 
-#include "pal_pch.h"
-#include "pal_win32video.h"
+#include "pal/pal_video.h"
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
+
+#include <windows.h>
+#endif // _WIN32
+
+#define PAL_WIN32_VIDEO_CLASS L"PALVideoClass"
+#define PAL_WIN32_VIDEO_PROP L"PALVideo"
+
+typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, int, UINT*, UINT*);
+typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
+
+static GetDpiForMonitorFn s_GetDpiForMonitor;
+static SetProcessAwarenessFn s_SetProcessAwareness;
+static HINSTANCE s_Shcore;
+
+typedef struct PalVideoSystem {
+    PalAllocator* allocator;
+    HINSTANCE instance;
+    Uint64 nextWindowID;
+} PalVideoSystem;
+
+LRESULT CALLBACK palVideoProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // ==================================================
 // Public API
@@ -56,7 +85,7 @@ PalResult _PCALL palCreateVideoSystem(
     video->instance = GetModuleHandleW(nullptr);
     WNDCLASSEXW wc = {0};
     wc.cbSize = sizeof(WNDCLASSEXW);
-    if (!GetClassInfoExW(video->instance, WIN32_VIDEO_CLASS, &wc)) {
+    if (!GetClassInfoExW(video->instance, PAL_WIN32_VIDEO_CLASS, &wc)) {
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;
         wc.hbrBackground = NULL;
@@ -65,7 +94,7 @@ PalResult _PCALL palCreateVideoSystem(
         wc.hIconSm = LoadIconW(video->instance, (LPCWSTR)IDI_APPLICATION);
         wc.hInstance = video->instance;
         wc.lpfnWndProc = palVideoProc;
-        wc.lpszClassName = WIN32_VIDEO_CLASS;
+        wc.lpszClassName = PAL_WIN32_VIDEO_CLASS;
         wc.lpszMenuName = NULL;
         wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
 
@@ -75,9 +104,17 @@ PalResult _PCALL palCreateVideoSystem(
     }
 
     // load shared libraries
-    video->shcore = LoadLibraryA("shcore.dll");
-    if (video->shcore) {
-        video->hasShcore = true;
+    s_Shcore = LoadLibraryA("shcore.dll");
+    if (s_Shcore) {
+        s_GetDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
+            s_Shcore,
+            "GetDpiForMonitor"
+        );
+
+        s_SetProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
+            s_Shcore,
+            "SetProcessDpiAwareness"
+        );
     }
 
     *outVideo = video;
@@ -91,11 +128,10 @@ void _PCALL palDestroyVideoSystem(
         return;
     }
 
-    UnregisterClassW(WIN32_VIDEO_CLASS, video->instance);
+    UnregisterClassW(PAL_WIN32_VIDEO_CLASS, video->instance);
     palFree(video->allocator, video);
 }
 
-// TODO: remove
 LRESULT CALLBACK palVideoProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);

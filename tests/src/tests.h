@@ -2,7 +2,7 @@
 #ifndef _TESTS_H
 #define _TESTS_H
 
-#include "pal/pal_defines.h"
+#include "pal/pal_core.h"
 
 #define MAX_TESTS 32 // will change
 
