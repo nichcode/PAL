@@ -67,6 +67,21 @@ typedef struct {
 } PalVideoSystemCreateInfo;
 
 /**
+ * @enum PalDisplayOrientation
+ * @brief Orientation for a display or display mode.
+ * 
+ * @note All orientation codes follow the format `PAL_ORIENTATION_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
+typedef enum {
+    PAL_ORIENTATION_LANDSCAPE,               /** < 0 degrees.*/
+    PAL_ORIENTATION_PORTRAIT,                /** < 90 degrees.*/
+    PAL_ORIENTATION_LANDSCAPE_FLIPPED,       /** < 180 degrees.*/
+    PAL_ORIENTATION_PORTRAIT_FLIPPED,        /** < 270 degrees.*/
+} PalDisplayOrientation;
+
+/**
  * @struct PalDisplayInfo
  * @brief Contains information about a display.
  * All values are in physical pixels.
@@ -76,15 +91,36 @@ typedef struct {
  * @ingroup video
  */
 typedef struct {
-    char name[32];          /** < Name of the display.*/
-    int x;                  /** < X position of yhe display.*/
-    int y;                  /** < Y position of the display.*/
-    Uint32 width;           /** < Width of the display in pixels.*/
-    Uint32 height;          /** < Height of the display in pixels.*/
-    Uint32 dpi;             /** < Display dpi.*/
-    Uint32 refreshRate;     /** < Refresh rate in HZ.*/
-    bool primary;           /** < True if this is the primary display.*/
+    char name[32];                              /** < Name of the display.*/
+    int x;                                      /** < X position of yhe display.*/
+    int y;                                      /** < Y position of the display.*/
+    Uint32 width;                               /** < Width of the display in pixels.*/
+    Uint32 height;                              /** < Height of the display in pixels.*/
+    Uint32 dpi;                                 /** < Display dpi.*/
+    Uint32 refreshRate;                         /** < Refresh rate in Hz.*/
+    PalDisplayOrientation orientation;          /** < display orientation.*/
+    bool primary;                               /** < True if this is the primary display.*/
 } PalDisplayInfo;
+
+/**
+ * @struct PalDisplayInfo
+ * @brief Represents a display mode a display supports.
+ * All values are in physical pixels.
+ * 
+ * @sa palEnumerateDisplayModes()
+ *
+ * @ingroup video
+ */
+typedef struct { 
+    Uint32 width;                               /** < Width of the display mode in pixels.*/
+    Uint32 height;                              /** < Height of the display mode in pixels.*/
+    Uint32 redBits;                             /** < Number of bits for the red channel.*/
+    Uint32 greenBits;                           /** < Number of bits for the green channel.*/
+    Uint32 blueBits;                            /** < Number of bits for the blue channel.*/
+    Uint32 alphaBits;                           /** < Number of bits for the alpha channel.*/
+    Uint32 refreshRate;                         /** < Refresh rate in Hz.*/
+    PalDisplayOrientation orientation;          /** < display orientation.*/
+} PalDisplayMode;
 
 /**
  * @brief Create an instance of the video system.
@@ -96,13 +132,13 @@ typedef struct {
  * The user must call this function before any other video related functionality,
  * to obtain the video system handle which will be passed in other video related functions.
  *
- * @param[in] info A pointer to a PalVideoSystemCreateInfo struct with creation options.
+ * @param[in] info Pointer to a PalVideoSystemCreateInfo struct with creation options.
  * @param[out] outSystem Pointer to the created video system handle.
  * 
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
- * then the user is responsible for synchronization.
+ * the user is responsible for synchronization.
  * 
  * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()`
  * when no longer needed.
@@ -122,10 +158,10 @@ _PAPI PalResult _PCALL palCreateVideoSystem(
  * This function can be called multiple times without any undefined behavior.
  * If the video system handle is invalid or a nullptr, the function returns silently.
  * 
- * @param[in] system A pointer to the video system handle to destroy.
+ * @param[in] system Pointer to the video system handle to destroy.
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
- * then the user is responsible for synchronization.
+ * the user is responsible for synchronization.
  * All resources created through the video system must be destroyed before this call.
  * 
  * @sa palCreateVideoSystem()
@@ -137,7 +173,7 @@ _PAPI void _PCALL palDestroyVideoSystem(
 /**
  * @brief Returns a list of active and connected displays (monitors).
  * 
- * User must `allocate` statically and dynamically and pass the maximum capacity of the
+ * User must `allocate` statically or dynamically and pass the maximum capacity of the
  * allocated array as `count` and pass the array itself as `displays`.
  * The user is responsible for the life time of the array.
  * 
@@ -147,22 +183,21 @@ _PAPI void _PCALL palDestroyVideoSystem(
  * int count = 2;
  * @endcode
  * 
- * you can set the `displays` to nullptr and PAL will set the count of the connected displays
- * to `count`. 
+ * you can set the `displays` to nullptr and PAL will set the count of the connected displays to `count`. 
  * If the `count` is zero or less than zero, the function returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
- * If `count` is less than the connected displays, PAL will write up to count.
+ * If `count` is less than the connected displays, PAL will write up to `count`.
  * 
- * @param[in] system A pointer to the video system handle.
- * @param[in] count The capacity of the `displays` array.
+ * @param[in] system Pointer to the video system handle.
+ * @param[in] count Capacity of the `displays` array.
  * @param[in] displays User allocated array of PalDisplay.
  * 
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  * 
  * @note Users must not free the display handles, they are managed by the OS.
- * Users are required to cache this, and call this again of displays changed.
+ * Users are required to cache this, and call this function again if displays are added or removed.
  * 
  * @note This function is thread-safe if `displays` is thread local.
- * If not, then the user is responsible for synchronization.
+ * If not, the user is responsible for synchronization.
  * 
  * @sa palCreateVideoSystem(), palGetPrimaryDisplay(), PalDisplayInfo
  * @ingroup video
@@ -177,7 +212,7 @@ _PAPI PalResult _PCALL palEnumerateDisplays(
  * 
  * The primary display can changed based on OS settings.
  * 
- * @param[in] system A pointer to the video system handle.
+ * @param[in] system Pointer to the video system handle.
  * @param[out] outDisplay User allocated PalDisplay handle to recieve the primary display.
  * 
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
@@ -185,7 +220,7 @@ _PAPI PalResult _PCALL palEnumerateDisplays(
  * @note Users must not free the display handle, it is managed by the OS.
  * 
  * @note This function is thread-safe if `outDisplay` is thread local.
- * If not, then the user is responsible for synchronization.
+ * If not, the user is responsible for synchronization.
  * 
  * @sa palCreateVideoSystem(), palEnumerateDisplays(), PalDisplayInfo
  * @ingroup video
@@ -201,13 +236,13 @@ _PAPI PalResult _PCALL palGetPrimaryDisplay(
  * Some of the fields are set to defaults if operation is not supported on the OS.
  * example: On Windows 7, DPI will always be 96.
  * 
- * @param[in] display A valid display handle.
- * @param[in] info Pointer to the PalDisplayInfo struct to fill.
+ * @param[in] display Display handle.
+ * @param[out] info Pointer to the PalDisplayInfo struct to fill.
  * 
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  * 
  * @note This function is thread-safe if `info` is thread local.
- * If not, then the user is responsible for synchronization.
+ * If not, the user is responsible for synchronization.
  * 
  * @sa palEnumerateDisplays(), palGetPrimaryDisplay(), PalDisplayInfo
  * @ingroup video
@@ -215,5 +250,82 @@ _PAPI PalResult _PCALL palGetPrimaryDisplay(
 _PAPI PalResult _PCALL palGetDisplayInfo(
     PalDisplay* display, 
     PalDisplayInfo* info);
+
+/**
+ * @brief Returns a list of all supported display modes for a display (monitor).
+ * 
+ * User must `allocate` statically or dynamically and pass the maximum capacity of the
+ * allocated array as `count` and pass the array itself as `modes`.
+ * The user is responsible for the life time of the array.
+ * 
+ * The `count` should be the number, not the size in bytes. Example:
+ * @code
+ * PalDisplayModes modes[2];
+ * int count = 2;
+ * @endcode
+ * 
+ * you can set the `modes` to nullptr and PAL will set the count of the available display modes to `count`. 
+ * If the `count` is zero or less than zero, the function returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
+ * If `count` is less than the available display modes, PAL will write up to `count`.
+ * 
+ * @param[in] display Display handle.
+ * @param[in] count Capacity of the `modes` array.
+ * @param[out] modes User allocated array of PalDisplayMode.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ * 
+ * @note This function is thread-safe if `modes` is thread local.
+ * If not, the user is responsible for synchronization.
+ * 
+ * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palEnumerateDisplayModes(
+    PalDisplay* display,
+    int* count,
+    PalDisplayMode* modes);
+
+/**
+ * @brief Get the current display mode of a display (monitor).
+ * 
+ * The `mode` must be allocated and initialized to get proper values.
+ * 
+ * @param[in] display Display handle.
+ * @param[out] mode Pointer to user allocated PalDisplayMode struct.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ * 
+ * @note This function is thread-safe if `mode` is thread local.
+ * If not, the user is responsible for synchronization.
+ * 
+ * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palGetCurrentDisplayMode(
+    PalDisplay* display,
+    PalDisplayMode* mode);
+
+/**
+ * @brief Set the active display mode of a display (monitor).
+ * 
+ * PAL only validates the `mode` pointer not the values. To be safe, 
+ * users must get the display mode from palEnumerateDisplayModes().
+ * 
+ * If the display mode submitted is invalid, this function might fail depending on the OS.
+ * 
+ * @param[in] display Display handle.
+ * @param[out] mode Pointer to the display mode.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ * 
+ * @note This function is not thread-safe. The user is responsible for synchronization.
+ * 
+ * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
+ * @sa palEnumerateDisplayModes(), palGetCurrentDisplayMode()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palSetDisplayMode(
+    PalDisplay* display,
+    PalDisplayMode* mode);
 
 #endif // _PAL_VIDEO_H

@@ -87,6 +87,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INVALID_DISPLAY:
         return "Invalid display";
+
+        case PAL_RESULT_INSUFFICIENT_BUFFER:
+        return "Buffer size is too small";
    }
 
     return nullptr;

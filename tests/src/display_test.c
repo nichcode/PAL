@@ -58,12 +58,32 @@ void displayTest() {
         palLog(" RefreshRate: %i", displayInfo.refreshRate);
 
         const char* boolToString;
+        const char* orientationToString;
         if (displayInfo.primary) {
             boolToString = "True";
         } else {
             boolToString = "False";
         }
         palLog(" Primary: %s", boolToString);
+
+        switch (displayInfo.orientation) {
+            case PAL_ORIENTATION_LANDSCAPE:
+            orientationToString = "Landscape";
+            break;
+
+            case PAL_ORIENTATION_PORTRAIT:
+            orientationToString = "Portrait";
+            break;
+
+            case PAL_ORIENTATION_LANDSCAPE_FLIPPED:
+            orientationToString = "Landscape Flipped";
+            break;
+
+            case PAL_ORIENTATION_PORTRAIT_FLIPPED:
+            orientationToString = "Portrait Flipped";
+            break;
+        }
+        palLog(" Orientation: %s", orientationToString);
     }
 
     palDestroyVideoSystem(video);

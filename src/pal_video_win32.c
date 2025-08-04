@@ -67,6 +67,9 @@ static void getMonitorDPI(
     HMONITOR monitor, 
     int* dpi);
 
+static PalDisplayOrientation orientationFromWin32(DWORD orientation);
+static DWORD orientationToin32(PalDisplayOrientation orientation);
+
 BOOL CALLBACK enumMonitors(
     HMONITOR monitor, 
     HDC hdc, 
@@ -167,6 +170,10 @@ PalResult _PCALL palEnumerateDisplays(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    if (count == 0) {
+        PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
     DisplayData data;
     data.count = 0;
     data.displays = displays;
@@ -215,15 +222,11 @@ PalResult _PCALL palGetDisplayInfo(
     // get name
     WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
 
-    // get refreshrate
     DEVMODE devMode = {};
     devMode.dmSize = sizeof(DEVMODE);
-    bool success = EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
-    if (!success) {
-        info->refreshRate = 60;
-    } else {
-        info->refreshRate = devMode.dmDisplayFrequency;
-    }   
+    EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+    info->refreshRate = devMode.dmDisplayFrequency;   
+    info->orientation = orientationFromWin32(devMode.dmDisplayOrientation);
 
     // get dpi scale
     int dpi;
@@ -243,6 +246,42 @@ PalResult _PCALL palGetDisplayInfo(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult _PCALL palEnumerateDisplayModes(
+    PalDisplay* display,
+    int* count,
+    PalDisplayMode* modes);
+
+PalResult _PCALL palGetCurrentDisplayMode(
+    PalDisplay* display,
+    PalDisplayMode* mode) {
+
+    HMONITOR monitor = (HMONITOR)display;
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        return PAL_RESULT_INVALID_DISPLAY; 
+    }
+
+    DEVMODE devMode = {};
+    devMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+    mode->width = devMode.dmPelsWidth;
+    mode->height = devMode.dmPelsHeight;
+    mode->refreshRate = devMode.dmDisplayFrequency;
+}
+
+PalResult _PCALL palSetDisplayMode(
+    PalDisplay* display,
+    PalDisplayMode* mode) {
+    
+    if (!display || !mode) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+
+
+}
+
 // ==================================================
 // Internal API
 // ==================================================
@@ -260,6 +299,40 @@ static void getMonitorDPI(
     s_SetProcessAwareness(WIN32_DPI_AWARE);
     s_GetDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
     *dpi = dpiX;
+}
+
+static PalDisplayOrientation orientationFromWin32(DWORD orientation) {
+
+    switch (orientation) {
+        case DMDO_DEFAULT: 
+        return PAL_ORIENTATION_LANDSCAPE;
+
+        case DMDO_90: 
+        return PAL_ORIENTATION_PORTRAIT;
+
+        case DMDO_180: 
+        return PAL_ORIENTATION_LANDSCAPE_FLIPPED;
+
+        case DMDO_270: 
+        return PAL_ORIENTATION_PORTRAIT_FLIPPED;
+    }
+}
+
+static DWORD orientationToin32(PalDisplayOrientation orientation) {
+
+    switch (orientation) {
+        case PAL_ORIENTATION_LANDSCAPE: 
+        return DMDO_DEFAULT;
+
+        case PAL_ORIENTATION_PORTRAIT: 
+        return DMDO_90;
+
+        case PAL_ORIENTATION_LANDSCAPE_FLIPPED: 
+        return DMDO_180;
+
+        case PAL_ORIENTATION_PORTRAIT_FLIPPED:
+        return DMDO_270;
+    }
 }
 
 BOOL CALLBACK enumMonitors(
