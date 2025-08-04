@@ -139,7 +139,9 @@ typedef enum {
     PAL_RESULT_INVALID_ALLOCATOR,         /** < A partially defined custom allocator.*/
     PAL_RESULT_ACCESS_DENIED,             /** < OS denied PAL access.*/
     PAL_RESULT_INVALID_DISPLAY,           /** < An invalid display.*/
-    PAL_RESULT_INSUFFICIENT_BUFFER        /** < Buffer too small.*/
+    PAL_RESULT_INSUFFICIENT_BUFFER,       /** < Buffer too small.*/
+    PAL_RESULT_INVALID_DISPLAY_MODE,      /** < An invalid display mode.*/
+    PAL_RESULT_INVALID_ORIENTATION        /** < An invalid display orientation.*/
 } PalResult;
 
 /**

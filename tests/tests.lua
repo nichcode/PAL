@@ -15,7 +15,8 @@ project "Tests"
     if (PAL_BUILD_VIDEO) then
         files { 
             "src/video_test.c",
-            "src/display_test.c"
+            "src/display_test.c",
+            "src/display_mode_test.c"
         }
     end
 

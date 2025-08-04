@@ -15,7 +15,7 @@ void timeTest() {
     PalTimer systemTimer = palGetSystemTimer();
 
     // get the current time for both systems and cache
-    double startTime = palGetTime(&systemTimer);
+    double lastTime = palGetTime(&systemTimer);
 
     // log the timer
     palLog("System Timer:");
@@ -29,7 +29,7 @@ void timeTest() {
     while (totalTime < 5.0) {
         // we get the current time using the system timer
         totalTime = palGetTime(&systemTimer);
-        double timePassed = totalTime - startTime;
+        double timePassed = totalTime - lastTime;
 
         // if you need to replay an action at a specific time range
         // then you need to reset the timer's start time when it reaches the point you want

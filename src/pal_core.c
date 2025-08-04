@@ -90,6 +90,12 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INSUFFICIENT_BUFFER:
         return "Buffer size is too small";
+
+        case PAL_RESULT_INVALID_DISPLAY_MODE:
+        return "Invalid display mode";
+
+        case PAL_RESULT_INVALID_ORIENTATION:
+        return "Invalid display orientation";
    }
 
     return nullptr;

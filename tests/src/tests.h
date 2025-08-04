@@ -44,5 +44,6 @@ void allocatorTest();
 void timeTest();
 void videoTest();
 void displayTest();
+void displayModeTest();
 
 #endif // _TESTS_H

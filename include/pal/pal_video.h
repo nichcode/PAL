@@ -104,7 +104,7 @@ typedef struct {
 
 /**
  * @struct PalDisplayInfo
- * @brief Represents a display mode a display supports.
+ * @brief Represents a single display mode.
  * All values are in physical pixels.
  * 
  * @sa palEnumerateDisplayModes()
@@ -114,12 +114,8 @@ typedef struct {
 typedef struct { 
     Uint32 width;                               /** < Width of the display mode in pixels.*/
     Uint32 height;                              /** < Height of the display mode in pixels.*/
-    Uint32 redBits;                             /** < Number of bits for the red channel.*/
-    Uint32 greenBits;                           /** < Number of bits for the green channel.*/
-    Uint32 blueBits;                            /** < Number of bits for the blue channel.*/
-    Uint32 alphaBits;                           /** < Number of bits for the alpha channel.*/
+    Uint32 bpp;                                 /** < Bits per pixel.*/
     Uint32 refreshRate;                         /** < Refresh rate in Hz.*/
-    PalDisplayOrientation orientation;          /** < display orientation.*/
 } PalDisplayMode;
 
 /**
@@ -310,6 +306,7 @@ _PAPI PalResult _PCALL palGetCurrentDisplayMode(
  * 
  * PAL only validates the `mode` pointer not the values. To be safe, 
  * users must get the display mode from palEnumerateDisplayModes().
+ * Or call palValidateDisplayMode() to check the mode.
  * 
  * If the display mode submitted is invalid, this function might fail depending on the OS.
  * 
@@ -327,5 +324,44 @@ _PAPI PalResult _PCALL palGetCurrentDisplayMode(
 _PAPI PalResult _PCALL palSetDisplayMode(
     PalDisplay* display,
     PalDisplayMode* mode);
+
+/**
+ * @brief Check if the supplied display mode is supported on the display (monitor).
+ * 
+ * @param[in] display Display handle.
+ * @param[out] mode Pointer to the display mode.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ * 
+ * @note This function is not thread-safe. The user is responsible for synchronization.
+ * 
+ * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
+ * @sa palEnumerateDisplayModes(), palGetCurrentDisplayMode()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palValidateDisplayMode(
+    PalDisplay* display,
+    PalDisplayMode* mode);
+
+/**
+ * @brief Set the orientation for a display (monitor).
+ * 
+ * This affects all display modes for the display.
+ * 
+ * @param[in] display Display handle.
+ * @param[in] orientation The orientation. example: `PAL_ORIENTATION_PORTRAIT`.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ * 
+ * @note This function is not thread-safe. The user is responsible for synchronization.
+ * 
+ * @note This change is temporary and will be reset when the OS is reboot.
+ * 
+ * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palSetDisplayOrientation(
+    PalDisplay* display,
+    PalDisplayOrientation orientation);
 
 #endif // _PAL_VIDEO_H
