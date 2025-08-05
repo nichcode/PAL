@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     palLog("PAL v(%s)", versionString);
 
     // registerTest("Allocator Test", allocatorTest);
-    // registerTest("Time Test", timeTest);
+    //registerTest("Time Test", timeTest);
 
 #if PAL_HAS_VIDEO
     //registerTest("Video Test", videoTest);

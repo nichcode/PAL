@@ -191,26 +191,26 @@ void _PCALL palLog(const char* fmt, ...) {
 #endif // _WIN32
 }
 
-PalTimer _PCALL palGetSystemTimer() {
+PalClock _PCALL palGetSystemClock() {
 
     Uint32 freq = palGetPerformanceFrequency();
-    Uint32 startTime = palGetPerformanceCounter();
-    return (PalTimer) {
+    Uint32 start = palGetPerformanceCounter();
+    return (PalClock) {
         .frequency = freq,
-        .startTime = startTime
+        .startTime = start
     };
 }
 
-double _PCALL palGetTime(PalTimer* timer) {
+double _PCALL palGetTime(PalClock* clock) {
 
-    if (!timer) {
+    if (!clock) {
         return 0.0;
     }
 
 #ifdef _WIN32
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
-    return (double)(now.QuadPart - timer->startTime) / (double)timer->frequency;
+    return (double)(now.QuadPart - clock->startTime) / (double)clock->frequency;
 #endif // _WIN32
 }
 

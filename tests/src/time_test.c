@@ -10,33 +10,46 @@ void timeTest() {
     palLog("===========================================");
     palLog("");
 
-    // get the system timer
-    // the start Time will be the current time since the OS started
-    PalTimer systemTimer = palGetSystemTimer();
+    // get the system clock
+    PalClock clock = palGetSystemClock();
 
-    // get the current time for both systems and cache
-    double lastTime = palGetTime(&systemTimer);
-
-    // log the timer
-    palLog("System Timer:");
-    palLog( "Frequency - %llu", systemTimer.frequency);
-    palLog( "Start Time - %llu", systemTimer.startTime);
+    double lastTime = palGetTime(&clock);
+    double resetTime = lastTime;
 
     double totalTime = 0.0;
     int frameCount = 0;
 
+    bool running = true;
+    int actionCount = 0;
+
     // run the loop for 5 seconds
     while (totalTime < 5.0) {
-        // we get the current time using the system timer
-        totalTime = palGetTime(&systemTimer);
-        double timePassed = totalTime - lastTime;
-
-        // if you need to replay an action at a specific time range
-        // then you need to reset the timer's start time when it reaches the point you want
-        // example systemTimer.startTime = palGetTime(&systemTimer).
-
+        double now = palGetTime(&clock);
+        totalTime = now - lastTime;
         palLog("Frame %i, Total Time - %f seconds", frameCount++, totalTime);
     }
 
     palLog("Loop finished after %f seconds and %i frames", totalTime, frameCount);
+
+    // now repeat an action every 5 seconds for five times and quit.
+    //resetTime = palGetTime(&clock); Do this to reset the time.
+    while (running) {
+        double now = palGetTime(&clock);
+        double timePassed = now - resetTime;
+
+        // this will be called as soon as the five seconds loop finishes
+        // since resetTime == lastTime. if you dont want this, reset resetTime to the current time.
+        if (timePassed > 5.0) {
+            // over 5 seconds
+            actionCount++;
+            palLog("Action Count: %d", actionCount);
+            if (actionCount == 5) {
+                running = false;
+            }
+
+            resetTime = palGetTime(&clock);
+        }
+
+        
+    }
 }

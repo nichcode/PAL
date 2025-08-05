@@ -88,7 +88,7 @@ typedef unsigned char Uint8;
 typedef signed char Int8;
 
 /**
- * @brief Ann unsigned 16-bit integer
+ * @brief An unsigned 16-bit integer
  */
 typedef unsigned short Uint16;
 
@@ -98,7 +98,7 @@ typedef unsigned short Uint16;
 typedef signed short Int16;
 
 /**
- * @brief Ann unsigned 32-bit integer
+ * @brief An unsigned 32-bit integer
  */
 typedef unsigned int Uint32;
 
@@ -108,12 +108,12 @@ typedef unsigned int Uint32;
 typedef signed int Int32;
 
 /**
- * @brief Ann unsigned 64-bit integer
+ * @brief An unsigned 64-bit integer
  */
 typedef unsigned long long Uint64;
 
 /**
- * @brief Ann unsigned 64-bit integer
+ * @brief An unsigned 64-bit integer
  */
 typedef signed long long Int64;
 
@@ -226,9 +226,20 @@ typedef struct {
  * @ingroup core
  */
 typedef struct {
-    Uint64 frequency;        /** < Ticks per second.*/
-    Uint64 startTime;        /** < Start time of the timer.*/
+    Uint64 startTime;        /** < Start time.*/
+    Uint64 duration;         /** < Duration in seconds.*/
 } PalTimer;
+
+/**
+ * @struct PalTimer
+ * @brief Describes a clock for time related calculations.
+ *
+ * @ingroup core
+ */
+typedef struct {
+    Uint64 frequency;        /** < Ticks per second.*/
+    Uint64 startTime;        /** < Start time.*/
+} PalClock;
 
 /**
  * @brief Get the runtime version of PAL.
@@ -320,37 +331,34 @@ _PAPI void _PCALL palFree(
 _PAPI void _PCALL palLog(const char* fmt, ...);
 
 /**
- * @brief Get the current system timer.
+ * @brief Get the system clock.
  * 
  * This is used to measure elasped time and for time related calculations.
- * You can use multiple timers for different use cases.
  * 
- * Example: one timer for total application time which you don't reset.
- * And another to calculate delta time which you reset every frame 
- * using palGetTime(). See `tests/src/time_test.c`.
+ * See `tests/src/time_test` for an example.
  * 
- * @return A PalTimer struct cintaining the system frequency and current time.
+ * @return The system clock.
  * 
- * @sa palGetTime(), PalTimer, palGetPerformanceCounter(), palGetPerformanceFrequency()
+ * @sa palGetTime(), PalClock, palGetPerformanceCounter(), palGetPerformanceFrequency()
  *
  * @note This function is thread-safe.
  * @ingroup core
  */
-_PAPI PalTimer _PCALL palGetSystemTimer();
+_PAPI PalClock _PCALL palGetSystemClock();
 
 /**
- * @brief Get the current time in seconds using a timer.
+ * @brief Get the current time in seconds using a clock.
  * 
- * This returns the current absolute time in seconds using a high resolution timer.
+ * This returns the current absolute time in seconds.
  *
- * @param[in] timer High resolution timer to use.
- * @return Current high resolution time in seconds or `0.0` if `timer` is nullptr.
+ * @param[in] clock The clock to use. see palGetSystemClock().
+ * @return Current high resolution time in seconds or `0.0` if `clock` is nullptr.
  * 
- * @note This function is thread-safe. This should not be used to measure calender time
+ * @note This function is thread-safe. This should not be used to measure calender time.
  * @sa palGetPerformanceCounter(), palGetPerformanceFrequency()
  * @ingroup core
  */
-_PAPI double _PCALL palGetTime(PalTimer* timer);
+_PAPI double _PCALL palGetTime(PalClock* clock);
 
 /**
  * @brief Get the system performance counter value in ticks
