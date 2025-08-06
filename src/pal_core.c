@@ -96,6 +96,15 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INVALID_ORIENTATION:
         return "Invalid display orientation";
+
+        case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
+        return "Video feature not supported";
+
+        case PAL_RESULT_VIDEO_DEVICE_NOT_FOUND:
+        return "OS driver not found or busy";
+
+        case PAL_RESULT_INVALID_WINDOW:
+        return "Invalid window";
    }
 
     return nullptr;

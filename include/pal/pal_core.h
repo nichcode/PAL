@@ -77,6 +77,8 @@ extern "C" {
 typedef _Bool bool;
 #endif // __cplusplus
 
+#define PAL_BIT(x) 1 << x
+
 /**
  * @brief An unsigned 8-bit integer
  */
@@ -129,19 +131,22 @@ typedef signed long long Int64;
  * @note For clarity, always use the named constants like 
  * `PAL_RESULT_OUT_OF_MEMORY` not their numeric values.
  * 
- * @note All result codes follow the format `PAL_RESULT_**` for consistency and API use.
+ * @note All result follow the format `PAL_RESULT_**` for consistency and API use.
  */
 typedef enum {
-    PAL_RESULT_SUCCESS,                   /** < Operation was successful.*/
-    PAL_RESULT_NULL_POINTER,              /** < A nullptr was used where it is not allowed.*/
-    PAL_RESULT_INVALID_ARGUMENT,          /** < One or more arguments were invalid.*/
-    PAL_RESULT_OUT_OF_MEMORY,             /** < Out of Memory or memory allocation failed.*/
-    PAL_RESULT_INVALID_ALLOCATOR,         /** < A partially defined custom allocator.*/
-    PAL_RESULT_ACCESS_DENIED,             /** < OS denied PAL access.*/
-    PAL_RESULT_INVALID_DISPLAY,           /** < An invalid display.*/
-    PAL_RESULT_INSUFFICIENT_BUFFER,       /** < Buffer too small.*/
-    PAL_RESULT_INVALID_DISPLAY_MODE,      /** < An invalid display mode.*/
-    PAL_RESULT_INVALID_ORIENTATION        /** < An invalid display orientation.*/
+    PAL_RESULT_SUCCESS,                           /** < Operation was successful.*/
+    PAL_RESULT_NULL_POINTER,                      /** < A nullptr was used where it is not allowed.*/
+    PAL_RESULT_INVALID_ARGUMENT,                  /** < One or more arguments were invalid.*/
+    PAL_RESULT_OUT_OF_MEMORY,                     /** < Out of Memory or memory allocation failed.*/
+    PAL_RESULT_INVALID_ALLOCATOR,                 /** < A partially defined custom allocator.*/
+    PAL_RESULT_ACCESS_DENIED,                     /** < OS denied PAL access.*/
+    PAL_RESULT_INVALID_DISPLAY,                   /** < An invalid display.*/
+    PAL_RESULT_INSUFFICIENT_BUFFER,               /** < Buffer too small.*/
+    PAL_RESULT_INVALID_DISPLAY_MODE,              /** < An invalid display mode.*/
+    PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
+    PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
+    PAL_RESULT_VIDEO_DEVICE_NOT_FOUND,            /** < OS driver could not be found (busy).*/
+    PAL_RESULT_INVALID_WINDOW                     /** < An invalid window.*/
 } PalResult;
 
 /**

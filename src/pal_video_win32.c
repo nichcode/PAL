@@ -57,7 +57,22 @@ static HINSTANCE s_Shcore;
 typedef struct PalVideoSystem {
     PalAllocator* allocator;
     HINSTANCE instance;
+    PalVideoFeatures features;
 } PalVideoSystem;
+
+typedef struct PalWindow {
+    PalVideoSystem* system;
+    HWND handle;
+    const char* title;
+    Uint32 width;
+    Uint32 height;
+    Uint32 style;
+    Uint32 exStyle;
+    int x;
+    int y;
+    bool hidden;
+    bool fullscreen;
+} PalWindow;
 
 typedef struct DisplayData {
     PalDisplay** displays;
@@ -162,6 +177,23 @@ PalResult _PCALL palCreateVideoSystem(
         );
     }
 
+    // set features
+    PalVideoFeatures features;
+    features |= PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION;
+    features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+    features |= PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH;
+    features |= PAL_VIDEO_FEATURE_MULTI_DISPLAYS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_RESIZING;
+    features |= PAL_VIDEO_FEATURE_WINDOW_POSITIONING;
+    features |= PAL_VIDEO_FEATURE_WINDOW_MINMAX;
+    features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
+    features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
+
+    if (s_GetDpiForMonitor && s_SetProcessAwareness) {
+        features |= PAL_VIDEO_FEATURE_HIGH_DPI;
+    }
+
+    system->features = features;
     *outSystem = system;
     return PAL_RESULT_SUCCESS;
 }
@@ -175,6 +207,34 @@ void _PCALL palDestroyVideoSystem(
 
     UnregisterClassW(PAL_WIN32_VIDEO_CLASS, system->instance);
     palFree(system->allocator, system);
+}
+
+PalResult _PCALL palGetVideoFeatures(
+    PalVideoSystem* system,
+    PalVideoFeatures* features) {
+
+    if (!system || !features) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    *features = system->features;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palUpdateVideo(
+    PalVideoSystem* system) {
+
+    if (!system) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+    
+    MSG msg;
+    while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult _PCALL palEnumerateDisplays(
@@ -418,6 +478,310 @@ PalResult _PCALL palSetDisplayOrientation(
     } else {
         return PAL_RESULT_INVALID_ORIENTATION;
     }    
+}
+
+PalResult _PCALL palCreateWindow(
+    PalVideoSystem* system, 
+    PalWindowCreateInfo* info,
+    PalWindow** outWindow) {
+
+    PalWindow* window = nullptr;
+    PalDisplay* display = nullptr;
+    PalDisplayInfo displayInfo;
+    bool hidden;
+
+    PalVideoFeatures features = system->features;
+    Uint32 style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
+    Uint32 exStyle = WS_EX_OVERLAPPEDWINDOW;
+
+    if (info->flags & PAL_WINDOW_MINIMIZEBOX) {
+        style |= WS_MINIMIZEBOX;
+    }
+
+    if (info->flags & PAL_WINDOW_RESIZABLE) {
+        style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+    }
+
+    if (info->display) {
+        display = info->display;
+    } else {
+        palGetPrimaryDisplay(system, &display);
+    }
+
+    // get display info
+    PalResult result = palGetDisplayInfo(display, &displayInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    Uint32 width = 0;
+    Uint32 height = 0;
+    int x = 0;
+    int y = 0;
+    
+    if (info->flags & PAL_WINDOW_CENTER) {
+        x = displayInfo.x + (displayInfo.width - info->width) / 2;
+        y = displayInfo.y + (displayInfo.height - info->height) / 2;
+
+    } else {
+        // we set 100 for each axix
+        x = displayInfo.x + 100;
+        y = displayInfo.y + 100;
+    }
+
+    float scale;
+    // set window size
+    if (info->flags & PAL_WINDOW_ALLOW_HIGH_DPI) {
+        // check for support
+        if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
+            scale = (float)displayInfo.dpi / 96.0f;
+            width = (Uint32)((float)info->width * scale);
+            height = (Uint32)((float)info->height * scale);
+        } else {
+            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else {
+        width = info->width;
+        height = info->height;
+    }
+
+    RECT rect = { 0, 0, 0, 0 };
+    rect.right = width;
+    rect.bottom = height;
+    AdjustWindowRectEx(&rect, style, 0, exStyle);
+
+    wchar_t buffer[256] = {};    
+    int len = MultiByteToWideChar(CP_UTF8, 0, info->title, -1, nullptr, 0);
+    MultiByteToWideChar(CP_UTF8, 0, info->title, -1, buffer, len);
+
+    HWND handle = CreateWindowExW(
+        exStyle,
+        PAL_WIN32_VIDEO_CLASS,
+        buffer,
+        style, 
+        x,
+        y,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        nullptr, 
+        nullptr, 
+        system->instance,
+        nullptr
+    );
+
+    if (!handle) {
+        return PAL_RESULT_VIDEO_DEVICE_NOT_FOUND;
+    }
+
+    window = palAllocate(system->allocator, sizeof(PalWindow), 0);
+    if (!window) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(window, 0, sizeof(PalWindow));
+    int showFlag = SW_HIDE;
+    if (info->flags & PAL_WINDOW_MAXIMIZED) {
+        showFlag = SW_SHOWMAXIMIZED;
+    }
+
+    if (info->flags & PAL_WINDOW_SHOWN) {
+        if (showFlag == SW_HIDE) {
+            showFlag = SW_SHOW;
+        }
+    }
+
+    if (showFlag != SW_HIDE) {
+        hidden = false;
+    } else {
+        hidden = true;
+    }
+
+    ShowWindow(handle, showFlag);
+    SetPropW(handle, PAL_WIN32_VIDEO_PROP, window);
+
+    window->system = system;
+    window->handle = handle;
+    window->title = info->title;
+    window->style = style;
+    window->exStyle = exStyle;
+    window->width = info->width;
+    window->height = info->height;
+    window->x = x;
+    window->y = y;
+    window->hidden = hidden;
+
+    if (info->flags & PAL_WINDOW_FULLSCREEN) {
+        PalResult result = palSetWindowFullscreen(window, display, true);
+        if (result != PAL_RESULT_SUCCESS) {
+            DestroyWindow(window->handle);
+            palFree(system->allocator, window);
+            return result;
+        }
+    }
+
+    *outWindow = window;
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palDestroyWindow(PalWindow* window) {
+
+    if (!window || (window && !window->system)) {
+        return;
+    }
+
+    DestroyWindow(window->handle);
+    palFree(window->system->allocator, window);
+}
+
+PalResult _PCALL palSetWindowBorderless(
+    PalWindow* window,
+    bool enable) {
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (enable) {
+        SetWindowLongPtrW(window->handle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+        SetWindowLongPtrW(window->handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
+        
+    } else {
+        SetWindowLongPtrW(window->handle, GWL_STYLE, window->style);
+        SetWindowLongPtrW(window->handle, GWL_EXSTYLE, window->exStyle);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palGetWindowDisplay(
+    PalWindow* window, 
+    PalDisplay** outDisplay) {
+
+    if (!window || !outDisplay) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HMONITOR monitor = MonitorFromWindow(window->handle, MONITOR_DEFAULTTONEAREST);
+    if (!monitor) { 
+        return PAL_RESULT_INVALID_WINDOW; 
+    }
+
+    *outDisplay = (PalDisplay*)monitor;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palFitWindowToDisplay(
+    PalWindow* window, 
+    PalDisplay* display) {
+    
+    PalResult result;
+    PalDisplayInfo info;
+    PalDisplay* currentDisplay;
+    
+    if (!window || !display) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (display) {
+        currentDisplay = display;
+
+    } else {
+        result = palGetWindowDisplay(window, &currentDisplay);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+    }
+
+    result = palGetDisplayInfo(currentDisplay, &info);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    bool success = SetWindowPos(
+        window->handle,
+        HWND_TOP,
+        info.x,
+        info.y,
+        info.width,
+        info.height,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW
+    );
+
+    if (!success) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palRestoreWindow(PalWindow* window) {
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    bool success = SetWindowPos(
+        window->handle,
+        HWND_TOP,
+        window->x,
+        window->y,
+        window->width,
+        window->height,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW
+    );
+
+    if (!success) {
+        PAL_RESULT_INVALID_WINDOW;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palSetWindowFullscreen(
+    PalWindow* window, 
+    PalDisplay* display,
+    bool enable) {
+
+    if (!window || !display) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (window->fullscreen && enable) {
+        // already fullscreen
+        return PAL_RESULT_SUCCESS;
+    }
+
+    if (!window->fullscreen && !enable) {
+        // already windowed
+        return PAL_RESULT_SUCCESS;
+    }
+
+    PalResult result;
+    if (enable) {
+        result = palSetWindowBorderless(window, true);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+
+        result = palFitWindowToDisplay(window, display);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+
+    } else {
+        result = palSetWindowBorderless(window, false);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+
+        result = palRestoreWindow(window);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+    }
+
+    window->fullscreen = enable;
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================

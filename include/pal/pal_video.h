@@ -2,7 +2,7 @@
 /**
 
 Copyright (C) 2025 Nicholas Agbo
-  
+
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
 arising from the use of this software.
@@ -10,11 +10,11 @@ arising from the use of this software.
 Permission is granted to anyone to use this software for any purpose,
 including commercial applications, and to alter it and redistribute it
 freely, subject to the following restrictions:
-  
+
 1. The origin of this software must not be misrepresented; you must not
    claim that you wrote the original software. If you use this software
    in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required. 
+   appreciated but is not required.
 2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
@@ -23,10 +23,10 @@ freely, subject to the following restrictions:
 
 /**
  * @file pal_video.h
- * 
+ *
  * Header file for video functions, macros, enum and structs
- * 
- * @defgroup video 
+ *
+ * @defgroup video
  */
 
 #ifndef _PAL_VIDEO_H
@@ -51,317 +51,621 @@ typedef struct PalVideoSystem PalVideoSystem;
 typedef struct PalDisplay PalDisplay;
 
 /**
+ * @struct PalDisplay
+ * @brief Opaque handle to a window.
+ *
+ * @ingroup video
+ */
+typedef struct PalWindow PalWindow;
+
+/**
  * @struct PalVideoSystemCreateInfo
  * @brief Specifies options for creating an instance of the video system.
- * 
+ *
  * This struct must be initialized and passed to palCreateVideoSystem().
- * 
+ *
  * All fields must be explicitly set by the user.
- * 
+ *
  * @note Uninitialized fields may result in undefined behavior.
  *
  * @ingroup video
  */
-typedef struct {
-    PalAllocator* allocator;         /** < User allocator or nullptr for default.*/
+typedef struct
+{
+    PalAllocator *allocator; /** < User allocator or nullptr for default.*/
 } PalVideoSystemCreateInfo;
 
 /**
  * @enum PalDisplayOrientation
  * @brief Orientation for a display or display mode.
- * 
- * @note All orientation codes follow the format `PAL_ORIENTATION_**` for consistency and API use.
+ *
+ * @note All orientation follow the format `PAL_ORIENTATION_**` for consistency and API use.
  *
  * @ingroup video
  */
-typedef enum {
-    PAL_ORIENTATION_LANDSCAPE,               /** < 0 degrees.*/
-    PAL_ORIENTATION_PORTRAIT,                /** < 90 degrees.*/
-    PAL_ORIENTATION_LANDSCAPE_FLIPPED,       /** < 180 degrees.*/
-    PAL_ORIENTATION_PORTRAIT_FLIPPED,        /** < 270 degrees.*/
+typedef enum
+{
+    PAL_ORIENTATION_LANDSCAPE,         /** < 0 degrees.*/
+    PAL_ORIENTATION_PORTRAIT,          /** < 90 degrees.*/
+    PAL_ORIENTATION_LANDSCAPE_FLIPPED, /** < 180 degrees.*/
+    PAL_ORIENTATION_PORTRAIT_FLIPPED,  /** < 270 degrees.*/
 } PalDisplayOrientation;
+
+/**
+ * @enum PalVideoFeatures
+ * @brief features supported on the video system.
+ *
+ * @note video instances created on the same OS version will be the same.
+ *
+ * Example: on Windows 7, `PAL_VIDEO_FEATURE_HIGH_DPI` is not supported.
+ * If you create two video instance on Windows 7, they features will be the same.
+ * So you can share features flag across multiple video system instance across threads.
+ *
+ * @code
+ * PalVideoFeatures features = `palVideoGetFeatures()`.
+ * if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
+ *     windowFlags |= PAL_WINDOW_ALLOW_HIGH_DPI;
+ * }
+ * @endcode
+ *
+ * @note All video features follow the format `PAL_VIDEO_FEATURE_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
+typedef enum
+{
+    /** < Supports high DPI windows.*/
+    PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
+
+    /** < Supports changing display orientation.*/
+    PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION = PAL_BIT(1),
+
+    /** < Supports borderless windows.*/
+    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = PAL_BIT(2),
+
+    /** < Supports chaning display modes.*/
+    PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH = PAL_BIT(3),
+
+    /** < Supports multiple monitors.*/
+    PAL_VIDEO_FEATURE_MULTI_DISPLAYS = PAL_BIT(4),
+
+    /** < Supports dynamic resizing of windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_RESIZING = PAL_BIT(5),
+
+    /** < Supports dynamic positioning of windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_POSITIONING = PAL_BIT(6),
+
+    /** < Supports maximized and minimized operations of windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_MINMAX = PAL_BIT(7),
+
+    /** < Supports display gamma control.*/
+    PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL = PAL_BIT(8),
+
+    /** < Supports clipping cursor (mouse).*/
+    PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(9)
+} PalVideoFeatures;
+
+/**
+ * @enum PalWindowFlags
+ * @brief Specifies behavior and style for a window at creation time.
+ * This is a bitmask enum and multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * @code
+ * PalWindowFlags flags = PAL_WINDOW_SHOWN | PAL_WINDOW_ALLOW_HIGH_DPI.
+ * @endcode
+ *
+ * @note All window flags follow the format `PAL_WINDOW_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
+typedef enum
+{
+    PAL_WINDOW_SHOWN = PAL_BIT(0),                    /** < Window is shown after creation.*/
+    PAL_WINDOW_MAXIMIZED = PAL_BIT(1),                /** < Window is maximized after creation.*/
+    PAL_WINDOW_RESIZABLE = PAL_BIT(2),                /** < Window is resizable.*/
+    PAL_WINDOW_CENTER = PAL_BIT(3),                   /** < Window centered after creation.*/
+    PAL_WINDOW_MINIMIZEBOX = PAL_BIT(4),              /** < Window has no minimized box.*/
+    PAL_WINDOW_ALLOW_HIGH_DPI = PAL_BIT(5),           /** < DPI scalling.*/
+
+    /** < A borderless fullscreen window. `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported on the OS. */
+    PAL_WINDOW_FULLSCREEN = PAL_BIT(6),               
+
+    /** < Window is created with default behavior (application window).*/
+    PAL_WINDOW_DEFAULT = PAL_WINDOW_RESIZABLE | PAL_WINDOW_MINIMIZEBOX | PAL_WINDOW_SHOWN
+} PalWindowFlags;
 
 /**
  * @struct PalDisplayInfo
  * @brief Contains information about a display.
  * All values are in physical pixels.
- * 
+ *
  * @sa palGetDisplayInfo()
  *
  * @ingroup video
  */
-typedef struct {
-    char name[32];                              /** < Name of the display.*/
-    int x;                                      /** < X position of yhe display.*/
-    int y;                                      /** < Y position of the display.*/
-    Uint32 width;                               /** < Width of the display in pixels.*/
-    Uint32 height;                              /** < Height of the display in pixels.*/
-    Uint32 dpi;                                 /** < Display dpi.*/
-    Uint32 refreshRate;                         /** < Refresh rate in Hz.*/
-    PalDisplayOrientation orientation;          /** < display orientation.*/
-    bool primary;                               /** < True if this is the primary display.*/
+typedef struct
+{
+    char name[32];                     /** < Name of the display.*/
+    int x;                             /** < X position of yhe display.*/
+    int y;                             /** < Y position of the display.*/
+    Uint32 width;                      /** < Width of the display in pixels.*/
+    Uint32 height;                     /** < Height of the display in pixels.*/
+    Uint32 dpi;                        /** < Display dpi.*/
+    Uint32 refreshRate;                /** < Refresh rate in Hz.*/
+    PalDisplayOrientation orientation; /** < display orientation.*/
+    bool primary;                      /** < True if this is the primary display.*/
 } PalDisplayInfo;
 
 /**
  * @struct PalDisplayInfo
  * @brief Represents a single display mode.
  * All values are in physical pixels.
- * 
+ *
  * @sa palEnumerateDisplayModes()
  *
  * @ingroup video
  */
-typedef struct { 
-    Uint32 width;                               /** < Width of the display mode in pixels.*/
-    Uint32 height;                              /** < Height of the display mode in pixels.*/
-    Uint32 bpp;                                 /** < Bits per pixel.*/
-    Uint32 refreshRate;                         /** < Refresh rate in Hz.*/
+typedef struct
+{
+    Uint32 width;       /** < Width of the display mode in pixels.*/
+    Uint32 height;      /** < Height of the display mode in pixels.*/
+    Uint32 bpp;         /** < Bits per pixel.*/
+    Uint32 refreshRate; /** < Refresh rate in Hz.*/
 } PalDisplayMode;
 
 /**
+ * @struct PalWindowCreateInfo
+ * @brief Specifies options for creating a window using the video system.
+ *
+ * This struct must be initialized and passed to palCreateWindow().
+ *
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
+typedef struct
+{
+    const char *title;    /** < UTF-8 encoded null terminated string for the window title.*/
+    PalDisplay *display;  /** < Display to create window on. set to nullptr to use primary display.*/
+    Uint32 width;         /** < Width of the window in pixels.*/
+    Uint32 height;        /** < Height of the window in pixels.*/
+    PalWindowFlags flags; /** < Window behavior. this can be OR'ed together. see `palWindowFlags`*/
+} PalWindowCreateInfo;
+
+/**
  * @brief Create an instance of the video system.
- * 
- * A video system is neeed to enumerate connected displays (monitors), 
- * get supported video features, get supported window styles 
+ *
+ * A video system is neeed to enumerate connected displays (monitors),
+ * get supported video features, get supported window styles
  * and window creation.
- * 
+ *
  * The user must call this function before any other video related functionality,
  * to obtain the video system handle which will be passed in other video related functions.
  *
  * @param[in] info Pointer to a PalVideoSystemCreateInfo struct with creation options.
- * @param[out] outSystem Pointer to the created video system handle.
+ * @param[out] outSystem Pointer to recieve the created video system instance.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()`
+ * when no longer needed.
+ *
+ * @sa PalVideoSystemCreateInfo, palDestroyVideoSystem()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palCreateVideoSystem(
+    const PalVideoSystemCreateInfo *info,
+    PalVideoSystem **outSystem);
+
+/**
+ * @brief Destroy the instance of the video system.
+ *
+ * After this call, the pointer will be invalid and should not be used anymore.
+ *
+ * This function can be called multiple times without any undefined behavior.
+ * If the video system handle is invalid or a nullptr, the function returns silently.
+ *
+ * @param[in] system Pointer to the video system instance to destroy.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * All resources created through the video system must be destroyed before this call.
+ *
+ * @sa palCreateVideoSystem()
+ * @ingroup video
+ */
+_PAPI void _PCALL palDestroyVideoSystem(
+    PalVideoSystem *system);
+
+/**
+ * @brief Get the features supported of a video system instance.
+ * 
+ * The video system must be created first by the user before querying features.
+ * Example: checking support for high DPI windows.
+ * @code 
+ * PalVideoFeatures features = palGetVideoFeatures();
+ * if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
+ *     you do yout logic here
+ * }
+ * @endcode
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @param[in] system Pointer to the video system instance.
+ * @param[out] features Pointer to a video features enum to recieve the features.
+ *
+ * @note This function is thread-safe if `features` is thread local.
+ * If not, the user is responsible for synchronization.
+ *
+ * @sa palCreateVideoSystem()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palGetVideoFeatures(
+    PalVideoSystem* system,
+    PalVideoFeatures* features);
+
+/**
+ * @brief Update the video system instance and all created windows.
+ *
+ * @param[in] system Pointer to the video system instance.
  * 
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
  * the user is responsible for synchronization.
- * 
- * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()`
- * when no longer needed.
- * 
- * @sa PalVideoSystemCreateInfo, palDestroyVideoSystem()
- * @ingroup video
- */
-_PAPI PalResult _PCALL palCreateVideoSystem(
-    const PalVideoSystemCreateInfo* info,
-    PalVideoSystem** outSystem);
-
-/**
- * @brief Destroy the instance of the video system.
- * 
- * After this call, the pointer will be invalid and should not be used anymore.
- * 
- * This function can be called multiple times without any undefined behavior.
- * If the video system handle is invalid or a nullptr, the function returns silently.
- * 
- * @param[in] system Pointer to the video system handle to destroy.
  *
- * @note This function is not thread-safe. If multiple threads will call this function,
- * the user is responsible for synchronization.
- * All resources created through the video system must be destroyed before this call.
- * 
  * @sa palCreateVideoSystem()
  * @ingroup video
  */
-_PAPI void _PCALL palDestroyVideoSystem(
+_PAPI PalResult _PCALL palUpdateVideo(
     PalVideoSystem* system);
 
 /**
  * @brief Returns a list of active and connected displays (monitors).
- * 
+ *
  * User must `allocate` statically or dynamically and pass the maximum capacity of the
  * allocated array as `count` and pass the array itself as `displays`.
  * The user is responsible for the life time of the array.
- * 
+ *
  * The `count` should be the number, not the size in bytes. Example:
  * @code
  * PalDisplay** displays[2];
  * int count = 2;
  * @endcode
- * 
- * you can set the `displays` to nullptr and PAL will set the count of the connected displays to `count`. 
+ *
+ * you can set the `displays` to nullptr and PAL will set the count of the connected displays to `count`.
  * If the `count` is zero or less than zero, the function returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  * If `count` is less than the connected displays, PAL will write up to `count`.
- * 
- * @param[in] system Pointer to the video system handle.
+ *
+ * @param[in] system Pointer to the video system instance.
  * @param[in] count Capacity of the `displays` array.
  * @param[in] displays User allocated array of PalDisplay.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note Users must not free the display handles, they are managed by the OS.
  * Users are required to cache this, and call this function again if displays are added or removed.
- * 
+ *
  * @note This function is thread-safe if `displays` is thread local.
  * If not, the user is responsible for synchronization.
- * 
+ *
  * @sa palCreateVideoSystem(), palGetPrimaryDisplay(), PalDisplayInfo
  * @ingroup video
  */
 _PAPI PalResult _PCALL palEnumerateDisplays(
-    PalVideoSystem* system,
-    int* count,
-    PalDisplay** displays);
+    PalVideoSystem *system,
+    int *count,
+    PalDisplay **displays);
 
 /**
  * @brief Get the primary active display (monitors).
- * 
+ *
  * The primary display can changed based on OS settings.
- * 
- * @param[in] system Pointer to the video system handle.
+ *
+ * @param[in] system Pointer to the video system instance.
  * @param[out] outDisplay User allocated PalDisplay handle to recieve the primary display.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note Users must not free the display handle, it is managed by the OS.
- * 
+ *
  * @note This function is thread-safe if `outDisplay` is thread local.
  * If not, the user is responsible for synchronization.
- * 
+ *
  * @sa palCreateVideoSystem(), palEnumerateDisplays(), PalDisplayInfo
  * @ingroup video
  */
 _PAPI PalResult _PCALL palGetPrimaryDisplay(
-    PalVideoSystem* system,
-    PalDisplay** outDisplay);
+    PalVideoSystem *system,
+    PalDisplay **outDisplay);
 
 /**
  * @brief Get information about a display (monitor).
- * 
+ *
  * This takes in a PalDisplayInfo struct and fills it.
  * Some of the fields are set to defaults if operation is not supported on the OS.
  * example: On Windows 7, DPI will always be 96.
- * 
+ *
  * @param[in] display Display handle.
  * @param[out] info Pointer to the PalDisplayInfo struct to fill.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note This function is thread-safe if `info` is thread local.
  * If not, the user is responsible for synchronization.
- * 
+ *
  * @sa palEnumerateDisplays(), palGetPrimaryDisplay(), PalDisplayInfo
  * @ingroup video
  */
 _PAPI PalResult _PCALL palGetDisplayInfo(
-    PalDisplay* display, 
-    PalDisplayInfo* info);
+    PalDisplay *display,
+    PalDisplayInfo *info);
 
 /**
  * @brief Returns a list of all supported display modes for a display (monitor).
- * 
+ *
  * User must `allocate` statically or dynamically and pass the maximum capacity of the
  * allocated array as `count` and pass the array itself as `modes`.
  * The user is responsible for the life time of the array.
- * 
+ *
  * The `count` should be the number, not the size in bytes. Example:
  * @code
  * PalDisplayModes modes[2];
  * int count = 2;
  * @endcode
- * 
- * you can set the `modes` to nullptr and PAL will set the count of the available display modes to `count`. 
+ *
+ * you can set the `modes` to nullptr and PAL will set the count of the available display modes to `count`.
  * If the `count` is zero or less than zero, the function returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  * If `count` is less than the available display modes, PAL will write up to `count`.
- * 
+ *
  * @param[in] display Display handle.
  * @param[in] count Capacity of the `modes` array.
  * @param[out] modes User allocated array of PalDisplayMode.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note This function is thread-safe if `modes` is thread local.
  * If not, the user is responsible for synchronization.
- * 
+ *
  * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
  * @ingroup video
  */
 _PAPI PalResult _PCALL palEnumerateDisplayModes(
-    PalDisplay* display,
-    int* count,
-    PalDisplayMode* modes);
+    PalDisplay *display,
+    int *count,
+    PalDisplayMode *modes);
 
 /**
  * @brief Get the current display mode of a display (monitor).
- * 
+ *
  * The `mode` must be allocated and initialized to get proper values.
- * 
+ *
  * @param[in] display Display handle.
  * @param[out] mode Pointer to user allocated PalDisplayMode struct.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note This function is thread-safe if `mode` is thread local.
  * If not, the user is responsible for synchronization.
- * 
+ *
  * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
  * @ingroup video
  */
 _PAPI PalResult _PCALL palGetCurrentDisplayMode(
-    PalDisplay* display,
-    PalDisplayMode* mode);
+    PalDisplay *display,
+    PalDisplayMode *mode);
 
 /**
  * @brief Set the active display mode of a display (monitor).
- * 
- * PAL only validates the `mode` pointer not the values. To be safe, 
- * users must get the display mode from palEnumerateDisplayModes().
- * Or call palValidateDisplayMode() to check the mode.
- * 
+ *
+ * PAL only validates the `mode` pointer not the values. To be safe,
+ * users must get the display mode from `palEnumerateDisplayModes()`.
+ * Or call `palValidateDisplayMode()` to check the mode.
+ *
  * If the display mode submitted is invalid, this function might fail depending on the OS.
- * 
+ *
  * @param[in] display Display handle.
  * @param[out] mode Pointer to the display mode.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note This function is not thread-safe. The user is responsible for synchronization.
- * 
+ *
  * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
  * @sa palEnumerateDisplayModes(), palGetCurrentDisplayMode()
  * @ingroup video
  */
 _PAPI PalResult _PCALL palSetDisplayMode(
-    PalDisplay* display,
-    PalDisplayMode* mode);
+    PalDisplay *display,
+    PalDisplayMode *mode);
 
 /**
  * @brief Check if the supplied display mode is supported on the display (monitor).
- * 
+ *
  * @param[in] display Display handle.
  * @param[out] mode Pointer to the display mode.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note This function is not thread-safe. The user is responsible for synchronization.
- * 
+ *
  * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
  * @sa palEnumerateDisplayModes(), palGetCurrentDisplayMode()
  * @ingroup video
  */
 _PAPI PalResult _PCALL palValidateDisplayMode(
-    PalDisplay* display,
-    PalDisplayMode* mode);
+    PalDisplay *display,
+    PalDisplayMode *mode);
 
 /**
  * @brief Set the orientation for a display (monitor).
- * 
+ *
  * This affects all display modes for the display.
- * 
+ *
  * @param[in] display Display handle.
  * @param[in] orientation The orientation. example: `PAL_ORIENTATION_PORTRAIT`.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- * 
+ *
  * @note This function is not thread-safe. The user is responsible for synchronization.
- * 
+ *
  * @note This change is temporary and will be reset when the OS is reboot.
- * 
+ *
  * @sa palGetPrimaryDisplay(), palEnumerateDisplays()
  * @ingroup video
  */
 _PAPI PalResult _PCALL palSetDisplayOrientation(
-    PalDisplay* display,
+    PalDisplay *display,
     PalDisplayOrientation orientation);
+
+/**
+ * @brief Create a window using the video system.
+ * 
+ * If the window flags set in `info` is not supported, (see `PalVideoFeatures`)
+ * this function will return `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`.
+ * 
+ * If `PAL_WINDOW_FULLSCREEN` is set, `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported.
+ *
+ * @param[in] system Pointer to a video system instance.
+ * @param[in] info Pointer to a PalWindowCreateInfo struct with creation options.
+ * @param[out] outWindow Pointer to recieve the created window.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * @note The created window must be deleted with `palDestroyWindow()` when no longer needed.
+ *
+ * @sa PalWindowCreateInfo, palDestroyWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palCreateWindow(
+    PalVideoSystem* system,
+    PalWindowCreateInfo *info,
+    PalWindow **outWindow);
+
+/**
+ * @brief Destroy a window.
+ *
+ * This must be destroyed before destroying the video system instance.
+ * If `window` is invalid, this function returns silently.
+ *
+ * @param[in] window Pointer to the window to destroy.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI void _PCALL palDestroyWindow(PalWindow *window);
+
+
+
+_PAPI PalResult _PCALL palSetWindowBorderless(
+    PalWindow* window,
+    bool enable);
+
+/**
+ * @brief Get the display (monitor) that the given window is on.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[out] outDisplay Pointer to recieve the display.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is thread-safe if `outDisplay` is thread local.
+ * If not, the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palGetWindowDisplay(
+    PalWindow* window, 
+    PalDisplay** outDisplay);
+
+/**
+ * @brief Resizes and repositions a window to fully fit the bounds of the given display (monitor).
+ * 
+ * This functions moves and resizes the window to the size and position of the display.
+ * This function is used by `palSetWindowFullscreen()` to make a window fullscreen.
+ * 
+ * If the `display` is (nullptr), the current display the window is on will be used.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] display Pointer to the display. This may be a nullptr.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palEnumerateDisplays().
+ * @sa palGetPrimaryDisplay(), palGetWindowDisplay().
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palFitWindowToDisplay(
+    PalWindow* window, 
+    PalDisplay* display);
+
+/**
+ * @brief Restores a window to it previous size, position and show state.
+ * 
+ * Call this function when you use `palFitWindowToDisplay()` to restore the window.
+ * 
+ * If `palMaximizedWindow()` or `palMinimizedWindow()` was called, this function reverts
+ * the window to the state it was before.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] display Pointer to the display. This may be a nullptr.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palRestoreWindow(PalWindow* window);
+
+/**
+ * @brief Sets or exits fullscreen mode (borderless fullscreen) for the given window.
+ * 
+ * This functions sets borderless fullscreen mode for the window if `enable` is `true`,
+ * otherwise restores to windowed mode when `false`.
+ * 
+ * If the window is already in fullscreen mode and `enable` is `true`, this returns `PAL_RESULT_SUCCESS`.
+ * Same if the window is already in windowed mode and `enable` is `false`.
+ * If the `display` is (nullptr), the current display the window is on will be used.
+ * 
+ * When `enable` is false, this function acts like `palRestoreWindow()`,
+ * but also restores the window style. So use this function to set and exit fullscreen mode.
+ * 
+ * This function is a wrapper for `palSetWindowBorderless()` and `palFitWindowToDisplay()`
+ * and can be replace with those functions respectively.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] display Pointer to the display. This may be a nullptr.
+ * @param[in] enable True to set fullscreen mode otherwise false for windowed mode.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palGetWindowDisplay()
+ * @sa palEnumerateDisplays()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palSetWindowFullscreen(
+    PalWindow* window, 
+    PalDisplay* display,
+    bool enable);
 
 #endif // _PAL_VIDEO_H
