@@ -980,6 +980,82 @@ PalResult _PCALL palSetWindowSize(
     return PAL_RESULT_SUCCESS;
 }
 
+const char* _PCALL palGetWindowTitle(PalWindow* window) {
+
+    if (!window) {
+        return nullptr;
+    }
+    return window->title;
+}
+
+void _PCALL palGetWindowPos(
+    PalWindow* window, 
+    int* x, 
+    int* y) {
+
+    if (!window) {
+        return;
+    }
+
+    if (x) {
+        *x = window->x;
+    }
+
+    if (y) {
+        *y = window->y;
+    }
+}
+
+void _PCALL palGetWindowSize(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height) {
+
+    if (!window) {
+        return;
+    }
+
+    if (width) {
+        *width = window->width;
+    }
+
+    if (height) {
+        *height = window->height;
+    }
+}
+
+bool _PCALL palIsWindowMaximized(PalWindow* window) {
+
+    if (!window) {
+        return false;
+    }
+    return window->maximized;
+}
+
+bool _PCALL palIsWindowMinimized(PalWindow* window) {
+
+    if (!window) {
+        return false;
+    }
+    return window->minimized;
+}
+
+bool _PCALL palIsWindowHidden(PalWindow* window) {
+
+    if (!window) {
+        return false;
+    }
+    return window->hidden;
+}
+
+bool _PCALL palIsWindowFullScreen(PalWindow* window) {
+
+    if (!window) {
+        return false;
+    }
+    return window->fullscreen;
+}
+
 // ==================================================
 // Internal API
 // ==================================================

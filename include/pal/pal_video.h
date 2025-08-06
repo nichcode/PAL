@@ -871,4 +871,119 @@ _PAPI PalResult _PCALL palSetWindowSize(
     Uint32 width, 
     Uint32 height);
 
+/**
+ * @brief Get the title of the given window.
+ *
+ * @param[in] window Pointer to the window.
+ * 
+ * @return UTF-8 encoded null terminated string on success or nullptr  on failure.
+ *
+ * @note This function is thread-safe. 
+ * @note The returned string should not be freed.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI const char* _PCALL palGetWindowTitle(PalWindow* window);
+
+/**
+ * @brief Get the position of the given window in pixels relative to the virtual desktop origin.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[out] x Pointer to recieve the window x position. Can be nullptr.
+ * @param[out] y Pointer to recieve the window y position. Can be nullptr.
+ *
+ * @note This function is thread-safe if `x` and `y` are thread local.
+ * If not, the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palSetWindowPos()
+ * @ingroup video
+ */
+_PAPI void _PCALL palGetWindowPos(
+    PalWindow* window, 
+    int* x, 
+    int* y);
+
+/**
+ * @brief Get the size of the given window in pixels.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[out] width Pointer to recieve the window width. Can be nullptr.
+ * @param[out] height Pointer to recieve the window height. Can be nullptr.
+ *
+ * @note This function is thread-safe if `width` and `height` are thread local.
+ * If not, the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palSetWindowSize()
+ * @ingroup video
+ */
+_PAPI void _PCALL palGetWindowSize(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height);
+
+/**
+ * @brief Check if the given window is maximized.
+ *
+ * @param[in] window Pointer to the window.
+ * 
+ * @return True if the window is maximized otherwise false. 
+ * This will return false if the window is invalid.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ *
+ * @sa palCreateWindow(), palMaximizeWindow()
+ * @ingroup video
+ */
+_PAPI bool _PCALL palIsWindowMaximized(PalWindow* window);
+
+/**
+ * @brief Check if the given window is minimized.
+ *
+ * @param[in] window Pointer to the window.
+ * 
+ * @return True if the window is minimized otherwise false. 
+ * This will return false if the window is invalid.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ *
+ * @sa palCreateWindow(), palMinimizeWindow()
+ * @ingroup video
+ */
+_PAPI bool _PCALL palIsWindowMinimized(PalWindow* window);
+
+/**
+ * @brief Check if the given window is hidden.
+ *
+ * @param[in] window Pointer to the window.
+ * 
+ * @return True if the window is hidden otherwise false. 
+ * This will return false if the window is invalid.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ *
+ * @sa palCreateWindow(), palHideWindow()
+ * @ingroup video
+ */
+_PAPI bool _PCALL palIsWindowHidden(PalWindow* window);
+
+/**
+ * @brief Check if the given window is in fullscreen mode.
+ *
+ * @param[in] window Pointer to the window.
+ * 
+ * @return True if the window is in fullscreen mode otherwise false. 
+ * This will return false if the window is invalid.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ *
+ * @sa palCreateWindow(), palSetWindowFullscreen()
+ * @ingroup video
+ */
+_PAPI bool _PCALL palIsWindowFullScreen(PalWindow* window);
+
 #endif // _PAL_VIDEO_H
