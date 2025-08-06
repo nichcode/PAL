@@ -189,6 +189,8 @@ PalResult _PCALL palCreateVideoSystem(
     features |= PAL_VIDEO_FEATURE_WINDOW_MINMAX;
     features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
     features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
+    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
+    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
 
     if (s_GetDpiForMonitor && s_SetProcessAwareness) {
         features |= PAL_VIDEO_FEATURE_HIGH_DPI;
@@ -479,7 +481,7 @@ PalResult _PCALL palSetDisplayOrientation(
 
 PalResult _PCALL palCreateWindow(
     PalVideoSystem* system, 
-    PalWindowCreateInfo* info,
+    const PalWindowCreateInfo* info,
     PalWindow** outWindow) {
 
     if (!system || !info || !outWindow) {
@@ -851,6 +853,42 @@ void _PCALL palHideWindow(PalWindow* window) {
 
     ShowWindow(window->handle, SW_HIDE);
     window->hidden = true;
+}
+
+PalResult palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info) {
+
+    if (!window || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    DWORD flags = 0;
+    if (info->type == PAL_FLASH_STOP) {
+        flags = FLASHW_STOP;
+
+    } else {
+        if (info->type == PAL_FLASH_CAPTION) {
+            flags |= FLASHW_CAPTION;
+        } if (info->type == PAL_FLASH_TRAY) {
+            flags |= FLASHW_TRAY;
+            flags |= FLASHW_TIMERNOFG;
+        }
+    }
+
+    FLASHWINFO flashInfo = {};
+    flashInfo.cbSize = sizeof(FLASHWINFO);
+    flashInfo.dwFlags = flags;
+    flashInfo.dwTimeout = info->interval;
+    flashInfo.hwnd = window->handle;
+    flashInfo.uCount = info->count;
+
+    bool success = FlashWindowEx(&flashInfo);
+    if (!success) {
+        return PAL_RESULT_INVALID_WINDOW;
+    } 
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult _PCALL palCenterWindow(

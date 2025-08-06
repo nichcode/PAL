@@ -70,8 +70,7 @@ typedef struct PalWindow PalWindow;
  *
  * @ingroup video
  */
-typedef struct
-{
+typedef struct {
     PalAllocator *allocator; /** < User allocator or nullptr for default.*/
 } PalVideoSystemCreateInfo;
 
@@ -83,8 +82,7 @@ typedef struct
  *
  * @ingroup video
  */
-typedef enum
-{
+typedef enum {
     PAL_ORIENTATION_LANDSCAPE,         /** < 0 degrees.*/
     PAL_ORIENTATION_PORTRAIT,          /** < 90 degrees.*/
     PAL_ORIENTATION_LANDSCAPE_FLIPPED, /** < 180 degrees.*/
@@ -112,8 +110,7 @@ typedef enum
  *
  * @ingroup video
  */
-typedef enum
-{
+typedef enum {
     /** < Supports high DPI windows.*/
     PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
 
@@ -142,7 +139,13 @@ typedef enum
     PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL = PAL_BIT(8),
 
     /** < Supports clipping cursor (mouse).*/
-    PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(9)
+    PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(9),
+
+    /** < Supports flashing window titlebar.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = PAL_BIT(10),
+
+    /** < Supports flashing window title icon on the taskbar.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = PAL_BIT(11)
 } PalVideoFeatures;
 
 /**
@@ -158,8 +161,7 @@ typedef enum
  *
  * @ingroup video
  */
-typedef enum
-{
+typedef enum {
     PAL_WINDOW_SHOWN = PAL_BIT(0),                    /** < Window is shown after creation.*/
     PAL_WINDOW_MAXIMIZED = PAL_BIT(1),                /** < Window is maximized after creation.*/
     PAL_WINDOW_RESIZABLE = PAL_BIT(2),                /** < Window is resizable.*/
@@ -175,6 +177,21 @@ typedef enum
 } PalWindowFlags;
 
 /**
+ * @enum PalFlashType
+ * @brief Specifies flash types.
+ * 
+ * @note All flash types follow the format `PAL_FLASH_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
+typedef enum {
+    PAL_FLASH_STOP = 0,           /** < Stop flash.*/
+    PAL_FLASH_CAPTION,            /** < Flash the titlebar of the window.*/
+    PAL_FLASH_TRAY,               /** < Flash the window icon in the taskbar.*/
+    PAL_FLASH_BOTH,               /** < Flash the window icon and titlebar.*/
+} PalFlashType;
+
+/**
  * @struct PalDisplayInfo
  * @brief Contains information about a display.
  * All values are in physical pixels.
@@ -183,8 +200,7 @@ typedef enum
  *
  * @ingroup video
  */
-typedef struct
-{
+typedef struct {
     char name[32];                     /** < Name of the display.*/
     int x;                             /** < X position of yhe display.*/
     int y;                             /** < Y position of the display.*/
@@ -205,8 +221,7 @@ typedef struct
  *
  * @ingroup video
  */
-typedef struct
-{
+typedef struct {
     Uint32 width;       /** < Width of the display mode in pixels.*/
     Uint32 height;      /** < Height of the display mode in pixels.*/
     Uint32 bpp;         /** < Bits per pixel.*/
@@ -225,14 +240,31 @@ typedef struct
  *
  * @ingroup video
  */
-typedef struct
-{
-    const char *title;    /** < UTF-8 encoded null terminated string for the window title.*/
-    PalDisplay *display;  /** < Display to create window on. set to nullptr to use primary display.*/
-    Uint32 width;         /** < Width of the window in pixels.*/
-    Uint32 height;        /** < Height of the window in pixels.*/
-    PalWindowFlags flags; /** < Window behavior. this can be OR'ed together. see `palWindowFlags`*/
+typedef struct {
+    const char *title;             /** < UTF-8 encoded null terminated string for the window title.*/
+    PalDisplay *display;           /** < Display to create window on. set to nullptr to use primary display.*/
+    Uint32 width;                  /** < Width of the window in pixels.*/
+    Uint32 height;                 /** < Height of the window in pixels.*/
+    PalWindowFlags flags;          /** < Window behavior. this can be OR'ed together. see `palWindowFlags`*/
 } PalWindowCreateInfo;
+
+/**
+ * @struct PalFlashInfo
+ * @brief Specifies options for flashing a window to ask for focus.
+ *
+ * This struct must be initialized and passed to palFlashWindow().
+ *
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
+typedef struct {
+    PalFlashType type;        /** < The flash type to use.*/
+    Uint32 count;             /** < Number of times to flash. Set to `0` to flash until focused or cancelled.*/
+    Uint32 interval;          /** < Flash interval in milliseconds. Only on Windows. Set to `0` for default.*/
+} PalFlashInfo;
 
 /**
  * @brief Create an instance of the video system.
@@ -251,6 +283,10 @@ typedef struct
  *
  * @note This function is not thread-safe. If multiple threads will call this function,
  * the user is responsible for synchronization.
+ * 
+ * @note After creating the video instance, 
+ * its best to query features and tailor you application to that.
+ * Most features are not supported on every platform.
  *
  * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()`
  * when no longer needed.
@@ -543,7 +579,7 @@ _PAPI PalResult _PCALL palSetDisplayOrientation(
  */
 _PAPI PalResult _PCALL palCreateWindow(
     PalVideoSystem* system,
-    PalWindowCreateInfo *info,
+    const PalWindowCreateInfo *info,
     PalWindow **outWindow);
 
 /**
@@ -769,6 +805,35 @@ _PAPI void _PCALL palShowWindow(PalWindow* window);
  * @ingroup video
  */
 _PAPI void _PCALL palHideWindow(PalWindow* window);
+
+/**
+ * @brief Request the OS to visually flash the given window.
+ * 
+ * Use this function to get user's attention when the window is not in the foreground.
+ * Depending on the OS (playform), this may not work. Example:
+ * 
+ * Windows supports flashing the widows's title bar and taskbar icon.
+ * 
+ * MacOS supports only bouncing the dock icon. etc.
+ * 
+ * check for support for flash types with `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` for title bar flashing 
+ * and `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` for taskbar icon flashing.
+ * If both are not supported, this function will failt and return `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`.
+ * 
+ * See PalVideoFeatures.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] info Pointer to a PalFlashInfo struct with flash options.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * 
+ * @sa palCreateWindow(), PalFlashInfo, PalVideoFeatures, PalFlashType
+ * @ingroup video
+ */
+_PAPI PalResult palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info);
 
 /**
  * @brief Place the window at the center of the display (monitor) bounds.

@@ -66,5 +66,13 @@ void videoTest() {
         palLog("Clipping cursor (mouse) feature is supported");
     }
 
+    if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION) {
+        palLog("Window titlebar flashing is supported");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY) {
+        palLog("Window icon on taskbar flashing is supported");
+    }
+
     palDestroyVideoSystem(video);
 }
