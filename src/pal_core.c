@@ -105,6 +105,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INVALID_WINDOW:
         return "Invalid window";
+
+        case PAL_RESULT_INVALID_OPERATION:
+        return "Invalid operation";
    }
 
     return nullptr;

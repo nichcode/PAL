@@ -72,6 +72,7 @@ typedef struct PalWindow {
     int y;
     bool hidden;
     bool fullscreen;
+    bool maximized, minimized;
 } PalWindow;
 
 typedef struct DisplayData {
@@ -209,16 +210,12 @@ void _PCALL palDestroyVideoSystem(
     palFree(system->allocator, system);
 }
 
-PalResult _PCALL palGetVideoFeatures(
-    PalVideoSystem* system,
-    PalVideoFeatures* features) {
+PalVideoFeatures _PCALL palGetVideoFeatures(PalVideoSystem* system) {
 
-    if (!system || !features) {
-        return PAL_RESULT_NULL_POINTER;
+    if (!system) {
+        return 0;
     }
-
-    *features = system->features;
-    return PAL_RESULT_SUCCESS;
+    return system->features;
 }
 
 PalResult _PCALL palUpdateVideo(
@@ -418,14 +415,14 @@ PalResult _PCALL palSetDisplayMode(
     PalDisplay* display,
     PalDisplayMode* mode) {
 
-    return setDisplayMode(display, mode, FALSE);
+    return setDisplayMode(display, mode, false);
 }
 
 PalResult _PCALL palValidateDisplayMode(
     PalDisplay* display,
     PalDisplayMode* mode) {
 
-    return setDisplayMode(display, mode, TRUE);
+    return setDisplayMode(display, mode, true);
 }
 
 PalResult _PCALL palSetDisplayOrientation(
@@ -484,6 +481,10 @@ PalResult _PCALL palCreateWindow(
     PalVideoSystem* system, 
     PalWindowCreateInfo* info,
     PalWindow** outWindow) {
+
+    if (!system || !info || !outWindow) {
+        return PAL_RESULT_NULL_POINTER;
+    }
 
     PalWindow* window = nullptr;
     PalDisplay* display = nullptr;
@@ -678,7 +679,7 @@ PalResult _PCALL palFitWindowToDisplay(
     PalDisplayInfo info;
     PalDisplay* currentDisplay;
     
-    if (!window || !display) {
+    if (!window) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -734,6 +735,53 @@ PalResult _PCALL palRestoreWindow(PalWindow* window) {
         PAL_RESULT_INVALID_WINDOW;
     }
 
+    if (window->maximized || window->minimized) {
+        ShowWindow(window->handle, SW_RESTORE);
+        window->maximized = false;
+        window->minimized = false;
+        window->hidden = false;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palMaximizeWindow(PalWindow* window) {
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (window->maximized) {
+        return PAL_RESULT_SUCCESS;
+    }
+
+    if (window->fullscreen) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    ShowWindow(window->handle, SW_SHOWMAXIMIZED);
+    window->maximized = true;
+    window->minimized = false;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palMinimizeWindow(PalWindow* window) {
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (window->minimized) {
+        return PAL_RESULT_SUCCESS;
+    }
+
+    if (window->fullscreen) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    ShowWindow(window->handle, SW_MINIMIZE);
+    window->minimized = true;
+    window->maximized = false;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -742,7 +790,7 @@ PalResult _PCALL palSetWindowFullscreen(
     PalDisplay* display,
     bool enable) {
 
-    if (!window || !display) {
+    if (!window) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -781,6 +829,79 @@ PalResult _PCALL palSetWindowFullscreen(
     }
 
     window->fullscreen = enable;
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palShowWindow(PalWindow* window) {
+
+    if (!window) {
+        return;
+    }
+
+    if (window->maximized) {
+        ShowWindow(window->handle, SW_SHOWMAXIMIZED);
+
+    } else {
+        ShowWindow(window->handle, SW_SHOW);
+    }
+    window->hidden = false;
+}
+
+void _PCALL palHideWindow(PalWindow* window) {
+
+    ShowWindow(window->handle, SW_HIDE);
+    window->hidden = true;
+}
+
+PalResult _PCALL palCenterWindow(
+    PalWindow* window, 
+    PalDisplay* display) {
+
+    PalResult result;
+    PalDisplayInfo info;
+    PalDisplay* currentDisplay;
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (window->fullscreen || window->maximized || window->minimized) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    if (display) {
+        currentDisplay = display;
+
+    } else {
+        result = palGetWindowDisplay(window, &currentDisplay);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+    }
+
+    result = palGetDisplayInfo(currentDisplay, &info);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    int x = info.x + (info.width - window->width) / 2;
+    int y = info.y + (info.height - window->height) / 2;
+    bool success = SetWindowPos(
+        window->handle, 
+        nullptr, 
+        x, 
+        y, 
+        0, 
+        0, 
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE
+    );
+
+    if (!success) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    window->x = x;
+    window->y = y;
     return PAL_RESULT_SUCCESS;
 }
 

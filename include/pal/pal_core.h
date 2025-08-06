@@ -146,7 +146,8 @@ typedef enum {
     PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
     PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
     PAL_RESULT_VIDEO_DEVICE_NOT_FOUND,            /** < OS driver could not be found (busy).*/
-    PAL_RESULT_INVALID_WINDOW                     /** < An invalid window.*/
+    PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
+    PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
 } PalResult;
 
 /**

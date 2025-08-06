@@ -294,20 +294,16 @@ _PAPI void _PCALL palDestroyVideoSystem(
  * }
  * @endcode
  * 
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ * @return video features on success or `0` on failure.
  *
  * @param[in] system Pointer to the video system instance.
- * @param[out] features Pointer to a video features enum to recieve the features.
  *
- * @note This function is thread-safe if `features` is thread local.
- * If not, the user is responsible for synchronization.
+ * @note This function is thread-safe.
  *
  * @sa palCreateVideoSystem()
  * @ingroup video
  */
-_PAPI PalResult _PCALL palGetVideoFeatures(
-    PalVideoSystem* system,
-    PalVideoFeatures* features);
+_PAPI PalVideoFeatures _PCALL palGetVideoFeatures(PalVideoSystem* system);
 
 /**
  * @brief Update the video system instance and all created windows.
@@ -565,8 +561,26 @@ _PAPI PalResult _PCALL palCreateWindow(
  */
 _PAPI void _PCALL palDestroyWindow(PalWindow *window);
 
-
-
+/**
+ * @brief Sets or exits borderless mode for the given window.
+ * 
+ * `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported.
+ * 
+ * This functions sets borderless mode for the window if `enable` is `true`,
+ * otherwise restores to normal mode when `false`.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] enable True to set borderless mode otherwise false for normal mode.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palGetWindowDisplay()
+ * @sa palEnumerateDisplays()
+ * @ingroup video
+ */
 _PAPI PalResult _PCALL palSetWindowBorderless(
     PalWindow* window,
     bool enable);
@@ -635,6 +649,50 @@ _PAPI PalResult _PCALL palFitWindowToDisplay(
 _PAPI PalResult _PCALL palRestoreWindow(PalWindow* window);
 
 /**
+ * @brief Maximize a minimized or windowed mode window.
+ * 
+ * The window must not be in fullscreen mode, 
+ * otherwise this function will fail and return `PAL_RESULT_INVALID_OPERATION`.
+ * If the window is already maximized, this functions does nothing and returns `PAL_RESULT_SUCCESS`.
+ * 
+ * If `PAL_VIDEO_FEATURE_WINDOW_MINMAX` is not supported, 
+ * this function will failt and return `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`.
+ * 
+ * @param[in] window Pointer to the window.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palMaximizeWindow(PalWindow* window);
+
+/**
+ * @brief Minimize a maximized or windowed mode window.
+ * 
+ * The window must not be in fullscreen mode, 
+ * otherwise this function will fail and return `PAL_RESULT_INVALID_OPERATION`.
+ * If the window is already minimized, this functions does nothing and returns `PAL_RESULT_SUCCESS`.
+ * 
+ * If `PAL_VIDEO_FEATURE_WINDOW_MINMAX` is not supported, 
+ * this function will failt and return `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`.
+ * 
+ * @param[in] window Pointer to the window.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palMinimizeWindow(PalWindow* window);
+
+/**
  * @brief Sets or exits fullscreen mode (borderless fullscreen) for the given window.
  * 
  * This functions sets borderless fullscreen mode for the window if `enable` is `true`,
@@ -667,5 +725,73 @@ _PAPI PalResult _PCALL palSetWindowFullscreen(
     PalWindow* window, 
     PalDisplay* display,
     bool enable);
+
+/**
+ * @brief Make the given window visible.
+ * 
+ * All windows are created hidden if `PAL_WINDOW_SHOWN` flag is not set.
+ * This does nothing if the window is already visible.
+ * 
+ * On some OS, this functions also set focus and bring the window to the top of all windows.
+ *
+ * @param[in] window Pointer to the window.
+ *
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ * @note This function may vary slightly on different OS (platforms). 
+ * 
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * 
+ * @sa palHideWindow(), palCreateWindow().
+ * @ingroup video
+ */
+_PAPI void _PCALL palShowWindow(PalWindow* window);
+
+/**
+ * @brief Hides the given window.
+ * 
+ * This is the default behaviour if `PAL_WINDOW_SHOWN` flag is not set. 
+ * This does nothing if the window is already hidden.
+ * 
+ * The window is hidden but still valid and can be shown with `palShowWindow()`.
+ *
+ * @param[in] window Pointer to the window.
+ *
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ * @note This function may vary slightly on different OS (platforms). 
+ * Example: the window will not be hidden instantly.
+ * 
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * 
+ * @sa palShowWindow(), palCreateWindow().
+ * @ingroup video
+ */
+_PAPI void _PCALL palHideWindow(PalWindow* window);
+
+/**
+ * @brief Place the window at the center of the display (monitor) bounds.
+ * 
+ * Unlike `palFitWindowToDisplay()`, `palRestoreWindow()` does not work on this function.
+ * If a window is centered on the display, the window can not revert back to its last position,
+ * unless the user explicitly set it using `palSetWindowPos()`.
+ * 
+ * If the `display` is (nullptr), the current display the window is on will be used.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] display Pointer to the display. This may be a nullptr.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palEnumerateDisplays().
+ * @sa palGetPrimaryDisplay(), palGetWindowDisplay().
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palCenterWindow(
+    PalWindow* window, 
+    PalDisplay* display);
 
 #endif // _PAL_VIDEO_H
