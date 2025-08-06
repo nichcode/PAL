@@ -905,6 +905,81 @@ PalResult _PCALL palCenterWindow(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult _PCALL palSetWindowTitle(
+    PalWindow* window, 
+    const char* title) {
+
+    if (!window || !title) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    wchar_t buffer[256] = {};    
+    int len = MultiByteToWideChar(CP_UTF8, 0, title, -1, nullptr, 0);
+    MultiByteToWideChar(CP_UTF8, 0, title, -1, buffer, len);
+
+    SetWindowTextW(window->handle, buffer);
+    window->title = title;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palSetWindowPos(
+    PalWindow* window, 
+    int x, 
+    int y) {
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    RECT rect = { x, y, x, y };
+    AdjustWindowRectEx(&rect, window->style, 0, window->exStyle);
+    SetWindowPos(
+        window->handle, 
+        nullptr, 
+        rect.left, 
+        rect.top, 
+        0, 
+        0, 
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE
+    );
+
+    window->x = x;
+    window->y = y;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palSetWindowSize(
+    PalWindow* window, 
+    Uint32 width, 
+    Uint32 height) {
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!width || !height) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    RECT rect = { 0, 0, 0, 0 };
+    rect.right = width;
+    rect.bottom = height;
+    AdjustWindowRectEx(&rect, window->style, 0, window->exStyle);
+    SetWindowPos(
+        window->handle, 
+        HWND_TOP, 
+        0, 
+        0, 
+        rect.right - rect.left, 
+        rect.bottom - rect.top,
+        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER
+    );
+
+    window->width = width;
+    window->height = height;
+    return PAL_RESULT_SUCCESS;
+}
+
 // ==================================================
 // Internal API
 // ==================================================

@@ -24,12 +24,7 @@ void videoTest() {
         return;
     }
 
-    result = palGetVideoFeatures(video, &features);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* resultString = palResultToString(result);
-        palLog("PAL error - %s", resultString);
-        return;
-    }
+    features = palGetVideoFeatures(video);
 
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
         palLog("High DPI windows feature is supported");

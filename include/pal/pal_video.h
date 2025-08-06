@@ -299,6 +299,7 @@ _PAPI void _PCALL palDestroyVideoSystem(
  * @param[in] system Pointer to the video system instance.
  *
  * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if `system` is valid.
  *
  * @sa palCreateVideoSystem()
  * @ingroup video
@@ -793,5 +794,81 @@ _PAPI void _PCALL palHideWindow(PalWindow* window);
 _PAPI PalResult _PCALL palCenterWindow(
     PalWindow* window, 
     PalDisplay* display);
+
+/**
+ * @brief Set the title of the given window.
+ * 
+ * The `title` must be a UTF-8 encoding null terminated string.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] title UTF-8 encoding null terminated string.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palSetWindowTitle(
+    PalWindow* window, 
+    const char* title);
+
+/**
+ * @brief Set the position of the given window in pixels relative to the virtual desktop origin.
+ * 
+ * This function fails and returns `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`
+ * if `PAL_VIDEO_FEATURE_WINDOW_POSITIONING` is not supported.
+ * 
+ * If the window is already maximized, minimized or in fullscreen mode,
+ * this function fails and return `PAL_RESULT_INVALID_OPERATION`. 
+ * 
+ * The position is not capped and might go beyond a single display, 
+ * to be safe get the display bounds and cap the position with it.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] x The new x coordinate in pixels.
+ * @param[in] y The new y coordinate in pixels.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateWindow(), palSetWindowSize(), palRestoreWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palSetWindowPos(
+    PalWindow* window, 
+    int x, 
+    int y);
+
+/**
+ * @brief Set the size of the client area of the given window in pixels.
+ * 
+ * This function will fail and return `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`
+ * if `PAL_VIDEO_FEATURE_WINDOW_RESIZING` is not supported.
+ * 
+ * If the window is already maximized, minimized or in fullscreen mode,
+ * this function fails and return `PAL_RESULT_INVALID_OPERATION`.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] width The new width of the window in pixels. Must be greater than `0`.
+ * @param[in] height The new height of the window in pixels. Must be greater than `0`.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * @note Some OS (platforms) with window managers may clapped or adjust the size.
+ *
+ * @sa palCreateWindow(), palSetWindowPos(), palRestoreWindow()
+ * @ingroup video
+ */
+_PAPI PalResult _PCALL palSetWindowSize(
+    PalWindow* window, 
+    Uint32 width, 
+    Uint32 height);
 
 #endif // _PAL_VIDEO_H
