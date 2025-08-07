@@ -26,7 +26,7 @@ project "PAL"
     targetdir(target_dir)
     objdir(obj_dir)
 
-    files { "src/pal_core.c" }
+    files { "src/core/pal_core.c" }
     includedirs {
         "include",
         "src"
@@ -34,7 +34,7 @@ project "PAL"
 
     if (PAL_BUILD_VIDEO) then
         filter {"system:windows", "configurations:*"}
-        files { "src/pal_video_win32.c" }
+        files { "src/video/pal_video_win32.c" }
         filter {}
     end
 

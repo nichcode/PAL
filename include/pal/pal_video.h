@@ -315,8 +315,7 @@ _PAPI PalResult _PCALL palCreateVideoSystem(
  * @sa palCreateVideoSystem()
  * @ingroup video
  */
-_PAPI void _PCALL palDestroyVideoSystem(
-    PalVideoSystem *system);
+_PAPI void _PCALL palDestroyVideoSystem(PalVideoSystem *system);
 
 /**
  * @brief Get the features supported of a video system instance.
@@ -347,16 +346,14 @@ _PAPI PalVideoFeatures _PCALL palGetVideoFeatures(PalVideoSystem* system);
  *
  * @param[in] system Pointer to the video system instance.
  * 
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
- *
+ * @note This function is guaranteed not to fail if the `system` is valid.
  * @note This function is not thread-safe. If multiple threads will call this function,
  * the user is responsible for synchronization.
  *
  * @sa palCreateVideoSystem()
  * @ingroup video
  */
-_PAPI PalResult _PCALL palUpdateVideo(
-    PalVideoSystem* system);
+_PAPI void _PCALL palUpdateVideo(PalVideoSystem* system);
 
 /**
  * @brief Returns a list of active and connected displays (monitors).

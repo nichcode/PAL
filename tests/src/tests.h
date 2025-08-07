@@ -8,34 +8,22 @@
 
 typedef void (*TestFn)();
 
-typedef struct TestEntry
-{
-    const char* name;
-    TestFn testFn;
-} TestEntry;
-
-typedef struct Tests
-{
+typedef struct Tests {
+    TestFn tests[MAX_TESTS];
     int count;
-    struct TestEntry tests[MAX_TESTS];
 } Tests;
 
 static Tests s_Test;
 
-static inline void registerTest(
-    const char* name, 
-    TestFn fn) {
+static inline void registerTest(TestFn fn) {
 
-    TestEntry entry;
-    entry.name = name;
-    entry.testFn = fn;
-    s_Test.tests[s_Test.count++] = entry;
+    s_Test.tests[s_Test.count++] = fn;
 }
 
 static inline void runTests() {
 
     for (int i = 0; i < s_Test.count; i++) {
-        s_Test.tests[i].testFn();
+        s_Test.tests[i]();
     }
 }
 
@@ -45,5 +33,6 @@ void timeTest();
 void videoTest();
 void displayTest();
 void displayModeTest();
+void windowTest();
 
 #endif // _TESTS_H

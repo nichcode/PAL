@@ -16,7 +16,8 @@ project "Tests"
         files { 
             "src/video_test.c",
             "src/display_test.c",
-            "src/display_mode_test.c"
+            "src/display_mode_test.c",
+            "src/window_test.c"
         }
     end
 

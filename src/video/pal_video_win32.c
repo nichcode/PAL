@@ -220,11 +220,10 @@ PalVideoFeatures _PCALL palGetVideoFeatures(PalVideoSystem* system) {
     return system->features;
 }
 
-PalResult _PCALL palUpdateVideo(
-    PalVideoSystem* system) {
+void _PCALL palUpdateVideo(PalVideoSystem* system) {
 
     if (!system) {
-        return PAL_RESULT_NULL_POINTER;
+        return;
     }
     
     MSG msg;
@@ -232,8 +231,6 @@ PalResult _PCALL palUpdateVideo(
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult _PCALL palEnumerateDisplays(

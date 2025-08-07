@@ -10,13 +10,14 @@ int main(int argc, char** argv) {
     const char* versionString = palGetVersionString();
     palLog("PAL v(%s)", versionString);
 
-    // registerTest("Allocator Test", allocatorTest);
-    //registerTest("Time Test", timeTest);
+    // registerTest(allocatorTest);
+    //registerTest(timeTest);
 
 #if PAL_HAS_VIDEO
-    registerTest("Video Test", videoTest);
-    //registerTest("Display Test", displayTest);
-    //registerTest("Display Mode Test", displayModeTest);
+    //registerTest(videoTest);
+    //registerTest(displayTest);
+    //registerTest(displayModeTest);
+    registerTest(windowTest);
 #endif // PAL_HAS_VIDEO
 
     runTests();
