@@ -861,13 +861,13 @@ PalResult palFlashWindow(
     }
 
     DWORD flags = 0;
-    if (info->type == PAL_FLASH_STOP) {
+    if (info->flags == PAL_FLASH_STOP) {
         flags = FLASHW_STOP;
 
     } else {
-        if (info->type == PAL_FLASH_CAPTION) {
+        if (info->flags & PAL_FLASH_CAPTION) {
             flags |= FLASHW_CAPTION;
-        } if (info->type == PAL_FLASH_TRAY) {
+        } if (info->flags & PAL_FLASH_TRAY) {
             flags |= FLASHW_TRAY;
             flags |= FLASHW_TIMERNOFG;
         }

@@ -393,4 +393,88 @@ _PAPI Uint64 _PCALL palGetPerformanceCounter();
  */
 _PAPI Uint64 _PCALL palGetPerformanceFrequency();
 
+/**
+ * @brief Combine two 32-bit unsigned integers into a 64-bit signed integer.
+ * 
+ * @return The combined 64-bit signed integer.
+ * 
+ * @sa palPackInt32(), palUnpackUint32(), palUnpackInt32()
+ * @note This function is thread-safe. 
+ * 
+ * @ingroup core
+ */
+static inline Int64 palPackUint32(
+    Uint32 low,
+    Uint32 high) {
+
+    return (Int64) (((Uint64)high << 32) | (Uint64)low);
+}
+
+/**
+ * @brief Combine two 32-bit signed integers into a 64-bit signed integer.
+ * 
+ * @return The combined 64-bit signed integer.
+ * 
+ * @sa palPackUint32(), palUnpackUint32(), palUnpackInt32()
+ * @note This function is thread-safe. 
+ * 
+ * @ingroup core
+ */
+static inline Int64 palPackInt32(
+    int low,
+    int high) {
+
+    return ((Int64) (Uint32)high << 32) | (Uint32)low;
+}
+
+/**
+ * @brief Unpack a 64-bit signed integer into two 32-bit unsigned integers.
+ * 
+ * @param[out] outLow Low value of the 64-bit signed integer.
+ * @param[out] outHigh High value of the 64-bit signed integer.
+ * 
+ * @sa palPackUint32(), palUnpackInt32()
+ * @note This function is thread-safe. 
+ * 
+ * @ingroup core
+ */
+static inline void palUnpackUint32(
+    Int64 data,
+    Uint32* outLow,
+    Uint32* outHigh) {
+
+    if (outLow) {
+        *outLow = (Uint32)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (Uint32)((Uint64)data >> 32);
+    }
+}
+
+/**
+ * @brief Unpack a 64-bit signed integer into two 32-bit signed integers.
+ * 
+ * @param[out] outLow Low value of the 64-bit signed integer.
+ * @param[out] outHigh High value of the 64-bit signed integer.
+ * 
+ * @sa palPackUint32(), palUnpackUint32()
+ * @note This function is thread-safe. 
+ * 
+ * @ingroup core
+ */
+static inline void palUnpackInt32(
+    Int64 data,
+    int* outLow,
+    int* outHigh) {
+
+    if (outLow) {
+        *outLow = (int)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (int)((Uint64)data >> 32);
+    }
+}
+
 #endif // _PAL_CORE_H

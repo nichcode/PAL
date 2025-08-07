@@ -177,19 +177,30 @@ typedef enum {
 } PalWindowFlags;
 
 /**
- * @enum PalFlashType
- * @brief Specifies flash types.
+ * @enum PalFlashFlags
+ * @brief Specifies behavior for flashing a window.
+ * 
+ * This is a bitmask enum and multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ * 
+ * Note: `PAL_FLASH_STOP` is not a bitmask and must not be combined with other bitmask.
+ *
+ * @code
+ * PalFlashFlags flashTypes = PAL_FLASH_CAPTION | PAL_FLASH_TRAY.
+ * @endcode
+ * 
+ * @code
+ * PalFlashFlags flashTypeSingle = PAL_FLASH_STOP.
+ * @endcode
  * 
  * @note All flash types follow the format `PAL_FLASH_**` for consistency and API use.
  *
  * @ingroup video
  */
 typedef enum {
-    PAL_FLASH_STOP = 0,           /** < Stop flash.*/
-    PAL_FLASH_CAPTION,            /** < Flash the titlebar of the window.*/
-    PAL_FLASH_TRAY,               /** < Flash the window icon in the taskbar.*/
-    PAL_FLASH_BOTH,               /** < Flash the window icon and titlebar.*/
-} PalFlashType;
+    PAL_FLASH_STOP = 0,                        /** < Stop flash.*/
+    PAL_FLASH_CAPTION = PAL_BIT(0),            /** < Flash the titlebar of the window.*/
+    PAL_FLASH_TRAY = PAL_BIT(1),               /** < Flash the window icon in the taskbar.*/
+} PalFlashFlags;
 
 /**
  * @struct PalDisplayInfo
@@ -245,7 +256,7 @@ typedef struct {
     PalDisplay *display;           /** < Display to create window on. set to nullptr to use primary display.*/
     Uint32 width;                  /** < Width of the window in pixels.*/
     Uint32 height;                 /** < Height of the window in pixels.*/
-    PalWindowFlags flags;          /** < Window behavior. this can be OR'ed together. see `palWindowFlags`*/
+    PalWindowFlags flags;          /** < Window behavior. This can be OR'ed together. see `palWindowFlags`*/
 } PalWindowCreateInfo;
 
 /**
@@ -261,7 +272,7 @@ typedef struct {
  * @ingroup video
  */
 typedef struct {
-    PalFlashType type;        /** < The flash type to use.*/
+    PalFlashFlags flags;      /** < The flash behavior. This can be OR'ed together. see `PalFlashFlags`*/
     Uint32 count;             /** < Number of times to flash. Set to `0` to flash until focused or cancelled.*/
     Uint32 interval;          /** < Flash interval in milliseconds. Only on Windows. Set to `0` for default.*/
 } PalFlashInfo;
@@ -825,7 +836,7 @@ _PAPI void _PCALL palHideWindow(PalWindow* window);
  * @note This function is not thread-safe. If multiple threads will call this function,
  * the user is responsible for synchronization.
  * 
- * @sa palCreateWindow(), PalFlashInfo, PalVideoFeatures, PalFlashType
+ * @sa palCreateWindow(), PalFlashInfo, PalVideoFeatures, PalFlashFlags
  * @ingroup video
  */
 _PAPI PalResult palFlashWindow(
