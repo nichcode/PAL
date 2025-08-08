@@ -40,6 +40,8 @@ freely, subject to the following restrictions:
 #include <windows.h>
 #endif // _WIN32
 
+#include <time.h>
+
 #define PAL_WIN32_VIDEO_CLASS L"PALVideoClass"
 #define PAL_WIN32_VIDEO_PROP L"PALVideo"
 #define WIN32_DPI 0
@@ -53,17 +55,20 @@ typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
 static GetDpiForMonitorFn s_GetDpiForMonitor;
 static SetProcessAwarenessFn s_SetProcessAwareness;
 static HINSTANCE s_Shcore;
+static Uint32 s_Counter = 0;
 
 typedef struct PalVideoSystem {
     PalAllocator* allocator;
     HINSTANCE instance;
     PalVideoFeatures features;
+    Uint32 windowCount;
 } PalVideoSystem;
 
 typedef struct PalWindow {
     PalVideoSystem* system;
     HWND handle;
     const char* title;
+    Uint64 id;
     Uint32 width;
     Uint32 height;
     Uint32 style;
@@ -101,6 +106,8 @@ static void addMode(
 static bool compareMode(
     const PalDisplayMode* a, 
     const PalDisplayMode* b);
+
+static Uint64 generateWindowID();
 
 BOOL CALLBACK enumMonitors(
     HMONITOR monitor, 
@@ -197,6 +204,7 @@ PalResult _PCALL palCreateVideoSystem(
     }
 
     system->features = features;
+    system->windowCount++;
     *outSystem = system;
     return PAL_RESULT_SUCCESS;
 }
@@ -620,6 +628,7 @@ PalResult _PCALL palCreateWindow(
         }
     }
 
+    window->id = generateWindowID();
     *outWindow = window;
     return PAL_RESULT_SUCCESS;
 }
@@ -630,6 +639,7 @@ void _PCALL palDestroyWindow(PalWindow* window) {
         return;
     }
 
+    window->system->windowCount--;
     DestroyWindow(window->handle);
     palFree(window->system->allocator, window);
 }
@@ -1059,6 +1069,14 @@ void _PCALL palGetWindowSize(
     }
 }
 
+Uint64 _PCALL palGetWindowID(PalWindow* window) {
+
+    if (window) {
+        return 0;
+    }
+    return window->id;
+}
+
 bool _PCALL palIsWindowMaximized(PalWindow* window) {
 
     if (!window) {
@@ -1220,6 +1238,13 @@ static void addMode(
     // new mode
     modes[*count] = *mode;
     *count += 1;
+}
+
+static Uint64 generateWindowID() {
+
+    Uint32 timeStamp = (Uint32)time(nullptr);
+    Uint32 local = s_Counter++;
+    return ((Uint64)timeStamp << 32) | local;
 }
 
 BOOL CALLBACK enumMonitors(

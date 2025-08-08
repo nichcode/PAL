@@ -62,7 +62,7 @@ typedef struct PalWindow PalWindow;
  * @struct PalVideoSystemCreateInfo
  * @brief Specifies options for creating an instance of the video system.
  *
- * This struct must be initialized and passed to palCreateVideoSystem().
+ * This struct must be initialized and passed to `palCreateVideoSystem()`.
  *
  * All fields must be explicitly set by the user.
  *
@@ -70,8 +70,8 @@ typedef struct PalWindow PalWindow;
  *
  * @ingroup video
  */
-typedef struct {
-    PalAllocator *allocator; /** < User allocator or nullptr for default.*/
+typedef struct PalVideoSystemCreateInfo {
+    PalAllocator *allocator;             /** < User allocator or nullptr for default.*/
 } PalVideoSystemCreateInfo;
 
 /**
@@ -82,7 +82,7 @@ typedef struct {
  *
  * @ingroup video
  */
-typedef enum {
+typedef enum PalDisplayOrientation {
     PAL_ORIENTATION_LANDSCAPE,         /** < 0 degrees.*/
     PAL_ORIENTATION_PORTRAIT,          /** < 90 degrees.*/
     PAL_ORIENTATION_LANDSCAPE_FLIPPED, /** < 180 degrees.*/
@@ -110,7 +110,7 @@ typedef enum {
  *
  * @ingroup video
  */
-typedef enum {
+typedef enum PalVideoFeatures {
     /** < Supports high DPI windows.*/
     PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
 
@@ -161,7 +161,7 @@ typedef enum {
  *
  * @ingroup video
  */
-typedef enum {
+typedef enum PalWindowFlags {
     PAL_WINDOW_SHOWN = PAL_BIT(0),                    /** < Window is shown after creation.*/
     PAL_WINDOW_MAXIMIZED = PAL_BIT(1),                /** < Window is maximized after creation.*/
     PAL_WINDOW_RESIZABLE = PAL_BIT(2),                /** < Window is resizable.*/
@@ -196,7 +196,7 @@ typedef enum {
  *
  * @ingroup video
  */
-typedef enum {
+typedef enum PalFlashFlags {
     PAL_FLASH_STOP = 0,                        /** < Stop flash.*/
     PAL_FLASH_CAPTION = PAL_BIT(0),            /** < Flash the titlebar of the window.*/
     PAL_FLASH_TRAY = PAL_BIT(1),               /** < Flash the window icon in the taskbar.*/
@@ -211,16 +211,16 @@ typedef enum {
  *
  * @ingroup video
  */
-typedef struct {
-    char name[32];                     /** < Name of the display.*/
-    int x;                             /** < X position of yhe display.*/
-    int y;                             /** < Y position of the display.*/
-    Uint32 width;                      /** < Width of the display in pixels.*/
-    Uint32 height;                     /** < Height of the display in pixels.*/
-    Uint32 dpi;                        /** < Display dpi.*/
-    Uint32 refreshRate;                /** < Refresh rate in Hz.*/
-    PalDisplayOrientation orientation; /** < display orientation.*/
-    bool primary;                      /** < True if this is the primary display.*/
+typedef struct PalDisplayInfo {
+    char name[32];                             /** < Name of the display.*/
+    int x;                                     /** < X position of yhe display.*/
+    int y;                                     /** < Y position of the display.*/
+    Uint32 width;                              /** < Width of the display in pixels.*/
+    Uint32 height;                             /** < Height of the display in pixels.*/
+    Uint32 dpi;                                /** < Display dpi.*/
+    Uint32 refreshRate;                        /** < Refresh rate in Hz.*/
+    PalDisplayOrientation orientation;         /** < display orientation.*/
+    bool primary;                              /** < True if this is the primary display.*/
 } PalDisplayInfo;
 
 /**
@@ -232,11 +232,11 @@ typedef struct {
  *
  * @ingroup video
  */
-typedef struct {
-    Uint32 width;       /** < Width of the display mode in pixels.*/
-    Uint32 height;      /** < Height of the display mode in pixels.*/
-    Uint32 bpp;         /** < Bits per pixel.*/
-    Uint32 refreshRate; /** < Refresh rate in Hz.*/
+typedef struct PalDisplayMode {
+    Uint32 width;              /** < Width of the display mode in pixels.*/
+    Uint32 height;             /** < Height of the display mode in pixels.*/
+    Uint32 bpp;                /** < Bits per pixel.*/
+    Uint32 refreshRate;        /** < Refresh rate in Hz.*/
 } PalDisplayMode;
 
 /**
@@ -251,7 +251,7 @@ typedef struct {
  *
  * @ingroup video
  */
-typedef struct {
+typedef struct PalWindowCreateInfo {
     const char *title;             /** < UTF-8 encoded null terminated string for the window title.*/
     PalDisplay *display;           /** < Display to create window on. set to nullptr to use primary display.*/
     Uint32 width;                  /** < Width of the window in pixels.*/
@@ -271,7 +271,7 @@ typedef struct {
  *
  * @ingroup video
  */
-typedef struct {
+typedef struct PalFlashInfo {
     PalFlashFlags flags;      /** < The flash behavior. This can be OR'ed together. see `PalFlashFlags`*/
     Uint32 count;             /** < Number of times to flash. Set to `0` to flash until focused or cancelled.*/
     Uint32 interval;          /** < Flash interval in milliseconds. Only on Windows. Set to `0` for default.*/
@@ -299,8 +299,7 @@ typedef struct {
  * its best to query features and tailor you application to that.
  * Most features are not supported on every platform.
  *
- * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()`
- * when no longer needed.
+ * @note The created video system instance must be destroyed with `PalDestroyVideoSystem()` when no longer needed.
  *
  * @sa PalVideoSystemCreateInfo, palDestroyVideoSystem()
  * @ingroup video
@@ -994,6 +993,21 @@ _PAPI void _PCALL palGetWindowSize(
     PalWindow* window, 
     Uint32* width, 
     Uint32* height);
+
+/**
+ * @brief Get the unique ID of the given window.
+ * 
+ * @return The unique id of the window.
+ *
+ * @param[in] window Pointer to the window on success or `0`  on failure.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI Uint64 _PCALL palGetWindowID(PalWindow* window);
 
 /**
  * @brief Check if the given window is maximized.

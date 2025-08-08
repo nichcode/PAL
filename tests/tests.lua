@@ -9,7 +9,8 @@ project "Tests"
     files { 
         "src/main.c",
         "src/allocator_test.c",
-        "src/time_test.c"
+        "src/time_test.c",
+        "src/events_test.c"
     }
 
     if (PAL_BUILD_VIDEO) then

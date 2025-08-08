@@ -12,6 +12,7 @@ int main(int argc, char** argv) {
 
     // registerTest(allocatorTest);
     //registerTest(timeTest);
+    registerTest(eventsTest);
 
 #if PAL_HAS_VIDEO
     //registerTest(videoTest);

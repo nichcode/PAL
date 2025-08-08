@@ -120,48 +120,74 @@ typedef unsigned long long Uint64;
 typedef signed long long Int64;
 
 /**
- * @enum PalResult
- * @brief codes returned by PAL functions.
- * 
- * Aside from the core system, PAL functions return a PalResult.
- * 
- * `PAL_RESULT_SUCCESS` code means the operation completed successfully. 
- * Any other value indicates an error.
- * 
- * @note For clarity, always use the named constants like 
- * `PAL_RESULT_OUT_OF_MEMORY` not their numeric values.
- * 
- * @note All result follow the format `PAL_RESULT_**` for consistency and API use.
+ * @struct PalEventDriver
+ * @brief Opaque handle to an event driver.
+ *
+ * @ingroup video
  */
-typedef enum {
-    PAL_RESULT_SUCCESS,                           /** < Operation was successful.*/
-    PAL_RESULT_NULL_POINTER,                      /** < A nullptr was used where it is not allowed.*/
-    PAL_RESULT_INVALID_ARGUMENT,                  /** < One or more arguments were invalid.*/
-    PAL_RESULT_OUT_OF_MEMORY,                     /** < Out of Memory or memory allocation failed.*/
-    PAL_RESULT_INVALID_ALLOCATOR,                 /** < A partially defined custom allocator.*/
-    PAL_RESULT_ACCESS_DENIED,                     /** < OS denied PAL access.*/
-    PAL_RESULT_INVALID_DISPLAY,                   /** < An invalid display.*/
-    PAL_RESULT_INSUFFICIENT_BUFFER,               /** < Buffer too small.*/
-    PAL_RESULT_INVALID_DISPLAY_MODE,              /** < An invalid display mode.*/
-    PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
-    PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
-    PAL_RESULT_VIDEO_DEVICE_NOT_FOUND,            /** < OS driver could not be found (busy).*/
-    PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
-    PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
-} PalResult;
+typedef struct PalEventDriver PalEventDriver;
 
 /**
- * @brief Return a human readable string for a specified result code.
- * 
- * This returns a constant, null-terminated string describing the result.
- * 
- * @param[in] result The result code to describe
- * @return A pointer to the null-terminated result string.
- * 
- * @note This function is thread-safe and the pointer should not be freed.
- * @sa PalResult
+ * @struct PalEvent
+ * @brief Opaque handle to an event. This describes a single event.
+ *
+ * @ingroup video
  */
-_PAPI const char* _PCALL palResultToString(PalResult result);
+typedef struct PalEvent PalEvent;
+
+/**
+ * @typedef PalEventCallback
+ * @brief Function pointer type used for callback events.
+ * 
+ * This is the callback which will be called if user enables an event with the callback mode.
+ * See `PalDispatchMode`.
+ * 
+ * @param[in] userData Pointer passed in the function. This is from `PalEventDriver`.
+ * @param[in] event The event triggered.
+ * 
+ * @sa PalEventDriverCreateInfo
+ * @ingroup core
+ */
+typedef void (*PalEventCallback)(
+    void* userData, 
+    const PalEvent* event);
+
+/**
+ * @typedef PalPushFn
+ * @brief Function pointer type used for pushing events onto an event queue.
+ * 
+ * The `event` must be initialized and explicitly set by the user and then passed in the function.
+ * The `userData` is the same pointer passed into the allocator struct.
+ * 
+ * @param[in] userData Pointer provided by the user.
+ * @param[in] event The event to push onto the queue.
+ * 
+ * @sa PalEventQeue, PalPollFn, palPushEvent(), palPushEvent()
+ * @ingroup core
+ */
+typedef void (*PalPushFn)(
+    void* userData, 
+    PalEvent* event);
+
+/**
+ * @typedef PalPollFn
+ * @brief Function pointer type used for polling events from an event queue.
+ *
+ * The `userData` is the same pointer passed into the allocator struct.
+ * If the event queue is empty or the `outEvent` is nullptr, the returns `false`, 
+ * but `true` if the `outEvent` was filled.
+ * 
+ * @return True on success or false on failure or queue empty.
+ * 
+ * @param[in] userData Pointer provided by the user.
+ * @param[out] outEvent The event to push onto the queue.
+ * 
+ * @sa PalEventQeue, PalPushFn, palPushEvent(), palPushEvent()
+ * @ingroup core
+ */
+typedef bool (*PalPollFn)(
+    void* userData, 
+    PalEvent* outEvent);
 
 /**
  * @typedef PalAllocateFn
@@ -200,12 +226,71 @@ typedef void* (*PalAllocateFn)(
 typedef void (*PalFreeFn)(void* userData, void* ptr);
 
 /**
+ * @enum PalEventType
+ * @brief Types for an event. This is not a bitmask enum.
+ *
+ * @note All event types follow the format `PAL_EVENT_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
+typedef enum PalEventType {
+    PAL_EVENT_WINDOW_CLOSE,              /** < The window close button was clicked.*/
+    PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
+    PAL_EVENT_MAX
+} PalEventType;
+
+/**
+ * @enum PalDispatchMode
+ * @brief Dispatch mode for an event. This is not a bitmask enum.
+ *
+ * @note All dispatch modes follow the format `PAL_DISPATCH_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
+typedef enum PalDispatchMode {
+    PAL_DISPATCH_NONE,                       /** < Dont't dispatch event.*/
+    PAL_DISPATCH_POLL,                       /** < Dispatch to the event queue.*/
+    PAL_DISPATCH_CALLBACK                    /** < Dispatch to event callback.*/
+} PalDispatchMode;
+
+/**
+ * @enum PalResult
+ * @brief codes returned by PAL functions.
+ * 
+ * Aside from the core system, PAL functions return a PalResult.
+ * 
+ * `PAL_RESULT_SUCCESS` code means the operation completed successfully. 
+ * Any other value indicates an error.
+ * 
+ * @note For clarity, always use the named constants like 
+ * `PAL_RESULT_OUT_OF_MEMORY` not their numeric values.
+ * 
+ * @note All result follow the format `PAL_RESULT_**` for consistency and API use.
+ */
+typedef enum PalResult {
+    PAL_RESULT_SUCCESS,                           /** < Operation was successful.*/
+    PAL_RESULT_NULL_POINTER,                      /** < A nullptr was used where it is not allowed.*/
+    PAL_RESULT_INVALID_ARGUMENT,                  /** < One or more arguments were invalid.*/
+    PAL_RESULT_OUT_OF_MEMORY,                     /** < Out of Memory or memory allocation failed.*/
+    PAL_RESULT_INVALID_ALLOCATOR,                 /** < A partially defined custom allocator.*/
+    PAL_RESULT_ACCESS_DENIED,                     /** < OS denied PAL access.*/
+    PAL_RESULT_INVALID_DISPLAY,                   /** < An invalid display.*/
+    PAL_RESULT_INSUFFICIENT_BUFFER,               /** < Buffer too small.*/
+    PAL_RESULT_INVALID_DISPLAY_MODE,              /** < An invalid display mode.*/
+    PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
+    PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
+    PAL_RESULT_VIDEO_DEVICE_NOT_FOUND,            /** < OS driver could not be found (busy).*/
+    PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
+    PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
+} PalResult;
+
+/**
  * @struct PalVersion
  * @brief Describes the version of the PAL library.
  *
  * @ingroup core
  */
-typedef struct {
+typedef struct PalVersion {
     int major;         /** < Major version (breaking changes).*/
     int minor;         /** < Minor version (features additions).*/
     int patch;         /** < Patch version (bug fixes only). */
@@ -219,7 +304,7 @@ typedef struct {
  *
  * @ingroup core
  */
-typedef struct {
+typedef struct PalAllocator {
     PalAllocateFn allocate;    /** < Allocation function pointer.*/
     PalFreeFn free;            /** < Free function pointer.*/
     void* userData;            /** < Optional user data passed to allocation functions.*/
@@ -231,7 +316,7 @@ typedef struct {
  *
  * @ingroup core
  */
-typedef struct {
+typedef struct PalTimer {
     Uint64 startTime;        /** < Start time.*/
     Uint64 duration;         /** < Duration in seconds.*/
 } PalTimer;
@@ -242,10 +327,70 @@ typedef struct {
  *
  * @ingroup core
  */
-typedef struct {
+typedef struct PalClock {
     Uint64 frequency;        /** < Ticks per second.*/
     Uint64 startTime;        /** < Start time.*/
 } PalClock;
+
+/**
+ * @struct PalEvent
+ * @brief Opaque handle to an event. This describes a single event.
+ *
+ * @ingroup video
+ */
+struct PalEvent {
+    PalEventType type;           /** < The type of the event. See `PalEventType`.*/
+    Int64 data;                  /** < First data payload.*/
+    Int64 data2;                 /** < Seconds data payload.*/
+    Uint64 userID;               /** < This is for user events.*/
+    Uint64 sourceID;             /** < ID of what generated the event. Example: a window, etc.*/
+};
+
+/**
+ * @struct PalEventQueue
+ * @brief Describes a user provided event queue.
+ * 
+ * Allows the user to override the default event queue when creating an event driver.
+ *
+ * @ingroup core
+ */
+typedef struct PalEventQueue {
+    PalPushFn push;             /** < Event push function pointer.*/
+    PalPollFn poll;             /** < Event poll function pointer.*/
+    void* userData;             /** < Optional user data passed to queue functions.*/
+} PalEventQueue;
+
+/**
+ * @struct PalEventDriverCreateInfo
+ * @brief Specifies options for creating an event driver.
+ *
+ * This struct must be initialized and passed to `palCreateEventDriver()`.
+ *
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
+typedef struct PalEventDriverCreateInfo {
+    PalAllocator* allocator;           /** < User allocator or nullptr for default.*/
+    PalEventQueue* queue;              /** < User privided event queue. Set to nullptr to use default.*/
+    PalEventCallback callback;         /** < Event callback to call for callback type events. Can be nullptr.*/
+    void* userData;                    /** < Optional user data passed to event callback function.*/
+} PalEventDriverCreateInfo;
+
+/**
+ * @brief Return a human readable string for a specified result code.
+ * 
+ * This returns a constant, null-terminated string describing the result.
+ * 
+ * @param[in] result The result code to describe
+ * @return A pointer to the null-terminated result string.
+ * 
+ * @note This function is thread-safe and the pointer should not be freed.
+ * @sa PalResult
+ */
+_PAPI const char* _PCALL palResultToString(PalResult result);
 
 /**
  * @brief Get the runtime version of PAL.
@@ -392,6 +537,152 @@ _PAPI Uint64 _PCALL palGetPerformanceCounter();
  * @ingroup core
  */
 _PAPI Uint64 _PCALL palGetPerformanceFrequency();
+
+/**
+ * @brief Creates an event driver used to signal events between multiple systems.
+ * 
+ * The event driver can be shared across multiple systems. 
+ * Example: the same event driver for both video and input systems.
+ * 
+ * The user is responsible for destroying the event driver when no longer needed.
+ * If its reference by other systems, those systems must be destroyed before destroying the event driver.
+ *
+ * @param[in] info Pointer to a PalEventDriverCreateInfo struct with creation options.
+ * @param[out] outEventDriver Pointer to recieve the created event driver.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * @note The created event driver must be destroyed with `palDestroyEventDriver()` when no longer needed.
+ *
+ * @sa PalEventDriverCreateInfo, palDestroyEventDriver()
+ * @ingroup core
+ */
+_PAPI PalResult _PCALL palCreateEventDriver(
+    PalEventDriverCreateInfo* info, 
+    PalEventDriver** outEventDriver);
+
+/**
+ * @brief Destroy the event driver.
+ *
+ * This function can be called multiple times without any undefined behavior.
+ * If the event driver is invalid or a nullptr, the function returns silently.
+ *
+ * @param[in] eventDriver Pointer to the event driver to destroy.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ *
+ * @sa palCreateEventDriver()
+ * @ingroup core
+ */
+_PAPI void _PCALL palDestroyEventDriver(PalEventDriver* eventDriver);
+
+/**
+ * @brief Sets the dispatch mode for a single event type for the given event driver.
+ * 
+ * If dispatch mode is `PAL_DISPATCH_POLL`, the event will be dispatched to the event queue.
+ * If dispatch mode is `PAL_DISPATCH_CALLBACK`, the event will be dispatched to the event callback function. 
+ *
+ * @param[in] eventDriver Pointer to the event driver.
+ * @param[in] type Event type to set dispatch for.
+ * @param[in] mode Dispatch mode to use. See `PalDispatchMode`.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * @note This function is guaranteed not to fail if `eventDriver` is valid.
+ *
+ * @sa palCreateEventDriver(), PalDispatchMode, PalEventType
+ * @ingroup core
+ */
+_PAPI void _PCALL palSetEventDispatchMode(
+    PalEventDriver* eventDriver, 
+    PalEventType type, 
+    PalDispatchMode mode);
+
+/**
+ * @brief Sets the dispatch mode for all event types for the given event driver.
+ * 
+ * If dispatch mode is `PAL_DISPATCH_POLL`, all events will be dispatched to the event queue.
+ * If dispatch mode is `PAL_DISPATCH_CALLBACK`, all events will be dispatched to the event callback function. 
+ *
+ * @param[in] eventDriver Pointer to the event driver.
+ * @param[in] mode Dispatch mode to use. See `PalDispatchMode`.
+ *
+ * @note This function is not thread-safe. If multiple threads will call this function,
+ * the user is responsible for synchronization.
+ * @note This function is guaranteed not to fail if `eventDriver` is valid.
+ *
+ * @sa palCreateEventDriver(), PalDispatchMode, PalEventType
+ * @ingroup core
+ */
+_PAPI void _PCALL palSetAllEventDispatchMode(
+    PalEventDriver* eventDriver, 
+    PalDispatchMode mode);
+
+/**
+ * @brief Get the dispatch mode for the event type.
+ *
+ * @param[in] eventDriver Pointer to the event driver.
+ * @param[in] type Event type to get its dispatch mode.
+ * 
+ * @return The dispatch mode on success or `PAL_DISPATCH_NONE` on failure.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if `eventDriver` is valid.
+ *
+ * @sa palCreateEventDriver(), PalDispatchMode, PalEventType
+ * @ingroup core
+ */
+_PAPI PalDispatchMode _PCALL palGetEventDispatchMode(
+    PalEventDriver* eventDriver, 
+    PalEventType type);
+
+/**
+ * @brief Push an event onto the event queue of an event driver.
+ * 
+ * If the dispatch mode for `event` is `PAL_DISPATCH_POLL`, 
+ * the event will be pushed to the event queue. 
+ * Otherwise if dispatch mode is `PAL_DISPATCH_CALLBACK`,
+ * the event callback function will be called. 
+ * 
+ * This function fails silently if the dispatch mode is `PAL_DISPATCH_CALLBACK`
+ * and the user did not set a valid event callback function.
+ *
+ * @param[in] eventDriver Pointer to the event driver.
+ * @param[in] event Pointer to an event. This should be initialized and explicitly set by the user.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if `eventDriver` and `event` are valid.
+ *
+ * @sa palCreateEventDriver(), PalDispatchMode, PalEvent
+ * @ingroup core
+ */
+_PAPI void _PCALL palPushEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* event);
+
+/**
+ * @brief Retrieve the next available event from the event queue of an event driver.
+ * 
+ * This functions retrieves the next pending event from the event queue of an event driver without blocking.
+ * If no events are available, it returns `false`.
+ *
+ * If `eventDriver` is not valid, this function returns `false`
+ *
+ * @param[in] eventDriver Pointer to the event driver.
+ * @param[out] outEvent Pointer to recieve the event from the event queue. Must be valid.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if `eventDriver` and `outEvent` are valid.
+ *
+ * @sa palCreateEventDriver(), PalEvent
+ * @ingroup core
+ */
+_PAPI bool _PCALL palPollEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* outEvent);
 
 /**
  * @brief Combine two 32-bit unsigned integers into a 64-bit signed integer.

@@ -34,5 +34,6 @@ void videoTest();
 void displayTest();
 void displayModeTest();
 void windowTest();
+void eventsTest();
 
 #endif // _TESTS_H

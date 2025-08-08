@@ -49,16 +49,40 @@ freely, subject to the following restrictions:
 #define PAL_VPATCH 0
 #define PAL_VSTRING "1.0.0"
 #define PAL_LOG_SIZE 1024
+#define PAL_MAX_EVENTS 128
 
 static DWORD s_TlsID = 0;
 static const char* s_NewlineString = "\n";
 
-typedef struct {
+typedef struct LogTLSData {
     char buffer[PAL_LOG_SIZE];
     wchar_t wideBuffer[PAL_LOG_SIZE];
 } LogTLSData;
 
+typedef struct QueueData {
+    PalEvent data[PAL_MAX_EVENTS];
+    int head;
+    int tail;
+} QueueData;
+
+typedef struct PalEventDriver {
+    PalDispatchMode modes[PAL_MAX_EVENTS];
+    PalEventQueue* queue;
+    PalAllocator* allocator;
+    PalEventCallback callback;
+    void* userData;
+    bool freeQueue;
+} PalEventDriver;
+
 static LogTLSData* getLogTlsData();
+
+static void palDefaultPush(
+    void* queue,
+    PalEvent* event);
+
+static bool palDefaultPoll(
+    void* queue, 
+    PalEvent* outEvent);
 
 // ==================================================
 // Public API
@@ -244,6 +268,145 @@ Uint64 _PCALL palGetPerformanceFrequency() {
 #endif // _WIN32
 }
 
+PalResult _PCALL palCreateEventDriver(
+    PalEventDriverCreateInfo* info, 
+    PalEventDriver** outEventDriver) {
+    
+    if (!info || !outEventDriver) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->allocator) {
+        if (!info->allocator->allocate && !info->allocator->free) {
+            return PAL_RESULT_INVALID_ALLOCATOR;
+        }
+    }
+
+    PalEventDriver* driver = palAllocate(
+        info->allocator,
+        sizeof(PalEventDriver),
+        0
+    );
+    if (!driver) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(driver, 0, sizeof(PalEventDriver));
+    if (info->allocator) {
+        driver->allocator = info->allocator;
+    }
+
+    if (info->queue) {
+        driver->queue = info->queue;
+        driver->freeQueue = false;
+
+    } else {
+        driver->queue = palAllocate(info->allocator, sizeof(PalEventQueue), 0);
+        if (!driver->queue) {
+            palFree(info->allocator, driver);
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        driver->queue->userData = palAllocate(info->allocator, sizeof(QueueData), 0);
+        if (!driver->queue->userData) {
+            palFree(info->allocator, driver->queue);
+            palFree(info->allocator, driver);
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        memset(driver->queue->userData, 0, sizeof(QueueData));
+        driver->queue->poll = palDefaultPoll;
+        driver->queue->push = palDefaultPush;
+        driver->freeQueue = true;
+    }
+
+    driver->callback = info->callback;
+    *outEventDriver = driver;
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palDestroyEventDriver(PalEventDriver* eventDriver) {
+
+    if (!eventDriver) {
+        return;
+    }
+
+    if (eventDriver->freeQueue) {
+        palFree(eventDriver->allocator, eventDriver->queue->userData);
+        palFree(eventDriver->allocator, eventDriver->queue);
+    }
+    palFree(eventDriver->allocator, eventDriver);
+}
+
+_PAPI void _PCALL palSetEventDispatchMode(
+    PalEventDriver* eventDriver, 
+    PalEventType type, 
+    PalDispatchMode mode) {
+
+    if (!eventDriver) {
+        return;
+    }
+    eventDriver->modes[type] = mode;
+}
+
+void _PCALL palSetAllEventDispatchMode(
+    PalEventDriver* eventDriver, 
+    PalDispatchMode mode) {
+    
+    if (!eventDriver) {
+        return;
+    }
+    
+    for (int i = 0; i < PAL_EVENT_MAX; i++) {
+        eventDriver->modes[i] = mode;
+    }
+}
+
+PalDispatchMode _PCALL palGetEventDispatchMode(
+    PalEventDriver* eventDriver, 
+    PalEventType type) {
+
+    if (!eventDriver) {
+        return PAL_DISPATCH_NONE;
+    }
+    return eventDriver->modes[type];
+}
+
+void _PCALL palPushEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* event) {
+
+    if (!eventDriver || !event) {
+        return;
+    }
+
+    // get the event mode
+    PalDispatchMode mode = eventDriver->modes[event->type];
+    if (mode == PAL_DISPATCH_CALLBACK) {
+        if (eventDriver->callback) {
+            eventDriver->callback(eventDriver->userData, event);
+        }
+        return;
+    }
+
+    if (mode == PAL_DISPATCH_POLL) {
+        eventDriver->queue->push(eventDriver->queue, event);
+    }
+}
+
+bool _PCALL palPollEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* outEvent) {
+
+    if (!eventDriver || !outEvent) {
+        return false;
+    }
+
+    return eventDriver->queue->poll(
+        eventDriver->queue,
+        outEvent
+    );
+}
 
 // ==================================================
 // Internal API
@@ -268,4 +431,27 @@ static LogTLSData* getLogTlsData() {
 
     memset(data, 0, sizeof(LogTLSData));
     return data;
+}
+
+static void palDefaultPush(
+    void* queue,
+    PalEvent* event) {
+
+    PalEventQueue* eventQueue = queue;
+    QueueData* data = eventQueue->userData;
+    data->data[data->tail++ % PAL_MAX_EVENTS] = *event;
+}
+
+static bool palDefaultPoll(
+    void* queue, 
+    PalEvent* outEvent) {
+
+    PalEventQueue* eventQueue = queue;
+    QueueData* data = eventQueue->userData;
+    if (data->head == data->tail) {
+        return false;
+    }
+
+    *outEvent = data->data[data->head++ % PAL_MAX_EVENTS];    
+    return true;
 }
