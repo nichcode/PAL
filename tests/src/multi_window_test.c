@@ -2,11 +2,11 @@
 #include "tests.h"
 #include "pal/pal_video.h"
 
-void windowTest() {
+void multiWindowTest() {
 
     palLog("");
     palLog("===========================================");
-    palLog("Window Test");
+    palLog("Multi Window Test");
     palLog("===========================================");
     palLog("");
 
@@ -32,7 +32,7 @@ void windowTest() {
 
     // Set polling dispatch mode for all event types
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    
+
     videoCreateInfo.allocator = nullptr; // for default.
     videoCreateInfo.eventDriver = eventDriver; // for pushing events
     result = palCreateVideoSystem(&videoCreateInfo, &video);
@@ -69,6 +69,16 @@ void windowTest() {
         return;
     }
 
+    // create second window reusing the same PalWindowCreateInfo
+    PalWindow* window2 = nullptr;
+    windowCreateInfo.title = "Pal Test Window 2";
+    result = palCreateWindow(video, &windowCreateInfo, &window2);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLog("PAL error - %s", resultString);
+        return;
+    }
+
     bool running = true;
     while (running) {
         // update video system to get video events
@@ -82,6 +92,10 @@ void windowTest() {
                     // useful for multi window applications
                     if (event.sourceID == palGetWindowID(window)) {
                         running = false;
+
+                    } else if (event.sourceID == palGetWindowID(window2)) {
+                        palLog("Window 2 close button was clicked");
+
                     }
                     break;
                 }
@@ -92,6 +106,7 @@ void windowTest() {
     }
 
     palDestroyWindow(window);
+    palDestroyWindow(window2);
     palDestroyVideoSystem(video);
     palDestroyEventDriver(eventDriver);
 }

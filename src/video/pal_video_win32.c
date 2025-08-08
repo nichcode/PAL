@@ -1291,7 +1291,7 @@ LRESULT CALLBACK videoProc(
                     palPushEvent(driver, &event);
                 }
             }
-            break;
+            return 0;
         }
     }
 
