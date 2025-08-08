@@ -60,6 +60,7 @@ static Uint32 s_Counter = 0;
 typedef struct PalVideoSystem {
     PalAllocator* allocator;
     HINSTANCE instance;
+    PalEventDriver* eventDriver;
     PalVideoFeatures features;
     Uint32 windowCount;
 } PalVideoSystem;
@@ -203,14 +204,17 @@ PalResult _PCALL palCreateVideoSystem(
         features |= PAL_VIDEO_FEATURE_HIGH_DPI;
     }
 
+    if (info->eventDriver) {
+        system->eventDriver = info->eventDriver;
+    }
+
     system->features = features;
     system->windowCount++;
     *outSystem = system;
     return PAL_RESULT_SUCCESS;
 }
 
-void _PCALL palDestroyVideoSystem(
-    PalVideoSystem* system) {
+void _PCALL palDestroyVideoSystem(PalVideoSystem* system) {
 
     if (!system || (system && !system->instance)) {
         return;
@@ -1071,7 +1075,7 @@ void _PCALL palGetWindowSize(
 
 Uint64 _PCALL palGetWindowID(PalWindow* window) {
 
-    if (window) {
+    if (!window) {
         return 0;
     }
     return window->id;
@@ -1269,6 +1273,27 @@ LRESULT CALLBACK videoProc(
     UINT msg, 
     WPARAM wParam, 
     LPARAM lParam) {
+
+    PalWindow* window = (PalWindow*)GetPropW(hwnd, PAL_WIN32_VIDEO_PROP);
+    if (!window) {
+        return DefWindowProcW(hwnd, msg, wParam, lParam);
+    }
+
+    switch (msg) {
+        case WM_CLOSE: {
+            if (window->system && window->system->eventDriver) {
+                PalEventDriver* driver = window->system->eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_CLOSE);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_CLOSE;
+                    event.sourceID = window->id;
+                    palPushEvent(driver, &event);
+                }
+            }
+            break;
+        }
+    }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }

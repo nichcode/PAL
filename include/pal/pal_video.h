@@ -72,6 +72,7 @@ typedef struct PalWindow PalWindow;
  */
 typedef struct PalVideoSystemCreateInfo {
     PalAllocator *allocator;             /** < User allocator or nullptr for default.*/
+    PalEventDriver *eventDriver;         /** < Event driver to push video events.*/
 } PalVideoSystemCreateInfo;
 
 /**
@@ -286,6 +287,8 @@ typedef struct PalFlashInfo {
  *
  * The user must call this function before any other video related functionality,
  * to obtain the video system handle which will be passed in other video related functions.
+ * 
+ * The `eventDriver` field in `info` must be valid to recieve video related events.
  *
  * @param[in] info Pointer to a PalVideoSystemCreateInfo struct with creation options.
  * @param[out] outSystem Pointer to recieve the created video system instance.
@@ -996,6 +999,8 @@ _PAPI void _PCALL palGetWindowSize(
 
 /**
  * @brief Get the unique ID of the given window.
+ * 
+ * This is unique within one process (application).
  * 
  * @return The unique id of the window.
  *

@@ -33,6 +33,8 @@ freely, subject to the following restrictions:
 #ifndef _PAL_CORE_H
 #define _PAL_CORE_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -82,42 +84,42 @@ typedef _Bool bool;
 /**
  * @brief An unsigned 8-bit integer
  */
-typedef unsigned char Uint8;
+typedef uint8_t Uint8;
 
 /**
  * @brief An signed 8-bit integer
  */
-typedef signed char Int8;
+typedef int8_t Int8;
 
 /**
  * @brief An unsigned 16-bit integer
  */
-typedef unsigned short Uint16;
+typedef uint16_t Uint16;
 
 /**
  * @brief An signed 16-bit integer
  */
-typedef signed short Int16;
+typedef int16_t Int16;
 
 /**
  * @brief An unsigned 32-bit integer
  */
-typedef unsigned int Uint32;
+typedef uint32_t Uint32;
 
 /**
  * @brief An signed 32-bit integer
  */
-typedef signed int Int32;
+typedef int32_t Int32;
 
 /**
  * @brief An unsigned 64-bit integer
  */
-typedef unsigned long long Uint64;
+typedef uint64_t Uint64;
 
 /**
  * @brief An unsigned 64-bit integer
  */
-typedef signed long long Int64;
+typedef int64_t Int64;
 
 /**
  * @struct PalEventDriver
