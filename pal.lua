@@ -26,7 +26,7 @@ project "PAL"
     targetdir(target_dir)
     objdir(obj_dir)
 
-    files { "src/core/pal_core.c" }
+    files { "src/pal_core.c" }
     includedirs {
         "include",
         "src"

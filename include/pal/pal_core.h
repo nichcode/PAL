@@ -237,6 +237,7 @@ typedef void (*PalFreeFn)(void* userData, void* ptr);
  */
 typedef enum PalEventType {
     PAL_EVENT_WINDOW_CLOSE,              /** < The window close button was clicked.*/
+    PAL_EVENT_WINDOW_RESIZE,             /** < The window was resized.*/
     PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
     PAL_EVENT_MAX
 } PalEventType;
@@ -343,7 +344,7 @@ typedef struct PalClock {
 struct PalEvent {
     PalEventType type;           /** < The type of the event. See `PalEventType`.*/
     Int64 data;                  /** < First data payload.*/
-    Int64 data2;                 /** < Seconds data payload.*/
+    Int64 data2;                 /** < Second data payload.*/
     Uint64 userID;               /** < This is for user events.*/
     Uint64 sourceID;             /** < ID of what generated the event. Example: a window, etc.*/
 };

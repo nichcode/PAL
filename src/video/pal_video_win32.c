@@ -57,12 +57,22 @@ static SetProcessAwarenessFn s_SetProcessAwareness;
 static HINSTANCE s_Shcore;
 static Uint32 s_Counter = 0;
 
+typedef struct PendingWindowEvent {
+    Uint64 sourceID;
+    Uint32 width;
+    Uint32 height;
+    int x;
+    int y;
+    bool pendingResize;
+    bool pendingMove;
+} PendingWindowEvent;
+
 typedef struct PalVideoSystem {
+    PendingWindowEvent pendingEvent;
     PalAllocator* allocator;
     HINSTANCE instance;
     PalEventDriver* eventDriver;
     PalVideoFeatures features;
-    Uint32 windowCount;
 } PalVideoSystem;
 
 typedef struct PalWindow {
@@ -209,7 +219,6 @@ PalResult _PCALL palCreateVideoSystem(
     }
 
     system->features = features;
-    system->windowCount++;
     *outSystem = system;
     return PAL_RESULT_SUCCESS;
 }
@@ -242,6 +251,16 @@ void _PCALL palUpdateVideo(PalVideoSystem* system) {
     while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
+    }
+
+    PendingWindowEvent* windowEvent = &system->pendingEvent;
+    if (windowEvent->pendingResize) {
+        PalEvent event = {};
+        event.data = palPackUint32(windowEvent->width, windowEvent->height);
+        event.sourceID = windowEvent->sourceID;
+        event.type = PAL_EVENT_WINDOW_RESIZE;
+        palPushEvent(system->eventDriver, &event);
+        windowEvent->pendingResize = false;
     }
 }
 
@@ -643,7 +662,6 @@ void _PCALL palDestroyWindow(PalWindow* window) {
         return;
     }
 
-    window->system->windowCount--;
     DestroyWindow(window->handle);
     palFree(window->system->allocator, window);
 }
@@ -1289,6 +1307,26 @@ LRESULT CALLBACK videoProc(
                     event.type = PAL_EVENT_WINDOW_CLOSE;
                     event.sourceID = window->id;
                     palPushEvent(driver, &event);
+                }
+            }
+            return 0;
+        }
+
+        case WM_SIZE: {
+            const Uint32 width = (Uint32)LOWORD(lParam);
+            const Uint32 height = (Uint32)HIWORD(lParam);
+            window->width = width;
+            window->height = height;
+
+            if (window->system && window->system->eventDriver) {
+                PalEventDriver* driver = window->system->eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_RESIZE);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PendingWindowEvent* event = &window->system->pendingEvent;
+                    event->pendingResize = true;
+                    event->width = width;
+                    event->height = height;
+                    event->sourceID = window->id;
                 }
             }
             return 0;

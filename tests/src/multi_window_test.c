@@ -30,8 +30,9 @@ void multiWindowTest() {
         return;
     }
 
-    // Set polling dispatch mode for all event types
+    // Set polling dispatch mode for event types
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_RESIZE, PAL_DISPATCH_POLL);
 
     videoCreateInfo.allocator = nullptr; // for default.
     videoCreateInfo.eventDriver = eventDriver; // for pushing events
@@ -98,6 +99,20 @@ void multiWindowTest() {
 
                     }
                     break;
+                }
+
+                case PAL_EVENT_WINDOW_RESIZE: {
+                    Uint32 width, height;
+                    palUnpackUint32(event.data, &width, &height);
+                    const char* windowTag = nullptr;
+
+                    if (event.sourceID == palGetWindowID(window)) {
+                        windowTag = "Window 1";
+                    } else {
+                        windowTag = "Window 2";
+                    }
+
+                    palLog("%s resized - (%d, %d)", windowTag, width, height);
                 }
             }
         }
