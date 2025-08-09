@@ -38,6 +38,7 @@ freely, subject to the following restrictions:
 #endif // UNICODE
 
 #include <windows.h>
+#include <windowsx.h>
 #endif // _WIN32
 
 #include <time.h>
@@ -261,6 +262,14 @@ void _PCALL palUpdateVideo(PalVideoSystem* system) {
         event.type = PAL_EVENT_WINDOW_RESIZE;
         palPushEvent(system->eventDriver, &event);
         windowEvent->pendingResize = false;
+
+    } else if (windowEvent->pendingMove) {
+        PalEvent event = {};
+        event.data = palPackInt32(windowEvent->x, windowEvent->y);
+        event.sourceID = windowEvent->sourceID;
+        event.type = PAL_EVENT_WINDOW_MOVE;
+        palPushEvent(system->eventDriver, &event);
+        windowEvent->pendingMove = false;
     }
 }
 
@@ -1326,6 +1335,26 @@ LRESULT CALLBACK videoProc(
                     event->pendingResize = true;
                     event->width = width;
                     event->height = height;
+                    event->sourceID = window->id;
+                }
+            }
+            return 0;
+        }
+
+        case WM_MOVE: {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            window->x = x;
+            window->y = y;
+
+            if (window->system && window->system->eventDriver) {
+                PalEventDriver* driver = window->system->eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MOVE);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PendingWindowEvent* event = &window->system->pendingEvent;
+                    event->pendingMove = true;
+                    event->x = x;
+                    event->y = y;
                     event->sourceID = window->id;
                 }
             }

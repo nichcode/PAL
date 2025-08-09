@@ -238,6 +238,7 @@ typedef void (*PalFreeFn)(void* userData, void* ptr);
 typedef enum PalEventType {
     PAL_EVENT_WINDOW_CLOSE,              /** < The window close button was clicked.*/
     PAL_EVENT_WINDOW_RESIZE,             /** < The window was resized.*/
+    PAL_EVENT_WINDOW_MOVE,               /** < The window was moved.*/
     PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
     PAL_EVENT_MAX
 } PalEventType;
