@@ -19,7 +19,11 @@ int main(int argc, char** argv) {
     //registerTest(displayTest);
     //registerTest(displayModeTest);
     //registerTest(windowTest);
-    registerTest(multiWindowTest);
+    //registerTest(multiWindowTest);
+#endif // PAL_HAS_VIDEO
+
+#if PAL_HAS_INPUT
+    registerTest(inputTest);
 #endif // PAL_HAS_VIDEO
 
     runTests();

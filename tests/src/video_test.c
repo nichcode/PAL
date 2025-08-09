@@ -13,9 +13,10 @@ void videoTest() {
     PalResult result;
     PalVideoSystem* video = nullptr;
     PalVideoFeatures features;
+    
     PalVideoSystemCreateInfo createInfo;
     createInfo.allocator = nullptr; // for default.
-
+    createInfo.eventDriver = nullptr; // for default.
     result = palCreateVideoSystem(&createInfo, &video);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks

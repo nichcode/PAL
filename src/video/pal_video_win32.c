@@ -23,7 +23,6 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_video.h"
 
-#ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
@@ -39,7 +38,6 @@ freely, subject to the following restrictions:
 
 #include <windows.h>
 #include <windowsx.h>
-#endif // _WIN32
 
 #include <time.h>
 
@@ -1421,6 +1419,19 @@ LRESULT CALLBACK videoProc(
                 }
             }
 
+            break;
+        }
+
+        case WM_LBUTTONDOWN: {
+            SetCapture(hwnd);
+            return 0;
+            break;
+        }
+
+        case WM_LBUTTONUP:
+        case WM_CAPTURECHANGED: {
+            ReleaseCapture();
+            return 0;
             break;
         }
     }

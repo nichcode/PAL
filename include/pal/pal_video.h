@@ -285,8 +285,7 @@ typedef struct PalFlashInfo {
  * get supported video features, get supported window styles
  * and window creation.
  *
- * The user must call this function before any other video related functionality,
- * to obtain the video system handle which will be passed in other video related functions.
+ * The user must call this function before any other video related functions.
  * 
  * The `eventDriver` field in `info` must be valid to recieve video related events.
  *
@@ -312,12 +311,12 @@ _PAPI PalResult _PCALL palCreateVideoSystem(
     PalVideoSystem **outSystem);
 
 /**
- * @brief Destroy the instance of the video system.
+ * @brief Destroys an instance of the video system.
  *
  * After this call, the pointer will be invalid and should not be used anymore.
  *
  * This function can be called multiple times without any undefined behavior.
- * If the video system handle is invalid or a nullptr, the function returns silently.
+ * If the video system instance is invalid or `nullptr`, this function returns silently.
  *
  * @param[in] system Pointer to the video system instance to destroy.
  *
