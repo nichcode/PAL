@@ -34,6 +34,7 @@ void multiWindowTest() {
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_RESIZE, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MOVE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_DPI_CHANGED, PAL_DISPATCH_POLL);
 
     videoCreateInfo.allocator = nullptr; // for default.
     videoCreateInfo.eventDriver = eventDriver; // for pushing events
@@ -98,6 +99,9 @@ void multiWindowTest() {
                     } else if (event.sourceID == palGetWindowID(window2)) {
                         palLog("Window 2 close button was clicked");
 
+                        if (features & PAL_VIDEO_FEATURE_WINDOW_RESIZING) {
+                            palSetWindowSize(window, 1000, 600);
+                        }
                     }
                     break;
                 }
@@ -114,6 +118,7 @@ void multiWindowTest() {
                     }
 
                     palLog("%s resized - (%d, %d)", windowTag, width, height);
+                    break;
                 }
 
                 case PAL_EVENT_WINDOW_MOVE: {
@@ -128,6 +133,17 @@ void multiWindowTest() {
                     }
 
                     palLog("%s moved - (%d, %d)", windowTag, x, y);
+                    break;
+                }
+
+                case PAL_EVENT_DPI_CHANGED: {
+                    palLog("DPI - %d", event.data);
+                    break;
+                }
+
+                case PAL_EVENT_DISPLAYS_CHANGED: {
+                    palLog("Display (monitor) List has been changed");
+                    break;
                 }
             }
         }

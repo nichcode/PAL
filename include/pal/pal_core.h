@@ -239,10 +239,11 @@ typedef enum PalEventType {
     PAL_EVENT_WINDOW_CLOSE,              /** < The window close button was clicked.*/
     PAL_EVENT_WINDOW_RESIZE,             /** < The window was resized.*/
     PAL_EVENT_WINDOW_MOVE,               /** < The window was moved.*/
+    PAL_EVENT_DPI_CHANGED,               /** < The display dpi has changed.*/
+    PAL_EVENT_DISPLAYS_CHANGED,          /** < The display list has changed. Enumerate (`palEnumerateDisplays()`) again to get valid handles..*/
     PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
     PAL_EVENT_MAX
 } PalEventType;
-
 /**
  * @enum PalDispatchMode
  * @brief Dispatch mode for an event. This is not a bitmask enum.

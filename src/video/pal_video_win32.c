@@ -50,6 +50,8 @@ freely, subject to the following restrictions:
 #define MAX_MODE_COUNT 128
 #define NULL_ORIENTATION 5
 
+#define DBT_DEVNODES_CHANGED 0x0007
+
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, int, UINT*, UINT*);
 typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
 
@@ -90,6 +92,7 @@ typedef struct PalWindow {
     bool hidden;
     bool fullscreen;
     bool maximized, minimized;
+    bool highDPI;
 } PalWindow;
 
 typedef struct DisplayData {
@@ -528,7 +531,7 @@ PalResult _PCALL palCreateWindow(
     PalWindow* window = nullptr;
     PalDisplay* display = nullptr;
     PalDisplayInfo displayInfo;
-    bool hidden;
+    bool hidden, highDPI;
 
     PalVideoFeatures features = system->features;
     Uint32 style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
@@ -577,6 +580,7 @@ PalResult _PCALL palCreateWindow(
             scale = (float)displayInfo.dpi / 96.0f;
             width = (Uint32)((float)info->width * scale);
             height = (Uint32)((float)info->height * scale);
+            highDPI = true;
         } else {
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
         }
@@ -584,6 +588,7 @@ PalResult _PCALL palCreateWindow(
     } else {
         width = info->width;
         height = info->height;
+        highDPI = false;
     }
 
     RECT rect = { 0, 0, 0, 0 };
@@ -650,6 +655,7 @@ PalResult _PCALL palCreateWindow(
     window->x = x;
     window->y = y;
     window->hidden = hidden;
+    window->highDPI = highDPI;
 
     if (info->flags & PAL_WINDOW_FULLSCREEN) {
         PalResult result = palSetWindowFullscreen(window, display, true);
@@ -1359,6 +1365,63 @@ LRESULT CALLBACK videoProc(
                 }
             }
             return 0;
+        }
+
+        case WM_DPICHANGED: {
+            UINT dpi = HIWORD(wParam);
+            if (window->highDPI) {
+                RECT* rect = (RECT*)lParam;
+
+                int x = rect->left;
+                int y = rect->top;
+                int w = rect->right - rect->left;
+                int h = rect->bottom - rect->top;
+
+                SetWindowPos(
+                    hwnd, 
+                    nullptr, 
+                    x, 
+                    y, 
+                    w, 
+                    h,
+                    SWP_NOZORDER | SWP_NOACTIVATE
+                );
+
+                window->x = x;
+                window->y = y;
+                window->width = w;
+                window->height = h;
+            }
+
+            if (window->system && window->system->eventDriver) {
+                PalEventDriver* driver = window->system->eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DPI_CHANGED);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_DPI_CHANGED;
+                    event.sourceID = window->id;
+                    event.data = dpi;
+                    palPushEvent(driver, &event);
+                }
+            }
+            return 0;
+        }
+
+        case WM_DEVICECHANGE: {
+            if (window->system && window->system->eventDriver) {
+                PalEventDriver* driver = window->system->eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DISPLAYS_CHANGED);
+                if (wParam == DBT_DEVNODES_CHANGED) {
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {};
+                        event.type = PAL_EVENT_DISPLAYS_CHANGED;
+                        event.sourceID = window->id;
+                        palPushEvent(driver, &event);
+                    }
+                }
+            }
+
+            break;
         }
     }
 
