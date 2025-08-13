@@ -50,8 +50,8 @@ freely, subject to the following restrictions:
 
 #define DBT_DEVNODES_CHANGED 0x0007
 
-typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, int, UINT*, UINT*);
-typedef HRESULT (WINAPI* SetProcessAwarenessFn)(int);
+typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, Int32, UINT*, UINT*);
+typedef HRESULT (WINAPI* SetProcessAwarenessFn)(Int32);
 
 static GetDpiForMonitorFn s_GetDpiForMonitor;
 static SetProcessAwarenessFn s_SetProcessAwareness;
@@ -62,8 +62,8 @@ typedef struct PendingWindowEvent {
     Uint64 sourceID;
     Uint32 width;
     Uint32 height;
-    int x;
-    int y;
+    Int32 x;
+    Int32 y;
     bool pendingResize;
     bool pendingMove;
 } PendingWindowEvent;
@@ -85,8 +85,8 @@ typedef struct PalWindow {
     Uint32 height;
     Uint32 style;
     Uint32 exStyle;
-    int x;
-    int y;
+    Int32 x;
+    Int32 y;
     bool hidden;
     bool fullscreen;
     bool maximized, minimized;
@@ -95,13 +95,13 @@ typedef struct PalWindow {
 
 typedef struct DisplayData {
     PalDisplay** displays;
-    int count;
-    int maxCount;
+    Int32 count;
+    Int32 maxCount;
 } DisplayData;
 
 static void getMonitorDPI(
     HMONITOR monitor, 
-    int* dpi);
+    Int32* dpi);
 
 static PalDisplayOrientation orientationFromWin32(DWORD orientation);
 static DWORD orientationToin32(PalDisplayOrientation orientation);
@@ -114,7 +114,7 @@ static PalResult setDisplayMode(
 static void addMode(
     PalDisplayMode* modes, 
     const PalDisplayMode* mode, 
-    int* count);
+    Int32* count);
 
 static bool compareMode(
     const PalDisplayMode* a, 
@@ -276,14 +276,14 @@ void _PCALL palUpdateVideo(PalVideoSystem* system) {
 
 PalResult _PCALL palEnumerateDisplays(
     PalVideoSystem* system,
-    int* count,
+    Int32* count,
     PalDisplay** displays) {
 
     if (!system || !count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (count == 0) {
+    if (count == 0 && !displays) {
         PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
@@ -342,7 +342,7 @@ PalResult _PCALL palGetDisplayInfo(
     info->orientation = orientationFromWin32(devMode.dmDisplayOrientation);
 
     // get dpi scale
-    int dpi;
+    Int32 dpi;
     getMonitorDPI(monitor, &dpi);
     info->dpi = dpi;
 
@@ -361,15 +361,15 @@ PalResult _PCALL palGetDisplayInfo(
 
 PalResult _PCALL palEnumerateDisplayModes(
     PalDisplay* display,
-    int* count,
+    Int32* count,
     PalDisplayMode* modes) {
 
     if (!display || !count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    int modeCount = 0;
-    int maxModes = 0;
+    Int32 modeCount = 0;
+    Int32 maxModes = 0;
     HMONITOR monitor = (HMONITOR)display;
     PalDisplayMode* displayModes = nullptr;
 
@@ -406,7 +406,7 @@ PalResult _PCALL palEnumerateDisplayModes(
 
     DEVMODEW dm = {};
     dm.dmSize = sizeof(DEVMODE);
-    for (int i = 0; EnumDisplaySettingsW(mi.szDevice, i, &dm); i++) {
+    for (Int32 i = 0; EnumDisplaySettingsW(mi.szDevice, i, &dm); i++) {
         // Pal support up to 128 modes
         if (modeCount > maxModes) {
             break;
@@ -557,8 +557,8 @@ PalResult _PCALL palCreateWindow(
 
     Uint32 width = 0;
     Uint32 height = 0;
-    int x = 0;
-    int y = 0;
+    Int32 x = 0;
+    Int32 y = 0;
     
     if (info->flags & PAL_WINDOW_CENTER) {
         x = displayInfo.x + (displayInfo.width - info->width) / 2;
@@ -595,7 +595,7 @@ PalResult _PCALL palCreateWindow(
     AdjustWindowRectEx(&rect, style, 0, exStyle);
 
     wchar_t buffer[256] = {};    
-    int len = MultiByteToWideChar(CP_UTF8, 0, info->title, -1, nullptr, 0);
+    Int32 len = MultiByteToWideChar(CP_UTF8, 0, info->title, -1, nullptr, 0);
     MultiByteToWideChar(CP_UTF8, 0, info->title, -1, buffer, len);
 
     HWND handle = CreateWindowExW(
@@ -623,7 +623,7 @@ PalResult _PCALL palCreateWindow(
     }
 
     memset(window, 0, sizeof(PalWindow));
-    int showFlag = SW_HIDE;
+    Int32 showFlag = SW_HIDE;
     if (info->flags & PAL_WINDOW_MAXIMIZED) {
         showFlag = SW_SHOWMAXIMIZED;
     }
@@ -964,8 +964,8 @@ PalResult _PCALL palCenterWindow(
         return result;
     }
 
-    int x = info.x + (info.width - window->width) / 2;
-    int y = info.y + (info.height - window->height) / 2;
+    Int32 x = info.x + (info.width - window->width) / 2;
+    Int32 y = info.y + (info.height - window->height) / 2;
     bool success = SetWindowPos(
         window->handle, 
         nullptr, 
@@ -994,7 +994,7 @@ PalResult _PCALL palSetWindowTitle(
     }
 
     wchar_t buffer[256] = {};    
-    int len = MultiByteToWideChar(CP_UTF8, 0, title, -1, nullptr, 0);
+    Int32 len = MultiByteToWideChar(CP_UTF8, 0, title, -1, nullptr, 0);
     MultiByteToWideChar(CP_UTF8, 0, title, -1, buffer, len);
 
     SetWindowTextW(window->handle, buffer);
@@ -1004,8 +1004,8 @@ PalResult _PCALL palSetWindowTitle(
 
 PalResult _PCALL palSetWindowPos(
     PalWindow* window, 
-    int x, 
-    int y) {
+    Int32 x, 
+    Int32 y) {
 
     if (!window) {
         return PAL_RESULT_NULL_POINTER;
@@ -1070,8 +1070,8 @@ const char* _PCALL palGetWindowTitle(PalWindow* window) {
 
 void _PCALL palGetWindowPos(
     PalWindow* window, 
-    int* x, 
-    int* y) {
+    Int32* x, 
+    Int32* y) {
 
     if (!window) {
         return;
@@ -1150,14 +1150,14 @@ bool _PCALL palIsWindowFullScreen(PalWindow* window) {
 
 static void getMonitorDPI(
     HMONITOR monitor, 
-    int* dpi) {
+    Int32* dpi) {
 
     if (!s_GetDpiForMonitor || !s_SetProcessAwareness) {
         *dpi = 96;
         return;
     }
 
-    int dpiX, dpiY;
+    Int32 dpiX, dpiY;
     s_SetProcessAwareness(WIN32_DPI_AWARE);
     s_GetDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
     *dpi = dpiX;
@@ -1260,10 +1260,10 @@ static bool compareMode(
 static void addMode(
     PalDisplayMode* modes, 
     const PalDisplayMode* mode, 
-    int* count) {
+    Int32* count) {
 
     // check if we have a duplicate mode
-    for (int i = 0; i < *count; i++) {
+    for (Int32 i = 0; i < *count; i++) {
         PalDisplayMode* oldMode = &modes[i];
         if (compareMode(oldMode, mode)) {
             return;
@@ -1346,8 +1346,8 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_MOVE: {
-            int x = GET_X_LPARAM(lParam);
-            int y = GET_Y_LPARAM(lParam);
+            Int32 x = GET_X_LPARAM(lParam);
+            Int32 y = GET_Y_LPARAM(lParam);
             window->x = x;
             window->y = y;
 
@@ -1370,10 +1370,10 @@ LRESULT CALLBACK videoProc(
             if (window->highDPI) {
                 RECT* rect = (RECT*)lParam;
 
-                int x = rect->left;
-                int y = rect->top;
-                int w = rect->right - rect->left;
-                int h = rect->bottom - rect->top;
+                Int32 x = rect->left;
+                Int32 y = rect->top;
+                Uint32 w = rect->right - rect->left;
+                Uint32 h = rect->bottom - rect->top;
 
                 SetWindowPos(
                     hwnd, 

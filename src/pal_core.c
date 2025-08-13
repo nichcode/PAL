@@ -61,8 +61,8 @@ typedef struct LogTLSData {
 
 typedef struct QueueData {
     PalEvent data[PAL_MAX_EVENTS];
-    int head;
-    int tail;
+    Int32 head;
+    Int32 tail;
 } QueueData;
 
 typedef struct PalEventDriver {
@@ -125,13 +125,19 @@ const char* _PCALL palResultToString(PalResult result) {
         return "Video feature not supported";
 
         case PAL_RESULT_VIDEO_DEVICE_NOT_FOUND:
-        return "OS driver not found or busy";
+        return "OS video driver not found or busy";
 
         case PAL_RESULT_INVALID_WINDOW:
         return "Invalid window";
 
         case PAL_RESULT_INVALID_OPERATION:
         return "Invalid operation";
+
+        case PAL_RESULT_INPUT_DEVICE_NOT_FOUND:
+        return "OS video driver not found or busy";
+
+        case PAL_RESULT_INVALID_INPUT_DEVICE:
+        return "Invalid input device";
    }
 
     return nullptr;
@@ -202,7 +208,7 @@ void _PCALL palLog(const char* fmt, ...) {
     __builtin_va_copy(listCopy, argPtr);
 #endif // _MSC_VER
 
-    int len = vsnprintf(0, 0, fmt, listCopy);
+    Int32 len = vsnprintf(0, 0, fmt, listCopy);
 
     vsnprintf(data->buffer, len + 1, fmt, listCopy);
     data->buffer[len] = 0;
@@ -357,7 +363,7 @@ void _PCALL palSetAllEventDispatchMode(
         return;
     }
     
-    for (int i = 0; i < PAL_EVENT_MAX; i++) {
+    for (Int32 i = 0; i < PAL_EVENT_MAX; i++) {
         eventDriver->modes[i] = mode;
     }
 }

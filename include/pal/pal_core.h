@@ -244,6 +244,7 @@ typedef enum PalEventType {
     PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
     PAL_EVENT_MAX
 } PalEventType;
+
 /**
  * @enum PalDispatchMode
  * @brief Dispatch mode for an event. This is not a bitmask enum.
@@ -284,9 +285,11 @@ typedef enum PalResult {
     PAL_RESULT_INVALID_DISPLAY_MODE,              /** < An invalid display mode.*/
     PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
     PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
-    PAL_RESULT_VIDEO_DEVICE_NOT_FOUND,            /** < OS driver could not be found (busy).*/
+    PAL_RESULT_VIDEO_DEVICE_NOT_FOUND,            /** < OS video driver could not be found (busy).*/
     PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
     PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
+    PAL_RESULT_INPUT_DEVICE_NOT_FOUND,            /** < OS input driver could not be found (busy).*/
+    PAL_RESULT_INVALID_INPUT_DEVICE,              /** < An invalid input device.*/
 } PalResult;
 
 /**
@@ -296,9 +299,9 @@ typedef enum PalResult {
  * @ingroup core
  */
 typedef struct PalVersion {
-    int major;         /** < Major version (breaking changes).*/
-    int minor;         /** < Minor version (features additions).*/
-    int patch;         /** < Patch version (bug fixes only). */
+    Int32 major;         /** < Major version (breaking changes).*/
+    Int32 minor;         /** < Minor version (features additions).*/
+    Int32 patch;         /** < Patch version (bug fixes only). */
 } PalVersion;
 
 /**
@@ -717,8 +720,8 @@ static inline Int64 palPackUint32(
  * @ingroup core
  */
 static inline Int64 palPackInt32(
-    int low,
-    int high) {
+    Int32 low,
+    Int32 high) {
 
     return ((Int64) (Uint32)high << 32) | (Uint32)low;
 }
@@ -761,15 +764,15 @@ static inline void palUnpackUint32(
  */
 static inline void palUnpackInt32(
     Int64 data,
-    int* outLow,
-    int* outHigh) {
+    Int32* outLow,
+    Int32* outHigh) {
 
     if (outLow) {
-        *outLow = (int)(data & 0xFFFFFFFF);
+        *outLow = (Int32)(data & 0xFFFFFFFF);
     }
 
     if (outHigh) {
-        *outHigh = (int)((Uint64)data >> 32);
+        *outHigh = (Int32)((Uint64)data >> 32);
     }
 }
 

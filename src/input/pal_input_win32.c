@@ -40,6 +40,7 @@ freely, subject to the following restrictions:
 #include <xinput.h>
 #include <hidsdi.h>
 #include <dbt.h>
+#include <wchar.h>
 
 #define PAL_WIN32_INPUT_CLASS L"PALInputClass"
 #define PAL_WIN32_INPUT_PROP L"PALInput"
@@ -80,11 +81,29 @@ typedef struct PalInputSystem {
     PalEventDriver* eventDriver;
 } PalInputSystem;
 
+
+void getHidProperties(PalInputDeviceInfo* info);
+
 LRESULT CALLBACK inputProc(
     HWND hwnd, 
     UINT msg, 
     WPARAM wParam, 
     LPARAM lParam);
+
+static inline PalInputDevice* palMakeXinputHandle(Uint32 index) {
+
+    return (PalInputDevice*)(uintptr_t)(XINPUT_TAG | index);
+}
+
+static inline bool palIsXinputHandle(PalInputDevice* handle) {
+
+    return ((uintptr_t)handle & XINPUT_TAG) == XINPUT_TAG;
+}
+
+static inline Uint32 palGetXinputIndex(PalInputDevice* handle) {
+
+    return ((uintptr_t)handle & XINPUT_TAG);
+}
 
 // ==================================================
 // Public API
@@ -234,9 +253,322 @@ void _PCALL palDestroyInputSystem(PalInputSystem *system) {
     palFree(system->allocator, system);
 }
 
+PalResult _PCALL palEnumerateInputDevices(
+    PalInputSystem* system,
+    PalInputMask mask,
+    Int32* count,
+    PalInputDevice** inputDevices) {
+    
+    if (!system || !count) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (count == 0 && !inputDevices) {
+        PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    Int32 deviceCount = 0;
+    Int32 rawDeviceCount = 0;
+
+    GetRawInputDeviceList(
+        nullptr, 
+        &rawDeviceCount, 
+        sizeof(RAWINPUTDEVICELIST)
+    );
+
+    RAWINPUTDEVICELIST* devices = palAllocate(
+        system->allocator, 
+        sizeof(RAWINPUTDEVICELIST) * rawDeviceCount,
+        0
+    );
+
+    if (!devices) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    GetRawInputDeviceList(
+        devices, 
+        &rawDeviceCount, 
+        sizeof(RAWINPUTDEVICELIST)
+    );
+
+    RID_DEVICE_INFO info = {};
+    info.cbSize = sizeof(RID_DEVICE_INFO);
+    Uint32 size = sizeof(RID_DEVICE_INFO);
+    Int32 maxDeviceCount = inputDevices ? *count : rawDeviceCount;
+
+    for (Int32 i = 0; i < rawDeviceCount; ++i) {
+        HANDLE device = devices[i].hDevice;
+        if (GetRawInputDeviceInfoA(
+            device,
+            RIDI_DEVICEINFO,
+            &info,
+            &size) == (UINT)-1) {
+            return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
+        }
+
+        switch (info.dwType) {
+            case RIM_TYPEKEYBOARD: {
+                if (mask & PAL_INPUT_MASK_KEYBOARD) {
+                    if (inputDevices) {
+                        if (deviceCount < maxDeviceCount) {
+                            inputDevices[deviceCount] = (PalInputDevice*)device;
+                        }
+                    }
+                    deviceCount++;
+                }
+                break;
+            }
+
+            case RIM_TYPEMOUSE: {
+                if (mask & PAL_INPUT_MASK_MOUSE) {
+                    if (inputDevices) {
+                        if (deviceCount < maxDeviceCount) {
+                            inputDevices[deviceCount] = (PalInputDevice*)device;
+                        }
+                    }
+                    deviceCount++;
+                }
+                break;
+            }
+
+            case RIM_TYPEHID: {
+                Int32 usagePage = info.hid.usUsagePage;
+                Int32 usage = info.hid.usUsage;
+
+                if (mask & PAL_INPUT_MASK_KEYBOARD) {
+                    if (usagePage == 0x01 && usage == 0x06) {
+                        if (inputDevices) {
+                            if (deviceCount < maxDeviceCount) {
+                                inputDevices[deviceCount] = (PalInputDevice*)device;
+                            }
+                        }
+                        deviceCount++;
+                    }
+                }
+
+                if (mask & PAL_INPUT_MASK_MOUSE) {
+                    if (usagePage == 0x01 && usage == 0x02) {
+                        if (inputDevices) {
+                            if (deviceCount < maxDeviceCount) {
+                                inputDevices[deviceCount] = (PalInputDevice*)device;
+                            }
+                        }
+                        deviceCount++;
+                    }
+                }
+
+                if (mask & PAL_INPUT_MASK_GAMEPAD) {
+                    if (usagePage == 0x01 && usage == 0x05) {
+                        if (inputDevices) {
+                            if (deviceCount < maxDeviceCount) {
+                                inputDevices[deviceCount] = (PalInputDevice*)device;
+                            }
+                        }
+                        deviceCount++;
+                    }
+                }
+
+            break;
+            }
+        }
+    }
+
+    palFree(system->allocator, devices);
+
+    // Xnput devices (Xbox controllers)
+    if (mask & PAL_INPUT_MASK_GAMEPAD) {
+        if (s_XInput) {
+            XINPUT_STATE state;
+            for (DWORD i = 0; i < XINPUT_COUNT; i++) {
+                if (s_GetXinputState(i, &state) == ERROR_SUCCESS) {
+                    if (inputDevices) {
+                        if (deviceCount < maxDeviceCount) {
+                            PalInputDevice* handle = palMakeXinputHandle(i);
+                            inputDevices[deviceCount] = handle;
+                        }
+                    }
+                    deviceCount++;
+                }
+            }
+        }
+    }
+
+    if (!inputDevices) {
+        *count = deviceCount;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palGetInputDeviceInfo(
+    PalInputDevice* inputDevice, 
+    PalInputDeviceInfo* info) {
+    
+    if (!inputDevice || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (palIsXinputHandle(inputDevice)) {
+        // TODO: XInput
+
+    } else {
+        RID_DEVICE_INFO deviceInfo = {};
+        deviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
+        Uint32 size = sizeof(RID_DEVICE_INFO);
+        HANDLE device = (HANDLE)inputDevice;
+        if (GetRawInputDeviceInfoA(
+            device,
+            RIDI_DEVICEINFO,
+            &deviceInfo,
+            &size) == (UINT)-1) {
+            return PAL_RESULT_INVALID_INPUT_DEVICE;
+        }
+
+        // get device path string
+        size = sizeof(info->path);
+        if (GetRawInputDeviceInfoA(
+            device,
+            RIDI_DEVICENAME,
+            &info->path,
+            &size) == (UINT)-1) {
+            return PAL_RESULT_INVALID_INPUT_DEVICE;
+        }
+
+        switch (deviceInfo.dwType) {
+            case RIM_TYPEKEYBOARD: {
+                strcpy(info->name, "Standard Keyboard");
+                info->productID = 0;
+                info->vendorID = 0;
+                info->type = PAL_INPUT_DEVICE_KEYBOARD;
+                break;
+            }
+
+            case RIM_TYPEMOUSE: {
+                strcpy(info->name, "Standard Mouse");
+                info->productID = 0;
+                info->vendorID = 0;
+                info->type = PAL_INPUT_DEVICE_MOUSE;
+                break;
+            }
+
+            case RIM_TYPEHID: {
+                Int32 usagePage = deviceInfo.hid.usUsagePage;
+                Int32 usage = deviceInfo.hid.usUsage;
+
+                if (usagePage == 0x01 && usage == 0x06) {
+                    info->type = PAL_INPUT_DEVICE_KEYBOARD;
+                    getHidProperties(info);
+                    break;
+
+                } else if (usagePage == 0x01 && usage == 0x02) {
+                    info->type = PAL_INPUT_DEVICE_MOUSE;
+                    getHidProperties(info);
+                    break;
+
+                } else if (usagePage == 0x01 && usage == 0x05) {
+                    getHidProperties(info);
+                    break;
+                }
+            }
+        }
+
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
 // ==================================================
 // Internal API
 // ==================================================
+
+void getHidProperties(PalInputDeviceInfo* info) {
+
+    HANDLE file = CreateFileA(
+        info->path,
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        0,
+        NULL
+    );
+
+    if (!file) {
+        info->productID = 0;
+        info->vendorID = 0;
+        info->type = PAL_INPUT_DEVICE_GENERIC_GAMEPAD;
+        return;
+    }
+
+    WCHAR manufacturer[64] = {};
+    WCHAR product[64] = {};
+    bool sucessManufacturer = s_HidD_GetManufacturerString(
+        file,
+        manufacturer,
+        sizeof(manufacturer)
+    );
+
+    bool sucessproduct = s_HidD_GetProductString(
+        file,
+        product,
+        sizeof(product)
+    );
+
+    if (sucessManufacturer && sucessproduct) {
+        WCHAR combined[128] = {};
+        snwprintf(combined, 128, L"%s %s", manufacturer, product);
+        WideCharToMultiByte(CP_UTF8, 0, combined, -1, info->name, 128, NULL, NULL);
+
+    } else if (sucessManufacturer) {
+        WideCharToMultiByte(CP_UTF8, 0, manufacturer, -1, info->name, 128, NULL, NULL);
+
+    } else if (sucessproduct) {
+        WideCharToMultiByte(CP_UTF8, 0, product, -1, info->name, 128, NULL, NULL);
+
+    } else {
+        strcpy(info->name, "Generic Gamepad");
+    }
+
+    // get attributes
+    HIDD_ATTRIBUTES attrs = {};
+    attrs.Size = sizeof(HIDD_ATTRIBUTES);
+    if (s_HidD_GetAttributes(file, &attrs)) {
+        info->productID = 0;
+        info->vendorID = 0;
+        info->type = PAL_INPUT_DEVICE_GENERIC_GAMEPAD;
+        return;
+        CloseHandle(file);
+    }
+
+    info->productID = attrs.ProductID;
+    info->vendorID = attrs.VendorID;
+
+    // get gamepad type
+    if (attrs.VendorID == 0x054C) {
+        // sony controllers
+        switch (attrs.ProductID) {
+            case 0x05C4:
+            info->type = PAL_INPUT_DEVICE_DUALSHOCK4;
+            break;
+
+            case 0x0CE6:
+            info->type = PAL_INPUT_DEVICE_DUALSENSE;
+            break;
+        }
+
+    } else if (attrs.VendorID == 0x057E) {
+        // nintendo
+        switch (attrs.ProductID) {
+            case 0x2009:
+            info->type = PAL_INPUT_DEVICE_SWITCH_PRO;
+            break;
+        }
+
+    } else {
+        info->type = PAL_INPUT_DEVICE_GENERIC_GAMEPAD;
+    }
+
+    CloseHandle(file);
+}
 
 LRESULT CALLBACK inputProc(
     HWND hwnd, 

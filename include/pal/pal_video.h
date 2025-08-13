@@ -206,7 +206,6 @@ typedef enum PalFlashFlags {
 /**
  * @struct PalDisplayInfo
  * @brief Contains information about a display.
- * All values are in physical pixels.
  *
  * @sa palGetDisplayInfo()
  *
@@ -214,8 +213,8 @@ typedef enum PalFlashFlags {
  */
 typedef struct PalDisplayInfo {
     char name[32];                             /** < Name of the display.*/
-    int x;                                     /** < X position of yhe display.*/
-    int y;                                     /** < Y position of the display.*/
+    Int32 x;                                   /** < X position of yhe display.*/
+    Int32 y;                                   /** < Y position of the display.*/
     Uint32 width;                              /** < Width of the display in pixels.*/
     Uint32 height;                             /** < Height of the display in pixels.*/
     Uint32 dpi;                                /** < Display dpi.*/
@@ -375,9 +374,13 @@ _PAPI void _PCALL palUpdateVideo(PalVideoSystem* system);
  * The user is responsible for the life time of the array.
  *
  * The `count` should be the number, not the size in bytes. Example:
+ * 
  * @code
- * PalDisplay** displays[2];
- * int count = 2;
+ * PalDisplay* displays[2];
+ * @endcode
+ * 
+ * @code
+ * Int32 count = 2;
  * @endcode
  *
  * you can set the `displays` to nullptr and PAL will set the count of the connected displays to `count`.
@@ -386,7 +389,7 @@ _PAPI void _PCALL palUpdateVideo(PalVideoSystem* system);
  *
  * @param[in] system Pointer to the video system instance.
  * @param[in] count Capacity of the `displays` array.
- * @param[in] displays User allocated array of PalDisplay.
+ * @param[out] displays User allocated array of PalDisplay.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
@@ -401,7 +404,7 @@ _PAPI void _PCALL palUpdateVideo(PalVideoSystem* system);
  */
 _PAPI PalResult _PCALL palEnumerateDisplays(
     PalVideoSystem *system,
-    int *count,
+    Int32 *count,
     PalDisplay **displays);
 
 /**
@@ -458,7 +461,7 @@ _PAPI PalResult _PCALL palGetDisplayInfo(
  * The `count` should be the number, not the size in bytes. Example:
  * @code
  * PalDisplayModes modes[2];
- * int count = 2;
+ * Int32 count = 2;
  * @endcode
  *
  * you can set the `modes` to nullptr and PAL will set the count of the available display modes to `count`.
@@ -479,7 +482,7 @@ _PAPI PalResult _PCALL palGetDisplayInfo(
  */
 _PAPI PalResult _PCALL palEnumerateDisplayModes(
     PalDisplay *display,
-    int *count,
+    Int32 *count,
     PalDisplayMode *modes);
 
 /**
@@ -915,8 +918,8 @@ _PAPI PalResult _PCALL palSetWindowTitle(
  */
 _PAPI PalResult _PCALL palSetWindowPos(
     PalWindow* window, 
-    int x, 
-    int y);
+    Int32 x, 
+    Int32 y);
 
 /**
  * @brief Set the size of the client area of the given window in pixels.
@@ -975,8 +978,8 @@ _PAPI const char* _PCALL palGetWindowTitle(PalWindow* window);
  */
 _PAPI void _PCALL palGetWindowPos(
     PalWindow* window, 
-    int* x, 
-    int* y);
+    Int32* x, 
+    Int32* y);
 
 /**
  * @brief Get the size of the given window in pixels.
