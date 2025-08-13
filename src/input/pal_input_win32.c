@@ -88,13 +88,21 @@ typedef struct KeyboardWin32 {
     bool keyState[PAL_KEY_MAX];
 } KeyboardWin32;
 
+typedef struct MouseWin32 {
+    PalMousePosition motion;
+    PalMouseWheel wheel;
+    bool state[PAL_MOUSE_BUTTON_MAX];
+} MouseWin32;
+
 static KeyboardWin32 s_Keyboard;
+static MouseWin32 s_Mouse;
 
 static void getHidProperties(PalInputDeviceInfo* info);
 static void createKeyTable();
 static void createScancodeTable();
 
 static void handleKeyboardInput(RAWKEYBOARD* keyboard);
+static void handleMouseInput(RAWMOUSE* mouse);
 
 LRESULT CALLBACK inputProc(
     HWND hwnd, 
@@ -272,6 +280,18 @@ void _PCALL palUpdateInput(PalInputSystem* system) {
     if (!system) {
         return;
     }
+
+    // reset mouse state
+    s_Mouse.motion.dx = 0;
+    s_Mouse.motion.dy = 0;
+    s_Mouse.wheel.x = 0;
+    s_Mouse.wheel.y = 0;
+
+    // update mouse position
+    POINT pos;
+    GetCursorPos(&pos);
+    s_Mouse.motion.x = pos.x;
+    s_Mouse.motion.y = pos.y;
     
     MSG msg;
     while (PeekMessageA(&msg, system->window, 0, 0, PM_REMOVE)) {
@@ -572,6 +592,19 @@ void _PCALL palGetKeyboardState(
 
     state->keys = s_Keyboard.keyState;
     state->scancodes = s_Keyboard.scancodeState;
+}
+
+void _PCALL palGetMouseState(
+    PalInputSystem* system,
+    PalMouseState* state) {
+    
+    if (!system || !state) {
+        return;
+    }
+
+    state->buttons = s_Mouse.state;
+    state->wheel = &s_Mouse.wheel;
+    state->motion = &s_Mouse.motion;
 }
 
 
@@ -960,6 +993,59 @@ static void handleKeyboardInput(RAWKEYBOARD* keyboard) {
     }
 }
 
+static void handleMouseInput(RAWMOUSE* mouse) {
+
+    USHORT flags = mouse->usButtonFlags;
+    s_Mouse.motion.dx += mouse->lLastX;
+    s_Mouse.motion.dy += mouse->lLastY;
+
+    // left
+    if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) {
+        s_Mouse.state[PAL_MOUSE_BUTTON_LEFT] = true;
+    } else {
+        s_Mouse.state[PAL_MOUSE_BUTTON_LEFT] = false;
+    }
+
+    // right
+    if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
+        s_Mouse.state[PAL_MOUSE_BUTTON_RIGHT] = true;
+    } else {
+        s_Mouse.state[PAL_MOUSE_BUTTON_RIGHT] = false;
+    }
+
+    // middle
+    if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
+        s_Mouse.state[PAL_MOUSE_BUTTON_MIDDLE] = true;
+    } else {
+        s_Mouse.state[PAL_MOUSE_BUTTON_MIDDLE] = false;
+    }
+
+    // x1
+    if (flags & RI_MOUSE_BUTTON_4_DOWN) {
+        s_Mouse.state[PAL_MOUSE_BUTTON_X1] = true;
+    } else {
+        s_Mouse.state[PAL_MOUSE_BUTTON_X1] = false;
+    }
+
+    // x2
+    if (flags & RI_MOUSE_BUTTON_5_DOWN) {
+        s_Mouse.state[PAL_MOUSE_BUTTON_X2] = true;
+    } else {
+        s_Mouse.state[PAL_MOUSE_BUTTON_X2] = false;
+    }
+
+    // wheel delta
+    if (flags & RI_MOUSE_WHEEL) {
+        SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
+        s_Mouse.wheel.y += (delta / WHEEL_DELTA);
+    }
+
+    if (flags & RI_MOUSE_HWHEEL) {
+        SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
+        s_Mouse.wheel.x += (delta / WHEEL_DELTA);
+    }
+}
+
 LRESULT CALLBACK inputProc(
     HWND hwnd, 
     UINT msg, 
@@ -997,6 +1083,11 @@ LRESULT CALLBACK inputProc(
             if (raw->header.dwType == RIM_TYPEKEYBOARD) {
                 // keyboard
                 handleKeyboardInput(&raw->data.keyboard);
+            }
+
+            if (raw->header.dwType == RIM_TYPEMOUSE) {
+                // mouse
+                handleMouseInput(&raw->data.mouse);
             }
             break;
         }

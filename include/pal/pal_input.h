@@ -361,6 +361,27 @@ typedef enum PalKey {
 } PalKey;
 
 /**
+ * @enum PalMouseButton
+ * @brief mouse button codes of a mouse device.
+ *
+ * @note All mouse buttons follow the format `PAL_MOUSE_BUTTON_**` for consistency and API use.
+ *
+ * @ingroup input
+ */
+typedef enum PalMouseButton {
+    PAL_MOUSE_BUTTON_UNKNOWN = 0,
+
+    PAL_MOUSE_BUTTON_LEFT,
+    PAL_MOUSE_BUTTON_RIGHT,
+    PAL_MOUSE_BUTTON_MIDDLE,
+    PAL_MOUSE_BUTTON_X1,
+    PAL_MOUSE_BUTTON_X2,
+
+    PAL_MOUSE_BUTTON_MAX
+
+} PalMouseButton;
+
+/**
  * @struct PalInputSystemCreateInfo
  * @brief Specifies options for creating an instance of the input system.
  *
@@ -405,6 +426,48 @@ typedef struct PalKeyboardState {
     const bool* scancodes;           /** < Layout independent keys state. Must not be modified by user. see `PalScancode`.*/
     const bool* keys;                /** < Layout aware keys state. Must not be modified by user. see `PalKey`.*/
 } PalKeyboardState;
+
+/**
+ * @struct PalMousePosition
+ * @brief Information about the current position and movement of the mouse.
+ *
+ * @sa PalMouseState()
+ *
+ * @ingroup input
+ */
+typedef struct PalMousePosition {
+    int x;                       /** < Mouse x position.*/
+    int y;                       /** < Mouse y position.*/
+    int dx;                      /** < Mouse x movement delta.*/
+    int dy;                      /** < Mouse y movement delta.*/
+} PalMousePosition;
+
+/**
+ * @struct PalMouseWheel
+ * @brief Information about the current state of the mouse wheel.
+ *
+ * @sa PalMouseState()
+ *
+ * @ingroup input
+ */
+typedef struct PalMouseWheel {
+    int x;                       /** < Horizontal scroll*/
+    int y;                       /** < Vertical scroll*/
+} PalMouseWheel;
+
+/**
+ * @struct PalMouseState
+ * @brief Information about the current mouse state (position, wheel and buttons).
+ *
+ * @sa palGetMouseState()
+ *
+ * @ingroup input
+ */
+typedef struct PalMouseState {
+    const PalMousePosition* motion;            /** < Mouse motion information.*/
+    const PalMouseWheel* wheel;                /** < Mouse wheel information.*/
+    const bool* buttons;                       /** < Mouse buttons state.*/
+} PalMouseState;
 
 /**
  * @brief Create an instance of the input system.
@@ -538,5 +601,9 @@ _PAPI PalResult _PCALL palRegisterInputDevice(
 _PAPI void _PCALL palGetKeyboardState(
     PalInputSystem* system,
     PalKeyboardState* state);
+
+_PAPI void _PCALL palGetMouseState(
+    PalInputSystem* system,
+    PalMouseState* state);
 
 #endif // _PAL_INPUT_H

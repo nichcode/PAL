@@ -26,7 +26,8 @@ project "Tests"
     if (PAL_BUILD_INPUT) then
         files { 
             "src/input_test.c",
-            "src/keyboard_test.c"
+            "src/keyboard_test.c",
+            "src/mouse_test.c"
         }
     end
 

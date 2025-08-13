@@ -38,5 +38,6 @@ void eventsTest();
 void multiWindowTest();
 void inputTest();
 void keyboardTest();
+void mouseTest();
 
 #endif // _TESTS_H

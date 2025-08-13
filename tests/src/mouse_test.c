@@ -2,12 +2,11 @@
 #include "tests.h"
 #include "pal/pal_input.h"
 
-
-void keyboardTest() {
+void mouseTest() {
 
     palLog("");
     palLog("===========================================");
-    palLog("Keyboard Test");
+    palLog("Mouse Test");
     palLog("===========================================");
     palLog("");
 
@@ -25,11 +24,11 @@ void keyboardTest() {
         return;
     }
 
-    // enumerate connected keyboards 
+    // enumerate connected mice 
     Int32 count = 0;
     if (palEnumerateInputDevices(
         input, 
-        PAL_INPUT_MASK_KEYBOARD,
+        PAL_INPUT_MASK_MOUSE,
         &count,
         nullptr
     ) != PAL_RESULT_SUCCESS) {
@@ -38,54 +37,44 @@ void keyboardTest() {
         return;
     }
 
-    palLog("Keyboard Count: %d", count);
+    palLog("Mouse Count: %d", count);
     if (count == 0) {
         return;
     }
 
-    PalInputDevice* keyboards[count];
+    PalInputDevice* mice[count];
     if (palEnumerateInputDevices(
         input, 
         PAL_INPUT_MASK_KEYBOARD,
         &count,
-        keyboards
+        mice
     ) != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
         return;
     }
 
-    // register the keyboard device
+    // register the mouse device
     // we register the first mouse device in the array,
     // but you should query info and check which you want to register.
-    result = palRegisterInputDevice(input, keyboards[0]);
+    result = palRegisterInputDevice(input, mice[0]);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
         return;
     }
 
-    // get keyboard state. If the keyboard device is not registered, this will not be filled.
+    // get mouse state. If the mouse device is not registered, this will not be filled.
     // The state will be updated when palUpdateInput is called, so call this once before the loop.
-    PalKeyboardState state;
-    palGetKeyboardState(input, &state);
+    PalMouseState state;
+    palGetMouseState(input, &state);
 
     bool running = true;
     while (running) {
         palUpdateInput(input);
 
-        if (state.scancodes[PAL_SCANCODE_RIGHT]) {
-            palLog("Right Scancode (Right key on QWERTY layout) was pressed");
-        }
-
-        if (state.scancodes[PAL_SCANCODE_LEFT]) {
-            palLog("Left Scancode (Left key on QWERTY layout) was pressed");
-        }
-        
-        if (state.keys[PAL_KEY_ESCAPE]) {
-            // terminate
-            running = false;
-        }
+        // we can check mouse button here because there won't be anywhere to click.
+        palLog("Mouse Global Pos - (%d, %d)", state.motion->x, state.motion->y);
     }
 
     palDestroyInputSystem(input);
