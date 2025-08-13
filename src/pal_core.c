@@ -138,6 +138,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INVALID_INPUT_DEVICE:
         return "Invalid input device";
+
+        case PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED:
+        return "Input device not registered";
    }
 
     return nullptr;

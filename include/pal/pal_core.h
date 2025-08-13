@@ -290,6 +290,7 @@ typedef enum PalResult {
     PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
     PAL_RESULT_INPUT_DEVICE_NOT_FOUND,            /** < OS input driver could not be found (busy).*/
     PAL_RESULT_INVALID_INPUT_DEVICE,              /** < An invalid input device.*/
+    PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED,       /** < The input device is not registered.*/
 } PalResult;
 
 /**

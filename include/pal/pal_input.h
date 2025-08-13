@@ -579,7 +579,7 @@ _PAPI PalResult _PCALL palEnumerateInputDevices(
  * example: standard mouse and keyboard might not provide a vendor and product id,
  * so PAL will set it to `0`.
  *
- * @param[in] inputDevice Input device.
+ * @param[in] inputDevice The input device.
  * @param[out] info Pointer to the PalInputDeviceInfo struct to fill.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
@@ -594,14 +594,91 @@ _PAPI PalResult _PCALL palGetInputDeviceInfo(
     PalInputDevice* inputDevice, 
     PalInputDeviceInfo* info);
 
+/**
+ * @brief Register an input device to recieve inputs using the input system.
+ *
+ * The input devices registered will be updated when `palUpdateInput()` is called.
+ * So for maximum performance, 
+ * register only input devices you need and unregister them with `palUnregisterInputDevice()` when no longer needed.
+ *
+ * @param[in] system The Pointer to the input system instance.
+ * @param[in] inputDevice The input device to register.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe.
+ *
+ * @sa palEnumerateInputDevices(), palCreateInputSystem()
+ * @sa palUnregisterInputDevice()
+ * @ingroup input
+ */
 _PAPI PalResult _PCALL palRegisterInputDevice(
     PalInputSystem* system,
     PalInputDevice* inputDevice);
 
+/**
+ * @brief Unregister an input device using the input system.
+ * 
+ * This function stops the given input device from recieving input.
+ * The input device must be registered before this call, 
+ * or `PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED` will be returned and this function will fail.
+ * To recieve input for the input device again, call `palRegisterInputDevice()`.
+ * 
+ * @param[in] system The Pointer to the input system instance.
+ * @param[in] inputDevice The input device to unregister.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread-safe.
+ *
+ * @sa palEnumerateInputDevices(), palCreateInputSystem()
+ * @sa palRegisterInputDevice()
+ * @ingroup input
+ */
+_PAPI PalResult _PCALL palUnregisterInputDevice(
+    PalInputSystem* system,
+    PalInputDevice* inputDevice);
+
+/**
+ * @brief Get the state of the registered keyboard device.
+ * 
+ * The returned state can be used for all keyboard types.
+ * A keyboard device must be registered before this call.
+ * 
+ * If a keyboard device is registered, the state will be updated at every call to `palUpdateInput()`.
+ *
+ * @param[in] system Pointer to the input system instance.
+ * @param[out] state Pointer to the PalKeyboardState struct to fill.
+ * 
+ * @note This function is guaranteed not to fail if `system` and `state` are is valid.
+ * @note This function is thread-safe if `state` is thread local.
+ * If not, the user is responsible for synchronization.
+ *
+ * @sa palCreateInputSystem(), PalKeyboardState
+ * @ingroup input
+ */
 _PAPI void _PCALL palGetKeyboardState(
     PalInputSystem* system,
     PalKeyboardState* state);
 
+/**
+ * @brief Get the state of the registered mouse device.
+ * 
+ * The returned state can be used for all mouse types.
+ * A mouse device must be registered before this call.
+ * 
+ * If a mouse device is registered, the state will be updated at every call to `palUpdateInput()`.
+ *
+ * @param[in] system Pointer to the input system instance.
+ * @param[out] state Pointer to the PalMouseState struct to fill.
+ * 
+ * @note This function is guaranteed not to fail if `system` and `state` are is valid.
+ * @note This function is thread-safe if `state` is thread local.
+ * If not, the user is responsible for synchronization.
+ *
+ * @sa palCreateInputSystem(), PalMouseState
+ * @ingroup input
+ */
 _PAPI void _PCALL palGetMouseState(
     PalInputSystem* system,
     PalMouseState* state);

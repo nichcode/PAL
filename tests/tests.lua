@@ -27,7 +27,8 @@ project "Tests"
         files { 
             "src/input_test.c",
             "src/keyboard_test.c",
-            "src/mouse_test.c"
+            "src/mouse_test.c",
+            "src/keyboard_mouse_test.c"
         }
     end
 

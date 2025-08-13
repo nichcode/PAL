@@ -25,7 +25,8 @@ int main(int argc, char** argv) {
 #if PAL_HAS_INPUT
     //registerTest(inputTest);
     //registerTest(keyboardTest);
-    registerTest(mouseTest);
+    //registerTest(mouseTest);
+    registerTest(keyboardAndMouseTest);
 #endif // PAL_HAS_VIDEO
 
     runTests();

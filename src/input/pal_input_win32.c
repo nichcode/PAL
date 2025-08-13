@@ -92,6 +92,7 @@ typedef struct MouseWin32 {
     PalMousePosition motion;
     PalMouseWheel wheel;
     bool state[PAL_MOUSE_BUTTON_MAX];
+    bool active;
 } MouseWin32;
 
 static KeyboardWin32 s_Keyboard;
@@ -100,6 +101,11 @@ static MouseWin32 s_Mouse;
 static void getHidProperties(PalInputDeviceInfo* info);
 static void createKeyTable();
 static void createScancodeTable();
+
+static PalResult registerRawDevice(
+    PalInputSystem* system,
+    PalInputDevice* inputDevice,
+    bool remove);
 
 static void handleKeyboardInput(RAWKEYBOARD* keyboard);
 static void handleMouseInput(RAWMOUSE* mouse);
@@ -281,18 +287,20 @@ void _PCALL palUpdateInput(PalInputSystem* system) {
         return;
     }
 
-    // reset mouse state
-    s_Mouse.motion.dx = 0;
-    s_Mouse.motion.dy = 0;
-    s_Mouse.wheel.x = 0;
-    s_Mouse.wheel.y = 0;
+    if (s_Mouse.active) {
+        // reset mouse state
+        s_Mouse.motion.dx = 0;
+        s_Mouse.motion.dy = 0;
+        s_Mouse.wheel.x = 0;
+        s_Mouse.wheel.y = 0;
 
-    // update mouse position
-    POINT pos;
-    GetCursorPos(&pos);
-    s_Mouse.motion.x = pos.x;
-    s_Mouse.motion.y = pos.y;
-    
+        // update mouse position
+        POINT pos;
+        GetCursorPos(&pos);
+        s_Mouse.motion.x = pos.x;
+        s_Mouse.motion.y = pos.y;
+    }
+
     MSG msg;
     while (PeekMessageA(&msg, system->window, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
@@ -535,50 +543,23 @@ PalResult _PCALL palRegisterInputDevice(
         // TODO: XInput
 
     } else {
-        RID_DEVICE_INFO info = {};
-        info.cbSize = sizeof(RID_DEVICE_INFO);
-        Uint32 size = sizeof(RID_DEVICE_INFO);
-        if (GetRawInputDeviceInfoA(
-            (HANDLE)inputDevice,
-            RIDI_DEVICEINFO,
-            &info,
-            &size) == (UINT)-1) {
-            return PAL_RESULT_INVALID_INPUT_DEVICE;
-        }
+        return registerRawDevice(system, inputDevice, false);
+    }
+}
 
-        switch (info.dwType) {
-            case RIM_TYPEKEYBOARD: {
-                // register a keyboard device
-                RAWINPUTDEVICE rid = {};
-                rid.dwFlags = RIDEV_INPUTSINK;
-                rid.hwndTarget = system->window;
-                rid.usUsage = 0x06; 
-                rid.usUsagePage = 0x01;
+PalResult _PCALL palUnregisterInputDevice(
+    PalInputSystem* system,
+    PalInputDevice* inputDevice) {
+    
+    if (!system || !inputDevice) {
+        return PAL_RESULT_NULL_POINTER;
+    }
 
-                if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
-                    return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
-                }
-                return PAL_RESULT_SUCCESS;
-            }
+    if (palIsXinputHandle(inputDevice)) {
+        // TODO: XInput
 
-            case RIM_TYPEMOUSE: {
-                RAWINPUTDEVICE rid = {};
-                rid.dwFlags = RIDEV_INPUTSINK;
-                rid.hwndTarget = system->window;
-                rid.usUsage = 0x02; 
-                rid.usUsagePage = 0x01;
-
-                if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
-                    return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
-                }
-                return PAL_RESULT_SUCCESS;
-            }
-
-            case RIM_TYPEHID: {
-                // TODO: HID
-                return PAL_RESULT_INVALID_INPUT_DEVICE;
-            }
-        }
+    } else {
+        return registerRawDevice(system, inputDevice, true);
     }
 }
 
@@ -950,6 +931,79 @@ static void createScancodeTable() {
     s_Keyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
     s_Keyboard.scancodes[0x15B] = PAL_SCANCODE_LSUPER;
     s_Keyboard.scancodes[0x15C] = PAL_SCANCODE_RSUPER;
+}
+
+static PalResult registerRawDevice(
+    PalInputSystem* system,
+    PalInputDevice* inputDevice,
+    bool remove) {
+
+    RID_DEVICE_INFO info = {};
+    info.cbSize = sizeof(RID_DEVICE_INFO);
+    Uint32 size = sizeof(RID_DEVICE_INFO);
+    if (GetRawInputDeviceInfoA(
+        (HANDLE)inputDevice,
+        RIDI_DEVICEINFO,
+        &info,
+        &size) == (UINT)-1) {
+        return PAL_RESULT_INVALID_INPUT_DEVICE;
+    }
+
+    DWORD flag = RIDEV_INPUTSINK;
+    HWND window = system->window;
+    if (remove) {
+        flag = RIDEV_REMOVE;
+        window = nullptr;
+    }
+
+    switch (info.dwType) {
+        case RIM_TYPEKEYBOARD: {
+            // register a keyboard device
+            RAWINPUTDEVICE rid = {};
+            rid.dwFlags = flag;
+            rid.hwndTarget = window;
+            rid.usUsage = 0x06; 
+            rid.usUsagePage = 0x01;
+
+            if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+                if (remove) {
+                    return PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED;
+                } else {
+                    return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
+                }
+            }
+            return PAL_RESULT_SUCCESS;
+        }
+
+        case RIM_TYPEMOUSE: {
+            RAWINPUTDEVICE rid = {};
+            rid.dwFlags = flag;
+            rid.hwndTarget = window;
+            rid.usUsage = 0x02; 
+            rid.usUsagePage = 0x01;
+
+            if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+                if (remove) {
+                    return PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED;
+                } else {
+                    return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
+                }
+            }
+
+            // will be deactivated at WM_DEVICECHANGE if mouse is removed.
+            if (remove) {
+                s_Mouse.active = false;
+            } else {
+                s_Mouse.active = true;
+            }
+            return PAL_RESULT_SUCCESS;
+        }
+
+        case RIM_TYPEHID: {
+            // TODO: HID
+            return PAL_RESULT_INVALID_INPUT_DEVICE;
+        }
+    }
 }
 
 static void handleKeyboardInput(RAWKEYBOARD* keyboard) {
