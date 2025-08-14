@@ -11,12 +11,7 @@ void mouseTest() {
     palLog("");
 
     PalResult result;
-    PalInputSystem* input = nullptr;
-
-    PalInputSystemCreateInfo createInfo;
-    createInfo.allocator = nullptr; // for default.
-    createInfo.eventDriver = nullptr; // for default.
-    result = palCreateInputSystem(&createInfo, &input);
+    result = palInitInput(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -26,8 +21,7 @@ void mouseTest() {
 
     // enumerate connected mice 
     Int32 count = 0;
-    if (palEnumerateInputDevices(
-        input, 
+    if (palEnumerateInputDevices( 
         PAL_INPUT_MASK_MOUSE,
         &count,
         nullptr
@@ -43,8 +37,7 @@ void mouseTest() {
     }
 
     PalInputDevice* mice[count];
-    if (palEnumerateInputDevices(
-        input, 
+    if (palEnumerateInputDevices( 
         PAL_INPUT_MASK_KEYBOARD,
         &count,
         mice
@@ -57,7 +50,7 @@ void mouseTest() {
     // register the mouse device
     // we register the first mouse device in the array,
     // but you should query info and check which you want to register.
-    result = palRegisterInputDevice(input, mice[0]);
+    result = palRegisterInputDevice(mice[0]);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -67,15 +60,15 @@ void mouseTest() {
     // get mouse state. If the mouse device is not registered, this will not be filled.
     // The state will be updated when palUpdateInput is called, so call this once before the loop.
     PalMouseState state;
-    palGetMouseState(input, &state);
+    palGetMouseState(&state);
 
     bool running = true;
     while (running) {
-        palUpdateInput(input);
+        palUpdateInput();
 
         // we can check mouse button here because there won't be anywhere to click.
         palLog("Mouse Global Pos - (%d, %d)", state.motion->x, state.motion->y);
     }
 
-    palDestroyInputSystem(input);
+    palShutdownInput();
 }

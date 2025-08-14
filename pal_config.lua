@@ -6,7 +6,7 @@ PAL_BUILD_TESTS = true
 PAL_BUILD_STATIC = false
 
 -- build video system
-PAL_BUILD_VIDEO = true
+PAL_BUILD_VIDEO = false
 
 -- build input system
-PAL_BUILD_INPUT = false
+PAL_BUILD_INPUT = true

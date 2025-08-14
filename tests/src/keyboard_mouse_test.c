@@ -11,14 +11,10 @@ void keyboardAndMouseTest() {
     palLog("");
 
     PalResult result;
-    PalInputSystem* input = nullptr;
     PalInputDevice* keyboard = nullptr;
     PalInputDevice* mouse = nullptr;
 
-    PalInputSystemCreateInfo createInfo;
-    createInfo.allocator = nullptr; // for default.
-    createInfo.eventDriver = nullptr; // for default.
-    result = palCreateInputSystem(&createInfo, &input);
+    result = palInitInput(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -28,8 +24,7 @@ void keyboardAndMouseTest() {
 
     // enumerate connected keyboards and mice 
     Int32 count = 0;
-    if (palEnumerateInputDevices(
-        input, 
+    if (palEnumerateInputDevices( 
         PAL_INPUT_MASK_KEYBOARD | PAL_INPUT_MASK_MOUSE,
         &count,
         nullptr
@@ -46,7 +41,6 @@ void keyboardAndMouseTest() {
 
     PalInputDevice* inputDevices[count];
     if (palEnumerateInputDevices(
-        input, 
         PAL_INPUT_MASK_KEYBOARD | PAL_INPUT_MASK_MOUSE,
         &count,
         inputDevices
@@ -82,7 +76,7 @@ void keyboardAndMouseTest() {
     }
 
     // register keyboard
-    result = palRegisterInputDevice(input, keyboard);
+    result = palRegisterInputDevice(keyboard);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -90,7 +84,7 @@ void keyboardAndMouseTest() {
     }
 
     // register mouse
-    result = palRegisterInputDevice(input, mouse);
+    result = palRegisterInputDevice(mouse);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -100,14 +94,14 @@ void keyboardAndMouseTest() {
     // get keyboard and mouse state
     PalMouseState mouseState;
     PalKeyboardState keyboardState;
-    palGetKeyboardState(input, &keyboardState);
-    palGetMouseState(input, &mouseState);
+    palGetKeyboardState(&keyboardState);
+    palGetMouseState(&mouseState);
 
     bool running = true;
     bool unRegistered = false;
 
     while (running) {
-        palUpdateInput(input);
+        palUpdateInput();
 
         if (keyboardState.keys[PAL_KEY_ESCAPE]) {
             // terminate
@@ -116,7 +110,7 @@ void keyboardAndMouseTest() {
 
         if (!unRegistered) {
             if (keyboardState.keys[PAL_KEY_SPACE]) {
-                palUnregisterInputDevice(input, mouse);
+                palUnregisterInputDevice(mouse);
                 if (result != PAL_RESULT_SUCCESS) {
                     const char* resultString = palResultToString(result);
                     palLog("PAL error - %s", resultString);
@@ -128,7 +122,7 @@ void keyboardAndMouseTest() {
 
         if (unRegistered) {
             if (keyboardState.keys[PAL_KEY_ENTER]) {
-                palRegisterInputDevice(input, mouse);
+                palRegisterInputDevice(mouse);
                 if (result != PAL_RESULT_SUCCESS) {
                     const char* resultString = palResultToString(result);
                     palLog("PAL error - %s", resultString);

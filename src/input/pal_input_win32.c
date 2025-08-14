@@ -43,7 +43,6 @@ freely, subject to the following restrictions:
 #include <wchar.h>
 
 #define PAL_WIN32_INPUT_CLASS L"PALInputClass"
-#define PAL_WIN32_INPUT_PROP L"PALInput"
 
 #define XINPUT_1_4 "xinput1_4.dll"
 #define XINPUT_1_3 "xinput1_3.dll"
@@ -59,27 +58,25 @@ typedef BOOLEAN (WINAPI* HidD_GetManufacturerStringFn)(HANDLE, PVOID, ULONG);
 typedef BOOLEAN (WINAPI* HidD_GetAttributesFn)(HANDLE, PHIDD_ATTRIBUTES);
 typedef void (WINAPI* HidD_GetGuidFn)(GUID*);
 
-static XInputGetStateFn s_GetXinputState = nullptr;
-static XInputSetStateFn s_SetXinputState = nullptr;
-
-static HidD_GetProductStringFn s_HidD_GetProductString;
-static HidD_GetManufacturerStringFn s_HidD_GetManufacturerString;
-static HidD_GetAttributesFn s_HidD_GetAttributes;
-static HidD_GetGuidFn s_HidD_GetGuid;
-
-static HINSTANCE s_XInput;
-static HINSTANCE s_Hid;
-static GUID s_HidGuid;
-
-static bool s_Loaded = false;
-
-typedef struct PalInputSystem {
+typedef struct InputSystemWin32 {
     PalAllocator* allocator;
     HINSTANCE instance;
+    HINSTANCE xInput;
+    HINSTANCE hid;
+    GUID hidGuid;
     HWND window;
     HDEVNOTIFY notifyHandle;
     PalEventDriver* eventDriver;
-} PalInputSystem;
+
+    HidD_GetProductStringFn hidD_GetProductString;
+    HidD_GetManufacturerStringFn hidD_GetManufacturerString;
+    HidD_GetAttributesFn hidD_GetAttributes;
+    HidD_GetGuidFn hidD_GetGuid;
+
+    XInputGetStateFn getXinputState;
+    XInputSetStateFn setXinputState;
+    bool initialized;
+} InputSystemWin32;
 
 typedef struct KeyboardWin32 {
     PalScancode scancodes[512];
@@ -95,15 +92,15 @@ typedef struct MouseWin32 {
     bool active;
 } MouseWin32;
 
-static KeyboardWin32 s_Keyboard;
-static MouseWin32 s_Mouse;
+static KeyboardWin32 s_Keyboard = {};
+static MouseWin32 s_Mouse = {};
+static InputSystemWin32 s_System = {};
 
 static void getHidProperties(PalInputDeviceInfo* info);
 static void createKeyTable();
 static void createScancodeTable();
 
 static PalResult registerRawDevice(
-    PalInputSystem* system,
     PalInputDevice* inputDevice,
     bool remove);
 
@@ -135,39 +132,23 @@ static inline Uint32 palGetXinputIndex(PalInputDevice* handle) {
 // Public API
 // ==================================================
 
-PalResult _PCALL palCreateInputSystem(
-    const PalInputSystemCreateInfo *info,
-    PalInputSystem **outSystem) {
+PalResult _PCALL palInitInput(
+    PalAllocator* allocator,
+    PalEventDriver* eventDriver) {
 
-    if (!info || !outSystem) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    PalInputSystem* system = nullptr;
-    if (info->allocator && (!info->allocator->allocate || !info->allocator->free)) {
+    if (allocator && (allocator->allocate || allocator->free)) {
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
-    system = palAllocate(info->allocator, sizeof(PalInputSystem), 0);
-    if (!system) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
+    s_System.allocator = allocator;
+    s_System.eventDriver = eventDriver;
 
-    memset(system, 0, sizeof(PalInputSystem));
-    if (info->allocator) {
-        system->allocator = info->allocator;
-    }
-
-    if (info->eventDriver) {
-        system->eventDriver = info->eventDriver;
-    }
-
-    system->instance = GetModuleHandleW(nullptr);
+    s_System.instance = GetModuleHandleW(nullptr);
     WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
-    if (!GetClassInfoExW(system->instance, PAL_WIN32_INPUT_CLASS, &wc)) {
+    if (!GetClassInfoExW(s_System.instance, PAL_WIN32_INPUT_CLASS, &wc)) {
         wc.lpfnWndProc = inputProc;
-        wc.hInstance = system->instance;
+        wc.hInstance = s_System.instance;
         wc.lpszClassName = PAL_WIN32_INPUT_CLASS;
 
         if (!RegisterClassExW(&wc)) {
@@ -175,7 +156,7 @@ PalResult _PCALL palCreateInputSystem(
         }
     }
 
-    system->window = CreateWindowExW(
+    s_System.window = CreateWindowExW(
         0,
         PAL_WIN32_INPUT_CLASS,
         L"",
@@ -186,104 +167,101 @@ PalResult _PCALL palCreateInputSystem(
         1,
         nullptr,
         nullptr,
-        system->instance,
+        s_System.instance,
         nullptr
     );
 
-    if (!system->window) {
-        palFree(system->allocator, system);
-        return PAL_RESULT_VIDEO_DEVICE_NOT_FOUND;
+    if (!s_System.window) {
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     // load libraries
-    if (!s_Loaded) {
+    if (!s_System.initialized) {
         // Xinput
-        s_XInput = LoadLibraryA(XINPUT_1_4);
-        if (!s_XInput) {
-            s_XInput = LoadLibraryA(XINPUT_1_3);
+        s_System.xInput = LoadLibraryA(XINPUT_1_4);
+        if (!s_System.xInput) {
+            s_System.xInput = LoadLibraryA(XINPUT_1_3);
 
-        } if (!s_XInput) {
-            s_XInput = LoadLibraryA(XINPUT_9_1_0);
+        } if (!s_System.xInput) {
+            s_System.xInput = LoadLibraryA(XINPUT_9_1_0);
         }
 
-        if (s_XInput) {
-            s_GetXinputState = (XInputGetStateFn)GetProcAddress(
-                s_XInput,
+        if (s_System.xInput) {
+            s_System.getXinputState = (XInputGetStateFn)GetProcAddress(
+                s_System.xInput,
                 "XInputGetState"
             );
 
-            s_SetXinputState = (XInputSetStateFn)GetProcAddress(
-                s_XInput,
+            s_System.setXinputState = (XInputSetStateFn)GetProcAddress(
+                s_System.xInput,
                 "XInputSetState"
             );
         }
 
         // hid
-        s_Hid = LoadLibraryA("hid.dll");
-        if (s_Hid) {
-            s_HidD_GetAttributes = (HidD_GetAttributesFn)GetProcAddress(
-                s_Hid,
+        s_System.hid = LoadLibraryA("hid.dll");
+        if (s_System.hid) {
+            s_System.hidD_GetAttributes = (HidD_GetAttributesFn)GetProcAddress(
+                s_System.hid,
                 "HidD_GetAttributes"
             );
 
-            s_HidD_GetManufacturerString = (HidD_GetManufacturerStringFn)GetProcAddress(
-                s_Hid,
+            s_System.hidD_GetManufacturerString = (HidD_GetManufacturerStringFn)GetProcAddress(
+                s_System.hid,
                 "HidD_GetManufacturerString"
             );
 
-            s_HidD_GetProductString = (HidD_GetProductStringFn)GetProcAddress(
-                s_Hid,
+            s_System.hidD_GetProductString = (HidD_GetProductStringFn)GetProcAddress(
+                s_System.hid,
                 "HidD_GetProductString"
             );
 
-            s_HidD_GetGuid = (HidD_GetGuidFn)GetProcAddress(
-                s_Hid,
+            s_System.hidD_GetGuid = (HidD_GetGuidFn)GetProcAddress(
+                s_System.hid,
                 "HidD_GetHidGuid"
             );
         }
 
         createScancodeTable();
         createKeyTable();
-        s_Loaded = true;     
+
+        // register hid notifications
+        if (s_System.hidD_GetGuid) {
+            s_System.hidD_GetGuid(&s_System.hidGuid);
+
+            DEV_BROADCAST_DEVICEINTERFACE_W filter = {0};
+            filter.dbcc_size = sizeof(filter);
+            filter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
+            filter.dbcc_classguid = s_System.hidGuid;
+
+            s_System.notifyHandle = RegisterDeviceNotificationW(
+                s_System.window,
+                &filter,
+                DEVICE_NOTIFY_WINDOW_HANDLE
+            );
+
+            ShowWindow(s_System.window, SW_HIDE);
+        }
+        s_System.initialized = true;     
     }
-
-    // register hid notifications
-    if (s_HidD_GetGuid) {
-        s_HidD_GetGuid(&s_HidGuid);
-
-        DEV_BROADCAST_DEVICEINTERFACE_W filter = {0};
-        filter.dbcc_size = sizeof(filter);
-        filter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-        filter.dbcc_classguid = s_HidGuid;
-
-        system->notifyHandle = RegisterDeviceNotificationW(
-            system->window,
-            &filter,
-            DEVICE_NOTIFY_WINDOW_HANDLE
-        );
-    }
-
-    ShowWindow(system->window, SW_HIDE);
-    SetPropW(system->window, PAL_WIN32_INPUT_PROP, system);
-    *outSystem = system;
     return PAL_RESULT_SUCCESS;
 }
 
-void _PCALL palDestroyInputSystem(PalInputSystem *system) {
+void _PCALL palShutdownInput() {
 
-    if (!system || (system && !system->instance)) {
+    if (!s_System.initialized) {
         return;
     }
 
-    DestroyWindow(system->window);
-    UnregisterClassW(PAL_WIN32_INPUT_CLASS, system->instance);
-    UnregisterDeviceNotification(system->notifyHandle);
-    palFree(system->allocator, system);
+    DestroyWindow(s_System.window);
+    UnregisterClassW(PAL_WIN32_INPUT_CLASS, s_System.instance);
+    UnregisterDeviceNotification(s_System.notifyHandle);
+    s_System.initialized = false;
 }
 
-void _PCALL palUpdateInput(PalInputSystem* system) {
+void _PCALL palUpdateInput() {
 
-    if (!system) {
+    if (!s_System.initialized) {
         return;
     }
 
@@ -302,14 +280,13 @@ void _PCALL palUpdateInput(PalInputSystem* system) {
     }
 
     MSG msg;
-    while (PeekMessageA(&msg, system->window, 0, 0, PM_REMOVE)) {
+    while (PeekMessageA(&msg, s_System.window, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }
 }
 
 PalResult _PCALL palEnumerateInputDevices(
-    PalInputSystem* system,
     PalInputMask mask,
     Int32* count,
     PalInputDevice** inputDevices) {
@@ -332,7 +309,7 @@ PalResult _PCALL palEnumerateInputDevices(
     );
 
     RAWINPUTDEVICELIST* devices = palAllocate(
-        system->allocator, 
+        s_System.allocator, 
         sizeof(RAWINPUTDEVICELIST) * rawDeviceCount,
         0
     );
@@ -359,7 +336,7 @@ PalResult _PCALL palEnumerateInputDevices(
             RIDI_DEVICEINFO,
             &info,
             &size) == (UINT)-1) {
-            return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
+            return PAL_RESULT_PLATFORM_FAILURE;
         }
 
         switch (info.dwType) {
@@ -429,14 +406,14 @@ PalResult _PCALL palEnumerateInputDevices(
         }
     }
 
-    palFree(system->allocator, devices);
+    palFree(s_System.allocator, devices);
 
     // Xnput devices (Xbox controllers)
     if (mask & PAL_INPUT_MASK_GAMEPAD) {
-        if (s_XInput) {
+        if (s_System.xInput) {
             XINPUT_STATE state;
             for (DWORD i = 0; i < XINPUT_COUNT; i++) {
-                if (s_GetXinputState(i, &state) == ERROR_SUCCESS) {
+                if (s_System.getXinputState(i, &state) == ERROR_SUCCESS) {
                     if (inputDevices) {
                         if (deviceCount < maxDeviceCount) {
                             PalInputDevice* handle = palMakeXinputHandle(i);
@@ -531,11 +508,9 @@ PalResult _PCALL palGetInputDeviceInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult _PCALL palRegisterInputDevice(
-    PalInputSystem* system,
-    PalInputDevice* inputDevice) {
+PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice) {
 
-    if (!system || !inputDevice) {
+    if (!inputDevice) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -543,15 +518,13 @@ PalResult _PCALL palRegisterInputDevice(
         // TODO: XInput
 
     } else {
-        return registerRawDevice(system, inputDevice, false);
+        return registerRawDevice(inputDevice, false);
     }
 }
 
-PalResult _PCALL palUnregisterInputDevice(
-    PalInputSystem* system,
-    PalInputDevice* inputDevice) {
+PalResult _PCALL palUnregisterInputDevice(PalInputDevice* inputDevice) {
     
-    if (!system || !inputDevice) {
+    if (!inputDevice) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -559,15 +532,13 @@ PalResult _PCALL palUnregisterInputDevice(
         // TODO: XInput
 
     } else {
-        return registerRawDevice(system, inputDevice, true);
+        return registerRawDevice(inputDevice, true);
     }
 }
 
-void _PCALL palGetKeyboardState(
-    PalInputSystem* system,
-    PalKeyboardState* state) {
+void _PCALL palGetKeyboardState(PalKeyboardState* state) {
     
-    if (!system || !state) {
+    if (!state) {
         return;
     }
 
@@ -575,11 +546,9 @@ void _PCALL palGetKeyboardState(
     state->scancodes = s_Keyboard.scancodeState;
 }
 
-void _PCALL palGetMouseState(
-    PalInputSystem* system,
-    PalMouseState* state) {
+void _PCALL palGetMouseState(PalMouseState* state) {
     
-    if (!system || !state) {
+    if (!state) {
         return;
     }
 
@@ -614,13 +583,13 @@ static void getHidProperties(PalInputDeviceInfo* info) {
 
     WCHAR manufacturer[64] = {};
     WCHAR product[64] = {};
-    bool sucessManufacturer = s_HidD_GetManufacturerString(
+    bool sucessManufacturer = s_System.hidD_GetManufacturerString(
         file,
         manufacturer,
         sizeof(manufacturer)
     );
 
-    bool sucessproduct = s_HidD_GetProductString(
+    bool sucessproduct = s_System.hidD_GetProductString(
         file,
         product,
         sizeof(product)
@@ -644,7 +613,7 @@ static void getHidProperties(PalInputDeviceInfo* info) {
     // get attributes
     HIDD_ATTRIBUTES attrs = {};
     attrs.Size = sizeof(HIDD_ATTRIBUTES);
-    if (s_HidD_GetAttributes(file, &attrs)) {
+    if (!s_System.hidD_GetAttributes(file, &attrs)) {
         info->productID = 0;
         info->vendorID = 0;
         info->type = PAL_INPUT_DEVICE_GENERIC_GAMEPAD;
@@ -934,7 +903,6 @@ static void createScancodeTable() {
 }
 
 static PalResult registerRawDevice(
-    PalInputSystem* system,
     PalInputDevice* inputDevice,
     bool remove) {
 
@@ -950,7 +918,7 @@ static PalResult registerRawDevice(
     }
 
     DWORD flag = RIDEV_INPUTSINK;
-    HWND window = system->window;
+    HWND window = s_System.window;
     if (remove) {
         flag = RIDEV_REMOVE;
         window = nullptr;
@@ -969,7 +937,7 @@ static PalResult registerRawDevice(
                 if (remove) {
                     return PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED;
                 } else {
-                    return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
+                    return PAL_RESULT_PLATFORM_FAILURE;
                 }
             }
             return PAL_RESULT_SUCCESS;
@@ -986,7 +954,7 @@ static PalResult registerRawDevice(
                 if (remove) {
                     return PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED;
                 } else {
-                    return PAL_RESULT_INPUT_DEVICE_NOT_FOUND;
+                    return PAL_RESULT_PLATFORM_FAILURE;
                 }
             }
 
@@ -1106,8 +1074,7 @@ LRESULT CALLBACK inputProc(
     WPARAM wParam, 
     LPARAM lParam) {
 
-    PalInputSystem* input = GetPropW(hwnd, PAL_WIN32_INPUT_PROP);
-    if (!input) {
+    if (!s_System.initialized) {
         return DefWindowProcW(hwnd, msg, wParam, lParam);
     }
 

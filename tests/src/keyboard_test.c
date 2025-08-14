@@ -12,12 +12,7 @@ void keyboardTest() {
     palLog("");
 
     PalResult result;
-    PalInputSystem* input = nullptr;
-
-    PalInputSystemCreateInfo createInfo;
-    createInfo.allocator = nullptr; // for default.
-    createInfo.eventDriver = nullptr; // for default.
-    result = palCreateInputSystem(&createInfo, &input);
+    result = palInitInput(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -28,7 +23,6 @@ void keyboardTest() {
     // enumerate connected keyboards 
     Int32 count = 0;
     if (palEnumerateInputDevices(
-        input, 
         PAL_INPUT_MASK_KEYBOARD,
         &count,
         nullptr
@@ -45,7 +39,6 @@ void keyboardTest() {
 
     PalInputDevice* keyboards[count];
     if (palEnumerateInputDevices(
-        input, 
         PAL_INPUT_MASK_KEYBOARD,
         &count,
         keyboards
@@ -58,7 +51,7 @@ void keyboardTest() {
     // register the keyboard device
     // we register the first mouse device in the array,
     // but you should query info and check which you want to register.
-    result = palRegisterInputDevice(input, keyboards[0]);
+    result = palRegisterInputDevice(keyboards[0]);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -68,11 +61,11 @@ void keyboardTest() {
     // get keyboard state. If the keyboard device is not registered, this will not be filled.
     // The state will be updated when palUpdateInput is called, so call this once before the loop.
     PalKeyboardState state;
-    palGetKeyboardState(input, &state);
+    palGetKeyboardState(&state);
 
     bool running = true;
     while (running) {
-        palUpdateInput(input);
+        palUpdateInput();
 
         if (state.scancodes[PAL_SCANCODE_RIGHT]) {
             palLog("Right Scancode (Right key on QWERTY layout) was pressed");
@@ -88,5 +81,5 @@ void keyboardTest() {
         }
     }
 
-    palDestroyInputSystem(input);
+    palShutdownInput();
 }

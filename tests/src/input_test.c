@@ -41,12 +41,7 @@ void inputTest() {
     palLog("");
 
     PalResult result;
-    PalInputSystem* input = nullptr;
-
-    PalInputSystemCreateInfo createInfo;
-    createInfo.allocator = nullptr; // for default.
-    createInfo.eventDriver = nullptr; // for default.
-    result = palCreateInputSystem(&createInfo, &input);
+    result = palInitInput(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -61,8 +56,7 @@ void inputTest() {
     Int32 totalInputDevices = 0;
 
     // enumerate connected keyboards
-    if (palEnumerateInputDevices(
-        input, 
+    if (palEnumerateInputDevices( 
         PAL_INPUT_MASK_KEYBOARD,
         &keyboardCount,
         nullptr
@@ -73,8 +67,7 @@ void inputTest() {
     }
 
     // enumerate connected mice
-    if (palEnumerateInputDevices(
-        input, 
+    if (palEnumerateInputDevices( 
         PAL_INPUT_MASK_MOUSE,
         &mouseCount,
         nullptr
@@ -85,8 +78,7 @@ void inputTest() {
     }
 
     // enumerate connected gamepads
-    if (palEnumerateInputDevices(
-        input, 
+    if (palEnumerateInputDevices( 
         PAL_INPUT_MASK_GAMEPAD,
         &gamepadCount,
         nullptr
@@ -106,7 +98,6 @@ void inputTest() {
     // enumerate all connected input devices
     PalInputDevice* inputDevices[totalInputDevices];
     if (palEnumerateInputDevices(
-        input, 
         PAL_INPUT_MASK_ALL,
         &totalInputDevices,
         inputDevices
@@ -137,5 +128,5 @@ void inputTest() {
 
     }
 
-    palDestroyInputSystem(input);
+    palShutdownInput();
 }

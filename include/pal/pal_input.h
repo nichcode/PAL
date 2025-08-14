@@ -35,14 +35,6 @@ freely, subject to the following restrictions:
 #include "pal_core.h"
 
 /**
- * @struct PalInputSystem
- * @brief Opaque handle to a input system.
- *
- * @ingroup input
- */
-typedef struct PalInputSystem PalInputSystem;
-
-/**
  * @struct PalInputDevice
  * @brief Opaque handle to an input device.
  *
@@ -382,23 +374,6 @@ typedef enum PalMouseButton {
 } PalMouseButton;
 
 /**
- * @struct PalInputSystemCreateInfo
- * @brief Specifies options for creating an instance of the input system.
- *
- * This struct must be initialized and passed to `palCreateInputSystem()`.
- *
- * All fields must be explicitly set by the user.
- *
- * @note Uninitialized fields may result in undefined behavior.
- *
- * @ingroup input
- */
-typedef struct PalInputSystemCreateInfo {
-    PalAllocator *allocator;             /** < User allocator or nullptr for default.*/
-    PalEventDriver *eventDriver;         /** < Event driver to push input events.*/
-} PalInputSystemCreateInfo;
-
-/**
  * @struct PalInputDeviceInfo
  * @brief Contains information about an input device.
  *
@@ -470,63 +445,50 @@ typedef struct PalMouseState {
 } PalMouseState;
 
 /**
- * @brief Create an instance of the input system.
- *
- * An input system is neeed to enumerate connected input devices,
- * register input devices and poll state for the registered devices.
- *
- * The user must call this function before any other input related functions.
+ * @brief Initializes the input system.
+ * 
+ * The input system must be initialized before enumerating connected input devices,
+ * registering input devices to recieve input for them and other input related functionality. 
+ * This must called before any input related function.
+ * 
+ * The input system must be shutdown with `palShutdownInput()` when no longer needed.
  * The `eventDriver` field in `info` must be valid to recieve input related events.
  *
- * @param[in] info Pointer to a PalInputSystemCreateInfo struct with creation options.
- * @param[out] outSystem Pointer to recieve the created input system instance.
+ * @param[in] allocator Optional user provided allocator. Can be `nullptr` to use default.
+ * @param[in] eventDriver Optional event driver to push events to. If `nullptr` no events will be pushed.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
- * @note This function is not thread-safe. If multiple threads will call this function,
- * the user is responsible for synchronization.
+ * @note This function must be called from the main thread.
  *
- * @note The created input system instance must be destroyed with `PalDestroyInputSystem()` when no longer needed.
- *
- * @sa PalInputSystemCreateInfo, palDestroyInputSystem()
+ * @sa palShutdownInput()
  * @ingroup input
  */
-_PAPI PalResult _PCALL palCreateInputSystem(
-    const PalInputSystemCreateInfo *info,
-    PalInputSystem **outSystem);
+_PAPI PalResult _PCALL palInitInput(
+    PalAllocator *allocator,
+    PalEventDriver *eventDriver);
 
 /**
- * @brief Destroys an instance of the input system.
+ * @brief Shutdown the input system.
+ * 
+ * The input system must be initialized before this call.
  *
- * After this call, the pointer will be invalid and should not be used anymore.
+ * @note This function must be called from the main thread.
  *
- * This function can be called multiple times without any undefined behavior.
- * If the input system instance is invalid or `nullptr`, this function returns silently.
- *
- * @param[in] system Pointer to the input system instance to destroy.
- *
- * @note This function is not thread-safe. If multiple threads will call this function,
- * the user is responsible for synchronization.
- * All resources created through the input system must be destroyed before this call.
- *
- * @sa palCreateInputSystem()
+ * @sa palInitInput()
  * @ingroup input
  */
-_PAPI void _PCALL palDestroyInputSystem(PalInputSystem *system);
+_PAPI void _PCALL palShutdownInput();
 
 /**
- * @brief Update the input system instance and all registered input devices.
+ * @brief Update the input system and all registered input devices.
  * 
- * @param[in] system Pointer to the video system instance.
- * 
- * @note This function is guaranteed not to fail if the `system` is valid.
- * @note This function is not thread-safe. If multiple threads will call this function,
- * the user is responsible for synchronization.
+ * @note This function must be called from the main thread.
  *
- * @sa palCreateInputSystem()
+ * @sa palInitInput()
  * @ingroup input
  */
-_PAPI void _PCALL palUpdateInput(PalInputSystem* system);
+_PAPI void _PCALL palUpdateInput();
 
 /**
  * @brief Returns a list of active and connected input devices.
@@ -549,7 +511,6 @@ _PAPI void _PCALL palUpdateInput(PalInputSystem* system);
  * If the `count` is zero or less than zero, the function returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  * If `count` is less than the connected input devices, PAL will write up to `count`.
  *
- * @param[in] system Pointer to the input system instance.
  * @param[in] mask Bitmask of input devices to enumerate.
  * @param[in] count Capacity of the `inputDevices` array.
  * @param[out] inputDevices User allocated array of PalInputDevice.
@@ -559,14 +520,12 @@ _PAPI void _PCALL palUpdateInput(PalInputSystem* system);
  * @note Users must not free the display handles, they are managed by the OS.
  * Users are required to cache this, and call this function again if input devices are added or removed.
  *
- * @note This function is thread-safe if `inputDevices` is thread local.
- * If not, the user is responsible for synchronization.
+ * @note This function must be called from the main thread.
  *
- * @sa palCreateInputSystem(), PalInputDeviceInfo
+ * @sa palInitInput(), PalInputDeviceInfo
  * @ingroup input
  */
 _PAPI PalResult _PCALL palEnumerateInputDevices(
-    PalInputSystem* system,
     PalInputMask mask,
     Int32* count,
     PalInputDevice** inputDevices);
@@ -584,8 +543,8 @@ _PAPI PalResult _PCALL palEnumerateInputDevices(
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
- * @note This function is thread-safe if `info` is thread local.
- * If not, the user is responsible for synchronization.
+ * @note This function must be called from the main thread.
+ * Users are required to cache this.
  *
  * @sa palEnumerateInputDevices(), PalInputDeviceInfo
  * @ingroup input
@@ -595,26 +554,23 @@ _PAPI PalResult _PCALL palGetInputDeviceInfo(
     PalInputDeviceInfo* info);
 
 /**
- * @brief Register an input device to recieve inputs using the input system.
+ * @brief Register an input device to recieve input.
  *
  * The input devices registered will be updated when `palUpdateInput()` is called.
  * So for maximum performance, 
  * register only input devices you need and unregister them with `palUnregisterInputDevice()` when no longer needed.
  *
- * @param[in] system The Pointer to the input system instance.
  * @param[in] inputDevice The input device to register.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
- * @note This function is not thread-safe.
+ * @note This function must be called from the main thread.
  *
- * @sa palEnumerateInputDevices(), palCreateInputSystem()
+ * @sa palEnumerateInputDevices(), palInitInput()
  * @sa palUnregisterInputDevice()
  * @ingroup input
  */
-_PAPI PalResult _PCALL palRegisterInputDevice(
-    PalInputSystem* system,
-    PalInputDevice* inputDevice);
+_PAPI PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice);
 
 /**
  * @brief Unregister an input device using the input system.
@@ -624,63 +580,63 @@ _PAPI PalResult _PCALL palRegisterInputDevice(
  * or `PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED` will be returned and this function will fail.
  * To recieve input for the input device again, call `palRegisterInputDevice()`.
  * 
- * @param[in] system The Pointer to the input system instance.
  * @param[in] inputDevice The input device to unregister.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
- * @note This function is not thread-safe.
+ * @note This function must be called from the main thread.
  *
- * @sa palEnumerateInputDevices(), palCreateInputSystem()
+ * @sa palEnumerateInputDevices(), palInitInput()
  * @sa palRegisterInputDevice()
  * @ingroup input
  */
-_PAPI PalResult _PCALL palUnregisterInputDevice(
-    PalInputSystem* system,
-    PalInputDevice* inputDevice);
+_PAPI PalResult _PCALL palUnregisterInputDevice(PalInputDevice* inputDevice);
 
 /**
- * @brief Get the state of the registered keyboard device.
+ * @brief Get the state of a registered keyboard device.
  * 
- * The returned state can be used for all keyboard types.
+ * This is not per-keyboard device state, 
+ * therefore the returned `state` should be used for all registered keyboards.
+ * Since the OS (platform) merges all keyboards into a virtual keyboard,
+ * the `state` returned will be a virtual keyboard (one state for all keyoard types).
+ *  
  * A keyboard device must be registered before this call.
+ * The difference between multiple keyboard devices will be the keys on the keybard.
+ * Example: some keyboards might not have a numpad, therefore that key cannot be pressed on that keybard.
  * 
- * If a keyboard device is registered, the state will be updated at every call to `palUpdateInput()`.
+ * If a keyboard device is registered, the `state` will be updated at every call to `palUpdateInput()`.
  *
- * @param[in] system Pointer to the input system instance.
  * @param[out] state Pointer to the PalKeyboardState struct to fill.
  * 
- * @note This function is guaranteed not to fail if `system` and `state` are is valid.
+ * @note This function is guaranteed not to fail if `state` is is valid.
  * @note This function is thread-safe if `state` is thread local.
  * If not, the user is responsible for synchronization.
  *
- * @sa palCreateInputSystem(), PalKeyboardState
+ * @sa palInitInput(), PalKeyboardState
  * @ingroup input
  */
-_PAPI void _PCALL palGetKeyboardState(
-    PalInputSystem* system,
-    PalKeyboardState* state);
+_PAPI void _PCALL palGetKeyboardState(PalKeyboardState* state);
 
 /**
- * @brief Get the state of the registered mouse device.
+ * @brief Get the state of a registered mouse device.
  * 
- * The returned state can be used for all mouse types.
+ * This is not per-mouse device state, 
+ * therefore the returned `state` should be used for all registered mice.
+ * Since the OS (platform) merges all mice into a virtual mouse,
+ * the `state` returned will be a virtual mouse (one state for all mouse types).
+ *  
  * A mouse device must be registered before this call.
- * 
- * If a mouse device is registered, the state will be updated at every call to `palUpdateInput()`.
+ * If a mouse device is registered, the `state` will be updated at every call to `palUpdateInput()`.
  *
- * @param[in] system Pointer to the input system instance.
- * @param[out] state Pointer to the PalMouseState struct to fill.
+ * @param[out] state Pointer to the PalKeyboardState struct to fill.
  * 
- * @note This function is guaranteed not to fail if `system` and `state` are is valid.
+ * @note This function is guaranteed not to fail if `state` is is valid.
  * @note This function is thread-safe if `state` is thread local.
  * If not, the user is responsible for synchronization.
  *
- * @sa palCreateInputSystem(), PalMouseState
+ * @sa palInitInput(), PalMouseState
  * @ingroup input
  */
-_PAPI void _PCALL palGetMouseState(
-    PalInputSystem* system,
-    PalMouseState* state);
+_PAPI void _PCALL palGetMouseState(PalMouseState* state);
 
 #endif // _PAL_INPUT_H
