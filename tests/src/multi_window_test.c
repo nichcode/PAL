@@ -14,9 +14,7 @@ void multiWindowTest() {
     PalResult result;
     PalEventDriverCreateInfo eventDriverCreateInfo;
     PalEventDriver* eventDriver = nullptr;
-    PalVideoSystem* video = nullptr;
     PalVideoFeatures features;
-    PalVideoSystemCreateInfo videoCreateInfo;
 
     eventDriverCreateInfo.allocator = nullptr;
     eventDriverCreateInfo.callback = nullptr;
@@ -31,14 +29,31 @@ void multiWindowTest() {
     }
 
     // Set polling dispatch mode for event types
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_RESIZE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MOVE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_DPI_CHANGED, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(
+        eventDriver, 
+        PAL_EVENT_WINDOW_CLOSE, 
+        PAL_DISPATCH_POLL
+    );
 
-    videoCreateInfo.allocator = nullptr; // for default.
-    videoCreateInfo.eventDriver = eventDriver; // for pushing events
-    result = palCreateVideoSystem(&videoCreateInfo, &video);
+    palSetEventDispatchMode(
+        eventDriver, 
+        PAL_EVENT_WINDOW_RESIZE, 
+        PAL_DISPATCH_POLL
+    );
+
+    palSetEventDispatchMode(
+        eventDriver, 
+        PAL_EVENT_WINDOW_MOVE, 
+        PAL_DISPATCH_POLL
+    );
+
+    palSetEventDispatchMode(
+        eventDriver, 
+        PAL_EVENT_DPI_CHANGED, 
+        PAL_DISPATCH_POLL
+    );
+
+    result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -46,7 +61,7 @@ void multiWindowTest() {
         return;
     }
 
-    features = palGetVideoFeatures(video);
+    features = palGetVideoFeatures();
 
     // create window
     PalWindow* window = nullptr;
@@ -65,7 +80,7 @@ void multiWindowTest() {
     //     windowCreateInfo.flags |= PAL_WINDOW_FULLSCREEN;
     // }
 
-    result = palCreateWindow(video, &windowCreateInfo, &window);
+    result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -75,7 +90,7 @@ void multiWindowTest() {
     // create second window reusing the same PalWindowCreateInfo
     PalWindow* window2 = nullptr;
     windowCreateInfo.title = "Pal Test Window 2";
-    result = palCreateWindow(video, &windowCreateInfo, &window2);
+    result = palCreateWindow(&windowCreateInfo, &window2);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -85,7 +100,7 @@ void multiWindowTest() {
     bool running = true;
     while (running) {
         // update video system to get video events
-        palUpdateVideo(video);
+        palUpdateVideo();
 
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
@@ -153,6 +168,6 @@ void multiWindowTest() {
 
     palDestroyWindow(window);
     palDestroyWindow(window2);
-    palDestroyVideoSystem(video);
+    palShutdownVideo();
     palDestroyEventDriver(eventDriver);
 }

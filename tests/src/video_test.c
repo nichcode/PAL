@@ -11,13 +11,9 @@ void videoTest() {
     palLog("");
 
     PalResult result;
-    PalVideoSystem* video = nullptr;
     PalVideoFeatures features;
     
-    PalVideoSystemCreateInfo createInfo;
-    createInfo.allocator = nullptr; // for default.
-    createInfo.eventDriver = nullptr; // for default.
-    result = palCreateVideoSystem(&createInfo, &video);
+    result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -25,7 +21,7 @@ void videoTest() {
         return;
     }
 
-    features = palGetVideoFeatures(video);
+    features = palGetVideoFeatures();
 
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
         palLog("High DPI windows feature is supported");
@@ -75,5 +71,5 @@ void videoTest() {
         palLog("Window icon on taskbar flashing is supported");
     }
 
-    palDestroyVideoSystem(video);
+    palShutdownVideo();
 }

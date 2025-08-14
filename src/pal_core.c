@@ -124,8 +124,8 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
         return "Video feature not supported";
 
-        case PAL_RESULT_VIDEO_DEVICE_NOT_FOUND:
-        return "OS video driver not found or busy";
+        case PAL_RESULT_VIDEO_NOT_INITIALIZED:
+        return "Video system not initialized.";
 
         case PAL_RESULT_INVALID_WINDOW:
         return "Invalid window";
@@ -133,8 +133,8 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_RESULT_INVALID_OPERATION:
         return "Invalid operation";
 
-        case PAL_RESULT_INPUT_DEVICE_NOT_FOUND:
-        return "OS video driver not found or busy";
+        case PAL_RESULT_INPUT_NOT_INITIALIZED:
+        return "Input system not initialized.";
 
         case PAL_RESULT_INVALID_INPUT_DEVICE:
         return "Invalid input device";

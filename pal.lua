@@ -44,7 +44,7 @@ project "PAL"
         filter {}
     end
 
-    if (PAL_BUILD_VIDEO) then
+    if (PAL_BUILD_INPUT) then
         filter {"system:windows", "configurations:*"}
         files { "src/input/pal_input_win32.c" }
         filter {}

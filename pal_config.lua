@@ -9,4 +9,4 @@ PAL_BUILD_STATIC = false
 PAL_BUILD_VIDEO = true
 
 -- build input system
-PAL_BUILD_INPUT = true
+PAL_BUILD_INPUT = false

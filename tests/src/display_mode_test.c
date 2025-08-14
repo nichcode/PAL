@@ -11,23 +11,19 @@ void displayModeTest() {
     palLog("");
 
     PalResult result;
-    PalVideoSystem* video;
     PalDisplayInfo displayInfo;
     PalDisplayMode displayMode;
     int displayCount = 0;
     int modeCount = 0;
 
-    PalVideoSystemCreateInfo createInfo;
-    createInfo.allocator = nullptr;
-
-    result = palCreateVideoSystem(&createInfo, &video);
+    result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog(resultString);
         return;
     }
 
-    result = palEnumerateDisplays(video, &displayCount, nullptr);
+    result = palEnumerateDisplays(&displayCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog(resultString);
@@ -37,7 +33,7 @@ void displayModeTest() {
     palLog("Display Count: %d", displayCount);
 
     PalDisplay* displays[displayCount];
-    result = palEnumerateDisplays(video, &displayCount, displays);
+    result = palEnumerateDisplays(&displayCount, displays);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog(resultString);
@@ -187,5 +183,5 @@ void displayModeTest() {
         }
     }
 
-    palDestroyVideoSystem(video);
+    palShutdownVideo();
 }

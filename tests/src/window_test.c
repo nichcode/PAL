@@ -14,9 +14,7 @@ void windowTest() {
     PalResult result;
     PalEventDriverCreateInfo eventDriverCreateInfo;
     PalEventDriver* eventDriver = nullptr;
-    PalVideoSystem* video = nullptr;
     PalVideoFeatures features;
-    PalVideoSystemCreateInfo videoCreateInfo;
 
     eventDriverCreateInfo.allocator = nullptr;
     eventDriverCreateInfo.callback = nullptr;
@@ -33,9 +31,7 @@ void windowTest() {
     // Set polling dispatch mode for all event types
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
     
-    videoCreateInfo.allocator = nullptr; // for default.
-    videoCreateInfo.eventDriver = eventDriver; // for pushing events
-    result = palCreateVideoSystem(&videoCreateInfo, &video);
+    result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
         const char* resultString = palResultToString(result);
@@ -43,7 +39,7 @@ void windowTest() {
         return;
     }
 
-    features = palGetVideoFeatures(video);
+    features = palGetVideoFeatures();
 
     // create window
     PalWindow* window = nullptr;
@@ -62,7 +58,7 @@ void windowTest() {
     //     windowCreateInfo.flags |= PAL_WINDOW_FULLSCREEN;
     // }
 
-    result = palCreateWindow(video, &windowCreateInfo, &window);
+    result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
@@ -72,7 +68,7 @@ void windowTest() {
     bool running = true;
     while (running) {
         // update video system to get video events
-        palUpdateVideo(video);
+        palUpdateVideo();
 
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
@@ -92,6 +88,6 @@ void windowTest() {
     }
 
     palDestroyWindow(window);
-    palDestroyVideoSystem(video);
+    palShutdownVideo();
     palDestroyEventDriver(eventDriver);
 }

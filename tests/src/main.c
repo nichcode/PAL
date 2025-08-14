@@ -15,11 +15,11 @@ int main(int argc, char** argv) {
     //registerTest(eventsTest);
 
 #if PAL_HAS_VIDEO
-    //registerTest(videoTest);
-    //registerTest(displayTest);
-    //registerTest(displayModeTest);
-    //registerTest(windowTest);
-    //registerTest(multiWindowTest);
+    // registerTest(videoTest);
+    // registerTest(displayTest);
+    // registerTest(displayModeTest);
+    // registerTest(windowTest);
+    // registerTest(multiWindowTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_INPUT

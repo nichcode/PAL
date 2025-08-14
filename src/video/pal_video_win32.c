@@ -38,7 +38,6 @@ freely, subject to the following restrictions:
 
 #include <windows.h>
 #include <windowsx.h>
-
 #include <time.h>
 
 #define PAL_WIN32_VIDEO_CLASS L"PALVideoClass"
@@ -53,12 +52,7 @@ freely, subject to the following restrictions:
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(HMONITOR, Int32, UINT*, UINT*);
 typedef HRESULT (WINAPI* SetProcessAwarenessFn)(Int32);
 
-static GetDpiForMonitorFn s_GetDpiForMonitor;
-static SetProcessAwarenessFn s_SetProcessAwareness;
-static HINSTANCE s_Shcore;
-static Uint32 s_Counter = 0;
-
-typedef struct PendingWindowEvent {
+typedef struct PendingEventWin32 {
     Uint64 sourceID;
     Uint32 width;
     Uint32 height;
@@ -66,18 +60,21 @@ typedef struct PendingWindowEvent {
     Int32 y;
     bool pendingResize;
     bool pendingMove;
-} PendingWindowEvent;
+} PendingEventWin32;
 
-typedef struct PalVideoSystem {
-    PendingWindowEvent pendingEvent;
+typedef struct VideoSystemWin32 {
     PalAllocator* allocator;
+    HINSTANCE shcore;
     HINSTANCE instance;
+    GetDpiForMonitorFn getDpiForMonitor;
+    SetProcessAwarenessFn setProcessAwareness;
+
     PalEventDriver* eventDriver;
     PalVideoFeatures features;
-} PalVideoSystem;
+    bool initialized;
+} VideoSystemWin32;
 
 typedef struct PalWindow {
-    PalVideoSystem* system;
     HWND handle;
     const char* title;
     Uint64 id;
@@ -98,6 +95,10 @@ typedef struct DisplayData {
     Int32 count;
     Int32 maxCount;
 } DisplayData;
+
+static Uint32 s_Counter = 0;
+static VideoSystemWin32 s_System = {};
+static PendingEventWin32 s_Event = {};
 
 static void getMonitorDPI(
     HMONITOR monitor, 
@@ -138,114 +139,97 @@ LRESULT CALLBACK videoProc(
 // Public API
 // ==================================================
 
-PalResult _PCALL palCreateVideoSystem(
-    const PalVideoSystemCreateInfo* info,
-    PalVideoSystem** outSystem) {
+PalResult _PCALL palInitVideo(
+    PalAllocator *allocator,
+    PalEventDriver *eventDriver) {
 
-    PalVideoSystem* system;
-    if (!info || !outSystem) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (info->allocator && 
-    (!info->allocator->allocate || !info->allocator->free)) {
+    if (allocator && (!allocator->allocate || !allocator->free)) {
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
-    system = palAllocate(info->allocator, sizeof(PalVideoSystem), 0);
-    if (!system) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
+    s_System.allocator = allocator;
+    s_System.eventDriver = eventDriver;
 
-    memset(system, 0, sizeof(PalVideoSystem));
-    if (info->allocator) {
-        system->allocator = info->allocator;
-    }
+    if (!s_System.initialized) {
+        // register class
+        s_System.instance = GetModuleHandleW(nullptr);
+        WNDCLASSEXW wc = {0};
+        wc.cbSize = sizeof(WNDCLASSEXW);
+        if (!GetClassInfoExW(s_System.instance, PAL_WIN32_VIDEO_CLASS, &wc)) {
+            wc.cbClsExtra = 0;
+            wc.cbWndExtra = 0;
+            wc.hbrBackground = NULL;
+            wc.hCursor = LoadCursorW(s_System.instance, IDC_ARROW);
+            wc.hIcon = LoadIconW(s_System.instance, IDI_APPLICATION);
+            wc.hIconSm = LoadIconW(s_System.instance, IDI_APPLICATION);
+            wc.hInstance = s_System.instance;
+            wc.lpfnWndProc = videoProc;
+            wc.lpszClassName = PAL_WIN32_VIDEO_CLASS;
+            wc.lpszMenuName = NULL;
+            wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
 
-    // register class
-    system->instance = GetModuleHandleW(nullptr);
-    WNDCLASSEXW wc = {0};
-    wc.cbSize = sizeof(WNDCLASSEXW);
-    if (!GetClassInfoExW(system->instance, PAL_WIN32_VIDEO_CLASS, &wc)) {
-        wc.cbClsExtra = 0;
-        wc.cbWndExtra = 0;
-        wc.hbrBackground = NULL;
-        wc.hCursor = LoadCursorW(system->instance, IDC_ARROW);
-        wc.hIcon = LoadIconW(system->instance, IDI_APPLICATION);
-        wc.hIconSm = LoadIconW(system->instance, IDI_APPLICATION);
-        wc.hInstance = system->instance;
-        wc.lpfnWndProc = videoProc;
-        wc.lpszClassName = PAL_WIN32_VIDEO_CLASS;
-        wc.lpszMenuName = NULL;
-        wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-
-        if (!RegisterClassExW(&wc)) {
-            return PAL_RESULT_ACCESS_DENIED;
+            if (!RegisterClassExW(&wc)) {
+                return PAL_RESULT_ACCESS_DENIED;
+            }
         }
+
+        // load shared libraries
+        s_System.shcore = LoadLibraryA("shcore.dll");
+        if (s_System.shcore) {
+            s_System.getDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
+                s_System.shcore,
+                "GetDpiForMonitor"
+            );
+
+            s_System.setProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
+                s_System.shcore,
+                "SetProcessDpiAwareness"
+            );
+        }
+
+        // set features
+        s_System.features |= PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION;
+        s_System.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+        s_System.features |= PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH;
+        s_System.features |= PAL_VIDEO_FEATURE_MULTI_DISPLAYS;
+        s_System.features |= PAL_VIDEO_FEATURE_WINDOW_RESIZING;
+        s_System.features |= PAL_VIDEO_FEATURE_WINDOW_POSITIONING;
+        s_System.features |= PAL_VIDEO_FEATURE_WINDOW_MINMAX;
+        s_System.features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
+        s_System.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
+        s_System.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
+        s_System.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
+
+        if (s_System.getDpiForMonitor && s_System.setProcessAwareness) {
+            s_System.features |= PAL_VIDEO_FEATURE_HIGH_DPI;
+        }
+
+        s_System.initialized = true;
     }
 
-    // load shared libraries
-    s_Shcore = LoadLibraryA("shcore.dll");
-    if (s_Shcore) {
-        s_GetDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
-            s_Shcore,
-            "GetDpiForMonitor"
-        );
-
-        s_SetProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
-            s_Shcore,
-            "SetProcessDpiAwareness"
-        );
-    }
-
-    // set features
-    PalVideoFeatures features;
-    features |= PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION;
-    features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
-    features |= PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH;
-    features |= PAL_VIDEO_FEATURE_MULTI_DISPLAYS;
-    features |= PAL_VIDEO_FEATURE_WINDOW_RESIZING;
-    features |= PAL_VIDEO_FEATURE_WINDOW_POSITIONING;
-    features |= PAL_VIDEO_FEATURE_WINDOW_MINMAX;
-    features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
-    features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
-    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
-    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
-
-    if (s_GetDpiForMonitor && s_SetProcessAwareness) {
-        features |= PAL_VIDEO_FEATURE_HIGH_DPI;
-    }
-
-    if (info->eventDriver) {
-        system->eventDriver = info->eventDriver;
-    }
-
-    system->features = features;
-    *outSystem = system;
     return PAL_RESULT_SUCCESS;
 }
 
-void _PCALL palDestroyVideoSystem(PalVideoSystem* system) {
+void _PCALL palShutdownVideo() {
 
-    if (!system || (system && !system->instance)) {
+    if (!s_System.initialized) {
         return;
     }
-
-    UnregisterClassW(PAL_WIN32_VIDEO_CLASS, system->instance);
-    palFree(system->allocator, system);
+    UnregisterClassW(PAL_WIN32_VIDEO_CLASS, s_System.instance);
+    s_System.initialized = false;
 }
 
-PalVideoFeatures _PCALL palGetVideoFeatures(PalVideoSystem* system) {
+PalVideoFeatures _PCALL palGetVideoFeatures() {
 
-    if (!system) {
+    if (!s_System.initialized) {
         return 0;
     }
-    return system->features;
+    return s_System.features;
 }
 
-void _PCALL palUpdateVideo(PalVideoSystem* system) {
+void _PCALL palUpdateVideo() {
 
-    if (!system) {
+    if (!s_System.initialized) {
         return;
     }
     
@@ -255,27 +239,25 @@ void _PCALL palUpdateVideo(PalVideoSystem* system) {
         DispatchMessageA(&msg);
     }
 
-    PendingWindowEvent* windowEvent = &system->pendingEvent;
-    if (windowEvent->pendingResize) {
+    if (s_Event.pendingResize) {
         PalEvent event = {};
-        event.data = palPackUint32(windowEvent->width, windowEvent->height);
-        event.sourceID = windowEvent->sourceID;
+        event.data = palPackUint32(s_Event.width, s_Event.height);
+        event.sourceID = s_Event.sourceID;
         event.type = PAL_EVENT_WINDOW_RESIZE;
-        palPushEvent(system->eventDriver, &event);
-        windowEvent->pendingResize = false;
+        palPushEvent(s_System.eventDriver, &event);
+        s_Event.pendingResize = false;
 
-    } else if (windowEvent->pendingMove) {
+    } else if (s_Event.pendingMove) {
         PalEvent event = {};
-        event.data = palPackInt32(windowEvent->x, windowEvent->y);
-        event.sourceID = windowEvent->sourceID;
+        event.data = palPackInt32(s_Event.x, s_Event.y);
+        event.sourceID = s_Event.sourceID;
         event.type = PAL_EVENT_WINDOW_MOVE;
-        palPushEvent(system->eventDriver, &event);
-        windowEvent->pendingMove = false;
+        palPushEvent(s_System.eventDriver, &event);
+        s_Event.pendingMove = false;
     }
 }
 
 PalResult _PCALL palEnumerateDisplays(
-    PalVideoSystem* system,
     Int32* count,
     PalDisplay** displays) {
 
@@ -300,7 +282,6 @@ PalResult _PCALL palEnumerateDisplays(
 }
 
 PalResult _PCALL palGetPrimaryDisplay(
-    PalVideoSystem* system,
     PalDisplay** outDisplay) {
 
     if (!system || !outDisplay) {
@@ -518,7 +499,6 @@ PalResult _PCALL palSetDisplayOrientation(
 }
 
 PalResult _PCALL palCreateWindow(
-    PalVideoSystem* system, 
     const PalWindowCreateInfo* info,
     PalWindow** outWindow) {
 
@@ -531,7 +511,6 @@ PalResult _PCALL palCreateWindow(
     PalDisplayInfo displayInfo;
     bool hidden, highDPI;
 
-    PalVideoFeatures features = system->features;
     Uint32 style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
     Uint32 exStyle = WS_EX_OVERLAPPEDWINDOW;
 
@@ -546,7 +525,7 @@ PalResult _PCALL palCreateWindow(
     if (info->display) {
         display = info->display;
     } else {
-        palGetPrimaryDisplay(system, &display);
+        palGetPrimaryDisplay(&display);
     }
 
     // get display info
@@ -574,7 +553,7 @@ PalResult _PCALL palCreateWindow(
     // set window size
     if (info->flags & PAL_WINDOW_ALLOW_HIGH_DPI) {
         // check for support
-        if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
+        if (s_System.features & PAL_VIDEO_FEATURE_HIGH_DPI) {
             scale = (float)displayInfo.dpi / 96.0f;
             width = (Uint32)((float)info->width * scale);
             height = (Uint32)((float)info->height * scale);
@@ -609,15 +588,15 @@ PalResult _PCALL palCreateWindow(
         rect.bottom - rect.top,
         nullptr, 
         nullptr, 
-        system->instance,
+        s_System.instance,
         nullptr
     );
 
     if (!handle) {
-        return PAL_RESULT_VIDEO_DEVICE_NOT_FOUND;
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    window = palAllocate(system->allocator, sizeof(PalWindow), 0);
+    window = palAllocate(s_System.allocator, sizeof(PalWindow), 0);
     if (!window) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -643,7 +622,6 @@ PalResult _PCALL palCreateWindow(
     ShowWindow(handle, showFlag);
     SetPropW(handle, PAL_WIN32_VIDEO_PROP, window);
 
-    window->system = system;
     window->handle = handle;
     window->title = info->title;
     window->style = style;
@@ -659,7 +637,7 @@ PalResult _PCALL palCreateWindow(
         PalResult result = palSetWindowFullscreen(window, display, true);
         if (result != PAL_RESULT_SUCCESS) {
             DestroyWindow(window->handle);
-            palFree(system->allocator, window);
+            palFree(s_System.allocator, window);
             return result;
         }
     }
@@ -671,12 +649,12 @@ PalResult _PCALL palCreateWindow(
 
 void _PCALL palDestroyWindow(PalWindow* window) {
 
-    if (!window || (window && !window->system)) {
+    if (!window) {
         return;
     }
 
     DestroyWindow(window->handle);
-    palFree(window->system->allocator, window);
+    palFree(s_System.allocator, window);
 }
 
 PalResult _PCALL palSetWindowBorderless(
@@ -1152,14 +1130,14 @@ static void getMonitorDPI(
     HMONITOR monitor, 
     Int32* dpi) {
 
-    if (!s_GetDpiForMonitor || !s_SetProcessAwareness) {
+    if (!s_System.getDpiForMonitor || !s_System.setProcessAwareness) {
         *dpi = 96;
         return;
     }
 
     Int32 dpiX, dpiY;
-    s_SetProcessAwareness(WIN32_DPI_AWARE);
-    s_GetDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
+    s_System.setProcessAwareness(WIN32_DPI_AWARE);
+    s_System.getDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
     *dpi = dpiX;
 }
 
@@ -1312,8 +1290,8 @@ LRESULT CALLBACK videoProc(
 
     switch (msg) {
         case WM_CLOSE: {
-            if (window->system && window->system->eventDriver) {
-                PalEventDriver* driver = window->system->eventDriver;
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_CLOSE);
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {};
@@ -1331,15 +1309,14 @@ LRESULT CALLBACK videoProc(
             window->width = width;
             window->height = height;
 
-            if (window->system && window->system->eventDriver) {
-                PalEventDriver* driver = window->system->eventDriver;
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_RESIZE);
                 if (mode != PAL_DISPATCH_NONE) {
-                    PendingWindowEvent* event = &window->system->pendingEvent;
-                    event->pendingResize = true;
-                    event->width = width;
-                    event->height = height;
-                    event->sourceID = window->id;
+                    s_Event.pendingResize = true;
+                    s_Event.width = width;
+                    s_Event.height = height;
+                    s_Event.sourceID = window->id;
                 }
             }
             return 0;
@@ -1351,15 +1328,14 @@ LRESULT CALLBACK videoProc(
             window->x = x;
             window->y = y;
 
-            if (window->system && window->system->eventDriver) {
-                PalEventDriver* driver = window->system->eventDriver;
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MOVE);
                 if (mode != PAL_DISPATCH_NONE) {
-                    PendingWindowEvent* event = &window->system->pendingEvent;
-                    event->pendingMove = true;
-                    event->x = x;
-                    event->y = y;
-                    event->sourceID = window->id;
+                    s_Event.pendingMove = true;
+                    s_Event.x = x;
+                    s_Event.y = y;
+                    s_Event.sourceID = window->id;
                 }
             }
             return 0;
@@ -1391,8 +1367,8 @@ LRESULT CALLBACK videoProc(
                 window->height = h;
             }
 
-            if (window->system && window->system->eventDriver) {
-                PalEventDriver* driver = window->system->eventDriver;
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DPI_CHANGED);
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {};
@@ -1406,8 +1382,8 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_DEVICECHANGE: {
-            if (window->system && window->system->eventDriver) {
-                PalEventDriver* driver = window->system->eventDriver;
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DISPLAYS_CHANGED);
                 if (wParam == DBT_DEVNODES_CHANGED) {
                     if (mode != PAL_DISPATCH_NONE) {
