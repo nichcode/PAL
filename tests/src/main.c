@@ -23,10 +23,10 @@ int main(int argc, char** argv) {
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_INPUT
-    // registerTest(inputTest);
+    //registerTest(inputTest);
     // registerTest(keyboardTest);
-    // registerTest(mouseTest);
-    registerTest(keyboardAndMouseTest);
+    registerTest(mouseTest);
+    //registerTest(keyboardAndMouseTest);
 #endif // PAL_HAS_VIDEO
 
     runTests();

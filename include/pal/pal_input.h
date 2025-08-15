@@ -72,6 +72,7 @@ typedef enum PalInputMask {
  * @ingroup input
  */
 typedef enum PalInputDeviceType {
+    PAL_INPUT_DEVICE_UNKNOWN,              /** < Invalid device.*/
     PAL_INPUT_DEVICE_KEYBOARD,             /** < Keyboard device.*/
     PAL_INPUT_DEVICE_MOUSE,                /** < Mouse device.*/
     PAL_INPUT_DEVICE_DUALSHOCK4,           /** < PS4 device.*/
@@ -370,8 +371,60 @@ typedef enum PalMouseButton {
     PAL_MOUSE_BUTTON_X2,
 
     PAL_MOUSE_BUTTON_MAX
-
 } PalMouseButton;
+
+/**
+ * @enum PalGamepadButton
+ * @brief buttons of a gamepad device.
+ *
+ * @note All buttons follow the format `PAL_GAMEPAD_BUTTON_**` for consistency and API use.
+ *
+ * @ingroup input
+ */
+typedef enum PalGamepadButton {
+    PAL_GAMEPAD_BUTTON_UNKNOWN = 0,
+
+    PAL_GAMEPAD_BUTTON_A,                 /** < Same as cross.*/
+    PAL_GAMEPAD_BUTTON_B,                 /** < Same as circle.*/
+    PAL_GAMEPAD_BUTTON_X,                 /** < Same as square.*/
+    PAL_GAMEPAD_BUTTON_Y,                 /** < Same as triangle.*/
+    PAL_GAMEPAD_BUTTON_LEFT_BUMPER,       /** < Same as L1.*/
+    PAL_GAMEPAD_BUTTON_RIGHT_BUMPER,      /** < Same as R1.*/
+    PAL_GAMEPAD_BUTTON_BACK,              /** < Same as select or view.*/
+    PAL_GAMEPAD_BUTTON_START,             /** < Same as menu or options.*/
+    PAL_GAMEPAD_BUTTON_GUIDE,             /** < Same as xbox or ps home.*/
+    PAL_GAMEPAD_BUTTON_LEFT_THUMB,        /** < Same as L3 (press left stick).*/
+    PAL_GAMEPAD_BUTTON_RIGHT_THUMB,       /** < Same as R3 (press right stick).*/
+
+    PAL_GAMEPAD_BUTTON_DPAD_UP,           
+    PAL_GAMEPAD_BUTTON_DPAD_DOWN,
+    PAL_GAMEPAD_BUTTON_DPAD_LEFT,
+    PAL_GAMEPAD_BUTTON_DPAD_RIGHT,
+
+    PAL_GAMEPAD_BUTTON_MAX,
+} PalGamepadButton;
+
+/**
+ * @enum PalGamepadAxis
+ * @brief axis of a gamepad device.
+ *
+ * @note All axis follow the format `PAL_GAMEPAD_AXIS_**` for consistency and API use.
+ *
+ * @ingroup input
+ */
+typedef enum PalGamepadAxis {
+    PAL_GAMEPAD_AXIS_UNKNOWN = 0,
+
+    PAL_GAMEPAD_AXIS_LEFT_X,              /** < Left stick X.*/
+    PAL_GAMEPAD_AXIS_LEFT_Y,              /** < Left stick Y.*/
+    PAL_GAMEPAD_AXIS_RIGHT_X,             /** < Right stick X.*/
+    PAL_GAMEPAD_AXIS_RIGHT_Y,             /** < Right stick Y.*/
+
+    PAL_GAMEPAD_AXIS_LEFT_TRIGGER,        /** < Same as L2 or LT.*/
+    PAL_GAMEPAD_AXIS_RIGHT_TRIGGER,       /** < Same as R2 or RT.*/
+
+    PAL_GAMEPAD_AXIS_MAX,
+} PalGamepadAxis;
 
 /**
  * @struct PalInputDeviceInfo
@@ -391,7 +444,7 @@ typedef struct PalInputDeviceInfo {
 
 /**
  * @struct PalKeyboardState
- * @brief Information about the current keyboard state (keys and scancodes).
+ * @brief Information about a keyboard device state (keys and scancodes).
  *
  * @sa palGetKeyboardState()
  *
@@ -403,23 +456,8 @@ typedef struct PalKeyboardState {
 } PalKeyboardState;
 
 /**
- * @struct PalMousePosition
- * @brief Information about the current position and movement of the mouse.
- *
- * @sa PalMouseState()
- *
- * @ingroup input
- */
-typedef struct PalMousePosition {
-    int x;                       /** < Mouse x position.*/
-    int y;                       /** < Mouse y position.*/
-    int dx;                      /** < Mouse x movement delta.*/
-    int dy;                      /** < Mouse y movement delta.*/
-} PalMousePosition;
-
-/**
  * @struct PalMouseWheel
- * @brief Information about the current state of the mouse wheel.
+ * @brief Information about a mouse device scroll wheel.
  *
  * @sa PalMouseState()
  *
@@ -432,17 +470,29 @@ typedef struct PalMouseWheel {
 
 /**
  * @struct PalMouseState
- * @brief Information about the current mouse state (position, wheel and buttons).
+ * @brief Information about a mouse device state. (wheel and buttons).
  *
  * @sa palGetMouseState()
  *
  * @ingroup input
  */
 typedef struct PalMouseState {
-    const PalMousePosition* motion;            /** < Mouse motion information.*/
     const PalMouseWheel* wheel;                /** < Mouse wheel information.*/
     const bool* buttons;                       /** < Mouse buttons state.*/
 } PalMouseState;
+
+/**
+ * @struct PalGamepadState
+ * @brief Information about a gamepad device state (buttons and axes)).
+ *
+ * @sa palGetGamepadState()
+ *
+ * @ingroup input
+ */
+typedef struct PalGamepadState {
+    const int* axes;                       /** < Normalized axes. (-1 to 1.0 for sticks, 0 to 1 for triggers).*/
+    const bool* buttons;                   /** < gamepad buttons state.*/
+} PalGamepadState;
 
 /**
  * @brief Initializes the input system.
@@ -592,6 +642,12 @@ _PAPI PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice);
  */
 _PAPI PalResult _PCALL palUnregisterInputDevice(PalInputDevice* inputDevice);
 
+// TODO: docs
+_PAPI void palGetMousePosition(Int32* x, Int32* y);
+
+// TODO: docs
+_PAPI void palGetMouseRelative(Int32* x, Int32* y);
+
 /**
  * @brief Get the state of a registered keyboard device.
  * 
@@ -612,10 +668,12 @@ _PAPI PalResult _PCALL palUnregisterInputDevice(PalInputDevice* inputDevice);
  * @note This function is thread-safe if `state` is thread local.
  * If not, the user is responsible for synchronization.
  *
- * @sa palInitInput(), PalKeyboardState
+ * @sa palRegisterInputDevice(), PalKeyboardState
  * @ingroup input
  */
-_PAPI void _PCALL palGetKeyboardState(PalKeyboardState* state);
+_PAPI void _PCALL palGetKeyboardState(
+    PalInputDevice* keyboard, 
+    PalKeyboardState* state);
 
 /**
  * @brief Get the state of a registered mouse device.
@@ -634,9 +692,11 @@ _PAPI void _PCALL palGetKeyboardState(PalKeyboardState* state);
  * @note This function is thread-safe if `state` is thread local.
  * If not, the user is responsible for synchronization.
  *
- * @sa palInitInput(), PalMouseState
+ * @sa palRegisterInputDevice(), PalMouseState
  * @ingroup input
  */
-_PAPI void _PCALL palGetMouseState(PalMouseState* state);
+_PAPI void _PCALL palGetMouseState(
+    PalInputDevice* mouse,
+    PalMouseState* state);
 
 #endif // _PAL_INPUT_H

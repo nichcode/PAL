@@ -94,6 +94,7 @@ void inputTest() {
 
     totalInputDevices = keyboardCount + mouseCount + gamepadCount;
     palLog("Total Input Devices Count: %d", totalInputDevices);
+    palLog("");
 
     // enumerate all connected input devices
     PalInputDevice* inputDevices[totalInputDevices];
@@ -125,6 +126,7 @@ void inputTest() {
         palLog(" Type: %s", inputDeviceTypeToString(inputDeviceInfo.type));
         palLog(" Vender ID: %i", inputDeviceInfo.vendorID);
         palLog(" Product ID: %i", inputDeviceInfo.productID);
+        palLog("");
 
     }
 

@@ -12,6 +12,8 @@ void keyboardTest() {
     palLog("");
 
     PalResult result;
+    PalInputDevice* keyboard = nullptr;
+
     result = palInitInput(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         // this can made into a goto to decrease this result checks
@@ -48,20 +50,44 @@ void keyboardTest() {
         return;
     }
 
+    PalInputDeviceInfo inputDeviceInfo;
+    for (int i = 0; i < count; i++) {
+        PalInputDevice* device = keyboards[i];
+
+        result = palGetInputDeviceInfo(device, &inputDeviceInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* resultString = palResultToString(result);
+            palLog(resultString);
+            return;
+        }
+
+        // standard keyboard Product id and vendor id are mostly 0
+        if (inputDeviceInfo.vendorID == 0) {
+            palLog("Mouse Name: %s", inputDeviceInfo.name);
+            palLog("Path: %s", inputDeviceInfo.path);
+            palLog("Vender ID: %i", inputDeviceInfo.vendorID);
+            palLog("Product ID: %i", inputDeviceInfo.productID);
+            palLog("");
+
+            keyboard = device;
+            break;
+        }
+    }
+
     // register the keyboard device
     // we register the first mouse device in the array,
     // but you should query info and check which you want to register.
-    result = palRegisterInputDevice(keyboards[0]);
+    result = palRegisterInputDevice(keyboard);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);
         return;
     }
 
-    // get keyboard state. If the keyboard device is not registered, this will not be filled.
+    // get keyboard state. If the keyboard device is not registered, the state struct will not be filled.
     // The state will be updated when palUpdateInput is called, so call this once before the loop.
     PalKeyboardState state;
-    palGetKeyboardState(&state);
+    palGetKeyboardState(keyboard, &state);
 
     bool running = true;
     while (running) {
