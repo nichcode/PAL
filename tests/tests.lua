@@ -35,7 +35,13 @@ project "Tests"
 
     if (PAL_BUILD_OPENGL) then
         files { 
-            "src/opengl_test.c"
+            "src/opengl_test.c",
+        }
+    end
+
+    if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
+        files { 
+            "src/opengl_pixel_test.c"
         }
     end
 

@@ -45,5 +45,6 @@ void keyboardAndMouseTest();
 void gamepadTest();
 
 void openglTest();
+void openglPixelTest();
 
 #endif // _TESTS_H

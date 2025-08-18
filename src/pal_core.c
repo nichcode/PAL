@@ -134,6 +134,9 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_RESULT_INVALID_WINDOW:
         return "Invalid window";
 
+        case PAL_RESULT_INVALID_WINDOW_HANDLE:
+        return "Invalid native window";
+
         
         case PAL_RESULT_INPUT_NOT_INITIALIZED:
         return "Input system not initialized.";

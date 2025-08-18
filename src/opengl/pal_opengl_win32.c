@@ -425,23 +425,23 @@ PalResult _PCALL palEnumerateGLPixelFormats(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HDC dc = GetDC((HWND)nativeWindow);
-    if (!dc) {
-        PAL_RESULT_INVALID_WINDOW;
+    if (count == 0 && formats) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    if (count == 0 && formats) {
-        PAL_RESULT_INSUFFICIENT_BUFFER;
+    HDC windowDC = GetDC((HWND)nativeWindow);
+    if (!windowDC) {
+        return PAL_RESULT_INVALID_WINDOW_HANDLE;
     }
 
     if (s_GL.wglCreateContextAttribsARB) {
 
         // TODO: Remove
-        getGLPixelFormatGDI(dc, count, formats);
+        getGLPixelFormatGDI(windowDC, count, formats);
         //getGLPixelFormat();
          
     } else {
-        getGLPixelFormatGDI(dc, count, formats);
+        getGLPixelFormatGDI(windowDC, count, formats);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -496,25 +496,22 @@ static void getGLPixelFormatGDI(
     Int32 *count,
     PalGLPixelFormat *formats) {
 
-    Int32 maxFormats = 0;
     Int32 formatCount = 0; 
 
-    formatCount = s_GL.describePixelFormat(
-        dc,
-        1,
-        0, 
-        nullptr
-    );
-
     if (!formats) {
-        *count = formatCount;
+        *count = s_GL.describePixelFormat(
+            dc,
+            1,
+            0, 
+            nullptr
+        );
         return;
 
     } else {
-        maxFormats = *count;
+        formatCount = *count;
     }
 
-    for (Int32 i = 1; i < maxFormats; i++) {
+    for (Int32 i = 1; i <= formatCount; i++) {
         PIXELFORMATDESCRIPTOR pfd;
         if (s_GL.describePixelFormat(
             dc,
@@ -535,7 +532,7 @@ static void getGLPixelFormatGDI(
 
             format->samples = 0;
             format->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
-            format->doubleBuffer = (pfd.dwFlags & PFD_STEREO) ? true : false;
+            format->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
             format->sRGB = false;
         }
     }

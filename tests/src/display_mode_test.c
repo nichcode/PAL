@@ -73,10 +73,10 @@ void displayModeTest() {
         for (int i = 0; i < modeCount; i++) {
             // log display mode
             PalDisplayMode* mode = &modes[i];
-            palLog(" Mode Index: %i", i);
-            palLog("  Size: (%i, %i)", mode->width, mode->height);
-            palLog("  RefreshRate: %i", mode->refreshRate);
-            palLog("  Bits Per Pixel: %i", mode->bpp);
+            palLog(" Mode Index: %d", i);
+            palLog("  Size: (%d, %d)", mode->width, mode->height);
+            palLog("  RefreshRate: %d", mode->refreshRate);
+            palLog("  Bits Per Pixel: %d", mode->bpp);
             palLog("");
         }
 
@@ -91,9 +91,9 @@ void displayModeTest() {
 
         palLog("");
         palLog(" Current Display Mode:");
-        palLog("  Size: (%i, %i)", currentDisplayMode.width, currentDisplayMode.height);
-        palLog("  RefreshRate: %i", currentDisplayMode.refreshRate);
-        palLog("  Bits Per Pixel: %i", currentDisplayMode.bpp);
+        palLog("  Size: (%d, %d)", currentDisplayMode.width, currentDisplayMode.height);
+        palLog("  RefreshRate: %d", currentDisplayMode.refreshRate);
+        palLog("  Bits Per Pixel: %d", currentDisplayMode.bpp);
         palLog("");
 
         resetDisplayMode = currentDisplayMode;
@@ -113,9 +113,9 @@ void displayModeTest() {
 
         palLog("");
         palLog(" Validated Display Mode:");
-        palLog("  Size: (%i, %i)", newDisplayMode.width, newDisplayMode.height);
-        palLog("  RefreshRate: %i", newDisplayMode.refreshRate);
-        palLog("  Bits Per Pixel: %i", newDisplayMode.bpp);
+        palLog("  Size: (%d, %d)", newDisplayMode.width, newDisplayMode.height);
+        palLog("  RefreshRate: %d", newDisplayMode.refreshRate);
+        palLog("  Bits Per Pixel: %d", newDisplayMode.bpp);
         palLog("");
 
         // set current display mode to the validated mode
@@ -136,9 +136,9 @@ void displayModeTest() {
 
         palLog("");
         palLog(" Current Display Mode:");
-        palLog("  Size: (%i, %i)", currentDisplayMode.width, currentDisplayMode.height);
-        palLog("  RefreshRate: %i", currentDisplayMode.refreshRate);
-        palLog("  Bits Per Pixel: %i", currentDisplayMode.bpp);
+        palLog("  Size: (%d, %d)", currentDisplayMode.width, currentDisplayMode.height);
+        palLog("  RefreshRate: %d", currentDisplayMode.refreshRate);
+        palLog("  Bits Per Pixel: %d", currentDisplayMode.bpp);
         palLog("");
 
         // reset display mode
@@ -159,9 +159,9 @@ void displayModeTest() {
 
         palLog("");
         palLog(" Current Display Mode:");
-        palLog("  Size: (%i, %i)", currentDisplayMode.width, currentDisplayMode.height);
-        palLog("  RefreshRate: %i", currentDisplayMode.refreshRate);
-        palLog("  Bits Per Pixel: %i", currentDisplayMode.bpp);
+        palLog("  Size: (%d, %d)", currentDisplayMode.width, currentDisplayMode.height);
+        palLog("  RefreshRate: %d", currentDisplayMode.refreshRate);
+        palLog("  Bits Per Pixel: %d", currentDisplayMode.bpp);
         palLog("");
 
         // changing orientation to portrait

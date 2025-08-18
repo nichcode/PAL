@@ -285,6 +285,7 @@ typedef enum PalResult {
     PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
     PAL_RESULT_VIDEO_NOT_INITIALIZED,             /** < The video system is not initialized.*/
     PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
+    PAL_RESULT_INVALID_WINDOW_HANDLE,             /** < An invalid native (OS) window.*/
 
     PAL_RESULT_INPUT_NOT_INITIALIZED,             /** < The input system is not initialized.*/
     PAL_RESULT_INVALID_INPUT_DEVICE,              /** < An invalid input device.*/

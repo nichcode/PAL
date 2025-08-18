@@ -620,6 +620,7 @@ PalResult _PCALL palCreateWindow(
     }
 
     ShowWindow(handle, showFlag);
+    UpdateWindow(window->handle);
     SetPropW(handle, PAL_WIN32_VIDEO_PROP, window);
 
     window->handle = handle;
