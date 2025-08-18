@@ -8,7 +8,7 @@
 int main(int argc, char** argv) {
 
     const char* versionString = palGetVersionString();
-    palLog("PAL v(%s)", versionString);
+    palLog("PAL version - %s", versionString);
 
     // registerTest(allocatorTest);
     //registerTest(timeTest);
@@ -27,8 +27,17 @@ int main(int argc, char** argv) {
     // registerTest(keyboardTest);
     // registerTest(mouseTest);
     // registerTest(keyboardAndMouseTest);
-    registerTest(gamepadTest);
+    //registerTest(gamepadTest);
 #endif // PAL_HAS_VIDEO
+
+#if PAL_HAS_OPENGL
+    // registerTest(inputTest);
+    // registerTest(keyboardTest);
+    // registerTest(mouseTest);
+    // registerTest(keyboardAndMouseTest);
+    //registerTest(gamepadTest);
+    registerTest(openglTest);
+#endif // PAL_HAS_OPENGL
 
     runTests();
     return 0;

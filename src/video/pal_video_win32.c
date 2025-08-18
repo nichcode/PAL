@@ -1090,6 +1090,14 @@ Uint64 _PCALL palGetWindowID(PalWindow* window) {
     return window->id;
 }
 
+void* _PCALL palGetWindowHandle(PalWindow* window) {
+
+    if (!window) {
+        return nullptr;
+    }
+    return window->handle;
+}
+
 bool _PCALL palIsWindowMaximized(PalWindow* window) {
 
     if (!window) {

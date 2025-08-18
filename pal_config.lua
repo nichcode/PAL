@@ -10,3 +10,6 @@ PAL_BUILD_VIDEO = false
 
 -- build input system
 PAL_BUILD_INPUT = true
+
+-- build opengl system
+PAL_BUILD_OPENGL = true

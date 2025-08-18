@@ -109,11 +109,15 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_RESULT_ACCESS_DENIED:
         return "Access denied";
 
+        case PAL_RESULT_INSUFFICIENT_BUFFER:
+        return "Buffer size is too small";
+
         case PAL_RESULT_INVALID_DISPLAY:
         return "Invalid display";
 
-        case PAL_RESULT_INSUFFICIENT_BUFFER:
-        return "Buffer size is too small";
+        case PAL_RESULT_INVALID_OPERATION:
+        return "Invalid operation";
+
 
         case PAL_RESULT_INVALID_DISPLAY_MODE:
         return "Invalid display mode";
@@ -130,9 +134,7 @@ const char* _PCALL palResultToString(PalResult result) {
         case PAL_RESULT_INVALID_WINDOW:
         return "Invalid window";
 
-        case PAL_RESULT_INVALID_OPERATION:
-        return "Invalid operation";
-
+        
         case PAL_RESULT_INPUT_NOT_INITIALIZED:
         return "Input system not initialized.";
 
@@ -141,6 +143,13 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED:
         return "Input device not registered";
+        
+
+        case PAL_RESULT_GL_ICD_NOT_LOADED:
+        return "GL ICD not loaded";
+
+        case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
+        return "GL extension not supported";
    }
 
     return nullptr;

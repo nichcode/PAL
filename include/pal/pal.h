@@ -34,5 +34,6 @@ freely, subject to the following restrictions:
 #include "pal_core.h"
 #include "pal_video.h"
 #include "pal_input.h"
+#include "pal_opengl.h"
 
 #endif // _PAL_H

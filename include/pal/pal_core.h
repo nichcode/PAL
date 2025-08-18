@@ -275,18 +275,23 @@ typedef enum PalResult {
     PAL_RESULT_OUT_OF_MEMORY,                     /** < Out of Memory or memory allocation failed.*/
     PAL_RESULT_INVALID_ALLOCATOR,                 /** < A partially defined custom allocator.*/
     PAL_RESULT_ACCESS_DENIED,                     /** < OS denied PAL access.*/
-    PAL_RESULT_INVALID_DISPLAY,                   /** < An invalid display.*/
     PAL_RESULT_INSUFFICIENT_BUFFER,               /** < Buffer too small.*/
+    PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
+    PAL_RESULT_PLATFORM_FAILURE,                  /** < An error occured on the plaform level.*/
+
+    PAL_RESULT_INVALID_DISPLAY,                   /** < An invalid display.*/
     PAL_RESULT_INVALID_DISPLAY_MODE,              /** < An invalid display mode.*/
     PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
     PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
     PAL_RESULT_VIDEO_NOT_INITIALIZED,             /** < The video system is not initialized.*/
     PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
-    PAL_RESULT_INVALID_OPERATION,                 /** < An invalid operation.*/
+
     PAL_RESULT_INPUT_NOT_INITIALIZED,             /** < The input system is not initialized.*/
     PAL_RESULT_INVALID_INPUT_DEVICE,              /** < An invalid input device.*/
     PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED,       /** < The input device is not registered.*/
-    PAL_RESULT_PLATFORM_FAILURE,                  /** < An error occured on the plaform level.*/
+    
+    PAL_RESULT_GL_ICD_NOT_LOADED,                /** < Opengl ICD has no been loaded.*/
+    PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,       /** < Am opengl extension used was not supported.*/
 } PalResult;
 
 /**

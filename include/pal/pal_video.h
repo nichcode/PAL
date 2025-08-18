@@ -932,7 +932,7 @@ _PAPI void _PCALL palGetWindowSize(
  * 
  * @return The unique id of the window.
  *
- * @param[in] window Pointer to the window on success or `0`  on failure.
+ * @param[in] window Pointer to the window.
  *
  * @note This function is thread-safe.
  * @note This function is guaranteed not to fail if the `window` is valid.
@@ -941,6 +941,32 @@ _PAPI void _PCALL palGetWindowSize(
  * @ingroup video
  */
 _PAPI Uint64 _PCALL palGetWindowID(PalWindow* window);
+
+/**
+ * @brief Get the native handle of the specified window.
+ * 
+ * This is OS (platform) handle of the window. 
+ * A simple example on Windows:
+ * 
+ * @code
+ * HWND windowHandle = (HWND)palGetWindowHandle(window);
+ * @endcode
+ * 
+ * The returned handle must not be freed by the user.
+ * If users decide to destroy the handle directly with the OS (platform),
+ * users must not call any video function take takes in the `window`.
+ * 
+ * @param[in] window Pointer to the window.
+ *
+ * @return The native handle of the window on success or `nullptr` on failure.
+ *
+ * @note This function is thread-safe.
+ * @note This function is guaranteed not to fail if the `window` is valid.
+ *
+ * @sa palCreateWindow()
+ * @ingroup video
+ */
+_PAPI void* _PCALL palGetWindowHandle(PalWindow* window);
 
 /**
  * @brief Check if the specified window is maximized.

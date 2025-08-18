@@ -4,3 +4,4 @@
 
 #define PAL_HAS_VIDEO 0
 #define PAL_HAS_INPUT 1
+#define PAL_HAS_OPENGL 1

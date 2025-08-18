@@ -30,16 +30,20 @@ static inline void runTests() {
 // Tests
 void allocatorTest();
 void timeTest();
+
 void videoTest();
 void displayTest();
 void displayModeTest();
 void windowTest();
 void eventsTest();
 void multiWindowTest();
+
 void inputTest();
 void keyboardTest();
 void mouseTest();
 void keyboardAndMouseTest();
 void gamepadTest();
+
+void openglTest();
 
 #endif // _TESTS_H

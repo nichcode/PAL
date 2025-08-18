@@ -33,5 +33,11 @@ project "Tests"
         }
     end
 
+    if (PAL_BUILD_OPENGL) then
+        files { 
+            "src/opengl_test.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

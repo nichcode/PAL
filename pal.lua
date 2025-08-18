@@ -15,6 +15,12 @@ function writeConfig(path)
     else
         file:write("#define PAL_HAS_INPUT 0\n")
     end
+
+    if (PAL_BUILD_OPENGL) then
+        file:write("#define PAL_HAS_OPENGL 1\n")
+    else
+        file:write("#define PAL_HAS_OPENGL 0\n")
+    end
     
     file:close()
 end
@@ -47,6 +53,12 @@ project "PAL"
     if (PAL_BUILD_INPUT) then
         filter {"system:windows", "configurations:*"}
         files { "src/input/pal_input_win32.c" }
+        filter {}
+    end
+
+    if (PAL_BUILD_OPENGL) then
+        filter {"system:windows", "configurations:*"}
+        files { "src/opengl/pal_opengl_win32.c" }
         filter {}
     end
 
