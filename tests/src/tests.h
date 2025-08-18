@@ -40,5 +40,6 @@ void inputTest();
 void keyboardTest();
 void mouseTest();
 void keyboardAndMouseTest();
+void gamepadTest();
 
 #endif // _TESTS_H

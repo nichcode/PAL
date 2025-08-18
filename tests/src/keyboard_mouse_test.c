@@ -94,8 +94,8 @@ void keyboardAndMouseTest() {
     // get keyboard and mouse state
     PalMouseState mouseState;
     PalKeyboardState keyboardState;
-    palGetKeyboardState(&keyboardState);
-    palGetMouseState(&mouseState);
+    palGetKeyboardState(keyboard, &keyboardState);
+    palGetMouseState(mouse, &mouseState);
 
     bool running = true;
     bool unRegistered = false;
@@ -106,6 +106,14 @@ void keyboardAndMouseTest() {
         if (keyboardState.keys[PAL_KEY_ESCAPE]) {
             // terminate
             running = false;
+        }
+
+        if (mouseState.buttons[PAL_MOUSE_BUTTON_LEFT]) {
+            palLog("Left mouse button pressed");
+        }
+
+        if (mouseState.buttons[PAL_MOUSE_BUTTON_RIGHT]) {
+            palLog("right mouse button pressed");
         }
 
         if (!unRegistered) {
@@ -131,11 +139,6 @@ void keyboardAndMouseTest() {
                 unRegistered = false;
             }
         }
-
-        // this will be updated only if a mouse device is registered
-        // but since we are logging every frame, it will log the old position
-        // FIXME: use events rather 
-        palLog("Mouse Pos - (%d, %d)", mouseState.motion->x, mouseState.motion->y);
     }
 
 }

@@ -75,8 +75,6 @@ void keyboardTest() {
     }
 
     // register the keyboard device
-    // we register the first mouse device in the array,
-    // but you should query info and check which you want to register.
     result = palRegisterInputDevice(keyboard);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);

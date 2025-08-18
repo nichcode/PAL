@@ -276,11 +276,25 @@ PalResult _PCALL palInitInput(
         rid.usUsage = 0x06; 
         rid.usUsagePage = 0x01;
 
+        // keyboards
         if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
+        // mice
         rid.usUsage = 0x02; 
+        if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // gamepads
+        rid.usUsage = 0x05; 
+        if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // joysticks
+        rid.usUsage = 0x04; 
         if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }

@@ -75,8 +75,6 @@ void mouseTest() {
     }
 
     // register the mouse device
-    // we register the first mouse device in the array,
-    // but you should query info and check which you want to register.
     result = palRegisterInputDevice(mouse);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
