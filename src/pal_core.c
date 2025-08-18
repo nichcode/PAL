@@ -145,8 +145,8 @@ const char* _PCALL palResultToString(PalResult result) {
         return "Input device not registered";
         
 
-        case PAL_RESULT_GL_ICD_NOT_LOADED:
-        return "GL ICD not loaded";
+        case PAL_RESULT_GL_NOT_INITIALIZED:
+        return "GL system not initialized";
 
         case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
         return "GL extension not supported";

@@ -290,8 +290,8 @@ typedef enum PalResult {
     PAL_RESULT_INVALID_INPUT_DEVICE,              /** < An invalid input device.*/
     PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED,       /** < The input device is not registered.*/
     
-    PAL_RESULT_GL_ICD_NOT_LOADED,                /** < Opengl ICD has no been loaded.*/
-    PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,       /** < Am opengl extension used was not supported.*/
+    PAL_RESULT_GL_NOT_INITIALIZED,                /** < Opengl system not initialized.*/
+    PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,        /** < Am opengl extension used was not supported.*/
 } PalResult;
 
 /**

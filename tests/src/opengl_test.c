@@ -64,6 +64,4 @@ void openglTest() {
     if (info.extensions & PAL_GL_EXTENSION_COLORSPACE_SRGB) {
         palLog(" GL colospace extension supported");
     }
-
-
 }

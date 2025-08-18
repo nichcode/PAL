@@ -261,11 +261,11 @@ PalResult _PCALL palEnumerateDisplays(
     Int32* count,
     PalDisplay** displays) {
 
-    if (!system || !count) {
+    if (!count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (count == 0 && !displays) {
+    if (count == 0 && displays) {
         PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
@@ -284,7 +284,7 @@ PalResult _PCALL palEnumerateDisplays(
 PalResult _PCALL palGetPrimaryDisplay(
     PalDisplay** outDisplay) {
 
-    if (!system || !outDisplay) {
+    if (!outDisplay) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -502,7 +502,7 @@ PalResult _PCALL palCreateWindow(
     const PalWindowCreateInfo* info,
     PalWindow** outWindow) {
 
-    if (!system || !info || !outWindow) {
+    if (!info || !outWindow) {
         return PAL_RESULT_NULL_POINTER;
     }
 

@@ -340,11 +340,11 @@ PalResult _PCALL palEnumerateInputDevices(
     Int32* count,
     PalInputDevice** inputDevices) {
     
-    if (!system || !count) {
+    if (!!count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (count == 0 && !inputDevices) {
+    if (count == 0 && inputDevices) {
         PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 

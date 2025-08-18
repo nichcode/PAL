@@ -63,10 +63,30 @@ typedef struct PalGLInfo {
     Int32 versionMinor;
 } PalGLInfo;
 
+typedef struct PalGLPixelFormat {
+    Int32 index;
+    Int32 redBits;
+    Int32 greenBits;
+    Int32 blueBits;
+    Int32 alphaBits;
+    Int32 depthBits;
+    Int32 stencilBits;
+    Int32 samples;
+    bool doubleBuffer;
+    bool stereo;
+    bool sRGB;
+} PalGLPixelFormat;
+
 // TODO: docs
 _PAPI PalResult _PCALL palLoadGLICD();
 
 // TODO: docs
 _PAPI PalGLInfo _PCALL palGetGLInfo();
+
+// TODO: docs
+_PAPI PalResult _PCALL palEnumerateGLPixelFormats(
+    void* nativeWindow,
+    Int32 *count,
+    PalGLPixelFormat *formats);
 
 #endif // _PAL_OPENGL_H
