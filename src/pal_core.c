@@ -68,7 +68,7 @@ typedef struct QueueData {
 typedef struct PalEventDriver {
     PalDispatchMode modes[PAL_MAX_EVENTS];
     PalEventQueue* queue;
-    PalAllocator* allocator;
+    const PalAllocator* allocator;
     PalEventCallback callback;
     void* userData;
     bool freeQueue;
@@ -153,6 +153,9 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
         return "GL extension not supported";
+
+        case PAL_RESULT_INVALID_GL_PIXEL_FORMAT:
+        return "Invalid opengl pixel format";
    }
 
     return nullptr;
@@ -173,7 +176,7 @@ const char* _PCALL palGetVersionString() {
 }
 
 void* _PCALL palAllocate(
-    PalAllocator* allocator, 
+    const PalAllocator* allocator, 
     Uint64 size,
     Uint64 PAL_alignment) {
 
@@ -192,7 +195,7 @@ void* _PCALL palAllocate(
 }
 
 void _PCALL palFree(
-    PalAllocator* allocator, 
+    const PalAllocator* allocator, 
     void* ptr) {
 
     if (allocator && allocator->free && ptr) {
@@ -290,7 +293,7 @@ Uint64 _PCALL palGetPerformanceFrequency() {
 }
 
 PalResult _PCALL palCreateEventDriver(
-    PalEventDriverCreateInfo* info, 
+    const PalEventDriverCreateInfo* info, 
     PalEventDriver** outEventDriver) {
     
     if (!info || !outEventDriver) {

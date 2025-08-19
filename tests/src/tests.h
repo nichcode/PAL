@@ -46,5 +46,6 @@ void gamepadTest();
 
 void openglTest();
 void openglPixelTest();
+void openglContextTest();
 
 #endif // _TESTS_H

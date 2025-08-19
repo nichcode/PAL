@@ -37,7 +37,8 @@ int main(int argc, char** argv) {
     // registerTest(keyboardAndMouseTest);
     //registerTest(gamepadTest);
     //registerTest(openglTest);
-    registerTest(openglPixelTest);
+    //registerTest(openglPixelTest);
+    registerTest(openglContextTest);
 #endif // PAL_HAS_OPENGL
 
     runTests();

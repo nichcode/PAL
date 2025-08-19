@@ -3,11 +3,11 @@
 #include "pal/pal_opengl.h"
 #include "pal/pal_video.h"
 
-void openglPixelTest() {
+void openglContextTest() {
 
     palLog("");
     palLog("===========================================");
-    palLog("Opengl Pixel Test");
+    palLog("Opengl Context Test");
     palLog("===========================================");
     palLog("");
 
@@ -35,7 +35,7 @@ void openglPixelTest() {
     windowCreateInfo.display = nullptr; // use primary display
     windowCreateInfo.width = 640;
     windowCreateInfo.height = 480;
-    windowCreateInfo.title = "Pal GL Pixel Test";
+    windowCreateInfo.title = "Pal GL Context Test";
     windowCreateInfo.flags = PAL_WINDOW_CENTER | PAL_WINDOW_DEFAULT;
 
     result = palCreateWindow(&windowCreateInfo, &window);
@@ -158,6 +158,46 @@ void openglPixelTest() {
     palLog(" sRGB: %s", boolsToSting[closest->sRGB]);
     palLog("");
 
+    // create opengl context
+    PalGLContext* context = nullptr;
+    PalGLInfo info = palGetGLInfo();
+
+    PalGLContextCreateInfo contextCreateInfo;
+    contextCreateInfo.allocator = nullptr;
+    contextCreateInfo.format = closest;
+    contextCreateInfo.major = info.versionMajor;
+    contextCreateInfo.minor = info.versionMinor;
+    contextCreateInfo.profile = PAL_GL_PROFILE_CORE;
+    contextCreateInfo.windowHandle = nativeWindow;
+
+    palCreateGLContext(&contextCreateInfo, &context);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLog("PAL error - %s", resultString);
+        return;
+    }
+
+    // make the context current
+    palMakeCurrent(context);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* resultString = palResultToString(result);
+        palLog("PAL error - %s", resultString);
+        return;
+    }
+
+    bool running = true;
+    while (running) {
+        palUpdateVideo();
+
+        palSwapBuffers(context);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* resultString = palResultToString(result);
+            palLog("PAL error - %s", resultString);
+            return;
+        }
+    }
+
+    palDestroyGLContext(context);
     palFree(nullptr, formats);
     palDestroyWindow(window);
     palShutdownVideo();

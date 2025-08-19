@@ -273,7 +273,7 @@ typedef struct PalFlashInfo {
  * @ingroup video
  */
 _PAPI PalResult _PCALL palInitVideo(
-    PalAllocator *allocator,
+    const PalAllocator *allocator,
     PalEventDriver *eventDriver);
 
 /**

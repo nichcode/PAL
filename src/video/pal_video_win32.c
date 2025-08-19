@@ -63,13 +63,13 @@ typedef struct PendingEventWin32 {
 } PendingEventWin32;
 
 typedef struct VideoSystemWin32 {
-    PalAllocator* allocator;
+    const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
     HINSTANCE shcore;
     HINSTANCE instance;
     GetDpiForMonitorFn getDpiForMonitor;
     SetProcessAwarenessFn setProcessAwareness;
 
-    PalEventDriver* eventDriver;
     PalVideoFeatures features;
     bool initialized;
 } VideoSystemWin32;
@@ -140,7 +140,7 @@ LRESULT CALLBACK videoProc(
 // ==================================================
 
 PalResult _PCALL palInitVideo(
-    PalAllocator *allocator,
+    const PalAllocator *allocator,
     PalEventDriver *eventDriver) {
 
     if (allocator && (!allocator->allocate || !allocator->free)) {

@@ -292,7 +292,8 @@ typedef enum PalResult {
     PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED,       /** < The input device is not registered.*/
     
     PAL_RESULT_GL_NOT_INITIALIZED,                /** < Opengl system not initialized.*/
-    PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,        /** < Am opengl extension used was not supported.*/
+    PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,        /** < An opengl extension used was not supported.*/
+    PAL_RESULT_INVALID_GL_PIXEL_FORMAT,           /** < An invalid opengl pixel format.*/
 } PalResult;
 
 /**
@@ -373,7 +374,7 @@ typedef struct PalEventQueue {
  * @ingroup core
  */
 typedef struct PalEventDriverCreateInfo {
-    PalAllocator* allocator;           /** < User allocator or nullptr for default.*/
+    const PalAllocator* allocator;     /** < User allocator or nullptr for default.*/
     PalEventQueue* queue;              /** < User privided event queue. Set to nullptr to use default.*/
     PalEventCallback callback;         /** < Event callback to call for callback type events. Can be nullptr.*/
     void* userData;                    /** < Optional user data passed to event callback function.*/
@@ -446,7 +447,7 @@ _PAPI const char* _PCALL palGetVersionString();
  * @ingroup core
  */
 _PAPI void* _PCALL palAllocate(
-    PalAllocator* allocator,
+    const PalAllocator* allocator,
     Uint64 size,
     Uint64 alignment);
     
@@ -467,7 +468,7 @@ _PAPI void* _PCALL palAllocate(
  * @ingroup core
  */
 _PAPI void _PCALL palFree(
-    PalAllocator* allocator,
+    const PalAllocator* allocator,
     void* ptr);
 
 /**
@@ -571,7 +572,7 @@ _PAPI Uint64 _PCALL palGetPerformanceFrequency();
  * @ingroup core
  */
 _PAPI PalResult _PCALL palCreateEventDriver(
-    PalEventDriverCreateInfo* info, 
+    const PalEventDriverCreateInfo* info, 
     PalEventDriver** outEventDriver);
 
 /**

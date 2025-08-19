@@ -54,6 +54,12 @@ typedef enum PalGLExtensions {
     PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(8)
 } PalGLExtensions;
 
+typedef enum PalGLProfile {
+    PAL_GL_PROFILE_CORE,
+    PAL_GL_PROFILE_COMPATIBILITY,
+    PAL_GL_PROFILE_ES
+} PalGLProfile;
+
 typedef struct PalGLInfo {
     char graphicsCard[64];
     char version[64];
@@ -77,6 +83,16 @@ typedef struct PalGLPixelFormat {
     bool sRGB;
 } PalGLPixelFormat;
 
+typedef struct PalGLContextCreateInfo {
+    const PalAllocator* allocator;
+    void* windowHandle;
+    const PalGLPixelFormat* format;
+    Int32 major;
+    Int32 minor;
+    PalGLProfile profile;
+    // TODO: add more
+} PalGLContextCreateInfo;
+
 // TODO: docs
 _PAPI PalResult _PCALL palLoadGLICD();
 
@@ -94,5 +110,19 @@ _PAPI PalGLPixelFormat* _PCALL palGetClosestGLPixelFormat(
     PalGLPixelFormat *formats,
     Int32 count,
     const PalGLPixelFormat* desired);
+
+// TODO: docs
+_PAPI PalResult _PCALL palCreateGLContext(
+    const PalGLContextCreateInfo* info,
+    PalGLContext** outContext);
+
+// TODO: docs
+_PAPI void _PCALL palDestroyGLContext(PalGLContext* context);
+
+// TODO: docs
+_PAPI PalResult _PCALL palMakeCurrent(PalGLContext* context);
+
+// TODO: docs
+_PAPI PalResult _PCALL palSwapBuffers(PalGLContext* context);
 
 #endif // _PAL_OPENGL_H

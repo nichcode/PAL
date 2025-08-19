@@ -62,14 +62,14 @@ typedef BOOLEAN (WINAPI* HidD_GetAttributesFn)(HANDLE, PHIDD_ATTRIBUTES);
 typedef void (WINAPI* HidD_GetGuidFn)(GUID*);
 
 typedef struct InputSystemWin32 {
-    PalAllocator* allocator;
+    const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
     HINSTANCE instance;
     HINSTANCE xInput;
     HINSTANCE hid;
     GUID hidGuid;
     HWND window;
     HDEVNOTIFY notifyHandle;
-    PalEventDriver* eventDriver;
 
     HidD_GetProductStringFn hidD_GetProductString;
     HidD_GetManufacturerStringFn hidD_GetManufacturerString;
@@ -140,17 +140,20 @@ LRESULT CALLBACK inputProc(
     WPARAM wParam, 
     LPARAM lParam);
 
-static inline PalInputDevice* palMakeXinputHandle(Uint32 index) {
+static inline PalInputDevice* palMakeXinputHandle(
+    Uint32 index) {
 
     return (PalInputDevice*)(uintptr_t)(XINPUT_TAG | index);
 }
 
-static inline bool palIsXinputHandle(PalInputDevice* handle) {
+static inline bool palIsXinputHandle(
+    PalInputDevice* handle) {
 
     return ((uintptr_t)handle & XINPUT_TAG) == XINPUT_TAG;
 }
 
-static inline Uint32 palGetXinputIndex(PalInputDevice* handle) {
+static inline Uint32 palGetXinputIndex(
+    PalInputDevice* handle) {
 
     return ((uintptr_t)handle & XINPUT_TAG);
 }
@@ -160,7 +163,7 @@ static inline Uint32 palGetXinputIndex(PalInputDevice* handle) {
 // ==================================================
 
 PalResult _PCALL palInitInput(
-    PalAllocator* allocator,
+    const PalAllocator* allocator,
     PalEventDriver* eventDriver) {
 
     if (allocator && (allocator->allocate || allocator->free)) {
@@ -586,7 +589,8 @@ PalResult _PCALL palGetInputDeviceInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice) {
+PalResult _PCALL palRegisterInputDevice(
+    PalInputDevice* inputDevice) {
 
     if (!inputDevice) {
         return PAL_RESULT_NULL_POINTER;
@@ -635,7 +639,8 @@ PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice) {
     return PAL_RESULT_PLATFORM_FAILURE;
 }
 
-PalResult _PCALL palUnregisterInputDevice(PalInputDevice* inputDevice) {
+PalResult _PCALL palUnregisterInputDevice(
+    PalInputDevice* inputDevice) {
     
     if (!inputDevice) {
         return PAL_RESULT_NULL_POINTER;

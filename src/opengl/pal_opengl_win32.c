@@ -66,6 +66,8 @@ typedef int (WINAPI *DescribePixelFormatFn)(
     UINT nBytes,
     LPPIXELFORMATDESCRIPTOR ppfd);
 
+typedef WINBOOL (WINAPI *SwapBuffersFn)(HDC hdc);
+
 // wgl functions
 typedef PROC (WINAPI *wglGetProcAddressFn)(LPCSTR lpszProc);
 typedef HGLRC (WINAPI *wglCreateContextFn)(HDC hDc);
@@ -110,6 +112,7 @@ typedef struct GLWin32 {
     SetPixelFormatFn setPixelFormat;
     DescribePixelFormatFn describePixelFormat;
     ChoosePixelFormatFn choosePixelFormat;
+    SwapBuffersFn swapBuffers;
 
     // wgl pointers
     wglGetProcAddressFn wglGetProcAddress;
@@ -136,6 +139,13 @@ typedef struct GLWin32 {
     bool initialized, supportContextEx;
 } GLWin32;
 
+typedef struct PalGLContext {
+    const PalAllocator* allocator;
+    HGLRC handle;
+    HWND window;
+    HDC dc;
+} PalGLContext;
+
 static GLWin32 s_GL = {};
 
 bool checkExtension(
@@ -144,12 +154,16 @@ bool checkExtension(
 
 static void shutdownGL();
 
-static void getGLPixelFormatGDI(
+static void getGLPixelFormatLegacy(
     HDC dc,
     Int32 *count,
     PalGLPixelFormat *formats);
 
-static void getGLPixelFormat(
+static PalResult createContextLegacy(
+    const PalGLContextCreateInfo* info,
+    PalGLContext* context);
+
+static void getGLPixelFormatExt(
     HDC dc,
     Int32 *count,
     PalGLPixelFormat *formats);
@@ -216,6 +230,11 @@ PalResult _PCALL palLoadGLICD() {
             "DescribePixelFormat"
         );
 
+        s_GL.swapBuffers = (SwapBuffersFn)GetProcAddress(
+            s_GL.gdi,
+            "SwapBuffers"
+        );
+
         // load wgl function pointers
         s_GL.wglGetProcAddress = (wglGetProcAddressFn)GetProcAddress(
             s_GL.opengl,
@@ -239,6 +258,7 @@ PalResult _PCALL palLoadGLICD() {
 
         if (!s_GL.choosePixelFormat   || 
             !s_GL.describePixelFormat || 
+            !s_GL.swapBuffers         || 
             !s_GL.setPixelFormat) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }
@@ -252,7 +272,7 @@ PalResult _PCALL palLoadGLICD() {
 
         s_GL.dc = GetDC(s_GL.window);
         PIXELFORMATDESCRIPTOR pfd = {};
-        pfd.nSize = sizeof(pfd);
+        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
         pfd.nVersion = 1;
         pfd.iPixelType = PFD_TYPE_RGBA;
         pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
@@ -437,11 +457,11 @@ PalResult _PCALL palEnumerateGLPixelFormats(
     if (s_GL.wglCreateContextAttribsARB) {
 
         // TODO: Remove
-        getGLPixelFormatGDI(windowDC, count, formats);
-        //getGLPixelFormat();
+        getGLPixelFormatLegacy(windowDC, count, formats);
+        //getGLPixelFormatExt();
          
     } else {
-        getGLPixelFormatGDI(windowDC, count, formats);
+        getGLPixelFormatLegacy(windowDC, count, formats);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -504,6 +524,93 @@ PalGLPixelFormat* _PCALL palGetClosestGLPixelFormat(
     return best;
 }
 
+PalResult _PCALL palCreateGLContext(
+    const PalGLContextCreateInfo* info,
+    PalGLContext** outContext) {
+
+    if (!info || !outContext || (info && !info->windowHandle)) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->allocator && (info->allocator->allocate || info->allocator->free)) {
+        return PAL_RESULT_INVALID_ALLOCATOR;
+    }
+
+    PalGLContext* context = palAllocate(
+        info->allocator, 
+        sizeof(PalGLContext),
+        0
+    );
+
+    if (!context) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(context, 0, sizeof(PalGLContext));
+    context->dc = GetDC((HWND)info->windowHandle);
+    if (!context->dc) {
+        palFree(info->allocator, context);
+        return PAL_RESULT_INVALID_WINDOW_HANDLE;
+    }
+
+    PalResult result;
+    context->window = (HWND)info->windowHandle;
+    if (s_GL.wglCreateContextAttribsARB) {
+
+        // TODO: Remove
+        result = createContextLegacy(info, context);
+        if (result != PAL_RESULT_SUCCESS) {
+            ReleaseDC(context->window, context->dc);
+            palFree(info->allocator, context);
+            return result;
+        }
+         
+    } else {
+        //getGLPixelFormatLegacy(windowDC, count, formats);
+    }
+
+    *outContext = context;
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palDestroyGLContext(PalGLContext* context) {
+
+    if (!context) {
+        return;
+    }
+
+    ReleaseDC(context->window, context->dc);
+    s_GL.wglDeleteContext(context->handle);
+    palFree(context->allocator, context);
+}
+
+PalResult _PCALL palMakeCurrent(PalGLContext* context) {
+
+    if (!context) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    bool success = s_GL.wglMakeCurrent(context->dc, context->handle);
+    if (!success) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palSwapBuffers(PalGLContext* context) {
+
+    if (!context) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    bool success = s_GL.swapBuffers(context->dc);
+    if (!success) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
 // ==================================================
 // Internal API
 // ==================================================
@@ -548,7 +655,7 @@ static void shutdownGL() {
     FreeLibrary(s_GL.gdi);
 }
 
-static void getGLPixelFormatGDI(
+static void getGLPixelFormatLegacy(
     HDC dc,
     Int32 *count,
     PalGLPixelFormat *formats) {
@@ -605,7 +712,7 @@ static void getGLPixelFormatGDI(
             format->depthBits = pfd.cDepthBits;
             format->stencilBits = pfd.cStencilBits;
 
-            format->samples = 0;
+            format->samples = 1;
             format->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
             format->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
             format->sRGB = false;
@@ -619,7 +726,48 @@ static void getGLPixelFormatGDI(
     }
 }
 
-static void getGLPixelFormat(
+static PalResult createContextLegacy(
+    const PalGLContextCreateInfo* info,
+    PalGLContext* context) {
+
+    const PalGLPixelFormat* format = info->format;
+    DWORD flags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
+    if (format->doubleBuffer) {
+        flags |= PFD_DOUBLEBUFFER;
+    }
+
+    if (format->stereo) {
+        flags |= PFD_STEREO;
+    }
+    
+    PIXELFORMATDESCRIPTOR pfd = {};
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.dwFlags = flags;
+
+    pfd.cRedBits = format->redBits;
+    pfd.cGreenBits = format->greenBits;
+    pfd.cBlueBits = format->blueBits;
+    pfd.cAlphaBits = format->alphaBits;
+    pfd.cDepthBits = format->depthBits;
+    pfd.cStencilBits = format->stencilBits;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+
+    bool success = s_GL.setPixelFormat(context->dc, format->index, &pfd);
+    if (!success) {
+        return PAL_RESULT_INVALID_GL_PIXEL_FORMAT;
+    }
+
+    context->handle = s_GL.wglCreateContext(context->dc);
+    if (!context->handle) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+static void getGLPixelFormatExt(
     HDC dc,
     Int32 *count,
     PalGLPixelFormat *formats) {

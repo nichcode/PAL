@@ -41,7 +41,8 @@ project "Tests"
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
         files { 
-            "src/opengl_pixel_test.c"
+            "src/opengl_pixel_test.c",
+            "src/opengl_context_test.c"
         }
     end
 

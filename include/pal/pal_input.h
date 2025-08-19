@@ -515,7 +515,7 @@ typedef struct PalGamepadState {
  * @ingroup input
  */
 _PAPI PalResult _PCALL palInitInput(
-    PalAllocator *allocator,
+    const PalAllocator *allocator,
     PalEventDriver *eventDriver);
 
 /**
@@ -620,7 +620,8 @@ _PAPI PalResult _PCALL palGetInputDeviceInfo(
  * @sa palUnregisterInputDevice()
  * @ingroup input
  */
-_PAPI PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice);
+_PAPI PalResult _PCALL palRegisterInputDevice(
+    PalInputDevice* inputDevice);
 
 /**
  * @brief Unregister an input device using the input system.
@@ -640,7 +641,8 @@ _PAPI PalResult _PCALL palRegisterInputDevice(PalInputDevice* inputDevice);
  * @sa palRegisterInputDevice()
  * @ingroup input
  */
-_PAPI PalResult _PCALL palUnregisterInputDevice(PalInputDevice* inputDevice);
+_PAPI PalResult _PCALL palUnregisterInputDevice(
+    PalInputDevice* inputDevice);
 
 // TODO: docs
 _PAPI void palGetMousePosition(Int32* x, Int32* y);
