@@ -919,7 +919,7 @@ void _PCALL palDestroyGLContext(PalGLContext* context) {
     palFree(context->allocator, context);
 }
 
-PalResult _PCALL palMakeCurrent(PalGLContext* context) {
+PalResult _PCALL palMakeContextCurrent(PalGLContext* context) {
 
     if (!context) {
         return PAL_RESULT_NULL_POINTER;

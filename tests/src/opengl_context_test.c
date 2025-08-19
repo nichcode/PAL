@@ -190,7 +190,7 @@ void openglContextTest() {
     }
 
     // make the context current
-    palMakeCurrent(context);
+    palMakeContextCurrent(context);
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
         palLog("PAL error - %s", resultString);

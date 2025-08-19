@@ -138,7 +138,7 @@ _PAPI PalResult _PCALL palCreateGLContext(
 _PAPI void _PCALL palDestroyGLContext(PalGLContext* context);
 
 // TODO: docs
-_PAPI PalResult _PCALL palMakeCurrent(PalGLContext* context);
+_PAPI PalResult _PCALL palMakeContextCurrent(PalGLContext* context);
 
 // TODO: docs
 _PAPI PalResult _PCALL palSwapBuffers(PalGLContext* context);
