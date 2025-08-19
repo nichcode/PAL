@@ -47,6 +47,49 @@ freely, subject to the following restrictions:
 #define GL_VERSION                        0x1F02
 #endif // GL_VENDOR
 
+#ifndef WGL_NUMBER_PIXEL_FORMATS_ARB
+
+#define WGL_NUMBER_PIXEL_FORMATS_ARB                   0x2000
+#define WGL_ACCELERATION_ARB                           0x2003
+#define WGL_RED_BITS_ARB                               0x2015
+#define WGL_GREEN_BITS_ARB                             0x2017
+#define WGL_BLUE_BITS_ARB                              0x2019
+#define WGL_ALPHA_BITS_ARB                             0x201b
+
+#define WGL_SUPPORT_OPENGL_ARB                         0x2010
+#define WGL_DRAW_TO_WINDOW_ARB                         0x2001
+#define WGL_PIXEL_TYPE_ARB                             0x2013
+#define WGL_DEPTH_BITS_ARB                             0x2022
+#define WGL_STENCIL_BITS_ARB                           0x2023
+#define WGL_STEREO_ARB                                 0x2012
+#define WGL_DOUBLE_BUFFER_ARB                          0x2011
+#define WGL_SAMPLES_ARB                                0x2042
+#define WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB               0x20a9
+#define WGL_TYPE_RGBA_ARB                              0x202b
+#define WGL_NO_ACCELERATION_ARB                        0x2025
+
+#define WGL_CONTEXT_MAJOR_VERSION_ARB                  0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB                  0x2092
+#define WGL_CONTEXT_PROFILE_MASK_ARB                   0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB               0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB      0x00000002
+#define WGL_CONTEXT_DEBUG_BIT_ARB                      0x00000001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB         0x00000002
+#define WGL_CONTEXT_ES2_PROFILE_BIT_EXT                0x00000004
+#define WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB              0x00000004
+#define WGL_LOSE_CONTEXT_ON_RESET_ARB                  0x8252
+#define WGL_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB    0x8256
+#define WGL_NO_RESET_NOTIFICATION_ARB                  0x8261
+#define WGL_CONTEXT_OPENGL_NO_ERROR_ARB                0x31b3
+#define WGL_CONTEXT_RELEASE_BEHAVIOR_ARB               0x2097
+#define WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB          0
+#define WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB         0x2098
+#define WGL_CONTEXT_FLAGS_ARB                          0x2094
+
+#define ERROR_INVALID_PROFILE_ARB 0x2096
+
+#endif // WGL_NUMBER_PIXEL_FORMATS_ARB
+
 typedef unsigned int GLenum;
 typedef unsigned char GLubyte;
 
@@ -89,6 +132,14 @@ typedef BOOL (WINAPI *wglChoosePixelFormatARBFn)(
     int *piFormats, 
     UINT *nNumFormats);
 
+typedef BOOL (WINAPI *wglGetPixelFormatAttribivARBFn) (
+    HDC hdc, 
+    int iPixelFormat, 
+    int iLayerPlane, 
+    UINT nAttributes, 
+    const int *piAttributes, 
+    int *piValues);
+
 typedef HGLRC (WINAPI *wglCreateContextAttribsARBFn)(
     HDC hDC, 
     HGLRC hShareContext, 
@@ -129,6 +180,7 @@ typedef struct GLWin32 {
     wglSwapIntervalEXTFn wglSwapIntervalEXT;
     wglGetExtensionsStringEXTFn wglGetExtensionsStringEXT;
     wglGetExtensionsStringARBFn wglGetExtensionsStringARB;
+    wglGetPixelFormatAttribivARBFn wglGetPixelFormatAttribivARB;
 
     char graphicsCard[64];
     char version[64];
@@ -136,7 +188,7 @@ typedef struct GLWin32 {
     PalGLExtensions extensions;
     Int32 versionMajor, versionMinor;
 
-    bool initialized, supportContextEx;
+    bool initialized;
 } GLWin32;
 
 typedef struct PalGLContext {
@@ -163,10 +215,14 @@ static PalResult createContextLegacy(
     const PalGLContextCreateInfo* info,
     PalGLContext* context);
 
-static void getGLPixelFormatExt(
+static bool getGLPixelFormatExt(
     HDC dc,
     Int32 *count,
     PalGLPixelFormat *formats);
+
+static PalResult createContextExt(
+    const PalGLContextCreateInfo* info,
+    PalGLContext* context);
 
 // ==================================================
 // Public API
@@ -297,6 +353,10 @@ PalResult _PCALL palLoadGLICD() {
             "wglChoosePixelFormatARB"
         );
 
+         s_GL.wglGetPixelFormatAttribivARB = (wglGetPixelFormatAttribivARBFn)s_GL.wglGetProcAddress(
+            "wglGetPixelFormatAttribivARB"
+        );
+
         s_GL.wglCreateContextAttribsARB = (wglCreateContextAttribsARBFn)s_GL.wglGetProcAddress(
             "wglCreateContextAttribsARB"
         );
@@ -312,12 +372,6 @@ PalResult _PCALL palLoadGLICD() {
         s_GL.wglGetExtensionsStringEXT = (wglGetExtensionsStringEXTFn)s_GL.wglGetProcAddress(
             "wglGetExtensionsStringEXT"
         );
-
-        if (s_GL.wglChoosePixelFormatARB       || 
-            s_GL.wglCreateContextAttribsARB    ||
-            s_GL.wglSwapIntervalEXT) {
-            s_GL.supportContextEx = true;
-        }
 
         // load gl functions
         s_GL.glGetString = (glGetStringFn)GetProcAddress(
@@ -404,11 +458,13 @@ PalResult _PCALL palLoadGLICD() {
             if (checkExtension("WGL_EXT_swap_control", extensions)) {
                 s_GL.extensions |= PAL_GL_EXTENSION_SWAP_CONTROL;
             }
-
-            if (checkExtension("WGL_ARB_context_flush_control", extensions)) {
-                s_GL.extensions |= PAL_GL_EXTENSION_SWAP_CONTROL;
-            }
             // swap control
+
+            // flush control
+            if (checkExtension("WGL_ARB_context_flush_control", extensions)) {
+                s_GL.extensions |= PAL_GL_EXTENSION_FLUSH_CONTROL;
+            }
+            // flush control
 
             // pixel format
             if (checkExtension("WGL_ARB_pixel_format", extensions)) {
@@ -454,16 +510,159 @@ PalResult _PCALL palEnumerateGLPixelFormats(
         return PAL_RESULT_INVALID_WINDOW_HANDLE;
     }
 
-    if (s_GL.wglCreateContextAttribsARB) {
+    Int32 formatCount = 0;
+    Int32 maxFormatCount = 0;
+    Int32 nativeCount = 0;
+    const Int32 formatAttrib = WGL_NUMBER_PIXEL_FORMATS_ARB;
 
-        // TODO: Remove
-        getGLPixelFormatLegacy(windowDC, count, formats);
-        //getGLPixelFormatExt();
-         
-    } else {
-        getGLPixelFormatLegacy(windowDC, count, formats);
+    if (formats) {
+        maxFormatCount = *count;
     }
 
+    if (s_GL.wglGetPixelFormatAttribivARB) {
+        // get pixel format with extensions
+        if (!s_GL.wglGetPixelFormatAttribivARB(
+            windowDC,
+            0,
+            0, 
+            1,
+            &formatAttrib,
+            &nativeCount)) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        Int32 attributes[] = {
+            WGL_SUPPORT_OPENGL_ARB,
+            WGL_DRAW_TO_WINDOW_ARB,
+            WGL_PIXEL_TYPE_ARB,
+            WGL_ACCELERATION_ARB,
+            WGL_RED_BITS_ARB,
+            WGL_GREEN_BITS_ARB,
+            WGL_BLUE_BITS_ARB,
+            WGL_ALPHA_BITS_ARB,
+            WGL_DEPTH_BITS_ARB,
+            WGL_STENCIL_BITS_ARB,
+            WGL_SAMPLES_ARB,
+            WGL_STEREO_ARB,
+            WGL_DOUBLE_BUFFER_ARB,
+            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB
+        };
+
+        Int32 values[sizeof(attributes) / sizeof(attributes[0])];
+        for (Int32 i = 1; i <= nativeCount; i++) {
+            if (!s_GL.wglGetPixelFormatAttribivARB(
+                windowDC,
+                i,
+                0, 
+                sizeof(attributes) / sizeof(attributes[0]),
+                attributes,
+                values)) {
+                continue;
+            }
+
+            // we index the values list in the same way as the arributes list
+            // so index 0 is WGL_SUPPORT_OPENGL_ARB and 1 is WGL_DRAW_TO_WINDOW_ARB
+            if (!values[0] || !values[1]) {
+                //WGL_SUPPORT_OPENGL_ARB and WGL_DRAW_TO_WINDOW_ARB support
+                continue;
+            }
+
+            if (values[2] != WGL_TYPE_RGBA_ARB) {
+                //WGL_PIXEL_TYPE_ARB support
+                continue;
+            }
+
+            if (values[3] == WGL_NO_ACCELERATION_ARB) {
+                //software pixel format
+                continue;
+            }
+
+            if (formats && formatCount < maxFormatCount) {
+                PalGLPixelFormat* format = &formats[formatCount];
+                format->index = i;
+
+                format->redBits = values[4]; // WGL_RED_BITS_ARB
+                format->greenBits = values[5]; // WGL_GREEN_BITS_ARB
+                format->blueBits = values[6]; // WGL_BLUE_BITS_ARB
+                format->alphaBits = values[7]; // WGL_ALPHA_BITS_ARB
+                format->depthBits = values[8]; // WGL_DEPTH_BITS_ARB
+                format->stencilBits = values[9]; // WGL_STENCIL_BITS_ARB
+                format->samples = values[10]; // WGL_SAMPLES_ARB
+
+                if (format->samples == 0) {
+                    format->samples = 1;
+                } 
+
+                //WGL_STEREO_ARB
+                format->stereo = values[11];
+
+                //WGL_DOUBLE_BUFFER_ARB
+                format->doubleBuffer = values[12];
+
+                //WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB
+                format->sRGB = values[13];
+            }
+            formatCount++;
+        }
+
+    } else {
+        // get pixel format with legacy pixel descriptor
+        nativeCount = s_GL.describePixelFormat(
+            windowDC,
+            1,
+            0, 
+            nullptr
+        );
+
+        for (Int32 i = 1; i <= nativeCount; i++) {
+            PIXELFORMATDESCRIPTOR pfd;
+            if (!s_GL.describePixelFormat(
+                windowDC,
+                i,
+                sizeof(PIXELFORMATDESCRIPTOR),
+                &pfd)) {
+                continue;
+            }
+
+            // filter for opengl pixel formats
+            if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) ||
+                !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
+                continue;
+            }
+
+            if (pfd.iPixelType != PFD_TYPE_RGBA) {
+                continue;
+            }
+
+            if (!(pfd.dwFlags & PFD_GENERIC_ACCELERATED) &&
+                (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
+                // software pixel format
+                continue;
+            }
+
+            if (formats && formatCount < maxFormatCount) {
+                PalGLPixelFormat* format = &formats[formatCount];
+                format->index = i;
+
+                format->redBits = pfd.cRedBits;
+                format->greenBits = pfd.cGreenBits;
+                format->blueBits = pfd.cBlueBits;
+                format->alphaBits = pfd.cAlphaBits;
+                format->depthBits = pfd.cDepthBits;
+                format->stencilBits = pfd.cStencilBits;
+                format->samples = 1;
+
+                format->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
+                format->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
+                format->sRGB = false;
+            }
+            formatCount++;
+        }
+    }
+
+    if (!formats) {
+        *count = formatCount;
+    }
     return PAL_RESULT_SUCCESS;
 }
 
@@ -536,6 +735,44 @@ PalResult _PCALL palCreateGLContext(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
+    if (info->profile != PAL_GL_PROFILE_NONE) {
+        if (!(s_GL.extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->forward) {
+        if (!(s_GL.extensions & PAL_GL_EXTENSION_CREATE_CONTEXT)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->robustness) {
+        if (!(s_GL.extensions & PAL_GL_EXTENSION_ROBUSTNESS)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->noError) {
+        if (!(s_GL.extensions & PAL_GL_EXTENSION_NO_ERROR)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
+        if (!(s_GL.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    // check version
+    bool valid = info->major < s_GL.versionMajor || 
+            (info->major == s_GL.versionMajor && info->minor <= s_GL.versionMinor);
+            
+    if (!valid) {
+        return PAL_RESULT_INVALID_GL_VERSION;
+    }
+
     PalGLContext* context = palAllocate(
         info->allocator, 
         sizeof(PalGLContext),
@@ -547,26 +784,124 @@ PalResult _PCALL palCreateGLContext(
     }
 
     memset(context, 0, sizeof(PalGLContext));
+    context->window = (HWND)info->windowHandle;
     context->dc = GetDC((HWND)info->windowHandle);
     if (!context->dc) {
         palFree(info->allocator, context);
         return PAL_RESULT_INVALID_WINDOW_HANDLE;
     }
 
-    PalResult result;
-    context->window = (HWND)info->windowHandle;
-    if (s_GL.wglCreateContextAttribsARB) {
+    // since we have the pixel format already
+    // we ask the OS (platform) to fill the pfd struct for us from that index
+    PIXELFORMATDESCRIPTOR pfd;
+    if (!s_GL.describePixelFormat(
+        context->dc,
+        info->format->index,
+        sizeof(PIXELFORMATDESCRIPTOR),
+        &pfd)) {
+        return PAL_RESULT_INVALID_GL_PIXEL_FORMAT;
+    }
 
-        // TODO: Remove
-        result = createContextLegacy(info, context);
-        if (result != PAL_RESULT_SUCCESS) {
-            ReleaseDC(context->window, context->dc);
-            palFree(info->allocator, context);
-            return result;
+    // we then set the pixel format for the hdc 
+    if (!s_GL.setPixelFormat(context->dc, info->format->index, &pfd)) {
+        return PAL_RESULT_INVALID_GL_PIXEL_FORMAT;
+    }
+
+    if (s_GL.wglCreateContextAttribsARB) {
+        Int32 attribs[40];
+        Int32 index = 0;
+        Int32 profile = 0;
+        Int32 flags = 0;
+
+        // set context attributes
+        // the first element is the key and the second is the value
+
+        // set version
+        attribs[index++] = WGL_CONTEXT_MAJOR_VERSION_ARB; // key
+        attribs[index++] = info->major; // value
+
+        attribs[index++] = WGL_CONTEXT_MINOR_VERSION_ARB;
+        attribs[index++] = info->minor;
+
+        // set profile mask
+        if (info->profile != PAL_GL_PROFILE_NONE) {
+            attribs[index++] = WGL_CONTEXT_PROFILE_MASK_ARB;
+            
+            if (info->profile == PAL_GL_PROFILE_COMPATIBILITY) {
+                profile = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+            } else if (info->profile == PAL_GL_PROFILE_CORE) {
+                profile = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+            } else {
+                profile = WGL_CONTEXT_ES2_PROFILE_BIT_EXT;
+            }
+            attribs[index++] = info->profile;
         }
-         
+
+        // set forward flag
+        if (info->forward) {
+            flags |= WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+        }
+
+        // set debug flag
+        if (info->debug) {
+            flags |= WGL_CONTEXT_DEBUG_BIT_ARB;
+        }
+
+        // set robustness
+        if (info->robustness && info->reset != PAL_GL_CONTEXT_RESET_NONE) {
+            flags |= WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB;
+            attribs[index++] = WGL_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB;
+            
+            if (info->reset == PAL_GL_CONTEXT_RESET_LOSE_CONTEXT) {
+                attribs[index++] = WGL_LOSE_CONTEXT_ON_RESET_ARB;
+
+            } else if (info->reset == PAL_GL_CONTEXT_RESET_NO_NOTIFICATION) {
+                attribs[index++] = WGL_NO_RESET_NOTIFICATION_ARB;
+            }
+        }
+
+        // set no error
+        if (info->noError) {
+            attribs[index++] = WGL_CONTEXT_OPENGL_NO_ERROR_ARB;
+            attribs[index++] = true;
+        }
+
+        // release 
+        if (s_GL.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL) {
+            if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
+                attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_ARB;
+
+                if (info->release == PAL_GL_RELEASE_BEHAVIOR_NONE) {
+                    attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB;
+
+                } else if (info->release == PAL_GL_CONTEXT_RESET_FLUSH) {
+                    attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB;
+                }
+            }
+        }
+
+        if (flags) {
+            attribs[index++] = WGL_CONTEXT_FLAGS_ARB;
+            attribs[index++] = flags;
+        }
+        attribs[index++] = 0;
+
+        context->handle = s_GL.wglCreateContextAttribsARB(context->dc, nullptr, attribs);
+        if (!context->handle) {
+            DWORD error = GetLastError();
+            if (error == ERROR_INVALID_PROFILE_ARB) {
+                return PAL_RESULT_INVALID_GL_PROFILE;
+            } else {
+                return PAL_RESULT_PLATFORM_FAILURE;
+            }
+        }
+        
     } else {
-        //getGLPixelFormatLegacy(windowDC, count, formats);
+        // create context with legacy wgl functions
+        context->handle = s_GL.wglCreateContext(context->dc);
+        if (!context->handle) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
     }
 
     *outContext = context;
@@ -611,6 +946,19 @@ PalResult _PCALL palSwapBuffers(PalGLContext* context) {
     return PAL_RESULT_SUCCESS;
 }
 
+void _PCALL palSetGLContextVsync(
+    PalGLContext* context,
+    bool enable) {
+    
+    if (!context) {
+        return;
+    }
+
+    if (s_GL.wglSwapIntervalEXT) {
+        s_GL.wglSwapIntervalEXT(enable);
+    }
+}
+
 // ==================================================
 // Internal API
 // ==================================================
@@ -653,123 +1001,4 @@ static void shutdownGL() {
 
     FreeLibrary(s_GL.opengl);
     FreeLibrary(s_GL.gdi);
-}
-
-static void getGLPixelFormatLegacy(
-    HDC dc,
-    Int32 *count,
-    PalGLPixelFormat *formats) {
-
-    Int32 formatCount = 0;
-    Int32 maxFormatCount = 0;
-    Int32 nativeCount = 0;
-
-    nativeCount = s_GL.describePixelFormat(
-        dc,
-        1,
-        0, 
-        nullptr
-    );
-
-    if (formats) {
-        maxFormatCount = *count;
-    }
-
-    for (Int32 i = 1; i <= nativeCount; i++) {
-        PIXELFORMATDESCRIPTOR pfd;
-        if (!s_GL.describePixelFormat(
-            dc,
-            i,
-            sizeof(PIXELFORMATDESCRIPTOR),
-            &pfd)) {
-            continue;
-        }
-
-        // filter for opengl pixel formats
-        if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) ||
-            !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
-            continue;
-        }
-
-        if (pfd.iPixelType != PFD_TYPE_RGBA) {
-            continue;
-        }
-
-        if (!(pfd.dwFlags & PFD_GENERIC_ACCELERATED) &&
-            (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
-            // software pixel format
-            continue;
-        }
-
-        if (formats && formatCount < maxFormatCount) {
-            PalGLPixelFormat* format = &formats[formatCount];
-            format->index = i;
-
-            format->redBits = pfd.cRedBits;
-            format->greenBits = pfd.cGreenBits;
-            format->blueBits = pfd.cBlueBits;
-            format->alphaBits = pfd.cAlphaBits;
-            format->depthBits = pfd.cDepthBits;
-            format->stencilBits = pfd.cStencilBits;
-
-            format->samples = 1;
-            format->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
-            format->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
-            format->sRGB = false;
-        }
-
-        formatCount++;
-    }
-
-    if (!formats) {
-        *count = formatCount;
-    }
-}
-
-static PalResult createContextLegacy(
-    const PalGLContextCreateInfo* info,
-    PalGLContext* context) {
-
-    const PalGLPixelFormat* format = info->format;
-    DWORD flags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
-    if (format->doubleBuffer) {
-        flags |= PFD_DOUBLEBUFFER;
-    }
-
-    if (format->stereo) {
-        flags |= PFD_STEREO;
-    }
-    
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 1;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.dwFlags = flags;
-
-    pfd.cRedBits = format->redBits;
-    pfd.cGreenBits = format->greenBits;
-    pfd.cBlueBits = format->blueBits;
-    pfd.cAlphaBits = format->alphaBits;
-    pfd.cDepthBits = format->depthBits;
-    pfd.cStencilBits = format->stencilBits;
-    pfd.iLayerType = PFD_MAIN_PLANE;
-
-    bool success = s_GL.setPixelFormat(context->dc, format->index, &pfd);
-    if (!success) {
-        return PAL_RESULT_INVALID_GL_PIXEL_FORMAT;
-    }
-
-    context->handle = s_GL.wglCreateContext(context->dc);
-    if (!context->handle) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    return PAL_RESULT_SUCCESS;
-}
-
-static void getGLPixelFormatExt(
-    HDC dc,
-    Int32 *count,
-    PalGLPixelFormat *formats) {
-
 }

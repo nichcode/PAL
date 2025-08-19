@@ -99,6 +99,7 @@ void openglPixelTest() {
         palLog("");
     }
 
+    // we desire a higer pixel format, if it fails we fallback to a lower one
     PalGLPixelFormat desired = {};
     desired.redBits = 8;
     desired.greenBits = 8;
@@ -108,9 +109,10 @@ void openglPixelTest() {
     desired.alphaBits = 8;
     desired.depthBits = 24;
     desired.stencilBits = 8;
+    desired.samples = 4;
 
     desired.stereo = false;
-    desired.sRGB = false;
+    desired.sRGB = true;
     desired.doubleBuffer = true;
 
     // get the closest pixel format
@@ -136,6 +138,18 @@ void openglPixelTest() {
     palLog(" Stereo: %s", boolsToSting[desired.stereo]);
     palLog(" sRGB: %s", boolsToSting[desired.sRGB]);
     palLog("");
+
+    if (!closest) {
+        desired.samples = 1;
+        desired.sRGB = false;
+    }
+
+    // get the closest pixel format with the new desired format
+    closest = palGetClosestGLPixelFormat(
+        formats,
+        pixelCount,
+        &desired
+    );
 
     if (!closest) {
         palLog("Failed to get closest pixel format");

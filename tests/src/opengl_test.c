@@ -61,7 +61,11 @@ void openglTest() {
         palLog(" GL swap control extension supported");
     }
 
+    if (info.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL) {
+        palLog(" GL flush control extension supported");
+    }
+
     if (info.extensions & PAL_GL_EXTENSION_COLORSPACE_SRGB) {
-        palLog(" GL colospace extension supported");
+        palLog(" GL colorspace extension supported");
     }
 }

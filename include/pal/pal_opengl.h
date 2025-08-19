@@ -51,14 +51,27 @@ typedef enum PalGLExtensions {
     PAL_GL_EXTENSION_PIXEL_FORMAT = PAL_BIT(5),
     PAL_GL_EXTENSION_MULTISAMPLE = PAL_BIT(6),
     PAL_GL_EXTENSION_SWAP_CONTROL = PAL_BIT(7),
-    PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(8)
+    PAL_GL_EXTENSION_FLUSH_CONTROL = PAL_BIT(8),
+    PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(9)
 } PalGLExtensions;
 
 typedef enum PalGLProfile {
+    PAL_GL_PROFILE_NONE,
     PAL_GL_PROFILE_CORE,
     PAL_GL_PROFILE_COMPATIBILITY,
     PAL_GL_PROFILE_ES
 } PalGLProfile;
+
+typedef enum PalGLContextReset {
+    PAL_GL_CONTEXT_RESET_NONE,
+    PAL_GL_CONTEXT_RESET_NO_NOTIFICATION,
+    PAL_GL_CONTEXT_RESET_LOSE_CONTEXT
+} PalGLContextReset;
+
+typedef enum PalGLRelease {
+    PAL_GL_RELEASE_BEHAVIOR_NONE,
+    PAL_GL_CONTEXT_RESET_FLUSH
+} PalGLRelease;
 
 typedef struct PalGLInfo {
     char graphicsCard[64];
@@ -85,12 +98,17 @@ typedef struct PalGLPixelFormat {
 
 typedef struct PalGLContextCreateInfo {
     const PalAllocator* allocator;
-    void* windowHandle;
     const PalGLPixelFormat* format;
+    void* windowHandle;
     Int32 major;
     Int32 minor;
     PalGLProfile profile;
-    // TODO: add more
+    PalGLContextReset reset;
+    PalGLRelease release;
+    bool forward;
+    bool robustness;
+    bool noError;
+    bool debug;
 } PalGLContextCreateInfo;
 
 // TODO: docs
@@ -124,5 +142,10 @@ _PAPI PalResult _PCALL palMakeCurrent(PalGLContext* context);
 
 // TODO: docs
 _PAPI PalResult _PCALL palSwapBuffers(PalGLContext* context);
+
+// TODO: docs
+_PAPI void _PCALL palSetGLContextVsync(
+    PalGLContext* context,
+    bool enable);
 
 #endif // _PAL_OPENGL_H

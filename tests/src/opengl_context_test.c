@@ -164,11 +164,23 @@ void openglContextTest() {
 
     PalGLContextCreateInfo contextCreateInfo;
     contextCreateInfo.allocator = nullptr;
+    contextCreateInfo.debug = true;
     contextCreateInfo.format = closest;
     contextCreateInfo.major = info.versionMajor;
     contextCreateInfo.minor = info.versionMinor;
-    contextCreateInfo.profile = PAL_GL_PROFILE_CORE;
+    contextCreateInfo.noError = false;
+    contextCreateInfo.release = PAL_GL_RELEASE_BEHAVIOR_NONE;
+    contextCreateInfo.reset = PAL_GL_CONTEXT_RESET_NONE; // set if robustness will be true
+    contextCreateInfo.robustness = false;
     contextCreateInfo.windowHandle = nativeWindow;
+
+    if (info.extensions & PAL_GL_EXTENSION_CREATE_CONTEXT) {
+        contextCreateInfo.forward = true;
+    }
+
+    if (info.extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
+        contextCreateInfo.profile = PAL_GL_PROFILE_CORE;
+    }
 
     palCreateGLContext(&contextCreateInfo, &context);
     if (result != PAL_RESULT_SUCCESS) {
@@ -184,6 +196,9 @@ void openglContextTest() {
         palLog("PAL error - %s", resultString);
         return;
     }
+
+    // set vsync
+    palSetGLContextVsync(context, true);
 
     bool running = true;
     while (running) {

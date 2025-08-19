@@ -282,7 +282,7 @@ typedef enum PalResult {
     PAL_RESULT_INVALID_DISPLAY,                   /** < An invalid display.*/
     PAL_RESULT_INVALID_DISPLAY_MODE,              /** < An invalid display mode.*/
     PAL_RESULT_INVALID_ORIENTATION,               /** < An invalid display orientation.*/
-    PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature used was not supported.*/
+    PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,       /** < A video feature was not supported.*/
     PAL_RESULT_VIDEO_NOT_INITIALIZED,             /** < The video system is not initialized.*/
     PAL_RESULT_INVALID_WINDOW,                    /** < An invalid window.*/
     PAL_RESULT_INVALID_WINDOW_HANDLE,             /** < An invalid native (OS) window.*/
@@ -294,6 +294,8 @@ typedef enum PalResult {
     PAL_RESULT_GL_NOT_INITIALIZED,                /** < Opengl system not initialized.*/
     PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,        /** < An opengl extension used was not supported.*/
     PAL_RESULT_INVALID_GL_PIXEL_FORMAT,           /** < An invalid opengl pixel format.*/
+    PAL_RESULT_INVALID_GL_VERSION,                /** < The version is not supported.*/
+    PAL_RESULT_INVALID_GL_PROFILE                 /** < The profile is not supported.*/
 } PalResult;
 
 /**

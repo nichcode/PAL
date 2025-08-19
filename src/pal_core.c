@@ -156,6 +156,12 @@ const char* _PCALL palResultToString(PalResult result) {
 
         case PAL_RESULT_INVALID_GL_PIXEL_FORMAT:
         return "Invalid opengl pixel format";
+
+        case PAL_RESULT_INVALID_GL_VERSION:
+        return "The opengl version is not supported";
+
+        case PAL_RESULT_INVALID_GL_PROFILE:
+        return "Invalid opengl profile";
    }
 
     return nullptr;
