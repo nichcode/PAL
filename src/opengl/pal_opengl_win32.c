@@ -447,6 +447,63 @@ PalResult _PCALL palEnumerateGLPixelFormats(
     return PAL_RESULT_SUCCESS;
 }
 
+PalGLPixelFormat* _PCALL palGetClosestGLPixelFormat(
+    PalGLPixelFormat *formats,
+    Int32 count,
+    const PalGLPixelFormat* desired) {
+
+    if (!formats || !desired) {
+        return nullptr;
+    }
+
+    if (count == 0) {
+        return nullptr;
+    }
+
+    Int32 score = 0;
+    Int32 bestScore = 0x7FFFFFFF;
+    PalGLPixelFormat* best = nullptr;
+
+    for (Int32 i = 0; i < count; i++) {
+        PalGLPixelFormat* tmp = &formats[i];
+        
+        // filter out hard constraints
+        if (desired->doubleBuffer && !tmp->doubleBuffer) {
+            continue;
+        }
+
+        if (desired->stereo && !tmp->stereo) {
+            continue;
+        }
+
+        score = 0;
+
+        // score color bits 
+        score += abs(tmp->redBits - desired->redBits);
+        score += abs(tmp->greenBits - desired->greenBits);
+        score += abs(tmp->blueBits - desired->blueBits);
+        score += abs(tmp->alphaBits - desired->alphaBits);
+        score += abs(tmp->depthBits - desired->depthBits);
+        score += abs(tmp->stencilBits - desired->stencilBits);
+
+        // score soft constraints
+        if (desired->samples != tmp->samples) {
+            score += 1000;
+        }
+
+        if (desired->sRGB != tmp->sRGB) {
+            score += 500;
+        }
+
+        if (score < bestScore) {
+            bestScore = score;
+            best = &formats[i];
+        }
+    }
+
+    return best;
+}
+
 // ==================================================
 // Internal API
 // ==================================================
@@ -496,31 +553,49 @@ static void getGLPixelFormatGDI(
     Int32 *count,
     PalGLPixelFormat *formats) {
 
-    Int32 formatCount = 0; 
+    Int32 formatCount = 0;
+    Int32 maxFormatCount = 0;
+    Int32 nativeCount = 0;
 
-    if (!formats) {
-        *count = s_GL.describePixelFormat(
-            dc,
-            1,
-            0, 
-            nullptr
-        );
-        return;
+    nativeCount = s_GL.describePixelFormat(
+        dc,
+        1,
+        0, 
+        nullptr
+    );
 
-    } else {
-        formatCount = *count;
+    if (formats) {
+        maxFormatCount = *count;
     }
 
-    for (Int32 i = 1; i <= formatCount; i++) {
+    for (Int32 i = 1; i <= nativeCount; i++) {
         PIXELFORMATDESCRIPTOR pfd;
-        if (s_GL.describePixelFormat(
+        if (!s_GL.describePixelFormat(
             dc,
             i,
             sizeof(PIXELFORMATDESCRIPTOR),
             &pfd)) {
-            // since the formats start at 1,
-            // can can't index directly in the array
-            PalGLPixelFormat* format = &formats[i - 1]; // the first one will be 1-1 = 0
+            continue;
+        }
+
+        // filter for opengl pixel formats
+        if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) ||
+            !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
+            continue;
+        }
+
+        if (pfd.iPixelType != PFD_TYPE_RGBA) {
+            continue;
+        }
+
+        if (!(pfd.dwFlags & PFD_GENERIC_ACCELERATED) &&
+            (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
+            // software pixel format
+            continue;
+        }
+
+        if (formats && formatCount < maxFormatCount) {
+            PalGLPixelFormat* format = &formats[formatCount];
             format->index = i;
 
             format->redBits = pfd.cRedBits;
@@ -535,6 +610,12 @@ static void getGLPixelFormatGDI(
             format->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
             format->sRGB = false;
         }
+
+        formatCount++;
+    }
+
+    if (!formats) {
+        *count = formatCount;
     }
 }
 

@@ -99,6 +99,65 @@ void openglPixelTest() {
         palLog("");
     }
 
+    PalGLPixelFormat desired = {};
+    desired.redBits = 8;
+    desired.greenBits = 8;
+    desired.blueBits = 8;
+    desired.alphaBits = 8;
+
+    desired.alphaBits = 8;
+    desired.depthBits = 24;
+    desired.stencilBits = 8;
+
+    desired.stereo = false;
+    desired.sRGB = false;
+    desired.doubleBuffer = true;
+
+    // get the closest pixel format
+    PalGLPixelFormat* closest = palGetClosestGLPixelFormat(
+        formats,
+        pixelCount,
+        &desired
+    );
+
+    // log the closest and desired pixel format
+    palLog("");
+    palLog("Desired Pixel Format");
+    palLog(" Pixel Format Index: %i", desired.index);
+    palLog(" Red Bits: %d", desired.redBits);
+    palLog(" Green Bits: %d", desired.greenBits);
+    palLog(" Blue Bits: %d", desired.blueBits);
+    palLog(" Alpha Bits: %d", desired.alphaBits);
+    palLog(" Depth Bits: %d", desired.depthBits);
+    palLog(" Stencil Bits: %d", desired.stencilBits);
+
+    palLog(" Samples: %d", desired.samples);
+    palLog(" DoubleBuffer: %s", boolsToSting[desired.doubleBuffer]);
+    palLog(" Stereo: %s", boolsToSting[desired.stereo]);
+    palLog(" sRGB: %s", boolsToSting[desired.sRGB]);
+    palLog("");
+
+    if (!closest) {
+        palLog("Failed to get closest pixel format");
+        return;
+    }
+
+    palLog("");
+    palLog("Closest Pixel Format");
+    palLog(" Pixel Format Index: %i", closest->index);
+    palLog(" Red Bits: %d", closest->redBits);
+    palLog(" Green Bits: %d", closest->greenBits);
+    palLog(" Blue Bits: %d", closest->blueBits);
+    palLog(" Alpha Bits: %d", closest->alphaBits);
+    palLog(" Depth Bits: %d", closest->depthBits);
+    palLog(" Stencil Bits: %d", closest->stencilBits);
+
+    palLog(" Samples: %d", closest->samples);
+    palLog(" DoubleBuffer: %s", boolsToSting[closest->doubleBuffer]);
+    palLog(" Stereo: %s", boolsToSting[closest->stereo]);
+    palLog(" sRGB: %s", boolsToSting[closest->sRGB]);
+    palLog("");
+
     palFree(nullptr, formats);
     palDestroyWindow(window);
     palShutdownVideo();

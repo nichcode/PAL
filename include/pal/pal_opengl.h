@@ -89,4 +89,10 @@ _PAPI PalResult _PCALL palEnumerateGLPixelFormats(
     Int32 *count,
     PalGLPixelFormat *formats);
 
+// TODO: docs
+_PAPI PalGLPixelFormat* _PCALL palGetClosestGLPixelFormat(
+    PalGLPixelFormat *formats,
+    Int32 count,
+    const PalGLPixelFormat* desired);
+
 #endif // _PAL_OPENGL_H
