@@ -105,8 +105,9 @@ bool createContext(
     PalGLContext* context = nullptr;
     PalGLInfo info = palGetGLInfo();
 
-    PalGLContextCreateInfo createInfo;
+    PalGLContextCreateInfo createInfo = {};
     createInfo.allocator = nullptr;
+    createInfo.share = nullptr;
     createInfo.debug = true;
     createInfo.format = format; // nullptr to use default
     createInfo.major = info.versionMajor;

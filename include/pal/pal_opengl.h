@@ -100,6 +100,7 @@ typedef struct PalGLContextCreateInfo {
     const PalAllocator* allocator;
     const PalGLPixelFormat* format;
     void* windowHandle;
+    PalGLContext* share;
     Int32 major;
     Int32 minor;
     PalGLProfile profile;

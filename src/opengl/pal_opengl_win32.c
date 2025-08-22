@@ -42,9 +42,9 @@ freely, subject to the following restrictions:
 #define PAL_WIN32_GL_CLASS L"PALGLClass"
 
 #ifndef GL_VENDOR
-#define GL_VENDOR                         0x1F00
-#define GL_RENDERER                       0x1F01
-#define GL_VERSION                        0x1F02
+#define GL_VENDOR                                      0x1F00
+#define GL_RENDERER                                    0x1F01
+#define GL_VERSION                                     0x1F02
 #endif // GL_VENDOR
 
 #ifndef WGL_NUMBER_PIXEL_FORMATS_ARB
@@ -115,6 +115,7 @@ typedef WINBOOL (WINAPI *SwapBuffersFn)(HDC hdc);
 typedef PROC (WINAPI *wglGetProcAddressFn)(LPCSTR lpszProc);
 typedef HGLRC (WINAPI *wglCreateContextFn)(HDC hDc);
 typedef BOOL (WINAPI *wglDeleteContextFn)(HGLRC oldContext);
+typedef BOOL (WINAPI *wglShareListsFn) (HGLRC hrcSrvShare, HGLRC hrcSrvSource);
 
 typedef BOOL (WINAPI *wglMakeCurrentFn)(
     HDC hDc, 
@@ -170,6 +171,7 @@ typedef struct GLWin32 {
     wglCreateContextFn wglCreateContext;
     wglDeleteContextFn wglDeleteContext;
     wglMakeCurrentFn wglMakeCurrent;
+    wglShareListsFn wglShareLists;
 
     // gl functions
     glGetStringFn glGetString; 
@@ -310,6 +312,11 @@ PalResult _PCALL palLoadGLICD() {
         s_GL.wglMakeCurrent = (wglMakeCurrentFn)GetProcAddress(
             s_GL.opengl,
             "wglMakeCurrent"
+        );
+
+        s_GL.wglShareLists = (wglShareListsFn)GetProcAddress(
+            s_GL.opengl,
+            "wglShareLists"
         );
 
         if (!s_GL.choosePixelFormat   || 
@@ -972,6 +979,14 @@ PalResult _PCALL palCreateGLContext(
         // create context with legacy wgl functions
         context->handle = s_GL.wglCreateContext(context->dc);
         if (!context->handle) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    if (info->share) {
+        if (!s_GL.wglShareLists(info->share->handle, context->handle)) {
+            s_GL.wglDeleteContext(context->handle);
+            ReleaseDC(context->window, context->dc);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
