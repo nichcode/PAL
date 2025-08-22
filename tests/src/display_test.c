@@ -38,7 +38,7 @@ void displayTest() {
     }
 
     // get display info
-    for (int i = 0; i < displayCount; i++) {
+    for (Int32 i = 0; i < displayCount; i++) {
         PalDisplay* display = displays[i];
         result = palGetDisplayInfo(display, &displayInfo);
         if (result != PAL_RESULT_SUCCESS) {

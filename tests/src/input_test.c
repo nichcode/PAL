@@ -110,7 +110,7 @@ void inputTest() {
 
     // Get input device info
     PalInputDeviceInfo inputDeviceInfo;
-    for (int i = 0; i < totalInputDevices; i++) {
+    for (Int32 i = 0; i < totalInputDevices; i++) {
         PalInputDevice* device = inputDevices[i];
 
         result = palGetInputDeviceInfo(device, &inputDeviceInfo);

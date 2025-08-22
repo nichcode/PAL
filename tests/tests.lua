@@ -1,5 +1,5 @@
 
-project "Tests"
+project "tests"
     language "C"
     kind "ConsoleApp"
 

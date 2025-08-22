@@ -50,7 +50,7 @@ void mouseTest() {
     }
 
     PalInputDeviceInfo inputDeviceInfo;
-    for (int i = 0; i < count; i++) {
+    for (Int32 i = 0; i < count; i++) {
         PalInputDevice* device = mice[i];
 
         result = palGetInputDeviceInfo(device, &inputDeviceInfo);

@@ -52,7 +52,7 @@ void keyboardAndMouseTest() {
 
     // loop through the list to find the keyboard and mouse
     PalInputDeviceInfo inputDeviceInfo;
-    for (int i = 0; i < count; i++) {
+    for (Int32 i = 0; i < count; i++) {
         PalInputDevice* device = inputDevices[i];
 
         result = palGetInputDeviceInfo(device, &inputDeviceInfo);

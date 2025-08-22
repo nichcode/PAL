@@ -644,6 +644,8 @@ _PAPI PalResult _PCALL palRegisterInputDevice(
 _PAPI PalResult _PCALL palUnregisterInputDevice(
     PalInputDevice* inputDevice);
 
+_PAPI Uint64 _PCALL palGetInputDeviceID(PalInputDevice* inputDevice);
+
 // TODO: docs
 _PAPI void palGetMousePosition(Int32* x, Int32* y);
 

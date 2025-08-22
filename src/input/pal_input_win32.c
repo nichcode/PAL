@@ -51,7 +51,7 @@ freely, subject to the following restrictions:
 #define XINPUT_COUNT 4
 #define XINPUT_TAG 0xFFFF0000
 
-#define MAX_DEVICES 32
+#define MAX_DEVICES 12
 
 typedef DWORD (WINAPI* XInputGetStateFn)(DWORD, XINPUT_STATE*);
 typedef DWORD (WINAPI* XInputSetStateFn)(DWORD, XINPUT_VIBRATION*);
@@ -343,7 +343,7 @@ PalResult _PCALL palEnumerateInputDevices(
     Int32* count,
     PalInputDevice** inputDevices) {
     
-    if (!!count) {
+    if (!count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -659,6 +659,18 @@ PalResult _PCALL palUnregisterInputDevice(
     return PAL_RESULT_INPUT_DEVICE_NOT_REGISTERED;
 }
 
+Uint64 _PCALL palGetInputDeviceID(PalInputDevice* inputDevice) {
+
+    for (Int32 i = 0; i < MAX_DEVICES; i++) {
+        RegisteredDevice* device = &s_Devices[i];
+        if (device->device == (HANDLE)inputDevice) {
+            return device->id;
+        }
+    }
+
+    return 0;
+}
+
 void palGetMousePosition(Int32* x, Int32* y) {
 
     if (x) {
@@ -848,7 +860,7 @@ static void createKeyTable() {
     s_Keycodes.keycodes['U'] = PAL_KEY_U;
     s_Keycodes.keycodes['V'] = PAL_KEY_V;
     s_Keycodes.keycodes['W'] = PAL_KEY_W;
-    s_Keycodes.keycodes['Z'] = PAL_KEY_Z;
+    s_Keycodes.keycodes['X'] = PAL_KEY_X;
     s_Keycodes.keycodes['Y'] = PAL_KEY_Y;
     s_Keycodes.keycodes['Z'] = PAL_KEY_Z;
 
@@ -887,11 +899,11 @@ static void createKeyTable() {
     s_Keycodes.keycodes[VK_CAPITAL] = PAL_KEY_CAPSLOCK;
     s_Keycodes.keycodes[VK_NUMLOCK] = PAL_KEY_NUMLOCK;
     s_Keycodes.keycodes[VK_SCROLL] = PAL_KEY_SCROLLLOCK;
-    s_Keycodes.keycodes[VK_LSHIFT] = PAL_KEY_LSHIFT;
+    s_Keycodes.keycodes[VK_SHIFT] = PAL_KEY_LSHIFT;  // left shift
     s_Keycodes.keycodes[VK_RSHIFT] = PAL_KEY_RSHIFT;
-    s_Keycodes.keycodes[VK_LCONTROL] = PAL_KEY_LCTRL;
+    s_Keycodes.keycodes[VK_CONTROL] = PAL_KEY_LCTRL; // left control
     s_Keycodes.keycodes[VK_RCONTROL] = PAL_KEY_RCTRL;
-    s_Keycodes.keycodes[VK_LMENU] = PAL_KEY_LALT;
+    s_Keycodes.keycodes[VK_MENU] = PAL_KEY_LALT; // left Alt
     s_Keycodes.keycodes[VK_RMENU] = PAL_KEY_RALT;
 
     // Arrows
@@ -1085,28 +1097,42 @@ static void handleKeyboardInput(
     PalScancode scancode = PAL_SCANCODE_UNKNOWN;
     PalKey key = PAL_KEY_UNKNOWN;
     bool extended = (keyboard->Flags & RI_KEY_E0) != 0;
+    PalEventDriver* driver = s_System.eventDriver;
 
+    // scancode
     if (!extended && keyboard->MakeCode == 0x045) {
         scancode = PAL_SCANCODE_NUMLOCK;
+
+    } else if (keyboard->MakeCode == 0x2A || keyboard->MakeCode == 0xAA) {
+        return;
 
     } else {
         Uint16 index = keyboard->MakeCode | (extended << 8);
         scancode = s_Keycodes.scancodes[index];
     }
 
+    // keycode
     if (extended && keyboard->VKey == VK_RETURN) {
         key = PAL_KEY_KP_ENTER;
 
     } else if (extended && keyboard->VKey == VK_OEM_PLUS) {
         key = PAL_KEY_KP_EQUAL;
 
+    } else if (extended && keyboard->VKey == VK_CONTROL) {
+        key = PAL_KEY_RCTRL;
+
+    } else if (extended && keyboard->VKey == VK_MENU) {
+        key = PAL_KEY_RALT;
+
+    } else if (scancode == PAL_SCANCODE_RSHIFT && keyboard->VKey == VK_SHIFT) {
+        key = PAL_KEY_RSHIFT;
+
     } else {
         key = s_Keycodes.keycodes[keyboard->VKey];
     }
 
     bool isKeyDown = !(keyboard->Flags & RI_KEY_BREAK);
-    bool keyRepeat = device->keyboard.keyState[key];
-    bool scancodeRepeat = device->keyboard.scancodeState[scancode];
+    bool repeat = device->keyboard.keyState[key];
 
     if (keyboard->Flags & RI_KEY_BREAK) {
         device->keyboard.keyState[key] = false;
@@ -1115,6 +1141,22 @@ static void handleKeyboardInput(
     } else {
         device->keyboard.keyState[key] = true;
         device->keyboard.scancodeState[scancode] = true;  
+    }
+
+    if (driver) {
+        PalEvent event = {};
+        event.data = palPackUint32(key, scancode);
+        event.sourceID = device->id;
+
+        if (isKeyDown) {
+            event.type = PAL_EVENT_KEYDOWN;
+            event.data2 = repeat;
+
+        } else {
+            event.type = PAL_EVENT_KEYUP;
+        }
+
+        palPushEvent(driver, &event);
     }
 }
 

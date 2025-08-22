@@ -1,5 +1,5 @@
 
-project "OpenglWindow"
+project "opengl_window"
     language "C"
     kind "ConsoleApp"
 

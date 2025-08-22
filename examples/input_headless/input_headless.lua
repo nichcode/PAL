@@ -1,11 +1,11 @@
 
-project "video_window"
+project "input_headless"
     language "C"
     kind "ConsoleApp"
 
     targetdir(target_dir)
     objdir(obj_dir)
 
-    files { "video_window.c" }
+    files { "input_headless.c" }
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

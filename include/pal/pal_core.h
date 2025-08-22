@@ -235,7 +235,11 @@ typedef enum PalEventType {
     PAL_EVENT_WINDOW_RESIZE,             /** < The window was resized.*/
     PAL_EVENT_WINDOW_MOVE,               /** < The window was moved.*/
     PAL_EVENT_DPI_CHANGED,               /** < The display dpi has changed.*/
-    PAL_EVENT_DISPLAYS_CHANGED,          /** < The display list has changed. Enumerate (`palEnumerateDisplays()`) again to get valid handles..*/
+    PAL_EVENT_DISPLAYS_CHANGED,          /** < The display list has changed. Enumerate (`palEnumerateDisplays()`) again to get valid handles.*/
+    
+    PAL_EVENT_KEYDOWN,                   /** < A key was pressed on a keyboard.*/
+    PAL_EVENT_KEYUP,                     /** < A key was released on a keyboard.*/
+    
     PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
     PAL_EVENT_MAX
 } PalEventType;

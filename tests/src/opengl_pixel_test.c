@@ -81,7 +81,7 @@ void openglPixelTest() {
     };
 
     palLog("");
-    for (int i = 0; i < pixelCount; i++) {
+    for (Int32 i = 0; i < pixelCount; i++) {
         // log pixel formate
         PalGLPixelFormat* format = &formats[i];
         palLog("Pixel Format Index: %i", format->index);

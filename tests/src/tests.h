@@ -22,7 +22,7 @@ static inline void registerTest(TestFn fn) {
 
 static inline void runTests() {
 
-    for (int i = 0; i < s_Test.count; i++) {
+    for (Int32 i = 0; i < s_Test.count; i++) {
         s_Test.tests[i]();
     }
 }

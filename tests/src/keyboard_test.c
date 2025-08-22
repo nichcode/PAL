@@ -51,7 +51,7 @@ void keyboardTest() {
     }
 
     PalInputDeviceInfo inputDeviceInfo;
-    for (int i = 0; i < count; i++) {
+    for (Int32 i = 0; i < count; i++) {
         PalInputDevice* device = keyboards[i];
 
         result = palGetInputDeviceInfo(device, &inputDeviceInfo);
