@@ -8,14 +8,16 @@ project "OpenglWindow"
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
         files { 
-            "src/opengl_window.c",
-            "glad/src/glad.c"
+            "opengl_window.c",
+            "opengl_helper.c",
+
+            "%{wks.location}/examples/glad/src/glad.c"
         }
     end
 
     includedirs { 
         "%{wks.location}/include",
-        "glad/include"
+        "%{wks.location}/examples/glad/include"
     }
 
     links { "PAL" }

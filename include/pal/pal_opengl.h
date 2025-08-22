@@ -130,6 +130,11 @@ _PAPI PalGLPixelFormat* _PCALL palGetClosestGLPixelFormat(
     const PalGLPixelFormat* desired);
 
 // TODO: docs
+_PAPI PalResult _PCALL palGetDefaultGLPixelFormat(
+    void* nativeWindow,
+    PalGLPixelFormat* format);
+
+// TODO: docs
 _PAPI PalResult _PCALL palCreateGLContext(
     const PalGLContextCreateInfo* info,
     PalGLContext** outContext);

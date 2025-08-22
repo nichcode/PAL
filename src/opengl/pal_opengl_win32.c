@@ -723,6 +723,65 @@ PalGLPixelFormat* _PCALL palGetClosestGLPixelFormat(
     return best;
 }
 
+PalResult _PCALL palGetDefaultGLPixelFormat(
+    void* nativeWindow,
+    PalGLPixelFormat* format) {
+
+    if (!nativeWindow || !format) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HDC dc = GetDC((HWND)nativeWindow);
+    if (!dc) {
+        return PAL_RESULT_INVALID_WINDOW_HANDLE;
+    }
+
+    PIXELFORMATDESCRIPTOR pfd = {};
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.cColorBits = 24;
+    pfd.cDepthBits = 16;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+    pfd.cStencilBits = 0;
+
+    Int32 pixelFormat = s_GL.choosePixelFormat(dc, &pfd);
+    if (!pixelFormat) {
+        // //FIXME: change some fields and re check again
+        // but this will almost work on all drivers
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    if (!s_GL.wglGetPixelFormatAttribivARB) {
+        // TODO: remove
+
+    } else {
+        memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+        s_GL.describePixelFormat(
+            dc,
+            pixelFormat,
+            sizeof(PIXELFORMATDESCRIPTOR),
+            &pfd
+        );
+
+        format->index = pixelFormat;
+        format->redBits = pfd.cRedBits;
+        format->greenBits = pfd.cGreenBits;
+        format->blueBits = pfd.cBlueBits;
+        format->alphaBits = pfd.cAlphaBits;
+        format->depthBits = pfd.cDepthBits;
+        format->stencilBits = pfd.cStencilBits;
+        format->samples = 1;
+
+        format->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
+        format->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
+        format->sRGB = false;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult _PCALL palCreateGLContext(
     const PalGLContextCreateInfo* info,
     PalGLContext** outContext) {
@@ -791,19 +850,32 @@ PalResult _PCALL palCreateGLContext(
         return PAL_RESULT_INVALID_WINDOW_HANDLE;
     }
 
+    // check format if nullptr use default
+    Int32 pixelFormat = 0;
+    if (info->format) {
+        pixelFormat = info->format->index;
+    } else {
+        PalGLPixelFormat format;
+        PalResult result = palGetDefaultGLPixelFormat(info->windowHandle, &format);        
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+        pixelFormat = format.index;
+    }
+
     // since we have the pixel format already
     // we ask the OS (platform) to fill the pfd struct for us from that index
     PIXELFORMATDESCRIPTOR pfd;
     if (!s_GL.describePixelFormat(
         context->dc,
-        info->format->index,
+        pixelFormat,
         sizeof(PIXELFORMATDESCRIPTOR),
         &pfd)) {
         return PAL_RESULT_INVALID_GL_PIXEL_FORMAT;
     }
 
     // we then set the pixel format for the hdc 
-    if (!s_GL.setPixelFormat(context->dc, info->format->index, &pfd)) {
+    if (!s_GL.setPixelFormat(context->dc, pixelFormat, &pfd)) {
         return PAL_RESULT_INVALID_GL_PIXEL_FORMAT;
     }
 

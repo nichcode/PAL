@@ -38,8 +38,8 @@ workspace "PAL Workspace"
         include "tests/tests.lua"
     end
 
-    if (PAL_BUILD_TESTS) then
-        include "examples/opengl_window.lua"
+    if (PAL_BUILD_EXAMPLES) then
+        include "examples/opengl_window/opengl_window.lua"
     end
 
     include "pal.lua"

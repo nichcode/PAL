@@ -1419,6 +1419,10 @@ LRESULT CALLBACK videoProc(
             return 0;
             break;
         }
+
+        case WM_ERASEBKGND: {
+            return 1;
+        }
     }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);
