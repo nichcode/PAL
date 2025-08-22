@@ -33,6 +33,8 @@ bool initOpengl(
     PalWindow** outWindow) {
 
     PalResult result;
+
+    // load the opengl ICD
     result = palLoadGLICD();
     if (result != PAL_RESULT_SUCCESS) {
         const char* resultString = palResultToString(result);
@@ -40,6 +42,7 @@ bool initOpengl(
         return false;
     }
 
+    // create an event driver to recieve video system events
     PalEventDriver* eventDriver = nullptr;
     PalEventDriverCreateInfo eventDriverCreateInfo;
     eventDriverCreateInfo.allocator = nullptr;
@@ -77,6 +80,8 @@ bool initOpengl(
         return false;
     }
 
+    // we create a normal window
+    // this way we don't set flags using video features to check for support
     PalWindow* window = nullptr;
     PalWindowCreateInfo windowCreateInfo;
     windowCreateInfo.display = nullptr; // use primary display
@@ -103,26 +108,30 @@ bool createContext(
 
     PalResult result;
     PalGLContext* context = nullptr;
+
+    // get the opengl driver info
     PalGLInfo info = palGetGLInfo();
 
     PalGLContextCreateInfo createInfo = {};
     createInfo.allocator = nullptr;
-    createInfo.share = nullptr;
+    createInfo.share = nullptr; // set to share context
     createInfo.debug = true;
     createInfo.format = format; // nullptr to use default
     createInfo.major = info.versionMajor;
     createInfo.minor = info.versionMinor;
     createInfo.noError = false;
-    createInfo.release = PAL_GL_RELEASE_BEHAVIOR_NONE;
+    createInfo.release = PAL_GL_RELEASE_BEHAVIOR_NONE; // this might not be supported. check with extensions
     createInfo.reset = PAL_GL_CONTEXT_RESET_NONE; // set if robustness will be true
     createInfo.robustness = false;
-    createInfo.windowHandle = palGetWindowHandle(window);
+    createInfo.windowHandle = palGetWindowHandle(window); // the window handle (HWND for win32 as void*)
 
     if (info.extensions & PAL_GL_EXTENSION_CREATE_CONTEXT) {
+        // create a forward compatible context if supported
         createInfo.forward = true;
     }
 
     if (info.extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
+        // create a context with core profile if supported
         createInfo.profile = PAL_GL_PROFILE_CORE;
     }
 

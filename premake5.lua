@@ -39,7 +39,13 @@ workspace "PAL Workspace"
     end
 
     if (PAL_BUILD_EXAMPLES) then
-        include "examples/opengl_window/opengl_window.lua"
+        if (PAL_BUILD_VIDEO) then
+            include "examples/video_window/video_window.lua"
+        end
+
+        if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
+            include "examples/opengl_window/opengl_window.lua"
+        end
     end
 
     include "pal.lua"

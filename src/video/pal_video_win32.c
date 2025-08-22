@@ -1321,7 +1321,15 @@ LRESULT CALLBACK videoProc(
             if (s_System.eventDriver) {
                 PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_RESIZE);
-                if (mode != PAL_DISPATCH_NONE) {
+
+                if (mode == PAL_DISPATCH_CALLBACK) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_RESIZE;
+                    event.sourceID = window->id;
+                    event.data = palPackUint32(width, height);
+                    palPushEvent(driver, &event);
+
+                } else if (mode == PAL_DISPATCH_POLL) {
                     s_Event.pendingResize = true;
                     s_Event.width = width;
                     s_Event.height = height;
@@ -1340,7 +1348,15 @@ LRESULT CALLBACK videoProc(
             if (s_System.eventDriver) {
                 PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MOVE);
-                if (mode != PAL_DISPATCH_NONE) {
+
+                if (mode == PAL_DISPATCH_CALLBACK) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_MOVE;
+                    event.sourceID = window->id;
+                    event.data = palPackInt32(x, y);
+                    palPushEvent(driver, &event);
+
+                } else if (mode == PAL_DISPATCH_POLL) {
                     s_Event.pendingMove = true;
                     s_Event.x = x;
                     s_Event.y = y;

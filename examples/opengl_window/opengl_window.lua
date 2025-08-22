@@ -6,14 +6,12 @@ project "OpenglWindow"
     targetdir(target_dir)
     objdir(obj_dir)
 
-    if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
-        files { 
-            "opengl_window.c",
-            "opengl_helper.c",
+    files { 
+        "opengl_window.c",
+        "opengl_helper.c",
 
-            "%{wks.location}/examples/glad/src/glad.c"
-        }
-    end
+        "%{wks.location}/examples/glad/src/glad.c"
+    }
 
     includedirs { 
         "%{wks.location}/include",
