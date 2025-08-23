@@ -4,19 +4,20 @@
 void onEvent(void* userData, const PalEvent* event) {
 
     if (event->type == PAL_EVENT_WINDOW_RESIZE) {
-        Int32 width, height;
-        palUnpackUint32(event->data, &width, &height);
-        palLog("Size - (%d, %d)", width, height);
+        PalResizeEventInfo info = palGetResizeEventInfo(event);
+        palLog("Size - (%d, %d)", info.width, info.height);
     }
 
     if (event->type == PAL_EVENT_WINDOW_MOVE) {
-        Int32 x, y;
-        palUnpackInt32(event->data, &x, &y);
-        palLog("Position - (%d, %d)", x, y);
+        PalMoveEventInfo info = palGetMoveEventInfo(event);
+        palLog("Position - (%d, %d)", info.x, info.y);
     }
 }
 
 int main(int argc, char**) {
+
+    const char* versionString = palGetVersionString();
+    palLog("PAL version - %s", versionString);
 
     PalResult result;
     PalEventDriver* eventDriver = nullptr;
@@ -74,6 +75,8 @@ int main(int argc, char**) {
     palSetEventDispatchMode(eventDriver, PAL_EVENT_DISPLAYS_CHANGED, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MOVE, PAL_DISPATCH_CALLBACK);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_RESIZE, PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_MOVE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_WHEEL, PAL_DISPATCH_POLL);
 
     running = true;
     while (running) {
@@ -99,9 +102,14 @@ int main(int argc, char**) {
                 }
 
                 case PAL_EVENT_MOUSE_MOVE: {
-                    Int32 x, y;
-                    palUnpackInt32(event.data, &x, &y);
-                    palLog("Mouse Position - (%d, %d)", x, y);
+                    PalMoveEventInfo info = palGetMoveEventInfo(&event);
+                    palLog("Mouse Position - (%i, %i)", info.x, info.y);
+                    break;
+                }
+
+                case PAL_EVENT_MOUSE_WHEEL: {
+                    PalWheelEventInfo info = palGetWheelEventInfo(&event);
+                    palLog("Mouse wheel - (%i, %i)", info.scrollX, info.scrollY);
                     break;
                 }
             }

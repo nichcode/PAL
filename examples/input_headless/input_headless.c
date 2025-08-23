@@ -5,6 +5,9 @@ static const char* gamepadTypeToString(PalInputDeviceType type);
 
 int main(int argc, char**) {
 
+    const char* versionString = palGetVersionString();
+    palLog("PAL version - %s", versionString);
+
     PalResult result;
     PalEventDriver* eventDriver = nullptr;
     PalInputDeviceInfo deviceInfo;
@@ -144,6 +147,7 @@ int main(int argc, char**) {
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYUP, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_BUTTONDOWN, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_BUTTONUP, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_RELATIVE, PAL_DISPATCH_POLL);
 
     running = true;
     while (running) {
@@ -153,16 +157,13 @@ int main(int argc, char**) {
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_KEYDOWN: {
-                    Uint32 key, scancode;
-                    bool repeat = event.data2;
-                    palUnpackUint32(event.data, &key, &scancode);
-
-                    const char* keyString = s_KeyNames[key];
-                    const char* scancodeString = s_ScancodeNames[scancode];
+                    PalKeyEventInfo info = palGetKeyEventInfo(&event);
+                    const char* keyString = s_KeyNames[info.key];
+                    const char* scancodeString = s_ScancodeNames[info.scancode];
 
                     // you can get the device id
                     // palGetInputDeviceID() and check with event.sourceID to know which keyboard was pressed
-                    if (key == PAL_KEY_ESCAPE) {
+                    if (info.key == PAL_KEY_ESCAPE) {
                         // the device must be registered
                         // Uint64 keyboardID = palGetInputDeviceID(keyboard);
                         // if (keyboardID == event.sourceID) {
@@ -172,7 +173,7 @@ int main(int argc, char**) {
                         break;
                     }
 
-                    if (repeat) {
+                    if (info.repeat) {
                         palLog("Key repeat - (key - %s, scancode - %s)", keyString, scancodeString);
 
                     } else {
@@ -182,12 +183,9 @@ int main(int argc, char**) {
                 }
 
                 case PAL_EVENT_KEYUP: {
-                    Uint32 key, scancode;
-                    bool repeat = event.data2;
-                    palUnpackUint32(event.data, &key, &scancode);
-
-                    const char* keyString = s_KeyNames[key];
-                    const char* scancodeString = s_ScancodeNames[scancode];
+                    PalKeyEventInfo info = palGetKeyEventInfo(&event);
+                    const char* keyString = s_KeyNames[info.key];
+                    const char* scancodeString = s_ScancodeNames[info.scancode];
                     palLog("Keyup - (key - %s, scancode - %s)", keyString, scancodeString);
                     break;
                 }
@@ -204,10 +202,9 @@ int main(int argc, char**) {
                     break;
                 }
 
-                case PAL_EVENT_MOUSE_WHEEL: {
-                    Int32 scrollX, scrollY;
-                    palUnpackInt32(event.data, &scrollX, &scrollY);
-                    palLog("mouse scroll - (%s, %s)", scrollX, scrollY);
+                case PAL_EVENT_MOUSE_RELATIVE: {
+                    PalMoveEventInfo info = palGetMoveEventInfo(&event);
+                    palLog("mouse delta - (%d, %d)", info.x, info.y);
                     break;
                 }
             }

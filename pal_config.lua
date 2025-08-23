@@ -1,6 +1,6 @@
 
 -- build PAL tests as a single application
-PAL_BUILD_TESTS = false
+PAL_BUILD_TESTS = true
 
 -- build PAL examples
 PAL_BUILD_EXAMPLES = true
@@ -9,10 +9,10 @@ PAL_BUILD_EXAMPLES = true
 PAL_BUILD_STATIC = false
 
 -- build video system
-PAL_BUILD_VIDEO = false
+PAL_BUILD_VIDEO = true
 
 -- build input system
 PAL_BUILD_INPUT = true
 
 -- build opengl system
-PAL_BUILD_OPENGL = false
+PAL_BUILD_OPENGL = true

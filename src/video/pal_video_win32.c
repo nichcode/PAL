@@ -1444,7 +1444,7 @@ LRESULT CALLBACK videoProc(
                 PalEventDriver* driver = s_System.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_MOVE);
 
-                if (mode == PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {};
                     event.type = PAL_EVENT_MOUSE_MOVE;
                     event.sourceID = window->id;
@@ -1457,6 +1457,40 @@ LRESULT CALLBACK videoProc(
 
         case WM_ERASEBKGND: {
             return 1;
+        }
+
+        case WM_MOUSEWHEEL: {
+            Int32 scroll = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
+
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_MOUSE_WHEEL;
+                    event.sourceID = window->id;
+                    event.data = palPackInt32(0, scroll);
+                    palPushEvent(driver, &event);
+                }
+            }
+            return 0;
+        }
+
+        case WM_MOUSEHWHEEL: {
+            Int32 scroll = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
+
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_MOUSE_WHEEL;
+                    event.sourceID = window->id;
+                    event.data = palPackInt32(scroll, 0);
+                    palPushEvent(driver, &event);
+                }
+            }
+            return 0;
         }
     }
 

@@ -8,8 +8,6 @@ project "opengl_window"
 
     files { 
         "opengl_window.c",
-        "opengl_helper.c",
-
         "%{wks.location}/examples/glad/src/glad.c"
     }
 

@@ -237,12 +237,13 @@ typedef enum PalEventType {
     PAL_EVENT_DPI_CHANGED,               /** < The display dpi has changed.*/
     PAL_EVENT_DISPLAYS_CHANGED,          /** < The display list has changed. Enumerate (`palEnumerateDisplays()`) again to get valid handles.*/
     PAL_EVENT_MOUSE_MOVE,                /** < The mouse was moved. This will be triggered if there is a focus window.*/
+    PAL_EVENT_MOUSE_WHEEL,               /** < A mouse wheel (scroll).*/
     
     PAL_EVENT_KEYDOWN,                   /** < A key was pressed on a keyboard.*/
     PAL_EVENT_KEYUP,                     /** < A key was released on a keyboard.*/
     PAL_EVENT_MOUSE_BUTTONDOWN,          /** < A mouse button was pressed.*/
     PAL_EVENT_MOUSE_BUTTONUP,            /** < A mouse button was released.*/
-    PAL_EVENT_MOUSE_WHEEL,               /** < A mouse wheel (scroll).*/
+    PAL_EVENT_MOUSE_RELATIVE,            /** < Mouse movement delta.*/
     
     PAL_EVENT_USER,                      /** < User event. Differentiate between them with userID field in PalEvent.*/
     PAL_EVENT_MAX
@@ -370,6 +371,31 @@ typedef struct PalEventQueue {
     PalPollFn poll;             /** < Event poll function pointer.*/
     void* userData;             /** < Optional user data passed to queue functions.*/
 } PalEventQueue;
+
+// TODO: docs
+typedef struct PalMoveEventInfo {
+    Int32 x;
+    Int32 y;
+} PalMoveEventInfo;
+
+// TODO: docs
+typedef struct PalResizeEventInfo {
+    Uint32 width;
+    Uint32 height;
+} PalResizeEventInfo;
+
+// TODO: docs
+typedef struct PalKeyEventInfo {
+    Uint32 key;
+    Uint32 scancode;
+    bool repeat;
+} PalKeyEventInfo;
+
+// TODO: docs
+typedef struct PalWheelEventInfo {
+    Int32 scrollX;
+    Int32 scrollY;
+} PalWheelEventInfo;
 
 /**
  * @struct PalEventDriverCreateInfo
@@ -790,6 +816,56 @@ static inline void palUnpackInt32(
     if (outHigh) {
         *outHigh = (Int32)((Uint64)data >> 32);
     }
+}
+
+// TODO: docs
+static inline PalMoveEventInfo palGetMoveEventInfo(
+    const PalEvent* event) {
+
+    Int32 low, high;
+    PalMoveEventInfo info;
+    palUnpackInt32(event->data, &low, &high);
+
+    info.x = low;
+    info.y = high;
+    return info;
+}
+
+static inline PalResizeEventInfo palGetResizeEventInfo(
+    const PalEvent* event) {
+
+    Uint32 low, high;
+    PalResizeEventInfo info;
+    palUnpackUint32(event->data, &low, &high);
+
+    info.width = low;
+    info.height = high;
+    return info;
+}
+
+static inline PalKeyEventInfo palGetKeyEventInfo(
+    const PalEvent* event) {
+
+    Uint32 low, high;
+    PalKeyEventInfo info;
+    palUnpackUint32(event->data, &low, &high);
+
+    info.key = low;
+    info.scancode = high;
+    info.repeat = event->data2;
+    return info;
+}
+
+static inline PalWheelEventInfo palGetWheelEventInfo(
+    const PalEvent* event) {
+
+    Int32 low, high;
+    PalWheelEventInfo info;
+    palUnpackInt32(event->data, &low, &high);
+
+    info.scrollX = low;
+    info.scrollY = high;
+    return info;
 }
 
 #endif // _PAL_CORE_H

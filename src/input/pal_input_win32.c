@@ -87,8 +87,8 @@ typedef struct Keycodes {
 } Keycodes;
 
 typedef struct MousePosition {
-    Int32 x, y;
-    Int32 dx, dy;
+    Int32 x;
+    Int32 y;
 } MousePosition;
 
 typedef struct RegisteredDevice {
@@ -103,7 +103,7 @@ typedef struct RegisteredDevice {
         } keyboard;
 
         struct {
-            PalMouseWheel wheel;
+            PalMouseDelta delta;
             bool state[PAL_MOUSE_BUTTON_MAX];
         } mouse;
     };
@@ -174,7 +174,7 @@ PalResult _PCALL palInitInput(
     s_System.eventDriver = eventDriver;
 
     s_System.instance = GetModuleHandleW(nullptr);
-    WNDCLASSEXW wc = {};
+    WNDCLASSEXW wc = {0};
     wc.cbSize = sizeof(WNDCLASSEXW);
     if (!GetClassInfoExW(s_System.instance, PAL_WIN32_INPUT_CLASS, &wc)) {
         wc.lpfnWndProc = inputProc;
@@ -189,12 +189,12 @@ PalResult _PCALL palInitInput(
     s_System.window = CreateWindowExW(
         0,
         PAL_WIN32_INPUT_CLASS,
-        L"",
-        0,
-        0,
-        0,
-        1,
-        1,
+        L"InputWindow",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
         nullptr,
         nullptr,
         s_System.instance,
@@ -269,8 +269,6 @@ PalResult _PCALL palInitInput(
                 &filter,
                 DEVICE_NOTIFY_WINDOW_HANDLE
             );
-
-            ShowWindow(s_System.window, SW_HIDE);
         }
 
         RAWINPUTDEVICE rid = {};
@@ -325,7 +323,15 @@ void _PCALL palUpdateInput() {
         return;
     }
 
-    s_Mouse.dx = s_Mouse.dy = 0;
+    // reset delta for registered mouse devices
+    for (Int32 i = 0; i < MAX_DEVICES; i++) {
+        RegisteredDevice* device = &s_Devices[i];
+        if (device->type == PAL_INPUT_DEVICE_MOUSE) {
+            device->mouse.delta.x = 0;
+            device->mouse.delta.y = 0;
+        }
+    }
+
     POINT pos;
     GetCursorPos(&pos);
     s_Mouse.x = pos.x;
@@ -682,17 +688,6 @@ void palGetMousePosition(Int32* x, Int32* y) {
     }
 }
 
-void palGetMouseRelative(Int32* x, Int32* y) {
-
-    if (x) {
-        *x = s_Mouse.dx;
-    }
-
-    if (y) {
-        *y = s_Mouse.dy;
-    }
-}
-
 void _PCALL palGetKeyboardState(
     PalInputDevice* keyboard, 
     PalKeyboardState* state) {
@@ -726,7 +721,7 @@ void _PCALL palGetMouseState(
         if (device->type == PAL_INPUT_DEVICE_MOUSE) {
                 if (device->device == (HANDLE)mouse) {
                 state->buttons = device->mouse.state;
-                state->wheel = &device->mouse.wheel;
+                state->delta = &device->mouse.delta;
                 return;
             }
         }
@@ -1098,6 +1093,13 @@ static void handleKeyboardInput(
     bool extended = (keyboard->Flags & RI_KEY_E0) != 0;
     PalEventDriver* driver = s_System.eventDriver;
 
+    PalDispatchMode keydownMode = PAL_DISPATCH_NONE;
+    PalDispatchMode keyupMode = PAL_DISPATCH_NONE;
+    if (driver) {
+        keydownMode = palGetEventDispatchMode(driver, PAL_EVENT_KEYDOWN);
+        keyupMode = palGetEventDispatchMode(driver, PAL_EVENT_KEYUP);
+    }
+
     // scancode
     if (!extended && keyboard->MakeCode == 0x045) {
         scancode = PAL_SCANCODE_NUMLOCK;
@@ -1142,19 +1144,19 @@ static void handleKeyboardInput(
         device->keyboard.scancodeState[scancode] = true;  
     }
 
-    if (driver) {
+    if (isKeyDown && driver && keydownMode != PAL_DISPATCH_NONE) {
         PalEvent event = {};
         event.data = palPackUint32(key, scancode);
         event.sourceID = device->id;
+        event.type = PAL_EVENT_KEYDOWN;
+        event.data2 = repeat;
+        palPushEvent(driver, &event);
 
-        if (isKeyDown) {
-            event.type = PAL_EVENT_KEYDOWN;
-            event.data2 = repeat;
-
-        } else {
-            event.type = PAL_EVENT_KEYUP;
-        }
-
+    } else if (!isKeyDown && driver && keyupMode != PAL_DISPATCH_NONE) {
+        PalEvent event = {};
+        event.data = palPackUint32(key, scancode);
+        event.sourceID = device->id;
+        event.type = PAL_EVENT_KEYUP;
         palPushEvent(driver, &event);
     }
 }
@@ -1164,121 +1166,78 @@ static void handleMouseInput(
     RAWMOUSE* mouse) {
 
     USHORT flags = mouse->usButtonFlags;
-    s_Mouse.dx += mouse->lLastX;
-    s_Mouse.dy += mouse->lLastY;
-    device->mouse.wheel.x = 0;
-    device->mouse.wheel.y = 0;
+    device->mouse.delta.x += mouse->lLastX;
+    device->mouse.delta.y += mouse->lLastY;
     PalEventDriver* driver = s_System.eventDriver;
 
     PalEvent event;
-    event.sourceID = device->id;
-
-    // left
-    if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) {
-        device->mouse.state[PAL_MOUSE_BUTTON_LEFT] = true;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_LEFT;
-            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
-            palPushEvent(driver, &event);
-        }
-        
-    } else if (flags & RI_MOUSE_LEFT_BUTTON_UP) {
-        device->mouse.state[PAL_MOUSE_BUTTON_LEFT] = false;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_LEFT;
-            event.type = PAL_EVENT_MOUSE_BUTTONUP;
-            palPushEvent(driver, &event);
-        }
-    }
-
-    // right
-    if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
-        device->mouse.state[PAL_MOUSE_BUTTON_RIGHT] = true;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_RIGHT;
-            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
-            palPushEvent(driver, &event);
-        }
-
-
-    } else if (flags & RI_MOUSE_RIGHT_BUTTON_UP) {
-        device->mouse.state[PAL_MOUSE_BUTTON_RIGHT] = false;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_RIGHT;
-            event.type = PAL_EVENT_MOUSE_BUTTONUP;
-            palPushEvent(driver, &event);
-        }
-    }
-
-    // middle
-    if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
-        device->mouse.state[PAL_MOUSE_BUTTON_MIDDLE] = true;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_MIDDLE;
-            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
-            palPushEvent(driver, &event);
-        }
-
-    } else if (flags & RI_MOUSE_MIDDLE_BUTTON_UP) {
-        device->mouse.state[PAL_MOUSE_BUTTON_MIDDLE] = false;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_MIDDLE;
-            event.type = PAL_EVENT_MOUSE_BUTTONUP;
-            palPushEvent(driver, &event);
-        }
-    }
-
-    // x1
-    if (flags & RI_MOUSE_BUTTON_4_DOWN) {
-        device->mouse.state[PAL_MOUSE_BUTTON_X1] = true;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_X1;
-            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
-            palPushEvent(driver, &event);
-        }
-
-    } else if (flags & RI_MOUSE_BUTTON_4_UP) {
-        device->mouse.state[PAL_MOUSE_BUTTON_X1] = false;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_X1;
-            event.type = PAL_EVENT_MOUSE_BUTTONUP;
-            palPushEvent(driver, &event);
-        }
-    }
-
-    // x2
-    if (flags & RI_MOUSE_BUTTON_5_DOWN) {
-        device->mouse.state[PAL_MOUSE_BUTTON_X2] = true;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_X2;
-            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
-            palPushEvent(driver, &event);
-        }
-
-    } else if (flags & RI_MOUSE_BUTTON_5_UP) {
-        device->mouse.state[PAL_MOUSE_BUTTON_X2] = false;
-        if (driver) {
-            event.data = PAL_MOUSE_BUTTON_X2;
-            event.type = PAL_EVENT_MOUSE_BUTTONUP;
-            palPushEvent(driver, &event);
-        }
-    }
-
-    // wheel delta
-    if (flags & RI_MOUSE_WHEEL) {
-        SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
-        device->mouse.wheel.y += (delta / WHEEL_DELTA);
-    }
-
-    if (flags & RI_MOUSE_HWHEEL) {
-        SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
-        device->mouse.wheel.x += (delta / WHEEL_DELTA);
-    }
+    PalDispatchMode buttonDownMode = PAL_DISPATCH_NONE;
+    PalDispatchMode buttonUpMode = PAL_DISPATCH_NONE;
+    PalDispatchMode deltaMode = PAL_DISPATCH_NONE;
+    PalMouseButton button;
+    PalEventType type;
 
     if (driver) {
-        if (device->mouse.wheel.x || device->mouse.wheel.y) {
-            event.data = palPackInt32(device->mouse.wheel.x, device->mouse.wheel.y);
-            event.type = PAL_EVENT_MOUSE_WHEEL;
+        event.sourceID = device->id;
+        buttonDownMode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_BUTTONDOWN);
+        buttonUpMode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_BUTTONUP);
+        deltaMode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_RELATIVE);
+    }
+
+    if (flags & RI_MOUSE_LEFT_BUTTON_DOWN ||
+        flags & RI_MOUSE_LEFT_BUTTON_UP) {
+        button = PAL_MOUSE_BUTTON_LEFT;
+
+    } else if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN ||
+        flags & RI_MOUSE_RIGHT_BUTTON_UP) {
+        button = PAL_MOUSE_BUTTON_RIGHT;
+
+    } else if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN ||
+        flags & RI_MOUSE_MIDDLE_BUTTON_UP) {
+        button = PAL_MOUSE_BUTTON_MIDDLE;
+
+    } else if (flags & RI_MOUSE_BUTTON_4_DOWN ||
+        flags & RI_MOUSE_BUTTON_4_UP) {
+        button = PAL_MOUSE_BUTTON_X1;
+
+    } else if (flags & RI_MOUSE_BUTTON_5_DOWN ||
+        flags & RI_MOUSE_BUTTON_5_UP) {
+        button = PAL_MOUSE_BUTTON_X2;
+    }
+
+    if (flags & RI_MOUSE_LEFT_BUTTON_DOWN ||
+        flags & RI_MOUSE_RIGHT_BUTTON_DOWN ||
+        flags & RI_MOUSE_MIDDLE_BUTTON_DOWN ||
+        flags & RI_MOUSE_BUTTON_4_DOWN ||
+        flags & RI_MOUSE_BUTTON_5_DOWN) {
+        type = PAL_EVENT_MOUSE_BUTTONDOWN; 
+        device->mouse.state[button] = true;
+
+        if (driver && buttonDownMode != PAL_DISPATCH_NONE) {
+            event.data = button;
+            event.type = type;
+            palPushEvent(driver, &event);
+        }
+
+    } else if (flags & RI_MOUSE_LEFT_BUTTON_UP ||
+        flags & RI_MOUSE_RIGHT_BUTTON_UP ||
+        flags & RI_MOUSE_MIDDLE_BUTTON_UP ||
+        flags & RI_MOUSE_BUTTON_4_UP ||
+        flags & RI_MOUSE_BUTTON_5_UP) {
+        type = PAL_EVENT_MOUSE_BUTTONUP; 
+        device->mouse.state[button] = false;
+
+        if (driver && buttonUpMode != PAL_DISPATCH_NONE) {
+            event.data = button;
+            event.type = type;
+            palPushEvent(driver, &event);
+        }
+    }
+
+    if (driver && (mouse->lLastX || mouse->lLastY)) {
+        if (driver && deltaMode != PAL_DISPATCH_NONE) {
+            event.type = PAL_EVENT_MOUSE_RELATIVE;
+            event.data = palPackInt32(mouse->lLastX, mouse->lLastY);
             palPushEvent(driver, &event);
         }
     }
@@ -1334,6 +1293,8 @@ LRESULT CALLBACK inputProc(
                     }
                 }
             }
+
+            break;
         }
     }
 

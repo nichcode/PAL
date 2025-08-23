@@ -455,18 +455,11 @@ typedef struct PalKeyboardState {
     const bool* keys;                /** < Layout aware keys state. Must not be modified by user. see `PalKey`.*/
 } PalKeyboardState;
 
-/**
- * @struct PalMouseWheel
- * @brief Information about a mouse device scroll wheel.
- *
- * @sa PalMouseState()
- *
- * @ingroup input
- */
-typedef struct PalMouseWheel {
-    Int32 x;                       /** < Horizontal scroll*/
-    Int32 y;                       /** < Vertical scroll*/
-} PalMouseWheel;
+// TODO: docs
+typedef struct PalMouseDelta {
+    Int32 x;                       
+    Int32 y;                       
+} PalMouseDelta;
 
 /**
  * @struct PalMouseState
@@ -477,7 +470,7 @@ typedef struct PalMouseWheel {
  * @ingroup input
  */
 typedef struct PalMouseState {
-    const PalMouseWheel* wheel;                /** < Mouse wheel information.*/
+    const PalMouseDelta* delta;                /** < Mouse delta information.*/
     const bool* buttons;                       /** < Mouse buttons state.*/
 } PalMouseState;
 
@@ -648,9 +641,6 @@ _PAPI Uint64 _PCALL palGetInputDeviceID(PalInputDevice* inputDevice);
 
 // TODO: docs
 _PAPI void palGetMousePosition(Int32* x, Int32* y);
-
-// TODO: docs
-_PAPI void palGetMouseRelative(Int32* x, Int32* y);
 
 /**
  * @brief Get the state of a registered keyboard device.
