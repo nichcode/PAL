@@ -142,6 +142,8 @@ int main(int argc, char**) {
     // we set all input events to poll dispatch mode but you can choose any one you want
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYUP, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_BUTTONDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_BUTTONUP, PAL_DISPATCH_POLL);
 
     running = true;
     while (running) {
@@ -187,6 +189,25 @@ int main(int argc, char**) {
                     const char* keyString = s_KeyNames[key];
                     const char* scancodeString = s_ScancodeNames[scancode];
                     palLog("Keyup - (key - %s, scancode - %s)", keyString, scancodeString);
+                    break;
+                }
+
+                case PAL_EVENT_MOUSE_BUTTONDOWN: {
+                    const char* mouseButtonString = s_MouseButtonNames[event.data];
+                    palLog("mouse button down - button - %s", mouseButtonString);
+                    break;
+                }
+
+                case PAL_EVENT_MOUSE_BUTTONUP: {
+                    const char* mouseButtonString = s_MouseButtonNames[event.data];
+                    palLog("mouse button up - button - %s", mouseButtonString);
+                    break;
+                }
+
+                case PAL_EVENT_MOUSE_WHEEL: {
+                    Int32 scrollX, scrollY;
+                    palUnpackInt32(event.data, &scrollX, &scrollY);
+                    palLog("mouse scroll - (%s, %s)", scrollX, scrollY);
                     break;
                 }
             }

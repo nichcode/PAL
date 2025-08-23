@@ -1436,6 +1436,25 @@ LRESULT CALLBACK videoProc(
             break;
         }
 
+        case WM_MOUSEMOVE: {
+            const int x = GET_X_LPARAM(lParam);
+            const int y = GET_Y_LPARAM(lParam);
+
+            if (s_System.eventDriver) {
+                PalEventDriver* driver = s_System.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_MOVE);
+
+                if (mode == PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_MOUSE_MOVE;
+                    event.sourceID = window->id;
+                    event.data = palPackInt32(x, y);
+                    palPushEvent(driver, &event);
+                }
+            }
+            return 0;
+        }
+
         case WM_ERASEBKGND: {
             return 1;
         }

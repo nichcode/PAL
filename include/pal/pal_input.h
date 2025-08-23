@@ -464,8 +464,8 @@ typedef struct PalKeyboardState {
  * @ingroup input
  */
 typedef struct PalMouseWheel {
-    int x;                       /** < Horizontal scroll*/
-    int y;                       /** < Vertical scroll*/
+    Int32 x;                       /** < Horizontal scroll*/
+    Int32 y;                       /** < Vertical scroll*/
 } PalMouseWheel;
 
 /**

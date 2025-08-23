@@ -3,7 +3,7 @@
 
 static const char* s_KeyNames[PAL_KEY_MAX] = {
 
-    [PAL_KEY_UNKNOWN] = "UNKNOWN",
+    [PAL_KEY_UNKNOWN] = "Unknown",
 
     // Letters
     [PAL_KEY_A] = "A",
@@ -130,7 +130,7 @@ static const char* s_KeyNames[PAL_KEY_MAX] = {
 
 static const char* s_ScancodeNames[PAL_SCANCODE_MAX] = {
 
-    [PAL_SCANCODE_UNKNOWN] = "UNKNOWN",
+    [PAL_SCANCODE_UNKNOWN] = "Unknown",
 
     // Letters
     [PAL_SCANCODE_A] = "A",
@@ -252,4 +252,15 @@ static const char* s_ScancodeNames[PAL_SCANCODE_MAX] = {
     [PAL_SCANCODE_RBRACKET] = "RightBracket",
     [PAL_SCANCODE_LSUPER] = "LeftSuper",
     [PAL_SCANCODE_RSUPER] = "RightSuper"
+};
+
+static const char* s_MouseButtonNames[PAL_MOUSE_BUTTON_MAX] = {
+
+    [PAL_MOUSE_BUTTON_UNKNOWN] = "Unknown",
+
+    [PAL_MOUSE_BUTTON_LEFT] = "Left",
+    [PAL_MOUSE_BUTTON_RIGHT] = "Right",
+    [PAL_MOUSE_BUTTON_MIDDLE] = "Middle",
+    [PAL_MOUSE_BUTTON_X1] = "X1",
+    [PAL_MOUSE_BUTTON_X2] = "X2"
 };

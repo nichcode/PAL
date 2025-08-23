@@ -733,7 +733,6 @@ void _PCALL palGetMouseState(
     }
 }
 
-
 // ==================================================
 // Internal API
 // ==================================================
@@ -1167,40 +1166,102 @@ static void handleMouseInput(
     USHORT flags = mouse->usButtonFlags;
     s_Mouse.dx += mouse->lLastX;
     s_Mouse.dy += mouse->lLastY;
+    device->mouse.wheel.x = 0;
+    device->mouse.wheel.y = 0;
+    PalEventDriver* driver = s_System.eventDriver;
+
+    PalEvent event;
+    event.sourceID = device->id;
 
     // left
     if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) {
         device->mouse.state[PAL_MOUSE_BUTTON_LEFT] = true;
-    } else {
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_LEFT;
+            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
+            palPushEvent(driver, &event);
+        }
+        
+    } else if (flags & RI_MOUSE_LEFT_BUTTON_UP) {
         device->mouse.state[PAL_MOUSE_BUTTON_LEFT] = false;
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_LEFT;
+            event.type = PAL_EVENT_MOUSE_BUTTONUP;
+            palPushEvent(driver, &event);
+        }
     }
 
     // right
     if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
         device->mouse.state[PAL_MOUSE_BUTTON_RIGHT] = true;
-    } else {
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_RIGHT;
+            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
+            palPushEvent(driver, &event);
+        }
+
+
+    } else if (flags & RI_MOUSE_RIGHT_BUTTON_UP) {
         device->mouse.state[PAL_MOUSE_BUTTON_RIGHT] = false;
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_RIGHT;
+            event.type = PAL_EVENT_MOUSE_BUTTONUP;
+            palPushEvent(driver, &event);
+        }
     }
 
     // middle
     if (flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
         device->mouse.state[PAL_MOUSE_BUTTON_MIDDLE] = true;
-    } else {
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_MIDDLE;
+            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
+            palPushEvent(driver, &event);
+        }
+
+    } else if (flags & RI_MOUSE_MIDDLE_BUTTON_UP) {
         device->mouse.state[PAL_MOUSE_BUTTON_MIDDLE] = false;
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_MIDDLE;
+            event.type = PAL_EVENT_MOUSE_BUTTONUP;
+            palPushEvent(driver, &event);
+        }
     }
 
     // x1
     if (flags & RI_MOUSE_BUTTON_4_DOWN) {
         device->mouse.state[PAL_MOUSE_BUTTON_X1] = true;
-    } else {
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_X1;
+            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
+            palPushEvent(driver, &event);
+        }
+
+    } else if (flags & RI_MOUSE_BUTTON_4_UP) {
         device->mouse.state[PAL_MOUSE_BUTTON_X1] = false;
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_X1;
+            event.type = PAL_EVENT_MOUSE_BUTTONUP;
+            palPushEvent(driver, &event);
+        }
     }
 
     // x2
     if (flags & RI_MOUSE_BUTTON_5_DOWN) {
         device->mouse.state[PAL_MOUSE_BUTTON_X2] = true;
-    } else {
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_X2;
+            event.type = PAL_EVENT_MOUSE_BUTTONDOWN;
+            palPushEvent(driver, &event);
+        }
+
+    } else if (flags & RI_MOUSE_BUTTON_5_UP) {
         device->mouse.state[PAL_MOUSE_BUTTON_X2] = false;
+        if (driver) {
+            event.data = PAL_MOUSE_BUTTON_X2;
+            event.type = PAL_EVENT_MOUSE_BUTTONUP;
+            palPushEvent(driver, &event);
+        }
     }
 
     // wheel delta
@@ -1212,6 +1273,14 @@ static void handleMouseInput(
     if (flags & RI_MOUSE_HWHEEL) {
         SHORT delta = (SHORT)HIWORD(mouse->usButtonData);
         device->mouse.wheel.x += (delta / WHEEL_DELTA);
+    }
+
+    if (driver) {
+        if (device->mouse.wheel.x || device->mouse.wheel.y) {
+            event.data = palPackInt32(device->mouse.wheel.x, device->mouse.wheel.y);
+            event.type = PAL_EVENT_MOUSE_WHEEL;
+            palPushEvent(driver, &event);
+        }
     }
 }
 

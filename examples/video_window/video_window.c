@@ -97,6 +97,13 @@ int main(int argc, char**) {
                     palLog("Display (monitor) List has been changed");
                     break;
                 }
+
+                case PAL_EVENT_MOUSE_MOVE: {
+                    Int32 x, y;
+                    palUnpackInt32(event.data, &x, &y);
+                    palLog("Mouse Position - (%d, %d)", x, y);
+                    break;
+                }
             }
         }
 
