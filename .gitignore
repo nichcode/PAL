@@ -1,0 +1,11 @@
+
+#.vscode folder
+**.vscode
+
+# Binaries
+**bin
+**build
+
+# MakeFiles
+Makefile
+**.make
