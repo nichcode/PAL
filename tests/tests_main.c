@@ -4,6 +4,8 @@
 
 int main(int argc, char**) {
 
+    PalVersion version = palGetVersion();
+
 #if PAL_HAS_SYSTEM
     registerTest("System Test", systemTest);
 #endif // PAL_HAS_SYSTEM

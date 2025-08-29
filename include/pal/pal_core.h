@@ -71,6 +71,9 @@ typedef struct {
     void* userData;
 } PalAllocator;
 
+_PAPI PalVersion _PCALL palGetVersion();
+_PAPI const char* _PCALL palGetVersionString();
+
 _PAPI void* _PCALL palAllocate(
     const PalAllocator* allocator,
     Uint64 size,

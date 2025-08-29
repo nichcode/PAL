@@ -30,7 +30,11 @@
 // Typedefs, enums and structs
 // ==================================================
 
-#define DEFAULT_ALIGNMENT 16
+#define PAL_DEFAULT_ALIGNMENT 16
+#define PAL_VERSION_MAJOR 1
+#define PAL_VERSION_MINOR 0
+#define PAL_VERSION_BUILD 0
+#define PAL_VERSION_STRING "1.0.0"
 
 // ==================================================
 // Internal API
@@ -64,6 +68,20 @@ static inline void alignedFree(void* ptr) {
 // Public API
 // ==================================================
 
+PalVersion _PCALL palGetVersion() {
+
+    return (PalVersion) {
+        .major = PAL_VERSION_MAJOR,
+        .minor = PAL_VERSION_MINOR,
+        .build = PAL_VERSION_BUILD
+    };
+}
+
+const char* _PCALL palGetVersionString() {
+
+    return PAL_VERSION_STRING;
+}
+
 void* _PCALL palAllocate(
     const PalAllocator* allocator,
     Uint64 size,
@@ -71,7 +89,7 @@ void* _PCALL palAllocate(
     
     Uint64 align = alignment;
     if (align == 0) {
-        align = DEFAULT_ALIGNMENT;
+        align = PAL_DEFAULT_ALIGNMENT;
     }
 
     if (allocator && allocator->allocate) {
