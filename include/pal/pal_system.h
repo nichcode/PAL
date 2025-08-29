@@ -68,7 +68,7 @@ typedef struct {
     Uint32 cacheKbL1;
     Uint32 cacheKbL2;
     Uint32 cacheKbL3;
-    Uint32 numThreads;
+    Uint32 numLogicalProcessors;
     PalCpuArch architecture;
     PalCpuFeatures features;
     char vendor[PAL_CPU_VENDOR_NAME_SIZE];

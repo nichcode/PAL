@@ -37,6 +37,6 @@ void runTests() {
             statusString = s_FailedString;
         }
 
-        // TODO: log
+        palLog(nullptr, "%s: %s", s_Test.tests[i].name, statusString);
     }
 }

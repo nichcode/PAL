@@ -210,8 +210,8 @@ PalResult _PAPI palGetCpuInfo(
     getCpuid(0, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
 
     memcpy(info->vendor + 0, &cpuInfo[1], 4);
-    memcpy(info->vendor + 4, &cpuInfo[2], 4);
-    memcpy(info->vendor + 8, &cpuInfo[3], 4);
+    memcpy(info->vendor + 4, &cpuInfo[3], 4);
+    memcpy(info->vendor + 8, &cpuInfo[2], 4);
     info->vendor[12] = '\0'; // null terminating character
 
     // get cpu model name
@@ -261,7 +261,7 @@ PalResult _PAPI palGetCpuInfo(
             DWORD count = tmp->Processor.GroupCount;
             for (DWORD i = 0; i < count; i++) {
                 KAFFINITY mask = tmp->Processor.GroupMask[i].Mask;
-                info->numThreads += _popcnt64(mask);
+                info->numLogicalProcessors += _popcnt64(mask);
             }
 
         } else if (tmp->Relationship == RelationCache) {

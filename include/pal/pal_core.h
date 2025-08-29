@@ -49,11 +49,12 @@ typedef uint64_t Uint64;
 
 typedef void* (*PalAllocateFn)(void*, Uint64, Uint64);
 typedef void (*PalFreeFn)(void*, void*);
+typedef void (*PalLogCallback)(void*, const char*);
 
 typedef enum {
     PAL_RESULT_SUCCESS,
     PAL_RESULT_NULL_POINTER,
-    PAL_RESULT_INVALID_ARGUMENT,
+    PAL_RESULT_INVALID_PARAMETER,
     PAL_RESULT_OUT_OF_MEMORY,
     PAL_RESULT_PLATFORM_FAILURE,
     PAL_RESULT_INVALID_ALLOCATOR
@@ -71,16 +72,25 @@ typedef struct {
     void* userData;
 } PalAllocator;
 
+typedef struct {
+    PalLogCallback callback;
+    void* userData;
+} PalLogger;
+
 _PAPI PalVersion _PCALL palGetVersion();
 _PAPI const char* _PCALL palGetVersionString();
+
+_PAPI const char* _PCALL palFormatResult(PalResult result);
 
 _PAPI void* _PCALL palAllocate(
     const PalAllocator* allocator,
     Uint64 size,
     Uint64 alignment);
 
-_PAPI void _PCALL palFree(
-    const PalAllocator* allocator,
-    void* ptr);
+_PAPI void _PCALL palFree(const PalAllocator* allocator, void* ptr);
+
+_PAPI void _PCALL palLog(const PalLogger* logger, const char* fmt, ...);
+
+_PAPI const char* _PCALL palGetLastLogMessage();
 
 #endif // _PAL_CORE_H

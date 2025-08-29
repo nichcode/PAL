@@ -11,6 +11,7 @@ void runTests();
 
 // Tests
 
+bool loggerTest();
 bool systemTest();
 
 #endif // _TESTS_H
