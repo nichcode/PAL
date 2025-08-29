@@ -1,10 +1,13 @@
 
-#include "pal/pal_core.h"
+#include "tests.h"
+#include "pal/pal_config.h" // for systems reflection
 
 int main(int argc, char**) {
 
-    PalCpuInfo cpuInfo;
-    palGetCpuInfo(&cpuInfo);
+#if PAL_HAS_SYSTEM
+    registerTest("System Test", systemTest);
+#endif // PAL_HAS_SYSTEM
 
+    runTests();
     return 0;
 }

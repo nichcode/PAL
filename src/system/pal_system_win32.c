@@ -1,9 +1,10 @@
 
-#include "pal/pal_core.h"
 
 // ==================================================
 // Includes
 // ==================================================
+
+#include "pal/pal_system.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -19,7 +20,19 @@
 #endif // UNICODE
 
 #include <windows.h>
+#include <string.h>
+
+#if defined(_MSC_VER)
 #include <intrin.h> // for cpuid
+#elif defined(__GNUC__) || defined(__clang__)
+#include <cpuid.h>
+#endif // _MSC_VER
+
+// ==================================================
+// Typedefs, enums and structs
+// ==================================================
+
+typedef LONG (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
 // ==================================================
 // Internal API
@@ -73,18 +86,121 @@ static inline void getCpuidCount(
 #endif // _MSC_VER
 }
 
+static inline bool getVersionWin32(PalVersion* version) {
+
+    OSVERSIONINFOEXW ver = { 0 };
+    ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+
+    HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
+    RtlGetVersionPtr getVer = (RtlGetVersionPtr)GetProcAddress(ntdll, "RtlGetVersion");
+    if (!getVer) {
+        return false;
+    }
+
+    if (getVer((PRTL_OSVERSIONINFOW)&ver)) {
+        return false;
+    }
+
+    version->major = ver.dwMajorVersion;
+    version->minor = ver.dwMinorVersion;
+    version->build = ver.dwBuildNumber;
+    return true;
+}
+
+static inline bool isVersionWin32(
+    PalVersion* osVersion, 
+    Uint16 major,
+    Uint16 minor,
+    Uint16 build) {
+    
+    if (osVersion->major > major) {
+        return true;
+    }
+
+    if (osVersion->major < major) {
+        return false;
+    }
+
+    if (osVersion->minor > minor) {
+        return true;
+    }
+
+    if (osVersion->minor < minor) {
+        return false;
+    }
+
+    return osVersion->build >= build;
+}
+
 // ==================================================
 // Public API
 // ==================================================
 
 PalResult _PAPI palGetPlatformInfo(PalPlatformInfo *info) {
 
+    if (!info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    info->apiType = PAL_PLATFORM_API_WIN32;
+    info->type = PAL_PLATFORM_WINDOWS;
+
+    // get windows build, version and combine them
+    if (!getVersionWin32(&info->version)) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    const char* name = nullptr;
+    const char* build = nullptr;
+    // check the versions and set the appropriate name
+    if (isVersionWin32(&info->version, 5, 1, 0)) {
+        name = "Windows XP";
+    } 
+
+    if (isVersionWin32(&info->version, 6, 0, 0)) {
+        name = "Windows Vista";
+    } 
+
+    if (isVersionWin32(&info->version, 6, 1, 0)) {
+        name = "Windows 7";    
+    }
+
+    if (isVersionWin32(&info->version, 6, 2, 0)) {
+        name = "Windows 8";
+    }
+
+    if (isVersionWin32(&info->version, 6, 3, 0)) {
+        name = "Windows 8.1";
+    }
+
+    if (isVersionWin32(&info->version, 10, 0, 0)) {
+        name = "Windows 10";
+    }
+
+    if (isVersionWin32(&info->version, 10, 0, 22000)) {
+        name = "Windows 11";
+        build = ".22000";
+    }
+
+    // combine them into a single string
+    strcpy(info->name, name);
+    if (build) {
+        strcat(info->name, build);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
-PalResult _PAPI palGetCpuInfo(PalCpuInfo *info) {
+PalResult _PAPI palGetCpuInfo(
+    const PalAllocator* allocator, 
+    PalCpuInfo *info) {
 
     if (!info) {
         return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (allocator && (!allocator->allocate || !allocator->free)) {
+        return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
     memset(info, 0, sizeof(PalCpuInfo));
@@ -119,7 +235,7 @@ PalResult _PAPI palGetCpuInfo(PalCpuInfo *info) {
     );
 
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = nullptr;
-    buffer = malloc(len);
+    buffer = palAllocate(allocator, len, 16);
     if (!buffer) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -131,7 +247,7 @@ PalResult _PAPI palGetCpuInfo(PalCpuInfo *info) {
     );
 
     if (!success) {
-        free(buffer);
+        palFree(allocator, buffer);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -167,7 +283,7 @@ PalResult _PAPI palGetCpuInfo(PalCpuInfo *info) {
         ptr += tmp->Size;
     }
 
-    free(buffer);
+    palFree(allocator, buffer);
 
     // features
     PalCpuFeatures features;
@@ -256,24 +372,6 @@ PalResult _PAPI palGetCpuInfo(PalCpuInfo *info) {
 #else 
     info->architecture = PAL_CPU_ARCH_UNKNOWN;
 #endif // check compile time architecture
-}
 
-bool _PAPI palGetCpuid(
-    Uint32 leaf, 
-    Uint32 subLeaf, 
-    PalCpuid *cpuid) {
-
-    if (!cpuid) {
-        return false;
-    }
-
-    getCpuidCount(
-        leaf, 
-        subLeaf, 
-        &cpuid->eax,
-        &cpuid->ebx,
-        &cpuid->ecx,
-        &cpuid->edx
-    );
-    return true;
+    return PAL_RESULT_SUCCESS;
 }

@@ -1,4 +1,18 @@
 
+function writeConfig(path)
+    local file = io.open(path, "w")
+    file:write("\n// Auto Generated Config Header From pal_config.lua\n")
+    file:write("// Must not be edited manually\n\n")
+
+    if (PAL_BUILD_SYSTEM) then
+        file:write("#define PAL_HAS_SYSTEM 1\n")
+    else
+        file:write("#define PAL_HAS_SYSTEM 0\n")
+    end
+    
+    file:close()
+end
+
 project "PAL"
     language "C"
 
@@ -12,11 +26,17 @@ project "PAL"
     targetdir(target_dir)
     objdir(obj_dir)
 
-    filter {"system:windows", "configurations:*"}
-        files { "src/core/pal_core_win32.c" }
-    filter {}
-
     includedirs {
         "include",
         "src"
     }
+
+    files { "src/pal_core.c" }
+
+    if (PAL_BUILD_SYSTEM) then
+        filter {"system:windows", "configurations:*"}
+        files { "src/system/pal_system_win32.c" }
+        filter {}
+    end
+
+    writeConfig("include/pal/pal_config.h")
