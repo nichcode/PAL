@@ -59,8 +59,5 @@ bool loggerTest() {
     palLog(&logger2, "This is directed to a logger");
     palLog(&logger3, "This is directed to a logger");
 
-    // get the last log message
-    palLog(nullptr, palGetLastLogMessage());
-
     return true;
 }

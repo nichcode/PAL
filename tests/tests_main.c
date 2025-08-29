@@ -9,6 +9,7 @@ int main(int argc, char**) {
 
     // core
     registerTest("Logger Test", loggerTest);
+    registerTest("Time Test", timeTest);
 
 #if PAL_HAS_SYSTEM
     registerTest("System Test", systemTest);

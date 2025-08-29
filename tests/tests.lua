@@ -9,7 +9,8 @@ project "tests"
     files { 
         "tests_main.c",
         "tests.c",
-        "logger_test.c"
+        "logger_test.c",
+        "time_test.c"
     }
 
     if (PAL_BUILD_SYSTEM) then

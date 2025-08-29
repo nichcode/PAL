@@ -91,6 +91,7 @@ _PAPI void _PCALL palFree(const PalAllocator* allocator, void* ptr);
 
 _PAPI void _PCALL palLog(const PalLogger* logger, const char* fmt, ...);
 
-_PAPI const char* _PCALL palGetLastLogMessage();
+_PAPI Uint64 _PCALL palGetPerformanceCounter();
+_PAPI Uint64 _PCALL palGetPerformanceFrequency();
 
 #endif // _PAL_CORE_H

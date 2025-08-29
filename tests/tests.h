@@ -9,9 +9,11 @@ typedef bool (*TestFn)();
 void registerTest(const char* name, TestFn func);
 void runTests();
 
-// Tests
-
+// core tests
 bool loggerTest();
+bool timeTest();
+
+// system tests
 bool systemTest();
 
 #endif // _TESTS_H

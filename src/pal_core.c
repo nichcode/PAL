@@ -38,11 +38,12 @@
 #define PAL_VERSION_MINOR 0
 #define PAL_VERSION_BUILD 0
 #define PAL_VERSION_STRING "1.0.0"
-#define PAL_LOG_MSG_SIZE 1024
+#define PAL_LOG_MSG_SIZE 4096
 
 static Uint32 s_TlsID = 0;
 
 typedef struct {
+    char tmp[PAL_LOG_MSG_SIZE];
     char buffer[PAL_LOG_MSG_SIZE];
     wchar_t wideBuffer[PAL_LOG_MSG_SIZE];
     bool isLogging;
@@ -220,14 +221,13 @@ void _PCALL palLog(const PalLogger* logger, const char* fmt, ...) {
         return;
     }
 
-    char tmp[PAL_LOG_MSG_SIZE];
+    LogTLSData* data = getLogTlsData();
     va_list argPtr;
     va_start(argPtr, fmt);
-    formatArgs(fmt, argPtr, tmp);
+    formatArgs(fmt, argPtr, data->tmp);
     va_end(argPtr);
 
     // check to see if a user supplied a logger
-    LogTLSData* data = getLogTlsData();
     if (logger && logger->callback) {
         if (data->isLogging) {
             // block recursion
@@ -235,14 +235,14 @@ void _PCALL palLog(const PalLogger* logger, const char* fmt, ...) {
         }
 
         // update the tls to stop recursive calls
-        memcpy(data->buffer, tmp, PAL_LOG_MSG_SIZE);
+        memcpy(data->buffer, data->tmp, PAL_LOG_MSG_SIZE);
         data->isLogging = true;
         updateLogTlsData(data);
         logger->callback(logger->userData, data->buffer);
 
     } else {
         // add newline character to the string
-        format(data->buffer, "%s\n", tmp);
+        format(data->buffer, "%s\n", data->tmp);
         writeToConsole(data);
     }
 
@@ -250,8 +250,20 @@ void _PCALL palLog(const PalLogger* logger, const char* fmt, ...) {
     updateLogTlsData(data);
 }
 
-const char* _PCALL palGetLastLogMessage() {
+Uint64 _PCALL palGetPerformanceCounter() {
 
-    LogTLSData* data = getLogTlsData();
-    return data->buffer;
+#ifdef _WIN32
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    return (Uint64)counter.QuadPart;
+#endif // _WIN32
+}
+
+Uint64 _PCALL palGetPerformanceFrequency() {
+
+#ifdef _WIN32
+    LARGE_INTEGER frequency;
+    QueryPerformanceFrequency(&frequency);
+    return (Uint64)frequency.QuadPart;
+#endif // _WIN32
 }
