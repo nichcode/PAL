@@ -73,13 +73,13 @@ bool systemTest() {
     PalCpuInfo cpuInfo;
     PalPlatformInfo platformInfo;
 
-    // user defined allocator, set to override the default one or nullptr for default
-    result = palGetCpuInfo(nullptr, &cpuInfo);
+    result = palGetPlatformInfo(&platformInfo);
     if (result != PAL_RESULT_SUCCESS) {
         return false;
     }
 
-    result = palGetPlatformInfo(&platformInfo);
+    // user defined allocator, set to override the default one or nullptr for default
+    result = palGetCpuInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
         return false;
     }
@@ -88,6 +88,8 @@ bool systemTest() {
     palLog(nullptr, "Platform: %s", platformToString(platformInfo.type));
     palLog(nullptr, " Name: %s", platformInfo.name);
     palLog(nullptr, " API: %s", platformApiToString(platformInfo.apiType));
+    palLog(nullptr, " Total RAM: %llu MB", platformInfo.totalRam);
+    palLog(nullptr, " Total Memory: %llu GB", platformInfo.totalMemory);
 
     Uint16 major, minor, build;
     major = platformInfo.version.major;
@@ -101,66 +103,58 @@ bool systemTest() {
     palLog(nullptr, "  Architecture: %s", cpuArchToString(cpuInfo.architecture));
     palLog(nullptr, "  Number Of Cores: %d", cpuInfo.numCores);
     palLog(nullptr, "  Number Of Logical Processors: %d", cpuInfo.numLogicalProcessors);
-    palLog(nullptr, "  L1 Cache KB: %d", cpuInfo.cacheKbL1);
-    palLog(nullptr, "  L2 Cache KB: %d", cpuInfo.cacheKbL2);
-    palLog(nullptr, "  L3 Cache KB: %d", cpuInfo.cacheKbL3);
+    palLog(nullptr, "  L1 Cache KB: %d", cpuInfo.cache1);
+    palLog(nullptr, "  L2 Cache KB: %d", cpuInfo.cache2);
+    palLog(nullptr, "  L3 Cache KB: %d", cpuInfo.cache3);
 
     // get instruction sets
     char instructionSets[256] = {};
     if (cpuInfo.features & PAL_CPU_FEATURE_SSE) {
-        strcat(instructionSets, "SSE | ");
+        strcat(instructionSets, "SSE");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_SSE2) {
-        strcat(instructionSets, "SSE2 | ");
+        strcat(instructionSets, " | SSE2");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_SSE3) {
-        strcat(instructionSets, "SSE3 | ");
+        strcat(instructionSets, " | SSE3");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_SSSE3) {
-        strcat(instructionSets, "SSSE3 | ");
+        strcat(instructionSets, " | SSSE3");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_SSE41) {
-        strcat(instructionSets, "SSE41 | ");
+        strcat(instructionSets, " | SSE4.1");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_SSE42) {
-        strcat(instructionSets, "SSE42 | ");
+        strcat(instructionSets, " | SSE4.2");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_AVX) {
-        strcat(instructionSets, "AVX | ");
+        strcat(instructionSets, " | AVX");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_AVX2) {
-        strcat(instructionSets, "AVX2 | ");
+        strcat(instructionSets, "| AVX2");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_AVX512F) {
-        strcat(instructionSets, "AVX512F | ");
+        strcat(instructionSets, "| AVX-512F");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_FMA3) {
-        strcat(instructionSets, "FMA3 | ");
+        strcat(instructionSets, " | FMA3");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_BMI1) {
-        strcat(instructionSets, "BMI1 | ");
+        strcat(instructionSets, " | BMI1");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_BMI2) {
-        strcat(instructionSets, "BMI2 | ");
-    }
-
-    if (cpuInfo.features & PAL_CPU_FEATURE_POPCNT) {
-        strcat(instructionSets, "POPCNT | ");
-    }
-
-    if (cpuInfo.features & PAL_CPU_FEATURE_LZCNT) {
-        strcat(instructionSets, "LZCNT | ");
+        strcat(instructionSets, " | BMI2");
     }
 
     int a = strlen(instructionSets);

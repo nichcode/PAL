@@ -37,9 +37,7 @@ typedef enum {
     PAL_CPU_FEATURE_AVX512F = PAL_BIT(8),
     PAL_CPU_FEATURE_FMA3 = PAL_BIT(9),
     PAL_CPU_FEATURE_BMI1 = PAL_BIT(10),
-    PAL_CPU_FEATURE_BMI2 = PAL_BIT(11),
-    PAL_CPU_FEATURE_POPCNT = PAL_BIT(12),
-    PAL_CPU_FEATURE_LZCNT = PAL_BIT(13),
+    PAL_CPU_FEATURE_BMI2 = PAL_BIT(11)
 } PalCpuFeatures;
 
 typedef enum {
@@ -59,15 +57,17 @@ typedef enum {
 typedef struct {
     PalPlatformType type;
     PalPlatformApiType apiType;
+    Uint32 totalMemory;
+    Uint32 totalRam;
     PalVersion version;
     char name[PAL_PLATFORM_NAME_SIZE];
 } PalPlatformInfo;
 
 typedef struct {
     Uint32 numCores;
-    Uint32 cacheKbL1;
-    Uint32 cacheKbL2;
-    Uint32 cacheKbL3;
+    Uint32 cache1;
+    Uint32 cache2;
+    Uint32 cache3;
     Uint32 numLogicalProcessors;
     PalCpuArch architecture;
     PalCpuFeatures features;

@@ -22,12 +22,6 @@
 #include <windows.h>
 #include <string.h>
 
-#if defined(_MSC_VER)
-#include <intrin.h> // for cpuid
-#elif defined(__GNUC__) || defined(__clang__)
-#include <cpuid.h>
-#endif // _MSC_VER
-
 // ==================================================
 // Typedefs, enums and structs
 // ==================================================
@@ -38,52 +32,20 @@ typedef LONG (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 // Internal API
 // ==================================================
 
-static inline void getCpuid(
+static inline void cpuid(
+    int regs[4], 
     int leaf, 
-    Uint32 *eax, 
-    Uint32 *ebx, 
-    Uint32 *ecx, 
-    Uint32 *edx) {
+    int subLeaf) {
 
-#if defined(_MSC_VER)
-    int cpuidInfo[4];
-    __cpuid(cpuidInfo, leaf);
-    *eax = (Uint32)cpuidInfo[0];
-    *ebx = (Uint32)cpuidInfo[1];
-    *ecx = (Uint32)cpuidInfo[2];
-    *edx = (Uint32)cpuidInfo[3];
-#elif defined(__GNUC__) || defined(__clang__)
-      Uint32 _eax, _ebx, _ecx, _edx;
-    __get_cpuid(leaf, &_eax, &_ebx, &_ecx, &_edx);
-    *eax = _eax;
-    *ebx = _ebx;
-    *ecx = _ecx;
-    *edx = _edx;
-#else
-#error "Unknown compiler"
-#endif // _MSC_VER
-}
-
-static inline void getCpuidCount(
-    int leaf, 
-    int subLeaf, 
-    Uint32 *eax, 
-    Uint32 *ebx, 
-    Uint32 *ecx, 
-    Uint32 *edx) {
-
-#if defined(_MSC_VER)
-    int cpuidInfo[4];
-    __cpuidex(cpuidInfo, leaf, subLeaf);
-    *eax = (Uint32)cpuidInfo[0];
-    *ebx = (Uint32)cpuidInfo[1];
-    *ecx = (Uint32)cpuidInfo[2];
-    *edx = (Uint32)cpuidInfo[3];
-#elif defined(__GNUC__) || defined(__clang__)
-    __cpuid_count(leaf, subLeaf, eax, ebx, ecx, edx);
-#else
-#error "Unknown compiler"
-#endif // _MSC_VER
+    __asm__ __volatile__(
+        "cpuid" : 
+        "=a"(regs[0]),
+        "=b"(regs[1]), 
+        "=c"(regs[2]), 
+        "=d"(regs[3]) : 
+        "a"(leaf), 
+        "b"(subLeaf)
+    );
 }
 
 static inline bool getVersionWin32(PalVersion* version) {
@@ -188,6 +150,19 @@ PalResult _PAPI palGetPlatformInfo(PalPlatformInfo *info) {
         strcat(info->name, build);
     }
 
+    // get total disk memory (size) in GB
+    ULARGE_INTEGER free, total, available;
+    if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
+        info->totalMemory = total.QuadPart / (1024 * 1024 * 1024); // to GB
+    }
+
+    // get ram (size) in MB
+    MEMORYSTATUSEX status;
+    status.dwLength = sizeof(MEMORYSTATUSEX);
+    if (GlobalMemoryStatusEx(&status)) {
+        info->totalRam = status.ullTotalPhys / (1024 * 1024); // to MB
+    }
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -206,23 +181,23 @@ PalResult _PAPI palGetCpuInfo(
     memset(info, 0, sizeof(PalCpuInfo));
 
     // get cpu vendor
-    int cpuInfo[4] = {};
-    getCpuid(0, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
+    int regs[4] = {};
+    cpuid(regs, 0, 0);
 
-    memcpy(info->vendor + 0, &cpuInfo[1], 4);
-    memcpy(info->vendor + 4, &cpuInfo[3], 4);
-    memcpy(info->vendor + 8, &cpuInfo[2], 4);
+    memcpy(info->vendor + 0, &regs[1], 4);
+    memcpy(info->vendor + 4, &regs[3], 4);
+    memcpy(info->vendor + 8, &regs[2], 4);
     info->vendor[12] = '\0'; // null terminating character
 
     // get cpu model name
-    getCpuid(0x80000002, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
-    memcpy(info->model, cpuInfo, 16);
+    cpuid(regs, 0x80000002, 0);
+    memcpy(info->model, regs, 16);
 
-    getCpuid(0x80000003, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
-    memcpy(info->model + 16, cpuInfo, 16);
+    cpuid(regs, 0x80000003, 0);
+    memcpy(info->model + 16, regs, 16);
 
-    getCpuid(0x80000004, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
-    memcpy(info->model + 32, cpuInfo, 16);
+    cpuid(regs, 0x80000004, 0);
+    memcpy(info->model + 32, regs, 16);
     info->model[48] = '\0';
 
   
@@ -268,15 +243,15 @@ PalResult _PAPI palGetCpuInfo(
             // cache size
             CACHE_RELATIONSHIP cache = tmp->Cache;
             if (cache.Level == 1) {
-                info->cacheKbL1 = cache.CacheSize / 1024;
+                info->cache1 = cache.CacheSize / 1024;
             }
 
             if (cache.Level == 2) {
-                info->cacheKbL2 = cache.CacheSize / 1024;
+                info->cache2 = cache.CacheSize / 1024;
             }
 
             if (cache.Level == 3) {
-                info->cacheKbL3 = cache.CacheSize / 1024;
+                info->cache3 = cache.CacheSize / 1024;
             }
 
         }
@@ -287,9 +262,9 @@ PalResult _PAPI palGetCpuInfo(
 
     // features
     PalCpuFeatures features;
-    getCpuid(1, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
-    int ecx = cpuInfo[2];
-    int edx = cpuInfo[3];
+    cpuid(regs, 1, 0);
+    int ecx = regs[2];
+    int edx = regs[3];
 
     if (edx & (1 << 25)) {
         features |= PAL_CPU_FEATURE_SSE;
@@ -323,20 +298,12 @@ PalResult _PAPI palGetCpuInfo(
         features |= PAL_CPU_FEATURE_FMA3;
     }
 
-    if (ecx & (1 << 23)) {
-        features |= PAL_CPU_FEATURE_POPCNT;
-    }
-
     // extended features
-    getCpuidCount(7, 0, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
-    int ebx = cpuInfo[1];
+    cpuid(regs, 7, 0);
+    int ebx = regs[1];
 
     if (ebx & (1 << 5)) {
         features |= PAL_CPU_FEATURE_AVX2;
-    }
-
-    if (ebx & (1 << 16)) {
-        features |= PAL_CPU_FEATURE_AVX512F;
     }
 
     if (ebx & (1 << 3)) {
@@ -347,15 +314,8 @@ PalResult _PAPI palGetCpuInfo(
         features |= PAL_CPU_FEATURE_BMI2;
     }
 
-    if (ebx & (1 << 8)) {
-        features |= PAL_CPU_FEATURE_BMI2;
-    }
-
-    getCpuid(0x80000001, &cpuInfo[0], &cpuInfo[1], &cpuInfo[2], &cpuInfo[3]);
-    ecx = cpuInfo[2];
-
-    if (ecx & (1 << 5)) {
-        features |= PAL_CPU_FEATURE_LZCNT;
+    if (ebx & (1 << 16)) {
+        features |= PAL_CPU_FEATURE_AVX512F;
     }
 
     info->features = features;
@@ -372,6 +332,6 @@ PalResult _PAPI palGetCpuInfo(
 #else 
     info->architecture = PAL_CPU_ARCH_UNKNOWN;
 #endif // check compile time architecture
-
+    
     return PAL_RESULT_SUCCESS;
 }

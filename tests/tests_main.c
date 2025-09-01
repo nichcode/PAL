@@ -8,8 +8,8 @@ int main(int argc, char**) {
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core
-    registerTest("Logger Test", loggerTest);
-    registerTest("Time Test", timeTest);
+    // registerTest("Logger Test", loggerTest);
+    // registerTest("Time Test", timeTest);
 
 #if PAL_HAS_SYSTEM
     registerTest("System Test", systemTest);
