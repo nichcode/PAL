@@ -4,15 +4,6 @@
 
 #include "pal_core.h"
 
-// Set up typedefs for C
-#ifndef __cplusplus
-#define nullptr ((void *)0)
-#define true 1
-#define false 0
-
-typedef _Bool bool;
-#endif // __cplusplus
-
 #define PAL_PLATFORM_NAME_SIZE 32
 #define PAL_CPU_VENDOR_NAME_SIZE 16
 #define PAL_CPU_MODEL_NAME_SIZE 64

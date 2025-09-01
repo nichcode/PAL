@@ -9,6 +9,12 @@ function writeConfig(path)
     else
         file:write("#define PAL_HAS_SYSTEM 0\n")
     end
+
+    if (PAL_BUILD_THREAD) then
+        file:write("#define PAL_HAS_THREAD 1\n")
+    else
+        file:write("#define PAL_HAS_THREAD 0\n")
+    end
     
     file:close()
 end
@@ -36,6 +42,12 @@ project "PAL"
     if (PAL_BUILD_SYSTEM) then
         filter {"system:windows", "configurations:*"}
         files { "src/system/pal_system_win32.c" }
+        filter {}
+    end
+
+    if (PAL_BUILD_THREAD) then
+        filter {"system:windows", "configurations:*"}
+        files { "src/thread/pal_thread_win32.c" }
         filter {}
     end
 

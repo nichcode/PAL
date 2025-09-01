@@ -7,3 +7,6 @@ PAL_BUILD_TESTS = true
 
 -- build system module
 PAL_BUILD_SYSTEM = true
+
+-- build thread module
+PAL_BUILD_THREAD = true
