@@ -19,5 +19,12 @@ project "tests"
         }
     end
 
+    if (PAL_BUILD_THREAD) then
+        files { 
+            "thread_test.c",
+            "tls_test.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

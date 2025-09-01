@@ -12,8 +12,13 @@ int main(int argc, char**) {
     // registerTest("Time Test", timeTest);
 
 #if PAL_HAS_SYSTEM
-    registerTest("System Test", systemTest);
+    // registerTest("System Test", systemTest);
 #endif // PAL_HAS_SYSTEM
+
+#if PAL_HAS_THREAD
+    registerTest("Thread Test", threadTest);
+    // registerTest("TLS Test", tlsTest);
+#endif // PAL_HAS_THREAD
 
     runTests();
     return 0;

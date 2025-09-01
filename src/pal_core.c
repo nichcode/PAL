@@ -77,20 +77,30 @@ static inline void alignedFree(void* ptr) {
 #endif // _MSC_VER
 }
 
+static void destroyTlsData(void* data) {
+
+    LogTLSData* tlsData = data;
+    if (tlsData) {
+        palFree(nullptr, tlsData);
+    }
+}
+
 static inline LogTLSData* getLogTlsData() {
 
 #ifdef _WIN32
-    LogTLSData* data = TlsGetValue((DWORD)s_TlsID);
+    LogTLSData* data = FlsGetValue((DWORD)s_TlsID);
 #endif // _WIN32
 
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 16);
         memset(data, 0, sizeof(LogTLSData));
 
-        // create TLS
+        // create TLS if it has not been created
 #ifdef _WIN32
-        s_TlsID = TlsAlloc();
-        TlsSetValue(s_TlsID, data);
+        if (s_TlsID == 0) {
+            s_TlsID = FlsAlloc(destroyTlsData);
+        }
+        FlsSetValue(s_TlsID, data); // set the thread-specific data to the same tls id
 #endif // _WIN32
     }
     return data;
@@ -99,7 +109,7 @@ static inline LogTLSData* getLogTlsData() {
 static inline void updateLogTlsData(LogTLSData* data) {
 
 #ifdef _WIN32
-    TlsSetValue(s_TlsID, data);
+    FlsSetValue(s_TlsID, data);
 #endif // _WIN32
 }
 
@@ -185,6 +195,9 @@ const char* _PCALL palFormatResult(PalResult result) {
         case PAL_RESULT_INVALID_ALLOCATOR:
         return "The provided allocator's function pointers are not fully set";
 
+        case PAL_RESULT_ACCESS_DENIED: 
+        return "The platform denied access to the operation";
+
     }
     return "Unknown";
 }
@@ -202,7 +215,7 @@ void* _PCALL palAllocate(
     if (allocator && allocator->allocate) {
         return allocator->allocate(allocator->userData, size, align);
     }
-    return alignedAlloc(size, alignment);
+    return alignedAlloc(size, align);
 }
 
 void _PCALL palFree(const PalAllocator* allocator, void* ptr) {

@@ -174,6 +174,7 @@ PalResult _PAPI palGetCpuInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    // check invalid allocator
     if (allocator && (!allocator->allocate || !allocator->free)) {
         return PAL_RESULT_INVALID_ALLOCATOR;
     }

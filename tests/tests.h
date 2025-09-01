@@ -16,4 +16,8 @@ bool timeTest();
 // system tests
 bool systemTest();
 
+// system tests
+bool threadTest();
+bool tlsTest();
+
 #endif // _TESTS_H
