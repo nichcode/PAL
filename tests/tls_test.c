@@ -18,7 +18,7 @@ void TlsDestructor(void* data) {
 void* onThread(void* arg) {
 
     // create tls
-    PalTlsId tlsID = (PalTlsId)arg;
+    PalTlsId tlsID = (PalTlsId)(UintPtr)arg;
 
     // allocate and buffer and store it with the tls
     TlsData *data = palAllocate(nullptr, sizeof(TlsData), 0); // use default alignment(16)
@@ -56,7 +56,6 @@ bool tlsTest() {
     info.arg = (void*)(UintPtr)tlsID; // use a struct for easy casting
     info.entry = onThread;
     info.stackSize = 0; // for default
-    info.allocator = nullptr;
     PalResult result = palCreateThread(&info, &thread);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Error: %s", palFormatResult(result));

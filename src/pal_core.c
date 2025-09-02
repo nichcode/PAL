@@ -198,6 +198,14 @@ const char* _PCALL palFormatResult(PalResult result) {
         case PAL_RESULT_ACCESS_DENIED: 
         return "The platform denied access to the operation";
 
+        // thread
+
+        case PAL_RESULT_INVALID_THREAD:
+        return "The provided thread handle was invalid";
+
+        case PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED:
+        return "The thread feature used is not supported";
+
     }
     return "Unknown";
 }

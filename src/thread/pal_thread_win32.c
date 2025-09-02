@@ -33,8 +33,12 @@ typedef HRESULT (WINAPI *GetThreadDescriptionFn)(HANDLE, PWSTR*);
 typedef struct {
     PalThreadFn func;
     void* arg;
-    const PalAllocator* allocator;
 } ThreadWin32;
+
+static Uint8 s_Init = false;
+static SetThreadDescriptionFn s_SetThreadDescription;
+static GetThreadDescriptionFn s_GetThreadDescription;
+static const PalAllocator* s_Allocator = nullptr;
 
 // ==================================================
 // Internal API
@@ -44,19 +48,25 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg) {
 
     ThreadWin32* data = arg;
     void* ret = data->func(data->arg);
-
-    const PalAllocator* allocator = data->allocator;
-    palFree(allocator, data);
+    palFree(s_Allocator, data);
     return (uintptr_t)ret;
 }
-
-static Uint8 s_Init = false;
-static SetThreadDescriptionFn s_SetThreadDescription;
-static GetThreadDescriptionFn s_GetThreadDescription;
 
 // ==================================================
 // Public API
 // ==================================================
+
+void _PCALL palSetThreadAllocator(const PalAllocator* allocator) {
+
+    if (allocator && (allocator->allocate || allocator->free)) {
+        s_Allocator = allocator;
+    }
+}
+
+const PalAllocator* _PCALL palGetThreadAllocator() {
+
+    return s_Allocator;
+}
 
 // ==================================================
 // Thread
@@ -68,11 +78,6 @@ PalResult _PCALL palCreateThread(
 
     if (!info || !outThread) {
         return PAL_RESULT_NULL_POINTER;
-    }
-
-    // check invalid allocator
-    if (info->allocator && (!info->allocator->allocate || !info->allocator->free)) {
-        return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
     if (s_Init == 0) {
@@ -100,12 +105,11 @@ PalResult _PCALL palCreateThread(
     }
 
     // create thread
-    ThreadWin32* data = palAllocate(info->allocator, sizeof(ThreadWin32), 0);
+    ThreadWin32* data = palAllocate(s_Allocator, sizeof(ThreadWin32), 0);
     if (!data) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    data->allocator = info->allocator;
     data->arg = info->arg;
     data->func = info->entry;
 
@@ -117,8 +121,6 @@ PalResult _PCALL palCreateThread(
         0,
         nullptr
     );
-
-    DWORD err = GetLastError();
 
     if (!thread) {
         // error
@@ -141,17 +143,25 @@ PalResult _PCALL palCreateThread(
     return PAL_RESULT_SUCCESS;
 }
 
-void _PCALL palJoinThread(PalThread* thread, void* retval) {
+PalResult _PCALL palJoinThread(
+    PalThread* thread, 
+    void* retval) {
 
-    if (thread) {
-        WaitForSingleObject(thread, INFINITE);
-
-        if (retval) {
-            uintptr_t ret;
-            GetExitCodeThread(thread, (LPDWORD)&ret);
-            retval = (void*)ret;
-        }
+    if (!thread) {
+        return PAL_RESULT_NULL_POINTER;
     }
+
+    DWORD wait = WaitForSingleObject(thread, INFINITE);
+    if (wait == WAIT_OBJECT_0 && retval) {
+        uintptr_t ret;
+        GetExitCodeThread(thread, (LPDWORD)&ret);
+        retval = (void*)ret;
+
+    } else if (wait == WAIT_FAILED) {
+        return PAL_RESULT_INVALID_THREAD;
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 void _PCALL palDetachThread(PalThread* thread) {
@@ -164,6 +174,11 @@ void _PCALL palDetachThread(PalThread* thread) {
 void _PCALL palSleep(Uint64 milliseconds) {
 
     Sleep((DWORD)milliseconds);
+}
+
+void _PCALL palYield() {
+
+    SwitchToThread();
 }
 
 PalThread* _PCALL palGetCurrentThread() {
@@ -189,6 +204,175 @@ PalThreadFeatures _PCALL palGetThreadFeatures() {
     }
     return features;
 }
+
+PalThreadPriority _PCALL palGetThreadPriority(PalThread* thread) {
+
+    if (!thread) {
+        return 0;
+    }
+
+    int priority = GetThreadPriority(thread);
+    switch (priority) {
+        case THREAD_PRIORITY_LOWEST:
+        return PAL_THREAD_PRIORITY_LOW;
+        break;
+
+        case THREAD_PRIORITY_NORMAL:
+        return PAL_THREAD_PRIORITY_NORMAL;
+        break;
+
+        case THREAD_PRIORITY_HIGHEST:
+        return PAL_THREAD_PRIORITY_HIGH;
+        break;
+    }
+
+    return 0;
+}
+
+Uint64 _PCALL palGetThreadAffinity(PalThread* thread) {
+
+    if (!thread) {
+        return 0;
+    }
+
+    DWORD_PTR mask = SetThreadAffinityMask(thread, ~0ull);
+    if (mask == 0) {
+        return 0;
+    }
+
+    SetThreadAffinityMask(thread, mask);
+    return mask;
+}
+
+char* _PCALL palGetThreadName(PalThread* thread) {
+
+    if (!thread || !s_GetThreadDescription) {
+        return nullptr;
+    }
+
+    wchar_t* buffer = nullptr;
+    HRESULT hr = s_GetThreadDescription(thread, &buffer);
+
+    if (!SUCCEEDED(hr)) {
+        return nullptr;
+    } 
+
+    // convert to char string
+    int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
+    char* stringBuffer = palAllocate(s_Allocator, len + 1, 0);
+    if (!stringBuffer) {
+        return nullptr;
+    }
+
+    WideCharToMultiByte(CP_UTF8, 0, buffer, -1, stringBuffer, len, 0, 0);
+    LocalFree(buffer);
+    return stringBuffer;
+}
+
+PalResult _PCALL palSetThreadPriority(
+    PalThread* thread, 
+    PalThreadPriority priority) {
+    
+    if (!thread) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    int _priority = 0;
+    switch (priority) {
+        case PAL_THREAD_PRIORITY_LOW:
+        _priority = THREAD_PRIORITY_LOWEST;
+        break;
+
+        case PAL_THREAD_PRIORITY_NORMAL:
+        _priority = THREAD_PRIORITY_NORMAL;
+        break;
+
+        case PAL_THREAD_PRIORITY_HIGH:
+        _priority = THREAD_PRIORITY_HIGHEST;
+        break;
+    }
+
+    if (!SetThreadPriority(thread, _priority)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_THREAD;
+
+        } else if (error == ERROR_ACCESS_DENIED) {
+            return PAL_RESULT_ACCESS_DENIED;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palSetThreadAffinity(
+    PalThread* thread,
+    Uint64 mask) {
+
+    if (!thread) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!SetThreadAffinityMask(thread, mask)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_THREAD;
+
+        } else if (error == ERROR_INVALID_PARAMETER) {
+            return PAL_RESULT_INVALID_PARAMETER;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palSetThreadName(
+    PalThread* thread, 
+    const char* name) {
+
+    if (!thread || !name) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // check if the thread has been created
+    if (s_Init == 0) {
+        return PAL_RESULT_INVALID_THREAD;
+    }
+
+    if (!s_SetThreadDescription) {
+        return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED;
+    }
+
+    wchar_t buffer[512] = {};
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 512);
+    HRESULT hr = s_SetThreadDescription(thread, buffer);
+
+    if (SUCCEEDED(hr)) {
+        return PAL_RESULT_SUCCESS;
+
+    } else {
+        // error resolving
+        if (hr == E_INVALIDARG) {
+        return PAL_RESULT_INVALID_THREAD;
+
+        } else if (hr == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+
+        } else if (hr == E_ACCESSDENIED) {
+            return PAL_RESULT_ACCESS_DENIED;  
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+}
+
 
 // ==================================================
 // TLS

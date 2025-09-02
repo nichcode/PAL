@@ -20,7 +20,7 @@ typedef enum {
 
 typedef enum {
     PAL_THREAD_PRIORITY_LOW,
-    PAL_THREAD_PRIORITY_MEDIUM,
+    PAL_THREAD_PRIORITY_NORMAL,
     PAL_THREAD_PRIORITY_HIGH
 } PalThreadPriority;
 
@@ -28,19 +28,41 @@ typedef struct {
     Uint64 stackSize;
     PalThreadFn entry;
     void* arg;
-    const PalAllocator* allocator;
 } PalThreadCreateInfo;
+
+_PAPI const PalAllocator* _PCALL palGetThreadAllocator();
+_PAPI void _PCALL palSetThreadAllocator(const PalAllocator* allocator);
 
 _PAPI PalResult _PCALL palCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** outThread);
 
-_PAPI void _PCALL palJoinThread(PalThread* thread, void* retval);
+_PAPI PalResult _PCALL palJoinThread(
+    PalThread* thread, 
+    void* retval);
+
 _PAPI void _PCALL palDetachThread(PalThread* thread);
 _PAPI void _PCALL palSleep(Uint64 milliseconds);
+_PAPI void _PCALL palYield();
 
 _PAPI PalThread* _PCALL palGetCurrentThread();
 _PAPI PalThreadFeatures _PCALL palGetThreadFeatures();
+
+_PAPI PalThreadPriority _PCALL palGetThreadPriority(PalThread* thread);
+_PAPI Uint64 _PCALL palGetThreadAffinity(PalThread* thread);
+_PAPI char* _PCALL palGetThreadName(PalThread* thread);
+
+_PAPI PalResult _PCALL palSetThreadPriority(
+    PalThread* thread, 
+    PalThreadPriority priority);
+
+_PAPI PalResult _PCALL palSetThreadAffinity(
+    PalThread* thread,
+    Uint64 mask);
+
+_PAPI PalResult _PCALL palSetThreadName(
+    PalThread* thread, 
+    const char* name);
 
 _PAPI PalTlsId _PCALL palCreateTls(PaTlsDestructorFn destructor);
 _PAPI void _PCALL palDestroyTls(PalTlsId id);

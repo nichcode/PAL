@@ -22,7 +22,6 @@ bool threadTest() {
     info.arg = "Thread 1";
     info.entry = workerThread;
     info.stackSize = 0; // for default
-    info.allocator = nullptr;
     PalResult result = palCreateThread(&info, &thread1);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Error: %s", palFormatResult(result));
@@ -45,6 +44,33 @@ bool threadTest() {
     }
 
     palSleep(1000); // to allow other threads to run before exiting
+
+    // set and get the name of the thread if supported
+    PalThreadFeatures features = palGetThreadFeatures();
+
+    if (features & PAL_THREAD_FEATURE_NAME) {
+        result = palSetThreadName(thread1, "Thread1");
+        if (result != PAL_RESULT_SUCCESS) {
+            palLog(nullptr, "Error: %s", palFormatResult(result));
+            return false;
+        }
+
+        char* threadName1 = palGetThreadName(thread1);
+        palLog(nullptr, "Thread 1 Name: %s", threadName1);
+        palFree(nullptr, threadName1);
+    }
+
+    // we set thread priority for thread 2 to always be high
+    // platform (OS) might block access
+    if (features & PAL_THREAD_FEATURE_PRIORITY) {
+        result = palSetThreadPriority(thread2,PAL_THREAD_PRIORITY_HIGH);
+        if (result != PAL_RESULT_SUCCESS) {
+            palLog(nullptr, "Error: %s", palFormatResult(result));
+            return false;
+        }
+
+        PalThreadPriority priority = palGetThreadPriority(thread2);
+    }
 
     palDetachThread(thread1);
     palDetachThread(thread2);
