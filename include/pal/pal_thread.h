@@ -7,6 +7,7 @@
 typedef Uint32 PalTlsId;
 typedef struct PalThread PalThread;
 typedef struct PalMutex PalMutex;
+typedef struct PalCondition PalCondition;
 
 typedef void* (*PalThreadFn)(void*);
 typedef void (*PaTlsDestructorFn)(void*);
@@ -74,5 +75,20 @@ _PAPI PalResult _PCALL palCreateMutex(PalMutex** outMutex);
 _PAPI void _PCALL palDestroyMutex(PalMutex* mutex);
 _PAPI void _PCALL palLockMutex(PalMutex* mutex);
 _PAPI void _PCALL palUnlockMutex(PalMutex* mutex);
+
+_PAPI PalResult _PCALL palCreateCondition(PalCondition** outCondition);
+_PAPI void _PCALL palDestroyCondition(PalCondition* condition);
+
+_PAPI PalResult _PCALL palWaitCondition(
+    PalCondition* condition,
+    PalMutex* mutex);
+
+_PAPI PalResult _PCALL palWaitConditionTimeout(
+    PalCondition* condition,
+    PalMutex* mutex,
+    Uint64 milliseconds);
+
+_PAPI void _PCALL palSignalCondition(PalCondition* condition);
+_PAPI void _PCALL palBroadcastCondition(PalCondition* condition);
 
 #endif // _PAL_THREAD_H

@@ -39,6 +39,10 @@ typedef struct PalMutex {
     CRITICAL_SECTION sc;
 } PalMutex;
 
+typedef struct PalCondition {
+    CONDITION_VARIABLE cv;
+} PalCondition;
+
 static Uint8 s_Init = false;
 static SetThreadDescriptionFn s_SetThreadDescription;
 static GetThreadDescriptionFn s_GetThreadDescription;
@@ -431,6 +435,7 @@ void _PCALL palDestroyMutex(PalMutex* mutex) {
 
     if (mutex) {
         DeleteCriticalSection(&mutex->sc);
+        palFree(s_Allocator, mutex);
     }
 }
 
@@ -447,3 +452,82 @@ void _PCALL palUnlockMutex(PalMutex* mutex) {
         LeaveCriticalSection(&mutex->sc);
     }
 }
+
+PalResult _PCALL palCreateCondition(PalCondition** outCondition) {
+
+    if (!outCondition) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalCondition* condition = palAllocate(s_Allocator, sizeof(PalCondition), 0);
+    if (!condition) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    InitializeConditionVariable(&condition->cv);
+    *outCondition = condition;
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palDestroyCondition(PalCondition* condition) {
+
+    if (condition) {
+        palFree(s_Allocator, condition);
+    }
+}
+
+PalResult _PCALL palWaitCondition(
+    PalCondition* condition,
+    PalMutex* mutex) {
+    
+    if (!condition || !mutex) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    BOOL ret = SleepConditionVariableCS(&condition->cv, &mutex->sc, INFINITE);
+    if (!ret) {
+        DWORD error = GetLastError();
+        if (error == ERROR_TIMEOUT) {
+            return PAL_RESULT_TIMEOUT;
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult _PCALL palWaitConditionTimeout(
+    PalCondition* condition,
+    PalMutex* mutex,
+    Uint64 milliseconds) {
+    
+    if (!condition || !mutex) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    BOOL ret = SleepConditionVariableCS(&condition->cv, &mutex->sc, milliseconds);
+    if (!ret) {
+        DWORD error = GetLastError();
+        if (error == ERROR_TIMEOUT) {
+            return PAL_RESULT_TIMEOUT;
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palSignalCondition(PalCondition* condition) {
+
+    if (condition) {
+        WakeConditionVariable(&condition->cv);
+    }
+}
+
+void _PCALL palBroadcastCondition(PalCondition* condition) {
+
+    if (condition) {
+        WakeAllConditionVariable(&condition->cv);
+    }
+}
+

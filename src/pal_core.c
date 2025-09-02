@@ -198,6 +198,9 @@ const char* _PCALL palFormatResult(PalResult result) {
         case PAL_RESULT_ACCESS_DENIED: 
         return "The platform denied access to the operation";
 
+        case PAL_RESULT_TIMEOUT:
+        return "Timeout expired";
+
         // thread
 
         case PAL_RESULT_INVALID_THREAD:
