@@ -5,10 +5,11 @@
 #include "pal_core.h"
 
 typedef Uint32 PalTlsId;
-typedef void (*PaTlsDestructorFn)(void*);
-
 typedef struct PalThread PalThread;
+typedef struct PalMutex PalMutex;
+
 typedef void* (*PalThreadFn)(void*);
+typedef void (*PaTlsDestructorFn)(void*);
 
 typedef enum {
     PAL_THREAD_FEATURE_STACK_SIZE = PAL_BIT(0),
@@ -68,5 +69,10 @@ _PAPI PalTlsId _PCALL palCreateTls(PaTlsDestructorFn destructor);
 _PAPI void _PCALL palDestroyTls(PalTlsId id);
 _PAPI void* _PCALL palGetTls(PalTlsId id);
 _PAPI void _PCALL palSetTls(PalTlsId id, void* data);
+
+_PAPI PalResult _PCALL palCreateMutex(PalMutex** outMutex);
+_PAPI void _PCALL palDestroyMutex(PalMutex* mutex);
+_PAPI void _PCALL palLockMutex(PalMutex* mutex);
+_PAPI void _PCALL palUnlockMutex(PalMutex* mutex);
 
 #endif // _PAL_THREAD_H

@@ -33,7 +33,11 @@ typedef HRESULT (WINAPI *GetThreadDescriptionFn)(HANDLE, PWSTR*);
 typedef struct {
     PalThreadFn func;
     void* arg;
-} ThreadWin32;
+} ThreadData;
+
+typedef struct PalMutex {
+    CRITICAL_SECTION sc;
+} PalMutex;
 
 static Uint8 s_Init = false;
 static SetThreadDescriptionFn s_SetThreadDescription;
@@ -46,7 +50,7 @@ static const PalAllocator* s_Allocator = nullptr;
 
 static DWORD WINAPI threadEntryToWin32(LPVOID arg) {
 
-    ThreadWin32* data = arg;
+    ThreadData* data = arg;
     void* ret = data->func(data->arg);
     palFree(s_Allocator, data);
     return (uintptr_t)ret;
@@ -105,7 +109,7 @@ PalResult _PCALL palCreateThread(
     }
 
     // create thread
-    ThreadWin32* data = palAllocate(s_Allocator, sizeof(ThreadWin32), 0);
+    ThreadData* data = palAllocate(s_Allocator, sizeof(ThreadData), 0);
     if (!data) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -400,4 +404,46 @@ void* _PCALL palGetTls(PalTlsId id) {
 void _PCALL palSetTls(PalTlsId id, void* data) {
 
     FlsSetValue((DWORD)id, data);
+}
+
+
+// ==================================================
+// Mutex
+// ==================================================
+
+PalResult _PCALL palCreateMutex(PalMutex** outMutex) {
+
+    if (!outMutex) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalMutex* mutex = palAllocate(s_Allocator, sizeof(PalMutex), 0);
+    if (!mutex) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    InitializeCriticalSection(&mutex->sc);
+    *outMutex = mutex;
+    return PAL_RESULT_SUCCESS;
+}
+
+void _PCALL palDestroyMutex(PalMutex* mutex) {
+
+    if (mutex) {
+        DeleteCriticalSection(&mutex->sc);
+    }
+}
+
+void _PCALL palLockMutex(PalMutex* mutex) {
+
+    if (mutex) {
+        EnterCriticalSection(&mutex->sc);
+    }
+}
+
+void _PCALL palUnlockMutex(PalMutex* mutex) {
+
+    if (mutex) {
+        LeaveCriticalSection(&mutex->sc);
+    }
 }
