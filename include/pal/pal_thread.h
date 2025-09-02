@@ -35,7 +35,7 @@ _PAPI PalResult _PCALL palCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** outThread);
 
-_PAPI void _PCALL palJoinThread(PalThread* thread);
+_PAPI void _PCALL palJoinThread(PalThread* thread, void* retval);
 _PAPI void _PCALL palDetachThread(PalThread* thread);
 _PAPI void _PCALL palSleep(Uint64 milliseconds);
 

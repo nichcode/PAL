@@ -47,7 +47,7 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg) {
 
     const PalAllocator* allocator = data->allocator;
     palFree(allocator, data);
-    return (DWORD)(uintptr_t)ret;
+    return (uintptr_t)ret;
 }
 
 static Uint8 s_Init = false;
@@ -141,10 +141,16 @@ PalResult _PCALL palCreateThread(
     return PAL_RESULT_SUCCESS;
 }
 
-void _PCALL palJoinThread(PalThread* thread) {
+void _PCALL palJoinThread(PalThread* thread, void* retval) {
 
     if (thread) {
         WaitForSingleObject(thread, INFINITE);
+
+        if (retval) {
+            uintptr_t ret;
+            GetExitCodeThread(thread, (LPDWORD)&ret);
+            retval = (void*)ret;
+        }
     }
 }
 
@@ -204,10 +210,10 @@ void _PCALL palDestroyTls(PalTlsId id) {
 
 void* _PCALL palGetTls(PalTlsId id) {
 
-    return TlsGetValue((DWORD)id);
+    return FlsGetValue((DWORD)id);
 }
 
 void _PCALL palSetTls(PalTlsId id, void* data) {
 
-    TlsSetValue((DWORD)id, data);
+    FlsSetValue((DWORD)id, data);
 }
