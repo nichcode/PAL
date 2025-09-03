@@ -223,6 +223,12 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_INVALID_DISPLAY:
         return "The provided display handle was invalid";
 
+        case PAL_RESULT_INVALID_DISPLAY_MODE:
+        return "The provided display mode was invalid";
+
+        case PAL_RESULT_INVALID_ORIENTATION:
+        return "The provided orientation is invalid";
+
     }
     return "Unknown";
 }

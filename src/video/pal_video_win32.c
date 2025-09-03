@@ -28,6 +28,8 @@
 #define PAL_VIDEO_PROP L"PALVideo"
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
+#define MAX_MODE_COUNT 128
+#define NULL_ORIENTATION 5
 
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(
     HMONITOR, 
@@ -103,6 +105,108 @@ static inline PalOrientation orientationFromWin32(
         return PAL_ORIENTATION_PORTRAIT_FLIPPED;
     }
     return PAL_ORIENTATION_LANDSCAPE;
+}
+
+static inline DWORD orientationToin32(
+    PalOrientation orientation) {
+
+    switch (orientation) {
+        case PAL_ORIENTATION_LANDSCAPE: 
+        return DMDO_DEFAULT;
+
+        case PAL_ORIENTATION_PORTRAIT: 
+        return DMDO_90;
+
+        case PAL_ORIENTATION_LANDSCAPE_FLIPPED: 
+        return DMDO_180;
+
+        case PAL_ORIENTATION_PORTRAIT_FLIPPED:
+        return DMDO_270;
+    }
+    return NULL_ORIENTATION;
+}
+
+static PalResult setDisplayMode(
+    PalDisplay* display,
+    PalDisplayMode* mode,
+    bool test) {
+    
+    if (!display || !mode) {
+        return PAL_RESULT_NULL_POINTER;
+    } 
+
+    HMONITOR monitor = (HMONITOR)display;
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_DISPLAY;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    DWORD flags = DM_PELSWIDTH | DM_PELSHEIGHT;
+    flags |= DM_DISPLAYFREQUENCY | DM_BITSPERPEL;
+
+    DEVMODE devMode = {};
+    devMode.dmSize = sizeof(DEVMODE);
+    devMode.dmFields = flags;
+
+    devMode.dmPelsWidth = mode->width;
+    devMode.dmPelsHeight = mode->height;
+    devMode.dmDisplayFrequency = mode->refreshRate;
+    devMode.dmBitsPerPel = mode->bpp;
+
+    DWORD settingsFlag = CDS_FULLSCREEN;
+    if (test) {
+        settingsFlag = CDS_TEST;
+    }
+
+    ULONG result = ChangeDisplaySettingsExW(
+        mi.szDevice,
+        &devMode,
+        NULL,
+        settingsFlag,
+        NULL
+    );
+
+    if (result == DISP_CHANGE_SUCCESSFUL) {
+        return PAL_RESULT_SUCCESS;
+    } else {
+        return PAL_RESULT_INVALID_DISPLAY_MODE;
+    }
+}
+
+static inline bool compareDisplayMode(
+    const PalDisplayMode* a, 
+    const PalDisplayMode* b) {
+
+    return 
+        a->bpp == b->bpp               &&
+        a->width == b->width           &&
+        a->height == b->height         &&
+        a->refreshRate == b->refreshRate;
+}
+
+static void addDisplayMode(
+    PalDisplayMode* modes, 
+    const PalDisplayMode* mode, 
+    Int32* count) {
+
+    // check if we have a duplicate mode
+    for (Int32 i = 0; i < *count; i++) {
+        PalDisplayMode* oldMode = &modes[i];
+        if (compareDisplayMode(oldMode, mode)) {
+            return; // discard it
+        }
+    }
+
+    // new mode
+    modes[*count] = *mode;
+    *count += 1;
 }
 
 // ==================================================
@@ -299,4 +403,183 @@ PalResult PAL_CALL palGetDisplayInfo(
     }
 
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palEnumerateDisplayModes(
+    PalDisplay *display,
+    Int32 *count,
+    PalDisplayMode *modes) {
+    
+    if (!display || !count) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Int32 modeCount = 0;
+    Int32 maxModes = 0;
+    HMONITOR monitor = (HMONITOR)display;
+    PalDisplayMode* displayModes = nullptr;
+
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_DISPLAY;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    if (!modes) {
+        // allocate and store tmp display modesand check for the interested fields.
+        displayModes = palAllocate(
+            s_Video.allocator, 
+            sizeof(PalDisplayMode) * MAX_MODE_COUNT,
+            0
+        );
+
+        if (!displayModes) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        memset(
+            displayModes, 
+            0,
+            sizeof(PalDisplayMode) * MAX_MODE_COUNT
+        );
+        maxModes = MAX_MODE_COUNT;
+
+    } else {
+        displayModes = modes;
+        maxModes = *count;
+    }
+
+    DEVMODEW dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    for (Int32 i = 0; EnumDisplaySettingsW(mi.szDevice, i, &dm); i++) {
+        // Pal support up to 128 modes
+        if (modeCount > maxModes) {
+            break;
+        }
+
+        PalDisplayMode* mode = &displayModes[modeCount];
+        mode->refreshRate = dm.dmDisplayFrequency;
+        mode->width = dm.dmPelsWidth;
+        mode->height = dm.dmPelsHeight;
+        mode->bpp = dm.dmBitsPerPel;
+        addDisplayMode(displayModes, mode, &modeCount);
+    }
+
+    if (!modes) {
+        *count = modeCount;
+        palFree(s_Video.allocator, displayModes);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetCurrentDisplayMode(
+    PalDisplay *display,
+    PalDisplayMode *mode) {
+    
+    if (!display || !mode) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HMONITOR monitor = (HMONITOR)display;
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_DISPLAY;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    DEVMODE devMode = {};
+    devMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+    mode->width = devMode.dmPelsWidth;
+    mode->height = devMode.dmPelsHeight;
+    mode->refreshRate = devMode.dmDisplayFrequency;
+    mode->bpp = devMode.dmBitsPerPel;
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSetDisplayMode(
+    PalDisplay *display,
+    PalDisplayMode *mode) {
+
+    return setDisplayMode(display, mode, false);
+}
+
+PalResult PAL_CALL palValidateDisplayMode(
+    PalDisplay *display,
+    PalDisplayMode *mode) {
+    
+    return setDisplayMode(display, mode, true);
+}
+
+PalResult PAL_CALL palSetDisplayOrientation(
+    PalDisplay *display,
+    PalOrientation orientation) {
+    
+    if (!display) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    DWORD win32Orientation = orientationToin32(orientation);
+    if (orientation == NULL_ORIENTATION) {
+        return PAL_RESULT_INVALID_ORIENTATION;
+    }
+
+    HMONITOR monitor = (HMONITOR)display;
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_DISPLAY;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    DEVMODE devMode = {};
+    devMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+    DWORD displayOrientation = devMode.dmDisplayOrientation;
+
+    // only swap size if switching between landscape and portrait
+    bool isDisplayLandscape = (displayOrientation == DMDO_DEFAULT || displayOrientation == DMDO_180);
+    bool isLandscape = (win32Orientation == DMDO_DEFAULT || win32Orientation == DMDO_180);
+    if (isDisplayLandscape != isLandscape) {
+        DWORD tmp = devMode.dmPelsWidth;
+        devMode.dmPelsWidth = devMode.dmPelsHeight;
+        devMode.dmPelsHeight = tmp;
+    }
+
+    devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYORIENTATION;
+    devMode.dmDisplayOrientation = win32Orientation;
+
+    ULONG result = ChangeDisplaySettingsExW(
+        mi.szDevice,
+        &devMode,
+        NULL,
+        CDS_RESET,
+        NULL
+    );
+
+    if (result == DISP_CHANGE_SUCCESSFUL) {
+        return PAL_RESULT_SUCCESS;
+
+    } else {
+        return PAL_RESULT_INVALID_ORIENTATION;
+    }
 }

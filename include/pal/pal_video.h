@@ -40,6 +40,13 @@ typedef struct {
     char name[32];
 } PalDisplayInfo;
 
+typedef struct {
+    Uint16 bpp;
+    Uint16 refreshRate;
+    Uint32 width;
+    Uint32 height;
+} PalDisplayMode;
+
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator *allocator);
 
@@ -57,5 +64,27 @@ PAL_API PalResult PAL_CALL palGetPrimaryDisplay(
 PAL_API PalResult PAL_CALL palGetDisplayInfo(
     PalDisplay *display,
     PalDisplayInfo *info);
+
+PAL_API PalResult PAL_CALL palEnumerateDisplayModes(
+    PalDisplay *display,
+    Int32 *count,
+    PalDisplayMode *modes);
+
+PAL_API PalResult PAL_CALL palGetCurrentDisplayMode(
+    PalDisplay *display,
+    PalDisplayMode *mode);
+
+PAL_API PalResult PAL_CALL palSetDisplayMode(
+    PalDisplay *display,
+    PalDisplayMode *mode);
+
+PAL_API PalResult PAL_CALL palValidateDisplayMode(
+    PalDisplay *display,
+    PalDisplayMode *mode);
+
+PAL_API PalResult PAL_CALL palSetDisplayOrientation(
+    PalDisplay *display,
+    PalOrientation orientation);
+
 
 #endif // _PAL_VIDEO_H

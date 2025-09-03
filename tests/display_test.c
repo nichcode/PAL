@@ -36,7 +36,7 @@ bool displayTest() {
 
     palLog(nullptr, "Display Count: %d", count);
     // allocate an array of displays or use a fixed array
-    // Example: displays* displays[12].
+    // Example: PalDisplay* displays[12];
     PalDisplay** displays = palAllocate(nullptr, sizeof(PalDisplay*) * count, 0);
     if (!displays) {
         palLog(nullptr, "Failed to allocate memory");
