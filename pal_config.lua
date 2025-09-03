@@ -10,3 +10,6 @@ PAL_BUILD_SYSTEM = true
 
 -- build thread module
 PAL_BUILD_THREAD = true
+
+-- build video module
+PAL_BUILD_VIDEO = true

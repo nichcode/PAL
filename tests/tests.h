@@ -25,4 +25,7 @@ bool tlsTest();
 bool mutexTest();
 bool condvarTest();
 
+// video test
+bool videoTest();
+
 #endif // _TESTS_H

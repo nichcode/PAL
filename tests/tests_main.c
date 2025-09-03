@@ -19,7 +19,11 @@ int main(int argc, char**) {
     // registerTest("Thread Test", threadTest);
     // registerTest("TLS Test", tlsTest);
     // registerTest("Mutex Test", mutexTest);
-    registerTest("Condvar Test", condvarTest);
+    // registerTest("Condvar Test", condvarTest);
+#endif // PAL_HAS_THREAD
+
+#if PAL_HAS_VIDEO
+    registerTest("Video Test", videoTest);
 #endif // PAL_HAS_THREAD
 
     runTests();
