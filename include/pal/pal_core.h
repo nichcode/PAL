@@ -6,19 +6,19 @@
 
 // Set up shared library dependencies
 #ifdef _WIN32
-#define _PCALL __stdcall
+#define PAL_CALL __stdcall
 #ifdef _PAL_EXPORT
-#define _PAPI __declspec(dllexport)
+#define PAL_API __declspec(dllexport)
 #else 
-#define _PAPI __declspec(dllimport)
+#define PAL_API __declspec(dllimport)
 #endif // PAL_EXPORT
 #else
 // other platforms
-#define _PCALL
+#define PAL_CALL
 #ifdef PAL_EXPORT
-#define _PAPI extern "C" __attribute__((visibility("default")))
+#define PAL_API extern "C" __attribute__((visibility("default")))
 #else 
-#define _PAPI
+#define PAL_API
 #endif // PAL_EXPORT
 #endif // _WIN32
 
@@ -41,6 +41,7 @@ typedef int8_t Int8;
 typedef int16_t Int16;
 typedef int32_t Int32;
 typedef int64_t Int64;
+typedef intptr_t IntPtr;
 
 typedef uint8_t Uint8;
 typedef uint16_t Uint16;
@@ -48,9 +49,18 @@ typedef uint32_t Uint32;
 typedef uint64_t Uint64;
 typedef uintptr_t UintPtr;
 
-typedef void* (*PalAllocateFn)(void*, Uint64, Uint64);
-typedef void (*PalFreeFn)(void*, void*);
-typedef void (*PalLogCallback)(void*, const char*);
+typedef void* (PAL_CALL *PalAllocateFn)(
+    void* userData, 
+    Uint64 size, 
+    Uint64 alignment);
+
+typedef void (PAL_CALL *PalFreeFn)(
+    void* userData, 
+    void* ptr);
+
+typedef void (PAL_CALL *PalLogCallback)(
+    void* userData, 
+    const char* msg);
 
 typedef enum {
     PAL_RESULT_SUCCESS,
@@ -83,21 +93,26 @@ typedef struct {
     void* userData;
 } PalLogger;
 
-_PAPI PalVersion _PCALL palGetVersion();
-_PAPI const char* _PCALL palGetVersionString();
+PAL_API PalVersion PAL_CALL palGetVersion();
+PAL_API const char* PAL_CALL palGetVersionString();
 
-_PAPI const char* _PCALL palFormatResult(PalResult result);
+PAL_API const char* PAL_CALL palFormatResult(
+    PalResult result);
 
-_PAPI void* _PCALL palAllocate(
+PAL_API void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
     Uint64 size,
     Uint64 alignment);
 
-_PAPI void _PCALL palFree(const PalAllocator* allocator, void* ptr);
+PAL_API void PAL_CALL palFree(
+    const PalAllocator* allocator, 
+    void* ptr);
 
-_PAPI void _PCALL palLog(const PalLogger* logger, const char* fmt, ...);
+PAL_API void PAL_CALL palLog(
+    const PalLogger* logger, 
+    const char* fmt, ...);
 
-_PAPI Uint64 _PCALL palGetPerformanceCounter();
-_PAPI Uint64 _PCALL palGetPerformanceFrequency();
+PAL_API Uint64 PAL_CALL palGetPerformanceCounter();
+PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
 
 #endif // _PAL_CORE_H

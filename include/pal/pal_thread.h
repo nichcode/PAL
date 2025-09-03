@@ -9,8 +9,11 @@ typedef struct PalThread PalThread;
 typedef struct PalMutex PalMutex;
 typedef struct PalCondition PalCondition;
 
-typedef void* (*PalThreadFn)(void*);
-typedef void (*PaTlsDestructorFn)(void*);
+typedef void* (*PalThreadFn)(
+    void* arg);
+
+typedef void (*PaTlsDestructorFn)(
+    void* userData);
 
 typedef enum {
     PAL_THREAD_FEATURE_STACK_SIZE = PAL_BIT(0),
@@ -32,63 +35,95 @@ typedef struct {
     void* arg;
 } PalThreadCreateInfo;
 
-_PAPI const PalAllocator* _PCALL palGetThreadAllocator();
-_PAPI void _PCALL palSetThreadAllocator(const PalAllocator* allocator);
+PAL_API const PalAllocator* PAL_CALL palGetThreadAllocator();
 
-_PAPI PalResult _PCALL palCreateThread(
+PAL_API void PAL_CALL palSetThreadAllocator(
+    const PalAllocator* allocator);
+
+PAL_API PalResult PAL_CALL palCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** outThread);
 
-_PAPI PalResult _PCALL palJoinThread(
+PAL_API PalResult PAL_CALL palJoinThread(
     PalThread* thread, 
     void* retval);
 
-_PAPI void _PCALL palDetachThread(PalThread* thread);
-_PAPI void _PCALL palSleep(Uint64 milliseconds);
-_PAPI void _PCALL palYield();
+PAL_API void PAL_CALL palDetachThread(
+    PalThread* thread);
 
-_PAPI PalThread* _PCALL palGetCurrentThread();
-_PAPI PalThreadFeatures _PCALL palGetThreadFeatures();
+PAL_API void PAL_CALL palSleep(
+    Uint64 milliseconds);
 
-_PAPI PalThreadPriority _PCALL palGetThreadPriority(PalThread* thread);
-_PAPI Uint64 _PCALL palGetThreadAffinity(PalThread* thread);
-_PAPI char* _PCALL palGetThreadName(PalThread* thread);
+PAL_API void PAL_CALL palYield();
 
-_PAPI PalResult _PCALL palSetThreadPriority(
+PAL_API PalThread* PAL_CALL palGetCurrentThread();
+PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
+
+PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(
+    PalThread* thread);
+
+PAL_API Uint64 PAL_CALL palGetThreadAffinity(
+    PalThread* thread);
+
+PAL_API char* PAL_CALL palGetThreadName(
+    PalThread* thread);
+
+PAL_API PalResult PAL_CALL palSetThreadPriority(
     PalThread* thread, 
     PalThreadPriority priority);
 
-_PAPI PalResult _PCALL palSetThreadAffinity(
+PAL_API PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
     Uint64 mask);
 
-_PAPI PalResult _PCALL palSetThreadName(
+PAL_API PalResult PAL_CALL palSetThreadName(
     PalThread* thread, 
     const char* name);
 
-_PAPI PalTlsId _PCALL palCreateTls(PaTlsDestructorFn destructor);
-_PAPI void _PCALL palDestroyTls(PalTlsId id);
-_PAPI void* _PCALL palGetTls(PalTlsId id);
-_PAPI void _PCALL palSetTls(PalTlsId id, void* data);
+PAL_API PalTlsId PAL_CALL palCreateTls(
+    PaTlsDestructorFn destructor);
 
-_PAPI PalResult _PCALL palCreateMutex(PalMutex** outMutex);
-_PAPI void _PCALL palDestroyMutex(PalMutex* mutex);
-_PAPI void _PCALL palLockMutex(PalMutex* mutex);
-_PAPI void _PCALL palUnlockMutex(PalMutex* mutex);
+PAL_API void PAL_CALL palDestroyTls(
+    PalTlsId id);
 
-_PAPI PalResult _PCALL palCreateCondition(PalCondition** outCondition);
-_PAPI void _PCALL palDestroyCondition(PalCondition* condition);
+PAL_API void* PAL_CALL palGetTls(
+    PalTlsId id);
 
-_PAPI PalResult _PCALL palWaitCondition(
+PAL_API void PAL_CALL palSetTls(
+    PalTlsId id, 
+    void* data);
+
+PAL_API PalResult PAL_CALL palCreateMutex(
+    PalMutex** outMutex);
+
+PAL_API void PAL_CALL palDestroyMutex(
+    PalMutex* mutex);
+
+PAL_API void PAL_CALL palLockMutex(
+    PalMutex* mutex);
+
+PAL_API void PAL_CALL palUnlockMutex(
+    PalMutex* mutex);
+
+PAL_API PalResult PAL_CALL palCreateCondition(
+    PalCondition** outCondition);
+
+PAL_API void PAL_CALL palDestroyCondition(
+    PalCondition* condition);
+
+PAL_API PalResult PAL_CALL palWaitCondition(
     PalCondition* condition,
     PalMutex* mutex);
 
-_PAPI PalResult _PCALL palWaitConditionTimeout(
+PAL_API PalResult PAL_CALL palWaitConditionTimeout(
     PalCondition* condition,
     PalMutex* mutex,
     Uint64 milliseconds);
 
-_PAPI void _PCALL palSignalCondition(PalCondition* condition);
-_PAPI void _PCALL palBroadcastCondition(PalCondition* condition);
+PAL_API void PAL_CALL palSignalCondition(
+    PalCondition* condition);
+    
+PAL_API void PAL_CALL palBroadcastCondition(
+    PalCondition* condition);
 
 #endif // _PAL_THREAD_H

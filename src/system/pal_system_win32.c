@@ -48,7 +48,8 @@ static inline void cpuid(
     );
 }
 
-static inline bool getVersionWin32(PalVersion* version) {
+static inline bool getVersionWin32(
+    PalVersion* version) {
 
     OSVERSIONINFOEXW ver = { 0 };
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
@@ -98,7 +99,8 @@ static inline bool isVersionWin32(
 // Public API
 // ==================================================
 
-PalResult _PAPI palGetPlatformInfo(PalPlatformInfo *info) {
+PalResult PAL_API palGetPlatformInfo(
+    PalPlatformInfo *info) {
 
     if (!info) {
         return PAL_RESULT_NULL_POINTER;
@@ -166,7 +168,7 @@ PalResult _PAPI palGetPlatformInfo(PalPlatformInfo *info) {
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult _PAPI palGetCpuInfo(
+PalResult PAL_API palGetCpuInfo(
     const PalAllocator* allocator, 
     PalCpuInfo *info) {
 

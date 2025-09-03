@@ -22,7 +22,8 @@ project "tests"
     if (PAL_BUILD_THREAD) then
         files { 
             "thread_test.c",
-            "tls_test.c"
+            "tls_test.c",
+            "mutex_test.c"
         }
     end
 

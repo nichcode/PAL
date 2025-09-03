@@ -4,7 +4,8 @@
 
 #include <string.h> // for strcat
 
-static inline const char* platformToString(PalPlatformType type) {
+static inline const char* platformToString(
+    PalPlatformType type) {
 
     switch (type) {
         case PAL_PLATFORM_WINDOWS:
@@ -25,7 +26,8 @@ static inline const char* platformToString(PalPlatformType type) {
     return nullptr;
 }
 
-static inline const char* platformApiToString(PalPlatformApiType type) {
+static inline const char* platformApiToString(
+    PalPlatformApiType type) {
 
     switch (type) {
         case PAL_PLATFORM_API_WIN32: 
@@ -40,7 +42,8 @@ static inline const char* platformApiToString(PalPlatformApiType type) {
     return nullptr;
 }
 
-static inline const char* cpuArchToString(PalCpuArch arch) {
+static inline const char* cpuArchToString(
+    PalCpuArch arch) {
 
     switch (arch) {
         case PAL_CPU_ARCH_UNKNOWN:
@@ -73,14 +76,17 @@ bool systemTest() {
     PalCpuInfo cpuInfo;
     PalPlatformInfo platformInfo;
 
+    // get the platform info. Users must cache this
     result = palGetPlatformInfo(&platformInfo);
     if (result != PAL_RESULT_SUCCESS) {
+        palLog(nullptr, "Failed to get platform info %s", palFormatResult(result));
         return false;
     }
 
     // user defined allocator, set to override the default one or nullptr for default
     result = palGetCpuInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
+        palLog(nullptr, "Failed to get Cpu info %s", palFormatResult(result));
         return false;
     }
 

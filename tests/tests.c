@@ -17,7 +17,9 @@ static Tests s_Test;
 static const char* s_FailedString = "FAILED";
 static const char* s_PassedString = "PASSED";
 
-void registerTest(const char* name, TestFn func) {
+void registerTest(
+    const char* name, 
+    TestFn func) {
 
     TestEntry *entry = &s_Test.tests[s_Test.count++];
     entry->func = func;

@@ -2,36 +2,52 @@
 #include "pal/pal_core.h"
 #include "pal/pal_thread.h"
 
+// data every thread will have its own copy of
 typedef struct {
     const char* name;
-    Uint32 id;
+    Uint32 number;
 } TlsData;
 
-void TlsDestructor(void* data) {
+// thread data
+typedef struct {
+    PalTlsId tlsId;
+} ThreadData;
 
-    TlsData* tlsData = data;
+// the tls destructor
+static void PAL_CALL TlsDestructor(
+    void* userData) {
+
+    palLog(nullptr, "Tls destructor started");
+
+    TlsData* tlsData = userData;
     if (tlsData) {
         palFree(nullptr, tlsData);
     }
+
+    palLog(nullptr, "Tls destructor finished");
 }
 
-void* onThread(void* arg) {
+static void* PAL_CALL worker(
+    void* arg) {
 
-    // create tls
-    PalTlsId tlsID = (PalTlsId)(UintPtr)arg;
+    ThreadData* threadData = (ThreadData*)arg;
+    palLog(nullptr, "Thread 0: started");
 
     // allocate and buffer and store it with the tls
     TlsData *data = palAllocate(nullptr, sizeof(TlsData), 0); // use default alignment(16)
     if (!data) {
+        palLog(nullptr, "Failed to allocate memory");
         return nullptr;
     }
 
-    data->id = 10;
+    data->number = 10;
     data->name = "TLS Data";
 
-    palSetTls(tlsID, data); // saves the data at the tlsID slot
-    palLog(nullptr, "TLS id: %d, Data string: %s", tlsID, data->name);
+    // for the tls destructor to be called, the tls must have a non null value
+    palSetTls(threadData->tlsId, data);
+    palLog(nullptr, "TLS %d: Data string: %s", threadData->tlsId, data->name);
 
+    palLog(nullptr, "Thread 0: finished");
     return nullptr;
 }
 
@@ -52,20 +68,36 @@ bool tlsTest() {
         return false;
     }
 
-    PalThreadCreateInfo info = {};
-    info.arg = (void*)(UintPtr)tlsID; // use a struct for easy casting
-    info.entry = onThread;
-    info.stackSize = 0; // for default
-    PalResult result = palCreateThread(&info, &thread);
-    if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Error: %s", palFormatResult(result));
+    // allocate thread data
+    ThreadData* threadData = palAllocate(nullptr, sizeof(ThreadData), 0);
+    if (!threadData) {
+        palLog(nullptr, "Failed to allocate memory");
         return false;
     }
 
+    threadData->tlsId = tlsID;
+
+    // create a thread
+    PalThreadCreateInfo info = {};
+    info.arg = threadData;
+    info.entry = worker;
+    info.stackSize = 0; // for default
+
+    PalResult result = palCreateThread(&info, &thread);
+    if (result != PAL_RESULT_SUCCESS) {
+        palLog(nullptr, "Failed to create thread: %s", palFormatResult(result));
+        return false;
+    }
+
+    // join thread
     palJoinThread(thread, nullptr); // wait for thread to finish
+
+    // detach thread
     palDetachThread(thread);
 
-    // destroy the tls.
+    // destroy the tls
     palDestroyTls(tlsID); 
+
+    palFree(nullptr, threadData);
     return true;
 }

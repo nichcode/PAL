@@ -6,7 +6,10 @@
 
 typedef bool (*TestFn)();
 
-void registerTest(const char* name, TestFn func);
+void registerTest(
+    const char* name, 
+    TestFn func);
+
 void runTests();
 
 // core tests
@@ -19,5 +22,6 @@ bool systemTest();
 // system tests
 bool threadTest();
 bool tlsTest();
+bool mutexTest();
 
 #endif // _TESTS_H

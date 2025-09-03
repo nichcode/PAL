@@ -1,12 +1,15 @@
 
 #include "tests.h"
 
+// a simple timer object to hold frequency and start time
 typedef struct {
     Uint64 frequency;
     Uint64 startTime;
 } MyTimer;
 
-static inline double getTime(MyTimer* timer) {
+// get the time in seconds
+static inline double getTime(
+    MyTimer* timer) {
 
     Uint64 now = palGetPerformanceCounter();
     return (double)(now - timer->startTime) / (double)timer->frequency;
@@ -20,10 +23,12 @@ bool timeTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
+    // create and set the frequency and start time for time related calculations
     MyTimer timer;
     timer.frequency = palGetPerformanceFrequency();
     timer.startTime = palGetPerformanceCounter();
 
+    // get the start time normalize by timer.startTime
     double lastTime = getTime(&timer);
 
     double totalTime = 0.0;

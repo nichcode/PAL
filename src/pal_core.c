@@ -68,7 +68,8 @@ static inline void* alignedAlloc(
 #endif // _MSC_VER
 }
 
-static inline void alignedFree(void* ptr) { 
+static inline void alignedFree(
+    void* ptr) { 
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
     _aligned_free(ptr);
@@ -77,7 +78,8 @@ static inline void alignedFree(void* ptr) {
 #endif // _MSC_VER
 }
 
-static void destroyTlsData(void* data) {
+static void destroyTlsData(
+    void* data) {
 
     LogTLSData* tlsData = data;
     if (tlsData) {
@@ -106,7 +108,8 @@ static inline LogTLSData* getLogTlsData() {
     return data;
 }
 
-static inline void updateLogTlsData(LogTLSData* data) {
+static inline void updateLogTlsData(
+    LogTLSData* data) {
 
 #ifdef _WIN32
     FlsSetValue(s_TlsID, data);
@@ -140,7 +143,8 @@ static inline void format(
     va_end(argPtr);
 }
 
-static inline void writeToConsole(LogTLSData* data) {
+static inline void writeToConsole(
+    LogTLSData* data) {
 
     HANDLE console = GetStdHandle(STD_ERROR_HANDLE);
     int len = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, nullptr, 0);
@@ -160,7 +164,7 @@ static inline void writeToConsole(LogTLSData* data) {
 // Public API
 // ==================================================
 
-PalVersion _PCALL palGetVersion() {
+PalVersion PAL_CALL palGetVersion() {
 
     return (PalVersion) {
         .major = PAL_VERSION_MAJOR,
@@ -169,12 +173,13 @@ PalVersion _PCALL palGetVersion() {
     };
 }
 
-const char* _PCALL palGetVersionString() {
+const char* PAL_CALL palGetVersionString() {
 
     return PAL_VERSION_STRING;
 }
 
-const char* _PCALL palFormatResult(PalResult result) {
+const char* PAL_CALL palFormatResult(
+    PalResult result) {
 
     switch (result) {
         case PAL_RESULT_SUCCESS: 
@@ -213,7 +218,7 @@ const char* _PCALL palFormatResult(PalResult result) {
     return "Unknown";
 }
 
-void* _PCALL palAllocate(
+void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
     Uint64 size,
     Uint64 alignment) {
@@ -229,7 +234,9 @@ void* _PCALL palAllocate(
     return alignedAlloc(size, align);
 }
 
-void _PCALL palFree(const PalAllocator* allocator, void* ptr) {
+void PAL_CALL palFree(
+    const PalAllocator* allocator, 
+    void* ptr) {
 
     if (allocator && allocator->free && ptr) {
         allocator->free(allocator->userData, ptr);
@@ -239,7 +246,9 @@ void _PCALL palFree(const PalAllocator* allocator, void* ptr) {
     }
 }
 
-void _PCALL palLog(const PalLogger* logger, const char* fmt, ...) {
+void PAL_CALL palLog(
+    const PalLogger* logger, 
+    const char* fmt, ...) {
     
     if (!fmt) {
         return;
@@ -274,7 +283,7 @@ void _PCALL palLog(const PalLogger* logger, const char* fmt, ...) {
     updateLogTlsData(data);
 }
 
-Uint64 _PCALL palGetPerformanceCounter() {
+Uint64 PAL_CALL palGetPerformanceCounter() {
 
 #ifdef _WIN32
     LARGE_INTEGER counter;
@@ -283,7 +292,7 @@ Uint64 _PCALL palGetPerformanceCounter() {
 #endif // _WIN32
 }
 
-Uint64 _PCALL palGetPerformanceFrequency() {
+Uint64 PAL_CALL palGetPerformanceFrequency() {
 
 #ifdef _WIN32
     LARGE_INTEGER frequency;

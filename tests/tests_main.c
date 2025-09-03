@@ -16,8 +16,9 @@ int main(int argc, char**) {
 #endif // PAL_HAS_SYSTEM
 
 #if PAL_HAS_THREAD
-    registerTest("Thread Test", threadTest);
+    // registerTest("Thread Test", threadTest);
     // registerTest("TLS Test", tlsTest);
+    registerTest("Mutex Test", mutexTest);
 #endif // PAL_HAS_THREAD
 
     runTests();

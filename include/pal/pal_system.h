@@ -66,9 +66,10 @@ typedef struct {
     char model[PAL_CPU_MODEL_NAME_SIZE];
 } PalCpuInfo;
 
-_PAPI PalResult _PAPI palGetPlatformInfo(PalPlatformInfo *info);
+PAL_API PalResult PAL_API palGetPlatformInfo(
+    PalPlatformInfo *info);
 
-_PAPI PalResult _PAPI palGetCpuInfo(
+PAL_API PalResult PAL_API palGetCpuInfo(
     const PalAllocator* allocator, 
     PalCpuInfo *info);
 
