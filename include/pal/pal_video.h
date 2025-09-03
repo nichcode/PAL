@@ -4,6 +4,8 @@
 
 #include "pal_core.h"
 
+typedef struct PalDisplay PalDisplay;
+
 typedef enum {
     PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
     PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION = PAL_BIT(1),
@@ -19,11 +21,41 @@ typedef enum {
     PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = PAL_BIT(11)
 } PalVideoFeatures;
 
+typedef enum {
+    PAL_ORIENTATION_LANDSCAPE,
+    PAL_ORIENTATION_PORTRAIT,
+    PAL_ORIENTATION_LANDSCAPE_FLIPPED,
+    PAL_ORIENTATION_PORTRAIT_FLIPPED
+} PalOrientation;
+
+typedef struct {
+    bool primary;
+    Uint16 dpi;
+    Uint16 refreshRate;
+    Int32 x;
+    Int32 y;
+    Uint32 width;
+    Uint32 height;
+    PalOrientation orientation;
+    char name[32];
+} PalDisplayInfo;
+
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator *allocator);
 
 PAL_API void PAL_CALL palShutdownVideo();
 
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
+
+PAL_API PalResult PAL_CALL palEnumerateDisplays(
+    Int32 *count,
+    PalDisplay **displays);
+
+PAL_API PalResult PAL_CALL palGetPrimaryDisplay(
+    PalDisplay **outDisplay);
+
+PAL_API PalResult PAL_CALL palGetDisplayInfo(
+    PalDisplay *display,
+    PalDisplayInfo *info);
 
 #endif // _PAL_VIDEO_H

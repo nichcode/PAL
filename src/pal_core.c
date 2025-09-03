@@ -206,13 +206,22 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_TIMEOUT:
         return "Timeout expired";
 
-        // thread
+        case PAL_RESULT_INSUFFICIENT_BUFFER:
+        return "The provided buffer was not enough";
 
+        // thread
         case PAL_RESULT_INVALID_THREAD:
         return "The provided thread handle was invalid";
 
         case PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED:
         return "The thread feature used is not supported";
+
+        // video
+        case PAL_RESULT_VIDEO_NOT_INITIALIZED:
+        return "Video system not initialized";
+
+        case PAL_RESULT_INVALID_DISPLAY:
+        return "The provided display handle was invalid";
 
     }
     return "Unknown";

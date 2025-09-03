@@ -27,5 +27,6 @@ bool condvarTest();
 
 // video test
 bool videoTest();
+bool displayTest();
 
 #endif // _TESTS_H

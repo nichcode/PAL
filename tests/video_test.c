@@ -13,6 +13,7 @@ bool videoTest() {
     PalResult result;
     PalVideoFeatures features;
     
+    // initialize the video system
     result = palInitVideo(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
@@ -69,6 +70,7 @@ bool videoTest() {
         palLog(nullptr, "Window icon on taskbar flashing is supported");
     }
 
+    // shutdown the video system
     palShutdownVideo();
     return true;
 }

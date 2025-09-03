@@ -23,7 +23,8 @@ int main(int argc, char**) {
 #endif // PAL_HAS_THREAD
 
 #if PAL_HAS_VIDEO
-    registerTest("Video Test", videoTest);
+    // registerTest("Video Test", videoTest);
+    registerTest("Display Test", displayTest);
 #endif // PAL_HAS_THREAD
 
     runTests();

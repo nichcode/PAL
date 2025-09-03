@@ -26,6 +26,8 @@
 
 #define PAL_VIDEO_CLASS L"PALVideoClass"
 #define PAL_VIDEO_PROP L"PALVideo"
+#define WIN32_DPI 0
+#define WIN32_DPI_AWARE 2
 
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(
     HMONITOR, 
@@ -46,6 +48,12 @@ typedef struct {
     HINSTANCE instance;
 } VideoWin32;
 
+typedef struct {
+    Int32 count;
+    Int32 maxCount;
+    PalDisplay** displays;
+} DisplayData;
+
 static VideoWin32 s_Video = {};
 
 // ==================================================
@@ -59,6 +67,42 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam) {
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
+BOOL CALLBACK enumMonitors(
+    HMONITOR monitor, 
+    HDC hdc, 
+    LPRECT lRect, 
+    LPARAM lParam) {
+    
+    DisplayData* data = (DisplayData*)lParam;
+    if (data->displays) {
+        if (data->count < data->maxCount) {
+            data->displays[data->count] = (PalDisplay*)monitor;
+        }
+    }
+
+    data->count++;
+    return TRUE;
+}
+
+static inline PalOrientation orientationFromWin32(
+    DWORD orientation) {
+    
+    switch (orientation) {
+        case DMDO_DEFAULT: 
+        return PAL_ORIENTATION_LANDSCAPE;
+
+        case DMDO_90: 
+        return PAL_ORIENTATION_PORTRAIT;
+
+        case DMDO_180: 
+        return PAL_ORIENTATION_LANDSCAPE_FLIPPED;
+
+        case DMDO_270: 
+        return PAL_ORIENTATION_PORTRAIT_FLIPPED;
+    }
+    return PAL_ORIENTATION_LANDSCAPE;
 }
 
 // ==================================================
@@ -88,7 +132,7 @@ PalResult PAL_CALL palInitVideo(
     wc.hInstance = s_Video.instance;
     wc.lpfnWndProc = videoProc;
     wc.lpszClassName = PAL_VIDEO_CLASS;
-    wc.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+    wc.style = CS_OWNDC;
 
     // since we check every input carefully, the only error we can get is access denied
     if (!RegisterClassExW(&wc)) {
@@ -148,4 +192,111 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures() {
     }
 
     return s_Video.features;
+}
+
+// ==================================================
+// Display
+// ==================================================
+
+PalResult PAL_CALL palEnumerateDisplays(
+    Int32 *count,
+    PalDisplay **displays) {
+    
+    if (!count) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (count == 0 && displays) {
+        PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    DisplayData data;
+    data.count = 0;
+    data.displays = displays;
+    data.maxCount = displays ? *count : 0;
+    EnumDisplayMonitors(nullptr, nullptr, enumMonitors, (LPARAM)&data);
+
+    if (!displays) {
+        *count = data.count;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetPrimaryDisplay(
+    PalDisplay **outDisplay) {
+    
+    if (!outDisplay) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HMONITOR monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    if (!monitor) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    *outDisplay = (PalDisplay*)monitor;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetDisplayInfo(
+    PalDisplay *display,
+    PalDisplayInfo *info) {
+
+    if (!display || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HMONITOR monitor = (HMONITOR)display;
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_DISPLAY;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    info->x = mi.rcMonitor.left;
+    info->y = mi.rcMonitor.top;
+    info->width = mi.rcMonitor.right - mi.rcMonitor.left;
+    info->height = mi.rcMonitor.bottom - mi.rcWork.top;
+
+    // get name
+    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
+
+    DEVMODE devMode = {};
+    devMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+    info->refreshRate = devMode.dmDisplayFrequency;   
+    info->orientation = orientationFromWin32(devMode.dmDisplayOrientation);
+
+    // get dpi scale
+    Int32 dpiX, dpiY;
+    if (s_Video.getDpiForMonitor || s_Video.setProcessAwareness) {
+        s_Video.setProcessAwareness(WIN32_DPI_AWARE);
+        s_Video.getDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
+        
+    } else {
+        dpiX = 96;
+    }    
+    info->dpi = dpiX;
+
+    // check for primary display
+    HMONITOR primaryDisplay = MonitorFromPoint(
+        (POINT){0, 0}, 
+        MONITOR_DEFAULTTOPRIMARY
+    );
+
+    if (!primaryDisplay) {
+        info->primary = false;
+    }
+
+    if (primaryDisplay == monitor) {
+        info->primary = true;
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
