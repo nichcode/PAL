@@ -10,7 +10,7 @@ typedef struct {
 
 // thread data
 typedef struct {
-    PalTlsId tlsId;
+    PalTLSId tlsId;
 } ThreadData;
 
 // the tls destructor
@@ -44,7 +44,7 @@ static void* PAL_CALL worker(
     data->name = "TLS Data";
 
     // for the tls destructor to be called, the tls must have a non null value
-    palSetTls(threadData->tlsId, data);
+    palSetTLS(threadData->tlsId, data);
     palLog(nullptr, "TLS %d: Data string: %s", threadData->tlsId, data->name);
 
     palLog(nullptr, "Thread 0: finished");
@@ -62,7 +62,7 @@ bool tlsTest() {
     PalThread* thread = nullptr;
 
     // create tls
-    PalTlsId tlsID = palCreateTls(TlsDestructor);
+    PalTLSId tlsID = palCreateTLS(TlsDestructor);
     if (tlsID == 0) {
         palLog(nullptr, "Failed to create TLS");
         return false;
@@ -96,7 +96,7 @@ bool tlsTest() {
     palDetachThread(thread);
 
     // destroy the tls
-    palDestroyTls(tlsID); 
+    palDestroyTLS(tlsID); 
 
     palFree(nullptr, threadData);
     return true;

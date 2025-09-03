@@ -23,5 +23,6 @@ bool systemTest();
 bool threadTest();
 bool tlsTest();
 bool mutexTest();
+bool condvarTest();
 
 #endif // _TESTS_H

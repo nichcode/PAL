@@ -73,7 +73,7 @@ bool systemTest() {
     palLog(nullptr, "");
 
     PalResult result;
-    PalCpuInfo cpuInfo;
+    PalCPUInfo cpuInfo;
     PalPlatformInfo platformInfo;
 
     // get the platform info. Users must cache this
@@ -84,7 +84,7 @@ bool systemTest() {
     }
 
     // user defined allocator, set to override the default one or nullptr for default
-    result = palGetCpuInfo(nullptr, &cpuInfo);
+    result = palGetCPUInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to get Cpu info %s", palFormatResult(result));
         return false;
@@ -94,7 +94,7 @@ bool systemTest() {
     palLog(nullptr, "Platform: %s", platformToString(platformInfo.type));
     palLog(nullptr, " Name: %s", platformInfo.name);
     palLog(nullptr, " API: %s", platformApiToString(platformInfo.apiType));
-    palLog(nullptr, " Total RAM: %llu MB", platformInfo.totalRam);
+    palLog(nullptr, " Total RAM: %llu MB", platformInfo.totalRAM);
     palLog(nullptr, " Total Memory: %llu GB", platformInfo.totalMemory);
 
     Uint16 major, minor, build;

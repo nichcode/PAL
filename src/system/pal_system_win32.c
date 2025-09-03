@@ -162,15 +162,15 @@ PalResult PAL_API palGetPlatformInfo(
     MEMORYSTATUSEX status;
     status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
-        info->totalRam = status.ullTotalPhys / (1024 * 1024); // to MB
+        info->totalRAM = status.ullTotalPhys / (1024 * 1024); // to MB
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_API palGetCpuInfo(
+PalResult PAL_API palGetCPUInfo(
     const PalAllocator* allocator, 
-    PalCpuInfo *info) {
+    PalCPUInfo *info) {
 
     if (!info) {
         return PAL_RESULT_NULL_POINTER;
@@ -181,7 +181,7 @@ PalResult PAL_API palGetCpuInfo(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
-    memset(info, 0, sizeof(PalCpuInfo));
+    memset(info, 0, sizeof(PalCPUInfo));
 
     // get cpu vendor
     int regs[4] = {};

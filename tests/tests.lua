@@ -23,7 +23,8 @@ project "tests"
         files { 
             "thread_test.c",
             "tls_test.c",
-            "mutex_test.c"
+            "mutex_test.c",
+            "condvar_test.c"
         }
     end
 

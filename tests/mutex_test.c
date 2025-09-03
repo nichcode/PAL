@@ -15,9 +15,10 @@ static void* PAL_CALL worker(
     
     SharedData* data = (SharedData*)arg;
 
+    // this is only needed when two or more threads are writing to the same variable
     for (Int32 i = 0; i < MAX_COUNTER; i++) {
         palLockMutex(data->mutex);
-        data->counter++;
+        data->counter++; // a shared variable. we need lock and unlocks
         palLog(nullptr, "Counter: %d", data->counter);
         palUnlockMutex(data->mutex);
     }

@@ -49,7 +49,7 @@ typedef struct {
     PalPlatformType type;
     PalPlatformApiType apiType;
     Uint32 totalMemory;
-    Uint32 totalRam;
+    Uint32 totalRAM;
     PalVersion version;
     char name[PAL_PLATFORM_NAME_SIZE];
 } PalPlatformInfo;
@@ -64,13 +64,13 @@ typedef struct {
     PalCpuFeatures features;
     char vendor[PAL_CPU_VENDOR_NAME_SIZE];
     char model[PAL_CPU_MODEL_NAME_SIZE];
-} PalCpuInfo;
+} PalCPUInfo;
 
 PAL_API PalResult PAL_API palGetPlatformInfo(
     PalPlatformInfo *info);
 
-PAL_API PalResult PAL_API palGetCpuInfo(
+PAL_API PalResult PAL_API palGetCPUInfo(
     const PalAllocator* allocator, 
-    PalCpuInfo *info);
+    PalCPUInfo *info);
 
 #endif // _PAL_SYSTEM_H

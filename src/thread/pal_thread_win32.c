@@ -39,9 +39,9 @@ typedef struct PalMutex {
     CRITICAL_SECTION sc;
 } PalMutex;
 
-typedef struct PalCondition {
+typedef struct PalCondVar {
     CONDITION_VARIABLE cv;
-} PalCondition;
+} PalCondVar;
 
 static Uint8 s_Init = false;
 static SetThreadDescriptionFn s_SetThreadDescription;
@@ -393,7 +393,7 @@ PalResult PAL_CALL palSetThreadName(
 // TLS
 // ==================================================
 
-PalTlsId PAL_CALL palCreateTls(
+PalTLSId PAL_CALL palCreateTLS(
     PaTlsDestructorFn destructor) {
 
     DWORD tlsid = tlsid = FlsAlloc(destructor);
@@ -403,20 +403,20 @@ PalTlsId PAL_CALL palCreateTls(
     return tlsid;
 }
 
-void PAL_CALL palDestroyTls(
-    PalTlsId id) {
+void PAL_CALL palDestroyTLS(
+    PalTLSId id) {
 
     FlsFree((DWORD)id);
 }
 
-void* PAL_CALL palGetTls(
-    PalTlsId id) {
+void* PAL_CALL palGetTLS(
+    PalTLSId id) {
 
     return FlsGetValue((DWORD)id);
 }
 
-void PAL_CALL palSetTls(
-    PalTlsId id, 
+void PAL_CALL palSetTLS(
+    PalTLSId id, 
     void* data) {
 
     FlsSetValue((DWORD)id, data);
@@ -469,14 +469,14 @@ void PAL_CALL palUnlockMutex(
     }
 }
 
-PalResult PAL_CALL palCreateCondition(
-    PalCondition** outCondition) {
+PalResult PAL_CALL palCreateCondVar(
+    PalCondVar** outCondition) {
 
     if (!outCondition) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    PalCondition* condition = palAllocate(s_Allocator, sizeof(PalCondition), 0);
+    PalCondVar* condition = palAllocate(s_Allocator, sizeof(PalCondVar), 0);
     if (!condition) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -486,16 +486,16 @@ PalResult PAL_CALL palCreateCondition(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyCondition(
-    PalCondition* condition) {
+void PAL_CALL palDestroyCondVar(
+    PalCondVar* condition) {
 
     if (condition) {
         palFree(s_Allocator, condition);
     }
 }
 
-PalResult PAL_CALL palWaitCondition(
-    PalCondition* condition,
+PalResult PAL_CALL palWaitCondVar(
+    PalCondVar* condition,
     PalMutex* mutex) {
     
     if (!condition || !mutex) {
@@ -514,8 +514,8 @@ PalResult PAL_CALL palWaitCondition(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palWaitConditionTimeout(
-    PalCondition* condition,
+PalResult PAL_CALL palWaitCondVarTimeout(
+    PalCondVar* condition,
     PalMutex* mutex,
     Uint64 milliseconds) {
     
@@ -535,16 +535,16 @@ PalResult PAL_CALL palWaitConditionTimeout(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palSignalCondition(
-    PalCondition* condition) {
+void PAL_CALL palSignalCondVar(
+    PalCondVar* condition) {
 
     if (condition) {
         WakeConditionVariable(&condition->cv);
     }
 }
 
-void PAL_CALL palBroadcastCondition(
-    PalCondition* condition) {
+void PAL_CALL palBroadcastCondVar(
+    PalCondVar* condition) {
 
     if (condition) {
         WakeAllConditionVariable(&condition->cv);

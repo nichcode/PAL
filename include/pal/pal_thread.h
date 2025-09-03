@@ -4,10 +4,10 @@
 
 #include "pal_core.h"
 
-typedef Uint32 PalTlsId;
+typedef Uint32 PalTLSId;
 typedef struct PalThread PalThread;
 typedef struct PalMutex PalMutex;
-typedef struct PalCondition PalCondition;
+typedef struct PalCondVar PalCondVar;
 
 typedef void* (*PalThreadFn)(
     void* arg);
@@ -80,17 +80,17 @@ PAL_API PalResult PAL_CALL palSetThreadName(
     PalThread* thread, 
     const char* name);
 
-PAL_API PalTlsId PAL_CALL palCreateTls(
+PAL_API PalTLSId PAL_CALL palCreateTLS(
     PaTlsDestructorFn destructor);
 
-PAL_API void PAL_CALL palDestroyTls(
-    PalTlsId id);
+PAL_API void PAL_CALL palDestroyTLS(
+    PalTLSId id);
 
-PAL_API void* PAL_CALL palGetTls(
-    PalTlsId id);
+PAL_API void* PAL_CALL palGetTLS(
+    PalTLSId id);
 
-PAL_API void PAL_CALL palSetTls(
-    PalTlsId id, 
+PAL_API void PAL_CALL palSetTLS(
+    PalTLSId id, 
     void* data);
 
 PAL_API PalResult PAL_CALL palCreateMutex(
@@ -105,25 +105,25 @@ PAL_API void PAL_CALL palLockMutex(
 PAL_API void PAL_CALL palUnlockMutex(
     PalMutex* mutex);
 
-PAL_API PalResult PAL_CALL palCreateCondition(
-    PalCondition** outCondition);
+PAL_API PalResult PAL_CALL palCreateCondVar(
+    PalCondVar** outCondition);
 
-PAL_API void PAL_CALL palDestroyCondition(
-    PalCondition* condition);
+PAL_API void PAL_CALL palDestroyCondVar(
+    PalCondVar* condition);
 
-PAL_API PalResult PAL_CALL palWaitCondition(
-    PalCondition* condition,
+PAL_API PalResult PAL_CALL palWaitCondVar(
+    PalCondVar* condition,
     PalMutex* mutex);
 
-PAL_API PalResult PAL_CALL palWaitConditionTimeout(
-    PalCondition* condition,
+PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
+    PalCondVar* condition,
     PalMutex* mutex,
     Uint64 milliseconds);
 
-PAL_API void PAL_CALL palSignalCondition(
-    PalCondition* condition);
+PAL_API void PAL_CALL palSignalCondVar(
+    PalCondVar* condition);
     
-PAL_API void PAL_CALL palBroadcastCondition(
-    PalCondition* condition);
+PAL_API void PAL_CALL palBroadcastCondVar(
+    PalCondVar* condition);
 
 #endif // _PAL_THREAD_H
