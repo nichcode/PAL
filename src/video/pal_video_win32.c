@@ -24,8 +24,7 @@
 // Typedefs, enums and structs
 // ==================================================
 
-#define PAL_VIDEO_CLASS L"PALVideoClass"
-#define PAL_VIDEO_PROP L"PALVideo"
+#define PAL_VIDEO_CLASS L"PALVideo"
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -260,11 +259,15 @@ PalResult PAL_CALL palInitVideo(
     // set features
     s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION;
     s_Video.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+    s_Video.features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
+    s_Video.features |= PAL_VIDEO_FEATURE_TOOLWINDOW;
     s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH;
     s_Video.features |= PAL_VIDEO_FEATURE_MULTI_DISPLAYS;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_RESIZING;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_POSITIONING;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_MINMAX;
+    s_Video.features |= PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX;
+    s_Video.features |= PAL_VIDEO_FEATURE_NO_MINIMIZEBOX;
     s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
     s_Video.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
@@ -272,6 +275,7 @@ PalResult PAL_CALL palInitVideo(
 
     if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
         s_Video.features |= PAL_VIDEO_FEATURE_HIGH_DPI;
+        s_Video.setProcessAwareness(WIN32_DPI_AWARE);
     }
 
     s_Video.initialized = true;
@@ -305,6 +309,10 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures() {
 PalResult PAL_CALL palEnumerateDisplays(
     Int32 *count,
     PalDisplay **displays) {
+
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
     
     if (!count) {
         return PAL_RESULT_NULL_POINTER;
@@ -328,6 +336,10 @@ PalResult PAL_CALL palEnumerateDisplays(
 
 PalResult PAL_CALL palGetPrimaryDisplay(
     PalDisplay **outDisplay) {
+
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
     
     if (!outDisplay) {
         return PAL_RESULT_NULL_POINTER;
@@ -345,6 +357,10 @@ PalResult PAL_CALL palGetPrimaryDisplay(
 PalResult PAL_CALL palGetDisplayInfo(
     PalDisplay *display,
     PalDisplayInfo *info) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
 
     if (!display || !info) {
         return PAL_RESULT_NULL_POINTER;
@@ -379,8 +395,7 @@ PalResult PAL_CALL palGetDisplayInfo(
 
     // get dpi scale
     Int32 dpiX, dpiY;
-    if (s_Video.getDpiForMonitor || s_Video.setProcessAwareness) {
-        s_Video.setProcessAwareness(WIN32_DPI_AWARE);
+    if (s_Video.getDpiForMonitor) {
         s_Video.getDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
         
     } else {
@@ -409,6 +424,10 @@ PalResult PAL_CALL palEnumerateDisplayModes(
     PalDisplay *display,
     Int32 *count,
     PalDisplayMode *modes) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
     
     if (!display || !count) {
         return PAL_RESULT_NULL_POINTER;
@@ -483,6 +502,10 @@ PalResult PAL_CALL palGetCurrentDisplayMode(
     PalDisplay *display,
     PalDisplayMode *mode) {
     
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
     if (!display || !mode) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -514,6 +537,10 @@ PalResult PAL_CALL palGetCurrentDisplayMode(
 PalResult PAL_CALL palSetDisplayMode(
     PalDisplay *display,
     PalDisplayMode *mode) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
 
     return setDisplayMode(display, mode, false);
 }
@@ -521,6 +548,10 @@ PalResult PAL_CALL palSetDisplayMode(
 PalResult PAL_CALL palValidateDisplayMode(
     PalDisplay *display,
     PalDisplayMode *mode) {
+
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
     
     return setDisplayMode(display, mode, true);
 }
@@ -528,6 +559,10 @@ PalResult PAL_CALL palValidateDisplayMode(
 PalResult PAL_CALL palSetDisplayOrientation(
     PalDisplay *display,
     PalOrientation orientation) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
     
     if (!display) {
         return PAL_RESULT_NULL_POINTER;
@@ -582,4 +617,192 @@ PalResult PAL_CALL palSetDisplayOrientation(
     } else {
         return PAL_RESULT_INVALID_ORIENTATION;
     }
+}
+
+// ==================================================
+// Window
+// ==================================================
+
+PalResult PAL_CALL palCreateWindow(
+    const PalWindowCreateInfo *info,
+    PalWindow **outWindow) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!info || !outWindow) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HWND handle = nullptr;
+    PalDisplay* display = nullptr;
+    PalDisplayInfo displayInfo;
+
+    Uint32 style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
+    Uint32 exStyle = 0;
+
+    // no minimize box
+    if (!(info->flags & PAL_WINDOW_NO_MINIMIZEBOX)) {
+        style |= WS_MINIMIZEBOX;
+    }
+
+    // no maximize box
+    if (!(info->flags & PAL_WINDOW_NO_MAXIMIZEBOX)) {
+        style |= WS_MAXIMIZEBOX;
+    }
+
+    // resizable window
+    if (info->flags & PAL_WINDOW_RESIZABLE) {
+        style |= WS_THICKFRAME;
+
+    } else {
+        // not resizable. We remove the maximizebox even if user requested
+        style &= ~WS_MAXIMIZEBOX;
+    }
+
+    // borderless window
+    if (info->flags & PAL_WINDOW_BORDERLESS) {
+        // this clears all other styles
+        style = WS_POPUP;
+    }
+
+    // transparent window
+    if (info->flags & PAL_WINDOW_TRANSPARENT) {
+        exStyle = WS_EX_LAYERED | WS_EX_TRANSPARENT;
+    }
+
+    // tool window
+    if (info->flags & PAL_WINDOW_TOOL) {
+        exStyle = WS_EX_TOOLWINDOW;
+    }
+
+    // topmost window
+    if (info->flags & PAL_WINDOW_TOPMOST) {
+        exStyle = WS_EX_TOPMOST;
+    }
+
+    // get display
+    if (info->display) {
+        display = info->display;
+    } else {
+        // get primary display
+        display = (PalDisplay*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
+        if (!display) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    // get display info
+    PalResult result = palGetDisplayInfo(display, &displayInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    } 
+
+    // compose position. 
+    Int32 x, y = 0;
+    // the position and size must be scaled with the dpi before this call
+    if (info->flags & PAL_WINDOW_CENTER) {
+        x = displayInfo.x + (displayInfo.width - info->width) / 2;
+        y = displayInfo.y + (displayInfo.height - info->height) / 2;
+
+    } else {
+        // we set 100 for each axix
+        x = displayInfo.x + 100;
+        y = displayInfo.y + 100;
+    }
+
+    // adjust the window size
+    RECT rect = { 0, 0, 0, 0 };
+    rect.right = info->width;
+    rect.bottom = info->height;
+    AdjustWindowRectEx(&rect, style, 0, exStyle);
+
+    wchar_t buffer[256] = {}; // FIXME: might be more    
+    MultiByteToWideChar(CP_UTF8, 0, info->title, -1, buffer, 256);
+
+    // create the window
+    handle = CreateWindowExW(
+        exStyle,
+        PAL_VIDEO_CLASS,
+        buffer,
+        style, 
+        x,
+        y,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        nullptr, 
+        nullptr, 
+        s_Video.instance,
+        nullptr
+    );
+
+    if (!handle) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    // show, maximize and minimize
+    Int32 showFlag = SW_HIDE;
+    // maximize
+    if (info->flags & PAL_WINDOW_MAXIMIZED) {
+        showFlag = SW_SHOWMAXIMIZED;
+    }
+
+    // minimized
+    if (info->flags & PAL_WINDOW_MINIMIZED) {
+        showFlag = SW_SHOWMINIMIZED;
+    }
+
+    // shown
+    if (info->flags & PAL_WINDOW_SHOWN) {
+        if (showFlag == SW_HIDE) {
+            // change only if maximize and minimize are not set
+            showFlag = SW_SHOW;
+        }
+    }
+
+    // update the window
+    ShowWindow(handle, showFlag);
+    UpdateWindow(handle);
+
+    *outWindow = (PalWindow*)handle;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyWindow(
+    PalWindow *window) {
+
+    if (!window) {
+        return;
+    }
+    DestroyWindow(window);
+}
+
+PalResult PAL_CALL palSetWindowOpacity(
+    PalWindow* window,
+    float opacity) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (SetLayeredWindowAttributes(window, 0, (BYTE)(opacity * 255), LWA_ALPHA)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else if (error == ERROR_INVALID_PARAMETER) {
+            return PAL_RESULT_INVALID_PARAMETER;
+
+        } else {
+            // FIXME: check for child windows
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
 }

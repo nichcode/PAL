@@ -229,6 +229,9 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_INVALID_ORIENTATION:
         return "The provided orientation is invalid";
 
+        case PAL_RESULT_INVALID_WINDOW:
+        return "The provided window handle was invalid";
+
     }
     return "Unknown";
 }
