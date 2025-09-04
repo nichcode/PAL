@@ -25,7 +25,8 @@ int main(int argc, char**) {
 #if PAL_HAS_VIDEO
     // registerTest("Video Test", videoTest);
     // registerTest("Display Test", displayTest);
-    registerTest("Display Mode Test", displayModeTest);
+    // registerTest("Display Mode Test", displayModeTest);
+    registerTest("Window Test", windowTest);
 #endif // PAL_HAS_THREAD
 
     runTests();

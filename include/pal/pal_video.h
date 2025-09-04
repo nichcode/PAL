@@ -80,6 +80,8 @@ PAL_API PalResult PAL_CALL palInitVideo(
 
 PAL_API void PAL_CALL palShutdownVideo();
 
+PAL_API void PAL_CALL palUpdateVideo();
+
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
 PAL_API PalResult PAL_CALL palEnumerateDisplays(

@@ -32,7 +32,8 @@ project "tests"
         files { 
             "video_test.c",
             "display_test.c",
-            "display_mode_test.c"
+            "display_mode_test.c",
+            "window_test.c"
         }
     end
 

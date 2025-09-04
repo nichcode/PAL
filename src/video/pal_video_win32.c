@@ -293,6 +293,19 @@ void PAL_CALL palShutdownVideo() {
     s_Video.initialized = false;
 }
 
+void PAL_CALL palUpdateVideo() {
+
+    if (!s_Video.initialized) {
+        return;
+    }
+    
+    MSG msg;
+    while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+}
+
 PalVideoFeatures PAL_CALL palGetVideoFeatures() {
 
     if (!s_Video.initialized) {
@@ -775,7 +788,7 @@ void PAL_CALL palDestroyWindow(
     if (!window) {
         return;
     }
-    DestroyWindow(window);
+    DestroyWindow((HWND)window);
 }
 
 PalResult PAL_CALL palSetWindowOpacity(
@@ -790,7 +803,7 @@ PalResult PAL_CALL palSetWindowOpacity(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (SetLayeredWindowAttributes(window, 0, (BYTE)(opacity * 255), LWA_ALPHA)) {
+    if (SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return PAL_RESULT_INVALID_WINDOW;

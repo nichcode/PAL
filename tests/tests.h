@@ -29,5 +29,6 @@ bool condvarTest();
 bool videoTest();
 bool displayTest();
 bool displayModeTest();
+bool windowTest();
 
 #endif // _TESTS_H

@@ -161,10 +161,10 @@ PalResult PAL_CALL palJoinThread(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    DWORD wait = WaitForSingleObject(thread, INFINITE);
+    DWORD wait = WaitForSingleObject((HANDLE)thread, INFINITE);
     if (wait == WAIT_OBJECT_0 && retval) {
         uintptr_t ret;
-        GetExitCodeThread(thread, (LPDWORD)&ret);
+        GetExitCodeThread((HANDLE)thread, (LPDWORD)&ret);
         retval = (void*)ret;
 
     } else if (wait == WAIT_FAILED) {
@@ -178,7 +178,7 @@ void PAL_CALL palDetachThread(
     PalThread* thread) {
 
     if (thread) {
-        CloseHandle(thread);
+        CloseHandle((HANDLE)thread);
     }
 }
 
@@ -224,7 +224,7 @@ PalThreadPriority PAL_CALL palGetThreadPriority(
         return 0;
     }
 
-    int priority = GetThreadPriority(thread);
+    int priority = GetThreadPriority((HANDLE)thread);
     switch (priority) {
         case THREAD_PRIORITY_LOWEST:
         return PAL_THREAD_PRIORITY_LOW;
@@ -249,12 +249,12 @@ Uint64 PAL_CALL palGetThreadAffinity(
         return 0;
     }
 
-    DWORD_PTR mask = SetThreadAffinityMask(thread, ~0ull);
+    DWORD_PTR mask = SetThreadAffinityMask((HANDLE)thread, ~0ull);
     if (mask == 0) {
         return 0;
     }
 
-    SetThreadAffinityMask(thread, mask);
+    SetThreadAffinityMask((HANDLE)thread, mask);
     return mask;
 }
 
@@ -266,7 +266,7 @@ char* PAL_CALL palGetThreadName(
     }
 
     wchar_t* buffer = nullptr;
-    HRESULT hr = s_GetThreadDescription(thread, &buffer);
+    HRESULT hr = s_GetThreadDescription((HANDLE)thread, &buffer);
 
     if (!SUCCEEDED(hr)) {
         return nullptr;
@@ -307,7 +307,7 @@ PalResult PAL_CALL palSetThreadPriority(
         break;
     }
 
-    if (!SetThreadPriority(thread, _priority)) {
+    if (!SetThreadPriority((HANDLE)thread, _priority)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return PAL_RESULT_INVALID_THREAD;
@@ -331,7 +331,7 @@ PalResult PAL_CALL palSetThreadAffinity(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (!SetThreadAffinityMask(thread, mask)) {
+    if (!SetThreadAffinityMask((HANDLE)thread, mask)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return PAL_RESULT_INVALID_THREAD;
@@ -366,7 +366,7 @@ PalResult PAL_CALL palSetThreadName(
 
     wchar_t buffer[512] = {};
     MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 512);
-    HRESULT hr = s_SetThreadDescription(thread, buffer);
+    HRESULT hr = s_SetThreadDescription((HANDLE)thread, buffer);
 
     if (SUCCEEDED(hr)) {
         return PAL_RESULT_SUCCESS;

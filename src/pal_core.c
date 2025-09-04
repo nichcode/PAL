@@ -232,6 +232,9 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_INVALID_WINDOW:
         return "The provided window handle was invalid";
 
+        case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
+        return "The video feature used is not supported";
+
     }
     return "Unknown";
 }
