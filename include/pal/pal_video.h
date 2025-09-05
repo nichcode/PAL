@@ -196,6 +196,10 @@ PAL_API PalResult PAL_CALL palGetWindowState(
     PalWindow* window, 
     PalWindowState* state);
 
+PAL_API PalWindow* PAL_CALL palGetFocusWindow();
+
+PAL_API PalWindow* PAL_CALL palGetForegroundWindow();
+
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity);
@@ -217,5 +221,11 @@ PAL_API PalResult PAL_CALL palSetWindowSize(
     PalWindow* window, 
     Uint32 width, 
     Uint32 height);
+
+PAL_API PalResult PAL_CALL palSetFocusWindow(
+    PalWindow* window);
+
+PAL_API PalResult PAL_CALL palSetForegroundWindow(
+    PalWindow* window);
 
 #endif // _PAL_VIDEO_H

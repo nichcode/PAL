@@ -93,6 +93,41 @@ LRESULT CALLBACK videoProc(
             return 0;
         }
 
+        case WM_SIZE: {
+
+        }
+
+        case WM_MOVE: {
+            
+        }
+
+        case WM_SHOWWINDOW: {
+            
+        }
+
+        case WM_SETFOCUS: {
+            
+        }
+
+        case WM_KILLFOCUS: {
+            
+        }
+
+        case WM_ENTERSIZEMOVE: {
+            
+        }
+
+        case WM_EXITSIZEMOVE: {
+            
+        }
+
+        case WM_DPICHANGED: {
+
+        }
+
+        case WM_DEVICECHANGE: {
+
+        }
     }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -1231,6 +1266,22 @@ PalResult PAL_CALL palGetWindowState(
     return PAL_RESULT_SUCCESS;
 }
 
+PalWindow* PAL_CALL palGetFocusWindow() {
+
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+    return GetFocus();
+}
+
+PalWindow* PAL_CALL palGetForegroundWindow() {
+
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+    return GetForegroundWindow();
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {
@@ -1435,4 +1486,53 @@ PalResult PAL_CALL palSetWindowSize(
         }
     }
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSetFocusWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!SetFocus((HWND)window)) {
+        DWORD error = GetLastError();
+        if (error ==ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSetForegroundWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!SetForegroundWindow((HWND)window)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else if (error == ERROR_ACCESS_DENIED) {
+            return PAL_RESULT_ACCESS_DENIED;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+    return PAL_RESULT_SUCCESS;
+
 }
