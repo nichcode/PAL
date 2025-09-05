@@ -16,7 +16,7 @@ bool displayModeTest() {
     Int32 modeCount = 0;
 
     // initialize the video system
-    result = palInitVideo(nullptr);
+    result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
         return false;

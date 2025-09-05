@@ -43,7 +43,10 @@ project "PAL"
         "src"
     }
 
-    files { "src/pal_core.c" }
+    files { 
+        "src/pal_core.c",
+        "src/pal_event.c"
+    }
 
     if (PAL_BUILD_SYSTEM) then
         filter {"system:windows", "configurations:*"}

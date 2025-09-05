@@ -24,7 +24,8 @@
 // Typedefs, enums and structs
 // ==================================================
 
-#define PAL_VIDEO_CLASS L"PALVideo"
+#define PAL_VIDEO_CLASS L"PALVideoClass"
+#define PAL_VIDEO_PROP L"PALVideo"
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -43,6 +44,7 @@ typedef struct {
     bool initialized;
     PalVideoFeatures features;
     const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
     GetDpiForMonitorFn getDpiForMonitor;
     SetProcessAwarenessFn setProcessAwareness;
     HINSTANCE shcore;
@@ -55,6 +57,11 @@ typedef struct {
     PalDisplay** displays;
 } DisplayData;
 
+typedef struct {
+    Uint32 style;
+    Uint32 exStyle;
+} WindowData;
+
 static VideoWin32 s_Video = {};
 
 // ==================================================
@@ -66,6 +73,26 @@ LRESULT CALLBACK videoProc(
     UINT msg, 
     WPARAM wParam, 
     LPARAM lParam) {
+    
+    switch (msg) {
+        case WM_CLOSE: {
+            // check if the user supplied an event driver
+            if (s_Video.eventDriver) {
+                // check if the user is interested in window close event
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_CLOSE);
+                if (mode != PAL_DISPATCH_NONE) {
+                    // push a window close event
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_CLOSE;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                } 
+            }
+            return 0;
+        }
+
+    }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
@@ -213,7 +240,8 @@ static void addDisplayMode(
 // ==================================================
 
 PalResult PAL_CALL palInitVideo(
-    const PalAllocator *allocator) {
+    const PalAllocator *allocator,
+    PalEventDriver* eventDriver) {
     
     if (s_Video.initialized) {
         return PAL_RESULT_SUCCESS;
@@ -260,7 +288,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION;
     s_Video.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
     s_Video.features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_TOOLWINDOW;
+    s_Video.features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
     s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH;
     s_Video.features |= PAL_VIDEO_FEATURE_MULTI_DISPLAYS;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_RESIZING;
@@ -280,6 +308,7 @@ PalResult PAL_CALL palInitVideo(
 
     s_Video.initialized = true;
     s_Video.allocator = allocator;
+    s_Video.eventDriver = eventDriver;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -656,17 +685,17 @@ PalResult PAL_CALL palCreateWindow(
     Uint32 exStyle = 0;
 
     // no minimize box
-    if (!(info->flags & PAL_WINDOW_NO_MINIMIZEBOX)) {
+    if (!(info->style & PAL_WINDOW_STYLE_NO_MINIMIZEBOX)) {
         style |= WS_MINIMIZEBOX;
     }
 
     // no maximize box
-    if (!(info->flags & PAL_WINDOW_NO_MAXIMIZEBOX)) {
+    if (!(info->style & PAL_WINDOW_STYLE_NO_MAXIMIZEBOX)) {
         style |= WS_MAXIMIZEBOX;
     }
 
     // resizable window
-    if (info->flags & PAL_WINDOW_RESIZABLE) {
+    if (info->style & PAL_WINDOW_STYLE_RESIZABLE) {
         style |= WS_THICKFRAME;
 
     } else {
@@ -674,25 +703,19 @@ PalResult PAL_CALL palCreateWindow(
         style &= ~WS_MAXIMIZEBOX;
     }
 
-    // borderless window
-    if (info->flags & PAL_WINDOW_BORDERLESS) {
-        // this clears all other styles
-        style = WS_POPUP;
-    }
-
     // transparent window
-    if (info->flags & PAL_WINDOW_TRANSPARENT) {
-        exStyle = WS_EX_LAYERED | WS_EX_TRANSPARENT;
+    if (info->style & PAL_WINDOW_STYLE_TRANSPARENT) {
+        exStyle |= WS_EX_LAYERED;
     }
 
     // tool window
-    if (info->flags & PAL_WINDOW_TOOL) {
-        exStyle = WS_EX_TOOLWINDOW;
+    if (info->style & PAL_WINDOW_STYLE_TOOL) {
+        exStyle |= WS_EX_TOOLWINDOW;
     }
 
     // topmost window
-    if (info->flags & PAL_WINDOW_TOPMOST) {
-        exStyle = WS_EX_TOPMOST;
+    if (info->style & PAL_WINDOW_STYLE_TOPMOST) {
+        exStyle |= WS_EX_TOPMOST;
     }
 
     // get display
@@ -715,7 +738,7 @@ PalResult PAL_CALL palCreateWindow(
     // compose position. 
     Int32 x, y = 0;
     // the position and size must be scaled with the dpi before this call
-    if (info->flags & PAL_WINDOW_CENTER) {
+    if (info->center) {
         x = displayInfo.x + (displayInfo.width - info->width) / 2;
         y = displayInfo.y + (displayInfo.height - info->height) / 2;
 
@@ -757,26 +780,42 @@ PalResult PAL_CALL palCreateWindow(
     // show, maximize and minimize
     Int32 showFlag = SW_HIDE;
     // maximize
-    if (info->flags & PAL_WINDOW_MAXIMIZED) {
+    if (info->showMaximized) {
         showFlag = SW_SHOWMAXIMIZED;
     }
 
     // minimized
-    if (info->flags & PAL_WINDOW_MINIMIZED) {
+    if (info->showMinimized) {
         showFlag = SW_SHOWMINIMIZED;
     }
 
     // shown
-    if (info->flags & PAL_WINDOW_SHOWN) {
+    if (info->show) {
         if (showFlag == SW_HIDE) {
             // change only if maximize and minimize are not set
             showFlag = SW_SHOW;
         }
     }
 
-    // update the window
     ShowWindow(handle, showFlag);
     UpdateWindow(handle);
+
+    if (info->style & PAL_WINDOW_STYLE_BORDERLESS) {
+        // revert changes
+        SetWindowLongPtrW(handle, GWL_STYLE, WS_POPUP);
+        SetWindowLongPtrW(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
+
+        // force a frame update
+        SetWindowPos(
+            handle,
+            nullptr,
+            0, 
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
+        );
+    }
 
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
@@ -791,6 +830,71 @@ void PAL_CALL palDestroyWindow(
     DestroyWindow((HWND)window);
 }
 
+PalResult PAL_CALL palGetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle* outStyle) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window || !outStyle) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalWindowStyle windowStyle = 0;
+    DWORD style = GetWindowLongPtrW((HWND)window, GWL_STYLE);
+    DWORD exStyle = GetWindowLongPtrW((HWND)window, GWL_EXSTYLE);
+
+    if (!style) {
+        // since there is no window without styles
+        // we assume if we dont get any, the window handle is invalid
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    
+    // check if we can resize
+    if (style & WS_THICKFRAME) {
+        windowStyle |= PAL_WINDOW_STYLE_RESIZABLE;
+    }
+
+    // check if we are transparent
+    if (exStyle & WS_EX_LAYERED) {
+        windowStyle |= PAL_WINDOW_STYLE_TRANSPARENT;
+    }
+
+    // check if we are a topmost window
+    if (exStyle & WS_EX_TOPMOST) {
+        windowStyle |= PAL_WINDOW_STYLE_TOPMOST;
+    }
+    
+    // check if we have a minimize box
+    if (!(style & WS_MINIMIZEBOX)) {
+        windowStyle |= PAL_WINDOW_STYLE_NO_MINIMIZEBOX;
+    }
+
+    // check if we have a maximize box
+    if (!(style & WS_MAXIMIZEBOX)) {
+        windowStyle |= PAL_WINDOW_STYLE_NO_MAXIMIZEBOX;
+    }
+
+    // check if its a tool window
+    if (exStyle & WS_EX_TOOLWINDOW) {
+        windowStyle |= PAL_WINDOW_STYLE_TOOL;
+    }
+
+    // we check borderless last since it will overwrite other styles
+    if (style & WS_POPUP) {
+        windowStyle |= PAL_WINDOW_STYLE_BORDERLESS;
+
+        // we remove minimize and maximize box if set
+        windowStyle &= ~PAL_WINDOW_STYLE_NO_MINIMIZEBOX;
+        windowStyle &= ~PAL_WINDOW_STYLE_NO_MAXIMIZEBOX;
+    }
+
+    *outStyle = windowStyle;
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {
@@ -803,7 +907,7 @@ PalResult PAL_CALL palSetWindowOpacity(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA)) {
+    if (!SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return PAL_RESULT_INVALID_WINDOW;
@@ -818,4 +922,86 @@ PalResult PAL_CALL palSetWindowOpacity(
     }
 
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle style) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // convert our style to win32 styles and exStyles
+    DWORD win32Style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED; // all windows have this styles
+    DWORD exStyle = 0;
+
+    // check for resizing
+    if (style & PAL_WINDOW_STYLE_RESIZABLE) {
+        win32Style |= WS_THICKFRAME;
+    }
+
+    // check for transparent window
+    if (style & PAL_WINDOW_STYLE_TRANSPARENT) {
+        exStyle |= WS_EX_LAYERED;
+    }
+
+    // check for topmost window
+    if (style & PAL_WINDOW_STYLE_TOPMOST) {
+        exStyle |= WS_EX_TOPMOST;
+    }
+
+    // check for no minimize box
+    if (style & PAL_WINDOW_STYLE_NO_MINIMIZEBOX) {
+        win32Style &= ~WS_MINIMIZEBOX;
+    }
+
+    // check for maximize box
+    if (style & PAL_WINDOW_STYLE_NO_MAXIMIZEBOX) {
+        win32Style &= ~WS_MAXIMIZEBOX;
+    }
+
+    // check for tool window
+    if (style & PAL_WINDOW_STYLE_TOOL) {
+        exStyle |= WS_EX_TOOLWINDOW;
+    }
+
+    // check for borderless window
+    if (style & PAL_WINDOW_STYLE_BORDERLESS) {
+        // revert the styles
+        win32Style = WS_POPUP;
+        exStyle = WS_EX_APPWINDOW;
+    }
+
+    HWND hwnd = (HWND)window;
+    SetWindowLongPtrW(hwnd, GWL_STYLE, win32Style);
+    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle);
+
+    // force a frame update
+    bool success = SetWindowPos(
+        hwnd,
+        nullptr,
+        0, 
+        0,
+        0,
+        0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
+    );
+
+    if (success) {
+        return PAL_RESULT_SUCCESS;
+
+    } else {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
 }

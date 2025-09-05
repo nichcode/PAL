@@ -2,7 +2,7 @@
 #ifndef _PAL_VIDEO_H
 #define _PAL_VIDEO_H
 
-#include "pal_core.h"
+#include "pal/pal_event.h"
 
 typedef struct PalDisplay PalDisplay;
 typedef struct PalWindow PalWindow;
@@ -12,7 +12,7 @@ typedef enum {
     PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION = PAL_BIT(1),
     PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = PAL_BIT(2),
     PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = PAL_BIT(3),
-    PAL_VIDEO_FEATURE_TOOLWINDOW = PAL_BIT(4),
+    PAL_VIDEO_FEATURE_TOOL_WINDOW = PAL_BIT(4),
     PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH = PAL_BIT(5),
     PAL_VIDEO_FEATURE_MULTI_DISPLAYS = PAL_BIT(6),
     PAL_VIDEO_FEATURE_WINDOW_RESIZING = PAL_BIT(7),
@@ -34,19 +34,14 @@ typedef enum {
 } PalOrientation;
 
 typedef enum {
-    PAL_WINDOW_RESIZABLE = PAL_BIT(0),
-    PAL_WINDOW_BORDERLESS = PAL_BIT(1),
-    PAL_WINDOW_SHOWN = PAL_BIT(2),
-    PAL_WINDOW_MINIMIZED = PAL_BIT(3),
-    PAL_WINDOW_MAXIMIZED = PAL_BIT(4),
-    PAL_WINDOW_TRANSPARENT = PAL_BIT(5),
-    PAL_WINDOW_TOPMOST = PAL_BIT(6),
-    PAL_WINDOW_CENTER  = PAL_BIT(7),
-    PAL_WINDOW_NO_MINIMIZEBOX = PAL_BIT(8),
-    PAL_WINDOW_NO_MAXIMIZEBOX = PAL_BIT(9),
-    PAL_WINDOW_TOOL = PAL_BIT(10),
-    PAL_WINDOW_DEFAULT = PAL_WINDOW_RESIZABLE | PAL_WINDOW_SHOWN
-} PalWindowFlags;
+    PAL_WINDOW_STYLE_RESIZABLE = PAL_BIT(0),
+    PAL_WINDOW_STYLE_TRANSPARENT = PAL_BIT(1),
+    PAL_WINDOW_STYLE_TOPMOST = PAL_BIT(2),
+    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = PAL_BIT(3),
+    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = PAL_BIT(4),
+    PAL_WINDOW_STYLE_TOOL = PAL_BIT(5),
+    PAL_WINDOW_STYLE_BORDERLESS = PAL_BIT(6)
+} PalWindowStyle;
 
 typedef struct {
     bool primary;
@@ -68,15 +63,20 @@ typedef struct {
 } PalDisplayMode;
 
 typedef struct {
+    bool show;
+    bool showMaximized;
+    bool showMinimized;
+    bool center;
     Uint32 width;
     Uint32 height;
-    PalWindowFlags flags;
+    PalWindowStyle style;
     const char* title;
     PalDisplay* display;
 } PalWindowCreateInfo;
 
 PAL_API PalResult PAL_CALL palInitVideo(
-    const PalAllocator *allocator);
+    const PalAllocator *allocator,
+    PalEventDriver* eventDriver);
 
 PAL_API void PAL_CALL palShutdownVideo();
 
@@ -123,8 +123,16 @@ PAL_API PalResult PAL_CALL palCreateWindow(
 PAL_API void PAL_CALL palDestroyWindow(
     PalWindow *window);
 
-PalResult PAL_CALL palSetWindowOpacity(
+PAL_API PalResult PAL_CALL palGetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle* outStyle);
+
+PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity);
+
+PAL_API PalResult PAL_CALL palSetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle style);
 
 #endif // _PAL_VIDEO_H
