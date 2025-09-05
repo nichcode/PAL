@@ -85,7 +85,7 @@ typedef struct {
     Uint32 width;
     Uint32 height;
     const Uint8* pixels;
-} PalWindowIconData;
+} PalWindowIconCreateInfo;
 
 typedef struct {
     bool show;
@@ -236,7 +236,7 @@ PAL_API PalResult PAL_CALL palSetForegroundWindow(
     PalWindow* window);
 
 PAL_API PalResult PAL_CALL palCreateWindowIcon(
-    const PalWindowIconData* data,
+    const PalWindowIconCreateInfo* info,
     PalWindowIcon** outIcon);
 
 PAL_API PalResult PAL_CALL palDestroyWindowIcon(

@@ -49,6 +49,13 @@ typedef HBITMAP (WINAPI* CreateDIBSectionFn)(
     HANDLE,
     DWORD);
 
+typedef HBITMAP (WINAPI* CreateBitmapFn) (
+    int,
+    int,
+    UINT,
+    UINT,
+    CONST VOID*);
+
 typedef BOOL (WINAPI* DeleteObjectFn)(
     HGDIOBJ);
 
@@ -63,6 +70,7 @@ typedef struct {
 
     HINSTANCE gdi;
     CreateDIBSectionFn createDIBSection;
+    CreateBitmapFn createBitmap;
     DeleteObjectFn deleteObject; 
 
     HINSTANCE instance;
@@ -345,6 +353,11 @@ PalResult PAL_CALL palInitVideo(
             "CreateDIBSection"
         );
 
+        s_Video.createBitmap = (CreateBitmapFn)GetProcAddress(
+            s_Video.gdi,
+            "CreateBitmap"
+        );
+
         s_Video.deleteObject = (DeleteObjectFn)GetProcAddress(
             s_Video.gdi,
             "DeleteObject"
@@ -366,6 +379,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
     s_Video.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
+    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
 
     if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
@@ -1571,25 +1585,29 @@ PalResult PAL_CALL palSetForegroundWindow(
     return PAL_RESULT_SUCCESS;
 }
 
+// ==================================================
+// Icon
+// ==================================================
+
 PalResult PAL_CALL palCreateWindowIcon(
-    const PalWindowIconData* data,
+    const PalWindowIconCreateInfo* info,
     PalWindowIcon** outIcon) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (!data || !outIcon) {
+    if (!info || !outIcon) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     // describe the icon pixels
     BITMAPV5HEADER bitInfo = {};
     bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
-    bitInfo.bV5Width = data->width;
-    bitInfo.bV5Height = -(Int32)data->height; // this is topdown by default
+    bitInfo.bV5Width = info->width;
+    bitInfo.bV5Height = -(Int32)info->height; // this is topdown by default
 
-    // default paramters
+    // default parameters
     bitInfo.bV5Planes = 1;
     bitInfo.bV5BitCount = 32; // PAL supports 32 bits
     bitInfo.bV5Compression = BI_BITFIELDS;
@@ -1619,28 +1637,37 @@ PalResult PAL_CALL palCreateWindowIcon(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    Uint32 count = data->width * data->height; 
-    for (Uint32 i = 0; i < count; i++) {
-        // copy and convert our pixels to BGRA format
-        pixels[0] = data->pixels[i * 4 + 2]; // Red bit - Blue bit
-        pixels[1] = data->pixels[i * 4 + 2]; // Green bit - Green bit
-        pixels[2] = data->pixels[i * 4 + 2]; // Blue bit - Red bit
-        pixels[3] = data->pixels[i * 4 + 2]; // Alpha bit - Alpha bit
-        pixels += 4; // RGBA || BGRA are four channels
+    for (int y = 0; y < info->height; ++y) {
+        for (int x = 0; x < info->width; ++x) {
+            int i = (y * info->width + x) * 4;
+            pixels[i + 0] = info->pixels[i + 2];
+            pixels[i + 1] = info->pixels[i + 1];
+            pixels[i + 2] = info->pixels[i + 0];
+            pixels[i + 3] = info->pixels[i + 3];
+        }
+    }
+
+    // create mask
+    HBITMAP mask = s_Video.createBitmap(info->width, info->height, 1, 1, nullptr);
+    if (!mask) {
+        s_Video.deleteObject(bitmap);
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     ICONINFO iconInfo = {};
     iconInfo.fIcon = TRUE;
-    iconInfo.hbmMask = bitmap;
+    iconInfo.hbmMask = mask;
     iconInfo.hbmColor = bitmap;
 
     // create the icon with the icon info
     HICON icon = CreateIconIndirect(&iconInfo);
     if (!icon) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        s_Video.deleteObject(mask);
         s_Video.deleteObject(bitmap);
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    s_Video.deleteObject(mask);
     s_Video.deleteObject(bitmap);
     *outIcon = (PalWindowIcon*)icon;
     return PAL_RESULT_SUCCESS;

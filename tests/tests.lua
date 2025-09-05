@@ -33,7 +33,8 @@ project "tests"
             "video_test.c",
             "display_test.c",
             "display_mode_test.c",
-            "window_test.c"
+            "window_test.c",
+            "window_icon_test.c"
         }
     end
 

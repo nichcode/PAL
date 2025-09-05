@@ -19,7 +19,7 @@ bool videoTest() {
         palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
         return false;
     }
-
+    
     // get supported features
     features = palGetVideoFeatures();
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
@@ -32,6 +32,14 @@ bool videoTest() {
 
     if (features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW) {
         palLog(nullptr, "Borderless windows feature is supported");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
+        palLog(nullptr, "Transparent windows feature is supported");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_TOOL_WINDOW) {
+        palLog(nullptr, "Tool windows feature is supported");
     }
 
     if (features & PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH) {
@@ -52,6 +60,14 @@ bool videoTest() {
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_MINMAX) {
         palLog(nullptr, "Window maximize and minimize feature is supported");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_NO_MINIMIZEBOX) {
+        palLog(nullptr, "No minimize box for windows feature is supported");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX) {
+        palLog(nullptr, "No maximize box for windows feature is supported");
     }
 
     if (features & PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL) {

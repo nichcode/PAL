@@ -30,5 +30,6 @@ bool videoTest();
 bool displayTest();
 bool displayModeTest();
 bool windowTest();
+bool windowIconTest();
 
 #endif // _TESTS_H
