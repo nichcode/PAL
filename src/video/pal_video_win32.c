@@ -1200,6 +1200,37 @@ PalResult PAL_CALL palGetWindowClientSize(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL palGetWindowState(
+    PalWindow* window, 
+    PalWindowState* state) {
+
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window || !state) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    WINDOWPLACEMENT wp = {};
+    if (!GetWindowPlacement((HWND)window, &wp)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    
+    if (wp.showCmd == SW_SHOWMINIMIZED || wp.showCmd == SW_MINIMIZE) {
+        state->minimized = true;
+        state->maximized = false;
+
+    } else if (wp.showCmd == SW_SHOWMAXIMIZED || wp.showCmd == SW_MAXIMIZE) {
+        state->maximized = true;
+        state->minimized = false;
+    }
+
+    // check visibility
+    state->visible = IsWindowVisible((HWND)window);
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {

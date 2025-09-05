@@ -75,6 +75,12 @@ typedef struct {
 } PalFlashInfo;
 
 typedef struct {
+    bool maximized;
+    bool minimized;
+    bool visible;
+} PalWindowState;
+
+typedef struct {
     bool show;
     bool showMaximized;
     bool showMinimized;
@@ -185,6 +191,10 @@ PAL_API PalResult PAL_CALL palGetWindowClientSize(
     PalWindow* window, 
     Uint32* width, 
     Uint32* height);
+
+PAL_API PalResult PAL_CALL palGetWindowState(
+    PalWindow* window, 
+    PalWindowState* state);
 
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
