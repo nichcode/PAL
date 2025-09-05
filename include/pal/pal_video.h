@@ -144,10 +144,10 @@ PAL_API PalResult PAL_CALL palMaximizeWindow(
 PAL_API PalResult PAL_CALL palRestoreWindow(
     PalWindow* window);
 
-PAL_API void PAL_CALL palShowWindow(
+PAL_API PalResult PAL_CALL palShowWindow(
     PalWindow* window);
 
-PAL_API void PAL_CALL palHideWindow(
+PAL_API PalResult PAL_CALL palHideWindow(
     PalWindow* window);
 
 PAL_API PalResult PAL_CALL palFlashWindow(
@@ -162,6 +162,10 @@ PAL_API PalResult PAL_CALL palGetWindowDisplay(
     PalWindow* window, 
     PalDisplay** outDisplay);
 
+PAL_API PalResult PAL_CALL palGetWindowTitle(
+    PalWindow* window,
+    char** outTitle);
+
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity);
@@ -169,5 +173,9 @@ PAL_API PalResult PAL_CALL palSetWindowOpacity(
 PAL_API PalResult PAL_CALL palSetWindowStyle(
     PalWindow* window,
     PalWindowStyle style);
+
+PAL_API PalResult PAL_CALL palSetWindowTitle(
+    PalWindow* window, 
+    const char* title);
 
 #endif // _PAL_VIDEO_H

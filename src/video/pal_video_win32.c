@@ -30,6 +30,7 @@
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
 #define NULL_ORIENTATION 5
+#define WINDOW_NAME_SIZE 256
 
 typedef HRESULT (WINAPI* GetDpiForMonitorFn)(
     HMONITOR, 
@@ -754,7 +755,7 @@ PalResult PAL_CALL palCreateWindow(
     rect.bottom = info->height;
     AdjustWindowRectEx(&rect, style, 0, exStyle);
 
-    wchar_t buffer[256] = {}; // FIXME: might be more    
+    wchar_t buffer[WINDOW_NAME_SIZE];  
     MultiByteToWideChar(CP_UTF8, 0, info->title, -1, buffer, 256);
 
     // create the window
@@ -884,7 +885,7 @@ PalResult PAL_CALL palRestoreWindow(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palShowWindow(
+PalResult PAL_CALL palShowWindow(
     PalWindow* window) {
     
     if (!s_Video.initialized) {
@@ -902,7 +903,7 @@ void PAL_CALL palShowWindow(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palHideWindow(
+PalResult PAL_CALL palHideWindow(
     PalWindow* window) {
     
     if (!s_Video.initialized) {
@@ -1058,6 +1059,35 @@ PalResult PAL_CALL palGetWindowDisplay(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL palGetWindowTitle(
+    PalWindow* window,
+    char** outTitle) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window || !outTitle) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    wchar_t buffer[WINDOW_NAME_SIZE];
+    if (GetWindowTextW((HWND)window, buffer, WINDOW_NAME_SIZE) == 0) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // convert to UTF-8 encoding string and allocate a string buffer
+    int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, nullptr, nullptr);
+    char* string = palAllocate(s_Video.allocator, len + 1, 0);
+    if (!string) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    WideCharToMultiByte(CP_UTF8, 0, buffer, -1, string, len, nullptr, nullptr);
+    *outTitle = string;
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {
@@ -1167,4 +1197,26 @@ PalResult PAL_CALL palSetWindowStyle(
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
+}
+
+PalResult PAL_CALL palSetWindowTitle(
+    PalWindow* window, 
+    const char* title) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !title) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+    
+    wchar_t buffer[WINDOW_NAME_SIZE];
+    MultiByteToWideChar(CP_UTF8, 0, title, -1, buffer, 256);
+
+    if (!SetWindowTextW((HWND)window, buffer)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    return PAL_RESULT_SUCCESS;
 }

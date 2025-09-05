@@ -18,6 +18,8 @@
 // remove the maximize box if supported
 #define NO_MAXIMIZEBOX 0
 
+#define UNICODE_NAME 1
+
 bool windowTest() {
 
     palLog(nullptr, "");
@@ -64,9 +66,14 @@ bool windowTest() {
     createInfo.display = nullptr; // use primary display
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.title = "PAL Test Window";
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
+
+#if UNICODE_NAME
+    createInfo.title = "PAL Test Window Unicode - àà";
+#else 
+    createInfo.title = "PAL Test Window";
+#endif // UNICODE_NAME
 
 #if MAKE_BORDERLESS
     if (features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW) {
@@ -131,6 +138,19 @@ bool windowTest() {
                     // optionally, get the window whose close button was clicked
                     PalWindow* tmp = (PalWindow*)palUnpackPointer(event.data2);
                     if (tmp == window) {
+                        // get window title
+                        char* title;
+                        result = palGetWindowTitle(window, &title);
+                        if (result != PAL_RESULT_SUCCESS) {
+                            palLog(nullptr, "Failed to get window title %s", palFormatResult(result));
+                            return false;
+                        }
+
+                        palLog(nullptr, "%s: closed", title);
+
+                        // this is allocated by the video allocate
+                        // so free with the same allocator
+                        palFree(nullptr, title);
                         running = false;
                         break;
                     }
