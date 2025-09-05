@@ -166,6 +166,26 @@ PAL_API PalResult PAL_CALL palGetWindowTitle(
     PalWindow* window,
     char** outTitle);
 
+PAL_API PalResult PAL_CALL palGetWindowPos(
+    PalWindow* window, 
+    Int32* x, 
+    Int32* y);
+
+PAL_API PalResult PAL_CALL palGetWindowClientPos(
+    PalWindow* window, 
+    Int32* x, 
+    Int32* y);
+
+PAL_API PalResult PAL_CALL palGetWindowSize(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height);
+
+PAL_API PalResult PAL_CALL palGetWindowClientSize(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height);
+
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity);
@@ -177,5 +197,15 @@ PAL_API PalResult PAL_CALL palSetWindowStyle(
 PAL_API PalResult PAL_CALL palSetWindowTitle(
     PalWindow* window, 
     const char* title);
+
+PAL_API PalResult PAL_CALL palSetWindowPos(
+    PalWindow* window, 
+    Int32 x, 
+    Int32 y);
+
+PAL_API PalResult PAL_CALL palSetWindowSize(
+    PalWindow* window, 
+    Uint32 width, 
+    Uint32 height);
 
 #endif // _PAL_VIDEO_H

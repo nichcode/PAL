@@ -1088,6 +1088,118 @@ PalResult PAL_CALL palGetWindowTitle(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL palGetWindowPos(
+    PalWindow* window, 
+    Int32* x, 
+    Int32* y) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    RECT rect;
+    if (!GetWindowRect((HWND)window, &rect)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (x) {
+        *x = rect.left;
+    }
+
+    if (y) {
+        *y = rect.top;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetWindowClientPos(
+    PalWindow* window, 
+    Int32* x, 
+    Int32* y) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    RECT rect;
+    if (!GetClientRect((HWND)window, &rect)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (x) {
+        *x = rect.left;
+    }
+
+    if (y) {
+        *y = rect.top;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetWindowSize(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    RECT rect;
+    if (!GetWindowRect((HWND)window, &rect)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (width) {
+        *width = rect.right - rect.left;
+    }
+
+    if (height) {
+        *height = rect.bottom - rect.top;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetWindowClientSize(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    RECT rect;
+    if (!GetClientRect((HWND)window, &rect)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (width) {
+        *width = rect.right - rect.left;
+    }
+
+    if (height) {
+        *height = rect.bottom - rect.top;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {
@@ -1218,5 +1330,78 @@ PalResult PAL_CALL palSetWindowTitle(
         return PAL_RESULT_INVALID_WINDOW;
     }
 
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSetWindowPos(
+    PalWindow* window, 
+    Int32 x, 
+    Int32 y) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+    
+    bool success = SetWindowPos(
+        (HWND)window, 
+        nullptr, 
+        x, 
+        y, 
+        0, 
+        0, 
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE
+    );
+
+    if (!success) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSetWindowSize(
+    PalWindow* window, 
+    Uint32 width, 
+    Uint32 height) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    bool success = SetWindowPos(
+        (HWND)window,
+        HWND_TOP, 
+        0, 
+        0, 
+        width, 
+        height,
+        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER
+    );
+
+    if (!success) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else if (error == ERROR_INVALID_PARAMETER) {
+            return PAL_RESULT_INVALID_PARAMETER;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
     return PAL_RESULT_SUCCESS;
 }
