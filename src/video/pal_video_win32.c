@@ -920,6 +920,52 @@ void PAL_CALL palHideWindow(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    DWORD flags = 0;
+    if (info->flags == PAL_FLASH_STOP) {
+        flags = FLASHW_STOP;
+
+    } else {
+        if (info->flags & PAL_FLASH_CAPTION) {
+            flags |= FLASHW_CAPTION;
+        } if (info->flags & PAL_FLASH_TRAY) {
+            flags |= FLASHW_TRAY;
+            flags |= FLASHW_TIMERNOFG;
+        }
+    }
+
+    FLASHWINFO flashInfo = {};
+    flashInfo.cbSize = sizeof(FLASHWINFO);
+    flashInfo.dwFlags = flags;
+    flashInfo.dwTimeout = info->interval;
+    flashInfo.hwnd = (HWND)window;
+    flashInfo.uCount = info->count;
+
+    bool success = FlashWindowEx(&flashInfo);
+    if (!success) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    } 
+
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palGetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle) {

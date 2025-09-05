@@ -43,6 +43,12 @@ typedef enum {
     PAL_WINDOW_STYLE_BORDERLESS = PAL_BIT(6)
 } PalWindowStyle;
 
+typedef enum {
+    PAL_FLASH_STOP = 0,
+    PAL_FLASH_CAPTION = PAL_BIT(0),
+    PAL_FLASH_TRAY = PAL_BIT(1)
+} PalFlashFlags;
+
 typedef struct {
     bool primary;
     Uint16 dpi;
@@ -61,6 +67,12 @@ typedef struct {
     Uint32 width;
     Uint32 height;
 } PalDisplayMode;
+
+typedef struct {
+    Uint16 interval;
+    PalFlashFlags flags;
+    Uint32 count;
+} PalFlashInfo;
 
 typedef struct {
     bool show;
@@ -137,6 +149,10 @@ PAL_API void PAL_CALL palShowWindow(
 
 PAL_API void PAL_CALL palHideWindow(
     PalWindow* window);
+
+PAL_API PalResult PAL_CALL palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info);
 
 PAL_API PalResult PAL_CALL palGetWindowStyle(
     PalWindow* window,
