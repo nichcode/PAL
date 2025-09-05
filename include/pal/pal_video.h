@@ -6,6 +6,7 @@
 
 typedef struct PalDisplay PalDisplay;
 typedef struct PalWindow PalWindow;
+typedef struct PalWindowIcon PalWindowIcon;
 
 typedef enum {
     PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
@@ -51,8 +52,8 @@ typedef enum {
 
 typedef struct {
     bool primary;
-    Uint16 dpi;
-    Uint16 refreshRate;
+    Uint32 dpi;
+    Uint32 refreshRate;
     Int32 x;
     Int32 y;
     Uint32 width;
@@ -62,14 +63,14 @@ typedef struct {
 } PalDisplayInfo;
 
 typedef struct {
-    Uint16 bpp;
-    Uint16 refreshRate;
+    Uint32 bpp;
+    Uint32 refreshRate;
     Uint32 width;
     Uint32 height;
 } PalDisplayMode;
 
 typedef struct {
-    Uint16 interval;
+    Uint32 interval;
     PalFlashFlags flags;
     Uint32 count;
 } PalFlashInfo;
@@ -79,6 +80,12 @@ typedef struct {
     bool minimized;
     bool visible;
 } PalWindowState;
+
+typedef struct {
+    Uint32 width;
+    Uint32 height;
+    const Uint8* pixels;
+} PalWindowIconData;
 
 typedef struct {
     bool show;
@@ -227,5 +234,16 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(
 
 PAL_API PalResult PAL_CALL palSetForegroundWindow(
     PalWindow* window);
+
+PAL_API PalResult PAL_CALL palCreateWindowIcon(
+    const PalWindowIconData* data,
+    PalWindowIcon** outIcon);
+
+PAL_API PalResult PAL_CALL palDestroyWindowIcon(
+    PalWindowIcon* icon);
+
+PAL_API PalResult PAL_CALL palSetWindowIcon(
+    PalWindow* window,
+    PalWindowIcon* icon);
 
 #endif // _PAL_VIDEO_H

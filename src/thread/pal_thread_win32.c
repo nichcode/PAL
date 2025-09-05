@@ -195,7 +195,7 @@ void PAL_CALL palYield() {
 
 PalThread* PAL_CALL palGetCurrentThread() {
 
-    return GetCurrentThread();
+    return (PalThread*)GetCurrentThread();
 }
 
 PalThreadFeatures PAL_CALL palGetThreadFeatures() {

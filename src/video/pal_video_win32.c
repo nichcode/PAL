@@ -41,14 +41,30 @@ typedef HRESULT (WINAPI* GetDpiForMonitorFn)(
 typedef HRESULT (WINAPI* SetProcessAwarenessFn)(
     Int32);
 
+typedef HBITMAP (WINAPI* CreateDIBSectionFn)(
+    HDC,
+    const BITMAPINFO*,
+    UINT,
+    VOID**,
+    HANDLE,
+    DWORD);
+
+typedef BOOL (WINAPI* DeleteObjectFn)(
+    HGDIOBJ);
+
 typedef struct {
     bool initialized;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
+    HINSTANCE shcore;
     GetDpiForMonitorFn getDpiForMonitor;
     SetProcessAwarenessFn setProcessAwareness;
-    HINSTANCE shcore;
+
+    HINSTANCE gdi;
+    CreateDIBSectionFn createDIBSection;
+    DeleteObjectFn deleteObject; 
+
     HINSTANCE instance;
 } VideoWin32;
 
@@ -307,6 +323,7 @@ PalResult PAL_CALL palInitVideo(
     }
 
     // load shared libraries
+    // shcore
     s_Video.shcore = LoadLibraryA("shcore.dll");
     if (s_Video.shcore) {
         s_Video.getDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
@@ -317,6 +334,20 @@ PalResult PAL_CALL palInitVideo(
         s_Video.setProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
             s_Video.shcore,
             "SetProcessDpiAwareness"
+        );
+    }
+
+    // gdi functios
+    s_Video.gdi = LoadLibraryA("gdi32.dll");
+    if (s_Video.gdi) {
+        s_Video.createDIBSection = (CreateDIBSectionFn)GetProcAddress(
+            s_Video.gdi,
+            "CreateDIBSection"
+        );
+
+        s_Video.deleteObject = (DeleteObjectFn)GetProcAddress(
+            s_Video.gdi,
+            "DeleteObject"
         );
     }
 
@@ -354,6 +385,11 @@ void PAL_CALL palShutdownVideo() {
         return;
     }
 
+    if (s_Video.shcore) {
+        FreeLibrary(s_Video.shcore);
+    }
+
+    FreeLibrary(s_Video.gdi);
     UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
     s_Video.initialized = false;
 }
@@ -860,10 +896,9 @@ PalResult PAL_CALL palCreateWindow(
 void PAL_CALL palDestroyWindow(
     PalWindow *window) {
 
-    if (!window) {
-        return;
+    if (window) {
+        DestroyWindow((HWND)window);
     }
-    DestroyWindow((HWND)window);
 }
 
 PalResult PAL_CALL palMinimizeWindow(
@@ -1271,7 +1306,7 @@ PalWindow* PAL_CALL palGetFocusWindow() {
     if (!s_Video.initialized) {
         return nullptr;
     }
-    return GetFocus();
+    return (PalWindow*)GetFocus();
 }
 
 PalWindow* PAL_CALL palGetForegroundWindow() {
@@ -1279,7 +1314,7 @@ PalWindow* PAL_CALL palGetForegroundWindow() {
     if (!s_Video.initialized) {
         return nullptr;
     }
-    return GetForegroundWindow();
+    return (PalWindow*)GetForegroundWindow();
 }
 
 PalResult PAL_CALL palSetWindowOpacity(
@@ -1534,5 +1569,108 @@ PalResult PAL_CALL palSetForegroundWindow(
         }
     }
     return PAL_RESULT_SUCCESS;
+}
 
+PalResult PAL_CALL palCreateWindowIcon(
+    const PalWindowIconData* data,
+    PalWindowIcon** outIcon) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!data || !outIcon) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // describe the icon pixels
+    BITMAPV5HEADER bitInfo = {};
+    bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
+    bitInfo.bV5Width = data->width;
+    bitInfo.bV5Height = -(Int32)data->height; // this is topdown by default
+
+    // default paramters
+    bitInfo.bV5Planes = 1;
+    bitInfo.bV5BitCount = 32; // PAL supports 32 bits
+    bitInfo.bV5Compression = BI_BITFIELDS;
+    bitInfo.bV5RedMask =  0x00FF0000;
+    bitInfo.bV5GreenMask = 0x0000FF00;
+    bitInfo.bV5BlueMask = 0x000000FF;
+    bitInfo.bV5AlphaMask = 0xFF000000;
+
+    HDC hdc = GetDC(nullptr); 
+    void* dibPixels = nullptr;
+
+    // create dib section
+    HBITMAP bitmap = s_Video.createDIBSection(
+        hdc,
+        (BITMAPINFO*)&bitInfo,
+        DIB_RGB_COLORS,
+        &dibPixels,
+        nullptr,
+        0
+    );
+
+    if (!bitmap) {
+        ReleaseDC(nullptr, hdc);
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    ReleaseDC(nullptr, hdc);
+
+    // convert RGBA to BGRA
+    Uint8* pixels = (Uint8*)dibPixels;
+    Uint32 count = data->width * data->height; 
+    for (Uint32 i = 0; i < count; i++) {
+        // copy and convert our pixels to BGRA format
+        pixels[0] = data->pixels[i * 4 + 2]; // Red bit - Blue bit
+        pixels[1] = data->pixels[i * 4 + 2]; // Green bit - Green bit
+        pixels[2] = data->pixels[i * 4 + 2]; // Blue bit - Red bit
+        pixels[3] = data->pixels[i * 4 + 2]; // Alpha bit - Alpha bit
+        pixels += 4; // RGBA || BGRA are four channels
+    }
+
+    ICONINFO iconInfo = {};
+    iconInfo.fIcon = TRUE;
+    iconInfo.hbmMask = bitmap;
+    iconInfo.hbmColor = bitmap;
+
+    // create the icon with the icon info
+    HICON icon = CreateIconIndirect(&iconInfo);
+    if (!icon) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+        s_Video.deleteObject(bitmap);
+    }
+
+    s_Video.deleteObject(bitmap);
+    *outIcon = (PalWindowIcon*)icon;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palDestroyWindowIcon(
+    PalWindowIcon* icon) {
+    
+    if (icon) {
+        DestroyIcon((HICON)icon);
+    }
+}
+
+PalResult PAL_CALL palSetWindowIcon(
+    PalWindow* window,
+    PalWindowIcon* icon) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!IsWindow((HWND)window)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    SendMessageW((HWND)window, WM_SETICON, ICON_BIG, (LPARAM)icon);
+    SendMessageW((HWND)window, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+    return PAL_RESULT_SUCCESS;
 }

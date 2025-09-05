@@ -85,9 +85,9 @@ typedef enum {
 } PalResult;
 
 typedef struct {
-    Uint16 major;
-    Uint16 minor;
-    Uint16 build;
+    Uint32 major;
+    Uint32 minor;
+    Uint32 build;
 } PalVersion;
 
 typedef struct {
