@@ -895,6 +895,29 @@ PalResult PAL_CALL palGetWindowStyle(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL palGetWindowDisplay(
+    PalWindow* window, 
+    PalDisplay** outDisplay) {
+    
+    if (!window || !outDisplay) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HMONITOR monitor = MonitorFromWindow((HWND)window, MONITOR_DEFAULTTONEAREST);
+    if (!monitor) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_HANDLE) {
+            return PAL_RESULT_INVALID_WINDOW;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    *outDisplay = (PalDisplay*)monitor;
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {

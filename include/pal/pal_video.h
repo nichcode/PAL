@@ -127,6 +127,10 @@ PAL_API PalResult PAL_CALL palGetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle);
 
+PAL_API PalResult PAL_CALL palGetWindowDisplay(
+    PalWindow* window, 
+    PalDisplay** outDisplay);
+
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity);
