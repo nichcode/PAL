@@ -830,6 +830,96 @@ void PAL_CALL palDestroyWindow(
     DestroyWindow((HWND)window);
 }
 
+PalResult PAL_CALL palMinimizeWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!ShowWindow((HWND)window, SW_MINIMIZE)) {
+        // technically, this will fail if the window handle is invalid
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palMaximizeWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+    
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!ShowWindow((HWND)window, SW_MAXIMIZE)) {
+        // technically, this will fail if the window handle is invalid
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palRestoreWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!ShowWindow((HWND)window, SW_RESTORE)) {
+        // technically, this will fail if the window handle is invalid
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palShowWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!ShowWindow((HWND)window, SW_SHOW)) {
+        // technically, this will fail if the window handle is invalid
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palHideWindow(
+    PalWindow* window) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!ShowWindow((HWND)window, SW_HIDE)) {
+        // technically, this will fail if the window handle is invalid
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL palGetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle) {
@@ -898,6 +988,10 @@ PalResult PAL_CALL palGetWindowStyle(
 PalResult PAL_CALL palGetWindowDisplay(
     PalWindow* window, 
     PalDisplay** outDisplay) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
     
     if (!window || !outDisplay) {
         return PAL_RESULT_NULL_POINTER;

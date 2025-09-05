@@ -123,6 +123,21 @@ PAL_API PalResult PAL_CALL palCreateWindow(
 PAL_API void PAL_CALL palDestroyWindow(
     PalWindow *window);
 
+PAL_API PalResult PAL_CALL palMinimizeWindow(
+    PalWindow* window);
+
+PAL_API PalResult PAL_CALL palMaximizeWindow(
+    PalWindow* window);
+
+PAL_API PalResult PAL_CALL palRestoreWindow(
+    PalWindow* window);
+
+PAL_API void PAL_CALL palShowWindow(
+    PalWindow* window);
+
+PAL_API void PAL_CALL palHideWindow(
+    PalWindow* window);
+
 PAL_API PalResult PAL_CALL palGetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle);
