@@ -147,7 +147,7 @@ bool windowTest() {
 
     PalResult result;
     PalWindow* window = nullptr;
-    PalWindowCreateInfo createInfo;
+    PalWindowCreateInfo createInfo = {};
     PalVideoFeatures features;
     bool running = false;
 
@@ -169,7 +169,7 @@ bool windowTest() {
     }
 
     // initialize the video system. We pass the event driver to recieve video related events
-    // the video does not copy this, this must be valid till the video system is shutdown
+    // the video system does not copy the event driver, it must be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));

@@ -38,5 +38,11 @@ project "tests"
         }
     end
 
+    if (PAL_BUILD_INPUT and PAL_BUILD_VIDEO) then
+        files { 
+            "input_test.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

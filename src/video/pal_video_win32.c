@@ -241,6 +241,9 @@ LRESULT CALLBACK videoProc(
                     palPushEvent(driver, &event);                
                 }
             }
+
+            // TODO: send focus window to input system
+
             return 0;
         }
 
@@ -256,6 +259,9 @@ LRESULT CALLBACK videoProc(
                     palPushEvent(driver, &event);                
                 }
             }
+
+            // TODO: send focus window to input system
+            
             return 0;
         }
 
@@ -320,6 +326,24 @@ LRESULT CALLBACK videoProc(
             }
             return 0;
         }
+
+        // case WM_MOUSEHWHEEL: {
+
+        //     // TODO: send to input system
+        //     return 0;
+        // }
+
+        // case WM_MOUSEWHEEL: {
+
+        //     // TODO: send to input system
+        //     return 0;
+        // }
+
+        // case WM_MOUSEMOVE: {
+
+        //     // TODO: send to input system
+        //     return 0;
+        // }
     }
 
     return DefWindowProcW(hwnd, msg, wParam, lParam);

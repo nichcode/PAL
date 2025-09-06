@@ -2,7 +2,7 @@
 #ifndef _PAL_INPUT_H
 #define _PAL_INPUT_H
 
-#include "pal_core.h"
+#include "pal_event.h"
 
 typedef enum {
     PAL_SCANCODE_UNKNOWN = 0,
@@ -132,130 +132,130 @@ typedef enum {
 } PalScancode;
 
 typedef enum {
-    PAL_KEY_UNKNOWN = 0,
+    PAL_KEYCODE_UNKNOWN = 0,
 
     // Letters
-    PAL_KEY_A,
-    PAL_KEY_B,
-    PAL_KEY_C,
-    PAL_KEY_D,
-    PAL_KEY_E,
-    PAL_KEY_F,
-    PAL_KEY_G,
-    PAL_KEY_H,
-    PAL_KEY_I,
-    PAL_KEY_J,
-    PAL_KEY_K,
-    PAL_KEY_L,
-    PAL_KEY_M,
-    PAL_KEY_N,
-    PAL_KEY_O,
-    PAL_KEY_P,
-    PAL_KEY_Q,
-    PAL_KEY_R,
-    PAL_KEY_S,
-    PAL_KEY_T,
-    PAL_KEY_U,
-    PAL_KEY_V,
-    PAL_KEY_W,
-    PAL_KEY_X,
-    PAL_KEY_Y,
-    PAL_KEY_Z,
+    PAL_KEYCODE_A,
+    PAL_KEYCODE_B,
+    PAL_KEYCODE_C,
+    PAL_KEYCODE_D,
+    PAL_KEYCODE_E,
+    PAL_KEYCODE_F,
+    PAL_KEYCODE_G,
+    PAL_KEYCODE_H,
+    PAL_KEYCODE_I,
+    PAL_KEYCODE_J,
+    PAL_KEYCODE_K,
+    PAL_KEYCODE_L,
+    PAL_KEYCODE_M,
+    PAL_KEYCODE_N,
+    PAL_KEYCODE_O,
+    PAL_KEYCODE_P,
+    PAL_KEYCODE_Q,
+    PAL_KEYCODE_R,
+    PAL_KEYCODE_S,
+    PAL_KEYCODE_T,
+    PAL_KEYCODE_U,
+    PAL_KEYCODE_V,
+    PAL_KEYCODE_W,
+    PAL_KEYCODE_X,
+    PAL_KEYCODE_Y,
+    PAL_KEYCODE_Z,
 
     // Numbers (top row)
-    PAL_KEY_0,
-    PAL_KEY_1,
-    PAL_KEY_2,
-    PAL_KEY_3,
-    PAL_KEY_4,
-    PAL_KEY_5,
-    PAL_KEY_6,
-    PAL_KEY_7,
-    PAL_KEY_8,
-    PAL_KEY_9,
+    PAL_KEYCODE_0,
+    PAL_KEYCODE_1,
+    PAL_KEYCODE_2,
+    PAL_KEYCODE_3,
+    PAL_KEYCODE_4,
+    PAL_KEYCODE_5,
+    PAL_KEYCODE_6,
+    PAL_KEYCODE_7,
+    PAL_KEYCODE_8,
+    PAL_KEYCODE_9,
 
     // Function
-    PAL_KEY_F1,
-    PAL_KEY_F2,
-    PAL_KEY_F3,
-    PAL_KEY_F4,
-    PAL_KEY_F5,
-    PAL_KEY_F6,
-    PAL_KEY_F7,
-    PAL_KEY_F8,
-    PAL_KEY_F9,
-    PAL_KEY_F10,
-    PAL_KEY_F11,
-    PAL_KEY_F12,
+    PAL_KEYCODE_F1,
+    PAL_KEYCODE_F2,
+    PAL_KEYCODE_F3,
+    PAL_KEYCODE_F4,
+    PAL_KEYCODE_F5,
+    PAL_KEYCODE_F6,
+    PAL_KEYCODE_F7,
+    PAL_KEYCODE_F8,
+    PAL_KEYCODE_F9,
+    PAL_KEYCODE_F10,
+    PAL_KEYCODE_F11,
+    PAL_KEYCODE_F12,
 
     // Control
-    PAL_KEY_ESCAPE,
-    PAL_KEY_ENTER,
-    PAL_KEY_TAB,
-    PAL_KEY_BACKSPACE,
-    PAL_KEY_SPACE,
-    PAL_KEY_CAPSLOCK,
-    PAL_KEY_NUMLOCK,
-    PAL_KEY_SCROLLLOCK,
-    PAL_KEY_LSHIFT,
-    PAL_KEY_RSHIFT,
-    PAL_KEY_LCTRL,
-    PAL_KEY_RCTRL,
-    PAL_KEY_LALT,
-    PAL_KEY_RALT,
+    PAL_KEYCODE_ESCAPE,
+    PAL_KEYCODE_ENTER,
+    PAL_KEYCODE_TAB,
+    PAL_KEYCODE_BACKSPACE,
+    PAL_KEYCODE_SPACE,
+    PAL_KEYCODE_CAPSLOCK,
+    PAL_KEYCODE_NUMLOCK,
+    PAL_KEYCODE_SCROLLLOCK,
+    PAL_KEYCODE_LSHIFT,
+    PAL_KEYCODE_RSHIFT,
+    PAL_KEYCODE_LCTRL,
+    PAL_KEYCODE_RCTRL,
+    PAL_KEYCODE_LALT,
+    PAL_KEYCODE_RALT,
 
     // Arrows
-    PAL_KEY_LEFT,
-    PAL_KEY_RIGHT,
-    PAL_KEY_UP,
-    PAL_KEY_DOWN,
+    PAL_KEYCODE_LEFT,
+    PAL_KEYCODE_RIGHT,
+    PAL_KEYCODE_UP,
+    PAL_KEYCODE_DOWN,
 
     // Navigation
-    PAL_KEY_INSERT,
-    PAL_KEY_DELETE,
-    PAL_KEY_HOME,
-    PAL_KEY_END,
-    PAL_KEY_PAGEUP,
-    PAL_KEY_PAGEDOWN,
+    PAL_KEYCODE_INSERT,
+    PAL_KEYCODE_DELETE,
+    PAL_KEYCODE_HOME,
+    PAL_KEYCODE_END,
+    PAL_KEYCODE_PAGEUP,
+    PAL_KEYCODE_PAGEDOWN,
 
     // Keypad
-    PAL_KEY_KP_0,
-    PAL_KEY_KP_1,
-    PAL_KEY_KP_2,
-    PAL_KEY_KP_3,
-    PAL_KEY_KP_4,
-    PAL_KEY_KP_5,
-    PAL_KEY_KP_6,
-    PAL_KEY_KP_7,
-    PAL_KEY_KP_8,
-    PAL_KEY_KP_9,
-    PAL_KEY_KP_ENTER,
-    PAL_KEY_KP_ADD,
-    PAL_KEY_KP_SUBTRACT,
-    PAL_KEY_KP_MULTIPLY,
-    PAL_KEY_KP_DIVIDE,
-    PAL_KEY_KP_DECIMAL,
-    PAL_KEY_KP_EQUAL,
+    PAL_KEYCODE_KP_0,
+    PAL_KEYCODE_KP_1,
+    PAL_KEYCODE_KP_2,
+    PAL_KEYCODE_KP_3,
+    PAL_KEYCODE_KP_4,
+    PAL_KEYCODE_KP_5,
+    PAL_KEYCODE_KP_6,
+    PAL_KEYCODE_KP_7,
+    PAL_KEYCODE_KP_8,
+    PAL_KEYCODE_KP_9,
+    PAL_KEYCODE_KP_ENTER,
+    PAL_KEYCODE_KP_ADD,
+    PAL_KEYCODE_KP_SUBTRACT,
+    PAL_KEYCODE_KP_MULTIPLY,
+    PAL_KEYCODE_KP_DIVIDE,
+    PAL_KEYCODE_KP_DECIMAL,
+    PAL_KEYCODE_KP_EQUAL,
 
     // Misc
-    PAL_KEY_PRINTSCREEN,
-    PAL_KEY_PAUSE,
-    PAL_KEY_MENU,
-    PAL_KEY_APOSTROPHE,
-    PAL_KEY_BACKSLASH,
-    PAL_KEY_COMMA,
-    PAL_KEY_EQUAL,
-    PAL_KEY_GRAVEACCENT,
-    PAL_KEY_SUBTRACT,
-    PAL_KEY_PERIOD,
-    PAL_KEY_SEMICOLON,
-    PAL_KEY_SLASH,
-    PAL_KEY_LBRACKET,
-    PAL_KEY_RBRACKET,
-    PAL_KEY_LSUPER,
-    PAL_KEY_RSUPER,
+    PAL_KEYCODE_PRINTSCREEN,
+    PAL_KEYCODE_PAUSE,
+    PAL_KEYCODE_MENU,
+    PAL_KEYCODE_APOSTROPHE,
+    PAL_KEYCODE_BACKSLASH,
+    PAL_KEYCODE_COMMA,
+    PAL_KEYCODE_EQUAL,
+    PAL_KEYCODE_GRAVEACCENT,
+    PAL_KEYCODE_SUBTRACT,
+    PAL_KEYCODE_PERIOD,
+    PAL_KEYCODE_SEMICOLON,
+    PAL_KEYCODE_SLASH,
+    PAL_KEYCODE_LBRACKET,
+    PAL_KEYCODE_RBRACKET,
+    PAL_KEYCODE_LSUPER,
+    PAL_KEYCODE_RSUPER,
 
-    PAL_KEY_MAX
+    PAL_KEYCODE_MAX
 } PalKeycode;
 
 typedef enum {
@@ -269,5 +269,40 @@ typedef enum {
 
     PAL_MOUSE_BUTTON_MAX
 } PalMouseButton;
+
+PAL_API PalResult PAL_CALL palInitInput(
+    const PalAllocator *allocator,
+    PalEventDriver* eventDriver,
+    bool autoFocusWindow);
+
+PAL_API void PAL_CALL palShutdownInput();
+
+PAL_API void PAL_CALL palUpdateInput();
+
+PAL_API const bool* PAL_CALL palGetKeycodeState();
+
+PAL_API const bool* PAL_CALL palGetScancodeState();
+
+PAL_API const bool* PAL_CALL palGetMouseState();
+
+PAL_API void PAL_CALL palGetMousePosition(
+    Int32* x, 
+    Int32* y);
+
+PAL_API void PAL_CALL palGetMouseDelta(
+    Int32* dx, 
+    Int32* dy);
+
+PAL_API void PAL_CALL palGetMouseWheelDelta(
+    Int32* dx, 
+    Int32* dy);
+
+PAL_API void* PAL_CALL palGetInputWindow();
+
+PAL_API void PAL_CALL palSetInputWindow( 
+    void* windowHandle);
+
+PAL_API void PAL_CALL palSetAutoFocusWindow( 
+    bool enable);
 
 #endif // _PAL_INPUT_H
