@@ -19,6 +19,7 @@
 #endif // UNICODE
 
 #include <windows.h>
+#include <windowsx.h>
 
 // ==================================================
 // Typedefs, enums and structs
@@ -83,10 +84,17 @@ typedef struct {
 } DisplayData;
 
 typedef struct {
-    Uint32 style;
-    Uint32 exStyle;
-} WindowData;
+    bool pendingResize;
+    bool pendingMove;
+    Uint32 width;
+    Uint32 height;
+    Int32 x;
+    Int32 y;
+    PalWindowState state;
+    PalWindow* window;
+} PendingEvent;
 
+static PendingEvent s_Event;
 static VideoWin32 s_Video = {};
 
 // ==================================================
@@ -98,16 +106,20 @@ LRESULT CALLBACK videoProc(
     UINT msg, 
     WPARAM wParam, 
     LPARAM lParam) {
+
+    // check if the window has been created
+    PendingEvent* createFlag = (PendingEvent*)GetPropW(hwnd, PAL_VIDEO_PROP);
+    if (!createFlag) {
+        // window has not been created yet
+        return DefWindowProcW(hwnd, msg, wParam, lParam);
+    }
     
     switch (msg) {
         case WM_CLOSE: {
-            // check if the user supplied an event driver
             if (s_Video.eventDriver) {
-                // check if the user is interested in window close event
                 PalEventDriver* driver = s_Video.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_CLOSE);
                 if (mode != PAL_DISPATCH_NONE) {
-                    // push a window close event
                     PalEvent event = {};
                     event.type = PAL_EVENT_WINDOW_CLOSE;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
@@ -118,39 +130,195 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_SIZE: {
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_SIZE);
+                Uint32 width = (Uint32)LOWORD(lParam);
+                Uint32 height = (Uint32)HIWORD(lParam);
 
+                if (mode == PAL_DISPATCH_CALLBACK) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_SIZE;
+                    event.data = palPackUint32(width, height);
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);
+
+                } else {
+                    s_Event.pendingResize = true;
+                    s_Event.width = width;
+                    s_Event.height = height;
+                    s_Event.window = (PalWindow*)hwnd;
+                }
+
+                // trigger state event
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_STATE);
+                PalWindowState state;
+                if (mode == PAL_DISPATCH_NONE) {
+                    return 0;
+                }
+
+                switch (wParam) {
+                    case SIZE_MINIMIZED: {
+                        state = PAL_WINDOW_STATE_MINIMIZED;
+                        break;
+                    }
+
+                    case SIZE_MAXIMIZED: {
+                        state = PAL_WINDOW_STATE_MAXIMIZED;
+                        break;
+                    }
+
+                    case SIZE_RESTORED: {
+                        state = PAL_WINDOW_STATE_RESTORED;
+                        break;
+                    }
+                }
+
+                if (mode == PAL_DISPATCH_CALLBACK) {
+                    PalEvent event = {};
+                    event.data = state;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    event.type = PAL_EVENT_WINDOW_STATE;
+                    palPushEvent(driver, &event);
+
+                } else {
+                    s_Event.state = state;
+                }
+            }
+            
+            return 0;
         }
 
         case WM_MOVE: {
-            
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MOVE);
+                Int32 x = GET_X_LPARAM(lParam);
+                Int32 y = GET_Y_LPARAM(lParam);
+
+                if (mode == PAL_DISPATCH_CALLBACK) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_MOVE;
+                    event.data = palPackInt32(x, y);
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);
+
+                } else {
+                    s_Event.pendingMove = true;
+                    s_Event.x = x;
+                    s_Event.y = y;
+                    s_Event.window = (PalWindow*)hwnd;
+                }
+            }
+
+            return 0;
         }
 
         case WM_SHOWWINDOW: {
-            
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_VISIBILITY);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_VISIBILITY;
+                    event.data = (bool)wParam;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
 
         case WM_SETFOCUS: {
-            
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_FOCUS);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_FOCUS;
+                    event.data = true;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
 
         case WM_KILLFOCUS: {
-            
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_FOCUS);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_FOCUS;
+                    event.data = false;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
 
         case WM_ENTERSIZEMOVE: {
-            
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MODAL_BEGIN);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_MODAL_BEGIN;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
 
         case WM_EXITSIZEMOVE: {
-            
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MODAL_END);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_WINDOW_MODAL_END;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
 
         case WM_DPICHANGED: {
-
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DISPLAY_DPI_CHANGED);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_DISPLAY_DPI_CHANGED;
+                    event.data = HIWORD(wParam);
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
 
         case WM_DEVICECHANGE: {
+            // check if the displays list has been changed
+            if (wParam != 0x0007) {
+                return 0;
+            }
 
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DISPLAYS_CHANGED);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {};
+                    event.type = PAL_EVENT_DISPLAYS_CHANGED;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);                
+                }
+            }
+            return 0;
         }
     }
 
@@ -418,6 +586,30 @@ void PAL_CALL palUpdateVideo() {
     while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
+    }
+
+    // push pending move and reszie events
+    if (s_Event.pendingResize) {
+        PalEvent event = {};
+        event.type = PAL_EVENT_WINDOW_SIZE;
+        event.data = palPackUint32(s_Event.width, s_Event.height);
+        event.data2 = palPackPointer(s_Event.window);
+        palPushEvent(s_Video.eventDriver, &event);
+
+        // push a window state event
+        event.type = PAL_EVENT_WINDOW_STATE;
+        event.data = s_Event.state;
+        palPushEvent(s_Video.eventDriver, &event);
+
+        s_Event.pendingResize = false;
+
+    } else if (s_Event.pendingMove) {
+        PalEvent event = {};
+        event.type = PAL_EVENT_WINDOW_MOVE;
+        event.data = palPackInt32(s_Event.x, s_Event.y);
+        event.data2 = palPackPointer(s_Event.window);
+        palPushEvent(s_Video.eventDriver, &event);
+        s_Event.pendingMove = false;
     }
 }
 
@@ -903,6 +1095,9 @@ PalResult PAL_CALL palCreateWindow(
         );
     }
 
+    // set a flag to set if the window has been created
+    SetPropW(handle, PAL_VIDEO_PROP, &s_Event);
+
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
 }
@@ -1300,19 +1495,32 @@ PalResult PAL_CALL palGetWindowState(
     if (!GetWindowPlacement((HWND)window, &wp)) {
         return PAL_RESULT_INVALID_WINDOW;
     }
-    
+
     if (wp.showCmd == SW_SHOWMINIMIZED || wp.showCmd == SW_MINIMIZE) {
-        state->minimized = true;
-        state->maximized = false;
+        *state = PAL_WINDOW_STATE_MINIMIZED;
 
     } else if (wp.showCmd == SW_SHOWMAXIMIZED || wp.showCmd == SW_MAXIMIZE) {
-        state->maximized = true;
-        state->minimized = false;
+        *state = PAL_WINDOW_STATE_MAXIMIZED;
+
+    } else if (wp.showCmd == SW_RESTORE) {
+        *state = PAL_WINDOW_STATE_RESTORED;
     }
 
-    // check visibility
-    state->visible = IsWindowVisible((HWND)window);
     return PAL_RESULT_SUCCESS;
+}
+
+bool PAL_CALL palIsWindowVisible(
+    PalWindow* window) {
+
+    if (!s_Video.initialized) {
+        return false;
+    }
+    
+    if (!window) {
+        return false;
+    }
+
+    return IsWindowVisible((HWND)window);
 }
 
 PalWindow* PAL_CALL palGetFocusWindow() {
@@ -1640,10 +1848,10 @@ PalResult PAL_CALL palCreateWindowIcon(
     for (int y = 0; y < info->height; ++y) {
         for (int x = 0; x < info->width; ++x) {
             int i = (y * info->width + x) * 4;
-            pixels[i + 0] = info->pixels[i + 2];
-            pixels[i + 1] = info->pixels[i + 1];
-            pixels[i + 2] = info->pixels[i + 0];
-            pixels[i + 3] = info->pixels[i + 3];
+            pixels[i + 0] = info->pixels[i + 2]; // Red
+            pixels[i + 1] = info->pixels[i + 1]; // Green
+            pixels[i + 2] = info->pixels[i + 0]; // Nlue
+            pixels[i + 3] = info->pixels[i + 3]; // Alpha
         }
     }
 

@@ -45,6 +45,12 @@ typedef enum {
 } PalWindowStyle;
 
 typedef enum {
+    PAL_WINDOW_STATE_MAXIMIZED,
+    PAL_WINDOW_STATE_MINIMIZED,
+    PAL_WINDOW_STATE_RESTORED
+} PalWindowState;
+
+typedef enum {
     PAL_FLASH_STOP = 0,
     PAL_FLASH_CAPTION = PAL_BIT(0),
     PAL_FLASH_TRAY = PAL_BIT(1)
@@ -74,12 +80,6 @@ typedef struct {
     PalFlashFlags flags;
     Uint32 count;
 } PalFlashInfo;
-
-typedef struct {
-    bool maximized;
-    bool minimized;
-    bool visible;
-} PalWindowState;
 
 typedef struct {
     Uint32 width;
@@ -202,6 +202,9 @@ PAL_API PalResult PAL_CALL palGetWindowClientSize(
 PAL_API PalResult PAL_CALL palGetWindowState(
     PalWindow* window, 
     PalWindowState* state);
+
+PAL_API bool PAL_CALL palIsWindowVisible(
+    PalWindow* window);
 
 PAL_API PalWindow* PAL_CALL palGetFocusWindow();
 
