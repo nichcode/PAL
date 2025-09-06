@@ -13,3 +13,6 @@ PAL_BUILD_THREAD = true
 
 -- build video module
 PAL_BUILD_VIDEO = true
+
+-- build input module
+PAL_BUILD_INPUT = true

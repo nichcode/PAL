@@ -380,7 +380,7 @@ static inline DWORD orientationToin32(
     return NULL_ORIENTATION;
 }
 
-static PalResult setDisplayMode(
+static inline PalResult setDisplayMode(
     PalDisplay* display,
     PalDisplayMode* mode,
     bool test) {
@@ -445,7 +445,7 @@ static inline bool compareDisplayMode(
         a->refreshRate == b->refreshRate;
 }
 
-static void addDisplayMode(
+static inline void addDisplayMode(
     PalDisplayMode* modes, 
     const PalDisplayMode* mode, 
     Int32* count) {

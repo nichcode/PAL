@@ -5,3 +5,4 @@
 #define PAL_HAS_SYSTEM 1
 #define PAL_HAS_THREAD 1
 #define PAL_HAS_VIDEO 1
+#define PAL_HAS_INPUT 1
