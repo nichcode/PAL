@@ -235,10 +235,6 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
         return "The video feature used is not supported";
         
-        // input
-        case PAL_RESULT_INPUT_NOT_INITIALIZED:
-        return "Input system not initialized";
-
         case PAL_RESULT_INVALID_KEYCODE:
         return "The provided keycode was invalid";
 

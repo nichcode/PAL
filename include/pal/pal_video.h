@@ -7,6 +7,7 @@
 typedef struct PalDisplay PalDisplay;
 typedef struct PalWindow PalWindow;
 typedef struct PalWindowIcon PalWindowIcon;
+typedef struct PalWindowCursor PalWindowCursor;
 
 typedef enum {
     PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
@@ -354,6 +355,14 @@ typedef struct {
 } PalWindowIconCreateInfo;
 
 typedef struct {
+    Uint32 width;
+    Uint32 height;
+    Int32 xHotspot;
+    Int32 yHotspot;
+    const Uint8* pixels;
+} PalWindowCursorCreateInfo;
+
+typedef struct {
     bool show;
     bool showMaximized;
     bool showMinimized;
@@ -475,6 +484,14 @@ PAL_API const bool* PAL_CALL palGetScancodeState();
 
 PAL_API const bool* PAL_CALL palGetMouseState();
 
+PAL_API void PAL_CALL palGetMouseDelta(
+    Int32* dx,
+    Int32* dy);
+
+void PAL_CALL palGetMouseWheelDelta(
+    Int32* dx, 
+    Int32* dy);
+
 PAL_API bool PAL_CALL palIsWindowVisible(
     PalWindow* window);
 
@@ -514,11 +531,39 @@ PAL_API PalResult PAL_CALL palCreateWindowIcon(
     const PalWindowIconCreateInfo* info,
     PalWindowIcon** outIcon);
 
-PAL_API PalResult PAL_CALL palDestroyWindowIcon(
+PAL_API void PAL_CALL palDestroyWindowIcon(
     PalWindowIcon* icon);
 
 PAL_API PalResult PAL_CALL palSetWindowIcon(
     PalWindow* window,
     PalWindowIcon* icon);
+
+PAL_API PalResult PAL_CALL palCreateWindowCursor(
+    const PalWindowCursorCreateInfo* info,
+    PalWindowCursor** outCursor);
+
+PAL_API void PAL_CALL palDestroyWindowCursor(
+    PalWindowCursor* cursor);
+
+PAL_API void PAL_CALL palShowCursor(
+    bool show);
+
+PAL_API void PAL_CALL palClipCursor(
+    PalWindow* window,
+    bool clip);
+
+PAL_API void PAL_CALL palGetCursorPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y);
+
+PAL_API void PAL_CALL palSetCursorPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y);
+
+PAL_API void PAL_CALL palSetCursor(
+    PalWindow* window,
+    PalWindowCursor* cursor);
 
 #endif // _PAL_VIDEO_H

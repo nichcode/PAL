@@ -85,6 +85,11 @@ typedef struct {
 } DisplayData;
 
 typedef struct {
+    int unused;
+    PalWindowCursor* cursor;
+} WindowData;
+
+typedef struct {
     bool pendingResize;
     bool pendingMove;
     Uint32 width;
@@ -103,8 +108,6 @@ typedef struct {
 } Keyboard;
 
 typedef struct {
-    Int32 x;
-    Int32 y;
     Int32 dx;
     Int32 dy;
     Int32 WheelX;
@@ -130,8 +133,8 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam) {
 
     // check if the window has been created
-    PendingEvent* createFlag = (PendingEvent*)GetPropW(hwnd, PAL_VIDEO_PROP);
-    if (!createFlag) {
+    WindowData* windowData = (WindowData*)GetPropW(hwnd, PAL_VIDEO_PROP);
+    if (!windowData) {
         // window has not been created yet
         return DefWindowProcW(hwnd, msg, wParam, lParam);
     }
@@ -388,9 +391,7 @@ LRESULT CALLBACK videoProc(
         case WM_MOUSEMOVE: {
             const Int32 x = GET_X_LPARAM(lParam);
             const Int32 y = GET_Y_LPARAM(lParam);
-            s_Mouse.x = x;
-            s_Mouse.y = y;
-
+           
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_MOVE);
@@ -681,6 +682,16 @@ LRESULT CALLBACK videoProc(
         case WM_ERASEBKGND:
         {
             return true;
+        }
+
+        case WM_SETCURSOR: {
+            if (LOWORD(wParam) == HTCLIENT) {
+                WindowData* data = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+                SetCursor(data->cursor);
+                return TRUE;
+            }
+
+            break;
         }
 
     }
@@ -1130,8 +1141,13 @@ PalResult PAL_CALL palInitVideo(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    WindowData* data = palAllocate(s_Video.allocator, sizeof(WindowData), 0);
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     // set a flag to set if the window has been created
-    SetPropW(s_Video.hiddenWindow, PAL_VIDEO_PROP, &s_Event);
+    SetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA, (LONG_PTR)data);
 
     // register raw input for mice to get delta
     RAWINPUTDEVICE rid = {0};
@@ -1221,6 +1237,8 @@ void PAL_CALL palShutdownVideo() {
     }
 
     FreeLibrary(s_Video.gdi);
+    WindowData* data = GetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA);
+    palFree(s_Video.allocator, data);
     DestroyWindow(s_Video.hiddenWindow);
     UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
     s_Video.initialized = false;
@@ -1748,8 +1766,13 @@ PalResult PAL_CALL palCreateWindow(
         );
     }
 
+    WindowData* data = palAllocate(s_Video.allocator, sizeof(WindowData), 0);
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     // set a flag to set if the window has been created
-    SetPropW(handle, PAL_VIDEO_PROP, &s_Event);
+    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)data);
 
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
@@ -2186,23 +2209,6 @@ const bool* PAL_CALL palGetMouseState() {
     return s_Mouse.state;
 }
 
-void PAL_CALL palGetMousePosition(
-    Int32* x, 
-    Int32* y) {
-    
-    if (!s_Video.initialized) {
-        return;
-    }
-
-    if (x) {
-        *x = s_Mouse.x;
-    }
-
-    if (y) {
-        *y = s_Mouse.y;
-    }
-}
-
 void PAL_CALL palGetMouseDelta(
     Int32* dx, 
     Int32* dy) {
@@ -2609,10 +2615,10 @@ PalResult PAL_CALL palCreateWindowIcon(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palDestroyWindowIcon(
+void PAL_CALL palDestroyWindowIcon(
     PalWindowIcon* icon) {
     
-    if (icon) {
+    if (s_Video.initialized && icon) {
         DestroyIcon((HICON)icon);
     }
 }
@@ -2636,4 +2642,178 @@ PalResult PAL_CALL palSetWindowIcon(
     SendMessageW((HWND)window, WM_SETICON, ICON_BIG, (LPARAM)icon);
     SendMessageW((HWND)window, WM_SETICON, ICON_SMALL, (LPARAM)icon);
     return PAL_RESULT_SUCCESS;
+}
+
+// ==================================================
+// Icon
+// ==================================================
+
+PalResult PAL_CALL palCreateWindowCursor(
+    const PalWindowCursorCreateInfo* info,
+    PalWindowCursor** outCursor) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!info || !outCursor) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // describe the icon pixels
+    BITMAPV5HEADER bitInfo = {};
+    bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
+    bitInfo.bV5Width = info->width;
+    bitInfo.bV5Height = -(Int32)info->height; // this is topdown by default
+
+    // default parameters
+    bitInfo.bV5Planes = 1;
+    bitInfo.bV5BitCount = 32; // PAL supports 32 bits
+    bitInfo.bV5Compression = BI_BITFIELDS;
+    bitInfo.bV5RedMask =  0x00FF0000;
+    bitInfo.bV5GreenMask = 0x0000FF00;
+    bitInfo.bV5BlueMask = 0x000000FF;
+    bitInfo.bV5AlphaMask = 0xFF000000;
+
+    HDC hdc = GetDC(nullptr); 
+    void* dibPixels = nullptr;
+
+    // create dib section
+    HBITMAP bitmap = s_Video.createDIBSection(
+        hdc,
+        (BITMAPINFO*)&bitInfo,
+        DIB_RGB_COLORS,
+        &dibPixels,
+        nullptr,
+        0
+    );
+
+    if (!bitmap) {
+        ReleaseDC(nullptr, hdc);
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    ReleaseDC(nullptr, hdc);
+
+    // copy pixels and create mask
+    memcpy(dibPixels, info->pixels, info->width * info->height * 4);
+    HBITMAP mask = s_Video.createBitmap(
+        info->width, 
+        info->height, 
+        1, 
+        1, 
+        NULL
+    );
+
+    ICONINFO iconInfo = {0};
+    iconInfo.fIcon = false;
+    iconInfo.hbmColor = bitmap;
+    iconInfo.hbmMask = mask;
+    iconInfo.xHotspot = info->xHotspot;
+    iconInfo.xHotspot = info->yHotspot;
+
+    // create the cursor with the iconinfo
+    HCURSOR cursor = CreateIconIndirect(&iconInfo);
+    if (!cursor) {
+        s_Video.deleteObject(mask);
+        s_Video.deleteObject(bitmap);
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    s_Video.deleteObject(mask);
+    s_Video.deleteObject(bitmap);
+    *outCursor = (PalWindowCursor*)cursor;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyWindowCursor(
+    PalWindowCursor* cursor) {
+
+    if (s_Video.initialized && cursor) {
+        DestroyCursor((HCURSOR)cursor);
+    }
+}
+
+void PAL_CALL palShowCursor(
+    bool show) {
+    
+    if (s_Video.initialized) {
+        ShowCursor(show);
+    }
+}
+
+void PAL_CALL palClipCursor(
+    PalWindow* window,
+    bool clip) {
+    
+    if (!s_Video.initialized || !window) {
+        return;
+    }
+
+    if (clip) {
+        RECT rect;
+        if (GetClientRect((HWND)window, &rect)) {
+            return;
+        }
+
+        POINT tmp = { rect.left, rect.top };
+        POINT tmp2 = { rect.right, rect.bottom };
+
+        ClientToScreen((HWND)window, &tmp);
+        ClientToScreen((HWND)window, &tmp2);
+
+        RECT clipRect = { tmp.x, tmp.y, tmp2.x, tmp2.y };
+        ClipCursor(&clipRect);
+
+    } else {
+        ClipCursor(nullptr);
+    }
+}
+
+void PAL_CALL palGetCursorPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y) {
+    
+    if (!s_Video.initialized || !window) {
+        return;
+    }
+
+    POINT pos;
+    if (GetCursorPos(&pos)) {
+        if (ScreenToClient((HWND)window, &pos)) {
+            if (x) {
+                *x = pos.x;
+            }
+
+            if (y) {
+                *y = pos.y;
+            }
+        }
+    }
+}
+
+void PAL_CALL palSetCursorPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y) {
+    
+    if (!s_Video.initialized || !window) {
+        return;
+    }
+
+    POINT pos = { x, y };
+    ClientToScreen((HWND)window, &pos);
+    SetCursorPos(pos.x, pos.y);
+}
+
+void PAL_CALL palSetCursor(
+    PalWindow* window,
+    PalWindowCursor* cursor) {
+    
+    if (window || cursor) {
+        WindowData* data = GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+        if (data) {
+            data->cursor = cursor;
+        }
+    }
 }
