@@ -15,6 +15,7 @@ void runTests();
 // core tests
 bool loggerTest();
 bool timeTest();
+bool userEventTest();
 
 // system tests
 bool systemTest();
