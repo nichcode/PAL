@@ -106,7 +106,7 @@ static inline void onDisplayList(const PalEvent* event) {
     palLog(nullptr, "%s: Display (monitor) List has been changed", dispatchString);
 }
 
-void PAL_CALL onEvent(void* userData, const PalEvent* event) {
+static void PAL_CALL onEvent(void* userData, const PalEvent* event) {
 
     if (event->type == PAL_EVENT_WINDOW_SIZE) {
         onWindowResize(event);
@@ -246,7 +246,7 @@ bool windowTest() {
 #endif // DISPATCH_MODE_POLL
 
     // set dispatch mode for all events.
-    for (Uint32 e = 0; e < PAL_EVENT_MAX; e++) {
+    for (Uint32 e = 0; e < PAL_EVENT_KEYDOWN; e++) {
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 

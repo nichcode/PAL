@@ -128,4 +128,58 @@ PAL_API void PAL_CALL palLog(
 PAL_API Uint64 PAL_CALL palGetPerformanceCounter();
 PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
 
+static inline Int64 PAL_CALL palPackUint32(
+    Uint32 low,
+    Uint32 high) {
+
+    return (Int64) (((Uint64)high << 32) | (Uint64)low);
+}
+
+static inline Int64 PAL_CALL palPackInt32(
+    Int32 low,
+    Int32 high) {
+
+    return ((Int64) (Uint32)high << 32) | (Uint32)low;
+}
+
+static inline Int64 PAL_CALL palPackPointer(
+    void* ptr) {
+    
+    return (Int64)(UintPtr)ptr;
+}
+
+static inline void PAL_CALL palUnpackUint32(
+    Int64 data,
+    Uint32* outLow,
+    Uint32* outHigh) {
+
+    if (outLow) {
+        *outLow = (Uint32)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (Uint32)((Uint64)data >> 32);
+    }
+}
+
+static inline void PAL_CALL palUnpackInt32(
+    Int64 data,
+    Int32* outLow,
+    Int32* outHigh) {
+
+    if (outLow) {
+        *outLow = (Int32)(data & 0xFFFFFFFF);
+    }
+
+    if (outHigh) {
+        *outHigh = (Int32)((Uint64)data >> 32);
+    }
+}
+
+static inline void* PAL_CALL palUnpackPointer(
+    Int64 data) {
+    
+    return (void*)(UintPtr)data;
+}
+
 #endif // _PAL_CORE_H

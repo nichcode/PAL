@@ -30,6 +30,15 @@ typedef enum {
     PAL_EVENT_WINDOW_MODAL_END,
     PAL_EVENT_DISPLAY_DPI_CHANGED,
     PAL_EVENT_DISPLAYS_CHANGED,
+    PAL_EVENT_KEYDOWN,
+    PAL_EVENT_KEYREPEAT,
+    PAL_EVENT_KEYUP,
+    PAL_EVENT_MOUSE_BUTTONDOWN,
+    PAL_EVENT_MOUSE_BUTTONUP,
+    PAL_EVENT_MOUSE_MOVE,
+    PAL_EVENT_MOUSE_DELTA,
+    PAL_EVENT_MOUSE_WHEEL,
+    PAL_EVENT_USER,
     PAL_EVENT_MAX
 } PalEventType;
 
@@ -44,6 +53,7 @@ typedef struct PalEvent {
     PalEventType type;
     Int64 data;
     Int64 data2;
+    Int64 userId;
 } PalEvent;
 
 typedef struct {
@@ -82,59 +92,5 @@ PAL_API void PAL_CALL palPushEvent(
 PAL_API bool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
     PalEvent* outEvent);
-
-static inline Int64 PAL_CALL palPackUint32(
-    Uint32 low,
-    Uint32 high) {
-
-    return (Int64) (((Uint64)high << 32) | (Uint64)low);
-}
-
-static inline Int64 PAL_CALL palPackInt32(
-    Int32 low,
-    Int32 high) {
-
-    return ((Int64) (Uint32)high << 32) | (Uint32)low;
-}
-
-static inline Int64 PAL_CALL palPackPointer(
-    void* ptr) {
-    
-    return (Int64)(UintPtr)ptr;
-}
-
-static inline void PAL_CALL palUnpackUint32(
-    Int64 data,
-    Uint32* outLow,
-    Uint32* outHigh) {
-
-    if (outLow) {
-        *outLow = (Uint32)(data & 0xFFFFFFFF);
-    }
-
-    if (outHigh) {
-        *outHigh = (Uint32)((Uint64)data >> 32);
-    }
-}
-
-static inline void PAL_CALL palUnpackInt32(
-    Int64 data,
-    Int32* outLow,
-    Int32* outHigh) {
-
-    if (outLow) {
-        *outLow = (Int32)(data & 0xFFFFFFFF);
-    }
-
-    if (outHigh) {
-        *outHigh = (Int32)((Uint64)data >> 32);
-    }
-}
-
-static inline void* PAL_CALL palUnpackPointer(
-    Int64 data) {
-    
-    return (void*)(UintPtr)data;
-}
 
 #endif // _PAL_EVENT_H
