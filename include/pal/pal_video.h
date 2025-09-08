@@ -562,7 +562,7 @@ PAL_API void PAL_CALL palSetCursorPos(
     Int32 x,
     Int32 y);
 
-PAL_API void PAL_CALL palSetCursor(
+PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalWindowCursor* cursor);
 

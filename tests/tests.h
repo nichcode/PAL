@@ -31,6 +31,7 @@ bool displayTest();
 bool displayModeTest();
 bool windowTest();
 bool windowIconTest();
+bool windowCursorTest();
 bool inputWindowTest();
 
 #endif // _TESTS_H

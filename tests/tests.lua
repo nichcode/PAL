@@ -35,6 +35,7 @@ project "tests"
             "display_mode_test.c",
             "window_test.c",
             "window_icon_test.c",
+            "window_cursor_test.c",
             "input_window_test.c"
         }
     end

@@ -26,7 +26,6 @@
 // ==================================================
 
 #define PAL_VIDEO_CLASS L"PALVideoClass"
-#define PAL_VIDEO_PROP L"PALVideo"
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -133,8 +132,8 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam) {
 
     // check if the window has been created
-    WindowData* windowData = (WindowData*)GetPropW(hwnd, PAL_VIDEO_PROP);
-    if (!windowData) {
+    WindowData* data = (WindowData*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    if (!data) {
         // window has not been created yet
         return DefWindowProcW(hwnd, msg, wParam, lParam);
     }
@@ -685,9 +684,9 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_SETCURSOR: {
-            if (LOWORD(wParam) == HTCLIENT) {
-                WindowData* data = GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-                SetCursor(data->cursor);
+            if (LOWORD(lParam) == HTCLIENT) {
+                WindowData* data = (WindowData*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+                SetCursor((HCURSOR)data->cursor);
                 return TRUE;
             }
 
@@ -1237,7 +1236,7 @@ void PAL_CALL palShutdownVideo() {
     }
 
     FreeLibrary(s_Video.gdi);
-    WindowData* data = GetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA);
+    WindowData* data = (WindowData*)GetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA);
     palFree(s_Video.allocator, data);
     DestroyWindow(s_Video.hiddenWindow);
     UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
@@ -2806,12 +2805,12 @@ void PAL_CALL palSetCursorPos(
     SetCursorPos(pos.x, pos.y);
 }
 
-void PAL_CALL palSetCursor(
+void PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalWindowCursor* cursor) {
     
     if (window || cursor) {
-        WindowData* data = GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+        WindowData* data = (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
         if (data) {
             data->cursor = cursor;
         }

@@ -28,7 +28,8 @@ int main(int argc, char**) {
     // registerTest("Display Mode Test", displayModeTest);
     // registerTest("Window Test", windowTest);
     // registerTest("Window Icon Test", windowIconTest);
-    registerTest("Input Window Test", inputWindowTest);
+    registerTest("Window Cursor Test", windowCursorTest);
+    // registerTest("Input Window Test", inputWindowTest);
 #endif // PAL_HAS_VIDEO
 
     runTests();
