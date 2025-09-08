@@ -51,7 +51,7 @@ static inline void cpuid(
 static inline bool getVersionWin32(
     PalVersion* version) {
 
-    OSVERSIONINFOEXW ver = { 0 };
+    OSVERSIONINFOEXW ver = {0};
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 
     HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
@@ -159,7 +159,7 @@ PalResult PAL_API palGetPlatformInfo(
     }
 
     // get ram (size) in MB
-    MEMORYSTATUSEX status;
+    MEMORYSTATUSEX status = {0};
     status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
         info->totalRAM = status.ullTotalPhys / (1024 * 1024); // to MB

@@ -28,11 +28,8 @@ int main(int argc, char**) {
     // registerTest("Display Mode Test", displayModeTest);
     // registerTest("Window Test", windowTest);
     // registerTest("Window Icon Test", windowIconTest);
+    registerTest("Input Window Test", inputWindowTest);
 #endif // PAL_HAS_VIDEO
-
-#if PAL_HAS_INPUT && PAL_HAS_VIDEO
-    registerTest("Input Test", inputTest);
-#endif // PAL_HAS_INPUT && PAL_HAS_VIDEO
 
     runTests();
     return 0;

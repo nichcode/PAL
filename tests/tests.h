@@ -31,8 +31,6 @@ bool displayTest();
 bool displayModeTest();
 bool windowTest();
 bool windowIconTest();
-
-// input test. // since we want to be self contained, we will use video system
-bool inputTest();
+bool inputWindowTest();
 
 #endif // _TESTS_H

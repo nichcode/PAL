@@ -34,13 +34,8 @@ project "tests"
             "display_test.c",
             "display_mode_test.c",
             "window_test.c",
-            "window_icon_test.c"
-        }
-    end
-
-    if (PAL_BUILD_INPUT and PAL_BUILD_VIDEO) then
-        files { 
-            "input_test.c"
+            "window_icon_test.c",
+            "input_window_test.c"
         }
     end
 
