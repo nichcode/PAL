@@ -363,6 +363,11 @@ typedef struct {
 } PalCursorCreateInfo;
 
 typedef struct {
+    void* nativeDisplay;
+    void* nativeWindow;
+} PalWindowHandleInfo;
+
+typedef struct {
     bool show;
     bool showMaximized;
     bool showMinimized;
@@ -498,6 +503,9 @@ PAL_API bool PAL_CALL palIsWindowVisible(
 PAL_API PalWindow* PAL_CALL palGetFocusWindow();
 
 PAL_API PalWindow* PAL_CALL palGetForegroundWindow();
+
+PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(
+    PalWindow* window);
 
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,

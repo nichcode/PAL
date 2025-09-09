@@ -38,4 +38,7 @@ bool inputWindowTest();
 // opengl test
 bool openglTest();
 
+// opengl and video test
+bool openglFBConfigTest();
+
 #endif // _TESTS_H

@@ -509,3 +509,234 @@ const PalGLInfo* PAL_CALL palGetGLInfo() {
     }
     return &s_Wgl.info;
 }
+
+PalResult PAL_CALL palEnumerateGLFBConfigs(
+    PalGLWindow* glWindow,
+    Int32 *count,
+    PalGLFBConfig *configs) {
+    
+    if (!count || !glWindow) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (count == 0 && configs) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    HDC windowDC = GetDC((HWND)glWindow->window);
+    if (!windowDC) {
+        return PAL_RESULT_INVALID_GL_WINDOW;
+    }
+
+    Int32 configCount = 0;
+    Int32 maxConfigCount = 0;
+    Int32 nativeCount = 0;
+    const Int32 configAttrib = WGL_NUMBER_PIXEL_FORMATS_ARB;
+
+    if (configs) {
+        maxConfigCount = *count;
+    }
+
+    // check if we support modern extention
+    if (s_Wgl.wglGetPixelFormatAttribivARB) {
+        // get framebuffer config with extensions
+        if (!s_Wgl.wglGetPixelFormatAttribivARB(
+            windowDC,
+            0,
+            0, 
+            1,
+            &configAttrib,
+            &nativeCount)) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // attributes we care about
+        Int32 attributes[] = {
+            WGL_SUPPORT_OPENGL_ARB,
+            WGL_DRAW_TO_WINDOW_ARB,
+            WGL_PIXEL_TYPE_ARB,
+            WGL_ACCELERATION_ARB,
+            WGL_RED_BITS_ARB,
+            WGL_GREEN_BITS_ARB,
+            WGL_BLUE_BITS_ARB,
+            WGL_ALPHA_BITS_ARB,
+            WGL_DEPTH_BITS_ARB,
+            WGL_STENCIL_BITS_ARB,
+            WGL_SAMPLES_ARB,
+            WGL_STEREO_ARB,
+            WGL_DOUBLE_BUFFER_ARB,
+            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB
+        };
+
+        Int32 values[sizeof(attributes) / sizeof(attributes[0])];
+        for (Int32 i = 1; i <= nativeCount; i++) {
+            if (!s_Wgl.wglGetPixelFormatAttribivARB(
+                windowDC,
+                i,
+                0, 
+                sizeof(attributes) / sizeof(attributes[0]),
+                attributes,
+                values)) {
+                continue;
+            }
+
+            // we index the values list in the same way as the arributes list
+            // so index 0 is WGL_SUPPORT_OPENGL_ARB and 1 is WGL_DRAW_TO_WINDOW_ARB
+            if (!values[0] || !values[1]) {
+                //WGL_SUPPORT_OPENGL_ARB and WGL_DRAW_TO_WINDOW_ARB support
+                continue;
+            }
+
+            if (values[2] != WGL_TYPE_RGBA_ARB) {
+                //WGL_PIXEL_TYPE_ARB support
+                continue;
+            }
+
+            if (values[3] == WGL_NO_ACCELERATION_ARB) {
+                continue;
+            }
+
+            if (configs && configCount < maxConfigCount) {
+                PalGLFBConfig* config = &configs[configCount];
+                config->index = i;
+
+                config->redBits = values[4]; // WGL_RED_BITS_ARB
+                config->greenBits = values[5]; // WGL_GREEN_BITS_ARB
+                config->blueBits = values[6]; // WGL_BLUE_BITS_ARB
+                config->alphaBits = values[7]; // WGL_ALPHA_BITS_ARB
+                config->depthBits = values[8]; // WGL_DEPTH_BITS_ARB
+                config->stencilBits = values[9]; // WGL_STENCIL_BITS_ARB
+                config->samples = values[10]; // WGL_SAMPLES_ARB
+
+                if (config->samples == 0) {
+                    config->samples = 1;
+                } 
+
+                //WGL_STEREO_ARB
+                config->stereo = values[11];
+
+                //WGL_DOUBLE_BUFFER_ARB
+                config->doubleBuffer = values[12];
+
+                //WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB
+                config->sRGB = values[13];
+            }
+            configCount++;
+        }
+
+    } else {
+        // get pixel format with legacy pixel descriptor
+        nativeCount = s_Gdi.describePixelFormat(
+            windowDC,
+            1,
+            0, 
+            nullptr
+        );
+
+        for (Int32 i = 1; i <= nativeCount; i++) {
+            PIXELFORMATDESCRIPTOR pfd;
+            if (!s_Gdi.describePixelFormat(
+                windowDC,
+                i,
+                sizeof(PIXELFORMATDESCRIPTOR),
+                &pfd)) {
+                continue;
+            }
+
+            // filter for opengl pixel formats
+            if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) ||
+                !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
+                continue;
+            }
+
+            if (pfd.iPixelType != PFD_TYPE_RGBA) {
+                continue;
+            }
+
+            if (!(pfd.dwFlags & PFD_GENERIC_ACCELERATED) &&
+                (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
+                continue;
+            }
+
+            if (configs && configCount < maxConfigCount) {
+                PalGLFBConfig* config = &configs[configCount];
+                config->index = i;
+
+                config->redBits = pfd.cRedBits;
+                config->greenBits = pfd.cGreenBits;
+                config->blueBits = pfd.cBlueBits;
+                config->alphaBits = pfd.cAlphaBits;
+                config->depthBits = pfd.cDepthBits;
+                config->stencilBits = pfd.cStencilBits;
+                config->samples = 1;
+
+                config->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
+                config->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
+                config->sRGB = false;
+            }
+            configCount++;
+        }
+    }
+
+    ReleaseDC((HWND)glWindow->window, windowDC);
+    if (!configs) {
+        *count = configCount;
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
+    PalGLFBConfig *configs,
+    Int32 count,
+    const PalGLFBConfig* desired) {
+    
+    if (!configs || !desired) {
+        return nullptr;
+    }
+
+    if (count == 0) {
+        return nullptr;
+    }
+
+    Int32 score = 0;
+    Int32 bestScore = 0x7FFFFFFF;
+    PalGLFBConfig* best = nullptr;
+    for (Int32 i = 0; i < count; i++) {
+        PalGLFBConfig* tmp = &configs[i];
+        
+        // filter out hard constraints
+        if (desired->doubleBuffer && !tmp->doubleBuffer) {
+            continue;
+        }
+
+        if (desired->stereo && !tmp->stereo) {
+            continue;
+        }
+
+        score = 0;
+
+        // score color bits 
+        score += abs(tmp->redBits - desired->redBits);
+        score += abs(tmp->greenBits - desired->greenBits);
+        score += abs(tmp->blueBits - desired->blueBits);
+        score += abs(tmp->alphaBits - desired->alphaBits);
+        score += abs(tmp->depthBits - desired->depthBits);
+        score += abs(tmp->stencilBits - desired->stencilBits);
+
+        // score soft constraints
+        if (desired->samples != tmp->samples) {
+            score += 1000;
+        }
+
+        if (desired->sRGB != tmp->sRGB) {
+            score += 500;
+        }
+
+        if (score < bestScore) {
+            bestScore = score;
+            best = &configs[i];
+        }
+    }
+
+    return best;
+}

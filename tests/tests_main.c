@@ -36,6 +36,11 @@ int main(int argc, char**) {
 #if PAL_HAS_OPENGL
     // registerTest("Opengl Test", openglTest);
 #endif // PAL_HAS_OPENGL
+    
+    // This test can run without video system so long as your have a valid window
+#if PAL_HAS_OPENGL && PAL_HAS_VIDEO
+    registerTest("Opengl FBConfig Test", openglFBConfigTest);
+#endif // PAL_HAS_OPENGL
 
     runTests();
     return 0;

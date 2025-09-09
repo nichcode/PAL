@@ -243,6 +243,25 @@ const char* PAL_CALL palFormatResult(
 
         case PAL_RESULT_INVALID_MOUSE_BUTTON:
         return "The provided mouse button was invalid";
+
+        // opengl
+        case PAL_RESULT_GL_NOT_INITIALIZED:
+        return "Opengl system not initialized";
+
+        case PAL_RESULT_INVALID_GL_WINDOW:
+        return "The provided opengl window was invalid";
+
+        case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
+        return "The opengl extension is not supported";
+
+        case PAL_RESULT_INVALID_GL_FBCONFIG:
+        return "The provided opengl framebuffer config was invalid";
+
+        case PAL_RESULT_INVALID_GL_VERSION:
+        return "The opengl version is not supported";
+
+        case PAL_RESULT_INVALID_GL_PROFILE:
+        return "The opengl profile is not supported";
     }
     return "Unknown";
 }

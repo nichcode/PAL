@@ -26,11 +26,40 @@ typedef struct {
     char version[64];
 } PalGLInfo;
 
+typedef struct {
+    bool doubleBuffer;
+    bool stereo;
+    bool sRGB;
+    Uint16 index;
+    Uint16 redBits;
+    Uint16 greenBits;
+    Uint16 blueBits;
+    Uint16 alphaBits;
+    Uint16 depthBits;
+    Uint16 stencilBits;
+    Uint16 samples;
+} PalGLFBConfig;
+
+typedef struct {
+    void* display;
+    void* window;
+} PalGLWindow;
+
 PAL_API PalResult PAL_CALL palInitGL(
     const PalAllocator* allocator);
 
 PAL_API void PAL_CALL palShutdownGL();
 
 PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
+
+PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
+    PalGLWindow* glWindow,
+    Int32 *count,
+    PalGLFBConfig *configs);
+
+PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
+    PalGLFBConfig *configs,
+    Int32 count,
+    const PalGLFBConfig* desired);
 
 #endif // _PAL_OPENGL_H

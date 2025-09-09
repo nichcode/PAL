@@ -2252,6 +2252,17 @@ PalWindow* PAL_CALL palGetForegroundWindow() {
     return (PalWindow*)GetForegroundWindow();
 }
 
+PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(
+    PalWindow* window) {
+    
+    PalWindowHandleInfo handle = {0};
+    if (s_Video.initialized && window) {
+        handle.nativeDisplay = nullptr;
+        handle.nativeWindow = (void*)window;
+    }
+    return handle;
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity) {
