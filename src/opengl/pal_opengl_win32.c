@@ -1016,15 +1016,30 @@ PalResult PAL_CALL palSwapBuffers(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palSetGLContextVsync(
+void* PAL_CALL palGLGetProcAddress(
+    const char* name) {
+
+    if (!s_Wgl.initialized) {
+        return nullptr;
+    }
+
+    void* proc = s_Wgl.wglGetProcAddress(name);
+    if (!proc) {
+        proc = (void*)GetProcAddress(s_Wgl.opengl, name);
+    }
+    return proc;
+}
+
+void PAL_CALL palSetSwapInterval(
+    PalGLWindow* glWindow,
     PalGLContext* context,
-    bool enable) {
+    Int32 interval) {
     
-    if (!context) {
+    if (!context || !glWindow) {
         return;
     }
 
     if (s_Wgl.wglSwapIntervalEXT) {
-        s_Wgl.wglSwapIntervalEXT(enable);
+        s_Wgl.wglSwapIntervalEXT(interval);
     }
 }

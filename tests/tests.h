@@ -40,5 +40,6 @@ bool openglTest();
 
 // opengl and video test
 bool openglFBConfigTest();
+bool openglContextTest();
 
 #endif // _TESTS_H

@@ -4,6 +4,12 @@
 
 #include "pal_core.h"
 
+#ifdef _WIN32
+#define PAL_GL_APIENTRY __stdcall
+#else 
+#define PAL_GL_APIENTRY
+#endif // _WIN32
+
 typedef struct PalGLContext PalGLContext;
 
 typedef enum {
@@ -76,7 +82,6 @@ typedef struct {
     PalGLContextReset reset;
     PalGLRelease release;
     PalGLContext* shareContext;
-    const PalAllocator* allocator;
     const PalGLFBConfig* fbConfig;
     const PalGLWindow* window;
 } PalGLContextCreateInfo;
@@ -109,12 +114,16 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
     PalGLWindow* glWindow,
     PalGLContext* context);
 
+PAL_API void* PAL_CALL palGLGetProcAddress(
+    const char* name);
+
 PAL_API PalResult PAL_CALL palSwapBuffers(
     PalGLWindow* glWindow,
     PalGLContext* context);
 
-PAL_API void PAL_CALL palSetGLContextVsync(
+PAL_API void PAL_CALL palSetSwapInterval(
+    PalGLWindow* glWindow,
     PalGLContext* context,
-    bool enable);
+    Int32 interval);
 
 #endif // _PAL_OPENGL_H
