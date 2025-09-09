@@ -2,7 +2,7 @@
 #ifndef _PAL_VIDEO_H
 #define _PAL_VIDEO_H
 
-#include "pal/pal_event.h"
+#include "pal_event.h"
 
 typedef struct PalDisplay PalDisplay;
 typedef struct PalWindow PalWindow;

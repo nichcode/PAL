@@ -16,3 +16,6 @@ PAL_BUILD_VIDEO = true
 
 -- build input module
 PAL_BUILD_INPUT = true
+
+-- build opengl module
+PAL_BUILD_OPENGL = true

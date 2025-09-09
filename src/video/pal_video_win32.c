@@ -1781,6 +1781,9 @@ void PAL_CALL palDestroyWindow(
     PalWindow *window) {
 
     if (window) {
+        //every window has a window data
+        WindowData* data = (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+        palFree(s_Video.allocator, data);
         DestroyWindow((HWND)window);
     }
 }
