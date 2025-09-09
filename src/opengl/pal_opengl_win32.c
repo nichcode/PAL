@@ -481,6 +481,7 @@ PalResult PAL_CALL palInitGL(
         // pixel format
     }
 
+    s_Wgl.initialized = true;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -498,6 +499,7 @@ void PAL_CALL palShutdownGL() {
 
     FreeLibrary(s_Wgl.opengl);
     FreeLibrary(s_Gdi.handle);
+    s_Wgl.initialized = false;
 }
 
 const PalGLInfo* PAL_CALL palGetGLInfo() {

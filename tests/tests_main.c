@@ -10,7 +10,7 @@ int main(int argc, char**) {
     // core
     // registerTest("Logger Test", loggerTest);
     // registerTest("Time Test", timeTest);
-    registerTest("User Event Test", userEventTest);
+    // registerTest("User Event Test", userEventTest);
 
 #if PAL_HAS_SYSTEM
     // registerTest("System Test", systemTest);
@@ -32,6 +32,10 @@ int main(int argc, char**) {
     // registerTest("Window Cursor Test", windowCursorTest);
     // registerTest("Input Window Test", inputWindowTest);
 #endif // PAL_HAS_VIDEO
+
+#if PAL_HAS_OPENGL
+    registerTest("Opengl Test", openglTest);
+#endif // PAL_HAS_OPENGL
 
     runTests();
     return 0;

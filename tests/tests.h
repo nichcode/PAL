@@ -35,4 +35,7 @@ bool windowIconTest();
 bool windowCursorTest();
 bool inputWindowTest();
 
+// opengl test
+bool openglTest();
+
 #endif // _TESTS_H
