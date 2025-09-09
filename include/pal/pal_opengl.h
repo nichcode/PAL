@@ -4,6 +4,8 @@
 
 #include "pal_core.h"
 
+typedef struct PalGLContext PalGLContext;
+
 typedef enum {
     PAL_GL_EXTENSION_CREATE_CONTEXT = PAL_BIT(0),
     PAL_GL_EXTENSION_CONTEXT_PROFILE = PAL_BIT(1),
@@ -16,6 +18,24 @@ typedef enum {
     PAL_GL_EXTENSION_FLUSH_CONTROL = PAL_BIT(8),
     PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(9)
 } PalGLExtension;
+
+typedef enum {
+    PAL_GL_PROFILE_NONE,
+    PAL_GL_PROFILE_CORE,
+    PAL_GL_PROFILE_COMPATIBILITY,
+    PAL_GL_PROFILE_ES
+} PalGLProfile;
+
+typedef enum {
+    PAL_GL_CONTEXT_RESET_NONE,
+    PAL_GL_CONTEXT_RESET_NO_NOTIFICATION,
+    PAL_GL_CONTEXT_RESET_LOSE_CONTEXT
+} PalGLContextReset;
+
+typedef enum {
+    PAL_GL_RELEASE_BEHAVIOR_NONE,
+    PAL_GL_CONTEXT_RESET_FLUSH
+} PalGLRelease;
 
 typedef struct {
     PalGLExtension extensions;
@@ -45,6 +65,22 @@ typedef struct {
     void* window;
 } PalGLWindow;
 
+typedef struct {
+    bool forward;
+    bool robustness;
+    bool noError;
+    bool debug;
+    Uint16 major;
+    Uint16 minor;
+    PalGLProfile profile;
+    PalGLContextReset reset;
+    PalGLRelease release;
+    PalGLContext* shareContext;
+    const PalAllocator* allocator;
+    const PalGLFBConfig* fbConfig;
+    const PalGLWindow* window;
+} PalGLContextCreateInfo;
+
 PAL_API PalResult PAL_CALL palInitGL(
     const PalAllocator* allocator);
 
@@ -61,5 +97,24 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig *configs,
     Int32 count,
     const PalGLFBConfig* desired);
+
+PAL_API PalResult PAL_CALL palCreateGLContext(
+    const PalGLContextCreateInfo* info,
+    PalGLContext** outContext);
+
+PAL_API void PAL_CALL palDestroyGLContext(
+    PalGLContext* context);
+
+PAL_API PalResult PAL_CALL palMakeContextCurrent(
+    PalGLWindow* glWindow,
+    PalGLContext* context);
+
+PAL_API PalResult PAL_CALL palSwapBuffers(
+    PalGLWindow* glWindow,
+    PalGLContext* context);
+
+PAL_API void PAL_CALL palSetGLContextVsync(
+    PalGLContext* context,
+    bool enable);
 
 #endif // _PAL_OPENGL_H

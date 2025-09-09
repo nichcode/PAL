@@ -262,6 +262,9 @@ const char* PAL_CALL palFormatResult(
 
         case PAL_RESULT_INVALID_GL_PROFILE:
         return "The opengl profile is not supported";
+
+        case PAL_RESULT_INVALID_GL_CONTEXT:
+        return "The provided opengl context was invalid";
     }
     return "Unknown";
 }

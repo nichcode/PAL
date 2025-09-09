@@ -515,6 +515,10 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     Int32 *count,
     PalGLFBConfig *configs) {
     
+    if (!s_Wgl.initialized) {
+        return PAL_RESULT_GL_NOT_INITIALIZED;
+    }
+    
     if (!count || !glWindow) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -690,6 +694,10 @@ const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     Int32 count,
     const PalGLFBConfig* desired) {
     
+    if (!s_Wgl.initialized) {
+        return nullptr;
+    }
+    
     if (!configs || !desired) {
         return nullptr;
     }
@@ -739,4 +747,284 @@ const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     }
 
     return best;
+}
+
+// ==================================================
+// Context
+// ==================================================
+
+PalResult PAL_CALL palCreateGLContext(
+    const PalGLContextCreateInfo* info,
+    PalGLContext** outContext) {
+    
+    if (!s_Wgl.initialized) {
+        return PAL_RESULT_GL_NOT_INITIALIZED;
+    }
+
+    if (!info || !outContext || (info && (!info->window || !info->fbConfig))) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // check support for requested features
+    if (info->profile != PAL_GL_PROFILE_NONE) {
+        if (!(s_Wgl.info.extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->forward) {
+        if (!(s_Wgl.info.extensions & PAL_GL_EXTENSION_CREATE_CONTEXT)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->robustness) {
+        if (!(s_Wgl.info.extensions & PAL_GL_EXTENSION_ROBUSTNESS)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->noError) {
+        if (!(s_Wgl.info.extensions & PAL_GL_EXTENSION_NO_ERROR)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
+        if (!(s_Wgl.info.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL)) {
+            return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+        }
+    }
+
+    // check version
+    bool valid = info->major < s_Wgl.info.major || 
+            (info->major == s_Wgl.info.major && info->minor <= s_Wgl.info.minor);
+            
+    if (!valid) {
+        return PAL_RESULT_INVALID_GL_VERSION;
+    }
+
+    HDC hdc = GetDC((HWND)info->window->window);
+    if (!hdc) {
+        return PAL_RESULT_INVALID_GL_WINDOW;
+    }
+
+    Int32 pixelFormat = info->fbConfig->index;
+    // since we have the pixel format already
+    // we ask the OS (platform) to fill the pfd struct for us from that index
+    PIXELFORMATDESCRIPTOR pfd;
+    if (!s_Gdi.describePixelFormat(
+        hdc,
+        pixelFormat,
+        sizeof(PIXELFORMATDESCRIPTOR),
+        &pfd)) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    // we then set the pixel format for the hdc 
+    if (!s_Gdi.setPixelFormat(hdc, pixelFormat, &pfd)) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    HGLRC context = nullptr;
+    if (s_Wgl.wglCreateContextAttribsARB) {
+        // create context with modern wgl functions
+        Int32 attribs[40];
+        Int32 index = 0;
+        Int32 profile = 0;
+        Int32 flags = 0;
+
+        // set context attributes
+        // the first element is the key and the second is the value
+        // set version
+        attribs[index++] = WGL_CONTEXT_MAJOR_VERSION_ARB; // key
+        attribs[index++] = info->major; // value
+
+        attribs[index++] = WGL_CONTEXT_MINOR_VERSION_ARB;
+        attribs[index++] = info->minor;
+
+        // set profile mask
+        if (info->profile != PAL_GL_PROFILE_NONE) {
+            attribs[index++] = WGL_CONTEXT_PROFILE_MASK_ARB;
+            
+            if (info->profile == PAL_GL_PROFILE_COMPATIBILITY) {
+                profile = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+            } else if (info->profile == PAL_GL_PROFILE_CORE) {
+                profile = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+            } else {
+                profile = WGL_CONTEXT_ES2_PROFILE_BIT_EXT;
+            }
+            attribs[index++] = info->profile;
+        }
+
+        // set forward flag
+        if (info->forward) {
+            flags |= WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+        }
+
+        // set debug flag
+        if (info->debug) {
+            flags |= WGL_CONTEXT_DEBUG_BIT_ARB;
+        }
+
+        // set robustness
+        if (info->robustness && info->reset != PAL_GL_CONTEXT_RESET_NONE) {
+            flags |= WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB;
+            attribs[index++] = WGL_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB;
+            
+            if (info->reset == PAL_GL_CONTEXT_RESET_LOSE_CONTEXT) {
+                attribs[index++] = WGL_LOSE_CONTEXT_ON_RESET_ARB;
+
+            } else if (info->reset == PAL_GL_CONTEXT_RESET_NO_NOTIFICATION) {
+                attribs[index++] = WGL_NO_RESET_NOTIFICATION_ARB;
+            }
+        }
+
+        // set no error
+        if (info->noError) {
+            attribs[index++] = WGL_CONTEXT_OPENGL_NO_ERROR_ARB;
+            attribs[index++] = true;
+        }
+
+        // release 
+        if (s_Wgl.info.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL) {
+            if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
+                attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_ARB;
+
+                if (info->release == PAL_GL_RELEASE_BEHAVIOR_NONE) {
+                    attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB;
+
+                } else if (info->release == PAL_GL_CONTEXT_RESET_FLUSH) {
+                    attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB;
+                }
+            }
+        }
+
+        if (flags) {
+            attribs[index++] = WGL_CONTEXT_FLAGS_ARB;
+            attribs[index++] = flags;
+        }
+        attribs[index++] = 0;
+
+        context = s_Wgl.wglCreateContextAttribsARB(hdc, nullptr, attribs);
+        if (!context) {
+            DWORD error = GetLastError();
+            if (error == ERROR_INVALID_PROFILE_ARB) {
+                return PAL_RESULT_INVALID_GL_PROFILE;
+            } else {
+                return PAL_RESULT_PLATFORM_FAILURE;
+            }
+        }
+
+    } else {
+        // create context with legacy wgl functions
+        context = s_Wgl.wglCreateContext(hdc);
+        if (!context) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    // share context
+    if (info->shareContext) {
+        if (!s_Wgl.wglShareLists((HGLRC)info->shareContext, context)) {
+            s_Wgl.wglDeleteContext(context);
+            ReleaseDC((HWND)info->window->window, hdc);
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    ReleaseDC((HWND)info->window->window, hdc);
+    *outContext = (PalGLContext*)context;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyGLContext(
+    PalGLContext* context) {
+    
+    if (!s_Wgl.initialized || !context) {
+        return;
+    }
+    s_Wgl.wglDeleteContext((HGLRC)context);
+}
+
+PalResult PAL_CALL palMakeContextCurrent(
+    PalGLWindow* glWindow,
+    PalGLContext* context) {
+    
+    if (!s_Wgl.initialized) {
+        return PAL_RESULT_GL_NOT_INITIALIZED;
+    }
+
+    if ((!glWindow && context) || (glWindow && !context)) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (context && glWindow) {
+        // get hdc
+        HDC hdc = GetDC((HWND)glWindow->window);
+        if (!hdc) {
+            return PAL_RESULT_INVALID_GL_WINDOW;
+        }
+
+        if (!s_Wgl.wglMakeCurrent(hdc, (HGLRC)context)) {
+            DWORD error = GetLastError();
+            if (error == ERROR_INVALID_HANDLE) {
+                return PAL_RESULT_INVALID_GL_CONTEXT;
+
+            } else {
+                return PAL_RESULT_PLATFORM_FAILURE;
+            }
+        }
+        ReleaseDC((HWND)glWindow->window, hdc);
+
+    } else if (!context && !glWindow) {
+        s_Wgl.wglMakeCurrent(nullptr, nullptr);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palSwapBuffers(
+    PalGLWindow* glWindow,
+    PalGLContext* context) {
+    
+    if (!s_Wgl.initialized) {
+        return PAL_RESULT_GL_NOT_INITIALIZED;
+    }
+    
+    if (!context || !glWindow) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // get hdc
+    HDC hdc = GetDC((HWND)glWindow->window);
+    if (!hdc) {
+        return PAL_RESULT_INVALID_GL_WINDOW;
+    }
+
+    if (!s_Gdi.swapBuffers(hdc)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_PIXEL_FORMAT) {
+            return PAL_RESULT_INVALID_GL_FBCONFIG;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    ReleaseDC((HWND)glWindow->window, hdc);
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palSetGLContextVsync(
+    PalGLContext* context,
+    bool enable) {
+    
+    if (!context) {
+        return;
+    }
+
+    if (s_Wgl.wglSwapIntervalEXT) {
+        s_Wgl.wglSwapIntervalEXT(enable);
+    }
 }
