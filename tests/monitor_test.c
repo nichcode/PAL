@@ -2,16 +2,16 @@
 #include "tests.h"
 #include "pal/pal_video.h"
 
-bool displayTest() {
+bool monitorTest() {
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Display Test");
+    palLog(nullptr, "Monitor Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
     PalResult result;
-    PalDisplayInfo info;
+    PalMonitorInfo info;
     Int32 count = 0;
 
     // initialize the video system
@@ -21,52 +21,52 @@ bool displayTest() {
         return false;
     }
 
-    // get the number of connected displays (monitors
-    result = palEnumerateDisplays(&count, nullptr);
+    // get the number of connected monitors
+    result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to get query displays %s", palFormatResult(result));
+        palLog(nullptr, "Failed to get query monitors %s", palFormatResult(result));
         return false;
     }
 
     // if count == 0, we fail 
     if (count == 0) {
-        palLog(nullptr, "No display (monitor) connected");
+        palLog(nullptr, "No monitor connected");
         return false;
     }
 
-    palLog(nullptr, "Display Count: %d", count);
-    // allocate an array of displays or use a fixed array
-    // Example: PalDisplay* displays[12];
-    PalDisplay** displays = palAllocate(nullptr, sizeof(PalDisplay*) * count, 0);
-    if (!displays) {
+    palLog(nullptr, "Monitor Count: %d", count);
+    // allocate an array of monitors or use a fixed array
+    // Example: PalMonitor* monitors[12];
+    PalMonitor** monitors = palAllocate(nullptr, sizeof(PalMonitor*) * count, 0);
+    if (!monitors) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
     }
 
-    // get the handle of the connected displays (monitors)
-    result = palEnumerateDisplays(&count, displays);
+    // get the handle of the connected monitors
+    result = palEnumerateMonitors(&count, monitors);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to get query displays %s", palFormatResult(result));
+        palLog(nullptr, "Failed to get query monitors %s", palFormatResult(result));
         return false;
     }
 
-    // get display info for every display and log the information
+    // get monitor info for every monitor and log the information
     for (Int32 i = 0; i < count; i++) {
-        PalDisplay* display = displays[i];
-        result = palGetDisplayInfo(display, &info);
+        PalMonitor* monitor = monitors[i];
+        result = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(nullptr, "Failed to get display info %s", palFormatResult(result));
-            palFree(nullptr, displays);
+            palLog(nullptr, "Failed to get monitor info %s", palFormatResult(result));
+            palFree(nullptr, monitors);
             return false;
         }
 
-        // log display info
-        palLog(nullptr, "Display Name: %s", info.name);
+        // log monitor info
+        palLog(nullptr, "Monitor Name: %s", info.name);
         palLog(nullptr, " Size: (%d, %d)", info.width, info.height);
         palLog(nullptr, " DPI: %d", info.dpi);
         palLog(nullptr, " RefreshRate: %d", info.refreshRate);
 
-        // check if the display is the primary display
+        // check if the monitor is the primary monitor
         const char* boolToString;
         if (info.primary) {
             boolToString = "True";
@@ -75,7 +75,7 @@ bool displayTest() {
         }
         palLog(nullptr, " Primary: %s", boolToString);
 
-        // convert display orientation to string
+        // convert monitor orientation to string
         const char* orientationToString;
         switch (info.orientation) {
             case PAL_ORIENTATION_LANDSCAPE:
@@ -100,7 +100,7 @@ bool displayTest() {
     // shutdown the video system
     palShutdownVideo();
 
-    // free displays array
-    palFree(nullptr, displays);
+    // free monitors array
+    palFree(nullptr, monitors);
     return true;
 }

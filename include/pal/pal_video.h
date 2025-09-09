@@ -4,25 +4,25 @@
 
 #include "pal_event.h"
 
-typedef struct PalDisplay PalDisplay;
+typedef struct PalMonitor PalMonitor;
 typedef struct PalWindow PalWindow;
-typedef struct PalWindowIcon PalWindowIcon;
-typedef struct PalWindowCursor PalWindowCursor;
+typedef struct PalIcon PalIcon;
+typedef struct PalCursor PalCursor;
 
 typedef enum {
     PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
-    PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION = PAL_BIT(1),
+    PAL_VIDEO_FEATURE_MONITOR_ORIENTATION = PAL_BIT(1),
     PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = PAL_BIT(2),
     PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = PAL_BIT(3),
     PAL_VIDEO_FEATURE_TOOL_WINDOW = PAL_BIT(4),
-    PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH = PAL_BIT(5),
-    PAL_VIDEO_FEATURE_MULTI_DISPLAYS = PAL_BIT(6),
+    PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH = PAL_BIT(5),
+    PAL_VIDEO_FEATURE_MULTI_MONITORS = PAL_BIT(6),
     PAL_VIDEO_FEATURE_WINDOW_RESIZING = PAL_BIT(7),
     PAL_VIDEO_FEATURE_WINDOW_POSITIONING = PAL_BIT(8),
     PAL_VIDEO_FEATURE_WINDOW_MINMAX = PAL_BIT(9),
     PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = PAL_BIT(10),
     PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = PAL_BIT(11),
-    PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL = PAL_BIT(12),
+    PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL = PAL_BIT(12),
     PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(13),
     PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = PAL_BIT(14),
     PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = PAL_BIT(15)
@@ -333,14 +333,14 @@ typedef struct {
     Uint32 height;
     PalOrientation orientation;
     char name[32];
-} PalDisplayInfo;
+} PalMonitorInfo;
 
 typedef struct {
     Uint32 bpp;
     Uint32 refreshRate;
     Uint32 width;
     Uint32 height;
-} PalDisplayMode;
+} PalMonitorMode;
 
 typedef struct {
     Uint32 interval;
@@ -352,7 +352,7 @@ typedef struct {
     Uint32 width;
     Uint32 height;
     const Uint8* pixels;
-} PalWindowIconCreateInfo;
+} PalIconCreateInfo;
 
 typedef struct {
     Uint32 width;
@@ -360,7 +360,7 @@ typedef struct {
     Int32 xHotspot;
     Int32 yHotspot;
     const Uint8* pixels;
-} PalWindowCursorCreateInfo;
+} PalCursorCreateInfo;
 
 typedef struct {
     bool show;
@@ -371,7 +371,7 @@ typedef struct {
     Uint32 height;
     PalWindowStyle style;
     const char* title;
-    PalDisplay* display;
+    PalMonitor* monitor;
 } PalWindowCreateInfo;
 
 PAL_API PalResult PAL_CALL palInitVideo(
@@ -384,36 +384,36 @@ PAL_API void PAL_CALL palUpdateVideo();
 
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
-PAL_API PalResult PAL_CALL palEnumerateDisplays(
+PAL_API PalResult PAL_CALL palEnumerateMonitors(
     Int32 *count,
-    PalDisplay **displays);
+    PalMonitor **outMonitors);
 
-PAL_API PalResult PAL_CALL palGetPrimaryDisplay(
-    PalDisplay **outDisplay);
+PAL_API PalResult PAL_CALL palGetPrimaryMonitor(
+    PalMonitor **outMonitor);
 
-PAL_API PalResult PAL_CALL palGetDisplayInfo(
-    PalDisplay *display,
-    PalDisplayInfo *info);
+PAL_API PalResult PAL_CALL palGetMonitorInfo(
+    PalMonitor *monitor,
+    PalMonitorInfo *info);
 
-PAL_API PalResult PAL_CALL palEnumerateDisplayModes(
-    PalDisplay *display,
+PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
+    PalMonitor *monitor,
     Int32 *count,
-    PalDisplayMode *modes);
+    PalMonitorMode *modes);
 
-PAL_API PalResult PAL_CALL palGetCurrentDisplayMode(
-    PalDisplay *display,
-    PalDisplayMode *mode);
+PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
+    PalMonitor *monitor,
+    PalMonitorMode *mode);
 
-PAL_API PalResult PAL_CALL palSetDisplayMode(
-    PalDisplay *display,
-    PalDisplayMode *mode);
+PAL_API PalResult PAL_CALL palSetMonitorMode(
+    PalMonitor *monitor,
+    PalMonitorMode *mode);
 
-PAL_API PalResult PAL_CALL palValidateDisplayMode(
-    PalDisplay *display,
-    PalDisplayMode *mode);
+PAL_API PalResult PAL_CALL palValidateMonitorMode(
+    PalMonitor *monitor,
+    PalMonitorMode *mode);
 
-PAL_API PalResult PAL_CALL palSetDisplayOrientation(
-    PalDisplay *display,
+PAL_API PalResult PAL_CALL palSetMonitorOrientation(
+    PalMonitor *monitor,
     PalOrientation orientation);
 
 PAL_API PalResult PAL_CALL palCreateWindow(
@@ -446,9 +446,9 @@ PAL_API PalResult PAL_CALL palGetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle);
 
-PAL_API PalResult PAL_CALL palGetWindowDisplay(
+PAL_API PalResult PAL_CALL palGetWindowMonitor(
     PalWindow* window, 
-    PalDisplay** outDisplay);
+    PalMonitor** outMonitor);
 
 PAL_API PalResult PAL_CALL palGetWindowTitle(
     PalWindow* window,
@@ -527,23 +527,23 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(
 PAL_API PalResult PAL_CALL palSetForegroundWindow(
     PalWindow* window);
 
-PAL_API PalResult PAL_CALL palCreateWindowIcon(
-    const PalWindowIconCreateInfo* info,
-    PalWindowIcon** outIcon);
+PAL_API PalResult PAL_CALL palCreateIcon(
+    const PalIconCreateInfo* info,
+    PalIcon** outIcon);
 
-PAL_API void PAL_CALL palDestroyWindowIcon(
-    PalWindowIcon* icon);
+PAL_API void PAL_CALL palDestroyIcon(
+    PalIcon* icon);
 
 PAL_API PalResult PAL_CALL palSetWindowIcon(
     PalWindow* window,
-    PalWindowIcon* icon);
+    PalIcon* icon);
 
-PAL_API PalResult PAL_CALL palCreateWindowCursor(
-    const PalWindowCursorCreateInfo* info,
-    PalWindowCursor** outCursor);
+PAL_API PalResult PAL_CALL palCreateCursor(
+    const PalCursorCreateInfo* info,
+    PalCursor** outCursor);
 
-PAL_API void PAL_CALL palDestroyWindowCursor(
-    PalWindowCursor* cursor);
+PAL_API void PAL_CALL palDestroyCursor(
+    PalCursor* cursor);
 
 PAL_API void PAL_CALL palShowCursor(
     bool show);
@@ -564,6 +564,6 @@ PAL_API void PAL_CALL palSetCursorPos(
 
 PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,
-    PalWindowCursor* cursor);
+    PalCursor* cursor);
 
 #endif // _PAL_VIDEO_H

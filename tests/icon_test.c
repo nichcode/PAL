@@ -2,19 +2,19 @@
 #include "tests.h"
 #include "pal/pal_video.h"
 
-bool windowCursorTest() {
+bool iconTest() {
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Window Cursor Test");
+    palLog(nullptr, "Icon Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
     PalResult result;
     PalWindow* window = nullptr;
-    PalWindowCursor* cursor = nullptr;
-    PalWindowCreateInfo createInfo;
-    PalWindowCursorCreateInfo cursorCreateInfo;
+    PalIcon* icon = nullptr;
+    PalWindowCreateInfo createInfo = {0};
+    PalIconCreateInfo iconCreateInfo = {0};
     bool running = false;
 
     // event driver
@@ -57,33 +57,31 @@ bool windowCursorTest() {
 
             } else {
                 pixels[i + 0] = 0;  // Red bit
-                pixels[i + 1] = 0;  // Green bit
-                pixels[i + 2] = 255;  // Blue bit
+                pixels[i + 1] = 255;  // Green bit
+                pixels[i + 2] = 0;  // Blue bit
                 pixels[i + 3] = 0;  // Alpha bit
             }
         }
     }
 
-    // create cursor
-    cursorCreateInfo.width = 32;
-    cursorCreateInfo.height = 32;
-    cursorCreateInfo.xHotspot = 0;
-    cursorCreateInfo.yHotspot = 0;
-    cursorCreateInfo.pixels = pixels;
+    // create icon
+    iconCreateInfo.width = 32;
+    iconCreateInfo.height = 32;
+    iconCreateInfo.pixels = pixels; // can be loaded from an .ico file
 
-    result = palCreateWindowCursor(&cursorCreateInfo, &cursor);
+    result = palCreateIcon(&iconCreateInfo, &icon);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create window cursor %s", palFormatResult(result));
+        palLog(nullptr, "Failed to create window icon %s", palFormatResult(result));
         return false;
     }
 
     // fill the create info struct
-    createInfo.display = nullptr; // use primary display
+    createInfo.monitor = nullptr; // use primary monitor
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL cursor Window";
+    createInfo.title = "PAL Icon Window";
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
@@ -95,8 +93,12 @@ bool windowCursorTest() {
     // set the dispatch mode for window close event to recieve it
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL); // polling
 
-    // set the cursor
-    palSetWindowCursor(window, cursor);
+    // set the icon
+    result = palSetWindowIcon(window, icon);
+    if (result != PAL_RESULT_SUCCESS) {
+        palLog(nullptr, "Failed to set window icon %s", palFormatResult(result));
+        return false;
+    }
 
     running = true;
     while (running) {
@@ -117,8 +119,8 @@ bool windowCursorTest() {
     // destroy the window
     palDestroyWindow(window);
 
-    // destroy cursor
-    palDestroyWindowCursor(cursor);
+    // destroy icon
+    palDestroyIcon(icon);
 
     // shutdown the video system
     palShutdownVideo();

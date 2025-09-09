@@ -26,8 +26,8 @@ bool videoTest() {
         palLog(nullptr, "High DPI windows feature is supported");
     }
 
-    if (features & PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION) {
-        palLog(nullptr, "Switching display orientation feature is supported");
+    if (features & PAL_VIDEO_FEATURE_MONITOR_ORIENTATION) {
+        palLog(nullptr, "Switching monitor orientation feature is supported");
     }
 
     if (features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW) {
@@ -42,11 +42,11 @@ bool videoTest() {
         palLog(nullptr, "Tool windows feature is supported");
     }
 
-    if (features & PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH) {
-        palLog(nullptr, "Switching display modes feature is supported");
+    if (features & PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH) {
+        palLog(nullptr, "Switching monitor modes feature is supported");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MULTI_DISPLAYS) {
+    if (features & PAL_VIDEO_FEATURE_MULTI_MONITORS) {
         palLog(nullptr, "Multi monitors feature is supported");
     }
 
@@ -70,8 +70,8 @@ bool videoTest() {
         palLog(nullptr, "No maximize box for windows feature is supported");
     }
 
-    if (features & PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL) {
-        palLog(nullptr, "Display gamma control feature is supported");
+    if (features & PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL) {
+        palLog(nullptr, "Monitor gamma control feature is supported");
     }
 
     if (features & PAL_VIDEO_FEATURE_CLIP_CURSOR) {

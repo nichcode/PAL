@@ -28,11 +28,11 @@ bool condvarTest();
 
 // video test
 bool videoTest();
-bool displayTest();
-bool displayModeTest();
+bool monitorTest();
+bool monitorModeTest();
 bool windowTest();
-bool windowIconTest();
-bool windowCursorTest();
+bool iconTest();
+bool cursorTest();
 bool inputWindowTest();
 
 // opengl test

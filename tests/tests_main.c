@@ -25,16 +25,16 @@ int main(int argc, char**) {
 
 #if PAL_HAS_VIDEO
     // registerTest("Video Test", videoTest);
-    // registerTest("Display Test", displayTest);
-    // registerTest("Display Mode Test", displayModeTest);
+    // registerTest("Monitor Test", monitorTest);
+    // registerTest("Monitor Mode Test", monitorModeTest);
     // registerTest("Window Test", windowTest);
-    // registerTest("Window Icon Test", windowIconTest);
-    // registerTest("Window Cursor Test", windowCursorTest);
+    // registerTest("Icon Test", iconTest);
+    // registerTest("Cursor Test", cursorTest);
     // registerTest("Input Window Test", inputWindowTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL
-    registerTest("Opengl Test", openglTest);
+    // registerTest("Opengl Test", openglTest);
 #endif // PAL_HAS_OPENGL
 
     runTests();

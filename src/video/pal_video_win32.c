@@ -80,13 +80,8 @@ typedef struct {
 typedef struct {
     Int32 count;
     Int32 maxCount;
-    PalDisplay** displays;
-} DisplayData;
-
-typedef struct {
-    int unused;
-    PalWindowCursor* cursor;
-} WindowData;
+    PalMonitor** monitors;
+} MonitorData;
 
 typedef struct {
     bool pendingResize;
@@ -132,7 +127,7 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam) {
 
     // check if the window has been created
-    WindowData* data = (WindowData*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    void* data = (void*)(LONG_PTR)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
     if (!data) {
         // window has not been created yet
         return DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -320,10 +315,10 @@ LRESULT CALLBACK videoProc(
         case WM_DPICHANGED: {
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
-                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DISPLAY_DPI_CHANGED);
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MONITOR_DPI_CHANGED);
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_DISPLAY_DPI_CHANGED;
+                    event.type = PAL_EVENT_MONITOR_DPI_CHANGED;
                     event.data = HIWORD(wParam);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);                
@@ -333,17 +328,17 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_DEVICECHANGE: {
-            // check if the displays list has been changed
+            // check if the monitors list has been changed
             if (wParam != 0x0007) {
                 return 0;
             }
 
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
-                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_DISPLAYS_CHANGED);
+                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MONITOR_LIST_CHANGED);
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_DISPLAYS_CHANGED;
+                    event.type = PAL_EVENT_MONITOR_LIST_CHANGED;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);                
                 }
@@ -685,8 +680,10 @@ LRESULT CALLBACK videoProc(
 
         case WM_SETCURSOR: {
             if (LOWORD(lParam) == HTCLIENT) {
-                WindowData* data = (WindowData*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-                SetCursor((HCURSOR)data->cursor);
+                if (data) {
+                    SetCursor((HCURSOR)data);
+                    return TRUE;
+                }
                 return TRUE;
             }
 
@@ -704,10 +701,10 @@ BOOL CALLBACK enumMonitors(
     LPRECT lRect, 
     LPARAM lParam) {
     
-    DisplayData* data = (DisplayData*)lParam;
-    if (data->displays) {
+    MonitorData* data = (MonitorData*)lParam;
+    if (data->monitors) {
         if (data->count < data->maxCount) {
-            data->displays[data->count] = (PalDisplay*)monitor;
+            data->monitors[data->count] = (PalMonitor*)monitor;
         }
     }
 
@@ -753,22 +750,21 @@ static inline DWORD orientationToin32(
     return NULL_ORIENTATION;
 }
 
-static inline PalResult setDisplayMode(
-    PalDisplay* display,
-    PalDisplayMode* mode,
+static inline PalResult setMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode,
     bool test) {
     
-    if (!display || !mode) {
+    if (!monitor || !mode) {
         return PAL_RESULT_NULL_POINTER;
     } 
 
-    HMONITOR monitor = (HMONITOR)display;
     MONITORINFOEXW mi = {};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) { 
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return PAL_RESULT_INVALID_DISPLAY;
+            return PAL_RESULT_INVALID_MONITOR;
 
         } else {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -803,13 +799,13 @@ static inline PalResult setDisplayMode(
     if (result == DISP_CHANGE_SUCCESSFUL) {
         return PAL_RESULT_SUCCESS;
     } else {
-        return PAL_RESULT_INVALID_DISPLAY_MODE;
+        return PAL_RESULT_INVALID_MONITOR_MODE;
     }
 }
 
-static inline bool compareDisplayMode(
-    const PalDisplayMode* a, 
-    const PalDisplayMode* b) {
+static inline bool compareMonitorMode(
+    const PalMonitorMode* a, 
+    const PalMonitorMode* b) {
 
     return 
         a->bpp == b->bpp               &&
@@ -818,15 +814,15 @@ static inline bool compareDisplayMode(
         a->refreshRate == b->refreshRate;
 }
 
-static inline void addDisplayMode(
-    PalDisplayMode* modes, 
-    const PalDisplayMode* mode, 
+static inline void addMonitorMode(
+    PalMonitorMode* modes, 
+    const PalMonitorMode* mode, 
     Int32* count) {
 
     // check if we have a duplicate mode
     for (Int32 i = 0; i < *count; i++) {
-        PalDisplayMode* oldMode = &modes[i];
-        if (compareDisplayMode(oldMode, mode)) {
+        PalMonitorMode* oldMode = &modes[i];
+        if (compareMonitorMode(oldMode, mode)) {
             return; // discard it
         }
     }
@@ -1140,13 +1136,8 @@ PalResult PAL_CALL palInitVideo(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    WindowData* data = palAllocate(s_Video.allocator, sizeof(WindowData), 0);
-    if (!data) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     // set a flag to set if the window has been created
-    SetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA, (LONG_PTR)data);
+    SetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA, (LONG_PTR)&s_Event);
 
     // register raw input for mice to get delta
     RAWINPUTDEVICE rid = {0};
@@ -1197,18 +1188,18 @@ PalResult PAL_CALL palInitVideo(
     }
 
     // set features
-    s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_ORIENTATION;
+    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_ORIENTATION;
     s_Video.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
     s_Video.features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
     s_Video.features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_MODE_SWITCH;
-    s_Video.features |= PAL_VIDEO_FEATURE_MULTI_DISPLAYS;
+    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH;
+    s_Video.features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_RESIZING;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_POSITIONING;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_MINMAX;
     s_Video.features |= PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX;
     s_Video.features |= PAL_VIDEO_FEATURE_NO_MINIMIZEBOX;
-    s_Video.features |= PAL_VIDEO_FEATURE_DISPLAY_GAMMA_CONTROL;
+    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL;
     s_Video.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
@@ -1236,8 +1227,6 @@ void PAL_CALL palShutdownVideo() {
     }
 
     FreeLibrary(s_Video.gdi);
-    WindowData* data = (WindowData*)GetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA);
-    palFree(s_Video.allocator, data);
     DestroyWindow(s_Video.hiddenWindow);
     UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
     s_Video.initialized = false;
@@ -1293,12 +1282,12 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures() {
 }
 
 // ==================================================
-// Display
+// Monitor
 // ==================================================
 
-PalResult PAL_CALL palEnumerateDisplays(
+PalResult PAL_CALL palEnumerateMonitors(
     Int32 *count,
-    PalDisplay **displays) {
+    PalMonitor **outMonitors) {
 
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -1308,30 +1297,30 @@ PalResult PAL_CALL palEnumerateDisplays(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (count == 0 && displays) {
+    if (count == 0 && outMonitors) {
         PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    DisplayData data;
+    MonitorData data;
     data.count = 0;
-    data.displays = displays;
-    data.maxCount = displays ? *count : 0;
+    data.monitors = outMonitors;
+    data.maxCount = outMonitors ? *count : 0;
     EnumDisplayMonitors(nullptr, nullptr, enumMonitors, (LPARAM)&data);
 
-    if (!displays) {
+    if (!outMonitors) {
         *count = data.count;
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetPrimaryDisplay(
-    PalDisplay **outDisplay) {
+PalResult PAL_CALL palGetPrimaryMonitor(
+    PalMonitor **outMonitor) {
 
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
     
-    if (!outDisplay) {
+    if (!outMonitor) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -1340,29 +1329,28 @@ PalResult PAL_CALL palGetPrimaryDisplay(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    *outDisplay = (PalDisplay*)monitor;
+    *outMonitor = (PalMonitor*)monitor;
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetDisplayInfo(
-    PalDisplay *display,
-    PalDisplayInfo *info) {
+PalResult PAL_CALL palGetMonitorInfo(
+    PalMonitor *monitor,
+    PalMonitorInfo *info) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (!display || !info) {
+    if (!monitor || !info) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HMONITOR monitor = (HMONITOR)display;
     MONITORINFOEXW mi = {};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) { 
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return PAL_RESULT_INVALID_DISPLAY;
+            return PAL_RESULT_INVALID_MONITOR;
 
         } else {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -1386,54 +1374,53 @@ PalResult PAL_CALL palGetDisplayInfo(
     // get dpi scale
     Int32 dpiX, dpiY;
     if (s_Video.getDpiForMonitor) {
-        s_Video.getDpiForMonitor(monitor, WIN32_DPI, &dpiX, &dpiY);
+        s_Video.getDpiForMonitor((HMONITOR)monitor, WIN32_DPI, &dpiX, &dpiY);
         
     } else {
         dpiX = 96;
     }    
     info->dpi = dpiX;
 
-    // check for primary display
-    HMONITOR primaryDisplay = MonitorFromPoint(
+    // check for primary monitor
+    HMONITOR primaryMonitor = MonitorFromPoint(
         (POINT){0, 0}, 
         MONITOR_DEFAULTTOPRIMARY
     );
 
-    if (!primaryDisplay) {
+    if (!primaryMonitor) {
         info->primary = false;
     }
 
-    if (primaryDisplay == monitor) {
+    if (primaryMonitor == (HMONITOR)monitor) {
         info->primary = true;
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palEnumerateDisplayModes(
-    PalDisplay *display,
+PalResult PAL_CALL palEnumerateMonitorModes(
+    PalMonitor *monitor,
     Int32 *count,
-    PalDisplayMode *modes) {
+    PalMonitorMode *modes) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
     
-    if (!display || !count) {
+    if (!monitor || !count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     Int32 modeCount = 0;
     Int32 maxModes = 0;
-    HMONITOR monitor = (HMONITOR)display;
-    PalDisplayMode* displayModes = nullptr;
+    PalMonitorMode* monitorModes = nullptr;
 
     MONITORINFOEXW mi = {};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) { 
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return PAL_RESULT_INVALID_DISPLAY;
+            return PAL_RESULT_INVALID_MONITOR;
 
         } else {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -1441,26 +1428,26 @@ PalResult PAL_CALL palEnumerateDisplayModes(
     }
 
     if (!modes) {
-        // allocate and store tmp display modesand check for the interested fields.
-        displayModes = palAllocate(
+        // allocate and store tmp monitor modesand check for the interested fields.
+        monitorModes = palAllocate(
             s_Video.allocator, 
-            sizeof(PalDisplayMode) * MAX_MODE_COUNT,
+            sizeof(PalMonitorMode) * MAX_MODE_COUNT,
             0
         );
 
-        if (!displayModes) {
+        if (!monitorModes) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
         memset(
-            displayModes, 
+            monitorModes, 
             0,
-            sizeof(PalDisplayMode) * MAX_MODE_COUNT
+            sizeof(PalMonitorMode) * MAX_MODE_COUNT
         );
         maxModes = MAX_MODE_COUNT;
 
     } else {
-        displayModes = modes;
+        monitorModes = modes;
         maxModes = *count;
     }
 
@@ -1472,41 +1459,40 @@ PalResult PAL_CALL palEnumerateDisplayModes(
             break;
         }
 
-        PalDisplayMode* mode = &displayModes[modeCount];
+        PalMonitorMode* mode = &monitorModes[modeCount];
         mode->refreshRate = dm.dmDisplayFrequency;
         mode->width = dm.dmPelsWidth;
         mode->height = dm.dmPelsHeight;
         mode->bpp = dm.dmBitsPerPel;
-        addDisplayMode(displayModes, mode, &modeCount);
+        addMonitorMode(monitorModes, mode, &modeCount);
     }
 
     if (!modes) {
         *count = modeCount;
-        palFree(s_Video.allocator, displayModes);
+        palFree(s_Video.allocator, monitorModes);
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetCurrentDisplayMode(
-    PalDisplay *display,
-    PalDisplayMode *mode) {
+PalResult PAL_CALL palGetCurrentMonitorMode(
+    PalMonitor *monitor,
+    PalMonitorMode *mode) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
     
-    if (!display || !mode) {
+    if (!monitor || !mode) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HMONITOR monitor = (HMONITOR)display;
     MONITORINFOEXW mi = {};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) { 
+    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) { 
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return PAL_RESULT_INVALID_DISPLAY;
+            return PAL_RESULT_INVALID_MONITOR;
 
         } else {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -1524,37 +1510,37 @@ PalResult PAL_CALL palGetCurrentDisplayMode(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetDisplayMode(
-    PalDisplay *display,
-    PalDisplayMode *mode) {
+PalResult PAL_CALL palSetMonitorMode(
+    PalMonitor *monitor,
+    PalMonitorMode *mode) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    return setDisplayMode(display, mode, false);
+    return setMonitorMode(monitor, mode, false);
 }
 
-PalResult PAL_CALL palValidateDisplayMode(
-    PalDisplay *display,
-    PalDisplayMode *mode) {
+PalResult PAL_CALL palValidateMonitorMode(
+    PalMonitor *monitor,
+    PalMonitorMode *mode) {
 
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
     
-    return setDisplayMode(display, mode, true);
+    return setMonitorMode(monitor, mode, true);
 }
 
-PalResult PAL_CALL palSetDisplayOrientation(
-    PalDisplay *display,
+PalResult PAL_CALL palSetMonitorOrientation(
+    PalMonitor *monitor,
     PalOrientation orientation) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
     
-    if (!display) {
+    if (!monitor) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -1563,13 +1549,12 @@ PalResult PAL_CALL palSetDisplayOrientation(
         return PAL_RESULT_INVALID_ORIENTATION;
     }
 
-    HMONITOR monitor = (HMONITOR)display;
     MONITORINFOEXW mi = {};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW(monitor, (MONITORINFO*)&mi)) {
+    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return PAL_RESULT_INVALID_DISPLAY;
+            return PAL_RESULT_INVALID_MONITOR;
 
         } else {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -1579,12 +1564,12 @@ PalResult PAL_CALL palSetDisplayOrientation(
     DEVMODE devMode = {};
     devMode.dmSize = sizeof(DEVMODE);
     EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
-    DWORD displayOrientation = devMode.dmDisplayOrientation;
+    DWORD monitorOrientation = devMode.dmDisplayOrientation;
 
     // only swap size if switching between landscape and portrait
-    bool isDisplayLandscape = (displayOrientation == DMDO_DEFAULT || displayOrientation == DMDO_180);
+    bool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT || monitorOrientation == DMDO_180);
     bool isLandscape = (win32Orientation == DMDO_DEFAULT || win32Orientation == DMDO_180);
-    if (isDisplayLandscape != isLandscape) {
+    if (isMonitorLandscape != isLandscape) {
         DWORD tmp = devMode.dmPelsWidth;
         devMode.dmPelsWidth = devMode.dmPelsHeight;
         devMode.dmPelsHeight = tmp;
@@ -1626,8 +1611,8 @@ PalResult PAL_CALL palCreateWindow(
     }
 
     HWND handle = nullptr;
-    PalDisplay* display = nullptr;
-    PalDisplayInfo displayInfo;
+    PalMonitor* monitor = nullptr;
+    PalMonitorInfo monitorInfo;
 
     Uint32 style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
     Uint32 exStyle = 0;
@@ -1666,34 +1651,34 @@ PalResult PAL_CALL palCreateWindow(
         exStyle |= WS_EX_TOPMOST;
     }
 
-    // get display
-    if (info->display) {
-        display = info->display;
+    // get monitor
+    if (info->monitor) {
+        monitor = info->monitor;
     } else {
-        // get primary display
-        display = (PalDisplay*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
-        if (!display) {
+        // get primary monitor
+        monitor = (PalMonitor*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
+        if (!monitor) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
 
-    // get display info
-    PalResult result = palGetDisplayInfo(display, &displayInfo);
+    // get monitor info
+    PalResult result = palGetMonitorInfo(monitor, &monitorInfo);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
-    } 
+    }
 
     // compose position. 
     Int32 x, y = 0;
     // the position and size must be scaled with the dpi before this call
     if (info->center) {
-        x = displayInfo.x + (displayInfo.width - info->width) / 2;
-        y = displayInfo.y + (displayInfo.height - info->height) / 2;
+        x = monitorInfo.x + (monitorInfo.width - info->width) / 2;
+        y = monitorInfo.y + (monitorInfo.height - info->height) / 2;
 
     } else {
         // we set 100 for each axix
-        x = displayInfo.x + 100;
-        y = displayInfo.y + 100;
+        x = monitorInfo.x + 100;
+        y = monitorInfo.y + 100;
     }
 
     // adjust the window size
@@ -1765,13 +1750,8 @@ PalResult PAL_CALL palCreateWindow(
         );
     }
 
-    WindowData* data = palAllocate(s_Video.allocator, sizeof(WindowData), 0);
-    if (!data) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     // set a flag to set if the window has been created
-    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)data);
+    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)&s_Event);
 
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
@@ -1781,9 +1761,6 @@ void PAL_CALL palDestroyWindow(
     PalWindow *window) {
 
     if (window) {
-        //every window has a window data
-        WindowData* data = (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
-        palFree(s_Video.allocator, data);
         DestroyWindow((HWND)window);
     }
 }
@@ -1989,15 +1966,15 @@ PalResult PAL_CALL palGetWindowStyle(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowDisplay(
+PalResult PAL_CALL palGetWindowMonitor(
     PalWindow* window, 
-    PalDisplay** outDisplay) {
+    PalMonitor** outMonitor) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
     
-    if (!window || !outDisplay) {
+    if (!window || !outMonitor) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -2012,7 +1989,7 @@ PalResult PAL_CALL palGetWindowDisplay(
         }
     }
 
-    *outDisplay = (PalDisplay*)monitor;
+    *outMonitor = (PalMonitor*)monitor;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2533,9 +2510,9 @@ PalResult PAL_CALL palSetForegroundWindow(
 // Icon
 // ==================================================
 
-PalResult PAL_CALL palCreateWindowIcon(
-    const PalWindowIconCreateInfo* info,
-    PalWindowIcon** outIcon) {
+PalResult PAL_CALL palCreateIcon(
+    const PalIconCreateInfo* info,
+    PalIcon** outIcon) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -2613,12 +2590,12 @@ PalResult PAL_CALL palCreateWindowIcon(
 
     s_Video.deleteObject(mask);
     s_Video.deleteObject(bitmap);
-    *outIcon = (PalWindowIcon*)icon;
+    *outIcon = (PalIcon*)icon;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyWindowIcon(
-    PalWindowIcon* icon) {
+void PAL_CALL palDestroyIcon(
+    PalIcon* icon) {
     
     if (s_Video.initialized && icon) {
         DestroyIcon((HICON)icon);
@@ -2627,7 +2604,7 @@ void PAL_CALL palDestroyWindowIcon(
 
 PalResult PAL_CALL palSetWindowIcon(
     PalWindow* window,
-    PalWindowIcon* icon) {
+    PalIcon* icon) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -2647,12 +2624,12 @@ PalResult PAL_CALL palSetWindowIcon(
 }
 
 // ==================================================
-// Icon
+// Cursor
 // ==================================================
 
-PalResult PAL_CALL palCreateWindowCursor(
-    const PalWindowCursorCreateInfo* info,
-    PalWindowCursor** outCursor) {
+PalResult PAL_CALL palCreateCursor(
+    const PalCursorCreateInfo* info,
+    PalCursor** outCursor) {
     
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -2723,12 +2700,12 @@ PalResult PAL_CALL palCreateWindowCursor(
 
     s_Video.deleteObject(mask);
     s_Video.deleteObject(bitmap);
-    *outCursor = (PalWindowCursor*)cursor;
+    *outCursor = (PalCursor*)cursor;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyWindowCursor(
-    PalWindowCursor* cursor) {
+void PAL_CALL palDestroyCursor(
+    PalCursor* cursor) {
 
     if (s_Video.initialized && cursor) {
         DestroyCursor((HCURSOR)cursor);
@@ -2810,12 +2787,9 @@ void PAL_CALL palSetCursorPos(
 
 void PAL_CALL palSetWindowCursor(
     PalWindow* window,
-    PalWindowCursor* cursor) {
+    PalCursor* cursor) {
     
     if (window || cursor) {
-        WindowData* data = (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
-        if (data) {
-            data->cursor = cursor;
-        }
+        SetWindowLongPtrW((HWND)window, GWLP_USERDATA, (LONG_PTR)cursor);
     }
 }

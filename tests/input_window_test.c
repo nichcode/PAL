@@ -389,7 +389,7 @@ bool inputWindowTest() {
 
     PalResult result;
     PalWindow* window = nullptr;
-    PalWindowCreateInfo createInfo = {};
+    PalWindowCreateInfo createInfo = {0};
     bool running = false;
 
     // event driver
@@ -418,7 +418,7 @@ bool inputWindowTest() {
     }
 
     // fill the create info struct
-    createInfo.display = nullptr; // use primary display
+    createInfo.monitor = nullptr; // use primary monitor
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;
@@ -460,7 +460,7 @@ bool inputWindowTest() {
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    return true;
+                    running = false;
                     break;
                 }
 

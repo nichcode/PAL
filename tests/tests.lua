@@ -32,11 +32,11 @@ project "tests"
     if (PAL_BUILD_VIDEO) then
         files { 
             "video_test.c",
-            "display_test.c",
-            "display_mode_test.c",
+            "monitor_test.c",
+            "monitor_mode_test.c",
             "window_test.c",
-            "window_icon_test.c",
-            "window_cursor_test.c",
+            "icon_test.c",
+            "cursor_test.c",
             "input_window_test.c"
         }
     end

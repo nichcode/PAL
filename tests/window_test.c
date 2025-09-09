@@ -129,10 +129,10 @@ static void PAL_CALL onEvent(void* userData, const PalEvent* event) {
     } else if (event->type == PAL_EVENT_WINDOW_MODAL_END) {
         onWindowModalEnd(event);
 
-    } else if (event->type == PAL_EVENT_DISPLAY_DPI_CHANGED) {
+    } else if (event->type == PAL_EVENT_MONITOR_DPI_CHANGED) {
         onDisplayDPI(event);
 
-    } else if (event->type == PAL_EVENT_DISPLAYS_CHANGED) {
+    } else if (event->type == PAL_EVENT_MONITOR_LIST_CHANGED) {
         onDisplayList(event);
     }
 }
@@ -147,7 +147,7 @@ bool windowTest() {
 
     PalResult result;
     PalWindow* window = nullptr;
-    PalWindowCreateInfo createInfo = {};
+    PalWindowCreateInfo createInfo = {0};
     PalVideoFeatures features;
     bool running = false;
 
@@ -180,7 +180,7 @@ bool windowTest() {
     features = palGetVideoFeatures();
 
     // fill the create info struct
-    createInfo.display = nullptr; // use primary display
+    createInfo.monitor = nullptr; // use primary monitor
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;
@@ -275,7 +275,7 @@ bool windowTest() {
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    return true;
+                    running = false;
                     break;
                 }
 
@@ -304,12 +304,12 @@ bool windowTest() {
                     break;
                 }
 
-                case PAL_EVENT_DISPLAY_DPI_CHANGED: {
+                case PAL_EVENT_MONITOR_DPI_CHANGED: {
                     onDisplayDPI(&event);
                     break;
                 }
 
-                case PAL_EVENT_DISPLAYS_CHANGED: {
+                case PAL_EVENT_MONITOR_LIST_CHANGED: {
                     onDisplayList(&event);
                     break;
                 }

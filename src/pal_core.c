@@ -220,11 +220,11 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_VIDEO_NOT_INITIALIZED:
         return "Video system not initialized";
 
-        case PAL_RESULT_INVALID_DISPLAY:
-        return "The provided display handle was invalid";
+        case PAL_RESULT_INVALID_MONITOR:
+        return "The provided monitor handle was invalid";
 
-        case PAL_RESULT_INVALID_DISPLAY_MODE:
-        return "The provided display mode was invalid";
+        case PAL_RESULT_INVALID_MONITOR_MODE:
+        return "The provided monitor mode was invalid";
 
         case PAL_RESULT_INVALID_ORIENTATION:
         return "The provided orientation is invalid";
