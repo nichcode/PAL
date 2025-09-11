@@ -16,6 +16,7 @@ void runTests();
 bool loggerTest();
 bool timeTest();
 bool userEventTest();
+bool eventTest();
 
 // system tests
 bool systemTest();

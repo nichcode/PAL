@@ -5,9 +5,6 @@ PAL_BUILD_STATIC = false
 -- build PAL tests as a single application
 PAL_BUILD_TESTS = true
 
--- build PAL stress test as a single application
-PAL_BUILD_STRESS_TESTS = true
-
 -- build system module
 PAL_BUILD_SYSTEM = true
 

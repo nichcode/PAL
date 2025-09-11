@@ -11,7 +11,7 @@
 // Typedefs, enums and structs
 // ==================================================
 
-#define PAL_MAX_EVENTS 128
+#define PAL_MAX_EVENTS 512
 
 typedef struct {
     Uint8 head;

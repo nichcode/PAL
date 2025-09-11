@@ -12,6 +12,7 @@ project "tests"
         "logger_test.c",
         "time_test.c",
         "user_event_test.c",
+        "event_test.c"
     }
 
     if (PAL_BUILD_SYSTEM) then
