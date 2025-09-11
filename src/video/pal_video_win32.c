@@ -1,4 +1,26 @@
 
+/**
+
+Copyright (C) 2025 Nicholas Agbo
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+ */
+
 // ==================================================
 // Includes
 // ==================================================
@@ -102,6 +124,7 @@ typedef struct {
 } Keyboard;
 
 typedef struct {
+    bool push;
     Int32 dx;
     Int32 dy;
     Int32 WheelX;
@@ -260,9 +283,6 @@ LRESULT CALLBACK videoProc(
                     palPushEvent(driver, &event);                
                 }
             }
-
-            // TODO: send focus window to input system
-
             return 0;
         }
 
@@ -277,14 +297,12 @@ LRESULT CALLBACK videoProc(
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);                
                 }
-            }
-
-            // TODO: send focus window to input system
-            
+            }    
             return 0;
         }
 
         case WM_ENTERSIZEMOVE: {
+            s_Mouse.push = false;
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MODAL_BEGIN);
@@ -299,6 +317,7 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_EXITSIZEMOVE: {
+            s_Mouse.push = true;
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
                 PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MODAL_END);
@@ -415,17 +434,21 @@ LRESULT CALLBACK videoProc(
             }
 
             RAWINPUT* raw = (RAWINPUT*)s_RawBuffer;
-            s_Mouse.dx += raw->data.mouse.lLastX;
-            s_Mouse.dy += raw->data.mouse.lLastY;
+            RAWMOUSE* mouse = &raw->data.mouse;
+            // push only if we are not rresizing or moving with the mouse
+            if (s_Mouse.push && (mouse->lLastX || mouse->lLastY)) {
+                s_Mouse.dx += mouse->lLastX;
+                s_Mouse.dy += mouse->lLastY;
 
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_DELTA);
-                if (mode != PAL_DISPATCH_NONE) {
-                    PalEvent event = {0};
-                    event.type = PAL_EVENT_MOUSE_DELTA;
-                    event.data = palPackInt32(s_Mouse.dx, s_Mouse.dy);
-                    palPushEvent(driver, &event);                
+                if (s_Video.eventDriver) {
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    PalDispatchMode mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_DELTA);
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = PAL_EVENT_MOUSE_DELTA;
+                        event.data = palPackInt32(s_Mouse.dx, s_Mouse.dy);
+                        palPushEvent(driver, &event);                
+                    }
                 }
             }
             break;
@@ -1204,6 +1227,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
+    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL;
 
     if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
         s_Video.features |= PAL_VIDEO_FEATURE_HIGH_DPI;

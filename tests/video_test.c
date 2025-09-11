@@ -86,6 +86,10 @@ bool videoTest() {
         palLog(nullptr, "Window icon on taskbar flashing is supported");
     }
 
+    if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL) {
+        palLog(nullptr, "Setting window flash interval is supported");
+    }
+
     // shutdown the video system
     palShutdownVideo();
     return true;

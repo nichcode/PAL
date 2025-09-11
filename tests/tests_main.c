@@ -11,7 +11,7 @@ int main(int argc, char**) {
     // registerTest("Logger Test", loggerTest);
     // registerTest("Time Test", timeTest);
     // registerTest("User Event Test", userEventTest);
-    registerTest("Event Test", eventTest);
+    // registerTest("Event Test", eventTest);
 
 #if PAL_HAS_SYSTEM
     // registerTest("System Test", systemTest);
@@ -31,7 +31,7 @@ int main(int argc, char**) {
     // registerTest("Window Test", windowTest);
     // registerTest("Icon Test", iconTest);
     // registerTest("Cursor Test", cursorTest);
-    // registerTest("Input Window Test", inputWindowTest);
+    registerTest("Input Window Test", inputWindowTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL

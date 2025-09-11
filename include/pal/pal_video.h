@@ -1,62 +1,203 @@
 
+/**
+
+Copyright (C) 2025 Nicholas Agbo
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+ */
+
+/**
+ * @file pal_video.h
+ *
+ * Header file for video functions, macros, enum and structs
+ *
+ * @defgroup video
+ *
+ */
+
 #ifndef _PAL_VIDEO_H
 #define _PAL_VIDEO_H
 
 #include "pal_event.h"
 
+/**
+ * @struct PalMonitor
+ * @brief Opaque handle to a monitor.
+ *
+ * @ingroup video
+ */
 typedef struct PalMonitor PalMonitor;
+
+/**
+ * @struct PalWindow
+ * @brief Opaque handle to a window.
+ *
+ * @ingroup video
+ */
 typedef struct PalWindow PalWindow;
+
+/**
+ * @struct PalIcon
+ * @brief Opaque handle to an icon.
+ *
+ * @ingroup video
+ */
 typedef struct PalIcon PalIcon;
+
+/**
+ * @struct PalCursor
+ * @brief Opaque handle to a cursor.
+ *
+ * @ingroup video
+ */
 typedef struct PalCursor PalCursor;
 
+/**
+ * @enum PalVideoFeatures
+ * @brief Get the supported features of the video system.
+ * 
+ * Check after palInitVideo() to check which features are supported on the platform (OS).
+ * Example: on Windows 7, `PAL_VIDEO_FEATURE_HIGH_DPI` is not supported.
+ *
+ * @code
+ * PalVideoFeatures features = `palGetVideoFeatures()`.
+ * @endcode
+ * 
+ * @code
+ * if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
+ *     // do logic
+ * }
+ * @endcode
+ *
+ * @note All video features follow the format `PAL_VIDEO_FEATURE_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
-    PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
-    PAL_VIDEO_FEATURE_MONITOR_ORIENTATION = PAL_BIT(1),
-    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = PAL_BIT(2),
-    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = PAL_BIT(3),
-    PAL_VIDEO_FEATURE_TOOL_WINDOW = PAL_BIT(4),
-    PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH = PAL_BIT(5),
-    PAL_VIDEO_FEATURE_MULTI_MONITORS = PAL_BIT(6),
-    PAL_VIDEO_FEATURE_WINDOW_RESIZING = PAL_BIT(7),
-    PAL_VIDEO_FEATURE_WINDOW_POSITIONING = PAL_BIT(8),
-    PAL_VIDEO_FEATURE_WINDOW_MINMAX = PAL_BIT(9),
-    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = PAL_BIT(10),
-    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = PAL_BIT(11),
-    PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL = PAL_BIT(12),
-    PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(13),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = PAL_BIT(14),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = PAL_BIT(15)
+    PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),                   /** < High DPI windows.*/
+    PAL_VIDEO_FEATURE_MONITOR_ORIENTATION = PAL_BIT(1),        /** < Switching monitor orientation.*/
+    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = PAL_BIT(2),          /** < Borderless windows.*/
+    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = PAL_BIT(3),         /** < Transparent windows.*/
+    PAL_VIDEO_FEATURE_TOOL_WINDOW = PAL_BIT(4),                /** < Tool windows.*/
+    PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH = PAL_BIT(5),        /** < Switching monitor modes.*/
+    PAL_VIDEO_FEATURE_MULTI_MONITORS = PAL_BIT(6),             /** < Multiple monitors.*/
+    PAL_VIDEO_FEATURE_WINDOW_RESIZING = PAL_BIT(7),            /** < Resizing windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_POSITIONING = PAL_BIT(8),         /** < Moving windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_MINMAX = PAL_BIT(9),              /** < Window minimize and maximize operations.*/
+    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = PAL_BIT(10),            /** < No window minimize box.*/
+    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = PAL_BIT(11),            /** < No window maximize box.*/
+    PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL = PAL_BIT(12),     /** < Switching monitor gamma.*/
+    PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(13),               /** < Clipping cursor to window.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = PAL_BIT(14),      /** < Flashing window title bar.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = PAL_BIT(15),         /** < Flashing window icon.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL = PAL_BIT(16)      /** < Setting flash interval.*/
 } PalVideoFeatures;
 
+/**
+ * @enum PalOrientation
+ * @brief Orientation for a monitor
+ *
+ * @note All orientation follow the format `PAL_ORIENTATION_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
-    PAL_ORIENTATION_LANDSCAPE,
-    PAL_ORIENTATION_PORTRAIT,
-    PAL_ORIENTATION_LANDSCAPE_FLIPPED,
-    PAL_ORIENTATION_PORTRAIT_FLIPPED
+    PAL_ORIENTATION_LANDSCAPE,            /** < 0 degrees.*/
+    PAL_ORIENTATION_PORTRAIT,             /** < 90 degrees.*/
+    PAL_ORIENTATION_LANDSCAPE_FLIPPED,    /** < 180 degrees.*/
+    PAL_ORIENTATION_PORTRAIT_FLIPPED      /** < 270 degrees.*/
 } PalOrientation;
 
+/**
+ * @enum PalWindowStyle
+ * @brief Specifies style for a window.
+ * This is a bitmask enum and multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * @code
+ * PalWindowStyle style = PAL_WINDOW_STYLE_RESIZABLE | PAL_WINDOW_STYLE_TOPMOST.
+ * @endcode
+ *
+ * @note All window flags follow the format `PAL_WINDOW_STYLE_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
-    PAL_WINDOW_STYLE_RESIZABLE = PAL_BIT(0),
-    PAL_WINDOW_STYLE_TRANSPARENT = PAL_BIT(1),
-    PAL_WINDOW_STYLE_TOPMOST = PAL_BIT(2),
-    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = PAL_BIT(3),
-    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = PAL_BIT(4),
-    PAL_WINDOW_STYLE_TOOL = PAL_BIT(5),
-    PAL_WINDOW_STYLE_BORDERLESS = PAL_BIT(6)
+    PAL_WINDOW_STYLE_RESIZABLE = PAL_BIT(0),         /** < Window is resizable.*/
+    PAL_WINDOW_STYLE_TRANSPARENT = PAL_BIT(1),       /** < Window is transparent.*/
+    PAL_WINDOW_STYLE_TOPMOST = PAL_BIT(2),           /** < Topmost window.*/
+    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = PAL_BIT(3),    /** < Window has no minimze box.*/
+    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = PAL_BIT(4),    /** < Window has no maximized box.*/
+    PAL_WINDOW_STYLE_TOOL = PAL_BIT(5),              /** < Tooling window.*/
+    PAL_WINDOW_STYLE_BORDERLESS = PAL_BIT(6)         /** < Window is borderless.*/
 } PalWindowStyle;
 
+/**
+ * @enum PalWindowState
+ * @brief Represents the current state of a window.
+ *
+ * @note All state follow the format `PAL_WINDOW_STATE_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
-    PAL_WINDOW_STATE_MAXIMIZED,
-    PAL_WINDOW_STATE_MINIMIZED,
-    PAL_WINDOW_STATE_RESTORED
+    PAL_WINDOW_STATE_MAXIMIZED,          /** < Window is maximized.*/
+    PAL_WINDOW_STATE_MINIMIZED,          /** < Window is minimized.*/
+    PAL_WINDOW_STATE_RESTORED            /** < Window has been restored from revious state (eg. maximized).*/
 } PalWindowState;
 
+/**
+ * @enum PalFlashFlag
+ * @brief Specifies behavior for flashing a window.
+ * 
+ * This is a bitmask enum and multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ * If `PAL_FLASH_CAPTION` will be used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must be supported.
+ * 
+ * If `PAL_FLASH_TRAY` will be used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be supported. 
+ * 
+ * Example:
+ *
+ * @code
+ * PalFlashFlag flashType = PAL_FLASH_CAPTION | PAL_FLASH_TRAY.
+ * @endcode
+ * 
+ * @code
+ * PalFlashFlag flashTypeSingle = PAL_FLASH_STOP.
+ * @endcode
+ * 
+ * @note All flash types follow the format `PAL_FLASH_**` for consistency and API use.
+ * @note `PAL_FLASH_STOP` is not a bit and must not be combined with other bits.
+ *
+ * @ingroup video
+ */
 typedef enum {
-    PAL_FLASH_STOP = 0,
-    PAL_FLASH_CAPTION = PAL_BIT(0),
-    PAL_FLASH_TRAY = PAL_BIT(1)
-} PalFlashFlags;
+    PAL_FLASH_STOP = 0,                 /** < Stop flashing.*/
+    PAL_FLASH_CAPTION = PAL_BIT(0),     /** < Flash the titlebar of the window.*/
+    PAL_FLASH_TRAY = PAL_BIT(1)         /** < Flash the icon of the window.*/
+} PalFlashFlag;
 
+/**
+ * @enum PalScancode
+ * @brief scancodes (layout independent keys) of a keyboard.
+ *
+ * @note All scancodes follow the format `PAL_SCANCODE_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
     PAL_SCANCODE_UNKNOWN = 0,
 
@@ -184,6 +325,14 @@ typedef enum {
     PAL_SCANCODE_MAX
 } PalScancode;
 
+/**
+ * @enum PalKeycode
+ * @brief keycodes (layout aware keys) of a keyboard.
+ *
+ * @note All keycodes follow the format `PAL_KEYCODE_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
     PAL_KEYCODE_UNKNOWN = 0,
 
@@ -311,6 +460,14 @@ typedef enum {
     PAL_KEYCODE_MAX
 } PalKeycode;
 
+/**
+ * @enum PalMouseButton
+ * @brief mouse buttons of a mouse.
+ *
+ * @note All mouse buttons follow the format `PAL_MOUSE_BUTTON_**` for consistency and API use.
+ *
+ * @ingroup video
+ */
 typedef enum {
     PAL_MOUSE_BUTTON_UNKNOWN = 0,
 
@@ -323,100 +480,396 @@ typedef enum {
     PAL_MOUSE_BUTTON_MAX
 } PalMouseButton;
 
+/**
+ * @struct PalMonitorInfo
+ * @brief Information about a monitor.
+ *
+ * @sa palGetMonitorInfo(), palEnumerateMonitors()
+ *
+ * @ingroup video
+ */
 typedef struct {
-    bool primary;
-    Uint32 dpi;
-    Uint32 refreshRate;
-    Int32 x;
-    Int32 y;
-    Uint32 width;
-    Uint32 height;
-    PalOrientation orientation;
-    char name[32];
+    bool primary;                 /** < `true` if this is the primary monitor.*/
+    Uint32 dpi;                   /** < Monitor DPI.*/
+    Uint32 refreshRate;           /** < Monitor refresh rate in Hz.*/
+    Int32 x;                      /** < Position x of the monitor.*/
+    Int32 y;                      /** < Position y of the monitor.*/
+    Uint32 width;                 /** < Width of the monitor in pixels.*/
+    Uint32 height;                /** < Height of the monitor in pixels.*/
+    PalOrientation orientation;   /** < Orientation of the monitor.*/
+    char name[32];                /** < Name of the monitor.*/
 } PalMonitorInfo;
 
+/**
+ * @struct PalMonitorMode
+ * @brief Infomartion about a monitor mode.
+ *
+ * @sa palEnumerateMonitorModes(), palEnumerateMonitors()
+ *
+ * @ingroup video
+ */
 typedef struct {
-    Uint32 bpp;
-    Uint32 refreshRate;
-    Uint32 width;
-    Uint32 height;
+    Uint32 bpp;                /** < Monitor Mode Bits per pixel.*/
+    Uint32 refreshRate;        /** < Monitor Mode Refresh rate in Hz.*/
+    Uint32 width;              /** < Width of the monitor mode in pixels.*/
+    Uint32 height;             /** < Height of the monitor mode in pixels.*/
 } PalMonitorMode;
 
+/**
+ * @struct PalFlashInfo
+ * @brief Specifications for flashing a window to request focus.
+ *
+ * This struct must be initialized and passed to `palFlashWindow()`.
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
 typedef struct {
-    Uint32 interval;
-    PalFlashFlags flags;
-    Uint32 count;
+    Uint32 interval;               /** < Flash interval in milliseconds. Set to `0` for default.*/
+    PalFlashFlag flags;            /** < The flash behavior. This can be OR'ed together. see `PalFlashFlags`*/
+    Uint32 count;                  /** < Number of times to flash. Set to `0` to flash until focused or cancelled.*/
 } PalFlashInfo;
 
+/**
+ * @struct PalIconCreateInfo
+ * @brief Specifications for creating an icon using the video system.
+ *
+ * This struct must be initialized and passed to `palCreateIcon()`.
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
 typedef struct {
-    Uint32 width;
-    Uint32 height;
-    const Uint8* pixels;
+    Uint32 width;          /** < Width of the icon in pixels.*/
+    Uint32 height;         /** < Height of the icon in pixels.*/
+    const Uint8* pixels;   /** < Pixels in `RGBA` format.*/
 } PalIconCreateInfo;
 
+/**
+ * @struct PalCursorCreateInfo
+ * @brief Specifications for creating a cursor using the video system.
+ *
+ * This struct must be initialized and passed to `palCreateCursor()`.
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
 typedef struct {
-    Uint32 width;
-    Uint32 height;
-    Int32 xHotspot;
-    Int32 yHotspot;
-    const Uint8* pixels;
+    Uint32 width;           /** < Width of the cursor in pixels.*/
+    Uint32 height;          /** < Width of the cursor in pixels.*/
+    Int32 xHotspot;         /** < The x active pixel for deteciting clicks.*/
+    Int32 yHotspot;         /** < The y active pixel for deteciting clicks.*/
+    const Uint8* pixels;    /** < Pixels in `RGBA` format.*/
 } PalCursorCreateInfo;
 
+/**
+ * @struct PalWindowHandleInfo
+ * @brief Information about a window handle.
+ *
+ * @sa PalWindow, palGetWindowHandleInfo(), palCreateWindow()
+ *
+ * @ingroup video
+ */
 typedef struct {
-    void* nativeDisplay;
-    void* nativeWindow;
+    void* nativeDisplay;           /** < The platform (OS) monitor handle of the window.*/
+    void* nativeWindow;            /** < The platform (OS) handle of the window.*/
 } PalWindowHandleInfo;
 
+/**
+ * @struct PalWindowCreateInfo
+ * @brief Specifications for creating a window using the video system.
+ *
+ * This struct must be initialized and passed to `palCreateWindow()`.
+ * All fields must be explicitly set by the user.
+ *
+ * @note Uninitialized fields may result in undefined behavior.
+ *
+ * @ingroup video
+ */
 typedef struct {
-    bool show;
-    bool showMaximized;
-    bool showMinimized;
-    bool center;
-    Uint32 width;
-    Uint32 height;
-    PalWindowStyle style;
-    const char* title;
-    PalMonitor* monitor;
+    bool show;                   /** < Show window after creation.*/
+    bool showMaximized;          /** < Show window maximized after creation. If set `show` and `showMinimized` must be false.*/
+    bool showMinimized;          /** < Show window minimzed after creation. If set `show` and `showMaximized` must be false.*/
+    bool center;                 /** < Center window minimzed after creation.*/
+    Uint32 width;                /** < Width of the window in pixels.*/
+    Uint32 height;               /** < Height of the window in pixels.*/
+    PalWindowStyle style;        /** < The style of the window. see `PalWindowStyle`.*/
+    const char* title;           /** < The title of the window in UTF-8 encoding.*/
+    PalMonitor* monitor;         /** < The monitor to create the window on. Set to `nullptr` to use primary monitor.*/
 } PalWindowCreateInfo;
 
+/**
+ * @brief Initialize the video system.
+ * 
+ * The video system must be initialized before enumerating monitors,
+ * query supported features, create windows and other video related functionality.
+ * This must called before any video related function.
+ * 
+ * The video system must be shutdown with `palShutdownVideo()` when no longer needed.
+ * The `eventDriver` must be valid to recieve video related events.
+ *
+ * @param[in] allocator Optional user provided allocator. Can be `nullptr` to use default.
+ * @param[in] eventDriver Optional event driver to push events to. If `nullptr` no events will be generated.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread safe.
+ * @note This function must be called from the main thread.
+ *
+ * @sa palShutdownVideo()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator *allocator,
     PalEventDriver* eventDriver);
 
+/**
+ * @brief Shutdown the video system.
+ *
+ * * The video system must be initialized before this call otherwise this functions returns silently.
+ * This function does not destroy created windows and other video resources, 
+ * therefore all created windows and other video resources must be destroyed explicitly before this function.
+ *
+ * @note This function is not thread safe.
+ * @note This function must be called from the main thread.
+ *
+ * @sa palInitVideo()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palShutdownVideo();
 
+/**
+ * @brief Update the video system and all created windows.
+ * 
+ * The video system must be initialized before this call otherwise this functions returns silently.
+ * This function also pushes generated video related events, if a valid event driver was set at `palInitVideo()`.
+ * 
+ * @note This function is not thread safe.
+ * @note This function must be called from the main thread.
+ *
+ * @sa palInitVideo()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palUpdateVideo();
 
+/**
+ * @brief Get the supported features of the video system.
+ * 
+ * The video system must be initialized before this call.
+ * see `PalVideoFeatures`
+ * 
+ * @return video features on success or `0` on failure.
+ *
+ * @note This function is thread-safe.
+ *
+ * @sa palInitVideo()
+ * @ingroup video
+ */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
+/**
+ * @brief Return a list of all onnected monitors.
+ *
+ * User must `allocate` statically or dynamically and pass the maximum capacity of the
+ * allocated array as `count` and also pass the array itself as `monitors`.
+ * The user is responsible for the life time of the array.
+ *
+ * The `count` should be the number, not the size in bytes. Example:
+ * 
+ * @code
+ * PalMonitor* monitors[2];
+ * @endcode
+ * 
+ * @code
+ * Int32 count = 2;
+ * @endcode
+ *
+ * you can set the `monitors` to `nullptr` and PAL will set the number of the connected monitors to `count`.
+ * 
+ * If the `count` is zero or less than zero and the `monitors` is not `nullptr`, 
+ * this function fails and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
+ * If `count` is less than the number of connected monitors, PAL will write up to `count`.
+ *
+ * @param[in] count Capacity of the `monitors` array.
+ * @param[out] monitors User allocated array of PalMonitor.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note Users must not free the monitor handles, they are managed by the platform (OS).
+ * Users are required to cache this, 
+ * and call this function again if monitors are added or removed. see `PAL_EVENT_MONITOR_LIST_CHANGED`
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palInitVideo(), palGetPrimaryMonitor(), PalMonitorInfo
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palEnumerateMonitors(
     Int32 *count,
     PalMonitor **outMonitors);
 
+/**
+ * @brief Get the primary connected monitor.
+ *
+ * @param[out] outMonitor Pointer to recieve the primary monitor.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note Users must not free the monitor handle, it is managed by the platform (OS).
+ * @note This function must be called from the main thread.
+ *
+ * @sa palInitVideo(), palEnumerateMonitors(), PalMonitorInfo
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palGetPrimaryMonitor(
     PalMonitor **outMonitor);
 
+/**
+ * @brief Get information about a monitor.
+ *
+ * This function takes in a PalMonitorInfo struct and fills it.
+ * Some of the fields are set to defaults if the operation is not supported on the platform (OS).
+ * example: On Windows 7, DPI will always be 96.
+ *
+ * @param[in] monitor Monitor handle.
+ * @param[out] info Pointer to the PalMonitorInfo struct to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palEnumerateMonitors(), palGetPrimaryMonitor(), PalMonitorInfo
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palGetMonitorInfo(
     PalMonitor *monitor,
     PalMonitorInfo *info);
 
+/**
+ * @brief Return a list of all supported monitor modes for the provided monitor.
+ *
+ * User must `allocate` statically or dynamically and pass the maximum capacity of the
+ * allocated array as `count` and also pass the array itself as `modes`.
+ * The user is responsible for the life time of the array.
+ *
+ * The `count` should be the number, not the size in bytes. Example:
+ * 
+ * @code
+ * PalMonitorMode modes[2];
+ * @endcode
+ * 
+ * @code
+ * Int32 count = 2;
+ * @endcode
+ *
+ * you can set the `modes` to `nullptr` and PAL will set the number of available monitor modes to `count`.
+ * 
+ * If the `count` is zero or less than zero and the `modes` is nut `nullptr`, 
+ * this function fails and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
+ * If `count` is less than the available monitor modes, PAL will write up to `count`.
+ *
+ * @param[in] monitor Monitor handle.
+ * @param[in] count Capacity of the `modes` array.
+ * @param[out] modes User allocated array of PalMonitorMode.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
     PalMonitor *monitor,
     Int32 *count,
     PalMonitorMode *modes);
 
+/**
+ * @brief Get the current monitor mode of a monitor.
+ *
+ * @param[in] monitor Monitor handle.
+ * @param[out] mode Pointer to recieve the current monitor mode.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
     PalMonitor *monitor,
     PalMonitorMode *mode);
 
+/**
+ * @brief Set the active monitor mode of a monitor.
+ *
+ * PAL only validates the `mode` pointer not the values. To be safe,
+ * users must get the monitor mode from `palEnumerateMonitorModes()` or `palValidateMonitorMode()` to validate the mode before changing.
+ *
+ * If the monitor mode submitted is invalid, this function might fail depending on the platform (OS).
+ * 
+ * `PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH` must be supported 
+ * otherwise this function fails and returns `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] monitor Monitor handle.
+ * @param[out] mode Pointer to the monitor mode.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
+ * @sa palEnumerateMonitorModes(), palGetCurrentMonitorMode()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palSetMonitorMode(
     PalMonitor *monitor,
     PalMonitorMode *mode);
 
+/**
+ * @brief Check if the provided monitor mode is valid on the monitor.
+ * 
+ * @param[in] monitor Monitor handle.
+ * @param[out] mode Pointer to the monitor mode.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function mus be called from the main thread.
+ *
+ * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
+ * @sa palEnumerateMonitorModes(), palGetCurrentMonitorMode()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palValidateMonitorMode(
     PalMonitor *monitor,
     PalMonitorMode *mode);
 
+/**
+ * @brief Set the orientation for a monitor.
+ *
+ * This affects all monitor modes for the monitor.
+ * 
+ * `PAL_VIDEO_FEATURE_MONITOR_ORIENTATION` must be supported 
+ * otherwise this function fails and returns `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] monitor Monitor handle.
+ * @param[in] orientation The monitor orientation. example: `PAL_ORIENTATION_PORTRAIT`.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ * @note This change is temporary and will be reset when the platform (OS) is reboot.
+ *
+ * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palSetMonitorOrientation(
     PalMonitor *monitor,
     PalOrientation orientation);

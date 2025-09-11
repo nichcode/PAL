@@ -72,8 +72,8 @@ typedef enum {
     PAL_EVENT_WINDOW_STATE,            /** < The window state has changed (minimzie, maximize, restores).*/
     PAL_EVENT_WINDOW_FOCUS,            /** < The window has gained or lost focus. Check `event.data` if `true` or `false`.*/
     PAL_EVENT_WINDOW_VISIBILITY,       /** < The window is shown or hidden. Check `event.data` if `true` or `false`.*/
-    PAL_EVENT_WINDOW_MODAL_BEGIN,      /** < The window has entered move or resize modal. Only for `Windows`.*/
-    PAL_EVENT_WINDOW_MODAL_END,        /** < The window has exited move or resize modal. Only for `Windows`.*/
+    PAL_EVENT_WINDOW_MODAL_BEGIN,      /** < The window has entered move or resize modal.`.*/
+    PAL_EVENT_WINDOW_MODAL_END,        /** < The window has exited move or resize modal.`.*/
     PAL_EVENT_MONITOR_DPI_CHANGED,     /** < The monitor DPI has changed.*/
     PAL_EVENT_MONITOR_LIST_CHANGED,    /** < The monitor list has changed. Enumerate `palEnumerateMonitors()` again to get valid handles.*/
     PAL_EVENT_KEYDOWN,                 /** < A keyboard key was pressed.*/
@@ -135,7 +135,6 @@ typedef struct {
  * @brief Specifications for creating an event driver.
  *
  * This struct must be initialized and passed to `palCreateEventDriver()`.
- *
  * All fields must be explicitly set by the user.
  *
  * @note Uninitialized fields may result in undefined behavior.
