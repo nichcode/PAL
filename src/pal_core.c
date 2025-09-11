@@ -226,9 +226,6 @@ const char* PAL_CALL palFormatResult(
         case PAL_RESULT_INVALID_MONITOR_MODE:
         return "The provided monitor mode was invalid";
 
-        case PAL_RESULT_INVALID_ORIENTATION:
-        return "The provided orientation is invalid";
-
         case PAL_RESULT_INVALID_WINDOW:
         return "The provided window handle was invalid";
 
@@ -243,6 +240,9 @@ const char* PAL_CALL palFormatResult(
 
         case PAL_RESULT_INVALID_MOUSE_BUTTON:
         return "The provided mouse button was invalid";
+
+        case PAL_RESULT_INVALID_ORIENTATION: 
+        return "The provided orientation was invalid";
 
         // opengl
         case PAL_RESULT_GL_NOT_INITIALIZED:
