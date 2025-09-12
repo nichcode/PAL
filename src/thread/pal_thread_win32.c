@@ -417,7 +417,7 @@ PalResult PAL_CALL palSetThreadName(
 PalTLSId PAL_CALL palCreateTLS(
     PaTlsDestructorFn destructor) {
 
-    DWORD tlsid = tlsid = FlsAlloc(destructor);
+    DWORD tlsid = FlsAlloc(destructor);
     if (tlsid == FLS_OUT_OF_INDEXES) {
         return 0;
     }

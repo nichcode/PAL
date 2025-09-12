@@ -185,6 +185,7 @@ PAL_API PalResult PAL_CALL palJoinThread(
  * 
  * This function must be called when the thread is done executing.
  * After this call, the thread cannot be attached or used anymore.
+ * If `thread` is invalid, this function returns silently.
  *
  * @param[in] thread Pointer to the thread.
  *
@@ -375,7 +376,7 @@ PAL_API PalResult PAL_CALL palSetThreadName(
  *
  * @return The TLS or `0` on failure
  *
- * @note This function is not thread safe.
+ * @note This function is thread safe.
  *
  * @sa palSetTLS(), palGetTLS(), palDestroyTLS()
  * @ingroup thread
@@ -390,7 +391,7 @@ PAL_API PalTLSId PAL_CALL palCreateTLS(
  *
  * @param[in] id The TLS
  *
- * @note This function is not thread safe.
+ * @note This function is thread safe.
  *
  * @sa palSetTLS(), palGetTLS(), palCreateTLS()
  * @ingroup thread
@@ -407,7 +408,7 @@ PAL_API void PAL_CALL palDestroyTLS(
  * 
  * @return the value on success or `nullptr` on failure
  *
- * @note This function is not thread safe.
+ * @note This function is thread safe.
  *
  * @sa palSetTLS(), palCreateTLS()
  * @ingroup thread
@@ -423,7 +424,7 @@ PAL_API void* PAL_CALL palGetTLS(
  * @param[in] id The TLS
  * @param[in] data The value to set for the calling thread
  *
- * @note This function is not thread safe.
+ * @note This function is thread safe.
  *
  * @sa palGetTLS(), palCreateTLS()
  * @ingroup thread
@@ -432,15 +433,62 @@ PAL_API void PAL_CALL palSetTLS(
     PalTLSId id, 
     void* data);
 
+/**
+ * @brief Create a new mutex
+ *
+ * @param[out] outThread Pointer to recieve the created mutex.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is thread safe if `outMutex` is thread local.
+ *
+ * @sa palDestroyMutex(), palLockMutex(), palUnlockMutex()
+ * @ingroup thread
+ */
 PAL_API PalResult PAL_CALL palCreateMutex(
     PalMutex** outMutex);
 
+/**
+ * @brief Destroy a mutex
+ * 
+ * If `mutex` is invalid, this function returns silently.
+ * The mutex must be unlocked before destroying if it was locked.
+ *
+ * @param[in] mutex Pointer to the mutex.
+ *
+ * @note This function is not thread safe.
+ *
+ * @sa palCreateMutex(), palLockMutex(), palUnlockMutex()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palDestroyMutex(
     PalMutex* mutex);
 
+/**
+ * @brief Lock a mutex. Blocks if the mutex is alrrady locked by another thread
+ *
+ * @param[in] mutex Pointer to the mutex.
+ *
+ * @note This function is thread safe.
+ *
+ * @sa palCreateMutex(), palUnlockMutex()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palLockMutex(
     PalMutex* mutex);
 
+/**
+ * @brief Unlock a mutex.
+ * 
+ * The function must be called by the thread that first locked it.
+ *
+ * @param[in] mutex Pointer to the mutex.
+ *
+ * @note This function is thread safe.
+ *
+ * @sa palCreateMutex(), palUnlockMutex()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palUnlockMutex(
     PalMutex* mutex);
 
