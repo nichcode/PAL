@@ -268,7 +268,6 @@ typedef struct {
  *
  * @return A copy of PAL runtime version.
  * @note This function is thread-safe
- * @note This function can be called from any thread.
  * @sa palGetVersionString(), PalVersion
  * @ingroup core
  */
@@ -282,7 +281,6 @@ PAL_API PalVersion PAL_CALL palGetVersion();
  *
  * @return A pointer to the null-terminated UTF-8 encoding string.
  * @note This function is thread-safe and the pointer must not be freed.
- * @note This function can be called from any thread.
  * @sa palGetVersion(), PalVersion
  * @ingroup core
  */
@@ -297,7 +295,6 @@ PAL_API const char* PAL_CALL palGetVersionString();
  * @return A pointer to the null-terminated UTF-5 encoding string.
  * 
  * @note This function is thread-safe and the pointer must not be freed.
- * @note This function can be called from any thread.
  * @sa PalResult
  */
 PAL_API const char* PAL_CALL palFormatResult(
@@ -317,7 +314,6 @@ PAL_API const char* PAL_CALL palFormatResult(
  *
  * @note This does not initialize the allocated memory.
  * This function is thread safe if the provided allocator is thread safe.
- * @note This function can be called from any thread.
  * 
  * @sa palFree(), PalAllocator
  * @ingroup core
@@ -337,7 +333,6 @@ PAL_API void* PAL_CALL palAllocate(
  * @param[in] ptr The pointer to the memory block to free.
  *
  * @note This function is thread safe if the provided allocator is thread safe.
- * @note This function can be called from any thread.
  * 
  * @sa PalAllocator, palAllocate
  * @ingroup core
@@ -364,7 +359,6 @@ PAL_API void PAL_CALL palFree(
  * @note This function is thread-safe. 
  * This will do nothing if there's no console on the platform (OS).
  * On Windows, PAL will log to the debug console.
- * @note This function can be called from any thread.
  * 
  * @ingroup core
  */
@@ -378,7 +372,6 @@ PAL_API void PAL_CALL palLog(
  * @return Current tick count from the system
  * 
  * @note This function is thread-safe.
- * @note This function can be called from any thread.
  * 
  * @sa palGetPerformanceFrequency
  * @ingroup core
@@ -393,7 +386,6 @@ PAL_API Uint64 PAL_CALL palGetPerformanceCounter();
  * 
  * @note The returned frequency is constant for the duration of the application.
  * @note This function is thread-safe.
- * @note This function can be called from any thread.
  * 
  * @sa palGetPerformanceCounter
  * @ingroup core
@@ -406,7 +398,6 @@ PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
  * @return The combined 64-bit signed integer.
  * 
  * @note This function is thread-safe. 
- * @note This function can be called from any thread.
  * 
  * @sa palPackInt32(), palUnpackUint32(), palUnpackInt32()
  * @ingroup core
@@ -424,7 +415,6 @@ static inline Int64 PAL_CALL palPackUint32(
  * @return The combined 64-bit signed integer.
  * 
  * @note This function is thread-safe. 
- * @note This function can be called from any thread.
  * 
  * @sa palPackInt32(), palUnpackUint32(), palUnpackInt32()
  * @ingroup core
@@ -442,7 +432,6 @@ static inline Int64 PAL_CALL palPackInt32(
  * @return The packed 64-bit signed integer.
  * 
  * @note This function is thread-safe. 
- * @note This function can be called from any thread.
  * 
  * @sa palUnpackPointer()
  * @ingroup core
@@ -460,7 +449,6 @@ static inline Int64 PAL_CALL palPackPointer(
  * @param[out] outHigh High value of the 64-bit signed integer.
  * 
  * @note This function is thread-safe. 
- * @note This function can be called from any thread.
  * 
  * @sa palPackUint32(), palUnpackInt32()
  * @ingroup core
@@ -486,7 +474,6 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outHigh High value of the 64-bit signed integer.
  * 
  * @note This function is thread-safe. 
- * @note This function can be called from any thread.
  * 
  * @sa palUnpackInt32(), palPackUint32()
  * @ingroup core
@@ -511,7 +498,6 @@ static inline void PAL_CALL palUnpackInt32(
  * @return The pointer from the 64-bit signed integer.
  * 
  * @note This function is thread-safe. 
- * @note This function can be called from any thread.
  * 
  * @sa palPackPointer()
  * @ingroup core
