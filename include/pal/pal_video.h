@@ -893,7 +893,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * The video system must be initialized before this call.
  * The `info` pointer must be valid, explicitly initialized by the user. see `PalWindowCreateInfo` struct.
  *
- * @param[in] info Pointer to the PalWindowCreateInfo struct with the specifications.
+ * @param[in] info Pointer to the PalWindowCreateInfo struct with creation specifications.
  * @param[out] outWindow Pointer to recieve the created window.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
@@ -1478,21 +1478,98 @@ PAL_API PalResult PAL_CALL palSetWindowSize(
 PAL_API PalResult PAL_CALL palSetFocusWindow(
     PalWindow* window);
 
+/**
+ * @brief Create an icon with PAL video system.
+ * 
+ * The video system must be initialized before this call.
+ * The `info` pointer must be valid, explicitly initialized by the user. see `PalIconCreateInfo` struct.
+ *
+ * @param[in] info Pointer to the PalIconCreateInfo struct with creation specifications.
+ * @param[out] outIcon Pointer to recieve the created icon.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa PalIconCreateInfo, palDestroyIcon()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palCreateIcon(
     const PalIconCreateInfo* info,
     PalIcon** outIcon);
 
+/**
+ * @brief Destroy the provided icon.
+ * 
+ * The video system must be initialized before this call.
+ *
+ * This must be destroyed before the video system is shutdown.
+ * If `icon` is invalid, this function returns silently.
+ *
+ * @param[in] icon Pointer to the icon to destroy.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palCreateIcon()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palDestroyIcon(
     PalIcon* icon);
 
+/**
+ * @brief Set the icon for the provided window.
+ * 
+ * The video system must be initialized before this call. Both the `window` and the `icon` must be valid.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] icon Pointer to the icon.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ * 
+ * @sa palCreateWindow(), palCreateIcon()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palSetWindowIcon(
     PalWindow* window,
     PalIcon* icon);
 
+/**
+ * @brief Create a cursor with PAL video system.
+ * 
+ * The video system must be initialized before this call.
+ * The `info` pointer must be valid, explicitly initialized by the user. see `PalCursorCreateInfo` struct.
+ *
+ * @param[in] info Pointer to the PalCursorCreateInfo struct with creation specifications.
+ * @param[out] outCursor Pointer to recieve the created cursor.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa PalCursorCreateInfo, palDestroyCursor()
+ * @ingroup video
+ */
 PAL_API PalResult PAL_CALL palCreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** outCursor);
 
+/**
+ * @brief Destroy the provided cursor.
+ * 
+ * The video system must be initialized before this call.
+ *
+ * This must be destroyed before the video system is shutdown.
+ * If `cursor` is invalid, this function returns silently.
+ *
+ * @param[in] cursor Pointer to the cursor to destroy.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palCreateCursor()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palDestroyCursor(
     PalCursor* cursor);
 
@@ -1513,6 +1590,21 @@ PAL_API void PAL_CALL palSetCursorPos(
     Int32 x,
     Int32 y);
 
+/**
+ * @brief Set the cursor for the provided window.
+ * 
+ * The video system must be initialized before this call. Both the `window` and the `cursor` must be valid.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] cursor Pointer to the cursor.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ * 
+ * @sa palCreateWindow(), palCreateCursor()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor);
