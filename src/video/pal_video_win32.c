@@ -2265,14 +2265,6 @@ PalWindow* PAL_CALL palGetFocusWindow() {
     if (!s_Video.initialized) {
         return nullptr;
     }
-    return (PalWindow*)GetFocus();
-}
-
-PalWindow* PAL_CALL palGetForegroundWindow() {
-
-    if (!s_Video.initialized) {
-        return nullptr;
-    }
     return (PalWindow*)GetForegroundWindow();
 }
 
@@ -2494,28 +2486,6 @@ PalResult PAL_CALL palSetWindowSize(
 }
 
 PalResult PAL_CALL palSetFocusWindow(
-    PalWindow* window) {
-    
-    if (!s_Video.initialized) {
-        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
-    }
-
-    if (!window) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (!SetFocus((HWND)window)) {
-        DWORD error = GetLastError();
-        if (error ==ERROR_INVALID_HANDLE) {
-            return PAL_RESULT_INVALID_WINDOW;
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
-        }
-    }
-    return PAL_RESULT_SUCCESS;
-}
-
-PalResult PAL_CALL palSetForegroundWindow(
     PalWindow* window) {
     
     if (!s_Video.initialized) {
