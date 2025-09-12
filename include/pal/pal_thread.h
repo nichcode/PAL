@@ -492,24 +492,104 @@ PAL_API void PAL_CALL palLockMutex(
 PAL_API void PAL_CALL palUnlockMutex(
     PalMutex* mutex);
 
+/**
+ * @brief Create a new condition variable
+ *
+ * @param[out] outCondition Pointer to recieve the created condition variable.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is thread safe if `outCondition` is thread local.
+ *
+ * @sa palDestroyCondVar(), palWaitCondVar()
+ * @ingroup thread
+ */
 PAL_API PalResult PAL_CALL palCreateCondVar(
     PalCondVar** outCondition);
 
+/**
+ * @brief Destroy a condition variable
+ * 
+ * If `condition` is invalid, this function returns silently.
+ * Threads must not wait on the condition variable otherwise undefined behaviour.
+ *
+ * @param[in] condition Pointer to the condition.
+ *
+ * @note This function is not thread safe.
+ *
+ * @sa palCreateCondVar(), palWaitCondVar()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palDestroyCondVar(
     PalCondVar* condition);
 
+/**
+ * @brief Unlock the provided mutex and wait on the condition variable.
+ * 
+ * The mutex must be locked before this call. Spurious wakeups may occur, its best to use a loop.
+ * This waits until the condition varibale is signaled.
+ * 
+ * Example:
+ * 
+ * @code
+ * while (!ready) { palWaitCondVar(condition, mutex); }
+ * @endcode
+ *
+ * @param[in] condition Pointer to the condition.
+ * @param[in] mutex Pointer to the mutex.
+ *
+ * @note This function is thread safe.
+ *
+ * @sa palCreateMutex(), palCreateCondVar()
+ * @ingroup thread
+ */
 PAL_API PalResult PAL_CALL palWaitCondVar(
     PalCondVar* condition,
     PalMutex* mutex);
 
+/**
+ * @brief Unlock the provided mutex and wait on the condition variable.
+ * 
+ * The mutex must be locked before this call. Spurious wakeups may occur, its best to use a loop.
+ * If the condition variable is not signaled but the time to wait is up `PAL_RESULT_TIMEOUT` is returned.
+ *
+ * @param[in] condition Pointer to the condition.
+ * @param[in] mutex Pointer to the mutex.
+ * @param[in] milliseconds Timeout in milliseconds
+ *
+ * @note This function is thread safe.
+ *
+ * @sa palCreateMutex(), palCreateCondVar()
+ * @ingroup thread
+ */
 PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
     PalCondVar* condition,
     PalMutex* mutex,
     Uint64 milliseconds);
 
+/**
+ * @brief Wake a single thread waiting on the condition variable.
+ * 
+ * @param[in] condition Pointer to the condition.
+ *
+ * @note This function is thread safe.
+ *
+ * @sa palCreateCondVar(), palWaitCondVar()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palSignalCondVar(
     PalCondVar* condition);
-    
+
+/**
+ * @brief Wake all threads waiting on the condition variable.
+ * 
+ * @param[in] condition Pointer to the condition.
+ *
+ * @note This function is thread safe.
+ *
+ * @sa palCreateCondVar(), palSignalCondVar()
+ * @ingroup thread
+ */    
 PAL_API void PAL_CALL palBroadcastCondVar(
     PalCondVar* condition);
 
