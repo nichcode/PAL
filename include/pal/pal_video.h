@@ -1573,18 +1573,76 @@ PAL_API PalResult PAL_CALL palCreateCursor(
 PAL_API void PAL_CALL palDestroyCursor(
     PalCursor* cursor);
 
+/**
+ * @brief Show or hide the provided cursor.
+ * 
+ * The video system must be initialized before this call. 
+ * This affects all created cursors since the platform (OS) merges all cursors into a single one on the screen or desktop
+ *
+ * @param[in] show True to make the cursor visible otherwise false.
+ *
+ * @note This function is not thread safe.
+ *
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palShowCursor(
     bool show);
 
+/**
+ * @brief Clip or capped the cursor to the provided window.
+ * 
+ * The video system must be initialized before this call. 
+ * If the `window` is destroyed without unclipping the cursor, this cursor might not reset depending on the platform (OS).
+ * To be safe, unclip the cursor from the `window` before destroying the window.
+ *
+ * @param[in] show True to make the cursor visible otherwise false.
+ *
+ * @note This function is not thread safe.
+ *
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palClipCursor(
     PalWindow* window,
     bool clip);
 
+/**
+ * @brief Get the position of the provided window cursor in pixels.
+ * 
+ * The video system must be initialized before this call.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[out] x Pointer to recieve the window cursor's position x. Can be `nullptr`.
+ * @param[out] y Pointer to recieve the window cursor's position y. Can be `nullptr`.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is thread-safe if `x` and `y` are thread local.
+ *
+ * @sa palCreateWindow(), palSetWindowPos()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palGetCursorPos(
     PalWindow* window,
     Int32* x,
     Int32* y);
 
+/**
+ * @brief Set the position of the provided window cursor in pixels.
+ * 
+ * The video system must be initialized before this call.
+ * The window cursor can be set with `palSetWindowCursor()`.
+ *
+ * @param[in] window Pointer to the window.
+ * @param[in] x The new x coordinate of the cursor in pixels.
+ * @param[in] y The new y coordinate of the cursor in pixels.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palCreateWindow(), palSetWindowCursor()
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palSetCursorPos(
     PalWindow* window,
     Int32 x,
