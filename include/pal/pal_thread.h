@@ -365,15 +365,69 @@ PAL_API PalResult PAL_CALL palSetThreadName(
     PalThread* thread, 
     const char* name);
 
+/**
+ * @brief Create a new TLS
+ * 
+ * The TLS handle can be used by multiple threads to associate thread local vaules.
+ * The `destructor` will be called if `palDestroyTLS()` is called and the TLS has a valid value.
+ *
+ * @param[in] destructor Pointer to the TLS destructor function. Can be `nullptr`
+ *
+ * @return The TLS or `0` on failure
+ *
+ * @note This function is not thread safe.
+ *
+ * @sa palSetTLS(), palGetTLS(), palDestroyTLS()
+ * @ingroup thread
+ */
 PAL_API PalTLSId PAL_CALL palCreateTLS(
     PaTlsDestructorFn destructor);
 
+/**
+ * @brief Destroy the provided TLS.
+ * 
+ * If the value of the TLS is valid and not `nullptr`, the destructor will be called.
+ *
+ * @param[in] id The TLS
+ *
+ * @note This function is not thread safe.
+ *
+ * @sa palSetTLS(), palGetTLS(), palCreateTLS()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palDestroyTLS(
     PalTLSId id);
 
+/**
+ * @brief Get the value associated with the provided TLS.
+ * 
+ * The value is per thread.
+ *
+ * @param[in] id The TLS
+ * 
+ * @return the value on success or `nullptr` on failure
+ *
+ * @note This function is not thread safe.
+ *
+ * @sa palSetTLS(), palCreateTLS()
+ * @ingroup thread
+ */
 PAL_API void* PAL_CALL palGetTLS(
     PalTLSId id);
 
+/**
+ * @brief Set the value associated with the provided TLS.
+ * 
+ * The value is per thread. This function fails silently if the TLS is not valid.
+ *
+ * @param[in] id The TLS
+ * @param[in] data The value to set for the calling thread
+ *
+ * @note This function is not thread safe.
+ *
+ * @sa palGetTLS(), palCreateTLS()
+ * @ingroup thread
+ */
 PAL_API void PAL_CALL palSetTLS(
     PalTLSId id, 
     void* data);
