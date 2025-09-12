@@ -1215,16 +1215,84 @@ PAL_API PalResult PAL_CALL palGetWindowState(
     PalWindow* window, 
     PalWindowState* state);
 
+/**
+ * @brief Get the current state of the keycodes (layout aware keys) of the keyboard.
+ * 
+ * The video system must be initialized before this call.
+ * 
+ * The returned pointer must not be freed. The state is updated when `palUpdateInput()` is called.
+ * The array must be index with PalKeycodes and not exceed `PAL_KEYCODE_MAX`. see `PalKeycode`
+ * 
+ * @return An array of the current state of the keycodes of the keyboard
+ *
+ * @note This function is thread-safe.
+ *
+ * @sa PalKeycode
+ * @ingroup video
+ */
 PAL_API const bool* PAL_CALL palGetKeycodeState();
 
+/**
+ * @brief Get the current state of the scancodes (layout independent keys) of the keyboard.
+ * 
+ * The video system must be initialized before this call.
+ * 
+ * The returned pointer must not be freed. The state is updated when `palUpdateInput()` is called.
+ * The array must be index with PalScancodes and not exceed `PAL_SCANCODE_MAX`. see `PalScancode`
+ * 
+ * @return An array of the current state of the scancodes of the keyboard
+ *
+ * @note This function is thread-safe.
+ *
+ * @sa PalScancode
+ * @ingroup video
+ */
 PAL_API const bool* PAL_CALL palGetScancodeState();
 
+/**
+ * @brief Get the current state of the buttons of the mouse.
+ * 
+ * The video system must be initialized before this call.
+ * 
+ * The returned pointer must not be freed. The state is updated when `palUpdateInput()` is called.
+ * The array must be index with PalMouseButton and not exceed `PAL_MOUSE_BUTTON_MAX`. see `PalMouseButton`
+ * 
+ * @return An array of the current state of the buttons of the mouse
+ *
+ * @note This function is thread-safe.
+ *
+ * @sa PalMouseButton
+ * @ingroup video
+ */
 PAL_API const bool* PAL_CALL palGetMouseState();
 
+/**
+ * @brief Get the relative movement of the mouse.
+ * 
+ * The video system must be initialized before this call.
+ * 
+ * The relative movement will be updated when `palUpdateInput()` is called.
+ * The relative movement is in desktop pixels, relative to screen coordinates.
+ *
+ * @note This function is thread-safe if `dx` and `dy` are thread local.
+ *
+ * @ingroup video
+ */
 PAL_API void PAL_CALL palGetMouseDelta(
     Int32* dx,
     Int32* dy);
 
+/**
+ * @brief Get the wheel delta of the mouse.
+ * 
+ * The video system must be initialized before this call.
+ * The wheel delta will be updated when `palUpdateInput()` is called.
+ * PAL wheel values are typically `120`.
+ *
+ * @note This function is thread-safe if `dx` and `dy` are thread local.
+ *
+ * @ingroup video
+ */
 void PAL_CALL palGetMouseWheelDelta(
     Int32* dx, 
     Int32* dy);
