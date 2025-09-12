@@ -631,7 +631,7 @@ PAL_API PalResult PAL_CALL palInitVideo(
 /**
  * @brief Shutdown the video system.
  *
- * * The video system must be initialized before this call otherwise this functions returns silently.
+ * The video system must be initialized before this call otherwise this functions returns silently.
  * This function does not destroy created windows and other video resources, 
  * therefore all created windows and other video resources must be destroyed explicitly before this function.
  *
@@ -675,7 +675,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * 
  * The video system must be initialized before this call.
  * 
- * User must `allocate` statically or dynamically and pass the maximum capacity of the
+ * Users must `allocate` statically or dynamically and pass the maximum capacity of the
  * allocated array as `count` and also pass the array itself as `monitors`.
  * The user is responsible for the life time of the array.
  *
@@ -759,7 +759,7 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  * 
  * The video system must be initialized before this call.
  *
- * User must `allocate` statically or dynamically and pass the maximum capacity of the
+ * Users must `allocate` statically or dynamically and pass the maximum capacity of the
  * allocated array as `count` and also pass the array itself as `modes`.
  * The user is responsible for the life time of the array.
  *
