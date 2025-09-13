@@ -262,27 +262,119 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     Int32 count,
     const PalGLFBConfig* desired);
 
+/**
+ * @brief Create a context with PAL opengl system.
+ * 
+ * The opengl system must be initialized before this call.
+ * The `info` pointer must be valid, explicitly initialized by the user. see `PalGLContextCreateInfo` struct.
+ *
+ * @param[in] info Pointer to the PalGLContextCreateInfo struct with creation specifications.
+ * @param[out] outContext Pointer to recieve the created context.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa PalGLContextCreateInfo, palDestroyGLContext()
+ * @ingroup opengl
+ */
 PAL_API PalResult PAL_CALL palCreateGLContext(
     const PalGLContextCreateInfo* info,
     PalGLContext** outContext);
 
+/**
+ * @brief Destroy the provided context.
+ * 
+ * The opengl system must be initialized before this call.
+ *
+ * This must be destroyed before the opengl system is shutdown.
+ * If `context` is invalid, this function returns silently.
+ *
+ * @param[in] context Pointer to the context to destroy.
+ *
+ * @note This function must be called from the main thread.
+ *
+ * @sa palCreateGLContext()
+ * @ingroup opengl
+ */
 PAL_API void PAL_CALL palDestroyGLContext(
     PalGLContext* context);
 
+/**
+ * @brief Make the provided context current of the calling thread
+ * 
+ * The opengl system must be initialized before this call.
+ *
+ * @param[in] context Pointer to the context to destroy.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function is not thread safe
+ *
+ * @sa palCreateGLContext()
+ * @ingroup opengl
+ */
 PAL_API PalResult PAL_CALL palMakeContextCurrent(
     PalGLWindow* glWindow,
     PalGLContext* context);
 
+/**
+ * @brief Get the pointer to a named opengl function.
+ * 
+ * The opengl system must be initialized before this call.
+ *
+ * @param[in] context Pointer to the context to destroy.
+ * 
+ * @return the pointer to the function on success or `nullptr` on failure.
+ *
+ * @note This function is thread safe
+ *
+ * @sa palInitGL()
+ * @ingroup opengl
+ */
 PAL_API void* PAL_CALL palGLGetProcAddress(
     const char* name);
 
+/**
+ * @brief Present the contents of the back buffer of the the provided context to the screen
+ * 
+ * The opengl system must be initialized before this call.
+ * 
+ * @param[in] context Pointer to the context to destroy.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from the thread that has the bound context
+ *
+ * @sa palCreateGLContext()
+ * @ingroup opengl
+ */
 PAL_API PalResult PAL_CALL palSwapBuffers(
     PalGLWindow* glWindow,
     PalGLContext* context);
 
+/**
+ * @brief Set the swap interval for the current context.
+ * 
+ * The opengl system must be initialized before this call.
+ * The affects the currently cound context on the calling thread, see `palMakeContextCurrent()`.
+ * 
+ * `interval` == 0, no vsync
+ * 
+ * `interval` == 0, vsync
+ * 
+ * `interval` > 0, multiples of refresh if supported on the driver
+ * 
+ * @param[in] context The swap interval
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
+ *
+ * @note This function must be called from a thread with a bound context.
+ *
+ * @sa palInitGL()
+ * @ingroup opengl
+ */
 PAL_API void PAL_CALL palSetSwapInterval(
-    PalGLWindow* glWindow,
-    PalGLContext* context,
     Int32 interval);
 
 #endif // _PAL_OPENGL_H

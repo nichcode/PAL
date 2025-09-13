@@ -1031,13 +1031,7 @@ void* PAL_CALL palGLGetProcAddress(
 }
 
 void PAL_CALL palSetSwapInterval(
-    PalGLWindow* glWindow,
-    PalGLContext* context,
     Int32 interval) {
-    
-    if (!context || !glWindow) {
-        return;
-    }
 
     if (s_Wgl.wglSwapIntervalEXT) {
         s_Wgl.wglSwapIntervalEXT(interval);
