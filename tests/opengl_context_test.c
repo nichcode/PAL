@@ -205,8 +205,8 @@ bool openglContextTest() {
     }
 
     if (info->extensions & PAL_GL_EXTENSION_SWAP_CONTROL) {
-        // vsync is supported
-        palSetSwapInterval(&glWindow, context, 1);
+        // vsync is supported. This is set for the current context
+        palSetSwapInterval(1);
     }
 
     // load function procs

@@ -38,5 +38,9 @@ workspace "PAL_workspace"
         include "tests/tests.lua"
     end
 
+    if (PAL_BUILD_BENCH) then
+        include "bench/bench.lua"
+    end
+
     include "pal.lua"
     

@@ -5,7 +5,7 @@
 PAL is a lightweight, low-level, modular, explicit, cross-platform abstraction layer for system functionality (video, input, threading, etc.).
 It is designed to be **explicit**, and as close to the OS as possible — similar in philosophy to Vulkan. PAL is such that, querying state with PAL on a window should be the same as querying the state with the direct OS call. PAL is like a helper not an abstraction hidding the OS. PAL and the user stores and gets the state directly from the OS.
 
-PAL currently supports only Windows. But Linux, Andriod and MacOS support will be added down the line.
+PAL currently supports only Windows. But Linux, Android and MacOS support will be added down the line.
 
 - Minimal overhead (close to raw OS calls)  
 - Explicit API (no hidden behavior or magic defaults)  
