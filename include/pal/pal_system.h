@@ -40,25 +40,25 @@ freely, subject to the following restrictions:
 
 typedef enum {
     PAL_CPU_ARCH_UNKNOWN,
-    PAL_CPU_ARCH_X86,          /** < 32 bit Architecture.*/
-    PAL_CPU_ARCH_X86_64,       /** < 64 bit Architecture.*/
+    PAL_CPU_ARCH_X86,    /** < 32 bit Architecture.*/
+    PAL_CPU_ARCH_X86_64, /** < 64 bit Architecture.*/
     PAL_CPU_ARCH_ARM,
     PAL_CPU_ARCH_ARM64
 } PalCpuArch;
 
 typedef enum {
-    PAL_CPU_FEATURE_SSE = PAL_BIT(0),
-    PAL_CPU_FEATURE_SSE2 = PAL_BIT(1),
-    PAL_CPU_FEATURE_SSE3 = PAL_BIT(2),
-    PAL_CPU_FEATURE_SSSE3 = PAL_BIT(3),
-    PAL_CPU_FEATURE_SSE41 = PAL_BIT(4),        /** < SSE4.1 instruction set.*/
-    PAL_CPU_FEATURE_SSE42 = PAL_BIT(5),        /** < SSE4.2 instruction set.*/
-    PAL_CPU_FEATURE_AVX = PAL_BIT(6),
-    PAL_CPU_FEATURE_AVX2 = PAL_BIT(7),
+    PAL_CPU_FEATURE_SSE     = PAL_BIT(0),
+    PAL_CPU_FEATURE_SSE2    = PAL_BIT(1),
+    PAL_CPU_FEATURE_SSE3    = PAL_BIT(2),
+    PAL_CPU_FEATURE_SSSE3   = PAL_BIT(3),
+    PAL_CPU_FEATURE_SSE41   = PAL_BIT(4), /** < SSE4.1 instruction set.*/
+    PAL_CPU_FEATURE_SSE42   = PAL_BIT(5), /** < SSE4.2 instruction set.*/
+    PAL_CPU_FEATURE_AVX     = PAL_BIT(6),
+    PAL_CPU_FEATURE_AVX2    = PAL_BIT(7),
     PAL_CPU_FEATURE_AVX512F = PAL_BIT(8),
-    PAL_CPU_FEATURE_FMA3 = PAL_BIT(9),
-    PAL_CPU_FEATURE_BMI1 = PAL_BIT(10),
-    PAL_CPU_FEATURE_BMI2 = PAL_BIT(11)
+    PAL_CPU_FEATURE_FMA3    = PAL_BIT(9),
+    PAL_CPU_FEATURE_BMI1    = PAL_BIT(10),
+    PAL_CPU_FEATURE_BMI2    = PAL_BIT(11)
 } PalCpuFeatures;
 
 typedef enum {
@@ -76,56 +76,58 @@ typedef enum {
 } PalPlatformApiType;
 
 typedef struct {
-    PalPlatformType type;
+    PalPlatformType    type;
     PalPlatformApiType apiType;
-    Uint32 totalMemory;                     /** < Total Disk memory*/
-    Uint32 totalRAM;                        /** < Total CPU memory*/
-    PalVersion version;                     /** < Platform version*/
-    char name[PAL_PLATFORM_NAME_SIZE];
+    Uint32             totalMemory; /** < Total Disk memory*/
+    Uint32             totalRAM;    /** < Total CPU memory*/
+    PalVersion         version;     /** < Platform version*/
+    char               name[PAL_PLATFORM_NAME_SIZE];
 } PalPlatformInfo;
 
 typedef struct {
-    Uint32 numCores;                           /** < Number of cores*/
-    Uint32 cache1;                             /** < L1 cache in KB*/
-    Uint32 cache2;                             /** < L2 cache in KB*/
-    Uint32 cache3;                             /** < L3 cache in KB*/
-    Uint32 numLogicalProcessors;               /** < Number of threads that can run simultaneously*/
-    PalCpuArch architecture;                   /** < Build architecture. Based on how the project will be built.*/
-    PalCpuFeatures features;                   /** < Supported instruction sets*/
-    char vendor[PAL_CPU_VENDOR_NAME_SIZE];
-    char model[PAL_CPU_MODEL_NAME_SIZE];
+    Uint32 numCores;             /** < Number of cores*/
+    Uint32 cache1;               /** < L1 cache in KB*/
+    Uint32 cache2;               /** < L2 cache in KB*/
+    Uint32 cache3;               /** < L3 cache in KB*/
+    Uint32 numLogicalProcessors; /** < Number of threads that can run
+                                    simultaneously*/
+    PalCpuArch architecture;     /** < Build architecture. Based on how the project
+                                    will be built.*/
+    PalCpuFeatures features;     /** < Supported instruction sets*/
+    char           vendor[PAL_CPU_VENDOR_NAME_SIZE];
+    char           model[PAL_CPU_MODEL_NAME_SIZE];
 } PalCPUInfo;
 
 /**
- * @brief Get platform (OS) information. 
+ * @brief Get platform (OS) information.
  *
  * @param[out] info Pointer to receive the platform info.
- * 
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
- * @note This function is not thread-safe. 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
+ * failure.
+ *
+ * @note This function is not thread-safe.
  *
  * @sa PalPlatformInfo
  * @ingroup system
  */
-PAL_API PalResult PAL_API palGetPlatformInfo(
-    PalPlatformInfo *info);
+PAL_API PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info);
 
 /**
- * @brief Get CPU information. 
+ * @brief Get CPU information.
  *
- * @param[in] allocator Optional user provided allocator. Set to `nullptr` to use default.
+ * @param[in] allocator Optional user provided allocator. Set to `nullptr` to
+ * use default.
  * @param[out] info Pointer to receive the CPU info.
- * 
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on failure.
  *
- * @note This function is not thread-safe. 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
+ * failure.
+ *
+ * @note This function is not thread-safe.
  *
  * @sa PalAllocator, PalCPUInfo
  * @ingroup system
  */
-PAL_API PalResult PAL_API palGetCPUInfo(
-    const PalAllocator* allocator, 
-    PalCPUInfo *info);
+PAL_API PalResult PAL_API palGetCPUInfo(const PalAllocator* allocator, PalCPUInfo* info);
 
 #endif // _PAL_SYSTEM_H

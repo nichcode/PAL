@@ -65,19 +65,18 @@ freely, subject to the following restrictions:
 static Uint32 s_TlsID = 0;
 
 typedef struct {
-    char tmp[PAL_LOG_MSG_SIZE];
-    char buffer[PAL_LOG_MSG_SIZE];
+    char    tmp[PAL_LOG_MSG_SIZE];
+    char    buffer[PAL_LOG_MSG_SIZE];
     wchar_t wideBuffer[PAL_LOG_MSG_SIZE];
-    bool isLogging;
+    bool    isLogging;
 } LogTLSData;
 
 // ==================================================
 // Internal API
 // ==================================================
 
-static inline void* alignedAlloc(
-    Uint64 size,
-    Uint64 alignment) { 
+static inline void* alignedAlloc(Uint64 size, Uint64 alignment)
+{
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
     return _aligned_malloc(size, alignment);
@@ -90,8 +89,8 @@ static inline void* alignedAlloc(
 #endif // _MSC_VER
 }
 
-static inline void alignedFree(
-    void* ptr) { 
+static inline void alignedFree(void* ptr)
+{
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
     _aligned_free(ptr);
@@ -100,8 +99,8 @@ static inline void alignedFree(
 #endif // _MSC_VER
 }
 
-static void destroyTlsData(
-    void* data) {
+static void destroyTlsData(void* data)
+{
 
     LogTLSData* tlsData = data;
     if (tlsData) {
@@ -109,7 +108,8 @@ static void destroyTlsData(
     }
 }
 
-static inline LogTLSData* getLogTlsData() {
+static inline LogTLSData* getLogTlsData()
+{
 
 #ifdef _WIN32
     LogTLSData* data = FlsGetValue((DWORD)s_TlsID);
@@ -125,23 +125,21 @@ static inline LogTLSData* getLogTlsData() {
             s_TlsID = FlsAlloc(destroyTlsData);
         }
         FlsSetValue(s_TlsID, data); // set the thread-specific data to the same tls id
-#endif // _WIN32
+#endif                              // _WIN32
     }
     return data;
 }
 
-static inline void updateLogTlsData(
-    LogTLSData* data) {
+static inline void updateLogTlsData(LogTLSData* data)
+{
 
 #ifdef _WIN32
     FlsSetValue(s_TlsID, data);
 #endif // _WIN32
 }
 
-static inline void formatArgs(
-    const char* fmt, 
-    va_list argsList, 
-    char* buffer) {
+static inline void formatArgs(const char* fmt, va_list argsList, char* buffer)
+{
 
     va_list listCopy;
 #ifdef _MSC_VER
@@ -155,9 +153,8 @@ static inline void formatArgs(
     buffer[len] = 0;
 }
 
-static inline void format(
-    char* buffer, 
-    const char* fmt, ...) {
+static inline void format(char* buffer, const char* fmt, ...)
+{
 
     va_list argPtr;
     va_start(argPtr, fmt);
@@ -165,11 +162,11 @@ static inline void format(
     va_end(argPtr);
 }
 
-static inline void writeToConsole(
-    LogTLSData* data) {
+static inline void writeToConsole(LogTLSData* data)
+{
 
     HANDLE console = GetStdHandle(STD_ERROR_HANDLE);
-    int len = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, nullptr, 0);
+    int    len     = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, nullptr, 0);
     if (!len) {
         return;
     }
@@ -186,116 +183,113 @@ static inline void writeToConsole(
 // Public API
 // ==================================================
 
-PalVersion PAL_CALL palGetVersion() {
+PalVersion PAL_CALL palGetVersion()
+{
 
-    return (PalVersion) {
-        .major = PAL_VERSION_MAJOR,
-        .minor = PAL_VERSION_MINOR,
-        .build = PAL_VERSION_BUILD
-    };
+    return (PalVersion){
+        .major = PAL_VERSION_MAJOR, .minor = PAL_VERSION_MINOR, .build = PAL_VERSION_BUILD};
 }
 
-const char* PAL_CALL palGetVersionString() {
+const char* PAL_CALL palGetVersionString()
+{
 
     return PAL_VERSION_STRING;
 }
 
-const char* PAL_CALL palFormatResult(
-    PalResult result) {
+const char* PAL_CALL palFormatResult(PalResult result)
+{
 
     switch (result) {
-        case PAL_RESULT_SUCCESS: 
+    case PAL_RESULT_SUCCESS:
         return "The operation completed successfully";
 
-        case PAL_RESULT_NULL_POINTER: 
+    case PAL_RESULT_NULL_POINTER:
         return "The pointer is invalid";
 
-        case PAL_RESULT_INVALID_PARAMETER: 
+    case PAL_RESULT_INVALID_PARAMETER:
         return "The parameter is invalid.";
 
-        case PAL_RESULT_OUT_OF_MEMORY: 
+    case PAL_RESULT_OUT_OF_MEMORY:
         return "The platform(OS) has no free memory";
 
-        case PAL_RESULT_PLATFORM_FAILURE: 
+    case PAL_RESULT_PLATFORM_FAILURE:
         return "An error occured on the platform(OS)";
 
-        case PAL_RESULT_INVALID_ALLOCATOR:
+    case PAL_RESULT_INVALID_ALLOCATOR:
         return "The provided allocator's function pointers are not fully set";
 
-        case PAL_RESULT_ACCESS_DENIED: 
+    case PAL_RESULT_ACCESS_DENIED:
         return "The platform denied access to the operation";
 
-        case PAL_RESULT_TIMEOUT:
+    case PAL_RESULT_TIMEOUT:
         return "Timeout expired";
 
-        case PAL_RESULT_INSUFFICIENT_BUFFER:
+    case PAL_RESULT_INSUFFICIENT_BUFFER:
         return "The provided buffer was not enough";
 
-        // thread
-        case PAL_RESULT_INVALID_THREAD:
+    // thread
+    case PAL_RESULT_INVALID_THREAD:
         return "The provided thread handle was invalid";
 
-        case PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED:
+    case PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED:
         return "The thread feature used is not supported";
 
-        // video
-        case PAL_RESULT_VIDEO_NOT_INITIALIZED:
+    // video
+    case PAL_RESULT_VIDEO_NOT_INITIALIZED:
         return "Video system not initialized";
 
-        case PAL_RESULT_INVALID_MONITOR:
+    case PAL_RESULT_INVALID_MONITOR:
         return "The provided monitor handle was invalid";
 
-        case PAL_RESULT_INVALID_MONITOR_MODE:
+    case PAL_RESULT_INVALID_MONITOR_MODE:
         return "The provided monitor mode was invalid";
 
-        case PAL_RESULT_INVALID_WINDOW:
+    case PAL_RESULT_INVALID_WINDOW:
         return "The provided window handle was invalid";
 
-        case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
+    case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
         return "The video feature used is not supported";
-        
-        case PAL_RESULT_INVALID_KEYCODE:
+
+    case PAL_RESULT_INVALID_KEYCODE:
         return "The provided keycode was invalid";
 
-        case PAL_RESULT_INVALID_SCANCODE:
+    case PAL_RESULT_INVALID_SCANCODE:
         return "The provided scancode was invalid";
 
-        case PAL_RESULT_INVALID_MOUSE_BUTTON:
+    case PAL_RESULT_INVALID_MOUSE_BUTTON:
         return "The provided mouse button was invalid";
 
-        case PAL_RESULT_INVALID_ORIENTATION: 
+    case PAL_RESULT_INVALID_ORIENTATION:
         return "The provided orientation was invalid";
 
-        // opengl
-        case PAL_RESULT_GL_NOT_INITIALIZED:
+    // opengl
+    case PAL_RESULT_GL_NOT_INITIALIZED:
         return "Opengl system not initialized";
 
-        case PAL_RESULT_INVALID_GL_WINDOW:
+    case PAL_RESULT_INVALID_GL_WINDOW:
         return "The provided opengl window was invalid";
 
-        case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
+    case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
         return "The opengl extension is not supported";
 
-        case PAL_RESULT_INVALID_GL_FBCONFIG:
+    case PAL_RESULT_INVALID_GL_FBCONFIG:
         return "The provided opengl framebuffer config was invalid";
 
-        case PAL_RESULT_INVALID_GL_VERSION:
+    case PAL_RESULT_INVALID_GL_VERSION:
         return "The opengl version is not supported";
 
-        case PAL_RESULT_INVALID_GL_PROFILE:
+    case PAL_RESULT_INVALID_GL_PROFILE:
         return "The opengl profile is not supported";
 
-        case PAL_RESULT_INVALID_GL_CONTEXT:
+    case PAL_RESULT_INVALID_GL_CONTEXT:
         return "The provided opengl context was invalid";
     }
     return "Unknown";
 }
 
-void* PAL_CALL palAllocate(
-    const PalAllocator* allocator,
-    Uint64 size,
-    Uint64 alignment) {
-    
+void* PAL_CALL palAllocate(const PalAllocator* allocator, Uint64 size, Uint64 alignment)
+{
+
     Uint64 align = alignment;
     if (align == 0) {
         align = PAL_DEFAULT_ALIGNMENT;
@@ -307,9 +301,8 @@ void* PAL_CALL palAllocate(
     return alignedAlloc(size, align);
 }
 
-void PAL_CALL palFree(
-    const PalAllocator* allocator, 
-    void* ptr) {
+void PAL_CALL palFree(const PalAllocator* allocator, void* ptr)
+{
 
     if (allocator && allocator->free && ptr) {
         allocator->free(allocator->userData, ptr);
@@ -319,16 +312,15 @@ void PAL_CALL palFree(
     }
 }
 
-void PAL_CALL palLog(
-    const PalLogger* logger, 
-    const char* fmt, ...) {
-    
+void PAL_CALL palLog(const PalLogger* logger, const char* fmt, ...)
+{
+
     if (!fmt) {
         return;
     }
 
     LogTLSData* data = getLogTlsData();
-    va_list argPtr;
+    va_list     argPtr;
     va_start(argPtr, fmt);
     formatArgs(fmt, argPtr, data->tmp);
     va_end(argPtr);
@@ -356,7 +348,8 @@ void PAL_CALL palLog(
     updateLogTlsData(data);
 }
 
-Uint64 PAL_CALL palGetPerformanceCounter() {
+Uint64 PAL_CALL palGetPerformanceCounter()
+{
 
 #ifdef _WIN32
     LARGE_INTEGER counter;
@@ -365,7 +358,8 @@ Uint64 PAL_CALL palGetPerformanceCounter() {
 #endif // _WIN32
 }
 
-Uint64 PAL_CALL palGetPerformanceFrequency() {
+Uint64 PAL_CALL palGetPerformanceFrequency()
+{
 
 #ifdef _WIN32
     LARGE_INTEGER frequency;

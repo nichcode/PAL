@@ -1,0 +1,24 @@
+
+name: Clang Format Check
+
+on:
+ pull_request:
+ push:
+  branches: [ "master" ]
+
+jobs:
+ clang-format: 
+  runs-on: ubuntu-latest
+
+  steps:
+  - uses: actions/checkout@v3
+
+  - name: Install clang-format
+    run: sudo apt-get install -y clang-format
+
+  - name: Check Formatting
+    run: | 
+     FILES=$(git ls-files '*.c' '*.h')
+     clang-format --version
+     clang-format --dry-run --Werror
+     $FILES
