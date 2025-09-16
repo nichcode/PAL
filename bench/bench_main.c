@@ -7,5 +7,9 @@ int main(int argc, char**) {
     PalVersion version = palGetVersion();
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
+#if PAL_HAS_VIDEO
+    windowBench();
+#endif // PAL_HAS_VIDEO
+
     return 0;
 }

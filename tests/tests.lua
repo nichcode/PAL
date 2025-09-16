@@ -44,8 +44,7 @@ project "tests"
 
     if (PAL_BUILD_OPENGL) then
         files { 
-            "opengl_test.c",
-            opengl_fbconfig_test
+            "opengl_test.c"
         }
     end
 

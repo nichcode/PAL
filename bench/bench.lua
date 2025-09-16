@@ -11,5 +11,11 @@ project "bench"
         "bench.c"
     }
 
+    if (PAL_BUILD_VIDEO) then
+        files { 
+            "window_bench.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

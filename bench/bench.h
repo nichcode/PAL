@@ -6,11 +6,11 @@
 
 typedef void (*BenchFn)();
 
-void registerBench(
+void runBench(
+    BenchFn func, 
     const char* name, 
-    BenchFn func,
     Int32 iterations);
 
-void runBenchs();
+void windowBench();
 
 #endif // _BENCH_H
