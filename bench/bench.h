@@ -12,5 +12,6 @@ void runBench(
     Int32 iterations);
 
 void windowBench();
+void windowUpdateBench();
 
 #endif // _BENCH_H

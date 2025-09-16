@@ -8,7 +8,8 @@ int main(int argc, char**) {
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
 #if PAL_HAS_VIDEO
-    windowBench();
+    //windowBench();
+    windowUpdateBench();
 #endif // PAL_HAS_VIDEO
 
     return 0;

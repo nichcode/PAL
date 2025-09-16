@@ -13,7 +13,8 @@ project "bench"
 
     if (PAL_BUILD_VIDEO) then
         files { 
-            "window_bench.c"
+            "window_bench.c",
+            "window_update_bench.c"
         }
     end
 
