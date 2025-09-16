@@ -6,10 +6,7 @@
 
 typedef void (*BenchFn)();
 
-void runBench(
-    BenchFn func, 
-    const char* name, 
-    Int32 iterations);
+void runBench(BenchFn func, const char* name, Int32 iterations);
 
 void windowBench();
 void windowUpdateBench();

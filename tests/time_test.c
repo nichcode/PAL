@@ -8,14 +8,15 @@ typedef struct {
 } MyTimer;
 
 // get the time in seconds
-static inline double getTime(
-    MyTimer* timer) {
+static inline double getTime(MyTimer* timer)
+{
 
     Uint64 now = palGetPerformanceCounter();
     return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 
-bool timeTest() {
+bool timeTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -31,13 +32,13 @@ bool timeTest() {
     // get the start time normalize by timer.startTime
     double lastTime = getTime(&timer);
 
-    double totalTime = 0.0;
-    Int32 frameCount = 0;
+    double totalTime  = 0.0;
+    Int32  frameCount = 0;
 
     // run the loop for 5 seconds
     while (totalTime < 5.0) {
         double now = getTime(&timer);
-        totalTime = now - lastTime;
+        totalTime  = now - lastTime;
         palLog(nullptr, "Frame %d, Total Time %f seconds", frameCount++, totalTime);
     }
 

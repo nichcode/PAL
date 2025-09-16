@@ -1,14 +1,12 @@
 
-#include "tests.h"
 #include "pal/pal_opengl.h"
 #include "pal/pal_video.h" // for window
+#include "tests.h"
 
-static const char* g_BoolsToSting[2] = {
-    "False",
-    "True"
-};
+static const char* g_BoolsToSting[2] = {"False", "True"};
 
-bool openglFBConfigTest() {
+bool openglFBConfigTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -24,9 +22,9 @@ bool openglFBConfigTest() {
         return false;
     }
 
-    PalWindow* window = nullptr;
+    PalWindow*          window     = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    Int32 fbCount;
+    Int32               fbCount;
 
     // initialize the video system.
     result = palInitVideo(nullptr, nullptr);
@@ -36,10 +34,10 @@ bool openglFBConfigTest() {
     }
 
     createInfo.monitor = nullptr; // use primary monitor
-    createInfo.height = 480;
-    createInfo.width = 640;
-    createInfo.show = true;
-    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
+    createInfo.height  = 480;
+    createInfo.width   = 640;
+    createInfo.show    = true;
+    createInfo.style   = PAL_WINDOW_STYLE_RESIZABLE;
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
@@ -56,8 +54,8 @@ bool openglFBConfigTest() {
 
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
-    glWindow.display = windowHandleInfo.nativeDisplay; // needed when using X11 or wayland
-    glWindow.window = windowHandleInfo.nativeWindow;
+    glWindow.display     = windowHandleInfo.nativeDisplay; // needed when using X11 or wayland
+    glWindow.window      = windowHandleInfo.nativeWindow;
 
     // enumerate supported opengl framebuffer configs
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, nullptr);
@@ -72,11 +70,7 @@ bool openglFBConfigTest() {
         return false;
     }
 
-    PalGLFBConfig* fbConfigs = palAllocate(
-        nullptr,
-        sizeof(PalGLFBConfig) * fbCount,
-        0
-    );
+    PalGLFBConfig* fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
 
     if (!fbConfigs) {
         palLog(nullptr, "Failed to allocate memory");
@@ -112,17 +106,17 @@ bool openglFBConfigTest() {
 
     // we desire a FB config and see what is closest the driver will give us
     PalGLFBConfig desired = {0};
-    desired.redBits = 8;
-    desired.greenBits = 8;
-    desired.blueBits = 8;
-    desired.alphaBits = 8;
-    desired.alphaBits = 8;
-    desired.depthBits = 24;
-    desired.stencilBits = 8;
-    desired.samples = 2;
+    desired.redBits       = 8;
+    desired.greenBits     = 8;
+    desired.blueBits      = 8;
+    desired.alphaBits     = 8;
+    desired.alphaBits     = 8;
+    desired.depthBits     = 24;
+    desired.stencilBits   = 8;
+    desired.samples       = 2;
 
-    desired.stereo = false; // not widely supported
-    desired.sRGB = true;
+    desired.stereo       = false; // not widely supported
+    desired.sRGB         = true;
     desired.doubleBuffer = true;
 
     // get the closest

@@ -1,8 +1,9 @@
 
-#include "tests.h"
 #include "pal/pal_video.h"
+#include "tests.h"
 
-bool monitorTest() {
+bool monitorTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -10,9 +11,9 @@ bool monitorTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
+    PalResult      result;
     PalMonitorInfo info;
-    Int32 count = 0;
+    Int32          count = 0;
 
     // initialize the video system
     result = palInitVideo(nullptr, nullptr);
@@ -28,7 +29,7 @@ bool monitorTest() {
         return false;
     }
 
-    // if count == 0, we fail 
+    // if count == 0, we fail
     if (count == 0) {
         palLog(nullptr, "No monitor connected");
         return false;
@@ -53,7 +54,7 @@ bool monitorTest() {
     // get monitor info for every monitor and log the information
     for (Int32 i = 0; i < count; i++) {
         PalMonitor* monitor = monitors[i];
-        result = palGetMonitorInfo(monitor, &info);
+        result              = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
             palLog(nullptr, "Failed to get monitor info %s", palFormatResult(result));
             palFree(nullptr, monitors);
@@ -78,19 +79,19 @@ bool monitorTest() {
         // convert monitor orientation to string
         const char* orientationToString;
         switch (info.orientation) {
-            case PAL_ORIENTATION_LANDSCAPE:
+        case PAL_ORIENTATION_LANDSCAPE:
             orientationToString = "Landscape";
             break;
 
-            case PAL_ORIENTATION_PORTRAIT:
+        case PAL_ORIENTATION_PORTRAIT:
             orientationToString = "Portrait";
             break;
 
-            case PAL_ORIENTATION_LANDSCAPE_FLIPPED:
+        case PAL_ORIENTATION_LANDSCAPE_FLIPPED:
             orientationToString = "Landscape Flipped";
             break;
 
-            case PAL_ORIENTATION_PORTRAIT_FLIPPED:
+        case PAL_ORIENTATION_PORTRAIT_FLIPPED:
             orientationToString = "Portrait Flipped";
             break;
         }

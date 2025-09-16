@@ -1,8 +1,9 @@
 
-#include "tests.h"
 #include "pal/pal_video.h"
+#include "tests.h"
 
-bool videoTest() {
+bool videoTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -10,16 +11,16 @@ bool videoTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
+    PalResult        result;
     PalVideoFeatures features;
-    
+
     // initialize the video system
     result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
         return false;
     }
-    
+
     // get supported features
     features = palGetVideoFeatures();
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {

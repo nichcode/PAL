@@ -25,17 +25,18 @@ static HINSTANCE g_Instance;
 
 #define MAX_ITERATIONS 1000
 
-static inline void createDestroy() {
+static inline void createDestroy()
+{
 
-    PalResult result;
+    PalResult  result;
     PalWindow* window = nullptr;
 
     PalWindowCreateInfo createInfo = {0};
-    createInfo.height = 480;
-    createInfo.width = 640;
-    createInfo.show = true;
-    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL Window";
+    createInfo.height              = 480;
+    createInfo.width               = 640;
+    createInfo.show                = true;
+    createInfo.style               = PAL_WINDOW_STYLE_RESIZABLE;
+    createInfo.title               = "PAL Window";
 
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
@@ -46,27 +47,16 @@ static inline void createDestroy() {
     palDestroyWindow(window);
 }
 
-static inline void createDestroyPlatform() {
+static inline void createDestroyPlatform()
+{
 
     HWND window = nullptr;
 
-    Uint32 style = WS_OVERLAPPEDWINDOW;
+    Uint32 style   = WS_OVERLAPPEDWINDOW;
     Uint32 exStyle = WS_EX_APPWINDOW;
 
-    window = CreateWindowExW(
-        exStyle,
-        PLATFORM_CLASS,
-        L"Platform Window",
-        style, 
-        100,
-        100,
-        640,
-        480,
-        nullptr, 
-        nullptr, 
-        g_Instance,
-        nullptr
-    );
+    window = CreateWindowExW(exStyle, PLATFORM_CLASS, L"Platform Window", style, 100, 100, 640, 480,
+                             nullptr, nullptr, g_Instance, nullptr);
 
     if (!window) {
         palLog(nullptr, "Platform Error");
@@ -75,12 +65,13 @@ static inline void createDestroyPlatform() {
 
     ShowWindow(window, SW_SHOW);
     UpdateWindow(window);
-    SetWindowLongPtrW(window, GWLP_USERDATA, (LONG_PTR)nullptr);
+    SetWindowLongPtrW(window, GWLP_USERDATA, (LONG_PTR) nullptr);
 
     DestroyWindow(window);
 }
 
-void windowBench() {
+void windowBench()
+{
 
     // initialize PAL video
     PalResult result = palInitVideo(nullptr, nullptr);
@@ -94,16 +85,16 @@ void windowBench() {
     HINSTANCE g_Instance = GetModuleHandleW(nullptr);
 
     // register class
-    WNDCLASSEXW wc = {0};
-    wc.cbSize = sizeof(WNDCLASSEXW);
-    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
-    wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
-    wc.hIconSm = LoadIconW(NULL, IDI_APPLICATION);
-    wc.hInstance = g_Instance;
-    wc.lpfnWndProc = DefWindowProcW;
+    WNDCLASSEXW wc   = {0};
+    wc.cbSize        = sizeof(WNDCLASSEXW);
+    wc.hCursor       = LoadCursorW(NULL, IDC_ARROW);
+    wc.hIcon         = LoadIconW(NULL, IDI_APPLICATION);
+    wc.hIconSm       = LoadIconW(NULL, IDI_APPLICATION);
+    wc.hInstance     = g_Instance;
+    wc.lpfnWndProc   = DefWindowProcW;
     wc.lpszClassName = PLATFORM_CLASS;
-    wc.style = CS_OWNDC;
-    
+    wc.style         = CS_OWNDC;
+
     if (!RegisterClassExW(&wc)) {
         palLog(nullptr, "Platform Error");
         return;
@@ -112,18 +103,10 @@ void windowBench() {
 
     // run benchmarks
     // platform
-    runBench(
-        createDestroyPlatform, 
-        "Platform Window Benchmark", 
-        MAX_ITERATIONS
-    );
+    runBench(createDestroyPlatform, "Platform Window Benchmark", MAX_ITERATIONS);
 
     // PAL
-    runBench(
-        createDestroy, 
-        "PAL Window Benchmark", 
-        MAX_ITERATIONS
-    );
+    runBench(createDestroy, "PAL Window Benchmark", MAX_ITERATIONS);
 
     // shutdown platform video
 #ifdef _WIN32

@@ -1,21 +1,21 @@
 
-#include "tests.h"
 #include "pal/pal_thread.h"
+#include "tests.h"
 
 #define THREAD_COUNT 4
 
 // we dont want to allocate this and pass it to every thread
-static PalMutex* g_Mutex;
+static PalMutex*   g_Mutex;
 static PalCondVar* g_Condition;
 
 typedef struct {
-    bool ready;
+    bool   ready;
     Uint32 id;
 } ThreadData;
 
-static void* PAL_CALL worker(
-    void* arg) {
-    
+static void* PAL_CALL worker(void* arg)
+{
+
     ThreadData* data = (ThreadData*)arg;
     palLog(nullptr, "Thread %d waiting...", data->id);
 
@@ -29,7 +29,8 @@ static void* PAL_CALL worker(
     return nullptr;
 }
 
-bool condvarTest() {
+bool condvarTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -37,7 +38,7 @@ bool condvarTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
+    PalResult  result;
     PalThread* threads[THREAD_COUNT];
 
     ThreadData* data = palAllocate(nullptr, sizeof(ThreadData) * THREAD_COUNT, 0);
@@ -62,13 +63,13 @@ bool condvarTest() {
 
     // create threads
     PalThreadCreateInfo createInfo = {};
-    createInfo.entry = worker; // will be the same for all threads
-    createInfo.stackSize = 0; // same for all threads
+    createInfo.entry               = worker; // will be the same for all threads
+    createInfo.stackSize           = 0;      // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         ThreadData* threadData = &data[i];
-        threadData->id = i + 1;
-        threadData->ready = false;
-        createInfo.arg = (void*)threadData;
+        threadData->id         = i + 1;
+        threadData->ready      = false;
+        createInfo.arg         = (void*)threadData;
 
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {

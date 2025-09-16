@@ -1,70 +1,71 @@
 
-#include "tests.h"
 #include "pal/pal_system.h"
+#include "tests.h"
 
 #include <string.h> // for strcat
 
-static inline const char* platformToString(
-    PalPlatformType type) {
+static inline const char* platformToString(PalPlatformType type)
+{
 
     switch (type) {
-        case PAL_PLATFORM_WINDOWS:
+    case PAL_PLATFORM_WINDOWS:
         return "Windows";
 
-        case PAL_PLATFORM_LINUX:
+    case PAL_PLATFORM_LINUX:
         return "Linux";
 
-        case PAL_PLATFORM_MACOS:
+    case PAL_PLATFORM_MACOS:
         return "MacOs";
 
-        case PAL_PLATFORM_ANDROID:
+    case PAL_PLATFORM_ANDROID:
         return "Android";
 
-        case PAL_PLATFORM_IOS:
+    case PAL_PLATFORM_IOS:
         return "Ios";
     }
     return nullptr;
 }
 
-static inline const char* platformApiToString(
-    PalPlatformApiType type) {
+static inline const char* platformApiToString(PalPlatformApiType type)
+{
 
     switch (type) {
-        case PAL_PLATFORM_API_WIN32: 
+    case PAL_PLATFORM_API_WIN32:
         return "Win32";
 
-        case PAL_PLATFORM_API_X11: 
+    case PAL_PLATFORM_API_X11:
         return "X11";
 
-        case PAL_PLATFORM_API_WAYLAND: 
+    case PAL_PLATFORM_API_WAYLAND:
         return "Wayland";
     }
     return nullptr;
 }
 
-static inline const char* cpuArchToString(
-    PalCpuArch arch) {
+static inline const char* cpuArchToString(PalCpuArch arch)
+{
 
     switch (arch) {
-        case PAL_CPU_ARCH_UNKNOWN:
+    case PAL_CPU_ARCH_UNKNOWN:
         return "Unknown";
 
-        case PAL_CPU_ARCH_X86:
+    case PAL_CPU_ARCH_X86:
         return "X86";
 
-        case PAL_CPU_ARCH_X86_64:
+    case PAL_CPU_ARCH_X86_64:
         return "X64";
 
-        case PAL_CPU_ARCH_ARM:
+    case PAL_CPU_ARCH_ARM:
         return "Arm";
 
-        case PAL_CPU_ARCH_ARM64:
+    case PAL_CPU_ARCH_ARM64:
         return "Arm64";
     }
     return nullptr;
 }
 
-bool systemTest() {
+bool systemTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -72,8 +73,8 @@ bool systemTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
-    PalCPUInfo cpuInfo;
+    PalResult       result;
+    PalCPUInfo      cpuInfo;
     PalPlatformInfo platformInfo;
 
     // get the platform info. Users must cache this

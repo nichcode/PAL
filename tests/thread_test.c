@@ -5,16 +5,11 @@
 #define THREAD_TIME 1000
 #define THREAD_COUNT 4
 
-static const char* g_ThreadNames[THREAD_COUNT] = {
-    "Thread1",
-    "Thread2",
-    "Thread3",
-    "Thread4"
-};
+static const char* g_ThreadNames[THREAD_COUNT] = {"Thread1", "Thread2", "Thread3", "Thread4"};
 
-static void* PAL_CALL worker(
-    void* arg) {
-        
+static void* PAL_CALL worker(void* arg)
+{
+
     // palLog is thread safe so there should'nt be any race conditions
     Int32 id = (Int32)(IntPtr)arg;
     palLog(nullptr, "Thread %d: started", id);
@@ -24,7 +19,8 @@ static void* PAL_CALL worker(
     return nullptr;
 }
 
-bool threadTest() {
+bool threadTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -32,13 +28,13 @@ bool threadTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
+    PalResult  result;
     PalThread* threads[THREAD_COUNT];
 
     // fill the thread creation struct
     PalThreadCreateInfo createInfo = {};
-    createInfo.entry = worker; // will be the same for all threads
-    createInfo.stackSize = 0; // same for all threads
+    createInfo.entry               = worker; // will be the same for all threads
+    createInfo.stackSize           = 0;      // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)(IntPtr)i + 1; // use struct to make casting easy
 

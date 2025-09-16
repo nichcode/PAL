@@ -5,7 +5,7 @@
 // data every thread will have its own copy of
 typedef struct {
     const char* name;
-    Uint32 number;
+    Uint32      number;
 } TlsData;
 
 // thread data
@@ -14,8 +14,8 @@ typedef struct {
 } ThreadData;
 
 // the tls destructor
-static void PAL_CALL TlsDestructor(
-    void* userData) {
+static void PAL_CALL TlsDestructor(void* userData)
+{
 
     palLog(nullptr, "Tls destructor started");
 
@@ -27,21 +27,21 @@ static void PAL_CALL TlsDestructor(
     palLog(nullptr, "Tls destructor finished");
 }
 
-static void* PAL_CALL worker(
-    void* arg) {
+static void* PAL_CALL worker(void* arg)
+{
 
     ThreadData* threadData = (ThreadData*)arg;
     palLog(nullptr, "Thread 0: started");
 
     // allocate and buffer and store it with the tls
-    TlsData *data = palAllocate(nullptr, sizeof(TlsData), 0); // use default alignment(16)
+    TlsData* data = palAllocate(nullptr, sizeof(TlsData), 0); // use default alignment(16)
     if (!data) {
         palLog(nullptr, "Failed to allocate memory");
         return nullptr;
     }
 
     data->number = 10;
-    data->name = "TLS Data";
+    data->name   = "TLS Data";
 
     // for the tls destructor to be called, the tls must have a non null value
     palSetTLS(threadData->tlsId, data);
@@ -51,7 +51,8 @@ static void* PAL_CALL worker(
     return nullptr;
 }
 
-bool tlsTest() {
+bool tlsTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -79,9 +80,9 @@ bool tlsTest() {
 
     // create a thread
     PalThreadCreateInfo info = {};
-    info.arg = threadData;
-    info.entry = worker;
-    info.stackSize = 0; // for default
+    info.arg                 = threadData;
+    info.entry               = worker;
+    info.stackSize           = 0; // for default
 
     PalResult result = palCreateThread(&info, &thread);
     if (result != PAL_RESULT_SUCCESS) {
@@ -96,7 +97,7 @@ bool tlsTest() {
     palDetachThread(thread);
 
     // destroy the tls
-    palDestroyTLS(tlsID); 
+    palDestroyTLS(tlsID);
 
     palFree(nullptr, threadData);
     return true;

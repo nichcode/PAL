@@ -1,8 +1,9 @@
 
-#include "tests.h"
 #include "pal/pal_opengl.h"
+#include "tests.h"
 
-bool openglTest() {
+bool openglTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");

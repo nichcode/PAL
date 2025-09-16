@@ -1,8 +1,9 @@
 
-#include "tests.h"
 #include "pal/pal_video.h"
+#include "tests.h"
 
-bool monitorModeTest() {
+bool monitorModeTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -10,10 +11,10 @@ bool monitorModeTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
+    PalResult      result;
     PalMonitorInfo info;
-    Int32 count = 0;
-    Int32 modeCount = 0;
+    Int32          count     = 0;
+    Int32          modeCount = 0;
 
     // initialize the video system
     result = palInitVideo(nullptr, nullptr);
@@ -29,7 +30,7 @@ bool monitorModeTest() {
         return false;
     }
 
-    // if count == 0, we fail 
+    // if count == 0, we fail
     if (count == 0) {
         palLog(nullptr, "No monitor connected");
         return false;
@@ -54,7 +55,7 @@ bool monitorModeTest() {
     // get monitor info for every monitor and log the information
     for (Int32 i = 0; i < count; i++) {
         PalMonitor* monitor = monitors[i];
-        result = palGetMonitorInfo(monitor, &info);
+        result              = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
             palLog(nullptr, "Failed to get display info %s", palFormatResult(result));
             palFree(nullptr, monitors);
@@ -63,7 +64,7 @@ bool monitorModeTest() {
 
         // log monitor name
         palLog(nullptr, "Monitor Name: %s", info.name);
-       
+
         // get number of monitor modes
         result = palEnumerateMonitorModes(monitor, &modeCount, nullptr);
         if (result != PAL_RESULT_SUCCESS) {

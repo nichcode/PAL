@@ -1,18 +1,18 @@
 
-#include "tests.h"
 #include "pal/pal_thread.h"
+#include "tests.h"
 
 #define MAX_COUNTER 10000
 #define THREAD_COUNT 2
 
 typedef struct {
     PalMutex* mutex;
-    Int32 counter;
+    Int32     counter;
 } SharedData;
 
-static void* PAL_CALL worker(
-    void* arg) {
-    
+static void* PAL_CALL worker(void* arg)
+{
+
     SharedData* data = (SharedData*)arg;
 
     // this is only needed when two or more threads are writing to the same variable
@@ -26,7 +26,8 @@ static void* PAL_CALL worker(
     return nullptr;
 }
 
-bool mutexTest() {
+bool mutexTest()
+{
 
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -34,9 +35,9 @@ bool mutexTest() {
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
+    PalResult  result;
     PalThread* threads[THREAD_COUNT];
-    PalMutex* mutex = nullptr;
+    PalMutex*  mutex = nullptr;
 
     SharedData* data = palAllocate(nullptr, sizeof(SharedData), 0);
     if (!data) {
@@ -52,12 +53,12 @@ bool mutexTest() {
     }
 
     data->counter = 0;
-    data->mutex = mutex;
+    data->mutex   = mutex;
 
     // create threads
     PalThreadCreateInfo createInfo = {};
-    createInfo.entry = worker; // will be the same for all threads
-    createInfo.stackSize = 0; // same for all threads
+    createInfo.entry               = worker; // will be the same for all threads
+    createInfo.stackSize           = 0;      // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)data;
 
@@ -69,7 +70,7 @@ bool mutexTest() {
     }
 
     // join the threads to main thread
-    for (Int32 i = 0; i < THREAD_COUNT; i++) { 
+    for (Int32 i = 0; i < THREAD_COUNT; i++) {
         palJoinThread(threads[i], nullptr);
     }
 
