@@ -2,7 +2,7 @@
 #include "bench.h"
 #include "pal/pal_config.h" // for systems reflection
 
-int main(int argc, char**)
+int main(int argc, char** argv)
 {
 
     PalVersion version = palGetVersion();

@@ -57,13 +57,13 @@ typedef struct {
     void*       arg;
 } ThreadData;
 
-typedef struct PalMutex {
+struct PalMutex {
     CRITICAL_SECTION sc;
-} PalMutex;
+};
 
-typedef struct PalCondVar {
+struct PalCondVar {
     CONDITION_VARIABLE cv;
-} PalCondVar;
+};
 
 static Uint8                  s_Init = false;
 static SetThreadDescriptionFn s_SetThreadDescription;

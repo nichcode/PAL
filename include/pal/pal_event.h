@@ -115,13 +115,13 @@ typedef enum {
  *
  * @ingroup event
  */
-typedef struct PalEvent {
+struct PalEvent {
     PalEventType type;   /** < The type of the event. See `PalEventType`.*/
     Int64        data;   /** < First data payload.*/
     Int64        data2;  /** < Second data payload.*/
     Int64        userId; /** < This is for user events. You can have user events upto
                             Int64 max.*/
-} PalEvent;
+};
 
 /**
  * @struct PalEventQueue

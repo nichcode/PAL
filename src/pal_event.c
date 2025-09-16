@@ -41,14 +41,14 @@ typedef struct {
     PalEvent data[PAL_MAX_EVENTS];
 } QueueData;
 
-typedef struct PalEventDriver {
+struct PalEventDriver{
     bool                freeQueue;
     PalEventQueue*      queue;
     const PalAllocator* allocator;
     PalEventCallback    callback;
     void*               userData;
     PalDispatchMode     modes[PAL_MAX_EVENTS];
-} PalEventDriver;
+};
 
 // ==================================================
 // Internal API

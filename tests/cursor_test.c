@@ -107,10 +107,10 @@ bool cursorTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-            case PAL_EVENT_WINDOW_CLOSE: {
-                running = false;
-                break;
-            }
+                case PAL_EVENT_WINDOW_CLOSE: {
+                    running = false;
+                    break;
+                }
             }
         }
     }

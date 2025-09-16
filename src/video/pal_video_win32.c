@@ -1255,7 +1255,7 @@ PalResult PAL_CALL palEnumerateMonitors(Int32* count, PalMonitor** outMonitors)
     }
 
     if (count == 0 && outMonitors) {
-        PAL_RESULT_INSUFFICIENT_BUFFER;
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
     MonitorData data;
@@ -1328,7 +1328,7 @@ PalResult PAL_CALL palGetMonitorInfo(PalMonitor* monitor, PalMonitorInfo* info)
     info->orientation = orientationFromWin32(devMode.dmDisplayOrientation);
 
     // get dpi scale
-    Int32 dpiX, dpiY;
+    UINT dpiX, dpiY;
     if (s_Video.getDpiForMonitor) {
         s_Video.getDpiForMonitor((HMONITOR)monitor, WIN32_DPI, &dpiX, &dpiY);
 
