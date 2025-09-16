@@ -314,7 +314,7 @@ PAL_API char* PAL_CALL palGetThreadName(PalThread* thread);
  *
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palSetThreadPriority(PalThread *thread, PalThreadPriority priority);
+PAL_API PalResult PAL_CALL palSetThreadPriority(PalThread* thread, PalThreadPriority priority);
 
 /**
  * @brief Set the affinity of the provided thread.
