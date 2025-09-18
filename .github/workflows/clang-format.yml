@@ -11,14 +11,21 @@ jobs:
   runs-on: ubuntu-latest
 
   steps:
-  - uses: actions/checkout@v4
+  - name: Checkout Code
+    uses: actions/checkout@v4
+    with:
+     fetch-depth: 0
 
   - name: Install clang-format
     run: sudo apt-get install -y clang-format
 
+  - name: Make files writable
+    run: chmod -R u+w .s
+
   - name: Check Formatting
     run: | 
-     FILES=$(git ls-files '*.c' '*.h')
-     clang-format --version
-     clang-format --dry-run --Werror
-     $FILES
+      files=$(git ls-files '*.c' '*.h')
+      if [ -n "$files" ]; then
+        clang-format --dry-run --Werror
+  $files
+      fi
