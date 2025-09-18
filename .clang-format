@@ -1,14 +1,37 @@
 
-BasedOnStyle: LLVM
-Language: Cpp
+BasedOnStyle: LLVM # use LLVM defauls
 IndentWidth: 4
-UseTab: Never
-ColumnLimit: 100
-BreakBeforeBraces: Linux
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: false
-SpaceBeforeParens: ControlStatements
+
+# reset if not set
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortEnumsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+BinPackParameters: AlwaysOnePerLine
+AlignAfterOpenBracket: AlwaysBreak
 PointerAlignment: Left
-AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
+BreakBeforeBraces: Custom
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+BinPackArguments: false
+IndentCaseLabels: true
+
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterControlStatement: Never
+  AfterEnum:       false
+  AfterFunction:   true
+  AfterStruct:     false
+  AfterUnion:      false
+  AfterExternBlock: false
+  BeforeCatch:     false
+  BeforeElse:      false
+  BeforeLambdaBody: false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true

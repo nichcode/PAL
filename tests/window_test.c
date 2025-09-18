@@ -30,16 +30,19 @@ static const char* dispatchString = "Callback Mode";
 // inline helpers
 static inline void onWindowResize(const PalEvent* event)
 {
-
     Uint32 width, height; // width == low, height == high
     palUnpackUint32(event->data, &width, &height);
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(nullptr, "%s: Window Resized: (%d, %d)", dispatchString, width, height);
+    palLog(
+        nullptr,
+        "%s: Window Resized: (%d, %d)",
+        dispatchString,
+        width,
+        height);
 }
 
 static inline void onWindowMove(const PalEvent* event)
 {
-
     Int32 x, y; // x == low, y == high
     palUnpackInt32(event->data, &x, &y);
     PalWindow* window = palUnpackPointer(event->data2);
@@ -48,7 +51,6 @@ static inline void onWindowMove(const PalEvent* event)
 
 static inline void onWindowVisibility(const PalEvent* event)
 {
-
     PalWindow* window = palUnpackPointer(event->data2);
     if (event->data) {
         palLog(nullptr, "%s: Window is shown", dispatchString);
@@ -60,7 +62,6 @@ static inline void onWindowVisibility(const PalEvent* event)
 
 static inline void onWindowFocus(const PalEvent* event)
 {
-
     PalWindow* window = palUnpackPointer(event->data2);
     if (event->data) {
         palLog(nullptr, "%s: Window has gained focus", dispatchString);
@@ -72,7 +73,6 @@ static inline void onWindowFocus(const PalEvent* event)
 
 static inline void onWindowState(const PalEvent* event)
 {
-
     PalWindow* window = palUnpackPointer(event->data2);
     if (event->data == PAL_WINDOW_STATE_MAXIMIZED) {
         palLog(nullptr, "%s: Window maximized", dispatchString);
@@ -87,7 +87,6 @@ static inline void onWindowState(const PalEvent* event)
 
 static inline void onWindowModalBegin(const PalEvent* event)
 {
-
     // window has entered modal mode (is being resize). only for windows
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Window has entered modal mode", dispatchString);
@@ -95,29 +94,30 @@ static inline void onWindowModalBegin(const PalEvent* event)
 
 static inline void onWindowModalEnd(const PalEvent* event)
 {
-
     // window has left modal mode. only for windows
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Window has exited modal mode", dispatchString);
 }
 
-static inline void onDisplayDPI(const PalEvent* event)
+static inline void onMonitorDPI(const PalEvent* event)
 {
-
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Display DPI: %d", dispatchString, event->data);
 }
 
-static inline void onDisplayList(const PalEvent* event)
+static inline void onMonitorList(const PalEvent* event)
 {
-
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(nullptr, "%s: Display (monitor) List has been changed", dispatchString);
+    palLog(
+        nullptr,
+        "%s: Display (monitor) List has been changed",
+        dispatchString);
 }
 
-static void PAL_CALL onEvent(void* userData, const PalEvent* event)
+static void PAL_CALL onEvent(
+    void* userData,
+    const PalEvent* event)
 {
-
     if (event->type == PAL_EVENT_WINDOW_SIZE) {
         onWindowResize(event);
 
@@ -140,51 +140,56 @@ static void PAL_CALL onEvent(void* userData, const PalEvent* event)
         onWindowModalEnd(event);
 
     } else if (event->type == PAL_EVENT_MONITOR_DPI_CHANGED) {
-        onDisplayDPI(event);
+        onMonitorDPI(event);
 
     } else if (event->type == PAL_EVENT_MONITOR_LIST_CHANGED) {
-        onDisplayList(event);
+        onMonitorList(event);
     }
 }
 
 bool windowTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Window Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult           result;
-    PalWindow*          window     = nullptr;
+    PalResult result;
+    PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    PalVideoFeatures    features;
-    bool                running = false;
+    PalVideoFeatures features;
+    bool running = false;
 
     // event driver
-    PalEventDriver*          eventDriver = nullptr;
+    PalEventDriver* eventDriver = nullptr;
     PalEventDriverCreateInfo eventDriverCreateInfo;
 
     // fill the event driver create info
     eventDriverCreateInfo.allocator = nullptr; // default allocator
-    eventDriverCreateInfo.callback  = onEvent; // for callback dispatch
-    eventDriverCreateInfo.queue     = nullptr; // default queue
-    eventDriverCreateInfo.userData  = nullptr; // null
+    eventDriverCreateInfo.callback = onEvent;  // for callback dispatch
+    eventDriverCreateInfo.queue = nullptr;     // default queue
+    eventDriverCreateInfo.userData = nullptr;  // null
 
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create event driver %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to create event driver %s",
+            palFormatResult(result));
         return false;
     }
 
-    // initialize the video system. We pass the event driver to recieve video related events
-    // the video system does not copy the event driver, it must be valid till the video system is
-    // shutdown
+    // initialize the video system. We pass the event driver to recieve video
+    // related events the video system does not copy the event driver, it must
+    // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to initialize video %s",
+            palFormatResult(result));
         return false;
     }
 
@@ -193,10 +198,10 @@ bool windowTest()
 
     // fill the create info struct
     createInfo.monitor = nullptr; // use primary monitor
-    createInfo.height  = 480;
-    createInfo.width   = 640;
-    createInfo.show    = true;
-    createInfo.style   = PAL_WINDOW_STYLE_RESIZABLE;
+    createInfo.height = 480;
+    createInfo.width = 640;
+    createInfo.show = true;
+    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
 
 #if UNICODE_NAME
     createInfo.title = "PAL Test Window Unicode - àà";
@@ -245,7 +250,10 @@ bool windowTest()
     if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
         result = palSetWindowOpacity(window, OPACITY);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(nullptr, "Failed to set window opacity %s", palFormatResult(result));
+            palLog(
+                nullptr,
+                "Failed to set window opacity %s",
+                palFormatResult(result));
             return false;
         }
     }
@@ -263,12 +271,22 @@ bool windowTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
+        PAL_DISPATCH_POLL);
 
-    // we set callback mode for modal begin and end. Since we want to capture that instantly
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_BEGIN, PAL_DISPATCH_CALLBACK);
+    // we set callback mode for modal begin and end. Since we want to capture
+    // that instantly
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_MODAL_BEGIN,
+        PAL_DISPATCH_CALLBACK);
 
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_END, PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_MODAL_END,
+        PAL_DISPATCH_CALLBACK);
 
     running = true;
     while (running) {
@@ -278,45 +296,45 @@ bool windowTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-            case PAL_EVENT_WINDOW_CLOSE: {
-                running = false;
-                break;
-            }
+                case PAL_EVENT_WINDOW_CLOSE: {
+                    running = false;
+                    break;
+                }
 
-            case PAL_EVENT_WINDOW_SIZE: {
-                onWindowResize(&event);
-                break;
-            }
+                case PAL_EVENT_WINDOW_SIZE: {
+                    onWindowResize(&event);
+                    break;
+                }
 
-            case PAL_EVENT_WINDOW_MOVE: {
-                onWindowMove(&event);
-                break;
-            }
+                case PAL_EVENT_WINDOW_MOVE: {
+                    onWindowMove(&event);
+                    break;
+                }
 
-            case PAL_EVENT_WINDOW_VISIBILITY: {
-                onWindowVisibility(&event);
-                break;
-            }
+                case PAL_EVENT_WINDOW_VISIBILITY: {
+                    onWindowVisibility(&event);
+                    break;
+                }
 
-            case PAL_EVENT_WINDOW_STATE: {
-                onWindowState(&event);
-                break;
-            }
+                case PAL_EVENT_WINDOW_STATE: {
+                    onWindowState(&event);
+                    break;
+                }
 
-            case PAL_EVENT_WINDOW_FOCUS: {
-                onWindowFocus(&event);
-                break;
-            }
+                case PAL_EVENT_WINDOW_FOCUS: {
+                    onWindowFocus(&event);
+                    break;
+                }
 
-            case PAL_EVENT_MONITOR_DPI_CHANGED: {
-                onDisplayDPI(&event);
-                break;
-            }
+                case PAL_EVENT_MONITOR_DPI_CHANGED: {
+                    onMonitorDPI(&event);
+                    break;
+                }
 
-            case PAL_EVENT_MONITOR_LIST_CHANGED: {
-                onDisplayList(&event);
-                break;
-            }
+                case PAL_EVENT_MONITOR_LIST_CHANGED: {
+                    onMonitorList(&event);
+                    break;
+                }
             }
         }
 

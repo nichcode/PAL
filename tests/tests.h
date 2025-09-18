@@ -6,7 +6,9 @@
 
 typedef bool (*TestFn)();
 
-void registerTest(const char* name, TestFn func);
+void registerTest(
+    const char* name,
+    TestFn func);
 
 void runTests();
 

@@ -96,10 +96,14 @@ typedef void* (*PalThreadFn)(void* arg);
 typedef void (*PaTlsDestructorFn)(void* userData);
 
 typedef enum {
-    PAL_THREAD_FEATURE_STACK_SIZE = PAL_BIT(0), /** < Setting thread stack size.*/
-    PAL_THREAD_FEATURE_PRIORITY   = PAL_BIT(1), /** < Setting and getting thread priority.*/
-    PAL_THREAD_FEATURE_AFFINITY   = PAL_BIT(2), /** < Setting and getting thread affinity.*/
-    PAL_THREAD_FEATURE_NAME       = PAL_BIT(3)  /** < Setting and getting thread name.*/
+    PAL_THREAD_FEATURE_STACK_SIZE =
+        PAL_BIT(0), /** < Setting thread stack size.*/
+    PAL_THREAD_FEATURE_PRIORITY =
+        PAL_BIT(1), /** < Setting and getting thread priority.*/
+    PAL_THREAD_FEATURE_AFFINITY =
+        PAL_BIT(2), /** < Setting and getting thread affinity.*/
+    PAL_THREAD_FEATURE_NAME =
+        PAL_BIT(3) /** < Setting and getting thread name.*/
 } PalThreadFeatures;
 
 typedef enum {
@@ -109,9 +113,9 @@ typedef enum {
 } PalThreadPriority;
 
 typedef struct {
-    Uint64      stackSize; /** Thread stack size. Set to `0` to use default*/
-    PalThreadFn entry;     /** Thread entry function*/
-    void*       arg;       /** Optional pointer to user data for thread function. Can be
+    Uint64 stackSize;  /** Thread stack size. Set to `0` to use default*/
+    PalThreadFn entry; /** Thread entry function*/
+    void* arg; /** Optional pointer to user data for thread function. Can be
                               `nullptr`*/
 } PalThreadCreateInfo;
 
@@ -163,7 +167,9 @@ PAL_API void PAL_CALL palSetThreadAllocator(const PalAllocator* allocator);
  * @sa PalThreadCreateInfo, palJoinThread() palDetachThread()
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palCreateThread(const PalThreadCreateInfo* info, PalThread** outThread);
+PAL_API PalResult PAL_CALL palCreateThread(
+    const PalThreadCreateInfo* info,
+    PalThread** outThread);
 
 /**
  * @brief Wait for the provided thread to finish executing.
@@ -181,7 +187,9 @@ PAL_API PalResult PAL_CALL palCreateThread(const PalThreadCreateInfo* info, PalT
  * @sa palDetachThread()
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palJoinThread(PalThread* thread, void* retval);
+PAL_API PalResult PAL_CALL palJoinThread(
+    PalThread* thread,
+    void* retval);
 
 /**
  * @brief Release the thread's resources and destroy it.
@@ -314,7 +322,9 @@ PAL_API char* PAL_CALL palGetThreadName(PalThread* thread);
  *
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palSetThreadPriority(PalThread* thread, PalThreadPriority priority);
+PAL_API PalResult PAL_CALL palSetThreadPriority(
+    PalThread* thread,
+    PalThreadPriority priority);
 
 /**
  * @brief Set the affinity of the provided thread.
@@ -340,7 +350,9 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(PalThread* thread, PalThreadPrio
  *
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palSetThreadAffinity(PalThread* thread, Uint64 mask);
+PAL_API PalResult PAL_CALL palSetThreadAffinity(
+    PalThread* thread,
+    Uint64 mask);
 
 /**
  * @brief Set the name of the provided thread.
@@ -360,7 +372,9 @@ PAL_API PalResult PAL_CALL palSetThreadAffinity(PalThread* thread, Uint64 mask);
  *
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palSetThreadName(PalThread* thread, const char* name);
+PAL_API PalResult PAL_CALL palSetThreadName(
+    PalThread* thread,
+    const char* name);
 
 /**
  * @brief Create a new TLS
@@ -426,7 +440,9 @@ PAL_API void* PAL_CALL palGetTLS(PalTLSId id);
  * @sa palGetTLS(), palCreateTLS()
  * @ingroup thread
  */
-PAL_API void PAL_CALL palSetTLS(PalTLSId id, void* data);
+PAL_API void PAL_CALL palSetTLS(
+    PalTLSId id,
+    void* data);
 
 /**
  * @brief Create a new mutex
@@ -535,7 +551,9 @@ PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condition);
  * @sa palCreateMutex(), palCreateCondVar()
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palWaitCondVar(PalCondVar* condition, PalMutex* mutex);
+PAL_API PalResult PAL_CALL palWaitCondVar(
+    PalCondVar* condition,
+    PalMutex* mutex);
 
 /**
  * @brief Unlock the provided mutex and wait on the condition variable.
@@ -553,8 +571,10 @@ PAL_API PalResult PAL_CALL palWaitCondVar(PalCondVar* condition, PalMutex* mutex
  * @sa palCreateMutex(), palCreateCondVar()
  * @ingroup thread
  */
-PAL_API PalResult PAL_CALL palWaitCondVarTimeout(PalCondVar* condition, PalMutex* mutex,
-                                                 Uint64 milliseconds);
+PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
+    PalCondVar* condition,
+    PalMutex* mutex,
+    Uint64 milliseconds);
 
 /**
  * @brief Wake a single thread waiting on the condition variable.

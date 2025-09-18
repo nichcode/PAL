@@ -3,16 +3,23 @@
 
 #define LOGGER_COUNT 4
 
-static const char* g_LoggerNames[LOGGER_COUNT] = {"Logger1", "Logger2", "Logger3", "Logger4"};
+// clang-format off
+static const char* g_LoggerNames[LOGGER_COUNT] = {
+    "Logger1", 
+    "Logger2", 
+    "Logger3", 
+    "Logger4"};
+    // clang-format on
 
-static void PAL_CALL onLogger(void* userData, const char* msg)
+static void PAL_CALL onLogger(
+    void* userData,
+    const char* msg)
 {
-
-    // if the logger paramter is not set to nullptr when logging in a log callback,
-    // the log will be discard. Example doing this below:
-    // and myLogger's callback function is the same function.
-    // This will trigger a recursive call and pal will discard the log.
-    // palLog(myLogger, "%s - %s", "Logger1 -", msg);
+    // if the logger paramter is not set to nullptr when logging in a log
+    // callback, the log will be discard. Example doing this below: and
+    // myLogger's callback function is the same function. This will trigger a
+    // recursive call and pal will discard the log. palLog(myLogger, "%s - %s",
+    // "Logger1 -", msg);
 
     char* name = (char*)userData;
     palLog(nullptr, "%s: %s", name, msg);
@@ -20,7 +27,6 @@ static void PAL_CALL onLogger(void* userData, const char* msg)
 
 bool loggerTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Logger Test");

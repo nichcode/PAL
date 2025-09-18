@@ -91,23 +91,35 @@ typedef struct PalCursor PalCursor;
  * @ingroup video
  */
 typedef enum {
-    PAL_VIDEO_FEATURE_HIGH_DPI            = PAL_BIT(0), /** < High DPI windows.*/
-    PAL_VIDEO_FEATURE_MONITOR_ORIENTATION = PAL_BIT(1), /** < Switching monitor orientation.*/
-    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW   = PAL_BIT(2), /** < Borderless windows.*/
-    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW  = PAL_BIT(3), /** < Transparent windows.*/
-    PAL_VIDEO_FEATURE_TOOL_WINDOW         = PAL_BIT(4), /** < Tool windows.*/
-    PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH = PAL_BIT(5), /** < Switching monitor modes.*/
-    PAL_VIDEO_FEATURE_MULTI_MONITORS      = PAL_BIT(6), /** < Multiple monitors.*/
-    PAL_VIDEO_FEATURE_WINDOW_RESIZING     = PAL_BIT(7), /** < Resizing windows.*/
-    PAL_VIDEO_FEATURE_WINDOW_POSITIONING  = PAL_BIT(8), /** < Moving windows.*/
-    PAL_VIDEO_FEATURE_WINDOW_MINMAX  = PAL_BIT(9),  /** < Window minimize and maximize operations.*/
-    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = PAL_BIT(10), /** < No window minimize box.*/
-    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = PAL_BIT(11), /** < No window maximize box.*/
-    PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL = PAL_BIT(12), /** < Switching monitor gamma.*/
-    PAL_VIDEO_FEATURE_CLIP_CURSOR           = PAL_BIT(13), /** < Clipping cursor to window.*/
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION  = PAL_BIT(14), /** < Flashing window title bar.*/
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY     = PAL_BIT(15), /** < Flashing window icon.*/
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL = PAL_BIT(16)  /** < Setting flash interval.*/
+    PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0), /** < High DPI windows.*/
+    PAL_VIDEO_FEATURE_MONITOR_ORIENTATION =
+        PAL_BIT(1), /** < Switching monitor orientation.*/
+    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW =
+        PAL_BIT(2), /** < Borderless windows.*/
+    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW =
+        PAL_BIT(3),                             /** < Transparent windows.*/
+    PAL_VIDEO_FEATURE_TOOL_WINDOW = PAL_BIT(4), /** < Tool windows.*/
+    PAL_VIDEO_FEATURE_MONITOR_MODE_SWITCH =
+        PAL_BIT(5), /** < Switching monitor modes.*/
+    PAL_VIDEO_FEATURE_MULTI_MONITORS = PAL_BIT(6),  /** < Multiple monitors.*/
+    PAL_VIDEO_FEATURE_WINDOW_RESIZING = PAL_BIT(7), /** < Resizing windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_POSITIONING = PAL_BIT(8), /** < Moving windows.*/
+    PAL_VIDEO_FEATURE_WINDOW_MINMAX =
+        PAL_BIT(9), /** < Window minimize and maximize operations.*/
+    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX =
+        PAL_BIT(10), /** < No window minimize box.*/
+    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX =
+        PAL_BIT(11), /** < No window maximize box.*/
+    PAL_VIDEO_FEATURE_MONITOR_GAMMA_CONTROL =
+        PAL_BIT(12), /** < Switching monitor gamma.*/
+    PAL_VIDEO_FEATURE_CLIP_CURSOR =
+        PAL_BIT(13), /** < Clipping cursor to window.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION =
+        PAL_BIT(14), /** < Flashing window title bar.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY =
+        PAL_BIT(15), /** < Flashing window icon.*/
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL =
+        PAL_BIT(16) /** < Setting flash interval.*/
 } PalVideoFeatures;
 
 /**
@@ -142,13 +154,15 @@ typedef enum {
  * @ingroup video
  */
 typedef enum {
-    PAL_WINDOW_STYLE_RESIZABLE      = PAL_BIT(0), /** < Window is resizable.*/
-    PAL_WINDOW_STYLE_TRANSPARENT    = PAL_BIT(1), /** < Window is transparent.*/
-    PAL_WINDOW_STYLE_TOPMOST        = PAL_BIT(2), /** < Topmost window.*/
-    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = PAL_BIT(3), /** < Window has no minimze box.*/
-    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = PAL_BIT(4), /** < Window has no maximized box.*/
-    PAL_WINDOW_STYLE_TOOL           = PAL_BIT(5), /** < Tooling window.*/
-    PAL_WINDOW_STYLE_BORDERLESS     = PAL_BIT(6)  /** < Window is borderless.*/
+    PAL_WINDOW_STYLE_RESIZABLE = PAL_BIT(0),   /** < Window is resizable.*/
+    PAL_WINDOW_STYLE_TRANSPARENT = PAL_BIT(1), /** < Window is transparent.*/
+    PAL_WINDOW_STYLE_TOPMOST = PAL_BIT(2),     /** < Topmost window.*/
+    PAL_WINDOW_STYLE_NO_MINIMIZEBOX =
+        PAL_BIT(3), /** < Window has no minimze box.*/
+    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX =
+        PAL_BIT(4),                     /** < Window has no maximized box.*/
+    PAL_WINDOW_STYLE_TOOL = PAL_BIT(5), /** < Tooling window.*/
+    PAL_WINDOW_STYLE_BORDERLESS = PAL_BIT(6) /** < Window is borderless.*/
 } PalWindowStyle;
 
 /**
@@ -163,8 +177,8 @@ typedef enum {
 typedef enum {
     PAL_WINDOW_STATE_MAXIMIZED, /** < Window is maximized.*/
     PAL_WINDOW_STATE_MINIMIZED, /** < Window is minimized.*/
-    PAL_WINDOW_STATE_RESTORED   /** < Window has been restored from revious state
-                                   (eg. maximized).*/
+    PAL_WINDOW_STATE_RESTORED /** < Window has been restored from revious state
+                                 (eg. maximized).*/
 } PalWindowState;
 
 /**
@@ -195,9 +209,9 @@ typedef enum {
  * @ingroup video
  */
 typedef enum {
-    PAL_FLASH_STOP    = 0,          /** < Stop flashing.*/
+    PAL_FLASH_STOP = 0,             /** < Stop flashing.*/
     PAL_FLASH_CAPTION = PAL_BIT(0), /** < Flash the titlebar of the window.*/
-    PAL_FLASH_TRAY    = PAL_BIT(1)  /** < Flash the icon of the window.*/
+    PAL_FLASH_TRAY = PAL_BIT(1)     /** < Flash the icon of the window.*/
 } PalFlashFlag;
 
 /**
@@ -502,15 +516,15 @@ typedef enum {
  * @ingroup video
  */
 typedef struct {
-    bool           primary;     /** < `true` if this is the primary monitor.*/
-    Uint32         dpi;         /** < Monitor DPI.*/
-    Uint32         refreshRate; /** < Monitor refresh rate in Hz.*/
-    Int32          x;           /** < Position x of the monitor.*/
-    Int32          y;           /** < Position y of the monitor.*/
-    Uint32         width;       /** < Width of the monitor in pixels.*/
-    Uint32         height;      /** < Height of the monitor in pixels.*/
+    bool primary;               /** < `true` if this is the primary monitor.*/
+    Uint32 dpi;                 /** < Monitor DPI.*/
+    Uint32 refreshRate;         /** < Monitor refresh rate in Hz.*/
+    Int32 x;                    /** < Position x of the monitor.*/
+    Int32 y;                    /** < Position y of the monitor.*/
+    Uint32 width;               /** < Width of the monitor in pixels.*/
+    Uint32 height;              /** < Height of the monitor in pixels.*/
     PalOrientation orientation; /** < Orientation of the monitor.*/
-    char           name[32];    /** < Name of the monitor.*/
+    char name[32];              /** < Name of the monitor.*/
 } PalMonitorInfo;
 
 /**
@@ -540,11 +554,12 @@ typedef struct {
  * @ingroup video
  */
 typedef struct {
-    Uint32       interval; /** < Flash interval in milliseconds. Set to `0` for default.*/
-    PalFlashFlag flags;    /** < The flash behavior. This can be OR'ed together. see
-                              `PalFlashFlags`*/
-    Uint32 count;          /** < Number of times to flash. Set to `0` to flash until
-                              focused or cancelled.*/
+    Uint32 interval;    /** < Flash interval in milliseconds. Set to `0` for
+                           default.*/
+    PalFlashFlag flags; /** < The flash behavior. This can be OR'ed together.
+                           see `PalFlashFlags`*/
+    Uint32 count; /** < Number of times to flash. Set to `0` to flash until
+                     focused or cancelled.*/
 } PalFlashInfo;
 
 /**
@@ -559,8 +574,10 @@ typedef struct {
  * @ingroup video
  */
 typedef struct {
-    Uint32       width;  /** < Width of the icon in pixels. Must be greater than zero.*/
-    Uint32       height; /** < Height of the icon in pixels. Must be greater than zero.*/
+    Uint32
+        width; /** < Width of the icon in pixels. Must be greater than zero.*/
+    Uint32
+        height; /** < Height of the icon in pixels. Must be greater than zero.*/
     const Uint8* pixels; /** < Pixels in `RGBA` format.*/
 } PalIconCreateInfo;
 
@@ -576,11 +593,13 @@ typedef struct {
  * @ingroup video
  */
 typedef struct {
-    Uint32       width;    /** < Width of the cursor in pixels. Must be greater than zero.*/
-    Uint32       height;   /** < Width of the cursor in pixels. Must be greater than zero.*/
-    Int32        xHotspot; /** < The x active pixel for deteciting clicks.*/
-    Int32        yHotspot; /** < The y active pixel for deteciting clicks.*/
-    const Uint8* pixels;   /** < Pixels in `RGBA` format.*/
+    Uint32
+        width; /** < Width of the cursor in pixels. Must be greater than zero.*/
+    Uint32 height;  /** < Width of the cursor in pixels. Must be greater than
+                       zero.*/
+    Int32 xHotspot; /** < The x active pixel for deteciting clicks.*/
+    Int32 yHotspot; /** < The y active pixel for deteciting clicks.*/
+    const Uint8* pixels; /** < Pixels in `RGBA` format.*/
 } PalCursorCreateInfo;
 
 /**
@@ -608,18 +627,20 @@ typedef struct {
  * @ingroup video
  */
 typedef struct {
-    bool show;              /** < Show window after creation.*/
-    bool showMaximized;     /** < Show window maximized after creation. If set `show`
-                               and `showMinimized` must be false.*/
-    bool showMinimized;     /** < Show window minimzed after creation. If set `show`
-                               and `showMaximized` must be false.*/
-    bool           center;  /** < Center window minimzed after creation.*/
-    Uint32         width;   /** < Width of the window in pixels. Must be greater than zero.*/
-    Uint32         height;  /** < Height of the window in pixels. Must be greater than zero.*/
-    PalWindowStyle style;   /** < The style of the window. see `PalWindowStyle`.*/
-    const char*    title;   /** < The title of the window in UTF-8 encoding.*/
-    PalMonitor*    monitor; /** < The monitor to create the window on. Set to
-                               `nullptr` to use primary monitor.*/
+    bool show;          /** < Show window after creation.*/
+    bool showMaximized; /** < Show window maximized after creation. If set
+                           `show` and `showMinimized` must be false.*/
+    bool showMinimized; /** < Show window minimzed after creation. If set `show`
+                           and `showMaximized` must be false.*/
+    bool center;        /** < Center window minimzed after creation.*/
+    Uint32
+        width; /** < Width of the window in pixels. Must be greater than zero.*/
+    Uint32 height; /** < Height of the window in pixels. Must be greater than
+                      zero.*/
+    PalWindowStyle style; /** < The style of the window. see `PalWindowStyle`.*/
+    const char* title;    /** < The title of the window in UTF-8 encoding.*/
+    PalMonitor* monitor;  /** < The monitor to create the window on. Set to
+                             `nullptr` to use primary monitor.*/
 } PalWindowCreateInfo;
 
 /**
@@ -645,7 +666,9 @@ typedef struct {
  * @sa palShutdownVideo()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palInitVideo(const PalAllocator* allocator, PalEventDriver* eventDriver);
+PAL_API PalResult PAL_CALL palInitVideo(
+    const PalAllocator* allocator,
+    PalEventDriver* eventDriver);
 
 /**
  * @brief Shutdown the video system.
@@ -733,7 +756,9 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * @sa palInitVideo(), palGetPrimaryMonitor(), PalMonitorInfo
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palEnumerateMonitors(Int32* count, PalMonitor** outMonitors);
+PAL_API PalResult PAL_CALL palEnumerateMonitors(
+    Int32* count,
+    PalMonitor** outMonitors);
 
 /**
  * @brief Get the primary connected monitor.
@@ -774,7 +799,9 @@ PAL_API PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
  * @sa palEnumerateMonitors(), palGetPrimaryMonitor(), PalMonitorInfo
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetMonitorInfo(PalMonitor* monitor, PalMonitorInfo* info);
+PAL_API PalResult PAL_CALL palGetMonitorInfo(
+    PalMonitor* monitor,
+    PalMonitorInfo* info);
 
 /**
  * @brief Return a list of all supported monitor modes for the provided monitor.
@@ -815,8 +842,10 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(PalMonitor* monitor, PalMonitorInfo
  * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palEnumerateMonitorModes(PalMonitor* monitor, Int32* count,
-                                                    PalMonitorMode* modes);
+PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
+    PalMonitor* monitor,
+    Int32* count,
+    PalMonitorMode* modes);
 
 /**
  * @brief Get the current monitor mode of a monitor.
@@ -834,7 +863,9 @@ PAL_API PalResult PAL_CALL palEnumerateMonitorModes(PalMonitor* monitor, Int32* 
  * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(PalMonitor* monitor, PalMonitorMode* mode);
+PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode);
 
 /**
  * @brief Set the active monitor mode of a monitor.
@@ -864,7 +895,9 @@ PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(PalMonitor* monitor, PalMoni
  * @sa palEnumerateMonitorModes(), palGetCurrentMonitorMode()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetMonitorMode(PalMonitor* monitor, PalMonitorMode* mode);
+PAL_API PalResult PAL_CALL palSetMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode);
 
 /**
  * @brief Check if the provided monitor mode is valid on the monitor.
@@ -883,7 +916,9 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(PalMonitor* monitor, PalMonitorMode
  * @sa palEnumerateMonitorModes(), palGetCurrentMonitorMode()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palValidateMonitorMode(PalMonitor* monitor, PalMonitorMode* mode);
+PAL_API PalResult PAL_CALL palValidateMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode);
 
 /**
  * @brief Set the orientation for a monitor.
@@ -910,8 +945,9 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(PalMonitor* monitor, PalMonito
  * @sa palGetPrimaryMonitor(), palEnumerateMonitors()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetMonitorOrientation(PalMonitor*    monitor,
-                                                    PalOrientation orientation);
+PAL_API PalResult PAL_CALL palSetMonitorOrientation(
+    PalMonitor* monitor,
+    PalOrientation orientation);
 
 /**
  * @brief Create a window with PAL video system.
@@ -932,7 +968,9 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(PalMonitor*    monitor,
  * @sa PalWindowCreateInfo, palDestroyWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palCreateWindow(const PalWindowCreateInfo* info, PalWindow** outWindow);
+PAL_API PalResult PAL_CALL palCreateWindow(
+    const PalWindowCreateInfo* info,
+    PalWindow** outWindow);
 
 /**
  * @brief Destroy the provided window.
@@ -1077,7 +1115,9 @@ PAL_API PalResult PAL_CALL palHideWindow(PalWindow* window);
  * @sa palCreateWindow(), PalFlashInfo, PalVideoFeatures, PalFlashFlags
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palFlashWindow(PalWindow* window, const PalFlashInfo* info);
+PAL_API PalResult PAL_CALL palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info);
 
 /**
  * @brief Get the style of the provided window.
@@ -1094,7 +1134,9 @@ PAL_API PalResult PAL_CALL palFlashWindow(PalWindow* window, const PalFlashInfo*
  * @sa palCreateWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowStyle(PalWindow* window, PalWindowStyle* outStyle);
+PAL_API PalResult PAL_CALL palGetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle* outStyle);
 
 /**
  * @brief Get the current monitor the provided window is currently on.
@@ -1112,7 +1154,9 @@ PAL_API PalResult PAL_CALL palGetWindowStyle(PalWindow* window, PalWindowStyle* 
  * @sa palCreateWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowMonitor(PalWindow* window, PalMonitor** outMonitor);
+PAL_API PalResult PAL_CALL palGetWindowMonitor(
+    PalWindow* window,
+    PalMonitor** outMonitor);
 
 /**
  * @brief Get the title of the provided window.
@@ -1135,7 +1179,9 @@ PAL_API PalResult PAL_CALL palGetWindowMonitor(PalWindow* window, PalMonitor** o
  * @sa palCreateWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowTitle(PalWindow* window, char** outTitle);
+PAL_API PalResult PAL_CALL palGetWindowTitle(
+    PalWindow* window,
+    char** outTitle);
 
 /**
  * @brief Get the position of the provided window in pixels.
@@ -1154,7 +1200,10 @@ PAL_API PalResult PAL_CALL palGetWindowTitle(PalWindow* window, char** outTitle)
  * @sa palCreateWindow(), palSetWindowPos()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowPos(PalWindow* window, Int32* x, Int32* y);
+PAL_API PalResult PAL_CALL palGetWindowPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y);
 
 /**
  * @brief Get the position of the provided window's client area in pixels.
@@ -1175,7 +1224,10 @@ PAL_API PalResult PAL_CALL palGetWindowPos(PalWindow* window, Int32* x, Int32* y
  * @sa palCreateWindow(), palSetWindowPos()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowClientPos(PalWindow* window, Int32* x, Int32* y);
+PAL_API PalResult PAL_CALL palGetWindowClientPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y);
 
 /**
  * @brief Get the size of the provided window in pixels.
@@ -1194,7 +1246,10 @@ PAL_API PalResult PAL_CALL palGetWindowClientPos(PalWindow* window, Int32* x, In
  * @sa palCreateWindow(), palSetWindowSize()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowSize(PalWindow* window, Uint32* width, Uint32* height);
+PAL_API PalResult PAL_CALL palGetWindowSize(
+    PalWindow* window,
+    Uint32* width,
+    Uint32* height);
 
 /**
  * @brief Get the size of the provided window's client area in pixels.
@@ -1213,7 +1268,10 @@ PAL_API PalResult PAL_CALL palGetWindowSize(PalWindow* window, Uint32* width, Ui
  * @sa palCreateWindow(), palSetWindowSize()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowClientSize(PalWindow* window, Uint32* width, Uint32* height);
+PAL_API PalResult PAL_CALL palGetWindowClientSize(
+    PalWindow* window,
+    Uint32* width,
+    Uint32* height);
 
 /**
  * @brief Get the current state of the provided window.
@@ -1234,7 +1292,9 @@ PAL_API PalResult PAL_CALL palGetWindowClientSize(PalWindow* window, Uint32* wid
  * @sa palCreateWindow(), palMaximizeWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palGetWindowState(PalWindow* window, PalWindowState* state);
+PAL_API PalResult PAL_CALL palGetWindowState(
+    PalWindow* window,
+    PalWindowState* state);
 
 /**
  * @brief Get the current state of the keycodes (layout aware keys) of the
@@ -1304,7 +1364,9 @@ PAL_API const bool* PAL_CALL palGetMouseState();
  *
  * @ingroup video
  */
-PAL_API void PAL_CALL palGetMouseDelta(Int32* dx, Int32* dy);
+PAL_API void PAL_CALL palGetMouseDelta(
+    Int32* dx,
+    Int32* dy);
 
 /**
  * @brief Get the wheel delta of the mouse.
@@ -1317,7 +1379,9 @@ PAL_API void PAL_CALL palGetMouseDelta(Int32* dx, Int32* dy);
  *
  * @ingroup video
  */
-void PAL_CALL palGetMouseWheelDelta(Int32* dx, Int32* dy);
+void PAL_CALL palGetMouseWheelDelta(
+    Int32* dx,
+    Int32* dy);
 
 /**
  * @brief Check if the provided window is visible.
@@ -1392,7 +1456,9 @@ PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
  * @sa palCreateWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetWindowOpacity(PalWindow* window, float opacity);
+PAL_API PalResult PAL_CALL palSetWindowOpacity(
+    PalWindow* window,
+    float opacity);
 
 /**
  * @brief Set the style of the provided window.
@@ -1409,7 +1475,9 @@ PAL_API PalResult PAL_CALL palSetWindowOpacity(PalWindow* window, float opacity)
  * @sa palCreateWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetWindowStyle(PalWindow* window, PalWindowStyle style);
+PAL_API PalResult PAL_CALL palSetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle style);
 
 /**
  * @brief Set the title of the provided window.
@@ -1428,7 +1496,9 @@ PAL_API PalResult PAL_CALL palSetWindowStyle(PalWindow* window, PalWindowStyle s
  * @sa palCreateWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetWindowTitle(PalWindow* window, const char* title);
+PAL_API PalResult PAL_CALL palSetWindowTitle(
+    PalWindow* window,
+    const char* title);
 
 /**
  * @brief Set the position of the specified window in pixels.
@@ -1453,7 +1523,10 @@ PAL_API PalResult PAL_CALL palSetWindowTitle(PalWindow* window, const char* titl
  * @sa palCreateWindow(), palSetWindowSize(), palRestoreWindow()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetWindowPos(PalWindow* window, Int32 x, Int32 y);
+PAL_API PalResult PAL_CALL palSetWindowPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y);
 
 /**
  * @brief Set the size of the provided window in pixels.
@@ -1479,7 +1552,10 @@ PAL_API PalResult PAL_CALL palSetWindowPos(PalWindow* window, Int32 x, Int32 y);
  * @sa palCreateWindow(), palSetWindowPos()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetWindowSize(PalWindow* window, Uint32 width, Uint32 height);
+PAL_API PalResult PAL_CALL palSetWindowSize(
+    PalWindow* window,
+    Uint32 width,
+    Uint32 height);
 
 /**
  * @brief Request input focus for the provided window.
@@ -1517,7 +1593,9 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * @sa PalIconCreateInfo, palDestroyIcon()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palCreateIcon(const PalIconCreateInfo* info, PalIcon** outIcon);
+PAL_API PalResult PAL_CALL palCreateIcon(
+    const PalIconCreateInfo* info,
+    PalIcon** outIcon);
 
 /**
  * @brief Destroy the provided icon.
@@ -1553,7 +1631,9 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * @sa palCreateWindow(), palCreateIcon()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palSetWindowIcon(PalWindow* window, PalIcon* icon);
+PAL_API PalResult PAL_CALL palSetWindowIcon(
+    PalWindow* window,
+    PalIcon* icon);
 
 /**
  * @brief Create a cursor with PAL video system.
@@ -1574,7 +1654,9 @@ PAL_API PalResult PAL_CALL palSetWindowIcon(PalWindow* window, PalIcon* icon);
  * @sa PalCursorCreateInfo, palDestroyCursor()
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palCreateCursor(const PalCursorCreateInfo* info, PalCursor** outCursor);
+PAL_API PalResult PAL_CALL palCreateCursor(
+    const PalCursorCreateInfo* info,
+    PalCursor** outCursor);
 
 /**
  * @brief Destroy the provided cursor.
@@ -1622,7 +1704,9 @@ PAL_API void PAL_CALL palShowCursor(bool show);
  *
  * @ingroup video
  */
-PAL_API void PAL_CALL palClipCursor(PalWindow* window, bool clip);
+PAL_API void PAL_CALL palClipCursor(
+    PalWindow* window,
+    bool clip);
 
 /**
  * @brief Get the position of the provided window cursor in pixels.
@@ -1643,7 +1727,10 @@ PAL_API void PAL_CALL palClipCursor(PalWindow* window, bool clip);
  * @sa palCreateWindow(), palSetWindowPos()
  * @ingroup video
  */
-PAL_API void PAL_CALL palGetCursorPos(PalWindow* window, Int32* x, Int32* y);
+PAL_API void PAL_CALL palGetCursorPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y);
 
 /**
  * @brief Set the position of the provided window cursor in pixels.
@@ -1663,7 +1750,10 @@ PAL_API void PAL_CALL palGetCursorPos(PalWindow* window, Int32* x, Int32* y);
  * @sa palCreateWindow(), palSetWindowCursor()
  * @ingroup video
  */
-PAL_API void PAL_CALL palSetCursorPos(PalWindow* window, Int32 x, Int32 y);
+PAL_API void PAL_CALL palSetCursorPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y);
 
 /**
  * @brief Set the cursor for the provided window.
@@ -1682,6 +1772,8 @@ PAL_API void PAL_CALL palSetCursorPos(PalWindow* window, Int32 x, Int32 y);
  * @sa palCreateWindow(), palCreateCursor()
  * @ingroup video
  */
-PAL_API void PAL_CALL palSetWindowCursor(PalWindow* window, PalCursor* cursor);
+PAL_API void PAL_CALL palSetWindowCursor(
+    PalWindow* window,
+    PalCursor* cursor);
 
 #endif // _PAL_VIDEO_H

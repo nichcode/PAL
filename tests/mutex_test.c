@@ -7,37 +7,35 @@
 
 typedef struct {
     PalMutex* mutex;
-    Int32     counter;
+    Int32 counter;
 } SharedData;
 
 static void* PAL_CALL worker(void* arg)
 {
-
     SharedData* data = (SharedData*)arg;
 
-    // this is only needed when two or more threads are writing to the same variable
+    // this is only needed when two or more threads are writing to the same
+    // variable
     for (Int32 i = 0; i < MAX_COUNTER; i++) {
         palLockMutex(data->mutex);
         data->counter++; // a shared variable. we need lock and unlocks
         palLog(nullptr, "Counter: %d", data->counter);
         palUnlockMutex(data->mutex);
     }
-
     return nullptr;
 }
 
 bool mutexTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Mutex Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult  result;
+    PalResult result;
     PalThread* threads[THREAD_COUNT];
-    PalMutex*  mutex = nullptr;
+    PalMutex* mutex = nullptr;
 
     SharedData* data = palAllocate(nullptr, sizeof(SharedData), 0);
     if (!data) {
@@ -53,18 +51,22 @@ bool mutexTest()
     }
 
     data->counter = 0;
-    data->mutex   = mutex;
+    data->mutex = mutex;
 
     // create threads
     PalThreadCreateInfo createInfo = {};
-    createInfo.entry               = worker; // will be the same for all threads
-    createInfo.stackSize           = 0;      // same for all threads
+    createInfo.entry = worker; // will be the same for all threads
+    createInfo.stackSize = 0;  // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)data;
 
+        // create thread
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(nullptr, "Failed to create thread: %s", palFormatResult(result));
+            palLog(
+                nullptr,
+                "Failed to create thread: %s",
+                palFormatResult(result));
             return false;
         }
     }

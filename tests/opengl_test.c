@@ -4,19 +4,19 @@
 
 bool openglTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Opengl Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
-
     // initialize the opengl system. This loads the icd.
-    result = palInitGL(nullptr);
+    PalResult result = palInitGL(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to initialize opengl %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to initialize opengl %s",
+            palFormatResult(result));
         return false;
     }
 
@@ -37,11 +37,11 @@ bool openglTest()
     }
 
     if (info->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
-        palLog(nullptr, " GL context profile selection extension supported");
+        palLog(nullptr, " GL context profile extension supported");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2) {
-        palLog(nullptr, " GL context profile selection (es2) extension supported");
+        palLog(nullptr, " GL context profile(es2) extension supported");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_ROBUSTNESS) {

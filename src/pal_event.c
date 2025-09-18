@@ -36,37 +36,39 @@ freely, subject to the following restrictions:
 #define PAL_MAX_EVENTS 512
 
 typedef struct {
-    Uint8    head;
-    Uint8    tail;
+    Uint8 head;
+    Uint8 tail;
     PalEvent data[PAL_MAX_EVENTS];
 } QueueData;
 
-struct PalEventDriver{
-    bool                freeQueue;
-    PalEventQueue*      queue;
+struct PalEventDriver {
+    bool freeQueue;
+    PalEventQueue* queue;
     const PalAllocator* allocator;
-    PalEventCallback    callback;
-    void*               userData;
-    PalDispatchMode     modes[PAL_MAX_EVENTS];
+    PalEventCallback callback;
+    void* userData;
+    PalDispatchMode modes[PAL_MAX_EVENTS];
 };
 
 // ==================================================
 // Internal API
 // ==================================================
 
-static void PAL_CALL defaultPush(void* queue, PalEvent* event)
+static void PAL_CALL defaultPush(
+    void* queue,
+    PalEvent* event)
 {
-
-    PalEventQueue* eventQueue                 = queue;
-    QueueData*     data                       = eventQueue->userData;
+    PalEventQueue* eventQueue = queue;
+    QueueData* data = eventQueue->userData;
     data->data[data->tail++ % PAL_MAX_EVENTS] = *event;
 }
 
-static bool PAL_CALL defaultPoll(void* queue, PalEvent* outEvent)
+static bool PAL_CALL defaultPoll(
+    void* queue,
+    PalEvent* outEvent)
 {
-
     PalEventQueue* eventQueue = queue;
-    QueueData*     data       = eventQueue->userData;
+    QueueData* data = eventQueue->userData;
     if (data->head == data->tail) {
         return false;
     }
@@ -79,10 +81,10 @@ static bool PAL_CALL defaultPoll(void* queue, PalEvent* outEvent)
 // Public API
 // ==================================================
 
-PalResult PAL_CALL palCreateEventDriver(const PalEventDriverCreateInfo* info,
-                                        PalEventDriver**                outEventDriver)
+PalResult PAL_CALL palCreateEventDriver(
+    const PalEventDriverCreateInfo* info,
+    PalEventDriver** outEventDriver)
 {
-
     if (!info || !outEventDriver) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -93,7 +95,8 @@ PalResult PAL_CALL palCreateEventDriver(const PalEventDriverCreateInfo* info,
         }
     }
 
-    PalEventDriver* driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
+    PalEventDriver* driver =
+        palAllocate(info->allocator, sizeof(PalEventDriver), 0);
     if (!driver) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -105,7 +108,7 @@ PalResult PAL_CALL palCreateEventDriver(const PalEventDriverCreateInfo* info,
 
     if (info->queue) {
         // user supplied an event queue
-        driver->queue     = info->queue;
+        driver->queue = info->queue;
         driver->freeQueue = false;
 
     } else {
@@ -116,7 +119,8 @@ PalResult PAL_CALL palCreateEventDriver(const PalEventDriverCreateInfo* info,
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        driver->queue->userData = palAllocate(info->allocator, sizeof(QueueData), 0);
+        driver->queue->userData =
+            palAllocate(info->allocator, sizeof(QueueData), 0);
         if (!driver->queue->userData) {
             palFree(info->allocator, driver->queue);
             palFree(info->allocator, driver);
@@ -126,17 +130,16 @@ PalResult PAL_CALL palCreateEventDriver(const PalEventDriverCreateInfo* info,
         memset(driver->queue->userData, 0, sizeof(QueueData));
         driver->queue->poll = defaultPoll;
         driver->queue->push = defaultPush;
-        driver->freeQueue   = true;
+        driver->freeQueue = true;
     }
 
     driver->callback = info->callback;
-    *outEventDriver  = driver;
+    *outEventDriver = driver;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver)
 {
-
     if (!eventDriver) {
         return;
     }
@@ -149,27 +152,30 @@ void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver)
     palFree(allocator, eventDriver);
 }
 
-void PAL_CALL palSetEventDispatchMode(PalEventDriver* eventDriver, PalEventType type,
-                                      PalDispatchMode mode)
+void PAL_CALL palSetEventDispatchMode(
+    PalEventDriver* eventDriver,
+    PalEventType type,
+    PalDispatchMode mode)
 {
-
     if (eventDriver) {
         eventDriver->modes[type] = mode;
     }
 }
 
-PalDispatchMode PAL_CALL palGetEventDispatchMode(PalEventDriver* eventDriver, PalEventType type)
+PalDispatchMode PAL_CALL palGetEventDispatchMode(
+    PalEventDriver* eventDriver,
+    PalEventType type)
 {
-
     if (!eventDriver) {
         return PAL_DISPATCH_NONE;
     }
     return eventDriver->modes[type];
 }
 
-void PAL_CALL palPushEvent(PalEventDriver* eventDriver, PalEvent* event)
+void PAL_CALL palPushEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* event)
 {
-
     if (!eventDriver || !event) {
         return;
     }
@@ -188,9 +194,10 @@ void PAL_CALL palPushEvent(PalEventDriver* eventDriver, PalEvent* event)
     }
 }
 
-bool PAL_CALL palPollEvent(PalEventDriver* eventDriver, PalEvent* outEvent)
+bool PAL_CALL palPollEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* outEvent)
 {
-
     if (!eventDriver || !outEvent) {
         return false;
     }

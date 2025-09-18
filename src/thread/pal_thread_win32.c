@@ -49,12 +49,16 @@ freely, subject to the following restrictions:
 #define NAME_SUPPORTED 2
 #define NAME_NOT_SUPPORTED 3
 
-typedef HRESULT(WINAPI* SetThreadDescriptionFn)(HANDLE, PCWSTR);
-typedef HRESULT(WINAPI* GetThreadDescriptionFn)(HANDLE, PWSTR*);
+typedef HRESULT(WINAPI* SetThreadDescriptionFn)(
+    HANDLE,
+    PCWSTR);
+typedef HRESULT(WINAPI* GetThreadDescriptionFn)(
+    HANDLE,
+    PWSTR*);
 
 typedef struct {
     PalThreadFn func;
-    void*       arg;
+    void* arg;
 } ThreadData;
 
 struct PalMutex {
@@ -65,10 +69,10 @@ struct PalCondVar {
     CONDITION_VARIABLE cv;
 };
 
-static Uint8                  s_Init = false;
+static Uint8 s_Init = false;
 static SetThreadDescriptionFn s_SetThreadDescription;
 static GetThreadDescriptionFn s_GetThreadDescription;
-static const PalAllocator*    s_Allocator = nullptr;
+static const PalAllocator* s_Allocator = nullptr;
 
 // ==================================================
 // Internal API
@@ -76,9 +80,8 @@ static const PalAllocator*    s_Allocator = nullptr;
 
 static DWORD WINAPI threadEntryToWin32(LPVOID arg)
 {
-
     ThreadData* data = arg;
-    void*       ret  = data->func(data->arg);
+    void* ret = data->func(data->arg);
     palFree(s_Allocator, data);
     return (uintptr_t)ret;
 }
@@ -89,7 +92,6 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg)
 
 void PAL_CALL palSetThreadAllocator(const PalAllocator* allocator)
 {
-
     if (allocator && (allocator->allocate || allocator->free)) {
         s_Allocator = allocator;
     }
@@ -97,7 +99,6 @@ void PAL_CALL palSetThreadAllocator(const PalAllocator* allocator)
 
 const PalAllocator* PAL_CALL palGetThreadAllocator()
 {
-
     return s_Allocator;
 }
 
@@ -105,9 +106,10 @@ const PalAllocator* PAL_CALL palGetThreadAllocator()
 // Thread
 // ==================================================
 
-PalResult PAL_CALL palCreateThread(const PalThreadCreateInfo* info, PalThread** outThread)
+PalResult PAL_CALL palCreateThread(
+    const PalThreadCreateInfo* info,
+    PalThread** outThread)
 {
-
     if (!info || !outThread) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -115,11 +117,13 @@ PalResult PAL_CALL palCreateThread(const PalThreadCreateInfo* info, PalThread** 
     if (s_Init == 0) {
         HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
         if (kernel32) {
-            s_GetThreadDescription =
-                (GetThreadDescriptionFn)GetProcAddress(kernel32, "GetThreadDescription");
+            s_GetThreadDescription = (GetThreadDescriptionFn)GetProcAddress(
+                kernel32,
+                "GetThreadDescription");
 
-            s_SetThreadDescription =
-                (SetThreadDescriptionFn)GetProcAddress(kernel32, "SetThreadDescription");
+            s_SetThreadDescription = (SetThreadDescriptionFn)GetProcAddress(
+                kernel32,
+                "SetThreadDescription");
 
             if (!s_GetThreadDescription && !s_SetThreadDescription) {
                 s_Init = NAME_NOT_SUPPORTED;
@@ -138,10 +142,16 @@ PalResult PAL_CALL palCreateThread(const PalThreadCreateInfo* info, PalThread** 
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    data->arg  = info->arg;
+    data->arg = info->arg;
     data->func = info->entry;
 
-    HANDLE thread = CreateThread(nullptr, info->stackSize, threadEntryToWin32, data, 0, nullptr);
+    HANDLE thread = CreateThread(
+        nullptr,
+        info->stackSize,
+        threadEntryToWin32,
+        data,
+        0,
+        nullptr);
 
     if (!thread) {
         // error
@@ -164,9 +174,10 @@ PalResult PAL_CALL palCreateThread(const PalThreadCreateInfo* info, PalThread** 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palJoinThread(PalThread* thread, void* retval)
+PalResult PAL_CALL palJoinThread(
+    PalThread* thread,
+    void* retval)
 {
-
     if (!thread) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -186,7 +197,6 @@ PalResult PAL_CALL palJoinThread(PalThread* thread, void* retval)
 
 void PAL_CALL palDetachThread(PalThread* thread)
 {
-
     if (thread) {
         CloseHandle((HANDLE)thread);
     }
@@ -194,25 +204,21 @@ void PAL_CALL palDetachThread(PalThread* thread)
 
 void PAL_CALL palSleep(Uint64 milliseconds)
 {
-
     Sleep((DWORD)milliseconds);
 }
 
 void PAL_CALL palYield()
 {
-
     SwitchToThread();
 }
 
 PalThread* PAL_CALL palGetCurrentThread()
 {
-
     return (PalThread*)GetCurrentThread();
 }
 
 PalThreadFeatures PAL_CALL palGetThreadFeatures()
 {
-
     PalThreadFeatures features;
     features |= PAL_THREAD_FEATURE_STACK_SIZE;
     features |= PAL_THREAD_FEATURE_PRIORITY;
@@ -221,7 +227,8 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
     // check support for PAL_THREAD_FEATURE_NAME feature
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
     if (kernel32) {
-        FARPROC setThreadDesc = GetProcAddress(kernel32, "SetThreadDescription");
+        FARPROC setThreadDesc =
+            GetProcAddress(kernel32, "SetThreadDescription");
         if (setThreadDesc) {
             features |= PAL_THREAD_FEATURE_NAME;
         }
@@ -231,24 +238,23 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
 
 PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 {
-
     if (!thread) {
         return 0;
     }
 
     int priority = GetThreadPriority((HANDLE)thread);
     switch (priority) {
-    case THREAD_PRIORITY_LOWEST:
-        return PAL_THREAD_PRIORITY_LOW;
-        break;
+        case THREAD_PRIORITY_LOWEST:
+            return PAL_THREAD_PRIORITY_LOW;
+            break;
 
-    case THREAD_PRIORITY_NORMAL:
-        return PAL_THREAD_PRIORITY_NORMAL;
-        break;
+        case THREAD_PRIORITY_NORMAL:
+            return PAL_THREAD_PRIORITY_NORMAL;
+            break;
 
-    case THREAD_PRIORITY_HIGHEST:
-        return PAL_THREAD_PRIORITY_HIGH;
-        break;
+        case THREAD_PRIORITY_HIGHEST:
+            return PAL_THREAD_PRIORITY_HIGH;
+            break;
     }
 
     return 0;
@@ -256,7 +262,6 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 
 Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
 {
-
     if (!thread) {
         return 0;
     }
@@ -272,20 +277,19 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
 
 char* PAL_CALL palGetThreadName(PalThread* thread)
 {
-
     if (!thread || !s_GetThreadDescription) {
         return nullptr;
     }
 
     wchar_t* buffer = nullptr;
-    HRESULT  hr     = s_GetThreadDescription((HANDLE)thread, &buffer);
+    HRESULT hr = s_GetThreadDescription((HANDLE)thread, &buffer);
 
     if (!SUCCEEDED(hr)) {
         return nullptr;
     }
 
     // convert to char string
-    int   len          = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
+    int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
     char* stringBuffer = palAllocate(s_Allocator, len + 1, 0);
     if (!stringBuffer) {
         return nullptr;
@@ -296,26 +300,27 @@ char* PAL_CALL palGetThreadName(PalThread* thread)
     return stringBuffer;
 }
 
-PalResult PAL_CALL palSetThreadPriority(PalThread* thread, PalThreadPriority priority)
+PalResult PAL_CALL palSetThreadPriority(
+    PalThread* thread,
+    PalThreadPriority priority)
 {
-
     if (!thread) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     int _priority = 0;
     switch (priority) {
-    case PAL_THREAD_PRIORITY_LOW:
-        _priority = THREAD_PRIORITY_LOWEST;
-        break;
+        case PAL_THREAD_PRIORITY_LOW:
+            _priority = THREAD_PRIORITY_LOWEST;
+            break;
 
-    case PAL_THREAD_PRIORITY_NORMAL:
-        _priority = THREAD_PRIORITY_NORMAL;
-        break;
+        case PAL_THREAD_PRIORITY_NORMAL:
+            _priority = THREAD_PRIORITY_NORMAL;
+            break;
 
-    case PAL_THREAD_PRIORITY_HIGH:
-        _priority = THREAD_PRIORITY_HIGHEST;
-        break;
+        case PAL_THREAD_PRIORITY_HIGH:
+            _priority = THREAD_PRIORITY_HIGHEST;
+            break;
     }
 
     if (!SetThreadPriority((HANDLE)thread, _priority)) {
@@ -334,9 +339,10 @@ PalResult PAL_CALL palSetThreadPriority(PalThread* thread, PalThreadPriority pri
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetThreadAffinity(PalThread* thread, Uint64 mask)
+PalResult PAL_CALL palSetThreadAffinity(
+    PalThread* thread,
+    Uint64 mask)
 {
-
     if (!thread) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -357,9 +363,10 @@ PalResult PAL_CALL palSetThreadAffinity(PalThread* thread, Uint64 mask)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetThreadName(PalThread* thread, const char* name)
+PalResult PAL_CALL palSetThreadName(
+    PalThread* thread,
+    const char* name)
 {
-
     if (!thread || !name) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -403,7 +410,6 @@ PalResult PAL_CALL palSetThreadName(PalThread* thread, const char* name)
 
 PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor)
 {
-
     DWORD tlsid = FlsAlloc(destructor);
     if (tlsid == FLS_OUT_OF_INDEXES) {
         return 0;
@@ -413,19 +419,18 @@ PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor)
 
 void PAL_CALL palDestroyTLS(PalTLSId id)
 {
-
     FlsFree((DWORD)id);
 }
 
 void* PAL_CALL palGetTLS(PalTLSId id)
 {
-
     return FlsGetValue((DWORD)id);
 }
 
-void PAL_CALL palSetTLS(PalTLSId id, void* data)
+void PAL_CALL palSetTLS(
+    PalTLSId id,
+    void* data)
 {
-
     FlsSetValue((DWORD)id, data);
 }
 
@@ -435,7 +440,6 @@ void PAL_CALL palSetTLS(PalTLSId id, void* data)
 
 PalResult PAL_CALL palCreateMutex(PalMutex** outMutex)
 {
-
     if (!outMutex) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -452,7 +456,6 @@ PalResult PAL_CALL palCreateMutex(PalMutex** outMutex)
 
 void PAL_CALL palDestroyMutex(PalMutex* mutex)
 {
-
     if (mutex) {
         DeleteCriticalSection(&mutex->sc);
         palFree(s_Allocator, mutex);
@@ -461,7 +464,6 @@ void PAL_CALL palDestroyMutex(PalMutex* mutex)
 
 void PAL_CALL palLockMutex(PalMutex* mutex)
 {
-
     if (mutex) {
         EnterCriticalSection(&mutex->sc);
     }
@@ -469,7 +471,6 @@ void PAL_CALL palLockMutex(PalMutex* mutex)
 
 void PAL_CALL palUnlockMutex(PalMutex* mutex)
 {
-
     if (mutex) {
         LeaveCriticalSection(&mutex->sc);
     }
@@ -477,7 +478,6 @@ void PAL_CALL palUnlockMutex(PalMutex* mutex)
 
 PalResult PAL_CALL palCreateCondVar(PalCondVar** outCondition)
 {
-
     if (!outCondition) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -494,15 +494,15 @@ PalResult PAL_CALL palCreateCondVar(PalCondVar** outCondition)
 
 void PAL_CALL palDestroyCondVar(PalCondVar* condition)
 {
-
     if (condition) {
         palFree(s_Allocator, condition);
     }
 }
 
-PalResult PAL_CALL palWaitCondVar(PalCondVar* condition, PalMutex* mutex)
+PalResult PAL_CALL palWaitCondVar(
+    PalCondVar* condition,
+    PalMutex* mutex)
 {
-
     if (!condition || !mutex) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -519,15 +519,17 @@ PalResult PAL_CALL palWaitCondVar(PalCondVar* condition, PalMutex* mutex)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palWaitCondVarTimeout(PalCondVar* condition, PalMutex* mutex,
-                                         Uint64 milliseconds)
+PalResult PAL_CALL palWaitCondVarTimeout(
+    PalCondVar* condition,
+    PalMutex* mutex,
+    Uint64 milliseconds)
 {
-
     if (!condition || !mutex) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    BOOL ret = SleepConditionVariableCS(&condition->cv, &mutex->sc, milliseconds);
+    BOOL ret =
+        SleepConditionVariableCS(&condition->cv, &mutex->sc, milliseconds);
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
@@ -541,7 +543,6 @@ PalResult PAL_CALL palWaitCondVarTimeout(PalCondVar* condition, PalMutex* mutex,
 
 void PAL_CALL palSignalCondVar(PalCondVar* condition)
 {
-
     if (condition) {
         WakeConditionVariable(&condition->cv);
     }
@@ -549,7 +550,6 @@ void PAL_CALL palSignalCondVar(PalCondVar* condition)
 
 void PAL_CALL palBroadcastCondVar(PalCondVar* condition)
 {
-
     if (condition) {
         WakeAllConditionVariable(&condition->cv);
     }

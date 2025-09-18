@@ -53,22 +53,25 @@ typedef LONG(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 // Internal API
 // ==================================================
 
-static inline void cpuid(int regs[4], int leaf, int subLeaf)
+static inline void cpuid(
+    int regs[4],
+    int leaf,
+    int subLeaf)
 {
-
-    __asm__ __volatile__("cpuid"
-                         : "=a"(regs[0]), "=b"(regs[1]), "=c"(regs[2]), "=d"(regs[3])
-                         : "a"(leaf), "b"(subLeaf));
+    __asm__ __volatile__(
+        "cpuid"
+        : "=a"(regs[0]), "=b"(regs[1]), "=c"(regs[2]), "=d"(regs[3])
+        : "a"(leaf), "b"(subLeaf));
 }
 
 static inline bool getVersionWin32(PalVersion* version)
 {
-
-    OSVERSIONINFOEXW ver    = {0};
+    OSVERSIONINFOEXW ver = {0};
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 
-    HINSTANCE        ntdll  = GetModuleHandleW(L"ntdll.dll");
-    RtlGetVersionPtr getVer = (RtlGetVersionPtr)GetProcAddress(ntdll, "RtlGetVersion");
+    HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
+    RtlGetVersionPtr getVer =
+        (RtlGetVersionPtr)GetProcAddress(ntdll, "RtlGetVersion");
     if (!getVer) {
         return false;
     }
@@ -83,9 +86,12 @@ static inline bool getVersionWin32(PalVersion* version)
     return true;
 }
 
-static inline bool isVersionWin32(PalVersion* osVersion, Uint16 major, Uint16 minor, Uint16 build)
+static inline bool isVersionWin32(
+    PalVersion* osVersion,
+    Uint16 major,
+    Uint16 minor,
+    Uint16 build)
 {
-
     if (osVersion->major > major) {
         return true;
     }
@@ -111,20 +117,19 @@ static inline bool isVersionWin32(PalVersion* osVersion, Uint16 major, Uint16 mi
 
 PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info)
 {
-
     if (!info) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     info->apiType = PAL_PLATFORM_API_WIN32;
-    info->type    = PAL_PLATFORM_WINDOWS;
+    info->type = PAL_PLATFORM_WINDOWS;
 
     // get windows build, version and combine them
     if (!getVersionWin32(&info->version)) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    const char* name  = nullptr;
+    const char* name = nullptr;
     const char* build = nullptr;
     // check the versions and set the appropriate name
     if (isVersionWin32(&info->version, 5, 1, 0)) {
@@ -152,7 +157,7 @@ PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info)
     }
 
     if (isVersionWin32(&info->version, 10, 0, 22000)) {
-        name  = "Windows 11";
+        name = "Windows 11";
         build = ".22000";
     }
 
@@ -170,7 +175,7 @@ PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info)
 
     // get ram (size) in MB
     MEMORYSTATUSEX status = {0};
-    status.dwLength       = sizeof(MEMORYSTATUSEX);
+    status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
         info->totalRAM = status.ullTotalPhys / (1024 * 1024); // to MB
     }
@@ -178,9 +183,10 @@ PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_API palGetCPUInfo(const PalAllocator* allocator, PalCPUInfo* info)
+PalResult PAL_API palGetCPUInfo(
+    const PalAllocator* allocator,
+    PalCPUInfo* info)
 {
-
     if (!info) {
         return PAL_RESULT_NULL_POINTER;
     }
@@ -217,12 +223,13 @@ PalResult PAL_API palGetCPUInfo(const PalAllocator* allocator, PalCPUInfo* info)
     GetLogicalProcessorInformationEx(RelationAll, nullptr, &len);
 
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = nullptr;
-    buffer                                          = palAllocate(allocator, len, 16);
+    buffer = palAllocate(allocator, len, 16);
     if (!buffer) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    WINBOOL success = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
+    WINBOOL success =
+        GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
 
     if (!success) {
         palFree(allocator, buffer);

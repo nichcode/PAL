@@ -5,17 +5,16 @@
 #define THREAD_COUNT 4
 
 // we dont want to allocate this and pass it to every thread
-static PalMutex*   g_Mutex;
+static PalMutex* g_Mutex;
 static PalCondVar* g_Condition;
 
 typedef struct {
-    bool   ready;
+    bool ready;
     Uint32 id;
 } ThreadData;
 
 static void* PAL_CALL worker(void* arg)
 {
-
     ThreadData* data = (ThreadData*)arg;
     palLog(nullptr, "Thread %d waiting...", data->id);
 
@@ -31,17 +30,17 @@ static void* PAL_CALL worker(void* arg)
 
 bool condvarTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Condvar Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult  result;
+    PalResult result;
     PalThread* threads[THREAD_COUNT];
 
-    ThreadData* data = palAllocate(nullptr, sizeof(ThreadData) * THREAD_COUNT, 0);
+    ThreadData* data = nullptr;
+    data = palAllocate(nullptr, sizeof(ThreadData) * THREAD_COUNT, 0);
     if (!data) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
@@ -57,23 +56,29 @@ bool condvarTest()
     // create condition
     result = palCreateCondVar(&g_Condition);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create cond var: %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to create cond var: %s",
+            palFormatResult(result));
         return false;
     }
 
     // create threads
     PalThreadCreateInfo createInfo = {};
-    createInfo.entry               = worker; // will be the same for all threads
-    createInfo.stackSize           = 0;      // same for all threads
+    createInfo.entry = worker; // will be the same for all threads
+    createInfo.stackSize = 0;  // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         ThreadData* threadData = &data[i];
-        threadData->id         = i + 1;
-        threadData->ready      = false;
-        createInfo.arg         = (void*)threadData;
+        threadData->id = i + 1;
+        threadData->ready = false;
+        createInfo.arg = (void*)threadData;
 
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(nullptr, "Failed to create thread: %s", palFormatResult(result));
+            palLog(
+                nullptr,
+                "Failed to create thread: %s",
+                palFormatResult(result));
             return false;
         }
     }

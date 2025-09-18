@@ -4,20 +4,22 @@
 
 bool videoTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Video Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult        result;
+    PalResult result;
     PalVideoFeatures features;
 
     // initialize the video system
     result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to initialize video %s",
+            palFormatResult(result));
         return false;
     }
 

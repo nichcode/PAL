@@ -51,16 +51,18 @@ freely, subject to the following restrictions:
 typedef struct PalGLContext PalGLContext;
 
 typedef enum {
-    PAL_GL_EXTENSION_CREATE_CONTEXT      = PAL_BIT(0), /** < Modern context creation.*/
-    PAL_GL_EXTENSION_CONTEXT_PROFILE     = PAL_BIT(1), /** < Setting context profile.*/
+    PAL_GL_EXTENSION_CREATE_CONTEXT =
+        PAL_BIT(0), /** < Modern context creation.*/
+    PAL_GL_EXTENSION_CONTEXT_PROFILE =
+        PAL_BIT(1), /** < Setting context profile.*/
     PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 = PAL_BIT(2),
-    PAL_GL_EXTENSION_ROBUSTNESS          = PAL_BIT(3),
-    PAL_GL_EXTENSION_NO_ERROR            = PAL_BIT(4),
-    PAL_GL_EXTENSION_PIXEL_FORMAT        = PAL_BIT(5), /** < Modern FBConfig.*/
-    PAL_GL_EXTENSION_MULTISAMPLE         = PAL_BIT(6), /** < Multisample FBConfigs.*/
-    PAL_GL_EXTENSION_SWAP_CONTROL        = PAL_BIT(7), /** < Vsync.*/
-    PAL_GL_EXTENSION_FLUSH_CONTROL       = PAL_BIT(8),
-    PAL_GL_EXTENSION_COLORSPACE_SRGB     = PAL_BIT(9)
+    PAL_GL_EXTENSION_ROBUSTNESS = PAL_BIT(3),
+    PAL_GL_EXTENSION_NO_ERROR = PAL_BIT(4),
+    PAL_GL_EXTENSION_PIXEL_FORMAT = PAL_BIT(5), /** < Modern FBConfig.*/
+    PAL_GL_EXTENSION_MULTISAMPLE = PAL_BIT(6),  /** < Multisample FBConfigs.*/
+    PAL_GL_EXTENSION_SWAP_CONTROL = PAL_BIT(7), /** < Vsync.*/
+    PAL_GL_EXTENSION_FLUSH_CONTROL = PAL_BIT(8),
+    PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(9)
 } PalGLExtension;
 
 typedef enum {
@@ -76,21 +78,24 @@ typedef enum {
     PAL_GL_CONTEXT_RESET_LOSE_CONTEXT
 } PalGLContextReset;
 
-typedef enum { PAL_GL_RELEASE_BEHAVIOR_NONE, PAL_GL_CONTEXT_RESET_FLUSH } PalGLRelease;
+typedef enum {
+    PAL_GL_RELEASE_BEHAVIOR_NONE,
+    PAL_GL_CONTEXT_RESET_FLUSH
+} PalGLRelease;
 
 typedef struct {
     PalGLExtension extensions; /** < Supported extensions.*/
-    Uint32         major;
-    Uint32         minor;
-    char           vendor[32];
-    char           graphicsCard[64];
-    char           version[64];
+    Uint32 major;
+    Uint32 minor;
+    char vendor[32];
+    char graphicsCard[64];
+    char version[64];
 } PalGLInfo;
 
 typedef struct {
-    bool   doubleBuffer;
-    bool   stereo;
-    bool   sRGB;
+    bool doubleBuffer;
+    bool stereo;
+    bool sRGB;
     Uint16 index;
     Uint16 redBits;
     Uint16 greenBits;
@@ -111,8 +116,9 @@ typedef struct {
  * @ingroup opengl
  */
 typedef struct {
-    void* display; /** < Native display. Can be `nullptr` depending on platform*/
-    void* window;  /** < Native window.*/
+    void*
+        display;  /** < Native display. Can be `nullptr` depending on platform*/
+    void* window; /** < Native window.*/
 } PalGLWindow;
 
 /**
@@ -129,18 +135,19 @@ typedef struct {
 typedef struct {
     bool forward;    /** < Forward compatible context.*/
     bool robustness; /** < Robustness. Set to `true` if reset is not
-                        `PAL_GL_CONTEXT_RESET_NONE`*/
-    bool              noError;
-    bool              debug; /** < Debug context.*/
-    Uint16            major;
-    Uint16            minor;
-    PalGLProfile      profile;
-    PalGLContextReset reset; /** < Robustness must be `true` if reset is not
-                                `PAL_GL_CONTEXT_RESET_NONE`*/
-    PalGLRelease         release;
-    PalGLContext*        shareContext; /** < Share context.*/
-    const PalGLFBConfig* fbConfig;     /** < Context Framebuffer config.*/
-    const PalGLWindow*   window;       /** < Opengl window with native handles.*/
+                                            `PAL_GL_CONTEXT_RESET_NONE`*/
+    bool noError;
+    bool debug; /** < Debug context.*/
+    Uint16 major;
+    Uint16 minor;
+    PalGLProfile profile;
+    PalGLContextReset
+        reset; /** < Robustness must be `true` if reset is not
+                                              `PAL_GL_CONTEXT_RESET_NONE`*/
+    PalGLRelease release;
+    PalGLContext* shareContext;    /** < Share context.*/
+    const PalGLFBConfig* fbConfig; /** < Context Framebuffer config.*/
+    const PalGLWindow* window;     /** < Opengl window with native handles.*/
 } PalGLContextCreateInfo;
 
 /**
@@ -235,8 +242,10 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * @sa palInitGL(), PalGLWindow, PalGLFBConfig
  * @ingroup video
  */
-PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(PalGLWindow* glWindow, Int32* count,
-                                                   PalGLFBConfig* configs);
+PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
+    PalGLWindow* glWindow,
+    Int32* count,
+    PalGLFBConfig* configs);
 
 /**
  * @brief Get the closest opengl framebuffer from a list of framebuffers with a
@@ -263,8 +272,10 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(PalGLWindow* glWindow, Int32*
  * @sa palInitGL(), PalGLFBConfig
  * @ingroup video
  */
-PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(PalGLFBConfig* configs, Int32 count,
-                                                              const PalGLFBConfig* desired);
+PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
+    PalGLFBConfig* configs,
+    Int32 count,
+    const PalGLFBConfig* desired);
 
 /**
  * @brief Create a context with PAL opengl system.
@@ -285,8 +296,9 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(PalGLFBConfig* con
  * @sa PalGLContextCreateInfo, palDestroyGLContext()
  * @ingroup opengl
  */
-PAL_API PalResult PAL_CALL palCreateGLContext(const PalGLContextCreateInfo* info,
-                                              PalGLContext**                outContext);
+PAL_API PalResult PAL_CALL palCreateGLContext(
+    const PalGLContextCreateInfo* info,
+    PalGLContext** outContext);
 
 /**
  * @brief Destroy the provided context.
@@ -320,7 +332,9 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * @sa palCreateGLContext()
  * @ingroup opengl
  */
-PAL_API PalResult PAL_CALL palMakeContextCurrent(PalGLWindow* glWindow, PalGLContext* context);
+PAL_API PalResult PAL_CALL palMakeContextCurrent(
+    PalGLWindow* glWindow,
+    PalGLContext* context);
 
 /**
  * @brief Get the pointer to a named opengl function.
@@ -354,7 +368,9 @@ PAL_API void* PAL_CALL palGLGetProcAddress(const char* name);
  * @sa palCreateGLContext()
  * @ingroup opengl
  */
-PAL_API PalResult PAL_CALL palSwapBuffers(PalGLWindow* glWindow, PalGLContext* context);
+PAL_API PalResult PAL_CALL palSwapBuffers(
+    PalGLWindow* glWindow,
+    PalGLContext* context);
 
 /**
  * @brief Set the swap interval for the current context.

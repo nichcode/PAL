@@ -2,9 +2,10 @@
 #include "pal/pal_config.h" // for systems reflection
 #include "tests.h"
 
+// clang-format off
 int main(int argc, char** argv)
 {
-
+    // clang-format on
     PalVersion version = palGetVersion();
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
@@ -39,7 +40,8 @@ int main(int argc, char** argv)
     registerTest("Opengl Test", openglTest);
 #endif // PAL_HAS_OPENGL
 
-    // This test can run without video system so long as your have a valid window
+    // This test can run without video system so long as your have a valid
+    // window
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO
     registerTest("Opengl FBConfig Test", openglFBConfigTest);
     registerTest("Opengl Context Test", openglContextTest);

@@ -5,11 +5,16 @@
 #define THREAD_TIME 1000
 #define THREAD_COUNT 4
 
-static const char* g_ThreadNames[THREAD_COUNT] = {"Thread1", "Thread2", "Thread3", "Thread4"};
+// clang-format off
+static const char* g_ThreadNames[THREAD_COUNT] = {
+    "Thread1", 
+    "Thread2", 
+    "Thread3", 
+    "Thread4"};
+// clang-format on
 
 static void* PAL_CALL worker(void* arg)
 {
-
     // palLog is thread safe so there should'nt be any race conditions
     Int32 id = (Int32)(IntPtr)arg;
     palLog(nullptr, "Thread %d: started", id);
@@ -21,36 +26,42 @@ static void* PAL_CALL worker(void* arg)
 
 bool threadTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Thread Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult  result;
+    PalResult result;
     PalThread* threads[THREAD_COUNT];
 
     // fill the thread creation struct
     PalThreadCreateInfo createInfo = {};
-    createInfo.entry               = worker; // will be the same for all threads
-    createInfo.stackSize           = 0;      // same for all threads
+    createInfo.entry = worker; // will be the same for all threads
+    createInfo.stackSize = 0;  // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
-        createInfo.arg = (void*)(IntPtr)i + 1; // use struct to make casting easy
+        createInfo.arg = (void*)(IntPtr)i + 1;
 
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(nullptr, "Failed to create thread: %s", palFormatResult(result));
+            palLog(
+                nullptr,
+                "Failed to create thread: %s",
+                palFormatResult(result));
             return false;
         }
     }
 
     // join threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
-        result = palJoinThread(threads[i], nullptr); // we dont need the return value
+        // we dont need the return value
+        result = palJoinThread(threads[i], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(nullptr, "Failed to join threads: %s", palFormatResult(result));
+            palLog(
+                nullptr,
+                "Failed to join threads: %s",
+                palFormatResult(result));
             return false;
         }
     }
@@ -61,7 +72,10 @@ bool threadTest()
         for (Int32 i = 0; i < THREAD_COUNT; i++) {
             result = palSetThreadName(threads[i], g_ThreadNames[i]);
             if (result != PAL_RESULT_SUCCESS) {
-                palLog(nullptr, "Failed to set thread nane: %s", palFormatResult(result));
+                palLog(
+                    nullptr,
+                    "Failed to set thread nane: %s",
+                    palFormatResult(result));
                 return false;
             }
         }
@@ -70,7 +84,11 @@ bool threadTest()
     if (features & PAL_THREAD_FEATURE_NAME) {
         for (Int32 i = 0; i < THREAD_COUNT; i++) {
             char* name = palGetThreadName(threads[i]);
-            palLog(nullptr, "Thread %d: (%s) finnished successfully", i + 1, name);
+            palLog(
+                nullptr,
+                "Thread %d: (%s) finnished successfully",
+                i + 1,
+                name);
 
             palFree(nullptr, name);
             name = nullptr;

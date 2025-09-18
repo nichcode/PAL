@@ -9,14 +9,15 @@ typedef struct {
 // get the time in seconds
 static inline double getTime(MyTimer* timer)
 {
-
     Uint64 now = palGetPerformanceCounter();
     return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 
-void runBench(BenchFn func, const char* name, Int32 iterations)
+void runBench(
+    BenchFn func,
+    const char* name,
+    Int32 iterations)
 {
-
     MyTimer timer;
     timer.frequency = palGetPerformanceFrequency();
     timer.startTime = palGetPerformanceCounter();
@@ -28,9 +29,13 @@ void runBench(BenchFn func, const char* name, Int32 iterations)
     }
 
     // end time
-    endTime     = getTime(&timer);
+    endTime = getTime(&timer);
     averageTime = (endTime - startTime) / iterations;
 
-    palLog(nullptr, "%s: %.6f seconds per iteration (average over %d iterations)", name,
-           averageTime, iterations);
+    palLog(
+        nullptr,
+        "%s: %.6f seconds per iteration (average over %d iterations)",
+        name,
+        averageTime,
+        iterations);
 }

@@ -45,11 +45,17 @@ typedef struct PalEventDriver PalEventDriver;
 
 typedef struct PalEvent PalEvent;
 
-typedef void(PAL_CALL* PalEventCallback)(void* userData, const PalEvent* event);
+typedef void(PAL_CALL* PalEventCallback)(
+    void* userData,
+    const PalEvent* event);
 
-typedef void(PAL_CALL* PalPushFn)(void* userData, PalEvent* event);
+typedef void(PAL_CALL* PalPushFn)(
+    void* userData,
+    PalEvent* event);
 
-typedef bool(PAL_CALL* PalPollFn)(void* userData, PalEvent* outEvent);
+typedef bool(PAL_CALL* PalPollFn)(
+    void* userData,
+    PalEvent* outEvent);
 
 /**
  * @enum PalEventType
@@ -61,13 +67,13 @@ typedef bool(PAL_CALL* PalPollFn)(void* userData, PalEvent* outEvent);
  * @ingroup event
  */
 typedef enum {
-    PAL_EVENT_WINDOW_CLOSE,         /** < The window close button was clicked.*/
-    PAL_EVENT_WINDOW_SIZE,          /** < The window was resized.*/
-    PAL_EVENT_WINDOW_MOVE,          /** < The window was moved.*/
-    PAL_EVENT_WINDOW_STATE,         /** < The window state has changed (minimzie,
-                                       maximize, restores).*/
-    PAL_EVENT_WINDOW_FOCUS,         /** < The window has gained or lost focus. Check
-                                       `event.data` if `true` or `false`.*/
+    PAL_EVENT_WINDOW_CLOSE, /** < The window close button was clicked.*/
+    PAL_EVENT_WINDOW_SIZE,  /** < The window was resized.*/
+    PAL_EVENT_WINDOW_MOVE,  /** < The window was moved.*/
+    PAL_EVENT_WINDOW_STATE, /** < The window state has changed (minimzie,
+                               maximize, restores).*/
+    PAL_EVENT_WINDOW_FOCUS, /** < The window has gained or lost focus. Check
+                               `event.data` if `true` or `false`.*/
     PAL_EVENT_WINDOW_VISIBILITY,    /** < The window is shown or hidden. Check
                                        `event.data` if `true` or `false`.*/
     PAL_EVENT_WINDOW_MODAL_BEGIN,   /** < The window has entered move or resize
@@ -75,21 +81,21 @@ typedef enum {
     PAL_EVENT_WINDOW_MODAL_END,     /** < The window has exited move or resize
                                        modal.`.*/
     PAL_EVENT_MONITOR_DPI_CHANGED,  /** < The monitor DPI has changed.*/
-    PAL_EVENT_MONITOR_LIST_CHANGED, /** < The monitor list has changed. Enumerate
-                                       `palEnumerateMonitors()` again to get valid
-                                       handles.*/
+    PAL_EVENT_MONITOR_LIST_CHANGED, /** < The monitor list has changed.
+                                       Enumerate `palEnumerateMonitors()` again
+                                       to get valid handles.*/
     PAL_EVENT_KEYDOWN,              /** < A keyboard key was pressed.*/
     PAL_EVENT_KEYREPEAT,            /** < A keyboard key is being repeated.*/
     PAL_EVENT_KEYUP,                /** < A keyboard key was released.*/
     PAL_EVENT_MOUSE_BUTTONDOWN,     /** < A mouse button was pressed.*/
     PAL_EVENT_MOUSE_BUTTONUP,       /** < A mouse button was released.*/
-    PAL_EVENT_MOUSE_MOVE,           /** < The mouse was moved. This will be triggered if
-                                       there is a focus window.*/
-    PAL_EVENT_MOUSE_DELTA,          /** < The mouse has movedMouse movement delta.*/
-    PAL_EVENT_MOUSE_WHEEL,          /** < The delta of the mouse position. This will be
-                                       triggered if there is a focus window.*/
-    PAL_EVENT_USER,                 /** < A user event. Differentiate between them with `userId`
-                                       field in `PalEvent`.*/
+    PAL_EVENT_MOUSE_MOVE,  /** < The mouse was moved. This will be triggered if
+                              there is a focus window.*/
+    PAL_EVENT_MOUSE_DELTA, /** < The mouse has movedMouse movement delta.*/
+    PAL_EVENT_MOUSE_WHEEL, /** < The delta of the mouse position. This will be
+                              triggered if there is a focus window.*/
+    PAL_EVENT_USER, /** < A user event. Differentiate between them with `userId`
+                       field in `PalEvent`.*/
     PAL_EVENT_MAX
 } PalEventType;
 
@@ -116,11 +122,11 @@ typedef enum {
  * @ingroup event
  */
 struct PalEvent {
-    PalEventType type;   /** < The type of the event. See `PalEventType`.*/
-    Int64        data;   /** < First data payload.*/
-    Int64        data2;  /** < Second data payload.*/
-    Int64        userId; /** < This is for user events. You can have user events upto
-                            Int64 max.*/
+    PalEventType type; /** < The type of the event. See `PalEventType`.*/
+    Int64 data;        /** < First data payload.*/
+    Int64 data2;       /** < Second data payload.*/
+    Int64 userId; /** < This is for user events. You can have user events upto
+                     Int64 max.*/
 };
 
 /**
@@ -133,10 +139,10 @@ struct PalEvent {
  * @ingroup event
  */
 typedef struct {
-    PalPushFn push;     /** < Event push function pointer.*/
-    PalPollFn poll;     /** < Event poll function pointer.*/
-    void*     userData; /** Optional pointer to user data passed into event queue
-                           queue functions. Can be `nullptr`.*/
+    PalPushFn push; /** < Event push function pointer.*/
+    PalPollFn poll; /** < Event poll function pointer.*/
+    void* userData; /** Optional pointer to user data passed into event queue
+                       queue functions. Can be `nullptr`.*/
 } PalEventQueue;
 
 /**
@@ -151,12 +157,14 @@ typedef struct {
  * @ingroup event
  */
 typedef struct {
-    const PalAllocator* allocator; /** < User allocator or `nullptr` for default.*/
-    PalEventQueue*      queue; /** < User provided event queue. Set to `nullptr` to use default.*/
-    PalEventCallback    callback; /** < Event callback to call for callback type
-                                     events. Can be `nullptr`.*/
-    void* userData;               /** Optional pointer to user data passed into event callback.
-                                     Can be `nullptr`.*/
+    const PalAllocator*
+        allocator;        /** < User allocator or `nullptr` for default.*/
+    PalEventQueue* queue; /** < User provided event queue. Set to `nullptr` to
+                             use default.*/
+    PalEventCallback callback; /** < Event callback to call for callback type
+                                  events. Can be `nullptr`.*/
+    void* userData; /** Optional pointer to user data passed into event
+                       callback. Can be `nullptr`.*/
 } PalEventDriverCreateInfo;
 
 /**
@@ -181,8 +189,9 @@ typedef struct {
  * @sa PalEventDriverCreateInfo, palDestroyEventDriver()
  * @ingroup event
  */
-PAL_API PalResult PAL_CALL palCreateEventDriver(const PalEventDriverCreateInfo* info,
-                                                PalEventDriver**                outEventDriver);
+PAL_API PalResult PAL_CALL palCreateEventDriver(
+    const PalEventDriverCreateInfo* info,
+    PalEventDriver** outEventDriver);
 
 /**
  * @brief Destroy the event driver.
@@ -219,8 +228,10 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @sa palCreateEventDriver(), PalDispatchMode, PalEventType
  * @ingroup event
  */
-PAL_API void PAL_CALL palSetEventDispatchMode(PalEventDriver* eventDriver, PalEventType type,
-                                              PalDispatchMode mode);
+PAL_API void PAL_CALL palSetEventDispatchMode(
+    PalEventDriver* eventDriver,
+    PalEventType type,
+    PalDispatchMode mode);
 
 /**
  * @brief Get the dispatch mode for an event type for the provided event driver.
@@ -236,8 +247,9 @@ PAL_API void PAL_CALL palSetEventDispatchMode(PalEventDriver* eventDriver, PalEv
  * @sa palCreateEventDriver(), PalDispatchMode, PalEventType
  * @ingroup event
  */
-PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(PalEventDriver* eventDriver,
-                                                         PalEventType    type);
+PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
+    PalEventDriver* eventDriver,
+    PalEventType type);
 
 /**
  * @brief Push an event onto the event queue of an event driver.
@@ -261,7 +273,9 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(PalEventDriver* eventDr
  * @sa palCreateEventDriver(), PalDispatchMode, PalEvent
  * @ingroup event
  */
-PAL_API void PAL_CALL palPushEvent(PalEventDriver* eventDriver, PalEvent* event);
+PAL_API void PAL_CALL palPushEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* event);
 
 /**
  * @brief Retrieve the next available event from the event queue of an event
@@ -285,6 +299,8 @@ PAL_API void PAL_CALL palPushEvent(PalEventDriver* eventDriver, PalEvent* event)
  * @sa palCreateEventDriver(), PalEvent
  * @ingroup event
  */
-PAL_API bool PAL_CALL palPollEvent(PalEventDriver* eventDriver, PalEvent* outEvent);
+PAL_API bool PAL_CALL palPollEvent(
+    PalEventDriver* eventDriver,
+    PalEvent* outEvent);
 
 #endif // _PAL_EVENT_H

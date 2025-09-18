@@ -7,37 +7,41 @@ static const char* g_BoolsToSting[2] = {"False", "True"};
 
 bool openglFBConfigTest()
 {
-
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Opengl FBConfig Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    PalResult result;
     // initialize the opengl system
-    result = palInitGL(nullptr);
+    PalResult result = palInitGL(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to initialize opengl %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to initialize opengl %s",
+            palFormatResult(result));
         return false;
     }
 
-    PalWindow*          window     = nullptr;
+    PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    Int32               fbCount;
+    Int32 fbCount;
 
     // initialize the video system.
     result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to initialize video %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to initialize video %s",
+            palFormatResult(result));
         return false;
     }
 
     createInfo.monitor = nullptr; // use primary monitor
-    createInfo.height  = 480;
-    createInfo.width   = 640;
-    createInfo.show    = true;
-    createInfo.style   = PAL_WINDOW_STYLE_RESIZABLE;
+    createInfo.height = 480;
+    createInfo.width = 640;
+    createInfo.show = true;
+    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
@@ -50,17 +54,21 @@ bool openglFBConfigTest()
     // so long as you can get the window handle and display (if on X11, wayland)
     // If pal video system will not be used, there is no need to initialize it
     PalWindowHandleInfo windowHandleInfo;
-    windowHandleInfo = palGetWindowHandleInfo(window); // this won't fail if window is valid
+    windowHandleInfo = palGetWindowHandleInfo(window);
 
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
-    glWindow.display     = windowHandleInfo.nativeDisplay; // needed when using X11 or wayland
-    glWindow.window      = windowHandleInfo.nativeWindow;
+    // needed when using X11 or wayland
+    glWindow.display = windowHandleInfo.nativeDisplay;
+    glWindow.window = windowHandleInfo.nativeWindow;
 
     // enumerate supported opengl framebuffer configs
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to query GL FBConfigs %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to query GL FBConfigs %s",
+            palFormatResult(result));
         return false;
     }
 
@@ -70,7 +78,8 @@ bool openglFBConfigTest()
         return false;
     }
 
-    PalGLFBConfig* fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
+    PalGLFBConfig* fbConfigs = nullptr;
+    fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
 
     if (!fbConfigs) {
         palLog(nullptr, "Failed to allocate memory");
@@ -79,7 +88,10 @@ bool openglFBConfigTest()
 
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to query GL FBConfigs %s", palFormatResult(result));
+        palLog(
+            nullptr,
+            "Failed to query GL FBConfigs %s",
+            palFormatResult(result));
         palFree(nullptr, fbConfigs);
         return false;
     }
@@ -98,7 +110,9 @@ bool openglFBConfigTest()
         palLog(nullptr, " Stencil Bits: %d", config->stencilBits);
 
         palLog(nullptr, " Samples: %d", config->samples);
-        palLog(nullptr, " DoubleBuffer: %s", g_BoolsToSting[config->doubleBuffer]);
+
+        const char* boolStr = g_BoolsToSting[config->doubleBuffer];
+        palLog(nullptr, " DoubleBuffer: %s", boolStr);
         palLog(nullptr, " Stereo: %s", g_BoolsToSting[config->stereo]);
         palLog(nullptr, " sRGB: %s", g_BoolsToSting[config->sRGB]);
         palLog(nullptr, "");
@@ -106,21 +120,22 @@ bool openglFBConfigTest()
 
     // we desire a FB config and see what is closest the driver will give us
     PalGLFBConfig desired = {0};
-    desired.redBits       = 8;
-    desired.greenBits     = 8;
-    desired.blueBits      = 8;
-    desired.alphaBits     = 8;
-    desired.alphaBits     = 8;
-    desired.depthBits     = 24;
-    desired.stencilBits   = 8;
-    desired.samples       = 2;
+    desired.redBits = 8;
+    desired.greenBits = 8;
+    desired.blueBits = 8;
+    desired.alphaBits = 8;
+    desired.alphaBits = 8;
+    desired.depthBits = 24;
+    desired.stencilBits = 8;
+    desired.samples = 2;
 
-    desired.stereo       = false; // not widely supported
-    desired.sRGB         = true;
+    desired.stereo = false; // not widely supported
+    desired.sRGB = true;
     desired.doubleBuffer = true;
 
     // get the closest
-    const PalGLFBConfig* closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
+    const PalGLFBConfig* closest = nullptr;
+    closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
 
     // log both
     palLog(nullptr, "Desired GL FBConfig:");
