@@ -19,7 +19,8 @@ jobs:
         run: |
           sudo apt-get update 
           wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh 21
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
           sudo apt-get install -y clang-format-21
           sudo ln -sf /usr/bin/clang-format-21 /usr/bin/clang-format
 
