@@ -123,10 +123,8 @@ static inline LogTLSData* getLogTlsData()
         if (s_TlsID == 0) {
             s_TlsID = FlsAlloc(destroyTlsData);
         }
-        FlsSetValue(
-            s_TlsID,
-            data); // set the thread-specific data to the same tls id
-#endif             // _WIN32
+        FlsSetValue(s_TlsID, data);
+#endif // _WIN32
     }
     return data;
 }
