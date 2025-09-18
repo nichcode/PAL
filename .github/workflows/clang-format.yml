@@ -1,31 +1,29 @@
-
 name: Clang Format Check
 
 on:
- pull_request:
- push:
-  branches: [ "master" ]
+  pull_request:
+  push:
+    branches: [ master ]
 
 jobs:
- clang-format: 
-  runs-on: ubuntu-latest
+  clang-format:
+    runs-on: ubuntu-latest
 
-  steps:
-  - name: Checkout Code
-    uses: actions/checkout@v4
-    with:
-     fetch-depth: 0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  - name: Install clang-format
-    run: sudo apt-get install -y clang-format
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
 
-  - name: Make files writable
-    run: chmod -R u+w .s
+      - name: Make source files writable
+        run: chmod -R u+w .
 
-  - name: Check Formatting
-    run: | 
-      files=$(git ls-files '*.c' '*.h')
-      if [ -n "$files" ]; then
-        clang-format --dry-run --Werror
-  $files
-      fi
+      - name: Check Formatting
+        run: |
+          files=$(git ls-files '*.c' '*.cpp' '*.h' '*.hpp')
+          if [ -n "$files" ]; then
+            clang-format --dry-run --Werror $files
+          fi
