@@ -9,7 +9,7 @@ static const char* g_LoggerNames[LOGGER_COUNT] = {
     "Logger2", 
     "Logger3", 
     "Logger4"};
-    // clang-format on
+// clang-format on
 
 static void PAL_CALL onLogger(
     void* userData,
