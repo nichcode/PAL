@@ -43,7 +43,7 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <windows.h>
 
-#if defined(_MSC_VER) 
+#if defined(_MSC_VER)
 #include <intrin.h>
 #endif // _MSC_VER
 
@@ -62,7 +62,7 @@ static inline void cpuid(
     int leaf,
     int subLeaf)
 {
-#if defined (_MSC_VER)
+#if defined(_MSC_VER)
     __cpuidex(regs, leaf, subLeaf);
 #else
     // gcc, clang
@@ -179,7 +179,8 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     // get total disk memory (size) in GB
     ULARGE_INTEGER free, total, available;
     if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory = (Uint32)(total.QuadPart / (1024 * 1024 * 1024)); // to GB
+        info->totalMemory =
+            (Uint32)(total.QuadPart / (1024 * 1024 * 1024)); // to GB
     }
 
     // get ram (size) in MB
@@ -241,8 +242,7 @@ PalResult PAL_CALL palGetCPUInfo(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    BOOL success =
-        GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
+    BOOL success = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
 
     if (!success) {
         palFree(allocator, buffer);

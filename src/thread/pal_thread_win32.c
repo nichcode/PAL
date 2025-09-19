@@ -528,8 +528,10 @@ PalResult PAL_CALL palWaitCondVarTimeout(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    BOOL ret =
-        SleepConditionVariableCS(&condition->cv, &mutex->sc, (DWORD)milliseconds);
+    BOOL ret = SleepConditionVariableCS(
+        &condition->cv,
+        &mutex->sc,
+        (DWORD)milliseconds);
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
