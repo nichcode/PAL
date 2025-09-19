@@ -43,6 +43,10 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <windows.h>
 
+#if defined(_MSC_VER) 
+#include <intrin.h>
+#endif // _MSC_VER
+
 // ==================================================
 // Typedefs, enums and structs
 // ==================================================
@@ -58,10 +62,15 @@ static inline void cpuid(
     int leaf,
     int subLeaf)
 {
+#if defined (_MSC_VER)
+    __cpuidex(regs, leaf, subLeaf);
+#else
+    // gcc, clang
     __asm__ __volatile__(
         "cpuid"
         : "=a"(regs[0]), "=b"(regs[1]), "=c"(regs[2]), "=d"(regs[3])
         : "a"(leaf), "b"(subLeaf));
+#endif // _MSC_VER
 }
 
 static inline bool getVersionWin32(PalVersion* version)
@@ -115,7 +124,7 @@ static inline bool isVersionWin32(
 // Public API
 // ==================================================
 
-PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info)
+PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {
     if (!info) {
         return PAL_RESULT_NULL_POINTER;
@@ -170,20 +179,20 @@ PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info)
     // get total disk memory (size) in GB
     ULARGE_INTEGER free, total, available;
     if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory = total.QuadPart / (1024 * 1024 * 1024); // to GB
+        info->totalMemory = (Uint32)(total.QuadPart / (1024 * 1024 * 1024)); // to GB
     }
 
     // get ram (size) in MB
     MEMORYSTATUSEX status = {0};
     status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
-        info->totalRAM = status.ullTotalPhys / (1024 * 1024); // to MB
+        info->totalRAM = (Uint32)(status.ullTotalPhys / (1024 * 1024)); // to MB
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_API palGetCPUInfo(
+PalResult PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info)
 {
@@ -199,7 +208,7 @@ PalResult PAL_API palGetCPUInfo(
     memset(info, 0, sizeof(PalCPUInfo));
 
     // get cpu vendor
-    int regs[4] = {};
+    int regs[4] = {0};
     cpuid(regs, 0, 0);
 
     memcpy(info->vendor + 0, &regs[1], 4);
@@ -218,6 +227,10 @@ PalResult PAL_API palGetCPUInfo(
     memcpy(info->model + 32, regs, 16);
     info->model[48] = '\0';
 
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    info->numLogicalProcessors = sysInfo.dwNumberOfProcessors;
+
     // get cpu info
     DWORD len = 0;
     GetLogicalProcessorInformationEx(RelationAll, nullptr, &len);
@@ -228,7 +241,7 @@ PalResult PAL_API palGetCPUInfo(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    WINBOOL success =
+    BOOL success =
         GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
 
     if (!success) {
@@ -241,13 +254,6 @@ PalResult PAL_API palGetCPUInfo(
         SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* tmp = (void*)ptr;
         if (tmp->Relationship == RelationProcessorCore) {
             info->numCores++;
-
-            // get the thread count for this core
-            DWORD count = tmp->Processor.GroupCount;
-            for (DWORD i = 0; i < count; i++) {
-                KAFFINITY mask = tmp->Processor.GroupMask[i].Mask;
-                info->numLogicalProcessors += _popcnt64(mask);
-            }
 
         } else if (tmp->Relationship == RelationCache) {
             // cache size
@@ -270,7 +276,7 @@ PalResult PAL_API palGetCPUInfo(
     palFree(allocator, buffer);
 
     // features
-    PalCpuFeatures features;
+    PalCpuFeatures features = 0;
     cpuid(regs, 1, 0);
     int ecx = regs[2];
     int edx = regs[3];

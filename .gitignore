@@ -2,6 +2,9 @@
 #.vscode folder
 **.vscode
 
+## Visual studio folder
+**.vs
+
 # Binaries
 **bin
 **build
@@ -9,3 +12,9 @@
 # MakeFiles
 Makefile
 **.make
+
+#  Visual studio files
+**.sln
+**.filters
+**.user
+**.vcxproj

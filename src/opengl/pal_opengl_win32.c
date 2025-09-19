@@ -19,6 +19,7 @@
 #endif // UNICODE
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <windows.h>
 
 // ==================================================
@@ -85,7 +86,7 @@ typedef int(WINAPI* ChoosePixelFormatFn)(
     HDC,
     CONST PIXELFORMATDESCRIPTOR*);
 
-typedef WINBOOL(WINAPI* SetPixelFormatFn)(
+typedef BOOL(WINAPI* SetPixelFormatFn)(
     HDC,
     int,
     CONST PIXELFORMATDESCRIPTOR*);
@@ -96,7 +97,7 @@ typedef int(WINAPI* DescribePixelFormatFn)(
     UINT,
     LPPIXELFORMATDESCRIPTOR);
 
-typedef WINBOOL(WINAPI* SwapBuffersFn)(HDC);
+typedef BOOL(WINAPI* SwapBuffersFn)(HDC);
 
 // wgl functions
 typedef PROC(WINAPI* wglGetProcAddressFn)(LPCSTR);
@@ -231,7 +232,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     s_Wgl.instance = GetModuleHandleW(nullptr);
 
     // register class
-    WNDCLASSEXW wc = {};
+    WNDCLASSEXW wc = {0};
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = DefWindowProcW;
     wc.lpszClassName = PAL_GL_CLASS;
@@ -309,7 +310,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     s_Wgl.hdc = GetDC(s_Wgl.window);
-    PIXELFORMATDESCRIPTOR pfd = {};
+    PIXELFORMATDESCRIPTOR pfd = {0};
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
     pfd.nVersion = 1;
     pfd.iPixelType = PFD_TYPE_RGBA;
@@ -359,7 +360,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     const char* version = (const char*)s_Wgl.glGetString(GL_VERSION);
     if (version) {
 #ifdef _MSC_VER
-        sscanf_s(version, "%d.%d", &major, &minor);
+        sscanf_s(version, "%d.%d", &s_Wgl.info.major, &s_Wgl.info.minor);
 #else
         sscanf(version, "%d.%d", &s_Wgl.info.major, &s_Wgl.info.minor);
 #endif

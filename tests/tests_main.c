@@ -6,7 +6,6 @@
 int main(int argc, char** argv)
 {
     // clang-format on
-    PalVersion version = palGetVersion();
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core

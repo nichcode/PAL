@@ -131,11 +131,11 @@ typedef struct {
 } Mouse;
 
 static PendingEvent s_Event;
-static VideoWin32 s_Video = {};
+static VideoWin32 s_Video = {0};
 
-static BYTE s_RawBuffer[4096] = {};
-static Mouse s_Mouse = {};
-static Keyboard s_Keyboard = {};
+static BYTE s_RawBuffer[4096] = {0};
+static Mouse s_Mouse = {0};
+static Keyboard s_Keyboard = {0};
 
 // ==================================================
 // Internal API
@@ -194,7 +194,7 @@ LRESULT CALLBACK videoProc(
 
                 // trigger state event
                 mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_STATE);
-                PalWindowState state;
+                PalWindowState state = PAL_WINDOW_STATE_RESTORED;
                 if (mode == PAL_DISPATCH_NONE) {
                     return 0;
                 }
@@ -207,11 +207,6 @@ LRESULT CALLBACK videoProc(
 
                     case SIZE_MAXIMIZED: {
                         state = PAL_WINDOW_STATE_MAXIMIZED;
-                        break;
-                    }
-
-                    case SIZE_RESTORED: {
-                        state = PAL_WINDOW_STATE_RESTORED;
                         break;
                     }
                 }
@@ -477,7 +472,7 @@ LRESULT CALLBACK videoProc(
         case WM_RBUTTONUP:
         case WM_MBUTTONUP:
         case WM_XBUTTONUP: {
-            PalMouseButton button;
+            PalMouseButton button = PAL_MOUSE_BUTTON_UNKNOWN;
             bool pressed = false;
 
             if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) {
@@ -489,7 +484,7 @@ LRESULT CALLBACK videoProc(
             } else if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONUP) {
                 button = PAL_MOUSE_BUTTON_MIDDLE;
 
-            } else if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONDOWN) {
+            } else if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONUP) {
                 // check which x buttton
                 WORD xButton = HIWORD(wParam);
                 if (xButton == XBUTTON1) {
@@ -805,7 +800,7 @@ static inline PalResult setMonitorMode(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    MONITORINFOEXW mi = {};
+    MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
@@ -820,7 +815,7 @@ static inline PalResult setMonitorMode(
     DWORD flags = DM_PELSWIDTH | DM_PELSHEIGHT;
     flags |= DM_DISPLAYFREQUENCY | DM_BITSPERPEL;
 
-    DEVMODE devMode = {};
+    DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
     devMode.dmFields = flags;
 
@@ -1380,7 +1375,7 @@ PalResult PAL_CALL palGetMonitorInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    MONITORINFOEXW mi = {};
+    MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
@@ -1408,7 +1403,7 @@ PalResult PAL_CALL palGetMonitorInfo(
         NULL,
         NULL);
 
-    DEVMODE devMode = {};
+    DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
     EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
     info->refreshRate = devMode.dmDisplayFrequency;
@@ -1456,7 +1451,7 @@ PalResult PAL_CALL palEnumerateMonitorModes(
     Int32 maxModes = 0;
     PalMonitorMode* monitorModes = nullptr;
 
-    MONITORINFOEXW mi = {};
+    MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
@@ -1488,7 +1483,7 @@ PalResult PAL_CALL palEnumerateMonitorModes(
         maxModes = *count;
     }
 
-    DEVMODEW dm = {};
+    DEVMODEW dm = {0};
     dm.dmSize = sizeof(DEVMODE);
     for (Int32 i = 0; EnumDisplaySettingsW(mi.szDevice, i, &dm); i++) {
         // Pal support up to 128 modes
@@ -1524,7 +1519,7 @@ PalResult PAL_CALL palGetCurrentMonitorMode(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    MONITORINFOEXW mi = {};
+    MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
@@ -1536,7 +1531,7 @@ PalResult PAL_CALL palGetCurrentMonitorMode(
         }
     }
 
-    DEVMODE devMode = {};
+    DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
     EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
     mode->width = devMode.dmPelsWidth;
@@ -1586,7 +1581,7 @@ PalResult PAL_CALL palSetMonitorOrientation(
         return PAL_RESULT_INVALID_ORIENTATION;
     }
 
-    MONITORINFOEXW mi = {};
+    MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
@@ -1598,7 +1593,7 @@ PalResult PAL_CALL palSetMonitorOrientation(
         }
     }
 
-    DEVMODE devMode = {};
+    DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
     EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
     DWORD monitorOrientation = devMode.dmDisplayOrientation;
@@ -1909,7 +1904,7 @@ PalResult PAL_CALL palFlashWindow(
         }
     }
 
-    FLASHWINFO flashInfo = {};
+    FLASHWINFO flashInfo = {0};
     flashInfo.cbSize = sizeof(FLASHWINFO);
     flashInfo.dwFlags = flags;
     flashInfo.dwTimeout = info->interval;
@@ -1943,8 +1938,8 @@ PalResult PAL_CALL palGetWindowStyle(
     }
 
     PalWindowStyle windowStyle = 0;
-    DWORD style = GetWindowLongPtrW((HWND)window, GWL_STYLE);
-    DWORD exStyle = GetWindowLongPtrW((HWND)window, GWL_EXSTYLE);
+    DWORD style = (DWORD)GetWindowLongPtrW((HWND)window, GWL_STYLE);
+    DWORD exStyle = (DWORD)GetWindowLongPtrW((HWND)window, GWL_EXSTYLE);
 
     if (!style) {
         // since there is no window without styles
@@ -2184,15 +2179,15 @@ PalResult PAL_CALL palGetWindowState(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    WINDOWPLACEMENT wp = {};
+    WINDOWPLACEMENT wp = {0};
     if (!GetWindowPlacement((HWND)window, &wp)) {
         return PAL_RESULT_INVALID_WINDOW;
     }
 
-    if (wp.showCmd == SW_SHOWMINIMIZED || wp.showCmd == SW_MINIMIZE) {
+    if (wp.showCmd == SW_MINIMIZE) {
         *state = PAL_WINDOW_STATE_MINIMIZED;
 
-    } else if (wp.showCmd == SW_SHOWMAXIMIZED || wp.showCmd == SW_MAXIMIZE) {
+    } else if (wp.showCmd == SW_MAXIMIZE) {
         *state = PAL_WINDOW_STATE_MAXIMIZED;
 
     } else if (wp.showCmd == SW_RESTORE) {
@@ -2541,7 +2536,7 @@ PalResult PAL_CALL palCreateIcon(
     }
 
     // describe the icon pixels
-    BITMAPV5HEADER bitInfo = {};
+    BITMAPV5HEADER bitInfo = {0};
     bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
     bitInfo.bV5Width = info->width;
     bitInfo.bV5Height = -(Int32)info->height; // this is topdown by default
@@ -2575,8 +2570,8 @@ PalResult PAL_CALL palCreateIcon(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    for (int y = 0; y < info->height; ++y) {
-        for (int x = 0; x < info->width; ++x) {
+    for (Uint32 y = 0; y < info->height; ++y) {
+        for (Uint32 x = 0; x < info->width; ++x) {
             int i = (y * info->width + x) * 4;
             pixels[i + 0] = info->pixels[i + 2]; // Red
             pixels[i + 1] = info->pixels[i + 1]; // Green
@@ -2593,7 +2588,7 @@ PalResult PAL_CALL palCreateIcon(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    ICONINFO iconInfo = {};
+    ICONINFO iconInfo = {0};
     iconInfo.fIcon = TRUE;
     iconInfo.hbmMask = mask;
     iconInfo.hbmColor = bitmap;
@@ -2657,7 +2652,7 @@ PalResult PAL_CALL palCreateCursor(
     }
 
     // describe the icon pixels
-    BITMAPV5HEADER bitInfo = {};
+    BITMAPV5HEADER bitInfo = {0};
     bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
     bitInfo.bV5Width = info->width;
     bitInfo.bV5Height = -(Int32)info->height; // this is topdown by default

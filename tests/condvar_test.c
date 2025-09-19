@@ -64,7 +64,7 @@ bool condvarTest()
     }
 
     // create threads
-    PalThreadCreateInfo createInfo = {};
+    PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker; // will be the same for all threads
     createInfo.stackSize = 0;  // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {

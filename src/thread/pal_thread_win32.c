@@ -83,7 +83,7 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg)
     ThreadData* data = arg;
     void* ret = data->func(data->arg);
     palFree(s_Allocator, data);
-    return (uintptr_t)ret;
+    return (DWORD)(uintptr_t)ret;
 }
 
 // ==================================================
@@ -219,7 +219,7 @@ PalThread* PAL_CALL palGetCurrentThread()
 
 PalThreadFeatures PAL_CALL palGetThreadFeatures()
 {
-    PalThreadFeatures features;
+    PalThreadFeatures features = 0;
     features |= PAL_THREAD_FEATURE_STACK_SIZE;
     features |= PAL_THREAD_FEATURE_PRIORITY;
     features |= PAL_THREAD_FEATURE_AFFINITY;
@@ -380,7 +380,7 @@ PalResult PAL_CALL palSetThreadName(
         return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED;
     }
 
-    wchar_t buffer[512] = {};
+    wchar_t buffer[512] = {0};
     MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 512);
     HRESULT hr = s_SetThreadDescription((HANDLE)thread, buffer);
 
@@ -529,7 +529,7 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     }
 
     BOOL ret =
-        SleepConditionVariableCS(&condition->cv, &mutex->sc, milliseconds);
+        SleepConditionVariableCS(&condition->cv, &mutex->sc, (DWORD)milliseconds);
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {

@@ -19,7 +19,7 @@ newoption {
 
 workspace "PAL_workspace"
     if PAL_BUILD_TESTS then
-        startproject("Tests")
+        startproject("tests")
     end
 
     if PAL_BUILD_STATIC then
@@ -65,10 +65,19 @@ workspace "PAL_workspace"
 
             linkoptions {
                 "-target x86_64-w64-windows-gnu",  
-                "-L" .. ucrt .. "/lib"
+                "-L" .. ucrt .. "/lib",
                 "-L" .. ucrt .. "/mingw/lib"
             }
 
+        end
+    else
+        if (_ACTION == "vs2022") then
+            defines {
+                "_CRT_SECURE_NO_WARNINGS"
+            }
+            disablewarnings {
+                "6387"
+            }
         end
     end
 

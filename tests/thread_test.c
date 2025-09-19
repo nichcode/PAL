@@ -36,11 +36,11 @@ bool threadTest()
     PalThread* threads[THREAD_COUNT];
 
     // fill the thread creation struct
-    PalThreadCreateInfo createInfo = {};
+    PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker; // will be the same for all threads
     createInfo.stackSize = 0;  // same for all threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
-        createInfo.arg = (void*)(IntPtr)i + 1;
+        createInfo.arg = (void*)((IntPtr)i + 1);
 
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);

@@ -118,7 +118,7 @@ bool systemTest()
     palLog(nullptr, "  L3 Cache KB: %d", cpuInfo.cache3);
 
     // get instruction sets
-    char instructionSets[256] = {};
+    char instructionSets[256] = {0};
     if (cpuInfo.features & PAL_CPU_FEATURE_SSE) {
         strcat(instructionSets, "SSE");
     }

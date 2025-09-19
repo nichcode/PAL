@@ -111,7 +111,7 @@ typedef struct {
  * @sa PalPlatformInfo
  * @ingroup system
  */
-PAL_API PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info);
+PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 
 /**
  * @brief Get CPU information.
@@ -128,7 +128,7 @@ PAL_API PalResult PAL_API palGetPlatformInfo(PalPlatformInfo* info);
  * @sa PalAllocator, PalCPUInfo
  * @ingroup system
  */
-PAL_API PalResult PAL_API palGetCPUInfo(
+PAL_API PalResult PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info);
 
