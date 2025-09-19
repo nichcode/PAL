@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     // core
     // registerTest("Logger Test", loggerTest);
     // registerTest("Time Test", timeTest);
-    registerTest("User Event Test", userEventTest);
+    // registerTest("User Event Test", userEventTest);
     // registerTest("Event Test", eventTest);
 
 #if PAL_HAS_SYSTEM
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL
-    // registerTest("Opengl Test", openglTest);
+    registerTest("Opengl Test", openglTest);
 #endif // PAL_HAS_OPENGL
 
     // This test can run without video system so long as your have a valid

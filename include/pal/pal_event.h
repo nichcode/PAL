@@ -284,7 +284,7 @@ typedef struct {
 } PalEventDriverCreateInfo;
 
 /**
- * @brief Creates an event driver with an event driver create info.
+ * @brief Creates an event driver.
  *
  * An event driver is used to signal events between multiple systems.
  * It it used to shared information from one system or entity to another.
@@ -296,15 +296,8 @@ typedef struct {
  * @param[out] outEventDriver Pointer to a PalEventDriver to recieve the created
  * event driver.
  *
- * @return
- * - `PAL_RESULT_SUCCESS` on success.
- *
- * - `PAL_RESULT_NULL_POINTER` if `info` or `outEventDriver` is nullptr.
- *
- * - `PAL_RESULT_OUT_MEMORY` if there is not enough memory.
- *
- * - `PAL_RESULT_INVALID_ALLOCATOR` if the allocator's function pointers are not
- * fully set.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
+ * failure. Call palFormatResult() for more information.
  *
  * @note This function may be called from any thread, but not concurrently.
  * Users must ensure synchronization.

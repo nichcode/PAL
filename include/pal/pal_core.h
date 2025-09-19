@@ -216,6 +216,7 @@ typedef void(PAL_CALL* PalLogCallback)(
 /**
  * @enum PalResult
  * @brief Codes returned by most PAL functions to specify success or failure.
+ * This is not a bitmask.
  *
  * `PAL_RESULT_SUCCESS` code means the operation completed successfully. Any
  * other value indicates an error.
@@ -374,7 +375,7 @@ typedef struct {
  *
  * @return A copy of PAL runtime version.
  *
- * @note This function is thread-safe
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palGetVersionString()
  * @sa PalVersion
@@ -637,7 +638,8 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * @note This function is thread-safe if `outLow` and `outHigh` are thread local.
+ * @note This function is thread-safe if `outLow` and `outHigh` are thread
+ * local.
  *
  * @sa palUnpackInt32()
  * @sa palPackUint32()

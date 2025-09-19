@@ -70,7 +70,6 @@
 #define WGL_NO_RESET_NOTIFICATION_ARB 0x8261
 #define WGL_CONTEXT_OPENGL_NO_ERROR_ARB 0x31b3
 #define WGL_CONTEXT_RELEASE_BEHAVIOR_ARB 0x2097
-#define WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB 0
 #define WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB 0x2098
 #define WGL_CONTEXT_FLAGS_ARB 0x2094
 
@@ -746,7 +745,7 @@ PalResult PAL_CALL palCreateGLContext(
         }
     }
 
-    if (info->robustness) {
+    if (info->reset != PAL_GL_CONTEXT_RESET_NONE) {
         if (!(s_Wgl.info.extensions & PAL_GL_EXTENSION_ROBUSTNESS)) {
             return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
         }
@@ -837,7 +836,7 @@ PalResult PAL_CALL palCreateGLContext(
         }
 
         // set robustness
-        if (info->robustness && info->reset != PAL_GL_CONTEXT_RESET_NONE) {
+        if (info->reset != PAL_GL_CONTEXT_RESET_NONE) {
             flags |= WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB;
             attribs[index++] = WGL_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB;
 
@@ -859,13 +858,7 @@ PalResult PAL_CALL palCreateGLContext(
         if (s_Wgl.info.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL) {
             if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
                 attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_ARB;
-
-                if (info->release == PAL_GL_RELEASE_BEHAVIOR_NONE) {
-                    attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB;
-
-                } else if (info->release == PAL_GL_CONTEXT_RESET_FLUSH) {
-                    attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB;
-                }
+                attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB;
             }
         }
 
@@ -997,9 +990,16 @@ void* PAL_CALL palGLGetProcAddress(const char* name)
     return proc;
 }
 
-void PAL_CALL palSetSwapInterval(Int32 interval)
+PalResult PAL_CALL palSetSwapInterval(Int32 interval)
 {
-    if (s_Wgl.wglSwapIntervalEXT) {
-        s_Wgl.wglSwapIntervalEXT(interval);
+    if (!s_Wgl.initialized) {
+        return PAL_RESULT_GL_NOT_INITIALIZED;
     }
+
+    if (!s_Wgl.wglSwapIntervalEXT) {
+        return PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED;
+    }
+
+    s_Wgl.wglSwapIntervalEXT(interval);
+    return PAL_RESULT_SUCCESS;
 }
