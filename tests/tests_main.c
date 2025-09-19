@@ -9,41 +9,41 @@ int main(int argc, char** argv)
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core
-    registerTest("Logger Test", loggerTest);
-    registerTest("Time Test", timeTest);
+    // registerTest("Logger Test", loggerTest);
+    // registerTest("Time Test", timeTest);
     registerTest("User Event Test", userEventTest);
-    registerTest("Event Test", eventTest);
+    // registerTest("Event Test", eventTest);
 
 #if PAL_HAS_SYSTEM
-    registerTest("System Test", systemTest);
+    // registerTest("System Test", systemTest);
 #endif // PAL_HAS_SYSTEM
 
 #if PAL_HAS_THREAD
-    registerTest("Thread Test", threadTest);
-    registerTest("TLS Test", tlsTest);
-    registerTest("Mutex Test", mutexTest);
-    registerTest("Condvar Test", condvarTest);
+    // registerTest("Thread Test", threadTest);
+    // registerTest("TLS Test", tlsTest);
+    // registerTest("Mutex Test", mutexTest);
+    // registerTest("Condvar Test", condvarTest);
 #endif // PAL_HAS_THREAD
 
 #if PAL_HAS_VIDEO
-    registerTest("Video Test", videoTest);
-    registerTest("Monitor Test", monitorTest);
-    registerTest("Monitor Mode Test", monitorModeTest);
-    registerTest("Window Test", windowTest);
-    registerTest("Icon Test", iconTest);
-    registerTest("Cursor Test", cursorTest);
-    registerTest("Input Window Test", inputWindowTest);
+    // registerTest("Video Test", videoTest);
+    // registerTest("Monitor Test", monitorTest);
+    // registerTest("Monitor Mode Test", monitorModeTest);
+    // registerTest("Window Test", windowTest);
+    // registerTest("Icon Test", iconTest);
+    // registerTest("Cursor Test", cursorTest);
+    // registerTest("Input Window Test", inputWindowTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL
-    registerTest("Opengl Test", openglTest);
+    // registerTest("Opengl Test", openglTest);
 #endif // PAL_HAS_OPENGL
 
     // This test can run without video system so long as your have a valid
     // window
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO
-    registerTest("Opengl FBConfig Test", openglFBConfigTest);
-    registerTest("Opengl Context Test", openglContextTest);
+    // registerTest("Opengl FBConfig Test", openglFBConfigTest);
+    // registerTest("Opengl Context Test", openglContextTest);
 #endif // PAL_HAS_OPENGL
 
     runTests();

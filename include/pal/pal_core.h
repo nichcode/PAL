@@ -65,6 +65,7 @@ freely, subject to the following restrictions:
 
 /**
  * @brief A bool
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef _Bool bool;
@@ -75,60 +76,70 @@ typedef _Bool bool;
 
 /**
  * @brief An signed 8-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef int8_t Int8;
 
 /**
  * @brief An signed 16-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef int16_t Int16;
 
 /**
  * @brief An signed 32-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef int32_t Int32;
 
 /**
  * @brief An signed 64-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef int64_t Int64;
 
 /**
  * @brief An signed 64-bit integer pointer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef intptr_t IntPtr;
 
 /**
  * @brief An unsigned 8-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef uint8_t Uint8;
 
 /**
  * @brief An unsigned 16-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef uint16_t Uint16;
 
 /**
  * @brief An unsigned 32-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef uint32_t Uint32;
 
 /**
  * @brief An unsigned 64-bit integer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef uint64_t Uint64;
 
 /**
  * @brief An unsigned 64-bit integer pointer
+ * @since Added in version 1.0.0.
  * @ingroup core
  */
 typedef uintptr_t UintPtr;
@@ -382,7 +393,7 @@ PAL_API PalVersion PAL_CALL palGetVersion();
  *
  * @return Pointer to the null-terminated UTF-8 encoding string.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  * @note The returned pointer must not be freed.
  *
  * @sa palGetVersion()
@@ -402,7 +413,7 @@ PAL_API const char* PAL_CALL palGetVersionString();
  * @param[in] result The result code
  * @return Pointer to the null-terminated UTF-5 encoding string.
  *
- * @note This function is thread-safe
+ * @note This function is thread-safe and may be called from any thread.
  * @note The returned pointer must not be freed.
  *
  * @sa PalResult
@@ -428,8 +439,8 @@ PAL_API const char* PAL_CALL palFormatResult(PalResult result);
  * allocation failed.
  *
  * @note This does not initialize the allocated memory.
- * @note This function is thread safe if the provided allocator is thread safe.
- * The default allocator is thread safe.
+ * @note This function is thread safe and may be called from any thread if the
+ * provided allocator is thread safe. The default allocator is thread safe.
  *
  * @sa palFree()
  * @sa PalAllocator
@@ -453,8 +464,8 @@ PAL_API void* PAL_CALL palAllocate(
  * will be used if it is a nullptr.
  * @param[in] ptr Pointer to the memory block to free.
  *
- * @note This function is thread safe if the provided allocator is thread safe.
- * The default allocator is thread safe.
+ * @note This function is thread safe and may be called from any thread if the
+ * provided allocator is thread safe. The default allocator is thread safe.
  *
  * @sa PalAllocator
  * @sa palAllocate()
@@ -482,7 +493,7 @@ PAL_API void PAL_CALL palFree(
  * float);
  * @endcode
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  * @note PAL default logger will not log if there is no console. On Windows, if
  * there is no console, PAL will log to the debug console.
  *
@@ -504,7 +515,7 @@ PAL_API void PAL_CALL palLog(
  *
  * @return The high-resolution counter value.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palGetPerformanceFrequency()
  *
@@ -521,7 +532,7 @@ PAL_API Uint64 PAL_CALL palGetPerformanceCounter();
  *
  * @return The high-resolution performance frequency in counts per second.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  * @note The returned frequency is constant during the lifetime of the
  * application.
  *
@@ -538,7 +549,7 @@ PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
  *
  * @return The combined 64-bit signed integer.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palPackInt32()
  * @sa palUnpackUint32()
@@ -559,7 +570,7 @@ static inline Int64 PAL_CALL palPackUint32(
  *
  * @return The combined 64-bit signed integer.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palPackInt32()
  * @sa palUnpackUint32()
@@ -580,7 +591,7 @@ static inline Int64 PAL_CALL palPackInt32(
  *
  * @return The packed 64-bit signed integer.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palUnpackPointer()
  *
@@ -598,7 +609,7 @@ static inline Int64 PAL_CALL palPackPointer(void* ptr)
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palPackUint32()
  * @sa palUnpackInt32()
@@ -626,7 +637,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe if `outLow` and `outHigh` are thread local.
  *
  * @sa palUnpackInt32()
  * @sa palPackUint32()
@@ -653,7 +664,7 @@ static inline void PAL_CALL palUnpackInt32(
  *
  * @return The pointer from the 64-bit signed integer.
  *
- * @note This function is thread-safe.
+ * @note This function is thread-safe and may be called from any thread.
  *
  * @sa palPackPointer()
  *

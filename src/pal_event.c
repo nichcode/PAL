@@ -26,7 +26,6 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #include "pal/pal_event.h"
-
 #include <string.h>
 
 // ==================================================
@@ -95,8 +94,8 @@ PalResult PAL_CALL palCreateEventDriver(
         }
     }
 
-    PalEventDriver* driver =
-        palAllocate(info->allocator, sizeof(PalEventDriver), 0);
+    PalEventDriver* driver = nullptr;
+    driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
     if (!driver) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -113,27 +112,34 @@ PalResult PAL_CALL palCreateEventDriver(
 
     } else {
         // we create a default event queue
-        driver->queue = palAllocate(info->allocator, sizeof(PalEventQueue), 0);
-        if (!driver->queue) {
+        PalEventQueue* queue = nullptr;
+        queue = palAllocate(info->allocator, sizeof(PalEventQueue), 0);
+        if (!queue) {
             palFree(info->allocator, driver);
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        driver->queue->userData =
-            palAllocate(info->allocator, sizeof(QueueData), 0);
-        if (!driver->queue->userData) {
-            palFree(info->allocator, driver->queue);
+        // we create a default event queue data
+        QueueData* queueData = nullptr;
+        queueData = palAllocate(info->allocator, sizeof(QueueData), 0);
+
+        if (!queueData) {
+            palFree(info->allocator, queue);
             palFree(info->allocator, driver);
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        memset(driver->queue->userData, 0, sizeof(QueueData));
-        driver->queue->poll = defaultPoll;
-        driver->queue->push = defaultPush;
+        memset(queueData, 0, sizeof(QueueData));
+        queue->userData = queueData;
+        queue->poll = defaultPoll;
+        queue->push = defaultPush;
+
+        driver->queue = queue;
         driver->freeQueue = true;
     }
 
     driver->callback = info->callback;
+    driver->userData = info->userData;
     *outEventDriver = driver;
     return PAL_RESULT_SUCCESS;
 }
