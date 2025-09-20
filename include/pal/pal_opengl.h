@@ -52,10 +52,10 @@ freely, subject to the following restrictions:
 typedef struct PalGLContext PalGLContext;
 
 /**
- * @enum PalGLExtension
+ * @enum PalGLExtensions
  * @brief Opengl system extensions.
  *
- * @note All opengl extensions follow the format `PAL_GL_EXTENSION**` for
+ * @note All opengl extensions follow the format `PAL_GL_EXTENSION_**` for
  * consistency and API use.
  *
  * @sa PalGLInfo
@@ -94,13 +94,13 @@ typedef enum {
 
     /** Standard red, green and blue.*/
     PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(9)
-} PalGLExtension;
+} PalGLExtensions;
 
 /**
  * @enum PalGLProfile
- * @brief Oepngl context creation profiles. This is not a bitmask.
+ * @brief Opengl context creation profiles. This is not a bitmask.
  *
- * @note All opengl profiles follow the format `PAL_GL_PROFILE**` for
+ * @note All opengl profiles follow the format `PAL_GL_PROFILE_**` for
  * consistency and API use.
  *
  * @since Added in version 1.0.0.
@@ -125,9 +125,9 @@ typedef enum {
 
 /**
  * @enum PalGLContextReset
- * @brief Oepngl context reset behavior. This is not a bitmask.
+ * @brief Opengl context reset behavior. This is not a bitmask.
  *
- * @note All context reset behavior follow the format `PAL_GL_CONTEXT_RESET**`
+ * @note All context reset behavior follow the format `PAL_GL_CONTEXT_RESET_**`
  * for consistency and API use.
  *
  * @since Added in version 1.0.0.
@@ -148,10 +148,10 @@ typedef enum {
 
 /**
  * @enum PalGLRelease
- * @brief Oepngl context release behavior. This is not a bitmask.
+ * @brief Opengl context release behavior. This is not a bitmask.
  *
  * @note All opengl context release behavior follow the format
- * `PAL_GL_RELEASE_BEHAVIOR**` for consistency and API use.
+ * `PAL_GL_RELEASE_BEHAVIOR_**` for consistency and API use.
  *
  * @since Added in version 1.0.0.
  * @ingroup opengl
@@ -175,8 +175,8 @@ typedef enum {
  * @ingroup opengl
  */
 typedef struct {
-    /** Supported opengl extensions. see PalGLExtension.*/
-    PalGLExtension extensions;
+    /** Supported opengl extensions. see PalGLExtensions.*/
+    PalGLExtensions extensions;
 
     /** Highest supported opengl major.*/
     Uint32 major;

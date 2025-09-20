@@ -300,7 +300,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     s_Wgl.wglMakeCurrent =
         (wglMakeCurrentFn)GetProcAddress(s_Wgl.opengl, "wglMakeCurrent");
-
+        
     s_Wgl.wglShareLists =
         (wglShareListsFn)GetProcAddress(s_Wgl.opengl, "wglShareLists");
 

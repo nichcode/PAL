@@ -51,7 +51,7 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-typedef LONG(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+typedef LONG(WINAPI* RtlGetVersionFn)(PRTL_OSVERSIONINFOW);
 
 // ==================================================
 // Internal API
@@ -79,8 +79,9 @@ static inline bool getVersionWin32(PalVersion* version)
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 
     HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
-    RtlGetVersionPtr getVer =
-        (RtlGetVersionPtr)GetProcAddress(ntdll, "RtlGetVersion");
+    RtlGetVersionFn getVer =
+        (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion");
+        
     if (!getVer) {
         return false;
     }
@@ -179,15 +180,14 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     // get total disk memory (size) in GB
     ULARGE_INTEGER free, total, available;
     if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory =
-            (Uint32)(total.QuadPart / (1024 * 1024 * 1024)); // to GB
+        info->totalMemory = (Uint32)(total.QuadPart / (1024 * 1024 * 1024));
     }
 
     // get ram (size) in MB
     MEMORYSTATUSEX status = {0};
     status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
-        info->totalRAM = (Uint32)(status.ullTotalPhys / (1024 * 1024)); // to MB
+        info->totalRAM = (Uint32)(status.ullTotalPhys / (1024 * 1024));
     }
 
     return PAL_RESULT_SUCCESS;
@@ -242,9 +242,9 @@ PalResult PAL_CALL palGetCPUInfo(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    BOOL success = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
+    BOOL ret = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
 
-    if (!success) {
+    if (!ret) {
         palFree(allocator, buffer);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -259,15 +259,15 @@ PalResult PAL_CALL palGetCPUInfo(
             // cache size
             CACHE_RELATIONSHIP cache = tmp->Cache;
             if (cache.Level == 1) {
-                info->cache1 = cache.CacheSize / 1024;
+                info->cacheL1 = cache.CacheSize / 1024;
             }
 
             if (cache.Level == 2) {
-                info->cache2 = cache.CacheSize / 1024;
+                info->cacheL2 = cache.CacheSize / 1024;
             }
 
             if (cache.Level == 3) {
-                info->cache3 = cache.CacheSize / 1024;
+                info->cacheL3 = cache.CacheSize / 1024;
             }
         }
         ptr += tmp->Size;

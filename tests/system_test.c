@@ -113,9 +113,9 @@ bool systemTest()
     palLog(nullptr, "  Architecture: %s", archString);
     palLog(nullptr, "  Number Of Cores: %d", cpuInfo.numCores);
     palLog(nullptr, "  Number Of Processors: %d", processors);
-    palLog(nullptr, "  L1 Cache KB: %d", cpuInfo.cache1);
-    palLog(nullptr, "  L2 Cache KB: %d", cpuInfo.cache2);
-    palLog(nullptr, "  L3 Cache KB: %d", cpuInfo.cache3);
+    palLog(nullptr, "  L1 Cache KB: %d", cpuInfo.cacheL1);
+    palLog(nullptr, "  L2 Cache KB: %d", cpuInfo.cacheL2);
+    palLog(nullptr, "  L3 Cache KB: %d", cpuInfo.cacheL3);
 
     // get instruction sets
     char instructionSets[256] = {0};
