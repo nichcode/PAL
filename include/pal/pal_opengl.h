@@ -461,6 +461,12 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * PalGLContextCreateInfo struct. The created context will not be make current,
  * make the context current of the calling thread with palMakeContextCurrent().
  *
+ * After this call, the provided FBConfig will be set to the window permanently
+ * and cannot be changed. To change it, you must destroy the window and recreate
+ * it. If the window already has a FBConfig, the opengl system skips the
+ * provided FBConfig in the `info` struct and create the context with the
+ * already set FBConfig.
+ *
  * @param[in] info Pointer to the PalGLContextCreateInfo struct with creation
  * options.
  * @param[out] outContext Pointer to a PalGLContext to recieve the created
@@ -488,9 +494,9 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * This must be destroyed before the opengl system is shutdown.
  * If the provided context is invalid or nullptr, this function returns
- * silently.
+ * silently. This destroys the context not the already set FBConfig.
  *
- * @param[in] context Pointer to the context to destroy.
+ * @param[in] context Pointer to the context.
  *
  * @note This function must only be called from the main thread.
  *
@@ -502,17 +508,22 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
 PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
 
 /**
- * @brief Make the provided context current of the calling thread
+ * @brief Make the provided context current of the calling thread.
  *
  * The opengl system must be initialized before this call.
  *
- * @param[in] context Pointer to the context to destroy.
+ * The `glWindow` must have the same FBConfig used to create the context.
+ * If the FBConfig of the `glWindow` is not the same as the one used to
+ * create the context, this function fails and returns
+ * `PAL_RESULT_INVALID_GL_WINDOW`. see `palCreateGLContext()`
+ *
+ * @param[in] context Pointer to the context.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
  * failure. Call palFormatResult() for more information.
  *
- * @note This function may be called from any thread, but not concurrently.
- * Users must ensure synchronization.
+ * @note This function may be called from any thread, but only one thread may
+ * have the current context at a time.
  *
  * @sa palCreateGLContext()
  *
@@ -528,7 +539,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  *
  * The opengl system must be initialized before this call.
  *
- * @param[in] context Pointer to the context to destroy.
+ * @param[in] context Pointer to the context.
  *
  * @return the pointer to the function on success or nullptr on failure.
  *
@@ -547,7 +558,7 @@ PAL_API void* PAL_CALL palGLGetProcAddress(const char* name);
  *
  * The opengl system must be initialized before this call.
  *
- * @param[in] context Pointer to the context to destroy.
+ * @param[in] context Pointer to the context.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
  * failure. Call palFormatResult() for more information.
@@ -585,6 +596,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  * @note This function must only be called from a thread with a bound context.
  *
  * @sa palInitGL()
+ * @sa palCreateGLContext()
  *
  * @since Added in version 1.0.0.
  * @ingroup opengl

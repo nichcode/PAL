@@ -96,6 +96,8 @@ typedef int(WINAPI* DescribePixelFormatFn)(
     UINT,
     LPPIXELFORMATDESCRIPTOR);
 
+typedef int(WINAPI* GetPixelFormatFn)(HDC);
+
 typedef BOOL(WINAPI* SwapBuffersFn)(HDC);
 
 // wgl functions
@@ -148,6 +150,7 @@ typedef struct {
     SetPixelFormatFn setPixelFormat;
     DescribePixelFormatFn describePixelFormat;
     ChoosePixelFormatFn choosePixelFormat;
+    GetPixelFormatFn getPixelFormat;
     SwapBuffersFn swapBuffers;
     HINSTANCE handle;
 } Gdi;
@@ -274,6 +277,9 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     s_Gdi.setPixelFormat =
         (SetPixelFormatFn)GetProcAddress(s_Gdi.handle, "SetPixelFormat");
+
+    s_Gdi.getPixelFormat =
+        (GetPixelFormatFn)GetProcAddress(s_Gdi.handle, "GetPixelFormat");
 
     s_Gdi.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
         s_Gdi.handle,
@@ -777,21 +783,26 @@ PalResult PAL_CALL palCreateGLContext(
         return PAL_RESULT_INVALID_GL_WINDOW;
     }
 
-    Int32 pixelFormat = info->fbConfig->index;
-    // since we have the pixel format already
-    // we ask the OS (platform) to fill the pfd struct for us from that index
-    PIXELFORMATDESCRIPTOR pfd;
-    if (!s_Gdi.describePixelFormat(
-            hdc,
-            pixelFormat,
-            sizeof(PIXELFORMATDESCRIPTOR),
-            &pfd)) {
-        return PAL_RESULT_INVALID_GL_FBCONFIG;
-    }
+    // check if the window's pixel format has already been set
+    if (s_Gdi.getPixelFormat(hdc) == 0) {
+        // set the pixel format
+        Int32 pixelFormat = info->fbConfig->index;
+        // since we have the pixel format already
+        // we ask the OS (platform) to fill the pfd struct for us from that
+        // index
+        PIXELFORMATDESCRIPTOR pfd;
+        if (!s_Gdi.describePixelFormat(
+                hdc,
+                pixelFormat,
+                sizeof(PIXELFORMATDESCRIPTOR),
+                &pfd)) {
+            return PAL_RESULT_INVALID_GL_FBCONFIG;
+        }
 
-    // we then set the pixel format for the hdc
-    if (!s_Gdi.setPixelFormat(hdc, pixelFormat, &pfd)) {
-        return PAL_RESULT_INVALID_GL_FBCONFIG;
+        // we then set the pixel format for the hdc
+        if (!s_Gdi.setPixelFormat(hdc, pixelFormat, &pfd)) {
+            return PAL_RESULT_INVALID_GL_FBCONFIG;
+        }
     }
 
     HGLRC context = nullptr;

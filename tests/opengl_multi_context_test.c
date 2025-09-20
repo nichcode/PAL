@@ -15,11 +15,11 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
 typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(
     Uint32 mask); // use GL typedefs if needed
 
-bool openglContextTest()
+bool openglMultiContextTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Opengl Context Test");
+    palLog(nullptr, "Opengl Multi Context Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -77,7 +77,7 @@ bool openglContextTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "Pal Opengl Context Window";
+    createInfo.title = "Pal Opengl Multi Context Window";
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
@@ -211,7 +211,7 @@ bool openglContextTest()
         return false;
     }
 
-    // make the context current and optionally set vsync if supported
+    // make the context current on this thread
     result = palMakeContextCurrent(&glWindow, context);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(
@@ -222,6 +222,7 @@ bool openglContextTest()
         return false;
     }
 
+    // check if vsync is supported.
     if (info->extensions & PAL_GL_EXTENSION_SWAP_CONTROL) {
         // vsync is supported. This is set for the current context
         palSetSwapInterval(1);
@@ -267,6 +268,61 @@ bool openglContextTest()
         }
     }
 
+    // destroy the opengl context.
+    palDestroyGLContext(context);
+
+    // create a new opengl context with the same window
+    // the window's FBConfig has already be set, so we can skip it or set it.
+    // Opengl system will ignore it
+    context = nullptr;
+    result = palCreateGLContext(&contextCreateInfo, &context);
+    if (result != PAL_RESULT_SUCCESS) {
+        palLog(
+            nullptr,
+            "Failed to create opengl context: %s",
+            palFormatResult(result));
+        palFree(nullptr, fbConfigs);
+        return false;
+    }
+
+    // make the context current on this thread
+    result = palMakeContextCurrent(&glWindow, context);
+    if (result != PAL_RESULT_SUCCESS) {
+        palLog(
+            nullptr,
+            "Failed to make opengl context current: %s",
+            palFormatResult(result));
+        palFree(nullptr, fbConfigs);
+        return false;
+    }
+
+    glClearColor(.2f, .6f, .6f, .2f);
+    running = true;
+    while (running) {
+        palUpdateVideo();
+
+        PalEvent event;
+        while (palPollEvent(eventDriver, &event)) {
+            switch (event.type) {
+                case PAL_EVENT_WINDOW_CLOSE: {
+                    running = false;
+                    break;
+                }
+            }
+        }
+
+        glClear(0x00004000); // GL_COLOR_BUFFER_BIT
+        result = palSwapBuffers(&glWindow, context);
+        if (result != PAL_RESULT_SUCCESS) {
+            palLog(
+                nullptr,
+                "Failed to swap buffers: %s",
+                palFormatResult(result));
+            palFree(nullptr, fbConfigs);
+            return false;
+        }
+    }
+
     // destroy the window
     palDestroyWindow(window);
 
@@ -276,7 +332,7 @@ bool openglContextTest()
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
 
-    // destroy the opengl context
+    // destroy the opengl context.
     palDestroyGLContext(context);
 
     // shutdown the opengl system

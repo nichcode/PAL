@@ -412,7 +412,7 @@ PAL_API const char* PAL_CALL palGetVersionString();
  * result.
  *
  * @param[in] result The result code
- * @return Pointer to the null-terminated UTF-5 encoding string.
+ * @return Pointer to the null-terminated UTF-8 encoding string.
  *
  * @note This function is thread-safe and may be called from any thread.
  * @note The returned pointer must not be freed.

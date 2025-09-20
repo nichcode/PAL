@@ -267,7 +267,8 @@ const char* PAL_CALL palFormatResult(PalResult result)
             return "Opengl system not initialized";
 
         case PAL_RESULT_INVALID_GL_WINDOW:
-            return "The provided opengl window was invalid";
+            return "The provided opengl window was invalid (Its framebuffer "
+                   "config has )";
 
         case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
             return "The opengl extension is not supported";
