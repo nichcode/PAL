@@ -22,12 +22,11 @@ freely, subject to the following restrictions:
  */
 
 /**
- * @file pal_core.h
+ * @defgroup pal_core Core
+ * Core PAL functionality such as versioning, memory allocation, logging, and
+ * timing.
  *
- * Header file for core functions, macros, enum and structs
- *
- * @defgroup core
- *
+ * @{
  */
 
 #ifndef _PAL_CORE_H
@@ -65,8 +64,8 @@ freely, subject to the following restrictions:
 
 /**
  * @brief A bool
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef _Bool bool;
 
@@ -76,94 +75,88 @@ typedef _Bool bool;
 
 /**
  * @brief An signed 8-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef int8_t Int8;
 
 /**
  * @brief An signed 16-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef int16_t Int16;
 
 /**
  * @brief An signed 32-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef int32_t Int32;
 
 /**
  * @brief An signed 64-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef int64_t Int64;
 
 /**
  * @brief An signed 64-bit integer pointer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef intptr_t IntPtr;
 
 /**
  * @brief An unsigned 8-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef uint8_t Uint8;
 
 /**
  * @brief An unsigned 16-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef uint16_t Uint16;
 
 /**
  * @brief An unsigned 32-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef uint32_t Uint32;
 
 /**
  * @brief An unsigned 64-bit integer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef uint64_t Uint64;
 
 /**
  * @brief An unsigned 64-bit integer pointer
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef uintptr_t UintPtr;
 
 /**
  * @typedef PalAllocateFn
- * @brief Function pointer type used for CPU memory allocations.
+ * @brief Function pointer type used for memory allocations.
  *
- * Allocates `size` bytes with `alignment` and return a pointer to the memory
- * block on success or nullptr on failure.
+ * @param[in] userData Optional pointer to user data passed from ::PalAllocator.
+ * Can be nullptr.
+ * @param[in] size Number of bytes to allocate.
+ * @param[in] alignment Must be power of two. Set to 0 to use default.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
- * @param[in] size Size in bytes to allocate.
- * @param[in] alignment Must be power of two. It is recommended that it should
- * atleast be 8 or 16. Set to 0 to use default.
+ * @return Pointer to the allocated memory on success or nullptr on failure.
  *
- * @return Pointer to the allocated memory block on success or nullptr if
- * allocation failed.
- *
- * @sa PalAllocator
+ * @since 1.0
+ * @ingroup pal_core
  * @sa PalFreeFn
- *
- * @since Added in version 1.0.0.
- * @ingroup core
  */
 typedef void*(PAL_CALL* PalAllocateFn)(
     void* userData,
@@ -172,20 +165,15 @@ typedef void*(PAL_CALL* PalAllocateFn)(
 
 /**
  * @typedef PalFreeFn
- * @brief Function pointer type used for CPU memory deallocations.
+ * @brief Function pointer type used for memory deallocations.
  *
- * Deallocates memory allocated by PalAllocateFn. Passing nullptr or an invalid
- * pointer must be safe.
+ * @param[in] userData Optional pointer to user data passed from ::PalAllocator.
+ * Can be nullptr.
+ * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
- * @param[in] ptr Pointer to the memory block to free. This function should do
- * nothing if `ptr` is nullptr.
- *
+ * @since 1.0
+ * @ingroup pal_core
  * @sa PalAllocateFn
- * @sa PalAllocator
- *
- * @since Added in version 1.0.0.
- * @ingroup core
  */
 typedef void(PAL_CALL* PalFreeFn)(
     void* userData,
@@ -195,19 +183,13 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @typedef PalLogCallback
  * @brief Function pointer type used for log callbacks.
  *
- * This provides control over how log messages are handled (eg. redirect the log
- * message to a file). The `msg` is only valid for the duration of the callback,
- * copy if you need to store it.
+ * @param userData Optional pointer to user data passed from ::PalLogger. Can be
+ * nullptr.
+ * @param msg Null-terminated UTF-8 log message.
  *
- * @param userData Optional pointer to user data. Can be nullptr.
- * @param msg A constant null-terminated UTF-8 encoding string containing the
- * message.
- *
- * @sa PalLogger
- * @sa palLog()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palLog
  */
 typedef void(PAL_CALL* PalLogCallback)(
     void* userData,
@@ -215,239 +197,140 @@ typedef void(PAL_CALL* PalLogCallback)(
 
 /**
  * @enum PalResult
- * @brief Codes returned by most PAL functions to specify success or failure.
- * This is not a bitmask.
+ * @brief Codes returned by most PAL functions. This is not a bitmask.
  *
- * `PAL_RESULT_SUCCESS` code means the operation completed successfully. Any
- * other value indicates an error.
- *
- * @note All results follow the format `PAL_RESULT_**` for consistency and API
+ * All result codes follow the format `PAL_RESULT_**` for consistency and API
  * use.
  *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef enum {
-    /** Operation was successful.*/
     PAL_RESULT_SUCCESS,
-
-    /** One or more pointers were nullptr or invalid.*/
     PAL_RESULT_NULL_POINTER,
-
-    /** One or more arguments were invalid.*/
-    PAL_RESULT_INVALID_PARAMETER,
-
-    /** Out of memory.*/
+    PAL_RESULT_INVALID_ARGUMENT,
     PAL_RESULT_OUT_OF_MEMORY,
-
-    /** An error occured on the plaform (OS) level.*/
     PAL_RESULT_PLATFORM_FAILURE,
-
-    /** A partially defined custom allocator.*/
     PAL_RESULT_INVALID_ALLOCATOR,
-
-    /** Platform (OS) denied PAL access.*/
     PAL_RESULT_ACCESS_DENIED,
-
-    /** Timeout expired.*/
     PAL_RESULT_TIMEOUT,
-
-    /** The buffer provided for write operation is too small.*/
     PAL_RESULT_INSUFFICIENT_BUFFER,
-
-    /** An invalid thread.*/
     PAL_RESULT_INVALID_THREAD,
-
-    /** An unsupported thread feature was used.*/
     PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED,
-
-    /** Video system is not initialized.*/
     PAL_RESULT_VIDEO_NOT_INITIALIZED,
-
-    /** An invalid monitor.*/
     PAL_RESULT_INVALID_MONITOR,
-
-    /** An invalid monitor display mode.*/
     PAL_RESULT_INVALID_MONITOR_MODE,
-
-    /** An invalid window.*/
     PAL_RESULT_INVALID_WINDOW,
-
-    /** An unsupported video feature was used.*/
     PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED,
-
-    /** An invalid keycode.*/
     PAL_RESULT_INVALID_KEYCODE,
-
-    /** An invalid scancode.*/
     PAL_RESULT_INVALID_SCANCODE,
-
-    /** An invalid mouse button.*/
     PAL_RESULT_INVALID_MOUSE_BUTTON,
-
-    /** An invalid orientation.*/
     PAL_RESULT_INVALID_ORIENTATION,
-
-    /** Opengl system is not initialized.*/
     PAL_RESULT_GL_NOT_INITIALIZED,
-
-    /** An invalid opengl window.*/
     PAL_RESULT_INVALID_GL_WINDOW,
-
-    /** An unsupported opengl extension was used.*/
     PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED,
-
-    /** An invalid opengl framebuffer config.*/
     PAL_RESULT_INVALID_GL_FBCONFIG,
-
-    /** The requested opengl version is not supported.*/
     PAL_RESULT_INVALID_GL_VERSION,
-
-    /** The requested opengl profile is not supported.*/
     PAL_RESULT_INVALID_GL_PROFILE,
-
-    /** An invalid opengl context.*/
     PAL_RESULT_INVALID_GL_CONTEXT
 } PalResult;
 
 /**
  * @struct PalVersion
- * @brief Describes the version of the PAL runtime.
+ * @brief Describes the version of PAL.
  *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef struct {
-    /** Major version (breaking changes).*/
-    Uint32 major;
-
-    /** Minor version (adding features).*/
-    Uint32 minor;
-
-    /** Build version (bug fixes). */
-    Uint32 build;
+    Uint32 major; /** < Major version (breaking changes).*/
+    Uint32 minor; /** < Minor version (adding features).*/
+    Uint32 build; /** < Build version (bug fixes).*/
 } PalVersion;
 
 /**
  * @struct PalAllocator
- * @brief Describes a user provided CPU memory allocator.
+ * @brief Custom memory allocator.
  *
- * Allows the user to override the default CPU allocator for PAL.
+ * Provides user-defined memory allocation and free functions.
  *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef struct {
-    /** CPU memory allocation function pointer.*/
     PalAllocateFn allocate;
-
-    /** CPU memory deallocation function pointer.*/
     PalFreeFn free;
-
-    /** Optional pointer to user data passed into allocation functions. Can be
-     * nullptr.*/
-    void* userData;
+    void* userData; /** < Optional user-provided data. Can be nullptr.*/
 } PalAllocator;
 
 /**
  * @struct PalLogger
- * @brief Describes a user provided logger for redirecting log messages.
+ * @brief Logging configuration.
  *
- * Allows the user to override the default log output.
+ * Provides a callback and user data for handling log messages.
  *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 typedef struct {
-    /** Log callback for log redirecting.*/
     PalLogCallback callback;
-
-    /** Optional pointer to user data passed into log callback. Can be
-     * nullptr.*/
-    void* userData;
+    void* userData; /** Optional user-provided data. Can be nullptr.*/
 } PalLogger;
 
 /**
- * @brief Get the runtime version of PAL.
+ * Retrieve the PAL version number.
  *
- * This returns a copy of PALVersion struct, which contains the major, minor and
- * build of PAL runtime.
+ * @return PAL version (major, minor, build).
  *
- * @return A copy of PAL runtime version.
+ * Thread safety: This function is thread safe.
  *
- * @note This function is thread-safe and may be called from any thread.
- *
- * @sa palGetVersionString()
- * @sa PalVersion
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palGetVersionString
  */
 PAL_API PalVersion PAL_CALL palGetVersion();
 
 /**
- * @brief Get the human readable string representation of PAL runtime.
+ * Retrieve the PAL version string.
  *
- * This returns a constant, null-terminated UTF-8 encoding string describing the
- * version in the format: `1.2.3`, where `1` is the major, `2` is the minor and
- * `3` is the build respectively.
+ * @return Null-terminated string containing the PAL version.
  *
- * @return Pointer to the null-terminated UTF-8 encoding string.
+ * Thread safety: This function is thread safe.
  *
- * @note This function is thread-safe and may be called from any thread.
- * @note The returned pointer must not be freed.
- *
- * @sa palGetVersion()
- * @sa PalVersion
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palGetVersion
  */
 PAL_API const char* PAL_CALL palGetVersionString();
 
 /**
- * @brief Return a string description for the specified result.
+ * Convert a result code to a human-readable string.
  *
- * This returns a constant, null-terminated UTF-8 encoding string describing the
- * result.
+ * @param result The PalResult code to format.
+ * @return Null-terminated static string describing the result.
  *
- * @param[in] result The result code
- * @return Pointer to the null-terminated UTF-8 encoding string.
+ * Thread safety: This function is thread safe.
  *
- * @note This function is thread-safe and may be called from any thread.
- * @note The returned pointer must not be freed.
- *
- * @sa PalResult
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
  */
 PAL_API const char* PAL_CALL palFormatResult(PalResult result);
 
 /**
- * @brief Allocate CPU memory with a custom or default allocator.
+ * Allocate memory using the provided allocator.
  *
- * If a valid allocator is provided, its `allocate` function is called with the
- * provided size and user data. Otherwise, the default allocator is used.
+ * @param allocator The allocator to use. Set to nullptr to use default.
+ * @param size Number of bytes to allocate.
+ * @param alignment Alignment in bytes. Must be a power of two.
  *
- * @param[in] allocator Optional pointer to an allocator. The default allocator
- * will be used if it is nullptr.
- * @param[in] size Size in bytes to allocate.
- * @param[in] alignment Must be power of two. It is recommended that it should
- * atleast be 8 or 16. Set to 0 to use default.
+ * @return Pointer to allocated memory on success, or nullptr on failure.
  *
- * @return Pointer to the allocated CPU memory block on success or nullptr if
- * allocation failed.
+ * @note Thread safety: Thread safe only if the provided allocator is thread
+ * safe. The default allocator is thread safe.
  *
- * @note This does not initialize the allocated memory.
- * @note This function is thread safe and may be called from any thread if the
- * provided allocator is thread safe. The default allocator is thread safe.
- *
- * @sa palFree()
- * @sa PalAllocator
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palFree
  */
 PAL_API void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
@@ -455,53 +338,38 @@ PAL_API void* PAL_CALL palAllocate(
     Uint64 alignment);
 
 /**
- * @brief Deallocate CPU memory with a custom or default allocator.
+ * Free memory allocated by palAllocate.
  *
- * If a valid allocator is provided, its `free` function is called with the
- * provided memory block and user data. Otherwise, the default allocator is
- * used.
+ * @param allocator The allocator used to allocate the memory. Set to nullptr to
+ * use default.
+ * @param ptr Pointer to memory to free. If nullptr, the function returns
+ * silently.
  *
- * @param[in] allocator Optional pointer to an allocator. The default allocator
- * will be used if it is a nullptr.
- * @param[in] ptr Pointer to the memory block to free.
+ * @note Thread safety: Thread safe only if the provided allocator is thread
+ * safe. The default allocator is thread safe.
  *
- * @note This function is thread safe and may be called from any thread if the
- * provided allocator is thread safe. The default allocator is thread safe.
- *
- * @sa PalAllocator
- * @sa palAllocate()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palAllocate
  */
 PAL_API void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr);
 
 /**
- * @brief Log a formatted message with a custom or default logger.
+ * Log a formatted message.
  *
- * If the provided logger does not have a valid `callback`, PAL will discard it
- * and use its default logger. Unicode characters are supported.
+ * @param logger Logger instance. Must not be NULL.
+ * @param fmt printf-style format string.
+ * @param ... Arguments for the format string.
  *
- * @param[in] logger Optional pointer to a logger. The default logger will be
- * used if it is nullptr.
- * @param[in] fmt UTF-8 encoding printf-style format string.
+ * @note Thread safety: This function is thread safe, but log output and
+ * callbacks may be invoked concurrently. The user must ensure the callback
+ * implementation is thread safe.
  *
- * Example:
- * @code
- * palLog(&myLogger, "%s - %f", string,
- * float);
- * @endcode
- *
- * @note This function is thread-safe and may be called from any thread.
- * @note PAL default logger will not log if there is no console. On Windows, if
- * there is no console, PAL will log to the debug console.
- *
- * @sa PalLogger
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palFormatResult
  */
 PAL_API void PAL_CALL palLog(
     const PalLogger* logger,
@@ -509,38 +377,28 @@ PAL_API void PAL_CALL palLog(
     ...);
 
 /**
- * @brief Get the high-resolution performance value.
+ * Query a high-resolution performance counter value.
  *
- * The counter is monotonically increasing while the system is running and is
- * typically used for precise time measurements.
+ * @return Current performance counter value.
  *
- * @return The high-resolution counter value.
+ * Thread safety: This function is thread safe.
  *
- * @note This function is thread-safe and may be called from any thread.
- *
- * @sa palGetPerformanceFrequency()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palGetPerformanceFrequency
  */
 PAL_API Uint64 PAL_CALL palGetPerformanceCounter();
 
 /**
- * @brief Get the frequency of the high-resolution performance counter.
+ * Query the frequency of the high-resolution performance counter.
  *
- * This function returns the frequency of the high-resolution performance
- * counter in counts per second.
+ * @return Performance counter frequency, in counts per second.
  *
- * @return The high-resolution performance frequency in counts per second.
+ * Thread safety: This function is thread safe.
  *
- * @note This function is thread-safe and may be called from any thread.
- * @note The returned frequency is constant during the lifetime of the
- * application.
- *
- * @sa palGetPerformanceCounter()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palGetPerformanceCounter
  */
 PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
 
@@ -550,14 +408,11 @@ PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
  *
  * @return The combined 64-bit signed integer.
  *
- * @note This function is thread-safe and may be called from any thread.
+ * Thread safety: This function is thread safe.
  *
- * @sa palPackInt32()
- * @sa palUnpackUint32()
- * @sa palUnpackInt32()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palUnpackUint32
  */
 static inline Int64 PAL_CALL palPackUint32(
     Uint32 low,
@@ -567,18 +422,16 @@ static inline Int64 PAL_CALL palPackUint32(
 }
 
 /**
- * @brief Combine two 32-bit signed integers into a 64-bit signed integer.
+ * @brief Combine two 32-bit signed integers into a single 64-bit signed
+ * integer.
  *
  * @return The combined 64-bit signed integer.
  *
- * @note This function is thread-safe and may be called from any thread.
+ * Thread safety: This function is thread safe.
  *
- * @sa palPackInt32()
- * @sa palUnpackUint32()
- * @sa palUnpackInt32()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palUnpackInt32
  */
 static inline Int64 PAL_CALL palPackInt32(
     Int32 low,
@@ -592,12 +445,11 @@ static inline Int64 PAL_CALL palPackInt32(
  *
  * @return The packed 64-bit signed integer.
  *
- * @note This function is thread-safe and may be called from any thread.
+ * Thread safety: This function is thread safe.
  *
- * @sa palUnpackPointer()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palUnpackPointer
  */
 static inline Int64 PAL_CALL palPackPointer(void* ptr)
 {
@@ -605,18 +457,16 @@ static inline Int64 PAL_CALL palPackPointer(void* ptr)
 }
 
 /**
- * @brief Unpack a 64-bit signed integer into two 32-bit unsigned integers.
+ * @brief Retrieve two 32-bit unsigned integers from a 64-bit signed integer.
  *
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * @note This function is thread-safe and may be called from any thread.
+ * Thread safety: This function is thread safe.
  *
- * @sa palPackUint32()
- * @sa palUnpackInt32()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palPackUint32
  */
 static inline void PAL_CALL palUnpackUint32(
     Int64 data,
@@ -633,19 +483,17 @@ static inline void PAL_CALL palUnpackUint32(
 }
 
 /**
- * @brief Unpack a 64-bit signed integer into two 32-bit signed integers.
+ * @brief Retrieve two 32-bit signed integers from a 64-bit signed integer.
  *
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * @note This function is thread-safe if `outLow` and `outHigh` are thread
- * local.
+ * Thread safety: This function is thread-safe if `outLow` and `outHigh` are
+ * thread local.
  *
- * @sa palUnpackInt32()
- * @sa palPackUint32()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palPackInt32
  */
 static inline void PAL_CALL palUnpackInt32(
     Int64 data,
@@ -666,16 +514,17 @@ static inline void PAL_CALL palUnpackInt32(
  *
  * @return The pointer from the 64-bit signed integer.
  *
- * @note This function is thread-safe and may be called from any thread.
+ * Thread safety: This function is thread safe.
  *
- * @sa palPackPointer()
- *
- * @since Added in version 1.0.0.
- * @ingroup core
+ * @since 1.0
+ * @ingroup pal_core
+ * @sa palPackPointer
  */
 static inline void* PAL_CALL palUnpackPointer(Int64 data)
 {
     return (void*)(UintPtr)data;
 }
+
+/** @} */ // end of pal_core group
 
 #endif // _PAL_CORE_H

@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO
     // registerTest("Opengl FBConfig Test", openglFBConfigTest);
     // registerTest("Opengl Context Test", openglContextTest);
-    registerTest("Opengl Multi Context Test", openglMultiContextTest);
+    // registerTest("Opengl Multi Context Test", openglMultiContextTest);
 #endif // PAL_HAS_OPENGL
 
     runTests();

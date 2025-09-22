@@ -62,7 +62,7 @@ freely, subject to the following restrictions:
 #define PAL_VERSION_STRING "1.0.0"
 #define PAL_LOG_MSG_SIZE 4096
 
-static Uint32 s_TlsID = 0;
+static volatile LONG s_TlsID = 0;
 
 typedef struct {
     char tmp[PAL_LOG_MSG_SIZE];
@@ -115,13 +115,29 @@ static inline LogTLSData* getLogTlsData()
 #endif // _WIN32
 
     if (!data) {
-        data = palAllocate(nullptr, sizeof(LogTLSData), 16);
+        data = palAllocate(nullptr, sizeof(LogTLSData), 0);
         memset(data, 0, sizeof(LogTLSData));
 
         // create TLS if it has not been created
 #ifdef _WIN32
         if (s_TlsID == 0) {
-            s_TlsID = FlsAlloc(destroyTlsData);
+            DWORD TLSIndex = FlsAlloc(destroyTlsData);
+            if (TLSIndex == TLS_OUT_OF_INDEXES) {
+                // FIXME: Use a global log buffer with a mutex
+                return nullptr;
+            } else {
+                // update the TLS using atomic operations to avoid thread race
+                LONG prev = InterlockedCompareExchange(
+                    (volatile LONG*)&s_TlsID,
+                    (LONG)TLSIndex,
+                    0);
+
+                if (prev != 0) {
+                    // Another thread has already set this,
+                    // destroy the tls index
+                    FlsFree(TLSIndex);
+                }
+            }
         }
         FlsSetValue(s_TlsID, data);
 #endif // _WIN32
@@ -141,15 +157,14 @@ static inline void formatArgs(
     va_list argsList,
     char* buffer)
 {
-    va_list listCopy;
-#ifdef _MSC_VER
-    listCopy = argsList;
-#else
-    __builtin_va_copy(listCopy, argsList);
-#endif // _MSC_VER
+    va_list argsListCopy;
+    va_copy(argsListCopy, argsList);
+    int len = vsnprintf(nullptr, 0, fmt, argsListCopy);
+    va_end(argsListCopy);
 
-    int len = vsnprintf(0, 0, fmt, listCopy);
-    vsnprintf(buffer, len + 1, fmt, listCopy);
+    va_copy(argsListCopy, argsList);
+    vsnprintf(buffer, len + 1, fmt, argsListCopy);
+    va_end(argsListCopy);
     buffer[len] = 0;
 }
 
@@ -200,90 +215,88 @@ const char* PAL_CALL palFormatResult(PalResult result)
 {
     switch (result) {
         case PAL_RESULT_SUCCESS:
-            return "The operation completed successfully";
+            return "Success";
 
         case PAL_RESULT_NULL_POINTER:
-            return "The pointer is invalid";
+            return "Null pointer";
 
-        case PAL_RESULT_INVALID_PARAMETER:
-            return "The parameter is invalid.";
+        case PAL_RESULT_INVALID_ARGUMENT:
+            return "Invalid argument";
 
         case PAL_RESULT_OUT_OF_MEMORY:
-            return "The platform(OS) has no free memory";
+            return "Out of memory";
 
         case PAL_RESULT_PLATFORM_FAILURE:
-            return "An error occured on the platform(OS)";
+            return "Platform error";
 
         case PAL_RESULT_INVALID_ALLOCATOR:
-            return "The provided allocator's function pointers are not fully "
-                   "set";
+            return "Invalif allocator";
 
         case PAL_RESULT_ACCESS_DENIED:
-            return "The platform denied access to the operation";
+            return "Access denied";
 
         case PAL_RESULT_TIMEOUT:
             return "Timeout expired";
 
         case PAL_RESULT_INSUFFICIENT_BUFFER:
-            return "The provided buffer was not enough";
+            return "Insufficient buffer";
 
         // thread
         case PAL_RESULT_INVALID_THREAD:
-            return "The provided thread handle was invalid";
+            return "Invalid thread";
 
         case PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED:
-            return "The thread feature used is not supported";
+            return "Unsupported thread feature";
 
         // video
         case PAL_RESULT_VIDEO_NOT_INITIALIZED:
             return "Video system not initialized";
 
         case PAL_RESULT_INVALID_MONITOR:
-            return "The provided monitor handle was invalid";
+            return "Invalid monitor";
 
         case PAL_RESULT_INVALID_MONITOR_MODE:
-            return "The provided monitor mode was invalid";
+            return "Invalid monitor display mode";
 
         case PAL_RESULT_INVALID_WINDOW:
-            return "The provided window handle was invalid";
+            return "Invalid window";
 
         case PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED:
-            return "The video feature used is not supported";
+            return "Unsupported video feature";
 
         case PAL_RESULT_INVALID_KEYCODE:
-            return "The provided keycode was invalid";
+            return "Invalid keycode";
 
         case PAL_RESULT_INVALID_SCANCODE:
-            return "The provided scancode was invalid";
+            return "Invalid scancode";
 
         case PAL_RESULT_INVALID_MOUSE_BUTTON:
-            return "The provided mouse button was invalid";
+            return "Invalid mouse button";
 
         case PAL_RESULT_INVALID_ORIENTATION:
-            return "The provided orientation was invalid";
+            return "Invalid orientation";
 
         // opengl
         case PAL_RESULT_GL_NOT_INITIALIZED:
             return "Opengl system not initialized";
 
         case PAL_RESULT_INVALID_GL_WINDOW:
-            return "The provided opengl window was invalid (Its framebuffer "
-                   "config has )";
+            return "Invalid opengl window";
 
         case PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED:
-            return "The opengl extension is not supported";
+            return "Unsupported opengl extension";
 
         case PAL_RESULT_INVALID_GL_FBCONFIG:
-            return "The provided opengl framebuffer config was invalid";
+            return "Invalid opengl framebuffer";
 
         case PAL_RESULT_INVALID_GL_VERSION:
-            return "The opengl version is not supported";
+            return "Unsupported opengl version";
 
         case PAL_RESULT_INVALID_GL_PROFILE:
-            return "The opengl profile is not supported";
+            return "Unsupported opengl profile";
 
         case PAL_RESULT_INVALID_GL_CONTEXT:
-            return "The provided opengl context was invalid";
+            return "Invalid opengl context";
     }
     return "Unknown";
 }
