@@ -2308,7 +2308,7 @@ PalResult PAL_CALL palSetWindowOpacity(
             return PAL_RESULT_INVALID_WINDOW;
 
         } else if (error == ERROR_INVALID_PARAMETER) {
-            return PAL_RESULT_INVALID_PARAMETER;
+            return PAL_RESULT_INVALID_ARGUMENT;
 
         } else {
             // FIXME: check for child windows

@@ -325,7 +325,7 @@ PAL_API const char* PAL_CALL palFormatResult(PalResult result);
  *
  * @return Pointer to allocated memory on success, or nullptr on failure.
  *
- * @note Thread safety: Thread safe only if the provided allocator is thread
+ * Thread safety: Thread safe only if the provided allocator is thread
  * safe. The default allocator is thread safe.
  *
  * @since 1.0
@@ -345,7 +345,7 @@ PAL_API void* PAL_CALL palAllocate(
  * @param ptr Pointer to memory to free. If nullptr, the function returns
  * silently.
  *
- * @note Thread safety: Thread safe only if the provided allocator is thread
+ * Thread safety: Thread safe only if the provided allocator is thread
  * safe. The default allocator is thread safe.
  *
  * @since 1.0
