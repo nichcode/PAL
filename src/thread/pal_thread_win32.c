@@ -46,33 +46,29 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-#define NAME_SUPPORTED 2
-#define NAME_NOT_SUPPORTED 3
-
 typedef HRESULT(WINAPI* SetThreadDescriptionFn)(
     HANDLE,
     PCWSTR);
+
 typedef HRESULT(WINAPI* GetThreadDescriptionFn)(
     HANDLE,
     PWSTR*);
 
 typedef struct {
+    const PalAllocator* allocator;
     PalThreadFn func;
     void* arg;
 } ThreadData;
 
 struct PalMutex {
+    const PalAllocator* allocator;
     CRITICAL_SECTION sc;
 };
 
 struct PalCondVar {
+    const PalAllocator* allocator;
     CONDITION_VARIABLE cv;
 };
-
-static Uint8 s_Init = false;
-static SetThreadDescriptionFn s_SetThreadDescription;
-static GetThreadDescriptionFn s_GetThreadDescription;
-static const PalAllocator* s_Allocator = nullptr;
 
 // ==================================================
 // Internal API
@@ -82,25 +78,13 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg)
 {
     ThreadData* data = arg;
     void* ret = data->func(data->arg);
-    palFree(s_Allocator, data);
+    palFree(data->allocator, data);
     return (DWORD)(uintptr_t)ret;
 }
 
 // ==================================================
 // Public API
 // ==================================================
-
-void PAL_CALL palSetThreadAllocator(const PalAllocator* allocator)
-{
-    if (allocator && (allocator->allocate || allocator->free)) {
-        s_Allocator = allocator;
-    }
-}
-
-const PalAllocator* PAL_CALL palGetThreadAllocator()
-{
-    return s_Allocator;
-}
 
 // ==================================================
 // Thread
@@ -114,36 +98,21 @@ PalResult PAL_CALL palCreateThread(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (s_Init == 0) {
-        HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
-        if (kernel32) {
-            s_GetThreadDescription = (GetThreadDescriptionFn)GetProcAddress(
-                kernel32,
-                "GetThreadDescription");
-
-            s_SetThreadDescription = (SetThreadDescriptionFn)GetProcAddress(
-                kernel32,
-                "SetThreadDescription");
-
-            if (!s_GetThreadDescription && !s_SetThreadDescription) {
-                s_Init = NAME_NOT_SUPPORTED;
-            } else {
-                s_Init = NAME_SUPPORTED;
-            }
-
-        } else {
-            s_Init = NAME_NOT_SUPPORTED;
+    if (info->allocator) {
+        if (!info->allocator->allocate && !info->allocator->free) {
+            return PAL_RESULT_INVALID_ALLOCATOR;
         }
     }
 
     // create thread
-    ThreadData* data = palAllocate(s_Allocator, sizeof(ThreadData), 0);
+    ThreadData* data = palAllocate(info->allocator, sizeof(ThreadData), 0);
     if (!data) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     data->arg = info->arg;
     data->func = info->entry;
+    data->allocator = info->allocator;
 
     HANDLE thread = CreateThread(
         nullptr,
@@ -275,29 +244,48 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
     return mask;
 }
 
-char* PAL_CALL palGetThreadName(PalThread* thread)
+void PAL_CALL palGetThreadName(
+    PalThread* thread,
+    Uint64 bufferSize,
+    Uint64* outSize,
+    char* outBuffer)
 {
-    if (!thread || !s_GetThreadDescription) {
-        return nullptr;
+    if (!thread) {
+        return;
+    }
+
+    HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    GetThreadDescriptionFn getThreadDescription = nullptr;
+    if (kernel32) {
+        getThreadDescription = (GetThreadDescriptionFn)GetProcAddress(
+            kernel32,
+            "GetThreadDescription");
+    }
+
+    if (!getThreadDescription) {
+        // not supported
+        return;
     }
 
     wchar_t* buffer = nullptr;
-    HRESULT hr = s_GetThreadDescription((HANDLE)thread, &buffer);
+    HRESULT hr = getThreadDescription((HANDLE)thread, &buffer);
 
     if (!SUCCEEDED(hr)) {
-        return nullptr;
+        return;
     }
 
-    // convert to char string
     int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
-    char* stringBuffer = palAllocate(s_Allocator, len + 1, 0);
-    if (!stringBuffer) {
-        return nullptr;
+    if (outSize) {
+        *outSize = len - 1;
     }
 
-    WideCharToMultiByte(CP_UTF8, 0, buffer, -1, stringBuffer, len, 0, 0);
-    LocalFree(buffer);
-    return stringBuffer;
+    // see if user provided a buffer and write to it
+    if (outBuffer && bufferSize > 0) {
+        int write = bufferSize - 1;
+        WideCharToMultiByte(CP_UTF8, 0, buffer, -1, outBuffer, write + 1, 0, 0);
+        outBuffer[write < len - 1 ? write : len - 1] = '\0';
+        LocalFree(buffer);
+    }
 }
 
 PalResult PAL_CALL palSetThreadPriority(
@@ -353,7 +341,7 @@ PalResult PAL_CALL palSetThreadAffinity(
             return PAL_RESULT_INVALID_THREAD;
 
         } else if (error == ERROR_INVALID_PARAMETER) {
-            return PAL_RESULT_INVALID_PARAMETER;
+            return PAL_RESULT_INVALID_ARGUMENT;
 
         } else {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -371,24 +359,27 @@ PalResult PAL_CALL palSetThreadName(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    // check if the thread has been created
-    if (s_Init == 0) {
-        return PAL_RESULT_INVALID_THREAD;
+    HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    SetThreadDescriptionFn setThreadDescription = nullptr;
+    if (kernel32) {
+        setThreadDescription = (SetThreadDescriptionFn)GetProcAddress(
+            kernel32,
+            "SetThreadDescription");
     }
 
-    if (!s_SetThreadDescription) {
+    if (!setThreadDescription) {
+        // not supported
         return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED;
     }
 
-    wchar_t buffer[512] = {0};
-    MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 512);
-    HRESULT hr = s_SetThreadDescription((HANDLE)thread, buffer);
+    wchar_t buffer[128] = {0};
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 128);
+    HRESULT hr = setThreadDescription((HANDLE)thread, buffer);
 
     if (SUCCEEDED(hr)) {
         return PAL_RESULT_SUCCESS;
 
     } else {
-        // error resolving
         if (hr == E_INVALIDARG) {
             return PAL_RESULT_INVALID_THREAD;
 
@@ -438,18 +429,27 @@ void PAL_CALL palSetTLS(
 // Mutex
 // ==================================================
 
-PalResult PAL_CALL palCreateMutex(PalMutex** outMutex)
+PalResult PAL_CALL palCreateMutex(
+    const PalAllocator* allocator,
+    PalMutex** outMutex)
 {
     if (!outMutex) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    PalMutex* mutex = palAllocate(s_Allocator, sizeof(PalMutex), 0);
+    if (allocator) {
+        if (!allocator->allocate && !allocator->free) {
+            return PAL_RESULT_INVALID_ALLOCATOR;
+        }
+    }
+
+    PalMutex* mutex = palAllocate(allocator, sizeof(PalMutex), 0);
     if (!mutex) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     InitializeCriticalSection(&mutex->sc);
+    mutex->allocator = allocator;
     *outMutex = mutex;
     return PAL_RESULT_SUCCESS;
 }
@@ -458,7 +458,7 @@ void PAL_CALL palDestroyMutex(PalMutex* mutex)
 {
     if (mutex) {
         DeleteCriticalSection(&mutex->sc);
-        palFree(s_Allocator, mutex);
+        palFree(mutex->allocator, mutex);
     }
 }
 
@@ -476,38 +476,51 @@ void PAL_CALL palUnlockMutex(PalMutex* mutex)
     }
 }
 
-PalResult PAL_CALL palCreateCondVar(PalCondVar** outCondition)
+// ==================================================
+// Condition Variable
+// ==================================================
+
+PalResult PAL_CALL palCreateCondVar(
+    const PalAllocator* allocator,
+    PalCondVar** outCondVar)
 {
-    if (!outCondition) {
+    if (!outCondVar) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    PalCondVar* condition = palAllocate(s_Allocator, sizeof(PalCondVar), 0);
-    if (!condition) {
+    if (allocator) {
+        if (!allocator->allocate && !allocator->free) {
+            return PAL_RESULT_INVALID_ALLOCATOR;
+        }
+    }
+
+    PalCondVar* condVar = palAllocate(allocator, sizeof(PalCondVar), 0);
+    if (!condVar) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    InitializeConditionVariable(&condition->cv);
-    *outCondition = condition;
+    InitializeConditionVariable(&condVar->cv);
+    condVar->allocator = allocator;
+    *outCondVar = condVar;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyCondVar(PalCondVar* condition)
+void PAL_CALL palDestroyCondVar(PalCondVar* condVar)
 {
-    if (condition) {
-        palFree(s_Allocator, condition);
+    if (condVar) {
+        palFree(condVar->allocator, condVar);
     }
 }
 
 PalResult PAL_CALL palWaitCondVar(
-    PalCondVar* condition,
+    PalCondVar* condVar,
     PalMutex* mutex)
 {
-    if (!condition || !mutex) {
+    if (!condVar || !mutex) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    BOOL ret = SleepConditionVariableCS(&condition->cv, &mutex->sc, INFINITE);
+    BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, INFINITE);
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
@@ -520,18 +533,19 @@ PalResult PAL_CALL palWaitCondVar(
 }
 
 PalResult PAL_CALL palWaitCondVarTimeout(
-    PalCondVar* condition,
+    PalCondVar* condVar,
     PalMutex* mutex,
     Uint64 milliseconds)
 {
-    if (!condition || !mutex) {
+    if (!condVar || !mutex) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     BOOL ret = SleepConditionVariableCS(
-        &condition->cv,
+        &condVar->cv,
         &mutex->sc,
         (DWORD)milliseconds);
+
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
@@ -543,16 +557,16 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palSignalCondVar(PalCondVar* condition)
+void PAL_CALL palSignalCondVar(PalCondVar* condVar)
 {
-    if (condition) {
-        WakeConditionVariable(&condition->cv);
+    if (condVar) {
+        WakeConditionVariable(&condVar->cv);
     }
 }
 
-void PAL_CALL palBroadcastCondVar(PalCondVar* condition)
+void PAL_CALL palBroadcastCondVar(PalCondVar* condVar)
 {
-    if (condition) {
-        WakeAllConditionVariable(&condition->cv);
+    if (condVar) {
+        WakeAllConditionVariable(&condVar->cv);
     }
 }

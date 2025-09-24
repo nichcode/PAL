@@ -39,6 +39,7 @@ bool threadTest()
     PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker; // will be the same for all threads
     createInfo.stackSize = 0;  // same for all threads
+    createInfo.allocator = nullptr;// default
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)((IntPtr)i + 1);
 
@@ -82,16 +83,14 @@ bool threadTest()
     }
 
     if (features & PAL_THREAD_FEATURE_NAME) {
+        char buffer[64] = {0};
         for (Int32 i = 0; i < THREAD_COUNT; i++) {
-            char* name = palGetThreadName(threads[i]);
+            palGetThreadName(threads[i], 64, nullptr, buffer);
             palLog(
                 nullptr,
                 "Thread %d: (%s) finnished successfully",
                 i + 1,
-                name);
-
-            palFree(nullptr, name);
-            name = nullptr;
+                buffer);
         }
     }
 

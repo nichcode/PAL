@@ -47,14 +47,14 @@ bool condvarTest()
     }
 
     // create mutex
-    result = palCreateMutex(&g_Mutex);
+    result = palCreateMutex(nullptr, &g_Mutex);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to create mutex: %s", palFormatResult(result));
         return false;
     }
 
     // create condition
-    result = palCreateCondVar(&g_Condition);
+    result = palCreateCondVar(nullptr, &g_Condition);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(
             nullptr,
@@ -67,6 +67,7 @@ bool condvarTest()
     PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker; // will be the same for all threads
     createInfo.stackSize = 0;  // same for all threads
+    createInfo.allocator = nullptr;// default
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         ThreadData* threadData = &data[i];
         threadData->id = i + 1;

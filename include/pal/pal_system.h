@@ -21,12 +21,10 @@ freely, subject to the following restrictions:
  */
 
 /**
- * @file pal_system.h
+ * @defgroup pal_system System
+ * System PAL functionality such as CPU info and Platform info.
  *
- * Header file for system functions, macros, enum and structs
- *
- * @defgroup system
- *
+ * @{
  */
 
 #ifndef _PAL_SYSTEM_H
@@ -40,31 +38,22 @@ freely, subject to the following restrictions:
 
 /**
  * @enum PalCpuArch
- * @brief CPU achitecture This is not a bitmask.
+ * @brief CPU achitecture. This is not a bitmask.
  *
  * This is a build time achitecture. Example: Generating your project with x64
  * will reflect PAL_CPU_ARCH_X86_64.
  *
- * @note All CPU achitectures follow the format `PAL_CPU_ARCH_**` for
+ * All CPU achitectures follow the format `PAL_CPU_ARCH_**` for
  * consistency and API use.
  *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 typedef enum {
-    /** Unknown Architecture.*/
     PAL_CPU_ARCH_UNKNOWN,
-
-    /** 32 bit Architecture.*/
     PAL_CPU_ARCH_X86,
-
-    /** 64 bit Architecture.*/
     PAL_CPU_ARCH_X86_64,
-
-    /** Arm Architecture.*/
     PAL_CPU_ARCH_ARM,
-
-    /** Arm64 Architecture.*/
     PAL_CPU_ARCH_ARM64
 } PalCpuArch;
 
@@ -72,50 +61,24 @@ typedef enum {
  * @enum PalCpuFeatures
  * @brief CPU features (instruction sets).
  *
- * @note All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
+ * All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
  * consistency and API use.
  *
- * @sa PalCPUInfo
- * @sa palGetCPUInfo()
- *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 typedef enum {
-    /** SSE (SIMD operations) instruction set.*/
     PAL_CPU_FEATURE_SSE = PAL_BIT(0),
-
-    /** SSE2 (SIMD operations) instruction set.*/
     PAL_CPU_FEATURE_SSE2 = PAL_BIT(1),
-
-    /** SSE3 (SIMD operations) instruction set.*/
     PAL_CPU_FEATURE_SSE3 = PAL_BIT(2),
-
-    /** SSSE3 (SIMD operations) instruction set.*/
     PAL_CPU_FEATURE_SSSE3 = PAL_BIT(3),
-
-    /** SSE4.1 (SIMD operations) instruction set.*/
-    PAL_CPU_FEATURE_SSE41 = PAL_BIT(4),
-
-    /** SSE4.2 (SIMD operations) instruction set.*/
-    PAL_CPU_FEATURE_SSE42 = PAL_BIT(5),
-
-    /** AVX (SIMD operations) instruction set.*/
+    PAL_CPU_FEATURE_SSE41 = PAL_BIT(4), /** < SSE4.1.*/
+    PAL_CPU_FEATURE_SSE42 = PAL_BIT(5), /** < SSE4.1.*/
     PAL_CPU_FEATURE_AVX = PAL_BIT(6),
-
-    /** AVX2 (SIMD operations) instruction set.*/
     PAL_CPU_FEATURE_AVX2 = PAL_BIT(7),
-
-    /** AVX512F (SIMD operations) instruction set.*/
     PAL_CPU_FEATURE_AVX512F = PAL_BIT(8),
-
-    /** FMA3 instruction set.*/
     PAL_CPU_FEATURE_FMA3 = PAL_BIT(9),
-
-    /** BMI1 instruction set.*/
     PAL_CPU_FEATURE_BMI1 = PAL_BIT(10),
-
-    /** BMI2 instruction set.*/
     PAL_CPU_FEATURE_BMI2 = PAL_BIT(11)
 } PalCpuFeatures;
 
@@ -124,28 +87,19 @@ typedef enum {
  * @brief Platform types. This is not a bitmask.
  *
  * This is the family name (eg. This does not show if its Windows 7 or Windows 8
- * etc)
+ * etc).
  *
- * @note All platform types follow the format `PAL_PLATFORM_**` for
+ * All platform types follow the format `PAL_PLATFORM_**` for
  * consistency and API use.
  *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 typedef enum {
-    /** Windows Platform (OS).*/
     PAL_PLATFORM_WINDOWS,
-
-    /** Linux Platform (OS).*/
     PAL_PLATFORM_LINUX,
-
-    /** MacOS Platform (OS).*/
     PAL_PLATFORM_MACOS,
-
-    /** Android Platform (OS).*/
     PAL_PLATFORM_ANDROID,
-
-    /** IOS Platform (OS).*/
     PAL_PLATFORM_IOS
 } PalPlatformType;
 
@@ -154,22 +108,17 @@ typedef enum {
  * @brief Platform API types. This is not a bitmask.
  *
  * This is the API the playform uses. Most platforms support only one (eg.
- * Windows)
+ * Windows).
  *
- * @note All platform API types follow the format `PAL_PLATFORM_API_**` for
+ * All platform API types follow the format `PAL_PLATFORM_API_**` for
  * consistency and API use.
  *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 typedef enum {
-    /** Win32 API.*/
     PAL_PLATFORM_API_WIN32,
-
-    /** Wayland API.*/
     PAL_PLATFORM_API_WAYLAND,
-
-    /** X11 API.*/
     PAL_PLATFORM_API_X11
 } PalPlatformApiType;
 
@@ -177,68 +126,35 @@ typedef enum {
  * @struct PalPlatformInfo
  * @brief Information about a platform (OS).
  *
- * @sa palGetPlatformInfo()
- *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 typedef struct {
-    /** Platform family type. See PalPlatformType.*/
     PalPlatformType type;
-
-    /** Platform API type. See PalPlatformApiType.*/
     PalPlatformApiType apiType;
-
-    /** Total Disk space (memory) in GB.*/
-    Uint32 totalMemory;
-
-    /** Total CPU RAM (memory) in MB.*/
-    Uint32 totalRAM;
-
-    /** < Use this to check a specific platform aside the family.*/
+    Uint32 totalMemory; /** < Total Disk space (memory) in GB.*/
+    Uint32 totalRAM;    /** < Total CPU RAM (memory) in MB.*/
     PalVersion version;
-
-    /** < This is the platform name with the version combined as a UTF-8
-     * encoding string. (eg. Windows 11.22000)*/
-    char name[PAL_PLATFORM_NAME_SIZE];
+    char name[PAL_PLATFORM_NAME_SIZE]; /** < (eg. Windows 11.22000).*/
 } PalPlatformInfo;
 
 /**
  * @struct PalCPUInfo
  * @brief Information about a CPU.
  *
- * @sa palGetCPUInfo()
- *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 typedef struct {
-    /** Number of CPU cores.*/
     Uint32 numCores;
-
-    /** L1 cache in KB.*/
-    Uint32 cacheL1;
-
-    /** L2 cache in KB.*/
-    Uint32 cacheL2;
-
-    /** L3 cache in KB.*/
-    Uint32 cacheL3;
-
-    /** Number of threads that can run simultaneously (CPUs).*/
-    Uint32 numLogicalProcessors;
-
-    /** Based on how the project will be or built. See PalCpuArch.*/
+    Uint32 cacheL1;              /** < L1 cache in KB.*/
+    Uint32 cacheL2;              /** < L2 cache in KB.*/
+    Uint32 cacheL3;              /** < L3 cache in KB.*/
+    Uint32 numLogicalProcessors; /** < Number of CPUs.*/
     PalCpuArch architecture;
-
-    /** Supported CPU instruction sets.*/
     PalCpuFeatures features;
-
-    /** CPU vendor name. (eg. GenuineIntel).*/
-    char vendor[PAL_CPU_VENDOR_NAME_SIZE];
-
-    /** CPU modal name.*/
-    char model[PAL_CPU_MODEL_NAME_SIZE];
+    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /** < CPU vendor name.*/
+    char model[PAL_CPU_MODEL_NAME_SIZE];   /** < CPU modal name.*/
 } PalCPUInfo;
 
 /**
@@ -246,15 +162,13 @@ typedef struct {
  *
  * @param[out] info Pointer to a PalPlatformInfo to receive the platform info.
  *
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
+ * @return PAL_RESULT_SUCCESS on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * @note This function is not thread-safe.
+ * Thread safety: This function is thread-safe if `info` is thread local.
  *
- * @sa PalPlatformInfo
- *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 
@@ -265,19 +179,19 @@ PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
  * use default.
  * @param[out] info Pointer to a PalCPUInfo to receive the CPU info.
  *
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result code on
+ * @return PAL_RESULT_SUCCESS on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * @note This function is not thread-safe.
+ * Thread safety: This function is thread-safe if the proivded allocator is thread safe
+ * and `info` is thread local. The default allocator is thread safe.
  *
- * @sa PalAllocator
- * @sa PalCPUInfo
- *
- * @since Added in version 1.0.0.
- * @ingroup system
+ * @since 1.0.
+ * @ingroup pal_system
  */
 PAL_API PalResult PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info);
+
+/** @} */ // end of pal_system group
 
 #endif // _PAL_SYSTEM_H

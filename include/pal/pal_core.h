@@ -363,7 +363,7 @@ PAL_API void PAL_CALL palFree(
  * @param fmt printf-style format string.
  * @param ... Arguments for the format string.
  *
- * @note Thread safety: This function is thread safe, but log output and
+ * Thread safety: This function is thread safe, but log output and
  * callbacks may be invoked concurrently. The user must ensure the callback
  * implementation is thread safe.
  *

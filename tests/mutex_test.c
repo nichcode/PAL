@@ -44,7 +44,7 @@ bool mutexTest()
     }
 
     // create mutex
-    result = palCreateMutex(&mutex);
+    result = palCreateMutex(nullptr, &mutex);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to create mutex: %s", palFormatResult(result));
         return false;
@@ -54,9 +54,10 @@ bool mutexTest()
     data->mutex = mutex;
 
     // create threads
-    PalThreadCreateInfo createInfo = {};
+    PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker; // will be the same for all threads
     createInfo.stackSize = 0;  // same for all threads
+    createInfo.allocator = nullptr;// default
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)data;
 

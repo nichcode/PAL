@@ -6,16 +6,16 @@ PAL_BUILD_STATIC = false
 PAL_BUILD_TESTS = true
 
 -- build PAL benchmark as a single application
-PAL_BUILD_BENCH = false
+PAL_BUILD_BENCH = true
 
 -- build system module
-PAL_BUILD_SYSTEM = false
+PAL_BUILD_SYSTEM = true
 
 -- build thread module
-PAL_BUILD_THREAD = false
+PAL_BUILD_THREAD = true
 
 -- build video module
-PAL_BUILD_VIDEO = false
+PAL_BUILD_VIDEO = true
 
 -- build opengl module
-PAL_BUILD_OPENGL = false
+PAL_BUILD_OPENGL = true

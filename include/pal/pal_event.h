@@ -154,7 +154,7 @@ struct PalEvent {
     PalEventType type;
     Int64 data;   /** < First data payload.*/
     Int64 data2;  /** < Second data payload.*/
-    Int64 userId; /** You can have user events upto Int64 max.*/
+    Int64 userId; /** < You can have user events upto Int64 max.*/
 };
 
 /**
@@ -192,73 +192,69 @@ typedef struct {
  * @brief Create an event driver.
  *
  * The allocator field in the provided PalEventDriverCreateInfo struct will not
- * be copied, so the pointer must remain valid until the event driver is
+ * be copied, therefore pointer must remain valid until the event driver is
  * destroyed. Destroy the event driver with palDestroyEventDriver() when no
  * longer needed.
  *
  * @param[in] info Pointer to a PalEventDriverCreateInfo struct that specifies
- * paramters.
+ * paramters. Must not be nullptr.
  * @param[out] outEventDriver Pointer to a PalEventDriver to recieve the created
- * event driver.
+ * event driver. Must not be nullptr.
  *
  * @return PAL_RESULT_SUCCESS on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * @note This function may be called from any thread, but not concurrently.
- * Users must ensure synchronization.
- *
- * @sa PalEventDriverCreateInfo
- * @sa palDestroyEventDriver()
+ * Thread safety: This function is thread safe if the provided allocator is
+ * thread safe and `outEventDriver` is thread local. The default allocator is
+ * thread safe.
  *
  * @since 1.0
  * @ingroup pal_event
+ * @sa palDestroyEventDriver
  */
 PAL_API PalResult PAL_CALL palCreateEventDriver(
     const PalEventDriverCreateInfo* info,
     PalEventDriver** outEventDriver);
 
 /**
- * @brief Destroy the event driver.
+ * @brief Destroy the provided event driver.
  *
  * This function can be called multiple times without any undefined behavior.
  * If the event driver is invalid or nullptr, this function returns silently.
  *
  * @param[in] eventDriver Pointer to the event driver to destroy.
  *
- * @note This function may be called from any thread, but not concurrently.
- * Users must ensure synchronization.
- *
- * @sa palCreateEventDriver()
+ * Thread safety: This function is thread safe if the allocator used to create
+ * the event driver is thread safe and `eventDriver` is thread local.
  *
  * @since 1.0
  * @ingroup pal_event
+ * @sa palCreateEventDriver
  */
 PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
 
 /**
- * @brief Set the dispatch mode for an event type for the provided event driver.
+ * @brief Set the dispatch mode for an event type with the provided event
+ * driver.
  *
  * If the event driver is not valid, the function fails and the dispatch mode
  * will not be set.
  *
- * If the dispatch mode is PAL_DISPATCH_POLL, the event will be dispatched to
- * the event queue. If the dispatch mode is PAL_DISPATCH_CALLBACK and the
- * event driver has a valid callback, the event will be dispatched to the event
- * callback. If not the event will be discared.
+ * If the dispatch mode is PAL_DISPATCH_POLL, the event will be dispatched into
+ * the event drivers event queue. If the dispatch mode is PAL_DISPATCH_CALLBACK
+ * and the event driver has a valid callback, the event will be dispatched to
+ * the event drivers callback otherwise the event will be discarded.
  *
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] type Event type to set dispatch mode for.
- * @param[in] mode Dispatch mode to use. See PalDispatchMode.
+ * @param[in] mode Dispatch mode to use.
  *
- * @note This function may be called from any thread, but not concurrently.
- * Users must ensure synchronization.
- *
- * @sa palCreateEventDriver()
- * @sa PalDispatchMode
- * @sa PalEventType
+ * Thread safety: This function is thread if multiple threads are not
+ * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
  * @ingroup pal_event
+ * @sa palGetEventDispatchMode
  */
 PAL_API void PAL_CALL palSetEventDispatchMode(
     PalEventDriver* eventDriver,
@@ -266,7 +262,8 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
     PalDispatchMode mode);
 
 /**
- * @brief Get the dispatch mode for an event type for the provided event driver.
+ * @brief Get the dispatch mode for an event type with the provided event
+ * driver.
  *
  * If the event driver is not valid, the function fails and returns
  * PAL_DISPATCH_NONE.
@@ -276,21 +273,19 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @return The dispatch mode on success or PAL_DISPATCH_NONE on failure.
  *
- * @note This function is thread-safe and may be called from any thread.
- *
- * @sa palCreateEventDriver()
- * @sa PalDispatchMode
- * @sa PalEventType
+ * Thread safety: This function is thread if multiple threads are not
+ * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
  * @ingroup pal_event
+ * @sa palSetEventDispatchMode
  */
 PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
     PalEventDriver* eventDriver,
     PalEventType type);
 
 /**
- * @brief Push an event onto the queue of the provided event driver.
+ * @brief Push an event into the queue or callback of the provided event driver.
  *
  * If the event driver is not valid, the function fails and the event will not
  * be pushed.
@@ -298,22 +293,19 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * pushed to the event queue.
  *
  * If dispatch mode is PAL_DISPATCH_CALLBACK and the event driver has a valid
- * event callback, the callback will be called. If not the event will be
- * discared.
+ * event callback, the callback will be called otherwise the event will be
+ * discarded.
  *
  * @param[in] eventDriver Pointer to the event driver.
- * @param[in] event Pointer to thes event. This must be valid and should be
- * initialized explicitly.
+ * @param[in] event Pointer to the event to push.
  *
- * @note This function may be called from any thread, but not concurrently.
- * Users must ensure synchronization.
- *
- * @sa palCreateEventDriver()
- * @sa PalDispatchMode
- * @sa PalEvent
+ * Thread safety: This function is thread if the provided event queue is thread
+ * safe or every thread has its own `eventDriver`. The default event queue is
+ * not thread safe.
  *
  * @since 1.0
  * @ingroup pal_event
+ * @sa palPollEvent
  */
 PAL_API void PAL_CALL palPushEvent(
     PalEventDriver* eventDriver,
@@ -332,15 +324,14 @@ PAL_API void PAL_CALL palPushEvent(
  * @param[in] eventDriver Pointer to the event driver.
  * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be
  * valid.
- *
- * @note This function may be called from any thread, but not concurrently.
- * Users must ensure synchronization.
- *
- * @sa palCreateEventDriver()
- * @sa PalEvent
+ * 
+ * Thread safety: This function is thread if the provided event queue is thread
+ * safe or every thread has its own `eventDriver`. The default event queue is
+ * not thread safe.
  *
  * @since 1.0
  * @ingroup pal_event
+ * @sa palPushEvent
  */
 PAL_API bool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
