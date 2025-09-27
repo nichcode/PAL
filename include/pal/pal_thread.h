@@ -38,7 +38,7 @@ freely, subject to the following restrictions:
  * @typedef PalTLSId
  * @brief Opaque handle to a Thread Local Storage.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 typedef Uint32 PalTLSId;
@@ -47,7 +47,7 @@ typedef Uint32 PalTLSId;
  * @struct PalThread
  * @brief Opaque handle to a thread.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 typedef struct PalThread PalThread;
@@ -56,7 +56,7 @@ typedef struct PalThread PalThread;
  * @struct PalMutex
  * @brief Opaque handle to a mutex.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 typedef struct PalMutex PalMutex;
@@ -65,7 +65,7 @@ typedef struct PalMutex PalMutex;
  * @struct PalCondVar
  * @brief Opaque handle to a condition variable.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 typedef struct PalCondVar PalCondVar;
@@ -78,7 +78,7 @@ typedef struct PalCondVar PalCondVar;
  *
  * @return The return value of the thread as a pointer.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 typedef void* (*PalThreadFn)(void* arg);
@@ -91,11 +91,21 @@ typedef void* (*PalThreadFn)(void* arg);
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 typedef void (*PaTlsDestructorFn)(void* userData);
 
+/**
+ * @enum PalThreadFeatures
+ * @brief Thread system features.
+ *
+ * All thread features follow the format `PAL_THREAD_FEATURE_**` for
+ * consistency and API use.
+ *
+ * @since 1.0
+ * @ingroup pal_thread
+ */
 typedef enum {
     PAL_THREAD_FEATURE_STACK_SIZE = PAL_BIT(0),
     PAL_THREAD_FEATURE_PRIORITY = PAL_BIT(1),
@@ -103,24 +113,43 @@ typedef enum {
     PAL_THREAD_FEATURE_NAME = PAL_BIT(3)
 } PalThreadFeatures;
 
+/**
+ * @enum PalThreadPriority
+ * @brief Thread priority types. This is not a bitmask enum.
+ *
+ * All thread priority types follow the format `PAL_THREAD_PRIORITY_**` for
+ * consistency and API use.
+ *
+ * @since 1.0
+ * @ingroup pal_thread
+ */
 typedef enum {
     PAL_THREAD_PRIORITY_LOW,
     PAL_THREAD_PRIORITY_NORMAL,
     PAL_THREAD_PRIORITY_HIGH
 } PalThreadPriority;
 
+/**
+ * @struct PalThreadCreateInfo
+ * @brief Creation parameters for a thread.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.0
+ * @ingroup pal_thread
+ */
 typedef struct {
-    Uint64 stackSize;              /** < Set to 0 to use default*/
-    const PalAllocator* allocator; /** < Set to nullptr to use default.*/
-    PalThreadFn entry;             /** < Thread entry function*/
-    void* arg; /** < Optional user-provided data. Can be nullptr.*/
+    Uint64 stackSize;              /**< Set to 0 to use default*/
+    const PalAllocator* allocator; /**< Set to nullptr to use default.*/
+    PalThreadFn entry;             /**< Thread entry function*/
+    void* arg; /**< Optional user-provided data. Can be nullptr.*/
 } PalThreadCreateInfo;
 
 /**
  * @brief Create a new thread.
  *
  * The allocator field in the provided PalThreadCreateInfo struct will not
- * be copied, therefore pointer must remain valid until the thread is
+ * be copied, therefore the pointer must remain valid until the win is
  * detached. Detach the thread with palDetachThread() when no
  * longer needed.
  *
@@ -132,7 +161,7 @@ typedef struct {
  * @param[out] outThread Pointer to a PalThread to recieve the created
  * thread.  Must not be nullptr.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
@@ -153,12 +182,12 @@ PAL_API PalResult PAL_CALL palCreateThread(
  * @param[in] thread Pointer to the thread.
  * @param[out] retval Optionally pointer to get the threads exit value.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if `retval` is thread local.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API PalResult PAL_CALL palJoinThread(
@@ -176,7 +205,7 @@ PAL_API PalResult PAL_CALL palJoinThread(
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API void PAL_CALL palDetachThread(PalThread* thread);
@@ -188,7 +217,7 @@ PAL_API void PAL_CALL palDetachThread(PalThread* thread);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API void PAL_CALL palSleep(Uint64 milliseconds);
@@ -199,7 +228,7 @@ PAL_API void PAL_CALL palSleep(Uint64 milliseconds);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API void PAL_CALL palYield();
@@ -211,7 +240,7 @@ PAL_API void PAL_CALL palYield();
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API PalThread* PAL_CALL palGetCurrentThread();
@@ -225,7 +254,7 @@ PAL_API PalThread* PAL_CALL palGetCurrentThread();
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
@@ -233,8 +262,7 @@ PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
 /**
  * @brief Get the priority of the provided thread.
  *
- * PAL_THREAD_FEATURE_PRIORITY must be supported otherwise, this function will
- * fail and return 0.
+ * `PAL_THREAD_FEATURE_PRIORITY` must be supported.
  *
  * @param[in] thread The thread to query priority for.
  *
@@ -242,7 +270,7 @@ PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
@@ -250,9 +278,8 @@ PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
 /**
  * @brief Get the affinity of the provided thread.
  *
- * PAL_THREAD_FEATURE_AFFINITY must be supported otherwise, this function will
- * fail and return 0. Thread affinity is the number of CPU cores the thread is
- * allowed to be executed on.
+ * `PAL_THREAD_FEATURE_AFFINITY` must be supported. Thread affinity is the
+ * number of CPU cores the thread is allowed to be executed on.
  *
  * @param[in] thread The thread to query affinity for.
  *
@@ -260,7 +287,7 @@ PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread);
@@ -268,7 +295,7 @@ PAL_API Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread);
 /**
  * @brief Get the name of the provided thread.
  *
- * PAL_THREAD_FEATURE_NAME must be supported otherwise, this function will
+ * `PAL_THREAD_FEATURE_NAME` must be supported.
  * fails. Set the buffer to nullptr to get the size of the thread name in bytes.
  *
  * If the size of the provided buffer is less than the actual size of thread
@@ -276,9 +303,9 @@ PAL_API Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread);
  *
  *
  * @param[in] thread The thread to query its name.
- * @param[in] size Size of the provided buffer in bytes.
+ * @param[in] bufferSize Size of the provided buffer in bytes.
  * @param[out] outSize The actual size of the thread name in bytes.
- * @param[out] outName Pointer to a user provided buffer to recieve the name.
+ * @param[out] outBuffer Pointer to a user provided buffer to recieve the name.
  * Can be nullptr.
  *
  * Thread safety: This function is thread safe.
@@ -289,10 +316,11 @@ PAL_API Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @note On MacOS: Thread names are limited to 64 characters including the null
  * terminator.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
+ * @sa palSetThreadName
  */
-PAL_API void PAL_CALL palGetThreadName(
+PAL_API PalResult PAL_CALL palGetThreadName(
     PalThread* thread,
     Uint64 bufferSize,
     Uint64* outSize,
@@ -301,18 +329,19 @@ PAL_API void PAL_CALL palGetThreadName(
 /**
  * @brief Set the priority of the provided thread.
  *
- * PAL_THREAD_FEATURE_PRIORITY must be supported otherwise, this function will
- * fail and return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED.
+ * `PAL_THREAD_FEATURE_PRIORITY` must be supported.
  *
  * @param[in] thread The thread to set priority for.
  * @param[in] priority The new thread priority.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
+ *
+ * @return
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API PalResult PAL_CALL palSetThreadPriority(
@@ -322,9 +351,9 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
 /**
  * @brief Set the affinity of the provided thread.
  *
- * PAL_THREAD_FEATURE_AFFINITY must be supported otherwise, this function will
- * fail and return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED. Thread
- * affinity is the number of CPU cores the thread is allowed to be executed on.
+ * `PAL_THREAD_FEATURE_AFFINITY` must be supported.
+ * Thread affinity is the number of CPU cores the thread is allowed to be
+ * executed on.
  *
  * To be safe, get the number of CPU cores and use that to build the CPU mask.
  * Example: we set a thread to the first and second CPU core.
@@ -336,12 +365,12 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
  * @param[in] thread The thread to set affinity for.
  * @param[in] mask The CPU core mask.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  */
 PAL_API PalResult PAL_CALL palSetThreadAffinity(
@@ -351,14 +380,13 @@ PAL_API PalResult PAL_CALL palSetThreadAffinity(
 /**
  * @brief Set the name of the provided thread.
  *
- * PAL_THREAD_FEATURE_NAME must be supported otherwise, this function will
- * fail and return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED.
+ * `PAL_THREAD_FEATURE_NAME` must be supported.
  * The thread name will be visible in debuggers and the Task Manager (Windows).
  *
  * @param[in] thread The thread
  * @param[in] name UTF-8 null terminated string.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe.
@@ -369,8 +397,9 @@ PAL_API PalResult PAL_CALL palSetThreadAffinity(
  * @note On MacOS: Thread names are limited to 64 characters including the null
  * terminator.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
+ * @sa palGetThreadName
  */
 PAL_API PalResult PAL_CALL palSetThreadName(
     PalThread* thread,
@@ -390,7 +419,7 @@ PAL_API PalResult PAL_CALL palSetThreadName(
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palDestroyTLS
  */
@@ -403,7 +432,7 @@ PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palCreateTL
  */
@@ -418,7 +447,7 @@ PAL_API void PAL_CALL palDestroyTLS(PalTLSId id);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palSetTLS
  */
@@ -432,7 +461,7 @@ PAL_API void* PAL_CALL palGetTLS(PalTLSId id);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palGetTLS
  */
@@ -448,13 +477,13 @@ PAL_API void PAL_CALL palSetTLS(
  * @param[out] outMutex Pointer to a PalMutex to recieve the created mutex.
  * Must not be nullptr.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
  * thread safe and `outMutex` is thread local.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palDestroyMutex
  */
@@ -473,7 +502,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
  * Thread safety: This function is thread safe if the allocator used to create
  * the mutex is thread safe and `mutex` is thread local.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palCreateMutex
  */
@@ -486,7 +515,7 @@ PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palUnlockMutex
  */
@@ -501,7 +530,7 @@ PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palLockMutex
  */
@@ -515,13 +544,13 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
  * @param[out] outCondVar Pointer to a PalCondVar to recieve the created
  * condition variable.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
  * thread safe and `outCondVar` is thread local.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palDestroyCondVar
  */
@@ -533,7 +562,7 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
  * @brief Destroy a condition variable.
  *
  * If the condition variable is invalid, this function returns silently.
- * Threads must not wait on the condition variable otherwise undefined
+ * Threads must not wait on the condition variable or undefined
  * behaviour.
  *
  * @param[in] condVar Pointer to the condition to destroy
@@ -541,7 +570,7 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
  * Thread safety: This function is thread safe if the allocator used to create
  * the condition varibale is thread safe and `condVar` is thread local.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palCreateCondVar
  */
@@ -564,7 +593,7 @@ PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palWaitCondVarTimeout
  */
@@ -577,7 +606,7 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
  *
  * The mutex must be locked before this call. Spurious wakeups may occur, its
  * best to use a loop. If the condition variable is not signaled but the time to
- * wait is up PAL_RESULT_TIMEOUT is returned.
+ * wait is up `PAL_RESULT_TIMEOUT` is returned.
  *
  * @param[in] condVar Pointer to the condition variable.
  * @param[in] mutex Pointer to the mutex.
@@ -585,7 +614,7 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palWaitCondVar
  */
@@ -601,7 +630,7 @@ PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
  *
  * Thread safety: This function is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_thread
  * @sa palBroadcastCondVar
  */

@@ -13,10 +13,8 @@ bool openglTest()
     // initialize the opengl system. This loads the icd.
     PalResult result = palInitGL(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to initialize opengl %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize opengl: %s", error);
         return false;
     }
 
@@ -30,46 +28,46 @@ bool openglTest()
     palLog(nullptr, "Graphics Card: %s", info->graphicsCard);
 
     palLog(nullptr, "");
-    palLog(nullptr, "Supported GL Extensions:");
+    palLog(nullptr, "Supported Opengl Extensions:");
 
     if (info->extensions & PAL_GL_EXTENSION_CREATE_CONTEXT) {
-        palLog(nullptr, " GL modern context creation extension supported");
+        palLog(nullptr, " GL modern context creation");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
-        palLog(nullptr, " GL context profile extension supported");
+        palLog(nullptr, " GL context profile");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2) {
-        palLog(nullptr, " GL context profile(es2) extension supported");
+        palLog(nullptr, " GL context profile(es2)");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_ROBUSTNESS) {
-        palLog(nullptr, " GL robustness extension supported");
+        palLog(nullptr, " GL robustness");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_NO_ERROR) {
-        palLog(nullptr, " GL no error extension supported");
+        palLog(nullptr, " GL no error");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_PIXEL_FORMAT) {
-        palLog(nullptr, " GL pixel format selection extension supported");
+        palLog(nullptr, " GL pixel format selection");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_MULTISAMPLE) {
-        palLog(nullptr, " GL multisample extension supported");
+        palLog(nullptr, " GL multisample");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_SWAP_CONTROL) {
-        palLog(nullptr, " GL swap control extension supported");
+        palLog(nullptr, " GL swap control");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_FLUSH_CONTROL) {
-        palLog(nullptr, " GL flush control extension supported");
+        palLog(nullptr, " GL flush control");
     }
 
     if (info->extensions & PAL_GL_EXTENSION_COLORSPACE_SRGB) {
-        palLog(nullptr, " GL colorspace extension supported");
+        palLog(nullptr, " GL colorspace");
     }
 
     // shutdown the opengl system

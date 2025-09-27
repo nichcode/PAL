@@ -49,17 +49,16 @@ bool condvarTest()
     // create mutex
     result = palCreateMutex(nullptr, &g_Mutex);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create mutex: %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create mutex: %s", error);
         return false;
     }
 
     // create condition
     result = palCreateCondVar(nullptr, &g_Condition);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create cond var: %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create cond var: %s", error);
         return false;
     }
 
@@ -76,10 +75,8 @@ bool condvarTest()
 
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(
-                nullptr,
-                "Failed to create thread: %s",
-                palFormatResult(result));
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create thread: %s", error);
             return false;
         }
     }

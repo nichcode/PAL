@@ -46,7 +46,8 @@ bool mutexTest()
     // create mutex
     result = palCreateMutex(nullptr, &mutex);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create mutex: %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create mutex: %s", error);
         return false;
     }
 
@@ -64,10 +65,8 @@ bool mutexTest()
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(
-                nullptr,
-                "Failed to create thread: %s",
-                palFormatResult(result));
+            const char* error = palFormatResult(result);
+            palLog(nullptr,"Failed to create thread: %s", error);
             return false;
         }
     }

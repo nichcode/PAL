@@ -26,10 +26,8 @@ bool openglContextTest()
     // initialize the opengl system
     PalResult result = palInitGL(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to initialize opengl %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize opengl: %s", error);
         return false;
     }
 
@@ -53,10 +51,8 @@ bool openglContextTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create event driver %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create event driver %s", error);
         return false;
     }
 
@@ -65,10 +61,8 @@ bool openglContextTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to initialize video %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 
@@ -82,7 +76,8 @@ bool openglContextTest()
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create window %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window %s", error);
         return false;
     }
 
@@ -107,10 +102,8 @@ bool openglContextTest()
     // use the gl window to query supported FBconfigs
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to query GL FBConfigs %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to query GL FBConfigs %s", error);
         return false;
     }
 
@@ -122,7 +115,6 @@ bool openglContextTest()
 
     PalGLFBConfig* fbConfigs = nullptr;
     fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
-
     if (!fbConfigs) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
@@ -130,10 +122,8 @@ bool openglContextTest()
 
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to query GL FBConfigs %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to query GL FBConfigs %s", error);
         palFree(nullptr, fbConfigs);
         return false;
     }
@@ -203,10 +193,8 @@ bool openglContextTest()
     // create the opengl context with the context create info
     result = palCreateGLContext(&contextCreateInfo, &context);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create opengl context: %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create opengl context: %s", error);
         palFree(nullptr, fbConfigs);
         return false;
     }
@@ -214,10 +202,8 @@ bool openglContextTest()
     // make the context current and optionally set vsync if supported
     result = palMakeContextCurrent(&glWindow, context);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to make opengl context current: %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to make opengl context current: %s", error);
         palFree(nullptr, fbConfigs);
         return false;
     }
@@ -230,7 +216,6 @@ bool openglContextTest()
     // load function procs
     PFNGLCLEARCOLORPROC glClearColor = nullptr;
     PFNGLCLEARPROC glClear = nullptr;
-
     glClearColor = (PFNGLCLEARCOLORPROC)palGLGetProcAddress("glClearColor");
     glClear = (PFNGLCLEARPROC)palGLGetProcAddress("glClear");
 
@@ -258,10 +243,8 @@ bool openglContextTest()
         // swap buffers
         result = palSwapBuffers(&glWindow, context);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(
-                nullptr,
-                "Failed to swap buffers: %s",
-                palFormatResult(result));
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to swap buffers: %s", error);
             palFree(nullptr, fbConfigs);
             return false;
         }

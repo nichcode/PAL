@@ -68,7 +68,7 @@ typedef void(PAL_CALL* PalEventCallback)(
 
 /**
  * @typedef PalPushFn
- * @brief Function pointer type used for pushing events.
+ * @brief Function pointer type used for pushing events into event queues.
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
  * @param[in] event The event to push.
@@ -90,7 +90,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * true.
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
- * @param[out] event Pointer to recieve the event.
+ * @param[out] event Pointer to a PalEvent to recieve the event.
  *
  * @since 1.0
  * @ingroup pal_event
@@ -111,23 +111,23 @@ typedef bool(PAL_CALL* PalPollFn)(
  * @ingroup pal_event
  */
 typedef enum {
-    PAL_EVENT_WINDOW_CLOSE, /** < Window close button.*/
+    PAL_EVENT_WINDOW_CLOSE, /**< Window close button.*/
     PAL_EVENT_WINDOW_SIZE,
     PAL_EVENT_WINDOW_MOVE,
-    PAL_EVENT_WINDOW_STATE,       /** < (minimized, maximized, restored).*/
-    PAL_EVENT_WINDOW_FOCUS,       /** < True for focus gained.*/
-    PAL_EVENT_WINDOW_VISIBILITY,  /** < True for visible.*/
-    PAL_EVENT_WINDOW_MODAL_BEGIN, /** < WM_ENTERSIZEMOVE (Windows Only).*/
-    PAL_EVENT_WINDOW_MODAL_END,   /** < WM_EXITSIZEMOVE. (Windows Only).*/
+    PAL_EVENT_WINDOW_STATE,       /**< (minimized, maximized, restored).*/
+    PAL_EVENT_WINDOW_FOCUS,       /**< True for focus gained.*/
+    PAL_EVENT_WINDOW_VISIBILITY,  /**< True for visible.*/
+    PAL_EVENT_WINDOW_MODAL_BEGIN, /**< WM_ENTERSIZEMOVE (Windows Only).*/
+    PAL_EVENT_WINDOW_MODAL_END,   /**< WM_EXITSIZEMOVE. (Windows Only).*/
     PAL_EVENT_MONITOR_DPI_CHANGED,
-    PAL_EVENT_MONITOR_LIST_CHANGED, /** < Monitor list changed.*/
+    PAL_EVENT_MONITOR_LIST_CHANGED, /**< Monitor list changed.*/
     PAL_EVENT_KEYDOWN,
     PAL_EVENT_KEYREPEAT,
     PAL_EVENT_KEYUP,
     PAL_EVENT_MOUSE_BUTTONDOWN,
     PAL_EVENT_MOUSE_BUTTONUP,
     PAL_EVENT_MOUSE_MOVE,
-    PAL_EVENT_MOUSE_DELTA, /** < Mouse movement delta.*/
+    PAL_EVENT_MOUSE_DELTA, /**< Mouse movement delta.*/
     PAL_EVENT_MOUSE_WHEEL,
     PAL_EVENT_USER,
     PAL_EVENT_MAX
@@ -144,17 +144,17 @@ typedef enum {
  * @ingroup pal_event
  */
 typedef enum {
-    PAL_DISPATCH_NONE,     /** < No dispatch.*/
-    PAL_DISPATCH_CALLBACK, /** < Dispatch to event callback.*/
-    PAL_DISPATCH_POLL,     /** < Dispatch to the event queue.*/
+    PAL_DISPATCH_NONE,     /**< No dispatch.*/
+    PAL_DISPATCH_CALLBACK, /**< Dispatch to event callback.*/
+    PAL_DISPATCH_POLL,     /**< Dispatch to the event queue.*/
     PAL_DISPATCH_MAX
 } PalDispatchMode;
 
 struct PalEvent {
     PalEventType type;
-    Int64 data;   /** < First data payload.*/
-    Int64 data2;  /** < Second data payload.*/
-    Int64 userId; /** < You can have user events upto Int64 max.*/
+    Int64 data;   /**< First data payload.*/
+    Int64 data2;  /**< Second data payload.*/
+    Int64 userId; /**< You can have user events upto Int64 max.*/
 };
 
 /**
@@ -169,7 +169,7 @@ struct PalEvent {
 typedef struct {
     PalPushFn push;
     PalPollFn poll;
-    void* userData; /** < Optional user-provided data. Can be nullptr.*/
+    void* userData; /**< Optional user-provided data. Can be nullptr.*/
 } PalEventQueue;
 
 /**
@@ -182,17 +182,17 @@ typedef struct {
  * @ingroup pal_event
  */
 typedef struct {
-    const PalAllocator* allocator; /** < Set to nullptr to use default.*/
-    PalEventQueue* queue;          /** < Set to nullptr to use default.*/
-    PalEventCallback callback;     /** < Can be nullptr.*/
-    void* userData; /** < Optional user-provided data. Can be nullptr.*/
+    const PalAllocator* allocator; /**< Set to nullptr to use default.*/
+    PalEventQueue* queue;          /**< Set to nullptr to use default.*/
+    PalEventCallback callback;     /**< Can be nullptr.*/
+    void* userData; /**< Optional user-provided data. Can be nullptr.*/
 } PalEventDriverCreateInfo;
 
 /**
  * @brief Create an event driver.
  *
  * The allocator field in the provided PalEventDriverCreateInfo struct will not
- * be copied, therefore pointer must remain valid until the event driver is
+ * be copied, therefore the pointer must remain valid until the event driver is
  * destroyed. Destroy the event driver with palDestroyEventDriver() when no
  * longer needed.
  *
@@ -201,7 +201,7 @@ typedef struct {
  * @param[out] outEventDriver Pointer to a PalEventDriver to recieve the created
  * event driver. Must not be nullptr.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
@@ -219,8 +219,8 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
 /**
  * @brief Destroy the provided event driver.
  *
- * This function can be called multiple times without any undefined behavior.
- * If the event driver is invalid or nullptr, this function returns silently.
+ * If the provided event driver is invalid or nullptr, this function returns
+ * silently.
  *
  * @param[in] eventDriver Pointer to the event driver to destroy.
  *
@@ -237,13 +237,14 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @brief Set the dispatch mode for an event type with the provided event
  * driver.
  *
- * If the event driver is not valid, the function fails and the dispatch mode
- * will not be set.
+ * If the provided event driver is invalid or nullptr, this function returns
+ * silently.
  *
- * If the dispatch mode is PAL_DISPATCH_POLL, the event will be dispatched into
- * the event drivers event queue. If the dispatch mode is PAL_DISPATCH_CALLBACK
- * and the event driver has a valid callback, the event will be dispatched to
- * the event drivers callback otherwise the event will be discarded.
+ * If the dispatch mode is `PAL_DISPATCH_POLL`, the event will be dispatched
+ * into the event drivers event queue. If the dispatch mode is
+ * `PAL_DISPATCH_CALLBACK` and the event driver has a valid callback function,
+ * the event will be dispatched to the callback function of the event driver
+ * otherwise the event will be discarded.
  *
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] type Event type to set dispatch mode for.
@@ -265,13 +266,10 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  * @brief Get the dispatch mode for an event type with the provided event
  * driver.
  *
- * If the event driver is not valid, the function fails and returns
- * PAL_DISPATCH_NONE.
- *
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] type The event type.
  *
- * @return The dispatch mode on success or PAL_DISPATCH_NONE on failure.
+ * @return The dispatch mode on success or `PAL_DISPATCH_NONE` on failure.
  *
  * Thread safety: This function is thread if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
@@ -285,14 +283,16 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
     PalEventType type);
 
 /**
- * @brief Push an event into the queue or callback of the provided event driver.
+ * @brief Push an event into the queue or callback function of the provided
+ * event driver.
  *
- * If the event driver is not valid, the function fails and the event will not
- * be pushed.
- * If the dispatch mode for the event is PAL_DISPATCH_POLL, the event will be
+ * If the provided event driver is invalid or nullptr, this function returns
+ * silently.
+ *
+ * If the dispatch mode for the event is `PAL_DISPATCH_POLL`, the event will be
  * pushed to the event queue.
  *
- * If dispatch mode is PAL_DISPATCH_CALLBACK and the event driver has a valid
+ * If dispatch mode is `PAL_DISPATCH_CALLBACK` and the event driver has a valid
  * event callback, the callback will be called otherwise the event will be
  * discarded.
  *
@@ -315,7 +315,8 @@ PAL_API void PAL_CALL palPushEvent(
  * @brief Retrieve the next available event from the queue of the provided event
  * driver.
  *
- * If the event driver is not valid, the function fails and returns false.
+ * If the provided event driver is invalid or nullptr, this function returns
+ * silently.
  *
  * This function retrieves the next pending event from the queue of the
  * provided event driver without blocking. If no events are available, it
@@ -324,7 +325,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @param[in] eventDriver Pointer to the event driver.
  * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be
  * valid.
- * 
+ *
  * Thread safety: This function is thread if the provided event queue is thread
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.

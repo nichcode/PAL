@@ -40,10 +40,8 @@ bool userEventTest()
     // create the event driver
     result = palCreateEventDriver(&createInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create event driver %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create event driver %s", error);
         return false;
     }
 

@@ -79,9 +79,13 @@ static inline bool getVersionWin32(PalVersion* version)
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
 
     HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
-    RtlGetVersionFn getVer =
-        (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion");
-        
+
+    // clang-format off
+    RtlGetVersionFn getVer = (RtlGetVersionFn)GetProcAddress(
+        ntdll, 
+        "RtlGetVersion");
+    // clang-format on
+
     if (!getVer) {
         return false;
     }

@@ -37,7 +37,8 @@ static inline void eventDispatchTest(bool poll)
 
     result = palCreateEventDriver(&createInfo, &driver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to driver %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create event driver %s", error);
         return;
     }
 

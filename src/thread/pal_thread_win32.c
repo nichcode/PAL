@@ -196,8 +196,12 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
     // check support for PAL_THREAD_FEATURE_NAME feature
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
     if (kernel32) {
-        FARPROC setThreadDesc =
-            GetProcAddress(kernel32, "SetThreadDescription");
+        // clang-format off
+        FARPROC setThreadDesc = GetProcAddress(
+            kernel32, 
+            "SetThreadDescription");
+        // clang-format on
+
         if (setThreadDesc) {
             features |= PAL_THREAD_FEATURE_NAME;
         }
@@ -244,14 +248,14 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
     return mask;
 }
 
-void PAL_CALL palGetThreadName(
+PalResult PAL_CALL palGetThreadName(
     PalThread* thread,
     Uint64 bufferSize,
     Uint64* outSize,
     char* outBuffer)
 {
     if (!thread) {
-        return;
+        return PAL_RESULT_NULL_POINTER;
     }
 
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
@@ -264,14 +268,14 @@ void PAL_CALL palGetThreadName(
 
     if (!getThreadDescription) {
         // not supported
-        return;
+        return PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED;
     }
 
     wchar_t* buffer = nullptr;
     HRESULT hr = getThreadDescription((HANDLE)thread, &buffer);
 
     if (!SUCCEEDED(hr)) {
-        return;
+        return PAL_RESULT_INVALID_THREAD;
     }
 
     int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
@@ -286,6 +290,8 @@ void PAL_CALL palGetThreadName(
         outBuffer[write < len - 1 ? write : len - 1] = '\0';
         LocalFree(buffer);
     }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL palSetThreadPriority(
@@ -541,10 +547,12 @@ PalResult PAL_CALL palWaitCondVarTimeout(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    // clang-format off
     BOOL ret = SleepConditionVariableCS(
-        &condVar->cv,
-        &mutex->sc,
+        &condVar->cv, 
+        &mutex->sc, 
         (DWORD)milliseconds);
+    // clang-format on
 
     if (!ret) {
         DWORD error = GetLastError();

@@ -30,10 +30,8 @@ bool iconTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create event driver %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create event driver %s", error);
         return false;
     }
 
@@ -42,10 +40,8 @@ bool iconTest()
     // video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to initialize video %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video %s", error);
         return false;
     }
 
@@ -78,10 +74,8 @@ bool iconTest()
 
     result = palCreateIcon(&iconCreateInfo, &icon);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create window icon %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window icon %s", error);
         return false;
     }
 
@@ -96,7 +90,8 @@ bool iconTest()
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create window %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window %s", error);
         return false;
     }
 
@@ -109,10 +104,8 @@ bool iconTest()
     // set the icon
     result = palSetWindowIcon(window, icon);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to set window icon %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set window icon %s", error);
         return false;
     }
 

@@ -74,35 +74,35 @@ typedef _Bool bool;
 #define PAL_BIT(x) 1 << x
 
 /**
- * @brief An signed 8-bit integer
+ * @brief A signed 8-bit integer
  * @since 1.0
  * @ingroup pal_core
  */
 typedef int8_t Int8;
 
 /**
- * @brief An signed 16-bit integer
+ * @brief A signed 16-bit integer
  * @since 1.0
  * @ingroup pal_core
  */
 typedef int16_t Int16;
 
 /**
- * @brief An signed 32-bit integer
+ * @brief A signed 32-bit integer
  * @since 1.0
  * @ingroup pal_core
  */
 typedef int32_t Int32;
 
 /**
- * @brief An signed 64-bit integer
+ * @brief A signed 64-bit integer
  * @since 1.0
  * @ingroup pal_core
  */
 typedef int64_t Int64;
 
 /**
- * @brief An signed 64-bit integer pointer
+ * @brief A signed 64-bit integer pointer
  * @since 1.0
  * @ingroup pal_core
  */
@@ -243,9 +243,9 @@ typedef enum {
  * @ingroup pal_core
  */
 typedef struct {
-    Uint32 major; /** < Major version (breaking changes).*/
-    Uint32 minor; /** < Minor version (adding features).*/
-    Uint32 build; /** < Build version (bug fixes).*/
+    Uint32 major; /**< Major version (breaking changes).*/
+    Uint32 minor; /**< Minor version (adding features).*/
+    Uint32 build; /**< Build version (bug fixes).*/
 } PalVersion;
 
 /**
@@ -260,7 +260,7 @@ typedef struct {
 typedef struct {
     PalAllocateFn allocate;
     PalFreeFn free;
-    void* userData; /** < Optional user-provided data. Can be nullptr.*/
+    void* userData; /**< Optional user-provided data. Can be nullptr.*/
 } PalAllocator;
 
 /**
@@ -307,6 +307,7 @@ PAL_API const char* PAL_CALL palGetVersionString();
  * Convert a result code to a human-readable string.
  *
  * @param result The PalResult code to format.
+ *
  * @return Null-terminated static string describing the result.
  *
  * Thread safety: This function is thread safe.

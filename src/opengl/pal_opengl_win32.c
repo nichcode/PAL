@@ -271,48 +271,65 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // clang-format off
+
     // load gdi function pointers
-    s_Gdi.choosePixelFormat =
-        (ChoosePixelFormatFn)GetProcAddress(s_Gdi.handle, "ChoosePixelFormat");
+    s_Gdi.choosePixelFormat = (ChoosePixelFormatFn)GetProcAddress(
+        s_Gdi.handle, 
+        "ChoosePixelFormat");
 
-    s_Gdi.setPixelFormat =
-        (SetPixelFormatFn)GetProcAddress(s_Gdi.handle, "SetPixelFormat");
+    s_Gdi.setPixelFormat = (SetPixelFormatFn)GetProcAddress(
+        s_Gdi.handle, 
+        "SetPixelFormat");
 
-    s_Gdi.getPixelFormat =
-        (GetPixelFormatFn)GetProcAddress(s_Gdi.handle, "GetPixelFormat");
+    s_Gdi.getPixelFormat = (GetPixelFormatFn)GetProcAddress(
+        s_Gdi.handle, 
+        "GetPixelFormat");
 
     s_Gdi.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
         s_Gdi.handle,
         "DescribePixelFormat");
 
-    s_Gdi.swapBuffers =
-        (SwapBuffersFn)GetProcAddress(s_Gdi.handle, "SwapBuffers");
+    s_Gdi.swapBuffers = (SwapBuffersFn)GetProcAddress(
+        s_Gdi.handle, 
+        "SwapBuffers");
 
     // load wgl function pointers
-    s_Wgl.wglGetProcAddress =
-        (wglGetProcAddressFn)GetProcAddress(s_Wgl.opengl, "wglGetProcAddress");
+    s_Wgl.wglGetProcAddress = (wglGetProcAddressFn)GetProcAddress(
+        s_Wgl.opengl, 
+        "wglGetProcAddress");
 
-    s_Wgl.wglCreateContext =
-        (wglCreateContextFn)GetProcAddress(s_Wgl.opengl, "wglCreateContext");
+    s_Wgl.wglCreateContext = (wglCreateContextFn)GetProcAddress(
+        s_Wgl.opengl, 
+        "wglCreateContext");
 
-    s_Wgl.wglDeleteContext =
-        (wglDeleteContextFn)GetProcAddress(s_Wgl.opengl, "wglDeleteContext");
+    s_Wgl.wglDeleteContext = (wglDeleteContextFn)GetProcAddress(
+        s_Wgl.opengl, 
+        "wglDeleteContext");
 
-    s_Wgl.wglMakeCurrent =
-        (wglMakeCurrentFn)GetProcAddress(s_Wgl.opengl, "wglMakeCurrent");
-        
-    s_Wgl.wglShareLists =
-        (wglShareListsFn)GetProcAddress(s_Wgl.opengl, "wglShareLists");
+    s_Wgl.wglMakeCurrent = (wglMakeCurrentFn)GetProcAddress(
+        s_Wgl.opengl, 
+        "wglMakeCurrent");
 
-    if (!s_Gdi.choosePixelFormat || !s_Gdi.describePixelFormat ||
-        !s_Gdi.swapBuffers || !s_Gdi.setPixelFormat) {
+    s_Wgl.wglShareLists = (wglShareListsFn)GetProcAddress(
+        s_Wgl.opengl, 
+        "wglShareLists");
+
+    if (!s_Gdi.choosePixelFormat     ||
+        !s_Gdi.describePixelFormat   ||
+        !s_Gdi.swapBuffers           ||
+        !s_Gdi.setPixelFormat) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    if (!s_Wgl.wglGetProcAddress || !s_Wgl.wglCreateContext ||
-        !s_Wgl.wglDeleteContext || !s_Wgl.wglMakeCurrent) {
+    if (!s_Wgl.wglGetProcAddress    || 
+        !s_Wgl.wglCreateContext     ||
+        !s_Wgl.wglDeleteContext     || 
+        !s_Wgl.wglMakeCurrent) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
+
+    // clang-format on
 
     s_Wgl.hdc = GetDC(s_Wgl.window);
     PIXELFORMATDESCRIPTOR pfd = {0};
@@ -334,33 +351,33 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // clang-format off
+
     // load wgl extension function pointers
-    s_Wgl.wglChoosePixelFormatARB =
-        (wglChoosePixelFormatARBFn)s_Wgl.wglGetProcAddress(
-            "wglChoosePixelFormatARB");
+    s_Wgl.wglChoosePixelFormatARB = (wglChoosePixelFormatARBFn)s_Wgl.wglGetProcAddress(
+        "wglChoosePixelFormatARB");
 
-    s_Wgl.wglGetPixelFormatAttribivARB =
-        (wglGetPixelFormatAttribivARBFn)s_Wgl.wglGetProcAddress(
-            "wglGetPixelFormatAttribivARB");
+    s_Wgl.wglGetPixelFormatAttribivARB = (wglGetPixelFormatAttribivARBFn)s_Wgl.wglGetProcAddress(
+        "wglGetPixelFormatAttribivARB");
 
-    s_Wgl.wglCreateContextAttribsARB =
-        (wglCreateContextAttribsARBFn)s_Wgl.wglGetProcAddress(
-            "wglCreateContextAttribsARB");
+    s_Wgl.wglCreateContextAttribsARB = (wglCreateContextAttribsARBFn)s_Wgl.wglGetProcAddress(
+        "wglCreateContextAttribsARB");
 
-    s_Wgl.wglSwapIntervalEXT =
-        (wglSwapIntervalEXTFn)s_Wgl.wglGetProcAddress("wglSwapIntervalEXT");
+    s_Wgl.wglSwapIntervalEXT = (wglSwapIntervalEXTFn)s_Wgl.wglGetProcAddress(
+        "wglSwapIntervalEXT");
 
-    s_Wgl.wglGetExtensionsStringARB =
-        (wglGetExtensionsStringARBFn)s_Wgl.wglGetProcAddress(
-            "wglGetExtensionsStringARB");
+    s_Wgl.wglGetExtensionsStringARB = (wglGetExtensionsStringARBFn)s_Wgl.wglGetProcAddress(
+        "wglGetExtensionsStringARB");
 
-    s_Wgl.wglGetExtensionsStringEXT =
-        (wglGetExtensionsStringEXTFn)s_Wgl.wglGetProcAddress(
-            "wglGetExtensionsStringEXT");
+    s_Wgl.wglGetExtensionsStringEXT = (wglGetExtensionsStringEXTFn)s_Wgl.wglGetProcAddress(
+        "wglGetExtensionsStringEXT");
 
     // load gl functions
-    s_Wgl.glGetString =
-        (glGetStringFn)GetProcAddress(s_Wgl.opengl, "glGetString");
+    s_Wgl.glGetString = (glGetStringFn)GetProcAddress(
+        s_Wgl.opengl, 
+        "glGetString");
+
+    // clang-format on
 
     const char* version = (const char*)s_Wgl.glGetString(GL_VERSION);
     if (version) {
@@ -646,10 +663,12 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
                 config->stencilBits = pfd.cStencilBits;
                 config->samples = 1;
 
-                config->doubleBuffer =
-                    (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
                 config->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
                 config->sRGB = false;
+
+                // clang-format off
+                config->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
+                // clang-format on
             }
             configCount++;
         }
@@ -769,10 +788,12 @@ PalResult PAL_CALL palCreateGLContext(
         }
     }
 
+    // clang-format off
+
     // check version
-    bool valid =
-        info->major < s_Wgl.info.major ||
+    bool valid = info->major < s_Wgl.info.major ||
         (info->major == s_Wgl.info.major && info->minor <= s_Wgl.info.minor);
+    // clang-format on
 
     if (!valid) {
         return PAL_RESULT_INVALID_GL_VERSION;

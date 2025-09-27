@@ -76,10 +76,8 @@ bool systemTest()
     // get the platform info. Users must cache this
     result = palGetPlatformInfo(&platformInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to get platform info %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get platform info: %s", error);
         return false;
     }
 
@@ -87,7 +85,8 @@ bool systemTest()
     // default
     result = palGetCPUInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to get Cpu info %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get Cpu info %s", error);
         return false;
     }
 

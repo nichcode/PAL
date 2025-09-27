@@ -46,10 +46,8 @@ bool threadTest()
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(
-                nullptr,
-                "Failed to create thread: %s",
-                palFormatResult(result));
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create thread: %s", error);
             return false;
         }
     }
@@ -59,10 +57,8 @@ bool threadTest()
         // we dont need the return value
         result = palJoinThread(threads[i], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
-            palLog(
-                nullptr,
-                "Failed to join threads: %s",
-                palFormatResult(result));
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to join threads: %s", error);
             return false;
         }
     }
@@ -73,10 +69,8 @@ bool threadTest()
         for (Int32 i = 0; i < THREAD_COUNT; i++) {
             result = palSetThreadName(threads[i], g_ThreadNames[i]);
             if (result != PAL_RESULT_SUCCESS) {
-                palLog(
-                    nullptr,
-                    "Failed to set thread nane: %s",
-                    palFormatResult(result));
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to set thread name %s", error);
                 return false;
             }
         }

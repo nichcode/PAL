@@ -46,7 +46,7 @@ freely, subject to the following restrictions:
  * All CPU achitectures follow the format `PAL_CPU_ARCH_**` for
  * consistency and API use.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 typedef enum {
@@ -64,7 +64,7 @@ typedef enum {
  * All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
  * consistency and API use.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 typedef enum {
@@ -72,8 +72,8 @@ typedef enum {
     PAL_CPU_FEATURE_SSE2 = PAL_BIT(1),
     PAL_CPU_FEATURE_SSE3 = PAL_BIT(2),
     PAL_CPU_FEATURE_SSSE3 = PAL_BIT(3),
-    PAL_CPU_FEATURE_SSE41 = PAL_BIT(4), /** < SSE4.1.*/
-    PAL_CPU_FEATURE_SSE42 = PAL_BIT(5), /** < SSE4.1.*/
+    PAL_CPU_FEATURE_SSE41 = PAL_BIT(4), /**< SSE4.1.*/
+    PAL_CPU_FEATURE_SSE42 = PAL_BIT(5), /**< SSE4.1.*/
     PAL_CPU_FEATURE_AVX = PAL_BIT(6),
     PAL_CPU_FEATURE_AVX2 = PAL_BIT(7),
     PAL_CPU_FEATURE_AVX512F = PAL_BIT(8),
@@ -92,7 +92,7 @@ typedef enum {
  * All platform types follow the format `PAL_PLATFORM_**` for
  * consistency and API use.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 typedef enum {
@@ -113,7 +113,7 @@ typedef enum {
  * All platform API types follow the format `PAL_PLATFORM_API_**` for
  * consistency and API use.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 typedef enum {
@@ -126,35 +126,35 @@ typedef enum {
  * @struct PalPlatformInfo
  * @brief Information about a platform (OS).
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 typedef struct {
     PalPlatformType type;
     PalPlatformApiType apiType;
-    Uint32 totalMemory; /** < Total Disk space (memory) in GB.*/
-    Uint32 totalRAM;    /** < Total CPU RAM (memory) in MB.*/
+    Uint32 totalMemory; /**< Total Disk space (memory) in GB.*/
+    Uint32 totalRAM;    /**< Total CPU RAM (memory) in MB.*/
     PalVersion version;
-    char name[PAL_PLATFORM_NAME_SIZE]; /** < (eg. Windows 11.22000).*/
+    char name[PAL_PLATFORM_NAME_SIZE]; /**< (eg. Windows 11.22000).*/
 } PalPlatformInfo;
 
 /**
  * @struct PalCPUInfo
  * @brief Information about a CPU.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 typedef struct {
     Uint32 numCores;
-    Uint32 cacheL1;              /** < L1 cache in KB.*/
-    Uint32 cacheL2;              /** < L2 cache in KB.*/
-    Uint32 cacheL3;              /** < L3 cache in KB.*/
-    Uint32 numLogicalProcessors; /** < Number of CPUs.*/
+    Uint32 cacheL1;              /**< L1 cache in KB.*/
+    Uint32 cacheL2;              /**< L2 cache in KB.*/
+    Uint32 cacheL3;              /**< L3 cache in KB.*/
+    Uint32 numLogicalProcessors; /**< Number of CPUs.*/
     PalCpuArch architecture;
     PalCpuFeatures features;
-    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /** < CPU vendor name.*/
-    char model[PAL_CPU_MODEL_NAME_SIZE];   /** < CPU modal name.*/
+    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name.*/
+    char model[PAL_CPU_MODEL_NAME_SIZE];   /**< CPU modal name.*/
 } PalCPUInfo;
 
 /**
@@ -162,12 +162,12 @@ typedef struct {
  *
  * @param[out] info Pointer to a PalPlatformInfo to receive the platform info.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread-safe if `info` is thread local.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
@@ -179,13 +179,13 @@ PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
  * use default.
  * @param[out] info Pointer to a PalCPUInfo to receive the CPU info.
  *
- * @return PAL_RESULT_SUCCESS on success or a result code on
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function is thread-safe if the proivded allocator is thread safe
- * and `info` is thread local. The default allocator is thread safe.
+ * Thread safety: This function is thread-safe if the proivded allocator is
+ * thread safe and `info` is thread local. The default allocator is thread safe.
  *
- * @since 1.0.
+ * @since 1.0
  * @ingroup pal_system
  */
 PAL_API PalResult PAL_CALL palGetCPUInfo(

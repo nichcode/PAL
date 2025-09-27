@@ -420,10 +420,8 @@ bool inputWindowTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to create event driver %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create event driver %s", error);
         return false;
     }
 
@@ -432,10 +430,8 @@ bool inputWindowTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(
-            nullptr,
-            "Failed to initialize video %s",
-            palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video %s", error);
         return false;
     }
 
@@ -450,7 +446,8 @@ bool inputWindowTest()
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create window %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window %s", error);
         return false;
     }
 

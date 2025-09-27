@@ -83,7 +83,8 @@ bool tlsTest()
 
     PalResult result = palCreateThread(&info, &thread);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to create thread: %s", palFormatResult(result));
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create thread: %s", error);
         return false;
     }
 
