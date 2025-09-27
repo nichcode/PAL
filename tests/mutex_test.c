@@ -56,9 +56,9 @@ bool mutexTest()
 
     // create threads
     PalThreadCreateInfo createInfo = {0};
-    createInfo.entry = worker; // will be the same for all threads
-    createInfo.stackSize = 0;  // same for all threads
-    createInfo.allocator = nullptr;// default
+    createInfo.entry = worker;      // will be the same for all threads
+    createInfo.stackSize = 0;       // same for all threads
+    createInfo.allocator = nullptr; // default
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)data;
 
@@ -66,7 +66,7 @@ bool mutexTest()
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr,"Failed to create thread: %s", error);
+            palLog(nullptr, "Failed to create thread: %s", error);
             return false;
         }
     }

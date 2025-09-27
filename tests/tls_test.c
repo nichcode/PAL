@@ -78,8 +78,8 @@ bool tlsTest()
     PalThreadCreateInfo info = {0};
     info.arg = threadData;
     info.entry = worker;
-    info.stackSize = 0; // for default
-    info.allocator = nullptr;// default
+    info.stackSize = 0;       // for default
+    info.allocator = nullptr; // default
 
     PalResult result = palCreateThread(&info, &thread);
     if (result != PAL_RESULT_SUCCESS) {
