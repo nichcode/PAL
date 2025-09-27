@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_VIDEO
     windowBench();
-    windowUpdateBench();
+    windowBenchPlatform();
 #endif // PAL_HAS_VIDEO
 
     return 0;

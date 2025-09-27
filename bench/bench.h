@@ -4,6 +4,8 @@
 
 #include "pal/pal_core.h"
 
+#define MAX_ITERATIONS 1000
+
 typedef void (*BenchFn)();
 
 void runBench(
@@ -12,6 +14,6 @@ void runBench(
     Int32 iterations);
 
 void windowBench();
-void windowUpdateBench();
+void windowBenchPlatform();
 
 #endif // _BENCH_H
