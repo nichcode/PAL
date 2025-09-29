@@ -409,7 +409,7 @@ bool inputWindowTest()
 
     // event driver
     PalEventDriver* eventDriver = nullptr;
-    PalEventDriverCreateInfo eventDriverCreateInfo{0} = {0};
+    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
     // fill the event driver create info
     eventDriverCreateInfo.allocator = nullptr; // default allocator

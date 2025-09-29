@@ -47,31 +47,34 @@ workspace "PAL_workspace"
 
     filter {}
 
-    if (_OPTIONS["compiler"] == "clang") then
-        toolset("clang")
-    end
-
     if (_ACTION == "gmake2") then
-        buildoptions {
-            "-target x86_64-w64-windows-gnu",
-            "-I" .. ucrt .. "/include",
-            "-I" .. ucrt .. "/ucrt/include",
-            "-I" .. ucrt .. "/mingw/include",
+        if (_OPTIONS["compiler"] == "clang") then
+            toolset("clang")
 
-            -- warnings
-            "-Wno-switch",        -- for switch statements
-            "-Wno-switch-enum"    -- for switch statements
-        }
+            buildoptions {
+                "-target x86_64-w64-windows-gnu",
+                "-I" .. ucrt .. "/include",
+                "-I" .. ucrt .. "/ucrt/include",
+                "-I" .. ucrt .. "/mingw/include",
+    
+                -- warnings
+                "-Wno-switch",        -- for switch statements
+                "-Wno-switch-enum"    -- for switch statements
+            }
 
-        linkoptions {
-            "-target x86_64-w64-windows-gnu",  
-            "-L" .. ucrt .. "/lib",
-            "-L" .. ucrt .. "/mingw/lib"
-        }
-
+            linkoptions {
+                "-target x86_64-w64-windows-gnu",  
+                "-L" .. ucrt .. "/lib",
+                "-L" .. ucrt .. "/mingw/lib"
+            }
+        end
     end
 
     if (_ACTION == "vs2022") then
+        if (_OPTIONS["compiler"] == "clang") then
+            toolset("clang")
+        end
+
         defines {
             "_CRT_SECURE_NO_WARNINGS"
         }
