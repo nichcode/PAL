@@ -47,46 +47,41 @@ workspace "PAL_workspace"
 
     filter {}
 
-    -- gmake already sets the compiler to gcc
     if (_OPTIONS["compiler"] == "clang") then
-        if (_ACTION == "gmake2") then
-            toolset("clang")
+        toolset("clang")
+    end
 
-            buildoptions {
-                "-target x86_64-w64-windows-gnu",
-                "-I" .. ucrt .. "/include",
-                "-I" .. ucrt .. "/ucrt/include",
-                "-I" .. ucrt .. "/mingw/include",
+    if (_ACTION == "gmake2") then
+        buildoptions {
+            "-target x86_64-w64-windows-gnu",
+            "-I" .. ucrt .. "/include",
+            "-I" .. ucrt .. "/ucrt/include",
+            "-I" .. ucrt .. "/mingw/include",
 
-                -- warnings
-                "-Wno-switch",        -- for switch statements
-                "-Wno-switch-enum"    -- for switch statements
-            }
+            -- warnings
+            "-Wno-switch",        -- for switch statements
+            "-Wno-switch-enum"    -- for switch statements
+        }
 
-            linkoptions {
-                "-target x86_64-w64-windows-gnu",  
-                "-L" .. ucrt .. "/lib",
-                "-L" .. ucrt .. "/mingw/lib"
-            }
+        linkoptions {
+            "-target x86_64-w64-windows-gnu",  
+            "-L" .. ucrt .. "/lib",
+            "-L" .. ucrt .. "/mingw/lib"
+        }
 
-        end
-    else
-        if (_ACTION == "vs2022") then
-            defines {
-                "_CRT_SECURE_NO_WARNINGS"
-            }
-            disablewarnings {
-                "6387"
-            }
-        end
+    end
+
+    if (_ACTION == "vs2022") then
+        defines {
+            "_CRT_SECURE_NO_WARNINGS"
+        }
+        disablewarnings {
+            "6387"
+        }
     end
 
     if (PAL_BUILD_TESTS) then
         include "tests/tests.lua"
-    end
-
-    if (PAL_BUILD_BENCH) then
-        include "bench/bench.lua"
     end
 
     include "pal.lua"
