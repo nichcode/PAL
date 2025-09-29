@@ -19,7 +19,7 @@ bool cursorTest()
 
     // event driver
     PalEventDriver* eventDriver = nullptr;
-    PalEventDriverCreateInfo eventDriverCreateInfo;
+    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
     // fill the event driver create info
     eventDriverCreateInfo.allocator = nullptr; // default allocator

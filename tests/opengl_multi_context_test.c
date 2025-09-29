@@ -5,7 +5,7 @@
 
 static const char* g_BoolsToSting[2] = {"False", "True"};
 
-// oepngl typedefs
+// opengl typedefs
 typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
     float red,
     float green,
@@ -40,7 +40,7 @@ bool openglMultiContextTest()
 
     // event driver
     PalEventDriver* eventDriver = nullptr;
-    PalEventDriverCreateInfo eventDriverCreateInfo;
+    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
     // fill the event driver create info
     eventDriverCreateInfo.allocator = nullptr; // default allocator
