@@ -34,30 +34,10 @@ freely, subject to the following restrictions:
 
 #include <stdint.h>
 
-// Set up shared library dependencies
-#ifdef _WIN32
-#define PAL_CALL __stdcall
-#ifdef _PAL_EXPORT
-#define PAL_API __declspec(dllexport)
-#else
-#define PAL_API __declspec(dllimport)
-#endif // PAL_EXPORT
-#else
-// other platforms
-#define PAL_CALL
-#ifdef PAL_EXPORT
-#define PAL_API extern "C" __attribute__((visibility("default")))
-#else
-#define PAL_API
-#endif // PAL_EXPORT
-#endif // _WIN32
-
 #ifdef __cplusplus
-}
-#endif // __cplusplus
-
-// Set up typedefs for C
-#ifndef __cplusplus
+#define PAL_EXTERN_C extern "C"
+#else
+#define PAL_EXTERN_C
 #define nullptr ((void*)0)
 #define true 1
 #define false 0
@@ -68,8 +48,33 @@ freely, subject to the following restrictions:
  * @ingroup pal_core
  */
 typedef _Bool bool;
-
 #endif // __cplusplus
+
+// Set up shared library dependencies
+#ifdef _WIN32
+#define PAL_CALL __stdcall
+#ifdef _PAL_BUILD_DLL // shared library
+#ifdef _PAL_EXPORT
+#define PAL_API PAL_EXTERN_C __declspec(dllexport)
+#else
+#define PAL_API PAL_EXTERN_C __declspec(dllimport)
+#endif // PAL_EXPORT 
+#else
+#define PAL_API PAL_EXTERN_C // static library 
+#endif // _PAL_BUILD_DLL
+#else
+// other platforms
+#define PAL_CALL
+#ifdef _PAL_BUILD_DLL // shared library
+#ifdef _PAL_EXPORT
+#define PAL_API PAL_EXTERN_C __attribute__((visibility("default")))
+#else
+#define PAL_API PAL_EXTERN_C
+#endif // PAL_EXPORT 
+#else
+#define PAL_API PAL_EXTERN_C // static library 
+#endif // _PAL_BUILD_DLL
+#endif // _WIN32
 
 #define PAL_BIT(x) 1 << x
 

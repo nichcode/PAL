@@ -2065,7 +2065,7 @@ PalResult PAL_CALL palGetWindowTitle(
 
     // see if user provided a buffer and write to it
     if (outBuffer && bufferSize > 0) {
-        int write = bufferSize - 1;
+        int write = (int)bufferSize - 1;
         WideCharToMultiByte(CP_UTF8, 0, buffer, -1, outBuffer, write + 1, 0, 0);
         outBuffer[write < len - 1 ? write : len - 1] = '\0';
     }
@@ -2735,18 +2735,18 @@ PalResult PAL_CALL palGetCursorPos(
     }
 
     POINT pos;
-    if (GetCursorPos(&pos)) {
-        if (ScreenToClient((HWND)window, &pos)) {
-            if (x) {
-                *x = pos.x;
-            }
-
-            if (y) {
-                *y = pos.y;
-            }
-
-            return PAL_RESULT_SUCCESS;
+    GetCursorPos(&pos);
+    if (ScreenToClient((HWND)window, &pos)) {
+        if (x) {
+            *x = pos.x;
         }
+
+        if (y) {
+            *y = pos.y;
+        }
+
+        return PAL_RESULT_SUCCESS;
+        
     } else {
         return PAL_RESULT_INVALID_WINDOW;
     }

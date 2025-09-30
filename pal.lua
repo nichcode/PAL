@@ -1,4 +1,6 @@
 
+dofile("pal_config.lua")
+
 function writeConfig(path)
     local file = io.open(path, "w")
     file:write("\n// Auto Generated Config Header From pal_config.lua\n")
@@ -38,7 +40,10 @@ project "PAL"
         kind "StaticLib"
     else
         kind "SharedLib"
-        defines { "_PAL_EXPORT" }
+        defines { 
+            "_PAL_EXPORT",
+            "_PAL_BUILD_DLL"
+        }
     end
 
     targetdir(target_dir)

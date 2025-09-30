@@ -71,7 +71,7 @@ workspace "PAL_workspace"
     end
 
     if (_ACTION == "vs2022") then
-        if (_OPTIONS["compiler"] == "clang") then
+        if (_OPTIONS["compiler"] == "clang") then  
             toolset("clang")
         end
 

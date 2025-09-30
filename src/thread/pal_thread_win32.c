@@ -285,7 +285,7 @@ PalResult PAL_CALL palGetThreadName(
 
     // see if user provided a buffer and write to it
     if (outBuffer && bufferSize > 0) {
-        int write = bufferSize - 1;
+        int write = (int)bufferSize - 1;
         WideCharToMultiByte(CP_UTF8, 0, buffer, -1, outBuffer, write + 1, 0, 0);
         outBuffer[write < len - 1 ? write : len - 1] = '\0';
         LocalFree(buffer);
