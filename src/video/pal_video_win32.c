@@ -2746,7 +2746,7 @@ PalResult PAL_CALL palGetCursorPos(
         }
 
         return PAL_RESULT_SUCCESS;
-        
+
     } else {
         return PAL_RESULT_INVALID_WINDOW;
     }
