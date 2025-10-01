@@ -53,28 +53,27 @@ typedef _Bool bool;
 // Set up shared library dependencies
 #ifdef _WIN32
 #define PAL_CALL __stdcall
-#ifdef _PAL_BUILD_DLL // shared library
 #ifdef _PAL_EXPORT
-#define PAL_API PAL_EXTERN_C __declspec(dllexport)
+#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport)
 #else
-#define PAL_API PAL_EXTERN_C __declspec(dllimport)
-#endif // PAL_EXPORT 
+#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport)
+#endif // PAL_EXPORT
 #else
-#define PAL_API PAL_EXTERN_C // static library 
-#endif // _PAL_BUILD_DLL
-#else
-// other platforms
+// other plafforms
 #define PAL_CALL
-#ifdef _PAL_BUILD_DLL // shared library
 #ifdef _PAL_EXPORT
-#define PAL_API PAL_EXTERN_C __attribute__((visibility("default")))
+#define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default")))
 #else
-#define PAL_API PAL_EXTERN_C
-#endif // PAL_EXPORT 
-#else
-#define PAL_API PAL_EXTERN_C // static library 
-#endif // _PAL_BUILD_DLL
+#define PAL_DECLSPEC PAL_EXTERN_C
+#endif // PAL_EXPORT
 #endif // _WIN32
+
+#ifdef _PAL_BUILD_DLL
+#define PAL_API PAL_EXTERN_C PAL_DECLSPEC
+#else
+// static library
+#define PAL_API PAL_EXTERN_C
+#endif // _PAL_BUILD_DLL
 
 #define PAL_BIT(x) 1 << x
 

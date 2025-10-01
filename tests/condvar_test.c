@@ -79,6 +79,13 @@ bool condvarTest()
             palLog(nullptr, "Failed to create thread: %s", error);
             return false;
         }
+
+        // since thread priority is not supported on all platforms
+        // the first thread might not be the one to lock the mutex
+        // so we wait a while for the first thread to lock the mutex
+        if (i == 0) {
+            palSleep(200);
+        }
     }
 
     // wait for a while
@@ -104,7 +111,7 @@ bool condvarTest()
     palUnlockMutex(g_Mutex);
 
     // wait for the remaining threads
-    for (Int32 i = 1; i < THREAD_COUNT; i++) {
+    for (Int32 i = 0; i < THREAD_COUNT; i++) {
         palJoinThread(threads[i], nullptr);
         palLog(nullptr, "Thread %d finished successfully", data[i].id);
     }
