@@ -25,6 +25,15 @@ freely, subject to the following restrictions:
 // Includes
 // ==================================================
 
+#ifdef __linux__
+#define _POSIX_C_SOURCE 200112L
+#include <time.h>
+#include <string.h>
+#include <pthread.h>
+#include <wchar.h>
+#include <stdlib.h>
+#endif // __linux__
+
 #include "pal/pal_core.h"
 
 #ifdef _WIN32
@@ -62,7 +71,12 @@ freely, subject to the following restrictions:
 #define PAL_VERSION_STRING "1.0.0"
 #define PAL_LOG_MSG_SIZE 4096
 
+#ifdef _WIN32
 static volatile LONG s_TlsID = 0;
+#elif defined(__linux__)
+pthread_key_t s_TLSID = 0;
+static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
+#endif // _WIN32
 
 typedef struct {
     char tmp[PAL_LOG_MSG_SIZE];
@@ -75,6 +89,18 @@ typedef struct {
 // Internal API
 // ==================================================
 
+static void destroyTlsData(void* data);
+
+#ifdef __linux__
+void createTLSID()
+{
+    if (pthread_key_create(&s_TLSID, destroyTlsData) != 0) {
+        // FIXME: Use a global log buffer with a mutex
+        return;
+    }
+}
+#endif // __linux__
+
 static inline void* alignedAlloc(
     Uint64 size,
     Uint64 alignment)
@@ -86,7 +112,7 @@ static inline void* alignedAlloc(
     return aligned_alloc(alignment, size);
 #else
     void* ptr = nullptr;
-    posix_memalign(&ptr, alignment);
+    posix_memalign(&ptr, alignment, size);
     return ptr;
 #endif // _MSC_VER
 }
@@ -112,6 +138,8 @@ static inline LogTLSData* getLogTlsData()
 {
 #ifdef _WIN32
     LogTLSData* data = FlsGetValue((DWORD)s_TlsID);
+#elif defined(__linux__)
+    LogTLSData* data = pthread_getspecific(s_TLSID);
 #endif // _WIN32
 
     if (!data) {
@@ -140,6 +168,9 @@ static inline LogTLSData* getLogTlsData()
             }
         }
         FlsSetValue(s_TlsID, data);
+#elif defined(__linux__)
+    pthread_once(&s_TLSCreation, createTLSID);
+    pthread_setspecific(s_TLSID, data);
 #endif // _WIN32
     }
     return data;
@@ -149,6 +180,8 @@ static inline void updateLogTlsData(LogTLSData* data)
 {
 #ifdef _WIN32
     FlsSetValue(s_TlsID, data);
+#elif defined(__linux__)
+    pthread_setspecific(s_TLSID, data);
 #endif // _WIN32
 }
 
@@ -181,6 +214,7 @@ static inline void format(
 
 static inline void writeToConsole(LogTLSData* data)
 {
+#ifdef _WIN32
     HANDLE console = GetStdHandle(STD_ERROR_HANDLE);
     int len = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, nullptr, 0);
     if (!len) {
@@ -193,6 +227,10 @@ static inline void writeToConsole(LogTLSData* data)
     } else {
         OutputDebugStringW(data->wideBuffer);
     }
+#elif defined (__linux__)
+    fprintf(stdout, "%s", data->buffer);
+    fflush(stdout);
+#endif // _WIN32
 }
 
 // ==================================================
@@ -373,6 +411,10 @@ Uint64 PAL_CALL palGetPerformanceCounter()
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return (Uint64)counter.QuadPart;
+#elif defined(__linux__)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (Uint64)ts.tv_sec * 1000000000LL + (Uint64)ts.tv_nsec;
 #endif // _WIN32
 }
 
@@ -382,5 +424,7 @@ Uint64 PAL_CALL palGetPerformanceFrequency()
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     return (Uint64)frequency.QuadPart;
+#elif defined(__linux__)
+    return 1000000000LL;
 #endif // _WIN32
 }

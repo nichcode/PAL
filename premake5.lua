@@ -36,6 +36,10 @@ workspace "PAL_workspace"
         systemversion "latest"
         cdialect "C99"
 
+    filter {"system:linux", "configurations:*"}
+        architecture "x86_64"
+        cdialect "C99"
+        
     filter "configurations:Debug"
         symbols "on"
         runtime "Debug"

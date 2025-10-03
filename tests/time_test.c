@@ -37,11 +37,14 @@ bool timeTest()
     while (totalTime < 5.0) {
         double now = getTime(&timer);
         totalTime = now - lastTime;
+
         palLog(
-            nullptr,
-            "Frame %d, Total Time %f seconds",
-            frameCount++,
-            totalTime);
+        nullptr,
+        "Frame %d, Total Time %f seconds",
+        frameCount,
+        totalTime);
+
+        frameCount++;
     }
 
     palLog(
