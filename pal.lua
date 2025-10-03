@@ -61,25 +61,28 @@ project "PAL"
 
     if (PAL_BUILD_SYSTEM) then
         filter {"system:windows", "configurations:*"}
-        files { "src/system/pal_system_win32.c" }
+            files { "src/system/pal_system_win32.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/system/pal_system_linux.c" }
         filter {}
     end
 
     if (PAL_BUILD_THREAD) then
         filter {"system:windows", "configurations:*"}
-        files { "src/thread/pal_thread_win32.c" }
+            files { "src/thread/pal_thread_win32.c" }
         filter {}
     end
 
     if (PAL_BUILD_VIDEO) then
         filter {"system:windows", "configurations:*"}
-        files { "src/video/pal_video_win32.c" }
+            files { "src/video/pal_video_win32.c" }
         filter {}
     end
 
     if (PAL_BUILD_OPENGL) then
         filter {"system:windows", "configurations:*"}
-        files { "src/opengl/pal_opengl_win32.c" }
+            files { "src/opengl/pal_opengl_win32.c" }
         filter {}
     end
 

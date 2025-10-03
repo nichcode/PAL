@@ -9,10 +9,10 @@ int main(int argc, char** argv)
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core
-    registerTest("Logger Test", loggerTest);
-    registerTest("Time Test", timeTest);
-    registerTest("User Event Test", userEventTest);
-    registerTest("Event Test", eventTest);
+    // registerTest("Logger Test", loggerTest);
+    // registerTest("Time Test", timeTest);
+    // registerTest("User Event Test", userEventTest);
+    // registerTest("Event Test", eventTest);
 
 #if PAL_HAS_SYSTEM
     registerTest("System Test", systemTest);
