@@ -139,7 +139,7 @@ PalResult PAL_CALL palCreateThread(
         }
     }
 
-    *outThread = thread;
+    *outThread = (PalThread*)thread;
     return PAL_RESULT_SUCCESS;
 }
 

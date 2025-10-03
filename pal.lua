@@ -71,6 +71,9 @@ project "PAL"
     if (PAL_BUILD_THREAD) then
         filter {"system:windows", "configurations:*"}
             files { "src/thread/pal_thread_win32.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/thread/pal_thread_linux.c" }
         filter {}
     end
 
