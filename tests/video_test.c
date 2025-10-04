@@ -25,127 +25,127 @@ bool videoTest()
     features = palGetVideoFeatures();
     palLog(nullptr, "Supported Video Features:");
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
-        palLog(nullptr, "High DPI windows");
+        palLog(nullptr, " High DPI windows");
     }
 
     if (features & PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION) {
-        palLog(nullptr, "Setting monitor orientation");
+        palLog(nullptr, " Setting monitor orientation");
     }
 
     if (features & PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION) {
-        palLog(nullptr, "Getting monitor orientation");
+        palLog(nullptr, " Getting monitor orientation");
     }
 
     if (features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW) {
-        palLog(nullptr, "Borderless windows");
+        palLog(nullptr, " Borderless windows");
     }
 
     if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
-        palLog(nullptr, "Transparent windows");
+        palLog(nullptr, " Transparent windows");
     }
 
     if (features & PAL_VIDEO_FEATURE_TOOL_WINDOW) {
-        palLog(nullptr, "Tool windows");
+        palLog(nullptr, " Tool windows");
     }
 
     if (features & PAL_VIDEO_FEATURE_MONITOR_SET_MODE) {
-        palLog(nullptr, "Setting monitor display mode");
+        palLog(nullptr, " Setting monitor display mode");
     }
 
     if (features & PAL_VIDEO_FEATURE_MONITOR_GET_MODE) {
-        palLog(nullptr, "Getting monitor display mode");
+        palLog(nullptr, " Getting monitor display mode");
     }
 
     if (features & PAL_VIDEO_FEATURE_MULTI_MONITORS) {
-        palLog(nullptr, "Multi monitors");
+        palLog(nullptr, " Multi monitors");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_SIZE) {
-        palLog(nullptr, "Setting window size");
+        palLog(nullptr, " Setting window size");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_SIZE) {
-        palLog(nullptr, "Getting window size");
+        palLog(nullptr, " Getting window size");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_POS) {
-        palLog(nullptr, "Setting window position");
+        palLog(nullptr, " Setting window position");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_POS) {
-        palLog(nullptr, "Getting window position");
+        palLog(nullptr, " Getting window position");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE) {
-        palLog(nullptr, "Setting window state");
+        palLog(nullptr, " Setting window state");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_STATE) {
-        palLog(nullptr, "Getting window state");
+        palLog(nullptr, " Getting window state");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY) {
-        palLog(nullptr, "Setting window visibility");
+        palLog(nullptr, " Setting window visibility");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY) {
-        palLog(nullptr, "Getting window visibility");
+        palLog(nullptr, " Getting window visibility");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_TITLE) {
-        palLog(nullptr, "Setting window title");
+        palLog(nullptr, " Setting window title");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_TITLE) {
-        palLog(nullptr, "Getting window title");
+        palLog(nullptr, " Getting window title");
     }
 
     if (features & PAL_VIDEO_FEATURE_NO_MINIMIZEBOX) {
-        palLog(nullptr, "No minimize box for windows");
+        palLog(nullptr, " No minimize box for windows");
     }
 
     if (features & PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX) {
-        palLog(nullptr, "No maximize box for windows");
+        palLog(nullptr, " No maximize box for windows");
     }
 
     if (features & PAL_VIDEO_FEATURE_CLIP_CURSOR) {
-        palLog(nullptr, "Clipping cursor (mouse)");
+        palLog(nullptr, " Clipping cursor (mouse)");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION) {
-        palLog(nullptr, "Window titlebar flashing");
+        palLog(nullptr, " Window titlebar flashing");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY) {
-        palLog(nullptr, "Window icon on taskbar flashing");
+        palLog(nullptr, " Window icon on taskbar flashing");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL) {
-        palLog(nullptr, "Setting window flash interval");
+        palLog(nullptr, " Setting window flash interval");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS) {
-        palLog(nullptr, "Setting input window");
+        palLog(nullptr, " Setting input window");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS) {
-        palLog(nullptr, "Getting input window");
+        palLog(nullptr, " Getting input window");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_STYLE) {
-        palLog(nullptr, "Setting window style");
+        palLog(nullptr, " Setting window style");
     }
 
     if (features & PAL_VIDEO_FEATURE_WINDOW_GET_STYLE) {
-        palLog(nullptr, "Getting window style");
+        palLog(nullptr, " Getting window style");
     }
 
     if (features & PAL_VIDEO_FEATURE_CURSOR_SET_POS) {
-        palLog(nullptr, "Setting cursor position");
+        palLog(nullptr, " Setting cursor position");
     }
 
     if (features & PAL_VIDEO_FEATURE_CURSOR_GET_POS) {
-        palLog(nullptr, "Getting cursor position");
+        palLog(nullptr, " Getting cursor position");
     }
 
     // shutdown the video system

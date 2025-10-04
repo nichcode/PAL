@@ -467,6 +467,26 @@ typedef enum {
 } PalMouseButton;
 
 /**
+ * @enum PalCursorType
+ * @brief System cursor types.
+ *
+ * All cursor types follow the format `PAL_CURSOR_**` for
+ * consistency and API use.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ */
+typedef enum {
+    PAL_CURSOR_ARROW,
+    PAL_CURSOR_HAND,
+    PAL_CURSOR_CROSS,
+    PAL_CURSOR_IBEAM,
+    PAL_CURSOR_WAIT,
+
+    PAL_CURSOR_MAX
+} PalCursorType;
+
+/**
  * @struct PalMonitorInfo
  * @brief Information about a monitor.
  *
@@ -1529,6 +1549,28 @@ PAL_API PalResult PAL_CALL palSetWindowIcon(
  */
 PAL_API PalResult PAL_CALL palCreateCursor(
     const PalCursorCreateInfo* info,
+    PalCursor** outCursor);
+
+/**
+ * @brief Create a system cursor.
+ *
+ * The video system must be initialized before this call.
+ *
+ * @param[in] type The system cursor type to create. Must not be nullptr.
+ * @param[out] outCursor Pointer to a PalCursor to recieve the created
+ * cursor. Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ * @sa palDestroyCursor
+ */
+PAL_API PalResult PAL_CALL palCreateCursorFrom(
+    PalCursorType type,
     PalCursor** outCursor);
 
 /**

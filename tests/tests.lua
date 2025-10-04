@@ -38,7 +38,8 @@ project "tests"
             "window_test.c",
             "icon_test.c",
             "cursor_test.c",
-            "input_window_test.c"
+            "input_window_test.c",
+            "system_cursor_test.c"
         }
     end
 

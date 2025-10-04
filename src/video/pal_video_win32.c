@@ -316,7 +316,7 @@ LRESULT CALLBACK videoProc(
             s_Mouse.push = true;
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
-                PalEventType type = PAL_EVENT_WINDOW_MODAL_BEGIN;
+                PalEventType type = PAL_EVENT_WINDOW_MODAL_END;
                 mode = palGetEventDispatchMode(driver, type);
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
@@ -2669,6 +2669,58 @@ PalResult PAL_CALL palCreateCursor(
 
     s_Video.deleteObject(mask);
     s_Video.deleteObject(bitmap);
+    *outCursor = (PalCursor*)cursor;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palCreateCursorFrom(
+    PalCursorType type,
+    PalCursor** outCursor) {
+    
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!outCursor) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HCURSOR cursor = nullptr;
+    switch (type) {
+        case PAL_CURSOR_ARROW: {
+            cursor = LoadCursorW(nullptr, IDC_ARROW);
+            break;
+        }
+
+        case PAL_CURSOR_HAND: {
+            cursor = LoadCursorW(nullptr, IDC_HAND);
+            break;
+        }
+
+        case PAL_CURSOR_CROSS: {
+            cursor = LoadCursorW(nullptr, IDC_CROSS);
+            break;
+        }
+
+        case PAL_CURSOR_IBEAM: {
+            cursor = LoadCursorW(nullptr, IDC_IBEAM);
+            break;
+        }
+
+        case PAL_CURSOR_WAIT: {
+            cursor = LoadCursorW(nullptr, IDC_WAIT);
+            break;
+        }
+
+        default: {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
+    }
+
+    if (!cursor) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     *outCursor = (PalCursor*)cursor;
     return PAL_RESULT_SUCCESS;
 }

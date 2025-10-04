@@ -12,7 +12,7 @@ PAL_BUILD_SYSTEM = true
 PAL_BUILD_THREAD = true
 
 -- build video module
-PAL_BUILD_VIDEO = false
+PAL_BUILD_VIDEO = true
 
 -- build opengl module
 PAL_BUILD_OPENGL = false
