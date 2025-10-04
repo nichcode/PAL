@@ -40,6 +40,9 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
+#define TO_HANDLE(type, val) ((type*)(UintPtr)(val))
+#define FROM_HANDLE(type, handle) ((type)(UintPtr)(handle))
+
 struct PalMutex {
     const PalAllocator* allocator;
     pthread_mutex_t handle;
@@ -82,6 +85,7 @@ PalResult PAL_CALL palCreateThread(
         if (pthread_create(&thread, nullptr, info->entry, info->arg) != 0) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }
+
     } else {
         pthread_attr_t attr;
         pthread_attr_init(&attr);
@@ -92,8 +96,8 @@ PalResult PAL_CALL palCreateThread(
         }
         pthread_attr_destroy(&attr);
     }
-    
-    *outThread = (PalThread*)thread;
+
+    *outThread = TO_HANDLE(PalThread, thread);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -106,10 +110,11 @@ PalResult PAL_CALL palJoinThread(
     }
 
     int ret = 0;
+    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
     if (retval) {
-        ret = pthread_join((pthread_t)thread, &retval);
+        ret = pthread_join(_thread, &retval);
     } else {
-        ret = pthread_join((pthread_t)thread, nullptr);
+        ret = pthread_join(_thread, nullptr);
     }
 
     if (ret == 0) {
@@ -122,7 +127,7 @@ PalResult PAL_CALL palJoinThread(
 void PAL_CALL palDetachThread(PalThread* thread)
 {
     if (thread) {
-        pthread_detach((pthread_t)thread);
+        pthread_detach(FROM_HANDLE(pthread_t, thread));
     }
 }
 
@@ -138,7 +143,7 @@ void PAL_CALL palYield()
 
 PalThread* PAL_CALL palGetCurrentThread()
 {
-    return (PalThread*)pthread_self();
+    return TO_HANDLE(PalThread, pthread_self());
 }
 
 PalThreadFeatures PAL_CALL palGetThreadFeatures()
@@ -159,7 +164,8 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 
     int policy;
     struct sched_param param;
-    if (pthread_getschedparam((pthread_t)thread, &policy, &param) != 0) {
+    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    if (pthread_getschedparam(_thread, &policy, &param) != 0) {
         return 0;
     }
 
@@ -185,7 +191,8 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    if (pthread_getaffinity_np((pthread_t)thread, sizeof(cpuset), &cpuset) != 0) {
+    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    if (pthread_getaffinity_np(_thread, sizeof(cpuset), &cpuset) != 0) {
         return 0;
     }
 
@@ -210,7 +217,8 @@ PalResult PAL_CALL palGetThreadName(
 
     // see if user provided a buffer and write to it
     if (outBuffer && bufferSize > 0) {
-        if (pthread_getname_np((pthread_t)thread, outBuffer, bufferSize) != 0) {
+        pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+        if (pthread_getname_np(_thread, outBuffer, bufferSize) != 0) {
             return PAL_RESULT_INVALID_THREAD;
         }
     }
@@ -240,7 +248,8 @@ PalResult PAL_CALL palSetThreadPriority(
         case PAL_THREAD_PRIORITY_HIGH: {
             struct sched_param param;
             param.sched_priority = 10;
-            int ret = pthread_setschedparam((pthread_t)thread, SCHED_FIFO, &param);
+            pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+            int ret = pthread_setschedparam(_thread, SCHED_FIFO, &param);
             if (ret == EPERM) {
                 return PAL_RESULT_ACCESS_DENIED;
             }
@@ -267,7 +276,8 @@ PalResult PAL_CALL palSetThreadAffinity(
         }
     }
 
-    int ret = pthread_setaffinity_np((pthread_t)thread, sizeof(cpuset), &cpuset);
+    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    int ret = pthread_setaffinity_np(_thread, sizeof(cpuset), &cpuset);
     if (ret == 0) {
         return  PAL_RESULT_SUCCESS;
     } else {
@@ -283,7 +293,8 @@ PalResult PAL_CALL palSetThreadName(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    int ret = pthread_setname_np((pthread_t)thread, name);
+    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    int ret = pthread_setname_np(_thread, name);
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
     } else {
