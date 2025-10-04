@@ -15,3 +15,20 @@
 ### Notes
 - No API or ABI changes
 - Safe upgrade from **v1.0** - just rebuild your project after updating.
+
+## [1.1.0] - 2025-10-01
+
+### Added
+- **Build:** Added Linux platform support across all modules.
+- **Video:** Added X11-based backend support.
+- **Thread:** Added Linux backend support.
+- **Opengl:** Added Linux backend support.
+- **System:** Added Linux backend support.
+
+### Changed
+- **System:** `PalCPUInfo.architecture` is now determined at runtime instead of build time.
+
+### Notes
+- No API or ABI changes - existing Windows code remains compatible.
+- Linux video support currently targets **X11** only: **Wayland** is planned for future releases.
+- Safe upgrade from **v1.0.1** - just rebuild your project after updating.

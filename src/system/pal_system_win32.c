@@ -236,6 +236,33 @@ PalResult PAL_CALL palGetCPUInfo(
     GetSystemInfo(&sysInfo);
     info->numLogicalProcessors = sysInfo.dwNumberOfProcessors;
 
+    // get architecture
+    switch (sysInfo.wProcessorArchitecture) {
+        case PROCESSOR_ARCHITECTURE_INTEL: {
+            info->architecture = PAL_CPU_ARCH_X86;
+            break;
+        }
+
+        case PROCESSOR_ARCHITECTURE_AMD64: {
+            info->architecture = PAL_CPU_ARCH_X86_64;
+            break;
+        }
+
+        case PROCESSOR_ARCHITECTURE_ARM: {
+            info->architecture = PAL_CPU_ARCH_ARM;
+            break;
+        }
+
+        case PROCESSOR_ARCHITECTURE_ARM64: {
+            info->architecture = PAL_CPU_ARCH_ARM64;
+            break;
+        }
+
+        default: {
+            info->architecture = PAL_CPU_ARCH_UNKNOWN;
+        }
+    }
+
     // get cpu info
     DWORD len = 0;
     GetLogicalProcessorInformationEx(RelationAll, nullptr, &len);
@@ -338,19 +365,5 @@ PalResult PAL_CALL palGetCPUInfo(
     }
 
     info->features = features;
-
-    // check compile time architecture
-#if defined(_M_X64) || defined(__x86_64__)
-    info->architecture = PAL_CPU_ARCH_X86_64;
-#elif defined(_M_IX86) || defined(__I386__)
-    info->architecture = PAL_CPU_ARCH_X86;
-#elif defined(_M_ARM64) || defined(__aarch64__)
-    info->architecture = PAL_CPU_ARCH_ARM64;
-#elif defined(_M_ARM) || defined(__arm__)
-    info->architecture = PAL_CPU_ARCH_ARM;
-#else
-    info->architecture = PAL_CPU_ARCH_UNKNOWN;
-#endif // check compile time architecture
-
     return PAL_RESULT_SUCCESS;
 }
