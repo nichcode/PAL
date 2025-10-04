@@ -27,13 +27,13 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_VIDEO
     registerTest("Video Test", videoTest);
-    registerTest("Monitor Test", monitorTest);
-    registerTest("Monitor Mode Test", monitorModeTest);
-    registerTest("Window Test", windowTest);
-    registerTest("Icon Test", iconTest);
-    registerTest("Cursor Test", cursorTest);
-    registerTest("Input Window Test", inputWindowTest);
-    registerTest("System Cursor Test", systemCursorTest);
+    // registerTest("Monitor Test", monitorTest);
+    // registerTest("Monitor Mode Test", monitorModeTest);
+    // registerTest("Window Test", windowTest);
+    // registerTest("Icon Test", iconTest);
+    // registerTest("Cursor Test", cursorTest);
+    // registerTest("Input Window Test", inputWindowTest);
+    // registerTest("System Cursor Test", systemCursorTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL

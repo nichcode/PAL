@@ -1235,7 +1235,6 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS;
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS;

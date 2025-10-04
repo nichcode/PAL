@@ -74,12 +74,39 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files { "src/thread/pal_thread_linux.c" }
+
         filter {}
     end
 
     if (PAL_BUILD_VIDEO) then
         filter {"system:windows", "configurations:*"}
             files { "src/video/pal_video_win32.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/video/pal_video_linux.c" }
+
+            -- check for wayland support. This is cross compiler
+            local paths = {
+                "/usr/include/wayland-client.h",
+                "/usr/include/x86_64-linux-gnu/wayland-client.h"
+            }
+
+            local found = false
+            for _, path in ipairs(paths) do
+                local file = io.open(path, "r")
+                if file then
+                    file:close()
+                    found = true
+                    break
+                end
+            end
+
+            if found then
+                defines { "PAL_HAS_WAYLAND=1" }
+            else
+                defines { "PAL_HAS_WAYLAND=0" }
+            end
+            
         filter {}
     end
 
