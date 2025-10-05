@@ -43,20 +43,17 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-#define TO_HANDLE(type, val) ((type*)(UintPtr)(val))
-#define FROM_HANDLE(type, handle) ((type)(UintPtr)(handle))
+#define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
+#define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 
 typedef struct {
     void (*shutdownVideo)();
-    PalResult (*enumerateMonitors)(
-        Int32* count, 
-        PalMonitor** outMonitors);
-
-    PalResult (*getPrimaryMonitor)(PalMonitor** outMonitor);
-    PalResult (*getMonitorInfo)(
-        PalMonitor* monitor, 
-        PalMonitorInfo* info);
-
+    PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
+    PalResult (*getPrimaryMonitor)(PalMonitor**);
+    PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
+    PalResult (*enumerateMonitorModes)(PalMonitor*, Int32*, PalMonitorMode*);
+    PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
 } Backend;
 
 typedef struct {
@@ -65,23 +62,29 @@ typedef struct {
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     const Backend* backend;
-
-    // we combine both since its not taking that much memory
-    void* xDisplay;
-    void* xRootWindow;
-
-    void* wlDisplay;
-    void* wlCompositor;
 } VideoLinux;
 
 static VideoLinux s_Video = {0};
 
-// ==================================================
-// X11
-// ==================================================
-
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
+
+typedef int (*XGetWindowAttributesFn)(
+    Display*,
+    Window,
+    XWindowAttributes*);
+
+typedef int (*XRRSetCrtcConfigFn)(
+    Display*,
+    XRRScreenResources*,
+    RRCrtc,
+    Time,
+    int, 
+    int,
+    RRMode,
+    Rotation,
+    RROutput*,
+    int);
 
 typedef XRRScreenResources* (*XRRGetScreenResourcesFn)(
     Display*, 
@@ -111,10 +114,15 @@ typedef void (*XRRFreeCrtcInfoFn)(
     XRRCrtcInfo*);
 
 typedef struct {
+    int bpp;
     void* handle;
     void* xrandr;
+    Display* display;
+    Window root;
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
+    XGetWindowAttributesFn getWindowAttributes;
+    XRRSetCrtcConfigFn setCrtcConfig;
 
     XRRGetScreenResourcesFn getScreenResources;
     XRRGetOutputPrimaryFn getOutputPrimary;
@@ -126,6 +134,57 @@ typedef struct {
 } X11;
 
 static X11 s_X11 = {0};
+
+// ==================================================
+// Internal API
+// ==================================================
+
+static int compareModes(const void* a, const void* b) 
+{
+    const PalMonitorMode* mode1 = (const PalMonitorMode*)a;
+    const PalMonitorMode* mode2 = (const PalMonitorMode*)b;
+
+    // compare fields
+    if (mode1->width != mode2->width) {
+        return mode1->width - mode2->width;
+    }
+
+    if (mode1->height != mode2->height) {
+        return mode1->height - mode2->height;
+    }
+
+    if (mode1->refreshRate != mode2->refreshRate) {
+        return mode1->refreshRate - mode2->refreshRate;
+    }
+
+    if (mode1->bpp != mode2->bpp) {
+        return mode1->bpp - mode2->bpp;
+    }
+}
+
+static RRMode xFindMode(
+    XRRScreenResources* resources, 
+    const PalMonitorMode* mode)
+{
+    for (int i = 0; i < resources->nmode; ++i) {
+        XRRModeInfo* info = &resources->modes[i];
+
+        double tmp = (double)info->hTotal * (double)info->vTotal;
+        double rate = (double)info->dotClock / tmp;
+
+        // compare with width, height and refresh rate
+        if (info->width == mode->width    &&
+            info->height == mode->height  &&
+            (Uint32)(rate + 0.5) == mode->refreshRate) {
+            return info->id;
+        }
+    }
+    return None;
+}
+
+// ==================================================
+// X11
+// ==================================================
 
 static PalResult xInitVideo() 
 {
@@ -149,13 +208,21 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XCloseDisplay");
 
+    s_X11.getWindowAttributes = (XGetWindowAttributesFn)dlsym(
+        s_X11.handle, 
+        "XGetWindowAttributes");
+
+    s_X11.setCrtcConfig = (XRRSetCrtcConfigFn)dlsym(
+        s_X11.handle, 
+        "XRRSetCrtcConfig");
+
     // X11 server
-    Display* display = s_X11.openDisplay(nullptr);
-    if (!display) {
+    s_X11.display = s_X11.openDisplay(nullptr);
+    if (!s_X11.display) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    Window rootWindow = DefaultRootWindow(display);
+    s_X11.root = DefaultRootWindow(s_X11.display);
 
     // load Xrandr functions
     s_X11.getScreenResources = (XRRGetScreenResourcesFn)dlsym(
@@ -217,32 +284,35 @@ static PalResult xInitVideo()
     s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
     s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
 
-    s_Video.xDisplay = display;
-    s_Video.xRootWindow = TO_HANDLE(void, rootWindow);
+    // get root window bpp
+    XWindowAttributes attr;
+    s_X11.getWindowAttributes(s_X11.display, s_X11.root, &attr);
+    s_X11.bpp = attr.depth;
+
     return PAL_RESULT_SUCCESS;
 }
 
 static void xShutdownVideo() 
 {
-    s_X11.closeDisplay((Display*)s_Video.xDisplay);
+    s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
 }
 
-PalResult xEnumerateMonitors(
+static PalResult xEnumerateMonitors(
     Int32* count,
     PalMonitor** outMonitors)
 {
     int _count = 0;
     int maxCount = outMonitors ? *count : 0;
     XRRScreenResources* resources = s_X11.getScreenResources(
-        (Display*)s_Video.xDisplay,
-        FROM_HANDLE(Window, s_Video.xRootWindow));
+        s_X11.display,
+        s_X11.root);
     
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
         XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-            (Display*)s_Video.xDisplay,
+            s_X11.display,
             resources,
             output);
         
@@ -251,7 +321,7 @@ PalResult xEnumerateMonitors(
             // a monitor
             if (outMonitors) {
                 if (_count < maxCount) {
-                    outMonitors[_count] = TO_HANDLE(PalMonitor, output);
+                    outMonitors[_count] = TO_PAL_HANDLE(PalMonitor, output);
                 }
             }
             _count++;
@@ -264,50 +334,50 @@ PalResult xEnumerateMonitors(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
+static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
 {
     // get the primary monitor
     RROutput primary = s_X11.getOutputPrimary(
-        (Display*)s_Video.xDisplay,
-        FROM_HANDLE(Window, s_Video.xRootWindow));
+        s_X11.display,
+        s_X11.root);
 
     if (primary) {
-        *outMonitor = TO_HANDLE(PalMonitor, primary);
+        *outMonitor = TO_PAL_HANDLE(PalMonitor, primary);
         return PAL_RESULT_SUCCESS;
     }
 
     // primary monitor not set
     XRRScreenResources* resources = s_X11.getScreenResources(
-        (Display*)s_Video.xDisplay,
-        FROM_HANDLE(Window, s_Video.xRootWindow));
+        s_X11.display,
+        s_X11.root);
 
     if (resources->noutput > 0) {
-        *outMonitor = TO_HANDLE(PalMonitor, resources->outputs[0]);
+        *outMonitor = TO_PAL_HANDLE(PalMonitor, resources->outputs[0]);
     }
     
     s_X11.freeScreenResources(resources);
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetMonitorInfo(
+static PalResult xGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
     XRRScreenResources* resources = s_X11.getScreenResources(
-        (Display*)s_Video.xDisplay,
-        FROM_HANDLE(Window, s_Video.xRootWindow));
+        s_X11.display,
+        s_X11.root);
 
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-        (Display*)s_Video.xDisplay,
+        s_X11.display,
         resources,
-        FROM_HANDLE(RROutput, monitor));
+        FROM_PAL_HANDLE(RROutput, monitor));
     
     strcpy(info->name, outputInfo->name);
     
     // check if its primary monitor
     RROutput primary = s_X11.getOutputPrimary(
-        (Display*)s_Video.xDisplay,
-        FROM_HANDLE(Window, s_Video.xRootWindow));
+        s_X11.display,
+        s_X11.root);
     
     if (!primary) {
         if (resources->noutput > 0) {
@@ -315,13 +385,13 @@ PalResult xGetMonitorInfo(
         }
     }
 
-    if (monitor == TO_HANDLE(PalMonitor, primary)) {
+    if (monitor == TO_PAL_HANDLE(PalMonitor, primary)) {
         info->primary = true;
     }
 
     // get monitor pos and size
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-        (Display*)s_Video.xDisplay,
+        s_X11.display,
         resources,
         outputInfo->crtc);
     
@@ -377,18 +447,210 @@ PalResult xGetMonitorInfo(
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
+
     return PAL_RESULT_SUCCESS;
 }
 
-// ==================================================
-// Internal API
-// ==================================================
+static PalResult xEnumerateMonitorModes(
+    PalMonitor* monitor,
+    Int32* count,
+    PalMonitorMode* modes)
+{    
+    Int32 modeCount = 0;
+    int maxModeCount = modes ? *count : 0;
+
+    XRRScreenResources* resources = s_X11.getScreenResources(
+        s_X11.display,
+        s_X11.root);
+    
+    // get the monitor info
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
+        s_X11.display,
+        resources,
+        FROM_PAL_HANDLE(RROutput, monitor));
+
+    if (!outputInfo) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    if (outputInfo->connection != RR_Connected) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    // get supported display modes
+    for (int i = 0; i < outputInfo->nmode; ++i) {
+        for (int j = 0; j < resources->nmode; ++j) {
+            // get the display mode and check if its for our monitor
+            XRRModeInfo* info = &resources->modes[j];
+            if (info->id == outputInfo->modes[i]) {
+                // check if user supplied a PalMonitorMode array
+                if (modes) {
+                    if (modeCount < maxModeCount) {
+                        PalMonitorMode* mode = &modes[modeCount];
+                        mode->width = info->width;
+                        mode->height = info->height;
+                        mode->bpp = s_X11.bpp;
+
+                        double tmp = (double)info->hTotal * (double)info->vTotal;
+                        double rate = (double)info->dotClock / tmp;
+                        mode->refreshRate = rate + 0.5;
+                    }
+                }
+                modeCount++;
+            }
+        }
+    }
+
+    if (!modes) {
+        *count = modeCount;
+    }
+
+    s_X11.freeOutputInfo(outputInfo);
+    s_X11.freeScreenResources(resources);
+    
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult xGetCurrentMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode)
+{
+    XRRScreenResources* resources = s_X11.getScreenResources(
+        s_X11.display,
+        s_X11.root);
+    
+    // get the monitor info
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
+        s_X11.display,
+        resources,
+        FROM_PAL_HANDLE(RROutput, monitor));
+
+    if (!outputInfo) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    if (outputInfo->connection != RR_Connected) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    // get the current display mode
+    if (outputInfo->crtc) {
+        XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
+            s_X11.display,
+            resources,
+            outputInfo->crtc);
+        
+        if (crtc) {
+            // find the display mode
+            XRRModeInfo* info = nullptr;
+            for (int i = 0; i < resources->nmode; ++i) {
+                if (resources->modes[i].id == crtc->mode) {
+                    // found
+                    info = &resources->modes[i];
+                    break;
+                }
+            }
+
+            if (mode) {
+                mode->width = info->width;
+                mode->height = info->height;
+                mode->bpp = s_X11.bpp;
+
+                double tmp = (double)info->hTotal * (double)info->vTotal;
+                double rate = (double)info->dotClock / tmp;
+                mode->refreshRate = rate + 0.5;
+
+                s_X11.freeCrtcInfo(crtc);
+            }
+        }
+    }
+
+    s_X11.freeOutputInfo(outputInfo);
+    s_X11.freeScreenResources(resources);
+    
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult xSetMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode)
+{
+    XRRScreenResources* resources = s_X11.getScreenResources(
+        s_X11.display,
+        s_X11.root);
+    
+    // get the monitor info
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
+        s_X11.display,
+        resources,
+        FROM_PAL_HANDLE(RROutput, monitor));
+
+    if (!outputInfo) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    if (outputInfo->connection != RR_Connected) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    // find the monitor display mode
+    RRMode displayMode = xFindMode(resources, mode);
+    if (displayMode == None) {
+        s_X11.freeOutputInfo(outputInfo);
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR_MODE;
+    }
+
+    // apply the display mode
+    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
+        s_X11.display,
+        resources,
+        outputInfo->crtc);
+
+    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
+    int ret = s_X11.setCrtcConfig(
+        s_X11.display,
+        resources,
+        outputInfo->crtc,
+        CurrentTime,
+        crtc->x,
+        crtc->y,
+        displayMode,
+        crtc->rotation,
+        &output,
+        1);
+    
+    s_X11.freeCrtcInfo(crtc);
+    s_X11.freeOutputInfo(outputInfo);
+    s_X11.freeScreenResources(resources);
+
+    if (ret != Success) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    
+    return PAL_RESULT_SUCCESS;
+}
 
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .enumerateMonitors = xEnumerateMonitors,
     .getMonitorInfo = xGetMonitorInfo,
-    .getPrimaryMonitor = xGetPrimaryMonitor
+    .getPrimaryMonitor = xGetPrimaryMonitor,
+    .enumerateMonitorModes = xEnumerateMonitorModes,
+    .getCurrentMonitorMode = xGetCurrentMonitorMode,
+    .setMonitorMode = xSetMonitorMode
 };
 
 // ==================================================
@@ -460,7 +722,7 @@ PalResult PAL_CALL palEnumerateMonitors(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (count == 0 && outMonitors) {
+    if (*count == 0 && outMonitors) {
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
@@ -493,4 +755,65 @@ PalResult PAL_CALL palGetMonitorInfo(
     }
 
     return s_Video.backend->getMonitorInfo(monitor, info);
+}
+
+PalResult PAL_CALL palEnumerateMonitorModes(
+    PalMonitor* monitor,
+    Int32* count,
+    PalMonitorMode* modes)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!monitor || !count) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (*count == 0 && modes) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    PalResult ret = s_Video.backend->enumerateMonitorModes(
+        monitor,
+        count,
+        modes
+    );
+
+    if (ret == PAL_RESULT_SUCCESS && modes) {
+        // sort the modes so that they are lowest to highest
+        qsort(modes, *count, sizeof(PalMonitorMode), compareModes);
+    }
+
+    return ret;
+}
+
+PalResult PAL_CALL palGetCurrentMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!monitor || !mode) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getCurrentMonitorMode(monitor, mode);
+}
+
+PalResult PAL_CALL palSetMonitorMode(
+    PalMonitor* monitor,
+    PalMonitorMode* mode)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!monitor || !mode) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setMonitorMode(monitor, mode);
 }

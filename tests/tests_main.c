@@ -27,8 +27,8 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_VIDEO
     // registerTest("Video Test", videoTest);
-    registerTest("Monitor Test", monitorTest);
-    // registerTest("Monitor Mode Test", monitorModeTest);
+    // registerTest("Monitor Test", monitorTest);
+    registerTest("Monitor Mode Test", monitorModeTest);
     // registerTest("Window Test", windowTest);
     // registerTest("Icon Test", iconTest);
     // registerTest("Cursor Test", cursorTest);

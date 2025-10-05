@@ -1335,7 +1335,7 @@ PalResult PAL_CALL palEnumerateMonitors(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (count == 0 && outMonitors) {
+    if (*count == 0 && outMonitors) {
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
@@ -1453,6 +1453,10 @@ PalResult PAL_CALL palEnumerateMonitorModes(
 
     if (!monitor || !count) {
         return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (*count == 0 && modes) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
     Int32 modeCount = 0;

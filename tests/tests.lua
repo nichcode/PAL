@@ -34,7 +34,7 @@ project "tests"
         files { 
             "video_test.c",
             "monitor_test.c",
-            -- "monitor_mode_test.c",
+            "monitor_mode_test.c",
             -- "window_test.c",
             -- "icon_test.c",
             -- "cursor_test.c",

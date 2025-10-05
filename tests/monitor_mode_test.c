@@ -128,5 +128,6 @@ bool monitorModeTest()
 
     // free monitors array
     palFree(nullptr, monitors);
+    
     return true;
 }

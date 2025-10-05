@@ -40,8 +40,8 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-#define TO_HANDLE(type, val) ((type*)(UintPtr)(val))
-#define FROM_HANDLE(type, handle) ((type)(UintPtr)(handle))
+#define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
+#define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 
 struct PalMutex {
     const PalAllocator* allocator;
@@ -97,7 +97,7 @@ PalResult PAL_CALL palCreateThread(
         pthread_attr_destroy(&attr);
     }
 
-    *outThread = TO_HANDLE(PalThread, thread);
+    *outThread = TO_PAL_HANDLE(PalThread, thread);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -110,7 +110,7 @@ PalResult PAL_CALL palJoinThread(
     }
 
     int ret = 0;
-    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     if (retval) {
         ret = pthread_join(_thread, &retval);
     } else {
@@ -127,7 +127,7 @@ PalResult PAL_CALL palJoinThread(
 void PAL_CALL palDetachThread(PalThread* thread)
 {
     if (thread) {
-        pthread_detach(FROM_HANDLE(pthread_t, thread));
+        pthread_detach(FROM_PAL_HANDLE(pthread_t, thread));
     }
 }
 
@@ -143,7 +143,7 @@ void PAL_CALL palYield()
 
 PalThread* PAL_CALL palGetCurrentThread()
 {
-    return TO_HANDLE(PalThread, pthread_self());
+    return TO_PAL_HANDLE(PalThread, pthread_self());
 }
 
 PalThreadFeatures PAL_CALL palGetThreadFeatures()
@@ -164,7 +164,7 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 
     int policy;
     struct sched_param param;
-    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     if (pthread_getschedparam(_thread, &policy, &param) != 0) {
         return 0;
     }
@@ -191,7 +191,7 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     if (pthread_getaffinity_np(_thread, sizeof(cpuset), &cpuset) != 0) {
         return 0;
     }
@@ -217,7 +217,7 @@ PalResult PAL_CALL palGetThreadName(
 
     // see if user provided a buffer and write to it
     if (outBuffer && bufferSize > 0) {
-        pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+        pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
         if (pthread_getname_np(_thread, outBuffer, bufferSize) != 0) {
             return PAL_RESULT_INVALID_THREAD;
         }
@@ -248,7 +248,7 @@ PalResult PAL_CALL palSetThreadPriority(
         case PAL_THREAD_PRIORITY_HIGH: {
             struct sched_param param;
             param.sched_priority = 10;
-            pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+            pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
             int ret = pthread_setschedparam(_thread, SCHED_FIFO, &param);
             if (ret == EPERM) {
                 return PAL_RESULT_ACCESS_DENIED;
@@ -276,7 +276,7 @@ PalResult PAL_CALL palSetThreadAffinity(
         }
     }
 
-    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     int ret = pthread_setaffinity_np(_thread, sizeof(cpuset), &cpuset);
     if (ret == 0) {
         return  PAL_RESULT_SUCCESS;
@@ -293,7 +293,7 @@ PalResult PAL_CALL palSetThreadName(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    pthread_t _thread = FROM_HANDLE(pthread_t, thread);
+    pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     int ret = pthread_setname_np(_thread, name);
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
