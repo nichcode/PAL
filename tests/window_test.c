@@ -18,7 +18,7 @@
 // remove the maximize box if supported
 #define NO_MAXIMIZEBOX 0
 
-#define UNICODE_NAME 0
+#define UNICODE_NAME 1
 #define DISPATCH_MODE_POLL 1 // use polling dispatch mode
 
 #if DISPATCH_MODE_POLL

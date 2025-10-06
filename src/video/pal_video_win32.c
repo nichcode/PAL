@@ -1242,6 +1242,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
     s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
     s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
+    s_Video.features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
 
     if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
         s_Video.features |= PAL_VIDEO_FEATURE_HIGH_DPI;

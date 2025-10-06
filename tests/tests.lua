@@ -35,7 +35,7 @@ project "tests"
             "video_test.c",
             "monitor_test.c",
             "monitor_mode_test.c",
-            -- "window_test.c",
+            "window_test.c",
             -- "icon_test.c",
             -- "cursor_test.c",
             -- "input_window_test.c",
