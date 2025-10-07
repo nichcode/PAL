@@ -7,7 +7,7 @@
 
 // make the window transparent if supported
 #define MAKE_TRANSPARENT 0
-#define OPACITY 0.5 // if transparent window is supported
+#define OPACITY 0.8f // if transparent window is supported
 
 // make the window a tool window if supported
 #define MAKE_TOOL 0
@@ -198,7 +198,6 @@ bool windowTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.maximized = true;
 
 #if UNICODE_NAME
     createInfo.title = "PAL Test Window Unicode - àà";
@@ -246,7 +245,7 @@ bool windowTest()
 
 #if MAKE_TRANSPARENT
     if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
-        result = palSetWindowOpacity(window, OPACITY);
+        //result = palSetWindowOpacity(window, OPACITY);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set window opacity %s", error);

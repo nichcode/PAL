@@ -29,7 +29,9 @@ freely, subject to the following restrictions:
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <dlfcn.h>
+#include <unistd.h>
 
 // X11 headers
 #include <X11/Xlib.h>
@@ -48,31 +50,6 @@ freely, subject to the following restrictions:
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 #define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
-
-typedef struct {
-    void (*shutdownVideo)();
-    void (*updateVideo)();
-    PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
-    PalResult (*getPrimaryMonitor)(PalMonitor**);
-    PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
-    PalResult (*enumerateMonitorModes)(PalMonitor*, Int32*, PalMonitorMode*);
-    PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
-    PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
-    PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
-    PalResult (*setMonitorOrientation)(PalMonitor*, PalOrientation);
-    PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
-    void (*destroyWindow)(PalWindow*);
-} Backend;
-
-typedef struct {
-    bool initialized;
-    PalVideoFeatures features;
-    const PalAllocator* allocator;
-    PalEventDriver* eventDriver;
-    const Backend* backend;
-} VideoLinux;
-
-static VideoLinux s_Video = {0};
 
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
@@ -197,6 +174,17 @@ typedef int (*XResizeWindowFn)(
     unsigned int,
     unsigned int);
 
+typedef int (*XIconifyWindowFn)(
+    Display*,
+    Window,
+    int);
+
+typedef XErrorHandler (*XSetErrorHandlerFn)(XErrorHandler);
+
+typedef int (*XSyncFn)(
+    Display*,
+    Bool);
+
 typedef int (*XRRSetCrtcConfigFn)(
     Display*,
     XRRScreenResources*,
@@ -256,17 +244,21 @@ typedef struct
     Atom UTF8_STRING;
     Atom _NET_WM_WINDOW_TYPE;
     Atom _NET_WM_WINDOW_TYPE_SPLASH;
+    Atom _NET_WM_PID;
+    Atom _WM_CLASS;
 } X11Atoms;
 
 typedef struct {
     int bpp;
     int transparentDepth;
+    int screen;
     void* handle;
     void* xrandr;
     Display* display;
     Window root;
     Colormap transparentColormap;
     Visual* transparentVisual;
+    GC gc;
 
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
@@ -291,6 +283,10 @@ typedef struct {
     XSendEventFn sendEvent;
     XMoveWindowFn moveWindow;
     XResizeWindowFn resizeWindow;
+    XIconifyWindowFn iconifyWindow;
+
+    XSetErrorHandlerFn setErrorHandler;
+    XSyncFn sync;
 
     XRRSetCrtcConfigFn setCrtcConfig;
     XRRGetScreenResourcesFn getScreenResources;
@@ -302,8 +298,36 @@ typedef struct {
     XRRFreeCrtcInfoFn freeCrtcInfo;
 } X11;
 
+typedef struct {
+    void (*shutdownVideo)();
+    void (*updateVideo)();
+    PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
+    PalResult (*getPrimaryMonitor)(PalMonitor**);
+    PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
+    PalResult (*enumerateMonitorModes)(PalMonitor*, Int32*, PalMonitorMode*);
+    PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*setMonitorOrientation)(PalMonitor*, PalOrientation);
+    PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
+    void (*destroyWindow)(PalWindow*);
+    PalResult (*setWindowOpacity)(PalWindow*, float);
+} Backend;
+
+typedef struct {
+    bool initialized;
+    PalVideoFeatures features;
+    const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
+    const Backend* backend;
+    char className[64];
+    Int32 classNameLen;
+} VideoLinux;
+
 static X11 s_X11 = {0};
 static X11Atoms s_X11Atoms = {0};
+static VideoLinux s_Video = {0};
+static bool s_XErrorOccurred = false;
 
 // ==================================================
 // Internal API
@@ -369,6 +393,8 @@ static void xcheckFeatures()
     X_INTERN(_NET_WM_WINDOW_OPACITY);
     X_INTERN(_NET_WM_WINDOW_TYPE);
     X_INTERN(_NET_WM_WINDOW_TYPE_SPLASH);
+    X_INTERN(_NET_WM_PID);
+    X_INTERN(_WM_CLASS);
 
     // check for support from the window manager
     Atom type;
@@ -460,6 +486,12 @@ static void xcheckFeatures()
     features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
 
     s_Video.features = features;
+}
+
+static int xErrorHandler(Display*, XErrorEvent* e) {
+    // this is use for simple success and failure
+    s_XErrorOccurred = true;
+    return 0;
 }
 
 // ==================================================
@@ -572,6 +604,18 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XResizeWindow");
 
+    s_X11.iconifyWindow = (XIconifyWindowFn)dlsym(
+        s_X11.handle, 
+        "XIconifyWindow");
+
+    s_X11.setErrorHandler = (XSetErrorHandlerFn)dlsym(
+        s_X11.handle, 
+        "XSetErrorHandler");
+
+    s_X11.sync = (XSyncFn)dlsym(
+        s_X11.handle, 
+        "XSync");
+
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
@@ -579,6 +623,7 @@ static PalResult xInitVideo()
     }
 
     s_X11.root = DefaultRootWindow(s_X11.display);
+    s_X11.screen = DefaultScreen(s_X11.display);
 
     // load Xrandr functions
     s_X11.getScreenResources = (XRRGetScreenResourcesFn)dlsym(
@@ -616,18 +661,31 @@ static PalResult xInitVideo()
     s_X11.bpp = attr.depth;
 
     // create a transparent colormap
-    XVisualInfo visualInfo;
-    s_X11.matchVisualInfo(s_X11.display, 0, 32, TrueColor, &visualInfo);
-    s_X11.transparentDepth = visualInfo.depth;
-    s_X11.transparentVisual = visualInfo.visual;
+    XVisualInfo info;
+    s_X11.matchVisualInfo(s_X11.display, s_X11.screen, 32, TrueColor, &info);
+    s_X11.transparentDepth = info.depth;
+    s_X11.transparentVisual = info.visual;
 
     // create color map
     s_X11.transparentColormap = s_X11.createColormap(
         s_X11.display, 
         s_X11.root,
-        visualInfo.visual, 
+        info.visual, 
         AllocNone);
 
+    // set class
+    const char* instance = "pal_window";
+    const char* class = "PAL";
+    snprintf(
+        s_Video.className, 
+        sizeof(s_Video.className), 
+        "%s%c%s%c",
+        instance,
+        '\0',
+        class,
+        '\0');
+
+    s_Video.classNameLen = strlen(instance) + strlen(class) + 2;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -718,7 +776,6 @@ static PalResult xEnumerateMonitors(
 
 static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
 {
-    // get the primary monitor
     RROutput primary = s_X11.getOutputPrimary(
         s_X11.display,
         s_X11.root);
@@ -726,19 +783,9 @@ static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
     if (primary) {
         *outMonitor = TO_PAL_HANDLE(PalMonitor, primary);
         return PAL_RESULT_SUCCESS;
+    } else {
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
-
-    // primary monitor not set
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-
-    if (resources->noutput > 0) {
-        *outMonitor = TO_PAL_HANDLE(PalMonitor, resources->outputs[0]);
-    }
-    
-    s_X11.freeScreenResources(resources);
-    return PAL_RESULT_SUCCESS;
 }
 
 static PalResult xGetMonitorInfo(
@@ -753,6 +800,18 @@ static PalResult xGetMonitorInfo(
         s_X11.display,
         resources,
         FROM_PAL_HANDLE(RROutput, monitor));
+
+    if (!outputInfo) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
+
+    if (outputInfo->connection != RR_Connected) {
+        // invalid monitor
+        s_X11.freeScreenResources(resources);
+        return PAL_RESULT_INVALID_MONITOR;
+    }
     
     strcpy(info->name, outputInfo->name);
     
@@ -760,12 +819,6 @@ static PalResult xGetMonitorInfo(
     RROutput primary = s_X11.getOutputPrimary(
         s_X11.display,
         s_X11.root);
-    
-    if (!primary) {
-        if (resources->noutput > 0) {
-            primary = resources->outputs[0];
-        }
-    }
 
     if (monitor == TO_PAL_HANDLE(PalMonitor, primary)) {
         info->primary = true;
@@ -1155,9 +1208,12 @@ static PalResult xCreateWindow(
     Window window = None;
     PalMonitor* monitor = nullptr;
     PalMonitorInfo monitorInfo;
-    Colormap colormap = None;
-    Visual* visual = DefaultVisual(s_X11.display, 0);
-    int depth = DefaultDepth(s_X11.display, 0);
+
+    Visual* visual = DefaultVisual(s_X11.display, s_X11.screen);
+    int depth = DefaultDepth(s_X11.display, s_X11.screen);
+    unsigned long bgPixel = WhitePixel(s_X11.display, s_X11.screen);
+    unsigned long borderPixel = BlackPixel(s_X11.display, s_X11.screen);
+    Colormap colormap = DefaultColormap(s_X11.display, s_X11.screen);
 
     // get monitor
     if (info->monitor) {
@@ -1195,11 +1251,11 @@ static PalResult xCreateWindow(
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
         }
 
+        bgPixel = 0;
+        borderPixel = 0;
+        visual = s_X11.transparentVisual;
+        depth = s_X11.transparentDepth;
         colormap = s_X11.transparentColormap;
-
-    } else {
-        // use default color map
-        colormap = DefaultColormap(s_X11.display, 0);
     }
 
     long mask = ExposureMask | StructureNotifyMask | KeyPressMask;
@@ -1211,8 +1267,8 @@ static PalResult xCreateWindow(
     XSetWindowAttributes attrs = {0};
     attrs.colormap = colormap;
     attrs.event_mask = mask;
-    attrs.background_pixel = WhitePixel(s_X11.display, 0);
-    attrs.border_pixel = BlackPixel(s_X11.display, 0);
+    attrs.background_pixel = bgPixel;
+    attrs.border_pixel = borderPixel;
     attrs.override_redirect = False;
 
     // create window
@@ -1233,6 +1289,29 @@ static PalResult xCreateWindow(
     if (window == None) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
+
+    // set window pid
+    pid_t pid = getpid();
+    s_X11.changeProperty(
+        s_X11.display,
+        window,
+        s_X11Atoms._NET_WM_PID,
+        XA_CARDINAL,
+        32,
+        PropModeReplace,
+        (unsigned char*)&pid,
+        1);
+    
+    // set class name
+    s_X11.changeProperty(
+        s_X11.display,
+        window,
+        s_X11Atoms._WM_CLASS,
+        XA_STRING,
+        8,
+        PropModeReplace,
+        (unsigned char*)&s_Video.className,
+        s_Video.classNameLen);
 
     if (s_X11Atoms.unicodeTitle) {
         s_X11.changeProperty(
@@ -1316,11 +1395,15 @@ static PalResult xCreateWindow(
     }
 
     // show window
-    s_X11.mapWindow(s_X11.display, window);
-    s_X11.flush(s_X11.display);
+    if (info->show) {
+        s_X11.mapWindow(s_X11.display, window);
+        // move the window if window manager didnt
+        s_X11.moveWindow(s_X11.display, window, x, y);
+        s_X11.flush(s_X11.display);
+    }
 
     // maximize
-    if (info->maximized) {
+    if (info->maximized && info->show) {
         if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
             s_X11.destroyWindow(s_X11.display, window);
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
@@ -1359,6 +1442,25 @@ static PalResult xCreateWindow(
             &e);
     }
 
+    // minimize
+    if (info->minimized && info->show) {
+        if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+            s_X11.destroyWindow(s_X11.display, window);
+            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        }
+
+        // wait till the window is mapped
+        for (;;) {
+            XEvent event;
+            s_X11.nextEvent(s_X11.display, &event);
+            if (event.type == MapNotify && event.xmap.window == window) {
+                break;
+            }
+        }
+
+        s_X11.iconifyWindow(s_X11.display, window, s_X11.screen);
+    }
+
     s_X11.setWMProtocols(
         s_X11.display, 
         window, 
@@ -1377,6 +1479,33 @@ static void xDestroyWindow(PalWindow* window)
         FROM_PAL_HANDLE(Window, window));
 }
 
+static PalResult xSetWindowOpacity(
+    PalWindow* window,
+    float opacity)
+{
+    XErrorHandler old = s_X11.setErrorHandler(xErrorHandler);
+    unsigned long value = (unsigned long)(opacity * 0xFFFFFFFFUL + 0.5f);
+
+    s_X11.changeProperty(
+        s_X11.display,
+        FROM_PAL_HANDLE(Window, window),
+        s_X11Atoms._NET_WM_WINDOW_OPACITY,
+        XA_CARDINAL,
+        32,
+        PropModeReplace,
+        (unsigned char*)&value,
+        1);
+    
+    s_X11.sync(s_X11.display, False);
+    s_X11.setErrorHandler(old);
+    if (s_XErrorOccurred) {
+        // technically, this is the only error that can occur
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
@@ -1389,7 +1518,8 @@ static Backend s_XBackend = {
     .validateMonitorMode = xValidateMonitorMode,
     .setMonitorOrientation = xSetMonitorOrientation,
     .createWindow = xCreateWindow,
-    .destroyWindow = xDestroyWindow 
+    .destroyWindow = xDestroyWindow,
+    .setWindowOpacity = xSetWindowOpacity
 };
 
 // ==================================================
@@ -1625,4 +1755,31 @@ void PAL_CALL palDestroyWindow(PalWindow* window)
     if (s_Video.initialized && window) {
         return s_Video.backend->destroyWindow(window);
     }
+}
+
+PalResult PAL_CALL palSetWindowOpacity(
+    PalWindow* window,
+    float opacity)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!(s_Video.features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW)) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (opacity < 0.0f) {
+        opacity = 0.0f;
+    }
+
+    if (opacity > 1.0f) {
+        opacity = 1.0f;
+    }
+
+    return s_Video.backend->setWindowOpacity(window, opacity);
 }

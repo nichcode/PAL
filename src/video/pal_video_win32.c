@@ -2264,6 +2264,14 @@ PalResult PAL_CALL palSetWindowOpacity(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    if (opacity < 0.0f) {
+        opacity = 0.0f;
+    }
+
+    if (opacity > 1.0f) {
+        opacity = 1.0f;
+    }
+
     bool ret = SetLayeredWindowAttributes(
         (HWND)window,
         0,
