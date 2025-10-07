@@ -173,6 +173,30 @@ typedef int (*XNextEventFn)(
     Display*,
     XEvent*);
 
+typedef int (*XSetWMNormalHintsFn)(
+    Display*,
+    Window,
+    XSizeHints*);
+
+typedef int (*XSendEventFn)(
+    Display*,
+    Window,
+    Bool,
+    long,
+    XEvent*);
+
+typedef int (*XMoveWindowFn)(
+    Display*,
+    Window,
+    int,
+    int);
+
+typedef int (*XResizeWindowFn)(
+    Display*,
+    Window,
+    unsigned int,
+    unsigned int);
+
 typedef int (*XRRSetCrtcConfigFn)(
     Display*,
     XRRScreenResources*,
@@ -230,7 +254,8 @@ typedef struct
 
     Atom _NET_WM_NAME;
     Atom UTF8_STRING;
-    Atom _MOTIF_WM_HINTS;
+    Atom _NET_WM_WINDOW_TYPE;
+    Atom _NET_WM_WINDOW_TYPE_SPLASH;
 } X11Atoms;
 
 typedef struct {
@@ -262,6 +287,10 @@ typedef struct {
     XPendingFn pending;
     XSetWMProtocolsFn setWMProtocols;
     XNextEventFn nextEvent;
+    XSetWMNormalHintsFn setWMNormalHints;
+    XSendEventFn sendEvent;
+    XMoveWindowFn moveWindow;
+    XResizeWindowFn resizeWindow;
 
     XRRSetCrtcConfigFn setCrtcConfig;
     XRRGetScreenResourcesFn getScreenResources;
@@ -334,11 +363,12 @@ static void xcheckFeatures()
     X_INTERN(_NET_WM_STATE_MAXIMIZED_HORZ);
     X_INTERN(_NET_WM_NAME);
     X_INTERN(UTF8_STRING);
-    X_INTERN(_MOTIF_WM_HINTS);
     X_INTERN(_NET_WM_WINDOW_TYPE_UTILITY);
     X_INTERN(_NET_WM_DESKTOP);
     X_INTERN(_NET_WM_STATE_DEMANDS_ATTENTIONS);
     X_INTERN(_NET_WM_WINDOW_OPACITY);
+    X_INTERN(_NET_WM_WINDOW_TYPE);
+    X_INTERN(_NET_WM_WINDOW_TYPE_SPLASH);
 
     // check for support from the window manager
     Atom type;
@@ -376,10 +406,13 @@ static void xcheckFeatures()
             features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
         }
 
-        if (supportedAtoms[i] == s_X11Atoms._MOTIF_WM_HINTS) {
-            features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+        if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE) {
             features |= PAL_VIDEO_FEATURE_WINDOW_SET_STYLE;
             features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
+        }
+
+        if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH) {
+            features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
         }
 
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_STATE_ABOVE) {
@@ -397,7 +430,6 @@ static void xcheckFeatures()
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE_UTILITY) {
             features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
         }
-
     }
 
     // check for transparent windows
@@ -523,6 +555,22 @@ static PalResult xInitVideo()
     s_X11.nextEvent = (XNextEventFn)dlsym(
         s_X11.handle, 
         "XNextEvent");
+
+    s_X11.setWMNormalHints = (XSetWMNormalHintsFn)dlsym(
+        s_X11.handle, 
+        "XSetWMNormalHints");
+
+    s_X11.sendEvent = (XSendEventFn)dlsym(
+        s_X11.handle, 
+        "XSendEvent");
+
+    s_X11.moveWindow = (XMoveWindowFn)dlsym(
+        s_X11.handle, 
+        "XMoveWindow");
+
+    s_X11.resizeWindow = (XResizeWindowFn)dlsym(
+        s_X11.handle, 
+        "XResizeWindow");
 
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
@@ -1165,6 +1213,7 @@ static PalResult xCreateWindow(
     attrs.event_mask = mask;
     attrs.background_pixel = WhitePixel(s_X11.display, 0);
     attrs.border_pixel = BlackPixel(s_X11.display, 0);
+    attrs.override_redirect = False;
 
     // create window
     window = s_X11.createWindow(
@@ -1201,14 +1250,115 @@ static PalResult xCreateWindow(
     }
 
     // borderless
+    if (info->style & PAL_WINDOW_STYLE_BORDERLESS) {
+        if (!(s_Video.features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW)) {
+            s_X11.destroyWindow(s_X11.display, window);
+            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        }
+
+        s_X11.changeProperty(
+            s_X11.display,
+            window,
+            s_X11Atoms._NET_WM_WINDOW_TYPE,
+            XA_ATOM,
+            32,
+            PropModeReplace,
+            (unsigned char*)&s_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH,
+            1);
+
+    }
 
     // tool window
+    if (info->style & PAL_WINDOW_STYLE_TOOL) {
+        if (!(s_Video.features & PAL_VIDEO_FEATURE_TOOL_WINDOW)) {
+            s_X11.destroyWindow(s_X11.display, window);
+            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        }
+
+        s_X11.changeProperty(
+            s_X11.display,
+            window,
+            s_X11Atoms._NET_WM_WINDOW_TYPE,
+            XA_ATOM,
+            32,
+            PropModeReplace,
+            (unsigned char*)&s_X11Atoms._NET_WM_WINDOW_TYPE_UTILITY,
+            1);
+
+    }
 
     // topmost
+    if (info->style & PAL_WINDOW_STYLE_TOPMOST) {
+        if (!(s_Video.features & PAL_VIDEO_FEATURE_TOPMOST_WINDOW)) {
+            s_X11.destroyWindow(s_X11.display, window);
+            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        }
+
+        s_X11.changeProperty(
+            s_X11.display,
+            window,
+            s_X11Atoms._NET_WM_STATE,
+            XA_ATOM,
+            32,
+            PropModeAppend,
+            (unsigned char*)&s_X11Atoms._NET_WM_STATE_ABOVE,
+            1);
+
+    }
 
     // resizable
+    if (!(info->style & PAL_WINDOW_STYLE_RESIZABLE)) {
+        XSizeHints hints = {0};
+        hints.flags = PMinSize | PMaxSize;
+        hints.min_width = hints.max_width = info->width;
+        hints.min_height = hints.max_height = info->height;
+        s_X11.setWMNormalHints(s_X11.display, window, &hints);
+    }
 
-    // min, max
+    // show window
+    s_X11.mapWindow(s_X11.display, window);
+    s_X11.flush(s_X11.display);
+
+    // maximize
+    if (info->maximized) {
+        if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+            s_X11.destroyWindow(s_X11.display, window);
+            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        }
+
+        // wait till the window is mapped
+        for (;;) {
+            XEvent event;
+            s_X11.nextEvent(s_X11.display, &event);
+            if (event.type == MapNotify && event.xmap.window == window) {
+                break;
+            }
+        }
+
+        Atom data[2];
+        data[0] = s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT;
+        data[1] = s_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ;
+
+        XEvent e = {0};
+        e.xclient.type = ClientMessage;
+        e.xclient.send_event = True;
+        e.xclient.window = window;
+        e.xclient.message_type = s_X11Atoms._NET_WM_STATE;
+        e.xclient.format = 32;
+        e.xclient.data.l[0] = 1; // _NET_WM_STATE_ADD
+        e.xclient.data.l[1] = data[0];
+        e.xclient.data.l[2] = data[1];
+        e.xclient.data.l[3] = 1;
+        e.xclient.data.l[4] = 0;
+
+        s_X11.sendEvent(
+            s_X11.display,
+            s_X11.root,
+            False,
+            SubstructureNotifyMask | SubstructureRedirectMask,
+            &e);
+    }
+
     s_X11.setWMProtocols(
         s_X11.display, 
         window, 
@@ -1216,10 +1366,6 @@ static PalResult xCreateWindow(
         True);
 
     s_X11.flush(s_X11.display);
-    
-    s_X11.mapWindow(s_X11.display, window);
-    s_X11.flush(s_X11.display); // we need the window to show
-
     *outWindow = TO_PAL_HANDLE(PalWindow, window);
     return PAL_RESULT_SUCCESS;
 }
@@ -1461,6 +1607,14 @@ PalResult PAL_CALL palCreateWindow(
 
     if (!info || !outWindow) {
         return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->style & PAL_WINDOW_STYLE_NO_MINIMIZEBOX) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (info->style & PAL_WINDOW_STYLE_NO_MAXIMIZEBOX) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
     }
 
     return s_Video.backend->createWindow(info,outWindow);

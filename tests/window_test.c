@@ -198,6 +198,7 @@ bool windowTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
+    createInfo.maximized = true;
 
 #if UNICODE_NAME
     createInfo.title = "PAL Test Window Unicode - àà";
