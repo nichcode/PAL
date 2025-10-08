@@ -1163,7 +1163,7 @@ PalResult PAL_CALL palInitVideo(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    // set a flag to set if the window has been created
+    // set a flag to check if the window has been created
     SetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA, (LONG_PTR)&s_Event);
 
     // register raw input for mice to get delta
@@ -1806,7 +1806,7 @@ PalResult PAL_CALL palCreateWindow(
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 
-    // set a flag to set if the window has been created
+    // set a flag to check if the window has been created
     SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)&s_Event);
 
     *outWindow = (PalWindow*)handle;

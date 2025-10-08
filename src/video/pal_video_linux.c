@@ -35,8 +35,9 @@ freely, subject to the following restrictions:
 
 // X11 headers
 #include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
+#include <X11/Xutil.h>
 #include <X11/extensions/Xrandr.h>
 
 #if PAL_HAS_WAYLAND
@@ -51,8 +52,9 @@ freely, subject to the following restrictions:
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 #define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
 
-#define MAX_MONITOR_STATE 16
-#define MAX_WINDOW_STATE 128
+// monitors are pluggable so we keep a static array
+// to get dpi and count since X11 does not provide those for us
+#define MAX_MONITOR_DATA 32
 
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
@@ -188,6 +190,20 @@ typedef int (*XSyncFn)(
     Display*,
     Bool);
 
+typedef int (*XSaveContextFn)(
+    Display*,
+    XID,
+    XContext,
+    _Xconst char*);
+
+typedef int (*XFindContextFn)(
+    Display*,
+    XID,
+    XContext,
+    XPointer*);
+
+typedef XrmQuark (*XrmUniqueQuarkFn)(void);
+
 typedef int (*XRRSetCrtcConfigFn)(
     Display*,
     XRRScreenResources*,
@@ -227,23 +243,26 @@ typedef void (*XRRFreeOutputInfoFn)(
 typedef void (*XRRFreeCrtcInfoFn)(
     XRRCrtcInfo*);
 
+typedef void (*XRRSelectInputFn)(
+    Display*, 
+    Window, 
+    int);
+
+typedef struct {
+    bool skipConfigure;
+    bool skipState;
+    int x;
+    int y;
+    Uint32 w;
+    Uint32 h;
+    PalWindowState state;
+} WindowData;
+
 typedef struct {
     bool used;
     int dpi;
     PalMonitor* monitor;
-} MonitorState;
-
-typedef struct {
-    bool skipState;
-    bool skipConfigure;
-    bool used;
-    int x;
-    int y;
-    int width;
-    int height;
-    PalWindowState state;
-    PalWindow* window;
-} WindowState;
+} MonitorData;
 
 typedef struct 
 {
@@ -281,6 +300,7 @@ typedef struct {
     Colormap transparentColormap;
     Visual* transparentVisual;
     GC gc;
+    XContext dataID;
 
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
@@ -309,6 +329,9 @@ typedef struct {
 
     XSetErrorHandlerFn setErrorHandler;
     XSyncFn sync;
+    XSaveContextFn saveContext;
+    XFindContextFn findContext;
+    XrmUniqueQuarkFn uniqueContext;
 
     XRRSetCrtcConfigFn setCrtcConfig;
     XRRGetScreenResourcesFn getScreenResources;
@@ -318,6 +341,7 @@ typedef struct {
     XRRFreeScreenResourcesFn freeScreenResources;
     XRRFreeOutputInfoFn freeOutputInfo;
     XRRFreeCrtcInfoFn freeCrtcInfo;
+    XRRSelectInputFn selectRRInput;
 } X11;
 
 typedef struct {
@@ -338,21 +362,21 @@ typedef struct {
 
 typedef struct {
     bool initialized;
+    bool error;
     Int32 classNameLen;
     Int32 monitorCount;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     const Backend* backend;
-    WindowState* windowStates;
-    MonitorState* monitorStates;
+
+    MonitorData monitorData[MAX_MONITOR_DATA];
     char className[64];
 } VideoLinux;
 
 static X11 s_X11 = {0};
 static X11Atoms s_X11Atoms = {0};
 static VideoLinux s_Video = {0};
-static bool s_XErrorOccurred = false;
 
 // ==================================================
 // Internal API
@@ -517,79 +541,44 @@ static void xCheckFeatures()
 static int xErrorHandler(Display*, XErrorEvent* e) 
 {
     // this is use for simple success and failure
-    s_XErrorOccurred = true;
+    s_Video.error = true;
     return 0;
 }
 
-static WindowState* getFreeWindowState() 
+static MonitorData* getFreeMonitorData() 
 {
-    for (int i = 0; i < MAX_WINDOW_STATE; ++i) {
-        if (!s_Video.windowStates[i].used) {
-            s_Video.windowStates[i].used = true;
-            return &s_Video.windowStates[i];
+    for (int i = 0; i < MAX_MONITOR_DATA; ++i) {
+        if (!s_Video.monitorData[i].used) {
+            s_Video.monitorData[i].used = true;
+            return &s_Video.monitorData[i];
         }
     }
-    // TODO: FIXME
-    // maybe expand window states array
+    //, It will be weird to see a 32 monitor setup
     return nullptr;
 }
 
-static MonitorState* getFreeMonitorState() 
+static MonitorData* findMonitorData(PalMonitor* monitor) 
 {
-    for (int i = 0; i < MAX_MONITOR_STATE; ++i) {
-        if (!s_Video.monitorStates[i].used) {
-            s_Video.monitorStates[i].used = true;
-            return &s_Video.monitorStates[i];
-        }
-    }
-    // TODO: FIXME
-    // maybe expand monitor states array
-    return nullptr;
-}
-
-static WindowState* findWindowState(PalWindow* window) 
-{
-    for (int i = 0; i < MAX_WINDOW_STATE; ++i) {
-        if (s_Video.windowStates[i].used && 
-            s_Video.windowStates[i].window == window) {
-            return &s_Video.windowStates[i];
+    for (int i = 0; i < MAX_MONITOR_DATA; ++i) {
+        if (s_Video.monitorData[i].used && 
+            s_Video.monitorData[i].monitor == monitor) {
+            return &s_Video.monitorData[i];
         }
     }
     return nullptr;
 }
 
-static MonitorState* findMonitorState(PalMonitor* monitor) 
+static void freeMonitorData(PalMonitor* monitor) 
 {
-    for (int i = 0; i < MAX_MONITOR_STATE; ++i) {
-        if (s_Video.monitorStates[i].used && 
-            s_Video.monitorStates[i].monitor == monitor) {
-            return &s_Video.monitorStates[i];
-        }
-    }
-    return nullptr;
-}
-
-static void freeWindowState(PalWindow* window) 
-{
-    for (int i = 0; i < MAX_WINDOW_STATE; ++i) {
-        if (s_Video.windowStates[i].used && 
-            s_Video.windowStates[i].window == window) {
-            s_Video.windowStates[i].used = false;
+    for (int i = 0; i < MAX_MONITOR_DATA; ++i) {
+        if (s_Video.monitorData[i].used && 
+            s_Video.monitorData[i].monitor == monitor) {
+            s_Video.monitorData[i].used = false;
         }
     }
 }
 
-static void freeMonitorState(PalMonitor* monitor) 
-{
-    for (int i = 0; i < MAX_MONITOR_STATE; ++i) {
-        if (s_Video.monitorStates[i].used && 
-            s_Video.monitorStates[i].monitor == monitor) {
-            s_Video.monitorStates[i].used = false;
-        }
-    }
-}
-
-static PalWindowState xQueryWindowState(Window xWindow) 
+static PalWindowState xQueryWindowState(Window xWin) 
 {
     Atom type;
     int format;
@@ -599,7 +588,7 @@ static PalWindowState xQueryWindowState(Window xWindow)
 
     s_X11.getWindowProperty(
         s_X11.display,
-        xWindow,
+        xWin,
         s_X11Atoms._NET_WM_STATE,
         0,
         1024,
@@ -750,6 +739,18 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XSync");
 
+    s_X11.saveContext = (XSaveContextFn)dlsym(
+        s_X11.handle, 
+        "XSaveContext");
+
+    s_X11.findContext = (XFindContextFn)dlsym(
+        s_X11.handle, 
+        "XFindContext");
+
+    s_X11.uniqueContext = (XrmUniqueQuarkFn)dlsym(
+        s_X11.handle, 
+        "XrmUniqueQuark");
+
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
@@ -788,6 +789,10 @@ static PalResult xInitVideo()
         s_X11.xrandr, 
         "XRRFreeCrtcInfo");
 
+    s_X11.selectRRInput = (XRRSelectInputFn)dlsym(
+        s_X11.xrandr, 
+        "XRRSelectInput");
+
     xCheckFeatures();
     // get root window bpp
     XWindowAttributes attr;
@@ -807,6 +812,12 @@ static PalResult xInitVideo()
         info.visual, 
         AllocNone);
 
+    // subscribe for monitor events
+    s_X11.selectRRInput(
+        s_X11.display, 
+        s_X11.root, 
+        RRScreenChangeNotifyMask);
+
     // set class
     const char* instance = "pal_window";
     const char* class = "PAL";
@@ -820,6 +831,7 @@ static PalResult xInitVideo()
         '\0');
 
     s_Video.classNameLen = strlen(instance) + strlen(class) + 2;
+    s_X11.dataID = (XContext)s_X11.uniqueContext();
 
     return PAL_RESULT_SUCCESS;
 }
@@ -842,6 +854,11 @@ static void xUpdateVideo()
     while (s_X11.pending(s_X11.display)) {
         s_X11.nextEvent(s_X11.display, &event);
 
+        Window xWin = event.xany.window;
+        PalWindow* window = TO_PAL_HANDLE(PalWindow, xWin);
+        WindowData* data = nullptr;
+        s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+
         switch (event.type) {
             case ClientMessage: {
                 // check for window close
@@ -851,11 +868,6 @@ static void xUpdateVideo()
                         PalEventDriver* driver = s_Video.eventDriver;
                         PalEventType type = PAL_EVENT_WINDOW_CLOSE;
                         mode = palGetEventDispatchMode(driver, type);
-
-                        PalWindow* window = TO_PAL_HANDLE(
-                            PalWindow, 
-                            event.xclient.window);
-
                         if (mode != PAL_DISPATCH_NONE) {
                             PalEvent event = {0};
                             event.type = type;
@@ -863,35 +875,30 @@ static void xUpdateVideo()
                             palPushEvent(driver, &event);
                         }
                     }
-                    
                 }
                 return;
             }
 
             case ConfigureNotify: {
                 // window resize or move
-                PalWindow* window = TO_PAL_HANDLE(
-                    PalWindow, 
-                    event.xconfigure.window);
 
-                WindowState* state = findWindowState(window);
                 // skip the first configure event
-                if (state->skipConfigure) {
-                    state->skipConfigure = false;
-                    state->width = event.xconfigure.width;
-                    state->height = event.xconfigure.height;
-                    state->x = event.xconfigure.x;
-                    state->y = event.xconfigure.y;
+                if (data->skipConfigure) {
+                    data->skipConfigure = false;
+                    data->w = event.xconfigure.width;
+                    data->h = event.xconfigure.height;
+                    data->x = event.xconfigure.x;
+                    data->y = event.xconfigure.y;
                     return;
                 }
 
                 // real configure event
                 if (s_Video.eventDriver) {
                     // check if its a resize event
-                    if (state->width != event.xconfigure.width || 
-                        state->height != event.xconfigure.height) {
-                        state->width = event.xconfigure.width;
-                        state->height = event.xconfigure.height;
+                    if (data->w != event.xconfigure.width || 
+                        data->h != event.xconfigure.height) {
+                        data->w = event.xconfigure.width;
+                        data->h = event.xconfigure.height;
 
                         // push a resize event
                         PalEventDriver* driver = s_Video.eventDriver;
@@ -901,40 +908,17 @@ static void xUpdateVideo()
                         if (mode != PAL_DISPATCH_NONE) {
                             PalEvent event = {0};
                             event.type = type;
-                            event.data = palPackUint32(state->width, state->height);
+                            event.data = palPackUint32(data->w, data->h);
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
-                        }
-
-                        // we check window state and push event some window 
-                        // managers do not update the state PropertyNotify
-                        // so we update that if it was not called
-                        PalWindowState winState;
-                        winState = xQueryWindowState(event.xconfigure.window);
-                        if (winState != state->state) {
-                            // state has changed even if PropertyNotify was called
-                            state->state = winState;
-
-                            // push event
-                            PalEventDriver* driver = s_Video.eventDriver;
-                            PalEventType type = PAL_EVENT_WINDOW_STATE;
-                            mode = palGetEventDispatchMode(driver, type);
-
-                            if (mode != PAL_DISPATCH_NONE) {
-                                PalEvent event = {0};
-                                event.type = type;
-                                event.data = state->state;
-                                event.data2 = palPackPointer(window);
-                                palPushEvent(driver, &event);
-                            }
                         }
                     }
 
                     // check if its a move event
-                    if (state->x != event.xconfigure.x || 
-                        state->y != event.xconfigure.y) {
-                        state->x = event.xconfigure.x;
-                        state->y = event.xconfigure.y;
+                    if (data->x != event.xconfigure.x || 
+                        data->y != event.xconfigure.y) {
+                        data->x = event.xconfigure.x;
+                        data->y = event.xconfigure.y;
 
                         // push a move event
                         PalEventDriver* driver = s_Video.eventDriver;
@@ -944,7 +928,7 @@ static void xUpdateVideo()
                         if (mode != PAL_DISPATCH_NONE) {
                             PalEvent event = {0};
                             event.type = type;
-                            event.data = palPackInt32(state->x, state->y);
+                            event.data = palPackInt32(data->x, data->y);
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
                         }
@@ -965,11 +949,6 @@ static void xUpdateVideo()
                     PalEventDriver* driver = s_Video.eventDriver;
                     PalEventType type = PAL_EVENT_WINDOW_FOCUS;
                     mode = palGetEventDispatchMode(driver, type);
-
-                    PalWindow* window = TO_PAL_HANDLE(
-                            PalWindow, 
-                            event.xfocus.window);
-
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = type;
@@ -993,11 +972,6 @@ static void xUpdateVideo()
                     PalEventDriver* driver = s_Video.eventDriver;
                     PalEventType type = PAL_EVENT_WINDOW_FOCUS;
                     mode = palGetEventDispatchMode(driver, type);
-
-                    PalWindow* window = TO_PAL_HANDLE(
-                            PalWindow, 
-                            event.xfocus.window);
-
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = type;
@@ -1010,22 +984,16 @@ static void xUpdateVideo()
             }
 
             case PropertyNotify: {
-                PalWindow* window = TO_PAL_HANDLE(
-                    PalWindow, 
-                    event.xproperty.window);
-
                 // check window state (maximize, minimize)
                 if (event.xproperty.atom == s_X11Atoms._NET_WM_STATE) {
-                    WindowState* state = findWindowState(window);
-
-                    PalWindowState winState;
-                    winState = xQueryWindowState(event.xproperty.window);
-                    if (winState != state->state) {
-                        state->state = winState;
+                    PalWindowState state;
+                    state = xQueryWindowState(event.xproperty.window);
+                    if (state != data->state) {
+                        data->state = state;
 
                         // skip the first state event
-                        if (state->skipState) {
-                            state->skipState = false;
+                        if (data->skipState) {
+                            data->skipState = false;
                             return;
                         }
 
@@ -1037,13 +1005,19 @@ static void xUpdateVideo()
                         if (mode != PAL_DISPATCH_NONE) {
                             PalEvent event = {0};
                             event.type = type;
-                            event.data = state->state;
+                            event.data = data->state;
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
                         }
                     }
                 }
-                break;
+                return;
+            }
+
+            case RRScreenChangeNotify: {
+                // TODO: 
+                int a = 1;
+                return;
             }
         }
     }
@@ -1521,6 +1495,12 @@ static PalResult xCreateWindow(
     PalMonitor* monitor = nullptr;
     PalMonitorInfo monitorInfo;
 
+    WindowData* data = nullptr;
+    data = palAllocate(s_Video.allocator, sizeof(WindowData), 0);
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     Visual* visual = DefaultVisual(s_X11.display, s_X11.screen);
     int depth = DefaultDepth(s_X11.display, s_X11.screen);
     unsigned long bgPixel = WhitePixel(s_X11.display, s_X11.screen);
@@ -1785,20 +1765,20 @@ static PalResult xCreateWindow(
 
     s_X11.flush(s_X11.display);
 
-    WindowState* state = getFreeWindowState();
-    state->skipConfigure = true;
-    state->skipState = true;
-    state->window = TO_PAL_HANDLE(PalWindow, window);
+    // attach the window data to the window
+    s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
-    *outWindow = state->window;
+    *outWindow = TO_PAL_HANDLE(PalWindow, window);
     return PAL_RESULT_SUCCESS;
 }
 
 static void xDestroyWindow(PalWindow* window)
 {
-    s_X11.destroyWindow(
-        s_X11.display, 
-        FROM_PAL_HANDLE(Window, window));
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    WindowData* data = nullptr;
+    s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+    s_X11.destroyWindow(s_X11.display, xWin);
+    palFree(s_Video.allocator, data);
 }
 
 static PalResult xSetWindowOpacity(
@@ -1820,7 +1800,7 @@ static PalResult xSetWindowOpacity(
     
     s_X11.sync(s_X11.display, False);
     s_X11.setErrorHandler(old);
-    if (s_XErrorOccurred) {
+    if (s_Video.error) {
         // technically, this is the only error that can occur
         return PAL_RESULT_INVALID_WINDOW;
     }
@@ -1860,25 +1840,6 @@ PalResult PAL_CALL palInitVideo(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
-    // allocate an array for window states
-    s_Video.windowStates = palAllocate(
-        s_Video.allocator, 
-        sizeof(WindowState) * MAX_WINDOW_STATE, 
-        0);
-
-    // allocate an array for monitor states
-    s_Video.monitorStates = palAllocate(
-        s_Video.allocator, 
-        sizeof(MonitorState) * MAX_MONITOR_STATE, 
-        0);
-
-    if (!s_Video.windowStates || !s_Video.monitorStates) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    memset(s_Video.windowStates, 0, sizeof(WindowState) * MAX_WINDOW_STATE);
-    memset(s_Video.monitorStates, 0, sizeof(MonitorState) * MAX_MONITOR_STATE);
-
     // get backend type
     bool x11 = true;
     const char* session = getenv("XDG_SESSION_TYPE");
@@ -1895,6 +1856,7 @@ PalResult PAL_CALL palInitVideo(
         }
 
         // get monitor count. X11 does not provide an event for this
+        // we need this to trigger PAL_EVENT_MONITOR_LIST_CHANGED
         int count = 0;
         xEnumerateMonitors(&count, nullptr);
         s_Video.monitorCount = count;
@@ -1911,8 +1873,6 @@ void PAL_CALL palShutdownVideo()
 {
     if (s_Video.initialized) {
         s_Video.backend->shutdownVideo();
-        palFree(s_Video.allocator, s_Video.windowStates);
-        palFree(s_Video.allocator, s_Video.monitorStates);
     }
 }
 
@@ -2101,7 +2061,6 @@ PalResult PAL_CALL palCreateWindow(
 void PAL_CALL palDestroyWindow(PalWindow* window)
 {
     if (s_Video.initialized && window) {
-        freeWindowState(window);
         return s_Video.backend->destroyWindow(window);
     }
 }
