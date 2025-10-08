@@ -210,6 +210,8 @@ LRESULT CALLBACK videoProc(
                     }
                 }
 
+                // TODO: Dont send restored events continously
+
                 if (mode == PAL_DISPATCH_CALLBACK) {
                     PalEvent event = {0};
                     event.data = state;
