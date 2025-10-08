@@ -50,6 +50,7 @@ freely, subject to the following restrictions:
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 #define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
+#define MAX_WINDOW_STATE 128
 
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
@@ -224,6 +225,16 @@ typedef void (*XRRFreeOutputInfoFn)(
 typedef void (*XRRFreeCrtcInfoFn)(
     XRRCrtcInfo*);
 
+typedef struct {
+    int x;
+    int y;
+    int width;
+    int height;
+    bool skipFirst;
+    bool used;
+    PalWindow* window;
+} WindowState;
+
 typedef struct 
 {
     bool unicodeTitle;
@@ -246,6 +257,7 @@ typedef struct
     Atom _NET_WM_WINDOW_TYPE_SPLASH;
     Atom _NET_WM_PID;
     Atom _WM_CLASS;
+    Atom _NET_ACTIVE_WINDOW;
 } X11Atoms;
 
 typedef struct {
@@ -320,6 +332,7 @@ typedef struct {
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     const Backend* backend;
+    WindowState* states;
     char className[64];
     Int32 classNameLen;
 } VideoLinux;
@@ -376,7 +389,7 @@ static RRMode xFindMode(
     return None;
 }
 
-static void xcheckFeatures()
+static void xCheckFeatures()
 {
     // cache this atoms
     X_INTERN(WM_DELETE_WINDOW);
@@ -395,6 +408,7 @@ static void xcheckFeatures()
     X_INTERN(_NET_WM_WINDOW_TYPE_SPLASH);
     X_INTERN(_NET_WM_PID);
     X_INTERN(_WM_CLASS);
+    X_INTERN(_NET_ACTIVE_WINDOW);
 
     // check for support from the window manager
     Atom type;
@@ -492,6 +506,35 @@ static int xErrorHandler(Display*, XErrorEvent* e) {
     // this is use for simple success and failure
     s_XErrorOccurred = true;
     return 0;
+}
+
+static WindowState* getFreeWindowState() {
+    for (int i = 0; i < MAX_WINDOW_STATE; ++i) {
+        if (!s_Video.states[i].used) {
+            s_Video.states[i].used = true;
+            return &s_Video.states[i];
+        }
+    }
+    // TODO: FIXME
+    // maybe expand window states array
+    return nullptr;
+}
+
+static WindowState* findWindowState(PalWindow* window) {
+    for (int i = 0; i < MAX_WINDOW_STATE; ++i) {
+        if (s_Video.states[i].used && s_Video.states[i].window == window) {
+            return &s_Video.states[i];
+        }
+    }
+    return nullptr;
+}
+
+static void freeWindowState(PalWindow* window) {
+    for (int i = 0; i < MAX_WINDOW_STATE; ++i) {
+        if (s_Video.states[i].used && s_Video.states[i].window == window) {
+            s_Video.states[i].used = false;
+        }
+    }
 }
 
 // ==================================================
@@ -654,7 +697,7 @@ static PalResult xInitVideo()
         s_X11.xrandr, 
         "XRRFreeCrtcInfo");
 
-    xcheckFeatures();
+    xCheckFeatures();
     // get root window bpp
     XWindowAttributes attr;
     s_X11.getWindowAttributes(s_X11.display, s_X11.root, &attr);
@@ -719,9 +762,154 @@ static void xUpdateVideo()
                     }
                     
                 }
-                break;
+                return;
             }
 
+            case ConfigureNotify: {
+                // window resize or move
+                PalWindow* window = TO_PAL_HANDLE(
+                    PalWindow, 
+                    event.xconfigure.window);
+
+                WindowState* state = findWindowState(window);
+                if (state->skipFirst) {
+                    state->skipFirst = false;
+                    state->width = event.xconfigure.width;
+                    state->height = event.xconfigure.height;
+                    state->x = event.xconfigure.x;
+                    state->y = event.xconfigure.y;
+                    return;
+                }
+
+                // real configure event
+                if (s_Video.eventDriver) {
+                    // check if its a resize event
+                    if (state->width != event.xconfigure.width || 
+                        state->height != event.xconfigure.height) {
+                        state->width = event.xconfigure.width;
+                        state->height = event.xconfigure.height;
+
+                        // push a resize event
+                        PalEventDriver* driver = s_Video.eventDriver;
+                        PalEventType type = PAL_EVENT_WINDOW_SIZE;
+                        mode = palGetEventDispatchMode(driver, type);
+
+                        if (mode != PAL_DISPATCH_NONE) {
+                            PalEvent event = {0};
+                            event.type = type;
+                            event.data = palPackUint32(state->width, state->height);
+                            event.data2 = palPackPointer(window);
+                            palPushEvent(driver, &event);
+                        }
+                    }
+
+                    // check if its a move event
+                    if (state->x != event.xconfigure.x || 
+                        state->y != event.xconfigure.y) {
+                        state->x = event.xconfigure.x;
+                        state->y = event.xconfigure.y;
+
+                        // push a move event
+                        PalEventDriver* driver = s_Video.eventDriver;
+                        PalEventType type = PAL_EVENT_WINDOW_MOVE;
+                        mode = palGetEventDispatchMode(driver, type);
+
+                        if (mode != PAL_DISPATCH_NONE) {
+                            PalEvent event = {0};
+                            event.type = type;
+                            event.data = palPackInt32(state->x, state->y);
+                            event.data2 = palPackPointer(window);
+                            palPushEvent(driver, &event);
+                        }
+                    }
+                }
+                return;
+            }
+
+            case FocusIn: {
+                // window has gained focus
+                if (s_Video.eventDriver) {
+                    int mode = event.xfocus.mode;
+                    if (mode == NotifyGrab || mode == NotifyUngrab) {
+                        // ignore dragging and popup focus events
+                        return;
+                    }
+
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    PalEventType type = PAL_EVENT_WINDOW_FOCUS;
+                    mode = palGetEventDispatchMode(driver, type);
+
+                    PalWindow* window = TO_PAL_HANDLE(
+                            PalWindow, 
+                            event.xfocus.window);
+
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = true;
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+                }
+                return;
+            }
+
+            case FocusOut: {
+                // window has lost focus
+                if (s_Video.eventDriver) {
+                    int mode = event.xfocus.mode;
+                    if (mode == NotifyGrab || mode == NotifyUngrab) {
+                        // ignore dragging and popup focus events
+                        break;
+                    }
+
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    PalEventType type = PAL_EVENT_WINDOW_FOCUS;
+                    mode = palGetEventDispatchMode(driver, type);
+
+                    PalWindow* window = TO_PAL_HANDLE(
+                            PalWindow, 
+                            event.xfocus.window);
+
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = false;
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+                }
+                return;
+            }
+
+            //case PropertyNotify: {
+                // check for active window
+            //     if (event.xproperty.atom == s_X11Atoms._NET_ACTIVE_WINDOW) {
+            //         Window window = None;
+            //         Atom type;
+            //         int format;
+            //         unsigned long count, bytesAfter;
+            //         unsigned char* property = nullptr;
+
+            //         s_X11.getWindowProperty(
+            //             s_X11.display,
+            //             s_X11.root,
+            //             s_X11Atoms._NET_ACTIVE_WINDOW,
+            //             0, 
+            //             1,
+            //             False,
+            //             XA_WINDOW,
+            //             &type,
+            //             &format,
+            //             &count,
+            //             &bytesAfter,
+            //             &property);
+    
+            //         window = *(Window*)property;
+
+            //     }
+            //     break;
+            // }
         }
     }
 
@@ -1263,6 +1451,10 @@ static PalResult xCreateWindow(
     mask |= ButtonPressMask;
     mask |= ButtonReleaseMask;
     mask |= PointerMotionMask;
+    mask |= FocusChangeMask;
+    mask |= EnterWindowMask;
+    mask |= LeaveWindowMask;
+    mask |= PropertyChangeMask;
 
     XSetWindowAttributes attrs = {0};
     attrs.colormap = colormap;
@@ -1468,7 +1660,12 @@ static PalResult xCreateWindow(
         True);
 
     s_X11.flush(s_X11.display);
-    *outWindow = TO_PAL_HANDLE(PalWindow, window);
+
+    WindowState* state = getFreeWindowState();
+    state->skipFirst = true;
+    state->window = TO_PAL_HANDLE(PalWindow, window);
+
+    *outWindow = state->window;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1538,6 +1735,13 @@ PalResult PAL_CALL palInitVideo(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
+    // allocate an array for window states
+    s_Video.states = palAllocate(s_Video.allocator, sizeof(WindowState), 0);
+    if (!s_Video.states) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+    
+
     // get backend type
     bool x11 = true;
     const char* session = getenv("XDG_SESSION_TYPE");
@@ -1565,6 +1769,7 @@ void PAL_CALL palShutdownVideo()
 {
     if (s_Video.initialized) {
         s_Video.backend->shutdownVideo();
+        palFree(s_Video.allocator, s_Video.states);
     }
 }
 
