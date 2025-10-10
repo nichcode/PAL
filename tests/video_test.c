@@ -17,7 +17,7 @@ bool videoTest()
     result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 

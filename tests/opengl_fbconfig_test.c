@@ -43,7 +43,7 @@ bool openglFBConfigTest()
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window %s", error);
+        palLog(nullptr, "Failed to create window: %s", error);
         return false;
     }
 
@@ -63,7 +63,7 @@ bool openglFBConfigTest()
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs %s", error);
+        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
         return false;
     }
 
@@ -83,7 +83,7 @@ bool openglFBConfigTest()
     result = palEnumerateGLFBConfigs(&glWindow, &fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs %s", error);
+        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
         palFree(nullptr, fbConfigs);
         return false;
     }

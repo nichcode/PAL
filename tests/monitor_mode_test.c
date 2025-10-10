@@ -18,7 +18,7 @@ bool monitorModeTest()
     PalResult result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 
@@ -26,7 +26,7 @@ bool monitorModeTest()
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors %s", error);
+        palLog(nullptr, "Failed to get query monitors: %s", error);
         return false;
     }
 
@@ -50,7 +50,7 @@ bool monitorModeTest()
     result = palEnumerateMonitors(&count, monitors);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors %s", error);
+        palLog(nullptr, "Failed to get query monitors: %s", error);
         return false;
     }
 
@@ -60,7 +60,7 @@ bool monitorModeTest()
         result = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get monitor info %s", error);
+            palLog(nullptr, "Failed to get monitor info: %s", error);
             palFree(nullptr, monitors);
             return false;
         }
@@ -72,7 +72,7 @@ bool monitorModeTest()
         result = palEnumerateMonitorModes(monitor, &modeCount, nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get query monitor modes %s", error);
+            palLog(nullptr, "Failed to get query monitor modes: %s", error);
             return false;
         }
 
@@ -91,7 +91,7 @@ bool monitorModeTest()
         result = palEnumerateMonitorModes(monitor, &modeCount, modes);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get query monitor modes %s", error);
+            palLog(nullptr, "Failed to get query monitor modes: %s", error);
             return false;
         }
 
@@ -112,7 +112,7 @@ bool monitorModeTest()
         result = palGetCurrentMonitorMode(monitor, &current);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get current monitor mode %s", error);
+            palLog(nullptr, "Failed to get current monitor mode: %s", error);
             return false;
         }
 

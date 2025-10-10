@@ -40,6 +40,7 @@ freely, subject to the following restrictions:
 #include <X11/Xutil.h>
 #include <X11/extensions/Xrandr.h>
 
+// Wayland headers
 #if PAL_HAS_WAYLAND
 #include <wayland-client.h>
 #endif // PAL_HAS_WAYLAND
@@ -50,11 +51,38 @@ freely, subject to the following restrictions:
 
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
+
+typedef struct {
+    bool skipConfigure;
+    bool skipState;
+    bool used;
+    int x;
+    int y;
+    Uint32 w;
+    int dpi;
+    Uint32 h;
+    PalWindowState state;
+} WindowData;
+
+typedef struct {
+    bool used;
+    int dpi;
+    int x;
+    int y;
+    Uint32 w;
+    Uint32 h;
+    PalMonitor* monitor;
+} MonitorData;
+
+// ==================================================
+// X11 Typedefs, enums and structs
+// ==================================================
+
+#pragma region X11 Typedefs
 #define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
 
-// monitors are pluggable so we keep a static array
-// to get dpi and count since X11 does not provide those for us
-#define MAX_MONITOR_DATA 32
+#define RANDR_SCREEN_CHANGE_EVENT 1040
+#define RANDR_NOTIFY_EVENT 1041
 
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
@@ -248,21 +276,10 @@ typedef void (*XRRSelectInputFn)(
     Window, 
     int);
 
-typedef struct {
-    bool skipConfigure;
-    bool skipState;
-    int x;
-    int y;
-    Uint32 w;
-    Uint32 h;
-    PalWindowState state;
-} WindowData;
-
-typedef struct {
-    bool used;
-    int dpi;
-    PalMonitor* monitor;
-} MonitorData;
+typedef int (*XRRQueryExtensionFn)(
+    Display*,
+	int*,
+	int*);
 
 typedef struct 
 {
@@ -290,9 +307,13 @@ typedef struct
 } X11Atoms;
 
 typedef struct {
+    bool error;
+    bool skipScreenEvent;
+    bool skipNotifyEvent;
     int bpp;
     int transparentDepth;
     int screen;
+    int rrEventBase;
     void* handle;
     void* xrandr;
     Display* display;
@@ -342,7 +363,13 @@ typedef struct {
     XRRFreeOutputInfoFn freeOutputInfo;
     XRRFreeCrtcInfoFn freeCrtcInfo;
     XRRSelectInputFn selectRRInput;
+    XRRQueryExtensionFn queryRRExtension;
 } X11;
+
+static X11 s_X11 = {0};
+static X11Atoms s_X11Atoms = {0};
+
+#pragma endregion
 
 typedef struct {
     void (*shutdownVideo)();
@@ -362,20 +389,18 @@ typedef struct {
 
 typedef struct {
     bool initialized;
-    bool error;
     Int32 classNameLen;
-    Int32 monitorCount;
+    Int32 maxWindowData;
+    Int32 maxMonitorData;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     const Backend* backend;
-
-    MonitorData monitorData[MAX_MONITOR_DATA];
+    WindowData* windowData;
+    MonitorData* monitorData;
     char className[64];
 } VideoLinux;
 
-static X11 s_X11 = {0};
-static X11Atoms s_X11Atoms = {0};
 static VideoLinux s_Video = {0};
 
 // ==================================================
@@ -404,6 +429,103 @@ static int compareModes(const void* a, const void* b)
         return mode1->bpp - mode2->bpp;
     }
 }
+
+static WindowData* getFreeWindowData() 
+{
+    for (int i = 0; i < s_Video.maxWindowData; ++i) {
+        if (!s_Video.windowData[i].used) {
+            s_Video.windowData[i].used = true;
+            return &s_Video.windowData[i];
+        }
+    }
+
+    // resize the data array
+    // It is rare for a user to create and manage
+    // 32 windows at the same time
+    WindowData* data = nullptr;
+    int count = s_Video.maxWindowData * 2; // double the size
+    int freeIndex = s_Video.maxWindowData + 1;
+    data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
+    if (data) {
+        memcpy(
+            data, 
+            s_Video.windowData, 
+            s_Video.maxWindowData * sizeof(WindowData));
+
+        palFree(s_Video.allocator, s_Video.windowData);
+        s_Video.windowData = data;
+        s_Video.maxWindowData = count;
+
+        s_Video.windowData[freeIndex].used = true;
+        return &s_Video.windowData[freeIndex];
+    }
+    return nullptr;
+}
+
+static void resetMonitorData() 
+{
+    memset(
+        s_Video.monitorData, 
+        0, 
+        s_Video.maxMonitorData * sizeof(MonitorData));
+}
+
+static MonitorData* getFreeMonitorData() 
+{
+    for (int i = 0; i < s_Video.maxMonitorData; ++i) {
+        if (!s_Video.monitorData[i].used) {
+            s_Video.monitorData[i].used = true;
+            return &s_Video.monitorData[i];
+        }
+    }
+
+    // resize the data array
+    // this will almost not reach here since most setups are 1-4 monitors
+    MonitorData* data = nullptr;
+    int count = s_Video.maxMonitorData * 2; // double the size
+    int freeIndex = s_Video.maxMonitorData + 1;
+    data = palAllocate(s_Video.allocator, sizeof(MonitorData) * count, 0);
+    if (data) {
+        memcpy(
+            data, 
+            s_Video.monitorData, 
+            s_Video.maxMonitorData * sizeof(MonitorData));
+
+        palFree(s_Video.allocator, s_Video.monitorData);
+        s_Video.monitorData = data;
+        s_Video.maxWindowData = count;
+
+        s_Video.monitorData[freeIndex].used = true;
+        return &s_Video.monitorData[freeIndex];
+    }
+    return nullptr;
+}
+
+static MonitorData* findMonitorData(PalMonitor* monitor) 
+{
+    for (int i = 0; i < s_Video.maxMonitorData; ++i) {
+        if (s_Video.monitorData[i].used && 
+            s_Video.monitorData[i].monitor == monitor) {
+            return &s_Video.monitorData[i];
+        }
+    }
+}
+
+static void freeMonitorData(PalMonitor* monitor) 
+{
+    for (int i = 0; i < s_Video.maxMonitorData; ++i) {
+        if (s_Video.monitorData[i].used && 
+            s_Video.monitorData[i].monitor == monitor) {
+            s_Video.monitorData[i].used = false;
+        }
+    }
+}
+
+// ==================================================
+// X11 API
+// ==================================================
+
+#pragma region X11 API
 
 static RRMode xFindMode(
     XRRScreenResources* resources, 
@@ -541,41 +663,8 @@ static void xCheckFeatures()
 static int xErrorHandler(Display*, XErrorEvent* e) 
 {
     // this is use for simple success and failure
-    s_Video.error = true;
+    s_X11.error = true;
     return 0;
-}
-
-static MonitorData* getFreeMonitorData() 
-{
-    for (int i = 0; i < MAX_MONITOR_DATA; ++i) {
-        if (!s_Video.monitorData[i].used) {
-            s_Video.monitorData[i].used = true;
-            return &s_Video.monitorData[i];
-        }
-    }
-    //, It will be weird to see a 32 monitor setup
-    return nullptr;
-}
-
-static MonitorData* findMonitorData(PalMonitor* monitor) 
-{
-    for (int i = 0; i < MAX_MONITOR_DATA; ++i) {
-        if (s_Video.monitorData[i].used && 
-            s_Video.monitorData[i].monitor == monitor) {
-            return &s_Video.monitorData[i];
-        }
-    }
-    return nullptr;
-}
-
-static void freeMonitorData(PalMonitor* monitor) 
-{
-    for (int i = 0; i < MAX_MONITOR_DATA; ++i) {
-        if (s_Video.monitorData[i].used && 
-            s_Video.monitorData[i].monitor == monitor) {
-            s_Video.monitorData[i].used = false;
-        }
-    }
 }
 
 static PalWindowState xQueryWindowState(Window xWin) 
@@ -617,9 +706,82 @@ static PalWindowState xQueryWindowState(Window xWin)
     return state;
 }
 
-// ==================================================
-// X11
-// ==================================================
+static void xCacheMonitors(bool enumerate)
+{
+    XRRScreenResources* resources = nullptr;
+    resources = s_X11.getScreenResources(
+        s_X11.display,
+        s_X11.root);
+
+    for (int i = 0; i < resources->noutput; ++i) {
+        RROutput output = resources->outputs[i];
+        XRROutputInfo* info = s_X11.getOutputInfo(
+            s_X11.display,
+            resources,
+            output);
+
+        if (info->connection == RR_Connected && 
+            info->crtc != None) {
+            // get monitor data and update info
+            PalMonitor* monitor = TO_PAL_HANDLE(PalMonitor, output);
+            MonitorData* data = nullptr;
+
+            if (enumerate) {
+                data = getFreeMonitorData();
+                if (!data) {
+                    return;
+                }
+
+                data->monitor = monitor;
+
+            } else {
+                data = findMonitorData(monitor);
+            }
+
+            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
+                s_X11.display,
+                resources,
+                info->crtc);
+
+            double dpi = (double)(crtc->width * 25.4) / (double)info->mm_width;
+            data->dpi = (int)dpi;
+            data->w = crtc->width;
+            data->h = crtc->height;
+            data->x = crtc->x;
+            data->y = crtc->y;
+
+            s_X11.freeCrtcInfo(crtc);
+        }
+
+        s_X11.freeOutputInfo(info);
+    }
+
+    s_X11.freeScreenResources(resources);
+}
+
+static int xGetWindowMonitorDPI(
+    WindowData* data, 
+    bool enumerate)
+{
+    int winX = data->x + data->w / 2;
+    int winY = data->y + data->w / 2;
+    // get the DPI from our cached monitor
+    for (int i = 0; i < s_Video.maxMonitorData; i++) {
+        if (!s_Video.monitorData->used) {
+            continue;
+        }
+
+        // we found a monitor, check the monitor bounds with the window
+        MonitorData* info = &s_Video.monitorData[i];
+        if (winX >= info->x && 
+            winX < info->x + info->w && 
+            winY >= info->y && 
+            winY < info->y + info->h) {
+            // found monitor
+            return info->dpi;
+        }
+    }
+}
 
 static PalResult xInitVideo() 
 {
@@ -793,6 +955,10 @@ static PalResult xInitVideo()
         s_X11.xrandr, 
         "XRRSelectInput");
 
+    s_X11.queryRRExtension = (XRRQueryExtensionFn)dlsym(
+        s_X11.xrandr, 
+        "XRRQueryExtension");
+
     xCheckFeatures();
     // get root window bpp
     XWindowAttributes attr;
@@ -816,7 +982,13 @@ static PalResult xInitVideo()
     s_X11.selectRRInput(
         s_X11.display, 
         s_X11.root, 
-        RRScreenChangeNotifyMask);
+        RRScreenChangeNotifyMask | RRNotify);
+
+    int eventBase, errorBase = 0;
+    s_X11.queryRRExtension(s_X11.display, &eventBase, &errorBase);
+    s_X11.rrEventBase = eventBase;
+    s_X11.skipScreenEvent = true;
+    s_X11.skipNotifyEvent = true;
 
     // set class
     const char* instance = "pal_window";
@@ -832,6 +1004,8 @@ static PalResult xInitVideo()
 
     s_Video.classNameLen = strlen(instance) + strlen(class) + 2;
     s_X11.dataID = (XContext)s_X11.uniqueContext();
+    resetMonitorData();
+    xCacheMonitors(true);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -858,6 +1032,12 @@ static void xUpdateVideo()
         PalWindow* window = TO_PAL_HANDLE(PalWindow, xWin);
         WindowData* data = nullptr;
         s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+
+        if (event.type == s_X11.rrEventBase + RRScreenChangeNotify) {
+            event.type = RANDR_SCREEN_CHANGE_EVENT; // for switch flow
+        } else if (event.type == s_X11.rrEventBase + RRNotify) {
+            event.type = RANDR_NOTIFY_EVENT; // for switch flow
+        }
 
         switch (event.type) {
             case ClientMessage: {
@@ -931,6 +1111,29 @@ static void xUpdateVideo()
                             event.data = palPackInt32(data->x, data->y);
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
+                        }
+
+                        /** a window has to be moved 
+                        before its can change monitors
+                        we get the monitor the moved 
+                        window is on and check if the dpi is different
+                        from the one it was created on */
+                        int monitorDPI = xGetWindowMonitorDPI(data, false);
+                        if (monitorDPI != data->dpi) {
+                            // window is on a different monitor
+                            data->dpi = monitorDPI;
+
+                            // push a DPI event
+                            type = PAL_EVENT_MONITOR_DPI_CHANGED;
+                            mode = palGetEventDispatchMode(driver, type);
+
+                            if (mode != PAL_DISPATCH_NONE) {
+                                PalEvent event = {0};
+                                event.type = type;
+                                event.data = monitorDPI;
+                                event.data2 = palPackPointer(window);
+                                palPushEvent(driver, &event);
+                            }
                         }
                     }
                 }
@@ -1014,10 +1217,50 @@ static void xUpdateVideo()
                 return;
             }
 
-            case RRScreenChangeNotify: {
-                // TODO: 
-                int a = 1;
+            case RANDR_SCREEN_CHANGE_EVENT: {
+                // skip the first event 
+                if (s_X11.skipScreenEvent) {
+                    s_X11.skipScreenEvent = false;
+                    return;
+                }
+
+                // something change on pre existing monitor
+                // cache the information
+                xCacheMonitors(false);
                 return;
+            }
+
+            case RANDR_NOTIFY_EVENT: {
+                // skip the first event 
+                if (s_X11.skipNotifyEvent) {
+                    s_X11.skipNotifyEvent = false;
+                    return;
+                }
+
+                XRRNotifyEvent* e = (XRRNotifyEvent*)&event;
+                switch (e->subtype) {
+                    case RRNotify_OutputChange: {
+                        // push a event monitor list changed event
+                        if (s_Video.eventDriver) {
+                            PalEventDriver* driver = s_Video.eventDriver;
+                            PalEventType type = PAL_EVENT_MONITOR_LIST_CHANGED;
+                            mode = palGetEventDispatchMode(driver, type);
+                            if (mode != PAL_DISPATCH_NONE) {
+                                PalEvent event = {0};
+                                event.type = type;
+                                event.data2 = palPackPointer(window);
+                                palPushEvent(driver, &event);
+                            }
+                        }
+
+                        /** enumerate monitors and cache them 
+                        these will be used to detect DPI changed
+                        since X11 does not have a DPI changed function */
+                        resetMonitorData();
+                        xCacheMonitors(true);
+                        return;
+                    }
+                }
             }
         }
     }
@@ -1066,9 +1309,32 @@ static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
         s_X11.display,
         s_X11.root);
 
+    if (!primary) {
+        // primary monitor is not set, set the first one
+        XRRScreenResources* resources = s_X11.getScreenResources(
+            s_X11.display,
+            s_X11.root);
+
+        for (int i = 0; i < resources->noutput; ++i) {
+            RROutput output = resources->outputs[i];
+            XRROutputInfo* outputInfo = s_X11.getOutputInfo(
+                s_X11.display,
+                resources,
+                output);
+
+            if (outputInfo->connection == RR_Connected && 
+                outputInfo->crtc != None) {
+                primary = resources->outputs[i];
+                break;
+            }
+        }
+    }
+
+    // if we still did not get one, we fail
     if (primary) {
         *outMonitor = TO_PAL_HANDLE(PalMonitor, primary);
         return PAL_RESULT_SUCCESS;
+
     } else {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -1495,8 +1761,7 @@ static PalResult xCreateWindow(
     PalMonitor* monitor = nullptr;
     PalMonitorInfo monitorInfo;
 
-    WindowData* data = nullptr;
-    data = palAllocate(s_Video.allocator, sizeof(WindowData), 0);
+    WindowData* data = getFreeWindowData();
     if (!data) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -1766,6 +2031,9 @@ static PalResult xCreateWindow(
     s_X11.flush(s_X11.display);
 
     // attach the window data to the window
+    data->skipConfigure = true;
+    data->skipState = true;
+    data->dpi = monitorInfo.dpi; // the current window monitor
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
     *outWindow = TO_PAL_HANDLE(PalWindow, window);
@@ -1778,7 +2046,7 @@ static void xDestroyWindow(PalWindow* window)
     WindowData* data = nullptr;
     s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
     s_X11.destroyWindow(s_X11.display, xWin);
-    palFree(s_Video.allocator, data);
+    data->used = false;
 }
 
 static PalResult xSetWindowOpacity(
@@ -1800,7 +2068,7 @@ static PalResult xSetWindowOpacity(
     
     s_X11.sync(s_X11.display, False);
     s_X11.setErrorHandler(old);
-    if (s_Video.error) {
+    if (s_X11.error) {
         // technically, this is the only error that can occur
         return PAL_RESULT_INVALID_WINDOW;
     }
@@ -1823,6 +2091,8 @@ static Backend s_XBackend = {
     .destroyWindow = xDestroyWindow,
     .setWindowOpacity = xSetWindowOpacity
 };
+
+#pragma endregion
 
 // ==================================================
 // Public API
@@ -1849,17 +2119,28 @@ PalResult PAL_CALL palInitVideo(
         }
     }
 
+    s_Video.maxMonitorData = 16; // initial size
+    s_Video.maxWindowData = 32;// initial size
+
+    s_Video.windowData = palAllocate(
+        s_Video.allocator,
+        sizeof(WindowData) * s_Video.maxWindowData,
+        0);
+
+    s_Video.monitorData = palAllocate(
+        s_Video.allocator,
+        sizeof(MonitorData) * s_Video.maxMonitorData,
+        0);
+
+    if (!s_Video.monitorData || !s_Video.windowData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     if (x11) {
         PalResult ret = xInitVideo();
         if (ret != PAL_RESULT_SUCCESS) {
             return ret;
         }
-
-        // get monitor count. X11 does not provide an event for this
-        // we need this to trigger PAL_EVENT_MONITOR_LIST_CHANGED
-        int count = 0;
-        xEnumerateMonitors(&count, nullptr);
-        s_Video.monitorCount = count;
         s_Video.backend = &s_XBackend;
     }
 
@@ -1873,6 +2154,8 @@ void PAL_CALL palShutdownVideo()
 {
     if (s_Video.initialized) {
         s_Video.backend->shutdownVideo();
+        palFree(s_Video.allocator, s_Video.windowData);
+        palFree(s_Video.allocator, s_Video.monitorData);
     }
 }
 

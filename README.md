@@ -7,6 +7,17 @@
 
 PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be **explicit** and as close to the **OS** as possible — similar in philosophy to Vulkan. It gives you precise control without hidden behavior, making it ideal for developers who want performance and predictability.
 
+PAL is a transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
+
+This approach gives you total control: you handle events, manage resources, and cache state explicitly. PAL provides the building blocks; how you use them — whether for simple applications or advanced frameworks — is entirely up to you.
+
+Example – Get Window Size
+```c
+// Direct query from the platform — not cached by PAL
+palGetWindowSize(window, &w, &h);
+```
+> Note: palGetWindowSize queries the OS directly. If your application needs continuous updates (e.g., window moves or resizes frequently), it is more efficient to listen to PAL events rather than repeatedly querying the OS. This ensures your app stays performant.
+
 ---
 
 ## Why PAL?
@@ -60,7 +71,11 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 ---
 
 ## Philosophy
-
+- PAL is a thin layer over the OS, not a framework or library.
+- Queries return the current platform state, reflecting any changes made through direct OS calls.
+- Developers are responsible for state tracking, caching, and event handling.
+- PAL enables cross-platform consistency while preserving full OS behavior and control.
+- Advanced users can build libraries or frameworks on top of PAL.
 - Minimal overhead (close to raw OS calls)  
 - Explicit API (no hidden behavior or defaults)  
 - Event system supporting both polling and callbacks  

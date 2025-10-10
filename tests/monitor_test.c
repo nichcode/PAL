@@ -17,7 +17,7 @@ bool monitorTest()
     PalResult result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 
@@ -25,7 +25,7 @@ bool monitorTest()
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors %s", error);
+        palLog(nullptr, "Failed to get query monitors: %s", error);
         return false;
     }
 
@@ -49,7 +49,7 @@ bool monitorTest()
     result = palEnumerateMonitors(&count, monitors);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors %s", error);
+        palLog(nullptr, "Failed to get query monitors: %s", error);
         return false;
     }
 
@@ -59,7 +59,7 @@ bool monitorTest()
         result = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get monitor info %s", error);
+            palLog(nullptr, "Failed to get monitor info: %s", error);
             palFree(nullptr, monitors);
             return false;
         }

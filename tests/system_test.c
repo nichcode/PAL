@@ -86,7 +86,7 @@ bool systemTest()
     result = palGetCPUInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get Cpu info %s", error);
+        palLog(nullptr, "Failed to get Cpu info: %s", error);
         return false;
     }
 

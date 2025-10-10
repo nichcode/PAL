@@ -175,7 +175,7 @@ bool windowTest()
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver %s", error);
+        palLog(nullptr, "Failed to create event driver: %s", error);
         return false;
     }
 
@@ -185,7 +185,7 @@ bool windowTest()
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 
@@ -239,7 +239,7 @@ bool windowTest()
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window %s", error);
+        palLog(nullptr, "Failed to create window: %s", error);
         return false;
     }
 
@@ -248,7 +248,7 @@ bool windowTest()
         //result = palSetWindowOpacity(window, OPACITY);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set window opacity %s", error);
+            palLog(nullptr, "Failed to set window opacity: %s", error);
             return false;
         }
     }
