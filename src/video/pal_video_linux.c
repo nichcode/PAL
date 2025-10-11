@@ -164,6 +164,10 @@ typedef int (*XMapWindowFn)(
     Display*,
     Window);
 
+typedef int (*XUnmapWindowFn)(
+    Display*,
+    Window);
+
 typedef int (*XMatchVisualInfoFn)(
     Display*,
     int,
@@ -281,6 +285,15 @@ typedef int (*XRRQueryExtensionFn)(
 	int*,
 	int*);
 
+typedef XClassHint *(*XAllocClassHintFn)(void);
+
+typedef int (*XSetClassHintFn)(
+    Display*,
+    Window,
+    XClassHint*);
+
+typedef int (*XFreeFn)(void*);
+
 typedef struct 
 {
     bool unicodeTitle;
@@ -304,6 +317,7 @@ typedef struct
     Atom _NET_WM_PID;
     Atom _WM_CLASS;
     Atom _NET_ACTIVE_WINDOW;
+    Atom _NET_WM_ICON;
 } X11Atoms;
 
 typedef struct {
@@ -322,6 +336,7 @@ typedef struct {
     Visual* transparentVisual;
     GC gc;
     XContext dataID;
+    const char* className;
 
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
@@ -335,6 +350,7 @@ typedef struct {
     XFlushFn flush;
     XCreateColormapFn createColormap;
     XMapWindowFn mapWindow;
+    XUnmapWindowFn unmapWindow;
 
     XCreateWindowFn createWindow;
     XDestroyWindowFn destroyWindow;
@@ -364,6 +380,10 @@ typedef struct {
     XRRFreeCrtcInfoFn freeCrtcInfo;
     XRRSelectInputFn selectRRInput;
     XRRQueryExtensionFn queryRRExtension;
+
+    XAllocClassHintFn allocClassHint;
+    XSetClassHintFn setClassHint;
+    XFreeFn free;
 } X11;
 
 static X11 s_X11 = {0};
@@ -382,14 +402,18 @@ typedef struct {
     PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*setMonitorOrientation)(PalMonitor*, PalOrientation);
+
     PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
     void (*destroyWindow)(PalWindow*);
     PalResult (*setWindowOpacity)(PalWindow*, float);
+
+    PalResult (*createIcon)(const PalIconCreateInfo*, PalIcon**);
+    void (*destroyIcon)(PalIcon*);
+    PalResult (*setWindowIcon)(PalWindow*, PalIcon*);
 } Backend;
 
 typedef struct {
     bool initialized;
-    Int32 classNameLen;
     Int32 maxWindowData;
     Int32 maxMonitorData;
     PalVideoFeatures features;
@@ -398,7 +422,6 @@ typedef struct {
     const Backend* backend;
     WindowData* windowData;
     MonitorData* monitorData;
-    char className[64];
 } VideoLinux;
 
 static VideoLinux s_Video = {0};
@@ -567,6 +590,7 @@ static void xCheckFeatures()
     X_INTERN(_NET_WM_PID);
     X_INTERN(_WM_CLASS);
     X_INTERN(_NET_ACTIVE_WINDOW);
+    X_INTERN(_NET_WM_ICON);
 
     // check for support from the window manager
     Atom type;
@@ -849,6 +873,10 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XMapWindow");
 
+    s_X11.unmapWindow = (XUnmapWindowFn)dlsym(
+        s_X11.handle, 
+        "XUnmapWindow");
+
     s_X11.createWindow = (XCreateWindowFn)dlsym(
         s_X11.handle, 
         "XCreateWindow");
@@ -913,15 +941,6 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XrmUniqueQuark");
 
-    // X11 server
-    s_X11.display = s_X11.openDisplay(nullptr);
-    if (!s_X11.display) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    s_X11.root = DefaultRootWindow(s_X11.display);
-    s_X11.screen = DefaultScreen(s_X11.display);
-
     // load Xrandr functions
     s_X11.getScreenResources = (XRRGetScreenResourcesFn)dlsym(
         s_X11.xrandr, 
@@ -959,6 +978,27 @@ static PalResult xInitVideo()
         s_X11.xrandr, 
         "XRRQueryExtension");
 
+    s_X11.allocClassHint = (XAllocClassHintFn)dlsym(
+        s_X11.handle, 
+        "XAllocClassHint");
+
+    s_X11.setClassHint = (XSetClassHintFn)dlsym(
+        s_X11.handle, 
+        "XSetClassHint");
+
+    s_X11.free = (XFreeFn)dlsym(
+        s_X11.handle, 
+        "XFree");
+
+    // X11 server
+    s_X11.display = s_X11.openDisplay(nullptr);
+    if (!s_X11.display) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    s_X11.root = DefaultRootWindow(s_X11.display);
+    s_X11.screen = DefaultScreen(s_X11.display);
+
     xCheckFeatures();
     // get root window bpp
     XWindowAttributes attr;
@@ -990,20 +1030,8 @@ static PalResult xInitVideo()
     s_X11.skipScreenEvent = true;
     s_X11.skipNotifyEvent = true;
 
-    // set class
-    const char* instance = "pal_window";
-    const char* class = "PAL";
-    snprintf(
-        s_Video.className, 
-        sizeof(s_Video.className), 
-        "%s%c%s%c",
-        instance,
-        '\0',
-        class,
-        '\0');
-
-    s_Video.classNameLen = strlen(instance) + strlen(class) + 2;
     s_X11.dataID = (XContext)s_X11.uniqueContext();
+    s_X11.className = "PAL";
     resetMonitorData();
     xCacheMonitors(true);
 
@@ -1851,7 +1879,7 @@ static PalResult xCreateWindow(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    // set window pid
+    // set pid property
     pid_t pid = getpid();
     s_X11.changeProperty(
         s_X11.display,
@@ -1862,18 +1890,16 @@ static PalResult xCreateWindow(
         PropModeReplace,
         (unsigned char*)&pid,
         1);
-    
-    // set class name
-    s_X11.changeProperty(
-        s_X11.display,
-        window,
-        s_X11Atoms._WM_CLASS,
-        XA_STRING,
-        8,
-        PropModeReplace,
-        (unsigned char*)&s_Video.className,
-        s_Video.classNameLen);
 
+    // set class property
+    XClassHint* hints = s_X11.allocClassHint();
+    if (hints) {
+        hints->res_name = (char*)info->title;
+        hints->res_class = (char*)s_X11.className;
+        s_X11.setClassHint(s_X11.display, window, hints);
+        s_X11.free(hints);
+    }
+    
     if (s_X11Atoms.unicodeTitle) {
         s_X11.changeProperty(
             s_X11.display,
@@ -2076,6 +2102,74 @@ static PalResult xSetWindowOpacity(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult xCreateIcon(
+    const PalIconCreateInfo* info,
+    PalIcon** outIcon)
+{
+    Uint64 totalPixels = 2 + (Uint64)(info->width * info->height);
+    Uint64 totalBytes = sizeof(unsigned long) * totalPixels;
+
+    unsigned long* icon = palAllocate(s_Video.allocator, totalBytes, 0);
+    if (!icon) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    // store width and height and populate data with icon pixels
+    // [width][height][pixels]
+    icon[0] = (unsigned long)info->width;
+    icon[1] = (unsigned long)info->height;
+
+    // convert from RGBA8 to ARGB32
+    for (int i = 0; i < info->width * info->height; i++) {
+        Uint8 r = info->pixels[i * 4 + 0]; // Red
+        Uint8 g = info->pixels[i * 4 + 1]; // Green
+        Uint8 b = info->pixels[i * 4 + 2]; // Blue
+        Uint8 a = info->pixels[i * 4 + 3]; // Alpha
+
+        icon[2 + i] = ((unsigned long)a << 24) | 
+                      ((unsigned long)r << 16) |
+                      ((unsigned long)g << 8) |
+                      ((unsigned long)b);
+    }
+
+    *outIcon = TO_PAL_HANDLE(PalIcon, icon);
+    return PAL_RESULT_SUCCESS;
+}
+
+void xDestroyIcon(PalIcon* icon)
+{
+    if (icon) {
+        palFree(s_Video.allocator, icon);
+    }
+}
+
+PalResult xSetWindowIcon(
+    PalWindow* window,
+    PalIcon* icon)
+{
+    WindowData* winData = nullptr;
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&winData);
+    if (!winData) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
+    Uint64 totalPixels = 2 + iconData[0] * iconData[1];  
+    s_X11.changeProperty(
+        s_X11.display,
+        xWin,
+        s_X11Atoms._NET_WM_ICON,
+        XA_CARDINAL,
+        32,
+        PropModeReplace,
+        (unsigned char*)iconData,
+        (int)totalPixels);
+
+    s_X11.flush(s_X11.display);
+    return PAL_RESULT_SUCCESS;
+}
+
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
@@ -2087,9 +2181,14 @@ static Backend s_XBackend = {
     .setMonitorMode = xSetMonitorMode,
     .validateMonitorMode = xValidateMonitorMode,
     .setMonitorOrientation = xSetMonitorOrientation,
+
     .createWindow = xCreateWindow,
     .destroyWindow = xDestroyWindow,
-    .setWindowOpacity = xSetWindowOpacity
+    .setWindowOpacity = xSetWindowOpacity,
+
+    .createIcon = xCreateIcon,
+    .destroyIcon = xDestroyIcon,
+    .setWindowIcon = xSetWindowIcon
 };
 
 #pragma endregion
@@ -2373,4 +2472,41 @@ PalResult PAL_CALL palSetWindowOpacity(
     }
 
     return s_Video.backend->setWindowOpacity(window, opacity);
+}
+
+PalResult PAL_CALL palCreateIcon(
+    const PalIconCreateInfo* info,
+    PalIcon** outIcon)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!info || !outIcon) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->createIcon(info, outIcon);
+}
+
+void PAL_CALL palDestroyIcon(PalIcon* icon)
+{
+    if (s_Video.initialized && icon) {
+        s_Video.backend->destroyIcon(icon);
+    }
+}
+
+PalResult PAL_CALL palSetWindowIcon(
+    PalWindow* window,
+    PalIcon* icon)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setWindowIcon(window, icon);
 }

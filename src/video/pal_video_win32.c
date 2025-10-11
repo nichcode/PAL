@@ -1815,7 +1815,7 @@ PalResult PAL_CALL palCreateWindow(
 
 void PAL_CALL palDestroyWindow(PalWindow* window)
 {
-    if (window) {
+    if (s_Video.initialized && window) {
         DestroyWindow((HWND)window);
     }
 }

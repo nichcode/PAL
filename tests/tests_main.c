@@ -29,8 +29,8 @@ int main(int argc, char** argv)
     // registerTest("Video Test", videoTest);
     // registerTest("Monitor Test", monitorTest);
     // registerTest("Monitor Mode Test", monitorModeTest);
-    registerTest("Window Test", windowTest);
-    // registerTest("Icon Test", iconTest);
+    // registerTest("Window Test", windowTest);
+    registerTest("Icon Test", iconTest);
     // registerTest("Cursor Test", cursorTest);
     // registerTest("Input Window Test", inputWindowTest);
     // registerTest("System Cursor Test", systemCursorTest);
