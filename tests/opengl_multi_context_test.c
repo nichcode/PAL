@@ -35,7 +35,7 @@ bool openglMultiContextTest()
     PalGLContext* context = nullptr;
     PalWindowCreateInfo createInfo = {0};
     PalGLContextCreateInfo contextCreateInfo = {0};
-    Int32 fbCount;
+    Int32 fbCount = 0;
     bool running = false;
 
     // event driver
@@ -56,6 +56,73 @@ bool openglMultiContextTest()
         return false;
     }
 
+    // enumerate supported opengl framebuffer configs
+    // glWindow can be nullptr
+    result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
+        return false;
+    }
+
+    palLog(nullptr, "GL FBConfig count: %d", fbCount);
+    if (fbCount == 0) {
+        palLog(nullptr, "No supported FBConfig found");
+        return false;
+    }
+
+    PalGLFBConfig* fbConfigs = nullptr;
+    fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
+    if (!fbConfigs) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    // enumerate supported opengl framebuffer configs
+    // glWindow can be nullptr
+    result = palEnumerateGLFBConfigs(nullptr, &fbCount, fbConfigs);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
+        palFree(nullptr, fbConfigs);
+        return false;
+    }
+
+    // we desire a FB config and see what is closest the driver will give us
+    PalGLFBConfig desired = {0};
+    desired.redBits = 8;
+    desired.greenBits = 8;
+    desired.blueBits = 8;
+    desired.alphaBits = 8;
+    desired.alphaBits = 8;
+    desired.depthBits = 24;
+    desired.stencilBits = 8;
+    desired.samples = 2;
+
+    desired.stereo = false; // not widely supported
+    desired.sRGB = true;
+    desired.doubleBuffer = true;
+
+    // get the closest
+    const PalGLFBConfig* closest = nullptr;
+    closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
+
+     // log the closest GL FBConfig
+    palLog(nullptr, "Closest GL FBConfig:");
+    palLog(nullptr, " Index: %d", closest->index);
+    palLog(nullptr, " Red Bits: %d", closest->redBits);
+    palLog(nullptr, " Green Bits: %d", closest->greenBits);
+    palLog(nullptr, " Blue Bits: %d", closest->blueBits);
+    palLog(nullptr, " Alpha Bits: %d", closest->alphaBits);
+    palLog(nullptr, " Depth Bits: %d", closest->depthBits);
+    palLog(nullptr, " Stencil Bits: %d", closest->stencilBits);
+
+    palLog(nullptr, " Samples: %d", closest->samples);
+    palLog(nullptr, " DoubleBuffer: %s", g_BoolsToSting[closest->doubleBuffer]);
+    palLog(nullptr, " Stereo: %s", g_BoolsToSting[closest->stereo]);
+    palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
+    palLog(nullptr, "");
+
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
     // be valid till the video system is shutdown
@@ -63,6 +130,16 @@ bool openglMultiContextTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // set the pixel format to use to create all windows with pal_video
+    // this must be set before creating a window
+    // for this example, we set the closest we desired
+    palSetGLPixelFormat(closest->index);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set GL pixel format: %s", error);
         return false;
     }
 
@@ -98,70 +175,6 @@ bool openglMultiContextTest()
     // needed when using X11 or wayland
     glWindow.display = windowHandleInfo.nativeDisplay;
     glWindow.window = windowHandleInfo.nativeWindow;
-
-    // use the gl window to query supported FBconfigs
-    result = palEnumerateGLFBConfigs(&glWindow, &fbCount, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
-        return false;
-    }
-
-    palLog(nullptr, "GL FBConfig count: %d", fbCount);
-    if (fbCount == 0) {
-        palLog(nullptr, "No supported FBConfig found");
-        return false;
-    }
-
-    PalGLFBConfig* fbConfigs = nullptr;
-    fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
-    if (!fbConfigs) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
-
-    result = palEnumerateGLFBConfigs(&glWindow, &fbCount, fbConfigs);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
-        palFree(nullptr, fbConfigs);
-        return false;
-    }
-
-    // we desire a FB config and see what is closest the driver will give us
-    PalGLFBConfig desired = {0};
-    desired.redBits = 8;
-    desired.greenBits = 8;
-    desired.blueBits = 8;
-    desired.alphaBits = 8;
-    desired.alphaBits = 8;
-    desired.depthBits = 24;
-    desired.stencilBits = 8;
-    desired.samples = 2;
-
-    desired.stereo = false; // not widely supported
-    desired.sRGB = true;
-    desired.doubleBuffer = true;
-
-    // get the closest
-    const PalGLFBConfig* closest = nullptr;
-    closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
-
-    // log the closest GL FBConfig
-    palLog(nullptr, "Closest GL FBConfig:");
-    palLog(nullptr, " Index: %d", closest->index);
-    palLog(nullptr, " Red Bits: %d", closest->redBits);
-    palLog(nullptr, " Green Bits: %d", closest->greenBits);
-    palLog(nullptr, " Blue Bits: %d", closest->blueBits);
-    palLog(nullptr, " Alpha Bits: %d", closest->alphaBits);
-    palLog(nullptr, " Depth Bits: %d", closest->depthBits);
-    palLog(nullptr, " Stencil Bits: %d", closest->stencilBits);
-
-    palLog(nullptr, " Samples: %d", closest->samples);
-    palLog(nullptr, " DoubleBuffer: %s", g_BoolsToSting[closest->doubleBuffer]);
-    palLog(nullptr, " Stereo: %s", g_BoolsToSting[closest->stereo]);
-    palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
-    palLog(nullptr, "");
 
     // get opengl info
     const PalGLInfo* info = palGetGLInfo();

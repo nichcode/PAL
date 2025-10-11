@@ -26,6 +26,8 @@
 - **System:** Added Linux backend support.
 - **Video:** Added **palCreateCursorFrom()** to create system cursors.
 
+palSetGLPixelFormat()
+
 ### Changed
 - **System:** `PalCPUInfo.architecture` is now determined at runtime instead of build time.
 

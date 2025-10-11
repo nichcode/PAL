@@ -79,8 +79,20 @@ typedef HBITMAP(WINAPI* CreateBitmapFn)(
 
 typedef BOOL(WINAPI* DeleteObjectFn)(HGDIOBJ);
 
+typedef int(WINAPI* DescribePixelFormatFn)(
+    HDC,
+    int,
+    UINT,
+    LPPIXELFORMATDESCRIPTOR);
+
+typedef BOOL(WINAPI* SetPixelFormatFn)(
+    HDC,
+    int,
+    CONST PIXELFORMATDESCRIPTOR*);
+
 typedef struct {
     bool initialized;
+    Int32 pixelFormat;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
@@ -92,6 +104,8 @@ typedef struct {
     CreateDIBSectionFn createDIBSection;
     CreateBitmapFn createBitmap;
     DeleteObjectFn deleteObject;
+    DescribePixelFormatFn describePixelFormat;
+    SetPixelFormatFn setPixelFormat;
 
     HINSTANCE instance;
     HWND hiddenWindow;
@@ -1209,6 +1223,14 @@ PalResult PAL_CALL palInitVideo(
         s_Video.deleteObject = (DeleteObjectFn)GetProcAddress(
             s_Video.gdi, 
             "DeleteObject");
+
+        s_Video.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
+            s_Video.gdi,
+            "DescribePixelFormat");
+
+        s_Video.setPixelFormat = (SetPixelFormatFn)GetProcAddress(
+            s_Video.gdi, 
+            "SetPixelFormat");
     }
 
     // clang-format on
@@ -1244,7 +1266,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
     s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
     s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
-    s_Video.features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
+    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_ICON;
 
     if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
         s_Video.features |= PAL_VIDEO_FEATURE_HIGH_DPI;
@@ -1254,6 +1276,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.initialized = true;
     s_Video.allocator = allocator;
     s_Video.eventDriver = eventDriver;
+    s_Video.pixelFormat = 0;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1320,6 +1343,19 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     }
 
     return s_Video.features;
+}
+
+PalResult PAL_CALL palSetGLPixelFormat(const int pixelFormatIndex)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (s_Video.initialized && pixelFormatIndex) {
+        s_Video.pixelFormat = pixelFormatIndex;
+        return PAL_RESULT_SUCCESS;
+    }
+    return PAL_RESULT_INVALID_GL_FBCONFIG;
 }
 
 // ==================================================
@@ -1765,6 +1801,25 @@ PalResult PAL_CALL palCreateWindow(
 
     if (!handle) {
         return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    // set the pixel format is set
+    if (s_Video.pixelFormat) {
+        HDC hdc = GetDC(handle);
+        // since we have the pixel format already
+        // we ask the OS (platform) to fill the pfd struct for us from that
+        // index
+        PIXELFORMATDESCRIPTOR pfd;
+        if (!s_Video.describePixelFormat(
+                hdc,
+                s_Video.pixelFormat,
+                sizeof(PIXELFORMATDESCRIPTOR),
+                &pfd)) {
+            return PAL_RESULT_INVALID_GL_FBCONFIG;
+        }
+        
+        s_Video.setPixelFormat(hdc, s_Video.pixelFormat, &pfd);
+        ReleaseDC(handle, hdc);
     }
 
     // show, maximize and minimize

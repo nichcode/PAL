@@ -111,7 +111,7 @@ typedef enum {
     PAL_VIDEO_FEATURE_WINDOW_GET_STYLE = PAL_BIT(28),
     PAL_VIDEO_FEATURE_CURSOR_SET_POS = PAL_BIT(29),
     PAL_VIDEO_FEATURE_CURSOR_GET_POS = PAL_BIT(30),
-    PAL_VIDEO_FEATURE_TOPMOST_WINDOW = PAL_BIT(31),
+    PAL_VIDEO_FEATURE_WINDOW_SET_ICON = PAL_BIT(31),
 } PalVideoFeatures;
 
 /**
@@ -671,6 +671,24 @@ PAL_API void PAL_CALL palUpdateVideo();
  * @sa palInitVideo
  */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
+
+/**
+ * @brief Set the pixel format (PalGLFBConfig) for the video system.
+ *
+ * The video system must be initialized before this call.
+ * This is used to create all windows after this call, If not set, the default will be used
+ *
+ * @param[in] pixelFormatIndex The pixel format driver ndex.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: This function must be called from the main thread.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ */
+PAL_API PalResult PAL_CALL palSetGLPixelFormat(const int pixelFormatIndex);
 
 /**
  * @brief Return a list of all connected monitors.
@@ -1472,6 +1490,7 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * @brief Create an icon.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] info Pointer to a PalIconCreateInfo struct that specifies
  * paramters. Must not be nullptr.
@@ -1513,6 +1532,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * @brief Set the icon for the provided window.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] window Pointer to the window.
  * @param[in] icon Pointer to the icon.
