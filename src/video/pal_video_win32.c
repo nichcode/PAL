@@ -1408,7 +1408,7 @@ PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex)
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (s_Video.initialized && pixelFormatIndex) {
+    if (pixelFormatIndex) {
         s_Video.pixelFormat = pixelFormatIndex;
         return PAL_RESULT_SUCCESS;
     }

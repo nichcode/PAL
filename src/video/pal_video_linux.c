@@ -84,6 +84,27 @@ typedef struct {
 #define RANDR_SCREEN_CHANGE_EVENT 1040
 #define RANDR_NOTIFY_EVENT 1041
 
+// optionally, needed to create visual from FBConfig
+#define GLX_FBCONFIG_ID 0x8012
+typedef struct __GLXFBConfigRec *GLXFBConfig;
+
+typedef GLXFBConfig* (*GLXGetFBConfigsFn)(
+    Display*,
+    int,
+    int*);
+
+typedef int (*GLXGetFBConfigAttribFn)(
+    Display*,
+    GLXFBConfig,
+    int,
+    int*);
+
+typedef XVisualInfo* (*GLXGetVisualFromFBConfigFn)(
+    Display*,
+    GLXFBConfig);
+
+typedef XVisualInfo* (*GLXGetProcAddressFn)(const unsigned char*);
+
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
 
@@ -325,15 +346,13 @@ typedef struct {
     bool skipScreenEvent;
     bool skipNotifyEvent;
     int bpp;
-    int transparentDepth;
     int screen;
     int rrEventBase;
     void* handle;
     void* xrandr;
+    void* opengl;
     Display* display;
     Window root;
-    Colormap transparentColormap;
-    Visual* transparentVisual;
     GC gc;
     XContext dataID;
     const char* className;
@@ -384,6 +403,11 @@ typedef struct {
     XAllocClassHintFn allocClassHint;
     XSetClassHintFn setClassHint;
     XFreeFn free;
+
+    // opengl
+    GLXGetFBConfigsFn glxGetFBConfigs;
+    GLXGetFBConfigAttribFn glxGetFBConfigAttrib;
+    GLXGetVisualFromFBConfigFn glxGetVisualFromFBConfig;
 } X11;
 
 static X11 s_X11 = {0};
@@ -416,6 +440,7 @@ typedef struct {
     bool initialized;
     Int32 maxWindowData;
     Int32 maxMonitorData;
+    Int32 pixelFormat;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
@@ -635,10 +660,6 @@ static void xCheckFeatures()
 
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH) {
             features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
-        }
-
-        if (supportedAtoms[i] == s_X11Atoms._NET_WM_STATE_ABOVE) {
-            features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
         }
 
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_NAME) {
@@ -1000,24 +1021,7 @@ static PalResult xInitVideo()
     s_X11.screen = DefaultScreen(s_X11.display);
 
     xCheckFeatures();
-    // get root window bpp
-    XWindowAttributes attr;
-    s_X11.getWindowAttributes(s_X11.display, s_X11.root, &attr);
-    s_X11.bpp = attr.depth;
-
-    // create a transparent colormap
-    XVisualInfo info;
-    s_X11.matchVisualInfo(s_X11.display, s_X11.screen, 32, TrueColor, &info);
-    s_X11.transparentDepth = info.depth;
-    s_X11.transparentVisual = info.visual;
-
-    // create color map
-    s_X11.transparentColormap = s_X11.createColormap(
-        s_X11.display, 
-        s_X11.root,
-        info.visual, 
-        AllocNone);
-
+   
     // subscribe for monitor events
     s_X11.selectRRInput(
         s_X11.display, 
@@ -1035,18 +1039,37 @@ static PalResult xInitVideo()
     resetMonitorData();
     xCacheMonitors(true);
 
+    // load opengl functions
+    s_X11.opengl = dlopen("libGL.so.1", RTLD_LAZY | RTLD_LOCAL);
+    if (s_X11.opengl) {
+
+        GLXGetProcAddressFn load = nullptr;
+        load = (GLXGetProcAddressFn)dlsym(
+            s_X11.opengl,
+            "glXGetProcAddress");
+
+        s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)load(
+            "glXGetFBConfigs");
+
+        s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)load(
+            "glXGetFBConfigAttrib");
+
+        s_X11.glxGetVisualFromFBConfig = (GLXGetVisualFromFBConfigFn)load(
+            "glXGetVisualFromFBConfig");
+
+    }
+
     return PAL_RESULT_SUCCESS;
 }
 
 static void xShutdownVideo() 
 {
-    if (s_X11.transparentColormap) {
-        s_X11.freeColormap(s_X11.display, s_X11.transparentColormap);
-    }
-    
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
+    if (s_X11.opengl) {
+        dlclose(s_X11.opengl);
+    }
 }
 
 static void xUpdateVideo()
@@ -1794,11 +1817,57 @@ static PalResult xCreateWindow(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    Visual* visual = DefaultVisual(s_X11.display, s_X11.screen);
-    int depth = DefaultDepth(s_X11.display, s_X11.screen);
-    unsigned long bgPixel = WhitePixel(s_X11.display, s_X11.screen);
-    unsigned long borderPixel = BlackPixel(s_X11.display, s_X11.screen);
-    Colormap colormap = DefaultColormap(s_X11.display, s_X11.screen);
+    Visual* visual = nullptr;
+    int depth = 0;
+    Colormap colormap = None;
+    unsigned long bgPixel = 0;
+    unsigned long borderPixel = 0;
+
+    // check to see if the user has set a pixel format
+    // with palSetPixelFormat()
+    if (s_Video.pixelFormat) {
+        // this is the pixel format driver index
+        // we query info about it and create the visual with it
+        if (s_X11.opengl) {
+            int count = 0;
+            GLXFBConfig* configs = s_X11.glxGetFBConfigs(
+                s_X11.display,
+                s_X11.screen,
+                &count);
+
+            GLXFBConfig fbConfig = configs[s_Video.pixelFormat];
+            if (!fbConfig) {
+                return PAL_RESULT_INVALID_GL_FBCONFIG;
+            }
+
+            // get a matching visual and use that to create the window
+            XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(
+                s_X11.display,
+                fbConfig);
+            
+            if (!visualInfo) {
+                return PAL_RESULT_INVALID_GL_FBCONFIG;
+            }
+
+            visual = visualInfo->visual;
+            depth = visualInfo->depth;
+            bgPixel = 0;
+            borderPixel = 0;
+            colormap = s_X11.createColormap(
+                s_X11.display, 
+                s_X11.root, 
+                visual, 
+                AllocNone);
+        }
+
+    } else {
+        // use a default visual
+        visual = DefaultVisual(s_X11.display, s_X11.screen);
+        depth = DefaultDepth(s_X11.display, s_X11.screen);
+        bgPixel = WhitePixel(s_X11.display, s_X11.screen);
+        borderPixel = BlackPixel(s_X11.display, s_X11.screen);
+        colormap = DefaultColormap(s_X11.display, s_X11.screen);
+    }
 
     // get monitor
     if (info->monitor) {
@@ -1836,11 +1905,7 @@ static PalResult xCreateWindow(
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
         }
 
-        bgPixel = 0;
-        borderPixel = 0;
-        visual = s_X11.transparentVisual;
-        depth = s_X11.transparentDepth;
-        colormap = s_X11.transparentColormap;
+        // we dont need to set any flag
     }
 
     long mask = ExposureMask | StructureNotifyMask | KeyPressMask;
@@ -1894,8 +1959,19 @@ static PalResult xCreateWindow(
     // set class property
     XClassHint* hints = s_X11.allocClassHint();
     if (hints) {
-        hints->res_name = (char*)info->title;
-        hints->res_class = (char*)s_X11.className;
+        const char* resName = getenv("RESOURCE_NAME");
+        const char* resClass = getenv("RESOURCE_CLASS");
+
+        if (!resName || strlen(resName) == 0) {
+            resName = info->title;
+        }
+
+        if (!resClass || strlen(resClass) == 0) {
+            resClass = s_X11.className;
+        }
+
+        hints->res_name = (char*)resName;
+        hints->res_class = (char*)resClass;
         s_X11.setClassHint(s_X11.display, window, hints);
         s_X11.free(hints);
     }
@@ -1955,21 +2031,17 @@ static PalResult xCreateWindow(
 
     // topmost
     if (info->style & PAL_WINDOW_STYLE_TOPMOST) {
-        if (!(s_Video.features & PAL_VIDEO_FEATURE_TOPMOST_WINDOW)) {
-            s_X11.destroyWindow(s_X11.display, window);
-            return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+        if (s_X11Atoms._NET_WM_STATE_ABOVE) {
+            s_X11.changeProperty(
+                s_X11.display,
+                window,
+                s_X11Atoms._NET_WM_STATE,
+                XA_ATOM,
+                32,
+                PropModeAppend,
+                (unsigned char*)&s_X11Atoms._NET_WM_STATE_ABOVE,
+                1);
         }
-
-        s_X11.changeProperty(
-            s_X11.display,
-            window,
-            s_X11Atoms._NET_WM_STATE,
-            XA_ATOM,
-            32,
-            PropModeAppend,
-            (unsigned char*)&s_X11Atoms._NET_WM_STATE_ABOVE,
-            1);
-
     }
 
     // resizable
@@ -1989,19 +2061,29 @@ static PalResult xCreateWindow(
         s_X11.flush(s_X11.display);
     }
 
+    // check if the window has been mapped
+    // we use this to minimize or maximize
+    XWindowAttributes attr;
+    s_X11.getWindowAttributes(s_X11.display, window, &attr);
+    bool windowMapped = attr.map_state = IsViewable;
+
     // maximize
-    if (info->maximized && info->show) {
+    if (info->maximized) {
         if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
             s_X11.destroyWindow(s_X11.display, window);
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
         }
 
-        // wait till the window is mapped
-        for (;;) {
-            XEvent event;
-            s_X11.nextEvent(s_X11.display, &event);
-            if (event.type == MapNotify && event.xmap.window == window) {
-                break;
+        // if the window is not mapped, we wait till its mapped
+        if (!windowMapped) {
+            // wait till the window is mapped
+            for (;;) {
+                XEvent event;
+                s_X11.nextEvent(s_X11.display, &event);
+                if (event.type == MapNotify && event.xmap.window == window) {
+                    windowMapped = true;
+                    break;
+                }
             }
         }
 
@@ -2030,21 +2112,24 @@ static PalResult xCreateWindow(
     }
 
     // minimize
-    if (info->minimized && info->show) {
+    if (info->minimized) {
         if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
             s_X11.destroyWindow(s_X11.display, window);
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
         }
 
-        // wait till the window is mapped
-        for (;;) {
-            XEvent event;
-            s_X11.nextEvent(s_X11.display, &event);
-            if (event.type == MapNotify && event.xmap.window == window) {
-                break;
+        // if the window is not mapped, we wait till its mapped
+        if (!windowMapped) {
+            // wait till the window is mapped
+            for (;;) {
+                XEvent event;
+                s_X11.nextEvent(s_X11.display, &event);
+                if (event.type == MapNotify && event.xmap.window == window) {
+                    windowMapped = true;
+                    break;
+                }
             }
         }
-
         s_X11.iconifyWindow(s_X11.display, window, s_X11.screen);
     }
 
@@ -2272,6 +2357,19 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     }
 
     return s_Video.features;
+}
+
+PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (pixelFormatIndex) {
+        s_Video.pixelFormat = pixelFormatIndex;
+        return PAL_RESULT_SUCCESS;
+    }
+    return PAL_RESULT_INVALID_GL_FBCONFIG;
 }
 
 PalResult PAL_CALL palEnumerateMonitors(
