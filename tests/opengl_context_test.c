@@ -136,7 +136,7 @@ bool openglContextTest()
     // set the pixel format to use to create all windows with pal_video
     // this must be set before creating a window
     // for this example, we set the closest we desired
-    palSetGLPixelFormat(closest->index);
+    palSetPixelFormat(closest->index);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set GL pixel format: %s", error);

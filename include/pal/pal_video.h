@@ -673,12 +673,12 @@ PAL_API void PAL_CALL palUpdateVideo();
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
 /**
- * @brief Set the pixel format (PalGLFBConfig) for the video system.
+ * @brief Set the pixel format or FBConfig for the video system.
  *
  * The video system must be initialized before this call.
- * This is used to create all windows after this call, If not set, the default will be used
+ * This is used to create all windows after this call, If not set, the default will be used.
  *
- * @param[in] pixelFormatIndex The pixel format driver ndex.
+ * @param[in] pixelFormatIndex The pixel format driver index.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -688,7 +688,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * @since 1.1
  * @ingroup pal_video
  */
-PAL_API PalResult PAL_CALL palSetGLPixelFormat(const int pixelFormatIndex);
+PAL_API PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex);
 
 /**
  * @brief Return a list of all connected monitors.
@@ -1535,7 +1535,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] window Pointer to the window.
- * @param[in] icon Pointer to the icon.
+ * @param[in] icon Pointer to the icon. Set to nullptr to revert.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1709,7 +1709,7 @@ PAL_API PalResult PAL_CALL palSetCursorPos(
  * The video system must be initialized before this call.
  *
  * @param[in] window Pointer to the window.
- * @param[in] cursor Pointer to the cursor.
+ * @param[in] cursor Pointer to the cursor. Set to nullptr to revert.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.

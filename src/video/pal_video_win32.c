@@ -91,8 +91,15 @@ typedef BOOL(WINAPI* SetPixelFormatFn)(
     CONST PIXELFORMATDESCRIPTOR*);
 
 typedef struct {
+    bool used;
+    PalWindowState state;
+    HCURSOR cursor;
+} WindowData;
+
+typedef struct {
     bool initialized;
     Int32 pixelFormat;
+    Int32 maxWindowData;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
@@ -109,6 +116,7 @@ typedef struct {
 
     HINSTANCE instance;
     HWND hiddenWindow;
+    WindowData* windowData;
 } VideoWin32;
 
 typedef struct {
@@ -120,6 +128,7 @@ typedef struct {
 typedef struct {
     bool pendingResize;
     bool pendingMove;
+    bool pendingState;
     Uint32 width;
     Uint32 height;
     Int32 x;
@@ -162,7 +171,7 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam)
 {
     // check if the window has been created
-    void* data = (void*)(LONG_PTR)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    WindowData* data = (void*)(LONG_PTR)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
     if (!data) {
         // window has not been created yet
         return DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -198,7 +207,7 @@ LRESULT CALLBACK videoProc(
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
 
-                } else {
+                } else if (mode == PAL_DISPATCH_POLL) {
                     s_Event.pendingResize = true;
                     s_Event.width = width;
                     s_Event.height = height;
@@ -224,18 +233,23 @@ LRESULT CALLBACK videoProc(
                     }
                 }
 
-                // TODO: Dont send restored events continously
+                // if state has not changed, we discard the event
+                if (data->state == state) {
+                    return 0;
+                }
 
                 if (mode == PAL_DISPATCH_CALLBACK) {
                     PalEvent event = {0};
+                    event.type = PAL_EVENT_WINDOW_STATE;
                     event.data = state;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
-                    event.type = PAL_EVENT_WINDOW_STATE;
                     palPushEvent(driver, &event);
 
-                } else {
+                } else if (mode == PAL_DISPATCH_POLL) {
+                    s_Event.pendingState = true;
                     s_Event.state = state;
                 }
+                data->state = state;
             }
 
             return 0;
@@ -722,10 +736,10 @@ LRESULT CALLBACK videoProc(
         case WM_SETCURSOR: {
             if (LOWORD(lParam) == HTCLIENT) {
                 if (data) {
-                    SetCursor((HCURSOR)data);
+                    SetCursor(data->cursor);
                     return TRUE;
                 }
-                return TRUE;
+                return FALSE;
             }
 
             break;
@@ -1122,6 +1136,38 @@ static void createScancodeTable()
     s_Keyboard.scancodes[0x15C] = PAL_SCANCODE_RSUPER;
 }
 
+static WindowData* getFreeWindowData() 
+{
+    for (int i = 0; i < s_Video.maxWindowData; ++i) {
+        if (!s_Video.windowData[i].used) {
+            s_Video.windowData[i].used = true;
+            return &s_Video.windowData[i];
+        }
+    }
+
+    // resize the data array
+    // It is rare for a user to create and manage
+    // 32 windows at the same time
+    WindowData* data = nullptr;
+    int count = s_Video.maxWindowData * 2; // double the size
+    int freeIndex = s_Video.maxWindowData + 1;
+    data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
+    if (data) {
+        memcpy(
+            data, 
+            s_Video.windowData, 
+            s_Video.maxWindowData * sizeof(WindowData));
+
+        palFree(s_Video.allocator, s_Video.windowData);
+        s_Video.windowData = data;
+        s_Video.maxWindowData = count;
+
+        s_Video.windowData[freeIndex].used = true;
+        return &s_Video.windowData[freeIndex];
+    }
+    return nullptr;
+}
+
 // ==================================================
 // Public API
 // ==================================================
@@ -1137,6 +1183,12 @@ PalResult PAL_CALL palInitVideo(
     if (allocator && (!allocator->allocate || !allocator->free)) {
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
+
+    s_Video.maxWindowData = 32;
+    s_Video.windowData = palAllocate(
+        s_Video.allocator, 
+        sizeof(WindowData) * s_Video.maxWindowData, 
+        0);
 
     // get the instance
     s_Video.instance = GetModuleHandleW(nullptr);
@@ -1293,6 +1345,7 @@ void PAL_CALL palShutdownVideo()
     FreeLibrary(s_Video.gdi);
     DestroyWindow(s_Video.hiddenWindow);
     UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
+    palFree(s_Video.allocator, s_Video.windowData);
     s_Video.initialized = false;
 }
 
@@ -1319,10 +1372,14 @@ void PAL_CALL palUpdateVideo()
         event.data2 = palPackPointer(s_Event.window);
         palPushEvent(s_Video.eventDriver, &event);
 
-        // push a window state event
-        event.type = PAL_EVENT_WINDOW_STATE;
-        event.data = s_Event.state;
-        palPushEvent(s_Video.eventDriver, &event);
+        if (s_Event.pendingState) {
+            PalEvent event = {0};
+            event.data = s_Event.state;
+            event.data2 = palPackPointer(s_Event.window);
+            event.type = PAL_EVENT_WINDOW_STATE;
+            palPushEvent(s_Video.eventDriver, &event);
+            s_Event.pendingState = false;
+        }
 
         s_Event.pendingResize = false;
 
@@ -1345,7 +1402,7 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-PalResult PAL_CALL palSetGLPixelFormat(const int pixelFormatIndex)
+PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -1700,6 +1757,11 @@ PalResult PAL_CALL palCreateWindow(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    WindowData* data = getFreeWindowData();
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     HWND handle = nullptr;
     PalMonitor* monitor = nullptr;
     PalMonitorInfo monitorInfo;
@@ -1827,11 +1889,13 @@ PalResult PAL_CALL palCreateWindow(
     // maximize
     if (info->maximized) {
         showFlag = SW_MAXIMIZE;
+        data->state = PAL_WINDOW_STATE_MAXIMIZED;
     }
 
     // minimized
     if (info->minimized) {
         showFlag = SW_MINIMIZE;
+        data->state = PAL_WINDOW_STATE_MINIMIZED;
     }
 
     // shown
@@ -1839,6 +1903,7 @@ PalResult PAL_CALL palCreateWindow(
         if (showFlag == SW_HIDE) {
             // change only if maximize and minimize are not set
             showFlag = SW_SHOW;
+            data->state = PAL_WINDOW_STATE_RESTORED;
         }
     }
 
@@ -1861,9 +1926,7 @@ PalResult PAL_CALL palCreateWindow(
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 
-    // set a flag to check if the window has been created
-    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)&s_Event);
-
+    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)data);
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
 }
@@ -2899,10 +2962,13 @@ PalResult PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
-    if (window || cursor) {
+    if (window) {
         SetLastError(0);
-        SetWindowLongPtrW((HWND)window, GWLP_USERDATA, (LONG_PTR)cursor);
+        WindowData* data = (WindowData*)GetWindowLongPtrW(
+            (HWND)window, 
+            GWLP_USERDATA);
 
+        data->cursor = (HCURSOR)cursor;
         DWORD error = GetLastError();
         if (error == 0) {
             return PAL_RESULT_SUCCESS;

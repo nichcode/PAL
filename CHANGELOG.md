@@ -26,13 +26,14 @@
 - **System:** Added Linux backend support.
 - **Video:** Added **palCreateCursorFrom()** to create system cursors.
 
-palSetGLPixelFormat()
+palSetPixelFormat()
 
 ### Changed
 - **System:** `PalCPUInfo.architecture` is now determined at runtime instead of build time.
 
 ### Fixed
 - Fixed a bug where **enter modal mode and exit modal mode** operations triggered only one event.
+- Fixed repeated window state event
 
 ### Notes
 - No API or ABI changes - existing Windows code remains compatible.
