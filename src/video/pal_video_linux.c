@@ -38,6 +38,8 @@ freely, subject to the following restrictions:
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
+#include <X11/Xcursor/Xcursor.h>
 #include <X11/extensions/Xrandr.h>
 
 // Wayland headers
@@ -62,6 +64,8 @@ typedef struct {
     int dpi;
     Uint32 h;
     PalWindowState state;
+    PalCursor* cursor;
+    PalWindow* window;
 } WindowData;
 
 typedef struct {
@@ -315,6 +319,130 @@ typedef int (*XSetClassHintFn)(
 
 typedef int (*XFreeFn)(void*);
 
+typedef Cursor (*XCreateFontCursorFn)(
+    Display*,
+    unsigned int);
+
+typedef int (*XFreePixmapFn)(
+    Display*,
+    Pixmap);
+
+typedef int (*XSetWMHintsFn)(
+    Display*,
+    Window,
+    XWMHints*);
+
+typedef int (*XGrabPointerFn)(
+    Display*,
+    Window,
+    Bool,
+    unsigned int,
+    int,
+    int,
+    Window,
+    Cursor,
+    Time);
+
+typedef Cursor (*XCreatePixmapCursorFn)(
+    Display*,
+    Pixmap,
+    Pixmap,
+    XColor*,
+    XColor*,
+    unsigned int,
+    unsigned int);
+
+typedef int (*XWarpPointerFn)(
+    Display*,
+    Window,
+    Window,
+    int,
+    int,
+    unsigned int,
+    unsigned int,
+    int,
+    int);
+
+typedef Status (*XGetWMNameFn)(
+    Display*,
+    Window,
+    XTextProperty*);
+
+typedef Bool (*XQueryPointerFn)(
+    Display*,
+    Window,
+    Window*,
+    Window*,
+    int*,
+    int*,
+    int*,
+    int*,
+    unsigned int*);
+
+typedef int (*XUngrabPointerFn)(
+    Display*,
+    Time);
+
+typedef XWMHints *(*XAllocWMHintsFn) (void);
+
+typedef int (*XMapRaisedFn)(
+    Display*,
+    Window);
+
+typedef int (*XUndefineCursorFn)(
+    Display*,
+    Window);
+
+typedef int (*XDefineCursorFn)(
+    Display*,
+    Window,
+    Cursor);
+
+typedef int (*XFreeCursorFn)(
+    Display*,
+    Cursor);
+
+typedef XWMHints *(*XGetWMHintsFn)(
+    Display*,
+    Window);
+
+typedef Cursor (*XCreatePixmapCursorFn)(
+    Display*,
+    Pixmap,
+    Pixmap,
+    XColor*,
+    XColor*,
+    unsigned int,
+    unsigned int);
+
+typedef int (*XSetInputFocusFn)(
+    Display*,
+    Window,
+    int,
+    Time);
+
+typedef int (*XGetInputFocusFn)(
+    Display*,
+    Window*,
+    int*);
+
+typedef Pixmap (*XCreatePixmapFn)(
+    Display*,
+    Drawable,
+    unsigned int,
+    unsigned int,
+    unsigned int);
+
+typedef Cursor (*XcursorImageLoadCursorFn)(
+    Display*, 
+    const XcursorImage*);
+
+typedef XcursorImage* (*XcursorImageCreateFn)(
+    int, 
+    int);
+
+typedef void (*XcursorImageDestroyFn)(XcursorImage*);
+
 typedef struct 
 {
     bool unicodeTitle;
@@ -351,10 +479,11 @@ typedef struct {
     void* handle;
     void* xrandr;
     void* opengl;
+    void* libCursor;
     Display* display;
     Window root;
-    GC gc;
     XContext dataID;
+    Cursor hiddenCursor;
     const char* className;
 
     XOpenDisplayFn openDisplay;
@@ -408,6 +537,28 @@ typedef struct {
     GLXGetFBConfigsFn glxGetFBConfigs;
     GLXGetFBConfigAttribFn glxGetFBConfigAttrib;
     GLXGetVisualFromFBConfigFn glxGetVisualFromFBConfig;
+
+    XCreateFontCursorFn createFontCursor;
+    XFreePixmapFn freePixmap;
+    XSetWMHintsFn setWMHints;
+    XGrabPointerFn grabPointer;
+    XCreatePixmapCursorFn createPixmapCursor;
+    XWarpPointerFn warpPointer;
+    XGetWMNameFn getWMName;
+    XQueryPointerFn queryPointer;
+    XUngrabPointerFn ungrabPointer;
+    XAllocWMHintsFn allocWMHints;
+    XMapRaisedFn mapRaised;
+    XUndefineCursorFn undefineCursor;
+    XDefineCursorFn defineCursor;
+    XFreeCursorFn freeCursor;
+    XGetWMHintsFn getWMHints;
+    XCreatePixmapFn createPixmap;
+    XSetInputFocusFn setInputFocus;
+    XGetInputFocusFn getInputFocus;
+    XcursorImageLoadCursorFn cursorImageLoadCursor;
+    XcursorImageCreateFn cursorImageCreate;
+    XcursorImageDestroyFn cursorImageDestroy;
 } X11;
 
 static X11 s_X11 = {0};
@@ -429,11 +580,41 @@ typedef struct {
 
     PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
     void (*destroyWindow)(PalWindow*);
+    PalResult (*maximizeWindow)(PalWindow*);
+    PalResult (*minimizeWindow)(PalWindow*);
+    PalResult (*restoreWindow)(PalWindow*);
+    PalResult (*showWindow)(PalWindow*);
+    PalResult (*hideWindow)(PalWindow*);
+    PalResult (*xFlashWindow)(PalWindow*, const PalFlashInfo*);
+
+    PalResult (*getWindowStyle)(PalWindow*, PalWindowStyle*);
+    PalResult (*getWindowMonitor)(PalWindow*, PalMonitor**);
+    PalResult (*getWindowTitle)(PalWindow*, Uint64, Uint64*, char*);
+    PalResult (*getWindowPos)(PalWindow*, Int32*, Int32*);
+    PalResult (*getWindowSize)(PalWindow*, Uint32*, Uint32*);
+    PalResult (*getWindowState)(PalWindow*, PalWindowState*);
+    bool (*isWindowVisible)(PalWindow*);
+    PalWindow* (*getFocusWindow)();
+    PalWindowHandleInfo (*getWindowHandleInfo)(PalWindow*);
     PalResult (*setWindowOpacity)(PalWindow*, float);
+    PalResult (*setWindowStyle)(PalWindow*, PalWindowStyle);
+    PalResult (*setWindowTitle)(PalWindow*, const char*);
+    PalResult (*setWindowPos)(PalWindow*, Int32, Int32);
+    PalResult (*setWindowSize)(PalWindow*, Uint32, Uint32);
+    PalResult (*setFocusWindow)(PalWindow*);
 
     PalResult (*createIcon)(const PalIconCreateInfo*, PalIcon**);
     void (*destroyIcon)(PalIcon*);
     PalResult (*setWindowIcon)(PalWindow*, PalIcon*);
+
+    PalResult (*createCursor)(const PalCursorCreateInfo*, PalCursor**);
+    PalResult (*createCursorFrom)(PalCursorType, PalCursor**);
+    void (*destroyCursor)(PalCursor*);
+    void (*showCursor)(bool);
+    PalResult (*clipCursor)(PalWindow*, bool);
+    PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
+    PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
+    PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
 } Backend;
 
 typedef struct {
@@ -653,21 +834,12 @@ static void xCheckFeatures()
             features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
         }
 
-        if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE) {
-            features |= PAL_VIDEO_FEATURE_WINDOW_SET_STYLE;
-            features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
-        }
-
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH) {
             features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
         }
 
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_NAME) {
             s_X11Atoms.unicodeTitle = true;
-        }
-
-        if (supportedAtoms[i] == s_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS) {
-            features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
         }
 
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_WINDOW_TYPE_UTILITY) {
@@ -701,8 +873,10 @@ static void xCheckFeatures()
     features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
     features |= PAL_VIDEO_FEATURE_WINDOW_SET_TITLE;
     features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
 
     s_Video.features = features;
+    s_X11.free(supportedAtoms);
 }
 
 static int xErrorHandler(Display*, XErrorEvent* e) 
@@ -748,6 +922,7 @@ static PalWindowState xQueryWindowState(Window xWin)
         }
     }
 
+    s_X11.free(atoms);
     return state;
 }
 
@@ -828,11 +1003,52 @@ static int xGetWindowMonitorDPI(
     }
 }
 
+static void xSendWMEvent(
+    Window window, 
+    Atom type,
+    long a,
+    long b,
+    long c,
+    long d,
+    bool add)
+{
+    XEvent e = {0};
+    e.xclient.type = ClientMessage;
+    e.xclient.send_event = True;
+    e.xclient.window = window;
+    e.xclient.message_type = type;
+    e.xclient.format = 32;
+    if (add) {
+        e.xclient.data.l[0] = 1; // _NET_WM_STATE_ADD
+    } else {
+        e.xclient.data.l[0] = 0; // _NET_WM_STATE_REMOVE
+    }
+
+    e.xclient.data.l[1] = a;
+    e.xclient.data.l[2] = b;
+    e.xclient.data.l[3] = c;
+    e.xclient.data.l[4] = d;
+
+    s_X11.sendEvent(
+        s_X11.display,
+        s_X11.root,
+        False,
+        SubstructureNotifyMask | SubstructureRedirectMask,
+        &e);
+
+}
+
 static PalResult xInitVideo() 
 {
     // load X11 library
     s_X11.handle = dlopen("libX11.so", RTLD_LAZY);
     if (!s_X11.handle) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    // libXCursor is needed
+    s_X11.libCursor = dlopen("libXcursor.so", RTLD_LAZY);
+    if (!s_X11.libCursor) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -1011,6 +1227,91 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XFree");
 
+    s_X11.createFontCursor = (XCreateFontCursorFn)dlsym(
+        s_X11.handle, 
+        "XCreateFontCursor");
+    
+    s_X11.freePixmap = (XFreePixmapFn)dlsym(
+        s_X11.handle, 
+        "XFreePixmap");
+
+    s_X11.setWMHints = (XSetWMHintsFn)dlsym(
+        s_X11.handle, 
+        "XSetWMHints");
+
+    s_X11.grabPointer = (XGrabPointerFn)dlsym(
+        s_X11.handle, 
+        "XGrabPointer");
+
+    s_X11.createPixmapCursor = (XCreatePixmapCursorFn)dlsym(
+        s_X11.handle, 
+        "XCreatePixmapCursor");
+
+    s_X11.warpPointer = (XWarpPointerFn)dlsym(
+        s_X11.handle, 
+        "XWarpPointer");
+
+    s_X11.getWMName = (XGetWMNameFn)dlsym(
+        s_X11.handle, 
+        "XGetWMName");
+
+    s_X11.queryPointer = (XQueryPointerFn)dlsym(
+        s_X11.handle, 
+        "XQueryPointer");
+
+    s_X11.ungrabPointer = (XUngrabPointerFn)dlsym(
+        s_X11.handle, 
+        "XUngrabPointer");
+
+    s_X11.allocWMHints = (XAllocWMHintsFn)dlsym(
+        s_X11.handle, 
+        "XAllocWMHints");
+
+    s_X11.mapRaised = (XMapRaisedFn)dlsym(
+        s_X11.handle, 
+        "XMapRaised");
+
+    s_X11.undefineCursor = (XUndefineCursorFn)dlsym(
+        s_X11.handle, 
+        "XUndefineCursor");
+
+    s_X11.defineCursor = (XDefineCursorFn)dlsym(
+        s_X11.handle, 
+        "XDefineCursor");
+
+    s_X11.freeCursor = (XFreeCursorFn)dlsym(
+        s_X11.handle, 
+        "XFreeCursor");
+
+    s_X11.getWMHints = (XGetWMHintsFn)dlsym(
+        s_X11.handle, 
+        "XGetWMHints");
+
+    s_X11.createPixmap = (XCreatePixmapFn)dlsym(
+        s_X11.handle, 
+        "XCreatePixmap");
+
+    s_X11.setInputFocus = (XSetInputFocusFn)dlsym(
+        s_X11.handle, 
+        "XSetInputFocus");
+
+    s_X11.getInputFocus = (XGetInputFocusFn)dlsym(
+        s_X11.handle, 
+        "XGetInputFocus");
+
+    // libXcursor
+    s_X11.cursorImageLoadCursor = (XcursorImageLoadCursorFn)dlsym(
+        s_X11.libCursor, 
+        "XcursorImageLoadCursor");
+
+    s_X11.cursorImageCreate = (XcursorImageCreateFn)dlsym(
+        s_X11.libCursor, 
+        "XcursorImageCreate");
+
+    s_X11.cursorImageDestroy = (XcursorImageDestroyFn)dlsym(
+        s_X11.libCursor, 
+        "XcursorImageDestroy");
+
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
@@ -1056,8 +1357,22 @@ static PalResult xInitVideo()
 
         s_X11.glxGetVisualFromFBConfig = (GLXGetVisualFromFBConfigFn)load(
             "glXGetVisualFromFBConfig");
-
     }
+
+    // create a hidden cursor. 
+    // This is used to simulate cursor hide and show
+    Pixmap map = s_X11.createPixmap(s_X11.display, s_X11.root, 1, 1, 1);
+    XColor dummy;
+    s_X11.hiddenCursor = s_X11.createPixmapCursor(
+        s_X11.display, 
+        map, 
+        map, 
+        &dummy, 
+        &dummy, 
+        0, 
+        0);
+
+    s_X11.freePixmap(s_X11.display, map);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -2044,20 +2359,25 @@ static PalResult xCreateWindow(
         }
     }
 
+    // set size hints
+    XSizeHints wmHints = {0};
+    wmHints.flags = PPosition | PSize;
+    wmHints.x = x;
+    wmHints.y = y;
+    wmHints.width = info->width;
+    wmHints.height = info->height;
+
     // resizable
     if (!(info->style & PAL_WINDOW_STYLE_RESIZABLE)) {
-        XSizeHints hints = {0};
-        hints.flags = PMinSize | PMaxSize;
-        hints.min_width = hints.max_width = info->width;
-        hints.min_height = hints.max_height = info->height;
-        s_X11.setWMNormalHints(s_X11.display, window, &hints);
+        wmHints.flags = PMinSize | PMaxSize;
+        wmHints.min_width = wmHints.max_width = info->width;
+        wmHints.min_height = wmHints.max_height = info->height;
     }
 
     // show window
+    s_X11.setWMNormalHints(s_X11.display, window, &wmHints);
     if (info->show) {
         s_X11.mapWindow(s_X11.display, window);
-        // move the window if window manager didnt
-        s_X11.moveWindow(s_X11.display, window, x, y);
         s_X11.flush(s_X11.display);
     }
 
@@ -2087,28 +2407,14 @@ static PalResult xCreateWindow(
             }
         }
 
-        Atom data[2];
-        data[0] = s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT;
-        data[1] = s_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ;
-
-        XEvent e = {0};
-        e.xclient.type = ClientMessage;
-        e.xclient.send_event = True;
-        e.xclient.window = window;
-        e.xclient.message_type = s_X11Atoms._NET_WM_STATE;
-        e.xclient.format = 32;
-        e.xclient.data.l[0] = 1; // _NET_WM_STATE_ADD
-        e.xclient.data.l[1] = data[0];
-        e.xclient.data.l[2] = data[1];
-        e.xclient.data.l[3] = 1;
-        e.xclient.data.l[4] = 0;
-
-        s_X11.sendEvent(
-            s_X11.display,
-            s_X11.root,
-            False,
-            SubstructureNotifyMask | SubstructureRedirectMask,
-            &e);
+        xSendWMEvent(
+            window,
+            s_X11Atoms._NET_WM_STATE,
+            s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT,
+            s_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ,
+            1,
+            0,
+            true); // _NET_WM_STATE_ADD
     }
 
     // minimize
@@ -2145,6 +2451,8 @@ static PalResult xCreateWindow(
     data->skipConfigure = true;
     data->skipState = true;
     data->dpi = monitorInfo.dpi; // the current window monitor
+    data->window = TO_PAL_HANDLE(PalWindow, window);
+    data->cursor = nullptr;
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
     *outWindow = TO_PAL_HANDLE(PalWindow, window);
@@ -2158,6 +2466,389 @@ static void xDestroyWindow(PalWindow* window)
     s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
     s_X11.destroyWindow(s_X11.display, xWin);
     data->used = false;
+}
+
+PalResult xMinimizeWindow(PalWindow* window)
+{
+    if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+    }
+
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    s_X11.iconifyWindow(s_X11.display, xWin, s_X11.screen);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xMaximizeWindow(PalWindow* window)
+{
+    if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+    }
+
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    xSendWMEvent(
+        xWin,
+        s_X11Atoms._NET_WM_STATE,
+        s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT,
+        s_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ,
+        1,
+        0,
+        true); // _NET_WM_STATE_ADD
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xRestoreWindow(PalWindow* window)
+{
+    if (!(s_Video.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+    }
+
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // since we have no fixed way to restore the window
+    // we just restore from minimized and maximized state
+    xSendWMEvent(
+        xWin,
+        s_X11Atoms._NET_WM_STATE,
+        s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT,
+        s_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ,
+        1,
+        0,
+        false); // _NET_WM_STATE_REMOVE
+
+    s_X11.mapRaised(s_X11.display, xWin);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xShowWindow(PalWindow* window)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    s_X11.mapWindow(s_X11.display, xWin);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xHideWindow(PalWindow* window)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    s_X11.unmapWindow(s_X11.display, xWin);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info)
+{
+    if (info->flags & PAL_FLASH_CAPTION) {
+        return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+    }
+
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    bool add = false; 
+    if (info->flags & PAL_FLASH_TRAY) {
+        add = true;
+    }
+
+    // check if modern flashing is supported
+    if (s_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS) {
+        xSendWMEvent(
+            xWin,
+            s_X11Atoms._NET_WM_STATE,
+            s_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS,
+            0,
+            0,
+            0,
+            add); // _NET_WM_STATE_ADD
+
+    } else {
+        // legacy mode
+        XWMHints* hints = s_X11.getWMHints(s_X11.display, xWin);
+        if (!hints) {
+            hints = s_X11.allocWMHints();
+            if (!hints) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+
+            if (add) {
+                hints->flags |= XUrgencyHint;
+            } else {
+                hints->flags &= ~XUrgencyHint;
+            }
+            s_X11.setWMHints(s_X11.display, xWin, hints);
+            s_X11.free(hints);
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xGetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle* outStyle)
+{
+    // Window Manager quirks
+    return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+}
+
+PalResult xGetWindowMonitor(
+    PalWindow* window,
+    PalMonitor** outMonitor)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    XRRScreenResources* resources = nullptr;
+    resources = s_X11.getScreenResources(
+        s_X11.display,
+        s_X11.root);
+
+    for (int i = 0; i < resources->noutput; ++i) {
+        RROutput output = resources->outputs[i];
+        XRROutputInfo* info = s_X11.getOutputInfo(
+            s_X11.display,
+            resources,
+            output);
+
+        if (info->connection == RR_Connected && 
+            info->crtc != None) {
+            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
+                s_X11.display,
+                resources,
+                info->crtc);
+
+            // check bounds to see if window is on the monitor
+            if (attr.x >= crtc->x && 
+                attr.x < crtc->x + crtc->width && 
+                attr.y >= crtc->y && 
+                attr.y < crtc->y + crtc->height) {
+                // found monitor
+                *outMonitor = TO_PAL_HANDLE(PalMonitor, output);
+                break;
+            }
+            s_X11.freeCrtcInfo(crtc);
+        }
+        s_X11.freeOutputInfo(info);
+    }
+    s_X11.freeScreenResources(resources);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xGetWindowTitle(
+    PalWindow* window,
+    Uint64 bufferSize,
+    Uint64* outSize,
+    char* outBuffer)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (!outBuffer || bufferSize <= 0) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    if (s_X11Atoms.unicodeTitle) {
+        Atom type;
+        int format;
+        unsigned long count, bytesAfter;
+        unsigned char* prop = nullptr;
+        s_X11.getWindowProperty(
+            s_X11.display,
+            xWin,
+            s_X11Atoms._NET_WM_NAME,
+            0,
+            (~0L),
+            False,
+            s_X11Atoms.UTF8_STRING,
+            &type,
+            &format,
+            &count,
+            &bytesAfter,
+            &prop);
+
+        if (bufferSize >= count) {
+            strcpy(outBuffer, (const char*)prop);
+        } else {
+            // copy up to the limiit of the supplied buffer
+            strncpy(outBuffer, (const char*)prop, bufferSize);
+        }
+        s_X11.free(prop);
+
+    } else {
+        XTextProperty text;
+        if (!s_X11.getWMName(s_X11.display, xWin, &text)) {
+            return PAL_RESULT_INVALID_WINDOW;
+        }
+
+        if (bufferSize >= text.nitems) {
+            strcpy(outBuffer, (const char*)text.value);
+        } else {
+            // copy up to the limiit of the supplied buffer
+            strncpy(outBuffer, (const char*)text.value, bufferSize);
+        }
+        s_X11.free(text.value);
+    }
+    
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xGetWindowPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (x) {
+        *x = attr.x;
+    }
+
+    if (y) {
+        *y = attr.y;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xGetWindowSize(
+    PalWindow* window,
+    Uint32* width,
+    Uint32* height)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (width) {
+        *width = attr.width;
+    }
+
+    if (height) {
+        *height = attr.height;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xGetWindowState(
+    PalWindow* window,
+    PalWindowState* outState)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    Atom type;
+    int format;
+    unsigned long count, bytesAfter;
+    unsigned char* props = nullptr;
+    s_X11.getWindowProperty(
+        s_X11.display,
+        xWin,
+        s_X11Atoms._NET_WM_STATE,
+        0,
+        (~0L),
+        False,
+        XA_ATOM,
+        &type,
+        &format,
+        &count,
+        &bytesAfter,
+        &props);
+
+    PalWindowState state = PAL_WINDOW_STATE_RESTORED;
+    for (unsigned long i = 0; i < count; ++i) {
+        if (props[i] == s_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ) {
+            state = PAL_WINDOW_STATE_MAXIMIZED;
+        }
+
+        if (props[i] == s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
+            state = PAL_WINDOW_STATE_MAXIMIZED;
+        }
+
+        if (props[i] == s_X11Atoms._NET_WM_STATE_HIDDEN) {
+            state = PAL_WINDOW_STATE_MINIMIZED;
+        }
+    }
+
+    s_X11.free(props);
+    *outState = state;
+    return PAL_RESULT_SUCCESS;
+}
+
+bool xIsWindowVisible(PalWindow* window)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return false;
+    }
+
+    return attr.map_state == IsViewable;
+}
+
+PalWindow* xGetFocusWindow()
+{
+    Window window;
+    int tmp;
+    s_X11.getInputFocus(s_X11.display, &window, &tmp);
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+
+    if (xWin == s_X11.root) {
+        return nullptr;
+    }
+    return TO_PAL_HANDLE(PalWindow, window);
+}
+
+PalWindowHandleInfo xGetWindowHandleInfo(PalWindow* window)
+{
+    PalWindowHandleInfo info;
+    info.nativeDisplay = (void*)s_X11.display;
+    info.nativeWindow = (void*)window;
+    return info;
 }
 
 static PalResult xSetWindowOpacity(
@@ -2182,6 +2873,97 @@ static PalResult xSetWindowOpacity(
     if (s_X11.error) {
         // technically, this is the only error that can occur
         return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xSetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle style)
+{
+    // Window Manager quirks
+    return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
+}
+
+PalResult xSetWindowTitle(
+    PalWindow* window,
+    const char* title)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (s_X11Atoms.unicodeTitle) {
+        s_X11.changeProperty(
+            s_X11.display,
+            xWin,
+            s_X11Atoms._NET_WM_NAME,
+            s_X11Atoms.UTF8_STRING,
+            8, // unsigned char
+            PropModeReplace,
+            title,
+            strlen(title));
+
+    } else {
+        s_X11.storeName(s_X11.display, xWin, title);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xSetWindowPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    s_X11.moveWindow(s_X11.display, xWin, x, y);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xSetWindowSize(
+    PalWindow* window,
+    Uint32 width,
+    Uint32 height)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    s_X11.resizeWindow(s_X11.display, xWin, width, height);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xSetFocusWindow(PalWindow* window)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (s_X11Atoms._NET_ACTIVE_WINDOW) {
+        xSendWMEvent(
+            xWin,
+            s_X11Atoms._NET_ACTIVE_WINDOW,
+            CurrentTime,
+            0,
+            0,
+            0,
+            true); // 1
+
+    } else {
+        s_X11.setInputFocus(s_X11.display, xWin, RevertToParent, CurrentTime);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -2255,6 +3037,226 @@ PalResult xSetWindowIcon(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult xCreateCursor(
+    const PalCursorCreateInfo* info,
+    PalCursor** outCursor)
+{
+    XcursorImage* image = s_X11.cursorImageCreate(info->width, info->height);
+    image->xhot = info->xHotspot;
+    image->yhot = info->yHotspot;
+
+    // convert from RGBA8 to ARGB32
+    for (int i = 0; i < info->width * info->height; i++) {
+        Uint8 r = info->pixels[i * 4 + 0]; // Red
+        Uint8 g = info->pixels[i * 4 + 1]; // Green
+        Uint8 b = info->pixels[i * 4 + 2]; // Blue
+        Uint8 a = info->pixels[i * 4 + 3]; // Alpha
+
+        image->pixels[i] = ((unsigned long)a << 24) | 
+                           ((unsigned long)r << 16) |
+                           ((unsigned long)g << 8) |
+                           ((unsigned long)b);
+    }
+
+    Cursor cursor = s_X11.cursorImageLoadCursor(s_X11.display, image);
+    if (!cursor) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    s_X11.cursorImageDestroy(image);
+    *outCursor = TO_PAL_HANDLE(PalCursor, cursor);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xCreateCursorFrom(
+    PalCursorType type,
+    PalCursor** outCursor)
+{
+    int shape;
+    Cursor cursor;
+    switch (type) {
+        case PAL_CURSOR_ARROW: {
+            shape = XC_left_ptr;
+            break;
+        }
+
+        case PAL_CURSOR_HAND: {
+            shape = XC_hand2;
+            break;
+        }
+
+        case PAL_CURSOR_CROSS: {
+            shape = XC_cross;
+            break;
+        }
+
+        case PAL_CURSOR_IBEAM: {
+            shape = XC_xterm;
+            break;
+        }
+
+        case PAL_CURSOR_WAIT: {
+            shape = XC_watch;
+            break;
+        }
+
+        default: {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
+    }
+
+    cursor = s_X11.createFontCursor(s_X11.display, shape);
+    *outCursor = TO_PAL_HANDLE(PalCursor, cursor);
+    return PAL_RESULT_SUCCESS;
+}
+
+void xDestroyCursor(PalCursor* cursor)
+{
+    s_X11.freeCursor(s_X11.display, FROM_PAL_HANDLE(Cursor, cursor));
+}
+
+void xShowCursor(bool show)
+{
+    // X11 does not have a single function to show or hide cursor globally
+    // so we query on windows and set the cursor for each
+    // The limitation is any window not attached to PAL will not be affected
+    for (int i = 0; i < s_Video.maxWindowData; i++) {
+        WindowData* data = &s_Video.windowData[i];
+        Window xWin = FROM_PAL_HANDLE(Window, data->window);
+        if (show) {
+            // we check if the window has a valid cursor
+            // if not we use the root windows cursor
+            Cursor cursor = FROM_PAL_HANDLE(Cursor, data->cursor);
+            if (cursor) {
+                s_X11.defineCursor(s_X11.display, xWin, cursor);
+            } else {
+                s_X11.undefineCursor(s_X11.display, xWin);
+            }
+
+        } else {
+            s_X11.defineCursor(s_X11.display, xWin, s_X11.hiddenCursor);
+        }
+        s_X11.flush(s_X11.display);
+    }
+}
+
+PalResult xClipCursor(
+    PalWindow* window,
+    bool clip)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (clip) {
+        s_X11.grabPointer(
+            s_X11.display,
+            xWin,
+            True,
+            0,
+            GrabModeAsync,
+            GrabModeAsync,
+            xWin,
+            None,
+            CurrentTime);
+
+    } else {
+        s_X11.ungrabPointer(s_X11.display, CurrentTime);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xGetCursorPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    Window root, rootChild;
+    int rootX, rootY, winX, winY;
+    unsigned int mask;
+    s_X11.queryPointer(
+        s_X11.display,
+        xWin,
+        &root,
+        &rootChild,
+        &rootX,
+        &rootY,
+        &winX,
+        &winY,
+        &mask);
+
+    if (x) {
+        *x = winX;
+    }
+
+    if (y) {
+        *y = winY;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xSetCursorPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    s_X11.warpPointer(
+        s_X11.display,
+        None,
+        xWin,
+        0,
+        0,
+        0,
+        0,
+        x,
+        y);
+    
+    s_X11.flush(s_X11.display);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xSetWindowCursor(
+    PalWindow* window,
+    PalCursor* cursor)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    Window xCursor = FROM_PAL_HANDLE(Cursor, cursor); 
+    if (xCursor) {
+        s_X11.defineCursor(s_X11.display, xWin, xCursor);
+        // cache the cursor. Show or hide cursor needs it
+        WindowData* data = nullptr;
+        s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+        data->cursor = cursor;
+
+    } else {
+        s_X11.undefineCursor(s_X11.display, xWin);
+    }
+
+    s_X11.flush(s_X11.display);
+    return PAL_RESULT_SUCCESS;
+}
+
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
@@ -2269,14 +3271,43 @@ static Backend s_XBackend = {
 
     .createWindow = xCreateWindow,
     .destroyWindow = xDestroyWindow,
+    .maximizeWindow = xMaximizeWindow,
+    .minimizeWindow = xMinimizeWindow,
+    .restoreWindow = xRestoreWindow,
+    .showWindow = xShowWindow,
+    .hideWindow = xHideWindow,
+    .xFlashWindow = xFlashWindow,
+    .getWindowStyle = xGetWindowStyle,
+    .getWindowMonitor = xGetWindowMonitor,
+    .getWindowTitle = xGetWindowTitle,
+    .getWindowPos = xGetWindowPos,
+    .getWindowSize = xGetWindowSize,
+    .getWindowState = xGetWindowState,
+    .isWindowVisible = xIsWindowVisible,
+    .getFocusWindow = xGetFocusWindow,
+    .getWindowHandleInfo = xGetWindowHandleInfo,
     .setWindowOpacity = xSetWindowOpacity,
+    .setWindowStyle = xSetWindowStyle,
+    .setWindowTitle = xSetWindowTitle,
+    .setWindowPos = xSetWindowPos,
+    .setWindowSize = xSetWindowSize,
+    .setFocusWindow = xSetFocusWindow,
 
     .createIcon = xCreateIcon,
     .destroyIcon = xDestroyIcon,
-    .setWindowIcon = xSetWindowIcon
+    .setWindowIcon = xSetWindowIcon,
+
+    .createCursor = xCreateCursor,
+    .createCursorFrom = xCreateCursorFrom,
+    .destroyCursor = xDestroyCursor,
+    .showCursor = xShowCursor,
+    .clipCursor = xClipCursor,
+    .getCursorPos = xGetCursorPos,
+    .setCursorPos = xSetCursorPos,
+    .setWindowCursor = xSetWindowCursor
 };
 
-#pragma endregion
+#pragma endregions
 
 // ==================================================
 // Public API
@@ -2545,6 +3576,247 @@ void PAL_CALL palDestroyWindow(PalWindow* window)
     }
 }
 
+PalResult PAL_CALL palMinimizeWindow(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->maximizeWindow(window);
+}
+
+PalResult PAL_CALL palMaximizeWindow(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->minimizeWindow(window);
+}
+
+PalResult PAL_CALL palRestoreWindow(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->restoreWindow(window);
+}
+
+PalResult PAL_CALL palShowWindow(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->showWindow(window);
+}
+
+PalResult PAL_CALL palHideWindow(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->hideWindow(window);
+}
+
+PalResult PAL_CALL palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->xFlashWindow(window, info);
+}
+
+PalResult PAL_CALL palGetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle* outStyle)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !outStyle) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getWindowStyle(window, outStyle);
+}
+
+PalResult PAL_CALL palGetWindowMonitor(
+    PalWindow* window,
+    PalMonitor** outMonitor)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !outMonitor) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getWindowMonitor(window, outMonitor);
+}
+
+PalResult PAL_CALL palGetWindowTitle(
+    PalWindow* window,
+    Uint64 bufferSize,
+    Uint64* outSize,
+    char* outBuffer)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !outBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getWindowTitle(
+        window, 
+        bufferSize, 
+        outSize, 
+        outBuffer);
+}
+
+PalResult PAL_CALL palGetWindowPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getWindowPos(window, x, y);
+}
+
+PalResult PAL_CALL palGetWindowSize(
+    PalWindow* window,
+    Uint32* width,
+    Uint32* height)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getWindowSize(window, width, height);
+}
+
+PalResult PAL_CALL palGetWindowState(
+    PalWindow* window,
+    PalWindowState* outState)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !outState) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getWindowState(window, outState);
+}
+
+const bool* PAL_CALL palGetKeycodeState()
+{
+    // TODO: implement
+    return nullptr;
+}
+
+const bool* PAL_CALL palGetScancodeState()
+{
+    // TODO: implement
+    return nullptr;
+}
+
+const bool* PAL_CALL palGetMouseState()
+{
+    // TODO: implement
+    return nullptr;
+}
+
+void PAL_CALL palGetMouseDelta(
+    Int32* dx,
+    Int32* dy)
+{
+    // TODO: implement
+    return;
+}
+
+void PAL_CALL palGetMouseWheelDelta(
+    Int32* dx,
+    Int32* dy)
+{
+    // TODO: implement
+    return;
+}
+
+bool PAL_CALL palIsWindowVisible(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->isWindowVisible(window);
+}
+
+PalWindow* PAL_CALL palGetFocusWindow()
+{
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+
+    return s_Video.backend->getFocusWindow();
+}
+
+PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window)
+{
+    if (s_Video.initialized) {
+        return s_Video.backend->getWindowHandleInfo(window);
+    }
+}
+
 PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
     float opacity)
@@ -2571,6 +3843,85 @@ PalResult PAL_CALL palSetWindowOpacity(
 
     return s_Video.backend->setWindowOpacity(window, opacity);
 }
+
+PalResult PAL_CALL palSetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle style)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setWindowStyle(window, style);
+}
+
+PalResult PAL_CALL palSetWindowTitle(
+    PalWindow* window,
+    const char* title)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window || !title) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setWindowTitle(window, title);
+}
+
+PalResult PAL_CALL palSetWindowPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setWindowPos(window, x, y);
+}
+
+PalResult PAL_CALL palSetWindowSize(
+    PalWindow* window,
+    Uint32 width,
+    Uint32 height)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setWindowSize(window, width, height);
+}
+
+PalResult PAL_CALL palSetFocusWindow(PalWindow* window)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setFocusWindow(window);
+}
+
+// ==================================================
+// Icon
+// ==================================================
 
 PalResult PAL_CALL palCreateIcon(
     const PalIconCreateInfo* info,
@@ -2607,4 +3958,114 @@ PalResult PAL_CALL palSetWindowIcon(
     }
 
     return s_Video.backend->setWindowIcon(window, icon);
+}
+
+// ==================================================
+// Cursor
+// ==================================================
+
+PalResult PAL_CALL palCreateCursor(
+    const PalCursorCreateInfo* info,
+    PalCursor** outCursor)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!info || !outCursor) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->createCursor(info, outCursor);
+}
+
+PalResult PAL_CALL palCreateCursorFrom(
+    PalCursorType type,
+    PalCursor** outCursor)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!outCursor) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->createCursorFrom(type, outCursor);
+}
+
+void PAL_CALL palDestroyCursor(PalCursor* cursor)
+{
+    if (s_Video.initialized && cursor) {
+        s_Video.backend->destroyCursor(cursor);
+    }
+}
+
+void PAL_CALL palShowCursor(bool show)
+{
+    if (s_Video.initialized) {
+        s_Video.backend->showCursor(show);
+    }
+}
+
+PalResult PAL_CALL palClipCursor(
+    PalWindow* window,
+    bool clip)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->clipCursor(window, clip);
+}
+
+PalResult PAL_CALL palGetCursorPos(
+    PalWindow* window,
+    Int32* x,
+    Int32* y)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->getCursorPos(window, x, y);
+}
+
+PalResult PAL_CALL palSetCursorPos(
+    PalWindow* window,
+    Int32 x,
+    Int32 y)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setCursorPos(window, x, y);
+}
+
+PalResult PAL_CALL palSetWindowCursor(
+    PalWindow* window,
+    PalCursor* cursor)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->setWindowCursor(window, cursor);
 }

@@ -676,7 +676,19 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * @brief Set the pixel format or FBConfig for the video system.
  *
  * The video system must be initialized before this call.
- * This is used to create all windows after this call, If not set, the default will be used.
+ * The pixel format set will be used for all created windows after this call.
+ * The `pixelFormatIndex` is the loop index from the drivers 
+ * supported pixel formats or FBConfig. 
+ * 
+ * Example:
+ * 
+ * @code
+ * for (int i = 0; i < count; i++) { pixelFormatIndex = i;}
+ * @endcode
+ * 
+ * An opengl supported pixel format or FBConfig must be used
+ * the window will be used to create an opengl context otherwise
+ * this can be ignored safely.
  *
  * @param[in] pixelFormatIndex The pixel format driver index.
  *
@@ -1613,7 +1625,7 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
 PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
 
 /**
- * @brief Show or hide the provided cursor.
+ * @brief Show or hide the cursor.
  *
  * The video system must be initialized before this call.
  * This affects all created cursors since the platform (OS) merges all cursors

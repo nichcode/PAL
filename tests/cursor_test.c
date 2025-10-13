@@ -56,13 +56,13 @@ bool cursorTest()
                 pixels[i + 0] = 255; // Red bit
                 pixels[i + 1] = 0;   // Green bit
                 pixels[i + 2] = 0;   // Blue bit
-                pixels[i + 3] = 0;   // Alpha bit
+                pixels[i + 3] = 255;   // Alpha bit
 
             } else {
                 pixels[i + 0] = 0;   // Red bit
                 pixels[i + 1] = 0;   // Green bit
                 pixels[i + 2] = 255; // Blue bit
-                pixels[i + 3] = 0;   // Alpha bit
+                pixels[i + 3] = 255;   // Alpha bit
             }
         }
     }

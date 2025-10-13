@@ -2686,7 +2686,7 @@ PalResult PAL_CALL palCreateIcon(
 
     ICONINFO iconInfo = {0};
     iconInfo.fIcon = TRUE;
-    iconInfo.hbmMask = mask;
+    iconInfo.hbmMask = mask; // TODO: set to nullptr to respect alpha
     iconInfo.hbmColor = bitmap;
 
     // create the icon with the icon info
@@ -2787,7 +2787,7 @@ PalResult PAL_CALL palCreateCursor(
     ICONINFO iconInfo = {0};
     iconInfo.fIcon = false;
     iconInfo.hbmColor = bitmap;
-    iconInfo.hbmMask = mask;
+    iconInfo.hbmMask = mask; // TODO: set to nullptr to respect alpha
     iconInfo.xHotspot = info->xHotspot;
     iconInfo.xHotspot = info->yHotspot;
 
