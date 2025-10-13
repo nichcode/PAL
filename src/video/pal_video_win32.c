@@ -396,7 +396,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_MOUSEHWHEEL: {
             Int32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            s_Mouse.WheelX = delta;
+            s_Mouse.WheelX = delta; // normalize with delta
 
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
@@ -414,7 +414,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_MOUSEWHEEL: {
             Int32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            s_Mouse.WheelY = delta;
+            s_Mouse.WheelY = delta; // normalize with delta
 
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
@@ -537,6 +537,7 @@ LRESULT CALLBACK videoProc(
                 ReleaseCapture();
             }
 
+            // TODO: optimaize
             s_Mouse.state[button] = pressed;
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;

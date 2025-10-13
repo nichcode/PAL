@@ -78,6 +78,23 @@ typedef struct {
     PalMonitor* monitor;
 } MonitorData;
 
+typedef struct {
+    Int32 lastX;
+    Int32 lastY;
+    Int32 dx;
+    Int32 dy;
+    Int32 WheelX;
+    Int32 WheelY;
+    bool state[PAL_MOUSE_BUTTON_MAX];
+} Mouse;
+
+typedef struct {
+    bool scancodeState[PAL_SCANCODE_MAX];
+    bool keycodeState[PAL_KEYCODE_MAX];
+    PalScancode scancodes[512];
+    PalKeycode keycodes[256];
+} Keyboard;
+
 // ==================================================
 // X11 Typedefs, enums and structs
 // ==================================================
@@ -631,6 +648,8 @@ typedef struct {
 } VideoLinux;
 
 static VideoLinux s_Video = {0};
+static Mouse s_Mouse = {0};
+static Keyboard s_Keyboard = {0};
 
 // ==================================================
 // Internal API
@@ -1382,6 +1401,7 @@ static void xShutdownVideo()
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
+    dlclose(s_X11.libCursor);
     if (s_X11.opengl) {
         dlclose(s_X11.opengl);
     }
@@ -1627,6 +1647,113 @@ static void xUpdateVideo()
                         return;
                     }
                 }
+            }
+
+            case MotionNotify: {
+                // mouse moved
+                const int x = event.xmotion.x;
+                const int y = event.xmotion.y;
+                const int dx = x - s_Mouse.lastX;
+                const int dy = y - s_Mouse.lastY;
+
+                if (s_Video.eventDriver) {
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    PalEventType type = PAL_EVENT_MOUSE_MOVE;
+                    mode = palGetEventDispatchMode(driver, type);
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = palPackInt32(x, y);
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+
+                    // push a mouse delta event
+                    type = PAL_EVENT_MOUSE_DELTA;
+                    mode = palGetEventDispatchMode(driver, type);
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = palPackInt32(dx, dy);
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+                }
+
+                s_Mouse.lastX = x;
+                s_Mouse.lastY = y;
+                s_Mouse.dx = dx;
+                s_Mouse.dy = dy;
+                return;
+            }
+
+            case ButtonPress:
+            case ButtonRelease: {
+                int xButton = event.xbutton.button;
+                bool pressed = (event.xbutton.type == ButtonPress);
+                PalMouseButton button = 0;
+                PalEventType type;
+
+                if (xButton == 1) {
+                    button = PAL_MOUSE_BUTTON_LEFT;
+                } else if (xButton == 3) {
+                    button = PAL_MOUSE_BUTTON_RIGHT;
+                } else if (xButton == 2) {
+                    button = PAL_MOUSE_BUTTON_MIDDLE;
+                }
+
+                s_Mouse.state[button] = pressed;
+                if (s_Video.eventDriver && button != 0) {
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    if (pressed) {
+                        type = PAL_EVENT_MOUSE_BUTTONDOWN;
+                    } else {
+                        type = PAL_EVENT_MOUSE_BUTTONUP;
+                    }
+                    
+                    mode = palGetEventDispatchMode(driver, type);
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = button;
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+                }
+
+                int scrollX = 0;
+                int scrollY = 0;
+                if (xButton == 4) {
+                    // scroll up
+                    scrollY = 1;
+                } else if (xButton == 5) {
+                    // scroll down
+                    scrollY = -1;
+                } else if (xButton == 6) {
+                    // scroll left
+                    scrollX = -1;
+                } else if (xButton == 7) {
+                    // scroll right
+                    scrollX = 1;
+                }
+
+                s_Mouse.WheelX = scrollX;
+                s_Mouse.WheelY = scrollY;
+                if (s_Video.eventDriver && (scrollX || scrollY)) {
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    mode = palGetEventDispatchMode(
+                        driver, 
+                        PAL_EVENT_MOUSE_WHEEL);
+
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = PAL_EVENT_MOUSE_WHEEL;
+                        event.data = palPackInt32(scrollX, scrollY);
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+                }
+                return;
             }
         }
     }
@@ -3756,36 +3883,60 @@ PalResult PAL_CALL palGetWindowState(
 
 const bool* PAL_CALL palGetKeycodeState()
 {
-    // TODO: implement
-    return nullptr;
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+    return s_Keyboard.keycodeState;
 }
 
 const bool* PAL_CALL palGetScancodeState()
 {
-    // TODO: implement
-    return nullptr;
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+    return s_Keyboard.scancodeState;
 }
 
 const bool* PAL_CALL palGetMouseState()
 {
-    // TODO: implement
-    return nullptr;
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+    return s_Mouse.state;
 }
 
 void PAL_CALL palGetMouseDelta(
     Int32* dx,
     Int32* dy)
 {
-    // TODO: implement
-    return;
+    if (!s_Video.initialized) {
+        return;
+    }
+
+    if (dx) {
+        *dx = s_Mouse.dx;
+    }
+
+    if (dy) {
+        *dy = s_Mouse.dy;
+    }
 }
 
 void PAL_CALL palGetMouseWheelDelta(
     Int32* dx,
     Int32* dy)
 {
-    // TODO: implement
-    return;
+    if (!s_Video.initialized) {
+        return;
+    }
+
+    if (dx) {
+        *dx = s_Mouse.WheelX;
+    }
+
+    if (dy) {
+        *dy = s_Mouse.WheelY;
+    }
 }
 
 bool PAL_CALL palIsWindowVisible(PalWindow* window)
