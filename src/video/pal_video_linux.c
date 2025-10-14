@@ -40,6 +40,7 @@ freely, subject to the following restrictions:
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/Xcursor/Xcursor.h>
+#include <X11/XKBlib.h>
 #include <X11/extensions/Xrandr.h>
 
 // Wayland headers
@@ -91,8 +92,8 @@ typedef struct {
 typedef struct {
     bool scancodeState[PAL_SCANCODE_MAX];
     bool keycodeState[PAL_KEYCODE_MAX];
-    PalScancode scancodes[512];
-    PalKeycode keycodes[256];
+    int scancodes[512];
+    int keycodes[256];
 } Keyboard;
 
 // ==================================================
@@ -233,6 +234,12 @@ typedef int (*XSetWMNormalHintsFn)(
     Display*,
     Window,
     XSizeHints*);
+
+typedef int (*XGetWMNormalHintsFn)(
+    Display*,
+    Window,
+    XSizeHints*,
+    long*);
 
 typedef int (*XSendEventFn)(
     Display*,
@@ -460,6 +467,15 @@ typedef XcursorImage* (*XcursorImageCreateFn)(
 
 typedef void (*XcursorImageDestroyFn)(XcursorImage*);
 
+typedef KeySym (*XLookupKeysymFn)(
+    XKeyEvent*,
+    int);
+
+typedef	int	(*XkbSetDetectableAutoRepeatFn)(
+	Display*,
+	int,
+	int*);
+
 typedef struct 
 {
     bool unicodeTitle;
@@ -524,6 +540,7 @@ typedef struct {
     XSetWMProtocolsFn setWMProtocols;
     XNextEventFn nextEvent;
     XSetWMNormalHintsFn setWMNormalHints;
+    XGetWMNormalHintsFn getWMNormalHints;
     XSendEventFn sendEvent;
     XMoveWindowFn moveWindow;
     XResizeWindowFn resizeWindow;
@@ -576,6 +593,9 @@ typedef struct {
     XcursorImageLoadCursorFn cursorImageLoadCursor;
     XcursorImageCreateFn cursorImageCreate;
     XcursorImageDestroyFn cursorImageDestroy;
+    XLookupKeysymFn lookupKeysym;
+
+    XkbSetDetectableAutoRepeatFn setDetectableAutoRepeat;
 } X11;
 
 static X11 s_X11 = {0};
@@ -1054,7 +1074,190 @@ static void xSendWMEvent(
         False,
         SubstructureNotifyMask | SubstructureRedirectMask,
         &e);
+}
 
+static void xCreateScancodeTable()
+{
+    // Letters
+    s_Keyboard.scancodes[30] = PAL_SCANCODE_A;
+    s_Keyboard.scancodes[48] = PAL_SCANCODE_B;
+    s_Keyboard.scancodes[46] = PAL_SCANCODE_C;
+    s_Keyboard.scancodes[32] = PAL_SCANCODE_D;
+    s_Keyboard.scancodes[18] = PAL_SCANCODE_E;
+    s_Keyboard.scancodes[33] = PAL_SCANCODE_F;
+    s_Keyboard.scancodes[34] = PAL_SCANCODE_G;
+    s_Keyboard.scancodes[35] = PAL_SCANCODE_H;
+    s_Keyboard.scancodes[23] = PAL_SCANCODE_I;
+    s_Keyboard.scancodes[36] = PAL_SCANCODE_J;
+    s_Keyboard.scancodes[37] = PAL_SCANCODE_K;
+    s_Keyboard.scancodes[38] = PAL_SCANCODE_L;
+    s_Keyboard.scancodes[50] = PAL_SCANCODE_M;
+    s_Keyboard.scancodes[49] = PAL_SCANCODE_N;
+    s_Keyboard.scancodes[24] = PAL_SCANCODE_O;
+    s_Keyboard.scancodes[25] = PAL_SCANCODE_P;
+    s_Keyboard.scancodes[16] = PAL_SCANCODE_Q;
+    s_Keyboard.scancodes[19] = PAL_SCANCODE_R;
+    s_Keyboard.scancodes[31] = PAL_SCANCODE_S;
+    s_Keyboard.scancodes[20] = PAL_SCANCODE_T;
+    s_Keyboard.scancodes[22] = PAL_SCANCODE_U;
+    s_Keyboard.scancodes[47] = PAL_SCANCODE_V;
+    s_Keyboard.scancodes[17] = PAL_SCANCODE_W;
+    s_Keyboard.scancodes[45] = PAL_SCANCODE_X;
+    s_Keyboard.scancodes[21] = PAL_SCANCODE_Y;
+    s_Keyboard.scancodes[44] = PAL_SCANCODE_Z;
+
+    // Numbers (top row)
+    s_Keyboard.scancodes[11] = PAL_SCANCODE_0;
+    s_Keyboard.scancodes[2] = PAL_SCANCODE_1;
+    s_Keyboard.scancodes[3] = PAL_SCANCODE_2;
+    s_Keyboard.scancodes[4] = PAL_SCANCODE_3;
+    s_Keyboard.scancodes[5] = PAL_SCANCODE_4;
+    s_Keyboard.scancodes[6] = PAL_SCANCODE_5;
+    s_Keyboard.scancodes[7] = PAL_SCANCODE_6;
+    s_Keyboard.scancodes[8] = PAL_SCANCODE_7;
+    s_Keyboard.scancodes[9] = PAL_SCANCODE_8;
+    s_Keyboard.scancodes[10] = PAL_SCANCODE_9;
+
+    // Function
+    s_Keyboard.scancodes[59] = PAL_SCANCODE_F1;
+    s_Keyboard.scancodes[60] = PAL_SCANCODE_F2;
+    s_Keyboard.scancodes[61] = PAL_SCANCODE_F3;
+    s_Keyboard.scancodes[62] = PAL_SCANCODE_F4;
+    s_Keyboard.scancodes[63] = PAL_SCANCODE_F5;
+    s_Keyboard.scancodes[64] = PAL_SCANCODE_F6;
+    s_Keyboard.scancodes[65] = PAL_SCANCODE_F7;
+    s_Keyboard.scancodes[66] = PAL_SCANCODE_F8;
+    s_Keyboard.scancodes[67] = PAL_SCANCODE_F9;
+    s_Keyboard.scancodes[68] = PAL_SCANCODE_F10;
+    s_Keyboard.scancodes[87] = PAL_SCANCODE_F11;
+    s_Keyboard.scancodes[88] = PAL_SCANCODE_F12;
+
+    // Control
+    s_Keyboard.scancodes[1] = PAL_SCANCODE_ESCAPE;
+    s_Keyboard.scancodes[28] = PAL_SCANCODE_ENTER;
+    s_Keyboard.scancodes[15] = PAL_SCANCODE_TAB;
+    s_Keyboard.scancodes[14] = PAL_SCANCODE_BACKSPACE;
+    s_Keyboard.scancodes[57] = PAL_SCANCODE_SPACE;
+    s_Keyboard.scancodes[58] = PAL_SCANCODE_CAPSLOCK;
+    s_Keyboard.scancodes[69] = PAL_SCANCODE_NUMLOCK;
+    s_Keyboard.scancodes[70] = PAL_SCANCODE_SCROLLLOCK;
+    s_Keyboard.scancodes[42] = PAL_SCANCODE_LSHIFT;
+    s_Keyboard.scancodes[54] = PAL_SCANCODE_RSHIFT;
+    s_Keyboard.scancodes[29] = PAL_SCANCODE_LCTRL;
+    s_Keyboard.scancodes[97] = PAL_SCANCODE_RCTRL;
+    s_Keyboard.scancodes[56] = PAL_SCANCODE_LALT;
+    s_Keyboard.scancodes[100] = PAL_SCANCODE_RALT;
+
+    // Arrows
+    s_Keyboard.scancodes[105] = PAL_SCANCODE_LEFT;
+    s_Keyboard.scancodes[106] = PAL_SCANCODE_RIGHT;
+    s_Keyboard.scancodes[103] = PAL_SCANCODE_UP;
+    s_Keyboard.scancodes[108] = PAL_SCANCODE_DOWN;
+
+    // Navigation
+    s_Keyboard.scancodes[110] = PAL_SCANCODE_INSERT;
+    s_Keyboard.scancodes[111] = PAL_SCANCODE_DELETE;
+    s_Keyboard.scancodes[102] = PAL_SCANCODE_HOME;
+    s_Keyboard.scancodes[107] = PAL_SCANCODE_END;
+    s_Keyboard.scancodes[104] = PAL_SCANCODE_PAGEUP;
+    s_Keyboard.scancodes[109] = PAL_SCANCODE_PAGEDOWN;
+
+    // Keypad
+    s_Keyboard.scancodes[82] = PAL_SCANCODE_KP_0;
+    s_Keyboard.scancodes[79] = PAL_SCANCODE_KP_1;
+    s_Keyboard.scancodes[80] = PAL_SCANCODE_KP_2;
+    s_Keyboard.scancodes[81] = PAL_SCANCODE_KP_3;
+    s_Keyboard.scancodes[75] = PAL_SCANCODE_KP_4;
+    s_Keyboard.scancodes[76] = PAL_SCANCODE_KP_5;
+    s_Keyboard.scancodes[77] = PAL_SCANCODE_KP_6;
+    s_Keyboard.scancodes[71] = PAL_SCANCODE_KP_7;
+    s_Keyboard.scancodes[72] = PAL_SCANCODE_KP_8;
+    s_Keyboard.scancodes[73] = PAL_SCANCODE_KP_9;
+    s_Keyboard.scancodes[96] = PAL_SCANCODE_KP_ENTER;
+    s_Keyboard.scancodes[78] = PAL_SCANCODE_KP_ADD;
+    s_Keyboard.scancodes[74] = PAL_SCANCODE_KP_SUBTRACT;
+    s_Keyboard.scancodes[55] = PAL_SCANCODE_KP_MULTIPLY;
+    s_Keyboard.scancodes[98] = PAL_SCANCODE_KP_DIVIDE;
+    s_Keyboard.scancodes[83] = PAL_SCANCODE_KP_DECIMAL;
+
+    // Misc
+    s_Keyboard.scancodes[99] = PAL_SCANCODE_PRINTSCREEN;
+    s_Keyboard.scancodes[102] = PAL_SCANCODE_PAUSE;
+    s_Keyboard.scancodes[127] = PAL_SCANCODE_MENU;
+    s_Keyboard.scancodes[40] = PAL_SCANCODE_APOSTROPHE;
+    s_Keyboard.scancodes[43] = PAL_SCANCODE_BACKSLASH;
+    s_Keyboard.scancodes[51] = PAL_SCANCODE_COMMA;
+    s_Keyboard.scancodes[13] = PAL_SCANCODE_EQUAL; 
+    s_Keyboard.scancodes[41] = PAL_SCANCODE_GRAVEACCENT;
+    s_Keyboard.scancodes[12] = PAL_SCANCODE_SUBTRACT;
+    s_Keyboard.scancodes[52] = PAL_SCANCODE_PERIOD;
+    s_Keyboard.scancodes[39] = PAL_SCANCODE_SEMICOLON;
+    s_Keyboard.scancodes[53] = PAL_SCANCODE_SLASH;
+    s_Keyboard.scancodes[26] = PAL_SCANCODE_LBRACKET;
+    s_Keyboard.scancodes[27] = PAL_SCANCODE_RBRACKET;
+    s_Keyboard.scancodes[125] = PAL_SCANCODE_LSUPER;
+    s_Keyboard.scancodes[126] = PAL_SCANCODE_RSUPER;
+}
+
+static void xCreateKeycodeTable()
+{
+    // Tis is for only printable and text input keys
+
+    // Letters
+    s_Keyboard.keycodes[XK_a] = PAL_KEYCODE_A;
+    s_Keyboard.keycodes[XK_b] = PAL_KEYCODE_B;
+    s_Keyboard.keycodes[XK_c] = PAL_KEYCODE_C;
+    s_Keyboard.keycodes[XK_d] = PAL_KEYCODE_D;
+    s_Keyboard.keycodes[XK_e] = PAL_KEYCODE_E;
+    s_Keyboard.keycodes[XK_f] = PAL_KEYCODE_F;
+    s_Keyboard.keycodes[XK_g] = PAL_KEYCODE_G;
+    s_Keyboard.keycodes[XK_h] = PAL_KEYCODE_H;
+    s_Keyboard.keycodes[XK_i] = PAL_KEYCODE_I;
+    s_Keyboard.keycodes[XK_j] = PAL_KEYCODE_J;
+    s_Keyboard.keycodes[XK_k] = PAL_KEYCODE_K;
+    s_Keyboard.keycodes[XK_l] = PAL_KEYCODE_L;
+    s_Keyboard.keycodes[XK_m] = PAL_KEYCODE_M;
+    s_Keyboard.keycodes[XK_n] = PAL_KEYCODE_N;
+    s_Keyboard.keycodes[XK_o] = PAL_KEYCODE_O;
+    s_Keyboard.keycodes[XK_p] = PAL_KEYCODE_P;
+    s_Keyboard.keycodes[XK_q] = PAL_KEYCODE_Q;
+    s_Keyboard.keycodes[XK_r] = PAL_KEYCODE_R;
+    s_Keyboard.keycodes[XK_s] = PAL_KEYCODE_S;
+    s_Keyboard.keycodes[XK_t] = PAL_KEYCODE_T;
+    s_Keyboard.keycodes[XK_u] = PAL_KEYCODE_U;
+    s_Keyboard.keycodes[XK_v] = PAL_KEYCODE_V;
+    s_Keyboard.keycodes[XK_w] = PAL_KEYCODE_W;
+    s_Keyboard.keycodes[XK_x] = PAL_KEYCODE_X;
+    s_Keyboard.keycodes[XK_y] = PAL_KEYCODE_Y;
+    s_Keyboard.keycodes[XK_z] = PAL_KEYCODE_Z;
+
+    // Numbers (top row)
+    s_Keyboard.keycodes[XK_0] = PAL_KEYCODE_0;
+    s_Keyboard.keycodes[XK_1] = PAL_KEYCODE_1;
+    s_Keyboard.keycodes[XK_2] = PAL_KEYCODE_2;
+    s_Keyboard.keycodes[XK_3] = PAL_KEYCODE_3;
+    s_Keyboard.keycodes[XK_4] = PAL_KEYCODE_4;
+    s_Keyboard.keycodes[XK_5] = PAL_KEYCODE_5;
+    s_Keyboard.keycodes[XK_6] = PAL_KEYCODE_6;
+    s_Keyboard.keycodes[XK_7] = PAL_KEYCODE_7;
+    s_Keyboard.keycodes[XK_8] = PAL_KEYCODE_8;
+    s_Keyboard.keycodes[XK_9] = PAL_KEYCODE_9;
+
+    // Control
+    s_Keyboard.keycodes[XK_space] = PAL_KEYCODE_SPACE;
+
+    // Misc
+    s_Keyboard.keycodes[XK_apostrophe] = PAL_KEYCODE_APOSTROPHE;
+    s_Keyboard.keycodes[XK_backslash] = PAL_KEYCODE_BACKSLASH;
+    s_Keyboard.keycodes[XK_comma] = PAL_KEYCODE_COMMA;
+    s_Keyboard.keycodes[XK_equal] = PAL_KEYCODE_EQUAL;
+    s_Keyboard.keycodes[XK_grave] = PAL_KEYCODE_GRAVEACCENT;
+    s_Keyboard.keycodes[XK_minus] = PAL_KEYCODE_SUBTRACT;
+    s_Keyboard.keycodes[XK_period] = PAL_KEYCODE_PERIOD;
+    s_Keyboard.keycodes[XK_semicolon] = PAL_KEYCODE_SEMICOLON;
+    s_Keyboard.keycodes[XK_slash] = PAL_KEYCODE_SLASH;
+    s_Keyboard.keycodes[XK_bracketleft] = PAL_KEYCODE_LBRACKET;
+    s_Keyboard.keycodes[XK_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
 static PalResult xInitVideo() 
@@ -1071,6 +1274,7 @@ static PalResult xInitVideo()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // Xrandr is needed
     s_X11.xrandr = dlopen("libXrandr.so.2", RTLD_LAZY);
     if (!s_X11.xrandr) {
         s_X11.xrandr = dlopen("libXrandr.so", RTLD_LAZY);
@@ -1160,6 +1364,10 @@ static PalResult xInitVideo()
     s_X11.setWMNormalHints = (XSetWMNormalHintsFn)dlsym(
         s_X11.handle, 
         "XSetWMNormalHints");
+
+    s_X11.getWMNormalHints = (XGetWMNormalHintsFn)dlsym(
+        s_X11.handle, 
+        "XGetWMNormalHints");
 
     s_X11.sendEvent = (XSendEventFn)dlsym(
         s_X11.handle, 
@@ -1331,6 +1539,14 @@ static PalResult xInitVideo()
         s_X11.libCursor, 
         "XcursorImageDestroy");
 
+    s_X11.lookupKeysym = (XLookupKeysymFn)dlsym(
+        s_X11.libCursor, 
+        "XLookupKeysym");
+
+    s_X11.setDetectableAutoRepeat = (XkbSetDetectableAutoRepeatFn)dlsym(
+        s_X11.handle, 
+        "XkbSetDetectableAutoRepeat");
+
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
@@ -1392,6 +1608,16 @@ static PalResult xInitVideo()
         0);
 
     s_X11.freePixmap(s_X11.display, map);
+    xCreateScancodeTable();
+    xCreateKeycodeTable();
+
+    // disable auto key repeats
+    int supported;
+    s_X11.setDetectableAutoRepeat(s_X11.display, True, &supported);
+    if (!supported) {
+        // TODO: FIXME
+        // fallback to manual key repeat detection
+    }
 
     return PAL_RESULT_SUCCESS;
 }
@@ -1749,6 +1975,79 @@ static void xUpdateVideo()
                         PalEvent event = {0};
                         event.type = PAL_EVENT_MOUSE_WHEEL;
                         event.data = palPackInt32(scrollX, scrollY);
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+                }
+                return;
+            }
+
+            case KeyPress:
+            case KeyRelease: {
+                int xScancode = event.xkey.keycode;
+                bool pressed = (event.xbutton.type == KeyPress);
+                PalScancode scancode = PAL_SCANCODE_UNKNOWN;
+                PalKeycode keycode = PAL_KEYCODE_UNKNOWN;
+                PalEventType type;
+                KeySym keySym = s_X11.lookupKeysym(&event.xkey, 0);
+
+                // special handling for Pause/break with Home
+                if (xScancode == 110) {
+                    if (keySym == XK_Pause) {
+                        scancode = PAL_SCANCODE_PAUSE;
+                    } else {
+                        scancode = PAL_SCANCODE_HOME;
+                    }
+
+                } else {
+                    int index = xScancode - 8;
+                    scancode = s_Keyboard.scancodes[index];
+                }
+
+                // printable and text input keys are from the range
+                // 39 (PAL_KEYCODE_APOSTROPHE) and 122 (PAL_KEYCODE_Z)
+                // The rest are almost the same as their scancode
+                // Maybe there will be a layout that makes this wrong
+                // but for now this works
+                if (keySym >= XK_apostrophe && keySym <= XK_z) {
+                    // a printable or input key
+                    keycode = s_Keyboard.keycodes[keySym];
+
+                } else {
+                    // Since PalKeycode and PalScancode have the same integers
+                    // we can make a direct cast without a table
+                    // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
+                    keycode = (PalKeycode)(Uint32)scancode;
+                }
+
+                // If we got a keySym but its not mapped into our keycode array
+                // we do a direct cast as well
+                if (keycode == PAL_KEYCODE_UNKNOWN) {
+                    keycode = (PalKeycode)(Uint32)scancode;
+                }
+
+                // update our keyboard and mouse state to handle key repeat
+                bool repeat = s_Keyboard.keycodeState[keycode];
+                s_Keyboard.scancodeState[scancode] = pressed;
+                s_Keyboard.keycodeState[keycode] = pressed;
+
+                if (pressed) {
+                    if (repeat) {
+                        type = PAL_EVENT_KEYREPEAT;
+                    } else {
+                        type = PAL_EVENT_KEYDOWN;
+                    }
+                } else {
+                    type = PAL_EVENT_KEYUP;
+                }
+
+                if (s_Video.eventDriver) {
+                    PalEventDriver* driver = s_Video.eventDriver;
+                    mode = palGetEventDispatchMode(driver, type);
+                    if (mode != PAL_DISPATCH_NONE) {
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = palPackUint32(keycode, scancode);
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }
@@ -2496,7 +2795,8 @@ static PalResult xCreateWindow(
 
     // resizable
     if (!(info->style & PAL_WINDOW_STYLE_RESIZABLE)) {
-        wmHints.flags = PMinSize | PMaxSize;
+        wmHints.flags |= PMinSize;
+        wmHints.flags |= PMaxSize;
         wmHints.min_width = wmHints.max_width = info->width;
         wmHints.min_height = wmHints.max_height = info->height;
     }
@@ -3038,6 +3338,7 @@ PalResult xSetWindowTitle(
         s_X11.storeName(s_X11.display, xWin, title);
     }
 
+    s_X11.flush(s_X11.display);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3053,6 +3354,7 @@ PalResult xSetWindowPos(
     }
 
     s_X11.moveWindow(s_X11.display, xWin, x, y);
+    s_X11.flush(s_X11.display);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3067,7 +3369,31 @@ PalResult xSetWindowSize(
         return PAL_RESULT_INVALID_WINDOW;
     }
 
-    s_X11.resizeWindow(s_X11.display, xWin, width, height);
+    // X11 does not allow users resize programaticaly
+    // if the window is not resizable.
+    // so we hack it by making the window resizable and resizing
+    // then revert back. 
+    XSizeHints hints;
+    long tmp;
+    s_X11.getWMNormalHints(s_X11.display, xWin, &hints, &tmp);
+    if ((hints.flags & PMinSize) && (hints.flags & PMaxSize)) {
+        hints.flags &= ~PMinSize;
+        hints.flags &= ~PMaxSize;
+        s_X11.resizeWindow(s_X11.display, xWin, width, height);
+        s_X11.flush(s_X11.display);
+
+        // revert
+        hints.flags |= PMinSize;
+        hints.flags |= PMaxSize;
+        hints.min_width = hints.max_width = width;
+        hints.min_height = hints.max_height = height;
+
+    } else {
+        // window is already resizable
+        s_X11.resizeWindow(s_X11.display, xWin, width, height);
+    }
+
+    s_X11.flush(s_X11.display);
     return PAL_RESULT_SUCCESS;
 }
 

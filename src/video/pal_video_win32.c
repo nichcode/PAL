@@ -140,8 +140,8 @@ typedef struct {
 typedef struct {
     bool scancodeState[PAL_SCANCODE_MAX];
     bool keycodeState[PAL_KEYCODE_MAX];
-    PalScancode scancodes[512];
-    PalKeycode keycodes[256];
+    int scancodes[512];
+    int keycodes[256];
 } Keyboard;
 
 typedef struct {
