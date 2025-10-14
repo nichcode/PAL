@@ -3824,6 +3824,7 @@ void PAL_CALL palShutdownVideo()
         s_Video.backend->shutdownVideo();
         palFree(s_Video.allocator, s_Video.windowData);
         palFree(s_Video.allocator, s_Video.monitorData);
+        s_Video.initialized = false;
     }
 }
 

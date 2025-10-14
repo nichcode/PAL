@@ -15,4 +15,4 @@ PAL_BUILD_THREAD = true
 PAL_BUILD_VIDEO = true
 
 -- build opengl module
-PAL_BUILD_OPENGL = false
+PAL_BUILD_OPENGL = true
