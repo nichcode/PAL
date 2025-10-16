@@ -55,6 +55,64 @@ freely, subject to the following restrictions:
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 
+typedef void *EGLConfig;
+typedef void *EGLSurface;
+typedef void *EGLContext;
+typedef void *EGLDisplay;
+typedef void *EGLNativeDisplayType;
+
+/* C++ / C typecast macros for special EGL handle values */
+#if defined(__cplusplus)
+#define EGL_CAST(type, value) (static_cast<type>(value))
+#else
+#define EGL_CAST(type, value) ((type) (value))
+#endif
+
+#define EGL_OPENGL_API                    0x30A2
+#define EGL_OPENGL_BIT                    0x0008
+#define EGL_NO_CONTEXT                    EGL_CAST(EGLContext,0)
+#define EGL_NO_DISPLAY                    EGL_CAST(EGLDisplay,0)
+#define EGL_NO_SURFACE                    EGL_CAST(EGLSurface,0)
+#define EGL_NATIVE_VISUAL_ID              0x302E
+
+typedef int32_t EGLint;
+typedef unsigned int EGLBoolean;
+typedef unsigned int EGLenum;
+
+typedef void* (*eglGetProcAddressFn)(const char*);
+
+typedef EGLBoolean (*eglInitializeFn)(
+    EGLDisplay, 
+    EGLint*, 
+    EGLint*);
+
+typedef EGLBoolean (*eglTerminateFn)(EGLDisplay);
+
+typedef EGLDisplay (*eglGetDisplayFn)(void*);
+
+typedef EGLBoolean (*eglChooseConfigFn)(
+    EGLDisplay, 
+    const EGLint*, 
+    EGLConfig*, 
+    EGLint, 
+    EGLint*);
+
+typedef EGLBoolean (*eglGetConfigAttribFn)(
+    EGLDisplay, 
+    EGLConfig, 
+    EGLint, 
+    EGLint*);
+
+typedef EGLint (*eglGetErrorFn)(void);
+
+typedef EGLBoolean (*eglBindAPIFn)(EGLenum);
+
+typedef EGLBoolean (*eglGetConfigsFn)(
+    EGLDisplay, 
+    EGLConfig*, 
+    EGLint, 
+    EGLint*);
+
 typedef struct {
     bool skipConfigure;
     bool skipState;
@@ -95,6 +153,18 @@ typedef struct {
     int scancodes[512];
     int keycodes[256];
 } Keyboard;
+
+typedef struct {
+    void* handle;
+    eglInitializeFn eglInitialize;
+    eglTerminateFn eglTerminate;
+    eglGetDisplayFn eglGetDisplay;
+    eglChooseConfigFn eglChooseConfig;
+    eglGetConfigAttribFn eglGetConfigAttrib;
+    eglGetErrorFn eglGetError;
+    eglBindAPIFn eglBindAPI;
+    eglGetConfigsFn eglGetConfigs;
+} EGL;
 
 // ==================================================
 // X11 Typedefs, enums and structs
@@ -457,6 +527,12 @@ typedef Pixmap (*XCreatePixmapFn)(
     unsigned int,
     unsigned int);
 
+typedef XVisualInfo *(*XGetVisualInfoFn)(
+    Display*,
+    long,
+    XVisualInfo*,
+    int*);
+
 typedef Cursor (*XcursorImageLoadCursorFn)(
     Display*, 
     const XcursorImage*);
@@ -508,16 +584,20 @@ typedef struct {
     bool skipNotifyEvent;
     int bpp;
     int screen;
+    int depth;
     int rrEventBase;
     void* handle;
     void* xrandr;
-    void* opengl;
+    void* glxHandle;
     void* libCursor;
     Display* display;
     Window root;
     XContext dataID;
     Cursor hiddenCursor;
     const char* className;
+
+    Visual* visual;
+    Colormap colormap;
 
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
@@ -566,6 +646,7 @@ typedef struct {
     XAllocClassHintFn allocClassHint;
     XSetClassHintFn setClassHint;
     XFreeFn free;
+    XGetVisualInfoFn getVisualInfo;
 
     // opengl
     GLXGetFBConfigsFn glxGetFBConfigs;
@@ -670,6 +751,7 @@ typedef struct {
 static VideoLinux s_Video = {0};
 static Mouse s_Mouse = {0};
 static Keyboard s_Keyboard = {0};
+static EGL s_Egl;
 
 // ==================================================
 // Internal API
@@ -787,6 +869,127 @@ static void freeMonitorData(PalMonitor* monitor)
             s_Video.monitorData[i].used = false;
         }
     }
+}
+
+static PalResult glxBackend() 
+{
+    // user choose GLX FBConfig backend
+    if (!s_X11.glxHandle) {
+        // Rare
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    int count = 0;
+    GLXFBConfig* configs = s_X11.glxGetFBConfigs(
+        s_X11.display,
+        s_X11.screen,
+        &count);
+
+    GLXFBConfig fbConfig = configs[s_Video.pixelFormat];
+    if (!fbConfig) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    // get a matching visual
+    XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(
+        s_X11.display,
+        fbConfig);
+            
+    if (!visualInfo) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    s_X11.visual = visualInfo->visual;
+    s_X11.depth = visualInfo->depth;
+    s_X11.colormap = s_X11.createColormap(
+        s_X11.display, 
+        s_X11.root, 
+        visualInfo->visual, 
+        AllocNone);
+
+    if (!s_X11.colormap) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult eglXBackend(int index) 
+{
+    // user choose EGL FBConfig backend
+    if (!s_Egl.handle) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    if (!s_Egl.eglBindAPI(EGL_OPENGL_API)) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    EGLDisplay display = EGL_NO_DISPLAY;
+    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
+
+    if (display == EGL_NO_DISPLAY) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    if (!s_Egl.eglInitialize(display, nullptr, nullptr)) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    EGLint numConfigs = 0;
+    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    EGLConfig* eglConfigs = palAllocate(
+        s_Video.allocator, 
+        sizeof(EGLConfig) * numConfigs, 
+        0);
+    
+    if (!eglConfigs) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
+    EGLConfig config = eglConfigs[index];
+
+    // we create a visual from the config
+    EGLint visualID;
+    s_Egl.eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
+    if (visualID == 0) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    int numVisuals = 0;
+    XVisualInfo tmp;
+    tmp.visualid = visualID;
+
+    // get a matching visual info
+    XVisualInfo* visualInfo = s_X11.getVisualInfo(
+        s_X11.display, 
+        VisualIDMask, 
+        &tmp, 
+        &numVisuals);
+
+    if (!visualInfo) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    s_X11.visual = visualInfo->visual;
+    s_X11.depth = visualInfo->depth;
+    s_X11.colormap = s_X11.createColormap(
+        s_X11.display, 
+        s_X11.root, 
+        visualInfo->visual, 
+        AllocNone);
+
+    if (!s_X11.colormap) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
+
+    s_Egl.eglTerminate(display);
+    palFree(s_Video.allocator, eglConfigs);
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
@@ -1454,6 +1657,10 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XFree");
 
+    s_X11.getVisualInfo = (XGetVisualInfoFn)dlsym(
+        s_X11.handle, 
+        "XGetVisualInfo");
+
     s_X11.createFontCursor = (XCreateFontCursorFn)dlsym(
         s_X11.handle, 
         "XCreateFontCursor");
@@ -1575,13 +1782,16 @@ static PalResult xInitVideo()
     resetMonitorData();
     xCacheMonitors(true);
 
-    // load opengl functions
-    s_X11.opengl = dlopen("libGL.so.1", RTLD_LAZY | RTLD_LOCAL);
-    if (s_X11.opengl) {
+    // since X11 supports both EGL and GLX
+    // we try to load them and resolve the needed functions
+
+    // we load GLX
+    s_X11.glxHandle = dlopen("libGL.so.1", RTLD_LAZY);
+    if (s_X11.glxHandle) {
 
         GLXGetProcAddressFn load = nullptr;
         load = (GLXGetProcAddressFn)dlsym(
-            s_X11.opengl,
+            s_X11.glxHandle,
             "glXGetProcAddress");
 
         s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)load(
@@ -1628,8 +1838,9 @@ static void xShutdownVideo()
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
     dlclose(s_X11.libCursor);
-    if (s_X11.opengl) {
-        dlclose(s_X11.opengl);
+
+    if (s_X11.glxHandle) {
+        dlclose(s_X11.glxHandle);
     }
 }
 
@@ -2564,42 +2775,12 @@ static PalResult xCreateWindow(
     unsigned long bgPixel = 0;
     unsigned long borderPixel = 0;
 
-    // check to see if the user has set a pixel format
-    // with palSetPixelFormat()
-    if (s_Video.pixelFormat) {
-        // this is the pixel format driver index
-        // we query info about it and create the visual with it
-        if (s_X11.opengl) {
-            int count = 0;
-            GLXFBConfig* configs = s_X11.glxGetFBConfigs(
-                s_X11.display,
-                s_X11.screen,
-                &count);
-
-            GLXFBConfig fbConfig = configs[s_Video.pixelFormat];
-            if (!fbConfig) {
-                return PAL_RESULT_INVALID_GL_FBCONFIG;
-            }
-
-            // get a matching visual and use that to create the window
-            XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(
-                s_X11.display,
-                fbConfig);
-            
-            if (!visualInfo) {
-                return PAL_RESULT_INVALID_GL_FBCONFIG;
-            }
-
-            visual = visualInfo->visual;
-            depth = visualInfo->depth;
-            bgPixel = 0;
-            borderPixel = 0;
-            colormap = s_X11.createColormap(
-                s_X11.display, 
-                s_X11.root, 
-                visual, 
-                AllocNone);
-        }
+    if (s_X11.colormap) {
+        visual = s_X11.visual;
+        depth = s_X11.depth;
+        colormap = s_X11.colormap;
+        bgPixel = 0;
+        borderPixel = 0;
 
     } else {
         // use a default visual
@@ -3812,6 +3993,24 @@ PalResult PAL_CALL palInitVideo(
         s_Video.backend = &s_XBackend;
     }
 
+    // we load EGL as well
+    s_Egl.handle = dlopen("libEGL.so", RTLD_LAZY);
+    if (s_Egl.handle) {
+        eglGetProcAddressFn load = nullptr;
+        load = (eglGetProcAddressFn)dlsym(
+            s_Egl.handle,
+            "eglGetProcAddress");
+
+        s_Egl.eglInitialize = (eglInitializeFn)load("eglInitialize");
+        s_Egl.eglTerminate = (eglTerminateFn)load("eglTerminate");
+        s_Egl.eglGetDisplay = (eglGetDisplayFn)load("eglGetDisplay");
+        s_Egl.eglChooseConfig = (eglChooseConfigFn)load("eglChooseConfig");
+        s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
+        s_Egl.eglGetError = (eglGetErrorFn)load("eglGetError");
+        s_Egl.eglBindAPI = (eglBindAPIFn)load("eglBindAPI");
+        s_Egl.eglGetConfigs = (eglGetConfigsFn)load("eglGetConfigs");
+    }
+
     s_Video.allocator = allocator;
     s_Video.eventDriver = eventDriver;
     s_Video.initialized = true;
@@ -3824,6 +4023,10 @@ void PAL_CALL palShutdownVideo()
         s_Video.backend->shutdownVideo();
         palFree(s_Video.allocator, s_Video.windowData);
         palFree(s_Video.allocator, s_Video.monitorData);
+
+        if (s_Egl.handle) {
+            dlclose(s_Egl.handle);
+        }
         s_Video.initialized = false;
     }
 }
@@ -3844,17 +4047,30 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex)
+PalResult PAL_CALL palSetFBConfig(
+    const int index, 
+    PalFBConfigBackend backend)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (pixelFormatIndex) {
-        s_Video.pixelFormat = pixelFormatIndex;
-        return PAL_RESULT_SUCCESS;
+    // X11 can used GLX and EGL
+    if (backend == PAL_CONFIG_BACKEND_WGL) {
+        return PAL_RESULT_INVALID_BACKEND;
     }
-    return PAL_RESULT_INVALID_GL_FBCONFIG;
+
+    // we try to create a colormap to see if the index is valid
+    if (backend == PAL_CONFIG_BACKEND_GLX) {
+        return glxBackend();
+
+    } else if (backend == PAL_CONFIG_BACKEND_EGL || 
+        backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+        if (s_X11.display) {
+            // we are on X11
+            return eglXBackend(index);
+        }
+    }
 }
 
 PalResult PAL_CALL palEnumerateMonitors(

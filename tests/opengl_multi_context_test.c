@@ -57,7 +57,7 @@ bool openglMultiContextTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    // glWindow can be nullptr
+    // glWindow must be nullptr
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -79,7 +79,7 @@ bool openglMultiContextTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    // glWindow can be nullptr
+    // glWindow must be nullptr
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -133,10 +133,15 @@ bool openglMultiContextTest()
         return false;
     }
 
-    // set the pixel format to use to create all windows with pal_video
-    // this must be set before creating a window
-    // for this example, we set the closest we desired
-    palSetPixelFormat(closest->index);
+    // set the FBConfig that will be used by PAL video system 
+    // to create windows. this must be set before creating a window
+    // for this example, we set the closest we desired.
+    // If pal_opengl and pal_video will be used together,
+    // then its recommended to use PAL_CONFIG_BACKEND_PAL_OPENGL
+
+    // NOTE: If PAL video system will not be used, 
+    // users need to call the direct OS call to achieve this.
+    result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set GL pixel format: %s", error);

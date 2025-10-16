@@ -188,6 +188,23 @@ typedef enum {
 } PalFlashFlag;
 
 /**
+ * @enum PalFBConfigBackend
+ * @brief Represents the backend of a FBConfig.
+ *
+ * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for consistency and
+ * API use.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ */
+typedef enum {
+    PAL_CONFIG_BACKEND_EGL,
+    PAL_CONFIG_BACKEND_GLX,
+    PAL_CONFIG_BACKEND_WGL,
+    PAL_CONFIG_BACKEND_PAL_OPENGL /**< Use PAL opengl module backend.*/
+} PalFBConfigBackend;
+
+/**
  * @enum PalScancode
  * @brief scancodes (layout independent keys) of a keyboard.
  *
@@ -673,24 +690,27 @@ PAL_API void PAL_CALL palUpdateVideo();
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
 /**
- * @brief Set the pixel format or FBConfig for the video system.
+ * @brief Set the FBConfig for the video system.
  *
  * The video system must be initialized before this call.
- * The pixel format set will be used for all created windows after this call.
- * The `pixelFormatIndex` is the loop index from the drivers 
- * supported pixel formats or FBConfig. 
+ * The provided FBConfig will be used for all created windows after this call.
+ * The `index` is the loop index from the drivers 
+ * supported FBConfigs. 
  * 
- * Example:
+ * The `backend` is used to tell the video system, the source of the index.
+ * Examples: PAL_CONFIG_BACKEND_EGL tells the video system, we got this loop index
+ * from EGL. This will enable the video system to find your FBConfig.
  * 
- * @code
- * for (int i = 0; i < count; i++) { pixelFormatIndex = i;}
- * @endcode
+ * Example Flow:
+ * Enumerate and select your FBConfig using any backend(EGL, GLX, WGL, etc)
+ * and just let the video system know which one you used.
  * 
- * An opengl supported pixel format or FBConfig must be used
- * the window will be used to create an opengl context otherwise
- * this can be ignored safely.
+ * If the backend passed is not the same as the one used, 
+ * the video system might still get a FBConfig but it will not be the 
+ * one requested.
  *
- * @param[in] pixelFormatIndex The pixel format driver index.
+ * @param[in] index The FBConfig driver index.
+ * @param[in] backend The FBConfig backend or source.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -700,7 +720,9 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * @since 1.1
  * @ingroup pal_video
  */
-PAL_API PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex);
+PAL_API PalResult PAL_CALL palSetFBConfig(
+    const int index, 
+    PalFBConfigBackend backend);
 
 /**
  * @brief Return a list of all connected monitors.

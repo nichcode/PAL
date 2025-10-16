@@ -261,7 +261,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * If the count is 0 and the PalGLFBConfigs array is nullptr, the function fails
  * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  *
- * @param[in] glWindow Pointer to the opengl window. Set to nullptr to get driver supported formats.
+ * @param[in] glWindow Set to nullptr.
  * @param[in] count Capacity of the PalGLFBConfig array.
  * @param[out] configs User allocated array of PalGLFBConfig.
  *

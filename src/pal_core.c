@@ -335,6 +335,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_GL_CONTEXT:
             return "Invalid opengl context";
+
+        case PAL_RESULT_INVALID_BACKEND: 
+            return "Invalid backend";
     }
     return "Unknown";
 }

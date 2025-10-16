@@ -22,7 +22,7 @@ bool openglFBConfigTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    // glWindow can be nullptr
+    // glWindow must be nullptr for default
     Int32 fbCount = 0;
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
@@ -45,37 +45,11 @@ bool openglFBConfigTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    // glWindow can be nullptr
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
         palFree(nullptr, fbConfigs);
-        return false;
-    }
-
-    PalWindow* window = nullptr;
-    PalWindowCreateInfo createInfo = {0};
-    
-    // initialize the video system.
-    result = palInitVideo(nullptr, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
-    }
-
-    createInfo.monitor = nullptr; // use primary monitor
-    createInfo.height = 480;
-    createInfo.width = 640;
-    createInfo.show = true;
-    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-
-    // create the window with the create info struct
-    result = palCreateWindow(&createInfo, &window);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
         return false;
     }
 
@@ -149,12 +123,6 @@ bool openglFBConfigTest()
     palLog(nullptr, " Stereo: %s", g_BoolsToSting[closest->stereo]);
     palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
     palLog(nullptr, "");
-
-    // destroy the window
-    palDestroyWindow(window);
-
-    // shutdown the video system
-    palShutdownVideo();
 
     // shutdown the opengl system
     palShutdownGL();

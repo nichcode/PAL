@@ -1403,14 +1403,22 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-PalResult PAL_CALL palSetPixelFormat(const int pixelFormatIndex)
+PalResult PAL_CALL palSetFBConfig(
+    const int index, 
+    PalFBConfigBackend backend)
 {
+    // Win32 uses only WGL and WGL index starts from 1
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (pixelFormatIndex) {
-        s_Video.pixelFormat = pixelFormatIndex;
+    if (backend != PAL_CONFIG_BACKEND_WGL || 
+        backend != PAL_CONFIG_BACKEND_PAL_OPENGL) {
+        return PAL_RESULT_INVALID_BACKEND;
+    }
+
+    if (index >= 1) {
+        s_Video.pixelFormat = index;
         return PAL_RESULT_SUCCESS;
     }
     return PAL_RESULT_INVALID_GL_FBCONFIG;
