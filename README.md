@@ -112,12 +112,19 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 PAL is written in **C99** and uses **Premake** as its build system. Configure modules via [pal_config.lua](./pal_config.lua).  
 See [pal_config.h](./include/pal/pal_config.h) to see the reflection of modules that will be built.
 
+**Windows**
 ```bash
 premake\premake5.exe gmake2        # generate Makefiles (default: GCC)
 premake\premake5.exe gmake2 --compiler=clang
 
 premake\premake5.exe vs2022        # generate Visual Studio project (default: MSVC)
 premake\premake5.exe vs2022 --compiler=clang
+```
+
+**Linux**
+```bash
+premake\premake5.exe gmake2        # generate Makefiles (default: GCC)
+premake\premake5.exe gmake2 --compiler=clang
 ```
 
 Enable tests in `pal_config.lua` by setting `PAL_BUILD_TESTS = true`.
@@ -147,7 +154,7 @@ PAL uses [Doxygen](https://www.doxygen.nl/) for generating API documentation.
 
 ```bash
 cd docs
-make doxygen
+doxygen doxyfile
 ```
 
 The generated HTML docs will be available in `docs/html/`.
