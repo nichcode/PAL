@@ -191,8 +191,8 @@ typedef enum {
  * @enum PalFBConfigBackend
  * @brief Represents the backend of a FBConfig.
  *
- * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for consistency and
- * API use.
+ * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for
+ * consistency and API use.
  *
  * @since 1.1
  * @ingroup pal_video
@@ -694,19 +694,19 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  *
  * The video system must be initialized before this call.
  * The provided FBConfig will be used for all created windows after this call.
- * The `index` is the loop index from the drivers 
- * supported FBConfigs. 
- * 
+ * The `index` is the loop index from the drivers
+ * supported FBConfigs.
+ *
  * The `backend` is used to tell the video system, the source of the index.
- * Examples: PAL_CONFIG_BACKEND_EGL tells the video system, we got this loop index
- * from EGL. This will enable the video system to find your FBConfig.
- * 
+ * Examples: PAL_CONFIG_BACKEND_EGL tells the video system, we got this loop
+ * index from EGL. This will enable the video system to find your FBConfig.
+ *
  * Example Flow:
  * Enumerate and select your FBConfig using any backend(EGL, GLX, WGL, etc)
  * and just let the video system know which one you used.
- * 
- * If the backend passed is not the same as the one used, 
- * the video system might still get a FBConfig but it will not be the 
+ *
+ * If the backend passed is not the same as the one used,
+ * the video system might still get a FBConfig but it will not be the
  * one requested.
  *
  * @param[in] index The FBConfig driver index.
@@ -721,7 +721,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetFBConfig(
-    const int index, 
+    const int index,
     PalFBConfigBackend backend);
 
 /**

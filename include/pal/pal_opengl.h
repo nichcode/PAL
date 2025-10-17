@@ -312,10 +312,10 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  *
  * The opengl system must be initialized before this call. The created context
  * will not be made current.
- * 
- * The provided PalGLFBConfig must be the same as the one used to create the window.
- * Once set, it cannot be changed. To change it, you must destroy the window
- * and recreate it.
+ *
+ * The provided PalGLFBConfig must be the same as the one used to create the
+ * window. Once set, it cannot be changed. To change it, you must destroy the
+ * window and recreate it.
  *
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
  * paramters. Must not be nullptr.

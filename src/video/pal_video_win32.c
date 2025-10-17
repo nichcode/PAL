@@ -396,7 +396,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_MOUSEHWHEEL: {
             Int32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            s_Mouse.WheelX = delta; // normalize with delta
+            s_Mouse.WheelX = delta / WHEEL_DELTA;
 
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
@@ -414,7 +414,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_MOUSEWHEEL: {
             Int32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            s_Mouse.WheelY = delta; // normalize with delta
+            s_Mouse.WheelY = delta / WHEEL_DELTA;
 
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
@@ -492,6 +492,7 @@ LRESULT CALLBACK videoProc(
         case WM_MBUTTONUP:
         case WM_XBUTTONUP: {
             PalMouseButton button = PAL_MOUSE_BUTTON_UNKNOWN;
+            PalEventType type;
             bool pressed = false;
 
             if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) {
@@ -522,9 +523,11 @@ LRESULT CALLBACK videoProc(
                 msg == WM_MBUTTONDOWN || 
                 msg == WM_XBUTTONDOWN) {
                 pressed = true;
+                type = PAL_EVENT_MOUSE_BUTTONDOWN;
 
             } else {
                 pressed = false;
+                type = PAL_EVENT_MOUSE_BUTTONUP;
             }
 
             // clang-format on
@@ -537,31 +540,16 @@ LRESULT CALLBACK videoProc(
                 ReleaseCapture();
             }
 
-            // TODO: optimaize
             s_Mouse.state[button] = pressed;
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
-                if (pressed) {
-                    PalEventType type = PAL_EVENT_MOUSE_BUTTONDOWN;
-                    mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
-                        PalEvent event = {0};
-                        event.type = type;
-                        event.data = button;
-                        event.data2 = palPackPointer((PalWindow*)hwnd);
-                        palPushEvent(driver, &event);
-                    }
-
-                } else {
-                    PalEventType type = PAL_EVENT_MOUSE_BUTTONUP;
-                    mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
-                        PalEvent event = {0};
-                        event.type = type;
-                        event.data = button;
-                        event.data2 = palPackPointer((PalWindow*)hwnd);
-                        palPushEvent(driver, &event);
-                    }
+                mode = palGetEventDispatchMode(driver, type);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {0};
+                    event.type = type;
+                    event.data = button;
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);
                 }
             }
             return 0;
@@ -573,6 +561,7 @@ LRESULT CALLBACK videoProc(
         case WM_SYSKEYUP: {
             PalKeycode keycode = PAL_KEYCODE_UNKNOWN;
             PalScancode scancode = PAL_SCANCODE_UNKNOWN;
+            PalEventType type;
             Int32 win32Keycode;
             Int32 win32Scancode;
             bool pressed = false;
@@ -684,49 +673,28 @@ LRESULT CALLBACK videoProc(
                 s_Keyboard.keycodeState[keycode] = true;
                 s_Keyboard.scancodeState[scancode] = true;
 
+                type = PAL_EVENT_KEYDOWN;
+                if (repeat) { 
+                    type = PAL_EVENT_KEYREPEAT;
+                }
+
             } else {
                 s_Keyboard.keycodeState[keycode] = false;
                 s_Keyboard.scancodeState[scancode] = false;
+                type = PAL_EVENT_KEYUP;
             }
 
             if (s_Video.eventDriver) {
                 PalEventDriver* driver = s_Video.eventDriver;
-                if (pressed) {
-                    if (repeat) {
-                        PalEventType type = PAL_EVENT_KEYREPEAT;
-                        mode = palGetEventDispatchMode(driver, type);
-                        if (mode != PAL_DISPATCH_NONE) {
-                            PalEvent event = {0};
-                            event.type = type;
-                            event.data = palPackUint32(keycode, scancode);
-                            event.data2 = palPackPointer((PalWindow*)hwnd);
-                            palPushEvent(driver, &event);
-                        }
-
-                    } else {
-                        PalEventType type = PAL_EVENT_KEYDOWN;
-                        mode = palGetEventDispatchMode(driver, type);
-                        if (mode != PAL_DISPATCH_NONE) {
-                            PalEvent event = {0};
-                            event.type = type;
-                            event.data = palPackUint32(keycode, scancode);
-                            event.data2 = palPackPointer((PalWindow*)hwnd);
-                            palPushEvent(driver, &event);
-                        }
-                    }
-                } else {
-                    PalEventType type = PAL_EVENT_KEYUP;
-                    mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
-                        PalEvent event = {0};
-                        event.type = type;
-                        event.data = palPackUint32(keycode, scancode);
-                        event.data2 = palPackPointer((PalWindow*)hwnd);
-                        palPushEvent(driver, &event);
-                    }
+                mode = palGetEventDispatchMode(driver, type);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {0};
+                    event.type = type;
+                    event.data = palPackUint32(keycode, scancode);
+                    event.data2 = palPackPointer((PalWindow*)hwnd);
+                    palPushEvent(driver, &event);
                 }
             }
-
             return 0;
         }
 
@@ -1412,8 +1380,8 @@ PalResult PAL_CALL palSetFBConfig(
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (backend != PAL_CONFIG_BACKEND_WGL || 
-        backend != PAL_CONFIG_BACKEND_PAL_OPENGL) {
+    if (backend == PAL_CONFIG_BACKEND_EGL || 
+        backend == PAL_CONFIG_BACKEND_GLX) {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
 
@@ -2675,38 +2643,39 @@ PalResult PAL_CALL palCreateIcon(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    for (Uint32 y = 0; y < info->height; ++y) {
-        for (Uint32 x = 0; x < info->width; ++x) {
-            int i = (y * info->width + x) * 4;
-            pixels[i + 0] = info->pixels[i + 2]; // Red
-            pixels[i + 1] = info->pixels[i + 1]; // Green
-            pixels[i + 2] = info->pixels[i + 0]; // Nlue
-            pixels[i + 3] = info->pixels[i + 3]; // Alpha
-        }
-    }
+    for (int i = 0; i < info->width * info->height; i++) {
+        Uint8 r = info->pixels[i * 4 + 0]; // Red
+        Uint8 g = info->pixels[i * 4 + 1]; // Green
+        Uint8 b = info->pixels[i * 4 + 2]; // Blue
+        Uint8 a = info->pixels[i * 4 + 3]; // Alpha
 
-    // create mask
-    HBITMAP mask = nullptr;
-    mask = s_Video.createBitmap(info->width, info->height, 1, 1, nullptr);
-    if (!mask) {
-        s_Video.deleteObject(bitmap);
-        return PAL_RESULT_PLATFORM_FAILURE;
+        // premultiply only if alpha is not 0
+        if (a == 0) {
+            r = g = b = 0;
+        } else {
+            r = (Uint8)((r * a) / 255);
+            g = (Uint8)((g * a) / 255);
+            b = (Uint8)((b * a) / 255);
+        }
+
+        pixels[i * 4 + 0] = b;
+        pixels[i * 4 + 1] = g;
+        pixels[i * 4 + 2] = r;
+        pixels[i * 4 + 3] = a;
     }
 
     ICONINFO iconInfo = {0};
     iconInfo.fIcon = TRUE;
-    iconInfo.hbmMask = mask; // TODO: set to nullptr to respect alpha
+    iconInfo.hbmMask = bitmap;
     iconInfo.hbmColor = bitmap;
 
     // create the icon with the icon info
     HICON icon = CreateIconIndirect(&iconInfo);
     if (!icon) {
-        s_Video.deleteObject(mask);
         s_Video.deleteObject(bitmap);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    s_Video.deleteObject(mask);
     s_Video.deleteObject(bitmap);
     *outIcon = (PalIcon*)icon;
     return PAL_RESULT_SUCCESS;
@@ -2789,26 +2758,43 @@ PalResult PAL_CALL palCreateCursor(
     }
     ReleaseDC(nullptr, hdc);
 
-    // copy pixels and create mask
-    memcpy(dibPixels, info->pixels, info->width * info->height * 4);
-    HBITMAP mask = s_Video.createBitmap(info->width, info->height, 1, 1, NULL);
+    // convert RGBA to BGRA
+    Uint8* pixels = (Uint8*)dibPixels;
+    for (int i = 0; i < info->width * info->height; i++) {
+        Uint8 r = info->pixels[i * 4 + 0]; // Red
+        Uint8 g = info->pixels[i * 4 + 1]; // Green
+        Uint8 b = info->pixels[i * 4 + 2]; // Blue
+        Uint8 a = info->pixels[i * 4 + 3]; // Alpha
+
+        // premultiply only if alpha is not 0
+        if (a == 0) {
+            r = g = b = 0;
+        } else {
+            r = (Uint8)((r * a) / 255);
+            g = (Uint8)((g * a) / 255);
+            b = (Uint8)((b * a) / 255);
+        }
+
+        pixels[i * 4 + 0] = b;
+        pixels[i * 4 + 1] = g;
+        pixels[i * 4 + 2] = r;
+        pixels[i * 4 + 3] = a;
+    }
 
     ICONINFO iconInfo = {0};
     iconInfo.fIcon = false;
     iconInfo.hbmColor = bitmap;
-    iconInfo.hbmMask = mask; // TODO: set to nullptr to respect alpha
+    iconInfo.hbmMask = bitmap;
     iconInfo.xHotspot = info->xHotspot;
     iconInfo.xHotspot = info->yHotspot;
 
     // create the cursor with the iconinfo
     HCURSOR cursor = CreateIconIndirect(&iconInfo);
     if (!cursor) {
-        s_Video.deleteObject(mask);
         s_Video.deleteObject(bitmap);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    s_Video.deleteObject(mask);
     s_Video.deleteObject(bitmap);
     *outCursor = (PalCursor*)cursor;
     return PAL_RESULT_SUCCESS;

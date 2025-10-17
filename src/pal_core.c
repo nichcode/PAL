@@ -27,11 +27,11 @@ freely, subject to the following restrictions:
 
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
-#include <time.h>
-#include <string.h>
 #include <pthread.h>
-#include <wchar.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <wchar.h>
 #endif // __linux__
 
 #include "pal/pal_core.h"
@@ -169,8 +169,8 @@ static inline LogTLSData* getLogTlsData()
         }
         FlsSetValue(s_TlsID, data);
 #elif defined(__linux__)
-    pthread_once(&s_TLSCreation, createTLSID);
-    pthread_setspecific(s_TLSID, data);
+        pthread_once(&s_TLSCreation, createTLSID);
+        pthread_setspecific(s_TLSID, data);
 #endif // _WIN32
     }
     return data;
@@ -227,7 +227,7 @@ static inline void writeToConsole(LogTLSData* data)
     } else {
         OutputDebugStringW(data->wideBuffer);
     }
-#elif defined (__linux__)
+#elif defined(__linux__)
     fprintf(stdout, "%s", data->buffer);
     fflush(stdout);
 #endif // _WIN32
@@ -336,7 +336,7 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_GL_CONTEXT:
             return "Invalid opengl context";
 
-        case PAL_RESULT_INVALID_FBCONFIG_BACKEND: 
+        case PAL_RESULT_INVALID_FBCONFIG_BACKEND:
             return "Invalid FBConfg backend";
     }
     return "Unknown";

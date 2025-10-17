@@ -48,8 +48,6 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-// TODO: use platform header file
-
 #define PAL_GL_CLASS L"PALGLClass"
 
 // check to see if this is not defined yet
@@ -420,7 +418,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     strcpy(s_Wgl.info.graphicsCard, renderer);
 
     // check available extensions
-    // TODO: use normal path
     const char* extensions = nullptr;
     if (s_Wgl.wglGetExtensionsStringARB) {
         extensions = s_Wgl.wglGetExtensionsStringARB(s_Wgl.hdc);
@@ -694,10 +691,6 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         }
     }
 
-    if (free) {
-        ReleaseDC((HWND)glWindow->window, s_Wgl.hdc);
-    }
-
     if (!configs) {
         *count = configCount;
     }
@@ -832,6 +825,11 @@ PalResult PAL_CALL palCreateGLContext(
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
 
+    HGLRC share = nullptr;
+    if (info->shareContext) {
+        share = (HGLRC)info->shareContext;
+    }
+
     HGLRC context = nullptr;
     if (s_Wgl.wglCreateContextAttribsARB) {
         // create context with modern wgl functions
@@ -904,8 +902,7 @@ PalResult PAL_CALL palCreateGLContext(
         }
         attribs[index++] = 0;
 
-        // TODO: put share context over here
-        context = s_Wgl.wglCreateContextAttribsARB(hdc, nullptr, attribs);
+        context = s_Wgl.wglCreateContextAttribsARB(hdc, share, attribs);
         if (!context) {
             DWORD error = GetLastError();
             if (error == ERROR_INVALID_PROFILE_ARB) {
@@ -921,14 +918,14 @@ PalResult PAL_CALL palCreateGLContext(
         if (!context) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }
-    }
 
-    // share context
-    if (info->shareContext) {
-        if (!s_Wgl.wglShareLists((HGLRC)info->shareContext, context)) {
-            s_Wgl.wglDeleteContext(context);
-            ReleaseDC((HWND)info->window->window, hdc);
-            return PAL_RESULT_PLATFORM_FAILURE;
+        // share context
+        if (share) {
+            if (!s_Wgl.wglShareLists(share, context)) {
+                s_Wgl.wglDeleteContext(context);
+                ReleaseDC((HWND)info->window->window, hdc);
+                return PAL_RESULT_PLATFORM_FAILURE;
+            }
         }
     }
 
