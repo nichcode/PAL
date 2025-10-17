@@ -1414,7 +1414,7 @@ PalResult PAL_CALL palSetFBConfig(
 
     if (backend != PAL_CONFIG_BACKEND_WGL || 
         backend != PAL_CONFIG_BACKEND_PAL_OPENGL) {
-        return PAL_RESULT_INVALID_BACKEND;
+        return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
 
     if (index >= 1) {

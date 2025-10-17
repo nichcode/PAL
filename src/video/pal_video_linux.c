@@ -1825,8 +1825,7 @@ static PalResult xInitVideo()
     int supported;
     s_X11.setDetectableAutoRepeat(s_X11.display, True, &supported);
     if (!supported) {
-        // TODO: FIXME
-        // fallback to manual key repeat detection
+        // FIXME: fallback to manual key repeat detection
     }
 
     return PAL_RESULT_SUCCESS;
@@ -1834,6 +1833,10 @@ static PalResult xInitVideo()
 
 static void xShutdownVideo() 
 {
+    if (s_X11.colormap) {
+        s_X11.freeColormap(s_X11.display, s_X11.colormap);
+    }
+
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
@@ -4057,7 +4060,7 @@ PalResult PAL_CALL palSetFBConfig(
 
     // X11 can used GLX and EGL
     if (backend == PAL_CONFIG_BACKEND_WGL) {
-        return PAL_RESULT_INVALID_BACKEND;
+        return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
 
     // we try to create a colormap to see if the index is valid

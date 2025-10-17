@@ -26,7 +26,7 @@
 - **System:** Added Linux backend support.
 - **Video:** Added **palCreateCursorFrom()** to create system cursors.
 
-PAL_RESULT_FBCONFIG_BACKEND
+PAL_RESULT_INVALID_FBCONFIG_BACKEND
 PAL_VIDEO_FEATURE_SET_ICON
 
 PAL_PLATFORM_API_COCOA,
