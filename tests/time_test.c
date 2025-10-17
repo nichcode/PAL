@@ -39,10 +39,10 @@ bool timeTest()
         totalTime = now - lastTime;
 
         palLog(
-        nullptr,
-        "Frame %d, Total Time %f seconds",
-        frameCount,
-        totalTime);
+            nullptr,
+            "Frame %d, Total Time %f seconds",
+            frameCount,
+            totalTime);
 
         frameCount++;
     }

@@ -245,7 +245,7 @@ bool windowTest()
 
 #if MAKE_TRANSPARENT
     if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
-        //result = palSetWindowOpacity(window, OPACITY);
+        result = palSetWindowOpacity(window, OPACITY);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set window opacity: %s", error);

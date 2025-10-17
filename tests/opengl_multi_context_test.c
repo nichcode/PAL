@@ -107,7 +107,7 @@ bool openglMultiContextTest()
     const PalGLFBConfig* closest = nullptr;
     closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
 
-     // log the closest GL FBConfig
+    // log the closest GL FBConfig
     palLog(nullptr, "Closest GL FBConfig:");
     palLog(nullptr, " Index: %d", closest->index);
     palLog(nullptr, " Red Bits: %d", closest->redBits);
@@ -133,13 +133,13 @@ bool openglMultiContextTest()
         return false;
     }
 
-    // set the FBConfig that will be used by PAL video system 
+    // set the FBConfig that will be used by PAL video system
     // to create windows. this must be set before creating a window
     // for this example, we set the closest we desired.
     // If pal_opengl and pal_video will be used together,
     // then its recommended to use PAL_CONFIG_BACKEND_PAL_OPENGL
 
-    // NOTE: If PAL video system will not be used, 
+    // NOTE: If PAL video system will not be used,
     // users need to call the direct OS call to achieve this.
     result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
     if (result != PAL_RESULT_SUCCESS) {

@@ -150,6 +150,6 @@ bool videoTest()
 
     // shutdown the video system
     palShutdownVideo();
-    
+
     return true;
 }
