@@ -2,11 +2,11 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool cursorTest()
+bool systemCursorTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Cursor Test");
+    palLog(nullptr, "System Cursor Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -14,7 +14,6 @@ bool cursorTest()
     PalWindow* window = nullptr;
     PalCursor* cursor = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    PalCursorCreateInfo cursorCreateInfo = {0};
     bool running = false;
 
     // event driver
@@ -45,36 +44,8 @@ bool cursorTest()
         return false;
     }
 
-    // simple checkerboard RGBA pixel buffer
-    // every block contains 64 pixels
-    Uint8 pixels[32 * 32 * 4]; // size is 32 and we have 4 channles
-    for (Int32 y = 0; y < 32; ++y) {
-        for (Int32 x = 0; x < 32; ++x) {
-            Int32 i = (y * 32 + x) * 4;
-            int checker = ((x / 8) ^ (y / 8)) & 1;
-            if (checker) {
-                pixels[i + 0] = 255; // Red bit
-                pixels[i + 1] = 0;   // Green bit
-                pixels[i + 2] = 0;   // Blue bit
-                pixels[i + 3] = 255; // Alpha bit
-
-            } else {
-                pixels[i + 0] = 0;   // Red bit
-                pixels[i + 1] = 0;   // Green bit
-                pixels[i + 2] = 255; // Blue bit
-                pixels[i + 3] = 255; // Alpha bit
-            }
-        }
-    }
-
-    // create cursor
-    cursorCreateInfo.width = 32;
-    cursorCreateInfo.height = 32;
-    cursorCreateInfo.xHotspot = 0;
-    cursorCreateInfo.yHotspot = 0;
-    cursorCreateInfo.pixels = pixels;
-
-    result = palCreateCursor(&cursorCreateInfo, &cursor);
+    // create system cursor
+    result = palCreateCursorFrom(PAL_CURSOR_CROSS, &cursor);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create window cursor: %s", error);
@@ -87,7 +58,7 @@ bool cursorTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL cursor Window";
+    createInfo.title = "PAL System Cursor Window - Cross";
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);

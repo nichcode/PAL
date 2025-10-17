@@ -7,7 +7,7 @@
 
 // make the window transparent if supported
 #define MAKE_TRANSPARENT 0
-#define OPACITY 0.5 // if transparent window is supported
+#define OPACITY 0.8f // if transparent window is supported
 
 // make the window a tool window if supported
 #define MAKE_TOOL 0
@@ -18,7 +18,7 @@
 // remove the maximize box if supported
 #define NO_MAXIMIZEBOX 0
 
-#define UNICODE_NAME 0
+#define UNICODE_NAME 1
 #define DISPATCH_MODE_POLL 1 // use polling dispatch mode
 
 #if DISPATCH_MODE_POLL
@@ -175,7 +175,7 @@ bool windowTest()
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver %s", error);
+        palLog(nullptr, "Failed to create event driver: %s", error);
         return false;
     }
 
@@ -185,7 +185,7 @@ bool windowTest()
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 
@@ -239,7 +239,7 @@ bool windowTest()
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window %s", error);
+        palLog(nullptr, "Failed to create window: %s", error);
         return false;
     }
 
@@ -248,7 +248,7 @@ bool windowTest()
         result = palSetWindowOpacity(window, OPACITY);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set window opacity %s", error);
+            palLog(nullptr, "Failed to set window opacity: %s", error);
             return false;
         }
     }

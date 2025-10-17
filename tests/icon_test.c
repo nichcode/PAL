@@ -31,7 +31,7 @@ bool iconTest()
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver %s", error);
+        palLog(nullptr, "Failed to create event driver: %s", error);
         return false;
     }
 
@@ -41,7 +41,7 @@ bool iconTest()
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
+        palLog(nullptr, "Failed to initialize video: %s", error);
         return false;
     }
 
@@ -56,13 +56,13 @@ bool iconTest()
                 pixels[i + 0] = 255; // Red bit
                 pixels[i + 1] = 0;   // Green bit
                 pixels[i + 2] = 0;   // Blue bit
-                pixels[i + 3] = 0;   // Alpha bit
+                pixels[i + 3] = 255; // Alpha bit
 
             } else {
                 pixels[i + 0] = 0;   // Red bit
                 pixels[i + 1] = 255; // Green bit
                 pixels[i + 2] = 0;   // Blue bit
-                pixels[i + 3] = 0;   // Alpha bit
+                pixels[i + 3] = 255; // Alpha bit
             }
         }
     }
@@ -75,7 +75,7 @@ bool iconTest()
     result = palCreateIcon(&iconCreateInfo, &icon);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window icon %s", error);
+        palLog(nullptr, "Failed to create window icon: %s", error);
         return false;
     }
 
@@ -91,7 +91,7 @@ bool iconTest()
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window %s", error);
+        palLog(nullptr, "Failed to create window: %s", error);
         return false;
     }
 
@@ -105,7 +105,7 @@ bool iconTest()
     result = palSetWindowIcon(window, icon);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set window icon %s", error);
+        palLog(nullptr, "Failed to set window icon: %s", error);
         return false;
     }
 

@@ -261,7 +261,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * If the count is 0 and the PalGLFBConfigs array is nullptr, the function fails
  * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  *
- * @param[in] glWindow Pointer to the opengl window.
+ * @param[in] glWindow Set to nullptr.
  * @param[in] count Capacity of the PalGLFBConfig array.
  * @param[out] configs User allocated array of PalGLFBConfig.
  *
@@ -313,10 +313,9 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * The opengl system must be initialized before this call. The created context
  * will not be made current.
  *
- * After this call, the provided PalGLFBConfig will be set to the window
- * permanently and cannot be changed. To change it, you must destroy the window
- * and recreate it. If the window already has a PalGLFBConfig, the opengl system
- * will use that and discard the provided one.
+ * The provided PalGLFBConfig must be the same as the one used to create the
+ * window. Once set, it cannot be changed. To change it, you must destroy the
+ * window and recreate it.
  *
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
  * paramters. Must not be nullptr.

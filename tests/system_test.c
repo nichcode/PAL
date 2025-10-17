@@ -86,7 +86,7 @@ bool systemTest()
     result = palGetCPUInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get Cpu info %s", error);
+        palLog(nullptr, "Failed to get Cpu info: %s", error);
         return false;
     }
 
@@ -147,11 +147,11 @@ bool systemTest()
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_AVX2) {
-        strcat(instructionSets, "| AVX2");
+        strcat(instructionSets, " | AVX2");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_AVX512F) {
-        strcat(instructionSets, "| AVX-512F");
+        strcat(instructionSets, " | AVX-512F");
     }
 
     if (cpuInfo.features & PAL_CPU_FEATURE_FMA3) {

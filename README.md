@@ -7,6 +7,17 @@
 
 PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be **explicit** and as close to the **OS** as possible — similar in philosophy to Vulkan. It gives you precise control without hidden behavior, making it ideal for developers who want performance and predictability.
 
+PAL is transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
+
+This approach gives you total control: you handle events, manage resources, and cache state explicitly. PAL provides the building blocks; how you use them — whether for simple applications or advanced frameworks — is entirely up to you.
+
+Example – Get Window Size
+```c
+// Direct query from the platform — not cached by PAL
+palGetWindowSize(window, &w, &h);
+```
+> Note: palGetWindowSize queries the OS directly. If your application needs continuous updates (e.g., window moves or resizes frequently), it is more efficient to listen to PAL events rather than repeatedly querying the OS. This ensures your app stays performant.
+
 ---
 
 ## Why PAL?
@@ -60,7 +71,11 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 ---
 
 ## Philosophy
-
+- PAL is a thin layer over the OS, not a framework or library.
+- Queries return the current platform state, reflecting any changes made through direct OS calls.
+- Developers are responsible for state tracking, caching, and event handling.
+- PAL enables cross-platform consistency while preserving full OS behavior and control.
+- Advanced users can build libraries or frameworks on top of PAL.
 - Minimal overhead (close to raw OS calls)  
 - Explicit API (no hidden behavior or defaults)  
 - Event system supporting both polling and callbacks  
@@ -73,9 +88,10 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 
 ## Supported Platforms
 - Windows (Vista+)
+- Linux (X11)
 
 ## Planned Platforms
-- Linux (X11/Wayland)
+- Linux (Wayland)
 - macOS (Cocoa)
 - Android
 - iOS
@@ -84,6 +100,8 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 - Standard C library
 - Platform SDKs (Win32, X11, Cocoa, etc.)
 - [Make for Windows](https://www.gnu.org/software/make/) (if not using Visual Studio)
+- XRandR (1.2+) for X11
+- libXcursor for X11
 
 ## Compilers
 - GCC
@@ -97,12 +115,18 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 PAL is written in **C99** and uses **Premake** as its build system. Configure modules via [pal_config.lua](./pal_config.lua).  
 See [pal_config.h](./include/pal/pal_config.h) to see the reflection of modules that will be built.
 
+**Windows**
 ```bash
 premake\premake5.exe gmake2        # generate Makefiles (default: GCC)
 premake\premake5.exe gmake2 --compiler=clang
 
 premake\premake5.exe vs2022        # generate Visual Studio project (default: MSVC)
 premake\premake5.exe vs2022 --compiler=clang
+```
+
+**Linux**
+```bash
+./premake/premake5 gmake        # generate Makefiles (default: GCC)
 ```
 
 Enable tests in `pal_config.lua` by setting `PAL_BUILD_TESTS = true`.
@@ -132,7 +156,7 @@ PAL uses [Doxygen](https://www.doxygen.nl/) for generating API documentation.
 
 ```bash
 cd docs
-make doxygen
+doxygen doxyfile
 ```
 
 The generated HTML docs will be available in `docs/html/`.

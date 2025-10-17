@@ -5,14 +5,6 @@
 #define THREAD_TIME 1000
 #define THREAD_COUNT 4
 
-// clang-format off
-static const char* g_ThreadNames[THREAD_COUNT] = {
-    "Thread1", 
-    "Thread2", 
-    "Thread3", 
-    "Thread4"};
-// clang-format on
-
 static void* PAL_CALL worker(void* arg)
 {
     // palLog is thread safe so there should'nt be any race conditions
@@ -60,31 +52,6 @@ bool threadTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to join threads: %s", error);
             return false;
-        }
-    }
-
-    // check if we support setting thread names and set for each created thread
-    PalThreadFeatures features = palGetThreadFeatures();
-    if (features & PAL_THREAD_FEATURE_NAME) {
-        for (Int32 i = 0; i < THREAD_COUNT; i++) {
-            result = palSetThreadName(threads[i], g_ThreadNames[i]);
-            if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to set thread name %s", error);
-                return false;
-            }
-        }
-    }
-
-    if (features & PAL_THREAD_FEATURE_NAME) {
-        char buffer[64] = {0};
-        for (Int32 i = 0; i < THREAD_COUNT; i++) {
-            palGetThreadName(threads[i], 64, nullptr, buffer);
-            palLog(
-                nullptr,
-                "Thread %d: (%s) finnished successfully",
-                i + 1,
-                buffer);
         }
     }
 

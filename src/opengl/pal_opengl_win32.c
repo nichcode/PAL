@@ -1,4 +1,26 @@
 
+/**
+
+Copyright (C) 2025 Nicholas Agbo
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+ */
+
 // ==================================================
 // Includes
 // ==================================================
@@ -33,6 +55,7 @@
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02
+#define GL_EXTENSIONS 0x1F03
 #endif // GL_VENDOR
 
 #ifndef WGL_NUMBER_PIXEL_FORMATS_ARB
@@ -508,22 +531,16 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     Int32* count,
     PalGLFBConfig* configs)
 {
-
     if (!s_Wgl.initialized) {
         return PAL_RESULT_GL_NOT_INITIALIZED;
     }
 
-    if (!count || !glWindow) {
+    if (!count) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     if (count == 0 && configs) {
         return PAL_RESULT_INSUFFICIENT_BUFFER;
-    }
-
-    HDC windowDC = GetDC((HWND)glWindow->window);
-    if (!windowDC) {
-        return PAL_RESULT_INVALID_GL_WINDOW;
     }
 
     Int32 configCount = 0;
@@ -539,7 +556,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     if (s_Wgl.wglGetPixelFormatAttribivARB) {
         // get framebuffer config with extensions
         if (!s_Wgl.wglGetPixelFormatAttribivARB(
-                windowDC,
+                s_Wgl.hdc,
                 0,
                 0,
                 1,
@@ -568,7 +585,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         Int32 values[sizeof(attributes) / sizeof(attributes[0])];
         for (Int32 i = 1; i <= nativeCount; i++) {
             if (!s_Wgl.wglGetPixelFormatAttribivARB(
-                    windowDC,
+                    s_Wgl.hdc,
                     i,
                     0,
                     sizeof(attributes) / sizeof(attributes[0]),
@@ -624,12 +641,12 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
     } else {
         // get pixel format with legacy pixel descriptor
-        nativeCount = s_Gdi.describePixelFormat(windowDC, 1, 0, nullptr);
+        nativeCount = s_Gdi.describePixelFormat(s_Wgl.hdc, 1, 0, nullptr);
 
         for (Int32 i = 1; i <= nativeCount; i++) {
             PIXELFORMATDESCRIPTOR pfd;
             if (!s_Gdi.describePixelFormat(
-                    windowDC,
+                    s_Wgl.hdc,
                     i,
                     sizeof(PIXELFORMATDESCRIPTOR),
                     &pfd)) {
@@ -674,7 +691,6 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         }
     }
 
-    ReleaseDC((HWND)glWindow->window, windowDC);
     if (!configs) {
         *count = configCount;
     }
@@ -804,26 +820,14 @@ PalResult PAL_CALL palCreateGLContext(
         return PAL_RESULT_INVALID_GL_WINDOW;
     }
 
-    // check if the window's pixel format has already been set
-    if (s_Gdi.getPixelFormat(hdc) == 0) {
-        // set the pixel format
-        Int32 pixelFormat = info->fbConfig->index;
-        // since we have the pixel format already
-        // we ask the OS (platform) to fill the pfd struct for us from that
-        // index
-        PIXELFORMATDESCRIPTOR pfd;
-        if (!s_Gdi.describePixelFormat(
-                hdc,
-                pixelFormat,
-                sizeof(PIXELFORMATDESCRIPTOR),
-                &pfd)) {
-            return PAL_RESULT_INVALID_GL_FBCONFIG;
-        }
+    // check if the provided pixel format is the same as the windows
+    if (s_Gdi.getPixelFormat(hdc) != info->fbConfig->index) {
+        return PAL_RESULT_INVALID_GL_FBCONFIG;
+    }
 
-        // we then set the pixel format for the hdc
-        if (!s_Gdi.setPixelFormat(hdc, pixelFormat, &pfd)) {
-            return PAL_RESULT_INVALID_GL_FBCONFIG;
-        }
+    HGLRC share = nullptr;
+    if (info->shareContext) {
+        share = (HGLRC)info->shareContext;
     }
 
     HGLRC context = nullptr;
@@ -887,11 +891,9 @@ PalResult PAL_CALL palCreateGLContext(
         }
 
         // release
-        if (s_Wgl.info.extensions & PAL_GL_EXTENSION_FLUSH_CONTROL) {
-            if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
-                attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_ARB;
-                attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB;
-            }
+        if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
+            attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_ARB;
+            attribs[index++] = WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB;
         }
 
         if (flags) {
@@ -900,7 +902,7 @@ PalResult PAL_CALL palCreateGLContext(
         }
         attribs[index++] = 0;
 
-        context = s_Wgl.wglCreateContextAttribsARB(hdc, nullptr, attribs);
+        context = s_Wgl.wglCreateContextAttribsARB(hdc, share, attribs);
         if (!context) {
             DWORD error = GetLastError();
             if (error == ERROR_INVALID_PROFILE_ARB) {
@@ -916,14 +918,14 @@ PalResult PAL_CALL palCreateGLContext(
         if (!context) {
             return PAL_RESULT_PLATFORM_FAILURE;
         }
-    }
 
-    // share context
-    if (info->shareContext) {
-        if (!s_Wgl.wglShareLists((HGLRC)info->shareContext, context)) {
-            s_Wgl.wglDeleteContext(context);
-            ReleaseDC((HWND)info->window->window, hdc);
-            return PAL_RESULT_PLATFORM_FAILURE;
+        // share context
+        if (share) {
+            if (!s_Wgl.wglShareLists(share, context)) {
+                s_Wgl.wglDeleteContext(context);
+                ReleaseDC((HWND)info->window->window, hdc);
+                return PAL_RESULT_PLATFORM_FAILURE;
+            }
         }
     }
 
@@ -977,6 +979,19 @@ PalResult PAL_CALL palMakeContextCurrent(
     return PAL_RESULT_SUCCESS;
 }
 
+void* PAL_CALL palGLGetProcAddress(const char* name)
+{
+    if (!s_Wgl.initialized) {
+        return nullptr;
+    }
+
+    void* proc = s_Wgl.wglGetProcAddress(name);
+    if (!proc) {
+        proc = (void*)GetProcAddress(s_Wgl.opengl, name);
+    }
+    return proc;
+}
+
 PalResult PAL_CALL palSwapBuffers(
     PalGLWindow* glWindow,
     PalGLContext* context)
@@ -1007,19 +1022,6 @@ PalResult PAL_CALL palSwapBuffers(
 
     ReleaseDC((HWND)glWindow->window, hdc);
     return PAL_RESULT_SUCCESS;
-}
-
-void* PAL_CALL palGLGetProcAddress(const char* name)
-{
-    if (!s_Wgl.initialized) {
-        return nullptr;
-    }
-
-    void* proc = s_Wgl.wglGetProcAddress(name);
-    if (!proc) {
-        proc = (void*)GetProcAddress(s_Wgl.opengl, name);
-    }
-    return proc;
 }
 
 PalResult PAL_CALL palSetSwapInterval(Int32 interval)

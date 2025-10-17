@@ -111,6 +111,7 @@ typedef enum {
     PAL_VIDEO_FEATURE_WINDOW_GET_STYLE = PAL_BIT(28),
     PAL_VIDEO_FEATURE_CURSOR_SET_POS = PAL_BIT(29),
     PAL_VIDEO_FEATURE_CURSOR_GET_POS = PAL_BIT(30),
+    PAL_VIDEO_FEATURE_WINDOW_SET_ICON = PAL_BIT(31),
 } PalVideoFeatures;
 
 /**
@@ -185,6 +186,23 @@ typedef enum {
     PAL_FLASH_CAPTION = PAL_BIT(0), /**< Flash the titlebar of the window.*/
     PAL_FLASH_TRAY = PAL_BIT(1)     /**< Flash the icon of the window.*/
 } PalFlashFlag;
+
+/**
+ * @enum PalFBConfigBackend
+ * @brief Represents the backend of a FBConfig.
+ *
+ * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for
+ * consistency and API use.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ */
+typedef enum {
+    PAL_CONFIG_BACKEND_EGL,
+    PAL_CONFIG_BACKEND_GLX,
+    PAL_CONFIG_BACKEND_WGL,
+    PAL_CONFIG_BACKEND_PAL_OPENGL /**< Use PAL opengl module backend.*/
+} PalFBConfigBackend;
 
 /**
  * @enum PalScancode
@@ -467,6 +485,26 @@ typedef enum {
 } PalMouseButton;
 
 /**
+ * @enum PalCursorType
+ * @brief System cursor types.
+ *
+ * All cursor types follow the format `PAL_CURSOR_**` for
+ * consistency and API use.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ */
+typedef enum {
+    PAL_CURSOR_ARROW,
+    PAL_CURSOR_HAND,
+    PAL_CURSOR_CROSS,
+    PAL_CURSOR_IBEAM,
+    PAL_CURSOR_WAIT,
+
+    PAL_CURSOR_MAX
+} PalCursorType;
+
+/**
  * @struct PalMonitorInfo
  * @brief Information about a monitor.
  *
@@ -650,6 +688,41 @@ PAL_API void PAL_CALL palUpdateVideo();
  * @sa palInitVideo
  */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
+
+/**
+ * @brief Set the FBConfig for the video system.
+ *
+ * The video system must be initialized before this call.
+ * The provided FBConfig will be used for all created windows after this call.
+ * The `index` is the loop index from the drivers
+ * supported FBConfigs.
+ *
+ * The `backend` is used to tell the video system, the source of the index.
+ * Examples: PAL_CONFIG_BACKEND_EGL tells the video system, we got this loop
+ * index from EGL. This will enable the video system to find your FBConfig.
+ *
+ * Example Flow:
+ * Enumerate and select your FBConfig using any backend(EGL, GLX, WGL, etc)
+ * and just let the video system know which one you used.
+ *
+ * If the backend passed is not the same as the one used,
+ * the video system might still get a FBConfig but it will not be the
+ * one requested.
+ *
+ * @param[in] index The FBConfig driver index.
+ * @param[in] backend The FBConfig backend or source.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: This function must be called from the main thread.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ */
+PAL_API PalResult PAL_CALL palSetFBConfig(
+    const int index,
+    PalFBConfigBackend backend);
 
 /**
  * @brief Return a list of all connected monitors.
@@ -1451,6 +1524,7 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * @brief Create an icon.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] info Pointer to a PalIconCreateInfo struct that specifies
  * paramters. Must not be nullptr.
@@ -1492,9 +1566,10 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * @brief Set the icon for the provided window.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] window Pointer to the window.
- * @param[in] icon Pointer to the icon.
+ * @param[in] icon Pointer to the icon. Set to nullptr to revert.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1532,6 +1607,28 @@ PAL_API PalResult PAL_CALL palCreateCursor(
     PalCursor** outCursor);
 
 /**
+ * @brief Create a system cursor.
+ *
+ * The video system must be initialized before this call.
+ *
+ * @param[in] type The system cursor type to create. Must not be nullptr.
+ * @param[out] outCursor Pointer to a PalCursor to recieve the created
+ * cursor. Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.1
+ * @ingroup pal_video
+ * @sa palDestroyCursor
+ */
+PAL_API PalResult PAL_CALL palCreateCursorFrom(
+    PalCursorType type,
+    PalCursor** outCursor);
+
+/**
  * @brief Destroy the provided cursor.
  *
  * The video system must be initialized before this call.
@@ -1550,7 +1647,7 @@ PAL_API PalResult PAL_CALL palCreateCursor(
 PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
 
 /**
- * @brief Show or hide the provided cursor.
+ * @brief Show or hide the cursor.
  *
  * The video system must be initialized before this call.
  * This affects all created cursors since the platform (OS) merges all cursors
@@ -1646,7 +1743,7 @@ PAL_API PalResult PAL_CALL palSetCursorPos(
  * The video system must be initialized before this call.
  *
  * @param[in] window Pointer to the window.
- * @param[in] cursor Pointer to the cursor.
+ * @param[in] cursor Pointer to the cursor. Set to nullptr to revert.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.

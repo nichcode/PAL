@@ -35,7 +35,7 @@ bool openglMultiContextTest()
     PalGLContext* context = nullptr;
     PalWindowCreateInfo createInfo = {0};
     PalGLContextCreateInfo contextCreateInfo = {0};
-    Int32 fbCount;
+    Int32 fbCount = 0;
     bool running = false;
 
     // event driver
@@ -52,58 +52,16 @@ bool openglMultiContextTest()
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver %s", error);
+        palLog(nullptr, "Failed to create event driver: %s", error);
         return false;
     }
 
-    // initialize the video system. We pass the event driver to recieve video
-    // related events the video system does not copy the event driver, it must
-    // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
+    // enumerate supported opengl framebuffer configs
+    // glWindow must be nullptr
+    result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video %s", error);
-        return false;
-    }
-
-    createInfo.monitor = nullptr; // use primary monitor
-    createInfo.height = 480;
-    createInfo.width = 640;
-    createInfo.show = true;
-    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "Pal Opengl Multi Context Window";
-
-    // create the window with the create info struct
-    result = palCreateWindow(&createInfo, &window);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window %s", error);
-        return false;
-    }
-
-    // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
-
-    // get window handle. You can use any window from any library
-    // so long as you can get the window handle and display (if on X11, wayland)
-    // If pal video system will not be used, there is no need to initialize it
-    PalWindowHandleInfo windowHandleInfo;
-    windowHandleInfo = palGetWindowHandleInfo(window);
-
-    // PalGLWindow is just a struct to hold native handles
-    PalGLWindow glWindow = {0};
-    // needed when using X11 or wayland
-    glWindow.display = windowHandleInfo.nativeDisplay;
-    glWindow.window = windowHandleInfo.nativeWindow;
-
-    // use the gl window to query supported FBconfigs
-    result = palEnumerateGLFBConfigs(&glWindow, &fbCount, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs %s", error);
+        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
         return false;
     }
 
@@ -120,10 +78,12 @@ bool openglMultiContextTest()
         return false;
     }
 
-    result = palEnumerateGLFBConfigs(&glWindow, &fbCount, fbConfigs);
+    // enumerate supported opengl framebuffer configs
+    // glWindow must be nullptr
+    result = palEnumerateGLFBConfigs(nullptr, &fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs %s", error);
+        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
         palFree(nullptr, fbConfigs);
         return false;
     }
@@ -162,6 +122,64 @@ bool openglMultiContextTest()
     palLog(nullptr, " Stereo: %s", g_BoolsToSting[closest->stereo]);
     palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
     palLog(nullptr, "");
+
+    // initialize the video system. We pass the event driver to recieve video
+    // related events the video system does not copy the event driver, it must
+    // be valid till the video system is shutdown
+    result = palInitVideo(nullptr, eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // set the FBConfig that will be used by PAL video system
+    // to create windows. this must be set before creating a window
+    // for this example, we set the closest we desired.
+    // If pal_opengl and pal_video will be used together,
+    // then its recommended to use PAL_CONFIG_BACKEND_PAL_OPENGL
+
+    // NOTE: If PAL video system will not be used,
+    // users need to call the direct OS call to achieve this.
+    result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set GL pixel format: %s", error);
+        return false;
+    }
+
+    createInfo.monitor = nullptr; // use primary monitor
+    createInfo.height = 480;
+    createInfo.width = 640;
+    createInfo.show = true;
+    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
+    createInfo.title = "Pal Opengl Multi Context Window";
+
+    // create the window with the create info struct
+    result = palCreateWindow(&createInfo, &window);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window: %s", error);
+        return false;
+    }
+
+    // we set window close to poll
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
+        PAL_DISPATCH_POLL);
+
+    // get window handle. You can use any window from any library
+    // so long as you can get the window handle and display (if on X11, wayland)
+    // If pal video system will not be used, there is no need to initialize it
+    PalWindowHandleInfo windowHandleInfo;
+    windowHandleInfo = palGetWindowHandleInfo(window);
+
+    // PalGLWindow is just a struct to hold native handles
+    PalGLWindow glWindow = {0};
+    // needed when using X11 or wayland
+    glWindow.display = windowHandleInfo.nativeDisplay;
+    glWindow.window = windowHandleInfo.nativeWindow;
 
     // get opengl info
     const PalGLInfo* info = palGetGLInfo();

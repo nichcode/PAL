@@ -33,16 +33,17 @@ int main(int argc, char** argv)
     registerTest("Icon Test", iconTest);
     registerTest("Cursor Test", cursorTest);
     registerTest("Input Window Test", inputWindowTest);
+    registerTest("System Cursor Test", systemCursorTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL
     registerTest("Opengl Test", openglTest);
+    registerTest("Opengl FBConfig Test", openglFBConfigTest);
 #endif // PAL_HAS_OPENGL
 
     // This test can run without video system so long as your have a valid
     // window
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO
-    registerTest("Opengl FBConfig Test", openglFBConfigTest);
     registerTest("Opengl Context Test", openglContextTest);
     registerTest("Opengl Multi Context Test", openglMultiContextTest);
 #endif // PAL_HAS_OPENGL

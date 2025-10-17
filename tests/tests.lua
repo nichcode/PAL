@@ -38,19 +38,20 @@ project "tests"
             "window_test.c",
             "icon_test.c",
             "cursor_test.c",
-            "input_window_test.c"
+            "input_window_test.c",
+            "system_cursor_test.c"
         }
     end
 
     if (PAL_BUILD_OPENGL) then
         files { 
-            "opengl_test.c"
+            "opengl_test.c",
+            "opengl_fbconfig_test.c"
         }
     end
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
         files { 
-            "opengl_fbconfig_test.c",
             "opengl_context_test.c",
             "opengl_multi_context_test.c"
         }
