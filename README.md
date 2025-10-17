@@ -88,9 +88,10 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 
 ## Supported Platforms
 - Windows (Vista+)
+- Linux (X11)
 
 ## Planned Platforms
-- Linux (X11/Wayland)
+- Linux (Wayland)
 - macOS (Cocoa)
 - Android
 - iOS
@@ -99,6 +100,8 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 - Standard C library
 - Platform SDKs (Win32, X11, Cocoa, etc.)
 - [Make for Windows](https://www.gnu.org/software/make/) (if not using Visual Studio)
+- XRandR (1.2+) for X11
+- libXcursor for X11
 
 ## Compilers
 - GCC
@@ -123,8 +126,7 @@ premake\premake5.exe vs2022 --compiler=clang
 
 **Linux**
 ```bash
-premake\premake5.exe gmake2        # generate Makefiles (default: GCC)
-premake\premake5.exe gmake2 --compiler=clang
+./premake/premake5 gmake        # generate Makefiles (default: GCC)
 ```
 
 Enable tests in `pal_config.lua` by setting `PAL_BUILD_TESTS = true`.

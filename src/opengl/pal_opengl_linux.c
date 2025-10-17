@@ -477,8 +477,8 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     EGLSurface surface = EGL_NO_SURFACE;
     EGLint pBufferAttribs[] = {
-        EGL_WIDTH, 1, E
-        GL_HEIGHT, 1, 
+        EGL_WIDTH, 1,
+        EGL_HEIGHT, 1, 
         EGL_NONE};
 
     surface = s_GL.eglCreatePbufferSurface(
