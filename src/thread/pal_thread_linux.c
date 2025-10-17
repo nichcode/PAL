@@ -27,12 +27,12 @@ freely, subject to the following restrictions:
 
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
-#include <pthread.h>
 #include <errno.h>
+#include <pthread.h>
 #include <sched.h>
-#include <unistd.h>
 #include <sys/resource.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "pal/pal_thread.h"
 
@@ -56,7 +56,6 @@ struct PalCondVar {
 // ==================================================
 // Internal API
 // ==================================================
-
 
 // ==================================================
 // Public API
@@ -244,7 +243,7 @@ PalResult PAL_CALL palSetThreadPriority(
             setpriority(PRIO_PROCESS, 0, 0);
             break;
         }
-            
+
         case PAL_THREAD_PRIORITY_HIGH: {
             struct sched_param param;
             param.sched_priority = 10;
@@ -279,7 +278,7 @@ PalResult PAL_CALL palSetThreadAffinity(
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     int ret = pthread_setaffinity_np(_thread, sizeof(cpuset), &cpuset);
     if (ret == 0) {
-        return  PAL_RESULT_SUCCESS;
+        return PAL_RESULT_SUCCESS;
     } else {
         return PAL_RESULT_INVALID_THREAD;
     }

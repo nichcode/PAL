@@ -27,13 +27,13 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_system.h"
 
-#include <sys/sysinfo.h>
-#include <sys/statvfs.h>
-#include <sys/utsname.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h> 
+#include <sys/statvfs.h>
+#include <sys/sysinfo.h>
+#include <sys/utsname.h>
+#include <unistd.h>
 
 // ==================================================
 // Typedefs, enums and structs
@@ -43,7 +43,7 @@ freely, subject to the following restrictions:
 // Internal API
 // ==================================================
 
-static Uint32 parseCache(const char* path) 
+static Uint32 parseCache(const char* path)
 {
     long cacheSize = 0;
     FILE* file = fopen(path, "r");
@@ -189,7 +189,7 @@ PalResult PAL_CALL palGetCPUInfo(
 
                     } else if (strcmp(token, "avx512f") == 0) {
                         info->features |= PAL_CPU_FEATURE_AVX512F;
-                        
+
                     } else if (strcmp(token, "fma") == 0) {
                         info->features |= PAL_CPU_FEATURE_FMA3;
 

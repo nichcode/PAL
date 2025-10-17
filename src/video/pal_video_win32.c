@@ -674,7 +674,7 @@ LRESULT CALLBACK videoProc(
                 s_Keyboard.scancodeState[scancode] = true;
 
                 type = PAL_EVENT_KEYDOWN;
-                if (repeat) { 
+                if (repeat) {
                     type = PAL_EVENT_KEYREPEAT;
                 }
 
@@ -1105,7 +1105,7 @@ static void createScancodeTable()
     s_Keyboard.scancodes[0x15C] = PAL_SCANCODE_RSUPER;
 }
 
-static WindowData* getFreeWindowData() 
+static WindowData* getFreeWindowData()
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
         if (!s_Video.windowData[i].used) {
@@ -1123,8 +1123,8 @@ static WindowData* getFreeWindowData()
     data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
     if (data) {
         memcpy(
-            data, 
-            s_Video.windowData, 
+            data,
+            s_Video.windowData,
             s_Video.maxWindowData * sizeof(WindowData));
 
         palFree(s_Video.allocator, s_Video.windowData);
@@ -1155,8 +1155,8 @@ PalResult PAL_CALL palInitVideo(
 
     s_Video.maxWindowData = 32;
     s_Video.windowData = palAllocate(
-        s_Video.allocator, 
-        sizeof(WindowData) * s_Video.maxWindowData, 
+        s_Video.allocator,
+        sizeof(WindowData) * s_Video.maxWindowData,
         0);
 
     // get the instance
@@ -1372,7 +1372,7 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
 }
 
 PalResult PAL_CALL palSetFBConfig(
-    const int index, 
+    const int index,
     PalFBConfigBackend backend)
 {
     // Win32 uses only WGL and WGL index starts from 1
@@ -1380,7 +1380,7 @@ PalResult PAL_CALL palSetFBConfig(
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (backend == PAL_CONFIG_BACKEND_EGL || 
+    if (backend == PAL_CONFIG_BACKEND_EGL ||
         backend == PAL_CONFIG_BACKEND_GLX) {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
@@ -1856,7 +1856,7 @@ PalResult PAL_CALL palCreateWindow(
                 &pfd)) {
             return PAL_RESULT_INVALID_GL_FBCONFIG;
         }
-        
+
         s_Video.setPixelFormat(hdc, s_Video.pixelFormat, &pfd);
         ReleaseDC(handle, hdc);
     }
@@ -2802,8 +2802,9 @@ PalResult PAL_CALL palCreateCursor(
 
 PalResult PAL_CALL palCreateCursorFrom(
     PalCursorType type,
-    PalCursor** outCursor) {
-    
+    PalCursor** outCursor)
+{
+
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
@@ -2959,9 +2960,8 @@ PalResult PAL_CALL palSetWindowCursor(
 {
     if (window) {
         SetLastError(0);
-        WindowData* data = (WindowData*)GetWindowLongPtrW(
-            (HWND)window, 
-            GWLP_USERDATA);
+        WindowData* data =
+            (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
 
         data->cursor = (HCURSOR)cursor;
         DWORD error = GetLastError();

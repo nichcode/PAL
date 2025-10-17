@@ -27,20 +27,20 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_video.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 // X11 headers
-#include <X11/Xlib.h>
+#include <X11/XKBlib.h>
 #include <X11/Xatom.h>
+#include <X11/Xcursor/Xcursor.h>
+#include <X11/Xlib.h>
 #include <X11/Xresource.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
-#include <X11/Xcursor/Xcursor.h>
-#include <X11/XKBlib.h>
 #include <X11/extensions/Xrandr.h>
 
 // Wayland headers
@@ -55,25 +55,25 @@ freely, subject to the following restrictions:
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 
-typedef void *EGLConfig;
-typedef void *EGLSurface;
-typedef void *EGLContext;
-typedef void *EGLDisplay;
-typedef void *EGLNativeDisplayType;
+typedef void* EGLConfig;
+typedef void* EGLSurface;
+typedef void* EGLContext;
+typedef void* EGLDisplay;
+typedef void* EGLNativeDisplayType;
 
 /* C++ / C typecast macros for special EGL handle values */
 #if defined(__cplusplus)
 #define EGL_CAST(type, value) (static_cast<type>(value))
 #else
-#define EGL_CAST(type, value) ((type) (value))
+#define EGL_CAST(type, value) ((type)(value))
 #endif
 
-#define EGL_OPENGL_API                    0x30A2
-#define EGL_OPENGL_BIT                    0x0008
-#define EGL_NO_CONTEXT                    EGL_CAST(EGLContext,0)
-#define EGL_NO_DISPLAY                    EGL_CAST(EGLDisplay,0)
-#define EGL_NO_SURFACE                    EGL_CAST(EGLSurface,0)
-#define EGL_NATIVE_VISUAL_ID              0x302E
+#define EGL_OPENGL_API 0x30A2
+#define EGL_OPENGL_BIT 0x0008
+#define EGL_NO_CONTEXT EGL_CAST(EGLContext, 0)
+#define EGL_NO_DISPLAY EGL_CAST(EGLDisplay, 0)
+#define EGL_NO_SURFACE EGL_CAST(EGLSurface, 0)
+#define EGL_NATIVE_VISUAL_ID 0x302E
 
 typedef int32_t EGLint;
 typedef unsigned int EGLBoolean;
@@ -82,8 +82,8 @@ typedef unsigned int EGLenum;
 typedef void* (*eglGetProcAddressFn)(const char*);
 
 typedef EGLBoolean (*eglInitializeFn)(
-    EGLDisplay, 
-    EGLint*, 
+    EGLDisplay,
+    EGLint*,
     EGLint*);
 
 typedef EGLBoolean (*eglTerminateFn)(EGLDisplay);
@@ -91,16 +91,16 @@ typedef EGLBoolean (*eglTerminateFn)(EGLDisplay);
 typedef EGLDisplay (*eglGetDisplayFn)(void*);
 
 typedef EGLBoolean (*eglChooseConfigFn)(
-    EGLDisplay, 
-    const EGLint*, 
-    EGLConfig*, 
-    EGLint, 
+    EGLDisplay,
+    const EGLint*,
+    EGLConfig*,
+    EGLint,
     EGLint*);
 
 typedef EGLBoolean (*eglGetConfigAttribFn)(
-    EGLDisplay, 
-    EGLConfig, 
-    EGLint, 
+    EGLDisplay,
+    EGLConfig,
+    EGLint,
     EGLint*);
 
 typedef EGLint (*eglGetErrorFn)(void);
@@ -108,9 +108,9 @@ typedef EGLint (*eglGetErrorFn)(void);
 typedef EGLBoolean (*eglBindAPIFn)(EGLenum);
 
 typedef EGLBoolean (*eglGetConfigsFn)(
-    EGLDisplay, 
-    EGLConfig*, 
-    EGLint, 
+    EGLDisplay,
+    EGLConfig*,
+    EGLint,
     EGLint*);
 
 typedef struct {
@@ -178,7 +178,7 @@ typedef struct {
 
 // optionally, needed to create visual from FBConfig
 #define GLX_FBCONFIG_ID 0x8012
-typedef struct __GLXFBConfigRec *GLXFBConfig;
+typedef struct __GLXFBConfigRec* GLXFBConfig;
 
 typedef GLXFBConfig* (*GLXGetFBConfigsFn)(
     Display*,
@@ -209,18 +209,18 @@ typedef int (*XGetWindowPropertyFn)(
     Display*,
     Window,
     Atom,
-    long,		
-    long,		
-    Bool,		
-    Atom,		
-    Atom*,		
-    int*,		
-    unsigned long*,	
-    unsigned long*,	
+    long,
+    long,
+    Bool,
+    Atom,
+    Atom*,
+    int*,
+    unsigned long*,
+    unsigned long*,
     unsigned char**);
 
 typedef Atom (*XInternAtomFn)(
-    Display*,	
+    Display*,
     _Xconst char*,
     Bool);
 
@@ -360,7 +360,7 @@ typedef int (*XRRSetCrtcConfigFn)(
     XRRScreenResources*,
     RRCrtc,
     Time,
-    int, 
+    int,
     int,
     RRMode,
     Rotation,
@@ -368,43 +368,40 @@ typedef int (*XRRSetCrtcConfigFn)(
     int);
 
 typedef XRRScreenResources* (*XRRGetScreenResourcesFn)(
-    Display*, 
+    Display*,
     Window);
 
 typedef RROutput (*XRRGetOutputPrimaryFn)(
-    Display*, 
+    Display*,
     Window);
 
 typedef XRROutputInfo* (*XRRGetOutputInfoFn)(
-    Display*, 
+    Display*,
     XRRScreenResources*,
     RROutput);
 
 typedef XRRCrtcInfo* (*XRRGetCrtcInfoFn)(
-    Display*, 
+    Display*,
     XRRScreenResources*,
     RRCrtc);
 
-typedef void (*XRRFreeScreenResourcesFn)(
-    XRRScreenResources*);
+typedef void (*XRRFreeScreenResourcesFn)(XRRScreenResources*);
 
-typedef void (*XRRFreeOutputInfoFn)(
-    XRROutputInfo*);
+typedef void (*XRRFreeOutputInfoFn)(XRROutputInfo*);
 
-typedef void (*XRRFreeCrtcInfoFn)(
-    XRRCrtcInfo*);
+typedef void (*XRRFreeCrtcInfoFn)(XRRCrtcInfo*);
 
 typedef void (*XRRSelectInputFn)(
-    Display*, 
-    Window, 
+    Display*,
+    Window,
     int);
 
 typedef int (*XRRQueryExtensionFn)(
     Display*,
-	int*,
-	int*);
+    int*,
+    int*);
 
-typedef XClassHint *(*XAllocClassHintFn)(void);
+typedef XClassHint* (*XAllocClassHintFn)(void);
 
 typedef int (*XSetClassHintFn)(
     Display*,
@@ -477,7 +474,7 @@ typedef int (*XUngrabPointerFn)(
     Display*,
     Time);
 
-typedef XWMHints *(*XAllocWMHintsFn) (void);
+typedef XWMHints* (*XAllocWMHintsFn)(void);
 
 typedef int (*XMapRaisedFn)(
     Display*,
@@ -496,7 +493,7 @@ typedef int (*XFreeCursorFn)(
     Display*,
     Cursor);
 
-typedef XWMHints *(*XGetWMHintsFn)(
+typedef XWMHints* (*XGetWMHintsFn)(
     Display*,
     Window);
 
@@ -527,18 +524,18 @@ typedef Pixmap (*XCreatePixmapFn)(
     unsigned int,
     unsigned int);
 
-typedef XVisualInfo *(*XGetVisualInfoFn)(
+typedef XVisualInfo* (*XGetVisualInfoFn)(
     Display*,
     long,
     XVisualInfo*,
     int*);
 
 typedef Cursor (*XcursorImageLoadCursorFn)(
-    Display*, 
+    Display*,
     const XcursorImage*);
 
 typedef XcursorImage* (*XcursorImageCreateFn)(
-    int, 
+    int,
     int);
 
 typedef void (*XcursorImageDestroyFn)(XcursorImage*);
@@ -547,13 +544,12 @@ typedef KeySym (*XLookupKeysymFn)(
     XKeyEvent*,
     int);
 
-typedef	int	(*XkbSetDetectableAutoRepeatFn)(
-	Display*,
-	int,
-	int*);
+typedef int (*XkbSetDetectableAutoRepeatFn)(
+    Display*,
+    int,
+    int*);
 
-typedef struct 
-{
+typedef struct {
     bool unicodeTitle;
 
     Atom WM_DELETE_WINDOW;
@@ -685,6 +681,7 @@ static X11Atoms s_X11Atoms = {0};
 #pragma endregion
 
 typedef struct {
+    // clang-format off
     void (*shutdownVideo)();
     void (*updateVideo)();
     PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
@@ -704,7 +701,6 @@ typedef struct {
     PalResult (*showWindow)(PalWindow*);
     PalResult (*hideWindow)(PalWindow*);
     PalResult (*xFlashWindow)(PalWindow*, const PalFlashInfo*);
-
     PalResult (*getWindowStyle)(PalWindow*, PalWindowStyle*);
     PalResult (*getWindowMonitor)(PalWindow*, PalMonitor**);
     PalResult (*getWindowTitle)(PalWindow*, Uint64, Uint64*, char*);
@@ -733,6 +729,7 @@ typedef struct {
     PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
     PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
     PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
+    // clang-format off
 } Backend;
 
 typedef struct {
@@ -757,7 +754,9 @@ static EGL s_Egl;
 // Internal API
 // ==================================================
 
-static int compareModes(const void* a, const void* b) 
+static int compareModes(
+    const void* a,
+    const void* b)
 {
     const PalMonitorMode* mode1 = (const PalMonitorMode*)a;
     const PalMonitorMode* mode2 = (const PalMonitorMode*)b;
@@ -780,7 +779,7 @@ static int compareModes(const void* a, const void* b)
     }
 }
 
-static WindowData* getFreeWindowData() 
+static WindowData* getFreeWindowData()
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
         if (!s_Video.windowData[i].used) {
@@ -798,8 +797,8 @@ static WindowData* getFreeWindowData()
     data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
     if (data) {
         memcpy(
-            data, 
-            s_Video.windowData, 
+            data,
+            s_Video.windowData,
             s_Video.maxWindowData * sizeof(WindowData));
 
         palFree(s_Video.allocator, s_Video.windowData);
@@ -812,15 +811,15 @@ static WindowData* getFreeWindowData()
     return nullptr;
 }
 
-static void resetMonitorData() 
+static void resetMonitorData()
 {
     memset(
-        s_Video.monitorData, 
-        0, 
+        s_Video.monitorData,
+        0,
         s_Video.maxMonitorData * sizeof(MonitorData));
 }
 
-static MonitorData* getFreeMonitorData() 
+static MonitorData* getFreeMonitorData()
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
         if (!s_Video.monitorData[i].used) {
@@ -837,8 +836,8 @@ static MonitorData* getFreeMonitorData()
     data = palAllocate(s_Video.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
         memcpy(
-            data, 
-            s_Video.monitorData, 
+            data,
+            s_Video.monitorData,
             s_Video.maxMonitorData * sizeof(MonitorData));
 
         palFree(s_Video.allocator, s_Video.monitorData);
@@ -851,27 +850,27 @@ static MonitorData* getFreeMonitorData()
     return nullptr;
 }
 
-static MonitorData* findMonitorData(PalMonitor* monitor) 
+static MonitorData* findMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
-        if (s_Video.monitorData[i].used && 
+        if (s_Video.monitorData[i].used &&
             s_Video.monitorData[i].monitor == monitor) {
             return &s_Video.monitorData[i];
         }
     }
 }
 
-static void freeMonitorData(PalMonitor* monitor) 
+static void freeMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
-        if (s_Video.monitorData[i].used && 
+        if (s_Video.monitorData[i].used &&
             s_Video.monitorData[i].monitor == monitor) {
             s_Video.monitorData[i].used = false;
         }
     }
 }
 
-static PalResult glxBackend() 
+static PalResult glxBackend()
 {
     // user choose GLX FBConfig backend
     if (!s_X11.glxHandle) {
@@ -879,10 +878,12 @@ static PalResult glxBackend()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // clang-format off
+
     int count = 0;
     GLXFBConfig* configs = s_X11.glxGetFBConfigs(
-        s_X11.display,
-        s_X11.screen,
+        s_X11.display, 
+        s_X11.screen, 
         &count);
 
     GLXFBConfig fbConfig = configs[s_Video.pixelFormat];
@@ -892,19 +893,21 @@ static PalResult glxBackend()
 
     // get a matching visual
     XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(
-        s_X11.display,
+        s_X11.display, 
         fbConfig);
-            
+
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
 
+    // clang-format on
+
     s_X11.visual = visualInfo->visual;
     s_X11.depth = visualInfo->depth;
     s_X11.colormap = s_X11.createColormap(
-        s_X11.display, 
-        s_X11.root, 
-        visualInfo->visual, 
+        s_X11.display,
+        s_X11.root,
+        visualInfo->visual,
         AllocNone);
 
     if (!s_X11.colormap) {
@@ -914,7 +917,7 @@ static PalResult glxBackend()
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult eglXBackend(int index) 
+static PalResult eglXBackend(int index)
 {
     // user choose EGL FBConfig backend
     if (!s_Egl.handle) {
@@ -941,11 +944,8 @@ static PalResult eglXBackend(int index)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    EGLConfig* eglConfigs = palAllocate(
-        s_Video.allocator, 
-        sizeof(EGLConfig) * numConfigs, 
-        0);
-    
+    EGLint configSize = sizeof(EGLConfig) * numConfigs;
+    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
     if (!eglConfigs) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -964,12 +964,14 @@ static PalResult eglXBackend(int index)
     XVisualInfo tmp;
     tmp.visualid = visualID;
 
+    // clang-format off
     // get a matching visual info
     XVisualInfo* visualInfo = s_X11.getVisualInfo(
         s_X11.display, 
         VisualIDMask, 
         &tmp, 
         &numVisuals);
+    // clang-format on
 
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
@@ -978,9 +980,9 @@ static PalResult eglXBackend(int index)
     s_X11.visual = visualInfo->visual;
     s_X11.depth = visualInfo->depth;
     s_X11.colormap = s_X11.createColormap(
-        s_X11.display, 
-        s_X11.root, 
-        visualInfo->visual, 
+        s_X11.display,
+        s_X11.root,
+        visualInfo->visual,
         AllocNone);
 
     if (!s_X11.colormap) {
@@ -999,7 +1001,7 @@ static PalResult eglXBackend(int index)
 #pragma region X11 API
 
 static RRMode xFindMode(
-    XRRScreenResources* resources, 
+    XRRScreenResources* resources,
     const PalMonitorMode* mode)
 {
     for (int i = 0; i < resources->nmode; ++i) {
@@ -1009,8 +1011,7 @@ static RRMode xFindMode(
         double rate = (double)info->dotClock / tmp;
 
         // compare with width, height and refresh rate
-        if (info->width == mode->width    &&
-            info->height == mode->height  &&
+        if (info->width == mode->width && info->height == mode->height &&
             (Uint32)(rate + 0.5) == mode->refreshRate) {
             return info->id;
         }
@@ -1121,14 +1122,16 @@ static void xCheckFeatures()
     s_X11.free(supportedAtoms);
 }
 
-static int xErrorHandler(Display*, XErrorEvent* e) 
+static int xErrorHandler(
+    Display*,
+    XErrorEvent* e)
 {
     // this is use for simple success and failure
     s_X11.error = true;
     return 0;
 }
 
-static PalWindowState xQueryWindowState(Window xWin) 
+static PalWindowState xQueryWindowState(Window xWin)
 {
     Atom type;
     int format;
@@ -1171,19 +1174,15 @@ static PalWindowState xQueryWindowState(Window xWin)
 static void xCacheMonitors(bool enumerate)
 {
     XRRScreenResources* resources = nullptr;
-    resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
+    resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
-        XRROutputInfo* info = s_X11.getOutputInfo(
-            s_X11.display,
-            resources,
-            output);
+        // clang-format off
+        XRROutputInfo* info = s_X11.getOutputInfo(s_X11.display, resources, output);
+        // clang-format on
 
-        if (info->connection == RR_Connected && 
-            info->crtc != None) {
+        if (info->connection == RR_Connected && info->crtc != None) {
             // get monitor data and update info
             PalMonitor* monitor = TO_PAL_HANDLE(PalMonitor, output);
             MonitorData* data = nullptr;
@@ -1200,10 +1199,9 @@ static void xCacheMonitors(bool enumerate)
                 data = findMonitorData(monitor);
             }
 
-            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-                s_X11.display,
-                resources,
-                info->crtc);
+            // clang-format off
+            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, info->crtc);
+            // clang-format on
 
             double dpi = (double)(crtc->width * 25.4) / (double)info->mm_width;
             data->dpi = (int)dpi;
@@ -1222,7 +1220,7 @@ static void xCacheMonitors(bool enumerate)
 }
 
 static int xGetWindowMonitorDPI(
-    WindowData* data, 
+    WindowData* data,
     bool enumerate)
 {
     int winX = data->x + data->w / 2;
@@ -1235,9 +1233,7 @@ static int xGetWindowMonitorDPI(
 
         // we found a monitor, check the monitor bounds with the window
         MonitorData* info = &s_Video.monitorData[i];
-        if (winX >= info->x && 
-            winX < info->x + info->w && 
-            winY >= info->y && 
+        if (winX >= info->x && winX < info->x + info->w && winY >= info->y &&
             winY < info->y + info->h) {
             // found monitor
             return info->dpi;
@@ -1246,7 +1242,7 @@ static int xGetWindowMonitorDPI(
 }
 
 static void xSendWMEvent(
-    Window window, 
+    Window window,
     Atom type,
     long a,
     long b,
@@ -1390,7 +1386,7 @@ static void xCreateScancodeTable()
     s_Keyboard.scancodes[40] = PAL_SCANCODE_APOSTROPHE;
     s_Keyboard.scancodes[43] = PAL_SCANCODE_BACKSLASH;
     s_Keyboard.scancodes[51] = PAL_SCANCODE_COMMA;
-    s_Keyboard.scancodes[13] = PAL_SCANCODE_EQUAL; 
+    s_Keyboard.scancodes[13] = PAL_SCANCODE_EQUAL;
     s_Keyboard.scancodes[41] = PAL_SCANCODE_GRAVEACCENT;
     s_Keyboard.scancodes[12] = PAL_SCANCODE_SUBTRACT;
     s_Keyboard.scancodes[52] = PAL_SCANCODE_PERIOD;
@@ -1463,7 +1459,7 @@ static void xCreateKeycodeTable()
     s_Keyboard.keycodes[XK_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-static PalResult xInitVideo() 
+static PalResult xInitVideo()
 {
     // load X11 library
     s_X11.handle = dlopen("libX11.so", RTLD_LAZY);
@@ -1482,6 +1478,8 @@ static PalResult xInitVideo()
     if (!s_X11.xrandr) {
         s_X11.xrandr = dlopen("libXrandr.so", RTLD_LAZY);
     }
+
+    // clang-format off
 
     // load procs
     s_X11.openDisplay = (XOpenDisplayFn)dlsym(
@@ -1828,10 +1826,11 @@ static PalResult xInitVideo()
         // FIXME: fallback to manual key repeat detection
     }
 
+    // clang-format on
     return PAL_RESULT_SUCCESS;
 }
 
-static void xShutdownVideo() 
+static void xShutdownVideo()
 {
     if (s_X11.colormap) {
         s_X11.freeColormap(s_X11.display, s_X11.colormap);
@@ -1901,7 +1900,7 @@ static void xUpdateVideo()
                 // real configure event
                 if (s_Video.eventDriver) {
                     // check if its a resize event
-                    if (data->w != event.xconfigure.width || 
+                    if (data->w != event.xconfigure.width ||
                         data->h != event.xconfigure.height) {
                         data->w = event.xconfigure.width;
                         data->h = event.xconfigure.height;
@@ -1921,7 +1920,7 @@ static void xUpdateVideo()
                     }
 
                     // check if its a move event
-                    if (data->x != event.xconfigure.x || 
+                    if (data->x != event.xconfigure.x ||
                         data->y != event.xconfigure.y) {
                         data->x = event.xconfigure.x;
                         data->y = event.xconfigure.y;
@@ -1939,9 +1938,9 @@ static void xUpdateVideo()
                             palPushEvent(driver, &event);
                         }
 
-                        /** a window has to be moved 
+                        /** a window has to be moved
                         before its can change monitors
-                        we get the monitor the moved 
+                        we get the monitor the moved
                         window is on and check if the dpi is different
                         from the one it was created on */
                         int monitorDPI = xGetWindowMonitorDPI(data, false);
@@ -2044,7 +2043,7 @@ static void xUpdateVideo()
             }
 
             case RANDR_SCREEN_CHANGE_EVENT: {
-                // skip the first event 
+                // skip the first event
                 if (s_X11.skipScreenEvent) {
                     s_X11.skipScreenEvent = false;
                     return;
@@ -2057,7 +2056,7 @@ static void xUpdateVideo()
             }
 
             case RANDR_NOTIFY_EVENT: {
-                // skip the first event 
+                // skip the first event
                 if (s_X11.skipNotifyEvent) {
                     s_X11.skipNotifyEvent = false;
                     return;
@@ -2079,7 +2078,7 @@ static void xUpdateVideo()
                             }
                         }
 
-                        /** enumerate monitors and cache them 
+                        /** enumerate monitors and cache them
                         these will be used to detect DPI changed
                         since X11 does not have a DPI changed function */
                         resetMonitorData();
@@ -2150,7 +2149,7 @@ static void xUpdateVideo()
                     } else {
                         type = PAL_EVENT_MOUSE_BUTTONUP;
                     }
-                    
+
                     mode = palGetEventDispatchMode(driver, type);
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
@@ -2181,9 +2180,9 @@ static void xUpdateVideo()
                 s_Mouse.WheelY = scrollY;
                 if (s_Video.eventDriver && (scrollX || scrollY)) {
                     PalEventDriver* driver = s_Video.eventDriver;
-                    mode = palGetEventDispatchMode(
-                        driver, 
-                        PAL_EVENT_MOUSE_WHEEL);
+                    // clang-format off
+                    mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
+                    // clang-format on
 
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
@@ -2280,18 +2279,17 @@ static PalResult xEnumerateMonitors(
 {
     int _count = 0;
     int maxCount = outMonitors ? *count : 0;
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-    
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
+
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
-        XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-            s_X11.display,
-            resources,
-            output);
-        
-        if (outputInfo->connection == RR_Connected && 
+        // clang-format off
+        XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
+        // clang-format on
+
+        if (outputInfo->connection == RR_Connected &&
             outputInfo->crtc != None) {
             // a monitor
             if (outMonitors) {
@@ -2311,24 +2309,21 @@ static PalResult xEnumerateMonitors(
 
 static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
 {
-    RROutput primary = s_X11.getOutputPrimary(
-        s_X11.display,
-        s_X11.root);
+    RROutput primary = s_X11.getOutputPrimary(s_X11.display, s_X11.root);
 
     if (!primary) {
         // primary monitor is not set, set the first one
-        XRRScreenResources* resources = s_X11.getScreenResources(
-            s_X11.display,
-            s_X11.root);
+        // clang-format off
+        XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+        // clang-format on
 
         for (int i = 0; i < resources->noutput; ++i) {
             RROutput output = resources->outputs[i];
-            XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-                s_X11.display,
-                resources,
-                output);
+            // clang-format off
+            XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
+            // clang-format on
 
-            if (outputInfo->connection == RR_Connected && 
+            if (outputInfo->connection == RR_Connected &&
                 outputInfo->crtc != None) {
                 primary = resources->outputs[i];
                 break;
@@ -2350,9 +2345,9 @@ static PalResult xGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
 
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
         s_X11.display,
@@ -2370,24 +2365,21 @@ static PalResult xGetMonitorInfo(
         s_X11.freeScreenResources(resources);
         return PAL_RESULT_INVALID_MONITOR;
     }
-    
+
     strcpy(info->name, outputInfo->name);
-    
+
     // check if its primary monitor
-    RROutput primary = s_X11.getOutputPrimary(
-        s_X11.display,
-        s_X11.root);
+    RROutput primary = s_X11.getOutputPrimary(s_X11.display, s_X11.root);
 
     if (monitor == TO_PAL_HANDLE(PalMonitor, primary)) {
         info->primary = true;
     }
 
     // get monitor pos and size
-    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-        s_X11.display,
-        resources,
-        outputInfo->crtc);
-    
+    // clang-format off
+    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
+    // clang-format on
+
     info->x = crtc->x;
     info->y = crtc->y;
     info->width = crtc->width;
@@ -2431,7 +2423,7 @@ static PalResult xGetMonitorInfo(
         default: {
             info->orientation = PAL_ORIENTATION_LANDSCAPE;
         }
-    } 
+    }
 
     // get dpi
     double tmp = (double)(crtc->width * 25.4) / (double)outputInfo->mm_width;
@@ -2448,14 +2440,14 @@ static PalResult xEnumerateMonitorModes(
     PalMonitor* monitor,
     Int32* count,
     PalMonitorMode* modes)
-{    
+{
     Int32 modeCount = 0;
     int maxModeCount = modes ? *count : 0;
 
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-    
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
+
     // get the monitor info
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
         s_X11.display,
@@ -2488,7 +2480,10 @@ static PalResult xEnumerateMonitorModes(
                         mode->height = info->height;
                         mode->bpp = s_X11.bpp;
 
+                        // clang-format off
                         double tmp = (double)info->hTotal * (double)info->vTotal;
+                        // clang-format on
+
                         double rate = (double)info->dotClock / tmp;
                         mode->refreshRate = rate + 0.5;
                     }
@@ -2504,7 +2499,7 @@ static PalResult xEnumerateMonitorModes(
 
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2512,10 +2507,10 @@ static PalResult xGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-    
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
+
     // get the monitor info
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
         s_X11.display,
@@ -2535,11 +2530,10 @@ static PalResult xGetCurrentMonitorMode(
     }
 
     // get the current display mode
-    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-        s_X11.display,
-        resources,
-        outputInfo->crtc);
-    
+    // clang-format off
+    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
+    // clang-format on
+
     // find the display mode
     XRRModeInfo* info = nullptr;
     for (int i = 0; i < resources->nmode; ++i) {
@@ -2559,11 +2553,11 @@ static PalResult xGetCurrentMonitorMode(
         double rate = (double)info->dotClock / tmp;
         mode->refreshRate = rate + 0.5;
     }
-    
+
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2571,10 +2565,10 @@ static PalResult xSetMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-    
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
+
     // get the monitor info
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
         s_X11.display,
@@ -2602,10 +2596,9 @@ static PalResult xSetMonitorMode(
     }
 
     // apply the display mode
-    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-        s_X11.display,
-        resources,
-        outputInfo->crtc);
+    // clang-format off
+    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
+    // clang-format on
 
     RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
     int ret = s_X11.setCrtcConfig(
@@ -2619,7 +2612,7 @@ static PalResult xSetMonitorMode(
         crtc->rotation,
         &output,
         1);
-    
+
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
@@ -2627,7 +2620,7 @@ static PalResult xSetMonitorMode(
     if (ret != Success) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2635,10 +2628,10 @@ static PalResult xValidateMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-    
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
+
     // get the monitor info
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
         s_X11.display,
@@ -2675,10 +2668,10 @@ static PalResult xSetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation)
 {
-    XRRScreenResources* resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
-    
+    // clang-format off
+    XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+    // clang-format on
+
     // get the monitor info
     XRROutputInfo* outputInfo = s_X11.getOutputInfo(
         s_X11.display,
@@ -2698,10 +2691,9 @@ static PalResult xSetMonitorOrientation(
     }
 
     // get the current display mode
-    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-        s_X11.display,
-        resources,
-        outputInfo->crtc);
+    // clang-format off
+    XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
+    // clang-format on
 
     // check if the new orientation is supported
     Rotation rotation = 0;
@@ -2747,7 +2739,7 @@ static PalResult xSetMonitorOrientation(
         rotation,
         &output,
         1);
-    
+
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
@@ -2755,7 +2747,7 @@ static PalResult xSetMonitorOrientation(
     if (ret != Success) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2900,7 +2892,7 @@ static PalResult xCreateWindow(
         s_X11.setClassHint(s_X11.display, window, hints);
         s_X11.free(hints);
     }
-    
+
     if (s_X11Atoms.unicodeTitle) {
         s_X11.changeProperty(
             s_X11.display,
@@ -2932,7 +2924,6 @@ static PalResult xCreateWindow(
             PropModeReplace,
             (unsigned char*)&s_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH,
             1);
-
     }
 
     // tool window
@@ -2951,7 +2942,6 @@ static PalResult xCreateWindow(
             PropModeReplace,
             (unsigned char*)&s_X11Atoms._NET_WM_WINDOW_TYPE_UTILITY,
             1);
-
     }
 
     // topmost
@@ -3051,9 +3041,9 @@ static PalResult xCreateWindow(
     }
 
     s_X11.setWMProtocols(
-        s_X11.display, 
-        window, 
-        &s_X11Atoms.WM_DELETE_WINDOW, 
+        s_X11.display,
+        window,
+        &s_X11Atoms.WM_DELETE_WINDOW,
         True);
 
     s_X11.flush(s_X11.display);
@@ -3179,13 +3169,13 @@ PalResult xFlashWindow(
         return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
     }
 
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
     }
 
-    bool add = false; 
+    bool add = false;
     if (info->flags & PAL_FLASH_TRAY) {
         add = true;
     }
@@ -3235,36 +3225,29 @@ PalResult xGetWindowMonitor(
     PalWindow* window,
     PalMonitor** outMonitor)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
     }
 
     XRRScreenResources* resources = nullptr;
-    resources = s_X11.getScreenResources(
-        s_X11.display,
-        s_X11.root);
+    resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
-        XRROutputInfo* info = s_X11.getOutputInfo(
-            s_X11.display,
-            resources,
-            output);
+        // clang-format off
+        XRROutputInfo* info = s_X11.getOutputInfo(s_X11.display, resources, output);
+        // clang-format on
 
-        if (info->connection == RR_Connected && 
-            info->crtc != None) {
-            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-                s_X11.display,
-                resources,
-                info->crtc);
+        if (info->connection == RR_Connected && info->crtc != None) {
+            // clang-format off
+            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, info->crtc);
+            // clang-format on
 
             // check bounds to see if window is on the monitor
-            if (attr.x >= crtc->x && 
-                attr.x < crtc->x + crtc->width && 
-                attr.y >= crtc->y && 
-                attr.y < crtc->y + crtc->height) {
+            if (attr.x >= crtc->x && attr.x < crtc->x + crtc->width &&
+                attr.y >= crtc->y && attr.y < crtc->y + crtc->height) {
                 // found monitor
                 *outMonitor = TO_PAL_HANDLE(PalMonitor, output);
                 break;
@@ -3283,7 +3266,7 @@ PalResult xGetWindowTitle(
     Uint64* outSize,
     char* outBuffer)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3334,7 +3317,7 @@ PalResult xGetWindowTitle(
         }
         s_X11.free(text.value);
     }
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3343,7 +3326,7 @@ PalResult xGetWindowPos(
     Int32* x,
     Int32* y)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3365,7 +3348,7 @@ PalResult xGetWindowSize(
     Uint32* width,
     Uint32* height)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3386,7 +3369,7 @@ PalResult xGetWindowState(
     PalWindow* window,
     PalWindowState* outState)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3432,7 +3415,7 @@ PalResult xGetWindowState(
 
 bool xIsWindowVisible(PalWindow* window)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return false;
@@ -3478,7 +3461,7 @@ static PalResult xSetWindowOpacity(
         PropModeReplace,
         (unsigned char*)&value,
         1);
-    
+
     s_X11.sync(s_X11.display, False);
     s_X11.setErrorHandler(old);
     if (s_X11.error) {
@@ -3501,7 +3484,7 @@ PalResult xSetWindowTitle(
     PalWindow* window,
     const char* title)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3531,7 +3514,7 @@ PalResult xSetWindowPos(
     Int32 x,
     Int32 y)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3547,7 +3530,7 @@ PalResult xSetWindowSize(
     Uint32 width,
     Uint32 height)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3556,7 +3539,7 @@ PalResult xSetWindowSize(
     // X11 does not allow users resize programaticaly
     // if the window is not resizable.
     // so we hack it by making the window resizable and resizing
-    // then revert back. 
+    // then revert back.
     XSizeHints hints;
     long tmp;
     s_X11.getWMNormalHints(s_X11.display, xWin, &hints, &tmp);
@@ -3583,7 +3566,7 @@ PalResult xSetWindowSize(
 
 PalResult xSetFocusWindow(PalWindow* window)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3630,10 +3613,12 @@ PalResult xCreateIcon(
         Uint8 b = info->pixels[i * 4 + 2]; // Blue
         Uint8 a = info->pixels[i * 4 + 3]; // Alpha
 
+        // clang-format off
         icon[2 + i] = ((unsigned long)a << 24) | 
                       ((unsigned long)r << 16) |
                       ((unsigned long)g << 8) |
                       ((unsigned long)b);
+        // clang-format on
     }
 
     *outIcon = TO_PAL_HANDLE(PalIcon, icon);
@@ -3659,7 +3644,7 @@ PalResult xSetWindowIcon(
     }
 
     unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
-    Uint64 totalPixels = 2 + iconData[0] * iconData[1];  
+    Uint64 totalPixels = 2 + iconData[0] * iconData[1];
     s_X11.changeProperty(
         s_X11.display,
         xWin,
@@ -3689,10 +3674,12 @@ PalResult xCreateCursor(
         Uint8 b = info->pixels[i * 4 + 2]; // Blue
         Uint8 a = info->pixels[i * 4 + 3]; // Alpha
 
+        // clang-format off
         image->pixels[i] = ((unsigned long)a << 24) | 
                            ((unsigned long)r << 16) |
                            ((unsigned long)g << 8) |
                            ((unsigned long)b);
+        // clang-format on
     }
 
     Cursor cursor = s_X11.cursorImageLoadCursor(s_X11.display, image);
@@ -3781,7 +3768,7 @@ PalResult xClipCursor(
     PalWindow* window,
     bool clip)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3811,7 +3798,7 @@ PalResult xGetCursorPos(
     Int32* x,
     Int32* y)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
@@ -3847,23 +3834,14 @@ PalResult xSetCursorPos(
     Int32 x,
     Int32 y)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
     }
 
-    s_X11.warpPointer(
-        s_X11.display,
-        None,
-        xWin,
-        0,
-        0,
-        0,
-        0,
-        x,
-        y);
-    
+    s_X11.warpPointer(s_X11.display, None, xWin, 0, 0, 0, 0, x, y);
+
     s_X11.flush(s_X11.display);
     return PAL_RESULT_SUCCESS;
 }
@@ -3872,13 +3850,13 @@ PalResult xSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);   
+    Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
         return PAL_RESULT_INVALID_WINDOW;
     }
 
-    Window xCursor = FROM_PAL_HANDLE(Cursor, cursor); 
+    Window xCursor = FROM_PAL_HANDLE(Cursor, cursor);
     if (xCursor) {
         s_X11.defineCursor(s_X11.display, xWin, xCursor);
         // cache the cursor. Show or hide cursor needs it
@@ -3941,8 +3919,7 @@ static Backend s_XBackend = {
     .clipCursor = xClipCursor,
     .getCursorPos = xGetCursorPos,
     .setCursorPos = xSetCursorPos,
-    .setWindowCursor = xSetWindowCursor
-};
+    .setWindowCursor = xSetWindowCursor};
 
 #pragma endregions
 
@@ -3952,7 +3929,7 @@ static Backend s_XBackend = {
 
 PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    PalEventDriver* eventDriver) 
+    PalEventDriver* eventDriver)
 {
     if (s_Video.initialized) {
         return PAL_RESULT_SUCCESS;
@@ -3972,7 +3949,7 @@ PalResult PAL_CALL palInitVideo(
     }
 
     s_Video.maxMonitorData = 16; // initial size
-    s_Video.maxWindowData = 32;// initial size
+    s_Video.maxWindowData = 32;  // initial size
 
     s_Video.windowData = palAllocate(
         s_Video.allocator,
@@ -4000,18 +3977,19 @@ PalResult PAL_CALL palInitVideo(
     s_Egl.handle = dlopen("libEGL.so", RTLD_LAZY);
     if (s_Egl.handle) {
         eglGetProcAddressFn load = nullptr;
-        load = (eglGetProcAddressFn)dlsym(
-            s_Egl.handle,
-            "eglGetProcAddress");
+        load = (eglGetProcAddressFn)dlsym(s_Egl.handle, "eglGetProcAddress");
 
         s_Egl.eglInitialize = (eglInitializeFn)load("eglInitialize");
         s_Egl.eglTerminate = (eglTerminateFn)load("eglTerminate");
         s_Egl.eglGetDisplay = (eglGetDisplayFn)load("eglGetDisplay");
         s_Egl.eglChooseConfig = (eglChooseConfigFn)load("eglChooseConfig");
-        s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
         s_Egl.eglGetError = (eglGetErrorFn)load("eglGetError");
         s_Egl.eglBindAPI = (eglBindAPIFn)load("eglBindAPI");
         s_Egl.eglGetConfigs = (eglGetConfigsFn)load("eglGetConfigs");
+
+        // clang-format off
+        s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
+        // clang-format on
     }
 
     s_Video.allocator = allocator;
@@ -4034,14 +4012,14 @@ void PAL_CALL palShutdownVideo()
     }
 }
 
-void PAL_CALL palUpdateVideo() 
+void PAL_CALL palUpdateVideo()
 {
     if (s_Video.initialized) {
         s_Video.backend->updateVideo();
     }
 }
 
-PalVideoFeatures PAL_CALL palGetVideoFeatures() 
+PalVideoFeatures PAL_CALL palGetVideoFeatures()
 {
     if (!s_Video.initialized) {
         return 0;
@@ -4051,7 +4029,7 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
 }
 
 PalResult PAL_CALL palSetFBConfig(
-    const int index, 
+    const int index,
     PalFBConfigBackend backend)
 {
     if (!s_Video.initialized) {
@@ -4067,7 +4045,8 @@ PalResult PAL_CALL palSetFBConfig(
     if (backend == PAL_CONFIG_BACKEND_GLX) {
         return glxBackend();
 
-    } else if (backend == PAL_CONFIG_BACKEND_EGL || 
+    } else if (
+        backend == PAL_CONFIG_BACKEND_EGL ||
         backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         if (s_X11.display) {
             // we are on X11
@@ -4095,7 +4074,7 @@ PalResult PAL_CALL palEnumerateMonitors(
     return s_Video.backend->enumerateMonitors(count, outMonitors);
 }
 
-PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor) 
+PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -4110,7 +4089,7 @@ PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor)
 
 PalResult PAL_CALL palGetMonitorInfo(
     PalMonitor* monitor,
-    PalMonitorInfo* info) 
+    PalMonitorInfo* info)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -4140,11 +4119,10 @@ PalResult PAL_CALL palEnumerateMonitorModes(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    PalResult ret = s_Video.backend->enumerateMonitorModes(
-        monitor,
-        count,
-        modes
-    );
+    // clang-format off
+
+    PalResult ret = s_Video.backend->enumerateMonitorModes(monitor, count, modes);
+    // clang-format on
 
     if (ret == PAL_RESULT_SUCCESS && modes) {
         // sort the modes so that they are lowest to highest
@@ -4186,9 +4164,9 @@ PalResult PAL_CALL palSetMonitorMode(
 
 PalResult PAL_CALL palValidateMonitorMode(
     PalMonitor* monitor,
-    PalMonitorMode* mode)     
+    PalMonitorMode* mode)
 {
-    
+
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
@@ -4239,7 +4217,7 @@ PalResult PAL_CALL palCreateWindow(
         return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
     }
 
-    return s_Video.backend->createWindow(info,outWindow);
+    return s_Video.backend->createWindow(info, outWindow);
 }
 
 void PAL_CALL palDestroyWindow(PalWindow* window)
@@ -4373,11 +4351,13 @@ PalResult PAL_CALL palGetWindowTitle(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    // clang-format off
     return s_Video.backend->getWindowTitle(
         window, 
         bufferSize, 
         outSize, 
         outBuffer);
+    // clang-format on
 }
 
 PalResult PAL_CALL palGetWindowPos(
