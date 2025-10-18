@@ -510,11 +510,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     s_GL.glGetString = (glGetStringFn)s_GL.eglGetProcAddress("glGetString");
     const char* version = (const char*)s_GL.glGetString(GL_VERSION);
     if (version) {
-#ifdef _MSC_VER
-        sscanf_s(version, "%d.%d", &s_GL.info.major, &s_GL.info.minor);
-#else
         sscanf(version, "%d.%d", &s_GL.info.major, &s_GL.info.minor);
-#endif
     }
 
     const char* renderer = (const char*)s_GL.glGetString(GL_RENDERER);

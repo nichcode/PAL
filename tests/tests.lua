@@ -39,7 +39,8 @@ project "tests"
             "icon_test.c",
             "cursor_test.c",
             "input_window_test.c",
-            "system_cursor_test.c"
+            "system_cursor_test.c",
+            "attach_window_test.c"
         }
     end
 

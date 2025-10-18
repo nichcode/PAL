@@ -1757,6 +1757,19 @@ PAL_API PalResult PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor);
 
+// TODO:DOCS
+PAL_API void* PAL_CALL palGetInstance();
+
+// TODO:DOCS
+PAL_API PalResult PAL_CALL palAttachWindow(
+    void* windowHandle,
+    PalWindow** outWindow);
+
+// TODO:DOCS
+PAL_API PalResult PAL_CALL palDetachWindow(
+    PalWindow* window,
+    void** outWindowHandle);
+
 /** @} */ // end of pal_video group
 
 #endif // _PAL_VIDEO_H

@@ -117,6 +117,8 @@ typedef struct {
     bool skipConfigure;
     bool skipState;
     bool used;
+    bool isAttached;
+    bool skipIfAttached;
     int x;
     int y;
     Uint32 w;
@@ -530,6 +532,11 @@ typedef XVisualInfo* (*XGetVisualInfoFn)(
     XVisualInfo*,
     int*);
 
+typedef int (*XSelectInputFn)(
+    Display*,
+    Window,
+    long);
+
 typedef Cursor (*XcursorImageLoadCursorFn)(
     Display*,
     const XcursorImage*);
@@ -671,6 +678,7 @@ typedef struct {
     XcursorImageCreateFn cursorImageCreate;
     XcursorImageDestroyFn cursorImageDestroy;
     XLookupKeysymFn lookupKeysym;
+    XSelectInputFn selectInput;
 
     XkbSetDetectableAutoRepeatFn setDetectableAutoRepeat;
 } X11;
@@ -729,6 +737,9 @@ typedef struct {
     PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
     PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
     PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
+
+    PalResult (*attachWindow)(void*, PalWindow**);
+    PalResult (*detachWindow)(PalWindow*, void**);
     // clang-format off
 } Backend;
 
@@ -1731,6 +1742,10 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XGetInputFocus");
 
+    s_X11.selectInput = (XSelectInputFn)dlsym(
+        s_X11.handle, 
+        "XSelectInput");
+
     // libXcursor
     s_X11.cursorImageLoadCursor = (XcursorImageLoadCursorFn)dlsym(
         s_X11.libCursor, 
@@ -1836,6 +1851,10 @@ static void xShutdownVideo()
         s_X11.freeColormap(s_X11.display, s_X11.colormap);
     }
 
+    if (s_X11.hiddenCursor) {
+        s_X11.freeCursor(s_X11.display, s_X11.hiddenCursor);
+    }
+
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
@@ -1916,6 +1935,15 @@ static void xUpdateVideo()
                             event.data = palPackUint32(data->w, data->h);
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
+                        }
+                    }
+
+                    // attach windows sometimes bypass
+                    // skipConfgure an still send an initial move event
+                    if (data->isAttached) {
+                        if (data->skipIfAttached) {
+                            data->skipIfAttached = false;
+                            return;
                         }
                     }
 
@@ -2825,14 +2853,12 @@ static PalResult xCreateWindow(
         // we dont need to set any flag
     }
 
-    long mask = ExposureMask | StructureNotifyMask | KeyPressMask;
+    long mask = StructureNotifyMask | KeyPressMask;
     mask |= KeyReleaseMask;
     mask |= ButtonPressMask;
     mask |= ButtonReleaseMask;
     mask |= PointerMotionMask;
     mask |= FocusChangeMask;
-    mask |= EnterWindowMask;
-    mask |= LeaveWindowMask;
     mask |= PropertyChangeMask;
 
     XSetWindowAttributes attrs = {0};
@@ -3044,13 +3070,14 @@ static PalResult xCreateWindow(
         s_X11.display,
         window,
         &s_X11Atoms.WM_DELETE_WINDOW,
-        True);
+        1);
 
     s_X11.flush(s_X11.display);
 
     // attach the window data to the window
     data->skipConfigure = true;
     data->skipState = true;
+    data->isAttached = false; // true for attached windows
     data->dpi = monitorInfo.dpi; // the current window monitor
     data->window = TO_PAL_HANDLE(PalWindow, window);
     data->cursor = nullptr;
@@ -3065,6 +3092,12 @@ static void xDestroyWindow(PalWindow* window)
     Window xWin = FROM_PAL_HANDLE(Window, window);
     WindowData* data = nullptr;
     s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+
+    // PAL does not destroy an attached window
+    if (data->isAttached) {
+        return;
+    }
+    
     s_X11.destroyWindow(s_X11.display, xWin);
     data->used = false;
 }
@@ -3872,6 +3905,103 @@ PalResult xSetWindowCursor(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult xAttachWindow(
+    void* windowHandle,
+    PalWindow** outWindow)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, windowHandle);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // get a free slot and set the window handle to it
+    // we also set a flag to make sure we know this is an attached window
+    WindowData* data = getFreeWindowData();
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalWindow* window = TO_PAL_HANDLE(PalWindow, xWin);
+    // we assume the window was just created, since there is 
+    // no official way to get the DPI
+    data->isAttached = true;
+    data->dpi = 100; // if this is not the DPI, a dpi event will be triggered
+
+    // If the window manager has not mapped the window yet,
+    // we dont need the initial Size / Move events
+    data->skipConfigure = true;
+    data->skipState = true;
+    data->skipIfAttached = true;
+    data->cursor = nullptr;
+    data->window = window;
+    data->w = attr.width;
+    data->h = attr.height;
+    data->x = attr.x;
+    data->y = attr.y;
+
+    // get the current window state 
+    // we dont check the return code because we know the window is valid
+    xGetWindowState(window, &data->state);
+
+    // listen to the events we support
+    long mask = StructureNotifyMask | KeyPressMask;
+    mask |= KeyReleaseMask;
+    mask |= ButtonPressMask;
+    mask |= ButtonReleaseMask;
+    mask |= PointerMotionMask;
+    mask |= FocusChangeMask;
+    mask |= PropertyChangeMask;
+    s_X11.selectInput(s_X11.display, xWin, mask);
+
+    // listen to window close button events
+    s_X11.setWMProtocols(
+        s_X11.display,
+        xWin,
+        &s_X11Atoms.WM_DELETE_WINDOW,
+        1);
+
+    s_X11.saveContext(s_X11.display, xWin, s_X11.dataID, (XPointer)data);
+    s_X11.flush(s_X11.display);
+
+    *outWindow = window;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xDetachWindow(
+    PalWindow* window, 
+    void** outWindowHandle)
+{
+    // we check is the window is really detachable
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    WindowData* data = nullptr;
+    s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (data->isAttached == false) {
+        // window was created by PAL
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // detach the window
+    data->used = false;
+    long mask = 0;
+    s_X11.selectInput(s_X11.display, xWin, mask);
+    s_X11.setWMProtocols(
+        s_X11.display,
+        xWin,
+        nullptr,
+        0);
+
+    if (outWindowHandle) {
+        *outWindowHandle = (PalWindow*)window;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
@@ -3919,7 +4049,10 @@ static Backend s_XBackend = {
     .clipCursor = xClipCursor,
     .getCursorPos = xGetCursorPos,
     .setCursorPos = xSetCursorPos,
-    .setWindowCursor = xSetWindowCursor};
+    .setWindowCursor = xSetWindowCursor,
+
+    .attachWindow = xAttachWindow,
+    .detachWindow = xDetachWindow};
 
 #pragma endregions
 
@@ -4745,4 +4878,47 @@ PalResult PAL_CALL palSetWindowCursor(
     }
 
     return s_Video.backend->setWindowCursor(window, cursor);
+}
+
+void* PAL_CALL palGetInstance()
+{
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+
+    if (s_X11.display) {
+        // we are on X11
+        return (void*)s_X11.display;
+    }
+    return nullptr;
+}
+
+PalResult PAL_CALL palAttachWindow(
+    void* windowHandle,
+    PalWindow** outWindow)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!windowHandle) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->attachWindow(windowHandle, outWindow);
+}
+
+PalResult PAL_CALL palDetachWindow(
+    PalWindow* window,
+    void** outWindowHandle)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->detachWindow(window, outWindowHandle);
 }
