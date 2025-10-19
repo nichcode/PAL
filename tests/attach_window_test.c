@@ -3,6 +3,24 @@
 #include "pal/pal_video.h"
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
+
+// set unicode
+#ifndef UNICODE
+#define UNICODE
+#endif // UNICODE
+
+#include <windows.h>
+
+#define CLASS_NAME L"NATIVE"
+static HINSTANCE s_Instance;
+
 #elif defined(__linux__)
 #include <X11/Xlib.h>
 #include <dlfcn.h>
@@ -107,6 +125,57 @@ static void* createX11Window()
 #endif // __linux__
 }
 
+static void* createWin32Window()
+{
+#ifdef _WIN32
+    // create a window class
+    s_Instance = (HINSTANCE)palGetInstance();
+    WNDCLASSEXW wc = {0};
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
+    wc.hIconSm = LoadIconW(NULL, IDI_APPLICATION);
+    wc.hInstance = s_Instance;
+    wc.lpfnWndProc = DefWindowProcW;
+    wc.lpszClassName = CLASS_NAME;
+    wc.style = CS_OWNDC;
+    if (!RegisterClassExW(&wc)) {
+        return nullptr;
+    }
+
+    // create a simple window
+    HWND window = CreateWindowExW(
+        WS_EX_APPWINDOW,
+        CLASS_NAME,
+        L"",
+        WS_OVERLAPPEDWINDOW,
+        WINDOW_POSX,
+        WINDOW_POSY,
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        nullptr,
+        nullptr,
+        s_Instance,
+        nullptr);
+
+    if (!window) {
+        return nullptr;
+    }
+
+    ShowWindow(window, SW_SHOW);
+    UpdateWindow(window);
+    return (void*)window;
+#endif // _WIN32
+}
+
+static void destroyWin32Window(void* windowHandle)
+{
+#ifdef _WIN32
+    DestroyWindow((HWND)windowHandle);
+    UnregisterClassW(CLASS_NAME, s_Instance);
+#endif // _WIN32
+}
+
 static void destroyX11Window(void* windowHandle)
 {
 #ifdef __linux__
@@ -119,6 +188,7 @@ static void destroyX11Window(void* windowHandle)
 static void* createPlatformWindow()
 {
 #ifdef _WIN32
+    return createWin32Window();
 #elif defined(__linux__)
     return createX11Window();
 #endif // _WIN32
@@ -127,6 +197,7 @@ static void* createPlatformWindow()
 static void destroyPlatformWindow(void* windowHandle)
 {
 #ifdef _WIN32
+    destroyWin32Window(windowHandle);
 #elif defined(__linux__)
     destroyX11Window(windowHandle);
 #endif // _WIN32
