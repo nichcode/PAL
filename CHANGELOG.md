@@ -46,3 +46,10 @@
 - No API or ABI changes - existing Windows code remains compatible.
 - Linux video support currently targets **X11** only: **Wayland** is planned for future releases.
 - Safe upgrade from **v1.0.1** - just rebuild your project after updating.
+
+## [1.2.0] - 2025-10-17
+
+// demo test
+- **Video:** Added **palAttachWindow()** to select window FBConfig.
+- **Video:** Added **palDetachWindow()** to select window FBConfig.
+// attach window test
