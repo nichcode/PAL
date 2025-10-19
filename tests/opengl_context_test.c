@@ -144,7 +144,7 @@ bool openglContextTest()
     result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set GL pixel format: %s", error);
+        palLog(nullptr, "Failed to set GL FBConfig: %s", error);
         return false;
     }
 

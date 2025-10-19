@@ -46,4 +46,7 @@ bool openglFBConfigTest();
 bool openglContextTest();
 bool openglMultiContextTest();
 
+// opengl, video and thread
+bool demo();
+
 #endif // _TESTS_H

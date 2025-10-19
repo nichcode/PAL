@@ -2919,7 +2919,7 @@ static PalResult xCreateWindow(
         s_X11.free(hints);
     }
 
-    if (s_X11Atoms.unicodeTitle) {
+    if (s_X11Atoms.unicodeTitle && info->title) {
         s_X11.changeProperty(
             s_X11.display,
             window,
@@ -2931,7 +2931,9 @@ static PalResult xCreateWindow(
             strlen(info->title));
 
     } else {
-        s_X11.storeName(s_X11.display, window, info->title);
+        if (info->title) {
+            s_X11.storeName(s_X11.display, window, info->title);
+        }
     }
 
     // borderless
@@ -3954,7 +3956,7 @@ PalResult xAttachWindow(
     mask |= PropertyChangeMask;
     s_X11.selectInput(s_X11.display, xWin, mask);
 
-    // listen to window close button events
+    // listen to window close event
     s_X11.setWMProtocols(
         s_X11.display,
         xWin,
@@ -3996,7 +3998,7 @@ PalResult xDetachWindow(
         0);
 
     if (outWindowHandle) {
-        *outWindowHandle = (PalWindow*)window;
+        *outWindowHandle = (void*)window;
     }
 
     return PAL_RESULT_SUCCESS;

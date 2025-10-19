@@ -66,7 +66,11 @@ static void* createX11Window()
         s_X11Lib, 
         "XMapRaised");
 
-    if (!s_XCreateWindow || !s_XSync || !s_XMapRaised) {
+    s_XDestroyWindow = (XDestroyWindowFn)dlsym(
+        s_X11Lib, 
+        "XDestroyWindow");
+
+    if (!s_XCreateWindow || !s_XSync || !s_XMapRaised || !s_XDestroyWindow) {
         return nullptr;
     }
 
@@ -108,6 +112,7 @@ static void destroyX11Window(void* windowHandle)
 #ifdef __linux__
     Display* display = palGetInstance();
     s_XDestroyWindow(display, (Window)(UintPtr)windowHandle);
+    dlclose(s_X11Lib); // we loaded dynamically
 #endif // __linux__
 }
 
@@ -200,6 +205,16 @@ bool attachWindowTest()
         return false;
     }
 
+    // now that the window is attached, we can use PAL video API
+    // to manager it
+    // TODO: check features before
+    result = palSetWindowTitle(myWindow, WINDOW_TITLE);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to attach window: %s", error);
+        return false;
+    }
+
     bool running = true;
     bool detached = false;
     Int32 counter = 0;
@@ -263,12 +278,13 @@ bool attachWindowTest()
         return false;
     }
 
+    // We need to destroy the platform window before we shutdown 
+    // PAL video since the window was created with PAL video instance
+    destroyX11Window(platformWindow);
+
     // shutdown PAL video
     palShutdownVideo();
     palDestroyEventDriver(eventDriver);
-
-    // We need to destroy the platform window
-    destroyX11Window(platformWindow);
 
     return true;
 }

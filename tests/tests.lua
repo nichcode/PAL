@@ -58,5 +58,11 @@ project "tests"
         }
     end
 
+    if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO and PAL_BUILD_THREAD) then
+        files { 
+            "demo.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }

@@ -34,7 +34,7 @@ int main(int argc, char** argv)
     // registerTest("Cursor Test", cursorTest);
     // registerTest("Input Window Test", inputWindowTest);
     // registerTest("System Cursor Test", systemCursorTest);
-    registerTest("Attach Window Test", attachWindowTest);
+    // registerTest("Attach Window Test", attachWindowTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL
@@ -47,6 +47,10 @@ int main(int argc, char** argv)
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO
     // registerTest("Opengl Context Test", openglContextTest);
     // registerTest("Opengl Multi Context Test", openglMultiContextTest);
+#endif // PAL_HAS_OPENGL
+
+#if PAL_HAS_OPENGL && PAL_HAS_VIDEO && PAL_HAS_THREAD
+    registerTest("Demo", demo);
 #endif // PAL_HAS_OPENGL
 
     runTests();
