@@ -2536,7 +2536,7 @@ PalResult PAL_CALL palCreateIcon(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    for (int i = 0; i < info->width * info->height; i++) {
+    for (Uint32 i = 0; i < info->width * info->height; i++) {
         Uint8 r = info->pixels[i * 4 + 0]; // Red
         Uint8 g = info->pixels[i * 4 + 1]; // Green
         Uint8 b = info->pixels[i * 4 + 2]; // Blue
@@ -2653,7 +2653,7 @@ PalResult PAL_CALL palCreateCursor(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    for (int i = 0; i < info->width * info->height; i++) {
+    for (Uint32 i = 0; i < info->width * info->height; i++) {
         Uint8 r = info->pixels[i * 4 + 0]; // Red
         Uint8 g = info->pixels[i * 4 + 1]; // Green
         Uint8 b = info->pixels[i * 4 + 2]; // Blue
