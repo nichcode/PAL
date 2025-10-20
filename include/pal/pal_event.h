@@ -111,24 +111,229 @@ typedef bool(PAL_CALL* PalPollFn)(
  * @ingroup pal_event
  */
 typedef enum {
-    PAL_EVENT_WINDOW_CLOSE, /**< Window close button.*/
+    /**
+     * PAL_EVENT_WINDOW_CLOSE
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_WINDOW_CLOSE,
+
+    /**
+     * PAL_EVENT_WINDOW_SIZE
+     * 
+     * event.data : lower 32 bits = width, upper 32 bits = height
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackUint32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_WINDOW_SIZE,
+
+    /**
+     * PAL_EVENT_WINDOW_MOVE
+     * 
+     * event.data : lower 32 bits = x, upper 32 bits = y
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackInt32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_WINDOW_MOVE,
-    PAL_EVENT_WINDOW_STATE,       /**< (minimized, maximized, restored).*/
-    PAL_EVENT_WINDOW_FOCUS,       /**< True for focus gained.*/
-    PAL_EVENT_WINDOW_VISIBILITY,  /**< True for visible.*/
-    PAL_EVENT_WINDOW_MODAL_BEGIN, /**< WM_ENTERSIZEMOVE (Windows Only).*/
-    PAL_EVENT_WINDOW_MODAL_END,   /**< WM_EXITSIZEMOVE. (Windows Only).*/
+
+    /**
+     * PAL_EVENT_WINDOW_STATE
+     * 
+     * event.data : state(minimized, maximized, restored).
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_WINDOW_STATE,
+
+    /**
+     * PAL_EVENT_WINDOW_FOCUS
+     * 
+     * event.data : `true` for focus gained or `false` for focus lost.
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_WINDOW_FOCUS,
+
+    /**
+     * PAL_EVENT_WINDOW_VISIBILITY
+     * 
+     * event.data : `true` for visible or `false` for hidden.
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_WINDOW_VISIBILITY,
+
+    /**
+     * @brief WM_ENTERSIZEMOVE (Windows Only).
+     * 
+     * PAL_EVENT_WINDOW_MODAL_BEGIN
+     * 
+     * event.data2 : window
+     */
+    PAL_EVENT_WINDOW_MODAL_BEGIN,
+
+    /**
+     * @brief WM_EXITSIZEMOVE (Windows Only).
+     * 
+     * PAL_EVENT_WINDOW_MODAL_END
+     * 
+     * event.data2 : window
+     */
+    PAL_EVENT_WINDOW_MODAL_END,
+
+    /**
+     * PAL_EVENT_MONITOR_DPI_CHANGED
+     *
+     * event.data2 : window
+     */
     PAL_EVENT_MONITOR_DPI_CHANGED,
-    PAL_EVENT_MONITOR_LIST_CHANGED, /**< Monitor list changed.*/
+
+    /**
+     * @brief Monitor list changed
+     * 
+     * PAL_EVENT_MONITOR_LIST_CHANGED
+     *
+     * event.data2 : window
+     */
+    PAL_EVENT_MONITOR_LIST_CHANGED,
+
+    /**
+     * PAL_EVENT_KEYDOWN
+     * 
+     * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackUint32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_KEYDOWN,
+
+    /**
+     * PAL_EVENT_KEYREPEAT
+     * 
+     * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackUint32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_KEYREPEAT,
+
+    /**
+     * PAL_EVENT_KEYUP
+     * 
+     * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackUint32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_KEYUP,
+
+    /**
+     * PAL_EVENT_MOUSE_BUTTONDOWN
+     * 
+     * event.data : mouse button
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
     PAL_EVENT_MOUSE_BUTTONDOWN,
+
+    /**
+     * PAL_EVENT_MOUSE_BUTTONUP
+     * 
+     * event.data : mouse button
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
     PAL_EVENT_MOUSE_BUTTONUP,
+
+    /**
+     * PAL_EVENT_MOUSE_MOVE
+     * 
+     * event.data : lower 32 bits = x, upper 32 bits = y
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackInt32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_MOUSE_MOVE,
-    PAL_EVENT_MOUSE_DELTA, /**< Mouse movement delta.*/
+
+    /**
+     * @brief Mouse movement delta.
+     * 
+     * PAL_EVENT_MOUSE_DELTA
+     * 
+     * event.data : lower 32 bits = dx, upper 32 bits = dy
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackInt32()
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_MOUSE_DELTA,
+
+    /**
+     * PAL_EVENT_MOUSE_WHEEL
+     * 
+     * event.data : lower 32 bits = dx, upper 32 bits = dy
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackInt32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_MOUSE_WHEEL,
+
+    /**
+     * PAL_EVENT_USER
+     * 
+     * event.userId : User event ID or type.
+     * 
+     * Use inline helpers:
+     * - palPackInt32()
+     * - palPackUint32()
+     * - palPackPointer()
+     * - palUnpackInt32()
+     * - palUnpackUint32()
+     * - palUnpackPointer()
+     */
     PAL_EVENT_USER,
     PAL_EVENT_MAX
 } PalEventType;

@@ -22,7 +22,8 @@ palGetWindowSize(window, &w, &h);
 
 ## Why PAL?
 
-Other libraries like SDL or GLFW provide high-level abstractions but at the cost of overhead, implicit behavior, and limited control. **PAL is different:**
+While libraries like SDL or GLFW focus on simplifying development 
+through high-level abstractions. **PAL is different:**
 
 - ✅ **Explicit**: You decide how memory, events, and handles are managed.
 - ✅ **Low Overhead**: PAL is close to raw OS calls, ensuring performance.
