@@ -59,7 +59,7 @@
 ### Naming Update
 - PAL now stands for **Prime Abstraction Layer**, 
 reflecting its role as the primary explicit foundation for OS and graphics abstraction.
-- All API remains unchanged — this is an identity update.
+- All API remains unchanged — this is an identity update only.
 
 ### Tests
 - Added multi-threaded OpenGL example: demonstrating **multi-threaded OpenGL rendering**. see **multi_thread_opengl_test.c**.
