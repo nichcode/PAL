@@ -681,6 +681,7 @@ LRESULT CALLBACK videoProc(
                     Uint32 high = s_Keyboard.pendingHighSurrogate - 0xD800;
                     Uint32 low = character - 0xDC00;
                     codepoint = 0x10000 + ((high << 10) | low);
+                    s_Keyboard.pendingHighSurrogate = 0;
                 }
 
             } else {

@@ -127,6 +127,7 @@ typedef struct {
     PalWindowState state;
     PalCursor* cursor;
     PalWindow* window;
+    XIC ic; // X11 only
 } WindowData;
 
 typedef struct {
@@ -556,6 +557,30 @@ typedef int (*XkbSetDetectableAutoRepeatFn)(
     int,
     int*);
 
+typedef char *(*XSetLocaleModifiersFn)(const char*);
+
+typedef XIM (*XOpenIMFn)(
+    Display*,
+    struct _XrmHashBucketRec*,
+    char*,
+    char*);
+
+typedef int (*XCloseIMFn)(XIM);
+
+typedef XIC (*XCreateICFn)(
+    XIM, ...
+) _X_SENTINEL(0);
+
+typedef void (*XDestroyICFn)(XIC);
+
+typedef int (*Xutf8LookupStringFn)(
+    XIC,
+    XKeyPressedEvent*,
+    char*,
+    int,
+    KeySym*,
+    int*);
+
 typedef struct {
     bool unicodeTitle;
 
@@ -593,6 +618,7 @@ typedef struct {
     void* xrandr;
     void* glxHandle;
     void* libCursor;
+    XIM im;
     Display* display;
     Window root;
     XContext dataID;
@@ -681,6 +707,12 @@ typedef struct {
     XSelectInputFn selectInput;
 
     XkbSetDetectableAutoRepeatFn setDetectableAutoRepeat;
+    XSetLocaleModifiersFn setLocaleModifiers;
+    XOpenIMFn openIM;
+    XCloseIMFn closeIM;
+    XCreateICFn createIC;
+    XDestroyICFn destroyIC;
+    Xutf8LookupStringFn utf8LookupString;
 } X11;
 
 static X11 s_X11 = {0};
@@ -1767,6 +1799,30 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XkbSetDetectableAutoRepeat");
 
+    s_X11.setLocaleModifiers = (XSetLocaleModifiersFn)dlsym(
+        s_X11.handle, 
+        "XSetLocaleModifiers");
+
+    s_X11.openIM = (XOpenIMFn)dlsym(
+        s_X11.handle, 
+        "XOpenIM");
+
+    s_X11.closeIM = (XCloseIMFn)dlsym(
+        s_X11.handle, 
+        "XCloseIM");
+
+    s_X11.createIC = (XCreateICFn)dlsym(
+        s_X11.handle, 
+        "XCreateIC");
+
+    s_X11.destroyIC = (XDestroyICFn)dlsym(
+        s_X11.handle, 
+        "XDestroyIC");
+
+    s_X11.utf8LookupString = (Xutf8LookupStringFn)dlsym(
+        s_X11.handle, 
+        "Xutf8LookupString");
+
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
@@ -1841,6 +1897,13 @@ static PalResult xInitVideo()
         // FIXME: fallback to manual key repeat detection
     }
 
+    // create an input method
+    s_X11.setLocaleModifiers("");
+    s_X11.im = s_X11.openIM(s_X11.display, nullptr, nullptr, nullptr);
+    if (s_X11.im == None) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     // clang-format on
     return PAL_RESULT_SUCCESS;
 }
@@ -1855,6 +1918,7 @@ static void xShutdownVideo()
         s_X11.freeCursor(s_X11.display, s_X11.hiddenCursor);
     }
 
+    s_X11.closeIM(s_X11.im);
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
@@ -2289,6 +2353,61 @@ static void xUpdateVideo()
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackUint32(keycode, scancode);
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+
+                    // check for char event if enabled
+                    type = PAL_EVENT_KEYCHAR;
+                    mode = palGetEventDispatchMode(driver, type);
+                    if (mode == PAL_DISPATCH_NONE) {
+                        return;
+                    }
+
+                    int status;
+                    char buffer[32];
+                    KeySym keySym;
+                    int len = s_X11.utf8LookupString(
+                        data->ic,
+                        &event.xkey,
+                        buffer,
+                        sizeof(buffer),
+                        &keySym,
+                        &status);
+
+                    Uint32 codepoint = 0;
+                    if (status == XLookupChars || status == XLookupBoth) {
+                        // decode to Unicode codepoint
+                        unsigned char ch = buffer[0];
+                        if (ch < 0x80) {
+                            // 1 byte (A-Z)
+                            codepoint = ch;
+
+                        } else if ((ch >> 5) == 0x6 && len >= 2) {
+                            // 2 byte
+                            codepoint = ((ch & 0x1F) << 6) | buffer[1] & 0x3F;
+
+                        } else if ((ch >> 4) == 0xE && len >= 3) {
+                            // 3 byte
+                            // clang-format off
+                            codepoint = ((ch & 0x0F) << 12)       | 
+                                        ((buffer[1] & 0x3F) << 6) | 
+                                        (buffer[2] & 0x3F);
+                            // clang-format on
+
+                        } else if ((ch >> 3) == 0x1E && len >= 4) {
+                            // 4 byte
+                            // clang-format off
+                            codepoint = ((ch & 0x07) << 18)        | 
+                                        ((buffer[1] & 0x3F) << 12) | 
+                                        ((buffer[2] & 0x3F) << 6)  | 
+                                        (buffer[3] & 0x3F);
+                            // clang-format on
+                        }
+
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = codepoint;
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }
@@ -3085,6 +3204,18 @@ static PalResult xCreateWindow(
     data->cursor = nullptr;
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
+    // create an input context
+    data->ic = s_X11.createIC(
+        s_X11.im, 
+        XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+        XNClientWindow, window,
+        XNFocusWindow, window,
+        nullptr);
+    
+    if (!data->ic) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     *outWindow = TO_PAL_HANDLE(PalWindow, window);
     return PAL_RESULT_SUCCESS;
 }
@@ -3099,7 +3230,8 @@ static void xDestroyWindow(PalWindow* window)
     if (data->isAttached) {
         return;
     }
-    
+
+    s_X11.destroyIC(data->ic);
     s_X11.destroyWindow(s_X11.display, xWin);
     data->used = false;
 }
