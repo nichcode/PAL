@@ -247,10 +247,10 @@ bool attachWindowTest()
         PAL_EVENT_WINDOW_MOVE,
         PAL_DISPATCH_POLL);
 
-    // we listen for key press events to attach and detach the window
+    // we listen for key release events to attach and detach the window
     palSetEventDispatchMode(
         eventDriver,
-        PAL_EVENT_KEYDOWN,
+        PAL_EVENT_KEYUP,
         PAL_DISPATCH_POLL);
 
     // PAL allows users create any kind of window not currently or will not
@@ -311,16 +311,19 @@ bool attachWindowTest()
                     palUnpackInt32(event.data, &x, &y);
                     palLog(nullptr, "Window Moved: (%d, %d)", x, y);
                     break;
-                }     
-                
-                case PAL_EVENT_KEYDOWN: {
-                    // keycode == low, scancode == high
-                    Uint32 keycode, scancode;
-                    palUnpackUint32(event.data, &keycode, &scancode);
+                }
 
+                case PAL_EVENT_KEYUP: {
+                    // we detach the window after keyup
+                    // since if the window is detached,
+                    // we wont recieve the key up event
+                    // keycode == low, scancode == high
+                    Uint32 keycode;
+                    palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_D) {
                         palDetachWindow(myWindow, nullptr);
                         palLog(nullptr, "window detached");
+                        palLog(nullptr, "not recieving events anymore");
                         detached = true;
                         counter = 0;
                     }
@@ -336,6 +339,7 @@ bool attachWindowTest()
         if (counter >= 2000000) { // we need a good delay
             palAttachWindow(platformWindow, &myWindow);
             palLog(nullptr, "window attached");
+            palLog(nullptr, "recieving events");
             counter = 0; // reset it
             detached = false;
         }

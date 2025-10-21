@@ -172,12 +172,11 @@ static void* PAL_CALL rendererWorkder(void* arg)
     return nullptr;
 }
 
-bool demo()
+bool multiThreadOpenGlTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Demo");
-    palLog(nullptr, "Running Opengl on a different thread");
+    palLog(nullptr, "Multi Thread OpenGL Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -272,7 +271,7 @@ bool demo()
     }
 
     // tell the video system to use our closest FBConfig
-    // to create the window
+    // to create the windows
     result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -287,7 +286,7 @@ bool demo()
     windowCreateInfo.height = 480;
     windowCreateInfo.show = true;
     windowCreateInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    windowCreateInfo.title = "PAL Demo Window";
+    windowCreateInfo.title = "Multi Thread OpenGL Window";
     result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);

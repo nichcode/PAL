@@ -60,7 +60,7 @@ project "tests"
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO and PAL_BUILD_THREAD) then
         files { 
-            "demo.c"
+            "multi_thread_opengl_test.c"
         }
     end
 

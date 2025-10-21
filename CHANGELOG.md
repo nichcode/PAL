@@ -49,7 +49,21 @@
 
 ## [1.2.0] - 2025-10-17
 
-// demo test
-- **Video:** Added **palAttachWindow()** to select window FBConfig.
-- **Video:** Added **palDetachWindow()** to select window FBConfig.
-// attach window test
+### Features
+- **Video:** Added **palGetInstance()** to retrieve the native display or instance handle.
+- **Video:** Added **palAttachWindow()** for attaching **foreign windows** to PAL.
+- **Video:** Added **palDetachWindow()** for detaching **foreign windows** from PAL.
+- **Event:** Added documentation for event bits(payload) layout.
+
+### Naming Update
+- PAL now stands for **Prime Abstraction Layer**, 
+reflecting its role as the primary explicit foundation for OS and graphics abstraction.
+- All API remains unchanged — this is an identity update.
+
+### Tests
+- Added multi-threaded OpenGL example: demonstrating **multi-threaded OpenGL rendering**. see **multi_thread_opengl_test.c**.
+- Added attaching and detach foreign windows example. see **attach_window_test.c**
+
+### Notes
+- No API or ABI changes - existing code remains compatible.
+- Safe upgrade from **v1.1.0** - just rebuild your project after updating.
