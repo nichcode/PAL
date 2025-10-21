@@ -140,6 +140,7 @@ typedef struct {
 } PendingEvent;
 
 typedef struct {
+    Int32 pendingHighSurrogate;
     bool scancodeState[PAL_SCANCODE_MAX];
     bool keycodeState[PAL_KEYCODE_MAX];
     int scancodes[512];
@@ -648,7 +649,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_SETCURSOR: {
             if (LOWORD(lParam) == HTCLIENT) {
-                if (data) {
+                if (data && data->cursor) {
                     SetCursor(data->cursor);
                     return TRUE;
                 }
@@ -656,6 +657,43 @@ LRESULT CALLBACK videoProc(
             }
 
             break;
+        }
+
+        case WM_CHAR: {
+            PalEventType type = PAL_EVENT_KEYCHAR;
+            Uint32 codepoint = 0;
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                mode = palGetEventDispatchMode(driver, type);
+                if (mode == PAL_DISPATCH_NONE) {
+                    break;
+                }
+            }
+            // Most characters comes as two WM_CHAR messags or event
+            // we store the first one and combine with the second if we got any
+            Uint16 character = (Uint16)wParam;
+            if (character >= 0xD800 && character <= 0xDBFF) {
+                // high surrogate
+                s_Keyboard.pendingHighSurrogate = character;
+            } else if (character >= 0xDC00 && character <= 0xDFFF) {
+                if (s_Keyboard.pendingHighSurrogate) {
+                    // low surrogate we combine both
+                    Uint32 high = s_Keyboard.pendingHighSurrogate - 0xD800;
+                    Uint32 low = character - 0xDC00;
+                    codepoint = 0x10000 + ((high << 10) | low);
+                }
+
+            } else {
+                // normal character (A-Z)
+                codepoint = character;
+            }
+
+            // push an event
+            PalEvent event = {0};
+            event.type = type;
+            event.data = codepoint;
+            event.data2 = palPackPointer((PalWindow*)hwnd);
+            palPushEvent(s_Video.eventDriver, &event);
         }
     }
 
@@ -2146,7 +2184,7 @@ PalResult PAL_CALL palGetWindowState(
     } else if (wp.showCmd == SW_MAXIMIZE) {
         *outState = PAL_WINDOW_STATE_MAXIMIZED;
 
-    } else if (wp.showCmd == SW_RESTORE) {
+    } else if (wp.showCmd == SW_RESTORE ||wp.showCmd == SW_NORMAL) {
         *outState = PAL_WINDOW_STATE_RESTORED;
     }
 
@@ -2905,6 +2943,10 @@ PalResult PAL_CALL palAttachWindow(
     data->wndProc = SetWindowLongPtrW(
         (HWND)windowHandle, 
         GWLP_WNDPROC, (LONG_PTR)videoProc);
+
+    // use default PAL video cursor
+    // there is no way to get the cursor set on the native window
+    data->cursor = nullptr;
 
     // get state
     palGetWindowState(window, &data->state);

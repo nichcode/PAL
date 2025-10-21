@@ -345,14 +345,6 @@ bool attachWindowTest()
         }
     }
 
-    // optionally detach the window before destroying it
-    result = palDetachWindow(myWindow, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to detach window: %s", error);
-        return false;
-    }
-
     // We need to destroy the platform window before we shutdown 
     // PAL video since the window was created with PAL video instance
     destroyX11Window(platformWindow);

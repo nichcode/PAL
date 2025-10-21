@@ -40,7 +40,8 @@ project "tests"
             "cursor_test.c",
             "input_window_test.c",
             "system_cursor_test.c",
-            "attach_window_test.c"
+            "attach_window_test.c",
+            "char_event_test.c"
         }
     end
 

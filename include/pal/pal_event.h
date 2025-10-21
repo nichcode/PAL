@@ -335,6 +335,19 @@ typedef enum {
      * - palUnpackPointer()
      */
     PAL_EVENT_USER,
+
+    /**
+     * PAL_EVENT_USER
+     * 
+     * event.data : codepoint
+     * 
+     * event.data2 : window
+     * 
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_KEYCHAR,
+
     PAL_EVENT_MAX
 } PalEventType;
 
