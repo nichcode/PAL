@@ -1318,7 +1318,6 @@ static void xSendWMEvent(
         &e);
 }
 
-
 static void xCreateScancodeTable()
 {
     // Letters

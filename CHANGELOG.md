@@ -62,7 +62,7 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - All API remains unchanged — this is an identity update only.
 
 ### Tests
-- Added multi-threaded OpenGL example: demonstrating **multi-threaded OpenGL rendering**. see **multi_thread_opengl_test.c**.
+- Added multi-threaded OpenGL example: demonstrating **Multi-Threaded OpenGL Rendering**. see **multi_thread_opengl_test.c**.
 - Added attaching and detach foreign windows example. see **attach_window_test.c**
 - Added key character example. see **char_event_test.c**
 

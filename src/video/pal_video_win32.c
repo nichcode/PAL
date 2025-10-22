@@ -2171,7 +2171,7 @@ PalResult PAL_CALL palGetWindowState(
     } else if (wp.showCmd == SW_MAXIMIZE) {
         *outState = PAL_WINDOW_STATE_MAXIMIZED;
 
-    } else if (wp.showCmd == SW_RESTORE ||wp.showCmd == SW_NORMAL) {
+    } else if (wp.showCmd == SW_RESTORE || wp.showCmd == SW_NORMAL) {
         *outState = PAL_WINDOW_STATE_RESTORED;
     }
 
@@ -2929,8 +2929,9 @@ PalResult PAL_CALL palAttachWindow(
     PalWindow* window = (PalWindow*)windowHandle;
     data->isAttached = true;
     data->wndProc = SetWindowLongPtrW(
-        (HWND)windowHandle, 
-        GWLP_WNDPROC, (LONG_PTR)videoProc);
+        (HWND)windowHandle,
+        GWLP_WNDPROC,
+        (LONG_PTR)videoProc);
 
     // use default PAL video cursor
     // there is no way to get the cursor set on the native window
