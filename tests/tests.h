@@ -36,6 +36,8 @@ bool iconTest();
 bool cursorTest();
 bool inputWindowTest();
 bool systemCursorTest();
+bool attachWindowTest();
+bool charEventTest();
 
 // opengl test
 bool openglTest();
@@ -44,5 +46,8 @@ bool openglTest();
 bool openglFBConfigTest();
 bool openglContextTest();
 bool openglMultiContextTest();
+
+// opengl, video and thread
+bool multiThreadOpenGlTest();
 
 #endif // _TESTS_H

@@ -144,6 +144,9 @@ static void PAL_CALL onEvent(
 
     } else if (event->type == PAL_EVENT_MONITOR_LIST_CHANGED) {
         onMonitorList(event);
+
+    } else {
+        return;
     }
 }
 

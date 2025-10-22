@@ -48,6 +48,7 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define PAL_VIDEO_CLASS L"PALVideoClass"
+#define PAL_VIDEO_PROP L"PalVideoData"
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -92,8 +93,10 @@ typedef BOOL(WINAPI* SetPixelFormatFn)(
 
 typedef struct {
     bool used;
+    bool isAttached;
     PalWindowState state;
     HCURSOR cursor;
+    LONG_PTR wndProc;
 } WindowData;
 
 typedef struct {
@@ -138,6 +141,7 @@ typedef struct {
 } PendingEvent;
 
 typedef struct {
+    Int32 pendingHighSurrogate;
     bool scancodeState[PAL_SCANCODE_MAX];
     bool keycodeState[PAL_KEYCODE_MAX];
     int scancodes[512];
@@ -171,7 +175,7 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam)
 {
     // check if the window has been created
-    WindowData* data = (void*)(LONG_PTR)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    WindowData* data = (WindowData*)GetPropW(hwnd, PAL_VIDEO_PROP);
     if (!data) {
         // window has not been created yet
         return DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -581,72 +585,17 @@ LRESULT CALLBACK videoProc(
                 scancode = s_Keyboard.scancodes[index];
             }
 
-            // special keycode handling
-            if (extended && win32Keycode == VK_RETURN) {
-                keycode = PAL_KEYCODE_KP_ENTER;
+            keycode = s_Keyboard.keycodes[win32Keycode];
+            if (keycode == PAL_KEYCODE_UNKNOWN) {
+                // we didnt get any printable key
+                // we use the scancode
+                // Since PalKeycode and PalScancode have the same integers
+                // we can make a direct cast without a table
+                // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
+                keycode = (PalKeycode)(Uint32)scancode;
+            }
 
-            } else if (extended && win32Keycode == VK_OEM_PLUS) {
-                keycode = PAL_KEYCODE_KP_EQUAL;
-
-            } else if (extended && win32Keycode == VK_CONTROL) {
-                keycode = PAL_KEYCODE_RCTRL;
-
-            } else if (extended && win32Keycode == VK_MENU) {
-                keycode = PAL_KEYCODE_RALT;
-
-            } else if (win32Keycode == VK_SHIFT) {
-                if (scancode == PAL_SCANCODE_LSHIFT) {
-                    keycode = PAL_KEYCODE_LSHIFT;
-
-                } else if (scancode == PAL_SCANCODE_RSHIFT) {
-                    keycode = PAL_KEYCODE_RSHIFT;
-                }
-
-            } else if (!extended && win32Keycode == VK_INSERT) {
-                // numpad 0
-                keycode = PAL_KEYCODE_KP_0;
-
-            } else if (!extended && win32Keycode == VK_END) {
-                // numpad 1
-                keycode = PAL_KEYCODE_KP_1;
-
-            } else if (!extended && win32Keycode == VK_DOWN) {
-                // numpad 2
-                keycode = PAL_KEYCODE_KP_2;
-
-            } else if (!extended && win32Keycode == VK_NEXT) {
-                // numpad 3
-                keycode = PAL_KEYCODE_KP_3;
-
-            } else if (!extended && win32Keycode == VK_LEFT) {
-                // numpad 4
-                keycode = PAL_KEYCODE_KP_4;
-
-            } else if (!extended && win32Keycode == VK_CLEAR) {
-                // numpad 5
-                keycode = PAL_KEYCODE_KP_5;
-
-            } else if (!extended && win32Keycode == VK_RIGHT) {
-                // numpad 6
-                keycode = PAL_KEYCODE_KP_6;
-
-            } else if (!extended && win32Keycode == VK_HOME) {
-                // numpad 7
-                keycode = PAL_KEYCODE_KP_7;
-
-            } else if (!extended && win32Keycode == VK_UP) {
-                // numpad 8
-                keycode = PAL_KEYCODE_KP_8;
-
-            } else if (!extended && win32Keycode == VK_PRIOR) {
-                // numpad 9
-                keycode = PAL_KEYCODE_KP_9;
-
-            } else if (!extended && win32Keycode == VK_DELETE) {
-                // numpad decimal
-                keycode = PAL_KEYCODE_KP_DECIMAL;
-
-            } else if (win32Keycode == VK_SNAPSHOT) {
+            if (win32Keycode == VK_SNAPSHOT) {
                 // printscreen since the platform does not get us a keydown, we
                 // do that ourselves
                 if (s_Video.eventDriver) {
@@ -662,9 +611,6 @@ LRESULT CALLBACK videoProc(
                     }
                     s_Keyboard.keycodeState[keycode] = true;
                 }
-
-            } else {
-                keycode = s_Keyboard.keycodes[win32Keycode];
             }
 
             // check before updating state
@@ -704,7 +650,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_SETCURSOR: {
             if (LOWORD(lParam) == HTCLIENT) {
-                if (data) {
+                if (data && data->cursor) {
                     SetCursor(data->cursor);
                     return TRUE;
                 }
@@ -712,6 +658,44 @@ LRESULT CALLBACK videoProc(
             }
 
             break;
+        }
+
+        case WM_CHAR: {
+            PalEventType type = PAL_EVENT_KEYCHAR;
+            Uint32 codepoint = 0;
+            if (s_Video.eventDriver) {
+                PalEventDriver* driver = s_Video.eventDriver;
+                mode = palGetEventDispatchMode(driver, type);
+                if (mode == PAL_DISPATCH_NONE) {
+                    break;
+                }
+            }
+            // Most characters comes as two WM_CHAR messags or event
+            // we store the first one and combine with the second if we got any
+            Uint16 character = (Uint16)wParam;
+            if (character >= 0xD800 && character <= 0xDBFF) {
+                // high surrogate
+                s_Keyboard.pendingHighSurrogate = character;
+            } else if (character >= 0xDC00 && character <= 0xDFFF) {
+                if (s_Keyboard.pendingHighSurrogate) {
+                    // low surrogate we combine both
+                    Uint32 high = s_Keyboard.pendingHighSurrogate - 0xD800;
+                    Uint32 low = character - 0xDC00;
+                    codepoint = 0x10000 + ((high << 10) | low);
+                    s_Keyboard.pendingHighSurrogate = 0;
+                }
+
+            } else {
+                // normal character (A-Z)
+                codepoint = character;
+            }
+
+            // push an event
+            PalEvent event = {0};
+            event.type = type;
+            event.data = codepoint;
+            event.data2 = palPackPointer((PalWindow*)hwnd);
+            palPushEvent(s_Video.eventDriver, &event);
         }
     }
 
@@ -858,6 +842,8 @@ static inline void addMonitorMode(
 
 static void createKeycodeTable()
 {
+    // Tis is for only printable and text input keys
+
     // Letters
     s_Keyboard.keycodes['A'] = PAL_KEYCODE_A;
     s_Keyboard.keycodes['B'] = PAL_KEYCODE_B;
@@ -886,84 +872,10 @@ static void createKeycodeTable()
     s_Keyboard.keycodes['Y'] = PAL_KEYCODE_Y;
     s_Keyboard.keycodes['Z'] = PAL_KEYCODE_Z;
 
-    // Numbers (top row)
-    s_Keyboard.keycodes['0'] = PAL_KEYCODE_0;
-    s_Keyboard.keycodes['1'] = PAL_KEYCODE_1;
-    s_Keyboard.keycodes['2'] = PAL_KEYCODE_2;
-    s_Keyboard.keycodes['3'] = PAL_KEYCODE_3;
-    s_Keyboard.keycodes['4'] = PAL_KEYCODE_4;
-    s_Keyboard.keycodes['5'] = PAL_KEYCODE_5;
-    s_Keyboard.keycodes['6'] = PAL_KEYCODE_6;
-    s_Keyboard.keycodes['7'] = PAL_KEYCODE_7;
-    s_Keyboard.keycodes['8'] = PAL_KEYCODE_8;
-    s_Keyboard.keycodes['9'] = PAL_KEYCODE_9;
-
-    // Function
-    s_Keyboard.keycodes[VK_F1] = PAL_KEYCODE_F1;
-    s_Keyboard.keycodes[VK_F2] = PAL_KEYCODE_F2;
-    s_Keyboard.keycodes[VK_F3] = PAL_KEYCODE_F3;
-    s_Keyboard.keycodes[VK_F4] = PAL_KEYCODE_F4;
-    s_Keyboard.keycodes[VK_F5] = PAL_KEYCODE_F5;
-    s_Keyboard.keycodes[VK_F6] = PAL_KEYCODE_F6;
-    s_Keyboard.keycodes[VK_F7] = PAL_KEYCODE_F7;
-    s_Keyboard.keycodes[VK_F8] = PAL_KEYCODE_F8;
-    s_Keyboard.keycodes[VK_F9] = PAL_KEYCODE_F9;
-    s_Keyboard.keycodes[VK_F10] = PAL_KEYCODE_F10;
-    s_Keyboard.keycodes[VK_F11] = PAL_KEYCODE_F11;
-    s_Keyboard.keycodes[VK_F12] = PAL_KEYCODE_F12;
-
     // Control
-    s_Keyboard.keycodes[VK_ESCAPE] = PAL_KEYCODE_ESCAPE;
-    s_Keyboard.keycodes[VK_RETURN] = PAL_KEYCODE_ENTER;
-    s_Keyboard.keycodes[VK_TAB] = PAL_KEYCODE_TAB;
-    s_Keyboard.keycodes[VK_BACK] = PAL_KEYCODE_BACKSPACE;
     s_Keyboard.keycodes[VK_SPACE] = PAL_KEYCODE_SPACE;
-    s_Keyboard.keycodes[VK_CAPITAL] = PAL_KEYCODE_CAPSLOCK;
-    s_Keyboard.keycodes[VK_NUMLOCK] = PAL_KEYCODE_NUMLOCK;
-    s_Keyboard.keycodes[VK_SCROLL] = PAL_KEYCODE_SCROLLLOCK;
-    s_Keyboard.keycodes[VK_SHIFT] = PAL_KEYCODE_LSHIFT;
-    s_Keyboard.keycodes[VK_RSHIFT] = PAL_KEYCODE_RSHIFT;
-    s_Keyboard.keycodes[VK_CONTROL] = PAL_KEYCODE_LCTRL;
-    s_Keyboard.keycodes[VK_RCONTROL] = PAL_KEYCODE_RCTRL;
-    s_Keyboard.keycodes[VK_MENU] = PAL_KEYCODE_LALT;
-    s_Keyboard.keycodes[VK_RMENU] = PAL_KEYCODE_RALT;
-
-    // Arrows
-    s_Keyboard.keycodes[VK_LEFT] = PAL_KEYCODE_LEFT;
-    s_Keyboard.keycodes[VK_RIGHT] = PAL_KEYCODE_RIGHT;
-    s_Keyboard.keycodes[VK_UP] = PAL_KEYCODE_UP;
-    s_Keyboard.keycodes[VK_DOWN] = PAL_KEYCODE_DOWN;
-
-    // Navigation
-    s_Keyboard.keycodes[VK_INSERT] = PAL_KEYCODE_INSERT;
-    s_Keyboard.keycodes[VK_DELETE] = PAL_KEYCODE_DELETE;
-    s_Keyboard.keycodes[VK_HOME] = PAL_KEYCODE_HOME;
-    s_Keyboard.keycodes[VK_END] = PAL_KEYCODE_END;
-    s_Keyboard.keycodes[VK_PRIOR] = PAL_KEYCODE_PAGEUP;
-    s_Keyboard.keycodes[VK_NEXT] = PAL_KEYCODE_PAGEDOWN;
-
-    // Keypad
-    s_Keyboard.keycodes[VK_NUMPAD0] = PAL_KEYCODE_KP_0;
-    s_Keyboard.keycodes[VK_NUMPAD1] = PAL_KEYCODE_KP_1;
-    s_Keyboard.keycodes[VK_NUMPAD2] = PAL_KEYCODE_KP_2;
-    s_Keyboard.keycodes[VK_NUMPAD3] = PAL_KEYCODE_KP_3;
-    s_Keyboard.keycodes[VK_NUMPAD4] = PAL_KEYCODE_KP_4;
-    s_Keyboard.keycodes[VK_NUMPAD5] = PAL_KEYCODE_KP_5;
-    s_Keyboard.keycodes[VK_NUMPAD6] = PAL_KEYCODE_KP_6;
-    s_Keyboard.keycodes[VK_NUMPAD7] = PAL_KEYCODE_KP_7;
-    s_Keyboard.keycodes[VK_NUMPAD8] = PAL_KEYCODE_KP_8;
-    s_Keyboard.keycodes[VK_NUMPAD9] = PAL_KEYCODE_KP_9;
-
-    s_Keyboard.keycodes[VK_ADD] = PAL_KEYCODE_KP_ADD;
-    s_Keyboard.keycodes[VK_SUBTRACT] = PAL_KEYCODE_KP_SUBTRACT;
-    s_Keyboard.keycodes[VK_MULTIPLY] = PAL_KEYCODE_KP_MULTIPLY;
-    s_Keyboard.keycodes[VK_DIVIDE] = PAL_KEYCODE_KP_DIVIDE;
-    s_Keyboard.keycodes[VK_DECIMAL] = PAL_KEYCODE_KP_DECIMAL;
 
     // Misc
-    s_Keyboard.keycodes[VK_SNAPSHOT] = PAL_KEYCODE_PRINTSCREEN;
-    s_Keyboard.keycodes[VK_PAUSE] = PAL_KEYCODE_PAUSE;
-    s_Keyboard.keycodes[VK_APPS] = PAL_KEYCODE_MENU;
     s_Keyboard.keycodes[VK_OEM_7] = PAL_KEYCODE_APOSTROPHE;
     s_Keyboard.keycodes[VK_OEM_5] = PAL_KEYCODE_BACKSLASH;
     s_Keyboard.keycodes[VK_OEM_COMMA] = PAL_KEYCODE_COMMA;
@@ -975,8 +887,6 @@ static void createKeycodeTable()
     s_Keyboard.keycodes[VK_OEM_2] = PAL_KEYCODE_SLASH;
     s_Keyboard.keycodes[VK_OEM_4] = PAL_KEYCODE_LBRACKET;
     s_Keyboard.keycodes[VK_OEM_6] = PAL_KEYCODE_RBRACKET;
-    s_Keyboard.keycodes[VK_LWIN] = PAL_KEYCODE_LSUPER;
-    s_Keyboard.keycodes[VK_RWIN] = PAL_KEYCODE_RSUPER;
 }
 
 static void createScancodeTable()
@@ -1199,7 +1109,7 @@ PalResult PAL_CALL palInitVideo(
     }
 
     // set a flag to check if the window has been created
-    SetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA, (LONG_PTR)&s_Event);
+    SetPropW(s_Video.hiddenWindow, PAL_VIDEO_PROP, &s_Event);
 
     // register raw input for mice to get delta
     RAWINPUTDEVICE rid = {0};
@@ -1903,7 +1813,10 @@ PalResult PAL_CALL palCreateWindow(
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 
-    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)data);
+    data->isAttached = false;
+    data->cursor = nullptr;
+    data->wndProc = (LONG_PTR)videoProc;
+    SetPropW(handle, PAL_VIDEO_PROP, data);
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
 }
@@ -1911,6 +1824,11 @@ PalResult PAL_CALL palCreateWindow(
 void PAL_CALL palDestroyWindow(PalWindow* window)
 {
     if (s_Video.initialized && window) {
+        WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
+        // destroy only PAL created window
+        if (data->isAttached) {
+            return;
+        }
         DestroyWindow((HWND)window);
     }
 }
@@ -2253,7 +2171,7 @@ PalResult PAL_CALL palGetWindowState(
     } else if (wp.showCmd == SW_MAXIMIZE) {
         *outState = PAL_WINDOW_STATE_MAXIMIZED;
 
-    } else if (wp.showCmd == SW_RESTORE) {
+    } else if (wp.showCmd == SW_RESTORE || wp.showCmd == SW_NORMAL) {
         *outState = PAL_WINDOW_STATE_RESTORED;
     }
 
@@ -2643,7 +2561,7 @@ PalResult PAL_CALL palCreateIcon(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    for (int i = 0; i < info->width * info->height; i++) {
+    for (Uint32 i = 0; i < info->width * info->height; i++) {
         Uint8 r = info->pixels[i * 4 + 0]; // Red
         Uint8 g = info->pixels[i * 4 + 1]; // Green
         Uint8 b = info->pixels[i * 4 + 2]; // Blue
@@ -2760,7 +2678,7 @@ PalResult PAL_CALL palCreateCursor(
 
     // convert RGBA to BGRA
     Uint8* pixels = (Uint8*)dibPixels;
-    for (int i = 0; i < info->width * info->height; i++) {
+    for (Uint32 i = 0; i < info->width * info->height; i++) {
         Uint8 r = info->pixels[i * 4 + 0]; // Red
         Uint8 g = info->pixels[i * 4 + 1]; // Green
         Uint8 b = info->pixels[i * 4 + 2]; // Blue
@@ -2960,8 +2878,10 @@ PalResult PAL_CALL palSetWindowCursor(
 {
     if (window) {
         SetLastError(0);
-        WindowData* data =
-            (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+        WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
+        if (!data) {
+            return PAL_RESULT_INVALID_WINDOW;
+        }
 
         data->cursor = (HCURSOR)cursor;
         DWORD error = GetLastError();
@@ -2978,4 +2898,81 @@ PalResult PAL_CALL palSetWindowCursor(
     } else {
         return PAL_RESULT_NULL_POINTER;
     }
+}
+
+void* PAL_CALL palGetInstance()
+{
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+
+    return (void*)s_Video.instance;
+}
+
+PalResult PAL_CALL palAttachWindow(
+    void* windowHandle,
+    PalWindow** outWindow)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!windowHandle || !outWindow) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    WindowData* data = getFreeWindowData();
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalWindow* window = (PalWindow*)windowHandle;
+    data->isAttached = true;
+    data->wndProc = SetWindowLongPtrW(
+        (HWND)windowHandle,
+        GWLP_WNDPROC,
+        (LONG_PTR)videoProc);
+
+    // use default PAL video cursor
+    // there is no way to get the cursor set on the native window
+    data->cursor = nullptr;
+
+    // get state
+    palGetWindowState(window, &data->state);
+    SetPropW((HWND)window, PAL_VIDEO_PROP, data);
+
+    *outWindow = window;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palDetachWindow(
+    PalWindow* window,
+    void** outWindowHandle)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    WindowData* data = nullptr;
+    data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (data->isAttached == false) {
+        // window is owned by PAL
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    data->used = false;
+    SetWindowLongPtrW((HWND)window, GWLP_WNDPROC, data->wndProc);
+    if (outWindowHandle) {
+        *outWindowHandle = (void*)window;
+    }
+
+    return PAL_RESULT_SUCCESS;
 }

@@ -117,6 +117,8 @@ typedef struct {
     bool skipConfigure;
     bool skipState;
     bool used;
+    bool isAttached;
+    bool skipIfAttached;
     int x;
     int y;
     Uint32 w;
@@ -125,6 +127,7 @@ typedef struct {
     PalWindowState state;
     PalCursor* cursor;
     PalWindow* window;
+    XIC ic; // X11 only
 } WindowData;
 
 typedef struct {
@@ -530,6 +533,11 @@ typedef XVisualInfo* (*XGetVisualInfoFn)(
     XVisualInfo*,
     int*);
 
+typedef int (*XSelectInputFn)(
+    Display*,
+    Window,
+    long);
+
 typedef Cursor (*XcursorImageLoadCursorFn)(
     Display*,
     const XcursorImage*);
@@ -547,6 +555,30 @@ typedef KeySym (*XLookupKeysymFn)(
 typedef int (*XkbSetDetectableAutoRepeatFn)(
     Display*,
     int,
+    int*);
+
+typedef char* (*XSetLocaleModifiersFn)(const char*);
+
+typedef XIM (*XOpenIMFn)(
+    Display*,
+    struct _XrmHashBucketRec*,
+    char*,
+    char*);
+
+typedef int (*XCloseIMFn)(XIM);
+
+typedef XIC (*XCreateICFn)(
+    XIM,
+    ...) _X_SENTINEL(0);
+
+typedef void (*XDestroyICFn)(XIC);
+
+typedef int (*Xutf8LookupStringFn)(
+    XIC,
+    XKeyPressedEvent*,
+    char*,
+    int,
+    KeySym*,
     int*);
 
 typedef struct {
@@ -586,6 +618,7 @@ typedef struct {
     void* xrandr;
     void* glxHandle;
     void* libCursor;
+    XIM im;
     Display* display;
     Window root;
     XContext dataID;
@@ -671,8 +704,15 @@ typedef struct {
     XcursorImageCreateFn cursorImageCreate;
     XcursorImageDestroyFn cursorImageDestroy;
     XLookupKeysymFn lookupKeysym;
+    XSelectInputFn selectInput;
 
     XkbSetDetectableAutoRepeatFn setDetectableAutoRepeat;
+    XSetLocaleModifiersFn setLocaleModifiers;
+    XOpenIMFn openIM;
+    XCloseIMFn closeIM;
+    XCreateICFn createIC;
+    XDestroyICFn destroyIC;
+    Xutf8LookupStringFn utf8LookupString;
 } X11;
 
 static X11 s_X11 = {0};
@@ -729,6 +769,9 @@ typedef struct {
     PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
     PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
     PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
+
+    PalResult (*attachWindow)(void*, PalWindow**);
+    PalResult (*detachWindow)(PalWindow*, void**);
     // clang-format off
 } Backend;
 
@@ -1278,124 +1321,124 @@ static void xSendWMEvent(
 static void xCreateScancodeTable()
 {
     // Letters
-    s_Keyboard.scancodes[30] = PAL_SCANCODE_A;
-    s_Keyboard.scancodes[48] = PAL_SCANCODE_B;
-    s_Keyboard.scancodes[46] = PAL_SCANCODE_C;
-    s_Keyboard.scancodes[32] = PAL_SCANCODE_D;
-    s_Keyboard.scancodes[18] = PAL_SCANCODE_E;
-    s_Keyboard.scancodes[33] = PAL_SCANCODE_F;
-    s_Keyboard.scancodes[34] = PAL_SCANCODE_G;
-    s_Keyboard.scancodes[35] = PAL_SCANCODE_H;
-    s_Keyboard.scancodes[23] = PAL_SCANCODE_I;
-    s_Keyboard.scancodes[36] = PAL_SCANCODE_J;
-    s_Keyboard.scancodes[37] = PAL_SCANCODE_K;
-    s_Keyboard.scancodes[38] = PAL_SCANCODE_L;
-    s_Keyboard.scancodes[50] = PAL_SCANCODE_M;
-    s_Keyboard.scancodes[49] = PAL_SCANCODE_N;
-    s_Keyboard.scancodes[24] = PAL_SCANCODE_O;
-    s_Keyboard.scancodes[25] = PAL_SCANCODE_P;
-    s_Keyboard.scancodes[16] = PAL_SCANCODE_Q;
-    s_Keyboard.scancodes[19] = PAL_SCANCODE_R;
-    s_Keyboard.scancodes[31] = PAL_SCANCODE_S;
-    s_Keyboard.scancodes[20] = PAL_SCANCODE_T;
-    s_Keyboard.scancodes[22] = PAL_SCANCODE_U;
-    s_Keyboard.scancodes[47] = PAL_SCANCODE_V;
-    s_Keyboard.scancodes[17] = PAL_SCANCODE_W;
-    s_Keyboard.scancodes[45] = PAL_SCANCODE_X;
-    s_Keyboard.scancodes[21] = PAL_SCANCODE_Y;
-    s_Keyboard.scancodes[44] = PAL_SCANCODE_Z;
+    s_Keyboard.scancodes[0x01E] = PAL_SCANCODE_A;
+    s_Keyboard.scancodes[0x030] = PAL_SCANCODE_B;
+    s_Keyboard.scancodes[0x02E] = PAL_SCANCODE_C;
+    s_Keyboard.scancodes[0x020] = PAL_SCANCODE_D;
+    s_Keyboard.scancodes[0x012] = PAL_SCANCODE_E;
+    s_Keyboard.scancodes[0x021] = PAL_SCANCODE_F;
+    s_Keyboard.scancodes[0x022] = PAL_SCANCODE_G;
+    s_Keyboard.scancodes[0x023] = PAL_SCANCODE_H;
+    s_Keyboard.scancodes[0x017] = PAL_SCANCODE_I;
+    s_Keyboard.scancodes[0x024] = PAL_SCANCODE_J;
+    s_Keyboard.scancodes[0x025] = PAL_SCANCODE_K;
+    s_Keyboard.scancodes[0x026] = PAL_SCANCODE_L;
+    s_Keyboard.scancodes[0x032] = PAL_SCANCODE_M;
+    s_Keyboard.scancodes[0x031] = PAL_SCANCODE_N;
+    s_Keyboard.scancodes[0x018] = PAL_SCANCODE_O;
+    s_Keyboard.scancodes[0x019] = PAL_SCANCODE_P;
+    s_Keyboard.scancodes[0x010] = PAL_SCANCODE_Q;
+    s_Keyboard.scancodes[0x013] = PAL_SCANCODE_R;
+    s_Keyboard.scancodes[0x01F] = PAL_SCANCODE_S;
+    s_Keyboard.scancodes[0x014] = PAL_SCANCODE_T;
+    s_Keyboard.scancodes[0x016] = PAL_SCANCODE_U;
+    s_Keyboard.scancodes[0x02F] = PAL_SCANCODE_V;
+    s_Keyboard.scancodes[0x011] = PAL_SCANCODE_W;
+    s_Keyboard.scancodes[0x02D] = PAL_SCANCODE_X;
+    s_Keyboard.scancodes[0x015] = PAL_SCANCODE_Y;
+    s_Keyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
 
     // Numbers (top row)
-    s_Keyboard.scancodes[11] = PAL_SCANCODE_0;
-    s_Keyboard.scancodes[2] = PAL_SCANCODE_1;
-    s_Keyboard.scancodes[3] = PAL_SCANCODE_2;
-    s_Keyboard.scancodes[4] = PAL_SCANCODE_3;
-    s_Keyboard.scancodes[5] = PAL_SCANCODE_4;
-    s_Keyboard.scancodes[6] = PAL_SCANCODE_5;
-    s_Keyboard.scancodes[7] = PAL_SCANCODE_6;
-    s_Keyboard.scancodes[8] = PAL_SCANCODE_7;
-    s_Keyboard.scancodes[9] = PAL_SCANCODE_8;
-    s_Keyboard.scancodes[10] = PAL_SCANCODE_9;
+    s_Keyboard.scancodes[0x00B] = PAL_SCANCODE_0;
+    s_Keyboard.scancodes[0x002] = PAL_SCANCODE_1;
+    s_Keyboard.scancodes[0x003] = PAL_SCANCODE_2;
+    s_Keyboard.scancodes[0x004] = PAL_SCANCODE_3;
+    s_Keyboard.scancodes[0x005] = PAL_SCANCODE_4;
+    s_Keyboard.scancodes[0x006] = PAL_SCANCODE_5;
+    s_Keyboard.scancodes[0x007] = PAL_SCANCODE_6;
+    s_Keyboard.scancodes[0x008] = PAL_SCANCODE_7;
+    s_Keyboard.scancodes[0x009] = PAL_SCANCODE_8;
+    s_Keyboard.scancodes[0x00A] = PAL_SCANCODE_9;
 
     // Function
-    s_Keyboard.scancodes[59] = PAL_SCANCODE_F1;
-    s_Keyboard.scancodes[60] = PAL_SCANCODE_F2;
-    s_Keyboard.scancodes[61] = PAL_SCANCODE_F3;
-    s_Keyboard.scancodes[62] = PAL_SCANCODE_F4;
-    s_Keyboard.scancodes[63] = PAL_SCANCODE_F5;
-    s_Keyboard.scancodes[64] = PAL_SCANCODE_F6;
-    s_Keyboard.scancodes[65] = PAL_SCANCODE_F7;
-    s_Keyboard.scancodes[66] = PAL_SCANCODE_F8;
-    s_Keyboard.scancodes[67] = PAL_SCANCODE_F9;
-    s_Keyboard.scancodes[68] = PAL_SCANCODE_F10;
-    s_Keyboard.scancodes[87] = PAL_SCANCODE_F11;
-    s_Keyboard.scancodes[88] = PAL_SCANCODE_F12;
+    s_Keyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
+    s_Keyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
+    s_Keyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
+    s_Keyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
+    s_Keyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
+    s_Keyboard.scancodes[0x040] = PAL_SCANCODE_F6;
+    s_Keyboard.scancodes[0x041] = PAL_SCANCODE_F7;
+    s_Keyboard.scancodes[0x042] = PAL_SCANCODE_F8;
+    s_Keyboard.scancodes[0x043] = PAL_SCANCODE_F9;
+    s_Keyboard.scancodes[0x044] = PAL_SCANCODE_F10;
+    s_Keyboard.scancodes[0x057] = PAL_SCANCODE_F11;
+    s_Keyboard.scancodes[0x058] = PAL_SCANCODE_F12;
 
     // Control
-    s_Keyboard.scancodes[1] = PAL_SCANCODE_ESCAPE;
-    s_Keyboard.scancodes[28] = PAL_SCANCODE_ENTER;
-    s_Keyboard.scancodes[15] = PAL_SCANCODE_TAB;
-    s_Keyboard.scancodes[14] = PAL_SCANCODE_BACKSPACE;
-    s_Keyboard.scancodes[57] = PAL_SCANCODE_SPACE;
-    s_Keyboard.scancodes[58] = PAL_SCANCODE_CAPSLOCK;
-    s_Keyboard.scancodes[69] = PAL_SCANCODE_NUMLOCK;
-    s_Keyboard.scancodes[70] = PAL_SCANCODE_SCROLLLOCK;
-    s_Keyboard.scancodes[42] = PAL_SCANCODE_LSHIFT;
-    s_Keyboard.scancodes[54] = PAL_SCANCODE_RSHIFT;
-    s_Keyboard.scancodes[29] = PAL_SCANCODE_LCTRL;
-    s_Keyboard.scancodes[97] = PAL_SCANCODE_RCTRL;
-    s_Keyboard.scancodes[56] = PAL_SCANCODE_LALT;
-    s_Keyboard.scancodes[100] = PAL_SCANCODE_RALT;
+    s_Keyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
+    s_Keyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
+    s_Keyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
+    s_Keyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
+    s_Keyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
+    s_Keyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
+    s_Keyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
+    s_Keyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
+    s_Keyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
+    s_Keyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
+    s_Keyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
+    s_Keyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
+    s_Keyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
+    s_Keyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
 
     // Arrows
-    s_Keyboard.scancodes[105] = PAL_SCANCODE_LEFT;
-    s_Keyboard.scancodes[106] = PAL_SCANCODE_RIGHT;
-    s_Keyboard.scancodes[103] = PAL_SCANCODE_UP;
-    s_Keyboard.scancodes[108] = PAL_SCANCODE_DOWN;
+    s_Keyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
+    s_Keyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_UP;
+    s_Keyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
 
     // Navigation
-    s_Keyboard.scancodes[110] = PAL_SCANCODE_INSERT;
-    s_Keyboard.scancodes[111] = PAL_SCANCODE_DELETE;
-    s_Keyboard.scancodes[102] = PAL_SCANCODE_HOME;
-    s_Keyboard.scancodes[107] = PAL_SCANCODE_END;
-    s_Keyboard.scancodes[104] = PAL_SCANCODE_PAGEUP;
-    s_Keyboard.scancodes[109] = PAL_SCANCODE_PAGEDOWN;
+    s_Keyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
+    s_Keyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_END;
+    s_Keyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
+    s_Keyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
 
     // Keypad
-    s_Keyboard.scancodes[82] = PAL_SCANCODE_KP_0;
-    s_Keyboard.scancodes[79] = PAL_SCANCODE_KP_1;
-    s_Keyboard.scancodes[80] = PAL_SCANCODE_KP_2;
-    s_Keyboard.scancodes[81] = PAL_SCANCODE_KP_3;
-    s_Keyboard.scancodes[75] = PAL_SCANCODE_KP_4;
-    s_Keyboard.scancodes[76] = PAL_SCANCODE_KP_5;
-    s_Keyboard.scancodes[77] = PAL_SCANCODE_KP_6;
-    s_Keyboard.scancodes[71] = PAL_SCANCODE_KP_7;
-    s_Keyboard.scancodes[72] = PAL_SCANCODE_KP_8;
-    s_Keyboard.scancodes[73] = PAL_SCANCODE_KP_9;
-    s_Keyboard.scancodes[96] = PAL_SCANCODE_KP_ENTER;
-    s_Keyboard.scancodes[78] = PAL_SCANCODE_KP_ADD;
-    s_Keyboard.scancodes[74] = PAL_SCANCODE_KP_SUBTRACT;
-    s_Keyboard.scancodes[55] = PAL_SCANCODE_KP_MULTIPLY;
-    s_Keyboard.scancodes[98] = PAL_SCANCODE_KP_DIVIDE;
-    s_Keyboard.scancodes[83] = PAL_SCANCODE_KP_DECIMAL;
+    s_Keyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
+    s_Keyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
+    s_Keyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
+    s_Keyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
+    s_Keyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
+    s_Keyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
+    s_Keyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
+    s_Keyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
+    s_Keyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
+    s_Keyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
+    s_Keyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
+    s_Keyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
+    s_Keyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
+    s_Keyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
+    s_Keyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
+    s_Keyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
 
     // Misc
-    s_Keyboard.scancodes[99] = PAL_SCANCODE_PRINTSCREEN;
-    s_Keyboard.scancodes[102] = PAL_SCANCODE_PAUSE;
-    s_Keyboard.scancodes[127] = PAL_SCANCODE_MENU;
-    s_Keyboard.scancodes[40] = PAL_SCANCODE_APOSTROPHE;
-    s_Keyboard.scancodes[43] = PAL_SCANCODE_BACKSLASH;
-    s_Keyboard.scancodes[51] = PAL_SCANCODE_COMMA;
-    s_Keyboard.scancodes[13] = PAL_SCANCODE_EQUAL;
-    s_Keyboard.scancodes[41] = PAL_SCANCODE_GRAVEACCENT;
-    s_Keyboard.scancodes[12] = PAL_SCANCODE_SUBTRACT;
-    s_Keyboard.scancodes[52] = PAL_SCANCODE_PERIOD;
-    s_Keyboard.scancodes[39] = PAL_SCANCODE_SEMICOLON;
-    s_Keyboard.scancodes[53] = PAL_SCANCODE_SLASH;
-    s_Keyboard.scancodes[26] = PAL_SCANCODE_LBRACKET;
-    s_Keyboard.scancodes[27] = PAL_SCANCODE_RBRACKET;
-    s_Keyboard.scancodes[125] = PAL_SCANCODE_LSUPER;
-    s_Keyboard.scancodes[126] = PAL_SCANCODE_RSUPER;
+    s_Keyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
+    s_Keyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
+    s_Keyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
+    s_Keyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
+    s_Keyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
+    s_Keyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
+    s_Keyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
+    s_Keyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
+    s_Keyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
+    s_Keyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
+    s_Keyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
+    s_Keyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
+    s_Keyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
+    s_Keyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
+    s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
 }
 
 static void xCreateKeycodeTable()
@@ -1429,18 +1472,6 @@ static void xCreateKeycodeTable()
     s_Keyboard.keycodes[XK_x] = PAL_KEYCODE_X;
     s_Keyboard.keycodes[XK_y] = PAL_KEYCODE_Y;
     s_Keyboard.keycodes[XK_z] = PAL_KEYCODE_Z;
-
-    // Numbers (top row)
-    s_Keyboard.keycodes[XK_0] = PAL_KEYCODE_0;
-    s_Keyboard.keycodes[XK_1] = PAL_KEYCODE_1;
-    s_Keyboard.keycodes[XK_2] = PAL_KEYCODE_2;
-    s_Keyboard.keycodes[XK_3] = PAL_KEYCODE_3;
-    s_Keyboard.keycodes[XK_4] = PAL_KEYCODE_4;
-    s_Keyboard.keycodes[XK_5] = PAL_KEYCODE_5;
-    s_Keyboard.keycodes[XK_6] = PAL_KEYCODE_6;
-    s_Keyboard.keycodes[XK_7] = PAL_KEYCODE_7;
-    s_Keyboard.keycodes[XK_8] = PAL_KEYCODE_8;
-    s_Keyboard.keycodes[XK_9] = PAL_KEYCODE_9;
 
     // Control
     s_Keyboard.keycodes[XK_space] = PAL_KEYCODE_SPACE;
@@ -1731,6 +1762,10 @@ static PalResult xInitVideo()
         s_X11.handle, 
         "XGetInputFocus");
 
+    s_X11.selectInput = (XSelectInputFn)dlsym(
+        s_X11.handle, 
+        "XSelectInput");
+
     // libXcursor
     s_X11.cursorImageLoadCursor = (XcursorImageLoadCursorFn)dlsym(
         s_X11.libCursor, 
@@ -1751,6 +1786,30 @@ static PalResult xInitVideo()
     s_X11.setDetectableAutoRepeat = (XkbSetDetectableAutoRepeatFn)dlsym(
         s_X11.handle, 
         "XkbSetDetectableAutoRepeat");
+
+    s_X11.setLocaleModifiers = (XSetLocaleModifiersFn)dlsym(
+        s_X11.handle, 
+        "XSetLocaleModifiers");
+
+    s_X11.openIM = (XOpenIMFn)dlsym(
+        s_X11.handle, 
+        "XOpenIM");
+
+    s_X11.closeIM = (XCloseIMFn)dlsym(
+        s_X11.handle, 
+        "XCloseIM");
+
+    s_X11.createIC = (XCreateICFn)dlsym(
+        s_X11.handle, 
+        "XCreateIC");
+
+    s_X11.destroyIC = (XDestroyICFn)dlsym(
+        s_X11.handle, 
+        "XDestroyIC");
+
+    s_X11.utf8LookupString = (Xutf8LookupStringFn)dlsym(
+        s_X11.handle, 
+        "Xutf8LookupString");
 
     // X11 server
     s_X11.display = s_X11.openDisplay(nullptr);
@@ -1826,6 +1885,13 @@ static PalResult xInitVideo()
         // FIXME: fallback to manual key repeat detection
     }
 
+    // create an input method
+    s_X11.setLocaleModifiers("");
+    s_X11.im = s_X11.openIM(s_X11.display, nullptr, nullptr, nullptr);
+    if (s_X11.im == None) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     // clang-format on
     return PAL_RESULT_SUCCESS;
 }
@@ -1836,6 +1902,11 @@ static void xShutdownVideo()
         s_X11.freeColormap(s_X11.display, s_X11.colormap);
     }
 
+    if (s_X11.hiddenCursor) {
+        s_X11.freeCursor(s_X11.display, s_X11.hiddenCursor);
+    }
+
+    s_X11.closeIM(s_X11.im);
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
@@ -1916,6 +1987,15 @@ static void xUpdateVideo()
                             event.data = palPackUint32(data->w, data->h);
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
+                        }
+                    }
+
+                    // attach windows sometimes bypass
+                    // skipConfgure an still send an initial move event
+                    if (data->isAttached) {
+                        if (data->skipIfAttached) {
+                            data->skipIfAttached = false;
+                            return;
                         }
                     }
 
@@ -2261,6 +2341,61 @@ static void xUpdateVideo()
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackUint32(keycode, scancode);
+                        event.data2 = palPackPointer(window);
+                        palPushEvent(driver, &event);
+                    }
+
+                    // check for char event if enabled
+                    type = PAL_EVENT_KEYCHAR;
+                    mode = palGetEventDispatchMode(driver, type);
+                    if (mode == PAL_DISPATCH_NONE) {
+                        return;
+                    }
+
+                    int status;
+                    char buffer[32];
+                    KeySym keySym;
+                    int len = s_X11.utf8LookupString(
+                        data->ic,
+                        &event.xkey,
+                        buffer,
+                        sizeof(buffer),
+                        &keySym,
+                        &status);
+
+                    Uint32 codepoint = 0;
+                    if (status == XLookupChars || status == XLookupBoth) {
+                        // decode to Unicode codepoint
+                        unsigned char ch = buffer[0];
+                        if (ch < 0x80) {
+                            // 1 byte (A-Z)
+                            codepoint = ch;
+
+                        } else if ((ch >> 5) == 0x6 && len >= 2) {
+                            // 2 byte
+                            codepoint = ((ch & 0x1F) << 6) | buffer[1] & 0x3F;
+
+                        } else if ((ch >> 4) == 0xE && len >= 3) {
+                            // 3 byte
+                            // clang-format off
+                            codepoint = ((ch & 0x0F) << 12)       | 
+                                        ((buffer[1] & 0x3F) << 6) | 
+                                        (buffer[2] & 0x3F);
+                            // clang-format on
+
+                        } else if ((ch >> 3) == 0x1E && len >= 4) {
+                            // 4 byte
+                            // clang-format off
+                            codepoint = ((ch & 0x07) << 18)        | 
+                                        ((buffer[1] & 0x3F) << 12) | 
+                                        ((buffer[2] & 0x3F) << 6)  | 
+                                        (buffer[3] & 0x3F);
+                            // clang-format on
+                        }
+
+                        PalEvent event = {0};
+                        event.type = type;
+                        event.data = codepoint;
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }
@@ -2825,14 +2960,12 @@ static PalResult xCreateWindow(
         // we dont need to set any flag
     }
 
-    long mask = ExposureMask | StructureNotifyMask | KeyPressMask;
+    long mask = StructureNotifyMask | KeyPressMask;
     mask |= KeyReleaseMask;
     mask |= ButtonPressMask;
     mask |= ButtonReleaseMask;
     mask |= PointerMotionMask;
     mask |= FocusChangeMask;
-    mask |= EnterWindowMask;
-    mask |= LeaveWindowMask;
     mask |= PropertyChangeMask;
 
     XSetWindowAttributes attrs = {0};
@@ -2893,7 +3026,7 @@ static PalResult xCreateWindow(
         s_X11.free(hints);
     }
 
-    if (s_X11Atoms.unicodeTitle) {
+    if (s_X11Atoms.unicodeTitle && info->title) {
         s_X11.changeProperty(
             s_X11.display,
             window,
@@ -2905,7 +3038,9 @@ static PalResult xCreateWindow(
             strlen(info->title));
 
     } else {
-        s_X11.storeName(s_X11.display, window, info->title);
+        if (info->title) {
+            s_X11.storeName(s_X11.display, window, info->title);
+        }
     }
 
     // borderless
@@ -3040,21 +3175,34 @@ static PalResult xCreateWindow(
         s_X11.iconifyWindow(s_X11.display, window, s_X11.screen);
     }
 
-    s_X11.setWMProtocols(
-        s_X11.display,
-        window,
-        &s_X11Atoms.WM_DELETE_WINDOW,
-        True);
+    s_X11
+        .setWMProtocols(s_X11.display, window, &s_X11Atoms.WM_DELETE_WINDOW, 1);
 
     s_X11.flush(s_X11.display);
 
     // attach the window data to the window
     data->skipConfigure = true;
     data->skipState = true;
+    data->isAttached = false;    // true for attached windows
     data->dpi = monitorInfo.dpi; // the current window monitor
     data->window = TO_PAL_HANDLE(PalWindow, window);
     data->cursor = nullptr;
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
+
+    // create an input context
+    data->ic = s_X11.createIC(
+        s_X11.im,
+        XNInputStyle,
+        XIMPreeditNothing | XIMStatusNothing,
+        XNClientWindow,
+        window,
+        XNFocusWindow,
+        window,
+        nullptr);
+
+    if (!data->ic) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
 
     *outWindow = TO_PAL_HANDLE(PalWindow, window);
     return PAL_RESULT_SUCCESS;
@@ -3065,6 +3213,13 @@ static void xDestroyWindow(PalWindow* window)
     Window xWin = FROM_PAL_HANDLE(Window, window);
     WindowData* data = nullptr;
     s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+
+    // PAL does not destroy an attached window
+    if (data->isAttached) {
+        return;
+    }
+
+    s_X11.destroyIC(data->ic);
     s_X11.destroyWindow(s_X11.display, xWin);
     data->used = false;
 }
@@ -3872,6 +4027,95 @@ PalResult xSetWindowCursor(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult xAttachWindow(
+    void* windowHandle,
+    PalWindow** outWindow)
+{
+    Window xWin = FROM_PAL_HANDLE(Window, windowHandle);
+    XWindowAttributes attr;
+    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // get a free slot and set the window handle to it
+    // we also set a flag to make sure we know this is an attached window
+    WindowData* data = getFreeWindowData();
+    if (!data) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalWindow* window = TO_PAL_HANDLE(PalWindow, xWin);
+    // we assume the window was just created, since there is
+    // no official way to get the DPI
+    data->isAttached = true;
+    data->dpi = 100; // if this is not the DPI, a dpi event will be triggered
+
+    // If the window manager has not mapped the window yet,
+    // we dont need the initial Size / Move events
+    data->skipConfigure = true;
+    data->skipState = true;
+    data->skipIfAttached = true;
+    data->cursor = nullptr;
+    data->window = window;
+    data->w = attr.width;
+    data->h = attr.height;
+    data->x = attr.x;
+    data->y = attr.y;
+
+    // get the current window state
+    // we dont check the return code because we know the window is valid
+    xGetWindowState(window, &data->state);
+
+    // listen to the events we support
+    long mask = StructureNotifyMask | KeyPressMask;
+    mask |= KeyReleaseMask;
+    mask |= ButtonPressMask;
+    mask |= ButtonReleaseMask;
+    mask |= PointerMotionMask;
+    mask |= FocusChangeMask;
+    mask |= PropertyChangeMask;
+    s_X11.selectInput(s_X11.display, xWin, mask);
+
+    // listen to window close event
+    s_X11.setWMProtocols(s_X11.display, xWin, &s_X11Atoms.WM_DELETE_WINDOW, 1);
+
+    s_X11.saveContext(s_X11.display, xWin, s_X11.dataID, (XPointer)data);
+    s_X11.flush(s_X11.display);
+
+    *outWindow = window;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult xDetachWindow(
+    PalWindow* window,
+    void** outWindowHandle)
+{
+    // we check is the window is really detachable
+    Window xWin = FROM_PAL_HANDLE(Window, window);
+    WindowData* data = nullptr;
+    s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    if (data->isAttached == false) {
+        // window was created by PAL
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // detach the window
+    data->used = false;
+    long mask = 0;
+    s_X11.selectInput(s_X11.display, xWin, mask);
+    s_X11.setWMProtocols(s_X11.display, xWin, nullptr, 0);
+
+    if (outWindowHandle) {
+        *outWindowHandle = (void*)window;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
@@ -3919,7 +4163,10 @@ static Backend s_XBackend = {
     .clipCursor = xClipCursor,
     .getCursorPos = xGetCursorPos,
     .setCursorPos = xSetCursorPos,
-    .setWindowCursor = xSetWindowCursor};
+    .setWindowCursor = xSetWindowCursor,
+
+    .attachWindow = xAttachWindow,
+    .detachWindow = xDetachWindow};
 
 #pragma endregions
 
@@ -4745,4 +4992,47 @@ PalResult PAL_CALL palSetWindowCursor(
     }
 
     return s_Video.backend->setWindowCursor(window, cursor);
+}
+
+void* PAL_CALL palGetInstance()
+{
+    if (!s_Video.initialized) {
+        return nullptr;
+    }
+
+    if (s_X11.display) {
+        // we are on X11
+        return (void*)s_X11.display;
+    }
+    return nullptr;
+}
+
+PalResult PAL_CALL palAttachWindow(
+    void* windowHandle,
+    PalWindow** outWindow)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!windowHandle) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->attachWindow(windowHandle, outWindow);
+}
+
+PalResult PAL_CALL palDetachWindow(
+    PalWindow* window,
+    void** outWindowHandle)
+{
+    if (!s_Video.initialized) {
+        return PAL_RESULT_VIDEO_NOT_INITIALIZED;
+    }
+
+    if (!window) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return s_Video.backend->detachWindow(window, outWindowHandle);
 }

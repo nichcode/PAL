@@ -39,7 +39,9 @@ project "tests"
             "icon_test.c",
             "cursor_test.c",
             "input_window_test.c",
-            "system_cursor_test.c"
+            "system_cursor_test.c",
+            "attach_window_test.c",
+            "char_event_test.c"
         }
     end
 
@@ -54,6 +56,12 @@ project "tests"
         files { 
             "opengl_context_test.c",
             "opengl_multi_context_test.c"
+        }
+    end
+
+    if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO and PAL_BUILD_THREAD) then
+        files { 
+            "multi_thread_opengl_test.c"
         }
     end
 

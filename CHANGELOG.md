@@ -46,3 +46,26 @@
 - No API or ABI changes - existing Windows code remains compatible.
 - Linux video support currently targets **X11** only: **Wayland** is planned for future releases.
 - Safe upgrade from **v1.0.1** - just rebuild your project after updating.
+
+## [1.2.0] - 2025-10-22
+
+### Features
+- **Video:** Added **palGetInstance()** to retrieve the native display or instance handle.
+- **Video:** Added **palAttachWindow()** for attaching **foreign windows** to PAL.
+- **Video:** Added **palDetachWindow()** for detaching **foreign windows** from PAL.
+- **Event:** Added **PAL_EVENT_KEYCHAR** to `PalEventType` enum.
+- **Event:** Added documentation for event bits(payload) layout.
+
+### Naming Update
+- PAL now stands for **Prime Abstraction Layer**, 
+reflecting its role as the primary explicit foundation for OS and graphics abstraction.
+- All API remains unchanged — this is an identity update only.
+
+### Tests
+- Added multi-threaded OpenGL example: demonstrating **Multi-Threaded OpenGL Rendering**. see **multi_thread_opengl_test.c**.
+- Added attaching and detach foreign windows example. see **attach_window_test.c**
+- Added key character example. see **char_event_test.c**
+
+### Notes
+- No API or ABI changes - existing code remains compatible.
+- Safe upgrade from **v1.1.0** - just rebuild your project after updating.

@@ -1,4 +1,4 @@
-# PAL (Platform Abstraction Layer)
+# PAL (Prime Abstraction Layer)
 
 ![License: Zlib](https://img.shields.io/badge/License-Zlib-blue.svg)
 ![Language: C99](https://img.shields.io/badge/language-C99-green.svg)
@@ -6,6 +6,9 @@
 ## Overview
 
 PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be **explicit** and as close to the **OS** as possible — similar in philosophy to Vulkan. It gives you precise control without hidden behavior, making it ideal for developers who want performance and predictability.
+
+Originally named as **Platform Abstraction Layer**, 
+PAL has evolved into **Prime Abstraction Layer** — the **first** and most **direct** layer between your engine or software and the operating system.
 
 PAL is transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
 
@@ -22,7 +25,8 @@ palGetWindowSize(window, &w, &h);
 
 ## Why PAL?
 
-Other libraries like SDL or GLFW provide high-level abstractions but at the cost of overhead, implicit behavior, and limited control. **PAL is different:**
+While libraries like SDL or GLFW focus on simplifying development 
+through high-level abstractions. **PAL is different:**
 
 - ✅ **Explicit**: You decide how memory, events, and handles are managed.
 - ✅ **Low Overhead**: PAL is close to raw OS calls, ensuring performance.
