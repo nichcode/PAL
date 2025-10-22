@@ -1,8 +1,8 @@
 
-#include "tests.h"
-#include "pal/pal_video.h"
 #include "pal/pal_opengl.h"
 #include "pal/pal_thread.h"
+#include "pal/pal_video.h"
+#include "tests.h"
 
 // opengl typedefs
 typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
@@ -17,10 +17,22 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(
 typedef void (*glFlushFn)();
 typedef void (*glBeginFn)(unsigned int);
 typedef void (*glEndFn)();
-typedef void (*glVertex2fFn)(float, float);
-typedef void (*glColor3fFn)(float, float, float);
 typedef unsigned int (*glGetErrorFn)();
-typedef void (*glViewportFn)(int, int, int, int);
+
+typedef void (*glVertex2fFn)(
+    float,
+    float);
+
+typedef void (*glColor3fFn)(
+    float,
+    float,
+    float);
+
+typedef void (*glViewportFn)(
+    int,
+    int,
+    int,
+    int);
 
 typedef struct {
     bool driverCreated;
@@ -58,19 +70,19 @@ static void* PAL_CALL eventDriverWorker(void* arg)
 
     // set dispatch modes. opengl needs only window resize
     palSetEventDispatchMode(
-        shared->openglEventDriver, 
-        PAL_EVENT_WINDOW_SIZE, 
+        shared->openglEventDriver,
+        PAL_EVENT_WINDOW_SIZE,
         PAL_DISPATCH_POLL);
 
     // video needs window close and resize
     palSetEventDispatchMode(
-        shared->videoEventDriver, 
-        PAL_EVENT_WINDOW_CLOSE, 
+        shared->videoEventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(
-        shared->videoEventDriver, 
-        PAL_EVENT_WINDOW_SIZE, 
+        shared->videoEventDriver,
+        PAL_EVENT_WINDOW_SIZE,
         PAL_DISPATCH_POLL);
 
     // we are done
@@ -130,9 +142,9 @@ static void* PAL_CALL rendererWorkder(void* arg)
                     Uint32 width, height;
                     palUnpackUint32(event.data, &width, &height);
                     palLog(
-                        nullptr, 
-                        "Video driver sent a resize event (%d, %d)", 
-                        width, 
+                        nullptr,
+                        "Video driver sent a resize event (%d, %d)",
+                        width,
                         height);
 
                     glViewport(0, 0, width, height);
@@ -259,7 +271,7 @@ bool multiThreadOpenGlTest()
     // check to see if the event driver thread is done creating the drivers
     // if not we wait for it
     if (!shared->driverCreated) {
-        palJoinThread(eventDriverThread , nullptr);
+        palJoinThread(eventDriverThread, nullptr);
     }
     palDetachThread(eventDriverThread); // we dont need it anymore
 

@@ -48,6 +48,7 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define PAL_VIDEO_CLASS L"PALVideoClass"
+#define PAL_VIDEO_PROP L"PalVideoData"
 #define WIN32_DPI 0
 #define WIN32_DPI_AWARE 2
 #define MAX_MODE_COUNT 128
@@ -174,7 +175,7 @@ LRESULT CALLBACK videoProc(
     LPARAM lParam)
 {
     // check if the window has been created
-    WindowData* data = (void*)(LONG_PTR)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    WindowData* data = (WindowData*)GetPropW(hwnd, PAL_VIDEO_PROP);
     if (!data) {
         // window has not been created yet
         return DefWindowProcW(hwnd, msg, wParam, lParam);
@@ -871,18 +872,6 @@ static void createKeycodeTable()
     s_Keyboard.keycodes['Y'] = PAL_KEYCODE_Y;
     s_Keyboard.keycodes['Z'] = PAL_KEYCODE_Z;
 
-    // Numbers (top row)
-    s_Keyboard.keycodes['0'] = PAL_KEYCODE_0;
-    s_Keyboard.keycodes['1'] = PAL_KEYCODE_1;
-    s_Keyboard.keycodes['2'] = PAL_KEYCODE_2;
-    s_Keyboard.keycodes['3'] = PAL_KEYCODE_3;
-    s_Keyboard.keycodes['4'] = PAL_KEYCODE_4;
-    s_Keyboard.keycodes['5'] = PAL_KEYCODE_5;
-    s_Keyboard.keycodes['6'] = PAL_KEYCODE_6;
-    s_Keyboard.keycodes['7'] = PAL_KEYCODE_7;
-    s_Keyboard.keycodes['8'] = PAL_KEYCODE_8;
-    s_Keyboard.keycodes['9'] = PAL_KEYCODE_9;
-
     // Control
     s_Keyboard.keycodes[VK_SPACE] = PAL_KEYCODE_SPACE;
 
@@ -1120,7 +1109,7 @@ PalResult PAL_CALL palInitVideo(
     }
 
     // set a flag to check if the window has been created
-    SetWindowLongPtrW(s_Video.hiddenWindow, GWLP_USERDATA, (LONG_PTR)&s_Event);
+    SetPropW(s_Video.hiddenWindow, PAL_VIDEO_PROP, &s_Event);
 
     // register raw input for mice to get delta
     RAWINPUTDEVICE rid = {0};
@@ -1825,7 +1814,9 @@ PalResult PAL_CALL palCreateWindow(
     }
 
     data->isAttached = false;
-    SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)data);
+    data->cursor = nullptr;
+    data->wndProc = (LONG_PTR)videoProc;
+    SetPropW(handle, PAL_VIDEO_PROP, data);
     *outWindow = (PalWindow*)handle;
     return PAL_RESULT_SUCCESS;
 }
@@ -1833,12 +1824,7 @@ PalResult PAL_CALL palCreateWindow(
 void PAL_CALL palDestroyWindow(PalWindow* window)
 {
     if (s_Video.initialized && window) {
-        // clang-format off
-        WindowData* data = (WindowData*)GetWindowLongPtrW(
-            (HWND)window, 
-            GWLP_USERDATA);
-        // clang-format off
-
+        WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
         // destroy only PAL created window
         if (data->isAttached) {
             return;
@@ -2892,9 +2878,10 @@ PalResult PAL_CALL palSetWindowCursor(
 {
     if (window) {
         SetLastError(0);
-        // clang-format off
-        WindowData* data = (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
-        // clang-format off
+        WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
+        if (!data) {
+            return PAL_RESULT_INVALID_WINDOW;
+        }
 
         data->cursor = (HCURSOR)cursor;
         DWORD error = GetLastError();
@@ -2951,7 +2938,7 @@ PalResult PAL_CALL palAttachWindow(
 
     // get state
     palGetWindowState(window, &data->state);
-    SetWindowLongPtrW((HWND)window, GWLP_USERDATA, (LONG_PTR)data);
+    SetPropW((HWND)window, PAL_VIDEO_PROP, data);
 
     *outWindow = window;
     return PAL_RESULT_SUCCESS;
@@ -2970,7 +2957,7 @@ PalResult PAL_CALL palDetachWindow(
     }
 
     WindowData* data = nullptr;
-    data = (WindowData*)GetWindowLongPtrW((HWND)window, GWLP_USERDATA);
+    data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
     if (!data) {
         return PAL_RESULT_INVALID_WINDOW;
     }

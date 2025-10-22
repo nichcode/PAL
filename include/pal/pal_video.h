@@ -1761,18 +1761,18 @@ PAL_API PalResult PAL_CALL palSetWindowCursor(
  * @brief Get the native application instance or display.
  *
  * The video system must be initialized before this call.
- * 
+ *
  * This returns the native instance or display of the application
- * PAL video was initialized in. 
- * 
+ * PAL video was initialized in.
+ *
  * On Linux: This is the Display associated with the connection.
- 
- * On Windows: This is the HINSTANCE of the process. 
- * 
+
+ * On Windows: This is the HINSTANCE of the process.
+ *
  * @return The instance or display on success or nullptr on failure.
  *
  * Thread safety: This function is thread safe.
- * 
+ *
  * @note The returned instance or display must not be freed.
  *
  * @since 1.2
@@ -1784,25 +1784,26 @@ PAL_API void* PAL_CALL palGetInstance();
  * @brief Attach a foreign or native window to PAL video system.
  *
  * The video system must be initialized before this call.
- * 
- * This function registers the provided window with PAL video system so it 
+ *
+ * This function registers the provided window with PAL video system so it
  * can manage events and use its functionality/API for the provided window.
- * 
- * PAL does not own the window, it just sends events to that window. 
- * Users are responsible for destroying the window when no longer needed. 
+ *
+ * PAL does not own the window, it just sends events to that window.
+ * Users are responsible for destroying the window when no longer needed.
  * palDestroyWindow() does not destroy the foreign or native window.
- * 
+ *
  * Use Case:
- * 
+ *
  * PAL takes your native foreign or native window and gives you a PalWindow
  * which can be used with all of PAL API. The native window must be valid
  * till the PalWindow has been detached with palDetachWindow().
- * 
- * The window must be created with the same instance or display 
+ *
+ * The window must be created with the same instance or display
  * that PAL uses. see palGetInstance().
  *
  * @param[in] windowHandle Pointer to the foreign or native window.
- * @param[out] outWindow Pointer to a PalWindow to recieve the attached window. Must not be nullptr.
+ * @param[out] outWindow Pointer to a PalWindow to recieve the attached window.
+ * Must not be nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1823,21 +1824,22 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * @brief Detach a foreign or native window from PAL video system.
  *
  * The video system must be initialized before this call.
- * 
+ *
  * This function unregisters the provided window from PAL video system.
  * The window must not be owned by PAL otherwise the function fails
  * and return `PAL_RESULT_INVALID_WINDOW`.
- * 
- * Detaching the window does not destroy the window, 
+ *
+ * Detaching the window does not destroy the window,
  * therefore destroying the window is the users responsibility.
- * 
+ *
  * Use Case:
- * 
- * Give back the PalWindow returned at palAttachWindow() 
+ *
+ * Give back the PalWindow returned at palAttachWindow()
  * and get back your native window.
  *
  * @param[in] window Pointer to the PalWindow to detach. Must not be nullptr.
- * @param[out] outWindowHandle Pointer to recieve the native window. Can be nullptr.
+ * @param[out] outWindowHandle Pointer to recieve the native window. Can be
+ * nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.

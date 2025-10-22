@@ -57,10 +57,7 @@ bool charEventTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYCHAR,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYCHAR, PAL_DISPATCH_POLL);
 
     bool running = true;
     while (running) {

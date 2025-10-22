@@ -1,6 +1,6 @@
 
-#include "tests.h"
 #include "pal/pal_video.h"
+#include "tests.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -182,7 +182,7 @@ static void destroyX11Window(void* windowHandle)
     Display* display = palGetInstance();
     s_XDestroyWindow(display, (Window)(UintPtr)windowHandle);
     dlclose(s_X11Lib); // we loaded dynamically
-#endif // __linux__
+#endif
 }
 
 static void* createPlatformWindow()
@@ -248,10 +248,7 @@ bool attachWindowTest()
         PAL_DISPATCH_POLL);
 
     // we listen for key release events to attach and detach the window
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYUP,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYUP, PAL_DISPATCH_POLL);
 
     // PAL allows users create any kind of window not currently or will not
     // be supported by PAL and just attach the window.
@@ -345,9 +342,18 @@ bool attachWindowTest()
         }
     }
 
-    // We need to destroy the platform window before we shutdown 
+    void* myPlatformWindow = nullptr;
+    // myPlatformWindow will be equal our platformWindow
+    result = palDetachWindow(myWindow, &myPlatformWindow);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to attach window: %s", error);
+        return false;
+    }
+
+    // We need to destroy the platform window before we shutdown
     // PAL video since the window was created with PAL video instance
-    destroyX11Window(platformWindow);
+    destroyPlatformWindow(platformWindow);
 
     // shutdown PAL video
     palShutdownVideo();
