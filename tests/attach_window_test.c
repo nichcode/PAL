@@ -123,6 +123,7 @@ static void* createX11Window()
 
     return (void*)(UintPtr)window;
 #endif // __linux__
+    return nullptr;
 }
 
 static void* createWin32Window()
@@ -166,6 +167,7 @@ static void* createWin32Window()
     UpdateWindow(window);
     return (void*)window;
 #endif // _WIN32
+    return nullptr;
 }
 
 static void destroyWin32Window(void* windowHandle)

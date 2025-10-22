@@ -73,7 +73,7 @@ bool charEventTest()
                 }
 
                 case PAL_EVENT_KEYCHAR: {
-                    Uint32 codepoint = event.data;
+                    Uint32 codepoint = (Uint32)event.data;
                     PalWindow* window = palUnpackPointer(event.data2);
 
                     // we log the codepoint

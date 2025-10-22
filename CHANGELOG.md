@@ -47,7 +47,7 @@
 - Linux video support currently targets **X11** only: **Wayland** is planned for future releases.
 - Safe upgrade from **v1.0.1** - just rebuild your project after updating.
 
-## [1.2.0] - 2025-10-17
+## [1.2.0] - 2025-10-22
 
 ### Features
 - **Video:** Added **palGetInstance()** to retrieve the native display or instance handle.
