@@ -115,6 +115,24 @@ typedef enum {
 } PalVideoFeatures;
 
 /**
+ * @enum PalVideoFeatures2
+ * @brief Extended Video system features.
+ *
+ * All extended video features follow the format `PAL_VIDEO_FEATURE_**` for
+ * consistency and API use.
+ *
+ * @since 1.3
+ * @ingroup pal_video
+ */
+typedef enum {
+    PAL_VIDEO_FEATURE_TOPMOST_WINDOW = PAL_BIT64(32),
+    PAL_VIDEO_FEATURE_DECORATED_WINDOW = PAL_BIT64(33),
+    PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY = PAL_BIT64(34),
+    PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR = PAL_BIT64(35),
+    PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY = PAL_BIT64(36)
+} PalVideoFeatures2;
+
+/**
  * @enum PalOrientation
  * @brief Orientation types for a monitor.
  *
@@ -690,6 +708,23 @@ PAL_API void PAL_CALL palUpdateVideo();
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
 /**
+ * @brief Get the supported features of the video system.
+ *
+ * The video system must be initialized before this call.
+ * This returns the supported features from palGetVideoFeatures()
+ * and adds additionally supported features.
+ *
+ * @return video features on success or `0` on failure.
+ *
+ * Thread safety: This function is thread safe.
+ *
+ * @since 1.3
+ * @ingroup pal_video
+ * @sa palInitVideo
+ */
+PAL_API PalVideoFeatures2 PAL_CALL palGetVideoFeaturesEx();
+
+/**
  * @brief Set the FBConfig for the video system.
  *
  * The video system must be initialized before this call.
@@ -1126,6 +1161,7 @@ PAL_API PalResult PAL_CALL palGetWindowStyle(
  * @brief Get the monitor the provided window is currently on.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR` must be supported.
  *
  * @param[in] window Pointer to the window.
  * @param[out] outMonitor Pointer to a PalMonitor to recieve the monitor.
@@ -1650,6 +1686,8 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  * @brief Show or hide the cursor.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY` must be supported.
+ * 
  * This affects all created cursors since the platform (OS) merges all cursors
  * into a single one on the screen.
  *

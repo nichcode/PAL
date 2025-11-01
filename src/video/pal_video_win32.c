@@ -104,6 +104,7 @@ typedef struct {
     Int32 pixelFormat;
     Int32 maxWindowData;
     PalVideoFeatures features;
+    PalVideoFeatures2 features2;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     HINSTANCE shcore;
@@ -1279,6 +1280,15 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     }
 
     return s_Video.features;
+}
+
+Uint64 PAL_CALL palGetVideoFeaturesEx()
+{
+    if (!s_Video.initialized) {
+        return 0;
+    }
+    
+    return ((Uint64)s_Video.features2) | (Uint64)s_Video.features;
 }
 
 PalResult PAL_CALL palSetFBConfig(

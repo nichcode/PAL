@@ -125,8 +125,8 @@ typedef struct {
     int dpi;
     Uint32 h;
     PalWindowState state;
-    PalCursor* cursor;
     PalWindow* window;
+    
     XIC ic; // X11 only
 } WindowData;
 
@@ -622,7 +622,6 @@ typedef struct {
     Display* display;
     Window root;
     XContext dataID;
-    Cursor hiddenCursor;
     const char* className;
 
     Visual* visual;
@@ -781,6 +780,7 @@ typedef struct {
     Int32 maxMonitorData;
     Int32 pixelFormat;
     PalVideoFeatures features;
+    PalVideoFeatures2 features2;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     const Backend* backend;
@@ -1104,6 +1104,7 @@ static void xCheckFeatures()
         (unsigned char**)&supportedAtoms);
 
     PalVideoFeatures features = 0;
+    PalVideoFeatures2 features2 = 0;
     for (unsigned long i = 0; i < count; ++i) {
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
             features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
@@ -1161,7 +1162,13 @@ static void xCheckFeatures()
     features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
     features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
 
+    // extended features
+    features2 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
+    features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+    features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
+
     s_Video.features = features;
+    s_Video.features2 = features2;
     s_X11.free(supportedAtoms);
 }
 
@@ -1861,20 +1868,6 @@ static PalResult xInitVideo()
             "glXGetVisualFromFBConfig");
     }
 
-    // create a hidden cursor. 
-    // This is used to simulate cursor hide and show
-    Pixmap map = s_X11.createPixmap(s_X11.display, s_X11.root, 1, 1, 1);
-    XColor dummy;
-    s_X11.hiddenCursor = s_X11.createPixmapCursor(
-        s_X11.display, 
-        map, 
-        map, 
-        &dummy, 
-        &dummy, 
-        0, 
-        0);
-
-    s_X11.freePixmap(s_X11.display, map);
     xCreateScancodeTable();
     xCreateKeycodeTable();
 
@@ -1892,7 +1885,6 @@ static PalResult xInitVideo()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    // clang-format on
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1900,10 +1892,6 @@ static void xShutdownVideo()
 {
     if (s_X11.colormap) {
         s_X11.freeColormap(s_X11.display, s_X11.colormap);
-    }
-
-    if (s_X11.hiddenCursor) {
-        s_X11.freeCursor(s_X11.display, s_X11.hiddenCursor);
     }
 
     s_X11.closeIM(s_X11.im);
@@ -2445,35 +2433,12 @@ static PalResult xEnumerateMonitors(
 static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
 {
     RROutput primary = s_X11.getOutputPrimary(s_X11.display, s_X11.root);
-
-    if (!primary) {
-        // primary monitor is not set, set the first one
-        // clang-format off
-        XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-        // clang-format on
-
-        for (int i = 0; i < resources->noutput; ++i) {
-            RROutput output = resources->outputs[i];
-            // clang-format off
-            XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
-            // clang-format on
-
-            if (outputInfo->connection == RR_Connected &&
-                outputInfo->crtc != None) {
-                primary = resources->outputs[i];
-                break;
-            }
-        }
-    }
-
-    // if we still did not get one, we fail
     if (primary) {
         *outMonitor = TO_PAL_HANDLE(PalMonitor, primary);
         return PAL_RESULT_SUCCESS;
-
-    } else {
-        return PAL_RESULT_PLATFORM_FAILURE;
     }
+
+    return PAL_RESULT_PLATFORM_FAILURE;
 }
 
 static PalResult xGetMonitorInfo(
@@ -2922,33 +2887,41 @@ static PalResult xCreateWindow(
     }
 
     // get monitor
+    int monitorX = 0;
+    int monitorY = 0;
+    Uint32 monitorW = 0;
+    Uint32 monitorH = 0;
     if (info->monitor) {
         monitor = info->monitor;
 
     } else {
         // get primary monitor
         xGetPrimaryMonitor(&monitor);
-        if (!monitor) {
-            return PAL_RESULT_PLATFORM_FAILURE;
-        }
     }
 
-    // get monitor info
-    PalResult result = palGetMonitorInfo(monitor, &monitorInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
+    if (monitor) {
+        // get monitor info
+        PalResult result = palGetMonitorInfo(monitor, &monitorInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+
+        monitorX = monitorInfo.x;
+        monitorY = monitorInfo.y;
+        monitorW = monitorInfo.width;
+        monitorH = monitorInfo.height;
     }
 
     Int32 x, y = 0;
     // the position and size must be scaled with the dpi before this call
     if (info->center) {
-        x = monitorInfo.x + (monitorInfo.width - info->width) / 2;
-        y = monitorInfo.y + (monitorInfo.height - info->height) / 2;
+        x = monitorX + (monitorW - info->width) / 2;
+        y = monitorY + (monitorH - info->height) / 2;
 
     } else {
         // we set 100 for each axix
-        x = monitorInfo.x + 100;
-        y = monitorInfo.y + 100;
+        x = monitorX + 100;
+        y = monitorY + 100;
     }
 
     // check and set transparency
@@ -3186,7 +3159,6 @@ static PalResult xCreateWindow(
     data->isAttached = false;    // true for attached windows
     data->dpi = monitorInfo.dpi; // the current window monitor
     data->window = TO_PAL_HANDLE(PalWindow, window);
-    data->cursor = nullptr;
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
     // create an input context
@@ -3380,39 +3352,7 @@ PalResult xGetWindowMonitor(
     PalWindow* window,
     PalMonitor** outMonitor)
 {
-    Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_INVALID_WINDOW;
-    }
-
-    XRRScreenResources* resources = nullptr;
-    resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-
-    for (int i = 0; i < resources->noutput; ++i) {
-        RROutput output = resources->outputs[i];
-        // clang-format off
-        XRROutputInfo* info = s_X11.getOutputInfo(s_X11.display, resources, output);
-        // clang-format on
-
-        if (info->connection == RR_Connected && info->crtc != None) {
-            // clang-format off
-            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, info->crtc);
-            // clang-format on
-
-            // check bounds to see if window is on the monitor
-            if (attr.x >= crtc->x && attr.x < crtc->x + crtc->width &&
-                attr.y >= crtc->y && attr.y < crtc->y + crtc->height) {
-                // found monitor
-                *outMonitor = TO_PAL_HANDLE(PalMonitor, output);
-                break;
-            }
-            s_X11.freeCrtcInfo(crtc);
-        }
-        s_X11.freeOutputInfo(info);
-    }
-    s_X11.freeScreenResources(resources);
-    return PAL_RESULT_SUCCESS;
+    return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult xGetWindowTitle(
@@ -3896,27 +3836,8 @@ void xDestroyCursor(PalCursor* cursor)
 
 void xShowCursor(bool show)
 {
-    // X11 does not have a single function to show or hide cursor globally
-    // so we query on windows and set the cursor for each
-    // The limitation is any window not attached to PAL will not be affected
-    for (int i = 0; i < s_Video.maxWindowData; i++) {
-        WindowData* data = &s_Video.windowData[i];
-        Window xWin = FROM_PAL_HANDLE(Window, data->window);
-        if (show) {
-            // we check if the window has a valid cursor
-            // if not we use the root windows cursor
-            Cursor cursor = FROM_PAL_HANDLE(Cursor, data->cursor);
-            if (cursor) {
-                s_X11.defineCursor(s_X11.display, xWin, cursor);
-            } else {
-                s_X11.undefineCursor(s_X11.display, xWin);
-            }
-
-        } else {
-            s_X11.defineCursor(s_X11.display, xWin, s_X11.hiddenCursor);
-        }
-        s_X11.flush(s_X11.display);
-    }
+    // x11 does not support Hiding and showing cursor
+    return;
 }
 
 PalResult xClipCursor(
@@ -4014,10 +3935,6 @@ PalResult xSetWindowCursor(
     Window xCursor = FROM_PAL_HANDLE(Cursor, cursor);
     if (xCursor) {
         s_X11.defineCursor(s_X11.display, xWin, xCursor);
-        // cache the cursor. Show or hide cursor needs it
-        WindowData* data = nullptr;
-        s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&data);
-        data->cursor = cursor;
 
     } else {
         s_X11.undefineCursor(s_X11.display, xWin);
@@ -4055,7 +3972,6 @@ PalResult xAttachWindow(
     data->skipConfigure = true;
     data->skipState = true;
     data->skipIfAttached = true;
-    data->cursor = nullptr;
     data->window = window;
     data->w = attr.width;
     data->h = attr.height;
@@ -4273,6 +4189,15 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     }
 
     return s_Video.features;
+}
+
+Uint64 PAL_CALL palGetVideoFeaturesEx()
+{
+    if (!s_Video.initialized) {
+        return 0;
+    }
+    
+    return ((Uint64)s_Video.features2) | (Uint64)s_Video.features;
 }
 
 PalResult PAL_CALL palSetFBConfig(
