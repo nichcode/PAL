@@ -129,7 +129,8 @@ typedef enum {
     PAL_VIDEO_FEATURE_DECORATED_WINDOW = PAL_BIT64(33),
     PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY = PAL_BIT64(34),
     PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR = PAL_BIT64(35),
-    PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY = PAL_BIT64(36)
+    PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY = PAL_BIT64(36),
+    PAL_VIDEO_FEATURE_FOREIGN_WINDOWS = PAL_BIT64(37)
 } PalVideoFeatures2;
 
 /**
@@ -611,7 +612,7 @@ typedef struct {
  */
 typedef struct {
     void* nativeDisplay; /**< The platform (OS) display.*/
-    void* nativeWindow;  /**< The platform (OS) handle.*/
+    void* nativeWindow;  /**< The window platform (OS) handle.*/
 } PalWindowHandleInfo;
 
 /**
@@ -797,6 +798,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
  * @brief Get the primary connected monitor.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY` must be supported.
  *
  * The monitor handle must not be freed by the user, they are managed by the
  * platform (OS).
@@ -1822,6 +1824,7 @@ PAL_API void* PAL_CALL palGetInstance();
  * @brief Attach a foreign or native window to PAL video system.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_FOREIGN_WINDOWS` must be supported.
  *
  * This function registers the provided window with PAL video system so it
  * can manage events and use its functionality/API for the provided window.
@@ -1862,6 +1865,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * @brief Detach a foreign or native window from PAL video system.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_FOREIGN_WINDOWS` must be supported.
  *
  * This function unregisters the provided window from PAL video system.
  * The window must not be owned by PAL otherwise the function fails

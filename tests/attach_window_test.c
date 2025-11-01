@@ -238,6 +238,18 @@ bool attachWindowTest()
         return false;
     }
 
+    // check for support
+    PalVideoFeatures2 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE_FOREIGN_WINDOWS)) {
+        // clang-format off
+        palLog(nullptr, "Attaching and detaching foreign windows feature not supported");
+        // clang-format on
+
+        palDestroyEventDriver(eventDriver);
+        palShutdownVideo();
+        return false;
+    }
+
     // we are interested in move and close events
     palSetEventDispatchMode(
         eventDriver,
