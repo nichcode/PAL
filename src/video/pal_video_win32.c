@@ -1205,6 +1205,14 @@ PalResult PAL_CALL palInitVideo(
         s_Video.setProcessAwareness(WIN32_DPI_AWARE);
     }
 
+    // extended features
+    s_Video.features2 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
+    s_Video.features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+    s_Video.features2 |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
+    s_Video.features2 |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
+    s_Video.features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
+    s_Video.features2 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
+
     s_Video.initialized = true;
     s_Video.allocator = allocator;
     s_Video.eventDriver = eventDriver;

@@ -1071,6 +1071,7 @@ static void xCheckFeatures()
     X_INTERN(_NET_WM_STATE_ABOVE);
     X_INTERN(_NET_WM_STATE_MAXIMIZED_VERT);
     X_INTERN(_NET_WM_STATE_MAXIMIZED_HORZ);
+    X_INTERN(_NET_WM_STATE_HIDDEN);
     X_INTERN(_NET_WM_NAME);
     X_INTERN(UTF8_STRING);
     X_INTERN(_NET_WM_WINDOW_TYPE_UTILITY);
@@ -1166,6 +1167,7 @@ static void xCheckFeatures()
     features2 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
     features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
     features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
+    features2 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
 
     s_Video.features = features;
     s_Video.features2 = features2;

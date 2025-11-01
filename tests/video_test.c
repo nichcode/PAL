@@ -168,6 +168,10 @@ bool videoTest()
         palLog(nullptr, " Getting primary monitor");
     }
 
+    if (features & PAL_VIDEO_FEATURE_FOREIGN_WINDOWS) {
+        palLog(nullptr, " Attaching and detaching foreign windows");
+    }
+
     // shutdown the video system
     palShutdownVideo();
 
