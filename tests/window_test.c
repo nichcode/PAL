@@ -161,7 +161,7 @@ bool windowTest()
     PalResult result;
     PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    PalVideoFeatures features;
+    PalVideoFeatures2 features;
     bool running = false;
 
     // event driver
@@ -193,14 +193,21 @@ bool windowTest()
     }
 
     // get video system features
-    features = palGetVideoFeatures();
+    features = palGetVideoFeaturesEx();
 
     // fill the create info struct
-    createInfo.monitor = nullptr; // use primary monitor
+    createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
+
+    // check if we support decorated windows (title bar, close etc)
+    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style = PAL_WINDOW_STYLE_BORDERLESS;
+    }
 
 #if UNICODE_NAME
     createInfo.title = "PAL Test Window Unicode - àà";

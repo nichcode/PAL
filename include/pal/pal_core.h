@@ -76,6 +76,7 @@ typedef _Bool bool;
 #endif // _PAL_BUILD_DLL
 
 #define PAL_BIT(x) 1 << x
+#define PAL_BIT64(x) 1ULL << x
 
 /**
  * @brief A signed 8-bit integer

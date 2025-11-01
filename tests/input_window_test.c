@@ -436,7 +436,7 @@ bool inputWindowTest()
     }
 
     // fill the create info struct
-    createInfo.monitor = nullptr; // use primary monitor
+    createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;

@@ -11,7 +11,7 @@ bool videoTest()
     palLog(nullptr, "");
 
     PalResult result;
-    PalVideoFeatures features;
+    PalVideoFeatures2 features;
 
     // initialize the video system
     result = palInitVideo(nullptr, nullptr);
@@ -21,8 +21,8 @@ bool videoTest()
         return false;
     }
 
-    // get supported features
-    features = palGetVideoFeatures();
+    // get supported features. Now uses extended function
+    features = palGetVideoFeaturesEx();
     palLog(nullptr, "Supported Video Features:");
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
         palLog(nullptr, " High DPI windows");
@@ -146,6 +146,26 @@ bool videoTest()
 
     if (features & PAL_VIDEO_FEATURE_CURSOR_GET_POS) {
         palLog(nullptr, " Getting cursor position");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_TOPMOST_WINDOW) {
+        palLog(nullptr, " Topmost windows");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_DECORATED_WINDOW) {
+        palLog(nullptr, " Decorated (Normal) windows");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY) {
+        palLog(nullptr, " Setting cursor visibility");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR) {
+        palLog(nullptr, " Getting window current monitor");
+    }
+
+    if (features & PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY) {
+        palLog(nullptr, " Getting primary monitor");
     }
 
     // shutdown the video system
