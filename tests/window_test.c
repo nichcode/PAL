@@ -206,7 +206,7 @@ bool windowTest()
     if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
-        createInfo.style = PAL_WINDOW_STYLE_BORDERLESS;
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
     }
 
 #if UNICODE_NAME

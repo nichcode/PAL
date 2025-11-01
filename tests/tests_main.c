@@ -26,10 +26,10 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_THREAD
 
 #if PAL_HAS_VIDEO
-    registerTest("Video Test", videoTest);
+    // registerTest("Video Test", videoTest);
     // registerTest("Monitor Test", monitorTest);
     // registerTest("Monitor Mode Test", monitorModeTest);
-    // registerTest("Window Test", windowTest);
+    registerTest("Window Test", windowTest);
     // registerTest("Icon Test", iconTest);
     // registerTest("Cursor Test", cursorTest);
     // registerTest("Input Window Test", inputWindowTest);
