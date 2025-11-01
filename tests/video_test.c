@@ -172,6 +172,10 @@ bool videoTest()
         palLog(nullptr, " Attaching and detaching foreign windows");
     }
 
+    if (features & PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE  ) {
+        palLog(nullptr, " Validate monitor display mode");
+    }
+
     // shutdown the video system
     palShutdownVideo();
 

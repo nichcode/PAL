@@ -1212,6 +1212,7 @@ PalResult PAL_CALL palInitVideo(
     s_Video.features2 |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
     s_Video.features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
     s_Video.features2 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
+    s_Video.features2 |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
 
     s_Video.initialized = true;
     s_Video.allocator = allocator;
@@ -1290,7 +1291,7 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-Uint64 PAL_CALL palGetVideoFeaturesEx()
+palGetVideoFeaturesEx PAL_CALL palGetVideoFeaturesEx()
 {
     if (!s_Video.initialized) {
         return 0;

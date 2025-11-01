@@ -130,7 +130,8 @@ typedef enum {
     PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY = PAL_BIT64(34),
     PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR = PAL_BIT64(35),
     PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY = PAL_BIT64(36),
-    PAL_VIDEO_FEATURE_FOREIGN_WINDOWS = PAL_BIT64(37)
+    PAL_VIDEO_FEATURE_FOREIGN_WINDOWS = PAL_BIT64(37),
+    PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE = PAL_BIT64(38),
 } PalVideoFeatures2;
 
 /**
@@ -904,7 +905,8 @@ PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
  *
  * PAL only validates the monitor display mode pointer not the values. To be
  * safe, users must get the monitor mode from palEnumerateMonitorModes() or call
- * palValidateMonitorMode() to validate before switching.
+ * palValidateMonitorMode() to validate before switching. 
+ * palValidateMonitorMode() is not supported on all platforms.
  *
  * If the monitor display mode submitted is invalid, this function might fail
  * depending on the platform (OS).
@@ -929,6 +931,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  * @brief Check if a monitor display mode is valid on the provided monitor.
  *
  * The video system must be initialized before this call.
+ * `PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE` must be supported.
  *
  * @param[in] monitor The monitor.
  * @param[in] mode Pointer to a PalMonitorMode to validate.
