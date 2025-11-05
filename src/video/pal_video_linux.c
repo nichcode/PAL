@@ -737,7 +737,7 @@ static X11Atoms s_X11Atoms = {0};
 // ==================================================
 
 #pragma region Wayland Typedefs
-#ifdef PAL_HAS_WAYLAND
+#if PAL_HAS_WAYLAND
 
 typedef struct wl_display* (*wl_display_connect_fn)(const char*);
 typedef void (*wl_display_disconnect_fn)(struct wl_display*);
@@ -827,7 +827,7 @@ static Wayland s_Wl = {0};
 #pragma endregion
 
 #pragma region Wayland-Client-Protocol
-#ifdef PAL_HAS_WAYLAND
+#if PAL_HAS_WAYLAND
 
 static inline void* wlRegistryBind(
     struct wl_registry *wl_registry, 
@@ -1034,7 +1034,7 @@ static inline void wlSurfaceDamageBuffer(
 #pragma endregion
 
 #pragma region Xdg-Shell-Protocol
-#ifdef PAL_HAS_WAYLAND
+#if PAL_HAS_WAYLAND
 
 struct xdg_wm_base;
 struct xdg_surface;
@@ -1464,7 +1464,7 @@ static const struct xdg_toplevel_listener xdgToplevelListener = {
 #pragma endregion
 
 #pragma region Zxdg-Decoraion_Manager-V1
-#ifdef PAL_HAS_WAYLAND
+#if PAL_HAS_WAYLAND
 
 struct xdg_toplevel;
 struct zxdg_decoration_manager_v1;
@@ -1583,7 +1583,7 @@ const struct wl_interface zxdg_toplevel_decoration_v1_interface = {
 #pragma endregion
 
 #pragma region Zwp-Pointer-Constraints
-#ifdef PAL_HAS_WAYLAND
+#if PAL_HAS_WAYLAND
 
 struct zwp_confined_pointer_v1;
 struct zwp_pointer_constraints_v1;
@@ -1726,6 +1726,7 @@ typedef struct {
     bool (*isWindowVisible)(PalWindow*);
     PalWindow* (*getFocusWindow)();
     PalWindowHandleInfo (*getWindowHandleInfo)(PalWindow*);
+    PalWindowHandleInfoEx (*getWindowHandleInfoEx)(PalWindow*);
     PalResult (*setWindowOpacity)(PalWindow*, float);
     PalResult (*setWindowStyle)(PalWindow*, PalWindowStyle);
     PalResult (*setWindowTitle)(PalWindow*, const char*);
@@ -2169,6 +2170,7 @@ static void xCheckFeatures()
     features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
     features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
     features2 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
+    features2 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
     s_Video.features = features;
     s_Video.features2 = features2;
@@ -4511,6 +4513,14 @@ PalWindowHandleInfo xGetWindowHandleInfo(PalWindow* window)
     return info;
 }
 
+PalWindowHandleInfoEx xGetWindowHandleInfoEx(PalWindow* w)
+{
+    PalWindowHandleInfoEx info = {0};
+    info.nativeDisplay = (void*)s_X11.display;
+    info.nativeWindow = (void*)w;
+    return info;
+}
+
 static PalResult xSetWindowOpacity(
     PalWindow* window,
     float opacity)
@@ -5032,6 +5042,7 @@ static Backend s_XBackend = {
     .isWindowVisible = xIsWindowVisible,
     .getFocusWindow = xGetFocusWindow,
     .getWindowHandleInfo = xGetWindowHandleInfo,
+    .getWindowHandleInfoEx = xGetWindowHandleInfoEx,
     .setWindowOpacity = xSetWindowOpacity,
     .setWindowStyle = xSetWindowStyle,
     .setWindowTitle = xSetWindowTitle,
@@ -5062,7 +5073,7 @@ static Backend s_XBackend = {
 // ==================================================
 
 #pragma region Wayland API
-#ifdef PAL_HAS_WAYLAND
+#if PAL_HAS_WAYLAND
 
 static int createShmFile(Uint64 size) 
 {
@@ -5141,6 +5152,8 @@ static void wlGlobalHandle(
         features |= PAL_VIDEO_FEATURE_WINDOW_SET_SIZE;
         features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
         features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+
+        s_Video.features2 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
         s_Video.features = features;
     }
 
@@ -5973,6 +5986,21 @@ PalWindowHandleInfo wlGetWindowHandleInfo(PalWindow* window)
     return info;
 }
 
+PalWindowHandleInfoEx wlGetWindowHandleInfoEx(PalWindow* window)
+{
+    PalWindowHandleInfoEx info = {0};
+    WindowData* data = findWindowData(window);
+    info.nativeDisplay = (void*)s_Wl.display;
+    info.nativeWindow = (void*)window;
+
+    if (data) {
+        info.nativeHandle1 = data->xdgSurface;
+        info.nativeHandle2 = data->xdgToplevel;
+    }
+
+    return info;
+}
+
 PalResult wlSetWindowOpacity(
     PalWindow* window,
     float opacity)
@@ -6141,6 +6169,7 @@ static Backend s_wlBackend = {
     .isWindowVisible = wlIsWindowVisible,
     .getFocusWindow = wlGetFocusWindow,
     .getWindowHandleInfo = wlGetWindowHandleInfo,
+    .getWindowHandleInfoEx = wlGetWindowHandleInfoEx,
     .setWindowOpacity = wlSetWindowOpacity,
     .setWindowStyle = wlSetWindowStyle,
     .setWindowTitle = wlSetWindowTitle,
@@ -6218,11 +6247,22 @@ PalResult PAL_CALL palInitVideo(
         s_Video.backend = &s_XBackend;
 
     } else {
-        PalResult ret = wlInitVideo();
+#if PAL_HAS_WAYLAND
+    PalResult ret = wlInitVideo();
+    if (ret != PAL_RESULT_SUCCESS) {
+        // fallback to X11
+        wlShutdownVideo();
+        ret = xInitVideo();
         if (ret != PAL_RESULT_SUCCESS) {
             return ret;
         }
+        s_Video.backend = &s_XBackend;
+
+    } else {
         s_Video.backend = &s_wlBackend;
+    }
+    
+#endif // PAL_HAS_WAYLAND
     }
 
     // we load EGL as well
@@ -6750,6 +6790,13 @@ PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window)
 {
     if (s_Video.initialized) {
         return s_Video.backend->getWindowHandleInfo(window);
+    }
+}
+
+PalWindowHandleInfoEx PAL_CALL palGetWindowHandleInfoEx(PalWindow* w)
+{
+    if (s_Video.initialized) {
+        return s_Video.backend->getWindowHandleInfoEx(w);
     }
 }
 

@@ -155,6 +155,7 @@ bool windowTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Window Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -281,6 +282,11 @@ bool windowTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
+        PAL_DISPATCH_POLL);
+
     // we set callback mode for modal begin and end. Since we want to capture
     // that instantly
     palSetEventDispatchMode(
@@ -338,6 +344,15 @@ bool windowTest()
 
                 case PAL_EVENT_MONITOR_LIST_CHANGED: {
                     onMonitorList(&event);
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
+                    }
                     break;
                 }
             }
