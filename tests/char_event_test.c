@@ -7,6 +7,7 @@ bool charEventTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Character Event Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -57,6 +58,11 @@ bool charEventTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
+        PAL_DISPATCH_POLL);
+
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYCHAR, PAL_DISPATCH_POLL);
 
     bool running = true;
@@ -85,6 +91,15 @@ bool charEventTest()
                     } else if (codepoint == 0x0061) {
                         // small a
                         palLog(nullptr, "a Character");
+                    }
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
                     }
                     break;
                 }

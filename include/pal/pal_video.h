@@ -132,6 +132,7 @@ typedef enum {
     PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY = PAL_BIT64(36),
     PAL_VIDEO_FEATURE_FOREIGN_WINDOWS = PAL_BIT64(37),
     PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE = PAL_BIT64(38),
+    PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR = PAL_BIT64(39)
 } PalVideoFeatures2;
 
 /**
@@ -615,6 +616,20 @@ typedef struct {
     void* nativeDisplay; /**< The platform (OS) display.*/
     void* nativeWindow;  /**< The window platform (OS) handle.*/
 } PalWindowHandleInfo;
+
+/**
+ * @struct PalWindowHandleInfoEx
+ * @brief Extended information about a window handle.
+ *
+ * @since 1.3
+ * @ingroup pal_video
+ */
+typedef struct {
+    void* nativeDisplay; /**< The platform (OS) display.*/
+    void* nativeWindow;  /**< The window platform (OS) handle.*/
+    void* nativeHandle1;  /**< Extra window handle.*/
+    void* nativeHandle2;  /**< Extra window handle.*/
+} PalWindowHandleInfoEx;
 
 /**
  * @struct PalWindowCreateInfo
@@ -1424,6 +1439,22 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  * @ingroup pal_video
  */
 PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
+
+/**
+ * @brief Get the native handles of the provided window.
+ *
+ * The video system must be initialized before this call.
+ *
+ * @param[in] window Pointer to the window.
+ *
+ * @return The native handles of the window on success or nullptr on failure.
+ *
+ * Thread safety: This function is thread-safe.
+ *
+ * @since 1.3
+ * @ingroup pal_video
+ */
+PAL_API PalWindowHandleInfoEx PAL_CALL palGetWindowHandleInfoEx(PalWindow* w);
 
 /**
  * @brief Set the opacity of the provided window.

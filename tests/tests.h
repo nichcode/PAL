@@ -38,6 +38,7 @@ bool inputWindowTest();
 bool systemCursorTest();
 bool attachWindowTest();
 bool charEventTest();
+bool nativeIntegrationTest();
 
 // opengl test
 bool openglTest();

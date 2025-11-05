@@ -7,6 +7,7 @@ bool iconTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Icon Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -42,6 +43,15 @@ bool iconTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // check for support
+    PalVideoFeatures2 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE_WINDOW_SET_ICON)) {
+        palLog(nullptr, "Seting icons feature not supported");
+        palDestroyEventDriver(eventDriver);
+        palShutdownVideo();
         return false;
     }
 
@@ -101,6 +111,11 @@ bool iconTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL); // polling
 
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
+        PAL_DISPATCH_POLL);
+
     // set the icon
     result = palSetWindowIcon(window, icon);
     if (result != PAL_RESULT_SUCCESS) {
@@ -119,6 +134,15 @@ bool iconTest()
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
                     running = false;
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
+                    }
                     break;
                 }
             }

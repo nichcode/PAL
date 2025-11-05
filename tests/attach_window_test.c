@@ -211,6 +211,7 @@ bool attachWindowTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Attach Window Test");
     palLog(nullptr, "Press A to attach and D to detach window");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -259,6 +260,11 @@ bool attachWindowTest()
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_WINDOW_MOVE,
+        PAL_DISPATCH_POLL);
+
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
         PAL_DISPATCH_POLL);
 
     // we listen for key release events to attach and detach the window
@@ -321,6 +327,15 @@ bool attachWindowTest()
                     Int32 x, y; // x == low, y == high
                     palUnpackInt32(event.data, &x, &y);
                     palLog(nullptr, "Window Moved: (%d, %d)", x, y);
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
+                    }
                     break;
                 }
 

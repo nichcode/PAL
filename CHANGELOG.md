@@ -69,3 +69,15 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 ### Notes
 - No API or ABI changes - existing code remains compatible.
 - Safe upgrade from **v1.1.0** - just rebuild your project after updating.
+
+## [1.3.0] - 2025-11-
+
+### Features
+- **Video:** Added **palGetVideoFeaturesEx()** to check supported features.
+- **Video:** Added **palGetWindowHandleInfoEx()** to get extended window handles.
+
+### Tests
+
+### Notes
+- No API or ABI changes - existing code remains compatible.
+- Safe upgrade from **v1.2.0** - just rebuild your project after updating.

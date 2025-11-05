@@ -270,6 +270,8 @@ static const char* dispatchString = "Poll Mode";
 static const char* dispatchString = "Callback Mode";
 #endif // DISPATCH_MODE_POLL
 
+static bool s_Running = false;
+
 // inline helpers
 static inline void onKeydown(const PalEvent* event)
 {
@@ -286,6 +288,10 @@ static inline void onKeydown(const PalEvent* event)
         dispatchString,
         keyName,
         scancodeName);
+
+    if (keycode == PAL_KEYCODE_ESCAPE) {
+        s_Running = false;
+    }
 }
 
 static inline void onKeyrepeat(const PalEvent* event)
@@ -399,6 +405,7 @@ bool inputWindowTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Input Window Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -469,8 +476,8 @@ bool inputWindowTest()
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 
-    running = true;
-    while (running) {
+    s_Running = true;
+    while (s_Running) {
         // update the video system to push video events
         palUpdateVideo();
 
@@ -478,7 +485,7 @@ bool inputWindowTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    s_Running = false;
                     break;
                 }
 

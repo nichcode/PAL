@@ -7,6 +7,7 @@ bool systemCursorTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "System Cursor Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -74,6 +75,11 @@ bool systemCursorTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL); // polling
 
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
+        PAL_DISPATCH_POLL);
+
     // set the cursor
     palSetWindowCursor(window, cursor);
 
@@ -87,6 +93,15 @@ bool systemCursorTest()
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
                     running = false;
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
+                    }
                     break;
                 }
             }
