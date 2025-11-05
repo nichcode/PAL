@@ -1,7 +1,7 @@
 
 /**
 
-Copyright (C) 2025 Nicholas Agbo
+Copyright (C) 2025 Nicholas Agbo <agbonicholas04@gmail.com>
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -53,6 +53,7 @@ freely, subject to the following restrictions:
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
 #endif // PAL_HAS_WAYLAND
 
 // ==================================================
@@ -773,6 +774,7 @@ typedef int (*wl_display_dispatch_pending_fn)(struct wl_display*);
 typedef int (*wl_display_flush_fn)(struct wl_display*);
 typedef int (*wl_display_prepare_read_fn)(struct wl_display*);
 typedef int (*wl_display_read_events_fn)(struct wl_display*);
+typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 
 typedef struct {
     bool checkFeatures;
@@ -813,6 +815,7 @@ typedef struct {
     wl_display_flush_fn displayFlush;
     wl_display_prepare_read_fn prepareRead;
     wl_display_read_events_fn readEvents;
+    wl_display_get_fd_fn displayGetFd;
 } Wayland;
 
 typedef struct {
@@ -1173,6 +1176,8 @@ static void xdgToplevelClose(
     void* data,
     struct xdg_toplevel* toplevel)
 {
+    // TODO: push window closee event
+
     (void)data;
     (void)toplevel;
 }
@@ -1456,7 +1461,9 @@ static const struct xdg_surface_listener xdgSurfaceListener = {
 
 static const struct xdg_toplevel_listener xdgToplevelListener = {
     .configure = xdgToplevelConfigure,
-    .close = xdgToplevelClose
+    .close = xdgToplevelClose,
+    .configure_bounds = nullptr,
+    .wm_capabilities = nullptr
 };
 
 #endif // PAL_HAS_WAYLAND
@@ -5171,6 +5178,8 @@ static void wlGlobalHandle(
             1);
         xdgWmBaseAddListener(s_Wl.xdgBase, &wmBaseListener, nullptr);
 
+        s_Wl.displayFlush(s_Wl.display);
+
     } else if (strcmp(interface, "wl_shm") == 0) {
         s_Wl.shm = wlRegistryBind(
             registry, 
@@ -5434,6 +5443,10 @@ PalResult wlInitVideo()
         s_Wl.handle, 
         "wl_display_read_events");
 
+    s_Wl.displayGetFd = (wl_display_get_fd_fn)dlsym(
+        s_Wl.handle, 
+        "wl_display_get_fd");
+
     // initialize wayland
     s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
@@ -5445,6 +5458,12 @@ PalResult wlInitVideo()
     s_Wl.registry = wlDisplayGetRegistry(s_Wl.display);
     wlRegistryAddListener(s_Wl.registry, &s_RegistryListener, nullptr);
     s_Wl.displayRoundtrip(s_Wl.display);
+
+    // s_Wl.displayRoundtrip(s_Wl.display);
+
+    if (!s_Wl.compositor || !s_Wl.xdgBase || !s_Wl.shm) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
 
     s_Wl.checkFeatures = false;
     return PAL_RESULT_SUCCESS;
@@ -5465,19 +5484,18 @@ void wlShutdownVideo()
 }
 
 void wlUpdateVideo()
-{
-    while (s_Wl.prepareRead(s_Wl.display) != 0) {
-        s_Wl.dispatchPending(s_Wl.display);
-        s_Wl.displayFlush(s_Wl.display);
-        if (s_Wl.readEvents(s_Wl.display) == 0) {
-            s_Wl.dispatchPending(s_Wl.display);
-        }
+{    
+    s_Wl.dispatchPending(s_Wl.display);
+    s_Wl.displayFlush(s_Wl.display);
+
+    // check for new messages
+    int fd = s_Wl.displayGetFd(s_Wl.display);
+    struct pollfd pfd = { fd, POLLIN, 0 };
+    poll(&pfd, 1, 0);
+    
+    if (pfd.revents & POLLIN) {
+        s_Wl.displayDispatch(s_Wl.display);
     }
-
-
-
-    // s_Wl.dispatchPending(s_Wl.display);
-    // s_Wl.displayFlush(s_Wl.display);
 }
 
 PalResult wlSetFBConfig(
@@ -5727,11 +5745,6 @@ PalResult wlCreateWindow(
     struct xdg_surface* xdgSurface = nullptr;
     struct xdg_toplevel* xdgToplevel = nullptr;
 
-    // check if we have xdg and a compositor
-    if (!s_Wl.xdgBase || !s_Wl.compositor) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
     if (info->style & PAL_WINDOW_STYLE_TOPMOST) {
         return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
     }
@@ -5842,10 +5855,9 @@ PalResult wlCreateWindow(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    struct wl_surface* wl_surface = (struct wl_surface*)data->window;
-    wlSurfaceAttach(wl_surface, buffer, 0, 0);
-    wlSurfaceDamageBuffer(wl_surface, 0, 0, data->w, data->h);
-    wlSurfaceCommit(wl_surface);
+    wlSurfaceAttach(surface, buffer, 0, 0);
+    wlSurfaceDamageBuffer(surface, 0, 0, data->w, data->h);
+    wlSurfaceCommit(surface);
     s_Wl.displayRoundtrip(s_Wl.display);
 
     // resizable
