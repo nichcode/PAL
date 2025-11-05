@@ -184,6 +184,82 @@ typedef struct {
     eglGetConfigsFn eglGetConfigs;
 } EGL;
 
+typedef struct {
+    // clang-format off
+    void (*shutdownVideo)();
+    void (*updateVideo)();
+    PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
+    PalResult (*getPrimaryMonitor)(PalMonitor**);
+    PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
+    PalResult (*enumerateMonitorModes)(PalMonitor*, Int32*, PalMonitorMode*);
+    PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*setMonitorOrientation)(PalMonitor*, PalOrientation);
+
+    PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
+    void (*destroyWindow)(PalWindow*);
+    PalResult (*maximizeWindow)(PalWindow*);
+    PalResult (*minimizeWindow)(PalWindow*);
+    PalResult (*restoreWindow)(PalWindow*);
+    PalResult (*showWindow)(PalWindow*);
+    PalResult (*hideWindow)(PalWindow*);
+    PalResult (*flashWindow)(PalWindow*, const PalFlashInfo*);
+    PalResult (*getWindowStyle)(PalWindow*, PalWindowStyle*);
+    PalResult (*getWindowMonitor)(PalWindow*, PalMonitor**);
+    PalResult (*getWindowTitle)(PalWindow*, Uint64, Uint64*, char*);
+    PalResult (*getWindowPos)(PalWindow*, Int32*, Int32*);
+    PalResult (*getWindowSize)(PalWindow*, Uint32*, Uint32*);
+    PalResult (*getWindowState)(PalWindow*, PalWindowState*);
+    bool (*isWindowVisible)(PalWindow*);
+    PalWindow* (*getFocusWindow)();
+    PalWindowHandleInfo (*getWindowHandleInfo)(PalWindow*);
+    PalWindowHandleInfoEx (*getWindowHandleInfoEx)(PalWindow*);
+    PalResult (*setWindowOpacity)(PalWindow*, float);
+    PalResult (*setWindowStyle)(PalWindow*, PalWindowStyle);
+    PalResult (*setWindowTitle)(PalWindow*, const char*);
+    PalResult (*setWindowPos)(PalWindow*, Int32, Int32);
+    PalResult (*setWindowSize)(PalWindow*, Uint32, Uint32);
+    PalResult (*setFocusWindow)(PalWindow*);
+
+    PalResult (*createIcon)(const PalIconCreateInfo*, PalIcon**);
+    void (*destroyIcon)(PalIcon*);
+    PalResult (*setWindowIcon)(PalWindow*, PalIcon*);
+
+    PalResult (*createCursor)(const PalCursorCreateInfo*, PalCursor**);
+    PalResult (*createCursorFrom)(PalCursorType, PalCursor**);
+    void (*destroyCursor)(PalCursor*);
+    void (*showCursor)(bool);
+    PalResult (*clipCursor)(PalWindow*, bool);
+    PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
+    PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
+    PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
+
+    PalResult (*attachWindow)(void*, PalWindow**);
+    PalResult (*detachWindow)(PalWindow*, void**);
+    // clang-format off
+} Backend;
+
+typedef struct {
+    bool initialized;
+    Int32 maxWindowData;
+    Int32 maxMonitorData;
+    Int32 pixelFormat;
+    PalVideoFeatures features;
+    PalVideoFeatures2 features2;
+    const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
+    const Backend* backend;
+    WindowData* windowData;
+    MonitorData* monitorData;
+    const char* className;
+} VideoLinux;
+
+static VideoLinux s_Video = {0};
+static Mouse s_Mouse = {0};
+static Keyboard s_Keyboard = {0};
+static EGL s_Egl;
+
 // ==================================================
 // X11 Typedefs, enums and structs
 // ==================================================
@@ -775,6 +851,7 @@ typedef int (*wl_display_flush_fn)(struct wl_display*);
 typedef int (*wl_display_prepare_read_fn)(struct wl_display*);
 typedef int (*wl_display_read_events_fn)(struct wl_display*);
 typedef int (*wl_display_get_fd_fn)(struct wl_display*);
+typedef void (*wl_display_cancel_read_fn)(struct wl_display*);
 
 typedef struct {
     bool checkFeatures;
@@ -816,6 +893,7 @@ typedef struct {
     wl_display_prepare_read_fn prepareRead;
     wl_display_read_events_fn readEvents;
     wl_display_get_fd_fn displayGetFd;
+    wl_display_cancel_read_fn cancelRead;
 } Wayland;
 
 typedef struct {
@@ -1176,10 +1254,17 @@ static void xdgToplevelClose(
     void* data,
     struct xdg_toplevel* toplevel)
 {
-    // TODO: push window closee event
+    WindowData* winData = (WindowData*)data;
 
-    (void)data;
-    (void)toplevel;
+    // TODO: push window close event
+    PalEventType type = PAL_EVENT_WINDOW_CLOSE;
+    PalDispatchMode mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+    if (mode != PAL_DISPATCH_NONE) {
+        PalEvent event = {0};
+        event.type = type;
+        event.data2 = palPackPointer(winData->window);
+        palPushEvent(s_Video.eventDriver, &event);
+    }
 }
 
 static inline int xdgSurfaceAddListener(
@@ -1700,83 +1785,7 @@ static void setupZwpPointerProtocol()
 }
 
 #endif // PAL_HAS_WAYLAND
-#pragma endregion
-
-typedef struct {
-    // clang-format off
-    void (*shutdownVideo)();
-    void (*updateVideo)();
-    PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
-    PalResult (*getPrimaryMonitor)(PalMonitor**);
-    PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
-    PalResult (*enumerateMonitorModes)(PalMonitor*, Int32*, PalMonitorMode*);
-    PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
-    PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
-    PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
-    PalResult (*setMonitorOrientation)(PalMonitor*, PalOrientation);
-
-    PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
-    void (*destroyWindow)(PalWindow*);
-    PalResult (*maximizeWindow)(PalWindow*);
-    PalResult (*minimizeWindow)(PalWindow*);
-    PalResult (*restoreWindow)(PalWindow*);
-    PalResult (*showWindow)(PalWindow*);
-    PalResult (*hideWindow)(PalWindow*);
-    PalResult (*flashWindow)(PalWindow*, const PalFlashInfo*);
-    PalResult (*getWindowStyle)(PalWindow*, PalWindowStyle*);
-    PalResult (*getWindowMonitor)(PalWindow*, PalMonitor**);
-    PalResult (*getWindowTitle)(PalWindow*, Uint64, Uint64*, char*);
-    PalResult (*getWindowPos)(PalWindow*, Int32*, Int32*);
-    PalResult (*getWindowSize)(PalWindow*, Uint32*, Uint32*);
-    PalResult (*getWindowState)(PalWindow*, PalWindowState*);
-    bool (*isWindowVisible)(PalWindow*);
-    PalWindow* (*getFocusWindow)();
-    PalWindowHandleInfo (*getWindowHandleInfo)(PalWindow*);
-    PalWindowHandleInfoEx (*getWindowHandleInfoEx)(PalWindow*);
-    PalResult (*setWindowOpacity)(PalWindow*, float);
-    PalResult (*setWindowStyle)(PalWindow*, PalWindowStyle);
-    PalResult (*setWindowTitle)(PalWindow*, const char*);
-    PalResult (*setWindowPos)(PalWindow*, Int32, Int32);
-    PalResult (*setWindowSize)(PalWindow*, Uint32, Uint32);
-    PalResult (*setFocusWindow)(PalWindow*);
-
-    PalResult (*createIcon)(const PalIconCreateInfo*, PalIcon**);
-    void (*destroyIcon)(PalIcon*);
-    PalResult (*setWindowIcon)(PalWindow*, PalIcon*);
-
-    PalResult (*createCursor)(const PalCursorCreateInfo*, PalCursor**);
-    PalResult (*createCursorFrom)(PalCursorType, PalCursor**);
-    void (*destroyCursor)(PalCursor*);
-    void (*showCursor)(bool);
-    PalResult (*clipCursor)(PalWindow*, bool);
-    PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
-    PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
-    PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
-
-    PalResult (*attachWindow)(void*, PalWindow**);
-    PalResult (*detachWindow)(PalWindow*, void**);
-    // clang-format off
-} Backend;
-
-typedef struct {
-    bool initialized;
-    Int32 maxWindowData;
-    Int32 maxMonitorData;
-    Int32 pixelFormat;
-    PalVideoFeatures features;
-    PalVideoFeatures2 features2;
-    const PalAllocator* allocator;
-    PalEventDriver* eventDriver;
-    const Backend* backend;
-    WindowData* windowData;
-    MonitorData* monitorData;
-    const char* className;
-} VideoLinux;
-
-static VideoLinux s_Video = {0};
-static Mouse s_Mouse = {0};
-static Keyboard s_Keyboard = {0};
-static EGL s_Egl;
+#pragma endregions
 
 // ==================================================
 // Internal API
@@ -5336,8 +5345,7 @@ static void wlOutputDone(
     void* data, 
     struct wl_output* output)
 {
-    (void)data;
-    (void)output;
+   
 }
 
 static const struct wl_registry_listener s_RegistryListener = {
@@ -5447,6 +5455,10 @@ PalResult wlInitVideo()
         s_Wl.handle, 
         "wl_display_get_fd");
 
+    s_Wl.cancelRead = (wl_display_cancel_read_fn)dlsym(
+        s_Wl.handle, 
+        "wl_display_cancel_read");
+
     // initialize wayland
     s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
@@ -5458,8 +5470,6 @@ PalResult wlInitVideo()
     s_Wl.registry = wlDisplayGetRegistry(s_Wl.display);
     wlRegistryAddListener(s_Wl.registry, &s_RegistryListener, nullptr);
     s_Wl.displayRoundtrip(s_Wl.display);
-
-    // s_Wl.displayRoundtrip(s_Wl.display);
 
     if (!s_Wl.compositor || !s_Wl.xdgBase || !s_Wl.shm) {
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -5484,18 +5494,27 @@ void wlShutdownVideo()
 }
 
 void wlUpdateVideo()
-{    
-    s_Wl.dispatchPending(s_Wl.display);
+{
+    // flush pending requests 
     s_Wl.displayFlush(s_Wl.display);
 
-    // check for new messages
+    while (s_Wl.prepareRead(s_Wl.display) != 0) {
+        s_Wl.dispatchPending(s_Wl.display);
+    }
+
     int fd = s_Wl.displayGetFd(s_Wl.display);
     struct pollfd pfd = { fd, POLLIN, 0 };
-    poll(&pfd, 1, 0);
-    
-    if (pfd.revents & POLLIN) {
-        s_Wl.displayDispatch(s_Wl.display);
+    if (poll(&pfd, 1, 0) > 0) {
+        // there are events ready to be read
+        s_Wl.readEvents(s_Wl.display);
+
+    } else {
+        s_Wl.cancelRead(s_Wl.display);
     }
+
+    // dispatch events that were read
+    s_Wl.dispatchPending(s_Wl.display);
+    s_Wl.displayFlush(s_Wl.display);
 }
 
 PalResult wlSetFBConfig(
