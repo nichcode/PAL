@@ -72,6 +72,37 @@ typedef int (*XFlushFn)(Display*);
 typedef int (*XFreeFn)(void*);
 
 // Wayland typedefs
+struct wl_display;
+struct wl_interface;
+struct xdg_toplevel;
+
+typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
+    struct wl_proxy*, 
+    uint32_t, 
+    const struct wl_interface*, 
+    uint32_t, 
+    uint32_t, ...);
+
+typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
+typedef int (*wl_display_flush_fn)(struct wl_display*);
+
+static wl_proxy_marshal_flags_fn s_wl_proxy_marshal_flags;
+static wl_proxy_get_version_fn s_wl_proxy_get_version;
+static wl_display_flush_fn s_wl_display_flush;
+
+static inline void xdgToplevelSetTitle(
+    struct xdg_toplevel *xdg_toplevel, 
+    const char *title)
+{
+	s_wl_proxy_marshal_flags(
+        (struct wl_proxy *) xdg_toplevel,
+        2, // XDG_TOPLEVEL_SET_TITLE
+        NULL, 
+        s_wl_proxy_get_version(
+            (struct wl_proxy *) xdg_toplevel), 
+            0, 
+            title);
+}
 
 static XInternAtomFn s_XInternAtom;
 static XChangePropertyFn s_XChangeProperty;
@@ -184,13 +215,13 @@ void getWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
             &bytesAfter,
             &prop);
 
-        strncpy(s_TitleBuffer, (const char*)prop, sizeof(s_TitleBuffer));
+        strcpy(s_TitleBuffer, (const char*)prop);
         s_XFree(prop);
 
     } else {
         XTextProperty text;
         s_XGetWMName(display, window, &text);
-        strncpy(s_TitleBuffer, (const char*)text.value, sizeof(s_TitleBuffer));
+        strcpy(s_TitleBuffer, (const char*)text.value);
         s_XFree(text.value);
     }
 
@@ -202,16 +233,42 @@ void getWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
 
 void setWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
 {
-    #ifdef __linux__
+#ifdef __linux__
+    s_WaylandLib = dlopen("libwayland-client.so.0", RTLD_LAZY);
+    if (!s_WaylandLib) {
+        return;
+    }
 
-    #endif // __linux__
+    s_wl_proxy_marshal_flags = (wl_proxy_marshal_flags_fn)dlsym(
+        s_WaylandLib, 
+        "wl_proxy_marshal_flags");
+
+    s_wl_proxy_get_version = (wl_proxy_get_version_fn)dlsym(
+        s_WaylandLib, 
+        "wl_proxy_get_version");
+
+    s_wl_display_flush = (wl_display_flush_fn)dlsym(
+        s_WaylandLib, 
+        "wl_display_flush");
+
+    struct xdg_toplevel* toplevel = nullptr;
+    struct wl_display* display = nullptr;
+    display = (struct wl_display*)windowInfo->nativeDisplay;
+    toplevel = (struct xdg_toplevel*)windowInfo->nativeHandle2;
+
+    xdgToplevelSetTitle(toplevel, "Hello from native Wayland API");
+    s_wl_display_flush(display);
+
+#endif // __linux__
 }
 
 void getWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
 {
-    #ifdef __linux__
-
-    #endif // __linux__
+#ifdef __linux__
+    // wayland does not support getting window title
+    // so we just return the title we set through wayland
+    dlclose(s_WaylandLib);
+#endif // __linux__
 }
 
 void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo);

@@ -73,10 +73,12 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 ## [1.3.0] - 2025-11-
 
 ### Features
+- **Video:** Added Wayland-based backend support.
 - **Video:** Added **palGetVideoFeaturesEx()** to check supported features.
 - **Video:** Added **palGetWindowHandleInfoEx()** to get extended window handles.
 
 ### Tests
+- Added native integration example: demonstrating **Native API Integration with PAL API**. see **native_integration_test.c**.
 
 ### Notes
 - No API or ABI changes - existing code remains compatible.

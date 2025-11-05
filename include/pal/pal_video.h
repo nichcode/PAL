@@ -1444,6 +1444,10 @@ PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
  * @brief Get the native handles of the provided window.
  *
  * The video system must be initialized before this call.
+ * 
+ * On Wayland: `PalWindowHandleInfoEx::nativeHandle1` and 
+ * `PalWindowHandleInfoEx::nativeHandle2` are xdg_surface and 
+ * xdg_toplevel respectively.
  *
  * @param[in] window Pointer to the window.
  *

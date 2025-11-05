@@ -1173,7 +1173,6 @@ static void xdgToplevelClose(
     void* data,
     struct xdg_toplevel* toplevel)
 {
-    printf("hello");
     (void)data;
     (void)toplevel;
 }
@@ -5856,6 +5855,9 @@ PalResult wlCreateWindow(
         wlSurfaceCommit(surface);
     }
 
+    data->buffer = buffer;
+    s_Wl.displayFlush(s_Wl.display);
+
     *outWindow = data->window;
     return PAL_RESULT_SUCCESS;
 }
@@ -6019,6 +6021,13 @@ PalResult wlSetWindowTitle(
     PalWindow* window,
     const char* title)
 {
+    WindowData* data = findWindowData(window);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    xdgToplevelSetTitle(data->xdgToplevel, title);
+    s_Wl.displayFlush(s_Wl.display);
     return PAL_RESULT_SUCCESS;
 }
 
