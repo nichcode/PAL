@@ -342,7 +342,7 @@ bool nativeIntegrationTest()
     }
 
     // check for support
-    PalVideoFeatures2 features = palGetVideoFeaturesEx();
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
 
     PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
@@ -354,7 +354,7 @@ bool nativeIntegrationTest()
     createInfo.title = "Native Integration Test";
   
     // check if we support decorated windows (title bar, close etc)
-    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;

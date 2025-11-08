@@ -47,9 +47,9 @@ bool iconTest()
     }
 
     // check for support
-    PalVideoFeatures2 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE_WINDOW_SET_ICON)) {
-        palLog(nullptr, "Seting icons feature not supported");
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_WINDOW_SET_ICON)) {
+        palLog(nullptr, "Setting icons feature not supported");
         palDestroyEventDriver(eventDriver);
         palShutdownVideo();
         return false;

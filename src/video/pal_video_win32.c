@@ -104,7 +104,7 @@ typedef struct {
     Int32 pixelFormat;
     Int32 maxWindowData;
     PalVideoFeatures features;
-    PalVideoFeatures2 features2;
+    PalVideoFeatures64 features64;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     HINSTANCE shcore;
@@ -1167,6 +1167,7 @@ PalResult PAL_CALL palInitVideo(
 
     // clang-format on
 
+    // TODO:: 
     // set features
     s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION;
     s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
@@ -1206,14 +1207,14 @@ PalResult PAL_CALL palInitVideo(
     }
 
     // extended features
-    s_Video.features2 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
-    s_Video.features2 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
     s_Video.initialized = true;
     s_Video.allocator = allocator;
@@ -1298,7 +1299,7 @@ palGetVideoFeaturesEx PAL_CALL palGetVideoFeaturesEx()
         return 0;
     }
     
-    return ((Uint64)s_Video.features2) | (Uint64)s_Video.features;
+    return ((Uint64)s_Video.features64) | (Uint64)s_Video.features;
 }
 
 PalResult PAL_CALL palSetFBConfig(

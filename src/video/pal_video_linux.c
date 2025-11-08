@@ -246,7 +246,7 @@ typedef struct {
     Int32 maxMonitorData;
     Int32 pixelFormat;
     PalVideoFeatures features;
-    PalVideoFeatures2 features2;
+    PalVideoFeatures64 features64;
     const PalAllocator* allocator;
     PalEventDriver* eventDriver;
     const Backend* backend;
@@ -1111,6 +1111,38 @@ static inline void wlSurfaceDamageBuffer(
             height);
 }
 
+static inline int wlSurfaceAddListener(
+    struct wl_surface *wl_surface,
+    const struct wl_surface_listener *listener, 
+    void *data)
+{
+	return s_Wl.proxyAddListener(
+        (struct wl_proxy *) wl_surface,
+        (void (**)(void)) listener, data);
+}
+
+static void surfaceEnter(
+    void* userData,
+    struct wl_surface* surface,
+    struct wl_output* output)
+{
+    // TODO: 
+
+}
+
+static void surfaceLeave(
+    void* userData,
+    struct wl_surface* surface,
+    struct wl_output* output)
+{
+    // TODO:
+}
+
+static struct wl_surface_listener surfaceListener = {
+    .enter = surfaceEnter,
+    .leave = surfaceLeave
+};
+
 #endif // PAL_HAS_WAYLAND
 #pragma endregion
 
@@ -1233,7 +1265,62 @@ static void xdgSurfaceConfigure(
     struct xdg_surface* surface,
     uint32_t serial)
 {
+    WindowData* winData = (WindowData*)data;
     xdgSurfaceAckConfigure(surface, serial);
+
+    // push and resolve any pending events
+    if (!winData->skipConfigure) {
+        winData->skipConfigure = true;
+
+        // create a new buffer with the new size
+        struct wl_buffer* buffer = nullptr;
+        buffer = createShmBuffer(winData->w, winData->h);
+        if (!buffer) {
+            return;
+        }
+
+        struct wl_surface* _surface = nullptr;
+        _surface = (struct wl_surface*)winData->window;
+
+        wlSurfaceAttach(_surface, buffer, 0, 0);
+        wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
+        wlSurfaceCommit(_surface);
+
+        // destroy old buffer
+        wlBufferDestroy(winData->buffer);
+        winData->buffer = buffer;
+
+        // push a window resize event
+        PalEventType type = PAL_EVENT_WINDOW_SIZE;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = palPackUint32(winData->w, winData->h);
+            event.data2 = palPackPointer(winData->window);
+            palPushEvent(s_Video.eventDriver, &event);
+        }
+    }
+
+    // pending state
+    if (!winData->skipState) {
+        winData->skipState = true;
+
+        // push a window state event
+        // we dont recreate buffers over here
+        // since we already create the buffer with the new size
+        PalEventType type = PAL_EVENT_WINDOW_STATE;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = winData->state;
+            event.data2 = palPackPointer(winData->window);
+            palPushEvent(s_Video.eventDriver, &event);
+        }
+    }
 }
 
 static void xdgToplevelConfigure(
@@ -1244,10 +1331,28 @@ static void xdgToplevelConfigure(
     struct wl_array* states)
 {
     WindowData* winData = (WindowData*)data;
-    if (width > 0 && height > 0) {
-        winData->w = width;
-        winData->h = height;
+
+    if (!winData->skipState) {
+        uint32_t* state;
+        wl_array_for_each(state, states) {
+            // we need only maximized
+            if (*state == 1) { // XDG_TOPLEVEL_STATE_MAXIMIZED
+                if (winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
+                    winData->state = PAL_WINDOW_STATE_MAXIMIZED;
+                    winData->skipState = false;
+                }
+            }
+        }
     }
+
+    if (!winData->skipConfigure) {
+        if (width > 0 && height > 0) {
+            winData->w = width;
+            winData->h = height;
+            winData->skipConfigure = false;
+        }
+    }
+
 }
 
 static void xdgToplevelClose(
@@ -1256,7 +1361,6 @@ static void xdgToplevelClose(
 {
     WindowData* winData = (WindowData*)data;
 
-    // TODO: push window close event
     PalEventType type = PAL_EVENT_WINDOW_CLOSE;
     PalDispatchMode mode = palGetEventDispatchMode(s_Video.eventDriver, type);
     if (mode != PAL_DISPATCH_NONE) {
@@ -1400,6 +1504,17 @@ static inline void xdgToplevelSetAppId(
             (struct wl_proxy *) xdg_toplevel), 
             0, 
             app_id);
+}
+
+static inline void xdgToplevelUnsetMaximized(struct xdg_toplevel *xdg_toplevel)
+{
+	s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) xdg_toplevel, 
+        10, // XDG_TOPLEVEL_UNSET_MAXIMIZED
+        NULL, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) xdg_toplevel), 
+            0);
 }
 
 static const struct wl_interface *xdg_shell_types[26];
@@ -2122,7 +2237,7 @@ static void xCheckFeatures()
         (unsigned char**)&supportedAtoms);
 
     PalVideoFeatures features = 0;
-    PalVideoFeatures2 features2 = 0;
+    PalVideoFeatures64 features64 = 0;
     for (unsigned long i = 0; i < count; ++i) {
         if (supportedAtoms[i] == s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
             features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
@@ -2181,14 +2296,33 @@ static void xCheckFeatures()
     features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
 
     // extended features
-    features2 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
-    features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
-    features2 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
-    features2 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
-    features2 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+    // old features
+    features64 |= PAL_VIDEO_FEATURE64_MULTI_MONITORS;
+    features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION;
+    features64 |= PAL_VIDEO_FEATURE64_MONITOR_SET_MODE;
+    features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_MODE;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_SIZE;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_VISIBILITY;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_VISIBILITY;
+
+    features64 |= PAL_VIDEO_FEATURE64_CLIP_CURSOR;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_INPUT_FOCUS;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_INPUT_FOCUS;
+    features64 |= PAL_VIDEO_FEATURE64_CURSOR_SET_POS;
+    features64 |= PAL_VIDEO_FEATURE64_CURSOR_GET_POS;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY;
+
+    features64 |= PAL_VIDEO_FEATURE64_TOPMOST_WINDOW;
+    features64 |= PAL_VIDEO_FEATURE64_DECORATED_WINDOW;
+    features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY;
+    features64 |= PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS;
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR;
 
     s_Video.features = features;
-    s_Video.features2 = features2;
+    s_Video.features64 = features64;
     s_X11.free(supportedAtoms);
 }
 
@@ -3898,6 +4032,44 @@ static PalResult xCreateWindow(
         monitorY = monitorInfo.y;
         monitorW = monitorInfo.width;
         monitorH = monitorInfo.height;
+
+    } else {
+        // primary monitor is not set
+        XRRScreenResources* resources = nullptr;
+        resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
+        for (int i = 0; i < resources->noutput; ++i) {
+            RROutput output = resources->outputs[i];
+            XRROutputInfo* outputInfo = s_X11.getOutputInfo(
+                s_X11.display,
+                resources,
+                FROM_PAL_HANDLE(RROutput, monitor));
+
+            // check if its a monitor
+            if (outputInfo->connection != RR_Connected || 
+                outputInfo->crtc == None) {
+                s_X11.freeOutputInfo(outputInfo);
+                continue;
+            }
+
+            // clang-format off
+            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
+                s_X11.display, 
+                resources, 
+                outputInfo->crtc);
+            // clang-format on
+
+            monitorX = crtc->x;
+
+            monitorX = crtc->x;
+            monitorY = crtc->y;
+            monitorW = crtc->width;
+            monitorH = crtc->height;
+
+            s_X11.freeCrtcInfo(crtc);
+            s_X11.freeOutputInfo(outputInfo);
+            break;
+        }
+        s_X11.freeScreenResources(resources);
     }
 
     Int32 x, y = 0;
@@ -5159,6 +5331,7 @@ static void wlGlobalHandle(
 {
     if (s_Wl.checkFeatures) {
         PalVideoFeatures features = 0;
+        PalVideoFeatures64 features64 = 0;
         features |= PAL_VIDEO_FEATURE_HIGH_DPI;
         features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
         features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
@@ -5168,8 +5341,20 @@ static void wlGlobalHandle(
         features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
         features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
 
-        s_Video.features2 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+        features64 |= PAL_VIDEO_FEATURE64_HIGH_DPI;
+        features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION;
+        features64 |= PAL_VIDEO_FEATURE64_MULTI_MONITORS;
+        features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_MODE;
+        features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE;
+        features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE;
+        features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_STATE;
+        features64 |= PAL_VIDEO_FEATURE64_BORDERLESS_WINDOW;
+
+        features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR;
+
         s_Video.features = features;
+        s_Video.features64 = features64;
+        s_Wl.checkFeatures = false;
     }
 
     if (strcmp(interface, "wl_compositor") == 0) {
@@ -5203,7 +5388,7 @@ static void wlGlobalHandle(
             &zxdg_decoration_manager_v1_interface,
             1);
 
-        s_Video.features2 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+        s_Video.features64 |= PAL_VIDEO_FEATURE64_DECORATED_WINDOW;
 
     } else if (strcmp(interface, "zwp_pointer_constraints_v1") == 0) {
         s_Wl.pointerConstraints = wlRegistryBind(
@@ -5475,7 +5660,6 @@ PalResult wlInitVideo()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    s_Wl.checkFeatures = false;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5816,9 +6000,13 @@ PalResult wlCreateWindow(
     xdgToplevelSetTitle(xdgToplevel, info->title);
     xdgToplevelSetAppId(xdgToplevel, appID);
 
+    wlSurfaceAddListener(surface, &surfaceListener, data);
     xdgToplevelAddListener(xdgToplevel, &xdgToplevelListener, data);
     xdgSurfaceAddListener(xdgSurface, &xdgSurfaceListener, data);
     wlSurfaceCommit(surface);
+
+    data->skipState = true;
+    data->skipConfigure = true;
     s_Wl.displayRoundtrip(s_Wl.display);
 
     if (info->maximized && info->show) {
@@ -5827,6 +6015,7 @@ PalResult wlCreateWindow(
         xdgToplevelSetMaximized(xdgToplevel);
         wlSurfaceCommit(surface);
         s_Wl.displayRoundtrip(s_Wl.display);
+        data->state = PAL_WINDOW_STATE_MAXIMIZED;
 
     } else {
         data->w = info->width;
@@ -5838,6 +6027,7 @@ PalResult wlCreateWindow(
     data->window = (PalWindow*)surface;
     data->buffer = nullptr;
     data->isAttached = false;
+    data->state = PAL_WINDOW_STATE_RESTORED;
 
     // show window
     if (info->show == false) {
@@ -5851,6 +6041,7 @@ PalResult wlCreateWindow(
     if (info->minimized) {
         xdgToplevelSetMinimized(xdgToplevel);
         wlSurfaceCommit(surface);
+        data->state = PAL_WINDOW_STATE_MINIMIZED;
     }
 
     // decorated window
@@ -5879,16 +6070,7 @@ PalResult wlCreateWindow(
     wlSurfaceCommit(surface);
     s_Wl.displayRoundtrip(s_Wl.display);
 
-    // resizable
-    if (!(info->style & PAL_WINDOW_STYLE_RESIZABLE)) {
-        xdgToplevelSetMinSize(xdgToplevel, data->w, data->h);
-        xdgToplevelSetMaxSize(xdgToplevel, data->w, data->h);
-        wlSurfaceCommit(surface);
-    }
-
     data->buffer = buffer;
-    s_Wl.displayFlush(s_Wl.display);
-
     *outWindow = data->window;
     return PAL_RESULT_SUCCESS;
 }
@@ -5935,6 +6117,13 @@ PalResult wlMaximizeWindow(PalWindow* window)
 
 PalResult wlRestoreWindow(PalWindow* window)
 {
+    WindowData* data = findWindowData(window);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    // we can only restore from a maximized state
+    xdgToplevelUnsetMaximized(data->xdgToplevel);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5966,7 +6155,7 @@ PalResult wlGetWindowMonitor(
     PalWindow* window,
     PalMonitor** outMonitor)
 {
-    return PAL_RESULT_SUCCESS;
+    return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowTitle(
@@ -6008,6 +6197,7 @@ bool wlIsWindowVisible(PalWindow* window)
 
 PalWindow* wlGetFocusWindow()
 {
+    // Wayland does not let client query focused window
     return nullptr;
 }
 
@@ -6075,6 +6265,14 @@ PalResult wlSetWindowSize(
     Uint32 width,
     Uint32 height)
 {
+    WindowData* data = findWindowData(window);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    xdgToplevelSetMinSize(data->xdgToplevel, width, height);
+    xdgToplevelSetMaxSize(data->xdgToplevel, width, height);
+    wlSurfaceCommit((struct wl_surface*)window);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6290,17 +6488,9 @@ PalResult PAL_CALL palInitVideo(
 #if PAL_HAS_WAYLAND
     PalResult ret = wlInitVideo();
     if (ret != PAL_RESULT_SUCCESS) {
-        // fallback to X11
-        wlShutdownVideo();
-        ret = xInitVideo();
-        if (ret != PAL_RESULT_SUCCESS) {
-            return ret;
-        }
-        s_Video.backend = &s_XBackend;
-
-    } else {
-        s_Video.backend = &s_wlBackend;
+        return ret;
     }
+    s_Video.backend = &s_wlBackend;
     
 #endif // PAL_HAS_WAYLAND
     }
@@ -6360,13 +6550,13 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-PalVideoFeatures2 PAL_CALL palGetVideoFeaturesEx()
+PalVideoFeatures64 PAL_CALL palGetVideoFeaturesEx()
 {
     if (!s_Video.initialized) {
         return 0;
     }
-    
-    return ((Uint64)s_Video.features2) | (Uint64)s_Video.features;
+
+    return s_Video.features64;
 }
 
 PalResult PAL_CALL palSetFBConfig(
