@@ -99,6 +99,13 @@ bool cursorTest()
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "PAL cursor Window";
 
+    // check if we support decorated windows (title bar, close etc)
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
+
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {

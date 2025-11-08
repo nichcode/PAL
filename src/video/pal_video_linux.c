@@ -143,6 +143,7 @@ typedef struct {
     void* xdgToplevel;
     void* buffer;
     void* decoration;
+    void* cursor;
 } WindowData;
 
 typedef struct {
@@ -864,6 +865,9 @@ typedef struct {
     struct xdg_wm_base* xdgBase;
     struct wl_compositor* compositor;
     struct wl_shm* shm;
+    struct wl_seat* seat;
+    struct wl_pointer* pointer;
+    struct wl_keyboard* keyboard;
     struct zxdg_decoration_manager_v1* decorationManager;
     struct zwp_pointer_constraints* pointerConstraints;
 
@@ -877,6 +881,7 @@ typedef struct {
     const struct wl_interface* shmPoolInterface;
     const struct wl_interface* regionInterface;
     const struct wl_interface* pointerInterface;
+    const struct wl_interface* keyboardInterface;
 
     wl_display_connect_fn displayConnect;
     wl_display_disconnect_fn displayDisconnect;
@@ -902,6 +907,13 @@ typedef struct {
     PalMonitorMode* modes;
 } MonitorModesData;
 
+typedef struct {
+    struct wl_buffer* buffer;
+    struct wl_surface* surface;
+    int hotspotX;
+    int hotspotY;
+} WaylandCursor;
+
 static Wayland s_Wl = {0};
 
 #endif // PAL_HAS_WAYLAND
@@ -909,6 +921,8 @@ static Wayland s_Wl = {0};
 
 #pragma region Wayland-Client-Protocol
 #if PAL_HAS_WAYLAND
+
+static WindowData* findWindowData(PalWindow* window);
 
 static inline void* wlRegistryBind(
     struct wl_registry *wl_registry, 
@@ -1121,6 +1135,86 @@ static inline int wlSurfaceAddListener(
         (void (**)(void)) listener, data);
 }
 
+static inline int wlSeatAddListener(
+    struct wl_seat *wl_seat,
+    const struct wl_seat_listener *listener, 
+    void *data)
+{
+	return s_Wl.proxyAddListener(
+        (struct wl_proxy *) wl_seat,
+        (void (**)(void)) listener, data);
+}
+
+static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat *wl_seat)
+{
+	struct wl_proxy *id;
+	id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_seat,
+        WL_SEAT_GET_POINTER, 
+        s_Wl.pointerInterface, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_seat), 
+            0, 
+            NULL);
+
+	return (struct wl_pointer *) id;
+}
+
+static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat *wl_seat)
+{
+	struct wl_proxy *id;
+	id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_seat,
+        WL_SEAT_GET_KEYBOARD, 
+        s_Wl.keyboardInterface, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_seat), 
+            0, 
+            NULL);
+
+	return (struct wl_keyboard *) id;
+}
+
+static inline int wlPointerAddListener(
+    struct wl_pointer *wl_pointer,
+    const struct wl_pointer_listener *listener, 
+    void *data)
+{
+	return s_Wl.proxyAddListener(
+        (struct wl_proxy *) wl_pointer,
+        (void (**)(void)) listener, data);
+}
+
+static inline void wlPointerSetCursor(
+    struct wl_pointer *wl_pointer, 
+    uint32_t serial, 
+    struct wl_surface *surface, 
+    int32_t hotspot_x, 
+    int32_t hotspot_y)
+{
+	s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_pointer,
+        WL_POINTER_SET_CURSOR, 
+        NULL, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_pointer), 
+            0, 
+            serial, 
+            surface, 
+            hotspot_x, 
+            hotspot_y);
+}
+
+static inline int wlKeyboardAddListener(
+    struct wl_keyboard *wl_keyboard,
+    const struct wl_keyboard_listener *listener, 
+    void *data)
+{
+	return s_Wl.proxyAddListener(
+        (struct wl_proxy *) wl_keyboard,
+        (void (**)(void)) listener, data);
+}
+
 static void surfaceEnter(
     void* userData,
     struct wl_surface* surface,
@@ -1143,6 +1237,105 @@ static struct wl_surface_listener surfaceListener = {
     .leave = surfaceLeave
 };
 
+static void pointerEnter(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t serial,
+    struct wl_surface* surface,
+    wl_fixed_t surface_x,
+    wl_fixed_t surface_y)
+{
+    WindowData* data = findWindowData((PalWindow*)surface);
+    if (data && data->cursor) {
+        // our window
+        WaylandCursor* cursor = data->cursor;
+        wlPointerSetCursor(
+            pointer, 
+            serial, 
+            cursor->surface,
+            cursor->hotspotX, 
+            cursor->hotspotY);
+    }
+}
+
+static void pointerLeave(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t serial,
+    struct wl_surface* surface)
+{
+    
+}
+
+static void pointerMotion(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t time,
+    wl_fixed_t surface_x,
+    wl_fixed_t surface_y)
+{
+    
+}
+
+static void pointerButton(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t serial,
+    uint32_t time,
+    uint32_t button,
+    uint32_t state)
+{
+    
+}
+
+static void pointerAxis(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t time,
+    uint32_t axis,
+    wl_fixed_t value)
+{
+    
+}
+
+static struct wl_pointer_listener pointerListener = {
+    .enter = pointerEnter,
+    .leave = pointerLeave,
+    .motion = pointerMotion,
+    .button = pointerButton,
+    .axis = pointerAxis
+};
+
+static void seatCapabilities(
+    void* userData,
+    struct wl_seat* seat,
+    enum wl_seat_capability caps)
+{
+    if (caps & WL_SEAT_CAPABILITY_KEYBOARD) {
+        s_Wl.keyboard = wlSeatGetKeyboard(seat);
+
+        // TODO: add keyboard listener
+    }
+
+    if (caps & WL_SEAT_CAPABILITY_POINTER) {
+        s_Wl.pointer = wlSeatGetPointer(seat);
+        wlPointerAddListener(s_Wl.pointer, &pointerListener, nullptr);
+    }
+}
+
+static void seatName(
+    void* userData,
+    struct wl_seat* seat,
+    const char* name)
+{
+    
+}
+
+static struct wl_seat_listener seatListener = {
+    .capabilities = seatCapabilities,
+    .name = seatName
+};
+
 #endif // PAL_HAS_WAYLAND
 #pragma endregion
 
@@ -1156,7 +1349,9 @@ struct xdg_toplevel;
 // forward declare
 static struct wl_buffer* createShmBuffer(
     int width,
-    int height);
+    int height,
+    const Uint8* pixels,
+    bool cursor);
 
 const struct wl_interface xdg_popup_interface;
 const struct wl_interface xdg_positioner_interface;
@@ -1274,7 +1469,7 @@ static void xdgSurfaceConfigure(
 
         // create a new buffer with the new size
         struct wl_buffer* buffer = nullptr;
-        buffer = createShmBuffer(winData->w, winData->h);
+        buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
         if (!buffer) {
             return;
         }
@@ -5280,7 +5475,9 @@ static int createShmFile(Uint64 size)
 
 static struct wl_buffer* createShmBuffer(
     int width,
-    int height) 
+    int height,
+    const Uint8* pixels,
+    bool cursor) 
 {
     int stride = width * 4;
     Uint64 size = stride * height;
@@ -5298,7 +5495,30 @@ static struct wl_buffer* createShmBuffer(
         return nullptr;
     }
 
-    memset(data, 0xFF, size); // white
+    enum wl_shm_format format = WL_SHM_FORMAT_XRGB8888;
+    if (cursor) {
+        format = WL_SHM_FORMAT_ARGB8888;
+        Uint32* dataPixels = (Uint32*)data;
+
+        // convert from RGBA8 to ARGB32
+        for (int i = 0; i < width * height; i++) {
+            Uint8 r = pixels[i * 4 + 0]; // Red
+            Uint8 g = pixels[i * 4 + 1]; // Green
+            Uint8 b = pixels[i * 4 + 2]; // Blue
+            Uint8 a = pixels[i * 4 + 3]; // Alpha
+
+            // clang-format off
+            dataPixels[i] = ((unsigned long)a << 24) | 
+                            ((unsigned long)r << 16) |
+                            ((unsigned long)g << 8) |
+                            ((unsigned long)b);
+            // clang-format on
+        }
+
+    } else {
+        memset(data, 0xFF, size); // white
+    }
+
     pool = wlShmCreatePool(s_Wl.shm, fd, size);
     if (!pool) {
         return nullptr;
@@ -5310,7 +5530,7 @@ static struct wl_buffer* createShmBuffer(
         width,
         height,
         stride,
-        WL_SHM_FORMAT_XRGB8888);
+        format);
 
     if (!buffer) {
         return nullptr;
@@ -5370,9 +5590,8 @@ static void wlGlobalHandle(
             name, 
             &xdg_wm_base_interface,
             1);
-        xdgWmBaseAddListener(s_Wl.xdgBase, &wmBaseListener, nullptr);
 
-        s_Wl.displayFlush(s_Wl.display);
+        xdgWmBaseAddListener(s_Wl.xdgBase, &wmBaseListener, nullptr);
 
     } else if (strcmp(interface, "wl_shm") == 0) {
         s_Wl.shm = wlRegistryBind(
@@ -5380,6 +5599,15 @@ static void wlGlobalHandle(
             name, 
             s_Wl.shmInterface,
             1);
+
+    } else if (strcmp(interface, "wl_seat") == 0) {
+        s_Wl.seat = wlRegistryBind(
+            registry, 
+            name, 
+            s_Wl.seatInterface,
+            4);
+
+        wlSeatAddListener(s_Wl.seat , &seatListener, nullptr);
 
     } else if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
         s_Wl.decorationManager = wlRegistryBind(
@@ -5578,6 +5806,7 @@ PalResult wlInitVideo()
     s_Wl.shmPoolInterface = dlsym(s_Wl.handle, "wl_shm_pool_interface");
     s_Wl.regionInterface = dlsym(s_Wl.handle, "wl_region_interface");
     s_Wl.pointerInterface = dlsym(s_Wl.handle, "wl_pointer_interface");
+    s_Wl.keyboardInterface = dlsym(s_Wl.handle, "wl_keyboard_interface");
 
     // load function procs
     s_Wl.displayConnect = (wl_display_connect_fn)dlsym(
@@ -5654,6 +5883,9 @@ PalResult wlInitVideo()
     s_Wl.display = s_Wl.displayConnect(nullptr);
     s_Wl.registry = wlDisplayGetRegistry(s_Wl.display);
     wlRegistryAddListener(s_Wl.registry, &s_RegistryListener, nullptr);
+    s_Wl.displayRoundtrip(s_Wl.display);
+
+    // do a roundtrip again to get remaining handles
     s_Wl.displayRoundtrip(s_Wl.display);
 
     if (!s_Wl.compositor || !s_Wl.xdgBase || !s_Wl.shm) {
@@ -5961,7 +6193,7 @@ PalResult wlCreateWindow(
     }
 
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
-        if (s_Wl.decorationManager) {
+        if (!s_Wl.decorationManager) {
             // user wants decorated window but its not supported
             return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
         }
@@ -6060,7 +6292,7 @@ PalResult wlCreateWindow(
 
     // create a white buffer for the surface
     struct wl_buffer* buffer = nullptr;
-    buffer = createShmBuffer(data->w, data->h);
+    buffer = createShmBuffer(data->w, data->h, nullptr, false);
     if (!buffer) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -6304,6 +6536,35 @@ PalResult wlCreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** outCursor)
 {
+    WaylandCursor* cursor = nullptr;
+    cursor = palAllocate(s_Video.allocator, sizeof(WaylandCursor), 0);
+    if (!cursor) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
+    if (!cursor->surface) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    cursor->buffer = createShmBuffer(
+        info->width, 
+        info->height, 
+        info->pixels, 
+        true);
+
+    if (!cursor->buffer) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    wlSurfaceAttach(cursor->surface, cursor->buffer, 0, 0);
+    wlSurfaceDamageBuffer(cursor->surface, 0, 0, info->width, info->height);
+    wlSurfaceCommit(cursor->surface);
+
+    cursor->hotspotX = info->xHotspot;
+    cursor->hotspotY = info->yHotspot;
+
+    *outCursor = (PalCursor*)cursor;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6316,11 +6577,15 @@ PalResult wlCreateCursorFrom(
 
 void wlDestroyCursor(PalCursor* cursor)
 {
-    
+    WaylandCursor* waylandCursor = (WaylandCursor*)cursor;
+    wlBufferDestroy(waylandCursor->buffer);
+    wlSurfaceDestroy(waylandCursor->surface);
+    palFree(s_Video.allocator, waylandCursor);
 }
 
 void wlShowCursor(bool show)
 {
+    // not supported
     return;
 }
 
@@ -6330,7 +6595,6 @@ PalResult wlClipCursor(
 {
     if (!(s_Video.features & PAL_VIDEO_FEATURE_CLIP_CURSOR)) {
         return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
-
     }
 
     return PAL_RESULT_SUCCESS;
@@ -6356,6 +6620,12 @@ PalResult wlSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
+    WindowData* data = findWindowData(window);
+    if (!data) {
+        return PAL_RESULT_INVALID_WINDOW;
+    }
+
+    data->cursor = cursor;
     return PAL_RESULT_SUCCESS;
 }
 
