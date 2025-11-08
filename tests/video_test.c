@@ -11,7 +11,6 @@ bool videoTest()
     palLog(nullptr, "");
 
     PalResult result;
-    PalVideoFeatures2 features;
 
     // initialize the video system
     result = palInitVideo(nullptr, nullptr);
@@ -22,157 +21,157 @@ bool videoTest()
     }
 
     // get supported features. Now uses extended function
-    features = palGetVideoFeaturesEx();
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
     palLog(nullptr, "Supported Video Features:");
-    if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {
+    if (features & PAL_VIDEO_FEATURE64_HIGH_DPI) {
         palLog(nullptr, " High DPI windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_SET_ORIENTATION) {
         palLog(nullptr, " Setting monitor orientation");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION) {
         palLog(nullptr, " Getting monitor orientation");
     }
 
-    if (features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW) {
+    if (features & PAL_VIDEO_FEATURE64_BORDERLESS_WINDOW) {
         palLog(nullptr, " Borderless windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
+    if (features & PAL_VIDEO_FEATURE64_TRANSPARENT_WINDOW) {
         palLog(nullptr, " Transparent windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_TOOL_WINDOW) {
+    if (features & PAL_VIDEO_FEATURE64_TOOL_WINDOW) {
         palLog(nullptr, " Tool windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MONITOR_SET_MODE) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_SET_MODE) {
         palLog(nullptr, " Setting monitor display mode");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MONITOR_GET_MODE) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_GET_MODE) {
         palLog(nullptr, " Getting monitor display mode");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MULTI_MONITORS) {
+    if (features & PAL_VIDEO_FEATURE64_MULTI_MONITORS) {
         palLog(nullptr, " Multi monitors");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_SIZE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE) {
         palLog(nullptr, " Setting window size");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_SIZE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_SIZE) {
         palLog(nullptr, " Getting window size");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_POS) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_POS) {
         palLog(nullptr, " Setting window position");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_POS) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_POS) {
         palLog(nullptr, " Getting window position");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_STATE) {
         palLog(nullptr, " Setting window state");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_STATE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_STATE) {
         palLog(nullptr, " Getting window state");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_VISIBILITY) {
         palLog(nullptr, " Setting window visibility");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_VISIBILITY) {
         palLog(nullptr, " Getting window visibility");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_TITLE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE) {
         palLog(nullptr, " Setting window title");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_TITLE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE) {
         palLog(nullptr, " Getting window title");
     }
 
-    if (features & PAL_VIDEO_FEATURE_NO_MINIMIZEBOX) {
+    if (features & PAL_VIDEO_FEATURE64_NO_MINIMIZEBOX) {
         palLog(nullptr, " No minimize box for windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX) {
+    if (features & PAL_VIDEO_FEATURE64_NO_MAXIMIZEBOX) {
         palLog(nullptr, " No maximize box for windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_CLIP_CURSOR) {
+    if (features & PAL_VIDEO_FEATURE64_CLIP_CURSOR) {
         palLog(nullptr, " Clipping cursor (mouse)");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_FLASH_CAPTION) {
         palLog(nullptr, " Window titlebar flashing");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY) {
         palLog(nullptr, " Window icon on taskbar flashing");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_FLASH_INTERVAL) {
         palLog(nullptr, " Setting window flash interval");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_INPUT_FOCUS) {
         palLog(nullptr, " Setting input window");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_INPUT_FOCUS) {
         palLog(nullptr, " Getting input window");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_STYLE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_STYLE) {
         palLog(nullptr, " Setting window style");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_STYLE) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_STYLE) {
         palLog(nullptr, " Getting window style");
     }
 
-    if (features & PAL_VIDEO_FEATURE_CURSOR_SET_POS) {
+    if (features & PAL_VIDEO_FEATURE64_CURSOR_SET_POS) {
         palLog(nullptr, " Setting cursor position");
     }
 
-    if (features & PAL_VIDEO_FEATURE_CURSOR_GET_POS) {
+    if (features & PAL_VIDEO_FEATURE64_CURSOR_GET_POS) {
         palLog(nullptr, " Getting cursor position");
     }
 
-    if (features & PAL_VIDEO_FEATURE_TOPMOST_WINDOW) {
+    if (features & PAL_VIDEO_FEATURE64_TOPMOST_WINDOW) {
         palLog(nullptr, " Topmost windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_DECORATED_WINDOW) {
+    if (features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW) {
         palLog(nullptr, " Decorated (Normal) windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY) {
+    if (features & PAL_VIDEO_FEATURE64_CURSOR_SET_VISIBILITY) {
         palLog(nullptr, " Setting cursor visibility");
     }
 
-    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR) {
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_GET_MONITOR) {
         palLog(nullptr, " Getting window current monitor");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY) {
         palLog(nullptr, " Getting primary monitor");
     }
 
-    if (features & PAL_VIDEO_FEATURE_FOREIGN_WINDOWS) {
+    if (features & PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS) {
         palLog(nullptr, " Attaching and detaching foreign windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE  ) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE  ) {
         palLog(nullptr, " Validate monitor display mode");
     }
 

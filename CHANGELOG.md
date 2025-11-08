@@ -74,7 +74,7 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 
 ### Features
 - **Video:** Added Wayland-based backend support.
-- **Video:** Added **palGetVideoFeaturesEx()** to check supported features.
+- **Video:** Added **palGetVideoFeaturesEx()** to check old and extended supported features.
 - **Video:** Added **palGetWindowHandleInfoEx()** to get extended window handles.
 
 ### Tests

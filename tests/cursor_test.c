@@ -47,8 +47,8 @@ bool cursorTest()
     }
 
     // check for support
-    PalVideoFeatures2 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR)) {
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR)) {
         palLog(nullptr, "Seting cursors feature not supported");
         palDestroyEventDriver(eventDriver);
         palShutdownVideo();

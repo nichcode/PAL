@@ -240,8 +240,8 @@ bool attachWindowTest()
     }
 
     // check for support
-    PalVideoFeatures2 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE_FOREIGN_WINDOWS)) {
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS)) {
         // clang-format off
         palLog(nullptr, "Attaching and detaching foreign windows feature not supported");
         // clang-format on
@@ -295,7 +295,6 @@ bool attachWindowTest()
 
     // now that the window is attached, we can use PAL video API
     // to manager it
-    // TODO: check features before
     result = palSetWindowTitle(myWindow, WINDOW_TITLE);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
