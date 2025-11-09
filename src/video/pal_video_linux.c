@@ -54,7 +54,11 @@ freely, subject to the following restrictions:
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <locale.h>
+
 #include <linux/input-event-codes.h>
+#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 #endif // PAL_HAS_WAYLAND
 
 // ==================================================
@@ -856,12 +860,31 @@ typedef int (*wl_display_read_events_fn)(struct wl_display*);
 typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 typedef void (*wl_display_cancel_read_fn)(struct wl_display*);
 
+// xkb
+typedef void (*xkb_keymap_unref_fn)(struct xkb_keymap*);
+typedef struct xkb_state* (*xkb_state_new_fn)(struct xkb_keymap*);
+typedef void (*xkb_state_unref_fn)(struct xkb_state*);
+typedef void (*xkb_context_unref_fn)(struct xkb_context*);
+typedef struct xkb_context* (*xkb_context_new_fn)(enum xkb_context_flags);
+typedef uint32_t (*xkb_keysym_to_utf32_fn)(xkb_keysym_t);
+
+typedef xkb_keysym_t (*xkb_state_key_get_one_sym_fn)(
+    struct xkb_state*, 
+    xkb_keycode_t);
+
+typedef struct xkb_keymap* (*xkb_keymap_new_from_string_fn)(
+    struct xkb_context*, 
+    const char*,
+    enum xkb_keymap_format,
+    enum xkb_keymap_compile_flags);
+
 typedef struct {
     bool checkFeatures;
     bool modesPhase;
     int monitorCount;
     
     void* handle;
+    void* xkbCommon;
     struct wl_display* display;
     struct wl_registry* registry;
     struct xdg_wm_base* xdgBase;
@@ -872,7 +895,12 @@ typedef struct {
     struct wl_keyboard* keyboard;
     struct zxdg_decoration_manager_v1* decorationManager;
     struct zwp_pointer_constraints* pointerConstraints;
-    struct wl_surface* pointersurface;
+    struct wl_surface* pointerSurface;
+    struct wl_surface* keyboardSurface;
+
+    struct xkb_context* inputContext;
+    struct xkb_keymap* keymap;
+    struct xkb_state* state;
 
     const struct wl_interface* outputInterface;
     const struct wl_interface* seatInterface;
@@ -902,6 +930,15 @@ typedef struct {
     wl_display_read_events_fn readEvents;
     wl_display_get_fd_fn displayGetFd;
     wl_display_cancel_read_fn cancelRead;
+
+    xkb_keymap_unref_fn xkbKeymapUnref;
+    xkb_state_new_fn xkbStateNew;
+    xkb_state_unref_fn xkbStateUnref;
+    xkb_context_unref_fn xkbContextUnref;
+    xkb_context_new_fn xkbContextNew;
+    xkb_state_key_get_one_sym_fn xkbStateKeyGetOneSym;
+    xkb_keymap_new_from_string_fn xkbKeymapNewFromString;
+    xkb_keysym_to_utf32_fn xkbKeysymToUtf32;
 } Wayland;
 
 typedef struct {
@@ -1261,7 +1298,7 @@ static void pointerHandleEnter(
     }
 
     // cache the surface the pointer is currently on
-    s_Wl.pointersurface = surface;
+    s_Wl.pointerSurface = surface;
 }
 
 static void pointerHandleLeave(
@@ -1270,8 +1307,8 @@ static void pointerHandleLeave(
     uint32_t serial,
     struct wl_surface* surface)
 {
-    if (s_Wl.pointersurface == surface) {
-        s_Wl.pointersurface == nullptr;
+    if (s_Wl.pointerSurface == surface) {
+        s_Wl.pointerSurface == nullptr;
     }
 }
 
@@ -1288,7 +1325,7 @@ static void pointerHandleMotion(
     const int dy = y - s_Mouse.lastY;
 
     PalDispatchMode mode = PAL_DISPATCH_NONE;
-    PalWindow* window = (PalWindow*)s_Wl.pointersurface;
+    PalWindow* window = (PalWindow*)s_Wl.pointerSurface;
     if (s_Video.eventDriver && window) {
         // we only push a mouse move only if we are on a window
         PalEventDriver* driver = s_Video.eventDriver;
@@ -1329,8 +1366,8 @@ static void pointerHandleButton(
     uint32_t state)
 {
     PalWindow* window = nullptr;
-    if (s_Wl.pointersurface) {
-        window = (PalWindow*)s_Wl.pointersurface;
+    if (s_Wl.pointerSurface) {
+        window = (PalWindow*)s_Wl.pointerSurface;
 
     } else {
         // cannot recieve events without a focused surface
@@ -1424,8 +1461,8 @@ static void pointerHandleFrame(
     }
 
     PalWindow* window = nullptr;
-    if (s_Wl.pointersurface) {
-        window = (PalWindow*)s_Wl.pointersurface;
+    if (s_Wl.pointerSurface) {
+        window = (PalWindow*)s_Wl.pointerSurface;
 
     } else {
         // cannot recieve events without a focused surface
@@ -1472,6 +1509,197 @@ static void pointerHandleAxisStop(
     
 }
 
+static void keyboardHandleEnter(
+    void* userData,
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    struct wl_surface* surface,
+    struct wl_array* keys)
+{
+    // cache the surface the keyboard is currently on
+    s_Wl.keyboardSurface = surface;
+}
+
+static void keyboardHandleLeave(
+    void* userData,
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    struct wl_surface* surface)
+{
+    if (s_Wl.keyboardSurface == surface) {
+        s_Wl.keyboardSurface == nullptr;
+    }
+}
+
+static void keyboardHandleRemap(
+    void* userData,
+    struct wl_keyboard* keyboard,
+    uint32_t format,
+    int32_t fd,
+    uint32_t size)
+{
+    if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
+        close(fd);
+        return;
+    }
+
+    struct xkb_keymap* keymap = nullptr;
+    struct xkb_state* state = nullptr;
+
+    char* keymapStr = mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
+    if (keymapStr == MAP_FAILED) {
+        close(fd);
+        return;
+    }
+
+    keymap = s_Wl.xkbKeymapNewFromString(
+        s_Wl.inputContext,
+        keymapStr,
+        XKB_KEYMAP_FORMAT_TEXT_V1,
+        XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    if (!keymap) {
+        return;
+    }
+
+    munmap(keymapStr, size);
+    close(fd);
+
+    state = s_Wl.xkbStateNew(keymap);
+    if (!state) {
+        return;
+    }
+
+    // check if we have old keymap and state
+    if (s_Wl.state) {
+        s_Wl.xkbStateUnref(s_Wl.state);
+        s_Wl.xkbKeymapUnref(s_Wl.keymap);
+    }
+
+    s_Wl.state = state;
+    s_Wl.keymap = keymap;
+}
+
+static void keyboardHandleKey(
+    void* userData,
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    uint32_t time,
+    uint32_t key,
+    uint32_t state)
+{
+    PalWindow* window = nullptr;
+    if (s_Wl.keyboardSurface) {
+        window = (PalWindow*)s_Wl.keyboardSurface;
+
+    } else {
+        // cannot recieve events without a focused surface
+        return;
+    }
+
+    PalScancode scancode = 0;
+    PalKeycode keycode = 0;
+    bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+    PalEventType type = PAL_EVENT_KEYUP;
+    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    xkb_keysym_t keySym = s_Wl.xkbStateKeyGetOneSym(s_Wl.state, key + 8);
+
+    // special handling
+    if (key == 119) {
+        scancode = PAL_SCANCODE_PAUSE;
+    } else if (key == 107) {
+        scancode = PAL_SCANCODE_END;
+    } else if (key == 103) {
+        scancode = PAL_SCANCODE_UP;
+    } else if (key == 102) {
+        scancode = PAL_SCANCODE_HOME;
+    
+    } else {
+        scancode = s_Keyboard.scancodes[key];
+    }
+
+    // printable and text input keys are from the range
+    // 39 (PAL_KEYCODE_APOSTROPHE) and 122 (PAL_KEYCODE_Z)
+    // The rest are almost the same as their scancode
+    // Maybe there will be a layout that makes this wrong
+    // but for now this works
+    if (keySym >= XKB_KEY_apostrophe && keySym <= XKB_KEY_z) {
+        // a printable or input key
+        keycode = s_Keyboard.keycodes[keySym];
+
+    } else {
+        // Since PalKeycode and PalScancode have the same integers
+        // we can make a direct cast without a table
+        // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
+        keycode = (PalKeycode)(Uint32)scancode;
+    }
+
+    // If we got a keySym but its not mapped into our keycode array
+    // we do a direct cast as well
+    if (keycode == PAL_KEYCODE_UNKNOWN) {
+        keycode = (PalKeycode)(Uint32)scancode;
+    }
+
+    bool repeat = s_Keyboard.keycodeState[keycode];
+    s_Keyboard.scancodeState[scancode] = pressed;
+    s_Keyboard.keycodeState[keycode] = pressed;
+
+    if (pressed) {
+        if (repeat) {
+            type = PAL_EVENT_KEYREPEAT;
+        } else {
+            type = PAL_EVENT_KEYDOWN;
+        }
+    }
+
+    if (s_Video.eventDriver) {
+        PalEventDriver* driver = s_Video.eventDriver;
+        mode = palGetEventDispatchMode(driver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = palPackUint32(keycode, scancode);
+            event.data2 = palPackPointer(window);
+            palPushEvent(driver, &event);
+        }
+
+        // check for char event if enabled
+        type = PAL_EVENT_KEYCHAR;
+        mode = palGetEventDispatchMode(driver, type);
+        if (mode == PAL_DISPATCH_NONE) {
+            return;
+        }
+
+        Uint32 codepoint = s_Wl.xkbKeysymToUtf32(keySym);
+        PalEvent event = {0};
+        event.type = type;
+        event.data = codepoint;
+        event.data2 = palPackPointer(window);
+        palPushEvent(driver, &event);
+    }
+}
+
+static void keyboardHandleRepeatInfo(
+    void* userData,
+    struct wl_keyboard* keyboard,
+    int32_t rate,
+    int32_t delay)
+{
+    
+}
+
+static void keyboardHandleModifiers(
+    void* userData,
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    uint32_t mods_depressed,
+    uint32_t mods_latched,
+    uint32_t mods_locked,
+    uint32_t group)
+{
+    
+}
+
 static struct wl_pointer_listener pointerListener = {
     .enter = pointerHandleEnter,
     .leave = pointerHandleLeave,
@@ -1484,6 +1712,15 @@ static struct wl_pointer_listener pointerListener = {
     .axis_stop = pointerHandleAxisStop
 };
 
+static struct wl_keyboard_listener keyboardListener = {
+    .enter = keyboardHandleEnter,
+    .leave = keyboardHandleLeave,
+    .keymap = keyboardHandleRemap,
+    .key = keyboardHandleKey,
+    .repeat_info = keyboardHandleRepeatInfo,
+    .modifiers = keyboardHandleModifiers
+};
+
 static void seatHandleCapabilities(
     void* userData,
     struct wl_seat* seat,
@@ -1491,8 +1728,7 @@ static void seatHandleCapabilities(
 {
     if (caps & WL_SEAT_CAPABILITY_KEYBOARD) {
         s_Wl.keyboard = wlSeatGetKeyboard(seat);
-
-        // TODO: add keyboard listener
+        wlKeyboardAddListener(s_Wl.keyboard, &keyboardListener, nullptr);
     }
 
     if (caps & WL_SEAT_CAPABILITY_POINTER) {
@@ -2412,6 +2648,129 @@ static void freeMonitorData(PalMonitor* monitor)
     }
 }
 
+static void createScancodeTable()
+{
+    // Letters
+    s_Keyboard.scancodes[0x01E] = PAL_SCANCODE_A;
+    s_Keyboard.scancodes[0x030] = PAL_SCANCODE_B;
+    s_Keyboard.scancodes[0x02E] = PAL_SCANCODE_C;
+    s_Keyboard.scancodes[0x020] = PAL_SCANCODE_D;
+    s_Keyboard.scancodes[0x012] = PAL_SCANCODE_E;
+    s_Keyboard.scancodes[0x021] = PAL_SCANCODE_F;
+    s_Keyboard.scancodes[0x022] = PAL_SCANCODE_G;
+    s_Keyboard.scancodes[0x023] = PAL_SCANCODE_H;
+    s_Keyboard.scancodes[0x017] = PAL_SCANCODE_I;
+    s_Keyboard.scancodes[0x024] = PAL_SCANCODE_J;
+    s_Keyboard.scancodes[0x025] = PAL_SCANCODE_K;
+    s_Keyboard.scancodes[0x026] = PAL_SCANCODE_L;
+    s_Keyboard.scancodes[0x032] = PAL_SCANCODE_M;
+    s_Keyboard.scancodes[0x031] = PAL_SCANCODE_N;
+    s_Keyboard.scancodes[0x018] = PAL_SCANCODE_O;
+    s_Keyboard.scancodes[0x019] = PAL_SCANCODE_P;
+    s_Keyboard.scancodes[0x010] = PAL_SCANCODE_Q;
+    s_Keyboard.scancodes[0x013] = PAL_SCANCODE_R;
+    s_Keyboard.scancodes[0x01F] = PAL_SCANCODE_S;
+    s_Keyboard.scancodes[0x014] = PAL_SCANCODE_T;
+    s_Keyboard.scancodes[0x016] = PAL_SCANCODE_U;
+    s_Keyboard.scancodes[0x02F] = PAL_SCANCODE_V;
+    s_Keyboard.scancodes[0x011] = PAL_SCANCODE_W;
+    s_Keyboard.scancodes[0x02D] = PAL_SCANCODE_X;
+    s_Keyboard.scancodes[0x015] = PAL_SCANCODE_Y;
+    s_Keyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
+
+    // Numbers (top row)
+    s_Keyboard.scancodes[0x00B] = PAL_SCANCODE_0;
+    s_Keyboard.scancodes[0x002] = PAL_SCANCODE_1;
+    s_Keyboard.scancodes[0x003] = PAL_SCANCODE_2;
+    s_Keyboard.scancodes[0x004] = PAL_SCANCODE_3;
+    s_Keyboard.scancodes[0x005] = PAL_SCANCODE_4;
+    s_Keyboard.scancodes[0x006] = PAL_SCANCODE_5;
+    s_Keyboard.scancodes[0x007] = PAL_SCANCODE_6;
+    s_Keyboard.scancodes[0x008] = PAL_SCANCODE_7;
+    s_Keyboard.scancodes[0x009] = PAL_SCANCODE_8;
+    s_Keyboard.scancodes[0x00A] = PAL_SCANCODE_9;
+
+    // Function
+    s_Keyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
+    s_Keyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
+    s_Keyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
+    s_Keyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
+    s_Keyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
+    s_Keyboard.scancodes[0x040] = PAL_SCANCODE_F6;
+    s_Keyboard.scancodes[0x041] = PAL_SCANCODE_F7;
+    s_Keyboard.scancodes[0x042] = PAL_SCANCODE_F8;
+    s_Keyboard.scancodes[0x043] = PAL_SCANCODE_F9;
+    s_Keyboard.scancodes[0x044] = PAL_SCANCODE_F10;
+    s_Keyboard.scancodes[0x057] = PAL_SCANCODE_F11;
+    s_Keyboard.scancodes[0x058] = PAL_SCANCODE_F12;
+
+    // Control
+    s_Keyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
+    s_Keyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
+    s_Keyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
+    s_Keyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
+    s_Keyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
+    s_Keyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
+    s_Keyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
+    s_Keyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
+    s_Keyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
+    s_Keyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
+    s_Keyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
+    s_Keyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
+    s_Keyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
+    s_Keyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
+
+    // Arrows
+    s_Keyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
+    s_Keyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_UP;
+    s_Keyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
+
+    // Navigation
+    s_Keyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
+    s_Keyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_END;
+    s_Keyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
+    s_Keyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
+
+    // Keypad
+    s_Keyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
+    s_Keyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
+    s_Keyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
+    s_Keyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
+    s_Keyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
+    s_Keyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
+    s_Keyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
+    s_Keyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
+    s_Keyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
+    s_Keyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
+    s_Keyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
+    s_Keyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
+    s_Keyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
+    s_Keyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
+    s_Keyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
+    s_Keyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
+
+    // Misc
+    s_Keyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
+    s_Keyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
+    s_Keyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
+    s_Keyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
+    s_Keyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
+    s_Keyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
+    s_Keyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
+    s_Keyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
+    s_Keyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
+    s_Keyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
+    s_Keyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
+    s_Keyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
+    s_Keyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
+    s_Keyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
+    s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
+}
+
 // ==================================================
 // X11 API
 // ==================================================
@@ -2859,129 +3218,6 @@ static void xSendWMEvent(
         &e);
 }
 
-static void xCreateScancodeTable()
-{
-    // Letters
-    s_Keyboard.scancodes[0x01E] = PAL_SCANCODE_A;
-    s_Keyboard.scancodes[0x030] = PAL_SCANCODE_B;
-    s_Keyboard.scancodes[0x02E] = PAL_SCANCODE_C;
-    s_Keyboard.scancodes[0x020] = PAL_SCANCODE_D;
-    s_Keyboard.scancodes[0x012] = PAL_SCANCODE_E;
-    s_Keyboard.scancodes[0x021] = PAL_SCANCODE_F;
-    s_Keyboard.scancodes[0x022] = PAL_SCANCODE_G;
-    s_Keyboard.scancodes[0x023] = PAL_SCANCODE_H;
-    s_Keyboard.scancodes[0x017] = PAL_SCANCODE_I;
-    s_Keyboard.scancodes[0x024] = PAL_SCANCODE_J;
-    s_Keyboard.scancodes[0x025] = PAL_SCANCODE_K;
-    s_Keyboard.scancodes[0x026] = PAL_SCANCODE_L;
-    s_Keyboard.scancodes[0x032] = PAL_SCANCODE_M;
-    s_Keyboard.scancodes[0x031] = PAL_SCANCODE_N;
-    s_Keyboard.scancodes[0x018] = PAL_SCANCODE_O;
-    s_Keyboard.scancodes[0x019] = PAL_SCANCODE_P;
-    s_Keyboard.scancodes[0x010] = PAL_SCANCODE_Q;
-    s_Keyboard.scancodes[0x013] = PAL_SCANCODE_R;
-    s_Keyboard.scancodes[0x01F] = PAL_SCANCODE_S;
-    s_Keyboard.scancodes[0x014] = PAL_SCANCODE_T;
-    s_Keyboard.scancodes[0x016] = PAL_SCANCODE_U;
-    s_Keyboard.scancodes[0x02F] = PAL_SCANCODE_V;
-    s_Keyboard.scancodes[0x011] = PAL_SCANCODE_W;
-    s_Keyboard.scancodes[0x02D] = PAL_SCANCODE_X;
-    s_Keyboard.scancodes[0x015] = PAL_SCANCODE_Y;
-    s_Keyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
-
-    // Numbers (top row)
-    s_Keyboard.scancodes[0x00B] = PAL_SCANCODE_0;
-    s_Keyboard.scancodes[0x002] = PAL_SCANCODE_1;
-    s_Keyboard.scancodes[0x003] = PAL_SCANCODE_2;
-    s_Keyboard.scancodes[0x004] = PAL_SCANCODE_3;
-    s_Keyboard.scancodes[0x005] = PAL_SCANCODE_4;
-    s_Keyboard.scancodes[0x006] = PAL_SCANCODE_5;
-    s_Keyboard.scancodes[0x007] = PAL_SCANCODE_6;
-    s_Keyboard.scancodes[0x008] = PAL_SCANCODE_7;
-    s_Keyboard.scancodes[0x009] = PAL_SCANCODE_8;
-    s_Keyboard.scancodes[0x00A] = PAL_SCANCODE_9;
-
-    // Function
-    s_Keyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
-    s_Keyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
-    s_Keyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
-    s_Keyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
-    s_Keyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
-    s_Keyboard.scancodes[0x040] = PAL_SCANCODE_F6;
-    s_Keyboard.scancodes[0x041] = PAL_SCANCODE_F7;
-    s_Keyboard.scancodes[0x042] = PAL_SCANCODE_F8;
-    s_Keyboard.scancodes[0x043] = PAL_SCANCODE_F9;
-    s_Keyboard.scancodes[0x044] = PAL_SCANCODE_F10;
-    s_Keyboard.scancodes[0x057] = PAL_SCANCODE_F11;
-    s_Keyboard.scancodes[0x058] = PAL_SCANCODE_F12;
-
-    // Control
-    s_Keyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
-    s_Keyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
-    s_Keyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
-    s_Keyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
-    s_Keyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
-    s_Keyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
-    s_Keyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
-    s_Keyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
-    s_Keyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
-    s_Keyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
-    s_Keyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
-    s_Keyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
-    s_Keyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
-    s_Keyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
-
-    // Arrows
-    s_Keyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
-    s_Keyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
-    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_UP;
-    s_Keyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
-
-    // Navigation
-    s_Keyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
-    s_Keyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
-    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
-    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_END;
-    s_Keyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
-    s_Keyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
-
-    // Keypad
-    s_Keyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
-    s_Keyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
-    s_Keyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
-    s_Keyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
-    s_Keyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
-    s_Keyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
-    s_Keyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
-    s_Keyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
-    s_Keyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
-    s_Keyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
-    s_Keyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
-    s_Keyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
-    s_Keyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
-    s_Keyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
-    s_Keyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
-    s_Keyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
-
-    // Misc
-    s_Keyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
-    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
-    s_Keyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
-    s_Keyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
-    s_Keyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
-    s_Keyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
-    s_Keyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
-    s_Keyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
-    s_Keyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
-    s_Keyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
-    s_Keyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
-    s_Keyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
-    s_Keyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
-    s_Keyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
-    s_Keyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
-    s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
-}
-
 static void xCreateKeycodeTable()
 {
     // Tis is for only printable and text input keys
@@ -3401,7 +3637,6 @@ static PalResult xInitVideo()
             "glXGetVisualFromFBConfig");
     }
 
-    xCreateScancodeTable();
     xCreateKeycodeTable();
 
     // disable auto key repeats
@@ -5642,6 +5877,55 @@ static Backend s_XBackend = {
 #pragma region Wayland API
 #if PAL_HAS_WAYLAND
 
+static void wlCreateKeycodeTable()
+{
+    // Tis is for only printable and text input keys
+
+    // Letters
+    s_Keyboard.keycodes[XKB_KEY_a] = PAL_KEYCODE_A;
+    s_Keyboard.keycodes[XKB_KEY_b] = PAL_KEYCODE_B;
+    s_Keyboard.keycodes[XKB_KEY_c] = PAL_KEYCODE_C;
+    s_Keyboard.keycodes[XKB_KEY_d] = PAL_KEYCODE_D;
+    s_Keyboard.keycodes[XKB_KEY_e] = PAL_KEYCODE_E;
+    s_Keyboard.keycodes[XKB_KEY_f] = PAL_KEYCODE_F;
+    s_Keyboard.keycodes[XKB_KEY_g] = PAL_KEYCODE_G;
+    s_Keyboard.keycodes[XKB_KEY_h] = PAL_KEYCODE_H;
+    s_Keyboard.keycodes[XKB_KEY_i] = PAL_KEYCODE_I;
+    s_Keyboard.keycodes[XKB_KEY_j] = PAL_KEYCODE_J;
+    s_Keyboard.keycodes[XKB_KEY_k] = PAL_KEYCODE_K;
+    s_Keyboard.keycodes[XKB_KEY_l] = PAL_KEYCODE_L;
+    s_Keyboard.keycodes[XKB_KEY_m] = PAL_KEYCODE_M;
+    s_Keyboard.keycodes[XKB_KEY_n] = PAL_KEYCODE_N;
+    s_Keyboard.keycodes[XKB_KEY_o] = PAL_KEYCODE_O;
+    s_Keyboard.keycodes[XKB_KEY_p] = PAL_KEYCODE_P;
+    s_Keyboard.keycodes[XKB_KEY_q] = PAL_KEYCODE_Q;
+    s_Keyboard.keycodes[XKB_KEY_r] = PAL_KEYCODE_R;
+    s_Keyboard.keycodes[XKB_KEY_s] = PAL_KEYCODE_S;
+    s_Keyboard.keycodes[XKB_KEY_t] = PAL_KEYCODE_T;
+    s_Keyboard.keycodes[XKB_KEY_u] = PAL_KEYCODE_U;
+    s_Keyboard.keycodes[XKB_KEY_v] = PAL_KEYCODE_V;
+    s_Keyboard.keycodes[XKB_KEY_w] = PAL_KEYCODE_W;
+    s_Keyboard.keycodes[XKB_KEY_x] = PAL_KEYCODE_X;
+    s_Keyboard.keycodes[XKB_KEY_y] = PAL_KEYCODE_Y;
+    s_Keyboard.keycodes[XKB_KEY_z] = PAL_KEYCODE_Z;
+
+    // Control
+    s_Keyboard.keycodes[XKB_KEY_space] = PAL_KEYCODE_SPACE;
+
+    // Misc
+    s_Keyboard.keycodes[XKB_KEY_apostrophe] = PAL_KEYCODE_APOSTROPHE;
+    s_Keyboard.keycodes[XKB_KEY_backslash] = PAL_KEYCODE_BACKSLASH;
+    s_Keyboard.keycodes[XKB_KEY_comma] = PAL_KEYCODE_COMMA;
+    s_Keyboard.keycodes[XKB_KEY_equal] = PAL_KEYCODE_EQUAL;
+    s_Keyboard.keycodes[XKB_KEY_grave] = PAL_KEYCODE_GRAVEACCENT;
+    s_Keyboard.keycodes[XKB_KEY_minus] = PAL_KEYCODE_SUBTRACT;
+    s_Keyboard.keycodes[XKB_KEY_period] = PAL_KEYCODE_PERIOD;
+    s_Keyboard.keycodes[XKB_KEY_semicolon] = PAL_KEYCODE_SEMICOLON;
+    s_Keyboard.keycodes[XKB_KEY_slash] = PAL_KEYCODE_SLASH;
+    s_Keyboard.keycodes[XKB_KEY_bracketleft] = PAL_KEYCODE_LBRACKET;
+    s_Keyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
+}
+
 static int createShmFile(Uint64 size) 
 {
     char template[] = "/tmp/pal-shm-XXXXXX";
@@ -5976,7 +6260,8 @@ PalResult wlInitVideo()
 {
     // load wayland libray
     s_Wl.handle = dlopen("libwayland-client.so.0", RTLD_LAZY);
-    if (!s_Wl.handle) {
+    s_Wl.xkbCommon = dlopen("libxkbcommon.so", RTLD_LAZY);
+    if (!s_Wl.handle || !s_Wl.xkbCommon) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6058,6 +6343,39 @@ PalResult wlInitVideo()
         s_Wl.handle, 
         "wl_display_cancel_read");
 
+    // load xkbcommon procs
+    s_Wl.xkbKeymapUnref = (xkb_keymap_unref_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_keymap_unref");
+
+    s_Wl.xkbStateKeyGetOneSym = (xkb_state_key_get_one_sym_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_state_key_get_one_sym");
+
+    s_Wl.xkbStateNew = (xkb_state_new_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_state_new");
+
+    s_Wl.xkbStateUnref = (xkb_state_unref_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_state_unref");
+
+    s_Wl.xkbContextUnref = (xkb_context_unref_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_context_unref");
+
+    s_Wl.xkbContextNew = (xkb_context_new_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_context_new");
+
+    s_Wl.xkbKeymapNewFromString = (xkb_keymap_new_from_string_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_keymap_new_from_string");
+
+    s_Wl.xkbKeysymToUtf32 = (xkb_keysym_to_utf32_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_keysym_to_utf32");
+
     // initialize wayland
     s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
@@ -6077,11 +6395,25 @@ PalResult wlInitVideo()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // create an input context
+    s_Wl.inputContext = s_Wl.xkbContextNew(XKB_CONTEXT_NO_FLAGS);
+    if (!s_Wl.inputContext) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    wlCreateKeycodeTable();
     return PAL_RESULT_SUCCESS;
 }
 
 void wlShutdownVideo()
 {
+    if (s_Wl.state) {
+        s_Wl.xkbStateUnref(s_Wl.state);
+        s_Wl.xkbKeymapUnref(s_Wl.keymap);
+    }
+
+    s_Wl.xkbContextUnref(s_Wl.inputContext);
+
     if (s_Wl.decorationManager) {
         zxdgDecorationManagerV1Destroy(s_Wl.decorationManager);
     }
@@ -6092,6 +6424,7 @@ void wlShutdownVideo()
     s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.registry);
     s_Wl.displayDisconnect(s_Wl.display);
     dlclose(s_Wl.handle);
+    dlclose(s_Wl.xkbCommon);
 }
 
 void wlUpdateVideo()
@@ -6953,6 +7286,8 @@ PalResult PAL_CALL palInitVideo(
     
 #endif // PAL_HAS_WAYLAND
     }
+
+    createScancodeTable();
 
     // we load EGL as well
     s_Egl.handle = dlopen("libEGL.so", RTLD_LAZY);
