@@ -1428,9 +1428,28 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * @since 1.0
  * @ingroup pal_video
  */
-void PAL_CALL palGetMouseWheelDelta(
+PAL_API void PAL_CALL palGetMouseWheelDelta(
     Int32* dx,
     Int32* dy);
+
+/**
+ * @brief Get the raw wheel delta of the mouse in floats.
+ *
+ * The video system must be initialized before this call.
+ * The wheel delta will be updated when palUpdateVideo() is called.
+ *
+ * @param[in] dx Pointer to recieve the mouse wheel delta x in floats. Can be nullptr.
+ * @param[in] dy Pointer to recieve the mouse wheel delta y in floats. Can be nullptr.
+ *
+ * Thread safety: This function is thread-safe if `dx` and `dy` are thread
+ * local.
+ *
+ * @since 1.3
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetRawMouseWheelDelta(
+    float* dx,
+    float* dy);
 
 /**
  * @brief Check if the provided window is visible.

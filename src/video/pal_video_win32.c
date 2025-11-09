@@ -2257,6 +2257,14 @@ void PAL_CALL palGetMouseWheelDelta(
     }
 }
 
+void PAL_CALL palGetRawMouseWheelDelta(
+    float* dx,
+    float* dy)
+{
+    // TODO:
+
+}
+
 bool PAL_CALL palIsWindowVisible(PalWindow* window)
 {
     if (!s_Video.initialized) {

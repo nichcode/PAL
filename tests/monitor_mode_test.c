@@ -121,6 +121,7 @@ bool monitorModeTest()
         palLog(nullptr, "  Size: (%d, %d)", current.width, current.height);
         palLog(nullptr, "  RefreshRate: %d", current.refreshRate);
         palLog(nullptr, "  Bits Per Pixel: %d", current.bpp);
+        palLog(nullptr, "");
     }
 
     // shutdown the video system
