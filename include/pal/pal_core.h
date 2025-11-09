@@ -33,6 +33,7 @@ freely, subject to the following restrictions:
 #define _PAL_CORE_H
 
 #include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 #define PAL_EXTERN_C extern "C"
@@ -74,6 +75,12 @@ typedef _Bool bool;
 // static library
 #define PAL_API PAL_EXTERN_C
 #endif // _PAL_BUILD_DLL
+
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define PAL_BIG_ENDIAN 1
+#else 
+#define PAL_BIG_ENDIAN 0
+#endif // __ORDER_BIG_ENDIAN__
 
 #define PAL_BIT(x) 1 << x
 #define PAL_BIT64(x) 1ULL << x
@@ -464,6 +471,33 @@ static inline Int64 PAL_CALL palPackPointer(void* ptr)
 }
 
 /**
+ * @brief Combine two floats into a single 64-bit signed integer.
+ *
+ * @return The combined 64-bit signed integer.
+ *
+ * Thread safety: This function is thread safe.
+ *
+ * @since 1.3
+ * @ingroup pal_core
+ * @sa palUnpackFloat
+ */
+static inline Int64 PAL_CALL palPackFloat(
+    float low,
+    float high)
+{
+    Int64 combined = 0;
+#if PAL_BIG_ENDIAN
+    memcpy(&((Uint32*)&combined)[0], &high, sizeof(float));
+    memcpy(&((Uint32*)&combined)[1], &low, sizeof(float));
+#else 
+    memcpy(&((Uint32*)&combined)[0], &low, sizeof(float));
+    memcpy(&((Uint32*)&combined)[1], &high, sizeof(float));
+#endif // PAL_BIG_ENDIAN
+
+    return combined;
+}
+
+/**
  * @brief Retrieve two 32-bit unsigned integers from a 64-bit signed integer.
  *
  * @param[out] outLow Low value of the 64-bit signed integer.
@@ -530,6 +564,44 @@ static inline void PAL_CALL palUnpackInt32(
 static inline void* PAL_CALL palUnpackPointer(Int64 data)
 {
     return (void*)(UintPtr)data;
+}
+
+/**
+ * @brief Retrieve two floats from a 64-bit signed integer.
+ *
+ * @param[out] outLow Low value of the 64-bit signed integer.
+ * @param[out] outHigh High value of the 64-bit signed integer.
+ *
+ * Thread safety: This function is thread-safe if `outLow` and `outHigh` are
+ * thread local.
+ *
+ * @since 1.3
+ * @ingroup pal_core
+ * @sa palPackFloat
+ */
+static inline void PAL_CALL palUnpackFloat(
+    Int64 data,
+    float* low,
+    float* high)
+{
+#if PAL_BIG_ENDIAN
+    if (low) {
+        memcpy(low, &((Uint32*)&data)[1], sizeof(float));
+    }
+
+    if (high) {
+        memcpy(high, &((Uint32*)&data)[0], sizeof(float));
+    }
+#else 
+    if (low) {
+        memcpy(low, &((Uint32*)&data)[0], sizeof(float));
+    }
+
+    if (high) {
+        memcpy(high, &((Uint32*)&data)[1], sizeof(float));
+    }
+
+#endif // PAL_BIG_ENDIAN
 }
 
 /** @} */ // end of pal_core group

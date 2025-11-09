@@ -366,8 +366,19 @@ static inline void onMouseWheel(const PalEvent* event)
 {
     Int32 dx, dy; // dx == low, dy == high
     palUnpackInt32(event->data, &dx, &dy);
+    
+    // get the raw wheel delta (float)
+    float fdx, fdy;
+    palGetRawMouseWheelDelta(&fdx, &fdy);
+
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Mouse Wheel: (%d, %d)", dispatchString, dx, dy);
+    palLog(
+        nullptr, 
+        "%s: Mouse Wheel Float: (%.2f, %.2f)", 
+        dispatchString, 
+        fdx, 
+        fdy);
 }
 
 static void PAL_CALL onEvent(
@@ -449,6 +460,15 @@ bool inputWindowTest()
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "PAL Input Window";
+
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+
+    // check if we support decorated windows (title bar, close etc)
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);

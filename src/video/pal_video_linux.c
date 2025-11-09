@@ -54,6 +54,7 @@ freely, subject to the following restrictions:
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <linux/input-event-codes.h>
 #endif // PAL_HAS_WAYLAND
 
 // ==================================================
@@ -69,13 +70,7 @@ typedef void* EGLContext;
 typedef void* EGLDisplay;
 typedef void* EGLNativeDisplayType;
 
-/* C++ / C typecast macros for special EGL handle values */
-#if defined(__cplusplus)
-#define EGL_CAST(type, value) (static_cast<type>(value))
-#else
 #define EGL_CAST(type, value) ((type)(value))
-#endif
-
 #define EGL_OPENGL_API 0x30A2
 #define EGL_OPENGL_BIT 0x0008
 #define EGL_NO_CONTEXT EGL_CAST(EGLContext, 0)
@@ -157,13 +152,20 @@ typedef struct {
 } MonitorData;
 
 typedef struct {
+    bool pendingScroll;
     Int32 lastX;
     Int32 lastY;
     Int32 dx;
     Int32 dy;
     Int32 WheelX;
     Int32 WheelY;
+    float WheelXf;
+    float WheelYf;
     bool state[PAL_MOUSE_BUTTON_MAX];
+    double tmpScrollX;
+    double tmpScrollY;
+    double accumScrollX;
+    double accumScrollY;
 } Mouse;
 
 typedef struct {
@@ -870,6 +872,7 @@ typedef struct {
     struct wl_keyboard* keyboard;
     struct zxdg_decoration_manager_v1* decorationManager;
     struct zwp_pointer_constraints* pointerConstraints;
+    struct wl_surface* pointersurface;
 
     const struct wl_interface* outputInterface;
     const struct wl_interface* seatInterface;
@@ -1215,7 +1218,7 @@ static inline int wlKeyboardAddListener(
         (void (**)(void)) listener, data);
 }
 
-static void surfaceEnter(
+static void surfaceHandleEnter(
     void* userData,
     struct wl_surface* surface,
     struct wl_output* output)
@@ -1224,7 +1227,7 @@ static void surfaceEnter(
 
 }
 
-static void surfaceLeave(
+static void surfaceHandleLeave(
     void* userData,
     struct wl_surface* surface,
     struct wl_output* output)
@@ -1233,11 +1236,11 @@ static void surfaceLeave(
 }
 
 static struct wl_surface_listener surfaceListener = {
-    .enter = surfaceEnter,
-    .leave = surfaceLeave
+    .enter = surfaceHandleEnter,
+    .leave = surfaceHandleLeave
 };
 
-static void pointerEnter(
+static void pointerHandleEnter(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t serial,
@@ -1256,28 +1259,68 @@ static void pointerEnter(
             cursor->hotspotX, 
             cursor->hotspotY);
     }
+
+    // cache the surface the pointer is currently on
+    s_Wl.pointersurface = surface;
 }
 
-static void pointerLeave(
+static void pointerHandleLeave(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t serial,
     struct wl_surface* surface)
 {
-    
+    if (s_Wl.pointersurface == surface) {
+        s_Wl.pointersurface == nullptr;
+    }
 }
 
-static void pointerMotion(
+static void pointerHandleMotion(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t time,
     wl_fixed_t surface_x,
     wl_fixed_t surface_y)
 {
-    
+    int x = wl_fixed_to_int(surface_x);
+    int y = wl_fixed_to_int(surface_y);
+    const int dx = x - s_Mouse.lastX;
+    const int dy = y - s_Mouse.lastY;
+
+    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    PalWindow* window = (PalWindow*)s_Wl.pointersurface;
+    if (s_Video.eventDriver && window) {
+        // we only push a mouse move only if we are on a window
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalEventType type = PAL_EVENT_MOUSE_MOVE;
+        mode = palGetEventDispatchMode(driver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = palPackInt32(x, y);
+            event.data2 = palPackPointer(window);
+            palPushEvent(driver, &event);
+        }
+
+        // push a mouse delta event
+        type = PAL_EVENT_MOUSE_DELTA;
+        mode = palGetEventDispatchMode(driver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = palPackInt32(dx, dy);
+            event.data2 = palPackPointer(window);
+            palPushEvent(driver, &event);
+        }
+    }
+
+    s_Mouse.lastX = x;
+    s_Mouse.lastY = y;
+    s_Mouse.dx = dx;
+    s_Mouse.dy = dy;
 }
 
-static void pointerButton(
+static void pointerHandleButton(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t serial,
@@ -1285,28 +1328,163 @@ static void pointerButton(
     uint32_t button,
     uint32_t state)
 {
+    PalWindow* window = nullptr;
+    if (s_Wl.pointersurface) {
+        window = (PalWindow*)s_Wl.pointersurface;
+
+    } else {
+        // cannot recieve events without a focused surface
+        return;
+    }
     
+    bool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
+    PalMouseButton _button = 0;
+    PalEventType type = PAL_EVENT_MOUSE_BUTTONUP;
+
+    if (button == BTN_LEFT) {
+        _button = PAL_MOUSE_BUTTON_LEFT;
+
+    } else if (button == BTN_RIGHT) {
+        _button = PAL_MOUSE_BUTTON_RIGHT;
+
+    } else if (button == BTN_MIDDLE) {
+        _button = PAL_MOUSE_BUTTON_MIDDLE;
+
+    } else if (button == BTN_SIDE) {
+        _button = PAL_MOUSE_BUTTON_X1;
+
+    } else if (button == BTN_EXTRA) {
+        _button = PAL_MOUSE_BUTTON_X2;
+    }
+
+    if (pressed) {
+        type = PAL_EVENT_MOUSE_BUTTONDOWN;
+    }
+
+    s_Mouse.state[_button] = pressed;
+    if (s_Video.eventDriver) {
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        mode = palGetEventDispatchMode(driver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = _button;
+            event.data2 = palPackPointer(window);
+            palPushEvent(driver, &event);
+        }
+    }
 }
 
-static void pointerAxis(
+static void pointerHandleAxis(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t time,
     uint32_t axis,
     wl_fixed_t value)
 {
+    double delta = wl_fixed_to_double(value);
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+        s_Mouse.tmpScrollX += delta;
+        s_Mouse.accumScrollX += delta;
+
+    } else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
+        s_Mouse.tmpScrollY += delta;
+        s_Mouse.accumScrollY += delta;
+    }
+    
+    s_Mouse.pendingScroll = true;
+}
+
+static void pointerHandleAxisDiscrete(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t axis,
+    int32_t discrete)
+{
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+        s_Mouse.tmpScrollX += discrete;
+        s_Mouse.accumScrollX += discrete;
+
+    } else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
+        s_Mouse.tmpScrollY += discrete;
+        s_Mouse.accumScrollY += discrete;
+    }
+    
+    s_Mouse.pendingScroll = true;
+}
+
+static void pointerHandleFrame(
+    void* userData,
+    struct wl_pointer* pointer)
+{
+    if (!s_Mouse.pendingScroll) {
+        // no wheel event
+        return;
+    }
+
+    PalWindow* window = nullptr;
+    if (s_Wl.pointersurface) {
+        window = (PalWindow*)s_Wl.pointersurface;
+
+    } else {
+        // cannot recieve events without a focused surface
+        return;
+    }
+
+    const int dx = (int)s_Mouse.accumScrollX;
+    const int dy = (int)s_Mouse.accumScrollY;
+    if (s_Video.eventDriver) {
+        PalEventType type = PAL_EVENT_MOUSE_WHEEL;
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        mode = palGetEventDispatchMode(driver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = palPackUint32(dx, dy);
+            event.data2 = palPackPointer(window);
+            palPushEvent(driver, &event);
+        }
+    }
+
+    s_Mouse.WheelX = dx;
+    s_Mouse.WheelY = dy;
+    s_Mouse.accumScrollX -= dx;
+    s_Mouse.accumScrollY -= dy;
+    s_Mouse.pendingScroll = false;
+}
+
+static void pointerHandleAxisSource(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t axis_source)
+{
+
+}
+
+static void pointerHandleAxisStop(
+    void* userData,
+    struct wl_pointer* pointer,
+    uint32_t time,
+	uint32_t axis)
+{
     
 }
 
 static struct wl_pointer_listener pointerListener = {
-    .enter = pointerEnter,
-    .leave = pointerLeave,
-    .motion = pointerMotion,
-    .button = pointerButton,
-    .axis = pointerAxis
+    .enter = pointerHandleEnter,
+    .leave = pointerHandleLeave,
+    .motion = pointerHandleMotion,
+    .button = pointerHandleButton,
+    .axis = pointerHandleAxis,
+    .axis_discrete = pointerHandleAxisDiscrete,
+    .frame = pointerHandleFrame,
+    .axis_source = pointerHandleAxisSource,
+    .axis_stop = pointerHandleAxisStop
 };
 
-static void seatCapabilities(
+static void seatHandleCapabilities(
     void* userData,
     struct wl_seat* seat,
     enum wl_seat_capability caps)
@@ -1323,7 +1501,7 @@ static void seatCapabilities(
     }
 }
 
-static void seatName(
+static void seatHandleName(
     void* userData,
     struct wl_seat* seat,
     const char* name)
@@ -1332,8 +1510,8 @@ static void seatName(
 }
 
 static struct wl_seat_listener seatListener = {
-    .capabilities = seatCapabilities,
-    .name = seatName
+    .capabilities = seatHandleCapabilities,
+    .name = seatHandleName
 };
 
 #endif // PAL_HAS_WAYLAND
@@ -1447,7 +1625,7 @@ static inline void xdgSurfaceAckConfigure(
             serial);
 }
 
-static void wmBasePing(
+static void wmBaseHandlePing(
     void* data, 
     struct xdg_wm_base* base, 
     uint32_t serial)
@@ -1455,7 +1633,7 @@ static void wmBasePing(
     xdgWmBasePong(base, serial);
 }
 
-static void xdgSurfaceConfigure(
+static void xdgSurfaceHandleConfigure(
     void* data,
     struct xdg_surface* surface,
     uint32_t serial)
@@ -1486,15 +1664,17 @@ static void xdgSurfaceConfigure(
         winData->buffer = buffer;
 
         // push a window resize event
-        PalEventType type = PAL_EVENT_WINDOW_SIZE;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
-        mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-        if (mode != PAL_DISPATCH_NONE) {
-            PalEvent event = {0};
-            event.type = type;
-            event.data = palPackUint32(winData->w, winData->h);
-            event.data2 = palPackPointer(winData->window);
-            palPushEvent(s_Video.eventDriver, &event);
+        if (s_Video.eventDriver) {
+            PalEventType type = PAL_EVENT_WINDOW_SIZE;
+            PalDispatchMode mode = PAL_DISPATCH_NONE;
+            mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+            if (mode != PAL_DISPATCH_NONE) {
+                PalEvent event = {0};
+                event.type = type;
+                event.data = palPackUint32(winData->w, winData->h);
+                event.data2 = palPackPointer(winData->window);
+                palPushEvent(s_Video.eventDriver, &event);
+            }
         }
     }
 
@@ -1505,20 +1685,22 @@ static void xdgSurfaceConfigure(
         // push a window state event
         // we dont recreate buffers over here
         // since we already create the buffer with the new size
-        PalEventType type = PAL_EVENT_WINDOW_STATE;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
-        mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-        if (mode != PAL_DISPATCH_NONE) {
-            PalEvent event = {0};
-            event.type = type;
-            event.data = winData->state;
-            event.data2 = palPackPointer(winData->window);
-            palPushEvent(s_Video.eventDriver, &event);
+        if (s_Video.eventDriver) {
+            PalEventType type = PAL_EVENT_WINDOW_STATE;
+            PalDispatchMode mode = PAL_DISPATCH_NONE;
+            mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+            if (mode != PAL_DISPATCH_NONE) {
+                PalEvent event = {0};
+                event.type = type;
+                event.data = winData->state;
+                event.data2 = palPackPointer(winData->window);
+                palPushEvent(s_Video.eventDriver, &event);
+            }
         }
     }
 }
 
-static void xdgToplevelConfigure(
+static void xdgToplevelHandleConfigure(
     void* data,
     struct xdg_toplevel* toplevel,
     int32_t width,
@@ -1550,19 +1732,22 @@ static void xdgToplevelConfigure(
 
 }
 
-static void xdgToplevelClose(
+static void xdgToplevelHandleClose(
     void* data,
     struct xdg_toplevel* toplevel)
 {
     WindowData* winData = (WindowData*)data;
 
-    PalEventType type = PAL_EVENT_WINDOW_CLOSE;
-    PalDispatchMode mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-    if (mode != PAL_DISPATCH_NONE) {
-        PalEvent event = {0};
-        event.type = type;
-        event.data2 = palPackPointer(winData->window);
-        palPushEvent(s_Video.eventDriver, &event);
+    if (s_Video.eventDriver) {
+        PalEventType type = PAL_EVENT_WINDOW_CLOSE;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data2 = palPackPointer(winData->window);
+            palPushEvent(s_Video.eventDriver, &event);
+        }
     }
 }
 
@@ -1847,16 +2032,16 @@ static void setupXdgShellProtocol()
 }
 
 static const struct xdg_wm_base_listener wmBaseListener = {
-    .ping = wmBasePing
+    .ping = wmBaseHandlePing
 };
 
 static const struct xdg_surface_listener xdgSurfaceListener = {
-    .configure = xdgSurfaceConfigure
+    .configure = xdgSurfaceHandleConfigure
 };
 
 static const struct xdg_toplevel_listener xdgToplevelListener = {
-    .configure = xdgToplevelConfigure,
-    .close = xdgToplevelClose,
+    .configure = xdgToplevelHandleConfigure,
+    .close = xdgToplevelHandleClose,
     .configure_bounds = nullptr,
     .wm_capabilities = nullptr
 };
@@ -5605,7 +5790,7 @@ static void wlGlobalHandle(
             registry, 
             name, 
             s_Wl.seatInterface,
-            4);
+            5);
 
         wlSeatAddListener(s_Wl.seat , &seatListener, nullptr);
 
@@ -5912,6 +6097,8 @@ void wlShutdownVideo()
 void wlUpdateVideo()
 {
     // flush pending requests 
+    s_Mouse.tmpScrollX = 0;
+    s_Mouse.tmpScrollY = 0;
     s_Wl.displayFlush(s_Wl.display);
 
     while (s_Wl.prepareRead(s_Wl.display) != 0) {
@@ -6019,15 +6206,16 @@ PalResult wlEnumerateMonitors(
     PalMonitor** outMonitors)
 {
     int _count = 0;
+    int index = 0;
     int maxCount = outMonitors ? *count : 0;
     if (outMonitors) {
         if (_count < maxCount) {
             for (int i = 0; i < maxCount; i++) {
                 // we get the monitor from our cache array
                 PalMonitor* monitor = nullptr;
-                for (int y = 0; y < s_Video.maxMonitorData; y++) {
-                    if (s_Video.monitorData[y].used) {
-                        monitor = s_Video.monitorData[y].monitor;
+                for (;index < s_Video.maxMonitorData;) {
+                    if (s_Video.monitorData[index].used) {
+                        monitor = s_Video.monitorData[index].monitor;
                         break;
                     }
                 }
@@ -6035,6 +6223,7 @@ PalResult wlEnumerateMonitors(
                 // write to user provided array
                 outMonitors[_count] = monitor;
                 _count++; // index into user array
+                index++;
             }
         }
     }
@@ -7261,6 +7450,23 @@ void PAL_CALL palGetMouseWheelDelta(
 
     if (dy) {
         *dy = s_Mouse.WheelY;
+    }
+}
+
+void PAL_CALL palGetRawMouseWheelDelta(
+    float* dx,
+    float* dy)
+{
+    if (!s_Video.initialized) {
+        return;
+    }
+
+    if (dx) {
+        *dx = (float)s_Mouse.tmpScrollX;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.tmpScrollY;
     }
 }
 
