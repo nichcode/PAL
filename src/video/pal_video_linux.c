@@ -175,8 +175,14 @@ typedef struct {
 typedef struct {
     bool scancodeState[PAL_SCANCODE_MAX];
     bool keycodeState[PAL_KEYCODE_MAX];
+    int repeatRate;
+    int repeatDelay;
+    int repeatKey;
+    int repeatScancode;
     int scancodes[512];
     int keycodes[256];
+    Uint64 timer;
+    Uint64 frequency;
 } Keyboard;
 
 typedef struct {
@@ -878,6 +884,19 @@ typedef struct xkb_keymap* (*xkb_keymap_new_from_string_fn)(
     enum xkb_keymap_format,
     enum xkb_keymap_compile_flags);
 
+typedef enum xkb_state_component (*xkb_state_update_mask_fn)(
+    struct xkb_state*,
+    xkb_mod_mask_t,
+    xkb_mod_mask_t,
+    xkb_mod_mask_t,
+    xkb_layout_index_t,
+    xkb_layout_index_t,
+    xkb_layout_index_t);
+
+typedef int (*xkb_keymap_key_repeats_fn)(
+    struct xkb_keymap*, 
+    xkb_keycode_t);
+
 typedef struct {
     bool checkFeatures;
     bool modesPhase;
@@ -939,6 +958,8 @@ typedef struct {
     xkb_state_key_get_one_sym_fn xkbStateKeyGetOneSym;
     xkb_keymap_new_from_string_fn xkbKeymapNewFromString;
     xkb_keysym_to_utf32_fn xkbKeysymToUtf32;
+    xkb_state_update_mask_fn xkbStateUpdateMask;
+    xkb_keymap_key_repeats_fn xkbKeymapKeyRepeats;
 } Wayland;
 
 typedef struct {
@@ -963,6 +984,12 @@ static Wayland s_Wl = {0};
 #if PAL_HAS_WAYLAND
 
 static WindowData* findWindowData(PalWindow* window);
+
+static inline Uint64 getTime()
+{
+    Uint64 now = palGetPerformanceCounter();
+    return (now * 1000) / s_Keyboard.frequency;
+}
 
 static inline void* wlRegistryBind(
     struct wl_registry *wl_registry, 
@@ -1578,6 +1605,7 @@ static void keyboardHandleRemap(
 
     s_Wl.state = state;
     s_Wl.keymap = keymap;
+    s_Keyboard.frequency = palGetPerformanceFrequency();
 }
 
 static void keyboardHandleKey(
@@ -1640,15 +1668,26 @@ static void keyboardHandleKey(
         keycode = (PalKeycode)(Uint32)scancode;
     }
 
-    bool repeat = s_Keyboard.keycodeState[keycode];
     s_Keyboard.scancodeState[scancode] = pressed;
     s_Keyboard.keycodeState[keycode] = pressed;
 
+    // check for key repeats
     if (pressed) {
-        if (repeat) {
-            type = PAL_EVENT_KEYREPEAT;
+        if (s_Wl.xkbKeymapKeyRepeats(s_Wl.keymap, key + 8)) {
+            s_Keyboard.repeatKey = keycode;
+            s_Keyboard.repeatScancode = scancode;
+            s_Keyboard.timer = getTime() + s_Keyboard.repeatDelay;
+
         } else {
-            type = PAL_EVENT_KEYDOWN;
+            s_Keyboard.repeatKey = 0;
+        }
+
+        type = PAL_EVENT_KEYDOWN;
+
+    } else {
+        // key release
+        if (s_Keyboard.repeatKey == keycode) {
+            s_Keyboard.repeatKey = 0;
         }
     }
 
@@ -1685,7 +1724,16 @@ static void keyboardHandleRepeatInfo(
     int32_t rate,
     int32_t delay)
 {
-    
+    if (s_Wl.keyboard == keyboard) {
+        s_Keyboard.repeatDelay = delay;
+        s_Keyboard.repeatRate = rate;
+
+    } else {
+        if (s_Keyboard.repeatDelay == 0) {
+            s_Keyboard.repeatDelay = 500;
+            s_Keyboard.repeatRate = 30;
+        }
+    }
 }
 
 static void keyboardHandleModifiers(
@@ -1697,7 +1745,16 @@ static void keyboardHandleModifiers(
     uint32_t mods_locked,
     uint32_t group)
 {
-    
+    if (s_Wl.state) {
+        s_Wl.xkbStateUpdateMask(
+            s_Wl.state,
+            mods_depressed,
+            mods_latched,
+            mods_locked,
+            group,
+            0,
+            0);
+    }
 }
 
 static struct wl_pointer_listener pointerListener = {
@@ -6376,6 +6433,14 @@ PalResult wlInitVideo()
         s_Wl.xkbCommon, 
         "xkb_keysym_to_utf32");
 
+    s_Wl.xkbStateUpdateMask = (xkb_state_update_mask_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_state_update_mask");
+
+    s_Wl.xkbKeymapKeyRepeats = (xkb_keymap_key_repeats_fn)dlsym(
+        s_Wl.xkbCommon, 
+        "xkb_keymap_key_repeats");
+
     // initialize wayland
     s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
@@ -6432,8 +6497,32 @@ void wlUpdateVideo()
     // flush pending requests 
     s_Mouse.tmpScrollX = 0;
     s_Mouse.tmpScrollY = 0;
-    s_Wl.displayFlush(s_Wl.display);
 
+    // push key repeats
+    // we only do this if the user wants key repeat events
+    if (s_Keyboard.repeatKey != 0 && s_Video.eventDriver) {
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        mode = palGetEventDispatchMode(driver, PAL_EVENT_KEYREPEAT);
+        if (mode != PAL_DISPATCH_NONE) {
+            // get now time and check with the key repeat time
+            Uint64 now = getTime();
+            if (now >= s_Keyboard.timer) {
+                PalWindow* window = (PalWindow*)s_Wl.keyboardSurface;
+                PalKeycode key = s_Keyboard.repeatKey;
+                PalScancode scancode = s_Keyboard.repeatScancode;
+
+                PalEvent event = {0};
+                event.type = PAL_EVENT_KEYREPEAT;
+                event.data = palPackUint32(key, scancode);
+                event.data2 = palPackPointer(window);
+                palPushEvent(driver, &event);
+                s_Keyboard.timer += s_Keyboard.repeatRate;
+            }
+        }
+    }
+
+    s_Wl.displayFlush(s_Wl.display);
     while (s_Wl.prepareRead(s_Wl.display) != 0) {
         s_Wl.dispatchPending(s_Wl.display);
     }
