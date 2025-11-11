@@ -59,6 +59,8 @@ freely, subject to the following restrictions:
 #include <linux/input-event-codes.h>
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
+
+#include <wayland-cursor.h>
 #endif // PAL_HAS_WAYLAND
 
 // ==================================================
@@ -897,6 +899,19 @@ typedef int (*xkb_keymap_key_repeats_fn)(
     struct xkb_keymap*, 
     xkb_keycode_t);
 
+// wayland cursor
+typedef struct wl_cursor_theme* (*wl_cursor_theme_load_fn)(
+    const char*, 
+    int, 
+    struct wl_shm*);
+
+typedef struct wl_cursor* (*wl_cursor_theme_get_cursor_fn)(
+    struct wl_cursor_theme*,
+    const char*);
+
+typedef struct wl_buffer* (*wl_cursor_image_get_buffer_fn)(
+    struct wl_cursor_image*);
+
 typedef struct {
     bool checkFeatures;
     bool modesPhase;
@@ -904,6 +919,7 @@ typedef struct {
     
     void* handle;
     void* xkbCommon;
+    void* libCursor;
     struct wl_display* display;
     struct wl_registry* registry;
     struct xdg_wm_base* xdgBase;
@@ -916,6 +932,7 @@ typedef struct {
     struct zwp_pointer_constraints* pointerConstraints;
     struct wl_surface* pointerSurface;
     struct wl_surface* keyboardSurface;
+    struct wl_cursor_theme* cursorTheme;
 
     struct xkb_context* inputContext;
     struct xkb_keymap* keymap;
@@ -960,6 +977,10 @@ typedef struct {
     xkb_keysym_to_utf32_fn xkbKeysymToUtf32;
     xkb_state_update_mask_fn xkbStateUpdateMask;
     xkb_keymap_key_repeats_fn xkbKeymapKeyRepeats;
+
+    wl_cursor_theme_load_fn cursorThemeLoad;
+    wl_cursor_theme_get_cursor_fn cursorThemeGetCursor;
+    wl_cursor_image_get_buffer_fn cursorImageGetBuffer;
 } Wayland;
 
 typedef struct {
@@ -6318,7 +6339,8 @@ PalResult wlInitVideo()
     // load wayland libray
     s_Wl.handle = dlopen("libwayland-client.so.0", RTLD_LAZY);
     s_Wl.xkbCommon = dlopen("libxkbcommon.so", RTLD_LAZY);
-    if (!s_Wl.handle || !s_Wl.xkbCommon) {
+    s_Wl.libCursor = dlopen("libwayland-cursor.so", RTLD_LAZY);
+    if (!s_Wl.handle || !s_Wl.xkbCommon || !s_Wl.libCursor) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6441,6 +6463,19 @@ PalResult wlInitVideo()
         s_Wl.xkbCommon, 
         "xkb_keymap_key_repeats");
 
+    // load wayland cursor procs
+    s_Wl.cursorImageGetBuffer = (wl_cursor_image_get_buffer_fn)dlsym(
+        s_Wl.libCursor, 
+        "wl_cursor_image_get_buffer");
+
+    s_Wl.cursorThemeLoad = (wl_cursor_theme_load_fn)dlsym(
+        s_Wl.libCursor, 
+        "wl_cursor_theme_load");
+
+    s_Wl.cursorThemeGetCursor = (wl_cursor_theme_get_cursor_fn)dlsym(
+        s_Wl.libCursor, 
+        "wl_cursor_theme_get_cursor");
+
     // initialize wayland
     s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
@@ -6466,6 +6501,12 @@ PalResult wlInitVideo()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // get the current theme
+    s_Wl.cursorTheme = s_Wl.cursorThemeLoad(nullptr, 32, s_Wl.shm);
+    if (!s_Wl.cursorTheme) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     wlCreateKeycodeTable();
     return PAL_RESULT_SUCCESS;
 }
@@ -6478,7 +6519,6 @@ void wlShutdownVideo()
     }
 
     s_Wl.xkbContextUnref(s_Wl.inputContext);
-
     if (s_Wl.decorationManager) {
         zxdgDecorationManagerV1Destroy(s_Wl.decorationManager);
     }
@@ -6488,8 +6528,10 @@ void wlShutdownVideo()
     s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.compositor);
     s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.registry);
     s_Wl.displayDisconnect(s_Wl.display);
-    dlclose(s_Wl.handle);
+
+    dlclose(s_Wl.libCursor);
     dlclose(s_Wl.xkbCommon);
+    dlclose(s_Wl.handle);
 }
 
 void wlUpdateVideo()
@@ -7169,9 +7211,7 @@ PalResult wlCreateCursor(
     }
 
     wlSurfaceAttach(cursor->surface, cursor->buffer, 0, 0);
-    wlSurfaceDamageBuffer(cursor->surface, 0, 0, info->width, info->height);
     wlSurfaceCommit(cursor->surface);
-
     cursor->hotspotX = info->xHotspot;
     cursor->hotspotY = info->yHotspot;
 
@@ -7183,6 +7223,58 @@ PalResult wlCreateCursorFrom(
     PalCursorType type,
     PalCursor** outCursor)
 {
+    const char* cursorType = nullptr;
+    switch (type) {
+        case PAL_CURSOR_ARROW: {
+            cursorType = "left_ptr";
+            break;
+        }
+
+        case PAL_CURSOR_HAND: {
+            cursorType = "hand1";
+            break;
+        }
+
+        case PAL_CURSOR_CROSS: {
+            cursorType = "crosshair";
+            break;
+        }
+
+        case PAL_CURSOR_IBEAM: {
+            cursorType = "text";
+            break;
+        }
+
+        case PAL_CURSOR_WAIT: {
+            cursorType = "wait";
+            break;
+        }
+    }
+
+    struct wl_cursor* wlCursor = nullptr;
+    wlCursor = s_Wl.cursorThemeGetCursor(s_Wl.cursorTheme, cursorType);
+    if (!wlCursor) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    
+    WaylandCursor* cursor = nullptr;
+    cursor = palAllocate(s_Video.allocator, sizeof(WaylandCursor), 0);
+    if (!cursor) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
+    if (!cursor->surface) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    cursor->buffer = s_Wl.cursorImageGetBuffer(wlCursor->images[0]);
+    wlSurfaceAttach(cursor->surface, cursor->buffer, 0, 0);
+    wlSurfaceCommit(cursor->surface);
+    cursor->hotspotX = wlCursor->images[0]->hotspot_x;
+    cursor->hotspotY = wlCursor->images[0]->hotspot_y;
+
+    *outCursor = (PalCursor*)cursor;
     return PAL_RESULT_SUCCESS;
 }
 
