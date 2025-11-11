@@ -375,7 +375,7 @@ static inline void onMouseWheel(const PalEvent* event)
     palLog(nullptr, "%s: Mouse Wheel: (%d, %d)", dispatchString, dx, dy);
     palLog(
         nullptr, 
-        "%s: Mouse Wheel Float: (%.2f, %.2f)", 
+        "%s: Mouse Wheel Raw: (%.2f, %.2f)", 
         dispatchString, 
         fdx, 
         fdy);

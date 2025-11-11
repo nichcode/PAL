@@ -45,6 +45,15 @@ bool systemCursorTest()
         return false;
     }
 
+    // check for support
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR)) {
+        palLog(nullptr, "Seting cursors feature not supported");
+        palDestroyEventDriver(eventDriver);
+        palShutdownVideo();
+        return false;
+    }
+
     // create system cursor
     result = palCreateCursorFrom(PAL_CURSOR_CROSS, &cursor);
     if (result != PAL_RESULT_SUCCESS) {
@@ -60,6 +69,13 @@ bool systemCursorTest()
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "PAL System Cursor Window - Cross";
+
+    // check if we support decorated windows (title bar, close etc)
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
