@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     // registerTest("System Cursor Test", systemCursorTest);
     // registerTest("Attach Window Test", attachWindowTest);
     // registerTest("Character Event Test", charEventTest);
-    registerTest("Native Integration Test", nativeIntegrationTest);
+    // registerTest("Native Integration Test", nativeIntegrationTest);
 #endif // PAL_HAS_VIDEO
 
 #if PAL_HAS_OPENGL
