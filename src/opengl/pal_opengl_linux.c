@@ -60,15 +60,12 @@ typedef void* EGLNativeDisplayType;
 
 #ifndef EGL_OPENGL_API
 // EGL header is not included
-/* C++ / C typecast macros for special EGL handle values */
-#if defined(__cplusplus)
-#define EGL_CAST(type, value) (static_cast<type>(value))
-#else
-#define EGL_CAST(type, value) ((type)(value))
-#endif
 
+#define EGL_CAST(type, value) ((type)(value))
 #define EGL_OPENGL_API 0x30A2
 #define EGL_OPENGL_BIT 0x0008
+#define EGL_OPENGL_ES_BIT 0x0001
+#define EGL_OPENGL_ES_API 0x30A0
 #define EGL_NO_CONTEXT EGL_CAST(EGLContext, 0)
 #define EGL_NO_DISPLAY EGL_CAST(EGLDisplay, 0)
 #define EGL_NO_SURFACE EGL_CAST(EGLSurface, 0)
@@ -218,6 +215,8 @@ typedef struct {
 typedef struct {
     bool initialized;
     Int32 maxContextData;
+    EGLenum apiType;
+    int apiTypeBit;
     const PalAllocator* allocator;
 
     eglGetProcAddressFn eglGetProcAddress;
@@ -243,7 +242,7 @@ typedef struct {
 
     void* handle;
     ContextData* contextData;
-    EGLDisplay display;
+    EGLDisplay* display;
     PalGLInfo info;
 } GLLinux;
 
@@ -436,8 +435,18 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    // create a dummy context
-    if (!s_GL.eglBindAPI(EGL_OPENGL_API)) {
+    // get backend type
+    const char* session = getenv("XDG_SESSION_TYPE");
+    if (session) {
+        if (strcmp(session, "wayland") == 0) {
+            s_GL.apiType = EGL_OPENGL_ES_API;
+        } else {
+            s_GL.apiType = EGL_OPENGL_API;
+            s_GL.apiTypeBit = EGL_OPENGL_BIT;
+        }
+    }
+
+    if (!s_GL.eglBindAPI(s_GL.apiType)) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -453,25 +462,27 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     // use a simple FBConfig
     EGLConfig config;
     int numConfigs;
-    EGLint attribs[] = {
-        EGL_RENDERABLE_TYPE,
-        EGL_OPENGL_BIT,
-        EGL_SURFACE_TYPE,
-        EGL_PBUFFER_BIT,
-        EGL_NONE};
-
     EGLint type;
-    s_GL.eglChooseConfig(display, attribs, &config, 1, &numConfigs);
-    s_GL.eglGetConfigAttrib(display, config, EGL_RENDERABLE_TYPE, &type);
-    if (!(type & EGL_OPENGL_BIT)) {
-        // we must support opengl API (desktop)
-        return PAL_RESULT_PLATFORM_FAILURE;
+    if (s_GL.apiType == EGL_OPENGL_API) {
+        EGLint attribs[] = {
+            EGL_RENDERABLE_TYPE,
+            EGL_OPENGL_BIT,
+            EGL_SURFACE_TYPE,
+            EGL_PBUFFER_BIT,
+            EGL_NONE};
+
+        s_GL.eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+        s_GL.eglGetConfigAttrib(display, config, EGL_RENDERABLE_TYPE, &type);
+        if (!(type & EGL_OPENGL_BIT)) {
+            // we must support opengl API (desktop)
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
     }
 
     // Since we don't want to create dummy window to get the driver info
     // we use EGL_OPENGL_ES2_BIT to create without a window
     if (!(type & EGL_OPENGL_ES2_BIT)) {
-        // FIXME: create a dummy window if EGL_OPENGL_ES2_BIT
+        // FIXME: create a dummy window if EGL_OPENGL_ES2_BIT if using GL API
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -490,27 +501,33 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    EGLint contextAttrib[] = {
-        EGL_CONTEXT_MAJOR_VERSION, 2, 
-        EGL_CONTEXT_MINOR_VERSION, 1, 
-        EGL_NONE};
-
     // create a dummy context
     EGLContext context = EGL_NO_CONTEXT;
-    context = s_GL.eglCreateContext(
-        display, 
-        config, 
-        EGL_NO_CONTEXT, 
-        contextAttrib);
+    if (s_GL.apiType == EGL_OPENGL_API) {
+        EGLint contextAttrib[] = {
+            EGL_CONTEXT_MAJOR_VERSION, 2, 
+            EGL_CONTEXT_MINOR_VERSION, 1, 
+            EGL_NONE};
+        
+        context = s_GL.eglCreateContext(
+            display, 
+            config, 
+            EGL_NO_CONTEXT, 
+            contextAttrib);
+    }
 
-    if (!s_GL.eglMakeCurrent(display, surface, surface, context)) {
+    if (context == EGL_NO_CONTEXT) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    s_GL.eglMakeCurrent(display, surface, surface, context);
     s_GL.glGetString = (glGetStringFn)s_GL.eglGetProcAddress("glGetString");
+
     const char* version = (const char*)s_GL.glGetString(GL_VERSION);
     if (version) {
-        sscanf(version, "%d.%d", &s_GL.info.major, &s_GL.info.minor);
+        if (s_GL.apiType == EGL_OPENGL_API) {
+            sscanf(version, "%d.%d", &s_GL.info.major, &s_GL.info.minor);
+        }
     }
 
     const char* renderer = (const char*)s_GL.glGetString(GL_RENDERER);
@@ -676,7 +693,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             continue;
         }
 
-        if (!(renderable & EGL_OPENGL_BIT)) {
+        if (!(renderable & s_GL.apiTypeBit)) {
             continue;
         }
 
@@ -917,6 +934,8 @@ PalResult PAL_CALL palCreateGLContext(
     EGLContext* share = nullptr;
     if (info->shareContext) {
         share = (EGLContext)info->shareContext;
+    } else {
+        share = EGL_NO_CONTEXT;
     }
 
     Int32 attribs[40];
@@ -926,65 +945,68 @@ PalResult PAL_CALL palCreateGLContext(
 
     // set context attributes
     // the first element is the key and the second is the value
-    // set version
-    attribs[index++] = EGL_CONTEXT_MAJOR_VERSION_KHR; // key
-    attribs[index++] = info->major;                   // value
+    if (s_GL.apiType == EGL_OPENGL_API) {
+        // set version
+        attribs[index++] = EGL_CONTEXT_MAJOR_VERSION_KHR; // key
+        attribs[index++] = info->major;                   // value
 
-    attribs[index++] = EGL_CONTEXT_MINOR_VERSION_KHR;
-    attribs[index++] = info->minor;
+        attribs[index++] = EGL_CONTEXT_MINOR_VERSION_KHR;
+        attribs[index++] = info->minor;
+    
+        // set profile mask
+        if (info->profile != PAL_GL_PROFILE_NONE) {
+            attribs[index++] = EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR;
 
-    // set profile mask
-    if (info->profile != PAL_GL_PROFILE_NONE) {
-        attribs[index++] = EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR;
+            if (info->profile == PAL_GL_PROFILE_COMPATIBILITY) {
+                profile = EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT_KHR;
+            } else if (info->profile == PAL_GL_PROFILE_CORE) {
+                profile = EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT_KHR;
+            }
 
-        if (info->profile == PAL_GL_PROFILE_COMPATIBILITY) {
-            profile = EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT_KHR;
-        } else if (info->profile == PAL_GL_PROFILE_CORE) {
-            profile = EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT_KHR;
+            attribs[index++] = info->profile;
         }
 
-        attribs[index++] = info->profile;
-    }
+        // set forward flag
+        if (info->forward) {
+            flags |= EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE_BIT_KHR;
+        }
 
-    // set forward flag
-    if (info->forward) {
-        flags |= EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE_BIT_KHR;
-    }
+        // set debug flag
+        if (info->debug) {
+            flags |= EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR;
+        }
 
-    // set debug flag
-    if (info->debug) {
-        flags |= EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR;
-    }
+        // set robustness
+        if (info->reset != PAL_GL_CONTEXT_RESET_NONE) {
+            flags |= EGL_CONTEXT_OPENGL_ROBUST_ACCESS_BIT_KHR;
+            attribs[index++] = EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_KHR;
 
-    // set robustness
-    if (info->reset != PAL_GL_CONTEXT_RESET_NONE) {
-        flags |= EGL_CONTEXT_OPENGL_ROBUST_ACCESS_BIT_KHR;
-        attribs[index++] = EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_KHR;
+            if (info->reset == PAL_GL_CONTEXT_RESET_LOSE_CONTEXT) {
+                attribs[index++] = EGL_LOSE_CONTEXT_ON_RESET_KHR;
 
-        if (info->reset == PAL_GL_CONTEXT_RESET_LOSE_CONTEXT) {
-            attribs[index++] = EGL_LOSE_CONTEXT_ON_RESET_KHR;
+            } else if (info->reset == PAL_GL_CONTEXT_RESET_NO_NOTIFICATION) {
+                attribs[index++] = EGL_NO_RESET_NOTIFICATION_KHR;
+            }
+        }
 
-        } else if (info->reset == PAL_GL_CONTEXT_RESET_NO_NOTIFICATION) {
-            attribs[index++] = EGL_NO_RESET_NOTIFICATION_KHR;
+        // set no error
+        if (info->noError) {
+            attribs[index++] = EGL_CONTEXT_OPENGL_NO_ERROR_KHR;
+            attribs[index++] = true;
+        }
+
+        // release
+        if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
+            attribs[index++] = EGL_CONTEXT_RELEASE_BEHAVIOR_KHR;
+            attribs[index++] = EGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_KHR;
+        }
+
+        if (flags) {
+            attribs[index++] = EGL_CONTEXT_FLAGS_KHR;
+            attribs[index++] = flags;
         }
     }
 
-    // set no error
-    if (info->noError) {
-        attribs[index++] = EGL_CONTEXT_OPENGL_NO_ERROR_KHR;
-        attribs[index++] = true;
-    }
-
-    // release
-    if (info->release != PAL_GL_RELEASE_BEHAVIOR_NONE) {
-        attribs[index++] = EGL_CONTEXT_RELEASE_BEHAVIOR_KHR;
-        attribs[index++] = EGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_KHR;
-    }
-
-    if (flags) {
-        attribs[index++] = EGL_CONTEXT_FLAGS_KHR;
-        attribs[index++] = flags;
-    }
     attribs[index++] = EGL_NONE;
 
     // clang-format off
@@ -992,7 +1014,7 @@ PalResult PAL_CALL palCreateGLContext(
     EGLContext context = s_GL.eglCreateContext(
         s_GL.display, 
         config, 
-        EGL_NO_CONTEXT, 
+        share, 
         attribs);
     // clang-format on
 
@@ -1025,7 +1047,7 @@ PalResult PAL_CALL palCreateGLContext(
     EGLSurface surface = s_GL.eglCreateWindowSurface(
         s_GL.display,
         config,
-        (EGLNativeWindowType)info->window->window,
+        (EGLNativeWindowType)info->window->window, // wl_egl_window on wayland
         surfaceAttribs);
 
     if (surface == EGL_NO_SURFACE) {
