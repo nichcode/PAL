@@ -6300,7 +6300,6 @@ static void wlGlobalHandle(
         // wayland does not let use query monitors directly
         // so we enumerate and store at init and update the 
         // cache when a monitor is added or removed
-
         MonitorData* monitorData = getFreeMonitorData();
         if (!monitorData) {
             return;
@@ -6321,6 +6320,7 @@ static void wlGlobalRemove(
     MonitorData* monitorData = findMonitorData(m);
     if (monitorData) {
         monitorData->used = false;
+        s_Wl.monitorCount--;
     }
 }
 
@@ -6746,25 +6746,14 @@ PalResult wlEnumerateMonitors(
     Int32* count,
     PalMonitor** outMonitors)
 {
-    int _count = 0;
-    int index = 0;
-    int maxCount = outMonitors ? *count : 0;
     if (outMonitors) {
-        if (_count < maxCount) {
-            for (int i = 0; i < maxCount; i++) {
-                // we get the monitor from our cache array
-                PalMonitor* monitor = nullptr;
-                for (;index < s_Video.maxMonitorData;) {
-                    if (s_Video.monitorData[index].used) {
-                        monitor = s_Video.monitorData[index].monitor;
-                        break;
-                    }
-                }
-
-                // write to user provided array
-                outMonitors[_count] = monitor;
-                _count++; // index into user array
-                index++;
+        int index = 0;
+        int maxCount = s_Video.maxMonitorData;
+        for (int i = 0; i < maxCount && index < *count; i++) {
+            if (s_Video.monitorData[i].used) {
+                // found a monitor
+                PalMonitor* monitor = s_Video.monitorData[index].monitor;
+                outMonitors[index++] = monitor;
             }
         }
     }
