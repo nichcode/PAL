@@ -23,22 +23,7 @@ bool openglContextTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    // initialize the opengl system
-    PalResult result = palInitGL(nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize opengl: %s", error);
-        return false;
-    }
-
-    PalWindow* window = nullptr;
-    PalGLContext* context = nullptr;
-    PalWindowCreateInfo createInfo = {0};
-    PalGLContextCreateInfo contextCreateInfo = {0};
-    Int32 fbCount = 0;
-    bool running = false;
-
-    // event driver
+    PalResult result;
     PalEventDriver* eventDriver = nullptr;
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
@@ -55,6 +40,35 @@ bool openglContextTest()
         palLog(nullptr, "Failed to create event driver: %s", error);
         return false;
     }
+
+    // initialize the video system. We pass the event driver to recieve video
+    // related events the video system does not copy the event driver, it must
+    // be valid till the video system is shutdown
+    result = palInitVideo(nullptr, eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // get the instance or display handle and pass it to the opengl system
+    // This must be called before the opengl system is initialized
+    palGLSetInstance(palGetInstance());
+
+    // initialize the opengl system
+    result = palInitGL(nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize opengl: %s", error);
+        return false;
+    }
+
+    PalWindow* window = nullptr;
+    PalGLContext* context = nullptr;
+    PalWindowCreateInfo createInfo = {0};
+    PalGLContextCreateInfo contextCreateInfo = {0};
+    Int32 fbCount = 0;
+    bool running = false;
 
     // enumerate supported opengl framebuffer configs
     // glWindow must be nullptr
@@ -123,16 +137,6 @@ bool openglContextTest()
     palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
     palLog(nullptr, "");
 
-    // initialize the video system. We pass the event driver to recieve video
-    // related events the video system does not copy the event driver, it must
-    // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
-    }
-
     // set the FBConfig that will be used by PAL video system
     // to create windows. this must be set before creating a window
     // for this example, we set the closest we desired.
@@ -155,6 +159,14 @@ bool openglContextTest()
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Pal Opengl Context Window";
 
+    // check if we support decorated windows (title bar, close etc)
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
+
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
@@ -172,14 +184,13 @@ bool openglContextTest()
     // get window handle. You can use any window from any library
     // so long as you can get the window handle and display (if on X11, wayland)
     // If pal video system will not be used, there is no need to initialize it
-    PalWindowHandleInfo windowHandleInfo;
-    windowHandleInfo = palGetWindowHandleInfo(window);
+    PalWindowHandleInfoEx winHandle = {0};
+    winHandle = palGetWindowHandleInfoEx(window);
 
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
-    // needed when using X11 or wayland
-    glWindow.display = windowHandleInfo.nativeDisplay;
-    glWindow.window = windowHandleInfo.nativeWindow;
+    glWindow.display = winHandle.nativeHandle3;
+    glWindow.window = winHandle.nativeWindow;
 
     // get opengl info
     const PalGLInfo* info = palGetGLInfo();
@@ -238,7 +249,7 @@ bool openglContextTest()
     glClear = (PFNGLCLEARPROC)palGLGetProcAddress("glClear");
 
     // set clear color
-    glClearColor(.2f, .2f, .2f, .2f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     running = true;
     while (running) {

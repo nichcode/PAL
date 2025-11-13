@@ -147,6 +147,7 @@ typedef struct {
     void* buffer;
     void* decoration;
     void* cursor;
+    void* eglWindow;
 } WindowData;
 
 typedef struct {
@@ -914,6 +915,24 @@ typedef struct wl_cursor* (*wl_cursor_theme_get_cursor_fn)(
 typedef struct wl_buffer* (*wl_cursor_image_get_buffer_fn)(
     struct wl_cursor_image*);
 
+// egl_window
+struct wl_egl_window;
+struct wl_surface;
+
+typedef struct wl_egl_window* (*wl_egl_window_create_fn)(
+    struct wl_surface*,
+    int, 
+    int);
+
+typedef void (*wl_egl_window_destroy_fn)(struct wl_egl_window*);
+
+typedef void (*wl_egl_window_resize_fn)(
+    struct wl_egl_window*,
+    int, 
+    int, 
+    int, 
+    int);
+
 typedef struct {
     bool checkFeatures;
     bool modesPhase;
@@ -922,6 +941,7 @@ typedef struct {
     void* handle;
     void* xkbCommon;
     void* libCursor;
+    void* libWaylandEgl;
     struct wl_display* display;
     struct wl_registry* registry;
     struct xdg_wm_base* xdgBase;
@@ -983,6 +1003,11 @@ typedef struct {
     wl_cursor_theme_load_fn cursorThemeLoad;
     wl_cursor_theme_get_cursor_fn cursorThemeGetCursor;
     wl_cursor_image_get_buffer_fn cursorImageGetBuffer;
+
+    EGLConfig eglFBConfig;
+    wl_egl_window_create_fn eglWindowCreate;
+    wl_egl_window_destroy_fn eglWindowDestroy;
+    wl_egl_window_resize_fn eglWindowResize;
 } Wayland;
 
 typedef struct {
@@ -1303,6 +1328,67 @@ static inline int wlKeyboardAddListener(
 	return s_Wl.proxyAddListener(
         (struct wl_proxy *) wl_keyboard,
         (void (**)(void)) listener, data);
+}
+
+static inline struct wl_region* wlCompositorCreateRegion(
+    struct wl_compositor *wl_compositor)
+{
+	struct wl_proxy *id;
+	id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_compositor,
+        WL_COMPOSITOR_CREATE_REGION, 
+        s_Wl.regionInterface, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_compositor), 
+            0, 
+            NULL);
+
+	return (struct wl_region *) id;
+}
+
+static inline void wlRegionAdd(
+    struct wl_region *wl_region, 
+    int32_t x, 
+    int32_t y, 
+    int32_t width, 
+    int32_t height)
+{
+	s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_region,
+        WL_REGION_ADD, 
+        NULL, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_region), 
+            0, 
+            x, 
+            y, 
+            width, 
+            height);
+}
+
+static inline void wlSurfaceSetOpaqueRegion(
+    struct wl_surface *wl_surface, 
+    struct wl_region *region)
+{
+	s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_surface,
+        WL_SURFACE_SET_OPAQUE_REGION, 
+        NULL, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_surface), 
+            0, 
+            region);
+}
+
+static inline void wlRegionDestroy(struct wl_region *wl_region)
+{
+	s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_region,
+        WL_REGION_DESTROY, 
+        NULL, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_region), 
+            WL_MARSHAL_FLAG_DESTROY);
 }
 
 static void surfaceHandleEnter(
@@ -1961,23 +2047,34 @@ static void xdgSurfaceHandleConfigure(
     if (!winData->skipConfigure) {
         winData->skipConfigure = true;
 
-        // create a new buffer with the new size
-        struct wl_buffer* buffer = nullptr;
-        buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
-        if (!buffer) {
-            return;
+        if (winData->eglWindow) {
+            s_Wl.eglWindowResize(
+                winData->eglWindow, 
+                winData->w, 
+                winData->h, 
+                0, 
+                0);
+                
+        } else {
+            // create a new buffer with the new size
+            struct wl_buffer* buffer = nullptr;
+            buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
+            if (!buffer) {
+                return;
+            }
+
+            struct wl_surface* _surface = nullptr;
+            _surface = (struct wl_surface*)winData->window;
+
+            wlSurfaceAttach(_surface, buffer, 0, 0);
+            wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
+            wlSurfaceCommit(_surface);
+
+
+            // destroy old buffer
+            wlBufferDestroy(winData->buffer);
+            winData->buffer = buffer;
         }
-
-        struct wl_surface* _surface = nullptr;
-        _surface = (struct wl_surface*)winData->window;
-
-        wlSurfaceAttach(_surface, buffer, 0, 0);
-        wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
-        wlSurfaceCommit(_surface);
-
-        // destroy old buffer
-        wlBufferDestroy(winData->buffer);
-        winData->buffer = buffer;
 
         // push a window resize event
         if (s_Video.eventDriver) {
@@ -2596,7 +2693,7 @@ static void setupZwpPointerProtocol()
 }
 
 #endif // PAL_HAS_WAYLAND
-#pragma endregions
+#pragma endregion
 
 // ==================================================
 // Internal API
@@ -5957,6 +6054,37 @@ static Backend s_XBackend = {
 #pragma region Wayland API
 #if PAL_HAS_WAYLAND
 
+PalResult eglWlBackend(const int index)
+{
+    // user choose EGL FBConfig backend
+    if (!s_Egl.handle) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    EGLDisplay display = EGL_NO_DISPLAY;
+    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
+
+    if (display == EGL_NO_DISPLAY) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    EGLint numConfigs = 0;
+    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    EGLint configSize = sizeof(EGLConfig) * numConfigs;
+    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
+    if (!eglConfigs) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
+    s_Wl.eglFBConfig = eglConfigs[index];
+    
+    return PAL_RESULT_SUCCESS;
+}
+
 static void wlCreateKeycodeTable()
 {
     // Tis is for only printable and text input keys
@@ -6342,7 +6470,13 @@ PalResult wlInitVideo()
     s_Wl.handle = dlopen("libwayland-client.so.0", RTLD_LAZY);
     s_Wl.xkbCommon = dlopen("libxkbcommon.so", RTLD_LAZY);
     s_Wl.libCursor = dlopen("libwayland-cursor.so", RTLD_LAZY);
-    if (!s_Wl.handle || !s_Wl.xkbCommon || !s_Wl.libCursor) {
+    s_Wl.libWaylandEgl = dlopen("libwayland-egl.so", RTLD_LAZY);
+
+    // clang-format off
+    if (!s_Wl.handle || 
+        !s_Wl.xkbCommon || 
+        !s_Wl.libCursor || 
+        !s_Wl.libWaylandEgl) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6478,6 +6612,21 @@ PalResult wlInitVideo()
         s_Wl.libCursor, 
         "wl_cursor_theme_get_cursor");
 
+    // wl_egl procs
+    s_Wl.eglWindowCreate = (wl_egl_window_create_fn)dlsym(
+        s_Wl.libWaylandEgl, 
+        "wl_egl_window_create");
+
+    s_Wl.eglWindowDestroy = (wl_egl_window_destroy_fn)dlsym(
+        s_Wl.libWaylandEgl, 
+        "wl_egl_window_destroy");
+
+    s_Wl.eglWindowResize = (wl_egl_window_resize_fn)dlsym(
+        s_Wl.libWaylandEgl, 
+        "wl_egl_window_resize");
+
+    // clang-format on
+
     // initialize wayland
     s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
@@ -6533,6 +6682,7 @@ void wlShutdownVideo()
 
     dlclose(s_Wl.libCursor);
     dlclose(s_Wl.xkbCommon);
+    dlclose(s_Wl.libWaylandEgl);
     dlclose(s_Wl.handle);
 }
 
@@ -6584,87 +6734,6 @@ void wlUpdateVideo()
     // dispatch events that were read
     s_Wl.dispatchPending(s_Wl.display);
     s_Wl.displayFlush(s_Wl.display);
-}
-
-PalResult wlSetFBConfig(
-    const int index,
-    PalFBConfigBackend backend)
-{
-    // user choose EGL FBConfig backend
-    if (!s_Egl.handle) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    if (!s_Egl.eglBindAPI(EGL_OPENGL_API)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    EGLDisplay display = EGL_NO_DISPLAY;
-    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
-
-    if (display == EGL_NO_DISPLAY) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    if (!s_Egl.eglInitialize(display, nullptr, nullptr)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    EGLint numConfigs = 0;
-    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    EGLint configSize = sizeof(EGLConfig) * numConfigs;
-    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
-    if (!eglConfigs) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    EGLConfig config = eglConfigs[index];
-
-    // FIXME:
-
-    // // we create a visual from the config
-    // EGLint visualID;
-    // s_Egl.eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
-    // if (visualID == 0) {
-    //     return PAL_RESULT_INVALID_GL_FBCONFIG;
-    // }
-
-    // int numVisuals = 0;
-    // XVisualInfo tmp;
-    // tmp.visualid = visualID;
-
-    // // clang-format off
-    // // get a matching visual info
-    // XVisualInfo* visualInfo = s_X11.getVisualInfo(
-    //     s_X11.display, 
-    //     VisualIDMask, 
-    //     &tmp, 
-    //     &numVisuals);
-    // // clang-format on
-
-    // if (!visualInfo) {
-    //     return PAL_RESULT_INVALID_GL_FBCONFIG;
-    // }
-
-    // s_X11.visual = visualInfo->visual;
-    // s_X11.depth = visualInfo->depth;
-    // s_X11.colormap = s_X11.createColormap(
-    //     s_X11.display,
-    //     s_X11.root,
-    //     visualInfo->visual,
-    //     AllocNone);
-
-    // if (!s_X11.colormap) {
-    //     return PAL_RESULT_INVALID_GL_FBCONFIG;
-    // }
-
-    // s_Egl.eglTerminate(display);
-    // palFree(s_Video.allocator, eglConfigs);
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult wlEnumerateMonitors(
@@ -6916,13 +6985,6 @@ PalResult wlCreateWindow(
     data->isAttached = false;
     data->state = PAL_WINDOW_STATE_RESTORED;
 
-    // show window
-    if (info->show == false) {
-        // we cant do much anymore
-        *outWindow = (PalWindow*)surface;
-        return PAL_RESULT_SUCCESS;
-    }
-
     // minimize
     // This is just a requeest, the compositor might ignore it
     if (info->minimized) {
@@ -6945,19 +7007,34 @@ PalResult wlCreateWindow(
         data->decoration = decoration;
     }
 
-    // create a white buffer for the surface
-    struct wl_buffer* buffer = nullptr;
-    buffer = createShmBuffer(data->w, data->h, nullptr, false);
-    if (!buffer) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+    if (s_Wl.eglFBConfig) {
+        data->eglWindow = s_Wl.eglWindowCreate(surface, data->w, data->h);
+        if (!data->eglWindow) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+    } else {
+        // create a white buffer for the surface
+        struct wl_buffer* buffer = nullptr;
+        buffer = createShmBuffer(data->w, data->h, nullptr, false);
+        if (!buffer) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        wlSurfaceAttach(surface, buffer, 0, 0);
+        wlSurfaceDamageBuffer(surface, 0, 0, data->w, data->h);
+        wlSurfaceCommit(surface);
+        data->buffer = buffer;
     }
 
-    wlSurfaceAttach(surface, buffer, 0, 0);
-    wlSurfaceDamageBuffer(surface, 0, 0, data->w, data->h);
-    wlSurfaceCommit(surface);
+    struct wl_region* region = wlCompositorCreateRegion(s_Wl.compositor);
+    if (region) {
+        wlRegionAdd(region, 0, 0, data->w, data->h);
+        wlSurfaceSetOpaqueRegion(surface, region);
+        wlRegionDestroy(region);
+    }
+    
     s_Wl.displayRoundtrip(s_Wl.display);
-
-    data->buffer = buffer;
     *outWindow = data->window;
     return PAL_RESULT_SUCCESS;
 }
@@ -7100,12 +7177,12 @@ PalWindowHandleInfoEx wlGetWindowHandleInfoEx(PalWindow* window)
 {
     PalWindowHandleInfoEx info = {0};
     WindowData* data = findWindowData(window);
-    info.nativeDisplay = (void*)s_Wl.display;
-    info.nativeWindow = (void*)window;
-
     if (data) {
+        info.nativeDisplay = (void*)s_Wl.display;
+        info.nativeWindow = (void*)window;
         info.nativeHandle1 = data->xdgSurface;
         info.nativeHandle2 = data->xdgToplevel;
+        info.nativeHandle3 = data->eglWindow;
     }
 
     return info;
@@ -7558,6 +7635,8 @@ PalResult PAL_CALL palSetFBConfig(
         backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         if (s_X11.display) {
             return eglXBackend(index);
+        } else {
+            return eglWlBackend(index);
         }
     }
 }
@@ -8286,7 +8365,10 @@ void* PAL_CALL palGetInstance()
     if (s_X11.display) {
         // we are on X11
         return (void*)s_X11.display;
+    } else {
+        return (void*)s_Wl.display;
     }
+
     return nullptr;
 }
 

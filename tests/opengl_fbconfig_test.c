@@ -13,8 +13,20 @@ bool openglFBConfigTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
+    // initialize the video system and create a window
+    PalResult result = palInitVideo(nullptr, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // get the instance or display handle and pass it to the opengl system
+    // This must be called before the opengl system is initialized
+    palGLSetInstance(palGetInstance());
+
     // initialize the opengl system
-    PalResult result = palInitGL(nullptr);
+    result = palInitGL(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize opengl: %s", error);
@@ -22,7 +34,6 @@ bool openglFBConfigTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    // glWindow must be nullptr for default
     Int32 fbCount = 0;
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
@@ -126,6 +137,8 @@ bool openglFBConfigTest()
 
     // shutdown the opengl system
     palShutdownGL();
+
+    palShutdownVideo();
 
     // free the framebuffer configs
     palFree(nullptr, fbConfigs);

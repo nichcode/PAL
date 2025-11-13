@@ -79,6 +79,7 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - **Video:** Added **palGetRawMouseWheelDelta()** to get raw mouse wheel delta.
 - **Core:** Added **palPackFloat()** to combine two floats into a single Int64 integer.
 - **Core:** Added **palUnpackFloat()** to retreive two floats from a single Int64 integer.
+- **OpenGL:** Added **palGLSetInstance()** to set the instance or display handle.
 
 ### Tests
 - Added native integration example: demonstrating **Native API Integration with PAL API**. see **native_integration_test.c**.
