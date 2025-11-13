@@ -460,9 +460,9 @@ PAL_API PalResult PAL_CALL palSetSwapInterval(Int32 interval);
 
  * On Windows: This is the HINSTANCE of the process.
  *
- * On Wayland: This is the Display associated with the connection.
- *
  * Thread safety: This function is thread safe.
+ * 
+ * @note The provided instance will not be freed by the opengl system.
  *
  * @since 1.3
  * @ingroup pal_opengl

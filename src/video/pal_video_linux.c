@@ -272,6 +272,7 @@ typedef struct {
     WindowData* windowData;
     MonitorData* monitorData;
     const char* className;
+    void* platformInstance;
 } VideoLinux;
 
 static VideoLinux s_Video = {0};
@@ -3725,6 +3726,14 @@ static PalResult xInitVideo()
         "Xutf8LookupString");
 
     // X11 server
+    if (s_Video.platformInstance) {
+        s_X11.display = (Display*)s_Video.platformInstance;
+
+    } else {
+        s_X11.display = s_X11.openDisplay(nullptr);
+        s_Video.platformInstance = nullptr;
+    }
+
     s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -3795,7 +3804,11 @@ static PalResult xInitVideo()
 static void xShutdownVideo()
 {
     s_X11.closeIM(s_X11.im);
-    s_X11.closeDisplay(s_X11.display);
+    if (!s_Video.platformInstance) {
+        // opened by PAL
+        s_X11.closeDisplay(s_X11.display);
+    }
+
     dlclose(s_X11.handle);
     dlclose(s_X11.xrandr);
     dlclose(s_X11.libCursor);
@@ -6609,7 +6622,15 @@ PalResult wlInitVideo()
     setupXdgShellProtocol();
     setupZwpPointerProtocol();
 
-    s_Wl.display = s_Wl.displayConnect(nullptr);
+    // check if user supplied their own display
+    if (s_Video.platformInstance) {
+        s_Wl.display = (struct wl_display*)s_Video.platformInstance;
+
+    } else {
+        s_Wl.display = s_Wl.displayConnect(nullptr);
+        s_Video.platformInstance = nullptr;
+    }
+
     s_Wl.registry = wlDisplayGetRegistry(s_Wl.display);
     wlRegistryAddListener(s_Wl.registry, &s_RegistryListener, nullptr);
     s_Wl.displayRoundtrip(s_Wl.display);
@@ -6653,7 +6674,11 @@ void wlShutdownVideo()
     xdgWmBaseDestroy(s_Wl.xdgBase);
     s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.compositor);
     s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.registry);
-    s_Wl.displayDisconnect(s_Wl.display);
+
+    if (!s_Video.platformInstance) {
+        // opened by PAL
+        s_Wl.displayDisconnect(s_Wl.display);
+    }
 
     dlclose(s_Wl.libCursor);
     dlclose(s_Wl.xkbCommon);
@@ -8382,4 +8407,11 @@ PalResult PAL_CALL palDetachWindow(
     }
 
     return s_Video.backend->detachWindow(window, outWindowHandle);
+}
+
+void PAL_CALL palSetPreferredInstance(void* instance)
+{
+    if (!s_Video.initialized && instance) {
+        s_Video.platformInstance = instance;
+    }
 }
