@@ -97,7 +97,7 @@ bool cursorTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL cursor Window";
+    createInfo.title = "Cursor Window";
 
     // check if we support decorated windows (title bar, close etc)
     if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {

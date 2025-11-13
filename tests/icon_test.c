@@ -95,7 +95,7 @@ bool iconTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL Icon Window";
+    createInfo.title = "Icon Window";
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);

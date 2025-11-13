@@ -42,7 +42,7 @@ bool charEventTest()
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;
-    createInfo.title = "PAL Character Window";
+    createInfo.title = "Character Window";
 
     // check if we support decorated windows (title bar, close etc)
     PalVideoFeatures64 features = palGetVideoFeaturesEx();

@@ -68,7 +68,7 @@ bool systemCursorTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL System Cursor Window - Cross";
+    createInfo.title = "System Cursor Window - Cross";
 
     // check if we support decorated windows (title bar, close etc)
     if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {

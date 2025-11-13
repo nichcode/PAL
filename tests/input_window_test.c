@@ -459,7 +459,7 @@ bool inputWindowTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "PAL Input Window";
+    createInfo.title = "Input Window";
 
     PalVideoFeatures64 features = palGetVideoFeaturesEx();
 

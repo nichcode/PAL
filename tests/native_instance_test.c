@@ -186,7 +186,7 @@ bool nativeInstanceTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "Native Integration Test";
+    createInfo.title = "Native Instance Test";
   
     // check if we support decorated windows (title bar, close etc)
     PalVideoFeatures64 features = palGetVideoFeaturesEx();

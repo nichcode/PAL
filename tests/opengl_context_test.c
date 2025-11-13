@@ -20,6 +20,7 @@ bool openglContextTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Opengl Context Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -176,7 +177,7 @@ bool openglContextTest()
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "Pal Opengl Context Window";
+    createInfo.title = "Opengl Context Window";
 
     // check if we support decorated windows (title bar, close etc)
     PalVideoFeatures64 features = palGetVideoFeaturesEx();
@@ -198,6 +199,11 @@ bool openglContextTest()
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_WINDOW_CLOSE,
+        PAL_DISPATCH_POLL);
+
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
         PAL_DISPATCH_POLL);
 
     // get window handle. You can use any window from any library
@@ -288,6 +294,15 @@ bool openglContextTest()
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
                     running = false;
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
+                    }
                     break;
                 }
             }
