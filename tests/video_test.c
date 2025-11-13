@@ -147,6 +147,10 @@ bool videoTest()
         palLog(nullptr, " Getting cursor position");
     }
 
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_ICON) {
+        palLog(nullptr, " Setting window icon");
+    }
+
     if (features & PAL_VIDEO_FEATURE64_TOPMOST_WINDOW) {
         palLog(nullptr, " Topmost windows");
     }
@@ -171,8 +175,12 @@ bool videoTest()
         palLog(nullptr, " Attaching and detaching foreign windows");
     }
 
-    if (features & PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE  ) {
+    if (features & PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE) {
         palLog(nullptr, " Validate monitor display mode");
+    }
+
+    if (features & PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR) {
+        palLog(nullptr, " Setting window cursor");
     }
 
     // shutdown the video system

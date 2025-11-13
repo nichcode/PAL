@@ -111,6 +111,7 @@ bool condvarTest()
     palUnlockMutex(g_Mutex);
 
     // wait for the remaining threads
+    // joint threads does not need to be detached
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         palJoinThread(threads[i], nullptr);
         palLog(nullptr, "Thread %d finished successfully", data[i].id);

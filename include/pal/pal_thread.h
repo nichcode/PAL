@@ -178,9 +178,14 @@ PAL_API PalResult PAL_CALL palCreateThread(
 
 /**
  * @brief Wait for the provided thread to finish executing.
+ * 
+ * After the thread is done executing, it is freed automatically and
+ * must not be used anymore nor detached.
  *
  * @param[in] thread Pointer to the thread.
  * @param[out] retval Optionally pointer to get the threads exit value.
+ * Pass the address of the pointer. Internally it will be reinterpreted into a
+ * pointer-to-pointer. This is for ABI stability.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -200,6 +205,8 @@ PAL_API PalResult PAL_CALL palJoinThread(
  * This function must be called when the thread is done executing.
  * After this call, the thread cannot be attached or used anymore.
  * If the thread is invalid or nullptr, this function returns silently.
+ * 
+ * This must not be called on a thread that has been attached.
  *
  * @param[in] thread Pointer to the thread to detach.
  *

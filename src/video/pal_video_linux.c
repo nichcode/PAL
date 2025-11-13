@@ -140,6 +140,7 @@ typedef struct {
 
     // X11 only
     XIC ic; 
+    Colormap colormap;
 
     // Wayland only
     void* xdgSurface;
@@ -731,9 +732,7 @@ typedef struct {
     Display* display;
     Window root;
     XContext dataID;
-
-    Visual* visual;
-    Colormap colormap;
+    XVisualInfo* visualInfo;
 
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
@@ -2963,13 +2962,6 @@ static PalResult glxBackend()
     }
     // clang-format off
 
-    // check if we already have a colormap
-    // if so we delete it and create a new one
-    if (s_X11.colormap) {
-        s_X11.freeColormap(s_X11.display, s_X11.colormap);
-        s_X11.colormap = None;
-    }
-
     int count = 0;
     GLXFBConfig* configs = s_X11.glxGetFBConfigs(
         s_X11.display, 
@@ -2990,20 +2982,7 @@ static PalResult glxBackend()
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
 
-    // clang-format on
-
-    s_X11.visual = visualInfo->visual;
-    s_X11.depth = visualInfo->depth;
-    s_X11.colormap = s_X11.createColormap(
-        s_X11.display,
-        s_X11.root,
-        visualInfo->visual,
-        AllocNone);
-
-    if (!s_X11.colormap) {
-        return PAL_RESULT_INVALID_GL_FBCONFIG;
-    }
-
+    s_X11.visualInfo = visualInfo;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3012,17 +2991,6 @@ static PalResult eglXBackend(int index)
     // user choose EGL FBConfig backend
     if (!s_Egl.handle) {
         return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    if (!s_Egl.eglBindAPI(EGL_OPENGL_API)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    // check if we already have a colormap
-    // if so we delete it and create a new one
-    if (s_X11.colormap) {
-        s_X11.freeColormap(s_X11.display, s_X11.colormap);
-        s_X11.colormap = None;
     }
 
     EGLDisplay display = EGL_NO_DISPLAY;
@@ -3050,7 +3018,7 @@ static PalResult eglXBackend(int index)
     s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
     EGLConfig config = eglConfigs[index];
 
-    // we create a visual from the config
+    // we get a visual info from the config
     EGLint visualID;
     s_Egl.eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
     if (visualID == 0) {
@@ -3074,19 +3042,9 @@ static PalResult eglXBackend(int index)
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
 
-    s_X11.visual = visualInfo->visual;
-    s_X11.depth = visualInfo->depth;
-    s_X11.colormap = s_X11.createColormap(
-        s_X11.display,
-        s_X11.root,
-        visualInfo->visual,
-        AllocNone);
+    s_X11.visualInfo = visualInfo;
+    return PAL_RESULT_SUCCESS;
 
-    if (!s_X11.colormap) {
-        return PAL_RESULT_INVALID_GL_FBCONFIG;
-    }
-
-    s_Egl.eglTerminate(display);
     palFree(s_Video.allocator, eglConfigs);
     return PAL_RESULT_SUCCESS;
 }
@@ -3231,6 +3189,7 @@ static void xCheckFeatures()
     features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE;
     features64 |= PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY;
 
+    features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_ICON;
     features64 |= PAL_VIDEO_FEATURE64_TOPMOST_WINDOW;
     features64 |= PAL_VIDEO_FEATURE64_DECORATED_WINDOW;
     features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY;
@@ -3835,10 +3794,6 @@ static PalResult xInitVideo()
 
 static void xShutdownVideo()
 {
-    if (s_X11.colormap) {
-        s_X11.freeColormap(s_X11.display, s_X11.colormap);
-    }
-
     s_X11.closeIM(s_X11.im);
     s_X11.closeDisplay(s_X11.display);
     dlclose(s_X11.handle);
@@ -4784,12 +4739,23 @@ static PalResult xCreateWindow(
     unsigned long bgPixel = 0;
     unsigned long borderPixel = 0;
 
-    if (s_X11.colormap) {
-        visual = s_X11.visual;
-        depth = s_X11.depth;
-        colormap = s_X11.colormap;
+    if (s_X11.visualInfo) {
+        visual = s_X11.visualInfo->visual;
+        depth = s_X11.visualInfo->depth;
         bgPixel = 0;
         borderPixel = 0;
+
+        colormap = s_X11.createColormap(
+            s_X11.display,
+            s_X11.root,
+            visual,
+            AllocNone);
+
+        if (!colormap) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        data->colormap = colormap;
 
     } else {
         // use a default visual
@@ -4798,6 +4764,7 @@ static PalResult xCreateWindow(
         bgPixel = WhitePixel(s_X11.display, s_X11.screen);
         borderPixel = BlackPixel(s_X11.display, s_X11.screen);
         colormap = DefaultColormap(s_X11.display, s_X11.screen);
+        data->colormap = None;
     }
 
     // get monitor
@@ -5100,8 +5067,11 @@ static PalResult xCreateWindow(
         s_X11.iconifyWindow(s_X11.display, window, s_X11.screen);
     }
 
-    s_X11
-        .setWMProtocols(s_X11.display, window, &s_X11Atoms.WM_DELETE_WINDOW, 1);
+    s_X11.setWMProtocols(
+        s_X11.display, 
+        window, 
+        &s_X11Atoms.WM_DELETE_WINDOW, 
+        1);
 
     s_X11.flush(s_X11.display);
 
@@ -5145,6 +5115,11 @@ static void xDestroyWindow(PalWindow* window)
 
     s_X11.destroyIC(data->ic);
     s_X11.destroyWindow(s_X11.display, xWin);
+
+    if (data->colormap != None) {
+        s_X11.freeColormap(s_X11.display, data->colormap);
+    }
+    
     data->used = false;
 }
 
@@ -7627,7 +7602,7 @@ PalResult PAL_CALL palSetFBConfig(
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    // X11 can used GLX and EGL
+    // X11 and wayland can used GLX and EGL
     if (backend == PAL_CONFIG_BACKEND_WGL) {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
@@ -7637,7 +7612,8 @@ PalResult PAL_CALL palSetFBConfig(
         return glxBackend();
 
     } else if (
-        backend == PAL_CONFIG_BACKEND_EGL ||
+        backend == PAL_CONFIG_BACKEND_EGL  ||
+        backend == PAL_CONFIG_BACKEND_GLES ||
         backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         if (s_X11.display) {
             return eglXBackend(index);

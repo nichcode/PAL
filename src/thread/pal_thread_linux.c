@@ -109,9 +109,13 @@ PalResult PAL_CALL palJoinThread(
     }
 
     int ret = 0;
+    void* value = nullptr;
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     if (retval) {
-        ret = pthread_join(_thread, &retval);
+        ret = pthread_join(_thread, &value);
+        void** out = (void**)retval;
+        *out = value;
+
     } else {
         ret = pthread_join(_thread, nullptr);
     }

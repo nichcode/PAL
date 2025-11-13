@@ -1312,6 +1312,7 @@ PalResult PAL_CALL palSetFBConfig(
     }
 
     if (backend == PAL_CONFIG_BACKEND_EGL ||
+        backend == PAL_CONFIG_BACKEND_GLES ||
         backend == PAL_CONFIG_BACKEND_GLX) {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }

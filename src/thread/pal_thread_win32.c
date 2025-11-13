@@ -157,6 +157,11 @@ PalResult PAL_CALL palJoinThread(
         GetExitCodeThread((HANDLE)thread, (LPDWORD)&ret);
         retval = (void*)ret;
 
+        // thread is done
+        // destroy the HANDLE
+        // TODO:
+        CloseHandle((HANDLE)thread);
+
     } else if (wait == WAIT_FAILED) {
         return PAL_RESULT_INVALID_THREAD;
     }
