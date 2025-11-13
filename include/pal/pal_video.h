@@ -659,8 +659,9 @@ typedef struct {
 typedef struct {
     void* nativeDisplay; /**< The platform (OS) display.*/
     void* nativeWindow;  /**< The window platform (OS) handle.*/
-    void* nativeHandle1;  /**< Extra window handle.*/
-    void* nativeHandle2;  /**< Extra window handle.*/
+    void* nativeHandle1;  /**< Extra window handle (xdgSurface)*/
+    void* nativeHandle2;  /**< Extra window handle (xdgToplevel)*/
+    void* nativeHandle3;  /**< Extra window handle (wl_egl_window)*/
 } PalWindowHandleInfoEx;
 
 /**
@@ -1038,7 +1039,9 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * - creating non resizable windows is not supported. 
  * PAL will always creating resizable windows.
  * 
- * * - Creating windows on a specific monitor is not supported.
+ * - Creating windows on a specific monitor is not supported.
+ * 
+ * - Creating hidden window is not supported. It will be ignored.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1505,9 +1508,10 @@ PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
  *
  * The video system must be initialized before this call.
  * 
- * On Wayland: `PalWindowHandleInfoEx::nativeHandle1` and 
- * `PalWindowHandleInfoEx::nativeHandle2` are xdg_surface and 
- * xdg_toplevel respectively.
+ * On Wayland: `PalWindowHandleInfoEx::nativeHandle1`,
+ * `PalWindowHandleInfoEx::nativeHandle2` and 
+ * `PalWindowHandleInfoEx::nativeHandle3` are xdg_surface, xdg_toplevel
+ * and wl_egl_window respectively.
  *
  * @param[in] window Pointer to the window.
  *

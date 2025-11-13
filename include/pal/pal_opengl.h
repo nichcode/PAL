@@ -316,6 +316,10 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * The provided PalGLFBConfig must be the same as the one used to create the
  * window. Once set, it cannot be changed. To change it, you must destroy the
  * window and recreate it.
+ * 
+ * `PalGLWindow::display` is only used on Wayland to point to a valid
+ * `wl_egl_window` created for the surface. 
+ *  It is ignored on all other platforms.
  *
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
  * paramters. Must not be nullptr.
@@ -326,6 +330,9 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function must only be called from the main thread.
+ * 
+ * @note Some field names have different meaning on each platform but 
+ * preserved for ABI stability.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -440,6 +447,28 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  * @sa palMakeContextCurrent
  */
 PAL_API PalResult PAL_CALL palSetSwapInterval(Int32 interval);
+
+/**
+ * @brief Set the native application instance or display for the opengl system
+ *
+ * This must be called before palInitGL is called.
+ *
+ * On Linux: This is the Display associated with the connection.
+
+ * On Windows: This is the HINSTANCE of the process.
+ *
+ * On Wayland: This is the Display associated with the connection.
+ * 
+ * @return The instance or display on success or nullptr on failure.
+ *
+ * Thread safety: This function is thread safe.
+ *
+ * @note The returned instance or display must not be freed.
+ *
+ * @since 1.3
+ * @ingroup pal_opengl
+ */
+PAL_API void PAL_CALL palGLSetInstance(void* instance);
 
 /** @} */ // end of pal_opengl group
 
