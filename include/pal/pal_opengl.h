@@ -169,7 +169,7 @@ typedef struct {
  */
 typedef struct {
     void* display; /**< Can be nullptr depending on platform (eg. Windows).*/
-    void* window;  /**< Must not be nullptr.*/
+    void* window;  /**< Must not be nullptr. (egl_wl_window on Wayland)*/
 } PalGLWindow;
 
 /**
@@ -215,6 +215,7 @@ typedef struct {
  * @since 1.0
  * @ingroup pal_opengl
  * @sa palShutdownGL
+ * @sa palGLSetInstance
  */
 PAL_API PalResult PAL_CALL palInitGL(const PalAllocator* allocator);
 
@@ -317,9 +318,8 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * window. Once set, it cannot be changed. To change it, you must destroy the
  * window and recreate it.
  * 
- * `PalGLWindow::display` is only used on Wayland to point to a valid
- * `wl_egl_window` created for the surface. 
- *  It is ignored on all other platforms.
+ * On Wayland: PalGLContextCreateInfo::PalGLWindow::window is the wl_egl_window
+ * not the wl_surface.
  *
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
  * paramters. Must not be nullptr.
@@ -330,9 +330,6 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function must only be called from the main thread.
- * 
- * @note Some field names have different meaning on each platform but 
- * preserved for ABI stability.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -369,6 +366,10 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * context. If the PalGLFBConfig of the opengl window is not the same as the one
  * used to create the context, this function fails and returns
  * `PAL_RESULT_INVALID_GL_WINDOW`.
+ * 
+ * If the window was created with a different display other than the one
+ * passed to the opengl system, this function fails and returns
+ * `PAL_RESULT_INVALID_GL_WINDOW`. see palGLSetInstance()
  *
  * @param[in] glWindow Pointer to the opengl window.
  * @param[in] context Pointer to the context to make current.
@@ -449,26 +450,38 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
 PAL_API PalResult PAL_CALL palSetSwapInterval(Int32 interval);
 
 /**
- * @brief Set the native application instance or display for the opengl system
+ * @brief Set the native application instance or display for the opengl system.
  *
- * This must be called before palInitGL is called.
+ * This must be called before palInitGL() is called. if palInitGL() is called
+ * before this function, 
+ * it fails and returns `PAL_RESULT_PLATFORM_FAILURE` will be returned.
  *
  * On Linux: This is the Display associated with the connection.
 
  * On Windows: This is the HINSTANCE of the process.
  *
  * On Wayland: This is the Display associated with the connection.
- * 
- * @return The instance or display on success or nullptr on failure.
  *
  * Thread safety: This function is thread safe.
  *
- * @note The returned instance or display must not be freed.
+ * @since 1.3
+ * @ingroup pal_opengl
+ * @sa palInitGL
+ */
+PAL_API void PAL_CALL palGLSetInstance(void* instance);
+
+/**
+ * @brief Get the backend of the opengl system.
+ * 
+ * The opengl system must be initialized before this call.
+ * Possible values are `wgl`, `glx`, `gles`, `egl`.
+ *
+ * Thread safety: This function is thread safe.
  *
  * @since 1.3
  * @ingroup pal_opengl
  */
-PAL_API void PAL_CALL palGLSetInstance(void* instance);
+PAL_API const char* PAL_CALL palGLGetBackend();
 
 /** @} */ // end of pal_opengl group
 

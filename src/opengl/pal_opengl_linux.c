@@ -450,8 +450,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     if (session) {
         if (strcmp(session, "wayland") == 0) {
             s_GL.apiType = EGL_OPENGL_ES_API;
-            // TODO: check features and set to maximum supported
-            s_GL.apiTypeBit = EGL_OPENGL_ES2_BIT;
+            s_GL.apiTypeBit = EGL_OPENGL_ES2_BIT; // default
 
         } else {
             s_GL.apiType = EGL_OPENGL_API;
@@ -620,8 +619,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     s_GL.info.extensions |= PAL_GL_EXTENSION_MULTISAMPLE;
 
     if (type & EGL_OPENGL_ES_BIT || 
-        type & EGL_OPENGL_ES2_BIT ||
-        type & EGL_OPENGL_ES3_BIT) {
+        type & EGL_OPENGL_ES2_BIT) {
         s_GL.info.extensions |= PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2;
     }
 
@@ -630,9 +628,15 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         s_GL.info.extensions |= PAL_GL_EXTENSION_SWAP_CONTROL;
     }
 
-    if (s_GL.apiType == EGL_OPENGL_ES_API) {
+    if (s_GL.apiType != EGL_OPENGL_API) {
         if (s_GL.info.extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
             s_GL.info.extensions &= ~PAL_GL_EXTENSION_CONTEXT_PROFILE;
+            s_GL.info.extensions &= ~PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2;
+        }
+    } else {
+        // check to see if we support EGL_OPENGL_ES3_BIT
+        if (type & EGL_OPENGL_ES3_BIT) {
+            s_GL.apiTypeBit = EGL_OPENGL_ES3_BIT;
         }
     }
 
@@ -744,8 +748,22 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             continue;
         }
 
-        if (!(renderable & s_GL.apiTypeBit)) {
-            continue;
+        if (s_GL.apiType == EGL_OPENGL_ES3_BIT) {
+            // EGL_OPENGL_ES2_BIT
+            if (!(renderable & EGL_OPENGL_ES2_BIT) && 
+                !(renderable & EGL_OPENGL_ES3_BIT)) {
+                continue;
+            }
+
+        } else if (s_GL.apiType == EGL_OPENGL_ES2_BIT) {
+            if (!(renderable & EGL_OPENGL_ES2_BIT)) {
+                continue;
+            }
+
+        } else {
+            if (!(renderable & EGL_OPENGL_BIT)) {
+                continue;
+            }
         }
 
         if (!(surfaceType & EGL_WINDOW_BIT)) {
@@ -920,6 +938,12 @@ PalResult PAL_CALL palCreateGLContext(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    // check if the window was created with the same display
+    // the opengl system is using
+    if (info->window->display != s_GL.platformDisplay) {
+        return PAL_RESULT_INVALID_GL_WINDOW;
+    }
+
     // check support for requested features
     if (info->profile != PAL_GL_PROFILE_NONE) {
         if (!(s_GL.info.extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE)) {
@@ -1024,7 +1048,8 @@ PalResult PAL_CALL palCreateGLContext(
 
     } else {
         attribs[index++] = EGL_CONTEXT_CLIENT_VERSION;
-        attribs[index++] = 2;
+        // our configs support EGL_OPENGL_ES2_BIT and EGL_OPENGL_ES3_BIT
+        attribs[index++] = info->major;
     }
 
     // set debug flag
@@ -1099,18 +1124,10 @@ PalResult PAL_CALL palCreateGLContext(
     }
     surfaceAttribs[2] = EGL_NONE;
 
-    // get native window
-    EGLNativeWindowType native = 0;
-    if (s_GL.apiType == EGL_OPENGL_API) {
-        native = (EGLNativeWindowType)info->window->window;
-    } else {
-        native = (EGLNativeWindowType)info->window->display;
-    }
-
     EGLSurface surface = s_GL.eglCreateWindowSurface(
         s_GL.display,
         config,
-        native,
+        (EGLNativeWindowType)info->window->window,
         surfaceAttribs);
 
     if (surface == EGL_NO_SURFACE) {
@@ -1151,6 +1168,13 @@ void PAL_CALL palDestroyGLContext(PalGLContext* context)
     if (s_GL.initialized && context) {
         ContextData* data = findContextData(context);
         if (data) {
+            // make it not current if it was current
+            s_GL.eglMakeCurrent(
+                s_GL.display, 
+                EGL_NO_SURFACE, 
+                EGL_NO_SURFACE, 
+                EGL_NO_CONTEXT);
+
             s_GL.eglDestroyContext(s_GL.display, (EGLContext)context);
             s_GL.eglDestroySurface(s_GL.display, data->surface);
             data->used = false;
@@ -1267,4 +1291,17 @@ PalResult PAL_CALL palSetSwapInterval(Int32 interval)
 void PAL_CALL palGLSetInstance(void* instance)
 {
     s_GL.platformDisplay = instance;
+}
+
+const char* PAL_CALL palGLGetBackend() 
+{
+    if (!s_GL.initialized) {
+        return nullptr;
+    }
+
+    if (s_GL.apiType == EGL_OPENGL_API) {
+        return "egl";
+    } else {
+        return "gles";
+    }
 }

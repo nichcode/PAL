@@ -152,6 +152,25 @@ bool openglContextTest()
         return false;
     }
 
+    // if not using pal_opengl with pal_video
+    // we get the backend string from the opengl system and
+    // get the backend from it
+    // Possible values are `wgl`, `glx`, `gles`, `egl`.
+    // PalFBConfigBackend backend;
+    // const char* glBackendString = palGLGetBackend();
+    // if (strcmp(glBackendString, "wgl") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_WGL;
+
+    // } else if (strcmp(glBackendString, "glx") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_GLX;
+
+    // } else if (strcmp(glBackendString, "gles") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_GLES;
+
+    // } else if (strcmp(glBackendString, "egl") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_EGL;
+    // }
+
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
@@ -189,8 +208,16 @@ bool openglContextTest()
 
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
-    glWindow.display = winHandle.nativeHandle3;
-    glWindow.window = winHandle.nativeWindow;
+    glWindow.display = winHandle.nativeDisplay;
+
+    // On Wayland the window is the wl_egl_window
+    if (winHandle.nativeHandle3) {
+        // the window has a valid wl_egl_window
+        glWindow.window = winHandle.nativeHandle3;
+
+    } else {
+        glWindow.window = winHandle.nativeWindow;
+    }
 
     // get opengl info
     const PalGLInfo* info = palGetGLInfo();
@@ -279,6 +306,12 @@ bool openglContextTest()
         }
     }
 
+    // destroy the opengl context
+    palDestroyGLContext(context);
+
+    // shutdown the opengl system
+    palShutdownGL();
+
     // destroy the window
     palDestroyWindow(window);
 
@@ -287,12 +320,6 @@ bool openglContextTest()
 
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
-
-    // destroy the opengl context
-    palDestroyGLContext(context);
-
-    // shutdown the opengl system
-    palShutdownGL();
 
     // free the framebuffer configs
     palFree(nullptr, fbConfigs);

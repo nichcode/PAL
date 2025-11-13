@@ -37,6 +37,7 @@ typedef void (*glViewportFn)(
 typedef struct {
     bool driverCreated;
     bool running;
+    bool fixedPipeline;
     PalEventDriver* videoEventDriver;
     PalEventDriver* openglEventDriver;
     PalGLContext* context;
@@ -131,7 +132,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
 
     // set clear color
     glViewport(0, 0, 640, 480);
-    glClearColor(.2f, .2f, .2f, .2f);
+    glClearColor(.2f, .2f, .2f, 1.0f);
 
     // run our while loop over there
     while (shared->running) {
@@ -159,18 +160,20 @@ static void* PAL_CALL rendererWorkder(void* arg)
         glClear(0x00004000); // GL_COLOR_BUFFER_BIT
 
         // draw a triangle using the fixed pipeline
-        glBegin(0x0004); // GL_TRIANGLES
-        glColor3f(1.0, 0.0, 0.0);
-        glVertex2f(-0.5f, -0.5f);
+        if (shared->fixedPipeline) {
+            glBegin(0x0004); // GL_TRIANGLES
+            glColor3f(1.0, 0.0, 0.0);
+            glVertex2f(-0.5f, -0.5f);
 
-        glColor3f(0.0, 1.0, 0.0);
-        glVertex2f(0.5f, -0.5f);
+            glColor3f(0.0, 1.0, 0.0);
+            glVertex2f(0.5f, -0.5f);
 
-        glColor3f(0.0, 0.0, 1.0);
-        glVertex2f(0.0f, 0.5f);
+            glColor3f(0.0, 0.0, 1.0);
+            glVertex2f(0.0f, 0.5f);
 
-        glEnd();
-        glFlush();
+            glEnd();
+            glFlush();
+        }
 
         // swap buffers
         result = palSwapBuffers(&shared->window, shared->context);
@@ -212,6 +215,27 @@ bool multiThreadOpenGlTest()
         palLog(nullptr, "Failed to create thread: %s", error);
         return false;
     }
+
+    // check to see if the event driver thread is done creating the drivers
+    // if not we wait for it
+    if (!shared->driverCreated) {
+        palJoinThread(eventDriverThread, nullptr);
+    }
+    palDetachThread(eventDriverThread); // we dont need it anymore
+
+    // initialize the video system. We pass the event driver to recieve video
+    // related events the video system does not copy the event driver, it must
+    // be valid till the video system is shutdown
+    result = palInitVideo(nullptr, shared->videoEventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // get the instance or display handle and pass it to the opengl system
+    // This must be called before the opengl system is initialized
+    palGLSetInstance(palGetInstance());
 
     // initialize video and opengl systems
     // we need to initialize these on the main thread
@@ -268,20 +292,6 @@ bool multiThreadOpenGlTest()
     const PalGLFBConfig* closest = nullptr;
     closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
 
-    // check to see if the event driver thread is done creating the drivers
-    // if not we wait for it
-    if (!shared->driverCreated) {
-        palJoinThread(eventDriverThread, nullptr);
-    }
-    palDetachThread(eventDriverThread); // we dont need it anymore
-
-    result = palInitVideo(nullptr, shared->videoEventDriver);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
-    }
-
     // tell the video system to use our closest FBConfig
     // to create the windows
     result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
@@ -291,6 +301,25 @@ bool multiThreadOpenGlTest()
         return false;
     }
 
+    // if not using pal_opengl with pal_video
+    // we get the backend string from the opengl system and
+    // get the backend from it
+    // Possible values are `wgl`, `glx`, `gles`, `egl`.
+    // PalFBConfigBackend backend;
+    // const char* glBackendString = palGLGetBackend();
+    // if (strcmp(glBackendString, "wgl") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_WGL;
+
+    // } else if (strcmp(glBackendString, "glx") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_GLX;
+
+    // } else if (strcmp(glBackendString, "gles") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_GLES;
+
+    // } else if (strcmp(glBackendString, "egl") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_EGL;
+    // }
+
     // all windows also needs to be created on the main thread
     PalWindow* window = nullptr;
     PalWindowCreateInfo windowCreateInfo = {0};
@@ -299,6 +328,15 @@ bool multiThreadOpenGlTest()
     windowCreateInfo.show = true;
     windowCreateInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     windowCreateInfo.title = "Multi Thread OpenGL Window";
+
+    // check if we support decorated windows (title bar, close etc)
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        windowCreateInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
+
     result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -310,10 +348,19 @@ bool multiThreadOpenGlTest()
     const PalGLInfo* glInfo = palGetGLInfo();
 
     // get the native handles of our created window
-    PalWindowHandleInfo windowHandleInfo;
-    windowHandleInfo = palGetWindowHandleInfo(window);
-    shared->window.display = windowHandleInfo.nativeDisplay;
-    shared->window.window = windowHandleInfo.nativeWindow;
+    PalWindowHandleInfoEx winHandle = {0};
+    winHandle = palGetWindowHandleInfoEx(window);
+
+    shared->window.display = winHandle.nativeDisplay;
+
+    // On Wayland the window is the wl_egl_window
+    if (winHandle.nativeHandle3) {
+        // the window has a valid wl_egl_window
+        shared->window.window = winHandle.nativeHandle3;
+
+    } else {
+        shared->window.window = winHandle.nativeWindow;
+    }
 
     PalGLContextCreateInfo contextCreateInfo = {0};
     contextCreateInfo.debug = true;
@@ -325,8 +372,14 @@ bool multiThreadOpenGlTest()
     // we dont want to get into GL pipeline for this example
     // so we request a Compatibility profile if supported
     // NOTE: is its not supported, no triangle would be displayed
+    shared->fixedPipeline = false;
     if (glInfo->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
         contextCreateInfo.profile = PAL_GL_PROFILE_COMPATIBILITY;
+        shared->fixedPipeline = true;
+    }
+
+    if (!shared->fixedPipeline) {
+        palLog(nullptr, "Fixed pipeline not supported");
     }
 
     result = palCreateGLContext(&contextCreateInfo, &shared->context);
@@ -375,11 +428,12 @@ bool multiThreadOpenGlTest()
         }
     }
 
+    palDestroyGLContext(shared->context);
+    palShutdownGL();
+
     // shutdown video and opengl systems
     // we need to shutdown these on the main thread
     palDestroyWindow(window);
-    palDestroyGLContext(shared->context);
-    palShutdownGL();
     palShutdownVideo();
 
     // The event drivers cn be destroyed on a seperate thread

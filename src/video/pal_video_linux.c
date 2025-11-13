@@ -7032,6 +7032,7 @@ PalResult wlCreateWindow(
         wlRegionAdd(region, 0, 0, data->w, data->h);
         wlSurfaceSetOpaqueRegion(surface, region);
         wlRegionDestroy(region);
+        wlSurfaceCommit(surface);
     }
     
     s_Wl.displayRoundtrip(s_Wl.display);
@@ -7050,7 +7051,12 @@ void wlDestroyWindow(PalWindow* window)
         zxdgToplevelDecorationV1Destroy(data->decoration);
     }
 
-    wlBufferDestroy(data->buffer);
+    if (data->eglWindow) {
+        s_Wl.eglWindowDestroy(data->eglWindow);
+    } else {
+        wlBufferDestroy(data->buffer);
+    }
+
     xdgToplevelDestroy(data->xdgToplevel);
     xdgSurfaceDestroy(data->xdgSurface);
     wlSurfaceDestroy((struct wl_surface*)window);
