@@ -6231,7 +6231,7 @@ static struct wl_buffer* createShmBuffer(
     return buffer;
 }
 
-static void wlGlobalHandle(
+static void globalHandle(
     void* data, 
     struct wl_registry* registry,
     uint32_t name,
@@ -6330,7 +6330,7 @@ static void wlGlobalHandle(
     }
 }
 
-static void wlGlobalRemove(
+static void globalRemove(
     void* data, 
     struct wl_registry* registry,
     uint32_t name)
@@ -6451,8 +6451,8 @@ static void wlOutputDone(
 }
 
 static const struct wl_registry_listener s_RegistryListener = {
-    .global = wlGlobalHandle,
-    .global_remove = nullptr
+    .global = globalHandle,
+    .global_remove = globalRemove
 };
 
 static const struct wl_output_listener s_OutputListener = {
