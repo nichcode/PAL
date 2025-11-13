@@ -42,7 +42,8 @@ project "tests"
             "system_cursor_test.c",
             "attach_window_test.c",
             "char_event_test.c",
-            "native_integration_test.c"
+            "native_integration_test.c",
+            "native_instance_test.c"
         }
     end
 

@@ -709,6 +709,7 @@ typedef struct {
  * @since 1.0
  * @ingroup pal_video
  * @sa palShutdownVideo
+ * @sa palSetPreferredInstance
  */
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
@@ -1998,6 +1999,27 @@ PAL_API PalResult PAL_CALL palAttachWindow(
 PAL_API PalResult PAL_CALL palDetachWindow(
     PalWindow* window,
     void** outWindowHandle);
+
+/**
+ * @brief Set the preferred instance the video system should use.
+ *
+ * This function must be called before palInitVideo(). This will be ignored
+ * if the video system is already initialized.
+ * If there is no preferred instance set, the video system creates one.
+ *
+ * On Linux: This is the Display associated with the connection.
+
+ * On Windows: This is the HINSTANCE of the process.
+ *
+ * Thread safety: This function must be called from the main thread.
+ *
+ * @note The provided instance will not be freed by the video system.
+ *
+ * @since 1.3
+ * @ingroup pal_video
+ * @sa palInitVideo
+ */
+PAL_API void PAL_CALL palSetPreferredInstance(void* instance);
 
 /** @} */ // end of pal_video group
 

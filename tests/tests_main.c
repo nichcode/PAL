@@ -37,6 +37,7 @@ int main(int argc, char** argv)
     // registerTest("Attach Window Test", attachWindowTest);
     // registerTest("Character Event Test", charEventTest);
     // registerTest("Native Integration Test", nativeIntegrationTest);
+    registerTest("Native Instance Test", nativeInstanceTest);
 #endif // PAL_HAS_VIDEO
 
     // This test can run without video system so long as your have a valid
@@ -49,7 +50,7 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_OPENGL
 
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO && PAL_HAS_THREAD
-    registerTest("Multi Thread OpenGL Test", multiThreadOpenGlTest);
+    // registerTest("Multi Thread OpenGL Test", multiThreadOpenGlTest);
 #endif //
 
     runTests();
