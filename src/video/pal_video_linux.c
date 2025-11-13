@@ -288,7 +288,6 @@ static EGL s_Egl;
 #define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
 
 #define RANDR_SCREEN_CHANGE_EVENT 1040
-#define RANDR_NOTIFY_EVENT 1041
 
 // optionally, needed to create visual from FBConfig
 #define GLX_FBCONFIG_ID 0x8012
@@ -720,10 +719,10 @@ typedef struct {
 typedef struct {
     bool error;
     bool skipScreenEvent;
-    bool skipNotifyEvent;
     int bpp;
     int screen;
     int depth;
+    int monitorCount;
     int rrEventBase;
     void* handle;
     void* xrandr;
@@ -1396,6 +1395,7 @@ static void surfaceHandleEnter(
     struct wl_surface* surface,
     struct wl_output* output)
 {
+    int a = 10;
     // TODO: 
 
 }
@@ -1405,6 +1405,7 @@ static void surfaceHandleLeave(
     struct wl_surface* surface,
     struct wl_output* output)
 {
+    int b = 10;
     // TODO:
 }
 
@@ -3254,8 +3255,10 @@ static PalWindowState xQueryWindowState(Window xWin)
     return state;
 }
 
-static void xCacheMonitors(bool enumerate)
+static void xCacheMonitors()
 {
+    resetMonitorData();
+
     XRRScreenResources* resources = nullptr;
     resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
@@ -3269,31 +3272,39 @@ static void xCacheMonitors(bool enumerate)
             // get monitor data and update info
             PalMonitor* monitor = TO_PAL_HANDLE(PalMonitor, output);
             MonitorData* data = nullptr;
-
-            if (enumerate) {
-                data = getFreeMonitorData();
-                if (!data) {
-                    return;
-                }
-
-                data->monitor = monitor;
-
-            } else {
-                data = findMonitorData(monitor);
+            data = getFreeMonitorData();
+            if (!data) {
+                return;
             }
+
+            data->monitor = monitor;
 
             // clang-format off
             XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, info->crtc);
             // clang-format on
 
-            double dpi = (double)(crtc->width * 25.4) / (double)info->mm_width;
-            data->dpi = (int)dpi;
+            // get DPI
+            float raw = crtc->width / 1920.0f;
+            float steps[] = { 1.0f, 1.2f, 1.5f, 1.75, 2.0f };
+            float closest = steps[0];
+            float minDiff = fabsf(raw - steps[0]);
+
+            for (int i = 1; i < sizeof(steps) / sizeof(steps[0]); i++) {
+                float diff = fabsf(raw - steps[i]);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = steps[i];
+                }
+            }
+
+            data->dpi = (Uint32)(closest * 96.0f);
             data->w = crtc->width;
             data->h = crtc->height;
             data->x = crtc->x;
             data->y = crtc->y;
 
             s_X11.freeCrtcInfo(crtc);
+            s_X11.monitorCount++;
         }
 
         s_X11.freeOutputInfo(info);
@@ -3302,9 +3313,7 @@ static void xCacheMonitors(bool enumerate)
     s_X11.freeScreenResources(resources);
 }
 
-static int xGetWindowMonitorDPI(
-    WindowData* data,
-    bool enumerate)
+static int xGetWindowMonitorDPI(WindowData* data)
 {
     int winX = data->x + data->w / 2;
     int winY = data->y + data->w / 2;
@@ -3757,11 +3766,12 @@ static PalResult xInitVideo()
     s_X11.queryRRExtension(s_X11.display, &eventBase, &errorBase);
     s_X11.rrEventBase = eventBase;
     s_X11.skipScreenEvent = true;
-    s_X11.skipNotifyEvent = true;
 
     s_X11.dataID = (XContext)s_X11.uniqueContext();
     resetMonitorData();
-    xCacheMonitors(true);
+
+    s_X11.monitorCount = 0;
+    xCacheMonitors();
 
     // since X11 supports both EGL and GLX
     // we try to load them and resolve the needed functions
@@ -3837,8 +3847,6 @@ static void xUpdateVideo()
 
         if (event.type == s_X11.rrEventBase + RRScreenChangeNotify) {
             event.type = RANDR_SCREEN_CHANGE_EVENT; // for switch flow
-        } else if (event.type == s_X11.rrEventBase + RRNotify) {
-            event.type = RANDR_NOTIFY_EVENT; // for switch flow
         }
 
         switch (event.type) {
@@ -3858,7 +3866,7 @@ static void xUpdateVideo()
                         }
                     }
                 }
-                return;
+                break;
             }
 
             case ConfigureNotify: {
@@ -3871,7 +3879,7 @@ static void xUpdateVideo()
                     data->h = event.xconfigure.height;
                     data->x = event.xconfigure.x;
                     data->y = event.xconfigure.y;
-                    return;
+                    break;
                 }
 
                 // real configure event
@@ -3901,7 +3909,7 @@ static void xUpdateVideo()
                     if (data->isAttached) {
                         if (data->skipIfAttached) {
                             data->skipIfAttached = false;
-                            return;
+                            break;
                         }
                     }
 
@@ -3929,7 +3937,7 @@ static void xUpdateVideo()
                         we get the monitor the moved
                         window is on and check if the dpi is different
                         from the one it was created on */
-                        int monitorDPI = xGetWindowMonitorDPI(data, false);
+                        int monitorDPI = xGetWindowMonitorDPI(data);
                         if (monitorDPI != data->dpi) {
                             // window is on a different monitor
                             data->dpi = monitorDPI;
@@ -3948,7 +3956,7 @@ static void xUpdateVideo()
                         }
                     }
                 }
-                return;
+                break;
             }
 
             case FocusIn: {
@@ -3957,7 +3965,7 @@ static void xUpdateVideo()
                     int mode = event.xfocus.mode;
                     if (mode == NotifyGrab || mode == NotifyUngrab) {
                         // ignore dragging and popup focus events
-                        return;
+                        break;
                     }
 
                     PalEventDriver* driver = s_Video.eventDriver;
@@ -3971,7 +3979,7 @@ static void xUpdateVideo()
                         palPushEvent(driver, &event);
                     }
                 }
-                return;
+                break;
             }
 
             case FocusOut: {
@@ -3994,7 +4002,7 @@ static void xUpdateVideo()
                         palPushEvent(driver, &event);
                     }
                 }
-                return;
+                break;
             }
 
             case PropertyNotify: {
@@ -4008,7 +4016,7 @@ static void xUpdateVideo()
                         // skip the first state event
                         if (data->skipState) {
                             data->skipState = false;
-                            return;
+                            break;
                         }
 
                         // push event
@@ -4025,55 +4033,38 @@ static void xUpdateVideo()
                         }
                     }
                 }
-                return;
+                break;
             }
 
             case RANDR_SCREEN_CHANGE_EVENT: {
                 // skip the first event
                 if (s_X11.skipScreenEvent) {
                     s_X11.skipScreenEvent = false;
-                    return;
+                    break;
                 }
 
-                // something change on pre existing monitor
-                // cache the information
-                xCacheMonitors(false);
-                return;
-            }
+                // store old monitor count
+                int oldCount = s_X11.monitorCount;
+                s_X11.monitorCount = 0;
+                xCacheMonitors();
 
-            case RANDR_NOTIFY_EVENT: {
-                // skip the first event
-                if (s_X11.skipNotifyEvent) {
-                    s_X11.skipNotifyEvent = false;
-                    return;
-                }
-
-                XRRNotifyEvent* e = (XRRNotifyEvent*)&event;
-                switch (e->subtype) {
-                    case RRNotify_OutputChange: {
-                        // push a event monitor list changed event
-                        if (s_Video.eventDriver) {
-                            PalEventDriver* driver = s_Video.eventDriver;
-                            PalEventType type = PAL_EVENT_MONITOR_LIST_CHANGED;
-                            mode = palGetEventDispatchMode(driver, type);
-                            if (mode != PAL_DISPATCH_NONE) {
-                                PalEvent event = {0};
-                                event.type = type;
-                                event.data2 = palPackPointer(window);
-                                palPushEvent(driver, &event);
-                            }
+                if (oldCount != s_X11.monitorCount) {
+                    // a monitor has been added or removed
+                    if (s_Video.eventDriver) {
+                        PalEventDriver* driver = s_Video.eventDriver;
+                        PalEventType type = PAL_EVENT_MONITOR_LIST_CHANGED;
+                        mode = palGetEventDispatchMode(driver, type);
+                        if (mode != PAL_DISPATCH_NONE) {
+                            PalEvent event = {0};
+                            event.type = type;
+                            event.data2 = palPackPointer(window);
+                            palPushEvent(driver, &event);
                         }
-
-                        /** enumerate monitors and cache them
-                        these will be used to detect DPI changed
-                        since X11 does not have a DPI changed function */
-                        resetMonitorData();
-                        xCacheMonitors(true);
-                        return;
                     }
                 }
+                break;
             }
-
+  
             case MotionNotify: {
                 // mouse moved
                 const int x = event.xmotion.x;
@@ -4109,7 +4100,7 @@ static void xUpdateVideo()
                 s_Mouse.lastY = y;
                 s_Mouse.dx = dx;
                 s_Mouse.dy = dy;
-                return;
+                break;
             }
 
             case ButtonPress:
@@ -4178,7 +4169,7 @@ static void xUpdateVideo()
                         palPushEvent(driver, &event);
                     }
                 }
-                return;
+                break;
             }
 
             case KeyPress:
@@ -4255,7 +4246,7 @@ static void xUpdateVideo()
                     type = PAL_EVENT_KEYCHAR;
                     mode = palGetEventDispatchMode(driver, type);
                     if (mode == PAL_DISPATCH_NONE) {
-                        return;
+                        break;
                     }
 
                     int status;
@@ -4306,7 +4297,7 @@ static void xUpdateVideo()
                         palPushEvent(driver, &event);
                     }
                 }
-                return;
+                break;
             }
         }
     }
@@ -4446,8 +4437,20 @@ static PalResult xGetMonitorInfo(
     }
 
     // get dpi
-    double tmp = (double)(crtc->width * 25.4) / (double)outputInfo->mm_width;
-    info->dpi = (Uint32)tmp;
+    float raw = crtc->width / 1920.0f;
+    float steps[] = { 1.0f, 1.2f, 1.5f, 1.75, 2.0f };
+    float closest = steps[0];
+    float minDiff = fabsf(raw - steps[0]);
+
+    for (int i = 1; i < sizeof(steps) / sizeof(steps[0]); i++) {
+        float diff = fabsf(raw - steps[i]);
+        if (diff < minDiff) {
+            minDiff = diff;
+            closest = steps[i];
+        }
+    }
+
+    info->dpi = (Uint32)(closest * 96.0f);
 
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
@@ -4790,6 +4793,7 @@ static PalResult xCreateWindow(
     int monitorY = 0;
     Uint32 monitorW = 0;
     Uint32 monitorH = 0;
+    int dpi = 0;
     if (info->monitor) {
         monitor = info->monitor;
 
@@ -4809,6 +4813,7 @@ static PalResult xCreateWindow(
         monitorY = monitorInfo.y;
         monitorW = monitorInfo.width;
         monitorH = monitorInfo.height;
+        dpi = monitorInfo.dpi;
 
     } else {
         // primary monitor is not set
@@ -4836,11 +4841,25 @@ static PalResult xCreateWindow(
             // clang-format on
 
             monitorX = crtc->x;
-
-            monitorX = crtc->x;
             monitorY = crtc->y;
             monitorW = crtc->width;
             monitorH = crtc->height;
+
+            // get DPI
+            float raw = crtc->width / 1920.0f;
+            float steps[] = { 1.0f, 1.2f, 1.5f, 1.75, 2.0f };
+            float closest = steps[0];
+            float minDiff = fabsf(raw - steps[0]);
+
+            for (int i = 1; i < sizeof(steps) / sizeof(steps[0]); i++) {
+                float diff = fabsf(raw - steps[i]);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = steps[i];
+                }
+            }
+
+            dpi = (Uint32)(closest * 96.0f);
 
             s_X11.freeCrtcInfo(crtc);
             s_X11.freeOutputInfo(outputInfo);
@@ -5097,7 +5116,7 @@ static PalResult xCreateWindow(
     data->skipConfigure = true;
     data->skipState = true;
     data->isAttached = false;    // true for attached windows
-    data->dpi = monitorInfo.dpi; // the current window monitor
+    data->dpi = dpi; // the current window monitor
     data->window = TO_PAL_HANDLE(PalWindow, window);
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
