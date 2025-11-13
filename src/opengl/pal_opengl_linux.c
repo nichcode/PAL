@@ -245,7 +245,7 @@ typedef struct {
     void* handle;
     void* platformDisplay;
     ContextData* contextData;
-    EGLDisplay* display;
+    EGLDisplay display;
     PalGLInfo info;
 } GLLinux;
 
@@ -463,6 +463,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     EGLDisplay display = s_GL.eglGetDisplay(s_GL.platformDisplay);
+    EGLDisplay * tmpDisplay = EGL_NO_DISPLAY;
     if (display == EGL_NO_DISPLAY) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -482,22 +483,29 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         EGL_PBUFFER_BIT,
         EGL_NONE};
 
-    // get a default display and create a dummy context with it
-    EGLDisplay defaultDis = s_GL.eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    if (display == EGL_NO_DISPLAY) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+    s_GL.eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+    if (!config || numConfigs == 0) {
+        // API bind type might not support puffer
+        // create a default display and use that
+        tmpDisplay = s_GL.eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        if (display == EGL_NO_DISPLAY) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        if (!s_GL.eglInitialize(tmpDisplay, nullptr, nullptr)) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    } else {
+        // set the tmp display to our display
+        tmpDisplay = display;
     }
 
-    if (!s_GL.eglInitialize(defaultDis, nullptr, nullptr)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    s_GL.eglChooseConfig(defaultDis, attribs, &config, 1, &numConfigs);
+    s_GL.eglChooseConfig(tmpDisplay, attribs, &config, 1, &numConfigs);
     if (!config) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    s_GL.eglGetConfigAttrib(defaultDis, config, EGL_RENDERABLE_TYPE, &type);
+    s_GL.eglGetConfigAttrib(tmpDisplay, config, EGL_RENDERABLE_TYPE, &type);
     if (!(type & s_GL.apiTypeBit)) {
         // we must support the required API
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -519,7 +527,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         EGL_NONE};
 
     surface = s_GL.eglCreatePbufferSurface(
-        defaultDis, 
+        tmpDisplay, 
         config, 
         pBufferAttribs);
 
@@ -536,7 +544,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
             EGL_NONE};
         
         context = s_GL.eglCreateContext(
-            defaultDis, 
+            tmpDisplay, 
             config, 
             EGL_NO_CONTEXT, 
             contextAttrib);
@@ -547,7 +555,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
             EGL_NONE};
         
         context = s_GL.eglCreateContext(
-            defaultDis, 
+            tmpDisplay, 
             config, 
             EGL_NO_CONTEXT, 
             contextAttrib);
@@ -557,7 +565,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    s_GL.eglMakeCurrent(defaultDis, surface, surface, context);
+    s_GL.eglMakeCurrent(tmpDisplay, surface, surface, context);
     s_GL.glGetString = (glGetStringFn)s_GL.eglGetProcAddress("glGetString");
 
     const char* version = (const char*)s_GL.glGetString(GL_VERSION);
@@ -577,7 +585,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     // EGL extensions can be queried without a bound context
     // we just do that over here after making the context current
-    const char* extensions = s_GL.eglQueryString(defaultDis, EGL_EXTENSIONS);
+    const char* extensions = s_GL.eglQueryString(tmpDisplay, EGL_EXTENSIONS);
     if (extensions) {
         // color space
         if (checkExtension("EGL_KHR_gl_colorspace", extensions)) {
@@ -633,27 +641,31 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
             s_GL.info.extensions &= ~PAL_GL_EXTENSION_CONTEXT_PROFILE;
             s_GL.info.extensions &= ~PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2;
         }
-    } else {
-        // check to see if we support EGL_OPENGL_ES3_BIT
+
         if (type & EGL_OPENGL_ES3_BIT) {
             s_GL.apiTypeBit = EGL_OPENGL_ES3_BIT;
         }
     }
 
     s_GL.eglMakeCurrent(
-        defaultDis,
+        tmpDisplay,
         EGL_NO_SURFACE,
         EGL_NO_SURFACE,
         EGL_NO_CONTEXT);
 
     // clang-format on
 
-    s_GL.eglDestroyContext(defaultDis, context);
-    s_GL.eglDestroySurface(defaultDis, surface);
+    s_GL.eglDestroyContext(tmpDisplay, context);
+    s_GL.eglDestroySurface(tmpDisplay, surface);
 
     s_GL.allocator = allocator;
     s_GL.initialized = true;
-    s_GL.eglTerminate(defaultDis);
+
+    if (tmpDisplay != display) {
+        // tmpDisplay is a seperate display
+        // terminate it
+        s_GL.eglTerminate(tmpDisplay);
+    }
 
     s_GL.display = display;
     return PAL_RESULT_SUCCESS;

@@ -72,12 +72,9 @@ bool mutexTest()
     }
 
     // join the threads to main thread
+    // joint threads does not need to be detached
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         palJoinThread(threads[i], nullptr);
-    }
-
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
-        palDetachThread(threads[i]);
     }
 
     palDestroyMutex(data->mutex);

@@ -1,5 +1,6 @@
 
 #include "pal/pal_opengl.h"
+#include "pal/pal_video.h"
 #include "tests.h"
 
 bool openglTest()
@@ -10,8 +11,20 @@ bool openglTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
+    // initialize the video system and create a window
+    PalResult result = palInitVideo(nullptr, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // get the instance or display handle and pass it to the opengl system
+    // This must be called before the opengl system is initialized
+    palGLSetInstance(palGetInstance());
+
     // initialize the opengl system. This loads the icd.
-    PalResult result = palInitGL(nullptr);
+    result = palInitGL(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize opengl: %s", error);
@@ -72,6 +85,9 @@ bool openglTest()
 
     // shutdown the opengl system
     palShutdownGL();
+
+    // shutdown the video system
+    palShutdownVideo();
 
     return true;
 }

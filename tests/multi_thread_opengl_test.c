@@ -179,7 +179,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
         result = palSwapBuffers(&shared->window, shared->context);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to swap buffers: %s", error);
+            palLog(nullptr, "Failed to swap buffers from: %s", error);
             return nullptr;
         }
     }
@@ -219,9 +219,12 @@ bool multiThreadOpenGlTest()
     // check to see if the event driver thread is done creating the drivers
     // if not we wait for it
     if (!shared->driverCreated) {
+        // this will be detached automatically when done
         palJoinThread(eventDriverThread, nullptr);
+
+    } else {
+        palDetachThread(eventDriverThread); // we dont need it anymore
     }
-    palDetachThread(eventDriverThread); // we dont need it anymore
 
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
@@ -428,6 +431,10 @@ bool multiThreadOpenGlTest()
         }
     }
 
+    // we wait for the render thread to finish with
+    // the current frame and destroy the context
+    palJoinThread(rendererThread, nullptr);
+
     palDestroyGLContext(shared->context);
     palShutdownGL();
 
@@ -441,9 +448,6 @@ bool multiThreadOpenGlTest()
     palDestroyEventDriver(shared->videoEventDriver);
     palDestroyEventDriver(shared->openglEventDriver);
     palFree(nullptr, fbConfigs);
-
-    // destroy the renderer thread
-    palDetachThread(rendererThread);
 
     return true;
 }

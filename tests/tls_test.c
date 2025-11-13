@@ -89,10 +89,8 @@ bool tlsTest()
     }
 
     // join thread
+    // joint threads does not need to be detached
     palJoinThread(thread, nullptr); // wait for thread to finish
-
-    // detach thread
-    palDetachThread(thread);
 
     // destroy the tls
     palDestroyTLS(tlsID);

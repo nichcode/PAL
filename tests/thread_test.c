@@ -47,6 +47,7 @@ bool threadTest()
     // join threads
     for (Int32 i = 0; i < THREAD_COUNT; i++) {
         // we dont need the return value
+        // joint threads does not need to be detached
         result = palJoinThread(threads[i], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -56,12 +57,5 @@ bool threadTest()
     }
 
     palLog(nullptr, "All threads finished successfully");
-
-    // detach threads
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
-        palDetachThread(threads[i]);
-        palLog(nullptr, "Thread %d: detached", i + 1);
-    }
-
     return true;
 }
