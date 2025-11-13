@@ -138,6 +138,7 @@ bool openglFBConfigTest()
     // shutdown the opengl system
     palShutdownGL();
 
+    // shutdown the video system
     palShutdownVideo();
 
     // free the framebuffer configs

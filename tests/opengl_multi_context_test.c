@@ -23,22 +23,7 @@ bool openglMultiContextTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    // initialize the opengl system
-    PalResult result = palInitGL(nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize opengl: %s", error);
-        return false;
-    }
-
-    PalWindow* window = nullptr;
-    PalGLContext* context = nullptr;
-    PalWindowCreateInfo createInfo = {0};
-    PalGLContextCreateInfo contextCreateInfo = {0};
-    Int32 fbCount = 0;
-    bool running = false;
-
-    // event driver
+    PalResult result;
     PalEventDriver* eventDriver = nullptr;
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
@@ -55,6 +40,35 @@ bool openglMultiContextTest()
         palLog(nullptr, "Failed to create event driver: %s", error);
         return false;
     }
+
+    // initialize the video system. We pass the event driver to recieve video
+    // related events the video system does not copy the event driver, it must
+    // be valid till the video system is shutdown
+    result = palInitVideo(nullptr, eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // get the instance or display handle and pass it to the opengl system
+    // This must be called before the opengl system is initialized
+    palGLSetInstance(palGetInstance());
+
+    // initialize the opengl system
+    result = palInitGL(nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize opengl: %s", error);
+        return false;
+    }
+
+    PalWindow* window = nullptr;
+    PalGLContext* context = nullptr;
+    PalWindowCreateInfo createInfo = {0};
+    PalGLContextCreateInfo contextCreateInfo = {0};
+    Int32 fbCount = 0;
+    bool running = false;
 
     // enumerate supported opengl framebuffer configs
     // glWindow must be nullptr
@@ -123,16 +137,6 @@ bool openglMultiContextTest()
     palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
     palLog(nullptr, "");
 
-    // initialize the video system. We pass the event driver to recieve video
-    // related events the video system does not copy the event driver, it must
-    // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
-    }
-
     // set the FBConfig that will be used by PAL video system
     // to create windows. this must be set before creating a window
     // for this example, we set the closest we desired.
@@ -144,16 +148,43 @@ bool openglMultiContextTest()
     result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set GL pixel format: %s", error);
+        palLog(nullptr, "Failed to set GL FBConfig: %s", error);
         return false;
     }
+
+    // if not using pal_opengl with pal_video
+    // we get the backend string from the opengl system and
+    // get the backend from it
+    // Possible values are `wgl`, `glx`, `gles`, `egl`.
+    // PalFBConfigBackend backend;
+    // const char* glBackendString = palGLGetBackend();
+    // if (strcmp(glBackendString, "wgl") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_WGL;
+
+    // } else if (strcmp(glBackendString, "glx") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_GLX;
+
+    // } else if (strcmp(glBackendString, "gles") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_GLES;
+
+    // } else if (strcmp(glBackendString, "egl") == 0) {
+    //     backend = PAL_CONFIG_BACKEND_EGL;
+    // }
 
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    createInfo.title = "Pal Opengl Multi Context Window";
+    createInfo.title = "Pal Opengl Context Window";
+
+    // check if we support decorated windows (title bar, close etc)
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
@@ -172,14 +203,21 @@ bool openglMultiContextTest()
     // get window handle. You can use any window from any library
     // so long as you can get the window handle and display (if on X11, wayland)
     // If pal video system will not be used, there is no need to initialize it
-    PalWindowHandleInfo windowHandleInfo;
-    windowHandleInfo = palGetWindowHandleInfo(window);
+    PalWindowHandleInfoEx winHandle = {0};
+    winHandle = palGetWindowHandleInfoEx(window);
 
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
-    // needed when using X11 or wayland
-    glWindow.display = windowHandleInfo.nativeDisplay;
-    glWindow.window = windowHandleInfo.nativeWindow;
+    glWindow.display = winHandle.nativeDisplay;
+
+    // On Wayland the window is the wl_egl_window
+    if (winHandle.nativeHandle3) {
+        // the window has a valid wl_egl_window
+        glWindow.window = winHandle.nativeHandle3;
+
+    } else {
+        glWindow.window = winHandle.nativeWindow;
+    }
 
     // get opengl info
     const PalGLInfo* info = palGetGLInfo();
@@ -217,7 +255,7 @@ bool openglMultiContextTest()
         return false;
     }
 
-    // make the context current on this thread
+    // make the context current and optionally set vsync if supported
     result = palMakeContextCurrent(&glWindow, context);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -226,7 +264,6 @@ bool openglMultiContextTest()
         return false;
     }
 
-    // check if vsync is supported.
     if (info->extensions & PAL_GL_EXTENSION_SWAP_CONTROL) {
         // vsync is supported. This is set for the current context
         palSetSwapInterval(1);
@@ -239,7 +276,7 @@ bool openglMultiContextTest()
     glClear = (PFNGLCLEARPROC)palGLGetProcAddress("glClear");
 
     // set clear color
-    glClearColor(.2f, .2f, .2f, .2f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     running = true;
     while (running) {
@@ -273,8 +310,7 @@ bool openglMultiContextTest()
     palDestroyGLContext(context);
 
     // create a new opengl context with the same window
-    // the window's FBConfig has already be set, so we can skip it or set it.
-    // Opengl system will ignore it
+    // the FBConfig of the new context must match the windows
     context = nullptr;
     result = palCreateGLContext(&contextCreateInfo, &context);
     if (result != PAL_RESULT_SUCCESS) {
@@ -293,7 +329,7 @@ bool openglMultiContextTest()
         return false;
     }
 
-    glClearColor(.2f, .6f, .6f, .2f);
+    glClearColor(.2f, .6f, .6f, 1.0f);
     running = true;
     while (running) {
         palUpdateVideo();
@@ -318,6 +354,12 @@ bool openglMultiContextTest()
         }
     }
 
+    // destroy the opengl context
+    palDestroyGLContext(context);
+
+    // shutdown the opengl system
+    palShutdownGL();
+
     // destroy the window
     palDestroyWindow(window);
 
@@ -326,12 +368,6 @@ bool openglMultiContextTest()
 
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
-
-    // destroy the opengl context.
-    palDestroyGLContext(context);
-
-    // shutdown the opengl system
-    palShutdownGL();
 
     // free the framebuffer configs
     palFree(nullptr, fbConfigs);

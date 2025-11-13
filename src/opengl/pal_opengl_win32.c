@@ -1037,3 +1037,23 @@ PalResult PAL_CALL palSetSwapInterval(Int32 interval)
     s_Wgl.wglSwapIntervalEXT(interval);
     return PAL_RESULT_SUCCESS;
 }
+
+void PAL_CALL palGLSetInstance(void* instance)
+{
+    // TODO
+    s_GL.platformDisplay = instance;
+}
+
+const char* PAL_CALL palGLGetBackend() 
+{
+    // TODO:
+    if (!s_GL.initialized) {
+        return nullptr;
+    }
+
+    if (s_GL.apiType == EGL_OPENGL_API) {
+        return "egl";
+    } else {
+        return "gles";
+    }
+}

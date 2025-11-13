@@ -254,7 +254,8 @@ typedef enum {
     PAL_CONFIG_BACKEND_EGL,
     PAL_CONFIG_BACKEND_GLX,
     PAL_CONFIG_BACKEND_WGL,
-    PAL_CONFIG_BACKEND_PAL_OPENGL /**< Use PAL opengl module backend.*/
+    PAL_CONFIG_BACKEND_PAL_OPENGL, /**< Use PAL opengl module backend.*/
+    PAL_CONFIG_BACKEND_GLES
 } PalFBConfigBackend;
 
 /**
