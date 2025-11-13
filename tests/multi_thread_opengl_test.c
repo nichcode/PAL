@@ -86,6 +86,11 @@ static void* PAL_CALL eventDriverWorker(void* arg)
         PAL_EVENT_WINDOW_SIZE,
         PAL_DISPATCH_POLL);
 
+    palSetEventDispatchMode(
+        shared->videoEventDriver,
+        PAL_EVENT_KEYDOWN,
+        PAL_DISPATCH_POLL);
+
     // we are done
     shared->driverCreated = true;
     return nullptr;
@@ -192,6 +197,7 @@ bool multiThreadOpenGlTest()
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Multi Thread OpenGL Test");
+    palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -419,6 +425,15 @@ bool multiThreadOpenGlTest()
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
                     shared->running = false;
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        shared->running = false;
+                    }
                     break;
                 }
 

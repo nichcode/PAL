@@ -1736,6 +1736,7 @@ static void keyboardHandleKey(
 
     PalScancode scancode = 0;
     PalKeycode keycode = 0;
+    bool validCodepoint = true;
     bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
     PalEventType type = PAL_EVENT_KEYUP;
     PalDispatchMode mode = PAL_DISPATCH_NONE;
@@ -1769,12 +1770,14 @@ static void keyboardHandleKey(
         // we can make a direct cast without a table
         // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
         keycode = (PalKeycode)(Uint32)scancode;
+        validCodepoint = false;
     }
 
     // If we got a keySym but its not mapped into our keycode array
     // we do a direct cast as well
     if (keycode == PAL_KEYCODE_UNKNOWN) {
         keycode = (PalKeycode)(Uint32)scancode;
+        validCodepoint = false;
     }
 
     s_Keyboard.scancodeState[scancode] = pressed;
@@ -1814,7 +1817,7 @@ static void keyboardHandleKey(
         // check for char event if enabled
         type = PAL_EVENT_KEYCHAR;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode == PAL_DISPATCH_NONE) {
+        if (mode == PAL_DISPATCH_NONE || validCodepoint == false) {
             return;
         }
 
@@ -3816,6 +3819,8 @@ static void xShutdownVideo()
     if (s_X11.glxHandle) {
         dlclose(s_X11.glxHandle);
     }
+    memset(&s_X11, 0, sizeof(X11));
+    memset(&s_X11Atoms, 0, sizeof(X11Atoms));
 }
 
 static void xUpdateVideo()
@@ -6684,6 +6689,7 @@ void wlShutdownVideo()
     dlclose(s_Wl.xkbCommon);
     dlclose(s_Wl.libWaylandEgl);
     dlclose(s_Wl.handle);
+    memset(&s_Wl, 0, sizeof(Wayland));
 }
 
 void wlUpdateVideo()
@@ -6927,6 +6933,9 @@ PalResult wlCreateWindow(
     if (!data) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
+
+    memset(data, 0, sizeof(WindowData));
+    data->used = true;
 
     // create surface
     surface = wlCompositorCreateSurface(s_Wl.compositor);
@@ -7590,6 +7599,8 @@ void PAL_CALL palShutdownVideo()
         if (s_Egl.handle) {
             dlclose(s_Egl.handle);
         }
+        
+        s_Video.platformInstance = nullptr;
         s_Video.initialized = false;
     }
 }

@@ -210,9 +210,9 @@ bool windowTest()
     }
 
 #if UNICODE_NAME
-    createInfo.title = "PAL Test Window Unicode - àà";
+    createInfo.title = "Test Window Unicode - àà";
 #else
-    createInfo.title = "PAL Test Window";
+    createInfo.title = "Test Window";
 #endif // UNICODE_NAME
 
 #if MAKE_BORDERLESS
