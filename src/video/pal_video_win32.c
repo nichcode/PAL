@@ -120,6 +120,7 @@ typedef struct {
 
     HINSTANCE instance;
     HWND hiddenWindow;
+    HCURSOR defaultCursor;
     WindowData* windowData;
 } VideoWin32;
 
@@ -653,11 +654,12 @@ LRESULT CALLBACK videoProc(
             if (LOWORD(lParam) == HTCLIENT) {
                 if (data && data->cursor) {
                     SetCursor(data->cursor);
-                    return TRUE;
+                } else {
+                    // no cursor, use default
+                    SetCursor(s_Video.defaultCursor);
                 }
-                return FALSE;
+                return TRUE;
             }
-
             break;
         }
 
@@ -1071,12 +1073,17 @@ PalResult PAL_CALL palInitVideo(
         0);
 
     // get the instance
-    s_Video.instance = GetModuleHandleW(nullptr);
+    if (!s_Video.instance) {
+        s_Video.instance = GetModuleHandleW(nullptr);
+    }
+
+    // load default cursor
+    s_Video.defaultCursor = LoadCursorW(NULL, IDC_ARROW);
 
     // register class
     WNDCLASSEXW wc = {0};
     wc.cbSize = sizeof(WNDCLASSEXW);
-    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    wc.hCursor = s_Video.defaultCursor;
     wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
     wc.hIconSm = LoadIconW(NULL, IDI_APPLICATION);
     wc.hInstance = s_Video.instance;
@@ -1167,7 +1174,6 @@ PalResult PAL_CALL palInitVideo(
 
     // clang-format on
 
-    // TODO:: 
     // set features
     s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION;
     s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
@@ -1203,18 +1209,51 @@ PalResult PAL_CALL palInitVideo(
 
     if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
         s_Video.features |= PAL_VIDEO_FEATURE_HIGH_DPI;
+        s_Video.features64 |= PAL_VIDEO_FEATURE64_HIGH_DPI;
         s_Video.setProcessAwareness(WIN32_DPI_AWARE);
     }
 
     // extended features
-    s_Video.features64 |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
-    s_Video.features64 |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MONITOR_SET_ORIENTATION;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_BORDERLESS_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_TRANSPARENT_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_TOOL_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MONITOR_SET_MODE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_MODE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MULTI_MONITORS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_SIZE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_POS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_POS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_STATE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_STATE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_VISIBILITY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_VISIBILITY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_NO_MAXIMIZEBOX;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_NO_MINIMIZEBOX;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_CLIP_CURSOR;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_FLASH_CAPTION;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_FLASH_INTERVAL;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_INPUT_FOCUS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_INPUT_FOCUS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_STYLE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_STYLE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_CURSOR_SET_POS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_CURSOR_GET_POS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_ICON;
+
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_TOPMOST_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_DECORATED_WINDOW;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_CURSOR_SET_VISIBILITY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_GET_MONITOR;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE;
+    s_Video.features64 |= PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR;
 
     s_Video.initialized = true;
     s_Video.allocator = allocator;
@@ -1237,6 +1276,12 @@ void PAL_CALL palShutdownVideo()
     DestroyWindow(s_Video.hiddenWindow);
     UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
     palFree(s_Video.allocator, s_Video.windowData);
+
+    memset(&s_Video, 0, sizeof(VideoWin32));
+    memset(&s_Keyboard, 0, sizeof(Keyboard));
+    memset(&s_Mouse, 0, sizeof(Mouse));
+
+    s_Video.windowData = nullptr;
     s_Video.initialized = false;
 }
 
@@ -1293,13 +1338,13 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-palGetVideoFeaturesEx PAL_CALL palGetVideoFeaturesEx()
+PalVideoFeatures64 PAL_CALL palGetVideoFeaturesEx()
 {
     if (!s_Video.initialized) {
         return 0;
     }
-    
-    return ((Uint64)s_Video.features64) | (Uint64)s_Video.features;
+
+    return s_Video.features64;
 }
 
 PalResult PAL_CALL palSetFBConfig(
@@ -1851,7 +1896,9 @@ void PAL_CALL palDestroyWindow(PalWindow* window)
         if (data->isAttached) {
             return;
         }
+
         DestroyWindow((HWND)window);
+        data->used = false;
     }
 }
 
@@ -2262,8 +2309,17 @@ void PAL_CALL palGetRawMouseWheelDelta(
     float* dx,
     float* dy)
 {
-    // TODO:
+    if (!s_Video.initialized) {
+        return;
+    }
 
+    if (dx) {
+        *dx = (float)s_Mouse.WheelX;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.WheelY;
+    }
 }
 
 bool PAL_CALL palIsWindowVisible(PalWindow* window)
@@ -2290,6 +2346,16 @@ PalWindow* PAL_CALL palGetFocusWindow()
 PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window)
 {
     PalWindowHandleInfo handle = {0};
+    if (s_Video.initialized && window) {
+        handle.nativeDisplay = nullptr;
+        handle.nativeWindow = (void*)window;
+    }
+    return handle;
+}
+
+PalWindowHandleInfoEx PAL_CALL palGetWindowHandleInfoEx(PalWindow* window)
+{
+    PalWindowHandleInfoEx handle = {0};
     if (s_Video.initialized && window) {
         handle.nativeDisplay = nullptr;
         handle.nativeWindow = (void*)window;
@@ -3005,4 +3071,11 @@ PalResult PAL_CALL palDetachWindow(
     }
 
     return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palSetPreferredInstance(void* instance)
+{
+    if (!s_Video.initialized && instance) {
+        s_Video.instance = instance;
+    }
 }

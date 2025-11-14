@@ -271,12 +271,24 @@ void getWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
 #endif // __linux__
 }
 
-void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo);
-void getWindowTitleWin32(PalWindowHandleInfoEx* windowInfo);
+void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
+{
+    const char* title = "Hello from native Win32 API";
+    SetWindowTextA((HWND)windowInfo->nativeWindow, title);
+}
+
+void getWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
+{
+    GetWindowTextA(
+        (HWND)windowInfo->nativeWindow, 
+        s_TitleBuffer, 
+        sizeof(s_TitleBuffer));
+}
 
 void setWindowTitle(PalWindowHandleInfoEx* windowInfo)
 {
 #ifdef _WIN32
+    setWindowTitleWin32(windowInfo);
 #elif defined(__linux__)
     // get the active session
     const char* session = getenv("XDG_SESSION_TYPE");
@@ -299,6 +311,7 @@ void setWindowTitle(PalWindowHandleInfoEx* windowInfo)
 void getWindowTitle(PalWindowHandleInfoEx* windowInfo)
 {
 #ifdef _WIN32
+    getWindowTitleWin32(windowInfo);
 #elif defined(__linux__)
     if (s_OnWayland) {
         getWindowTitleWayland(windowInfo);
