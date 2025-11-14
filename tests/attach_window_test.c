@@ -48,7 +48,7 @@ typedef int (*XDestroyWindowFn)(
     Display*,
     Window);
 
-static void* s_X11Lib;
+static void* s_LibX;
 static XCreateSimpleWindowFn s_XCreateWindow;
 static XSyncFn s_XSync;
 static XMapRaisedFn s_XMapRaised;
@@ -60,32 +60,32 @@ static XDestroyWindowFn s_XDestroyWindow;
 #define WINDOW_POSY 100
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
-#define WINDOW_TITLE "PAL Attach Window Test"
+#define WINDOW_TITLE "Attach Window Test"
 
 static void* createX11Window()
 {
 #ifdef __linux__
     // load the procs
-    s_X11Lib = dlopen("libX11.so", RTLD_LAZY);
-    if (!s_X11Lib) {
+    s_LibX = dlopen("libX11.so", RTLD_LAZY);
+    if (!s_LibX) {
         return nullptr;
     }
 
     // clang-format off
     s_XCreateWindow = (XCreateSimpleWindowFn)dlsym(
-        s_X11Lib, 
+        s_LibX, 
         "XCreateSimpleWindow");
     
     s_XSync = (XSyncFn)dlsym(
-        s_X11Lib, 
+        s_LibX, 
         "XSync");
 
     s_XMapRaised = (XMapRaisedFn)dlsym(
-        s_X11Lib, 
+        s_LibX, 
         "XMapRaised");
 
     s_XDestroyWindow = (XDestroyWindowFn)dlsym(
-        s_X11Lib, 
+        s_LibX, 
         "XDestroyWindow");
 
     if (!s_XCreateWindow || !s_XSync || !s_XMapRaised || !s_XDestroyWindow) {
@@ -125,6 +125,8 @@ static void* createX11Window()
 #endif // __linux__
     return nullptr;
 }
+
+
 
 static void* createWin32Window()
 {
@@ -183,7 +185,7 @@ static void destroyX11Window(void* windowHandle)
 #ifdef __linux__
     Display* display = palGetInstance();
     s_XDestroyWindow(display, (Window)(UintPtr)windowHandle);
-    dlclose(s_X11Lib); // we loaded dynamically
+    dlclose(s_LibX); // we loaded dynamically
 #endif
 }
 
