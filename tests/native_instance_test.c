@@ -41,33 +41,39 @@ typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
 typedef int (*wl_display_roundtrip_fn)(struct wl_display*);
 
 typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
-    struct wl_proxy*, 
-    uint32_t, 
-    const struct wl_interface*, 
-    uint32_t, 
-    uint32_t, ...);
+    struct wl_proxy*,
+    uint32_t,
+    const struct wl_interface*,
+    uint32_t,
+    uint32_t,
+    ...);
 
 typedef int (*wl_proxy_add_listener_fn)(
     struct wl_proxy*,
-    void (**)(void), void*);
+    void (**)(void),
+    void*);
 
 struct wl_interface {
-	const char *name;
-	int version;
-	int method_count;
-	const struct wl_message *methods;
-	int event_count;
-	const struct wl_message *events;
+    const char* name;
+    int version;
+    int method_count;
+    const struct wl_message* methods;
+    int event_count;
+    const struct wl_message* events;
 };
 
 struct wl_registry_listener {
-	void (*global)(void*,
-		       struct wl_registry*,
-		       uint32_t,
-		       const char*,
-		       uint32_t);
+    void (*global)(
+        void*,
+        struct wl_registry*,
+        uint32_t,
+        const char*,
+        uint32_t);
 
-	void (*global_remove)(void*, struct wl_registry*, uint32_t);
+    void (*global_remove)(
+        void*,
+        struct wl_registry*,
+        uint32_t);
 };
 
 static void* s_LibWayland;
@@ -81,55 +87,55 @@ static wl_proxy_add_listener_fn s_wl_proxy_add_listener;
 static const struct wl_interface* registryInterface;
 
 static inline void* wlRegistryBind(
-    struct wl_registry *wl_registry, 
-    uint32_t name, 
-    const struct wl_interface* interface, 
+    struct wl_registry* wl_registry,
+    uint32_t name,
+    const struct wl_interface* interface,
     uint32_t version)
 {
-	struct wl_proxy *id;
-	id = s_wl_proxy_marshal_flags(
-        (struct wl_proxy *)wl_registry,
+    struct wl_proxy* id;
+    id = s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_registry,
         0, // WL_REGISTRY_BIND
-        interface, 
-        version, 
-        0, 
-        name, 
-        interface->name, 
-        version, 
+        interface,
+        version,
+        0,
+        name,
+        interface->name,
+        version,
         NULL);
 
-	return (void *)id;
+    return (void*)id;
 }
 
 static inline int wlRegistryAddListener(
-    struct wl_registry *wl_registry,
-    const struct wl_registry_listener *listener, 
-    void *data)
+    struct wl_registry* wl_registry,
+    const struct wl_registry_listener* listener,
+    void* data)
 {
-	return s_wl_proxy_add_listener(
-        (struct wl_proxy *) wl_registry,
-        (void (**)(void)) listener, data);
+    return s_wl_proxy_add_listener(
+        (struct wl_proxy*)wl_registry,
+        (void (**)(void))listener,
+        data);
 }
 
-static inline struct wl_registry* wlDisplayGetRegistry(
-    struct wl_display *wl_display)
+static inline struct wl_registry*
+wlDisplayGetRegistry(struct wl_display* wl_display)
 {
-	struct wl_proxy *registry;
-	registry = s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_display,
+    struct wl_proxy* registry;
+    registry = s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_display,
         1, // WL_DISPLAY_GET_REGISTRY
-        registryInterface, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_display), 
-            0, 
-            NULL);
+        registryInterface,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_display),
+        0,
+        NULL);
 
-	return (struct wl_registry *)registry;
+    return (struct wl_registry*)registry;
 }
 
 static bool s_Logged = false;
 static void globalHandle(
-    void* data, 
+    void* data,
     struct wl_registry* registry,
     uint32_t name,
     const char* interface,
@@ -142,7 +148,7 @@ static void globalHandle(
 }
 
 static void globalRemove(
-    void* data, 
+    void* data,
     struct wl_registry* registry,
     uint32_t name)
 {
@@ -154,8 +160,7 @@ static void globalRemove(
 
 static const struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
-    .global_remove = globalRemove
-};
+    .global_remove = globalRemove};
 
 static bool s_OnWayland = false;
 

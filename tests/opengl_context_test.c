@@ -201,10 +201,7 @@ bool openglContextTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // get window handle. You can use any window from any library
     // so long as you can get the window handle and display (if on X11, wayland)

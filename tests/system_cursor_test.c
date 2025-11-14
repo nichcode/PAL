@@ -91,10 +91,7 @@ bool systemCursorTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL); // polling
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // set the cursor
     palSetWindowCursor(window, cursor);

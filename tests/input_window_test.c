@@ -366,7 +366,7 @@ static inline void onMouseWheel(const PalEvent* event)
 {
     Int32 dx, dy; // dx == low, dy == high
     palUnpackInt32(event->data, &dx, &dy);
-    
+
     // get the raw wheel delta (float)
     float fdx, fdy;
     palGetRawMouseWheelDelta(&fdx, &fdy);
@@ -374,10 +374,10 @@ static inline void onMouseWheel(const PalEvent* event)
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Mouse Wheel: (%d, %d)", dispatchString, dx, dy);
     palLog(
-        nullptr, 
-        "%s: Mouse Wheel Raw: (%.2f, %.2f)", 
-        dispatchString, 
-        fdx, 
+        nullptr,
+        "%s: Mouse Wheel Raw: (%.2f, %.2f)",
+        dispatchString,
+        fdx,
         fdy);
 }
 

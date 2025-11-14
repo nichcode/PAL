@@ -126,8 +126,6 @@ static void* createX11Window()
     return nullptr;
 }
 
-
-
 static void* createWin32Window()
 {
 #ifdef _WIN32
@@ -264,10 +262,7 @@ bool attachWindowTest()
         PAL_EVENT_WINDOW_MOVE,
         PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // we listen for key release events to attach and detach the window
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYUP, PAL_DISPATCH_POLL);

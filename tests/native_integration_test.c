@@ -22,8 +22,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <dlfcn.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 // wayland is optional and might not be supported
 // so we stick to typedefs
@@ -77,11 +77,12 @@ struct wl_interface;
 struct xdg_toplevel;
 
 typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
-    struct wl_proxy*, 
-    uint32_t, 
-    const struct wl_interface*, 
-    uint32_t, 
-    uint32_t, ...);
+    struct wl_proxy*,
+    uint32_t,
+    const struct wl_interface*,
+    uint32_t,
+    uint32_t,
+    ...);
 
 typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
 typedef int (*wl_display_flush_fn)(struct wl_display*);
@@ -91,17 +92,16 @@ static wl_proxy_get_version_fn s_wl_proxy_get_version;
 static wl_display_flush_fn s_wl_display_flush;
 
 static inline void xdgToplevelSetTitle(
-    struct xdg_toplevel *xdg_toplevel, 
-    const char *title)
+    struct xdg_toplevel* xdg_toplevel,
+    const char* title)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) xdg_toplevel,
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)xdg_toplevel,
         2, // XDG_TOPLEVEL_SET_TITLE
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            title);
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)xdg_toplevel),
+        0,
+        title);
 }
 
 static XInternAtomFn s_XInternAtom;
@@ -240,16 +240,14 @@ void setWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
     }
 
     s_wl_proxy_marshal_flags = (wl_proxy_marshal_flags_fn)dlsym(
-        s_WaylandLib, 
+        s_WaylandLib,
         "wl_proxy_marshal_flags");
 
-    s_wl_proxy_get_version = (wl_proxy_get_version_fn)dlsym(
-        s_WaylandLib, 
-        "wl_proxy_get_version");
+    s_wl_proxy_get_version =
+        (wl_proxy_get_version_fn)dlsym(s_WaylandLib, "wl_proxy_get_version");
 
-    s_wl_display_flush = (wl_display_flush_fn)dlsym(
-        s_WaylandLib, 
-        "wl_display_flush");
+    s_wl_display_flush =
+        (wl_display_flush_fn)dlsym(s_WaylandLib, "wl_display_flush");
 
     struct xdg_toplevel* toplevel = nullptr;
     struct wl_display* display = nullptr;
@@ -280,8 +278,8 @@ void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 void getWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 {
     GetWindowTextA(
-        (HWND)windowInfo->nativeWindow, 
-        s_TitleBuffer, 
+        (HWND)windowInfo->nativeWindow,
+        s_TitleBuffer,
         sizeof(s_TitleBuffer));
 }
 
@@ -362,7 +360,7 @@ bool nativeIntegrationTest()
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Native Integration Test";
-  
+
     // check if we support decorated windows (title bar, close etc)
     PalVideoFeatures64 features = palGetVideoFeaturesEx();
     if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
@@ -384,10 +382,7 @@ bool nativeIntegrationTest()
         PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // set the window title using native APIs
     PalWindowHandleInfoEx windowInfo = {0};
@@ -444,5 +439,4 @@ bool nativeIntegrationTest()
     palDestroyEventDriver(eventDriver);
 
     return true;
-
 }
