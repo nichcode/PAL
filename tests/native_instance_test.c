@@ -16,6 +16,8 @@
 #define UNICODE
 #endif // UNICODE
 
+#include <windows.h>
+
 #elif defined(__linux__)
 #include <X11/Xlib.h>
 #include <dlfcn.h>
@@ -244,9 +246,22 @@ void closeDisplayWayland(void* instance)
 #endif // __linux__
 }
 
+void* openDisplayWin32()
+{
+#ifdef __WIN32
+    return GetModuleHandleW(nullptr);
+#endif // __WIN32
+}
+
+void closeDisplayWin32(void* instance)
+{
+    // this does nothing
+}
+
 void* openInstance()
 {
 #ifdef _WIN32
+    return openDisplayWin32();
 #elif defined(__linux__)
     // get the active session
     const char* session = getenv("XDG_SESSION_TYPE");
@@ -269,6 +284,7 @@ void* openInstance()
 void closeInstance(void* instance)
 {
 #ifdef _WIN32
+    closeDisplayWin32(instance);
 #elif defined(__linux__)
     if (s_OnWayland) {
         closeDisplayWayland(instance);

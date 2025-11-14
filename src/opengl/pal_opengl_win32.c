@@ -203,8 +203,8 @@ typedef struct {
     PalGLInfo info;
 } Wgl;
 
-static Gdi s_Gdi;
-static Wgl s_Wgl;
+static Gdi s_Gdi = {0};
+static Wgl s_Wgl = {0};
 
 // ==================================================
 // Internal API
@@ -254,8 +254,10 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     // get the instance
-    s_Wgl.instance = GetModuleHandleW(nullptr);
-
+    if (!s_Wgl.instance) {
+        s_Wgl.instance = GetModuleHandleW(nullptr);
+    }
+    
     // register class
     WNDCLASSEXW wc = {0};
     wc.style = CS_OWNDC;
@@ -514,12 +516,13 @@ void PAL_CALL palShutdownGL()
 
     FreeLibrary(s_Wgl.opengl);
     FreeLibrary(s_Gdi.handle);
+
+    memset(&s_Wgl, 0, sizeof(Wgl));
     s_Wgl.initialized = false;
 }
 
 const PalGLInfo* PAL_CALL palGetGLInfo()
 {
-
     if (!s_Wgl.initialized) {
         return nullptr;
     }
@@ -1040,20 +1043,13 @@ PalResult PAL_CALL palSetSwapInterval(Int32 interval)
 
 void PAL_CALL palGLSetInstance(void* instance)
 {
-    // TODO
-    s_GL.platformDisplay = instance;
+    s_Wgl.instance = instance;
 }
 
 const char* PAL_CALL palGLGetBackend() 
 {
-    // TODO:
-    if (!s_GL.initialized) {
+    if (!s_Wgl.initialized) {
         return nullptr;
     }
-
-    if (s_GL.apiType == EGL_OPENGL_API) {
-        return "egl";
-    } else {
-        return "gles";
-    }
+    return "wgl";
 }

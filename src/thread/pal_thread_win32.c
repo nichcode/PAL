@@ -151,15 +151,15 @@ PalResult PAL_CALL palJoinThread(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    void* value = nullptr;
     DWORD wait = WaitForSingleObject((HANDLE)thread, INFINITE);
     if (wait == WAIT_OBJECT_0 && retval) {
         uintptr_t ret;
         GetExitCodeThread((HANDLE)thread, (LPDWORD)&ret);
-        retval = (void*)ret;
+        void** out = (void**)retval;
+        *out = value;
 
-        // thread is done
-        // destroy the HANDLE
-        // TODO:
+        // thread is done destroy the HANDLE
         CloseHandle((HANDLE)thread);
 
     } else if (wait == WAIT_FAILED) {
