@@ -78,7 +78,7 @@ typedef _Bool bool;
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define PAL_BIG_ENDIAN 1
-#else 
+#else
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
 
@@ -489,7 +489,7 @@ static inline Int64 PAL_CALL palPackFloat(
 #if PAL_BIG_ENDIAN
     memcpy(&((Uint32*)&combined)[0], &high, sizeof(float));
     memcpy(&((Uint32*)&combined)[1], &low, sizeof(float));
-#else 
+#else
     memcpy(&((Uint32*)&combined)[0], &low, sizeof(float));
     memcpy(&((Uint32*)&combined)[1], &high, sizeof(float));
 #endif // PAL_BIG_ENDIAN
@@ -592,7 +592,7 @@ static inline void PAL_CALL palUnpackFloat(
     if (high) {
         memcpy(high, &((Uint32*)&data)[0], sizeof(float));
     }
-#else 
+#else
     if (low) {
         memcpy(low, &((Uint32*)&data)[0], sizeof(float));
     }

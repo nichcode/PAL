@@ -660,9 +660,9 @@ typedef struct {
 typedef struct {
     void* nativeDisplay; /**< The platform (OS) display.*/
     void* nativeWindow;  /**< The window platform (OS) handle.*/
-    void* nativeHandle1;  /**< Extra window handle (xdgSurface)*/
-    void* nativeHandle2;  /**< Extra window handle (xdgToplevel)*/
-    void* nativeHandle3;  /**< Extra window handle (wl_egl_window)*/
+    void* nativeHandle1; /**< Extra window handle (xdgSurface)*/
+    void* nativeHandle2; /**< Extra window handle (xdgToplevel)*/
+    void* nativeHandle3; /**< Extra window handle (wl_egl_window)*/
 } PalWindowHandleInfoEx;
 
 /**
@@ -955,7 +955,7 @@ PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
  *
  * PAL only validates the monitor display mode pointer not the values. To be
  * safe, users must get the monitor mode from palEnumerateMonitorModes() or call
- * palValidateMonitorMode() to validate before switching. 
+ * palValidateMonitorMode() to validate before switching.
  * palValidateMonitorMode() is not supported on all platforms.
  *
  * If the monitor display mode submitted is invalid, this function might fail
@@ -1035,14 +1035,14 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function must only be called from the main thread.
- * 
+ *
  * @note On Wayland
- * 
- * - creating non resizable windows is not supported. 
+ *
+ * - creating non resizable windows is not supported.
  * PAL will always creating resizable windows.
- * 
+ *
  * - Creating windows on a specific monitor is not supported.
- * 
+ *
  * - Creating hidden window is not supported. It will be ignored.
  *
  * @since 1.0
@@ -1124,7 +1124,7 @@ PAL_API PalResult PAL_CALL palMaximizeWindow(PalWindow* window);
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function must only be called from the main thread.
- * 
+ *
  * @note Wayland does not support restoring a minimized windows.
  *
  * @since 1.0
@@ -1443,8 +1443,10 @@ PAL_API void PAL_CALL palGetMouseWheelDelta(
  * The video system must be initialized before this call.
  * The wheel delta will be updated when palUpdateVideo() is called.
  *
- * @param[in] dx Pointer to recieve the mouse wheel delta x in floats. Can be nullptr.
- * @param[in] dy Pointer to recieve the mouse wheel delta y in floats. Can be nullptr.
+ * @param[in] dx Pointer to recieve the mouse wheel delta x in floats. Can be
+ * nullptr.
+ * @param[in] dy Pointer to recieve the mouse wheel delta y in floats. Can be
+ * nullptr.
  *
  * Thread safety: This function is thread-safe if `dx` and `dy` are thread
  * local.
@@ -1509,9 +1511,9 @@ PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
  * @brief Get the native handles of the provided window.
  *
  * The video system must be initialized before this call.
- * 
+ *
  * On Wayland: `PalWindowHandleInfoEx::nativeHandle1`,
- * `PalWindowHandleInfoEx::nativeHandle2` and 
+ * `PalWindowHandleInfoEx::nativeHandle2` and
  * `PalWindowHandleInfoEx::nativeHandle3` are xdg_surface, xdg_toplevel
  * and wl_egl_window respectively.
  *
@@ -1793,7 +1795,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  *
  * The video system must be initialized before this call.
  * `PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY` must be supported.
- * 
+ *
  * This affects all created cursors since the platform (OS) merges all cursors
  * into a single one on the screen.
  *
