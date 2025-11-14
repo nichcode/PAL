@@ -257,7 +257,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     if (!s_Wgl.instance) {
         s_Wgl.instance = GetModuleHandleW(nullptr);
     }
-    
+
     // register class
     WNDCLASSEXW wc = {0};
     wc.style = CS_OWNDC;
@@ -1046,7 +1046,7 @@ void PAL_CALL palGLSetInstance(void* instance)
     s_Wgl.instance = instance;
 }
 
-const char* PAL_CALL palGLGetBackend() 
+const char* PAL_CALL palGLGetBackend()
 {
     if (!s_Wgl.initialized) {
         return nullptr;
