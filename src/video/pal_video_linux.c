@@ -1737,7 +1737,6 @@ static void keyboardHandleKey(
 
     PalScancode scancode = 0;
     PalKeycode keycode = 0;
-    bool validCodepoint = true;
     bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
     PalEventType type = PAL_EVENT_KEYUP;
     PalDispatchMode mode = PAL_DISPATCH_NONE;
@@ -1758,11 +1757,11 @@ static void keyboardHandleKey(
     }
 
     // printable and text input keys are from the range
-    // 39 (PAL_KEYCODE_APOSTROPHE) and 122 (PAL_KEYCODE_Z)
+    // 32 (PAL_KEYCODE_SPACE) and 122 (PAL_KEYCODE_Z)
     // The rest are almost the same as their scancode
     // Maybe there will be a layout that makes this wrong
     // but for now this works
-    if (keySym >= XKB_KEY_apostrophe && keySym <= XKB_KEY_z) {
+    if (keySym >= XKB_KEY_space && keySym <= XKB_KEY_z) {
         // a printable or input key
         keycode = s_Keyboard.keycodes[keySym];
 
@@ -1771,14 +1770,12 @@ static void keyboardHandleKey(
         // we can make a direct cast without a table
         // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
         keycode = (PalKeycode)(Uint32)scancode;
-        validCodepoint = false;
     }
 
     // If we got a keySym but its not mapped into our keycode array
     // we do a direct cast as well
     if (keycode == PAL_KEYCODE_UNKNOWN) {
         keycode = (PalKeycode)(Uint32)scancode;
-        validCodepoint = false;
     }
 
     s_Keyboard.scancodeState[scancode] = pressed;
@@ -1818,11 +1815,15 @@ static void keyboardHandleKey(
         // check for char event if enabled
         type = PAL_EVENT_KEYCHAR;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode == PAL_DISPATCH_NONE || validCodepoint == false) {
+        if (mode == PAL_DISPATCH_NONE) {
             return;
         }
 
         Uint32 codepoint = s_Wl.xkbKeysymToUtf32(keySym);
+        if (codepoint <= 0) {
+            return;
+        }
+
         PalEvent event = {0};
         event.type = type;
         event.data = codepoint;
@@ -4184,11 +4185,11 @@ static void xUpdateVideo()
                 }
 
                 // printable and text input keys are from the range
-                // 39 (PAL_KEYCODE_APOSTROPHE) and 122 (PAL_KEYCODE_Z)
+                // 32 (PAL_KEYCODE_SPACE) and 122 (PAL_KEYCODE_Z)
                 // The rest are almost the same as their scancode
                 // Maybe there will be a layout that makes this wrong
                 // but for now this works
-                if (keySym >= XK_apostrophe && keySym <= XK_z) {
+                if (keySym >= XK_space && keySym <= XK_z) {
                     // a printable or input key
                     keycode = s_Keyboard.keycodes[keySym];
 
@@ -6688,6 +6689,7 @@ void wlShutdownVideo()
     dlclose(s_Wl.xkbCommon);
     dlclose(s_Wl.libWaylandEgl);
     dlclose(s_Wl.handle);
+
     memset(&s_Wl, 0, sizeof(Wayland));
 }
 
@@ -7589,6 +7591,8 @@ void PAL_CALL palShutdownVideo()
         }
         
         s_Video.platformInstance = nullptr;
+        memset(&s_Keyboard, 0, sizeof(Keyboard));
+        memset(&s_Mouse, 0, sizeof(Mouse));
         s_Video.initialized = false;
     }
 }
