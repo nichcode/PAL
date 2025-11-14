@@ -50,15 +50,15 @@ freely, subject to the following restrictions:
 #include <wayland-client.h>
 #include <wayland-util.h>
 
+#include <fcntl.h>
+#include <locale.h>
+#include <poll.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <locale.h>
 
 #include <linux/input-event-codes.h>
-#include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
+#include <xkbcommon/xkbcommon.h>
 
 #include <wayland-cursor.h>
 #endif // PAL_HAS_WAYLAND
@@ -139,7 +139,7 @@ typedef struct {
     PalWindow* window;
 
     // X11 only
-    XIC ic; 
+    XIC ic;
     Colormap colormap;
 
     // Wayland only
@@ -1961,80 +1961,77 @@ struct xdg_toplevel_listener {
 };
 
 static inline void xdgWmBasePong(
-    struct xdg_wm_base *xdg_wm_base, 
+    struct xdg_wm_base* xdg_wm_base,
     uint32_t serial)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_wm_base,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_wm_base,
         3, // XDG_WM_BASE_PONG
-        NULL, 
-        s_Wl.proxyGetVersion((
-            struct wl_proxy *) xdg_wm_base), 
-            0, 
-            serial);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_wm_base),
+        0,
+        serial);
 }
 
 static inline int xdgWmBaseAddListener(
-    struct xdg_wm_base *xdg_wm_base,
-    const struct xdg_wm_base_listener *listener, 
-    void *data)
+    struct xdg_wm_base* xdg_wm_base,
+    const struct xdg_wm_base_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) xdg_wm_base,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener(
+        (struct wl_proxy*)xdg_wm_base,
+        (void (**)(void))listener,
+        data);
 }
 
 static inline struct xdg_surface* xdgWmBaseGetXdgSurface(
-    struct xdg_wm_base *xdg_wm_base, 
-    struct wl_surface *surface)
+    struct xdg_wm_base* xdg_wm_base,
+    struct wl_surface* surface)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_wm_base,
-        2, // XDG_WM_BASE_GET_XDG_SURFACE, 
-        &xdg_surface_interface, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_wm_base), 
-            0, 
-            NULL, 
-            surface);
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_wm_base,
+        2, // XDG_WM_BASE_GET_XDG_SURFACE,
+        &xdg_surface_interface,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_wm_base),
+        0,
+        NULL,
+        surface);
 
-	return (struct xdg_surface *) id;
+    return (struct xdg_surface*)id;
 }
 
-static inline struct xdg_toplevel* xdgSurfaceGetToplevel(
-    struct xdg_surface *xdg_surface)
+static inline struct xdg_toplevel*
+xdgSurfaceGetToplevel(struct xdg_surface* xdg_surface)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_surface,
-        1, // XDG_SURFACE_GET_TOPLEVEL, 
-        &xdg_toplevel_interface, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_surface), 
-            0, 
-            NULL);
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_surface,
+        1, // XDG_SURFACE_GET_TOPLEVEL,
+        &xdg_toplevel_interface,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
+        0,
+        NULL);
 
-	return (struct xdg_toplevel *) id;
+    return (struct xdg_toplevel*)id;
 }
 
 static inline void xdgSurfaceAckConfigure(
-    struct xdg_surface *xdg_surface, 
+    struct xdg_surface* xdg_surface,
     uint32_t serial)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_surface,
         4, // XDG_SURFACE_ACK_CONFIGURE
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_surface), 
-            0, 
-            serial);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
+        0,
+        serial);
 }
 
 static void wmBaseHandlePing(
-    void* data, 
-    struct xdg_wm_base* base, 
+    void* data,
+    struct xdg_wm_base* base,
     uint32_t serial)
 {
     xdgWmBasePong(base, serial);
@@ -2054,12 +2051,12 @@ static void xdgSurfaceHandleConfigure(
 
         if (winData->eglWindow) {
             s_Wl.eglWindowResize(
-                winData->eglWindow, 
-                winData->w, 
-                winData->h, 
-                0, 
+                winData->eglWindow,
+                winData->w,
+                winData->h,
+                0,
                 0);
-                
+
         } else {
             // create a new buffer with the new size
             struct wl_buffer* buffer = nullptr;
@@ -2074,7 +2071,6 @@ static void xdgSurfaceHandleConfigure(
             wlSurfaceAttach(_surface, buffer, 0, 0);
             wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
             wlSurfaceCommit(_surface);
-
 
             // destroy old buffer
             wlBufferDestroy(winData->buffer);
@@ -2129,7 +2125,8 @@ static void xdgToplevelHandleConfigure(
 
     if (!winData->skipState) {
         uint32_t* state;
-        wl_array_for_each(state, states) {
+        wl_array_for_each(state, states)
+        {
             // we need only maximized
             if (*state == 1) { // XDG_TOPLEVEL_STATE_MAXIMIZED
                 if (winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
@@ -2147,7 +2144,6 @@ static void xdgToplevelHandleConfigure(
             winData->skipConfigure = false;
         }
     }
-
 }
 
 static void xdgToplevelHandleClose(
@@ -2170,288 +2166,293 @@ static void xdgToplevelHandleClose(
 }
 
 static inline int xdgSurfaceAddListener(
-    struct xdg_surface *xdg_surface,
-    const struct xdg_surface_listener *listener, 
-    void *data)
+    struct xdg_surface* xdg_surface,
+    const struct xdg_surface_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) xdg_surface,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener(
+        (struct wl_proxy*)xdg_surface,
+        (void (**)(void))listener,
+        data);
 }
 
-static inline void xdgSurfaceDestroy(struct xdg_surface *xdg_surface)
+static inline void xdgSurfaceDestroy(struct xdg_surface* xdg_surface)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_surface,
         0, // XDG_SURFACE_DESTROY
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_surface), 
-            WL_MARSHAL_FLAG_DESTROY);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline void xdgToplevelDestroy(struct xdg_toplevel *xdg_toplevel)
+static inline void xdgToplevelDestroy(struct xdg_toplevel* xdg_toplevel)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
         0, // XDG_TOPLEVEL_DESTROY
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            WL_MARSHAL_FLAG_DESTROY);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void xdgToplevelSetTitle(
-    struct xdg_toplevel *xdg_toplevel, 
-    const char *title)
+    struct xdg_toplevel* xdg_toplevel,
+    const char* title)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
         2, // XDG_TOPLEVEL_SET_TITLE
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            title);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0,
+        title);
 }
 
-static inline void xdgToplevelSetMaximized(struct xdg_toplevel *xdg_toplevel)
+static inline void xdgToplevelSetMaximized(struct xdg_toplevel* xdg_toplevel)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
-        9, //XDG_TOPLEVEL_SET_MAXIMIZED 
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            0);
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
+        9, // XDG_TOPLEVEL_SET_MAXIMIZED
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0);
 }
 
-static inline void xdgToplevelSetMinimized(struct xdg_toplevel *xdg_toplevel)
+static inline void xdgToplevelSetMinimized(struct xdg_toplevel* xdg_toplevel)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
         13, // XDG_TOPLEVEL_SET_MINIMIZED
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel),
-            0);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0);
 }
 
 static inline int xdgToplevelAddListener(
-    struct xdg_toplevel *xdg_toplevel,
-    const struct xdg_toplevel_listener *listener, 
-    void *data)
+    struct xdg_toplevel* xdg_toplevel,
+    const struct xdg_toplevel_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) xdg_toplevel,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener(
+        (struct wl_proxy*)xdg_toplevel,
+        (void (**)(void))listener,
+        data);
 }
 
 static inline void xdgToplevelSetMinSize(
-    struct xdg_toplevel *xdg_toplevel, 
-    int32_t width, 
+    struct xdg_toplevel* xdg_toplevel,
+    int32_t width,
     int32_t height)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
-        8, //XDG_TOPLEVEL_SET_MIN_SIZE 
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            width, 
-            height);
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
+        8, // XDG_TOPLEVEL_SET_MIN_SIZE
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0,
+        width,
+        height);
 }
 
 static inline void xdgToplevelSetMaxSize(
-    struct xdg_toplevel *xdg_toplevel, 
-    int32_t width, 
+    struct xdg_toplevel* xdg_toplevel,
+    int32_t width,
     int32_t height)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
-        7, //XDG_TOPLEVEL_SET_MAX_SIZE
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            width, 
-            height);
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
+        7, // XDG_TOPLEVEL_SET_MAX_SIZE
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0,
+        width,
+        height);
 }
 
 static inline void xdgToplevelSetAppId(
-    struct xdg_toplevel *xdg_toplevel, 
-    const char *app_id)
+    struct xdg_toplevel* xdg_toplevel,
+    const char* app_id)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
         3, // XDG_TOPLEVEL_SET_APP_ID
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            app_id);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0,
+        app_id);
 }
 
-static inline void xdgToplevelUnsetMaximized(struct xdg_toplevel *xdg_toplevel)
+static inline void xdgToplevelUnsetMaximized(struct xdg_toplevel* xdg_toplevel)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_toplevel, 
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)xdg_toplevel,
         10, // XDG_TOPLEVEL_UNSET_MAXIMIZED
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_toplevel), 
-            0);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
+        0);
 }
 
-static const struct wl_interface *xdg_shell_types[26];
+static const struct wl_interface* xdg_shell_types[26];
 
 static const struct wl_message xdg_wm_base_requests[] = {
-	{ "destroy", "", xdg_shell_types + 0 },
-	{ "create_positioner", "n", xdg_shell_types + 4 },
-	{ "get_xdg_surface", "no", xdg_shell_types + 5 },
-	{ "pong", "u", xdg_shell_types + 0 },
+    {"destroy", "", xdg_shell_types + 0},
+    {"create_positioner", "n", xdg_shell_types + 4},
+    {"get_xdg_surface", "no", xdg_shell_types + 5},
+    {"pong", "u", xdg_shell_types + 0},
 };
 
 static const struct wl_message xdg_wm_base_events[] = {
-	{ "ping", "u", xdg_shell_types + 0 },
+    {"ping", "u", xdg_shell_types + 0},
 };
 
 const struct wl_interface xdg_wm_base_interface = {
-	"xdg_wm_base", 6,
-	4, xdg_wm_base_requests,
-	1, xdg_wm_base_events,
+    "xdg_wm_base",
+    6,
+    4,
+    xdg_wm_base_requests,
+    1,
+    xdg_wm_base_events,
 };
 
 static const struct wl_message xdg_positioner_requests[] = {
-	{ "destroy", "", xdg_shell_types + 0 },
-	{ "set_size", "ii", xdg_shell_types + 0 },
-	{ "set_anchor_rect", "iiii", xdg_shell_types + 0 },
-	{ "set_anchor", "u", xdg_shell_types + 0 },
-	{ "set_gravity", "u", xdg_shell_types + 0 },
-	{ "set_constraint_adjustment", "u", xdg_shell_types + 0 },
-	{ "set_offset", "ii", xdg_shell_types + 0 },
-	{ "set_reactive", "3", xdg_shell_types + 0 },
-	{ "set_parent_size", "3ii", xdg_shell_types + 0 },
-	{ "set_parent_configure", "3u", xdg_shell_types + 0 },
+    {"destroy", "", xdg_shell_types + 0},
+    {"set_size", "ii", xdg_shell_types + 0},
+    {"set_anchor_rect", "iiii", xdg_shell_types + 0},
+    {"set_anchor", "u", xdg_shell_types + 0},
+    {"set_gravity", "u", xdg_shell_types + 0},
+    {"set_constraint_adjustment", "u", xdg_shell_types + 0},
+    {"set_offset", "ii", xdg_shell_types + 0},
+    {"set_reactive", "3", xdg_shell_types + 0},
+    {"set_parent_size", "3ii", xdg_shell_types + 0},
+    {"set_parent_configure", "3u", xdg_shell_types + 0},
 };
 
 const struct wl_interface xdg_positioner_interface = {
-	"xdg_positioner", 6,
-	10, xdg_positioner_requests,
-	0, NULL,
+    "xdg_positioner",
+    6,
+    10,
+    xdg_positioner_requests,
+    0,
+    NULL,
 };
 
 static const struct wl_message xdg_surface_requests[] = {
-	{ "destroy", "", xdg_shell_types + 0 },
-	{ "get_toplevel", "n", xdg_shell_types + 7 },
-	{ "get_popup", "n?oo", xdg_shell_types + 8 },
-	{ "set_window_geometry", "iiii", xdg_shell_types + 0 },
-	{ "ack_configure", "u", xdg_shell_types + 0 },
+    {"destroy", "", xdg_shell_types + 0},
+    {"get_toplevel", "n", xdg_shell_types + 7},
+    {"get_popup", "n?oo", xdg_shell_types + 8},
+    {"set_window_geometry", "iiii", xdg_shell_types + 0},
+    {"ack_configure", "u", xdg_shell_types + 0},
 };
 
 static const struct wl_message xdg_surface_events[] = {
-	{ "configure", "u", xdg_shell_types + 0 },
+    {"configure", "u", xdg_shell_types + 0},
 };
 
 const struct wl_interface xdg_surface_interface = {
-	"xdg_surface", 6,
-	5, xdg_surface_requests,
-	1, xdg_surface_events,
+    "xdg_surface",
+    6,
+    5,
+    xdg_surface_requests,
+    1,
+    xdg_surface_events,
 };
 
 static const struct wl_message xdg_toplevel_requests[] = {
-	{ "destroy", "", xdg_shell_types + 0 },
-	{ "set_parent", "?o", xdg_shell_types + 11 },
-	{ "set_title", "s", xdg_shell_types + 0 },
-	{ "set_app_id", "s", xdg_shell_types + 0 },
-	{ "show_window_menu", "ouii", xdg_shell_types + 12 },
-	{ "move", "ou", xdg_shell_types + 16 },
-	{ "resize", "ouu", xdg_shell_types + 18 },
-	{ "set_max_size", "ii", xdg_shell_types + 0 },
-	{ "set_min_size", "ii", xdg_shell_types + 0 },
-	{ "set_maximized", "", xdg_shell_types + 0 },
-	{ "unset_maximized", "", xdg_shell_types + 0 },
-	{ "set_fullscreen", "?o", xdg_shell_types + 21 },
-	{ "unset_fullscreen", "", xdg_shell_types + 0 },
-	{ "set_minimized", "", xdg_shell_types + 0 },
+    {"destroy", "", xdg_shell_types + 0},
+    {"set_parent", "?o", xdg_shell_types + 11},
+    {"set_title", "s", xdg_shell_types + 0},
+    {"set_app_id", "s", xdg_shell_types + 0},
+    {"show_window_menu", "ouii", xdg_shell_types + 12},
+    {"move", "ou", xdg_shell_types + 16},
+    {"resize", "ouu", xdg_shell_types + 18},
+    {"set_max_size", "ii", xdg_shell_types + 0},
+    {"set_min_size", "ii", xdg_shell_types + 0},
+    {"set_maximized", "", xdg_shell_types + 0},
+    {"unset_maximized", "", xdg_shell_types + 0},
+    {"set_fullscreen", "?o", xdg_shell_types + 21},
+    {"unset_fullscreen", "", xdg_shell_types + 0},
+    {"set_minimized", "", xdg_shell_types + 0},
 };
 
 static const struct wl_message xdg_toplevel_events[] = {
-	{ "configure", "iia", xdg_shell_types + 0 },
-	{ "close", "", xdg_shell_types + 0 },
-	{ "configure_bounds", "4ii", xdg_shell_types + 0 },
-	{ "wm_capabilities", "5a", xdg_shell_types + 0 },
+    {"configure", "iia", xdg_shell_types + 0},
+    {"close", "", xdg_shell_types + 0},
+    {"configure_bounds", "4ii", xdg_shell_types + 0},
+    {"wm_capabilities", "5a", xdg_shell_types + 0},
 };
 
 const struct wl_interface xdg_toplevel_interface = {
-	"xdg_toplevel", 6,
-	14, xdg_toplevel_requests,
-	4, xdg_toplevel_events,
+    "xdg_toplevel",
+    6,
+    14,
+    xdg_toplevel_requests,
+    4,
+    xdg_toplevel_events,
 };
 
 static const struct wl_message xdg_popup_requests[] = {
-	{ "destroy", "", xdg_shell_types + 0 },
-	{ "grab", "ou", xdg_shell_types + 22 },
-	{ "reposition", "3ou", xdg_shell_types + 24 },
+    {"destroy", "", xdg_shell_types + 0},
+    {"grab", "ou", xdg_shell_types + 22},
+    {"reposition", "3ou", xdg_shell_types + 24},
 };
 
 static const struct wl_message xdg_popup_events[] = {
-	{ "configure", "iiii", xdg_shell_types + 0 },
-	{ "popup_done", "", xdg_shell_types + 0 },
-	{ "repositioned", "3u", xdg_shell_types + 0 },
+    {"configure", "iiii", xdg_shell_types + 0},
+    {"popup_done", "", xdg_shell_types + 0},
+    {"repositioned", "3u", xdg_shell_types + 0},
 };
 
 const struct wl_interface xdg_popup_interface = {
-	"xdg_popup", 6,
-	3, xdg_popup_requests,
-	3, xdg_popup_events,
+    "xdg_popup",
+    6,
+    3,
+    xdg_popup_requests,
+    3,
+    xdg_popup_events,
 };
 
 static void setupXdgShellProtocol()
 {
-	xdg_shell_types[0] = NULL;
-	xdg_shell_types[1] = NULL;
-	xdg_shell_types[2] = NULL;
-	xdg_shell_types[3] = NULL;
-	xdg_shell_types[4] = &xdg_positioner_interface;
-	xdg_shell_types[5] = &xdg_surface_interface;
-	xdg_shell_types[6] = s_Wl.surfaceInterface;
-	xdg_shell_types[7] = &xdg_toplevel_interface;
-	xdg_shell_types[8] = &xdg_popup_interface;
-	xdg_shell_types[9] = &xdg_surface_interface;
-	xdg_shell_types[10] = &xdg_positioner_interface;
-	xdg_shell_types[11] = &xdg_toplevel_interface;
-	xdg_shell_types[12] = s_Wl.seatInterface;
-	xdg_shell_types[13] = NULL;
-	xdg_shell_types[14] = NULL;
-	xdg_shell_types[15] = NULL;
-	xdg_shell_types[16] = s_Wl.seatInterface;
-	xdg_shell_types[17] = NULL;
-	xdg_shell_types[18] = s_Wl.seatInterface;
-	xdg_shell_types[19] = NULL;
-	xdg_shell_types[20] = NULL;
-	xdg_shell_types[21] = s_Wl.outputInterface;
-	xdg_shell_types[22] = s_Wl.seatInterface;
-	xdg_shell_types[23] = NULL;
-	xdg_shell_types[24] = &xdg_positioner_interface;
-	xdg_shell_types[25] = NULL;
+    xdg_shell_types[0] = NULL;
+    xdg_shell_types[1] = NULL;
+    xdg_shell_types[2] = NULL;
+    xdg_shell_types[3] = NULL;
+    xdg_shell_types[4] = &xdg_positioner_interface;
+    xdg_shell_types[5] = &xdg_surface_interface;
+    xdg_shell_types[6] = s_Wl.surfaceInterface;
+    xdg_shell_types[7] = &xdg_toplevel_interface;
+    xdg_shell_types[8] = &xdg_popup_interface;
+    xdg_shell_types[9] = &xdg_surface_interface;
+    xdg_shell_types[10] = &xdg_positioner_interface;
+    xdg_shell_types[11] = &xdg_toplevel_interface;
+    xdg_shell_types[12] = s_Wl.seatInterface;
+    xdg_shell_types[13] = NULL;
+    xdg_shell_types[14] = NULL;
+    xdg_shell_types[15] = NULL;
+    xdg_shell_types[16] = s_Wl.seatInterface;
+    xdg_shell_types[17] = NULL;
+    xdg_shell_types[18] = s_Wl.seatInterface;
+    xdg_shell_types[19] = NULL;
+    xdg_shell_types[20] = NULL;
+    xdg_shell_types[21] = s_Wl.outputInterface;
+    xdg_shell_types[22] = s_Wl.seatInterface;
+    xdg_shell_types[23] = NULL;
+    xdg_shell_types[24] = &xdg_positioner_interface;
+    xdg_shell_types[25] = NULL;
 }
 
 static const struct xdg_wm_base_listener wmBaseListener = {
-    .ping = wmBaseHandlePing
-};
+    .ping = wmBaseHandlePing};
 
 static const struct xdg_surface_listener xdgSurfaceListener = {
-    .configure = xdgSurfaceHandleConfigure
-};
+    .configure = xdgSurfaceHandleConfigure};
 
 static const struct xdg_toplevel_listener xdgToplevelListener = {
     .configure = xdgToplevelHandleConfigure,
     .close = xdgToplevelHandleClose,
     .configure_bounds = nullptr,
-    .wm_capabilities = nullptr
-};
+    .wm_capabilities = nullptr};
 
 #endif // PAL_HAS_WAYLAND
 #pragma endregion
@@ -2464,7 +2465,7 @@ struct zxdg_decoration_manager_v1;
 struct zxdg_toplevel_decoration_v1;
 
 struct zxdg_toplevel_decoration_v1_listener {
-	void (*configure)(
+    void (*configure)(
         void*,
         struct zxdg_toplevel_decoration_v1*,
         uint32_t);
@@ -2474,105 +2475,108 @@ const struct wl_interface zxdg_decoration_manager_v1_interface;
 const struct wl_interface zxdg_toplevel_decoration_v1_interface;
 
 static inline void zxdgDecorationManagerV1Destroy(
-    struct zxdg_decoration_manager_v1 *zxdg_decoration_manager_v1)
+    struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) zxdg_decoration_manager_v1,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)zxdg_decoration_manager_v1,
         0, // ZXDG_DECORATION_MANAGER_V1_DESTROY
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) zxdg_decoration_manager_v1), 
-            WL_MARSHAL_FLAG_DESTROY);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct zxdg_toplevel_decoration_v1* zxdgGetTopleveDecoration(
-    struct zxdg_decoration_manager_v1 *zxdg_decoration_manager_v1, 
-    struct xdg_toplevel *toplevel)
+    struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1,
+    struct xdg_toplevel* toplevel)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) zxdg_decoration_manager_v1,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)zxdg_decoration_manager_v1,
         1, // ZXDG_DECORATION_MANAGER_V1_GET_TOPLEVEL_DECORATION,
         &zxdg_toplevel_decoration_v1_interface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) zxdg_decoration_manager_v1),
-            0, 
-            NULL, 
-            toplevel);
+        s_Wl.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
+        0,
+        NULL,
+        toplevel);
 
-	return (struct zxdg_toplevel_decoration_v1 *) id;
+    return (struct zxdg_toplevel_decoration_v1*)id;
 }
 
 static inline int zxdgToplevelDecorationV1AddListener(
-    struct zxdg_toplevel_decoration_v1 *zxdg_toplevel_decoration_v1,
-    const struct zxdg_toplevel_decoration_v1_listener *listener, 
-    void *data)
+    struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1,
+    const struct zxdg_toplevel_decoration_v1_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) zxdg_toplevel_decoration_v1,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener(
+        (struct wl_proxy*)zxdg_toplevel_decoration_v1,
+        (void (**)(void))listener,
+        data);
 }
 
 static inline void zxdgToplevelDecorationV1Destroy(
-    struct zxdg_toplevel_decoration_v1 *zxdg_toplevel_decoration_v1)
+    struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) zxdg_toplevel_decoration_v1,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)zxdg_toplevel_decoration_v1,
         0, // ZXDG_TOPLEVEL_DECORATION_V1_DESTROY
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) zxdg_toplevel_decoration_v1), 
-            WL_MARSHAL_FLAG_DESTROY);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void zxdgToplevelDecorationV1SetMode(
-    struct zxdg_toplevel_decoration_v1 *zxdg_toplevel_decoration_v1, 
+    struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1,
     uint32_t mode)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) zxdg_toplevel_decoration_v1,
-        1, // ZXDG_TOPLEVEL_DECORATION_V1_SET_MODE, 
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) zxdg_toplevel_decoration_v1), 
-            0, 
-            mode);
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)zxdg_toplevel_decoration_v1,
+        1, // ZXDG_TOPLEVEL_DECORATION_V1_SET_MODE,
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
+        0,
+        mode);
 }
 
-static const struct wl_interface *xdg_decoration_unstable_v1_types[] = {
-	NULL,
-	&zxdg_toplevel_decoration_v1_interface,
-	&xdg_toplevel_interface,
+static const struct wl_interface* xdg_decoration_unstable_v1_types[] = {
+    NULL,
+    &zxdg_toplevel_decoration_v1_interface,
+    &xdg_toplevel_interface,
 };
 
 static const struct wl_message zxdg_decoration_manager_v1_requests[] = {
-	{ "destroy", "", xdg_decoration_unstable_v1_types + 0 },
-	{ "get_toplevel_decoration", "no", xdg_decoration_unstable_v1_types + 1 },
+    {"destroy", "", xdg_decoration_unstable_v1_types + 0},
+    {"get_toplevel_decoration", "no", xdg_decoration_unstable_v1_types + 1},
 };
 
 const struct wl_interface zxdg_decoration_manager_v1_interface = {
-	"zxdg_decoration_manager_v1", 1,
-	2, zxdg_decoration_manager_v1_requests,
-	0, NULL,
+    "zxdg_decoration_manager_v1",
+    1,
+    2,
+    zxdg_decoration_manager_v1_requests,
+    0,
+    NULL,
 };
 
 static const struct wl_message zxdg_toplevel_decoration_v1_requests[] = {
-	{ "destroy", "", xdg_decoration_unstable_v1_types + 0 },
-	{ "set_mode", "u", xdg_decoration_unstable_v1_types + 0 },
-	{ "unset_mode", "", xdg_decoration_unstable_v1_types + 0 },
+    {"destroy", "", xdg_decoration_unstable_v1_types + 0},
+    {"set_mode", "u", xdg_decoration_unstable_v1_types + 0},
+    {"unset_mode", "", xdg_decoration_unstable_v1_types + 0},
 };
 
 static const struct wl_message zxdg_toplevel_decoration_v1_events[] = {
-	{ "configure", "u", xdg_decoration_unstable_v1_types + 0 },
+    {"configure", "u", xdg_decoration_unstable_v1_types + 0},
 };
 
 const struct wl_interface zxdg_toplevel_decoration_v1_interface = {
-	"zxdg_toplevel_decoration_v1", 1,
-	3, zxdg_toplevel_decoration_v1_requests,
-	1, zxdg_toplevel_decoration_v1_events,
+    "zxdg_toplevel_decoration_v1",
+    1,
+    3,
+    zxdg_toplevel_decoration_v1_requests,
+    1,
+    zxdg_toplevel_decoration_v1_events,
 };
 
-#endif //PAL_HAS_WAYLAND
+#endif // PAL_HAS_WAYLAND
 #pragma endregion
 
 #pragma region Zwp-Pointer-Constraints
@@ -2584,86 +2588,95 @@ struct zwp_pointer_constraints_v1;
 const struct wl_interface zwp_confined_pointer_v1_interface;
 
 static inline struct zwp_confined_pointer_v1* zwpPointerConstraintsConfine(
-    struct zwp_pointer_constraints_v1 *zwp_pointer_constraints_v1, 
-    struct wl_surface *surface, 
-    struct wl_pointer *pointer, 
-    struct wl_region *region, 
+    struct zwp_pointer_constraints_v1* zwp_pointer_constraints_v1,
+    struct wl_surface* surface,
+    struct wl_pointer* pointer,
+    struct wl_region* region,
     uint32_t lifetime)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) zwp_pointer_constraints_v1,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)zwp_pointer_constraints_v1,
         2, // ZWP_POINTER_CONSTRAINTS_V1_CONFINE_POINTER
-        &zwp_confined_pointer_v1_interface, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) zwp_pointer_constraints_v1), 
-            0, 
-            NULL, 
-            surface, 
-            pointer, 
-            region, 
-            lifetime);
+        &zwp_confined_pointer_v1_interface,
+        s_Wl.proxyGetVersion((struct wl_proxy*)zwp_pointer_constraints_v1),
+        0,
+        NULL,
+        surface,
+        pointer,
+        region,
+        lifetime);
 
-	return (struct zwp_confined_pointer_v1 *) id;
+    return (struct zwp_confined_pointer_v1*)id;
 }
 
 static inline void zwpConfinedPointerV1Destroy(
-    struct zwp_confined_pointer_v1 *zwp_confined_pointer_v1)
+    struct zwp_confined_pointer_v1* zwp_confined_pointer_v1)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) zwp_confined_pointer_v1,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)zwp_confined_pointer_v1,
         0, // ZWP_CONFINED_POINTER_V1_DESTROY
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) zwp_confined_pointer_v1), 
-            WL_MARSHAL_FLAG_DESTROY);
+        NULL,
+        s_Wl.proxyGetVersion((struct wl_proxy*)zwp_confined_pointer_v1),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
-static const struct wl_interface *pointer_constraints_unstable_v1_types[14];
+static const struct wl_interface* pointer_constraints_unstable_v1_types[14];
 
 static const struct wl_message zwp_pointer_constraints_v1_requests[] = {
-	{ "destroy", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "lock_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 2 },
-	{ "confine_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 7 },
+    {"destroy", "", pointer_constraints_unstable_v1_types + 0},
+    {"lock_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 2},
+    {"confine_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 7},
 };
 
 const struct wl_interface zwp_pointer_constraints_v1_interface = {
-	"zwp_pointer_constraints_v1", 1,
-	3, zwp_pointer_constraints_v1_requests,
-	0, NULL,
+    "zwp_pointer_constraints_v1",
+    1,
+    3,
+    zwp_pointer_constraints_v1_requests,
+    0,
+    NULL,
 };
 
 static const struct wl_message zwp_locked_pointer_v1_requests[] = {
-	{ "destroy", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "set_cursor_position_hint", "ff", pointer_constraints_unstable_v1_types + 0 },
-	{ "set_region", "?o", pointer_constraints_unstable_v1_types + 12 },
+    {"destroy", "", pointer_constraints_unstable_v1_types + 0},
+    {"set_cursor_position_hint",
+     "ff",
+     pointer_constraints_unstable_v1_types + 0},
+    {"set_region", "?o", pointer_constraints_unstable_v1_types + 12},
 };
 
 static const struct wl_message zwp_locked_pointer_v1_events[] = {
-	{ "locked", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "unlocked", "", pointer_constraints_unstable_v1_types + 0 },
+    {"locked", "", pointer_constraints_unstable_v1_types + 0},
+    {"unlocked", "", pointer_constraints_unstable_v1_types + 0},
 };
 
 const struct wl_interface zwp_locked_pointer_v1_interface = {
-	"zwp_locked_pointer_v1", 1,
-	3, zwp_locked_pointer_v1_requests,
-	2, zwp_locked_pointer_v1_events,
+    "zwp_locked_pointer_v1",
+    1,
+    3,
+    zwp_locked_pointer_v1_requests,
+    2,
+    zwp_locked_pointer_v1_events,
 };
 
 static const struct wl_message zwp_confined_pointer_v1_requests[] = {
-	{ "destroy", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "set_region", "?o", pointer_constraints_unstable_v1_types + 13 },
+    {"destroy", "", pointer_constraints_unstable_v1_types + 0},
+    {"set_region", "?o", pointer_constraints_unstable_v1_types + 13},
 };
 
 static const struct wl_message zwp_confined_pointer_v1_events[] = {
-	{ "confined", "", pointer_constraints_unstable_v1_types + 0 },
-	{ "unconfined", "", pointer_constraints_unstable_v1_types + 0 },
+    {"confined", "", pointer_constraints_unstable_v1_types + 0},
+    {"unconfined", "", pointer_constraints_unstable_v1_types + 0},
 };
 
 const struct wl_interface zwp_confined_pointer_v1_interface = {
-	"zwp_confined_pointer_v1", 1,
-	2, zwp_confined_pointer_v1_requests,
-	2, zwp_confined_pointer_v1_events,
+    "zwp_confined_pointer_v1",
+    1,
+    2,
+    zwp_confined_pointer_v1_requests,
+    2,
+    zwp_confined_pointer_v1_events,
 };
 
 static void setupZwpPointerProtocol()
@@ -3275,7 +3288,7 @@ static void xCacheMonitors()
 
             // get DPI
             float raw = crtc->width / 1920.0f;
-            float steps[] = { 1.0f, 1.2f, 1.5f, 1.75, 2.0f };
+            float steps[] = {1.0f, 1.2f, 1.5f, 1.75, 2.0f};
             float closest = steps[0];
             float minDiff = fabsf(raw - steps[0]);
 
@@ -4428,7 +4441,7 @@ static PalResult xGetMonitorInfo(
 
     // get dpi
     float raw = crtc->width / 1920.0f;
-    float steps[] = { 1.0f, 1.2f, 1.5f, 1.75, 2.0f };
+    float steps[] = {1.0f, 1.2f, 1.5f, 1.75, 2.0f};
     float closest = steps[0];
     float minDiff = fabsf(raw - steps[0]);
 
@@ -4756,11 +4769,14 @@ static PalResult xCreateWindow(
         bgPixel = 0;
         borderPixel = 0;
 
+        // clang-format off
+        
         colormap = s_X11.createColormap(
-            s_X11.display,
-            s_X11.root,
-            visual,
+            s_X11.display, 
+            s_X11.root, 
+            visual, 
             AllocNone);
+        // clang-format on
 
         if (!colormap) {
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -4817,7 +4833,7 @@ static PalResult xCreateWindow(
                 FROM_PAL_HANDLE(RROutput, monitor));
 
             // check if its a monitor
-            if (outputInfo->connection != RR_Connected || 
+            if (outputInfo->connection != RR_Connected ||
                 outputInfo->crtc == None) {
                 s_X11.freeOutputInfo(outputInfo);
                 continue;
@@ -4837,7 +4853,7 @@ static PalResult xCreateWindow(
 
             // get DPI
             float raw = crtc->width / 1920.0f;
-            float steps[] = { 1.0f, 1.2f, 1.5f, 1.75, 2.0f };
+            float steps[] = {1.0f, 1.2f, 1.5f, 1.75, 2.0f};
             float closest = steps[0];
             float minDiff = fabsf(raw - steps[0]);
 
@@ -5094,19 +5110,16 @@ static PalResult xCreateWindow(
         s_X11.iconifyWindow(s_X11.display, window, s_X11.screen);
     }
 
-    s_X11.setWMProtocols(
-        s_X11.display, 
-        window, 
-        &s_X11Atoms.WM_DELETE_WINDOW, 
-        1);
+    s_X11
+        .setWMProtocols(s_X11.display, window, &s_X11Atoms.WM_DELETE_WINDOW, 1);
 
     s_X11.flush(s_X11.display);
 
     // attach the window data to the window
     data->skipConfigure = true;
     data->skipState = true;
-    data->isAttached = false;    // true for attached windows
-    data->dpi = dpi; // the current window monitor
+    data->isAttached = false; // true for attached windows
+    data->dpi = dpi;          // the current window monitor
     data->window = TO_PAL_HANDLE(PalWindow, window);
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
@@ -5146,7 +5159,7 @@ static void xDestroyWindow(PalWindow* window)
     if (data->colormap != None) {
         s_X11.freeColormap(s_X11.display, data->colormap);
     }
-    
+
     data->used = false;
 }
 
@@ -6083,7 +6096,7 @@ PalResult eglWlBackend(const int index)
 
     s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
     s_Wl.eglFBConfig = eglConfigs[index];
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6136,7 +6149,7 @@ static void wlCreateKeycodeTable()
     s_Keyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-static int createShmFile(Uint64 size) 
+static int createShmFile(Uint64 size)
 {
     char template[] = "/tmp/pal-shm-XXXXXX";
     int fd = mkstemp(template);
@@ -6156,7 +6169,7 @@ static struct wl_buffer* createShmBuffer(
     int width,
     int height,
     const Uint8* pixels,
-    bool cursor) 
+    bool cursor)
 {
     int stride = width * 4;
     Uint64 size = stride * height;
@@ -6203,13 +6216,7 @@ static struct wl_buffer* createShmBuffer(
         return nullptr;
     }
 
-    buffer = wlShmPoolCreateBuffer(
-        pool, 
-        0, 
-        width,
-        height,
-        stride,
-        format);
+    buffer = wlShmPoolCreateBuffer(pool, 0, width, height, stride, format);
 
     if (!buffer) {
         return nullptr;
@@ -6222,7 +6229,7 @@ static struct wl_buffer* createShmBuffer(
 }
 
 static void globalHandle(
-    void* data, 
+    void* data,
     struct wl_registry* registry,
     uint32_t name,
     const char* interface,
@@ -6257,41 +6264,27 @@ static void globalHandle(
     }
 
     if (strcmp(interface, "wl_compositor") == 0) {
-        s_Wl.compositor = wlRegistryBind(
-            registry, 
-            name, 
-            s_Wl.compositorInterface, 
-            4);
+        s_Wl.compositor =
+            wlRegistryBind(registry, name, s_Wl.compositorInterface, 4);
 
     } else if (strcmp(interface, "xdg_wm_base") == 0) {
-        s_Wl.xdgBase = wlRegistryBind(
-            registry, 
-            name, 
-            &xdg_wm_base_interface,
-            1);
+        s_Wl.xdgBase =
+            wlRegistryBind(registry, name, &xdg_wm_base_interface, 1);
 
         xdgWmBaseAddListener(s_Wl.xdgBase, &wmBaseListener, nullptr);
 
     } else if (strcmp(interface, "wl_shm") == 0) {
-        s_Wl.shm = wlRegistryBind(
-            registry, 
-            name, 
-            s_Wl.shmInterface,
-            1);
+        s_Wl.shm = wlRegistryBind(registry, name, s_Wl.shmInterface, 1);
 
     } else if (strcmp(interface, "wl_seat") == 0) {
-        s_Wl.seat = wlRegistryBind(
-            registry, 
-            name, 
-            s_Wl.seatInterface,
-            5);
+        s_Wl.seat = wlRegistryBind(registry, name, s_Wl.seatInterface, 5);
 
-        wlSeatAddListener(s_Wl.seat , &seatListener, nullptr);
+        wlSeatAddListener(s_Wl.seat, &seatListener, nullptr);
 
     } else if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
         s_Wl.decorationManager = wlRegistryBind(
-            registry, 
-            name, 
+            registry,
+            name,
             &zxdg_decoration_manager_v1_interface,
             1);
 
@@ -6299,21 +6292,20 @@ static void globalHandle(
 
     } else if (strcmp(interface, "zwp_pointer_constraints_v1") == 0) {
         s_Wl.pointerConstraints = wlRegistryBind(
-            registry, 
-            name, 
+            registry,
+            name,
             &zwp_pointer_constraints_v1_interface,
             1);
 
-
     } else if (strcmp(interface, "wl_output") == 0) {
         // wayland does not let use query monitors directly
-        // so we enumerate and store at init and update the 
+        // so we enumerate and store at init and update the
         // cache when a monitor is added or removed
         MonitorData* monitorData = getFreeMonitorData();
         if (!monitorData) {
             return;
         }
-        
+
         PalMonitor* m = TO_PAL_HANDLE(PalMonitor, name);
         monitorData->monitor = m;
         s_Wl.monitorCount++;
@@ -6321,7 +6313,7 @@ static void globalHandle(
 }
 
 static void globalRemove(
-    void* data, 
+    void* data,
     struct wl_registry* registry,
     uint32_t name)
 {
@@ -6334,9 +6326,9 @@ static void globalRemove(
 }
 
 static void wlOutputGeometry(
-    void* data, 
-    struct wl_output* output, 
-    int32_t x, 
+    void* data,
+    struct wl_output* output,
+    int32_t x,
     int32_t y,
     int32_t, // we dont need physical size
     int32_t, // we dont need physical size
@@ -6383,9 +6375,9 @@ static void wlOutputGeometry(
 }
 
 static void wlOutputMode(
-    void* data, 
-    struct wl_output* output, 
-    uint32_t flags, 
+    void* data,
+    struct wl_output* output,
+    uint32_t flags,
     int32_t width,
     int32_t height,
     int32_t refresh)
@@ -6399,9 +6391,9 @@ static void wlOutputMode(
 }
 
 static void wlOutputMonitorModes(
-    void* data, 
-    struct wl_output* output, 
-    uint32_t flags, 
+    void* data,
+    struct wl_output* output,
+    uint32_t flags,
     int32_t width,
     int32_t height,
     int32_t refresh)
@@ -6420,8 +6412,8 @@ static void wlOutputMonitorModes(
 }
 
 static void wlOutputScale(
-    void* data, 
-    struct wl_output* output, 
+    void* data,
+    struct wl_output* output,
     int32_t scale)
 {
     if (s_Wl.modesPhase) {
@@ -6434,37 +6426,32 @@ static void wlOutputScale(
 }
 
 static void wlOutputDone(
-    void* data, 
+    void* data,
     struct wl_output* output)
 {
-   
 }
 
 static const struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
-    .global_remove = globalRemove
-};
+    .global_remove = globalRemove};
 
 static const struct wl_output_listener s_OutputListener = {
     .geometry = wlOutputGeometry,
     .mode = wlOutputMode,
     .done = wlOutputDone,
-    .scale = wlOutputScale
-};
+    .scale = wlOutputScale};
 
 static const struct wl_output_listener s_ModesListener = {
     .geometry = wlOutputGeometry,
     .mode = wlOutputMonitorModes,
     .done = wlOutputDone,
-    .scale = wlOutputScale
-};
+    .scale = wlOutputScale};
 
 static const struct wl_output_listener s_DefaultModeListener = {
     .geometry = wlOutputGeometry,
     .mode = wlOutputMode,
     .done = wlOutputDone,
-    .scale = wlOutputScale
-};
+    .scale = wlOutputScale};
 
 PalResult wlInitVideo()
 {
@@ -6695,7 +6682,7 @@ void wlShutdownVideo()
 
 void wlUpdateVideo()
 {
-    // flush pending requests 
+    // flush pending requests
     s_Mouse.tmpScrollX = 0;
     s_Mouse.tmpScrollY = 0;
 
@@ -6729,7 +6716,7 @@ void wlUpdateVideo()
     }
 
     int fd = s_Wl.displayGetFd(s_Wl.display);
-    struct pollfd pfd = { fd, POLLIN, 0 };
+    struct pollfd pfd = {fd, POLLIN, 0};
     if (poll(&pfd, 1, 0) > 0) {
         // there are events ready to be read
         s_Wl.readEvents(s_Wl.display);
@@ -6777,11 +6764,8 @@ PalResult wlGetMonitorInfo(
 {
     uint32_t name = FROM_PAL_HANDLE(uint32_t, monitor);
     // bind the monitor and get its information
-    struct wl_output* output = wlRegistryBind(
-        s_Wl.registry, 
-        name, 
-        s_Wl.outputInterface, 
-        3);
+    struct wl_output* output =
+        wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
 
     if (!output) {
         return PAL_RESULT_INVALID_MONITOR;
@@ -6810,11 +6794,8 @@ PalResult wlEnumerateMonitorModes(
 {
     uint32_t name = FROM_PAL_HANDLE(uint32_t, monitor);
     // bind the monitor and get its information
-    struct wl_output* output = wlRegistryBind(
-        s_Wl.registry, 
-        name, 
-        s_Wl.outputInterface, 
-        3);
+    struct wl_output* output =
+        wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
 
     if (!output) {
         return PAL_RESULT_INVALID_MONITOR;
@@ -6844,17 +6825,14 @@ PalResult wlGetCurrentMonitorMode(
 {
     uint32_t name = FROM_PAL_HANDLE(uint32_t, monitor);
     // bind the monitor and get its information
-    struct wl_output* output = wlRegistryBind(
-        s_Wl.registry, 
-        name, 
-        s_Wl.outputInterface, 
-        3);
+    struct wl_output* output =
+        wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
 
     if (!output) {
         return PAL_RESULT_INVALID_MONITOR;
     }
 
-    // we dont want to add another listener just to get the 
+    // we dont want to add another listener just to get the
     // default monitor display mode
     PalMonitorInfo tmpInfo;
     s_Wl.modesPhase = true;
@@ -6933,9 +6911,7 @@ PalResult wlCreateWindow(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    xdgSurface = xdgWmBaseGetXdgSurface(
-        s_Wl.xdgBase, 
-        surface);
+    xdgSurface = xdgWmBaseGetXdgSurface(s_Wl.xdgBase, surface);
 
     if (!xdgSurface) {
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -6995,14 +6971,13 @@ PalResult wlCreateWindow(
     // decorated window
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         struct zxdg_toplevel_decoration_v1* decoration = nullptr;
-        decoration = zxdgGetTopleveDecoration(
-            s_Wl.decorationManager, 
-            xdgToplevel);
-        
+        decoration =
+            zxdgGetTopleveDecoration(s_Wl.decorationManager, xdgToplevel);
+
         zxdgToplevelDecorationV1SetMode(
-            decoration, 
+            decoration,
             2); // SERVER_SIDE_DECORATION
-        
+
         data->decoration = decoration;
     }
 
@@ -7033,7 +7008,7 @@ PalResult wlCreateWindow(
         wlRegionDestroy(region);
         wlSurfaceCommit(surface);
     }
-    
+
     s_Wl.displayRoundtrip(s_Wl.display);
     *outWindow = data->window;
     return PAL_RESULT_SUCCESS;
@@ -7284,11 +7259,8 @@ PalResult wlCreateCursor(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    cursor->buffer = createShmBuffer(
-        info->width, 
-        info->height, 
-        info->pixels, 
-        true);
+    cursor->buffer =
+        createShmBuffer(info->width, info->height, info->pixels, true);
 
     if (!cursor->buffer) {
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -7340,7 +7312,7 @@ PalResult wlCreateCursorFrom(
     if (!wlCursor) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
-    
+
     WaylandCursor* cursor = nullptr;
     cursor = palAllocate(s_Video.allocator, sizeof(WaylandCursor), 0);
     if (!cursor) {
@@ -7543,12 +7515,12 @@ PalResult PAL_CALL palInitVideo(
 
     } else {
 #if PAL_HAS_WAYLAND
-    PalResult ret = wlInitVideo();
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-    s_Video.backend = &s_wlBackend;
-    
+        PalResult ret = wlInitVideo();
+        if (ret != PAL_RESULT_SUCCESS) {
+            return ret;
+        }
+        s_Video.backend = &s_wlBackend;
+
 #endif // PAL_HAS_WAYLAND
     }
 
@@ -7589,7 +7561,7 @@ void PAL_CALL palShutdownVideo()
         if (s_Egl.handle) {
             dlclose(s_Egl.handle);
         }
-        
+
         s_Video.platformInstance = nullptr;
         memset(&s_Keyboard, 0, sizeof(Keyboard));
         memset(&s_Mouse, 0, sizeof(Mouse));
@@ -7640,7 +7612,7 @@ PalResult PAL_CALL palSetFBConfig(
         return glxBackend();
 
     } else if (
-        backend == PAL_CONFIG_BACKEND_EGL  ||
+        backend == PAL_CONFIG_BACKEND_EGL ||
         backend == PAL_CONFIG_BACKEND_GLES ||
         backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         if (s_X11.display) {

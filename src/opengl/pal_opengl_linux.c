@@ -203,8 +203,13 @@ typedef EGLSurface (*eglCreateWindowSurfaceFn)(
     const EGLint*);
 
 typedef const GLubyte* (*glGetStringFn)(GLenum);
-typedef void(PAL_GL_APIENTRY* glClearColorFn)(float, float, float, float);
-typedef void(PAL_GL_APIENTRY* glClearFn)(Uint32);    
+typedef void(PAL_GL_APIENTRY* glClearFn)(Uint32);
+
+typedef void(PAL_GL_APIENTRY* glClearColorFn)(
+    float,
+    float,
+    float,
+    float);
 
 typedef struct {
     bool used;
@@ -681,7 +686,7 @@ void PAL_CALL palShutdownGL()
     if (s_GL.display) {
         s_GL.eglTerminate(s_GL.display);
     }
-    
+
     dlclose(s_GL.handle);
     s_GL.initialized = false;
 }
@@ -762,7 +767,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
         if (s_GL.apiType == EGL_OPENGL_ES3_BIT) {
             // EGL_OPENGL_ES2_BIT
-            if (!(renderable & EGL_OPENGL_ES2_BIT) && 
+            if (!(renderable & EGL_OPENGL_ES2_BIT) &&
                 !(renderable & EGL_OPENGL_ES3_BIT)) {
                 continue;
             }
@@ -1039,7 +1044,7 @@ PalResult PAL_CALL palCreateGLContext(
 
         attribs[index++] = EGL_CONTEXT_MINOR_VERSION_KHR;
         attribs[index++] = info->minor;
-    
+
         // set profile mask
         if (info->profile != PAL_GL_PROFILE_NONE) {
             attribs[index++] = EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR;
@@ -1182,9 +1187,9 @@ void PAL_CALL palDestroyGLContext(PalGLContext* context)
         if (data) {
             // make it not current if it was current
             s_GL.eglMakeCurrent(
-                s_GL.display, 
-                EGL_NO_SURFACE, 
-                EGL_NO_SURFACE, 
+                s_GL.display,
+                EGL_NO_SURFACE,
+                EGL_NO_SURFACE,
                 EGL_NO_CONTEXT);
 
             s_GL.eglDestroyContext(s_GL.display, (EGLContext)context);
@@ -1305,7 +1310,7 @@ void PAL_CALL palGLSetInstance(void* instance)
     s_GL.platformDisplay = instance;
 }
 
-const char* PAL_CALL palGLGetBackend() 
+const char* PAL_CALL palGLGetBackend()
 {
     if (!s_GL.initialized) {
         return nullptr;
