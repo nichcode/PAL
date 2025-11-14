@@ -34,8 +34,10 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 // X11 headers
+#if PAL_HAS_X11
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xcursor/Xcursor.h>
@@ -44,6 +46,7 @@ freely, subject to the following restrictions:
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/extensions/Xrandr.h>
+#endif // PAL_HAS_X11
 
 // Wayland headers
 #if PAL_HAS_WAYLAND
@@ -69,6 +72,8 @@ freely, subject to the following restrictions:
 
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
+
+#pragma region EGL Typedefs
 
 typedef void* EGLConfig;
 typedef void* EGLSurface;
@@ -124,6 +129,8 @@ typedef EGLBoolean (*eglGetConfigsFn)(
     EGLint,
     EGLint*);
 
+#pragma endregion
+
 typedef struct {
     bool skipConfigure;
     bool skipState;
@@ -139,8 +146,8 @@ typedef struct {
     PalWindow* window;
 
     // X11 only
-    XIC ic;
-    Colormap colormap;
+    void* ic;
+    unsigned long colormap;
 
     // Wayland only
     void* xdgSurface;
@@ -207,6 +214,7 @@ typedef struct {
     // clang-format off
     void (*shutdownVideo)();
     void (*updateVideo)();
+    PalResult (*setFBConfig)(const int, PalFBConfigBackend);
     PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
     PalResult (*getPrimaryMonitor)(PalMonitor**);
     PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
@@ -273,6 +281,7 @@ typedef struct {
     MonitorData* monitorData;
     const char* className;
     void* platformInstance;
+    void* display;
 } VideoLinux;
 
 static VideoLinux s_Video = {0};
@@ -285,8 +294,9 @@ static EGL s_Egl;
 // ==================================================
 
 #pragma region X11 Typedefs
-#define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
+#if PAL_HAS_X11
 
+#define X_INTERN(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
 #define RANDR_SCREEN_CHANGE_EVENT 1040
 
 // optionally, needed to create visual from FBConfig
@@ -824,6 +834,7 @@ typedef struct {
 static X11 s_X11 = {0};
 static X11Atoms s_X11Atoms = {0};
 
+#endif // PAL_HAS_X11
 #pragma endregion
 
 // ==================================================
@@ -2960,8 +2971,9 @@ static void createScancodeTable()
 // ==================================================
 
 #pragma region X11 API
+#if PAL_HAS_X11
 
-static PalResult glxBackend()
+static PalResult glxBackend(const int index)
 {
     // user choose GLX FBConfig backend
     if (!s_X11.glxHandle) {
@@ -2976,7 +2988,7 @@ static PalResult glxBackend()
         s_X11.screen, 
         &count);
 
-    GLXFBConfig fbConfig = configs[s_Video.pixelFormat];
+    GLXFBConfig fbConfig = configs[index];
     if (!fbConfig) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
@@ -3003,12 +3015,7 @@ static PalResult eglXBackend(int index)
 
     EGLDisplay display = EGL_NO_DISPLAY;
     display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
-
     if (display == EGL_NO_DISPLAY) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    if (!s_Egl.eglInitialize(display, nullptr, nullptr)) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -3049,10 +3056,8 @@ static PalResult eglXBackend(int index)
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
-
+    
     s_X11.visualInfo = visualInfo;
-    return PAL_RESULT_SUCCESS;
-
     palFree(s_Video.allocator, eglConfigs);
     return PAL_RESULT_SUCCESS;
 }
@@ -3814,6 +3819,7 @@ static PalResult xInitVideo()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    s_Video.display = (void*)s_X11.display;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3834,6 +3840,22 @@ static void xShutdownVideo()
     }
     memset(&s_X11, 0, sizeof(X11));
     memset(&s_X11Atoms, 0, sizeof(X11Atoms));
+}
+
+PalResult xSetFBConfig(
+    const int index,
+    PalFBConfigBackend backend)
+{
+    if (backend == PAL_CONFIG_BACKEND_GLX) {
+        return glxBackend(index);
+
+    } else if (backend == PAL_CONFIG_BACKEND_EGL || 
+              backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+        return eglXBackend(index);
+
+    } else {
+        return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
+    }
 }
 
 static void xUpdateVideo()
@@ -6010,6 +6032,7 @@ PalResult xDetachWindow(
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
+    .setFBConfig = xSetFBConfig,
     .enumerateMonitors = xEnumerateMonitors,
     .getMonitorInfo = xGetMonitorInfo,
     .getPrimaryMonitor = xGetPrimaryMonitor,
@@ -6060,6 +6083,7 @@ static Backend s_XBackend = {
     .attachWindow = xAttachWindow,
     .detachWindow = xDetachWindow};
 
+#endif // PAL_HAS_X11
 #pragma endregion
 
 // ==================================================
@@ -6632,6 +6656,7 @@ PalResult wlInitVideo()
         s_Video.platformInstance = nullptr;
     }
 
+    s_Video.display = (void*)s_Wl.display;
     s_Wl.registry = wlDisplayGetRegistry(s_Wl.display);
     wlRegistryAddListener(s_Wl.registry, &s_RegistryListener, nullptr);
     s_Wl.displayRoundtrip(s_Wl.display);
@@ -6656,6 +6681,8 @@ PalResult wlInitVideo()
     }
 
     wlCreateKeycodeTable();
+
+    s_Video.display = (void*)s_Wl.display;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6678,6 +6705,19 @@ void wlShutdownVideo()
     dlclose(s_Wl.handle);
 
     memset(&s_Wl, 0, sizeof(Wayland));
+}
+
+PalResult wlSetFBConfig(
+    const int index,
+    PalFBConfigBackend backend)
+{
+    if (backend == PAL_CONFIG_BACKEND_GLES ||
+        backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+        return eglWlBackend(index);
+
+    } else {
+        return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
+    }    
 }
 
 void wlUpdateVideo()
@@ -7410,6 +7450,7 @@ PalResult wlDetachWindow(
 static Backend s_wlBackend = {
     .shutdownVideo = wlShutdownVideo,
     .updateVideo = wlUpdateVideo,
+    .setFBConfig = wlSetFBConfig,
     .enumerateMonitors = wlEnumerateMonitors,
     .getMonitorInfo = wlGetMonitorInfo,
     .getPrimaryMonitor = wlGetPrimaryMonitor,
@@ -7507,11 +7548,15 @@ PalResult PAL_CALL palInitVideo(
 
     s_Video.className = "PAL";
     if (x11) {
+#if PAL_HAS_X11
         PalResult ret = xInitVideo();
         if (ret != PAL_RESULT_SUCCESS) {
             return ret;
         }
         s_Video.backend = &s_XBackend;
+#else 
+    return PAL_RESULT_PLATFORM_FAILURE;
+#endif // PAL_HAS_X11
 
     } else {
 #if PAL_HAS_WAYLAND
@@ -7520,7 +7565,8 @@ PalResult PAL_CALL palInitVideo(
             return ret;
         }
         s_Video.backend = &s_wlBackend;
-
+#else
+    return PAL_RESULT_PLATFORM_FAILURE;
 #endif // PAL_HAS_WAYLAND
     }
 
@@ -7563,6 +7609,7 @@ void PAL_CALL palShutdownVideo()
         }
 
         s_Video.platformInstance = nullptr;
+        s_Video.display = nullptr;
         memset(&s_Keyboard, 0, sizeof(Keyboard));
         memset(&s_Mouse, 0, sizeof(Mouse));
         s_Video.initialized = false;
@@ -7602,25 +7649,12 @@ PalResult PAL_CALL palSetFBConfig(
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    // X11 and wayland can used GLX and EGL
+    // X11 and wayland can only used GLX and EGL
     if (backend == PAL_CONFIG_BACKEND_WGL) {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
 
-    // we try to create a colormap to see if the index is valid
-    if (backend == PAL_CONFIG_BACKEND_GLX) {
-        return glxBackend();
-
-    } else if (
-        backend == PAL_CONFIG_BACKEND_EGL ||
-        backend == PAL_CONFIG_BACKEND_GLES ||
-        backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
-        if (s_X11.display) {
-            return eglXBackend(index);
-        } else {
-            return eglWlBackend(index);
-        }
-    }
+    return s_Video.backend->setFBConfig(index, backend);
 }
 
 PalResult PAL_CALL palEnumerateMonitors(
@@ -8344,14 +8378,7 @@ void* PAL_CALL palGetInstance()
         return nullptr;
     }
 
-    if (s_X11.display) {
-        // we are on X11
-        return (void*)s_X11.display;
-    } else {
-        return (void*)s_Wl.display;
-    }
-
-    return nullptr;
+    return s_Video.display;
 }
 
 PalResult PAL_CALL palAttachWindow(

@@ -25,9 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// wayland is optional and might not be supported
-// so we stick to typedefs
-
 // X11 typedefs
 typedef Atom (*XInternAtomFn)(
     Display*,
@@ -271,16 +268,20 @@ void getWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
 
 void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 {
+#ifdef _WIN32
     const char* title = "Hello from native Win32 API";
     SetWindowTextA((HWND)windowInfo->nativeWindow, title);
+#endif // _WIN32
 }
 
 void getWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 {
+#ifdef _WIN32
     GetWindowTextA(
         (HWND)windowInfo->nativeWindow,
         s_TitleBuffer,
         sizeof(s_TitleBuffer));
+#endif // _WIN32
 }
 
 void setWindowTitle(PalWindowHandleInfoEx* windowInfo)

@@ -86,13 +86,13 @@ project "PAL"
             files { "src/video/pal_video_linux.c" }
 
             -- check for wayland support. This is cross compiler
-            local paths = {
+            local waylandPaths = {
                 "/usr/include/wayland-client.h",
                 "/usr/include/x86_64-linux-gnu/wayland-client.h"
             }
 
             local found = false
-            for _, path in ipairs(paths) do
+            for _, path in ipairs(waylandPaths) do
                 local file = io.open(path, "r")
                 if file then
                     file:close()
@@ -105,6 +105,28 @@ project "PAL"
                 defines { "PAL_HAS_WAYLAND=1" }
             else
                 defines { "PAL_HAS_WAYLAND=0" }
+            end
+
+            -- -- check for X11 support. This is cross compiler
+            local XPaths = {
+                "/usr/include/X11/Xlib.h",
+                "/usr/include/x86_64-linux-gnu/X11/Xlib.h"
+            }
+
+            found = false
+            for _, path in ipairs(XPaths) do
+                local file = io.open(path, "r")
+                if file then
+                    file:close()
+                    found = true
+                    break
+                end
+            end
+
+            if found then
+                defines { "PAL_HAS_X11=1" }
+            else
+                defines { "PAL_HAS_X11=0" }
             end
             
         filter {}
