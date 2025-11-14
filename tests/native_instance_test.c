@@ -29,12 +29,131 @@ static XOpenDisplayFn s_XOpenDisplay;
 static XCloseDisplayFn s_XCloseDisplay;
 
 struct wl_display;
+struct wl_registry;
+struct wl_proxy;
+struct wl_interface;
+
 typedef struct wl_display* (*wl_display_connect_fn)(const char*);
 typedef void (*wl_display_disconnect_fn)(struct wl_display*);
+typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
+typedef int (*wl_display_roundtrip_fn)(struct wl_display*);
+
+typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
+    struct wl_proxy*, 
+    uint32_t, 
+    const struct wl_interface*, 
+    uint32_t, 
+    uint32_t, ...);
+
+typedef int (*wl_proxy_add_listener_fn)(
+    struct wl_proxy*,
+    void (**)(void), void*);
+
+struct wl_interface {
+	const char *name;
+	int version;
+	int method_count;
+	const struct wl_message *methods;
+	int event_count;
+	const struct wl_message *events;
+};
+
+struct wl_registry_listener {
+	void (*global)(void*,
+		       struct wl_registry*,
+		       uint32_t,
+		       const char*,
+		       uint32_t);
+
+	void (*global_remove)(void*, struct wl_registry*, uint32_t);
+};
 
 static void* s_LibWayland;
 static wl_display_connect_fn s_wl_display_connect;
 static wl_display_disconnect_fn s_wl_display_disconnect;
+static wl_display_roundtrip_fn s_wl_display_roundtrip;
+static wl_proxy_get_version_fn s_wl_proxy_get_version;
+static wl_proxy_marshal_flags_fn s_wl_proxy_marshal_flags;
+static wl_proxy_add_listener_fn s_wl_proxy_add_listener;
+
+static const struct wl_interface* registryInterface;
+
+static inline void* wlRegistryBind(
+    struct wl_registry *wl_registry, 
+    uint32_t name, 
+    const struct wl_interface* interface, 
+    uint32_t version)
+{
+	struct wl_proxy *id;
+	id = s_wl_proxy_marshal_flags(
+        (struct wl_proxy *)wl_registry,
+        0, // WL_REGISTRY_BIND
+        interface, 
+        version, 
+        0, 
+        name, 
+        interface->name, 
+        version, 
+        NULL);
+
+	return (void *)id;
+}
+
+static inline int wlRegistryAddListener(
+    struct wl_registry *wl_registry,
+    const struct wl_registry_listener *listener, 
+    void *data)
+{
+	return s_wl_proxy_add_listener(
+        (struct wl_proxy *) wl_registry,
+        (void (**)(void)) listener, data);
+}
+
+static inline struct wl_registry* wlDisplayGetRegistry(
+    struct wl_display *wl_display)
+{
+	struct wl_proxy *registry;
+	registry = s_wl_proxy_marshal_flags(
+        (struct wl_proxy *) wl_display,
+        1, // WL_DISPLAY_GET_REGISTRY
+        registryInterface, 
+        s_wl_proxy_get_version(
+            (struct wl_proxy *) wl_display), 
+            0, 
+            NULL);
+
+	return (struct wl_registry *)registry;
+}
+
+static bool s_Logged = false;
+static void globalHandle(
+    void* data, 
+    struct wl_registry* registry,
+    uint32_t name,
+    const char* interface,
+    uint32_t version)
+{
+    if (!s_Logged) {
+        palLog(nullptr, "Registry global handle working");
+        s_Logged = true;
+    }
+}
+
+static void globalRemove(
+    void* data, 
+    struct wl_registry* registry,
+    uint32_t name)
+{
+    if (s_Logged) {
+        palLog(nullptr, "Registry global remove working");
+        s_Logged = false;
+    }
+}
+
+static const struct wl_registry_listener s_RegistryListener = {
+    .global = globalHandle,
+    .global_remove = globalRemove
+};
 
 static bool s_OnWayland = false;
 
@@ -88,7 +207,32 @@ void* openDisplayWayland()
         s_LibWayland, 
         "wl_display_disconnect");
 
-    return s_wl_display_connect(nullptr);
+    s_wl_display_roundtrip = (wl_display_roundtrip_fn)dlsym(
+        s_LibWayland, 
+        "wl_display_roundtrip");
+
+    s_wl_proxy_marshal_flags = (wl_proxy_marshal_flags_fn)dlsym(
+        s_LibWayland, 
+        "wl_proxy_marshal_flags");
+
+    s_wl_proxy_get_version = (wl_proxy_get_version_fn)dlsym(
+        s_LibWayland, 
+        "wl_proxy_get_version");
+
+    s_wl_proxy_add_listener = (wl_proxy_add_listener_fn)dlsym(
+        s_LibWayland, 
+        "wl_proxy_add_listener");
+
+    registryInterface = dlsym(s_LibWayland, "wl_registry_interface");
+
+    struct wl_display* display = s_wl_display_connect(nullptr);
+    if (display) {
+        struct wl_registry* registry = wlDisplayGetRegistry(display);
+        wlRegistryAddListener(registry, &s_RegistryListener, nullptr);
+        s_wl_display_roundtrip(display);
+    }
+
+    return display;
 #endif // __linux__
 }
 

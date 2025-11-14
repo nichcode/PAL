@@ -88,15 +88,14 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - Added native integration example: demonstrating **Native API Integration with PAL API**. see 
 **native_integration_test.c**.
 
-- Added native instance example: demonstrating 
-**Native Instance or Display Integration with PAL API**. 
+- Added native instance example: demonstrating **Native Instance or Display Integration with PAL API**.
 see **native_instance_test.c**.
 
 ### Notes
 - **No ABI changes** - existing code remains compatible.
 
-- **Old tests may fail** - some tests written against old version need to 
-be updated to follow the new initialization order. 
+- **OpenGL tests may fail** - The opengl system now needs to call **palGLSetInstance()**
+to set the instance or display before initializing. Failure to do this fails.
 This is a runtime behavior change. The tests are updated in the repo.
 
 - **palJoinThread()** - ABI remains unchanged but now takes the address 

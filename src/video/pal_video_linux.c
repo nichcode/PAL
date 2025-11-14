@@ -1207,16 +1207,16 @@ static inline void wlSurfaceAttach(
     int32_t x, 
     int32_t y)
 {
-	s_Wl.proxyMarshalFlags
-    ((struct wl_proxy *) wl_surface,
-    WL_SURFACE_ATTACH, 
-    NULL, 
-    s_Wl.proxyGetVersion(
-        (struct wl_proxy *) wl_surface), 
-        0, 
-        buffer, 
-        x, 
-        y);
+	s_Wl.proxyMarshalFlags(
+        (struct wl_proxy *) wl_surface,
+        WL_SURFACE_ATTACH, 
+        NULL, 
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy *) wl_surface), 
+            0, 
+            buffer, 
+            x, 
+            y);
 }
 
 static inline void wlSurfaceDamageBuffer(
@@ -2176,17 +2176,6 @@ static inline int xdgSurfaceAddListener(
 	return s_Wl.proxyAddListener(
         (struct wl_proxy *) xdg_surface,
         (void (**)(void)) listener, data);
-}
-
-static inline void xdgWmBaseDestroy(struct xdg_wm_base *xdg_wm_base)
-{
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) xdg_wm_base,
-        0, // XDG_WM_BASE_DESTROY
-        NULL, 
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) xdg_wm_base), 
-            WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void xdgSurfaceDestroy(struct xdg_surface *xdg_surface)
@@ -5937,7 +5926,7 @@ PalResult xAttachWindow(
     // we assume the window was just created, since there is
     // no official way to get the DPI
     data->isAttached = true;
-    data->dpi = 100; // if this is not the DPI, a dpi event will be triggered
+    data->dpi = 96; // if this is not the DPI, a dpi event will be triggered
 
     // If the window manager has not mapped the window yet,
     // we dont need the initial Size / Move events
@@ -6690,15 +6679,6 @@ void wlShutdownVideo()
     }
 
     s_Wl.xkbContextUnref(s_Wl.inputContext);
-    if (s_Wl.decorationManager) {
-        zxdgDecorationManagerV1Destroy(s_Wl.decorationManager);
-    }
-
-    s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.shm);
-    xdgWmBaseDestroy(s_Wl.xdgBase);
-    s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.compositor);
-    s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.registry);
-
     if (!s_Video.platformInstance) {
         // opened by PAL
         s_Wl.displayDisconnect(s_Wl.display);
