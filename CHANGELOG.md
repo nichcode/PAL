@@ -100,6 +100,11 @@ see **native_instance_test.c**.
 to set the instance or display before initializing. Failure to do this fails.
 This is a runtime behavior change. The tests are updated in the repo.
 
+- **Pal mouse button event** - The `event.data` now packs both the button and
+wayland seat serial (If on wayland). Existing code that reads as a single value
+without unpacking will see different values.
+This is a runtime behavior change. The **input_window_test.c** has been updated in the repo.
+
 - **palJoinThread()** - ABI remains unchanged but now takes the address 
 of a pointer variable for the return value of the thread.
 PAL internally reinterpreted into a pointer-to-pointer. This is for ABI stability.
