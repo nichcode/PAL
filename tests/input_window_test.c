@@ -330,19 +330,23 @@ static inline void onKeyup(const PalEvent* event)
 
 static inline void onMouseButtondown(const PalEvent* event)
 {
+    Uint32 button, serial; // button == low, serial == high
+    palUnpackUint32(event->data, &button, &serial);
     PalWindow* window = palUnpackPointer(event->data2);
 
     // get mouse button name
-    const char* name = s_MouseButtonNames[event->data];
+    const char* name = s_MouseButtonNames[button];
     palLog(nullptr, "%s: Mouse Button pressed: %s", dispatchString, name);
 }
 
 static inline void onMouseButtonup(const PalEvent* event)
 {
+    Uint32 button, serial; // button == low, serial == high
+    palUnpackUint32(event->data, &button, &serial);
     PalWindow* window = palUnpackPointer(event->data2);
 
     // get mouse button name
-    const char* name = s_MouseButtonNames[event->data];
+    const char* name = s_MouseButtonNames[button];
     palLog(nullptr, "%s: Mouse Button released: %s", dispatchString, name);
 }
 

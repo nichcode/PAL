@@ -274,7 +274,7 @@ typedef enum {
     /**
      * PAL_EVENT_MOUSE_BUTTONDOWN
      *
-     * event.data : mouse button
+     * event.data : lower 32 bits = button, upper 32 bits = serial
      *
      * event.data2 : window
      *
@@ -286,7 +286,7 @@ typedef enum {
     /**
      * PAL_EVENT_MOUSE_BUTTONUP
      *
-     * event.data : mouse button
+     * event.data : lower 32 bits = button, upper 32 bits = serial
      *
      * event.data2 : window
      *
