@@ -137,6 +137,9 @@ typedef struct {
     bool used;
     bool isAttached;
     bool skipIfAttached;
+    bool focused;
+    bool pushConfigureEvent;
+    bool pushStateEvent;
     int x;
     int y;
     Uint32 w;
@@ -1554,7 +1557,11 @@ static void pointerHandleButton(
         if (mode != PAL_DISPATCH_NONE) {
             PalEvent event = {0};
             event.type = type;
-            event.data = _button;
+
+            // since we are not drawing decorations for users
+            // they need the serial in order to draw their decorations
+            // we put the serial at the upper 32 so ABI is preserved
+            event.data = palPackUint32(_button, serial);
             event.data2 = palPackPointer(window);
             palPushEvent(driver, &event);
         }
@@ -2035,9 +2042,10 @@ static inline void xdgSurfaceAckConfigure(
         (struct wl_proxy*)xdg_surface,
         4, // XDG_SURFACE_ACK_CONFIGURE
         NULL,
-        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
-        0,
-        serial);
+        s_Wl.proxyGetVersion(
+            (struct wl_proxy*)xdg_surface),
+            0,
+            serial);
 }
 
 static void wmBaseHandlePing(
@@ -2058,54 +2066,58 @@ static void xdgSurfaceHandleConfigure(
 
     // push and resolve any pending events
     if (!winData->skipConfigure) {
-        winData->skipConfigure = true;
+        if (winData->pushConfigureEvent) {
+            if (winData->eglWindow) {
+                s_Wl.eglWindowResize(
+                    winData->eglWindow,
+                    winData->w,
+                    winData->h,
+                    0,
+                    0);
 
-        if (winData->eglWindow) {
-            s_Wl.eglWindowResize(
-                winData->eglWindow,
-                winData->w,
-                winData->h,
-                0,
-                0);
+            } else {
+                // create a new buffer with the new size
+                struct wl_buffer* buffer = nullptr;
+                buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
+                if (!buffer) {
+                    return;
+                }
 
-        } else {
-            // create a new buffer with the new size
-            struct wl_buffer* buffer = nullptr;
-            buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
-            if (!buffer) {
-                return;
+                struct wl_surface* _surface = nullptr;
+                _surface = (struct wl_surface*)winData->window;
+
+                wlSurfaceAttach(_surface, buffer, 0, 0);
+                wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
+                wlSurfaceCommit(_surface);
+
+                // destroy old buffer
+                wlBufferDestroy(winData->buffer);
+                winData->buffer = buffer;
             }
 
-            struct wl_surface* _surface = nullptr;
-            _surface = (struct wl_surface*)winData->window;
-
-            wlSurfaceAttach(_surface, buffer, 0, 0);
-            wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
-            wlSurfaceCommit(_surface);
-
-            // destroy old buffer
-            wlBufferDestroy(winData->buffer);
-            winData->buffer = buffer;
-        }
-
-        // push a window resize event
-        if (s_Video.eventDriver) {
-            PalEventType type = PAL_EVENT_WINDOW_SIZE;
-            PalDispatchMode mode = PAL_DISPATCH_NONE;
-            mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-            if (mode != PAL_DISPATCH_NONE) {
-                PalEvent event = {0};
-                event.type = type;
-                event.data = palPackUint32(winData->w, winData->h);
-                event.data2 = palPackPointer(winData->window);
-                palPushEvent(s_Video.eventDriver, &event);
+            // push a window resize event
+            if (s_Video.eventDriver) {
+                PalEventType type = PAL_EVENT_WINDOW_SIZE;
+                PalDispatchMode mode = PAL_DISPATCH_NONE;
+                mode = palGetEventDispatchMode(s_Video.eventDriver, type);
+                if (mode != PAL_DISPATCH_NONE) {
+                    PalEvent event = {0};
+                    event.type = type;
+                    event.data = palPackUint32(winData->w, winData->h);
+                    event.data2 = palPackPointer(winData->window);
+                    palPushEvent(s_Video.eventDriver, &event);
+                }
             }
+
+            winData->pushConfigureEvent = false;
         }
     }
 
     // pending state
     if (!winData->skipState) {
-        winData->skipState = true;
+        if (!winData->pushStateEvent) {
+            return;
+        }
 
         // push a window state event
         // we dont recreate buffers over here
@@ -2122,6 +2134,8 @@ static void xdgSurfaceHandleConfigure(
                 palPushEvent(s_Video.eventDriver, &event);
             }
         }
+
+        winData->pushStateEvent = false;
     }
 }
 
@@ -2133,26 +2147,56 @@ static void xdgToplevelHandleConfigure(
     struct wl_array* states)
 {
     WindowData* winData = (WindowData*)data;
-
-    if (!winData->skipState) {
-        uint32_t* state;
-        wl_array_for_each(state, states)
-        {
-            // we need only maximized
-            if (*state == 1) { // XDG_TOPLEVEL_STATE_MAXIMIZED
-                if (winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
-                    winData->state = PAL_WINDOW_STATE_MAXIMIZED;
-                    winData->skipState = false;
-                }
+    uint32_t* state;
+    bool activated = false;
+    wl_array_for_each(state, states) {
+        // we need only maximized
+        if (*state == 1) { // XDG_TOPLEVEL_STATE_MAXIMIZED
+            if (winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
+                winData->state = PAL_WINDOW_STATE_MAXIMIZED;
+                winData->pushStateEvent = true;
             }
+
+        } else if (*state == 4) { // XDG_TOPLEVEL_STATE_ACTIVATED
+            activated = true;
         }
     }
 
-    if (!winData->skipConfigure) {
-        if (width > 0 && height > 0) {
-            winData->w = width;
-            winData->h = height;
-            winData->skipConfigure = false;
+    if (width > 0 && height > 0) {
+        if (width != winData->w || height != winData->h) {
+            // size change
+            winData->pushConfigureEvent = true;
+        }
+
+        winData->w = width;
+        winData->h = height;
+    }
+
+    if (activated && !winData->focused) {
+        // focus gained
+        winData->focused = true;
+
+    } else if (!activated && winData->focused) {
+        // focus lost
+        winData->focused = false;
+
+    } else {
+        // discard double focus gained and double focus lost
+        return;
+    }
+
+    if (s_Video.eventDriver) {
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        PalEventType type = PAL_EVENT_WINDOW_FOCUS;
+        mode = palGetEventDispatchMode(driver, type);
+
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = winData->focused;
+            event.data2 = palPackPointer(winData->window);
+            palPushEvent(driver, &event);
         }
     }
 }
@@ -2162,7 +2206,6 @@ static void xdgToplevelHandleClose(
     struct xdg_toplevel* toplevel)
 {
     WindowData* winData = (WindowData*)data;
-
     if (s_Video.eventDriver) {
         PalEventType type = PAL_EVENT_WINDOW_CLOSE;
         PalDispatchMode mode = PAL_DISPATCH_NONE;
@@ -2496,7 +2539,7 @@ static inline void zxdgDecorationManagerV1Destroy(
         WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline struct zxdg_toplevel_decoration_v1* zxdgGetTopleveDecoration(
+static inline struct zxdg_toplevel_decoration_v1* zxdgGetToplevelDecoration(
     struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1,
     struct xdg_toplevel* toplevel)
 {
@@ -2587,128 +2630,36 @@ const struct wl_interface zxdg_toplevel_decoration_v1_interface = {
     zxdg_toplevel_decoration_v1_events,
 };
 
-#endif // PAL_HAS_WAYLAND
-#pragma endregion
-
-#pragma region Zwp-Pointer-Constraints
-#if PAL_HAS_WAYLAND
-
-struct zwp_confined_pointer_v1;
-struct zwp_pointer_constraints_v1;
-
-const struct wl_interface zwp_confined_pointer_v1_interface;
-
-static inline struct zwp_confined_pointer_v1* zwpPointerConstraintsConfine(
-    struct zwp_pointer_constraints_v1* zwp_pointer_constraints_v1,
-    struct wl_surface* surface,
-    struct wl_pointer* pointer,
-    struct wl_region* region,
-    uint32_t lifetime)
+void zxdgDecorationHandleConfigure(
+    void* data,
+    struct zxdg_toplevel_decoration_v1* dec,
+    uint32_t mode)
 {
-    struct wl_proxy* id;
-    id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy*)zwp_pointer_constraints_v1,
-        2, // ZWP_POINTER_CONSTRAINTS_V1_CONFINE_POINTER
-        &zwp_confined_pointer_v1_interface,
-        s_Wl.proxyGetVersion((struct wl_proxy*)zwp_pointer_constraints_v1),
-        0,
-        NULL,
-        surface,
-        pointer,
-        region,
-        lifetime);
+    if (s_Video.eventDriver) {
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
+        PalEventType type = PAL_EVENT_WINDOW_DECORATION_MODE;
+        dispatchMode = palGetEventDispatchMode(driver, type);
 
-    return (struct zwp_confined_pointer_v1*)id;
+        if (dispatchMode != PAL_DISPATCH_NONE) {
+            PalDecorationMode decorMode = PAL_DECORATION_MODE_SERVER_SIDE;
+            if (mode == 0 || mode == 1) {
+                // client side decoration
+                decorMode = PAL_DECORATION_MODE_CLIENT_SIDE;
+            }
+
+            PalEvent event = {0};
+            event.type = type;
+            event.data = decorMode;
+            event.data2 = palPackPointer(data);
+            palPushEvent(driver, &event);
+        }
+    }
 }
 
-static inline void zwpConfinedPointerV1Destroy(
-    struct zwp_confined_pointer_v1* zwp_confined_pointer_v1)
-{
-    s_Wl.proxyMarshalFlags(
-        (struct wl_proxy*)zwp_confined_pointer_v1,
-        0, // ZWP_CONFINED_POINTER_V1_DESTROY
-        NULL,
-        s_Wl.proxyGetVersion((struct wl_proxy*)zwp_confined_pointer_v1),
-        WL_MARSHAL_FLAG_DESTROY);
-}
-
-static const struct wl_interface* pointer_constraints_unstable_v1_types[14];
-
-static const struct wl_message zwp_pointer_constraints_v1_requests[] = {
-    {"destroy", "", pointer_constraints_unstable_v1_types + 0},
-    {"lock_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 2},
-    {"confine_pointer", "noo?ou", pointer_constraints_unstable_v1_types + 7},
+static struct zxdg_toplevel_decoration_v1_listener decorationListener = {
+    .configure = zxdgDecorationHandleConfigure
 };
-
-const struct wl_interface zwp_pointer_constraints_v1_interface = {
-    "zwp_pointer_constraints_v1",
-    1,
-    3,
-    zwp_pointer_constraints_v1_requests,
-    0,
-    NULL,
-};
-
-static const struct wl_message zwp_locked_pointer_v1_requests[] = {
-    {"destroy", "", pointer_constraints_unstable_v1_types + 0},
-    {"set_cursor_position_hint",
-     "ff",
-     pointer_constraints_unstable_v1_types + 0},
-    {"set_region", "?o", pointer_constraints_unstable_v1_types + 12},
-};
-
-static const struct wl_message zwp_locked_pointer_v1_events[] = {
-    {"locked", "", pointer_constraints_unstable_v1_types + 0},
-    {"unlocked", "", pointer_constraints_unstable_v1_types + 0},
-};
-
-const struct wl_interface zwp_locked_pointer_v1_interface = {
-    "zwp_locked_pointer_v1",
-    1,
-    3,
-    zwp_locked_pointer_v1_requests,
-    2,
-    zwp_locked_pointer_v1_events,
-};
-
-static const struct wl_message zwp_confined_pointer_v1_requests[] = {
-    {"destroy", "", pointer_constraints_unstable_v1_types + 0},
-    {"set_region", "?o", pointer_constraints_unstable_v1_types + 13},
-};
-
-static const struct wl_message zwp_confined_pointer_v1_events[] = {
-    {"confined", "", pointer_constraints_unstable_v1_types + 0},
-    {"unconfined", "", pointer_constraints_unstable_v1_types + 0},
-};
-
-const struct wl_interface zwp_confined_pointer_v1_interface = {
-    "zwp_confined_pointer_v1",
-    1,
-    2,
-    zwp_confined_pointer_v1_requests,
-    2,
-    zwp_confined_pointer_v1_events,
-};
-
-static void setupZwpPointerProtocol()
-{
-    // clang-format off
-	pointer_constraints_unstable_v1_types[0] = NULL;
-	pointer_constraints_unstable_v1_types[1] = NULL;
-	pointer_constraints_unstable_v1_types[2] = &zwp_locked_pointer_v1_interface;
-	pointer_constraints_unstable_v1_types[3] = s_Wl.surfaceInterface;
-	pointer_constraints_unstable_v1_types[4] = s_Wl.pointerInterface;
-	pointer_constraints_unstable_v1_types[5] = s_Wl.regionInterface;
-	pointer_constraints_unstable_v1_types[6] = NULL;
-	pointer_constraints_unstable_v1_types[7] = &zwp_confined_pointer_v1_interface;
-	pointer_constraints_unstable_v1_types[8] = s_Wl.surfaceInterface;
-	pointer_constraints_unstable_v1_types[9] = s_Wl.pointerInterface;
-	pointer_constraints_unstable_v1_types[10] = s_Wl.regionInterface;
-	pointer_constraints_unstable_v1_types[11] = NULL;
-	pointer_constraints_unstable_v1_types[12] = s_Wl.regionInterface;
-	pointer_constraints_unstable_v1_types[13] = s_Wl.regionInterface;
-    // clang-format on
-}
 
 #endif // PAL_HAS_WAYLAND
 #pragma endregion
@@ -6314,13 +6265,6 @@ static void globalHandle(
 
         s_Video.features64 |= PAL_VIDEO_FEATURE64_DECORATED_WINDOW;
 
-    } else if (strcmp(interface, "zwp_pointer_constraints_v1") == 0) {
-        s_Wl.pointerConstraints = wlRegistryBind(
-            registry,
-            name,
-            &zwp_pointer_constraints_v1_interface,
-            1);
-
     } else if (strcmp(interface, "wl_output") == 0) {
         // wayland does not let use query monitors directly
         // so we enumerate and store at init and update the
@@ -6645,7 +6589,6 @@ PalResult wlInitVideo()
     s_Wl.checkFeatures = true;
     s_Wl.monitorCount = 0;
     setupXdgShellProtocol();
-    setupZwpPointerProtocol();
 
     // check if user supplied their own display
     if (s_Video.platformInstance) {
@@ -6654,6 +6597,10 @@ PalResult wlInitVideo()
     } else {
         s_Wl.display = s_Wl.displayConnect(nullptr);
         s_Video.platformInstance = nullptr;
+    }
+
+    if (!s_Wl.display) {
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     s_Video.display = (void*)s_Wl.display;
@@ -6944,6 +6891,7 @@ PalResult wlCreateWindow(
 
     memset(data, 0, sizeof(WindowData));
     data->used = true;
+    data->focused = false;
 
     // create surface
     surface = wlCompositorCreateSurface(s_Wl.compositor);
@@ -6952,7 +6900,6 @@ PalResult wlCreateWindow(
     }
 
     xdgSurface = xdgWmBaseGetXdgSurface(s_Wl.xdgBase, surface);
-
     if (!xdgSurface) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -6974,10 +6921,25 @@ PalResult wlCreateWindow(
     wlSurfaceAddListener(surface, &surfaceListener, data);
     xdgToplevelAddListener(xdgToplevel, &xdgToplevelListener, data);
     xdgSurfaceAddListener(xdgSurface, &xdgSurfaceListener, data);
-    wlSurfaceCommit(surface);
+
+    // decorated window
+    if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
+        struct zxdg_toplevel_decoration_v1* decoration = nullptr;
+        decoration =
+            zxdgGetToplevelDecoration(s_Wl.decorationManager, xdgToplevel);
+
+        zxdgToplevelDecorationV1AddListener(
+            decoration, 
+            &decorationListener, 
+            surface);
+
+        zxdgToplevelDecorationV1SetMode(decoration, 2);
+        data->decoration = decoration;
+    }
 
     data->skipState = true;
     data->skipConfigure = true;
+    wlSurfaceCommit(surface);
     s_Wl.displayRoundtrip(s_Wl.display);
 
     if (info->maximized && info->show) {
@@ -7006,19 +6968,6 @@ PalResult wlCreateWindow(
         xdgToplevelSetMinimized(xdgToplevel);
         wlSurfaceCommit(surface);
         data->state = PAL_WINDOW_STATE_MINIMIZED;
-    }
-
-    // decorated window
-    if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
-        struct zxdg_toplevel_decoration_v1* decoration = nullptr;
-        decoration =
-            zxdgGetTopleveDecoration(s_Wl.decorationManager, xdgToplevel);
-
-        zxdgToplevelDecorationV1SetMode(
-            decoration,
-            2); // SERVER_SIDE_DECORATION
-
-        data->decoration = decoration;
     }
 
     if (s_Wl.eglFBConfig) {
@@ -7050,6 +6999,23 @@ PalResult wlCreateWindow(
     }
 
     s_Wl.displayRoundtrip(s_Wl.display);
+    if (!s_Wl.decorationManager && s_Video.eventDriver) {
+        PalEventDriver* driver = s_Video.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_NONE;
+        PalEventType type = PAL_EVENT_WINDOW_DECORATION_MODE;
+        mode = palGetEventDispatchMode(driver, type);
+
+        if (mode != PAL_DISPATCH_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = PAL_DECORATION_MODE_CLIENT_SIDE;
+            event.data2 = palPackPointer(data->window);
+            palPushEvent(driver, &event);
+        }
+    }
+
+    data->skipState = false;
+    data->skipConfigure = false;
     *outWindow = data->window;
     return PAL_RESULT_SUCCESS;
 }

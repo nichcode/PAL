@@ -83,6 +83,8 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - **Core:** Added **palUnpackFloat()** to retreive two floats from a single Int64 integer.
 - **OpenGL:** Added **palGLSetInstance()** to set the instance or display handle.
 - **OpenGL:** Added **palGLGetBackend()** to get the opengl backend.
+- **Event:** Added **PAL_EVENT_WINDOW_DECORATION_MODE** to `PalEventType` enum.
+- **Event:** Added **PalDecorationMode** enum.
 
 ### Tests
 - Added native integration example: demonstrating **Native API Integration with PAL API**. see 
