@@ -182,6 +182,43 @@ bool windowTest()
         return false;
     }
 
+    PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
+#if DISPATCH_MODE_POLL
+    dispatchMode = PAL_DISPATCH_POLL;
+#else
+    dispatchMode = PAL_DISPATCH_CALLBACK;
+#endif // DISPATCH_MODE_POLL
+
+    // set dispatch mode for all events.
+    for (Uint32 e = 0; e < PAL_EVENT_KEYDOWN; e++) {
+        palSetEventDispatchMode(eventDriver, e, dispatchMode);
+    }
+
+    // we set window close to poll
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
+        PAL_DISPATCH_POLL);
+
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+
+    // we set callback mode for modal begin and end. Since we want to capture
+    // that instantly
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_MODAL_BEGIN,
+        PAL_DISPATCH_CALLBACK);
+
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_MODAL_END,
+        PAL_DISPATCH_CALLBACK);
+
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_WINDOW_DECORATION_MODE,
+        PAL_DISPATCH_POLL);
+
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
     // be valid till the video system is shutdown
@@ -263,37 +300,6 @@ bool windowTest()
         }
     }
 #endif // MAKE_TRANSPARENT
-    PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
-#if DISPATCH_MODE_POLL
-    dispatchMode = PAL_DISPATCH_POLL;
-#else
-    dispatchMode = PAL_DISPATCH_CALLBACK;
-#endif // DISPATCH_MODE_POLL
-
-    // set dispatch mode for all events.
-    for (Uint32 e = 0; e < PAL_EVENT_KEYDOWN; e++) {
-        palSetEventDispatchMode(eventDriver, e, dispatchMode);
-    }
-
-    // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
-
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
-
-    // we set callback mode for modal begin and end. Since we want to capture
-    // that instantly
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_MODAL_BEGIN,
-        PAL_DISPATCH_CALLBACK);
-
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_MODAL_END,
-        PAL_DISPATCH_CALLBACK);
 
     running = true;
     while (running) {
@@ -348,6 +354,15 @@ bool windowTest()
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
                         running = false;
+                    }
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_DECORATION_MODE: {
+                    if (event.data == PAL_DECORATION_MODE_CLIENT_SIDE) {
+                        palLog(nullptr, "Window Decoration Mode: Client Side");
+                    } else {
+                        palLog(nullptr, "Window Decoration Mode: Server Side");
                     }
                     break;
                 }

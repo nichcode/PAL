@@ -101,6 +101,21 @@ typedef bool(PAL_CALL* PalPollFn)(
     PalEvent* outEvent);
 
 /**
+ * @enum PalDecorationMode
+ * @brief Decoration types. This is not a bitmask enum.
+ *
+ * All decoration types follow the format `PAL_DECORATION_MODE_**` for consistency and
+ * API use.
+ *
+ * @since 1.3
+ * @ingroup pal_event
+ */
+typedef enum {
+    PAL_DECORATION_MODE_CLIENT_SIDE,
+    PAL_DECORATION_MODE_SERVER_SIDE
+} PalDecorationMode;
+
+/**
  * @enum PalEventType
  * @brief Event types. This is not a bitmask enum.
  *
@@ -347,6 +362,18 @@ typedef enum {
      * - palUnpackPointer()
      */
     PAL_EVENT_KEYCHAR,
+
+    /**
+     * PAL_EVENT_WINDOW_DECORATION_MODE
+     *
+     * event.data : negotiated decorations mode
+     *
+     * event.data2 : window
+     *
+     * Use inline helpers:
+     * - palUnpackPointer()
+     */
+    PAL_EVENT_WINDOW_DECORATION_MODE,
 
     PAL_EVENT_MAX
 } PalEventType;
