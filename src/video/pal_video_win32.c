@@ -553,7 +553,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
                     event.type = type;
-                    event.data = button;
+                    event.data = palPackUint32(button, 0);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }

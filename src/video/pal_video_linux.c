@@ -57,7 +57,6 @@ freely, subject to the following restrictions:
 #include <locale.h>
 #include <poll.h>
 #include <sys/mman.h>
-#include <unistd.h>
 
 #include <linux/input-event-codes.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -1437,7 +1436,11 @@ static void pointerHandleEnter(
     wl_fixed_t surface_y)
 {
     WindowData* data = findWindowData((PalWindow*)surface);
-    if (data && data->cursor) {
+    if (!data) {
+        return;
+    }
+
+    if (data->cursor) {
         // our window
         WaylandCursor* cursor = data->cursor;
         wlPointerSetCursor(
@@ -2733,6 +2736,7 @@ static WindowData* findWindowData(PalWindow* window)
             return &s_Video.windowData[i];
         }
     }
+    return nullptr;
 }
 
 static void resetMonitorData()
@@ -2782,6 +2786,7 @@ static MonitorData* findMonitorData(PalMonitor* monitor)
             return &s_Video.monitorData[i];
         }
     }
+    return nullptr;
 }
 
 static void freeMonitorData(PalMonitor* monitor)
@@ -4107,7 +4112,7 @@ static void xUpdateVideo()
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = type;
-                        event.data = button;
+                        event.data = palPackUint32(button, 0);
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }
@@ -6641,6 +6646,15 @@ void wlShutdownVideo()
     }
 
     s_Wl.xkbContextUnref(s_Wl.inputContext);
+    if (s_Wl.compositor) {
+        // if compositor was found, all this will be as well
+        // since we check all at init
+        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.compositor);
+        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.xdgBase);
+        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.shm);
+        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.seat);
+    }
+
     if (!s_Video.platformInstance) {
         // opened by PAL
         s_Wl.displayDisconnect(s_Wl.display);
@@ -6915,7 +6929,12 @@ PalResult wlCreateWindow(
         appID = s_Video.className;
     }
 
-    xdgToplevelSetTitle(xdgToplevel, info->title);
+    const char* title = info->title;
+    if (!title) {
+        title = "";
+    }
+
+    xdgToplevelSetTitle(xdgToplevel, title);
     xdgToplevelSetAppId(xdgToplevel, appID);
 
     wlSurfaceAddListener(surface, &surfaceListener, data);

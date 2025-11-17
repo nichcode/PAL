@@ -229,9 +229,6 @@ bool windowTest()
         return false;
     }
 
-    // get video system features
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-
     // fill the create info struct
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
@@ -240,6 +237,7 @@ bool windowTest()
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
 
     // check if we support decorated windows (title bar, close etc)
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
     if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
