@@ -93,6 +93,9 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - Added native instance example: demonstrating **Native Instance or Display Integration with PAL API**.
 see **native_instance_test.c**.
 
+- Added custom decoration example: demonstrating **Custom Window Decoration**.
+see **custom_decoration_test.c**.
+
 ### Notes
 - **No ABI changes** - existing code remains compatible.
 

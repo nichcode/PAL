@@ -40,6 +40,7 @@ bool attachWindowTest();
 bool charEventTest();
 bool nativeIntegrationTest();
 bool nativeInstanceTest();
+bool customDecorationTest();
 
 // opengl test
 bool openglTest();

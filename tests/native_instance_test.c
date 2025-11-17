@@ -39,6 +39,7 @@ typedef struct wl_display* (*wl_display_connect_fn)(const char*);
 typedef void (*wl_display_disconnect_fn)(struct wl_display*);
 typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
 typedef int (*wl_display_roundtrip_fn)(struct wl_display*);
+typedef void (*wl_proxy_destroy_fn)(struct wl_proxy*);
 
 typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
     struct wl_proxy*,
@@ -83,6 +84,8 @@ static wl_display_roundtrip_fn s_wl_display_roundtrip;
 static wl_proxy_get_version_fn s_wl_proxy_get_version;
 static wl_proxy_marshal_flags_fn s_wl_proxy_marshal_flags;
 static wl_proxy_add_listener_fn s_wl_proxy_add_listener;
+static wl_proxy_destroy_fn s_wl_proxy_destroy;
+static struct wl_registry* s_Registry;
 
 static const struct wl_interface* registryInterface;
 
@@ -230,12 +233,16 @@ void* openDisplayWayland()
         s_LibWayland, 
         "wl_proxy_add_listener");
 
+    s_wl_proxy_destroy = (wl_proxy_destroy_fn)dlsym(
+        s_LibWayland, 
+        "wl_proxy_destroy");
+
     registryInterface = dlsym(s_LibWayland, "wl_registry_interface");
 
     struct wl_display* display = s_wl_display_connect(nullptr);
     if (display) {
-        struct wl_registry* registry = wlDisplayGetRegistry(display);
-        wlRegistryAddListener(registry, &s_RegistryListener, nullptr);
+        s_Registry = wlDisplayGetRegistry(display);
+        wlRegistryAddListener(s_Registry, &s_RegistryListener, nullptr);
         s_wl_display_roundtrip(display);
     }
 
@@ -246,6 +253,7 @@ void* openDisplayWayland()
 void closeDisplayWayland(void* instance)
 {
 #ifdef __linux__
+    s_wl_proxy_destroy((struct wl_proxy*)s_Registry);
     s_wl_display_disconnect((struct wl_display*)instance);
     dlclose(s_LibWayland);
 #endif // __linux__
