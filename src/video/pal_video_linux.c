@@ -167,7 +167,12 @@ typedef struct {
     int y;
     Uint32 w;
     Uint32 h;
+    Uint32 refreshRate;
+    PalOrientation orientation;
     PalMonitor* monitor;
+    void* output;
+    PalMonitorMode mode; // wayland only sends current
+    char name[32];
 } MonitorData;
 
 typedef struct {
@@ -947,7 +952,6 @@ typedef void (*wl_egl_window_resize_fn)(
 
 typedef struct {
     bool checkFeatures;
-    bool modesPhase;
     int monitorCount;
     
     void* handle;
@@ -1021,12 +1025,6 @@ typedef struct {
     wl_egl_window_destroy_fn eglWindowDestroy;
     wl_egl_window_resize_fn eglWindowResize;
 } Wayland;
-
-typedef struct {
-    int count;
-    int maxCount;
-    PalMonitorMode* modes;
-} MonitorModesData;
 
 typedef struct {
     struct wl_buffer* buffer;
@@ -6205,6 +6203,101 @@ static struct wl_buffer* createShmBuffer(
     return buffer;
 }
 
+static void wlOutputGeometry(
+    void* data,
+    struct wl_output* output,
+    int32_t x,
+    int32_t y,
+    int32_t, // we dont need physical size
+    int32_t, // we dont need physical size
+    int32_t, // we dont need subpixel
+    const char* make,
+    const char* model,
+    int32_t transform)
+{
+    MonitorData* monitorData = data;
+    monitorData->x = x;
+    monitorData->y = y;
+
+    switch (transform) {
+        case WL_OUTPUT_TRANSFORM_NORMAL:
+        case WL_OUTPUT_TRANSFORM_180: {
+            monitorData->orientation = PAL_ORIENTATION_LANDSCAPE;
+            break;
+        }
+
+        case WL_OUTPUT_TRANSFORM_90:
+        case WL_OUTPUT_TRANSFORM_270: {
+            monitorData->orientation = PAL_ORIENTATION_PORTRAIT;
+            break;
+        }
+
+        case WL_OUTPUT_TRANSFORM_FLIPPED:
+        case WL_OUTPUT_TRANSFORM_FLIPPED_180: {
+            monitorData->orientation = PAL_ORIENTATION_LANDSCAPE_FLIPPED;
+            break;
+        }
+
+        case WL_OUTPUT_TRANSFORM_FLIPPED_90:
+        case WL_OUTPUT_TRANSFORM_FLIPPED_270: {
+            monitorData->orientation = PAL_ORIENTATION_PORTRAIT_FLIPPED;
+            break;
+        }
+    }
+
+    snprintf(monitorData->name, 32, "%s %s", make, model);
+}
+
+static void wlOutputMode(
+    void* data,
+    struct wl_output* output,
+    uint32_t flags,
+    int32_t width,
+    int32_t height,
+    int32_t refresh)
+{
+    MonitorData* monitorData = data;
+    if (flags & WL_OUTPUT_MODE_CURRENT) {
+        monitorData->w = width;
+        monitorData->h = height;
+        monitorData->refreshRate = (refresh + 500) / 1000;
+
+        // wayland only sends the current mode
+        monitorData->mode.bpp = 0;
+        monitorData->mode.width = width;
+        monitorData->mode.height = height;
+        monitorData->mode.refreshRate = (refresh + 500) / 1000;
+    }
+}
+
+static void wlOutputScale(
+    void* data,
+    struct wl_output* output,
+    int32_t scale)
+{
+    MonitorData* monitorData = data;
+    float dpi = (float)scale * 96.0f;
+    monitorData->dpi = (Uint32)dpi;
+}
+
+static void wlOutputDone(
+    void* data,
+    struct wl_output* output)
+{
+}
+
+static const struct wl_output_listener s_OutputListener = {
+    .geometry = wlOutputGeometry,
+    .mode = wlOutputMode,
+    .done = wlOutputDone,
+    .scale = wlOutputScale};
+
+static const struct wl_output_listener s_DefaultModeListener = {
+    .geometry = wlOutputGeometry,
+    .mode = wlOutputMode,
+    .done = wlOutputDone,
+    .scale = wlOutputScale};
+
 static void globalHandle(
     void* data,
     struct wl_registry* registry,
@@ -6277,6 +6370,11 @@ static void globalHandle(
         }
 
         PalMonitor* m = TO_PAL_HANDLE(PalMonitor, name);
+        struct wl_output* output = nullptr;
+        output = wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
+        wlOutputAddListener(output, &s_OutputListener, monitorData);
+
+        monitorData->output = (void*)output;
         monitorData->monitor = m;
         s_Wl.monitorCount++;
     }
@@ -6291,137 +6389,14 @@ static void globalRemove(
     MonitorData* monitorData = findMonitorData(m);
     if (monitorData) {
         monitorData->used = false;
+        s_Wl.proxyDestroy((struct wl_proxy*)monitorData->output);
         s_Wl.monitorCount--;
     }
-}
-
-static void wlOutputGeometry(
-    void* data,
-    struct wl_output* output,
-    int32_t x,
-    int32_t y,
-    int32_t, // we dont need physical size
-    int32_t, // we dont need physical size
-    int32_t, // we dont need subpixel
-    const char* make,
-    const char* model,
-    int32_t transform)
-{
-    if (s_Wl.modesPhase) {
-        return;
-    }
-
-    PalMonitorInfo* info = (PalMonitorInfo*)data;
-    info->x = x;
-    info->y = y;
-
-    switch (transform) {
-        case WL_OUTPUT_TRANSFORM_NORMAL:
-        case WL_OUTPUT_TRANSFORM_180: {
-            info->orientation = PAL_ORIENTATION_LANDSCAPE;
-            break;
-        }
-
-        case WL_OUTPUT_TRANSFORM_90:
-        case WL_OUTPUT_TRANSFORM_270: {
-            info->orientation = PAL_ORIENTATION_PORTRAIT;
-            break;
-        }
-
-        case WL_OUTPUT_TRANSFORM_FLIPPED:
-        case WL_OUTPUT_TRANSFORM_FLIPPED_180: {
-            info->orientation = PAL_ORIENTATION_LANDSCAPE_FLIPPED;
-            break;
-        }
-
-        case WL_OUTPUT_TRANSFORM_FLIPPED_90:
-        case WL_OUTPUT_TRANSFORM_FLIPPED_270: {
-            info->orientation = PAL_ORIENTATION_PORTRAIT_FLIPPED;
-            break;
-        }
-    }
-
-    snprintf(info->name, 32, "%s %s", make, model);
-}
-
-static void wlOutputMode(
-    void* data,
-    struct wl_output* output,
-    uint32_t flags,
-    int32_t width,
-    int32_t height,
-    int32_t refresh)
-{
-    PalMonitorInfo* info = (PalMonitorInfo*)data;
-    if (flags & WL_OUTPUT_MODE_CURRENT) {
-        info->width = width;
-        info->height = height;
-        info->refreshRate = (refresh + 500) / 1000;
-    }
-}
-
-static void wlOutputMonitorModes(
-    void* data,
-    struct wl_output* output,
-    uint32_t flags,
-    int32_t width,
-    int32_t height,
-    int32_t refresh)
-{
-    MonitorModesData* modesInfo = (MonitorModesData*)data;
-    if (modesInfo->modes) {
-        if (modesInfo->count < modesInfo->maxCount) {
-            PalMonitorMode* mode = &modesInfo->modes[modesInfo->count];
-            mode->width = width;
-            mode->height = height;
-            mode->refreshRate = (refresh + 500) / 1000;
-            mode->bpp = 0; // default
-        }
-    }
-    modesInfo->count++;
-}
-
-static void wlOutputScale(
-    void* data,
-    struct wl_output* output,
-    int32_t scale)
-{
-    if (s_Wl.modesPhase) {
-        return;
-    }
-
-    PalMonitorInfo* info = (PalMonitorInfo*)data;
-    float dpi = (float)scale * 96.0f;
-    info->dpi = (Uint32)dpi;
-}
-
-static void wlOutputDone(
-    void* data,
-    struct wl_output* output)
-{
 }
 
 static const struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
     .global_remove = globalRemove};
-
-static const struct wl_output_listener s_OutputListener = {
-    .geometry = wlOutputGeometry,
-    .mode = wlOutputMode,
-    .done = wlOutputDone,
-    .scale = wlOutputScale};
-
-static const struct wl_output_listener s_ModesListener = {
-    .geometry = wlOutputGeometry,
-    .mode = wlOutputMonitorModes,
-    .done = wlOutputDone,
-    .scale = wlOutputScale};
-
-static const struct wl_output_listener s_DefaultModeListener = {
-    .geometry = wlOutputGeometry,
-    .mode = wlOutputMode,
-    .done = wlOutputDone,
-    .scale = wlOutputScale};
 
 PalResult wlInitVideo()
 {
@@ -6587,7 +6562,6 @@ PalResult wlInitVideo()
     // clang-format on
 
     // initialize wayland
-    s_Wl.modesPhase = false;
     s_Wl.checkFeatures = true;
     s_Wl.monitorCount = 0;
     setupXdgShellProtocol();
@@ -6708,11 +6682,11 @@ void wlUpdateVideo()
         }
     }
 
-    s_Wl.displayFlush(s_Wl.display);
     while (s_Wl.prepareRead(s_Wl.display) != 0) {
         s_Wl.dispatchPending(s_Wl.display);
     }
 
+    s_Wl.displayFlush(s_Wl.display);
     int fd = s_Wl.displayGetFd(s_Wl.display);
     struct pollfd pfd = {fd, POLLIN, 0};
     if (poll(&pfd, 1, 0) > 0) {
@@ -6725,7 +6699,6 @@ void wlUpdateVideo()
 
     // dispatch events that were read
     s_Wl.dispatchPending(s_Wl.display);
-    s_Wl.displayFlush(s_Wl.display);
 }
 
 PalResult wlEnumerateMonitors(
@@ -6760,27 +6733,21 @@ PalResult wlGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
-    uint32_t name = FROM_PAL_HANDLE(uint32_t, monitor);
-    // bind the monitor and get its information
-    struct wl_output* output =
-        wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
-
-    if (!output) {
+    MonitorData* monitorData = findMonitorData(monitor);
+    if (!monitorData) {
         return PAL_RESULT_INVALID_MONITOR;
     }
 
-    s_Wl.modesPhase = false;
-    wlOutputAddListener(output, &s_OutputListener, info);
-    s_Wl.displayRoundtrip(s_Wl.display);
-    s_Wl.proxyDestroy((struct wl_proxy*)output);
+    info->dpi = monitorData->dpi;
+    info->x = monitorData->x;
+    info->y = monitorData->y;
+    info->width = monitorData->w;
+    info->height = monitorData->h;
+    info->refreshRate = monitorData->refreshRate;
+    info->orientation = monitorData->orientation;
 
-    PalMonitor* primary = nullptr;
-    wlGetPrimaryMonitor(&primary);
-    if (monitor == primary) {
-        info->primary = true;
-    } else {
-        info->primary = false;
-    }
+    info->primary = false; // no way to query
+    strcpy(info->name, monitorData->name);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6790,28 +6757,21 @@ PalResult wlEnumerateMonitorModes(
     Int32* count,
     PalMonitorMode* modes)
 {
-    uint32_t name = FROM_PAL_HANDLE(uint32_t, monitor);
-    // bind the monitor and get its information
-    struct wl_output* output =
-        wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
-
-    if (!output) {
+    MonitorData* monitorData = findMonitorData(monitor);
+    if (!monitorData) {
         return PAL_RESULT_INVALID_MONITOR;
     }
 
-    MonitorModesData data;
-    data.count = 0;
-    data.modes = modes;
-    data.maxCount = modes ? *count : 0;
-
-    // we need only modes information
-    s_Wl.modesPhase = true;
-    wlOutputAddListener(output, &s_ModesListener, &data);
-    s_Wl.displayRoundtrip(s_Wl.display);
-    s_Wl.proxyDestroy((struct wl_proxy*)output);
+    if (modes && *count > 0) {
+        PalMonitorMode* mode = &modes[0];
+        mode->bpp = monitorData->mode.bpp;
+        mode->width = monitorData->mode.width;
+        mode->height = monitorData->mode.height;
+        mode->refreshRate = monitorData->mode.refreshRate;
+    }
 
     if (!modes) {
-        *count = data.count;
+        *count = 1; // wayland only gives the active mode
     }
 
     return PAL_RESULT_SUCCESS;
@@ -6821,28 +6781,16 @@ PalResult wlGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    uint32_t name = FROM_PAL_HANDLE(uint32_t, monitor);
-    // bind the monitor and get its information
-    struct wl_output* output =
-        wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
-
-    if (!output) {
+    MonitorData* monitorData = findMonitorData(monitor);
+    if (!monitorData) {
         return PAL_RESULT_INVALID_MONITOR;
     }
 
-    // we dont want to add another listener just to get the
-    // default monitor display mode
-    PalMonitorInfo tmpInfo;
-    s_Wl.modesPhase = true;
-    wlOutputAddListener(output, &s_OutputListener, &tmpInfo);
-    s_Wl.displayRoundtrip(s_Wl.display);
-    s_Wl.proxyDestroy((struct wl_proxy*)output);
-
-    // fill out display mode with the one we got back
-    mode->bpp = 0; // default
-    mode->refreshRate = tmpInfo.refreshRate;
-    mode->width = tmpInfo.width;
-    mode->height = tmpInfo.height;
+    // this is the same as the current mode 
+    mode->bpp = monitorData->mode.bpp;
+    mode->width = monitorData->mode.width;
+    mode->height = monitorData->mode.height;
+    mode->refreshRate = monitorData->mode.refreshRate;
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6910,6 +6858,7 @@ PalResult wlCreateWindow(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    wlSurfaceAddListener(surface, &surfaceListener, data);
     xdgSurface = xdgWmBaseGetXdgSurface(s_Wl.xdgBase, surface);
     if (!xdgSurface) {
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -6934,7 +6883,6 @@ PalResult wlCreateWindow(
     xdgToplevelSetTitle(xdgToplevel, title);
     xdgToplevelSetAppId(xdgToplevel, appID);
 
-    wlSurfaceAddListener(surface, &surfaceListener, data);
     xdgToplevelAddListener(xdgToplevel, &xdgToplevelListener, data);
     xdgSurfaceAddListener(xdgSurface, &xdgSurfaceListener, data);
 
