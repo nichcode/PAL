@@ -33,10 +33,16 @@ struct xdg_toplevel;
 
 typedef struct {
     int fd;
+
+    // cache mouse position
+    int mouseX;
+    int mouseY;
+
     struct wl_buffer* buffer;
     struct wl_surface* surface;
     struct wl_subsurface* subsurface;
     Uint32* pixels;
+    PalEventDriver* driver; // a pointer to the event driver
     Uint64 size;
 } WaylandDecoration;
 
@@ -800,6 +806,8 @@ static void createDecoration()
 
     // set opaque regions for optimazation
     // we wont do this in this example
+    // this does not include any hover effects and any shadows
+    // and any fancy stuff
 }
 
 static void destroyDecoration()
@@ -822,8 +830,41 @@ static void PAL_CALL onEvent(
         if (button == PAL_MOUSE_BUTTON_LEFT) {
             // check if the mouse is on the title bar
             // and move the window
-            xdgToplevelMove(s_WinHandle.nativeHandle2, s_Seat, serial);
+            // use the cache mouse position to check if the mouse
+            // is in the title bar
+            int x = s_Decoration.mouseX;
+            int y = s_Decoration.mouseY;
+            // width should reflect window width
+            if (x >= 0 && x < 640 && y >= 0 && y < TITLEBAR_HEIGHT) {
+                xdgToplevelMove(s_WinHandle.nativeHandle2, s_Seat, serial);
+
+                // Optionally check for another click and maximize the window
+                // maybe set a bool or query mouse button state
+                // we will skip it for this example
+            }
+
+            // we skip maximize and minimize button for simplicity
+            // we just deal with the close button
+            int buttonX = 640 - BUTTON_SIZE;
+            if (x >= buttonX              && 
+                x < buttonX + BUTTON_SIZE && 
+                y >= BUTTON_POSY          && 
+                y < BUTTON_POSY + BUTTON_SIZE) {
+                // inside close button
+                // trigger a window close event
+
+                PalEvent event = {0};
+                event.data2 = palPackPointer(s_WinHandle.nativeWindow);
+                event.type = PAL_EVENT_WINDOW_CLOSE;
+                palPushEvent(s_Decoration.driver, &event);
+            }
         }   
+
+    } else if (event->type == PAL_EVENT_MOUSE_MOVE) {
+        Int32 x, y;
+        palUnpackInt32(event->data, &x, &y);
+        s_Decoration.mouseX = x;
+        s_Decoration.mouseY = y;
     }
 }
 
@@ -833,6 +874,7 @@ bool customDecorationTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Custom Decoration Test");
     palLog(nullptr, "Press Escape or click close button to close Test");
+    palLog(nullptr, "This only implements close button and window movement");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -875,6 +917,11 @@ bool customDecorationTest()
         PAL_EVENT_MOUSE_BUTTONDOWN,
         PAL_DISPATCH_CALLBACK);
 
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_MOUSE_MOVE,
+        PAL_DISPATCH_CALLBACK);
+
     // tell the video system to use out instance rather
     // than creating a new one
     palSetPreferredInstance((void*)s_Display);
@@ -906,6 +953,7 @@ bool customDecorationTest()
 
     // get native handles
     s_WinHandle = palGetWindowHandleInfoEx(window);
+    s_Decoration.driver = eventDriver;
     createDecoration();
 
     bool running = true;

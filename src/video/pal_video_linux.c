@@ -1408,9 +1408,7 @@ static void surfaceHandleEnter(
     struct wl_surface* surface,
     struct wl_output* output)
 {
-    int a = 10;
-    // TODO: 
-
+    palLog(nullptr, "Surface Enter");
 }
 
 static void surfaceHandleLeave(
@@ -1418,8 +1416,7 @@ static void surfaceHandleLeave(
     struct wl_surface* surface,
     struct wl_output* output)
 {
-    int b = 10;
-    // TODO:
+    palLog(nullptr, "Surface Leave");
 }
 
 static struct wl_surface_listener surfaceListener = {
