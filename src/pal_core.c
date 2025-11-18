@@ -26,12 +26,14 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #ifdef __linux__
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <wchar.h>
+#include <errno.h>
 #endif // __linux__
 
 #include "pal/pal_core.h"
@@ -81,6 +83,7 @@ static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
 typedef struct {
     char tmp[PAL_LOG_MSG_SIZE];
     char buffer[PAL_LOG_MSG_SIZE];
+    char platformResultDesc[PAL_LOG_MSG_SIZE];
     wchar_t wideBuffer[PAL_LOG_MSG_SIZE];
     bool isLogging;
 } LogTLSData;
@@ -233,6 +236,41 @@ static inline void writeToConsole(LogTLSData* data)
 #endif // _WIN32
 }
 
+void palSetLastPlatformError()
+{
+    LogTLSData* data = getLogTlsData();
+    memset(data->platformResultDesc, 0, PAL_LOG_MSG_SIZE);
+    
+#ifdef __linux__
+    if (errno == 0) {
+        return;
+    }
+
+#if defined(__GLIBC__)
+    char* ret = strerror_r(errno, data->platformResultDesc, PAL_LOG_MSG_SIZE);
+    if (ret != data->platformResultDesc) {
+        snprintf(data->platformResultDesc, PAL_LOG_MSG_SIZE, "%s", ret);
+    }
+#else
+    strerror_r(errno, data->platformResultDesc, PAL_LOG_MSG_SIZE);
+#endif // __GLIBC__
+#else
+    DWORD error = getLastError();
+    if (error == 0) {
+        return;
+    }
+
+    FormatMessageA(
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        error,
+        0,
+        data->platformResultDesc,
+        PAL_LOG_MSG_SIZE,
+        nullptr);
+#endif // __linux__
+}
+
 // ==================================================
 // Public API
 // ==================================================
@@ -264,8 +302,16 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_OUT_OF_MEMORY:
             return "Out of memory";
 
-        case PAL_RESULT_PLATFORM_FAILURE:
-            return "Platform error";
+        case PAL_RESULT_PLATFORM_FAILURE: {
+            LogTLSData* data = getLogTlsData();
+            if (!data) {
+                return "Platform error";
+            } else if (data && data->platformResultDesc[0] == 0) {
+                return "Platform error";
+            } else {
+                return data->platformResultDesc;
+            }
+        }
 
         case PAL_RESULT_INVALID_ALLOCATOR:
             return "Invalif allocator";

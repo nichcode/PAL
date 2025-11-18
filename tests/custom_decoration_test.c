@@ -13,10 +13,10 @@
 
 #define WINDOW_TITLE "Custom Decoration Test"
 #define WL_MARSHAL_FLAG_DESTROY 1 << 0
-#define TITLEBAR_HEIGHT 30
-#define BUTTON_SIZE 15
+#define TITLEBAR_HEIGHT 34
+#define BUTTON_SIZE 24
 #define BUTTON_POSY 8
-#define BUTTON_OFFSET 20
+#define BUTTON_OFFSET 30
 
 struct wl_display;
 struct wl_registry;
@@ -795,12 +795,13 @@ static void createDecoration()
     // this example does not support unicode characters
     int textWidth = strlen(WINDOW_TITLE) * 8; // 8x8 font
     int x = (width - textWidth) / 2;
+    int y = (TITLEBAR_HEIGHT - 8) / 2;
 
     drawText(
         s_Decoration.pixels, 
         width, 
         x, 
-        12, 
+        y, 
         WINDOW_TITLE, 
         0x00FFFFFF);
 

@@ -3004,6 +3004,8 @@ static void createScancodeTable()
     s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
 }
 
+void palSetLastPlatformError();
+
 // ==================================================
 // X11 API
 // ==================================================
@@ -3016,6 +3018,7 @@ static PalResult glxBackend(const int index)
     // user choose GLX FBConfig backend
     if (!s_X11.glxHandle) {
         // Rare
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
     // clang-format off
@@ -3048,17 +3051,20 @@ static PalResult eglXBackend(int index)
 {    
     // user choose EGL FBConfig backend
     if (!s_Egl.handle) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     EGLDisplay display = EGL_NO_DISPLAY;
     display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
     if (display == EGL_NO_DISPLAY) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     EGLint numConfigs = 0;
     if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -3467,12 +3473,14 @@ static PalResult xInitVideo()
     // load X11 library
     s_X11.handle = dlopen("libX11.so", RTLD_LAZY);
     if (!s_X11.handle) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     // libXCursor is needed
     s_X11.libCursor = dlopen("libXcursor.so", RTLD_LAZY);
     if (!s_X11.libCursor) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -3792,8 +3800,8 @@ static PalResult xInitVideo()
         s_Video.platformInstance = nullptr;
     }
 
-    s_X11.display = s_X11.openDisplay(nullptr);
     if (!s_X11.display) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -3854,6 +3862,7 @@ static PalResult xInitVideo()
     s_X11.setLocaleModifiers("");
     s_X11.im = s_X11.openIM(s_X11.display, nullptr, nullptr, nullptr);
     if (s_X11.im == None) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -4410,6 +4419,7 @@ static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
         return PAL_RESULT_SUCCESS;
     }
 
+    palSetLastPlatformError();
     return PAL_RESULT_PLATFORM_FAILURE;
 }
 
@@ -4704,6 +4714,7 @@ static PalResult xSetMonitorMode(
     s_X11.freeScreenResources(resources);
 
     if (ret != Success) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -4798,6 +4809,7 @@ static PalResult xSetMonitorOrientation(
     s_X11.freeScreenResources(resources);
 
     if (ret != Success) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -4839,6 +4851,7 @@ static PalResult xCreateWindow(
         // clang-format on
 
         if (!colormap) {
+            palSetLastPlatformError();
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
@@ -4986,6 +4999,7 @@ static PalResult xCreateWindow(
         &attrs);
 
     if (window == None) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -5195,6 +5209,7 @@ static PalResult xCreateWindow(
         nullptr);
 
     if (!data->ic) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -5814,6 +5829,7 @@ PalResult xCreateCursor(
 
     Cursor cursor = s_X11.cursorImageLoadCursor(s_X11.display, image);
     if (!cursor) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6135,6 +6151,7 @@ PalResult eglWlBackend(const int index)
 {
     // user choose EGL FBConfig backend
     if (!s_Egl.handle) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6142,11 +6159,13 @@ PalResult eglWlBackend(const int index)
     display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
 
     if (display == EGL_NO_DISPLAY) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     EGLint numConfigs = 0;
     if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6499,6 +6518,7 @@ PalResult wlInitVideo()
         !s_Wl.xkbCommon || 
         !s_Wl.libCursor || 
         !s_Wl.libWaylandEgl) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6664,6 +6684,7 @@ PalResult wlInitVideo()
     }
 
     if (!s_Wl.display) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6676,18 +6697,21 @@ PalResult wlInitVideo()
     s_Wl.displayRoundtrip(s_Wl.display);
 
     if (!s_Wl.compositor || !s_Wl.xdgBase || !s_Wl.shm) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     // create an input context
     s_Wl.inputContext = s_Wl.xkbContextNew(XKB_CONTEXT_NO_FLAGS);
     if (!s_Wl.inputContext) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     // get the current theme
     s_Wl.cursorTheme = s_Wl.cursorThemeLoad(nullptr, 32, s_Wl.shm);
     if (!s_Wl.cursorTheme) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -6943,17 +6967,20 @@ PalResult wlCreateWindow(
     // create surface
     surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!surface) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     wlSurfaceAddListener(surface, &surfaceListener, data);
     xdgSurface = xdgWmBaseGetXdgSurface(s_Wl.xdgBase, surface);
     if (!xdgSurface) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     xdgToplevel = xdgSurfaceGetToplevel(xdgSurface);
     if (!xdgSurface) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -7025,6 +7052,7 @@ PalResult wlCreateWindow(
     if (s_Wl.eglFBConfig) {
         data->eglWindow = s_Wl.eglWindowCreate(surface, data->w, data->h);
         if (!data->eglWindow) {
+            palSetLastPlatformError();
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
@@ -7033,6 +7061,7 @@ PalResult wlCreateWindow(
         struct wl_buffer* buffer = nullptr;
         buffer = createShmBuffer(data->w, data->h, nullptr, false);
         if (!buffer) {
+            palSetLastPlatformError();
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
@@ -7320,6 +7349,7 @@ PalResult wlCreateCursor(
 
     cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!cursor->surface) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -7327,6 +7357,7 @@ PalResult wlCreateCursor(
         createShmBuffer(info->width, info->height, info->pixels, true);
 
     if (!cursor->buffer) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -7374,6 +7405,7 @@ PalResult wlCreateCursorFrom(
     struct wl_cursor* wlCursor = nullptr;
     wlCursor = s_Wl.cursorThemeGetCursor(s_Wl.cursorTheme, cursorType);
     if (!wlCursor) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -7385,6 +7417,7 @@ PalResult wlCreateCursorFrom(
 
     cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!cursor->surface) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 

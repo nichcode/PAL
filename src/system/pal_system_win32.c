@@ -125,6 +125,8 @@ static inline bool isVersionWin32(
     return osVersion->build >= build;
 }
 
+void palSetLastPlatformError();
+
 // ==================================================
 // Public API
 // ==================================================
@@ -140,6 +142,7 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     // get windows build, version and combine them
     if (!getVersionWin32(&info->version)) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -277,6 +280,7 @@ PalResult PAL_CALL palGetCPUInfo(
 
     if (!ret) {
         palFree(allocator, buffer);
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
