@@ -7,9 +7,6 @@
 
 PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be **explicit** and as close to the **OS** as possible — similar in philosophy to Vulkan. It gives you precise control without hidden behavior, making it ideal for developers who want performance and predictability.
 
-Originally named as **Platform Abstraction Layer**, 
-PAL has evolved into **Prime Abstraction Layer** — the **first** and most **direct** layer between your engine or software and the operating system.
-
 PAL is transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
 
 This approach gives you total control: you handle events, manage resources, and cache state explicitly. PAL provides the building blocks; how you use them — whether for simple applications or advanced frameworks — is entirely up to you.
