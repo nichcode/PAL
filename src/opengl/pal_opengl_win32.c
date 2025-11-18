@@ -239,7 +239,7 @@ static inline bool checkExtension(
     }
 }
 
-void palSetLastPlatformError();
+void palSetLastPlatformError(Uint32 e);
 
 // ==================================================
 // Public API
@@ -289,14 +289,16 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         0);
 
     if (!s_Wgl.window) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     s_Gdi.handle = LoadLibraryA("gdi32.dll");
     s_Wgl.opengl = LoadLibraryA("opengl32.dll");
     if (!s_Gdi.handle || !s_Wgl.opengl) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -348,7 +350,8 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         !s_Gdi.describePixelFormat   ||
         !s_Gdi.swapBuffers           ||
         !s_Gdi.setPixelFormat) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -356,7 +359,8 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         !s_Wgl.wglCreateContext     ||
         !s_Wgl.wglDeleteContext     || 
         !s_Wgl.wglMakeCurrent) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -379,7 +383,8 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     s_Wgl.context = s_Wgl.wglCreateContext(s_Wgl.hdc);
     if (!s_Wgl.wglMakeCurrent(s_Wgl.hdc, s_Wgl.context)) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -572,7 +577,8 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
                 1,
                 &configAttrib,
                 &nativeCount)) {
-            palSetLastPlatformError();
+            DWORD error = GetLastError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
@@ -919,7 +925,7 @@ PalResult PAL_CALL palCreateGLContext(
             if (error == ERROR_INVALID_PROFILE_ARB) {
                 return PAL_RESULT_INVALID_GL_PROFILE;
             } else {
-                palSetLastPlatformError();
+                palSetLastPlatformError(error);
                 return PAL_RESULT_PLATFORM_FAILURE;
             }
         }
@@ -928,7 +934,8 @@ PalResult PAL_CALL palCreateGLContext(
         // create context with legacy wgl functions
         context = s_Wgl.wglCreateContext(hdc);
         if (!context) {
-            palSetLastPlatformError();
+            DWORD error = GetLastError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
@@ -937,7 +944,8 @@ PalResult PAL_CALL palCreateGLContext(
             if (!s_Wgl.wglShareLists(share, context)) {
                 s_Wgl.wglDeleteContext(context);
                 ReleaseDC((HWND)info->window->window, hdc);
-                palSetLastPlatformError();
+                DWORD error = GetLastError();
+                palSetLastPlatformError(error);
                 return PAL_RESULT_PLATFORM_FAILURE;
             }
         }
@@ -981,7 +989,7 @@ PalResult PAL_CALL palMakeContextCurrent(
                 return PAL_RESULT_INVALID_GL_CONTEXT;
 
             } else {
-                palSetLastPlatformError();
+                palSetLastPlatformError(error);
                 return PAL_RESULT_PLATFORM_FAILURE;
             }
         }
@@ -1031,7 +1039,7 @@ PalResult PAL_CALL palSwapBuffers(
             return PAL_RESULT_INVALID_GL_FBCONFIG;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }

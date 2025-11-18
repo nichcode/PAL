@@ -171,7 +171,7 @@ static Keyboard s_Keyboard = {0};
 // Internal API
 // ==================================================
 
-void palSetLastPlatformError();
+void palSetLastPlatformError(Uint32 e);
 
 LRESULT CALLBACK videoProc(
     HWND hwnd,
@@ -778,7 +778,7 @@ static inline PalResult setMonitorMode(
             return PAL_RESULT_INVALID_MONITOR;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1117,7 +1117,8 @@ PalResult PAL_CALL palInitVideo(
         nullptr);
 
     if (!s_Video.hiddenWindow) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -1131,7 +1132,8 @@ PalResult PAL_CALL palInitVideo(
     rid.usUsage = 0x02;
     rid.usUsagePage = 0x01;
     if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -1420,7 +1422,8 @@ PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor)
     HMONITOR monitor = nullptr;
     monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
     if (!monitor) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -1448,7 +1451,7 @@ PalResult PAL_CALL palGetMonitorInfo(
             return PAL_RESULT_INVALID_MONITOR;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1529,7 +1532,7 @@ PalResult PAL_CALL palEnumerateMonitorModes(
             return PAL_RESULT_INVALID_MONITOR;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1598,7 +1601,7 @@ PalResult PAL_CALL palGetCurrentMonitorMode(
             return PAL_RESULT_INVALID_MONITOR;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1661,7 +1664,7 @@ PalResult PAL_CALL palSetMonitorOrientation(
             return PAL_RESULT_INVALID_MONITOR;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1779,7 +1782,8 @@ PalResult PAL_CALL palCreateWindow(
             MONITOR_DEFAULTTOPRIMARY);
 
         if (!monitor) {
-            palSetLastPlatformError();
+            DWORD error = GetLastError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1828,7 +1832,8 @@ PalResult PAL_CALL palCreateWindow(
         nullptr);
 
     if (!handle) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -2040,7 +2045,7 @@ PalResult PAL_CALL palFlashWindow(
             return PAL_RESULT_INVALID_WINDOW;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2133,7 +2138,7 @@ PalResult PAL_CALL palGetWindowMonitor(
             return PAL_RESULT_INVALID_WINDOW;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2414,7 +2419,7 @@ PalResult PAL_CALL palSetWindowOpacity(
 
         } else {
             // FIXME: check for child windows
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2499,7 +2504,7 @@ PalResult PAL_CALL palSetWindowStyle(
             return PAL_RESULT_INVALID_WINDOW;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2555,7 +2560,7 @@ PalResult PAL_CALL palSetWindowPos(
             return PAL_RESULT_INVALID_WINDOW;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2593,7 +2598,7 @@ PalResult PAL_CALL palSetWindowSize(
             return PAL_RESULT_INVALID_ARGUMENT;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2619,7 +2624,7 @@ PalResult PAL_CALL palSetFocusWindow(PalWindow* window)
             return PAL_RESULT_ACCESS_DENIED;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -2671,7 +2676,8 @@ PalResult PAL_CALL palCreateIcon(
 
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
     ReleaseDC(nullptr, hdc);
@@ -2708,7 +2714,8 @@ PalResult PAL_CALL palCreateIcon(
     HICON icon = CreateIconIndirect(&iconInfo);
     if (!icon) {
         s_Video.deleteObject(bitmap);
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -2790,7 +2797,8 @@ PalResult PAL_CALL palCreateCursor(
 
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
     ReleaseDC(nullptr, hdc);
@@ -2829,7 +2837,8 @@ PalResult PAL_CALL palCreateCursor(
     HCURSOR cursor = CreateIconIndirect(&iconInfo);
     if (!cursor) {
         s_Video.deleteObject(bitmap);
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -2884,7 +2893,8 @@ PalResult PAL_CALL palCreateCursorFrom(
     }
 
     if (!cursor) {
-        palSetLastPlatformError();
+        DWORD error = GetLastError();
+        palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -3013,7 +3023,7 @@ PalResult PAL_CALL palSetWindowCursor(
             return PAL_RESULT_INVALID_WINDOW;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 

@@ -82,7 +82,7 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg)
     return (DWORD)(uintptr_t)ret;
 }
 
-void palSetLastPlatformError();
+void palSetLastPlatformError(Uint32 e);
 
 // ==================================================
 // Public API
@@ -137,7 +137,7 @@ PalResult PAL_CALL palCreateThread(
             return PAL_RESULT_ACCESS_DENIED;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -334,7 +334,7 @@ PalResult PAL_CALL palSetThreadPriority(
             return PAL_RESULT_ACCESS_DENIED;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -359,7 +359,7 @@ PalResult PAL_CALL palSetThreadAffinity(
             return PAL_RESULT_INVALID_ARGUMENT;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -406,7 +406,8 @@ PalResult PAL_CALL palSetThreadName(
             return PAL_RESULT_ACCESS_DENIED;
 
         } else {
-            palSetLastPlatformError();
+            DWORD error = GetLastError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -543,7 +544,7 @@ PalResult PAL_CALL palWaitCondVar(
         if (error == ERROR_TIMEOUT) {
             return PAL_RESULT_TIMEOUT;
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -571,7 +572,7 @@ PalResult PAL_CALL palWaitCondVarTimeout(
         if (error == ERROR_TIMEOUT) {
             return PAL_RESULT_TIMEOUT;
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
