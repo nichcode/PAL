@@ -36,6 +36,7 @@ freely, subject to the following restrictions:
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include <errno.h>
 
 // ==================================================
 // Typedefs, enums and structs

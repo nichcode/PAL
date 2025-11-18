@@ -35,6 +35,7 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 // X11 headers
 #if PAL_HAS_X11
@@ -1428,8 +1429,25 @@ static void surfaceHandleEnter(
     // this assumes a surface can only span 4 monitors
     // at the sametime but this might be wrong
     // FIXME: check if we need more
-    if (data->monitorCount < MAX_SPAN_MONITORS) {
-        SpanMonitor* span = &data->monitors[data->monitorCount];
+
+    // wayland will trigger this event if the window gains focus
+    // so we check if the output is the same
+    SpanMonitor* span = nullptr;
+    if (data->monitorCount > 0) {
+        for (int i = 0; i < data->monitorCount; i++) {
+            if (data->monitors[i].monitor == (void*)output) {
+                // the monitor already exist in our array
+                // so we just update it
+                span = &data->monitors[i];
+                span->dpi = monitorData->dpi;
+                break;
+            }
+        }
+    }
+
+    if (span == nullptr) {
+        // new entry
+        span = &data->monitors[data->monitorCount];
         span->monitor = output;
         span->dpi = monitorData->dpi;
         data->monitorCount++;
