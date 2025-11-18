@@ -54,6 +54,7 @@ freely, subject to the following restrictions:
 #define MAX_MODE_COUNT 128
 #define NULL_ORIENTATION 5
 #define WINDOW_NAME_SIZE 256
+#define NULL_BUTTON_SERIAL 0xffffffffU
 
 typedef HRESULT(WINAPI* GetDpiForMonitorFn)(
     HMONITOR,
@@ -169,6 +170,8 @@ static Keyboard s_Keyboard = {0};
 // ==================================================
 // Internal API
 // ==================================================
+
+void palSetLastPlatformError();
 
 LRESULT CALLBACK videoProc(
     HWND hwnd,
@@ -553,7 +556,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
                     event.type = type;
-                    event.data = palPackUint32(button, 0);
+                    event.data = palPackUint32(button, NULL_BUTTON_SERIAL);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -1050,8 +1053,6 @@ static WindowData* getFreeWindowData()
     }
     return nullptr;
 }
-
-void palSetLastPlatformError();
 
 // ==================================================
 // Public API

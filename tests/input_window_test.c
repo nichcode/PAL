@@ -2,6 +2,8 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
+#define DISPATCH_MODE_POLL 0
+
 static const char* s_KeyNames[PAL_KEYCODE_MAX] = {
 
     [PAL_KEYCODE_UNKNOWN] = "Unknown",

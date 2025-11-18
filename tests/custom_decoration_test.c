@@ -1,9 +1,10 @@
+
+#if defined(__linux__)
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L // for linux
 #include "pal/pal_video.h"
 #include "tests.h"
 
-#if defined(__linux__)
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -700,8 +701,6 @@ void drawText(
     }
 }
 
-#endif // __linux__
-
 static PalWindowHandleInfoEx s_WinHandle;
 
 static void createDecoration()
@@ -1020,4 +1019,13 @@ bool customDecorationTest()
     closeDisplayWayland();
 
     return true;
+}
+
+#endif // __linux__
+
+#include "tests.h"
+
+bool customDecorationTest()
+{
+    return false;
 }
