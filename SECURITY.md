@@ -1,3 +1,4 @@
+
 # Security Policy
 
 PAL takes security seriously. If you discover a security vulnerability, please report it responsibly so it can be fixed safely.
