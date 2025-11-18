@@ -72,6 +72,7 @@ freely, subject to the following restrictions:
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
 #define MAX_SPAN_MONITORS 4
+#define NULL_BUTTON_SERIAL 0xffffffffU
 
 #pragma region EGL Typedefs
 
@@ -4203,7 +4204,7 @@ static void xUpdateVideo()
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = type;
-                        event.data = palPackUint32(button, 0);
+                        event.data = palPackUint32(button, NULL_BUTTON_SERIAL);
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }

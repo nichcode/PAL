@@ -255,7 +255,7 @@ void palSetLastPlatformError()
     strerror_r(errno, data->platformResultDesc, PAL_LOG_MSG_SIZE);
 #endif // __GLIBC__
 #else
-    DWORD error = getLastError();
+    DWORD error = GetLastError();
     if (error == 0) {
         return;
     }

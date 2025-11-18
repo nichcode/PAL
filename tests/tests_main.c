@@ -32,13 +32,13 @@ int main(int argc, char** argv)
     // registerTest("Window Test", windowTest);
     // registerTest("Icon Test", iconTest);
     // registerTest("Cursor Test", cursorTest);
-    // registerTest("Input Window Test", inputWindowTest);
+    registerTest("Input Window Test", inputWindowTest);
     // registerTest("System Cursor Test", systemCursorTest);
     // registerTest("Attach Window Test", attachWindowTest);
     // registerTest("Character Event Test", charEventTest);
     // registerTest("Native Integration Test", nativeIntegrationTest);
     // registerTest("Native Instance Test", nativeInstanceTest);
-    registerTest("Custom Decoration Test", customDecorationTest);
+    // registerTest("Custom Decoration Test", customDecorationTest);
 #endif // PAL_HAS_VIDEO
 
     // This test can run without video system so long as your have a valid
