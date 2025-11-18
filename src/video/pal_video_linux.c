@@ -168,9 +168,9 @@ typedef struct {
     Uint32 w;
     Uint32 h;
     Uint32 refreshRate;
+    Uint32 wlName;
     PalOrientation orientation;
     PalMonitor* monitor;
-    void* output;
     PalMonitorMode mode; // wayland only sends current
     char name[32];
 } MonitorData;
@@ -1042,6 +1042,7 @@ static Wayland s_Wl = {0};
 #if PAL_HAS_WAYLAND
 
 static WindowData* findWindowData(PalWindow* window);
+static MonitorData* findMonitorData(PalMonitor* monitor);
 
 static inline Uint64 getTime()
 {
@@ -1406,6 +1407,19 @@ static void surfaceHandleEnter(
     struct wl_surface* surface,
     struct wl_output* output)
 {
+    WindowData* data = userData;
+    MonitorData* monitorData = findMonitorData((PalMonitor*)output);
+    if (!monitorData) {
+        return;
+    }
+
+    if (data->dpi == 0) {
+        data->dpi = monitorData->dpi;
+        return;
+    }
+
+    // TODO: check and push dpi
+
     palLog(nullptr, "Surface Enter");
 }
 
@@ -6369,13 +6383,12 @@ static void globalHandle(
             return;
         }
 
-        PalMonitor* m = TO_PAL_HANDLE(PalMonitor, name);
         struct wl_output* output = nullptr;
         output = wlRegistryBind(s_Wl.registry, name, s_Wl.outputInterface, 3);
         wlOutputAddListener(output, &s_OutputListener, monitorData);
 
-        monitorData->output = (void*)output;
-        monitorData->monitor = m;
+        monitorData->wlName = name;
+        monitorData->monitor = (PalMonitor*)output;
         s_Wl.monitorCount++;
     }
 }
@@ -6385,12 +6398,14 @@ static void globalRemove(
     struct wl_registry* registry,
     uint32_t name)
 {
-    PalMonitor* m = TO_PAL_HANDLE(PalMonitor, name);
-    MonitorData* monitorData = findMonitorData(m);
-    if (monitorData) {
-        monitorData->used = false;
-        s_Wl.proxyDestroy((struct wl_proxy*)monitorData->output);
-        s_Wl.monitorCount--;
+    for (int i = 0; i < s_Video.maxMonitorData; ++i) {
+        if (s_Video.monitorData[i].used &&
+            s_Video.monitorData[i].wlName == name) {
+            MonitorData* data = &s_Video.monitorData[i];
+            data->used = false;
+            s_Wl.proxyDestroy((struct wl_proxy*)data->monitor);
+            s_Wl.monitorCount--;
+        }
     }
 }
 
@@ -6977,6 +6992,12 @@ PalResult wlCreateWindow(
             palPushEvent(driver, &event);
         }
     }
+
+    // Since wayland does not have a way to set unique data
+    // to a surface without taking control from users
+    // we might implement a simple hash map to do that
+    // but at the moment a linear search is fine
+    // FIXME: Implement a window hash map
 
     data->skipState = false;
     data->skipConfigure = false;

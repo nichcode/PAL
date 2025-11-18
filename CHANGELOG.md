@@ -78,10 +78,10 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - **Video:** Added **palGetWindowHandleInfoEx()** to get extended window handles.
 - **Video:** Added **palGetRawMouseWheelDelta()** to get raw mouse wheel delta.
 - **Video:** Added **PAL_CONFIG_BACKEND_GLES** to `PalFBConfigBackend` enum.
-- **Video:** Added **palSetPreferredInstance()** to use native instance or display wth PAL video.
+- **Video:** Added **palSetPreferredInstance()** to set the native instance or display PAL video should use rather than creating a new one.
 - **Core:** Added **palPackFloat()** to combine two floats into a single Int64 integer.
 - **Core:** Added **palUnpackFloat()** to retreive two floats from a single Int64 integer.
-- **OpenGL:** Added **palGLSetInstance()** to set the instance or display handle.
+- **OpenGL:** Added **palGLSetInstance()** o set the native instance or display PAL opengl should use. This must be set before calling **palInitGL()**.
 - **OpenGL:** Added **palGLGetBackend()** to get the opengl backend.
 - **Event:** Added **PAL_EVENT_WINDOW_DECORATION_MODE** to `PalEventType` enum.
 - **Event:** Added **PalDecorationMode** enum.
@@ -111,3 +111,10 @@ This is a runtime behavior change. The **input_window_test.c** has been updated 
 - **palJoinThread()** - ABI remains unchanged but now takes the address 
 of a pointer variable for the return value of the thread.
 PAL internally reinterpreted into a pointer-to-pointer. This is for ABI stability.
+
+Example – Join thread and get the return value
+```c
+void* retval;
+palJoinThread(thread, &retval);
+```
+
