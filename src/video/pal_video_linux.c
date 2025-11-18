@@ -71,6 +71,7 @@ freely, subject to the following restrictions:
 
 #define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
+#define MAX_SPAN_MONITORS 4
 
 #pragma region EGL Typedefs
 
@@ -131,6 +132,11 @@ typedef EGLBoolean (*eglGetConfigsFn)(
 #pragma endregion
 
 typedef struct {
+    void* monitor;
+    int dpi;
+} SpanMonitor;
+
+typedef struct {
     bool skipConfigure;
     bool skipState;
     bool used;
@@ -143,6 +149,7 @@ typedef struct {
     int y;
     Uint32 w;
     int dpi;
+    int monitorCount;
     Uint32 h;
     PalWindowState state;
     PalWindow* window;
@@ -158,6 +165,7 @@ typedef struct {
     void* decoration;
     void* cursor;
     void* eglWindow;
+    SpanMonitor monitors[MAX_SPAN_MONITORS];
 } WindowData;
 
 typedef struct {
@@ -1413,14 +1421,63 @@ static void surfaceHandleEnter(
         return;
     }
 
+    // wayland sends multiple surface enter events
+    // if the surface spans multiple monitors
+    // we get all and return the highest dpi
+    // this assumes a surface can only span 4 monitors
+    // at the sametime but this might be wrong
+    // FIXME: check if we need more
+    if (data->monitorCount < MAX_SPAN_MONITORS) {
+        SpanMonitor* span = &data->monitors[data->monitorCount];
+        span->monitor = output;
+        span->dpi = monitorData->dpi;
+        data->monitorCount++;
+    }
+
     if (data->dpi == 0) {
-        data->dpi = monitorData->dpi;
+        // this is triggered when the window is created
+        // we cache the DPI and skip the event
+        data->dpi = monitorData->dpi;        
         return;
     }
 
-    // TODO: check and push dpi
+    // the code below should be skipped if users are not 
+    // interested in DPI changed events
+    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    PalEventType type = PAL_EVENT_MONITOR_DPI_CHANGED;
+    if (!s_Video.eventDriver) {
+        return;
+    }
 
-    palLog(nullptr, "Surface Enter");
+    PalEventDriver* driver = s_Video.eventDriver;
+    mode = palGetEventDispatchMode(driver, type);
+    if (mode == PAL_DISPATCH_NONE) {
+        return;
+    }
+
+    // get the highest dpi and check if the it has changed
+    int maxDPI = 96; // baseline
+    for (int i = 0; i < data->monitorCount; i++) {
+        if (!data->monitors[i].monitor) {
+            // not a valid index. continue
+            continue;
+        }
+
+        if (data->monitors[i].dpi > maxDPI) {
+            // new highest
+            maxDPI = data->monitors[i].dpi;
+        }
+    }
+
+    if (maxDPI != data->dpi) {
+        data->dpi = maxDPI;
+
+        PalEvent event = {0};
+        event.type = type;
+        event.data = maxDPI;
+        event.data2 = palPackPointer((void*)data->window);
+        palPushEvent(driver, &event);
+    }
 }
 
 static void surfaceHandleLeave(
@@ -1428,7 +1485,23 @@ static void surfaceHandleLeave(
     struct wl_surface* surface,
     struct wl_output* output)
 {
-    palLog(nullptr, "Surface Leave");
+    // remove the monitor from our span monitor list
+    WindowData* data = userData;
+    MonitorData* monitorData = findMonitorData((PalMonitor*)output);
+    if (!monitorData) {
+        return;
+    }
+
+    for (int i = 0; i < data->monitorCount; i++) {
+        if (data->monitors[i].monitor == (void*)output) {
+            // found our monitor
+            // we might want to pack the array but its just 4 monitors
+            // so we leave it like that
+            data->monitors[i].monitor = nullptr;
+            data->monitorCount--;
+            break;
+        }
+    }
 }
 
 static struct wl_surface_listener surfaceListener = {
