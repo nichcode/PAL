@@ -1004,11 +1004,11 @@ bool customDecorationTest()
     return true;
 }
 
-#endif // __linux__
-
+#else 
 #include "tests.h"
-
 bool customDecorationTest()
 {
     return false;
 }
+
+#endif // __linux__

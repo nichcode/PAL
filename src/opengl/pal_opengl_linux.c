@@ -33,6 +33,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 // ==================================================
 // Typedefs, enums and structs
