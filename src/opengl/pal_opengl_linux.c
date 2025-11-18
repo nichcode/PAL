@@ -342,7 +342,7 @@ static void freeContextData(PalGLContext* context)
     }
 }
 
-void palSetLastPlatformError();
+void palSetLastPlatformError(Uint32 e);
 
 // ==================================================
 // Public API
@@ -359,7 +359,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     if (!s_GL.platformDisplay) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -375,7 +375,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     s_GL.handle = dlopen("libEGL.so", RTLD_LAZY);
     if (!s_GL.handle) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -453,7 +453,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         !s_GL.eglQueryString          ||
         !s_GL.eglGetConfigs           || 
         !s_GL.eglCreateWindowSurface) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -471,19 +471,19 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     if (!s_GL.eglBindAPI(s_GL.apiType)) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     EGLDisplay display = s_GL.eglGetDisplay(s_GL.platformDisplay);
     EGLDisplay * tmpDisplay = EGL_NO_DISPLAY;
     if (display == EGL_NO_DISPLAY) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     if (!s_GL.eglInitialize(display, nullptr, nullptr)) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -504,12 +504,12 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         // create a default display and use that
         tmpDisplay = s_GL.eglGetDisplay(EGL_DEFAULT_DISPLAY);
         if (display == EGL_NO_DISPLAY) {
-            palSetLastPlatformError();
+            palSetLastPlatformError(errno);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
         if (!s_GL.eglInitialize(tmpDisplay, nullptr, nullptr)) {
-            palSetLastPlatformError();
+            palSetLastPlatformError(errno);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     } else {
@@ -519,14 +519,14 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     s_GL.eglChooseConfig(tmpDisplay, attribs, &config, 1, &numConfigs);
     if (!config) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     s_GL.eglGetConfigAttrib(tmpDisplay, config, EGL_RENDERABLE_TYPE, &type);
     if (!(type & s_GL.apiTypeBit)) {
         // we must support the required API
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -535,7 +535,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     if (s_GL.apiType == EGL_OPENGL_API) {
         if (!(type & EGL_OPENGL_ES2_BIT)) {
             // FIXME: create a dummy window if EGL_OPENGL_ES2_BIT
-            palSetLastPlatformError();
+            palSetLastPlatformError(errno);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -552,7 +552,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         pBufferAttribs);
 
     if (surface == EGL_NO_SURFACE) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -583,7 +583,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     if (context == EGL_NO_CONTEXT) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -743,7 +743,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     // get the number of configs and filter the ones for opengl desktop
     EGLint numConfigs = 0;
     if (!s_GL.eglGetConfigs(s_GL.display, nullptr, 0, &numConfigs)) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -1029,7 +1029,7 @@ PalResult PAL_CALL palCreateGLContext(
     // we need to get the EGL config from the user supplied index
     EGLint numConfigs = 0;
     if (!s_GL.eglGetConfigs(s_GL.display, nullptr, 0, &numConfigs)) {
-        palSetLastPlatformError();
+        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -1145,7 +1145,7 @@ PalResult PAL_CALL palCreateGLContext(
             return PAL_RESULT_INVALID_GL_VERSION;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(errno);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1173,7 +1173,7 @@ PalResult PAL_CALL palCreateGLContext(
             return PAL_RESULT_INVALID_GL_FBCONFIG;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(errno);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
@@ -1254,7 +1254,7 @@ PalResult PAL_CALL palMakeContextCurrent(
                 return PAL_RESULT_INVALID_GL_WINDOW;
 
             } else {
-                palSetLastPlatformError();
+                palSetLastPlatformError(errno);
                 return PAL_RESULT_PLATFORM_FAILURE;
             }
         }
@@ -1306,7 +1306,7 @@ PalResult PAL_CALL palSwapBuffers(
             return PAL_RESULT_INVALID_GL_WINDOW;
 
         } else {
-            palSetLastPlatformError();
+            palSetLastPlatformError(errno);
             return PAL_RESULT_PLATFORM_FAILURE;
         }
     }
