@@ -874,7 +874,10 @@ bool customDecorationTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "Custom Decoration Test");
     palLog(nullptr, "Press Escape or click close button to close Test");
-    palLog(nullptr, "This only implements close button and window movement");
+
+    palLog(nullptr, 
+        "This only implements close and window movement for simplicity");
+
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
