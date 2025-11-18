@@ -90,9 +90,9 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 ## Supported Platforms
 - Windows (Vista+)
 - Linux (X11)
+- Linux (Wayland)
 
 ## Planned Platforms
-- Linux (Wayland)
 - macOS (Cocoa)
 - Android
 - iOS
