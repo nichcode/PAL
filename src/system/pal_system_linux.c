@@ -25,6 +25,8 @@ freely, subject to the following restrictions:
 // Includes
 // ==================================================
 
+#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 200112L
 #include "pal/pal_system.h"
 
 #include <stdio.h>
@@ -65,6 +67,8 @@ static Uint32 parseCache(const char* path)
     return cacheSize;
 }
 
+void palSetLastPlatformError();
+
 // ==================================================
 // Public API
 // ==================================================
@@ -90,6 +94,7 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     FILE* file = fopen("/etc/os-release", "r");
     if (!file) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -118,6 +123,7 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     struct statvfs stats;
     if (statvfs("/", &stats) != 0) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -141,6 +147,7 @@ PalResult PAL_CALL palGetCPUInfo(
 
     FILE* file = fopen("/proc/cpuinfo", "r");
     if (!file) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -220,6 +227,7 @@ PalResult PAL_CALL palGetCPUInfo(
     // get architecture
     struct utsname arch;
     if (uname(&arch) != 0) {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 

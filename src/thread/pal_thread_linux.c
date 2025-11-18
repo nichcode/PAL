@@ -57,6 +57,8 @@ struct PalCondVar {
 // Internal API
 // ==================================================
 
+void palSetLastPlatformError();
+
 // ==================================================
 // Public API
 // ==================================================
@@ -82,6 +84,7 @@ PalResult PAL_CALL palCreateThread(
     pthread_t thread;
     if (info->stackSize == 0) {
         if (pthread_create(&thread, nullptr, info->entry, info->arg) != 0) {
+            palSetLastPlatformError();
             return PAL_RESULT_PLATFORM_FAILURE;
         }
 
@@ -91,6 +94,7 @@ PalResult PAL_CALL palCreateThread(
         pthread_attr_setstacksize(&attr, info->stackSize);
 
         if (pthread_create(&thread, nullptr, info->entry, info->arg) != 0) {
+            palSetLastPlatformError();
             return PAL_RESULT_PLATFORM_FAILURE;
         }
         pthread_attr_destroy(&attr);
@@ -123,6 +127,7 @@ PalResult PAL_CALL palJoinThread(
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
     } else {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 }
@@ -437,6 +442,7 @@ PalResult PAL_CALL palWaitCondVar(
     } else if (ret == ETIMEDOUT) {
         return PAL_RESULT_TIMEOUT;
     } else {
+        palSetLastPlatformError();
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 }
