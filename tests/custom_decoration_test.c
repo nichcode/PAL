@@ -865,6 +865,9 @@ static void PAL_CALL onEvent(
         palUnpackInt32(event->data, &x, &y);
         s_Decoration.mouseX = x;
         s_Decoration.mouseY = y;
+
+    } else if (event->type == PAL_EVENT_MONITOR_DPI_CHANGED) {
+        palLog(nullptr, "Monitor DPI: %d", event->data);
     }
 }
 
@@ -884,6 +887,7 @@ bool customDecorationTest()
     openDisplayWayland();
     if (!s_Display) {
         // not on wayland
+        palLog(nullptr, "Not on wayland platform");
         return false;
     }
 
@@ -923,6 +927,11 @@ bool customDecorationTest()
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_MOUSE_MOVE,
+        PAL_DISPATCH_CALLBACK);
+
+    palSetEventDispatchMode(
+        eventDriver,
+        PAL_EVENT_MONITOR_DPI_CHANGED,
         PAL_DISPATCH_CALLBACK);
 
     // tell the video system to use out instance rather

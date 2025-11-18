@@ -102,7 +102,7 @@ static inline void onWindowModalEnd(const PalEvent* event)
 static inline void onMonitorDPI(const PalEvent* event)
 {
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(nullptr, "%s: Display DPI: %d", dispatchString, event->data);
+    palLog(nullptr, "%s: Monitor DPI: %d", dispatchString, event->data);
 }
 
 static inline void onMonitorList(const PalEvent* event)
@@ -110,7 +110,7 @@ static inline void onMonitorList(const PalEvent* event)
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(
         nullptr,
-        "%s: Display (monitor) List has been changed",
+        "%s: Monitor List has been changed",
         dispatchString);
 }
 
