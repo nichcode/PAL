@@ -104,8 +104,8 @@ typedef bool(PAL_CALL* PalPollFn)(
  * @enum PalDecorationMode
  * @brief Decoration types. This is not a bitmask enum.
  *
- * All decoration types follow the format `PAL_DECORATION_MODE_**` for consistency and
- * API use.
+ * All decoration types follow the format `PAL_DECORATION_MODE_**` for
+ * consistency and API use.
  *
  * @since 1.3
  * @ingroup pal_event

@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #define WINDOW_TITLE "Custom Decoration Test"
 #define WL_MARSHAL_FLAG_DESTROY 1 << 0
@@ -47,12 +47,12 @@ typedef struct {
     Uint64 size;
 } WaylandDecoration;
 
-static struct wl_display *s_Display = nullptr;
-static struct wl_registry *s_Registry = nullptr;
-static struct wl_compositor *s_Compositor = nullptr;
+static struct wl_display* s_Display = nullptr;
+static struct wl_registry* s_Registry = nullptr;
+static struct wl_compositor* s_Compositor = nullptr;
 static struct wl_subcompositor* s_Subcompositor = nullptr;
-static struct wl_shm *s_Shm = nullptr;
-static struct wl_surface *s_Surface = nullptr;
+static struct wl_shm* s_Shm = nullptr;
+static struct wl_surface* s_Surface = nullptr;
 static struct wl_seat* s_Seat = nullptr;
 
 static WaylandDecoration s_Decoration = {0};
@@ -151,8 +151,8 @@ static inline int wlRegistryAddListener(
         data);
 }
 
-static inline struct wl_registry* wlDisplayGetRegistry(
-    struct wl_display* wl_display)
+static inline struct wl_registry*
+wlDisplayGetRegistry(struct wl_display* wl_display)
 {
     struct wl_proxy* registry;
     registry = s_wl_proxy_marshal_flags(
@@ -166,219 +166,204 @@ static inline struct wl_registry* wlDisplayGetRegistry(
     return (struct wl_registry*)registry;
 }
 
-static inline struct wl_surface* wlCompositorCreateSurface(
-    struct wl_compositor *wl_compositor)
+static inline struct wl_surface*
+wlCompositorCreateSurface(struct wl_compositor* wl_compositor)
 {
-	struct wl_proxy *id;
-	id = s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_compositor,
+    struct wl_proxy* id;
+    id = s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_compositor,
         0, // WL_COMPOSITOR_CREATE_SURFACE,
-        surfaceInterface, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_compositor), 
-            0, 
-            NULL);
+        surfaceInterface,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_compositor),
+        0,
+        NULL);
 
-	return (struct wl_surface*) id;
+    return (struct wl_surface*)id;
 }
 
-static inline void wlSurfaceCommit(struct wl_surface *wl_surface)
+static inline void wlSurfaceCommit(struct wl_surface* wl_surface)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_surface,
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_surface,
         6, // WL_SURFACE_COMMIT
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_surface), 
-            0);
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_surface),
+        0);
 }
 
-static inline void wlSurfaceDestroy(struct wl_surface *wl_surface)
+static inline void wlSurfaceDestroy(struct wl_surface* wl_surface)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_surface,
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_surface,
         0, // WL_SURFACE_DESTROY
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_surface), 
-            WL_MARSHAL_FLAG_DESTROY);
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_surface),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct wl_shm_pool* wlShmCreatePool(
-    struct wl_shm *wl_shm, 
-    int32_t fd, 
+    struct wl_shm* wl_shm,
+    int32_t fd,
     int32_t size)
 {
-	struct wl_proxy *id;
-	id = s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_shm,
+    struct wl_proxy* id;
+    id = s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_shm,
         0, // WL_SHM_CREATE_POOL
-        shmPoolInterface, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_shm), 
-            0, 
-            NULL, 
-            fd, 
-            size);
+        shmPoolInterface,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_shm),
+        0,
+        NULL,
+        fd,
+        size);
 
-	return (struct wl_shm_pool *) id;
+    return (struct wl_shm_pool*)id;
 }
 
-static inline void wlShmPoolDestroy(struct wl_shm_pool *wl_shm_pool)
+static inline void wlShmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_shm_pool,
-        1, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_shm_pool), 
-            WL_MARSHAL_FLAG_DESTROY);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_shm_pool,
+        1,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_shm_pool),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct wl_buffer* wlShmPoolCreateBuffer(
-    struct wl_shm_pool *wl_shm_pool, 
-    int32_t offset, 
-    int32_t width, 
-    int32_t height, 
-    int32_t stride, 
+    struct wl_shm_pool* wl_shm_pool,
+    int32_t offset,
+    int32_t width,
+    int32_t height,
+    int32_t stride,
     uint32_t format)
 {
-	struct wl_proxy *id;
-	id = s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_shm_pool,
-        0, 
-        bufferInterface, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_shm_pool),
-            0, 
-            NULL, 
-            offset,
-            width, 
-            height, 
-            stride, 
-            format);
+    struct wl_proxy* id;
+    id = s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_shm_pool,
+        0,
+        bufferInterface,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_shm_pool),
+        0,
+        NULL,
+        offset,
+        width,
+        height,
+        stride,
+        format);
 
-	return (struct wl_buffer *) id;
+    return (struct wl_buffer*)id;
 }
 
-static inline void wlBufferDestroy(struct wl_buffer *wl_buffer)
+static inline void wlBufferDestroy(struct wl_buffer* wl_buffer)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_buffer,
-        0, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_buffer),
-            WL_MARSHAL_FLAG_DESTROY);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_buffer,
+        0,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_buffer),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void wlSurfaceAttach(
-    struct wl_surface *wl_surface, 
-    struct wl_buffer *buffer, 
-    int32_t x, 
+    struct wl_surface* wl_surface,
+    struct wl_buffer* buffer,
+    int32_t x,
     int32_t y)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_surface,
-        1, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_surface), 
-            0, 
-            buffer, 
-            x, 
-            y);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_surface,
+        1,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_surface),
+        0,
+        buffer,
+        x,
+        y);
 }
 
 static inline void wlSurfaceDamageBuffer(
-    struct wl_surface *wl_surface, 
-    int32_t x, 
-    int32_t y, 
-    int32_t width, 
+    struct wl_surface* wl_surface,
+    int32_t x,
+    int32_t y,
+    int32_t width,
     int32_t height)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_surface,
-        9, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_surface), 
-            0, 
-            x, 
-            y, 
-            width, 
-            height);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_surface,
+        9,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_surface),
+        0,
+        x,
+        y,
+        width,
+        height);
 }
 
-static inline void wlSubcompositorDestroy(
-    struct wl_subcompositor *wl_subcompositor)
+static inline void
+wlSubcompositorDestroy(struct wl_subcompositor* wl_subcompositor)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_subcompositor,
-        0, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_subcompositor), 
-            WL_MARSHAL_FLAG_DESTROY);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_subcompositor,
+        0,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_subcompositor),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline struct wl_subsurface * wlSubcompositorGetSubsurface(
-    struct wl_subcompositor *wl_subcompositor, 
-    struct wl_surface *surface, 
-    struct wl_surface *parent)
+static inline struct wl_subsurface* wlSubcompositorGetSubsurface(
+    struct wl_subcompositor* wl_subcompositor,
+    struct wl_surface* surface,
+    struct wl_surface* parent)
 {
-	struct wl_proxy *id;
-	id = s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_subcompositor,
-        1, 
-        subsurfaceInterface, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_subcompositor), 
-            0, 
-            NULL, 
-            surface, 
-            parent);
+    struct wl_proxy* id;
+    id = s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_subcompositor,
+        1,
+        subsurfaceInterface,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_subcompositor),
+        0,
+        NULL,
+        surface,
+        parent);
 
-	return (struct wl_subsurface *) id;
+    return (struct wl_subsurface*)id;
 }
 
-static inline void wlSubsurfaceDestroy(
-    struct wl_subsurface *wl_subsurface)
+static inline void wlSubsurfaceDestroy(struct wl_subsurface* wl_subsurface)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_subsurface,
-        0, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_subsurface), 
-            WL_MARSHAL_FLAG_DESTROY);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_subsurface,
+        0,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_subsurface),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void wlSubsurfaceSetPosition(
-    struct wl_subsurface *wl_subsurface, 
-    int32_t x, 
+    struct wl_subsurface* wl_subsurface,
+    int32_t x,
     int32_t y)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_subsurface,
-        1, NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_subsurface),
-            0, 
-            x, 
-            y);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_subsurface,
+        1,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_subsurface),
+        0,
+        x,
+        y);
 }
 
-static inline void wlSubsurfaceSetDesync(
-    struct wl_subsurface *wl_subsurface)
+static inline void wlSubsurfaceSetDesync(struct wl_subsurface* wl_subsurface)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) wl_subsurface,
-        5, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) wl_subsurface), 
-            0);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)wl_subsurface,
+        5,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)wl_subsurface),
+        0);
 }
 
 static void globalHandle(
@@ -395,7 +380,8 @@ static void globalHandle(
         s_Compositor = wlRegistryBind(registry, name, compositorInterface, 4);
 
     } else if (strcmp(interface, "wl_subcompositor") == 0) {
-        s_Subcompositor = wlRegistryBind(registry, name, subCompositorInterface, 1);
+        s_Subcompositor =
+            wlRegistryBind(registry, name, subCompositorInterface, 1);
 
     } else if (strcmp(interface, "wl_shm") == 0) {
         s_Shm = wlRegistryBind(registry, name, shmInterface, 1);
@@ -407,7 +393,6 @@ static void globalRemove(
     struct wl_registry* registry,
     uint32_t name)
 {
-    
 }
 
 static const struct wl_registry_listener s_RegistryListener = {
@@ -416,37 +401,35 @@ static const struct wl_registry_listener s_RegistryListener = {
 
 // xdg-shell protocol
 static inline void xdgToplevelMove(
-    struct xdg_toplevel *xdg_toplevel, 
-    struct wl_seat *seat, 
+    struct xdg_toplevel* xdg_toplevel,
+    struct wl_seat* seat,
     uint32_t serial)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) xdg_toplevel,
-        5, 
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)xdg_toplevel,
+        5,
         NULL,
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            seat, 
-            serial);
+        s_wl_proxy_get_version((struct wl_proxy*)xdg_toplevel),
+        0,
+        seat,
+        serial);
 }
 
 static inline void xdgToplevelResize(
-    struct xdg_toplevel *xdg_toplevel, 
-    struct wl_seat *seat, 
-    uint32_t serial, 
+    struct xdg_toplevel* xdg_toplevel,
+    struct wl_seat* seat,
+    uint32_t serial,
     uint32_t edges)
 {
-	s_wl_proxy_marshal_flags(
-        (struct wl_proxy *) xdg_toplevel,
-        6, 
-        NULL, 
-        s_wl_proxy_get_version(
-            (struct wl_proxy *) xdg_toplevel), 
-            0, 
-            seat, 
-            serial, 
-            edges);
+    s_wl_proxy_marshal_flags(
+        (struct wl_proxy*)xdg_toplevel,
+        6,
+        NULL,
+        s_wl_proxy_get_version((struct wl_proxy*)xdg_toplevel),
+        0,
+        seat,
+        serial,
+        edges);
 }
 
 static void openDisplayWayland()

@@ -108,10 +108,7 @@ static inline void onMonitorDPI(const PalEvent* event)
 static inline void onMonitorList(const PalEvent* event)
 {
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(
-        nullptr,
-        "%s: Monitor List has been changed",
-        dispatchString);
+    palLog(nullptr, "%s: Monitor List has been changed", dispatchString);
 }
 
 static void PAL_CALL onEvent(

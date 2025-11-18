@@ -28,12 +28,12 @@ freely, subject to the following restrictions:
 #ifdef __linux__
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
+#include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <wchar.h>
-#include <errno.h>
 #endif // __linux__
 
 #include "pal/pal_core.h"
@@ -240,7 +240,7 @@ void palSetLastPlatformError()
 {
     LogTLSData* data = getLogTlsData();
     memset(data->platformResultDesc, 0, PAL_LOG_MSG_SIZE);
-    
+
 #ifdef __linux__
     if (errno == 0) {
         return;

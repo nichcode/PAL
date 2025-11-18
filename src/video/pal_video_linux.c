@@ -30,11 +30,11 @@ freely, subject to the following restrictions:
 #include "pal/pal_video.h"
 
 #include <dlfcn.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <math.h>
 
 // X11 headers
 #if PAL_HAS_X11
@@ -2128,10 +2128,9 @@ static inline void xdgSurfaceAckConfigure(
         (struct wl_proxy*)xdg_surface,
         4, // XDG_SURFACE_ACK_CONFIGURE
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy*)xdg_surface),
-            0,
-            serial);
+        s_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
+        0,
+        serial);
 }
 
 static void wmBaseHandlePing(
@@ -2164,7 +2163,8 @@ static void xdgSurfaceHandleConfigure(
             } else {
                 // create a new buffer with the new size
                 struct wl_buffer* buffer = nullptr;
-                buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
+                buffer =
+                    createShmBuffer(winData->w, winData->h, nullptr, false);
                 if (!buffer) {
                     return;
                 }
@@ -2235,7 +2235,8 @@ static void xdgToplevelHandleConfigure(
     WindowData* winData = (WindowData*)data;
     uint32_t* state;
     bool activated = false;
-    wl_array_for_each(state, states) {
+    wl_array_for_each(state, states)
+    {
         // we need only maximized
         if (*state == 1) { // XDG_TOPLEVEL_STATE_MAXIMIZED
             if (winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
@@ -2744,8 +2745,7 @@ void zxdgDecorationHandleConfigure(
 }
 
 static struct zxdg_toplevel_decoration_v1_listener decorationListener = {
-    .configure = zxdgDecorationHandleConfigure
-};
+    .configure = zxdgDecorationHandleConfigure};
 
 #endif // PAL_HAS_WAYLAND
 #pragma endregion
@@ -3101,7 +3101,7 @@ static PalResult eglXBackend(int index)
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
-    
+
     s_X11.visualInfo = visualInfo;
     palFree(s_Video.allocator, eglConfigs);
     return PAL_RESULT_SUCCESS;
@@ -6733,10 +6733,10 @@ void wlShutdownVideo()
     if (s_Wl.compositor) {
         // if compositor was found, all this will be as well
         // since we check all at init
-        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.compositor);
-        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.xdgBase);
-        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.shm);
-        s_Wl.proxyDestroy((struct wl_proxy *)s_Wl.seat);
+        s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.compositor);
+        s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.xdgBase);
+        s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.shm);
+        s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.seat);
     }
 
     if (!s_Video.platformInstance) {
@@ -6762,7 +6762,7 @@ PalResult wlSetFBConfig(
 
     } else {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
-    }    
+    }
 }
 
 void wlUpdateVideo()
@@ -6899,7 +6899,7 @@ PalResult wlGetCurrentMonitorMode(
         return PAL_RESULT_INVALID_MONITOR;
     }
 
-    // this is the same as the current mode 
+    // this is the same as the current mode
     mode->bpp = monitorData->mode.bpp;
     mode->width = monitorData->mode.width;
     mode->height = monitorData->mode.height;
@@ -7009,8 +7009,8 @@ PalResult wlCreateWindow(
             zxdgGetToplevelDecoration(s_Wl.decorationManager, xdgToplevel);
 
         zxdgToplevelDecorationV1AddListener(
-            decoration, 
-            &decorationListener, 
+            decoration,
+            &decorationListener,
             surface);
 
         zxdgToplevelDecorationV1SetMode(decoration, 2);
@@ -7612,8 +7612,8 @@ PalResult PAL_CALL palInitVideo(
             return ret;
         }
         s_Video.backend = &s_XBackend;
-#else 
-    return PAL_RESULT_PLATFORM_FAILURE;
+#else
+        return PAL_RESULT_PLATFORM_FAILURE;
 #endif // PAL_HAS_X11
 
     } else {
@@ -7624,7 +7624,7 @@ PalResult PAL_CALL palInitVideo(
         }
         s_Video.backend = &s_wlBackend;
 #else
-    return PAL_RESULT_PLATFORM_FAILURE;
+        return PAL_RESULT_PLATFORM_FAILURE;
 #endif // PAL_HAS_WAYLAND
     }
 
