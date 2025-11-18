@@ -236,34 +236,29 @@ static inline void writeToConsole(LogTLSData* data)
 #endif // _WIN32
 }
 
-void palSetLastPlatformError()
+void palSetLastPlatformError(Uint32 e)
 {
     LogTLSData* data = getLogTlsData();
     memset(data->platformResultDesc, 0, PAL_LOG_MSG_SIZE);
 
-#ifdef __linux__
-    if (errno == 0) {
+    if (e == 0) {
         return;
     }
 
+#ifdef __linux__
 #if defined(__GLIBC__)
-    char* ret = strerror_r(errno, data->platformResultDesc, PAL_LOG_MSG_SIZE);
+    char* ret = strerror_r(e, data->platformResultDesc, PAL_LOG_MSG_SIZE);
     if (ret != data->platformResultDesc) {
         snprintf(data->platformResultDesc, PAL_LOG_MSG_SIZE, "%s", ret);
     }
 #else
-    strerror_r(errno, data->platformResultDesc, PAL_LOG_MSG_SIZE);
+    strerror_r(e, data->platformResultDesc, PAL_LOG_MSG_SIZE);
 #endif // __GLIBC__
 #else
-    DWORD error = GetLastError();
-    if (error == 0) {
-        return;
-    }
-
     FormatMessageA(
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         nullptr,
-        error,
+        e,
         0,
         data->platformResultDesc,
         PAL_LOG_MSG_SIZE,
