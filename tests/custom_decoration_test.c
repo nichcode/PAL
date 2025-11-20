@@ -580,7 +580,7 @@ void fillRect(
 {
     for (int j = 0; j < h; j++) {
         for (int i = 0; i < w; i++) {
-            pixels[(y + j)* stride + (x + i)] = color;
+            pixels[(y + j) * stride + (x + i)] = color;
         }
     }
 }

@@ -30,12 +30,12 @@ freely, subject to the following restrictions:
 #include "pal/pal_video.h"
 
 #include <dlfcn.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
 
 // X11 headers
 #if PAL_HAS_X11

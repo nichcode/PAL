@@ -405,7 +405,7 @@ bool nativeIntegrationTest()
     getWindowTitle(&windowInfo);
     palLog(nullptr, "Window title: %s", s_TitleBuffer);
 
-    // using native API like wl_proxy_set_user_data, XContext and 
+    // using native API like wl_proxy_set_user_data, XContext and
     // SetWindowLongPtr(GWLP_USERDATA) can be used freely
 
     bool running = true;
