@@ -1,7 +1,5 @@
 # Contributing to PAL
 
-Thank you for your interest in contributing to **PAL**.
-
 Everyone is welcome to contribute to PAL by submitting bug reports, 
 bug fixes, improving documentation, adding tests examples, telling others about PAL,
 giving PAL a star, adding a new backend, etc.
