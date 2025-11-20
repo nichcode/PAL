@@ -9,6 +9,10 @@ PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, desi
 
 PAL is transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
 
+The goal is very simple, write low-level cross-platform code without having per platform files
+all over the place. Example: `renderer_vulkan`, `renderer_d3d12`, `window_win32`, etc.
+PAL makes it possible to safely mix native API with its API in a very straight forward way. This is one of the main reasons why PAL exists.
+
 This approach gives you total control: you handle events, manage resources, and cache state explicitly. PAL provides the building blocks; how you use them — whether for simple applications or advanced frameworks — is entirely up to you.
 
 Example – Get Window Size
