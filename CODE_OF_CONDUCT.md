@@ -1,8 +1,8 @@
 
 # Code of Conduct
 
-PAL aims to provide a respectful and productive environment for all
-contributors. To ensure this, everyone participating in the project — on GitHub
+PAL aims to provide a respectful, productive and positive environment for all
+contributors and maintainers. To ensure this, everyone participating in the project — on GitHub
 issues, discussions, pull requests, or community channels — is expected to
 follow this Code of Conduct.
 
@@ -22,7 +22,6 @@ follow this Code of Conduct.
 
 - Personal attacks, insults, or harassment.
 - Aggressive or hostile debate.
-- Dismissing someone’s question without explanation.
 - Repeated disruptive behavior.
 - Sharing private or confidential information.
 
@@ -45,14 +44,8 @@ The project maintainer may:
 
 - Issue warnings  
 - Temporarily restrict participation  
-- Permanently ban repeat or severe offenders  
+- Permanently ban offenders  
 
 These actions are taken solely to maintain a safe and productive environment.
 
 ---
-
-## Conclusion
-
-PAL is a technical system-level project built on respect, clarity, and
-collaboration.  
-Thank you for helping maintain a healthy community!
