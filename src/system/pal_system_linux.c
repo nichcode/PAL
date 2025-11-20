@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_system.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +37,6 @@ freely, subject to the following restrictions:
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <unistd.h>
-#include <errno.h>
 
 // ==================================================
 // Typedefs, enums and structs

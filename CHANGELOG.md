@@ -73,7 +73,7 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 ## [1.3.0] - 2025-11-21
 
 ### Features
-- **Video:** Added Wayland-based backend support.
+- **Video:** Added Wayland backend support
 - **Video:** Added **palGetVideoFeaturesEx()** to check old and extended supported features.
 - **Video:** Added **palGetWindowHandleInfoEx()** to get extended window handles.
 - **Video:** Added **palGetRawMouseWheelDelta()** to get raw mouse wheel delta.
@@ -83,7 +83,7 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - **Core:** Added **palPackFloat()** to combine two floats into a single Int64 integer.
 - **Core:** Added **palUnpackFloat()** to retreive two floats from a single Int64 integer.
 
-- **OpenGL:** Added **palGLSetInstance()** o set the native instance or display PAL opengl should use. This must be set before calling **palInitGL()**.
+- **OpenGL:** Added **palGLSetInstance()** to set the native instance or display PAL opengl should use. This must be set before calling **palInitGL()**.
 - **OpenGL:** Added **palGLGetBackend()** to get the opengl backend.
 
 - **Event:** Added **PAL_EVENT_WINDOW_DECORATION_MODE** to `PalEventType` enum.

@@ -33,7 +33,6 @@ freely, subject to the following restrictions:
 #include <sys/resource.h>
 #include <time.h>
 #include <unistd.h>
-#include <errno.h>
 
 #include "pal/pal_thread.h"
 
