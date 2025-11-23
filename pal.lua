@@ -29,6 +29,12 @@ function writeConfig(path)
     else
         file:write("#define PAL_HAS_OPENGL 0\n")
     end
+
+    if (PAL_BUILD_GRAPHICS) then
+        file:write("#define PAL_HAS_GRAPHICS 1\n")
+    else
+        file:write("#define PAL_HAS_GRAPHICS 0\n")
+    end
     
     file:close()
 end
@@ -107,7 +113,7 @@ project "PAL"
                 defines { "PAL_HAS_WAYLAND=0" }
             end
 
-            -- -- check for X11 support. This is cross compiler
+            -- check for X11 support. This is cross compiler
             local XPaths = {
                 "/usr/include/X11/Xlib.h",
                 "/usr/include/x86_64-linux-gnu/X11/Xlib.h"
@@ -138,6 +144,32 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files { "src/opengl/pal_opengl_linux.c" }
+        filter {}
+    end
+
+    if (PAL_BUILD_GRAPHICS) then
+        filter {"system:windows", "configurations:*"}
+            -- files { "src/graphics/pal_graphics_win32.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/graphics/pal_graphics_linux.c" }
+
+            -- check for vulkan support. This is cross compiler
+            vulkan_sdk = os.getenv("VULKAN_SDK")
+            if (vulkan_sdk) then
+                -- add to include path if compiler does not see it
+                includedirs {
+                    path.join(vulkan_sdk, "include")
+                }
+
+                libdirs {
+                    path.join(vulkan_sdk, "Lib")
+                }
+
+                defines { "PAL_HAS_VULKAN=1" }
+            else
+                defines { "PAL_HAS_VULKAN=0" }
+            end
         filter {}
     end
 

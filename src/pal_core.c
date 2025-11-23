@@ -68,9 +68,9 @@ freely, subject to the following restrictions:
 
 #define PAL_DEFAULT_ALIGNMENT 16
 #define PAL_VERSION_MAJOR 1
-#define PAL_VERSION_MINOR 3
+#define PAL_VERSION_MINOR 4
 #define PAL_VERSION_BUILD 0
-#define PAL_VERSION_STRING "1.3.0"
+#define PAL_VERSION_STRING "1.4.0"
 #define PAL_LOG_MSG_SIZE 4096
 
 #ifdef _WIN32

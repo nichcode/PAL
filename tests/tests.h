@@ -53,4 +53,7 @@ bool openglMultiContextTest();
 // opengl, video and thread
 bool multiThreadOpenGlTest();
 
+// graphics
+bool graphicsTest();
+
 #endif // _TESTS_H

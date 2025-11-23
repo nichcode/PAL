@@ -63,5 +63,11 @@ project "tests"
         }
     end
 
+    if (PAL_BUILD_GRAPHICS) then
+        files { 
+            "graphics_test.c"
+        }
+    end
+
     includedirs { "%{wks.location}/include" }
     links { "PAL" }
