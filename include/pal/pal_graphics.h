@@ -33,18 +33,57 @@ freely, subject to the following restrictions:
 
 #include "pal_core.h"
 
+#define PAL_GPU_NAME_SIZE 128
+#define PAL_GPU_VERSION_SIZE 16
+
 typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
 
+typedef enum {
+   PAL_GPU_TYPE_UNKNOWN,
+   PAL_GPU_TYPE_DISCRETE,
+   PAL_GPU_TYPE_INTEGRATED,
+   PAL_GPU_TYPE_VIRTUAL,
+   PAL_GPU_TYPE_CPU
+} PalGPUType;
+
+typedef enum {
+   PAL_GPU_API_VULKAN,
+   PAL_GPU_API_D3D12,
+   PAL_GPU_API_METAL,
+   PAL_GPU_API_CUSTOM
+} PalGPUApiType;
+
 typedef struct {
-    PalResult PAL_CALL (*enumerateAdapters)(
+   bool debugLayerSupported;
+   PalGPUType type;
+   PalGPUApiType apiType;
+   Uint32 version;
+   Uint64 totalMemory;
+   char versionString[PAL_GPU_VERSION_SIZE];
+   char name[PAL_GPU_NAME_SIZE];
+} PalGPUAdapterInfo;
+
+typedef struct {
+    PalResult PAL_CALL (*enumerateGPUAdapters)(
         Int32* count, 
         PalGPUAdapter** outAdapters);
+
+    PalResult PAL_CALL (*getGPUAdapterInfo)(
+        PalGPUAdapter* adapter,
+        PalGPUAdapterInfo* info);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator);
-
 PAL_API void PAL_CALL palShutdownGraphics();
+
+PAL_API PalResult PAL_CALL palEnumerateGPUAdapters(
+   Int32* count,
+   PalGPUAdapter** outAdapters);
+
+PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterInfo* info);
 
 /** @} */ // end of pal_graphics group
 

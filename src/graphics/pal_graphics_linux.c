@@ -31,13 +31,16 @@ freely, subject to the following restrictions:
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <string.h>
+#include <stdio.h>
 #endif // PAL_HAS_VULKAN
 
 // ==================================================
 // Typedefs, enums and structs
 // ==================================================
 
-#define PAL_MAX_BACKENDS 8 // should be fine for now
+#define MAX_BACKENDS 8 // should be fine for now
+#define MAX_ADAPTERS 32 // should be enough
 
 #if PAL_HAS_VULKAN
 // VKAPI_PTR expands to nothing on linux
@@ -56,11 +59,37 @@ typedef VkResult (*vkEnumeratePhysicalDevicesFn)(
     uint32_t*, 
     VkPhysicalDevice*);
 
+typedef void (*vkGetPhysicalDevicePropertiesFn)(
+    VkPhysicalDevice, 
+    VkPhysicalDeviceProperties*);
+
+typedef void (*vkGetPhysicalDeviceMemoryPropertiesFn)(
+    VkPhysicalDevice, 
+    VkPhysicalDeviceMemoryProperties*);
+
+typedef VkResult (*vkEnumerateInstanceLayerPropertiesFn)(
+    uint32_t*, 
+    VkLayerProperties*);
+
 #endif // PAL_HAS_VULKAN
 
 typedef struct {
+    bool used;
+    const PalGPUBackend* backend;
+    PalGPUAdapter* adapter;
+} AdapterData;
+
+typedef struct {
+    const PalGPUBackend* base;
+    Uint16 startIndex;
+    Uint16 count;
+} AttachGPUBackend;
+
+typedef struct {
     bool initialized;
+    bool hasDebug;
     Int32 backendCount;
+    Int32 totalAdapterCount;
     const PalAllocator* allocator;
     void* instance;
     void* handle;
@@ -68,8 +97,12 @@ typedef struct {
     void* destroyInstance;
     void* createInstance;
     void* enumeratePhysicalDevices;
+    void* getPhysicalDeviceProperties;
+    void* getPhysicalDeviceMemoryProperties;
+    void* enumerateInstanceLayerProperties;
 
-    const PalGPUBackend* backends[PAL_MAX_BACKENDS];
+    AdapterData adapterData[MAX_ADAPTERS];
+    AttachGPUBackend backends[MAX_BACKENDS];
 } VkGPU;
 
 static VkGPU s_VkGPU = {0};
@@ -78,8 +111,28 @@ static VkGPU s_VkGPU = {0};
 // Internal API
 // ==================================================
 
-#if PAL_HAS_VULKAN
+static AdapterData* getFreeAdapterData()
+{
+    for (int i = 0; i < MAX_ADAPTERS; ++i) {
+        if (!s_VkGPU.adapterData[i].used) {
+            s_VkGPU.adapterData[i].used = true;
+            return &s_VkGPU.adapterData[i];
+        }
+    }  
+}
 
+static AdapterData* findAdapterData(PalGPUAdapter* adapter)
+{
+    for (int i = 0; i < MAX_ADAPTERS; ++i) {
+        if (s_VkGPU.adapterData[i].used &&
+            s_VkGPU.adapterData[i].adapter == adapter) {
+            return &s_VkGPU.adapterData[i];
+        }
+    }
+    return nullptr;
+}
+
+#if PAL_HAS_VULKAN
 // we dont want to fill this everytime we want to use
 static VkAllocationCallbacks s_VkAllocator = {0};
 
@@ -138,6 +191,18 @@ PalResult vkInitGraphics()
         s_VkGPU.handle, 
         "vkEnumeratePhysicalDevices");
 
+    s_VkGPU.getPhysicalDeviceProperties = dlsym(
+        s_VkGPU.handle, 
+        "vkGetPhysicalDeviceProperties");
+
+    s_VkGPU.getPhysicalDeviceMemoryProperties = dlsym(
+        s_VkGPU.handle, 
+        "vkGetPhysicalDeviceMemoryProperties");
+
+    s_VkGPU.enumerateInstanceLayerProperties = dlsym(
+        s_VkGPU.handle, 
+        "vkEnumerateInstanceLayerProperties");
+
     // create a dummy instance
     VkApplicationInfo appInfo = {0};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -167,6 +232,34 @@ PalResult vkInitGraphics()
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    Uint32 count = 0;
+    vkEnumerateInstanceLayerPropertiesFn enumerateProperties;
+    enumerateProperties = s_VkGPU.enumerateInstanceLayerProperties;
+
+    VkResult ret = enumerateProperties(&count, nullptr);
+    if (ret != VK_SUCCESS) {
+        s_VkGPU.hasDebug = false;
+    }
+
+    VkLayerProperties* props = nullptr;
+    props = palAllocate(
+        s_VkGPU.allocator, 
+        sizeof(VkLayerProperties) * count,
+        0);
+
+    if (!props) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+    
+    enumerateProperties(&count, props);
+    for (int i = 0; i < count; i++) {
+        if (strcmp(props[i].layerName, "VK_LAYER_KHRONOS_validation") == 0) {
+            s_VkGPU.hasDebug = true;
+            break;
+        }
+    }
+
+    palFree(s_VkGPU.allocator, props);
     s_VkGPU.instance = instance;
     return PAL_RESULT_SUCCESS;
 }
@@ -176,6 +269,7 @@ void vkShutdownGraphics()
     if (s_VkGPU.instance) {
         vkDestroyInstanceFn vkDestroyInstancePtr = s_VkGPU.destroyInstance;
         vkDestroyInstancePtr(s_VkGPU.instance, &s_VkAllocator);
+        dlclose(s_VkGPU.handle);
     }
 }
 
@@ -183,12 +277,118 @@ PalResult vkEnumerateAdapters(
     Int32* count, 
     PalGPUAdapter** outAdapters)
 {
-    palLog(nullptr, "Vulkan GPU");
+    int _count = 0;
+    int maxCount = outAdapters ? *count : 0;
+
+    vkEnumeratePhysicalDevicesFn enumerate = s_VkGPU.enumeratePhysicalDevices;
+    VkResult result = enumerate(s_VkGPU.instance, &_count, nullptr);
+    if (result != VK_SUCCESS) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    if (outAdapters) {
+        VkPhysicalDevice* devices = nullptr;
+        devices = palAllocate(
+            s_VkGPU.allocator, 
+            sizeof(VkPhysicalDevice) * _count,
+            0);
+
+        if (!devices) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        result = enumerate(s_VkGPU.instance, &_count, devices);
+        if (result != VK_SUCCESS) {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // write to user array
+        for (int i = 0; i < _count && i < *count; i++) {
+            outAdapters[i] = (PalGPUAdapter*)devices[i];
+        }
+
+        palFree(s_VkGPU.allocator, devices);
+    }
+
+    if (!outAdapters) {
+        *count = _count;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL vkGetAdapterInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterInfo* info)
+{
+    VkPhysicalDeviceProperties props;
+    VkPhysicalDeviceMemoryProperties memProps;
+    vkGetPhysicalDevicePropertiesFn getProperties;
+    vkGetPhysicalDeviceMemoryPropertiesFn getMemoryProperties;
+
+    getProperties = s_VkGPU.getPhysicalDeviceProperties;
+    getMemoryProperties = s_VkGPU.getPhysicalDeviceMemoryProperties;
+    getProperties((VkPhysicalDevice)adapter, &props);
+    getMemoryProperties((VkPhysicalDevice)adapter, &memProps);
+
+    strcpy(info->name, props.deviceName);
+    info->version = props.apiVersion;
+    info->debugLayerSupported = s_VkGPU.hasDebug;
+
+    // get total memory
+    Uint64 memory = 0;
+    for (int i = 0; i < memProps.memoryHeapCount; i++) {
+        if (memProps.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+            memory += memProps.memoryHeaps[i].size;
+        }
+    }
+
+    info->totalMemory = memory;
+    info->apiType = PAL_GPU_API_VULKAN;
+
+    // get device type
+    switch (props.deviceType) {
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: {
+            info->type = PAL_GPU_TYPE_INTEGRATED;
+            break;
+        }
+
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: {
+            info->type = PAL_GPU_TYPE_DISCRETE;
+            break;
+        }
+
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: {
+            info->type = PAL_GPU_TYPE_VIRTUAL;
+            break;
+        }
+
+        case VK_PHYSICAL_DEVICE_TYPE_CPU: {
+            info->type = PAL_GPU_TYPE_CPU;
+            break;
+        }
+
+        default: {
+            info->type = PAL_GPU_TYPE_UNKNOWN;
+            break;
+        }
+    }
+
+    // version string
+    snprintf(
+        info->versionString, 
+        PAL_GPU_VERSION_SIZE, 
+        "%d.%d.%d",
+        VK_VERSION_MAJOR(info->version),
+        VK_VERSION_MINOR(info->version),
+        VK_VERSION_PATCH(info->version));
+    
     return PAL_RESULT_SUCCESS;
 }
 
 static PalGPUBackend s_VkBackend = {
-    .enumerateAdapters = vkEnumerateAdapters
+    .enumerateGPUAdapters = vkEnumerateAdapters,
+    .getGPUAdapterInfo = vkGetAdapterInfo
 };
 
 #endif // PAL_HAS_VULKAN
@@ -213,7 +413,9 @@ PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator)
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
-    s_VkGPU.backends[s_VkGPU.backendCount++] = &s_VkBackend;
+
+    AttachGPUBackend* backend = &s_VkGPU.backends[s_VkGPU.backendCount++];
+    backend->base = &s_VkBackend;
 #endif // PAL_HAS_VULKAN
 
     s_VkGPU.initialized = true;
@@ -232,4 +434,80 @@ void PAL_CALL palShutdownGraphics()
 
     memset(&s_VkGPU, 0, sizeof(VkGPU));
     s_VkGPU.initialized = false; // just in case
+}
+
+PalResult PAL_CALL palEnumerateGPUAdapters(
+   Int32* count,
+   PalGPUAdapter** outAdapters)
+{
+    // enumerate all adapters for both custom and PAL backends
+    if (!s_VkGPU.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!count) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (*count == 0 && outAdapters) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    PalResult result;
+    int totalCount = 0;
+    int index = 0;
+
+    int _count = outAdapters ? *count : 0;
+    for (int i = 0; i < s_VkGPU.backendCount; i++) {
+        AttachGPUBackend* backend = &s_VkGPU.backends[i];
+        if (outAdapters) {
+            // offset into the array so all backends write at the correct index
+            PalGPUAdapter** adapters = &outAdapters[backend->startIndex];
+            result = backend->base->enumerateGPUAdapters(&_count, adapters);
+
+            for (int i = 0; i < backend->count; i++) {
+                AdapterData* data = getFreeAdapterData();
+                data->adapter = adapters[i];
+                data->backend = backend->base;
+            }
+
+        } else {
+            result = backend->base->enumerateGPUAdapters(&_count, nullptr);
+            backend->startIndex = totalCount;
+            backend->count = _count;
+            totalCount += _count;
+            _count = 0;
+        }
+        
+        // break if a backend fails
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+    }
+
+    if (!outAdapters) {
+        *count = totalCount;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palGetGPUAdapterInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterInfo* info)
+{
+    if (!s_VkGPU.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!adapter || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    AdapterData* data = findAdapterData(adapter);
+    if (data) {
+        return data->backend->getGPUAdapterInfo(adapter, info);
+    }
+
+    return PAL_RESULT_INVALID_GPU_ADAPTER;
 }

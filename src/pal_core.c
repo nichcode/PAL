@@ -379,6 +379,13 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_FBCONFIG_BACKEND:
             return "Invalid FBConfg backend";
+
+        // graphics
+        case PAL_RESULT_GRAPHICS_NOT_INITIALIZED:
+            return "Graphics system not initialized";
+
+        case PAL_RESULT_INVALID_GPU_ADAPTER:
+            return "Invalid GPU adapter";
     }
     return "Unknown";
 }
