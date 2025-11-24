@@ -1,7 +1,7 @@
 
 #include "tests.h"
 
-#define MAX_TESTS 32 // will change
+#define MAX_TESTS 64 // will change
 
 typedef struct {
     TestFn func;

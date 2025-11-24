@@ -39,7 +39,7 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-#define MAX_BACKENDS 8 // should be fine for now
+#define MAX_BACKENDS 16 // should be fine for now
 #define MAX_ADAPTERS 32 // should be enough
 
 #if PAL_HAS_VULKAN
@@ -416,6 +416,8 @@ PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator)
 
     AttachGPUBackend* backend = &s_VkGPU.backends[s_VkGPU.backendCount++];
     backend->base = &s_VkBackend;
+    backend->count = 0;
+    backend->startIndex = 0;
 #endif // PAL_HAS_VULKAN
 
     s_VkGPU.initialized = true;
@@ -510,4 +512,26 @@ PalResult PAL_CALL palGetGPUAdapterInfo(
     }
 
     return PAL_RESULT_INVALID_GPU_ADAPTER;
+}
+
+PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
+{
+    if (s_VkGPU.initialized) {
+        return PAL_RESULT_INVALID_GPU_BACKEND;
+    }
+
+    // check if all the function pointers are set
+    // clang-format off
+    if (!backend->enumerateGPUAdapters || 
+        !backend->getGPUAdapterInfo) {
+        return PAL_RESULT_INVALID_GPU_BACKEND;
+    }
+    // clang-format on
+
+    AttachGPUBackend* attached = &s_VkGPU.backends[s_VkGPU.backendCount++];
+    attached->base = backend;
+    attached->startIndex = 0;
+    attached->count = 0;
+
+    return PAL_RESULT_SUCCESS;
 }

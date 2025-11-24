@@ -51,7 +51,13 @@ typedef enum {
    PAL_GPU_API_VULKAN,
    PAL_GPU_API_D3D12,
    PAL_GPU_API_METAL,
-   PAL_GPU_API_CUSTOM
+
+   // for custom backends
+   PAL_GPU_API_OPENGL,
+   PAL_GPU_API_GLES,
+   PAL_GPU_API_D3D11,
+   PAL_GPU_API_D3D9,
+   PAL_GPU_API_PPM,
 } PalGPUApiType;
 
 typedef struct {
@@ -59,7 +65,7 @@ typedef struct {
    PalGPUType type;
    PalGPUApiType apiType;
    Uint32 version;
-   Uint64 totalMemory;
+   Uint64 totalMemory; // in bytes
    char versionString[PAL_GPU_VERSION_SIZE];
    char name[PAL_GPU_NAME_SIZE];
 } PalGPUAdapterInfo;
@@ -84,6 +90,8 @@ PAL_API PalResult PAL_CALL palEnumerateGPUAdapters(
 PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info);
+
+PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
 /** @} */ // end of pal_graphics group
 

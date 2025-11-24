@@ -386,6 +386,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_GPU_ADAPTER:
             return "Invalid GPU adapter";
+
+        case PAL_RESULT_INVALID_GPU_BACKEND:
+            return "Invalid GPU backend";
     }
     return "Unknown";
 }

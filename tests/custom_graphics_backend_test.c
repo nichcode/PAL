@@ -2,16 +2,121 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
-bool graphicsTest()
+// a simple custom backend
+// for simplicity we are not going to add that much functionality
+// to it
+
+typedef struct {
+    PalGPUAdapterInfo adapterInfo;
+    // add more fields if needed
+} CustomGPUAdapter;
+
+typedef struct {
+    // we just have only two adapters for simplicity
+    CustomGPUAdapter adapters[2];
+} CustomGPUBackend;
+
+static CustomGPUBackend s_CustomGPU;
+
+// setup our state which we will use
+// PAL does not need this call so we set it up
+// before adding the backend to PAL
+// you might need a shutdown function for the backend after PAL has shutdown
+// if there is cleanup to do
+static void initCustomBackend() {
+    CustomGPUAdapter* adapter = &s_CustomGPU.adapters[0];
+    adapter->adapterInfo.apiType = PAL_GPU_API_D3D9;
+    adapter->adapterInfo.debugLayerSupported = true;
+    adapter->adapterInfo.type = PAL_GPU_TYPE_INTEGRATED;
+    adapter->adapterInfo.version = 9; // combine into a single value
+    
+    // PAL needs it in bytes
+    Uint64 byte = 1024 * 1024 * 1024;
+    adapter->adapterInfo.totalMemory = byte * 4; // 4 GB
+
+    strcpy(adapter->adapterInfo.versionString, "10_1");
+    strcpy(adapter->adapterInfo.name, "Intel Arc A580");
+
+    // second adapter
+    adapter = &s_CustomGPU.adapters[1];
+    adapter->adapterInfo.apiType = PAL_GPU_API_OPENGL;
+    adapter->adapterInfo.debugLayerSupported = true;
+    adapter->adapterInfo.type = PAL_GPU_TYPE_DISCRETE;
+    adapter->adapterInfo.version = 4; // combine into a single value
+    
+    // PAL needs it in bytes
+    adapter->adapterInfo.totalMemory = byte * 6; // 6 GB
+
+    strcpy(adapter->adapterInfo.versionString, "4.4");
+    strcpy(adapter->adapterInfo.name, "AMD Radeon RX 7700 XT");
+}
+
+static PalResult PAL_CALL customEnumerateGPUAdapters(
+    Int32* count, 
+    PalGPUAdapter** outAdapters)
+{
+    if (outAdapters) {
+        for (int i = 0; i < 2 && i < *count; i++) {
+            PalGPUAdapter* adapter = (PalGPUAdapter*)&s_CustomGPU.adapters[i];
+            outAdapters[i] = adapter;
+        }
+
+    } else {
+        *count = 2;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult PAL_CALL customGetGPUAdapterInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterInfo* info)
+{
+    for (int i = 0; i < 2; i++) {
+        PalGPUAdapter* custom = (PalGPUAdapter*)&s_CustomGPU.adapters[i];
+        if (custom == adapter) {
+            // make a copy
+            PalGPUAdapterInfo* gpuInfo = &s_CustomGPU.adapters[i].adapterInfo;
+            info->apiType = gpuInfo->apiType;
+            info->debugLayerSupported = gpuInfo->debugLayerSupported;
+            info->totalMemory = gpuInfo->totalMemory;
+            info->type = gpuInfo->type;
+            info->version = gpuInfo->version;
+
+            strcpy(info->name, gpuInfo->name);
+            strcpy(info->versionString, gpuInfo->versionString);
+
+            return PAL_RESULT_SUCCESS;
+        }
+    }
+}
+
+static PalGPUBackend s_CustomBackend = {
+    .enumerateGPUAdapters = customEnumerateGPUAdapters,
+    .getGPUAdapterInfo = customGetGPUAdapterInfo
+};
+
+bool customGraphicsBackendTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Graphics Test");
+    palLog(nullptr, "Custom Graphics Backend Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
+    // do any initializtion before adding the backen to PAL
+    initCustomBackend();
+
+    // add the backend to the graphics system
+    PalResult result = palAddGPUBackend(&s_CustomBackend);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to add backend: %s", error);
+        return false;
+    }
+
     // initialize the video system
-    PalResult result = palInitGraphics(nullptr);
+    result = palInitGraphics(nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -61,7 +166,7 @@ bool graphicsTest()
             return false;
         }
 
-        Uint32 memoryGb = info.totalMemory / (1024 * 1024 * 1024);
+        Uint32 memoryGb = info.totalMemory / (1024.0 * 1024.0 * 1024.0);
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Total Memory %dGB", memoryGb);
         palLog(nullptr, " API Version: %s", info.versionString);
@@ -140,7 +245,9 @@ bool graphicsTest()
         } else {
             boolToString = "False";
         }
+
         palLog(nullptr, " Debug Layer: %s", boolToString);
+        palLog(nullptr, "");
     }
 
     // shutdown the graphics system
