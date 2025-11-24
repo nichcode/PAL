@@ -67,6 +67,15 @@ typedef enum {
 } PalGPUCommands;
 
 typedef enum {
+    PAL_GPU_SHADER_FORMAT_SPIRV = PAL_BIT(0),
+    PAL_GPU_SHADER_FORMAT_DXIL = PAL_BIT(1),
+    PAL_GPU_SHADER_FORMAT_DXBC = PAL_BIT(2),
+    PAL_GPU_SHADER_FORMAT_GLSL = PAL_BIT(3),
+    PAL_GPU_SHADER_FORMAT_MSL = PAL_BIT(4),
+    PAL_GPU_SHADER_FORMAT_PPM = PAL_BIT(5)
+} PalGPUShaderFormat;
+
+typedef enum {
     PAL_GPU_FEATURE_RAY_TRACING = PAL_BIT64(0),
     PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(1),
     PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(2),
@@ -77,7 +86,7 @@ typedef struct {
     bool debugLayerSupported;
     PalGPUType type;
     PalGPUApiType apiType;
-    Uint32 version;
+    PalGPUShaderFormat shaderFormat;
     Uint64 totalMemory; // in bytes
     PalGPUCommands commands;
     PalGPUFeatures features;

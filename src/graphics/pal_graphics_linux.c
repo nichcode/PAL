@@ -370,7 +370,6 @@ PalResult PAL_CALL vkGetAdapterInfo(
     getMemoryProperties(vkPhysicalDevice, &memProps);
 
     strcpy(info->name, props.deviceName);
-    info->version = props.apiVersion;
     info->debugLayerSupported = s_VkGPU.hasDebug;
 
     // get total memory
@@ -412,14 +411,17 @@ PalResult PAL_CALL vkGetAdapterInfo(
         }
     }
 
+    // shader format
+    info->shaderFormat = PAL_GPU_SHADER_FORMAT_SPIRV;
+
     // version string
     snprintf(
         info->versionString, 
         PAL_GPU_VERSION_SIZE, 
         "%d.%d.%d",
-        VK_VERSION_MAJOR(info->version),
-        VK_VERSION_MINOR(info->version),
-        VK_VERSION_PATCH(info->version));
+        VK_VERSION_MAJOR(props.apiVersion),
+        VK_VERSION_MINOR(props.apiVersion),
+        VK_VERSION_PATCH(props.apiVersion));
 
     // get supported queue commands
     Uint32 count;

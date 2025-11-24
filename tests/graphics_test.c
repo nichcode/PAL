@@ -61,7 +61,7 @@ bool graphicsTest()
             return false;
         }
 
-        Uint32 memoryGb = info.totalMemory / (1024 * 1024 * 1024);
+        Uint32 memoryGb = info.totalMemory / (1024.0 * 1024.0 * 1024.0);
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Total Memory %dGB", memoryGb);
         palLog(nullptr, " API Version: %s", info.versionString);
@@ -140,7 +140,68 @@ bool graphicsTest()
         } else {
             boolToString = "False";
         }
+
         palLog(nullptr, " Debug Layer: %s", boolToString);
+
+        // commands
+        palLog(nullptr, " Supported Commands:");
+        if (info.commands & PAL_GPU_COMMAND_COMPUTE) {
+            palLog(nullptr, "  Compute");
+        }
+
+        if (info.commands & PAL_GPU_COMMAND_GRAPHICS) {
+            palLog(nullptr, "  Graphics");
+        }
+
+        if (info.commands & PAL_GPU_COMMAND_TRANSFER) {
+            palLog(nullptr, "  Transfer");
+        }
+
+        // features
+        palLog(nullptr, " Supported Features:");
+        if (info.features & PAL_GPU_FEATURE_RAY_TRACING) {
+            palLog(nullptr, "  Ray tracing");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_MESH_SHADER) {
+            palLog(nullptr, "  Mesh shading");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
+            palLog(nullptr, "  Descriptor indexing");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
+            palLog(nullptr, "  Variable Rate Shading");
+        }
+
+        // shader formats
+        palLog(nullptr, " Supported Shader Formats:");
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_SPIRV) {
+            palLog(nullptr, "  SPIRV");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXIL) {
+            palLog(nullptr, "  DXIL");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXBC) {
+            palLog(nullptr, "  DXBC");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_GLSL) {
+            palLog(nullptr, "  GLSL");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_MSL) {
+            palLog(nullptr, "  MSL");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_PPM) {
+            palLog(nullptr, "  PPM");
+        }
+
+        palLog(nullptr, "");
     }
 
     // shutdown the graphics system

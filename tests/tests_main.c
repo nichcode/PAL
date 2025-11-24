@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 #if PAL_HAS_GRAPHICS
     // registerTest("Graphics Test", graphicsTest);
     registerTest("Custom Graphics Backend Test", customGraphicsBackendTest);
-#endif //
+#endif // PAL_HAS_GRAPHICS
 
     runTests();
     return 0;

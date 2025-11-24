@@ -31,7 +31,6 @@ static void initCustomBackend() {
     adapter->adapterInfo.apiType = PAL_GPU_API_D3D9;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_INTEGRATED;
-    adapter->adapterInfo.version = 9; // combine into a single value
     
     // PAL needs it in bytes
     Uint64 byte = 1024 * 1024 * 1024;
@@ -42,6 +41,7 @@ static void initCustomBackend() {
 
     adapter->adapterInfo.commands |= PAL_GPU_COMMAND_GRAPHICS;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_RAY_TRACING;
+    adapter->adapterInfo.shaderFormat = PAL_GPU_SHADER_FORMAT_DXBC;
 
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
@@ -51,7 +51,6 @@ static void initCustomBackend() {
     adapter->adapterInfo.apiType = PAL_GPU_API_OPENGL;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_DISCRETE;
-    adapter->adapterInfo.version = 4; // combine into a single value
     
     // PAL needs it in bytes
     adapter->adapterInfo.totalMemory = byte * 6; // 6 GB
@@ -63,6 +62,8 @@ static void initCustomBackend() {
     adapter->adapterInfo.commands |= PAL_GPU_COMMAND_COMPUTE;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_RAY_TRACING;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_MESH_SHADER;
+    adapter->adapterInfo.shaderFormat |= PAL_GPU_SHADER_FORMAT_SPIRV;
+    adapter->adapterInfo.shaderFormat |= PAL_GPU_SHADER_FORMAT_GLSL;
 }
 
 static PalResult PAL_CALL customEnumerateGPUAdapters(
@@ -95,9 +96,9 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
             info->debugLayerSupported = gpuInfo->debugLayerSupported;
             info->totalMemory = gpuInfo->totalMemory;
             info->type = gpuInfo->type;
-            info->version = gpuInfo->version;
             info->features = gpuInfo->features;
             info->commands = gpuInfo->commands;
+            info->shaderFormat = gpuInfo->shaderFormat;
 
             strcpy(info->name, gpuInfo->name);
             strcpy(info->versionString, gpuInfo->versionString);
@@ -293,7 +294,33 @@ bool customGraphicsBackendTest()
         }
 
         if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
-            palLog(nullptr, " Variable Rate Shading");
+            palLog(nullptr, "  Variable Rate Shading");
+        }
+
+        // shader formats
+        palLog(nullptr, " Supported Shader Formats:");
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_SPIRV) {
+            palLog(nullptr, "  SPIRV");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXIL) {
+            palLog(nullptr, "  DXIL");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXBC) {
+            palLog(nullptr, "  DXBC");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_GLSL) {
+            palLog(nullptr, "  GLSL");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_MSL) {
+            palLog(nullptr, "  MSL");
+        }
+
+        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_PPM) {
+            palLog(nullptr, "  PPM");
         }
 
         palLog(nullptr, "");
