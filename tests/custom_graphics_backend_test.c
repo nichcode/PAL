@@ -25,6 +25,9 @@ static CustomGPUBackend s_CustomGPU;
 // if there is cleanup to do
 static void initCustomBackend() {
     CustomGPUAdapter* adapter = &s_CustomGPU.adapters[0];
+    adapter->adapterInfo.features = 0;
+    adapter->adapterInfo.commands = 0;
+
     adapter->adapterInfo.apiType = PAL_GPU_API_D3D9;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_INTEGRATED;
@@ -37,8 +40,14 @@ static void initCustomBackend() {
     strcpy(adapter->adapterInfo.versionString, "10_1");
     strcpy(adapter->adapterInfo.name, "Intel Arc A580");
 
+    adapter->adapterInfo.commands |= PAL_GPU_COMMAND_GRAPHICS;
+    adapter->adapterInfo.features |= PAL_GPU_FEATURE_RAY_TRACING;
+
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
+    adapter->adapterInfo.features = 0;
+    adapter->adapterInfo.commands = 0;
+
     adapter->adapterInfo.apiType = PAL_GPU_API_OPENGL;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_DISCRETE;
@@ -49,6 +58,11 @@ static void initCustomBackend() {
 
     strcpy(adapter->adapterInfo.versionString, "4.4");
     strcpy(adapter->adapterInfo.name, "AMD Radeon RX 7700 XT");
+
+    adapter->adapterInfo.commands |= PAL_GPU_COMMAND_GRAPHICS;
+    adapter->adapterInfo.commands |= PAL_GPU_COMMAND_COMPUTE;
+    adapter->adapterInfo.features |= PAL_GPU_FEATURE_RAY_TRACING;
+    adapter->adapterInfo.features |= PAL_GPU_FEATURE_MESH_SHADER;
 }
 
 static PalResult PAL_CALL customEnumerateGPUAdapters(
@@ -82,6 +96,8 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
             info->totalMemory = gpuInfo->totalMemory;
             info->type = gpuInfo->type;
             info->version = gpuInfo->version;
+            info->features = gpuInfo->features;
+            info->commands = gpuInfo->commands;
 
             strcpy(info->name, gpuInfo->name);
             strcpy(info->versionString, gpuInfo->versionString);
@@ -247,6 +263,39 @@ bool customGraphicsBackendTest()
         }
 
         palLog(nullptr, " Debug Layer: %s", boolToString);
+
+        // commands
+        palLog(nullptr, " Supported Commands:");
+        if (info.commands & PAL_GPU_COMMAND_COMPUTE) {
+            palLog(nullptr, "  Compute");
+        }
+
+        if (info.commands & PAL_GPU_COMMAND_GRAPHICS) {
+            palLog(nullptr, "  Graphics");
+        }
+
+        if (info.commands & PAL_GPU_COMMAND_TRANSFER) {
+            palLog(nullptr, "  Transfer");
+        }
+
+        // features
+        palLog(nullptr, " Supported Features:");
+        if (info.features & PAL_GPU_FEATURE_RAY_TRACING) {
+            palLog(nullptr, "  Ray tracing");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_MESH_SHADER) {
+            palLog(nullptr, "  Mesh shading");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
+            palLog(nullptr, "  Descriptor indexing");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
+            palLog(nullptr, " Variable Rate Shading");
+        }
+
         palLog(nullptr, "");
     }
 

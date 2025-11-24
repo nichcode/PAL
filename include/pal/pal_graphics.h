@@ -40,39 +40,54 @@ typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
 
 typedef enum {
-   PAL_GPU_TYPE_UNKNOWN,
-   PAL_GPU_TYPE_DISCRETE,
-   PAL_GPU_TYPE_INTEGRATED,
-   PAL_GPU_TYPE_VIRTUAL,
-   PAL_GPU_TYPE_CPU
+    PAL_GPU_TYPE_UNKNOWN,
+    PAL_GPU_TYPE_DISCRETE,
+    PAL_GPU_TYPE_INTEGRATED,
+    PAL_GPU_TYPE_VIRTUAL,
+    PAL_GPU_TYPE_CPU
 } PalGPUType;
 
 typedef enum {
-   PAL_GPU_API_VULKAN,
-   PAL_GPU_API_D3D12,
-   PAL_GPU_API_METAL,
+    PAL_GPU_API_VULKAN,
+    PAL_GPU_API_D3D12,
+    PAL_GPU_API_METAL,
 
-   // for custom backends
-   PAL_GPU_API_OPENGL,
-   PAL_GPU_API_GLES,
-   PAL_GPU_API_D3D11,
-   PAL_GPU_API_D3D9,
-   PAL_GPU_API_PPM,
+    // for custom backends
+    PAL_GPU_API_OPENGL,
+    PAL_GPU_API_GLES,
+    PAL_GPU_API_D3D11,
+    PAL_GPU_API_D3D9,
+    PAL_GPU_API_PPM,
 } PalGPUApiType;
 
+typedef enum {
+    PAL_GPU_COMMAND_GRAPHICS = PAL_BIT64(0),
+    PAL_GPU_COMMAND_COMPUTE = PAL_BIT64(1),
+    PAL_GPU_COMMAND_TRANSFER = PAL_BIT64(2)
+} PalGPUCommands;
+
+typedef enum {
+    PAL_GPU_FEATURE_RAY_TRACING = PAL_BIT64(0),
+    PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(1),
+    PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(2),
+    PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(3)
+} PalGPUFeatures;
+
 typedef struct {
-   bool debugLayerSupported;
-   PalGPUType type;
-   PalGPUApiType apiType;
-   Uint32 version;
-   Uint64 totalMemory; // in bytes
-   char versionString[PAL_GPU_VERSION_SIZE];
-   char name[PAL_GPU_NAME_SIZE];
+    bool debugLayerSupported;
+    PalGPUType type;
+    PalGPUApiType apiType;
+    Uint32 version;
+    Uint64 totalMemory; // in bytes
+    PalGPUCommands commands;
+    PalGPUFeatures features;
+    char versionString[PAL_GPU_VERSION_SIZE];
+    char name[PAL_GPU_NAME_SIZE];
 } PalGPUAdapterInfo;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateGPUAdapters)(
-        Int32* count, 
+        Int32* count,
         PalGPUAdapter** outAdapters);
 
     PalResult PAL_CALL (*getGPUAdapterInfo)(
@@ -84,14 +99,21 @@ PAL_API PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator);
 PAL_API void PAL_CALL palShutdownGraphics();
 
 PAL_API PalResult PAL_CALL palEnumerateGPUAdapters(
-   Int32* count,
-   PalGPUAdapter** outAdapters);
+    Int32* count,
+    PalGPUAdapter** outAdapters);
 
 PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info);
 
 PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
+
+PAL_API PalResult PAL_CALL palCreateGPUDevice(
+    bool debug,
+    PalGPUAdapter* adapter,
+    PalGPUDevice** outDevice);
+
+PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);
 
 /** @} */ // end of pal_graphics group
 

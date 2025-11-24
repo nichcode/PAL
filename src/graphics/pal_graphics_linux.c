@@ -71,6 +71,21 @@ typedef VkResult (*vkEnumerateInstanceLayerPropertiesFn)(
     uint32_t*, 
     VkLayerProperties*);
 
+typedef void (*vkGetPhysicalDeviceQueueFamilyPropertiesFn)(
+    VkPhysicalDevice, 
+    uint32_t*, 
+    VkQueueFamilyProperties*);
+
+typedef VkResult (*vkEnumerateDeviceExtensionPropertiesFn)(
+    VkPhysicalDevice, 
+    const char*, 
+    uint32_t*, 
+    VkExtensionProperties*);
+
+typedef void (*vkGetPhysicalDeviceFeatures2Fn)(
+    VkPhysicalDevice, 
+    VkPhysicalDeviceFeatures2*);
+
 #endif // PAL_HAS_VULKAN
 
 typedef struct {
@@ -100,6 +115,9 @@ typedef struct {
     void* getPhysicalDeviceProperties;
     void* getPhysicalDeviceMemoryProperties;
     void* enumerateInstanceLayerProperties;
+    void* getPhysicalDeviceQueueFamilyProperties;
+    void* enumerateDeviceExtensionProperties;
+    void* getPhysicalDeviceFeatures2;
 
     AdapterData adapterData[MAX_ADAPTERS];
     AttachGPUBackend backends[MAX_BACKENDS];
@@ -202,6 +220,18 @@ PalResult vkInitGraphics()
     s_VkGPU.enumerateInstanceLayerProperties = dlsym(
         s_VkGPU.handle, 
         "vkEnumerateInstanceLayerProperties");
+
+    s_VkGPU.getPhysicalDeviceQueueFamilyProperties = dlsym(
+        s_VkGPU.handle, 
+        "vkGetPhysicalDeviceQueueFamilyProperties");
+
+    s_VkGPU.enumerateDeviceExtensionProperties = dlsym(
+        s_VkGPU.handle, 
+        "vkEnumerateDeviceExtensionProperties");
+
+    s_VkGPU.getPhysicalDeviceFeatures2 = dlsym(
+        s_VkGPU.handle, 
+        "vkGetPhysicalDeviceFeatures2");
 
     // create a dummy instance
     VkApplicationInfo appInfo = {0};
@@ -321,15 +351,23 @@ PalResult PAL_CALL vkGetAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info)
 {
+    VkPhysicalDevice vkPhysicalDevice = (VkPhysicalDevice)adapter;
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceMemoryProperties memProps;
     vkGetPhysicalDevicePropertiesFn getProperties;
     vkGetPhysicalDeviceMemoryPropertiesFn getMemoryProperties;
+    vkGetPhysicalDeviceQueueFamilyPropertiesFn getQueueProperties;
+    vkEnumerateDeviceExtensionPropertiesFn getExtensionProperties;
+    vkGetPhysicalDeviceFeatures2Fn getFeatures2;
 
     getProperties = s_VkGPU.getPhysicalDeviceProperties;
     getMemoryProperties = s_VkGPU.getPhysicalDeviceMemoryProperties;
-    getProperties((VkPhysicalDevice)adapter, &props);
-    getMemoryProperties((VkPhysicalDevice)adapter, &memProps);
+    getQueueProperties = s_VkGPU.getPhysicalDeviceQueueFamilyProperties;
+    getExtensionProperties = s_VkGPU.enumerateDeviceExtensionProperties;
+    getFeatures2 = s_VkGPU.getPhysicalDeviceFeatures2;
+
+    getProperties(vkPhysicalDevice, &props);
+    getMemoryProperties(vkPhysicalDevice, &memProps);
 
     strcpy(info->name, props.deviceName);
     info->version = props.apiVersion;
@@ -382,7 +420,142 @@ PalResult PAL_CALL vkGetAdapterInfo(
         VK_VERSION_MAJOR(info->version),
         VK_VERSION_MINOR(info->version),
         VK_VERSION_PATCH(info->version));
-    
+
+    // get supported queue commands
+    Uint32 count;
+    getQueueProperties(
+        vkPhysicalDevice, 
+        &count, 
+        nullptr);
+
+    // not that huge, we allocate on the stack rather (16 for safety)
+    VkQueueFamilyProperties queueProps[16];
+    getQueueProperties(
+        vkPhysicalDevice, 
+        &count, 
+        queueProps);
+
+    info->commands = 0;
+    for (int i = 0; i < count; i++) {
+        if (queueProps[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            info->commands |= PAL_GPU_COMMAND_COMPUTE;
+        }
+
+        if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            info->commands |= PAL_GPU_COMMAND_GRAPHICS;
+        }
+
+        if (queueProps[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            info->commands |= PAL_GPU_COMMAND_TRANSFER;
+        }
+    }
+
+    // get supported extensions
+    Uint32 extensionCount = 0;
+    VkResult ret = getExtensionProperties(
+        vkPhysicalDevice, 
+        nullptr, 
+        &extensionCount, 
+        nullptr);
+
+    if (ret != VK_SUCCESS) {
+        // we just return without any modern features
+        return PAL_RESULT_SUCCESS;
+    }
+
+    VkExtensionProperties* extensionProps = nullptr;
+    extensionProps = palAllocate(
+        s_VkGPU.allocator, 
+        sizeof(VkExtensionProperties) * extensionCount, 
+        0);
+
+    if (!extensionProps) {
+        return PAL_RESULT_SUCCESS;
+    }
+
+    getExtensionProperties(
+        vkPhysicalDevice, 
+        nullptr, 
+        &extensionCount, 
+        extensionProps);
+
+    bool rayTracingFound = false;
+    bool accelerateFound = false;
+    info->features = 0;
+
+    // clang-format off
+    for (int i = 0; i < extensionCount; i++) {
+        VkExtensionProperties* props = &extensionProps[i];
+        if (strcmp(props->extensionName, "VK_KHR_ray_tracing_pipeline") == 0) {
+            rayTracingFound = true;
+
+        } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structur") == 0) {
+            accelerateFound = true;
+
+        } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
+            // mesh shader
+            VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
+            mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+
+            VkPhysicalDeviceFeatures2 features;
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &mesh;
+            getFeatures2(vkPhysicalDevice, &features);
+
+            if (mesh.meshShader && mesh.taskShader) {
+                info->features |= PAL_GPU_FEATURE_MESH_SHADER;
+            }
+
+        } else if (strcmp(props->extensionName, "VK_KHR_fragment_shading_rate") == 0) {
+            // variable rate shading
+            VkPhysicalDeviceFragmentShadingRateFeaturesKHR frag = {0};
+            frag.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+
+            VkPhysicalDeviceFeatures2 features;
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &frag;
+            getFeatures2(vkPhysicalDevice, &features);
+
+            if (frag.pipelineFragmentShadingRate) {
+                info->features |= PAL_GPU_FEATURE_VARIABLE_RATE_SHADING;
+            }
+
+        } else if (strcmp(props->extensionName, "VK_EXT_descriptor_indexing") == 0) {
+            // descriptor indexing
+            VkPhysicalDeviceDescriptorIndexingFeatures desc = {0};
+            desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+            VkPhysicalDeviceFeatures2 features;
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &desc;
+            getFeatures2(vkPhysicalDevice, &features);
+
+            if (desc.shaderSampledImageArrayNonUniformIndexing) {
+                info->features |= PAL_GPU_FEATURE_DESCRIPTOR_INDEXING;
+            }
+        }
+    }
+
+    if (accelerateFound && rayTracingFound) {
+        // ray tracing
+        VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
+        VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
+        ray.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        acc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+
+        ray.pNext = &acc;
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &ray;
+        getFeatures2(vkPhysicalDevice, &features);
+
+        if (ray.rayTracingPipeline && acc.accelerationStructure) {
+            info->features |= PAL_GPU_FEATURE_RAY_TRACING;
+        }
+    }
+    // clang-format on
+
+    palFree(s_VkGPU.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -437,6 +610,10 @@ void PAL_CALL palShutdownGraphics()
     memset(&s_VkGPU, 0, sizeof(VkGPU));
     s_VkGPU.initialized = false; // just in case
 }
+
+// ==================================================
+// GPUAdapter
+// ==================================================
 
 PalResult PAL_CALL palEnumerateGPUAdapters(
    Int32* count,
@@ -534,4 +711,21 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
     attached->count = 0;
 
     return PAL_RESULT_SUCCESS;
+}
+
+// ==================================================
+// GPUDevice
+// ==================================================
+
+PalResult PAL_CALL palCreateGPUDevice(
+    bool debug,
+    PalGPUAdapter* adapter,
+    PalGPUDevice** outDevice)
+{
+
+}
+
+void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device)
+{
+
 }
