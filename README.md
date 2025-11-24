@@ -5,19 +5,18 @@
 
 ## Overview
 
-PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be **explicit** and as close to the **OS** as possible — similar in philosophy to Vulkan. It gives you precise control without hidden behavior, making it ideal for developers who want performance and predictability.
+PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be explicit and as close to the OS as possible similar in philosophy to Vulkan. PAL makes it possible to safely mix native API with its API in a very straight forward way. This is one of the main reasons why PAL exists.
 
-PAL is transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
+PAL is transparent. All queries like window size, position, monitor info reflect the current platform state. Using PAL is like working directly with the OS. PAL applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
 
-The goal is very simple, write low-level cross-platform code without having per platform files
-all over the place. Example: `renderer_vulkan`, `renderer_d3d12`, `window_win32`, etc.
-PAL makes it possible to safely mix native API with its API in a very straight forward way. This is one of the main reasons why PAL exists.
+The goal of PAL is very simple. Write low-level cross-platform code without having per platform files
+all over the place. (eg. `renderer_vulkan`, `renderer_d3d12`, `window_win32`, etc).
 
-This approach gives you total control: you handle events, manage resources, and cache state explicitly. PAL provides the building blocks; how you use them — whether for simple applications or advanced frameworks — is entirely up to you.
+This approach gives you total control. You handle events, manage resources, and cache state explicitly. PAL provides the building blocks, how you use them, whether for simple applications or advanced frameworks is entirely up to you.
 
-Example – Get Window Size
+Get Window Size
 ```c
-// Direct query from the platform — not cached by PAL
+// Direct query from the platform, not cached by PAL
 palGetWindowSize(window, &w, &h);
 ```
 > Note: palGetWindowSize queries the OS directly. If your application needs continuous updates (e.g., window moves or resizes frequently), it is more efficient to listen to PAL events rather than repeatedly querying the OS. This ensures your app stays performant.
@@ -29,11 +28,11 @@ palGetWindowSize(window, &w, &h);
 While libraries like SDL or GLFW focus on simplifying development 
 through high-level abstractions. **PAL is different:**
 
-- ✅ **Explicit**: You decide how memory, events, and handles are managed.
-- ✅ **Low Overhead**: PAL is close to raw OS calls, ensuring performance.
-- ✅ **Modular**: Pick only the subsystems you need (video, event, threading, OpenGL, etc.).
-- ✅ **Extendable**: Plug in your own backends (event queue, allocator, etc.).
-- ✅ **Transparent**: Exposes raw OS handles when you need them.
+- **Explicit**: You decide how memory, events, and handles are managed.
+- **Low Overhead**: PAL is close to raw OS calls, ensuring performance.
+- **Modular**: Pick only the subsystems you need (video, event, threading, OpenGL, etc.).
+- **Extendable**: Plug in your own backends (event queue, allocator, GPUbackend, etc.).
+- **Transparent**: Exposes raw OS handles when you need them.
 
 ---
 
@@ -69,7 +68,7 @@ int main() {
 }
 ```
 
-➡️ Build and run this, and you’ll get a cross-platform window managed entirely by PAL.
+Build and run this, and you’ll get a cross-platform window managed entirely by PAL.
 
 For more detailed examples, see the [tests folder](./tests) tests folder, which contains full usage scenarios and validation cases.
 
@@ -117,7 +116,7 @@ For more detailed examples, see the [tests folder](./tests) tests folder, which 
 
 ## Build
 
-PAL is written in **C99** and uses **Premake** as its build system. Configure modules via [pal_config.lua](./pal_config.lua).  
+PAL is written in **C99** and uses Premake as its build system. Configure modules via [pal_config.lua](./pal_config.lua).  
 See [pal_config.h](./include/pal/pal_config.h) to see the reflection of modules that will be built.
 
 **Windows**
@@ -145,9 +144,9 @@ Enable tests in `pal_config.lua` by setting `PAL_BUILD_TESTS = true`.
 - `pal_event` - event queue, event callback
 - `pal_thread` - threads, synchronization
 - `pal_opengl` - framebuffer configs, context
+- `pal_graphics` - Vulkan, D3D12, Metal, Custom
 
 ### Planned Modules
-- `pal_graphics` - Vulkan, D3D12, Metal, Custom
 - `pal_network`
 - `pal_audio`
 - `pal_hid`
@@ -170,7 +169,9 @@ The generated HTML docs will be available in `docs/html/`.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or pull request.
+Contributions are welcome! Please open an issue or pull request.  
+See  [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for how and what to contribute.  
+Thanks for contributing to PAL.
 
 ---
 
