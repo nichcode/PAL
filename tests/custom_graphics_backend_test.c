@@ -12,6 +12,11 @@ typedef struct {
 } CustomGPUAdapter;
 
 typedef struct {
+    CustomGPUAdapter* adapter;
+    // add more fields if needed
+} CustomGPUDevice;
+
+typedef struct {
     // we just have only two adapters for simplicity
     CustomGPUAdapter adapters[2];
 } CustomGPUBackend;
@@ -108,9 +113,48 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
     }
 }
 
+PalResult PAL_CALL customCreateGPUDevice(
+    const PalGPUDeviceCreateInfo* info,
+    PalGPUDevice** outDevice)
+{
+    // very simple GPU device. Just an allocation
+    // no need for checks eithe, PAL does that already for you
+    // use any allocator you want but its best to use the same allocator
+    // passed to the graphics system
+
+    CustomGPUDevice* device = nullptr;
+    device = palAllocate(nullptr, sizeof(CustomGPUDevice), 0);
+    if (!device) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    // if your backend has more than one adapter
+    // check and create the device with that adapter
+    for (int i = 0; i < 2; i++) {
+        PalGPUAdapter* custom = (PalGPUAdapter*)&s_CustomGPU.adapters[i];
+        if (info->adapter == custom) {
+            device->adapter = &s_CustomGPU.adapters[i];
+            // additional info for the adapter
+            break;
+        }
+    }
+
+    *outDevice = (PalGPUDevice*)device;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL customDestroyGPUDevice(PalGPUDevice* device)
+{
+    // get your device
+    CustomGPUDevice* customDevice = (CustomGPUDevice*)device;
+    palFree(nullptr, device);
+}
+
 static PalGPUBackend s_CustomBackend = {
     .enumerateGPUAdapters = customEnumerateGPUAdapters,
-    .getGPUAdapterInfo = customGetGPUAdapterInfo
+    .getGPUAdapterInfo = customGetGPUAdapterInfo,
+    .createGPUDevice = customCreateGPUDevice,
+    .destroyGPUDevice = customDestroyGPUDevice
 };
 
 bool customGraphicsBackendTest()
@@ -173,6 +217,8 @@ bool customGraphicsBackendTest()
 
     // get information about all the adapters
     PalGPUAdapterInfo info;
+    PalGPUAdapter* d3d9Adapter = nullptr;
+
     for (Int32 i = 0; i < count; i++) {
         PalGPUAdapter* adapter = adapters[i];
         result = palGetGPUAdapterInfo(adapter, &info);
@@ -246,6 +292,7 @@ bool customGraphicsBackendTest()
 
             case PAL_GPU_API_D3D9: {
                 apiTypeString = "D3D9";
+                d3d9Adapter = adapter;
                 break;
             }
 
@@ -325,6 +372,23 @@ bool customGraphicsBackendTest()
 
         palLog(nullptr, "");
     }
+
+    // create a device with a custom aapter (D3D9)
+    PalGPUDevice* device = nullptr;
+    PalGPUDeviceCreateInfo createInfo = {0};
+    createInfo.adapter = d3d9Adapter;
+    createInfo.commands = PAL_GPU_COMMAND_GRAPHICS; // only graphics
+    createInfo.debug = false; // no debug layer
+
+    result = palCreateGPUDevice(&createInfo, &device);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create device: %s", error);
+        palFree(nullptr, adapters);
+        return false;
+    }
+
+    palDestroyGPUDevice(device);
 
     // shutdown the graphics system
     palShutdownGraphics();

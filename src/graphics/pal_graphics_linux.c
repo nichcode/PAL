@@ -41,6 +41,7 @@ freely, subject to the following restrictions:
 
 #define MAX_BACKENDS 16 // should be fine for now
 #define MAX_ADAPTERS 32 // should be enough
+#define MAX_DEVICE 16 // should be enough
 
 #if PAL_HAS_VULKAN
 // VKAPI_PTR expands to nothing on linux
@@ -95,6 +96,12 @@ typedef struct {
 } AdapterData;
 
 typedef struct {
+    bool used;
+    PalGPUDevice* device;
+    AdapterData* adapterData;
+} DeviceData;
+
+typedef struct {
     const PalGPUBackend* base;
     Uint16 startIndex;
     Uint16 count;
@@ -120,6 +127,7 @@ typedef struct {
     void* getPhysicalDeviceFeatures2;
 
     AdapterData adapterData[MAX_ADAPTERS];
+    DeviceData deviceData[MAX_DEVICE];
     AttachGPUBackend backends[MAX_BACKENDS];
 } VkGPU;
 
@@ -145,6 +153,27 @@ static AdapterData* findAdapterData(PalGPUAdapter* adapter)
         if (s_VkGPU.adapterData[i].used &&
             s_VkGPU.adapterData[i].adapter == adapter) {
             return &s_VkGPU.adapterData[i];
+        }
+    }
+    return nullptr;
+}
+
+static DeviceData* getFreeDeviceData()
+{
+    for (int i = 0; i < MAX_DEVICE; ++i) {
+        if (!s_VkGPU.deviceData[i].used) {
+            s_VkGPU.deviceData[i].used = true;
+            return &s_VkGPU.deviceData[i];
+        }
+    }  
+}
+
+static DeviceData* findDeviceData(PalGPUDevice* device)
+{
+    for (int i = 0; i < MAX_DEVICE; ++i) {
+        if (s_VkGPU.deviceData[i].used &&
+            s_VkGPU.deviceData[i].device == device) {
+            return &s_VkGPU.deviceData[i];
         }
     }
     return nullptr;
@@ -702,7 +731,9 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
     // check if all the function pointers are set
     // clang-format off
     if (!backend->enumerateGPUAdapters || 
-        !backend->getGPUAdapterInfo) {
+        !backend->getGPUAdapterInfo    ||
+        !backend->createGPUDevice    ||
+        !backend->destroyGPUDevice) {
         return PAL_RESULT_INVALID_GPU_BACKEND;
     }
     // clang-format on
@@ -720,14 +751,49 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 // ==================================================
 
 PalResult PAL_CALL palCreateGPUDevice(
-    bool debug,
-    PalGPUAdapter* adapter,
+    const PalGPUDeviceCreateInfo* info,
     PalGPUDevice** outDevice)
 {
+    if (!s_VkGPU.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
 
+    if (!info || !outDevice) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // check if the adapter is from PAL (custom or internal backend)
+    AdapterData* adapterData = findAdapterData(info->adapter);
+    if (!adapterData) {
+        return PAL_RESULT_INVALID_GPU_ADAPTER;
+    }
+
+    PalGPUDevice* device = nullptr;
+    PalResult ret = adapterData->backend->createGPUDevice(info, &device);
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    // create a slot for the created device
+    DeviceData* deviceData = getFreeDeviceData();
+    if (!deviceData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    deviceData->adapterData = adapterData;
+    deviceData->device = device;
+
+    *outDevice = device;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device)
 {
-
+    if (s_VkGPU.initialized && device) {
+        DeviceData* data = findDeviceData(device);
+        if (data) {
+            data->adapterData->backend->destroyGPUDevice(device);
+        }
+        data->used = false;
+    }
 }

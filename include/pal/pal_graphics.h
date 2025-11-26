@@ -95,6 +95,12 @@ typedef struct {
 } PalGPUAdapterInfo;
 
 typedef struct {
+    bool debug;
+    PalGPUCommands commands;
+    PalGPUAdapter* adapter;
+} PalGPUDeviceCreateInfo;
+
+typedef struct {
     PalResult PAL_CALL (*enumerateGPUAdapters)(
         Int32* count,
         PalGPUAdapter** outAdapters);
@@ -102,6 +108,12 @@ typedef struct {
     PalResult PAL_CALL (*getGPUAdapterInfo)(
         PalGPUAdapter* adapter,
         PalGPUAdapterInfo* info);
+
+    PalResult PAL_CALL (*createGPUDevice)(
+        const PalGPUDeviceCreateInfo* info,
+        PalGPUDevice** outDevice);
+
+    void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator);
@@ -118,8 +130,7 @@ PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
 PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
 PAL_API PalResult PAL_CALL palCreateGPUDevice(
-    bool debug,
-    PalGPUAdapter* adapter,
+    const PalGPUDeviceCreateInfo* info,
     PalGPUDevice** outDevice);
 
 PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);
