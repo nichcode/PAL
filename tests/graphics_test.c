@@ -11,7 +11,7 @@ bool graphicsTest()
     palLog(nullptr, "");
 
     // initialize the video system
-    PalResult result = palInitGraphics(nullptr);
+    PalResult result = palInitGraphics(true, PAL_VERSION_DEFAULT, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -159,20 +159,67 @@ bool graphicsTest()
 
         // features
         palLog(nullptr, " Supported Features:");
+        if (info.features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
+            palLog(nullptr, "  Sampler Anisotropy");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
+            palLog(nullptr, "  Sample rate shading");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
+            palLog(nullptr, "  Multi viewport");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
+            palLog(nullptr, "  Timeline Semaphore");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
+            palLog(nullptr, "  Tesselation Shader");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
+            palLog(nullptr, "  Geometry shader");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
+            palLog(nullptr, "  Shader float16");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
+            palLog(nullptr, "  Shader float64");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_SHADER_INT16) {
+            palLog(nullptr, "  Shader int16");
+        }
+        if (info.features & PAL_GPU_FEATURE_SHADER_INT64) {
+            palLog(nullptr, "  Shader int64");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
+            palLog(nullptr, "  Dynamic rendering");
+        }
+
         if (info.features & PAL_GPU_FEATURE_RAY_TRACING) {
             palLog(nullptr, "  Ray tracing");
         }
 
         if (info.features & PAL_GPU_FEATURE_MESH_SHADER) {
-            palLog(nullptr, "  Mesh shading");
+            palLog(nullptr, "  Mesh shader");
+        }
+
+        if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
+            palLog(nullptr, "  Variable rate rendering");
         }
 
         if (info.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
             palLog(nullptr, "  Descriptor indexing");
         }
 
-        if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
-            palLog(nullptr, "  Variable Rate Shading");
+        if (info.features & PAL_GPU_FEATURE_SWAPCHAIN) {
+            palLog(nullptr, "  Swapchain");
         }
 
         // shader formats

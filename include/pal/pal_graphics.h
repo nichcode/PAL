@@ -36,6 +36,11 @@ freely, subject to the following restrictions:
 #define PAL_GPU_NAME_SIZE 128
 #define PAL_GPU_VERSION_SIZE 16
 
+#define PAL_VERSION_DEFAULT 0x0667
+#define PAL_MAKE_VERSION(major, minor) (((major) << 16) | ((minor) & 0xFFFF))
+#define PAL_VERSION_MAJOR(version) ((version) >> 16)
+#define PAL_VERSION_MINOR(version) ((version) & 0xFFFF)
+
 typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
 
@@ -90,7 +95,8 @@ typedef enum {
     PAL_GPU_FEATURE_RAY_TRACING = PAL_BIT64(11),
     PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(12),
     PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
-    PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14)
+    PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
+    PAL_GPU_FEATURE_SWAPCHAIN = PAL_BIT64(15)
 } PalGPUFeatures;
 
 typedef struct {
@@ -127,7 +133,10 @@ typedef struct {
     void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
 } PalGPUBackend;
 
-PAL_API PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator);
+PAL_API PalResult PAL_CALL palInitGraphics(
+    bool enableDebug,
+    Int32 versionHint,
+    const PalAllocator* allocator);
 
 PAL_API void PAL_CALL palShutdownGraphics();
 
