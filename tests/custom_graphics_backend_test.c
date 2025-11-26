@@ -30,9 +30,6 @@ static CustomGPUBackend s_CustomGPU;
 // if there is cleanup to do
 static void initCustomBackend() {
     CustomGPUAdapter* adapter = &s_CustomGPU.adapters[0];
-    adapter->adapterInfo.features = 0;
-    adapter->adapterInfo.commands = 0;
-
     adapter->adapterInfo.apiType = PAL_GPU_API_D3D9;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_INTEGRATED;
@@ -44,15 +41,12 @@ static void initCustomBackend() {
     strcpy(adapter->adapterInfo.versionString, "10_1");
     strcpy(adapter->adapterInfo.name, "Intel Arc A580");
 
-    adapter->adapterInfo.commands |= PAL_GPU_COMMAND_GRAPHICS;
-    adapter->adapterInfo.features |= PAL_GPU_FEATURE_RAY_TRACING;
-    adapter->adapterInfo.shaderFormat = PAL_GPU_SHADER_FORMAT_DXBC;
+    adapter->adapterInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS;
+    adapter->adapterInfo.features = PAL_GPU_FEATURE_RAY_TRACING;
+    adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_DXBC;
 
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
-    adapter->adapterInfo.features = 0;
-    adapter->adapterInfo.commands = 0;
-
     adapter->adapterInfo.apiType = PAL_GPU_API_OPENGL;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_DISCRETE;
@@ -63,12 +57,12 @@ static void initCustomBackend() {
     strcpy(adapter->adapterInfo.versionString, "4.4");
     strcpy(adapter->adapterInfo.name, "AMD Radeon RX 7700 XT");
 
-    adapter->adapterInfo.commands |= PAL_GPU_COMMAND_GRAPHICS;
-    adapter->adapterInfo.commands |= PAL_GPU_COMMAND_COMPUTE;
-    adapter->adapterInfo.features |= PAL_GPU_FEATURE_RAY_TRACING;
+    adapter->adapterInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS;
+    adapter->adapterInfo.commandQueues |= PAL_GPU_COMMAND_QUEUE_COMPUTE;
+    adapter->adapterInfo.features = PAL_GPU_FEATURE_RAY_TRACING;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_MESH_SHADER;
-    adapter->adapterInfo.shaderFormat |= PAL_GPU_SHADER_FORMAT_SPIRV;
-    adapter->adapterInfo.shaderFormat |= PAL_GPU_SHADER_FORMAT_GLSL;
+    adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
+    adapter->adapterInfo.shaderFormats |= PAL_GPU_SHADER_FORMAT_GLSL;
 }
 
 static PalResult PAL_CALL customEnumerateGPUAdapters(
@@ -102,8 +96,8 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
             info->totalMemory = gpuInfo->totalMemory;
             info->type = gpuInfo->type;
             info->features = gpuInfo->features;
-            info->commands = gpuInfo->commands;
-            info->shaderFormat = gpuInfo->shaderFormat;
+            info->commandQueues = gpuInfo->commandQueues;
+            info->shaderFormats = gpuInfo->shaderFormats;
 
             strcpy(info->name, gpuInfo->name);
             strcpy(info->versionString, gpuInfo->versionString);
@@ -114,6 +108,7 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
 }
 
 PalResult PAL_CALL customCreateGPUDevice(
+    PalGPUAdapter* adapter,
     const PalGPUDeviceCreateInfo* info,
     PalGPUDevice** outDevice)
 {
@@ -132,7 +127,7 @@ PalResult PAL_CALL customCreateGPUDevice(
     // check and create the device with that adapter
     for (int i = 0; i < 2; i++) {
         PalGPUAdapter* custom = (PalGPUAdapter*)&s_CustomGPU.adapters[i];
-        if (info->adapter == custom) {
+        if (adapter == custom) {
             device->adapter = &s_CustomGPU.adapters[i];
             // additional info for the adapter
             break;
@@ -312,17 +307,17 @@ bool customGraphicsBackendTest()
 
         palLog(nullptr, " Debug Layer: %s", boolToString);
 
-        // commands
-        palLog(nullptr, " Supported Commands:");
-        if (info.commands & PAL_GPU_COMMAND_COMPUTE) {
+        // command queues
+        palLog(nullptr, " Supported Command Queues:");
+        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
             palLog(nullptr, "  Compute");
         }
 
-        if (info.commands & PAL_GPU_COMMAND_GRAPHICS) {
+        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
             palLog(nullptr, "  Graphics");
         }
 
-        if (info.commands & PAL_GPU_COMMAND_TRANSFER) {
+        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_TRANSFER) {
             palLog(nullptr, "  Transfer");
         }
 
@@ -346,27 +341,27 @@ bool customGraphicsBackendTest()
 
         // shader formats
         palLog(nullptr, " Supported Shader Formats:");
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_SPIRV) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_SPIRV) {
             palLog(nullptr, "  SPIRV");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXIL) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_DXIL) {
             palLog(nullptr, "  DXIL");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXBC) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_DXBC) {
             palLog(nullptr, "  DXBC");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_GLSL) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_GLSL) {
             palLog(nullptr, "  GLSL");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_MSL) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_MSL) {
             palLog(nullptr, "  MSL");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_PPM) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_PPM) {
             palLog(nullptr, "  PPM");
         }
 
@@ -376,11 +371,10 @@ bool customGraphicsBackendTest()
     // create a device with a custom aapter (D3D9)
     PalGPUDevice* device = nullptr;
     PalGPUDeviceCreateInfo createInfo = {0};
-    createInfo.adapter = d3d9Adapter;
-    createInfo.commands = PAL_GPU_COMMAND_GRAPHICS; // only graphics
+    createInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS; // only graphics
     createInfo.debug = false; // no debug layer
 
-    result = palCreateGPUDevice(&createInfo, &device);
+    result = palCreateGPUDevice(d3d9Adapter, &createInfo, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);

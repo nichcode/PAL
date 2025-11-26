@@ -143,17 +143,17 @@ bool graphicsTest()
 
         palLog(nullptr, " Debug Layer: %s", boolToString);
 
-        // commands
-        palLog(nullptr, " Supported Commands:");
-        if (info.commands & PAL_GPU_COMMAND_COMPUTE) {
+        // command queue
+        palLog(nullptr, " Supported Command Queues:");
+        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
             palLog(nullptr, "  Compute");
         }
 
-        if (info.commands & PAL_GPU_COMMAND_GRAPHICS) {
+        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
             palLog(nullptr, "  Graphics");
         }
 
-        if (info.commands & PAL_GPU_COMMAND_TRANSFER) {
+        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_TRANSFER) {
             palLog(nullptr, "  Transfer");
         }
 
@@ -177,27 +177,27 @@ bool graphicsTest()
 
         // shader formats
         palLog(nullptr, " Supported Shader Formats:");
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_SPIRV) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_SPIRV) {
             palLog(nullptr, "  SPIRV");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXIL) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_DXIL) {
             palLog(nullptr, "  DXIL");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_DXBC) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_DXBC) {
             palLog(nullptr, "  DXBC");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_GLSL) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_GLSL) {
             palLog(nullptr, "  GLSL");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_MSL) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_MSL) {
             palLog(nullptr, "  MSL");
         }
 
-        if (info.shaderFormat & PAL_GPU_SHADER_FORMAT_PPM) {
+        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_PPM) {
             palLog(nullptr, "  PPM");
         }
 

@@ -61,10 +61,10 @@ typedef enum {
 } PalGPUApiType;
 
 typedef enum {
-    PAL_GPU_COMMAND_GRAPHICS = PAL_BIT64(0),
-    PAL_GPU_COMMAND_COMPUTE = PAL_BIT64(1),
-    PAL_GPU_COMMAND_TRANSFER = PAL_BIT64(2)
-} PalGPUCommands;
+    PAL_GPU_COMMAND_QUEUE_GRAPHICS = PAL_BIT64(0),
+    PAL_GPU_COMMAND_QUEUE_COMPUTE = PAL_BIT64(1),
+    PAL_GPU_COMMAND_QUEUE_TRANSFER = PAL_BIT64(2)
+} PalGPUCommandQueues;
 
 typedef enum {
     PAL_GPU_SHADER_FORMAT_SPIRV = PAL_BIT(0),
@@ -73,22 +73,33 @@ typedef enum {
     PAL_GPU_SHADER_FORMAT_GLSL = PAL_BIT(3),
     PAL_GPU_SHADER_FORMAT_MSL = PAL_BIT(4),
     PAL_GPU_SHADER_FORMAT_PPM = PAL_BIT(5)
-} PalGPUShaderFormat;
+} PalGPUShaderFormats;
 
 typedef enum {
-    PAL_GPU_FEATURE_RAY_TRACING = PAL_BIT64(0),
-    PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(1),
-    PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(2),
-    PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(3)
+    PAL_GPU_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(0),
+    PAL_GPU_FEATURE_SAMPLE_RATE_SHADING = PAL_BIT64(1),
+    PAL_GPU_FEATURE_MULTI_VIEWPORT = PAL_BIT64(2),
+    PAL_GPU_FEATURE_TIMELINE_SEMAPHORE = PAL_BIT64(3),
+    PAL_GPU_FEATURE_TESSELLATION_SHADER = PAL_BIT64(4),
+    PAL_GPU_FEATURE_GEOMETRY_SHADER = PAL_BIT64(5),
+    PAL_GPU_FEATURE_SHADER_FLOAT16 = PAL_BIT64(6),
+    PAL_GPU_FEATURE_SHADER_FLOAT64 = PAL_BIT64(7),
+    PAL_GPU_FEATURE_SHADER_INT16 = PAL_BIT64(8),
+    PAL_GPU_FEATURE_SHADER_INT64 = PAL_BIT64(9),
+    PAL_GPU_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(10),
+    PAL_GPU_FEATURE_RAY_TRACING = PAL_BIT64(11),
+    PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(12),
+    PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
+    PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14)
 } PalGPUFeatures;
 
 typedef struct {
     bool debugLayerSupported;
     PalGPUType type;
     PalGPUApiType apiType;
-    PalGPUShaderFormat shaderFormat;
+    PalGPUShaderFormats shaderFormats;
     Uint64 totalMemory; // in bytes
-    PalGPUCommands commands;
+    PalGPUCommandQueues commandQueues;
     PalGPUFeatures features;
     char versionString[PAL_GPU_VERSION_SIZE];
     char name[PAL_GPU_NAME_SIZE];
@@ -96,8 +107,7 @@ typedef struct {
 
 typedef struct {
     bool debug;
-    PalGPUCommands commands;
-    PalGPUAdapter* adapter;
+    PalGPUCommandQueues commandQueues;
 } PalGPUDeviceCreateInfo;
 
 typedef struct {
@@ -110,6 +120,7 @@ typedef struct {
         PalGPUAdapterInfo* info);
 
     PalResult PAL_CALL (*createGPUDevice)(
+        PalGPUAdapter* adapter,
         const PalGPUDeviceCreateInfo* info,
         PalGPUDevice** outDevice);
 
@@ -117,6 +128,7 @@ typedef struct {
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(const PalAllocator* allocator);
+
 PAL_API void PAL_CALL palShutdownGraphics();
 
 PAL_API PalResult PAL_CALL palEnumerateGPUAdapters(
@@ -130,6 +142,7 @@ PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
 PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
 PAL_API PalResult PAL_CALL palCreateGPUDevice(
+    PalGPUAdapter* adapter,
     const PalGPUDeviceCreateInfo* info,
     PalGPUDevice** outDevice);
 

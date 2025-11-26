@@ -389,6 +389,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_GPU_BACKEND:
             return "Invalid GPU backend";
+
+        case PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED:
+            return "GPU command queue not supported";
     }
     return "Unknown";
 }

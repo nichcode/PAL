@@ -380,7 +380,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info)
 {
-    VkPhysicalDevice vkPhysicalDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceMemoryProperties memProps;
     vkGetPhysicalDevicePropertiesFn getProperties;
@@ -395,8 +395,8 @@ PalResult PAL_CALL vkGetAdapterInfo(
     getExtensionProperties = s_VkGPU.enumerateDeviceExtensionProperties;
     getFeatures2 = s_VkGPU.getPhysicalDeviceFeatures2;
 
-    getProperties(vkPhysicalDevice, &props);
-    getMemoryProperties(vkPhysicalDevice, &memProps);
+    getProperties(physicalDevice, &props);
+    getMemoryProperties(physicalDevice, &memProps);
 
     strcpy(info->name, props.deviceName);
     info->debugLayerSupported = s_VkGPU.hasDebug;
@@ -441,7 +441,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
     }
 
     // shader format
-    info->shaderFormat = PAL_GPU_SHADER_FORMAT_SPIRV;
+    info->shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
 
     // version string
     snprintf(
@@ -455,36 +455,36 @@ PalResult PAL_CALL vkGetAdapterInfo(
     // get supported queue commands
     Uint32 count;
     getQueueProperties(
-        vkPhysicalDevice, 
+        physicalDevice, 
         &count, 
         nullptr);
 
-    // not that huge, we allocate on the stack rather (16 for safety)
-    VkQueueFamilyProperties queueProps[16];
+    // not that huge, we allocate on the stack rather (8 for safety)
+    VkQueueFamilyProperties queueProps[8];
     getQueueProperties(
-        vkPhysicalDevice, 
+        physicalDevice, 
         &count, 
         queueProps);
 
-    info->commands = 0;
+    info->commandQueues = 0;
     for (int i = 0; i < count; i++) {
         if (queueProps[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            info->commands |= PAL_GPU_COMMAND_COMPUTE;
+            info->commandQueues |= PAL_GPU_COMMAND_QUEUE_COMPUTE;
         }
 
         if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            info->commands |= PAL_GPU_COMMAND_GRAPHICS;
+            info->commandQueues |= PAL_GPU_COMMAND_QUEUE_GRAPHICS;
         }
 
         if (queueProps[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            info->commands |= PAL_GPU_COMMAND_TRANSFER;
+            info->commandQueues |= PAL_GPU_COMMAND_QUEUE_TRANSFER;
         }
     }
 
     // get supported extensions
     Uint32 extensionCount = 0;
     VkResult ret = getExtensionProperties(
-        vkPhysicalDevice, 
+        physicalDevice, 
         nullptr, 
         &extensionCount, 
         nullptr);
@@ -505,7 +505,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
     }
 
     getExtensionProperties(
-        vkPhysicalDevice, 
+        physicalDevice, 
         nullptr, 
         &extensionCount, 
         extensionProps);
@@ -531,7 +531,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &mesh;
-            getFeatures2(vkPhysicalDevice, &features);
+            getFeatures2(physicalDevice, &features);
 
             if (mesh.meshShader && mesh.taskShader) {
                 info->features |= PAL_GPU_FEATURE_MESH_SHADER;
@@ -545,7 +545,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &frag;
-            getFeatures2(vkPhysicalDevice, &features);
+            getFeatures2(physicalDevice, &features);
 
             if (frag.pipelineFragmentShadingRate) {
                 info->features |= PAL_GPU_FEATURE_VARIABLE_RATE_SHADING;
@@ -559,7 +559,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &desc;
-            getFeatures2(vkPhysicalDevice, &features);
+            getFeatures2(physicalDevice, &features);
 
             if (desc.shaderSampledImageArrayNonUniformIndexing) {
                 info->features |= PAL_GPU_FEATURE_DESCRIPTOR_INDEXING;
@@ -578,7 +578,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
         VkPhysicalDeviceFeatures2 features;
         features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
         features.pNext = &ray;
-        getFeatures2(vkPhysicalDevice, &features);
+        getFeatures2(physicalDevice, &features);
 
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
             info->features |= PAL_GPU_FEATURE_RAY_TRACING;
@@ -588,6 +588,127 @@ PalResult PAL_CALL vkGetAdapterInfo(
 
     palFree(s_VkGPU.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL vkCreateGPUDevice(
+    PalGPUAdapter* adapter,
+    const PalGPUDeviceCreateInfo* info,
+    PalGPUDevice** outDevice)
+{
+    VkDevice device = nullptr;
+    VkPhysicalDevice physicalDevice = (PalGPUAdapter*)adapter;
+
+    // check if the requested queue is supported ny the Adapter and select it
+    vkGetPhysicalDeviceQueueFamilyPropertiesFn getQueueProperties;
+    getQueueProperties = s_VkGPU.getPhysicalDeviceQueueFamilyProperties;
+    Uint32 count;
+    getQueueProperties(
+        physicalDevice, 
+        &count, 
+        nullptr);
+
+    // not that huge, we allocate on the stack rather (8 for safety)
+    VkQueueFamilyProperties queueProps[8];
+    getQueueProperties(
+        physicalDevice, 
+        &count, 
+        queueProps);
+
+    // find the index of all the supported queue families
+    Int32 computeFamily, graphicsFamily, transferFamily = -1;
+    for (int i = 0; i < count; i++) {
+        if (queueProps[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            if (computeFamily == -1) {
+                computeFamily = i;
+            }
+        }
+
+        if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            if (graphicsFamily == -1) {
+                graphicsFamily = i;
+            }
+        }
+
+        if (queueProps[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            if (transferFamily == -1) {
+                transferFamily = i;
+            }
+        }
+    }
+
+    // build queue families
+    Int32 queueFamilies[3]; // compute, graphics, transfer
+    Int32 queueFamilyCount = 0;
+    if (info->commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
+        if (computeFamily == -1) {
+            // not supported
+            return PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED;
+        }
+        queueFamilies[queueFamilyCount++] = computeFamily;
+    }
+
+    if (info->commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
+        if (graphicsFamily == -1) {
+            // not supported
+            return PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED;
+        }
+
+        if (graphicsFamily != computeFamily) {
+            // different families, add a new family entry
+            queueFamilies[queueFamilyCount++] = graphicsFamily;
+        }        
+    }
+
+    if (info->commandQueues & PAL_GPU_COMMAND_QUEUE_TRANSFER) {
+        if (transferFamily == -1) {
+            // not supported
+            return PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED;
+        }
+
+        if (transferFamily != computeFamily && 
+            transferFamily != graphicsFamily) {
+            // different families, add a new family entry
+            queueFamilies[queueFamilyCount++] = transferFamily;
+        }
+    }
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo queueCreateInfos[3];
+    for (int i = 0; i < queueFamilyCount; i++) {
+        queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfos[i].pNext = nullptr;
+        queueCreateInfos[i].pQueuePriorities = &priority;
+        queueCreateInfos[i].queueFamilyIndex = queueFamilies[i];
+        queueCreateInfos[i].queueCount = 1;
+        queueCreateInfos[i].flags = 0;
+    }
+
+    VkDeviceCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pEnabledFeatures = 0;
+    createInfo.enabledExtensionCount = 0;
+    createInfo.ppEnabledExtensionNames = nullptr;
+    createInfo.pQueueCreateInfos = queueCreateInfos;
+    createInfo.queueCreateInfoCount = queueFamilyCount;
+    createInfo.pNext = nullptr;
+
+    // VkResult result = vkCreateDevice(
+    //     physicalDevice, 
+    //     &createInfo, 
+    //     &s_VkAllocator, 
+    //     &device);
+
+    // if (result != VK_SUCCESS) {
+
+    // }
+
+    outDevice = (PalGPUDevice*)device;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL vkDestroyGPUDevice(PalGPUDevice* device)
+{
+    // vkDestroyDevice((VkDevice)device, &s_VkAllocator);
 }
 
 static PalGPUBackend s_VkBackend = {
@@ -751,6 +872,7 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 // ==================================================
 
 PalResult PAL_CALL palCreateGPUDevice(
+    PalGPUAdapter* adapter,
     const PalGPUDeviceCreateInfo* info,
     PalGPUDevice** outDevice)
 {
@@ -763,13 +885,14 @@ PalResult PAL_CALL palCreateGPUDevice(
     }
 
     // check if the adapter is from PAL (custom or internal backend)
-    AdapterData* adapterData = findAdapterData(info->adapter);
+    AdapterData* adapterData = findAdapterData(adapter);
     if (!adapterData) {
         return PAL_RESULT_INVALID_GPU_ADAPTER;
     }
 
     PalGPUDevice* device = nullptr;
-    PalResult ret = adapterData->backend->createGPUDevice(info, &device);
+    PalResult ret;
+    ret = adapterData->backend->createGPUDevice(adapter, info, &device);
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
