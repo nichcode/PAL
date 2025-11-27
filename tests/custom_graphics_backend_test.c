@@ -109,6 +109,25 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
     }
 }
 
+static PalResult PAL_CALL customGetGPUAdapterSubInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterSubInfo* info)
+{
+    for (int i = 0; i < 2; i++) {
+        PalGPUAdapter* custom = (PalGPUAdapter*)&s_CustomGPU.adapters[i];
+        if (custom == adapter) {
+            // make a copy
+            PalGPUAdapterInfo* gpuInfo = &s_CustomGPU.adapters[i].adapterInfo;
+            info->apiType = gpuInfo->apiType;
+            info->type = gpuInfo->type;
+            strcpy(info->name, gpuInfo->name);
+            strcpy(info->versionString, gpuInfo->versionString);
+
+            return PAL_RESULT_SUCCESS;
+        }
+    }
+}
+
 PalResult PAL_CALL customCreateGPUDevice(
     PalGPUAdapter* adapter,
     const PalGPUDeviceCreateInfo* info,
@@ -174,7 +193,7 @@ bool customGraphicsBackendTest()
     }
 
     // initialize the graphics system
-    result = palInitGraphics(true, nullptr);
+    result = palInitGraphics(false, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);

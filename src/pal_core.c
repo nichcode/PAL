@@ -392,6 +392,12 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED:
             return "GPU command queue not supported";
+
+        case PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED:
+            return "Unsupported gpu feature";
+
+        case PAL_RESULT_INVALID_GRAPHICS_DRIVER:
+            return "Incompatible graphics driver";
     }
     return "Unknown";
 }

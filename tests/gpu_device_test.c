@@ -11,7 +11,7 @@ bool gpuDeviceTest()
     palLog(nullptr, "");
 
     // initialize the graphics system
-    PalResult result = palInitGraphics(true, nullptr);
+    PalResult result = palInitGraphics(false, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -49,26 +49,23 @@ bool gpuDeviceTest()
         return false;
     }
 
-    // get information about all the adapters
-    PalGPUAdapterInfo info;
+    // filter the adapters for Vulkan
     PalGPUAdapter* vulkanAdapter = nullptr;
-    PalGPUCommandQueues vulkanCommandQueues;
-    PalGPUFeatures vulkanFeatures;
+    PalGPUAdapterSubInfo subInfo = {0};
 
     for (Int32 i = 0; i < count; i++) {
         PalGPUAdapter* adapter = adapters[i];
-        result = palGetGPUAdapterInfo(adapter, &info);
+        result = palGetGPUAdapterSubInfo(adapter, &subInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter info: %s", error);
+            palLog(nullptr, "Failed to get adapter sub info: %s", error);
             palFree(nullptr, adapters);
             return false;
         }
 
-        if (info.apiType == PAL_GPU_API_VULKAN) {
+        // check if its Vulkan
+        if (subInfo.apiType == PAL_GPU_API_VULKAN) {
             vulkanAdapter = adapter;
-            vulkanCommandQueues = info.commandQueues;
-            vulkanFeatures = info.features;
             break;
         }
     }
@@ -79,22 +76,34 @@ bool gpuDeviceTest()
         return false;
     }
 
+    // get information about the adapter
+    // this time, we want all the information including 
+    // supported features and the rest
+    PalGPUAdapterInfo info = {0};
+    result = palGetGPUAdapterInfo(vulkanAdapter, &info);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get adapter info: %s", error);
+        palFree(nullptr, adapters);
+        return false;
+    }
+
     // create a device with the vulkan adapter
     PalGPUDevice* device = nullptr;
     PalGPUDeviceCreateInfo deviceCreateInfo = {0};
 
     // almost supported on all platforms
-    if (vulkanCommandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
+    if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
         deviceCreateInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS;
     }
 
     // enable swapchain and maybe multi viewport if supported
-    if (vulkanFeatures & PAL_GPU_FEATURE_SWAPCHAIN) {
+    if (info.features & PAL_GPU_FEATURE_SWAPCHAIN) {
         deviceCreateInfo.features = PAL_GPU_FEATURE_SWAPCHAIN;
     }
 
-    if (vulkanFeatures & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
-        deviceCreateInfo.features = PAL_GPU_FEATURE_MULTI_VIEWPORT;
+    if (info.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
+        deviceCreateInfo.features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
     }
 
     result = palCreateGPUDevice(vulkanAdapter, &deviceCreateInfo, &device);

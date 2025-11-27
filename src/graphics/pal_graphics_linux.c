@@ -220,6 +220,42 @@ static DeviceData* findDeviceData(PalGPUDevice* device)
 
 #if PAL_HAS_VULKAN
 
+static PalResult vkResultToPal(VkResult result) 
+{
+    switch (result) {
+        case VK_ERROR_FEATURE_NOT_PRESENT:
+        case VK_ERROR_EXTENSION_NOT_PRESENT: {
+            return PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED;
+        }
+
+        case VK_ERROR_OUT_OF_HOST_MEMORY:
+        case VK_ERROR_TOO_MANY_OBJECTS:
+        case VK_ERROR_OUT_OF_DEVICE_MEMORY: {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        case VK_ERROR_INITIALIZATION_FAILED: 
+        case VK_ERROR_DEVICE_LOST: {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        case VK_ERROR_INCOMPATIBLE_DRIVER:
+            return PAL_RESULT_INVALID_GRAPHICS_DRIVER;
+
+        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+        case VK_ERROR_SURFACE_LOST_KHR: {
+            return PAL_RESULT_INVALID_WINDOW;
+        }
+
+        case VK_TIMEOUT:
+            return PAL_RESULT_TIMEOUT;
+
+        default:
+            return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    return PAL_RESULT_PLATFORM_FAILURE;
+}
+
 void* vkAlloc(
     void* pUserData,
     size_t size,
@@ -318,6 +354,14 @@ PalResult vkInitGraphics(bool enableDebugLayer)
         s_Vk.handle, 
         "vkGetPhysicalDeviceFeatures2");
 
+    s_Vk.createDevice = (vkCreateDeviceFn)dlsym(
+        s_Vk.handle, 
+        "vkCreateDevice");
+
+    s_Vk.destroyDevice = (vkDestroyDeviceFn)dlsym(
+        s_Vk.handle, 
+        "vkDestroyDevice");
+    
     // clang-format on
 
     // get version
@@ -330,33 +374,40 @@ PalResult vkInitGraphics(bool enableDebugLayer)
         }
     }
 
-    // layers
+    VkResult ret;
     Uint32 layerCount = 0;
-    VkResult ret = s_Vk.enumerateInstanceLayerProperties(&layerCount, nullptr);
-    if (ret != VK_SUCCESS) {
-        s_Vk.hasDebug = false;
-    }
-
-    VkLayerProperties* props = nullptr;
-    props = palAllocate(
-        s_Graphics.allocator, 
-        sizeof(VkLayerProperties) * layerCount,
-        0);
-
-    if (!props) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    s_Vk.enumerateInstanceLayerProperties(&layerCount, props);
     bool hasValidationLayer = false;
-    for (int i = 0; i < layerCount; i++) {
-        if (strcmp(props[i].layerName, "VK_LAYER_KHRONOS_validation") == 0) {
-            hasValidationLayer = true;
-            break;
-        }
-    }
+    if (enableDebugLayer) {
+        // layers
+        ret = s_Vk.enumerateInstanceLayerProperties(
+            &layerCount, 
+            nullptr);
 
-    palFree(s_Graphics.allocator, props);
+        if (ret != VK_SUCCESS) {
+            s_Vk.hasDebug = false;
+        }
+
+        VkLayerProperties* props = nullptr;
+        props = palAllocate(
+            s_Graphics.allocator, 
+            sizeof(VkLayerProperties) * layerCount,
+            0);
+
+        if (!props) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        s_Vk.enumerateInstanceLayerProperties(&layerCount, props);
+        for (int i = 0; i < layerCount; i++) {
+            const char* name = props[i].layerName;
+            if (strcmp(name, "VK_LAYER_KHRONOS_validation") == 0) {
+                hasValidationLayer = true;
+                break;
+            }
+        }
+
+        palFree(s_Graphics.allocator, props);
+    }
 
     // extensions
     Uint32 extCount = 0;
@@ -470,7 +521,7 @@ PalResult vkInitGraphics(bool enableDebugLayer)
         &instance);
 
     if (result != VK_SUCCESS) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return vkResultToPal(result);
     }
 
     if (versionFallback) {
@@ -671,7 +722,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
         if (strcmp(props->extensionName, "VK_KHR_ray_tracing_pipeline") == 0) {
             rayTracingFound = true;
 
-        } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structur") == 0) {
+        } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structure") == 0) {
             accelerateFound = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
@@ -848,6 +899,57 @@ PalResult PAL_CALL vkGetAdapterInfo(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL vkGetAdapterSubInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterSubInfo* info)
+{
+    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDeviceProperties props;
+
+    s_Vk.getPhysicalDeviceProperties(physicalDevice, &props);
+    strcpy(info->name, props.deviceName);
+    info->apiType = PAL_GPU_API_VULKAN;
+
+    // get device type
+    switch (props.deviceType) {
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: {
+            info->type = PAL_GPU_TYPE_INTEGRATED;
+            break;
+        }
+
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: {
+            info->type = PAL_GPU_TYPE_DISCRETE;
+            break;
+        }
+
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: {
+            info->type = PAL_GPU_TYPE_VIRTUAL;
+            break;
+        }
+
+        case VK_PHYSICAL_DEVICE_TYPE_CPU: {
+            info->type = PAL_GPU_TYPE_CPU;
+            break;
+        }
+
+        default: {
+            info->type = PAL_GPU_TYPE_UNKNOWN;
+            break;
+        }
+    }
+
+    // version string
+    snprintf(
+        info->versionString, 
+        PAL_GPU_VERSION_SIZE, 
+        "%d.%d.%d",
+        VK_VERSION_MAJOR(props.apiVersion),
+        VK_VERSION_MINOR(props.apiVersion),
+        VK_VERSION_PATCH(props.apiVersion));
+
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL vkCreateGPUDevice(
     PalGPUAdapter* adapter,
     const PalGPUDeviceCreateInfo* info,
@@ -872,7 +974,10 @@ PalResult PAL_CALL vkCreateGPUDevice(
         queueProps);
 
     // find the index of all the supported queue families
-    Int32 computeFamily, graphicsFamily, transferFamily = -1;
+    Int32 computeFamily = -1;
+    Int32 graphicsFamily = -1;
+    Int32 transferFamily = -1;
+
     for (int i = 0; i < count; i++) {
         if (queueProps[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
             if (computeFamily == -1) {
@@ -894,11 +999,10 @@ PalResult PAL_CALL vkCreateGPUDevice(
     }
 
     // build queue families
-    Int32 queueFamilies[3]; // compute, graphics, transfer
+    Int32 queueFamilies[3] = {0}; // compute, graphics, transfer
     Int32 queueFamilyCount = 0;
     if (info->commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
         if (computeFamily == -1) {
-            // not supported
             return PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED;
         }
         queueFamilies[queueFamilyCount++] = computeFamily;
@@ -906,26 +1010,32 @@ PalResult PAL_CALL vkCreateGPUDevice(
 
     if (info->commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
         if (graphicsFamily == -1) {
-            // not supported
             return PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED;
         }
 
-        if (graphicsFamily != computeFamily) {
-            // different families, add a new family entry
+        if (queueFamilyCount == 0) {
             queueFamilies[queueFamilyCount++] = graphicsFamily;
-        }        
+
+        } else {
+            if (graphicsFamily != computeFamily) {
+                queueFamilies[queueFamilyCount++] = graphicsFamily;
+            }      
+        }
     }
 
     if (info->commandQueues & PAL_GPU_COMMAND_QUEUE_TRANSFER) {
         if (transferFamily == -1) {
-            // not supported
             return PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED;
         }
 
-        if (transferFamily != computeFamily && 
-            transferFamily != graphicsFamily) {
-            // different families, add a new family entry
-            queueFamilies[queueFamilyCount++] = transferFamily;
+        if (queueFamilyCount == 0) {
+            queueFamilies[queueFamilyCount++] = graphicsFamily;
+
+        } else {
+            if (transferFamily != computeFamily && 
+                transferFamily != graphicsFamily) {
+                queueFamilies[queueFamilyCount++] = transferFamily;
+            }
         }
     }
 
@@ -940,24 +1050,186 @@ PalResult PAL_CALL vkCreateGPUDevice(
         queueCreateInfos[i].flags = 0;
     }
 
+    // build features and extensions capabilities
+    VkPhysicalDeviceFeatures features = {0};
+    if (info->features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
+        features.samplerAnisotropy = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
+        features.sampleRateShading = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
+        features.multiViewport = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
+        features.tessellationShader = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
+        features.geometryShader = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_SHADER_INT16) {
+        features.shaderInt16 = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_SHADER_INT64) {
+        features.shaderInt64 = true;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
+        features.shaderFloat64 = true;
+    }
+
+    // extensions and features2
+    int extCount = 0;
+    const char* extensions[12];
+
+    // clang-format off
+
+    const void* start = nullptr;
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline = {0};
+    timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+
+    VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
+    shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
+
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
+    mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
+    ray.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    acc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR vrs = {0};
+    vrs.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+
+    VkPhysicalDeviceDescriptorIndexingFeatures descIndex = {0};
+    descIndex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+    // clang-format on
+
+    if (info->features & PAL_GPU_FEATURE_SWAPCHAIN) {
+        extensions[extCount++] = "VK_KHR_swapchain";
+    }
+
+    if (info->features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
+        extensions[extCount++] = "VK_KHR_dynamic_rendering";
+    }
+
+    if (info->features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
+        extensions[extCount++] = "VK_KHR_timeline_semaphore";
+        timeline.timelineSemaphore = true;
+        start = &timeline;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
+        extensions[extCount++] = "VK_KHR_shader_float16_int8";
+        shader16.shaderFloat16 = true;
+
+        if (timeline.timelineSemaphore) {
+            timeline.pNext = &shader16;
+        }
+        start = &shader16;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_RAY_TRACING) {
+        extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
+        extensions[extCount++] = "VK_KHR_acceleration_structure";
+        ray.rayTracingPipeline = true;
+        acc.accelerationStructure = true;
+       
+        if (shader16.shaderFloat16) {
+            shader16.pNext = &ray;
+
+        } else if (timeline.timelineSemaphore) {
+            // no shader16, check timeline
+            timeline.pNext = &ray;
+        }
+        ray.pNext = &acc;
+        start = &ray;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_MESH_SHADER) {
+        extensions[extCount++] = "VK_EXT_mesh_shader";
+        mesh.meshShader = true;
+        mesh.taskShader = true;
+
+        if (acc.accelerationStructure) {
+            acc.pNext = &mesh;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &mesh;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &mesh;
+        }
+        start = &mesh;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
+        extensions[extCount++] = "VK_KHR_fragment_shading_rate";
+        vrs.pipelineFragmentShadingRate = true;
+
+        if (mesh.meshShader) {
+            mesh.pNext = &vrs;
+
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &vrs;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &vrs;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &vrs;
+        }
+        start = &vrs;
+    }
+
+    if (info->features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
+        extensions[extCount++] = "VK_EXT_descriptor_indexing";
+        descIndex.shaderSampledImageArrayNonUniformIndexing = true;
+
+        if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &descIndex;
+
+        } else if (mesh.meshShader) {
+            mesh.pNext = &descIndex;
+
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &descIndex;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &descIndex;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &descIndex;
+        }
+        start = &descIndex;
+    }
+
     VkDeviceCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pEnabledFeatures = 0;
-    createInfo.enabledExtensionCount = 0;
-    createInfo.ppEnabledExtensionNames = nullptr;
+    createInfo.pEnabledFeatures = &features;
+    createInfo.enabledExtensionCount = extCount;
+    createInfo.ppEnabledExtensionNames = extensions;
     createInfo.pQueueCreateInfos = queueCreateInfos;
     createInfo.queueCreateInfoCount = queueFamilyCount;
-    createInfo.pNext = nullptr;
+    createInfo.pNext = start;
 
-    // ret = s_Vk.createDevice(
-    //     physicalDevice, 
-    //     &createInfo, 
-    //     &s_Vk.allocator, 
-    //     &device);
+    ret = s_Vk.createDevice(
+        physicalDevice, 
+        &createInfo, 
+        &s_Vk.allocator, 
+        &device);
 
-    // if (ret != VK_SUCCESS) {
-
-    // }
+    if (ret != VK_SUCCESS) {
+        return vkResultToPal(ret);
+    }
 
     *outDevice = (PalGPUDevice*)device;
     return PAL_RESULT_SUCCESS;
@@ -970,7 +1242,10 @@ void PAL_CALL vkDestroyGPUDevice(PalGPUDevice* device)
 
 static PalGPUBackend s_VkBackend = {
     .enumerateGPUAdapters = vkEnumerateAdapters,
-    .getGPUAdapterInfo = vkGetAdapterInfo
+    .getGPUAdapterInfo = vkGetAdapterInfo,
+    .getGPUAdapterSubInfo = vkGetAdapterSubInfo,
+    .createGPUDevice = vkCreateGPUDevice,
+    .destroyGPUDevice = vkDestroyGPUDevice
 };
 
 #endif // PAL_HAS_VULKAN
@@ -1097,6 +1372,26 @@ PalResult PAL_CALL palGetGPUAdapterInfo(
     AdapterData* data = findAdapterData(adapter);
     if (data) {
         return data->backend->getGPUAdapterInfo(adapter, info);
+    }
+
+    return PAL_RESULT_INVALID_GPU_ADAPTER;
+}
+
+PalResult PAL_CALL palGetGPUAdapterSubInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterSubInfo* info)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!adapter || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    AdapterData* data = findAdapterData(adapter);
+    if (data) {
+        return data->backend->getGPUAdapterSubInfo(adapter, info);
     }
 
     return PAL_RESULT_INVALID_GPU_ADAPTER;

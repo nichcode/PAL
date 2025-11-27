@@ -95,6 +95,13 @@ typedef enum {
 } PalGPUFeatures;
 
 typedef struct {
+    PalGPUType type;
+    PalGPUApiType apiType;
+    char versionString[PAL_GPU_VERSION_SIZE];
+    char name[PAL_GPU_NAME_SIZE];
+} PalGPUAdapterSubInfo;
+
+typedef struct {
     bool debugLayerSupported;
     PalGPUType type;
     PalGPUApiType apiType;
@@ -115,6 +122,10 @@ typedef struct {
     PalResult PAL_CALL (*enumerateGPUAdapters)(
         Int32* count,
         PalGPUAdapter** outAdapters);
+
+    PalResult PAL_CALL (*getGPUAdapterSubInfo)(
+        PalGPUAdapter* adapter,
+        PalGPUAdapterSubInfo* info);
 
     PalResult PAL_CALL (*getGPUAdapterInfo)(
         PalGPUAdapter* adapter,
@@ -141,6 +152,10 @@ PAL_API PalResult PAL_CALL palEnumerateGPUAdapters(
 PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info);
+
+PAL_API PalResult PAL_CALL palGetGPUAdapterSubInfo(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterSubInfo* info);
 
 PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
