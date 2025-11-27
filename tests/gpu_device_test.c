@@ -90,23 +90,18 @@ bool gpuDeviceTest()
 
     // create a device with the vulkan adapter
     PalGPUDevice* device = nullptr;
-    PalGPUDeviceCreateInfo deviceCreateInfo = {0};
-
-    // almost supported on all platforms
-    if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
-        deviceCreateInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS;
-    }
+    PalGPUFeatures features = 0;
 
     // enable swapchain and maybe multi viewport if supported
     if (info.features & PAL_GPU_FEATURE_SWAPCHAIN) {
-        deviceCreateInfo.features = PAL_GPU_FEATURE_SWAPCHAIN;
+        features = PAL_GPU_FEATURE_SWAPCHAIN;
     }
 
     if (info.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
-        deviceCreateInfo.features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
+        features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
     }
 
-    result = palCreateGPUDevice(vulkanAdapter, &deviceCreateInfo, &device);
+    result = palCreateGPUDevice(vulkanAdapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);

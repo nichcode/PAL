@@ -144,6 +144,13 @@ bool graphicsTest()
         palLog(nullptr, " Debug Layer: %s", boolToString);
 
         // command queue
+        Int32 maxComputeQueues = info.commandQueuesInfo.maxComputeQueues;
+        Int32 maxGraphicsQueues = info.commandQueuesInfo.maxGraphicsQueues;
+        Int32 maxTransferQueues = info.commandQueuesInfo.maxTransferQueues;
+        palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
+        palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
+        palLog(nullptr, " Max transfer command queues: %d", maxTransferQueues);
+        
         palLog(nullptr, " Supported Command Queues:");
         if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
             palLog(nullptr, "  Compute");

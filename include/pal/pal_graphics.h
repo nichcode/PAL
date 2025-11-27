@@ -102,6 +102,12 @@ typedef struct {
 } PalGPUAdapterSubInfo;
 
 typedef struct {
+    Uint32 maxComputeQueues;
+    Uint32 maxGraphicsQueues;
+    Uint32 maxTransferQueues;
+} PalGPUCommandQueuesInfo;
+
+typedef struct {
     bool debugLayerSupported;
     PalGPUType type;
     PalGPUApiType apiType;
@@ -109,14 +115,10 @@ typedef struct {
     Uint64 totalMemory; // in bytes
     PalGPUCommandQueues commandQueues;
     PalGPUFeatures features;
+    PalGPUCommandQueuesInfo commandQueuesInfo;
     char versionString[PAL_GPU_VERSION_SIZE];
     char name[PAL_GPU_NAME_SIZE];
 } PalGPUAdapterInfo;
-
-typedef struct {
-    PalGPUCommandQueues commandQueues;
-    PalGPUFeatures features;
-} PalGPUDeviceCreateInfo;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateGPUAdapters)(
@@ -133,7 +135,7 @@ typedef struct {
 
     PalResult PAL_CALL (*createGPUDevice)(
         PalGPUAdapter* adapter,
-        const PalGPUDeviceCreateInfo* info,
+        PalGPUFeatures features,
         PalGPUDevice** outDevice);
 
     void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
@@ -161,7 +163,7 @@ PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
 PAL_API PalResult PAL_CALL palCreateGPUDevice(
     PalGPUAdapter* adapter,
-    const PalGPUDeviceCreateInfo* info,
+    PalGPUFeatures features,
     PalGPUDevice** outDevice);
 
 PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);

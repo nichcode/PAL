@@ -46,6 +46,10 @@ static void initCustomBackend() {
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
     adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_DXBC;
 
+    adapter->adapterInfo.commandQueuesInfo.maxComputeQueues = 1;
+    adapter->adapterInfo.commandQueuesInfo.maxGraphicsQueues = 1;
+    adapter->adapterInfo.commandQueuesInfo.maxTransferQueues = 2;
+
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
     adapter->adapterInfo.apiType = PAL_GPU_API_OPENGL;
@@ -65,6 +69,10 @@ static void initCustomBackend() {
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
     adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
     adapter->adapterInfo.shaderFormats |= PAL_GPU_SHADER_FORMAT_GLSL;
+
+    adapter->adapterInfo.commandQueuesInfo.maxComputeQueues = 1;
+    adapter->adapterInfo.commandQueuesInfo.maxGraphicsQueues = 4;
+    adapter->adapterInfo.commandQueuesInfo.maxTransferQueues = 4;
 }
 
 static PalResult PAL_CALL customEnumerateGPUAdapters(
@@ -100,6 +108,7 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
             info->features = gpuInfo->features;
             info->commandQueues = gpuInfo->commandQueues;
             info->shaderFormats = gpuInfo->shaderFormats;
+            info->commandQueuesInfo = gpuInfo->commandQueuesInfo;
 
             strcpy(info->name, gpuInfo->name);
             strcpy(info->versionString, gpuInfo->versionString);
@@ -130,7 +139,7 @@ static PalResult PAL_CALL customGetGPUAdapterSubInfo(
 
 PalResult PAL_CALL customCreateGPUDevice(
     PalGPUAdapter* adapter,
-    const PalGPUDeviceCreateInfo* info,
+    PalGPUFeatures features,
     PalGPUDevice** outDevice)
 {
     // very simple GPU device. Just an allocation
@@ -329,6 +338,13 @@ bool customGraphicsBackendTest()
         palLog(nullptr, " Debug Layer: %s", boolToString);
 
         // command queues
+        Int32 maxComputeQueues = info.commandQueuesInfo.maxComputeQueues;
+        Int32 maxGraphicsQueues = info.commandQueuesInfo.maxGraphicsQueues;
+        Int32 maxTransferQueues = info.commandQueuesInfo.maxTransferQueues;
+        palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
+        palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
+        palLog(nullptr, " Max transfer command queues: %d", maxTransferQueues);
+
         palLog(nullptr, " Supported Command Queues:");
         if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
             palLog(nullptr, "  Compute");
@@ -438,12 +454,10 @@ bool customGraphicsBackendTest()
 
     // create a device with a custom adapter (D3D9)
     PalGPUDevice* device = nullptr;
-    PalGPUDeviceCreateInfo createInfo = {0};
-    createInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS; // only graphics
-    createInfo.features = PAL_GPU_FEATURE_SHADER_FLOAT64;
-    createInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
+    PalGPUFeatures features = PAL_GPU_FEATURE_SHADER_FLOAT64;
+    features |= PAL_GPU_FEATURE_SWAPCHAIN;
 
-    result = palCreateGPUDevice(d3d9Adapter, &createInfo, &device);
+    result = palCreateGPUDevice(d3d9Adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);
