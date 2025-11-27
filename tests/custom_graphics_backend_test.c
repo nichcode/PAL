@@ -173,8 +173,8 @@ bool customGraphicsBackendTest()
         return false;
     }
 
-    // initialize the video system
-    result = palInitGraphics(true, PAL_VERSION_DEFAULT, nullptr);
+    // initialize the graphics system
+    result = palInitGraphics(true, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -417,11 +417,12 @@ bool customGraphicsBackendTest()
         palLog(nullptr, "");
     }
 
-    // create a device with a custom aapter (D3D9)
+    // create a device with a custom adapter (D3D9)
     PalGPUDevice* device = nullptr;
     PalGPUDeviceCreateInfo createInfo = {0};
     createInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS; // only graphics
-    createInfo.debug = false; // no debug layer
+    createInfo.features = PAL_GPU_FEATURE_SHADER_FLOAT64;
+    createInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
 
     result = palCreateGPUDevice(d3d9Adapter, &createInfo, &device);
     if (result != PAL_RESULT_SUCCESS) {

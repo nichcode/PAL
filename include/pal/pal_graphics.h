@@ -36,11 +36,6 @@ freely, subject to the following restrictions:
 #define PAL_GPU_NAME_SIZE 128
 #define PAL_GPU_VERSION_SIZE 16
 
-#define PAL_VERSION_DEFAULT 0x0667
-#define PAL_MAKE_VERSION(major, minor) (((major) << 16) | ((minor) & 0xFFFF))
-#define PAL_VERSION_MAJOR(version) ((version) >> 16)
-#define PAL_VERSION_MINOR(version) ((version) & 0xFFFF)
-
 typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
 
@@ -112,8 +107,8 @@ typedef struct {
 } PalGPUAdapterInfo;
 
 typedef struct {
-    bool debug;
     PalGPUCommandQueues commandQueues;
+    PalGPUFeatures features;
 } PalGPUDeviceCreateInfo;
 
 typedef struct {
@@ -134,8 +129,7 @@ typedef struct {
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
-    bool enableDebug,
-    Int32 versionHint,
+    bool enableDebugLayer,
     const PalAllocator* allocator);
 
 PAL_API void PAL_CALL palShutdownGraphics();

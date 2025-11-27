@@ -56,7 +56,8 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_GRAPHICS
     // registerTest("Graphics Test", graphicsTest);
-    registerTest("Custom Graphics Backend Test", customGraphicsBackendTest);
+    // registerTest("Custom Graphics Backend Test", customGraphicsBackendTest);
+    registerTest("GPU Device Test", gpuDeviceTest);
 #endif // PAL_HAS_GRAPHICS
 
     runTests();

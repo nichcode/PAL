@@ -98,6 +98,10 @@ typedef void (*vkGetPhysicalDeviceFeatures2Fn)(
     VkPhysicalDevice, 
     VkPhysicalDeviceFeatures2*);
 
+typedef void (*vkGetPhysicalDeviceFeatures2KHRFn)(
+    VkPhysicalDevice, 
+    VkPhysicalDeviceFeatures2*);
+
 #endif // PAL_HAS_VULKAN
 
 typedef struct {
@@ -121,6 +125,7 @@ typedef struct {
 typedef struct {
     bool initialized;
     bool hasDebug;
+    bool versionFallback;
     Int32 backendCount;
     Int32 totalAdapterCount;
     const PalAllocator* allocator;
@@ -139,6 +144,7 @@ typedef struct {
     void* enumerateDeviceExtensionProperties;
     void* getPhysicalDeviceFeatures;
     void* getPhysicalDeviceFeatures2;
+    void* getPhysicalDeviceFeatures2KHR;
 
     AdapterData adapterData[MAX_ADAPTERS];
     DeviceData deviceData[MAX_DEVICE];
@@ -237,9 +243,7 @@ void* vkRealloc(
     return nullptr;
 }
 
-PalResult vkInitGraphics(
-    bool enableDebug,
-    Int32 versionHint)
+PalResult vkInitGraphics(bool enableDebugLayer)
 {
     // load vulkan
     s_VkGPU.handle = dlopen("libvulkan.so", RTLD_LAZY);
@@ -291,20 +295,15 @@ PalResult vkInitGraphics(
         "vkGetPhysicalDeviceFeatures2");
 
     // get version
+    bool versionFallback = false;
     Uint32 version = 0;
-    if (versionHint == PAL_VERSION_DEFAULT) {
-        vkEnumerateInstanceVersionFn getInstanceVersion;
-        getInstanceVersion = s_VkGPU.enumerateInstanceVersion;
-        if (getInstanceVersion) {
-            getInstanceVersion(&version);
-        } else {
-            version = VK_API_VERSION_1_0;
+    vkEnumerateInstanceVersionFn getInstanceVersion;
+    getInstanceVersion = s_VkGPU.enumerateInstanceVersion;
+    if (getInstanceVersion) {
+        getInstanceVersion(&version);
+        if (version <= VK_API_VERSION_1_0) {
+            versionFallback = true;
         }
-
-    } else {
-        Uint16 major = PAL_VERSION_MAJOR(versionHint);
-        Uint16 minor = PAL_VERSION_MINOR(versionHint);
-        version = VK_MAKE_VERSION(major, minor, 0);
     }
 
     // layers
@@ -419,6 +418,11 @@ PalResult vkInitGraphics(
         layers[layerCount++] = "VK_LAYER_KHRONOS_validation";
     }
 
+    if (versionFallback) {
+        const char* name = "VK_KHR_get_physical_device_properties2";
+        extensions[extensionCount++] = name;
+    }
+
     VkApplicationInfo appInfo = {0};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.apiVersion = version;
@@ -450,6 +454,17 @@ PalResult vkInitGraphics(
 
     if (result != VK_SUCCESS) {
         return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    // load get physical device properties2 proc if we are on version 1.0
+    s_VkGPU.getPhysicalDeviceFeatures2KHR = dlsym(
+        s_VkGPU.handle, 
+        "vkGetPhysicalDeviceFeatures2KHR");
+
+    if (s_VkGPU.getPhysicalDeviceFeatures2KHR) {
+        s_VkGPU.versionFallback = true;
+    } else {
+        s_VkGPU.versionFallback = false;
     }
 
     s_VkGPU.instance = instance;
@@ -522,6 +537,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
     vkEnumerateDeviceExtensionPropertiesFn getExtensionProperties;
     vkGetPhysicalDeviceFeaturesFn getFeatures;
     vkGetPhysicalDeviceFeatures2Fn getFeatures2;
+    vkGetPhysicalDeviceFeatures2KHRFn getFeatures2KHR;
 
     getProperties = s_VkGPU.getPhysicalDeviceProperties;
     getMemoryProperties = s_VkGPU.getPhysicalDeviceMemoryProperties;
@@ -529,6 +545,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
     getExtensionProperties = s_VkGPU.enumerateDeviceExtensionProperties;
     getFeatures = s_VkGPU.getPhysicalDeviceFeatures;
     getFeatures2 = s_VkGPU.getPhysicalDeviceFeatures2;
+    getFeatures2KHR = s_VkGPU.getPhysicalDeviceFeatures2KHR;
 
     getProperties(physicalDevice, &props);
     getMemoryProperties(physicalDevice, &memProps);
@@ -626,6 +643,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
 
     if (ret != VK_SUCCESS) {
         // we just return without any modern features
+        // this is rare
         return PAL_RESULT_SUCCESS;
     }
 
@@ -666,7 +684,13 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &mesh;
-            getFeatures2(physicalDevice, &features);
+
+            if (getFeatures2KHR) {
+                getFeatures2KHR(physicalDevice, &features);
+
+            } else {
+                getFeatures2(physicalDevice, &features);
+            }
 
             if (mesh.meshShader && mesh.taskShader) {
                 info->features |= PAL_GPU_FEATURE_MESH_SHADER;
@@ -680,7 +704,13 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &frag;
-            getFeatures2(physicalDevice, &features);
+
+            if (getFeatures2KHR) {
+                getFeatures2KHR(physicalDevice, &features);
+
+            } else {
+                getFeatures2(physicalDevice, &features);
+            }
 
             if (frag.pipelineFragmentShadingRate) {
                 info->features |= PAL_GPU_FEATURE_VARIABLE_RATE_SHADING;
@@ -694,7 +724,13 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &desc;
-            getFeatures2(physicalDevice, &features);
+
+            if (getFeatures2KHR) {
+                getFeatures2KHR(physicalDevice, &features);
+
+            } else {
+                getFeatures2(physicalDevice, &features);
+            }
 
             if (desc.shaderSampledImageArrayNonUniformIndexing) {
                 info->features |= PAL_GPU_FEATURE_DESCRIPTOR_INDEXING;
@@ -716,7 +752,13 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &shader16;
-            getFeatures2(physicalDevice, &features);
+
+            if (getFeatures2KHR) {
+                getFeatures2KHR(physicalDevice, &features);
+
+            } else {
+                getFeatures2(physicalDevice, &features);
+            }
 
             if (shader16.shaderFloat16) {
                 info->features |= PAL_GPU_FEATURE_SHADER_FLOAT16;
@@ -730,7 +772,13 @@ PalResult PAL_CALL vkGetAdapterInfo(
             VkPhysicalDeviceFeatures2 features;
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features.pNext = &timeline;
-            getFeatures2(physicalDevice, &features);
+
+            if (getFeatures2KHR) {
+                getFeatures2KHR(physicalDevice, &features);
+
+            } else {
+                getFeatures2(physicalDevice, &features);
+            }
 
             if (timeline.timelineSemaphore) {
                 info->features |= PAL_GPU_FEATURE_TIMELINE_SEMAPHORE;
@@ -749,7 +797,13 @@ PalResult PAL_CALL vkGetAdapterInfo(
         VkPhysicalDeviceFeatures2 features;
         features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
         features.pNext = &ray;
-        getFeatures2(physicalDevice, &features);
+
+        if (getFeatures2KHR) {
+            getFeatures2KHR(physicalDevice, &features);
+
+        } else {
+            getFeatures2(physicalDevice, &features);
+        }
 
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
             info->features |= PAL_GPU_FEATURE_RAY_TRACING;
@@ -931,8 +985,7 @@ static PalGPUBackend s_VkBackend = {
 // ==================================================
 
 PalResult PAL_CALL palInitGraphics(
-    bool enableDebug,
-    Int32 versionHint,
+    bool enableDebugLayer,
     const PalAllocator* allocator)
 {
     if (s_VkGPU.initialized) {
@@ -945,10 +998,7 @@ PalResult PAL_CALL palInitGraphics(
 
     s_VkGPU.allocator = allocator;
 #if PAL_HAS_VULKAN
-    PalResult ret = vkInitGraphics(
-        enableDebug, 
-        versionHint);
-
+    PalResult ret = vkInitGraphics(enableDebugLayer);
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }

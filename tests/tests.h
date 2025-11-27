@@ -56,5 +56,6 @@ bool multiThreadOpenGlTest();
 // graphics
 bool graphicsTest();
 bool customGraphicsBackendTest();
+bool gpuDeviceTest();
 
 #endif // _TESTS_H

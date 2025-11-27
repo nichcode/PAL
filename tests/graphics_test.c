@@ -10,8 +10,8 @@ bool graphicsTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    // initialize the video system
-    PalResult result = palInitGraphics(true, PAL_VERSION_DEFAULT, nullptr);
+    // initialize the graphics system
+    PalResult result = palInitGraphics(true, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
