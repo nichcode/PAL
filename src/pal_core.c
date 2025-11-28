@@ -398,6 +398,12 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_GRAPHICS_DRIVER:
             return "Incompatible graphics driver";
+
+        case PAL_RESULT_INVALID_GPU_DEVICE:
+            return "Invalid GPU device";
+
+        case PAL_RESULT_OUT_OF_GPU_COMMAND_QUEUE:
+            return "Out of GPU command queues";
     }
     return "Unknown";
 }

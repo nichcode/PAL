@@ -146,10 +146,10 @@ bool graphicsTest()
         // command queue
         Int32 maxComputeQueues = info.commandQueuesInfo.maxComputeQueues;
         Int32 maxGraphicsQueues = info.commandQueuesInfo.maxGraphicsQueues;
-        Int32 maxTransferQueues = info.commandQueuesInfo.maxTransferQueues;
+        Int32 maxCopyQueues = info.commandQueuesInfo.maxCopyQueues;
         palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
         palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
-        palLog(nullptr, " Max transfer command queues: %d", maxTransferQueues);
+        palLog(nullptr, " Max copy command queues: %d", maxCopyQueues);
 
         // features
         palLog(nullptr, " Supported Features:");

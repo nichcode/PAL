@@ -47,7 +47,7 @@ static void initCustomBackend() {
 
     adapter->adapterInfo.commandQueuesInfo.maxComputeQueues = 1;
     adapter->adapterInfo.commandQueuesInfo.maxGraphicsQueues = 1;
-    adapter->adapterInfo.commandQueuesInfo.maxTransferQueues = 2;
+    adapter->adapterInfo.commandQueuesInfo.maxCopyQueues = 2;
 
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
@@ -69,7 +69,7 @@ static void initCustomBackend() {
 
     adapter->adapterInfo.commandQueuesInfo.maxComputeQueues = 1;
     adapter->adapterInfo.commandQueuesInfo.maxGraphicsQueues = 4;
-    adapter->adapterInfo.commandQueuesInfo.maxTransferQueues = 4;
+    adapter->adapterInfo.commandQueuesInfo.maxCopyQueues = 4;
 }
 
 static PalResult PAL_CALL customEnumerateGPUAdapters(
@@ -336,10 +336,10 @@ bool customGraphicsBackendTest()
         // command queues
         Int32 maxComputeQueues = info.commandQueuesInfo.maxComputeQueues;
         Int32 maxGraphicsQueues = info.commandQueuesInfo.maxGraphicsQueues;
-        Int32 maxTransferQueues = info.commandQueuesInfo.maxTransferQueues;
+        Int32 maxCopyQueues = info.commandQueuesInfo.maxCopyQueues;
         palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
         palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
-        palLog(nullptr, " Max transfer command queues: %d", maxTransferQueues);
+        palLog(nullptr, " Max transfer command queues: %d", maxCopyQueues);
 
         // features
         palLog(nullptr, " Supported Features:");

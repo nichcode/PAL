@@ -108,6 +108,30 @@ bool gpuDeviceTest()
         return false;
     }
 
+    // check if we support a graphics command queue
+    if (!info.commandQueuesInfo.maxGraphicsQueues) {
+        palLog(
+            nullptr, 
+            "This Adapter (GPU) does not have any grapics command queues");
+        return false;
+    }
+
+    // create a graphics command queue
+    PalGPUCommandQueue* graphicsQueue = nullptr;
+    result = palCreateGPUCommandQueue(
+        device, 
+        PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS, 
+        &graphicsQueue);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create grapics command queue: %s", error);
+        return false;
+    }
+
+    // destroy the command queue
+    palDestroyGPUCommandQueue(graphicsQueue);
+
     // destroy the device
     palDestroyGPUDevice(device);
 

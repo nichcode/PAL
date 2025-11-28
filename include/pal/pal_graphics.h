@@ -38,6 +38,7 @@ freely, subject to the following restrictions:
 
 typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
+typedef struct PalGPUCommandQueue PalGPUCommandQueue;
 
 typedef enum {
     PAL_GPU_TYPE_UNKNOWN,
@@ -63,7 +64,7 @@ typedef enum {
 typedef enum {
     PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS,
     PAL_GPU_COMMAND_QUEUE_TYPE_COMPUTE,
-    PAL_GPU_COMMAND_QUEUE_TYPE_TRANSFER
+    PAL_GPU_COMMAND_QUEUE_TYPE_COPY
 } PalGPUCommandQueueType;
 
 typedef enum {
@@ -104,7 +105,7 @@ typedef struct {
 typedef struct {
     Uint32 maxComputeQueues;
     Uint32 maxGraphicsQueues;
-    Uint32 maxTransferQueues;
+    Uint32 maxCopyQueues;
 } PalGPUCommandQueuesInfo;
 
 typedef struct {
@@ -138,6 +139,14 @@ typedef struct {
         PalGPUDevice** outDevice);
 
     void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
+
+    PalResult PAL_CALL (*createGPUCommandQueue)(
+        PalGPUDevice* device,
+        PalGPUCommandQueueType type,
+        PalGPUCommandQueue** outQueue);
+
+    void PAL_CALL (*destroyGPUCommandQueue)(PalGPUCommandQueue* queue);
+
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -166,6 +175,13 @@ PAL_API PalResult PAL_CALL palCreateGPUDevice(
     PalGPUDevice** outDevice);
 
 PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);
+
+PAL_API PalResult PAL_CALL palCreateGPUCommandQueue(
+    PalGPUDevice* device,
+    PalGPUCommandQueueType type,
+    PalGPUCommandQueue** outQueue);
+
+PAL_API void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue);
 
 /** @} */ // end of pal_graphics group
 
