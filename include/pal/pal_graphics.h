@@ -39,6 +39,7 @@ freely, subject to the following restrictions:
 typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
 typedef struct PalGPUCommandQueue PalGPUCommandQueue;
+typedef struct PalSwapchain PalSwapchain;
 
 typedef enum {
     PAL_GPU_TYPE_UNKNOWN,
@@ -98,40 +99,32 @@ typedef enum {
 typedef struct {
     PalGPUType type;
     PalGPUApiType apiType;
-    char versionString[PAL_GPU_VERSION_SIZE];
-    char name[PAL_GPU_NAME_SIZE];
-} PalGPUAdapterSubInfo;
-
-typedef struct {
-    Uint32 maxComputeQueues;
-    Uint32 maxGraphicsQueues;
-    Uint32 maxCopyQueues;
-} PalGPUCommandQueuesInfo;
-
-typedef struct {
-    bool debugLayerSupported;
-    PalGPUType type;
-    PalGPUApiType apiType;
     PalGPUShaderFormats shaderFormats;
     Uint64 totalMemory; // in bytes
-    PalGPUFeatures features;
-    PalGPUCommandQueuesInfo commandQueuesInfo;
     char versionString[PAL_GPU_VERSION_SIZE];
     char name[PAL_GPU_NAME_SIZE];
 } PalGPUAdapterInfo;
+
+typedef struct {
+    bool debugLayerSupported;
+    Uint32 maxComputeQueues;
+    Uint32 maxGraphicsQueues;
+    Uint32 maxCopyQueues;
+    PalGPUFeatures features;
+} PalGPUAdapterCapabilities;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateGPUAdapters)(
         Int32* count,
         PalGPUAdapter** outAdapters);
 
-    PalResult PAL_CALL (*getGPUAdapterSubInfo)(
-        PalGPUAdapter* adapter,
-        PalGPUAdapterSubInfo* info);
-
     PalResult PAL_CALL (*getGPUAdapterInfo)(
         PalGPUAdapter* adapter,
         PalGPUAdapterInfo* info);
+
+    PalResult PAL_CALL (*getGPUAdapterCapabilities)(
+        PalGPUAdapter* adapter,
+        PalGPUAdapterCapabilities* caps);
 
     PalResult PAL_CALL (*createGPUDevice)(
         PalGPUAdapter* adapter,
@@ -146,7 +139,6 @@ typedef struct {
         PalGPUCommandQueue** outQueue);
 
     void PAL_CALL (*destroyGPUCommandQueue)(PalGPUCommandQueue* queue);
-
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -163,9 +155,9 @@ PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info);
 
-PAL_API PalResult PAL_CALL palGetGPUAdapterSubInfo(
+PAL_API PalResult PAL_CALL palGetGPUAdapterCapabilities(
     PalGPUAdapter* adapter,
-    PalGPUAdapterSubInfo* info);
+    PalGPUAdapterCapabilities* caps);
 
 PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 

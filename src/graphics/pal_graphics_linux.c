@@ -663,26 +663,23 @@ static PalResult PAL_CALL vkGetAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info)
 {
-    VkResult ret;
     VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
-    VkPhysicalDeviceProperties props;
-    VkPhysicalDeviceMemoryProperties memProps;
+    VkPhysicalDeviceProperties props = {0};
+    VkPhysicalDeviceMemoryProperties memProps = {0};
 
-    s_Vk.getPhysicalDeviceProperties(physicalDevice, &props);
     s_Vk.getPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
-    strcpy(info->name, props.deviceName);
-    info->debugLayerSupported = s_Vk.hasDebug;
+    s_Vk.getPhysicalDeviceProperties(physicalDevice, &props);
 
-    // get total memory
-    Uint64 memory = 0;
+    info->apiType = PAL_GPU_API_TYPE_VULKAN;
+    info->shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
+    strcpy(info->name, props.deviceName);
+
+    info->totalMemory = 0;
     for (int i = 0; i < memProps.memoryHeapCount; i++) {
         if (memProps.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-            memory += memProps.memoryHeaps[i].size;
+            info->totalMemory = memProps.memoryHeaps[i].size;
         }
     }
-
-    info->totalMemory = memory;
-    info->apiType = PAL_GPU_API_TYPE_VULKAN;
 
     // get device type
     switch (props.deviceType) {
@@ -712,9 +709,6 @@ static PalResult PAL_CALL vkGetAdapterInfo(
         }
     }
 
-    // shader format
-    info->shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
-
     // version string
     snprintf(
         info->versionString, 
@@ -723,6 +717,17 @@ static PalResult PAL_CALL vkGetAdapterInfo(
         VK_VERSION_MAJOR(props.apiVersion),
         VK_VERSION_MINOR(props.apiVersion),
         VK_VERSION_PATCH(props.apiVersion));
+
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult PAL_CALL vkGetAdapterCapabilities(
+    PalGPUAdapter* adapter,
+    PalGPUAdapterCapabilities* caps)
+{
+    VkResult ret = VK_SUCCESS;
+    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
+    caps->debugLayerSupported = s_Vk.hasDebug;
 
     // get supported queue commands
     Uint32 count;
@@ -737,22 +742,21 @@ static PalResult PAL_CALL vkGetAdapterInfo(
         &count, 
         queueProps);
 
-    PalGPUCommandQueuesInfo* queueInfo = &info->commandQueuesInfo;
-    queueInfo->maxComputeQueues = 0;
-    queueInfo->maxGraphicsQueues = 0;
-    queueInfo->maxCopyQueues = 0;
+    caps->maxComputeQueues = 0;
+    caps->maxGraphicsQueues = 0;
+    caps->maxCopyQueues = 0;
     
     for (int i = 0; i < count; i++) {
         if (queueProps[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            queueInfo->maxComputeQueues += queueProps->queueCount;
+            caps->maxComputeQueues += queueProps->queueCount;
         }
 
         if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            queueInfo->maxGraphicsQueues += queueProps->queueCount;
+            caps->maxGraphicsQueues += queueProps->queueCount;
         }
 
         if (queueProps[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            queueInfo->maxCopyQueues += queueProps->queueCount;
+            caps->maxCopyQueues += queueProps->queueCount;
         }
     }
 
@@ -787,7 +791,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
 
     bool rayTracingFound = false;
     bool accelerateFound = false;
-    info->features = 0;
+    caps->features = 0;
 
     // clang-format off
     for (int i = 0; i < extensionCount; i++) {
@@ -815,7 +819,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
             }
 
             if (mesh.meshShader && mesh.taskShader) {
-                info->features |= PAL_GPU_FEATURE_MESH_SHADER;
+                caps->features |= PAL_GPU_FEATURE_MESH_SHADER;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_fragment_shading_rate") == 0) {
@@ -835,7 +839,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
             }
 
             if (frag.pipelineFragmentShadingRate) {
-                info->features |= PAL_GPU_FEATURE_VARIABLE_RATE_SHADING;
+                caps->features |= PAL_GPU_FEATURE_VARIABLE_RATE_SHADING;
             }
 
         } else if (strcmp(props->extensionName, "VK_EXT_descriptor_indexing") == 0) {
@@ -855,16 +859,16 @@ static PalResult PAL_CALL vkGetAdapterInfo(
             }
 
             if (desc.shaderSampledImageArrayNonUniformIndexing) {
-                info->features |= PAL_GPU_FEATURE_DESCRIPTOR_INDEXING;
+                caps->features |= PAL_GPU_FEATURE_DESCRIPTOR_INDEXING;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_swapchain") == 0) {
             // swapchain
-            info->features |= PAL_GPU_FEATURE_SWAPCHAIN;
+            caps->features |= PAL_GPU_FEATURE_SWAPCHAIN;
 
         } else if (strcmp(props->extensionName, "VK_KHR_dynamic_rendering") == 0) {
             // dynamic rendering
-            info->features |= PAL_GPU_FEATURE_DYNAMIC_RENDERING;
+            caps->features |= PAL_GPU_FEATURE_DYNAMIC_RENDERING;
 
         } else if (strcmp(props->extensionName, "VK_KHR_shader_float16_int8") == 0) {
             // shader float16
@@ -883,7 +887,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
             }
 
             if (shader16.shaderFloat16) {
-                info->features |= PAL_GPU_FEATURE_SHADER_FLOAT16;
+                caps->features |= PAL_GPU_FEATURE_SHADER_FLOAT16;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_timeline_semaphore") == 0) {
@@ -903,7 +907,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
             }
 
             if (timeline.timelineSemaphore) {
-                info->features |= PAL_GPU_FEATURE_TIMELINE_SEMAPHORE;
+                caps->features |= PAL_GPU_FEATURE_TIMELINE_SEMAPHORE;
             }
         }
     }
@@ -928,7 +932,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
         }
 
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
-            info->features |= PAL_GPU_FEATURE_RAY_TRACING;
+            caps->features |= PAL_GPU_FEATURE_RAY_TRACING;
         }
     }
     // clang-format on
@@ -937,89 +941,38 @@ static PalResult PAL_CALL vkGetAdapterInfo(
 
     // check for additional features
     if (features.geometryShader) {
-        info->features |= PAL_GPU_FEATURE_GEOMETRY_SHADER;
+        caps->features |= PAL_GPU_FEATURE_GEOMETRY_SHADER;
     }
 
     if (features.multiViewport) {
-        info->features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
+        caps->features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
     }
 
     if (features.samplerAnisotropy) {
-        info->features |= PAL_GPU_FEATURE_SAMPLER_ANISOTROPY;
+        caps->features |= PAL_GPU_FEATURE_SAMPLER_ANISOTROPY;
     }
 
     if (features.sampleRateShading) {
-        info->features |= PAL_GPU_FEATURE_SAMPLE_RATE_SHADING;
+        caps->features |= PAL_GPU_FEATURE_SAMPLE_RATE_SHADING;
     }
 
     if (features.shaderFloat64) {
-        info->features |= PAL_GPU_FEATURE_SHADER_FLOAT64;
+        caps->features |= PAL_GPU_FEATURE_SHADER_FLOAT64;
     }
 
     if (features.shaderInt64) {
-        info->features |= PAL_GPU_FEATURE_SHADER_INT64;
+        caps->features |= PAL_GPU_FEATURE_SHADER_INT64;
     }
 
     if (features.shaderInt16) {
-        info->features |= PAL_GPU_FEATURE_SHADER_INT16;
+        caps->features |= PAL_GPU_FEATURE_SHADER_INT16;
     }
 
     if (features.tessellationShader) {
-        info->features |= PAL_GPU_FEATURE_TESSELLATION_SHADER;
+        caps->features |= PAL_GPU_FEATURE_TESSELLATION_SHADER;
     }
 
     palFree(s_Graphics.allocator, extensionProps);
-    return PAL_RESULT_SUCCESS;
-}
-
-static PalResult PAL_CALL vkGetAdapterSubInfo(
-    PalGPUAdapter* adapter,
-    PalGPUAdapterSubInfo* info)
-{
-    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
-    VkPhysicalDeviceProperties props;
-
-    s_Vk.getPhysicalDeviceProperties(physicalDevice, &props);
-    strcpy(info->name, props.deviceName);
-    info->apiType = PAL_GPU_API_TYPE_VULKAN;
-
-    // get device type
-    switch (props.deviceType) {
-        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: {
-            info->type = PAL_GPU_TYPE_INTEGRATED;
-            break;
-        }
-
-        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: {
-            info->type = PAL_GPU_TYPE_DISCRETE;
-            break;
-        }
-
-        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: {
-            info->type = PAL_GPU_TYPE_VIRTUAL;
-            break;
-        }
-
-        case VK_PHYSICAL_DEVICE_TYPE_CPU: {
-            info->type = PAL_GPU_TYPE_CPU;
-            break;
-        }
-
-        default: {
-            info->type = PAL_GPU_TYPE_UNKNOWN;
-            break;
-        }
-    }
-
-    // version string
-    snprintf(
-        info->versionString, 
-        PAL_GPU_VERSION_SIZE, 
-        "%d.%d.%d",
-        VK_VERSION_MAJOR(props.apiVersion),
-        VK_VERSION_MINOR(props.apiVersion),
-        VK_VERSION_PATCH(props.apiVersion));
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1355,7 +1308,7 @@ static void PAL_CALL vkDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
 static PalGPUBackend s_VkBackend = {
     .enumerateGPUAdapters = vkEnumerateAdapters,
     .getGPUAdapterInfo = vkGetAdapterInfo,
-    .getGPUAdapterSubInfo = vkGetAdapterSubInfo,
+    .getGPUAdapterCapabilities = vkGetAdapterCapabilities,
     .createGPUDevice = vkCreateGPUDevice,
     .destroyGPUDevice = vkDestroyGPUDevice,
     .createGPUCommandQueue = vkCreateGPUCommandQueue,
@@ -1491,21 +1444,21 @@ PalResult PAL_CALL palGetGPUAdapterInfo(
     return PAL_RESULT_INVALID_GPU_ADAPTER;
 }
 
-PalResult PAL_CALL palGetGPUAdapterSubInfo(
+PalResult PAL_CALL palGetGPUAdapterCapabilities(
     PalGPUAdapter* adapter,
-    PalGPUAdapterSubInfo* info)
+    PalGPUAdapterCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!adapter || !info) {
+    if (!adapter || !caps) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     AdapterData* data = findAdapterData(adapter);
     if (data) {
-        return data->backend->getGPUAdapterSubInfo(adapter, info);
+        return data->backend->getGPUAdapterCapabilities(adapter, caps);
     }
 
     return PAL_RESULT_INVALID_GPU_ADAPTER;
@@ -1521,6 +1474,7 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
     // clang-format off
     if (!backend->enumerateGPUAdapters      || 
         !backend->getGPUAdapterInfo         ||
+        !backend->getGPUAdapterCapabilities ||
         !backend->createGPUDevice           ||
         !backend->destroyGPUDevice          ||
         !backend->createGPUCommandQueue     ||

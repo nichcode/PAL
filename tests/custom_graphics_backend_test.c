@@ -5,9 +5,9 @@
 // a simple custom backend
 // for simplicity we are not going to add that much functionality
 // to it
-
 typedef struct {
     PalGPUAdapterInfo adapterInfo;
+    PalGPUAdapterCapabilities caps;
     // add more fields if needed
 } CustomGPUAdapter;
 
@@ -15,6 +15,12 @@ typedef struct {
     CustomGPUAdapter* adapter;
     // add more fields if needed
 } CustomGPUDevice;
+
+typedef struct {
+    CustomGPUDevice* device;
+    PalGPUCommandQueueType type;
+    // add more fields if needed
+} CustomGPUCommandQueue;
 
 typedef struct {
     // we just have only two adapters for simplicity
@@ -29,47 +35,41 @@ static CustomGPUBackend s_CustomGPU;
 // you might need a shutdown function for the backend after PAL has shutdown
 // if there is cleanup to do
 static void initCustomBackend() {
+    // PAL needs the memory it in bytes
+    Uint64 byte = 1024 * 1024 * 1024;
+
     CustomGPUAdapter* adapter = &s_CustomGPU.adapters[0];
     adapter->adapterInfo.apiType = PAL_GPU_API_TYPE_D3D9;
-    adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_INTEGRATED;
-    
-    // PAL needs it in bytes
-    Uint64 byte = 1024 * 1024 * 1024;
+    adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_DXBC;
     adapter->adapterInfo.totalMemory = byte * 4; // 4 GB
-
     strcpy(adapter->adapterInfo.versionString, "10_1");
     strcpy(adapter->adapterInfo.name, "Intel Arc A580");
 
-    adapter->adapterInfo.features = PAL_GPU_FEATURE_RAY_TRACING;
-    adapter->adapterInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
-    adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_DXBC;
-
-    adapter->adapterInfo.commandQueuesInfo.maxComputeQueues = 1;
-    adapter->adapterInfo.commandQueuesInfo.maxGraphicsQueues = 1;
-    adapter->adapterInfo.commandQueuesInfo.maxCopyQueues = 2;
+    adapter->caps.debugLayerSupported = true;
+    adapter->caps.features = PAL_GPU_FEATURE_RAY_TRACING;
+    adapter->caps.features |= PAL_GPU_FEATURE_SWAPCHAIN;
+    adapter->caps.maxComputeQueues = 1;
+    adapter->caps.maxGraphicsQueues = 1;
+    adapter->caps.maxCopyQueues = 2;
 
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
     adapter->adapterInfo.apiType = PAL_GPU_API_TYPE_OPENGL;
-    adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_DISCRETE;
-    
-    // PAL needs it in bytes
+    adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
+    adapter->adapterInfo.shaderFormats |= PAL_GPU_SHADER_FORMAT_GLSL;
     adapter->adapterInfo.totalMemory = byte * 6; // 6 GB
-
     strcpy(adapter->adapterInfo.versionString, "4.4");
     strcpy(adapter->adapterInfo.name, "AMD Radeon RX 7700 XT");
 
-    adapter->adapterInfo.features = PAL_GPU_FEATURE_RAY_TRACING;
-    adapter->adapterInfo.features |= PAL_GPU_FEATURE_MESH_SHADER;
-    adapter->adapterInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
-    adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
-    adapter->adapterInfo.shaderFormats |= PAL_GPU_SHADER_FORMAT_GLSL;
-
-    adapter->adapterInfo.commandQueuesInfo.maxComputeQueues = 1;
-    adapter->adapterInfo.commandQueuesInfo.maxGraphicsQueues = 4;
-    adapter->adapterInfo.commandQueuesInfo.maxCopyQueues = 4;
+    adapter->caps.debugLayerSupported = true;
+    adapter->caps.features = PAL_GPU_FEATURE_RAY_TRACING;
+    adapter->caps.features |= PAL_GPU_FEATURE_SWAPCHAIN;
+    adapter->caps.features |= PAL_GPU_FEATURE_MESH_SHADER;
+    adapter->caps.maxComputeQueues = 1;
+    adapter->caps.maxGraphicsQueues = 4;
+    adapter->caps.maxCopyQueues = 4;
 }
 
 static PalResult PAL_CALL customEnumerateGPUAdapters(
@@ -99,38 +99,33 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
             // make a copy
             PalGPUAdapterInfo* gpuInfo = &s_CustomGPU.adapters[i].adapterInfo;
             info->apiType = gpuInfo->apiType;
-            info->debugLayerSupported = gpuInfo->debugLayerSupported;
             info->totalMemory = gpuInfo->totalMemory;
             info->type = gpuInfo->type;
-            info->features = gpuInfo->features;
             info->shaderFormats = gpuInfo->shaderFormats;
-            info->commandQueuesInfo = gpuInfo->commandQueuesInfo;
 
             strcpy(info->name, gpuInfo->name);
             strcpy(info->versionString, gpuInfo->versionString);
-
             return PAL_RESULT_SUCCESS;
         }
     }
+
+    return PAL_RESULT_INVALID_GPU_ADAPTER;
 }
 
-static PalResult PAL_CALL customGetGPUAdapterSubInfo(
+static PalResult PAL_CALL customGetGPUAdapterCapabilities(
     PalGPUAdapter* adapter,
-    PalGPUAdapterSubInfo* info)
+    PalGPUAdapterCapabilities* caps)
 {
     for (int i = 0; i < 2; i++) {
         PalGPUAdapter* custom = (PalGPUAdapter*)&s_CustomGPU.adapters[i];
         if (custom == adapter) {
             // make a copy
-            PalGPUAdapterInfo* gpuInfo = &s_CustomGPU.adapters[i].adapterInfo;
-            info->apiType = gpuInfo->apiType;
-            info->type = gpuInfo->type;
-            strcpy(info->name, gpuInfo->name);
-            strcpy(info->versionString, gpuInfo->versionString);
-
+            *caps = s_CustomGPU.adapters[i].caps;
             return PAL_RESULT_SUCCESS;
         }
     }
+
+    return PAL_RESULT_INVALID_GPU_ADAPTER;
 }
 
 PalResult PAL_CALL customCreateGPUDevice(
@@ -166,16 +161,31 @@ PalResult PAL_CALL customCreateGPUDevice(
 
 void PAL_CALL customDestroyGPUDevice(PalGPUDevice* device)
 {
-    // get your device
     CustomGPUDevice* customDevice = (CustomGPUDevice*)device;
     palFree(nullptr, device);
+}
+
+static PalResult PAL_CALL customCreateGPUCommandQueue(
+    PalGPUDevice* device,
+    PalGPUCommandQueueType type,
+    PalGPUCommandQueue** outQueue)
+{
+    // implement
+}
+
+void PAL_CALL customDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
+{
+    // implement
 }
 
 static PalGPUBackend s_CustomBackend = {
     .enumerateGPUAdapters = customEnumerateGPUAdapters,
     .getGPUAdapterInfo = customGetGPUAdapterInfo,
+    .getGPUAdapterCapabilities = customGetGPUAdapterCapabilities,
     .createGPUDevice = customCreateGPUDevice,
-    .destroyGPUDevice = customDestroyGPUDevice
+    .destroyGPUDevice = customDestroyGPUDevice,
+    .createGPUCommandQueue = customCreateGPUCommandQueue,
+    .destroyGPUCommandQueue = customDestroyGPUCommandQueue
 };
 
 bool customGraphicsBackendTest()
@@ -324,88 +334,6 @@ bool customGraphicsBackendTest()
         }
         palLog(nullptr, " API Type: %s", apiTypeString);
 
-        const char* boolToString;
-        if (info.debugLayerSupported) {
-            boolToString = "True";
-        } else {
-            boolToString = "False";
-        }
-
-        palLog(nullptr, " Debug Layer: %s", boolToString);
-
-        // command queues
-        Int32 maxComputeQueues = info.commandQueuesInfo.maxComputeQueues;
-        Int32 maxGraphicsQueues = info.commandQueuesInfo.maxGraphicsQueues;
-        Int32 maxCopyQueues = info.commandQueuesInfo.maxCopyQueues;
-        palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
-        palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
-        palLog(nullptr, " Max transfer command queues: %d", maxCopyQueues);
-
-        // features
-        palLog(nullptr, " Supported Features:");
-        if (info.features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
-            palLog(nullptr, "  Sampler Anisotropy");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
-            palLog(nullptr, "  Sample rate shading");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
-            palLog(nullptr, "  Multi viewport");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
-            palLog(nullptr, "  Timeline Semaphore");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
-            palLog(nullptr, "  Tesselation Shader");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
-            palLog(nullptr, "  Geometry shader");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
-            palLog(nullptr, "  Shader float16");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
-            palLog(nullptr, "  Shader float64");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_SHADER_INT16) {
-            palLog(nullptr, "  Shader int16");
-        }
-        if (info.features & PAL_GPU_FEATURE_SHADER_INT64) {
-            palLog(nullptr, "  Shader int64");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
-            palLog(nullptr, "  Dynamic rendering");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_RAY_TRACING) {
-            palLog(nullptr, "  Ray tracing");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_MESH_SHADER) {
-            palLog(nullptr, "  Mesh shader");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
-            palLog(nullptr, "  Variable rate rendering");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
-            palLog(nullptr, "  Descriptor indexing");
-        }
-
-        if (info.features & PAL_GPU_FEATURE_SWAPCHAIN) {
-            palLog(nullptr, "  Swapchain");
-        }
-
         // shader formats
         palLog(nullptr, " Supported Shader Formats:");
         if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_SPIRV) {
@@ -434,21 +362,6 @@ bool customGraphicsBackendTest()
 
         palLog(nullptr, "");
     }
-
-    // create a device with a custom adapter (D3D9)
-    PalGPUDevice* device = nullptr;
-    PalGPUFeatures features = PAL_GPU_FEATURE_SHADER_FLOAT64;
-    features |= PAL_GPU_FEATURE_SWAPCHAIN;
-
-    result = palCreateGPUDevice(d3d9Adapter, features, &device);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create device: %s", error);
-        palFree(nullptr, adapters);
-        return false;
-    }
-
-    palDestroyGPUDevice(device);
 
     // shutdown the graphics system
     palShutdownGraphics();

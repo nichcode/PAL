@@ -51,12 +51,21 @@ bool graphicsTest()
 
     // get information about all the adapters
     PalGPUAdapterInfo info;
+    PalGPUAdapterCapabilities caps;
     for (Int32 i = 0; i < count; i++) {
         PalGPUAdapter* adapter = adapters[i];
         result = palGetGPUAdapterInfo(adapter, &info);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter info: %s", error);
+            palFree(nullptr, adapters);
+            return false;
+        }
+
+        result = palGetGPUAdapterCapabilities(adapter, &caps);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
             palFree(nullptr, adapters);
             return false;
         }
@@ -135,7 +144,7 @@ bool graphicsTest()
         palLog(nullptr, " API Type: %s", apiTypeString);
 
         const char* boolToString;
-        if (info.debugLayerSupported) {
+        if (caps.debugLayerSupported) {
             boolToString = "True";
         } else {
             boolToString = "False";
@@ -143,76 +152,76 @@ bool graphicsTest()
 
         palLog(nullptr, " Debug Layer: %s", boolToString);
 
-        // command queue
-        Int32 maxComputeQueues = info.commandQueuesInfo.maxComputeQueues;
-        Int32 maxGraphicsQueues = info.commandQueuesInfo.maxGraphicsQueues;
-        Int32 maxCopyQueues = info.commandQueuesInfo.maxCopyQueues;
+        // command queues
+        Int32 maxComputeQueues = caps.maxComputeQueues;
+        Int32 maxGraphicsQueues = caps.maxGraphicsQueues;
+        Int32 maxCopyQueues = caps.maxCopyQueues;
         palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
         palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
         palLog(nullptr, " Max copy command queues: %d", maxCopyQueues);
 
         // features
         palLog(nullptr, " Supported Features:");
-        if (info.features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
+        if (caps.features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
             palLog(nullptr, "  Sampler Anisotropy");
         }
 
-        if (info.features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
+        if (caps.features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
             palLog(nullptr, "  Sample rate shading");
         }
 
-        if (info.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
+        if (caps.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
             palLog(nullptr, "  Multi viewport");
         }
 
-        if (info.features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
+        if (caps.features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
             palLog(nullptr, "  Timeline Semaphore");
         }
 
-        if (info.features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
+        if (caps.features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
             palLog(nullptr, "  Tesselation Shader");
         }
 
-        if (info.features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
+        if (caps.features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
             palLog(nullptr, "  Geometry shader");
         }
 
-        if (info.features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
+        if (caps.features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
             palLog(nullptr, "  Shader float16");
         }
 
-        if (info.features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
+        if (caps.features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
             palLog(nullptr, "  Shader float64");
         }
 
-        if (info.features & PAL_GPU_FEATURE_SHADER_INT16) {
+        if (caps.features & PAL_GPU_FEATURE_SHADER_INT16) {
             palLog(nullptr, "  Shader int16");
         }
-        if (info.features & PAL_GPU_FEATURE_SHADER_INT64) {
+        if (caps.features & PAL_GPU_FEATURE_SHADER_INT64) {
             palLog(nullptr, "  Shader int64");
         }
 
-        if (info.features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
+        if (caps.features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
             palLog(nullptr, "  Dynamic rendering");
         }
 
-        if (info.features & PAL_GPU_FEATURE_RAY_TRACING) {
+        if (caps.features & PAL_GPU_FEATURE_RAY_TRACING) {
             palLog(nullptr, "  Ray tracing");
         }
 
-        if (info.features & PAL_GPU_FEATURE_MESH_SHADER) {
+        if (caps.features & PAL_GPU_FEATURE_MESH_SHADER) {
             palLog(nullptr, "  Mesh shader");
         }
 
-        if (info.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
+        if (caps.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
             palLog(nullptr, "  Variable rate rendering");
         }
 
-        if (info.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
+        if (caps.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
             palLog(nullptr, "  Descriptor indexing");
         }
 
-        if (info.features & PAL_GPU_FEATURE_SWAPCHAIN) {
+        if (caps.features & PAL_GPU_FEATURE_SWAPCHAIN) {
             palLog(nullptr, "  Swapchain");
         }
 

@@ -51,20 +51,20 @@ bool gpuDeviceTest()
 
     // filter the adapters for Vulkan
     PalGPUAdapter* vulkanAdapter = nullptr;
-    PalGPUAdapterSubInfo subInfo = {0};
+    PalGPUAdapterInfo info = {0};
 
     for (Int32 i = 0; i < count; i++) {
         PalGPUAdapter* adapter = adapters[i];
-        result = palGetGPUAdapterSubInfo(adapter, &subInfo);
+        result = palGetGPUAdapterInfo(adapter, &info);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter sub info: %s", error);
+            palLog(nullptr, "Failed to get adapter info: %s", error);
             palFree(nullptr, adapters);
             return false;
         }
 
         // check if its Vulkan
-        if (subInfo.apiType == PAL_GPU_API_TYPE_VULKAN) {
+        if (info.apiType == PAL_GPU_API_TYPE_VULKAN) {
             vulkanAdapter = adapter;
             break;
         }
@@ -76,11 +76,9 @@ bool gpuDeviceTest()
         return false;
     }
 
-    // get information about the adapter
-    // this time, we want all the information including 
-    // supported features and the rest
-    PalGPUAdapterInfo info = {0};
-    result = palGetGPUAdapterInfo(vulkanAdapter, &info);
+    // get capabilities about the adapter
+    PalGPUAdapterCapabilities caps = {0};
+    result = palGetGPUAdapterCapabilities(vulkanAdapter, &caps);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get adapter info: %s", error);
@@ -93,11 +91,11 @@ bool gpuDeviceTest()
     PalGPUFeatures features = 0;
 
     // enable swapchain and maybe multi viewport if supported
-    if (info.features & PAL_GPU_FEATURE_SWAPCHAIN) {
+    if (caps.features & PAL_GPU_FEATURE_SWAPCHAIN) {
         features = PAL_GPU_FEATURE_SWAPCHAIN;
     }
 
-    if (info.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
+    if (caps.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
         features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
     }
 
@@ -109,10 +107,10 @@ bool gpuDeviceTest()
     }
 
     // check if we support a graphics command queue
-    if (!info.commandQueuesInfo.maxGraphicsQueues) {
+    if (!caps.maxGraphicsQueues) {
         palLog(
             nullptr, 
-            "This Adapter (GPU) does not have any grapics command queues");
+            "This Adapter (GPU) does not have any graphics command queues");
         return false;
     }
 
@@ -125,7 +123,7 @@ bool gpuDeviceTest()
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create grapics command queue: %s", error);
+        palLog(nullptr, "Failed to create graphics command queue: %s", error);
         return false;
     }
 
