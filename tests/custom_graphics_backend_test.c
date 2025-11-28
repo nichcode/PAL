@@ -30,7 +30,7 @@ static CustomGPUBackend s_CustomGPU;
 // if there is cleanup to do
 static void initCustomBackend() {
     CustomGPUAdapter* adapter = &s_CustomGPU.adapters[0];
-    adapter->adapterInfo.apiType = PAL_GPU_API_D3D9;
+    adapter->adapterInfo.apiType = PAL_GPU_API_TYPE_D3D9;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_INTEGRATED;
     
@@ -41,7 +41,6 @@ static void initCustomBackend() {
     strcpy(adapter->adapterInfo.versionString, "10_1");
     strcpy(adapter->adapterInfo.name, "Intel Arc A580");
 
-    adapter->adapterInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS;
     adapter->adapterInfo.features = PAL_GPU_FEATURE_RAY_TRACING;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
     adapter->adapterInfo.shaderFormats = PAL_GPU_SHADER_FORMAT_DXBC;
@@ -52,7 +51,7 @@ static void initCustomBackend() {
 
     // second adapter
     adapter = &s_CustomGPU.adapters[1];
-    adapter->adapterInfo.apiType = PAL_GPU_API_OPENGL;
+    adapter->adapterInfo.apiType = PAL_GPU_API_TYPE_OPENGL;
     adapter->adapterInfo.debugLayerSupported = true;
     adapter->adapterInfo.type = PAL_GPU_TYPE_DISCRETE;
     
@@ -62,8 +61,6 @@ static void initCustomBackend() {
     strcpy(adapter->adapterInfo.versionString, "4.4");
     strcpy(adapter->adapterInfo.name, "AMD Radeon RX 7700 XT");
 
-    adapter->adapterInfo.commandQueues = PAL_GPU_COMMAND_QUEUE_GRAPHICS;
-    adapter->adapterInfo.commandQueues |= PAL_GPU_COMMAND_QUEUE_COMPUTE;
     adapter->adapterInfo.features = PAL_GPU_FEATURE_RAY_TRACING;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_MESH_SHADER;
     adapter->adapterInfo.features |= PAL_GPU_FEATURE_SWAPCHAIN;
@@ -106,7 +103,6 @@ static PalResult PAL_CALL customGetGPUAdapterInfo(
             info->totalMemory = gpuInfo->totalMemory;
             info->type = gpuInfo->type;
             info->features = gpuInfo->features;
-            info->commandQueues = gpuInfo->commandQueues;
             info->shaderFormats = gpuInfo->shaderFormats;
             info->commandQueuesInfo = gpuInfo->commandQueuesInfo;
 
@@ -285,43 +281,43 @@ bool customGraphicsBackendTest()
 
         const char* apiTypeString;
         switch (info.apiType) {
-            case PAL_GPU_API_D3D12: {
+            case PAL_GPU_API_TYPE_D3D12: {
                 apiTypeString = "D3D12";
                 break;
             }
 
-            case PAL_GPU_API_VULKAN: {
+            case PAL_GPU_API_TYPE_VULKAN: {
                 apiTypeString = "Vulkan";
                 break;
             }
 
-            case PAL_GPU_API_METAL: {
+            case PAL_GPU_API_TYPE_METAL: {
                 apiTypeString = "Metal";
                 break;
             }
 
-            case PAL_GPU_API_OPENGL: {
+            case PAL_GPU_API_TYPE_OPENGL: {
                 apiTypeString = "OpenGL";
                 break;
             }
 
-            case PAL_GPU_API_GLES: {
+            case PAL_GPU_API_TYPE_GLES: {
                 apiTypeString = "GLes";
                 break;
             }
 
-            case PAL_GPU_API_D3D11: {
+            case PAL_GPU_API_TYPE_D3D11: {
                 apiTypeString = "D3D11";
                 break;
             }
 
-            case PAL_GPU_API_D3D9: {
+            case PAL_GPU_API_TYPE_D3D9: {
                 apiTypeString = "D3D9";
                 d3d9Adapter = adapter;
                 break;
             }
 
-            case PAL_GPU_API_PPM: {
+            case PAL_GPU_API_TYPE_PPM: {
                 apiTypeString = "PPM";
                 break;
             }
@@ -344,19 +340,6 @@ bool customGraphicsBackendTest()
         palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
         palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
         palLog(nullptr, " Max transfer command queues: %d", maxTransferQueues);
-
-        palLog(nullptr, " Supported Command Queues:");
-        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
-            palLog(nullptr, "  Compute");
-        }
-
-        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
-            palLog(nullptr, "  Graphics");
-        }
-
-        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_TRANSFER) {
-            palLog(nullptr, "  Transfer");
-        }
 
         // features
         palLog(nullptr, " Supported Features:");

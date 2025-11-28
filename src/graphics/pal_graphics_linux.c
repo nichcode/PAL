@@ -642,7 +642,7 @@ PalResult PAL_CALL vkGetAdapterInfo(
     }
 
     info->totalMemory = memory;
-    info->apiType = PAL_GPU_API_VULKAN;
+    info->apiType = PAL_GPU_API_TYPE_VULKAN;
 
     // get device type
     switch (props.deviceType) {
@@ -701,21 +701,17 @@ PalResult PAL_CALL vkGetAdapterInfo(
     queueInfo->maxComputeQueues = 0;
     queueInfo->maxGraphicsQueues = 0;
     queueInfo->maxTransferQueues = 0;
-    info->commandQueues = 0;
     
     for (int i = 0; i < count; i++) {
         if (queueProps[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            info->commandQueues |= PAL_GPU_COMMAND_QUEUE_COMPUTE;
             queueInfo->maxComputeQueues += queueProps->queueCount;
         }
 
         if (queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            info->commandQueues |= PAL_GPU_COMMAND_QUEUE_GRAPHICS;
             queueInfo->maxGraphicsQueues += queueProps->queueCount;
         }
 
         if (queueProps[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            info->commandQueues |= PAL_GPU_COMMAND_QUEUE_TRANSFER;
             queueInfo->maxTransferQueues += queueProps->queueCount;
         }
     }
@@ -945,7 +941,7 @@ PalResult PAL_CALL vkGetAdapterSubInfo(
 
     s_Vk.getPhysicalDeviceProperties(physicalDevice, &props);
     strcpy(info->name, props.deviceName);
-    info->apiType = PAL_GPU_API_VULKAN;
+    info->apiType = PAL_GPU_API_TYPE_VULKAN;
 
     // get device type
     switch (props.deviceType) {

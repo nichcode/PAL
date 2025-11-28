@@ -48,23 +48,23 @@ typedef enum {
 } PalGPUType;
 
 typedef enum {
-    PAL_GPU_API_VULKAN,
-    PAL_GPU_API_D3D12,
-    PAL_GPU_API_METAL,
+    PAL_GPU_API_TYPE_VULKAN,
+    PAL_GPU_API_TYPE_D3D12,
+    PAL_GPU_API_TYPE_METAL,
 
     // for custom backends
-    PAL_GPU_API_OPENGL,
-    PAL_GPU_API_GLES,
-    PAL_GPU_API_D3D11,
-    PAL_GPU_API_D3D9,
-    PAL_GPU_API_PPM,
+    PAL_GPU_API_TYPE_OPENGL,
+    PAL_GPU_API_TYPE_GLES,
+    PAL_GPU_API_TYPE_D3D11,
+    PAL_GPU_API_TYPE_D3D9,
+    PAL_GPU_API_TYPE_PPM,
 } PalGPUApiType;
 
 typedef enum {
-    PAL_GPU_COMMAND_QUEUE_GRAPHICS = PAL_BIT64(0),
-    PAL_GPU_COMMAND_QUEUE_COMPUTE = PAL_BIT64(1),
-    PAL_GPU_COMMAND_QUEUE_TRANSFER = PAL_BIT64(2)
-} PalGPUCommandQueues;
+    PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS,
+    PAL_GPU_COMMAND_QUEUE_TYPE_COMPUTE,
+    PAL_GPU_COMMAND_QUEUE_TYPE_TRANSFER
+} PalGPUCommandQueueType;
 
 typedef enum {
     PAL_GPU_SHADER_FORMAT_SPIRV = PAL_BIT(0),
@@ -113,7 +113,6 @@ typedef struct {
     PalGPUApiType apiType;
     PalGPUShaderFormats shaderFormats;
     Uint64 totalMemory; // in bytes
-    PalGPUCommandQueues commandQueues;
     PalGPUFeatures features;
     PalGPUCommandQueuesInfo commandQueuesInfo;
     char versionString[PAL_GPU_VERSION_SIZE];

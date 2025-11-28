@@ -64,7 +64,7 @@ bool gpuDeviceTest()
         }
 
         // check if its Vulkan
-        if (subInfo.apiType == PAL_GPU_API_VULKAN) {
+        if (subInfo.apiType == PAL_GPU_API_TYPE_VULKAN) {
             vulkanAdapter = adapter;
             break;
         }

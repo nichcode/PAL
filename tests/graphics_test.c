@@ -92,42 +92,42 @@ bool graphicsTest()
 
         const char* apiTypeString;
         switch (info.apiType) {
-            case PAL_GPU_API_D3D12: {
+            case PAL_GPU_API_TYPE_D3D12: {
                 apiTypeString = "D3D12";
                 break;
             }
 
-            case PAL_GPU_API_VULKAN: {
+            case PAL_GPU_API_TYPE_VULKAN: {
                 apiTypeString = "Vulkan";
                 break;
             }
 
-            case PAL_GPU_API_METAL: {
+            case PAL_GPU_API_TYPE_METAL: {
                 apiTypeString = "Metal";
                 break;
             }
 
-            case PAL_GPU_API_OPENGL: {
+            case PAL_GPU_API_TYPE_OPENGL: {
                 apiTypeString = "OpenGL";
                 break;
             }
 
-            case PAL_GPU_API_GLES: {
+            case PAL_GPU_API_TYPE_GLES: {
                 apiTypeString = "GLes";
                 break;
             }
 
-            case PAL_GPU_API_D3D11: {
+            case PAL_GPU_API_TYPE_D3D11: {
                 apiTypeString = "D3D11";
                 break;
             }
 
-            case PAL_GPU_API_D3D9: {
+            case PAL_GPU_API_TYPE_D3D9: {
                 apiTypeString = "D3D9";
                 break;
             }
 
-            case PAL_GPU_API_PPM: {
+            case PAL_GPU_API_TYPE_PPM: {
                 apiTypeString = "PPM";
                 break;
             }
@@ -150,19 +150,6 @@ bool graphicsTest()
         palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
         palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
         palLog(nullptr, " Max transfer command queues: %d", maxTransferQueues);
-        
-        palLog(nullptr, " Supported Command Queues:");
-        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_COMPUTE) {
-            palLog(nullptr, "  Compute");
-        }
-
-        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_GRAPHICS) {
-            palLog(nullptr, "  Graphics");
-        }
-
-        if (info.commandQueues & PAL_GPU_COMMAND_QUEUE_TRANSFER) {
-            palLog(nullptr, "  Transfer");
-        }
 
         // features
         palLog(nullptr, " Supported Features:");
