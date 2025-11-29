@@ -82,19 +82,26 @@ bool gpuDeviceTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get adapter info: %s", error);
-        palFree(nullptr, adapters);
+        return false;
+    }
+
+    // check if we support a graphics command queue
+    const char* msg = "This Adapter (GPU) does not have any graphics queues";
+    if (!(caps.features & PAL_GPU_FEATURE_SWAPCHAIN)) {
+        palLog(nullptr, msg);
+        return false;
+    }
+
+    if (!caps.maxGraphicsQueues) {
+        palLog(nullptr, msg);
         return false;
     }
 
     // create a device with the vulkan adapter
     PalGPUDevice* device = nullptr;
-    PalGPUFeatures features = 0;
-
-    // enable swapchain and maybe multi viewport if supported
-    if (caps.features & PAL_GPU_FEATURE_SWAPCHAIN) {
-        features = PAL_GPU_FEATURE_SWAPCHAIN;
-    }
-
+    PalGPUFeatures features = PAL_GPU_FEATURE_SWAPCHAIN;
+    
+    // enable multi viewport if supported
     if (caps.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
         features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
     }
@@ -106,24 +113,12 @@ bool gpuDeviceTest()
         return false;
     }
 
-    // check if we support a graphics command queue
-    if (!caps.maxGraphicsQueues) {
-        palLog(
-            nullptr, 
-            "This Adapter (GPU) does not have any graphics command queues");
-        return false;
-    }
-
-    // create a graphics command queue
+    PalGPUCommandQueueType queueType = PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS;
     PalGPUCommandQueue* graphicsQueue = nullptr;
-    result = palCreateGPUCommandQueue(
-        device, 
-        PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS, 
-        &graphicsQueue);
-
+    result = palCreateGPUCommandQueue(device, queueType, &graphicsQueue);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create graphics command queue: %s", error);
+        palLog(nullptr, "Failed to create command queue: %s", error);
         return false;
     }
 

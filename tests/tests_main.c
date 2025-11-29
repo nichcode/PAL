@@ -52,13 +52,17 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO && PAL_HAS_THREAD
     registerTest("Multi Thread OpenGL Test", multiThreadOpenGlTest);
-#endif //
+#endif
 
 #if PAL_HAS_GRAPHICS
-    registerTest("Graphics Test", graphicsTest);
+    // registerTest("Graphics Test", graphicsTest);
     // registerTest("Custom Graphics Backend Test", customGraphicsBackendTest);
-    //registerTest("GPU Device Test", gpuDeviceTest);
+    // registerTest("GPU Device Test", gpuDeviceTest);
 #endif // PAL_HAS_GRAPHICS
+
+#if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
+    registerTest("Swapchain Test", swapchainTest);
+#endif
 
     runTests();
     return 0;

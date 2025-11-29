@@ -58,4 +58,7 @@ bool graphicsTest();
 bool customGraphicsBackendTest();
 bool gpuDeviceTest();
 
+// graphics and video
+bool swapchainTest();
+
 #endif // _TESTS_H

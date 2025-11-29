@@ -402,8 +402,14 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_GPU_DEVICE:
             return "Invalid GPU device";
 
+        case PAL_RESULT_INVALID_GPU_COMMAND_QUEUE:
+            return "Invalid GPU command queue";
+
         case PAL_RESULT_OUT_OF_GPU_COMMAND_QUEUE:
             return "Out of GPU command queues";
+
+        case PAL_RESULT_INVALID_GPU_WINDOW:
+            return "Invalid GPU window";
     }
     return "Unknown";
 }

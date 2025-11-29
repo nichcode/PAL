@@ -35,6 +35,7 @@ freely, subject to the following restrictions:
 
 #define PAL_GPU_NAME_SIZE 128
 #define PAL_GPU_VERSION_SIZE 16
+#define PAL_INFINITE (2147483647)
 
 typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
@@ -59,7 +60,7 @@ typedef enum {
     PAL_GPU_API_TYPE_GLES,
     PAL_GPU_API_TYPE_D3D11,
     PAL_GPU_API_TYPE_D3D9,
-    PAL_GPU_API_TYPE_PPM,
+    PAL_GPU_API_TYPE_PPM
 } PalGPUApiType;
 
 typedef enum {
@@ -67,6 +68,44 @@ typedef enum {
     PAL_GPU_COMMAND_QUEUE_TYPE_COMPUTE,
     PAL_GPU_COMMAND_QUEUE_TYPE_COPY
 } PalGPUCommandQueueType;
+
+typedef enum {
+    PAL_PRESENT_MODE_FIFO = PAL_BIT(0),
+    PAL_PRESENT_MODE_IMMEDIATE = PAL_BIT(1),
+    PAL_PRESENT_MODE_MAILBOX = PAL_BIT(2)
+} PalPresentModes;
+
+typedef enum {
+    PAL_COMPOSITE_ALPHA_OPAQUE = PAL_BIT(0),
+    PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED = PAL_BIT(1),
+    PAL_COMPOSITE_ALPHA_POST_MULTIPLIED = PAL_BIT(2)
+} PalCompositeAplhas;
+
+typedef enum {
+    PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB = PAL_BIT64(0),
+    PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB = PAL_BIT64(1),
+    PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB = PAL_BIT64(2),
+    PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10 = PAL_BIT64(3)
+} PalSwapchainFormats;
+
+typedef enum {
+    PAL_SWAPCHAIN_SHARING_MODE_EXCLUSIVE = PAL_BIT(0),
+    PAL_SWAPCHAIN_SHARING_MODE_CONCURRENT = PAL_BIT(1)
+} PalSwapchainSharingModes;
+
+typedef enum {
+    PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE = PAL_BIT(0),
+    PAL_SWAPCHAIN_TRANSFORM_PORTRAIT = PAL_BIT(1),
+    PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE_FLIPPED = PAL_BIT(2),
+    PAL_SWAPCHAIN_TRANSFORM_PORTRAIT_FLIPPED = PAL_BIT(3)
+} PalSwapchainTransforms;
+
+typedef enum {
+    PAL_SWAPCHAIN_USAGE_COLOR_ATTACHEMENT = PAL_BIT(0),
+    PAL_SWAPCHAIN_USAGE_TRANSFER_SRC = PAL_BIT(1),
+    PAL_SWAPCHAIN_USAGE_TRANSFER_DST = PAL_BIT(2),
+    PAL_SWAPCHAIN_USAGE_SAMPLED = PAL_BIT(3),
+} PalSwapchainUsages;
 
 typedef enum {
     PAL_GPU_SHADER_FORMAT_SPIRV = PAL_BIT(0),
@@ -114,6 +153,41 @@ typedef struct {
 } PalGPUAdapterCapabilities;
 
 typedef struct {
+    Uint32 minBufferCount;
+    Uint32 maxBufferCount;
+    Uint32 minWidth;
+    Uint32 minHeight;
+    Uint32 maxWidth;
+    Uint32 maxHeight;
+    Uint32 maxBufferArrayLayers;
+    PalSwapchainFormats formats;
+    PalSwapchainUsages usages;
+    PalPresentModes presentModes;
+    PalCompositeAplhas compositeAlphas;
+    PalSwapchainSharingModes sharingModes;
+    PalSwapchainTransforms transforms;
+} PalSwapchainCapabilities;
+
+typedef struct {
+    bool clipped;
+    Uint32 width;
+    Uint32 height;
+    Uint32 imageCount;
+    Uint32 imageArrayLayerCount;
+    PalPresentModes presentMode;
+    PalSwapchainUsages usages;
+    PalCompositeAplhas compositeAlpha;
+    PalSwapchainFormats format;
+    PalSwapchainSharingModes sharingMode;
+    PalSwapchainTransforms transform;
+} PalSwapchainCreateInfo;
+
+typedef struct {
+    void* display;
+    void* window;
+} PalGPUWindow;
+
+typedef struct {
     PalResult PAL_CALL (*enumerateGPUAdapters)(
         Int32* count,
         PalGPUAdapter** outAdapters);
@@ -139,6 +213,15 @@ typedef struct {
         PalGPUCommandQueue** outQueue);
 
     void PAL_CALL (*destroyGPUCommandQueue)(PalGPUCommandQueue* queue);
+
+    bool PAL_CALL (*canCommandQueuePresent)(
+        PalGPUCommandQueue* queue, 
+        PalGPUWindow* window);
+
+    PalResult PAL_CALL (*getSwapchainCapabilities)(
+        PalGPUAdapter* adapter,
+        PalGPUWindow* window,
+        PalSwapchainCapabilities* caps);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -174,6 +257,15 @@ PAL_API PalResult PAL_CALL palCreateGPUCommandQueue(
     PalGPUCommandQueue** outQueue);
 
 PAL_API void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue);
+
+PAL_API bool PAL_CALL palCanCommandQueuePresent(
+    PalGPUCommandQueue* queue, 
+    PalGPUWindow* window);
+
+PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
+    PalGPUAdapter* adapter,
+    PalGPUWindow* window,
+    PalSwapchainCapabilities* caps);
 
 /** @} */ // end of pal_graphics group
 

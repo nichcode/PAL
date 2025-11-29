@@ -39,16 +39,70 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-// TODO: make all these dynamic
-#define MAX_BACKENDS 16 // should be fine for now
-#define MAX_ADAPTERS 32 // should be enough
-#define MAX_DEVICE 16 // should be enough
+// FIXME: make all these dynamic if need be
+// but for now its fine
+#define MAX_BACKENDS 16
+#define MAX_ADAPTERS 32
+#define MAX_DEVICE 16
 #define MAX_QUEUE_FAMILIES 8
 #define MAX_PHYSICAL_QUEUES 16
 #define MAX_COMMAND_QUEUES 32
+#define MAX_FORMATS 32
+#define MAX_PRESENT_MODES 16
 
 #if PAL_HAS_VULKAN
 // VKAPI_PTR expands to nothing on linux
+
+// HACK: Needed to determine display type
+struct wl_display;
+typedef int (*wl_display_get_fd_fn)(struct wl_display*);
+
+// wayland
+typedef VkFlags VkWaylandSurfaceCreateFlagsKHR;
+typedef struct VkWaylandSurfaceCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkWaylandSurfaceCreateFlagsKHR flags;
+    struct wl_display* display;
+    struct wl_surface* surface;
+} VkWaylandSurfaceCreateInfoKHR;
+
+typedef VkResult (*vkCreateWaylandSurfaceKHRFn)(
+    VkInstance, 
+    const VkWaylandSurfaceCreateInfoKHR*, 
+    const VkAllocationCallbacks*, 
+    VkSurfaceKHR*);
+
+typedef VkBool32 (*vkGetPhysicalDeviceWaylandPresentationSupportKHRFn)(
+    VkPhysicalDevice, 
+    uint32_t, 
+    struct wl_display*);
+
+// Xlib
+typedef struct _XDisplay Display;
+typedef unsigned long Window;
+typedef unsigned long VisualID;
+typedef VkFlags VkXlibSurfaceCreateFlagsKHR;
+
+typedef struct VkXlibSurfaceCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkXlibSurfaceCreateFlagsKHR flags;
+    Display* dpy;
+    Window window;
+} VkXlibSurfaceCreateInfoKHR;
+
+typedef VkResult (*vkCreateXlibSurfaceKHRFn)(
+    VkInstance, 
+    const VkXlibSurfaceCreateInfoKHR*, 
+    const VkAllocationCallbacks*, 
+    VkSurfaceKHR*);
+
+typedef VkBool32 (*vkGetPhysicalDeviceXlibPresentationSupportKHRFn)(
+    VkPhysicalDevice, 
+    uint32_t, 
+    Display*, 
+    VisualID);
 
 typedef VkResult (*vkEnumerateInstanceVersionFn)(uint32_t*);
 
@@ -122,12 +176,46 @@ typedef void (*vkGetDeviceQueueFn)(
     uint32_t,
     VkQueue*);
 
+typedef void (*vkDestroySurfaceKHRFn)(
+    VkInstance, 
+    VkSurfaceKHR, 
+    const VkAllocationCallbacks*);
+
+typedef PFN_vkVoidFunction (*vkGetInstanceProcAddrFn)(
+    VkInstance,
+    const char*);
+
+typedef PFN_vkVoidFunction (*vkGetDeviceProcAddrFn)(
+    VkDevice,
+    const char*);
+
+typedef VkResult (*vkGetPhysicalDeviceSurfaceCapabilitiesKHRFn)(
+    VkPhysicalDevice,
+    VkSurfaceKHR,
+    VkSurfaceCapabilitiesKHR*);
+
+typedef VkResult (*vkGetPhysicalDeviceSurfaceFormatsKHRFn)(
+    VkPhysicalDevice,
+    VkSurfaceKHR,
+    uint32_t*,
+    VkSurfaceFormatKHR*);
+
+typedef VkResult (*vkGetPhysicalDeviceSurfacePresentModesKHRFn)(
+    VkPhysicalDevice,
+    VkSurfaceKHR,
+    uint32_t*,
+    VkPresentModeKHR*);
+
 typedef struct {
     bool hasDebug;
     bool versionFallback;
     void* handle;
     VkInstance instance;
-
+    
+    // HACK: for display testing
+    void* libWayland;
+    wl_display_get_fd_fn getDisplayFd;
+    
     vkEnumerateInstanceVersionFn enumerateInstanceVersion;
     vkEnumerateInstanceExtensionPropertiesFn enumerateInstanceExtensionProperties;
     vkDestroyInstanceFn destroyInstance;
@@ -141,10 +229,21 @@ typedef struct {
     vkGetPhysicalDeviceFeaturesFn getPhysicalDeviceFeatures;
     vkGetPhysicalDeviceFeatures2Fn getPhysicalDeviceFeatures2;
     vkGetPhysicalDeviceFeatures2KHRFn getPhysicalDeviceFeatures2KHR;
-
+    vkGetInstanceProcAddrFn getInstanceProcAddr;
+    
     vkCreateDeviceFn createDevice;
     vkDestroyDeviceFn destroyDevice;
     vkGetDeviceQueueFn getDeviceQueue;
+    vkGetDeviceProcAddrFn getDeviceProcAddr;
+
+    vkCreateWaylandSurfaceKHRFn createWaylandSurface;
+    vkGetPhysicalDeviceWaylandPresentationSupportKHRFn checkWaylandPresentSupport;
+    vkCreateXlibSurfaceKHRFn createXlibSurface;
+    vkGetPhysicalDeviceXlibPresentationSupportKHRFn checkXlibPresentSupport;
+    vkDestroySurfaceKHRFn destroySurface;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHRFn getSurfaceCapabilities;
+    vkGetPhysicalDeviceSurfaceFormatsKHRFn getSurfaceFormats;
+    vkGetPhysicalDeviceSurfacePresentModesKHRFn getSurfacePresentModes;
 
     VkAllocationCallbacks allocator;
 } Vulkan;
@@ -156,6 +255,8 @@ typedef struct {
 } QueueFamilyData;
 
 typedef struct {
+    Int32 familyIndex;
+    VkPhysicalDevice phyDevice;
     VkQueue handle;
     VkQueueFlags usages;
     VkQueueFlags usedUsages;
@@ -168,6 +269,7 @@ typedef struct {
 
 typedef struct {
     Int32 queueCount;
+    VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue queues[MAX_PHYSICAL_QUEUES];
 } VkGPUDevice;
@@ -184,6 +286,7 @@ typedef struct {
 
 typedef struct {
     bool used;
+    PalGPUAdapter* adapter;
     PalGPUDevice* device;
     const PalGPUBackend* backend;
 } DeviceData;
@@ -286,6 +389,51 @@ static CommandQueueData* findCommandQueueData(PalGPUCommandQueue* queue)
 
 #if PAL_HAS_VULKAN
 
+static bool vkOnWayland(struct wl_display* display) 
+{
+    if (!s_Vk.libWayland) {
+        return false;
+    }
+
+    int fd = s_Vk.getDisplayFd(display);
+    if (fd <= 0 || fd > 1024) { // fds are usaually 0-30 but this is fine
+        return false;
+    }
+    return true;
+}
+
+static bool vkCreateSurface(PalGPUWindow* window, VkSurfaceKHR* outSurface) 
+{
+    if (vkOnWayland(window->display)) {
+        if (!s_Vk.createWaylandSurface) {
+            return false;
+        }
+
+        VkSurfaceKHR surface = nullptr;
+        VkWaylandSurfaceCreateInfoKHR createInfo = {0};
+        createInfo.display = window->display;
+        createInfo.pNext = nullptr;
+        createInfo.flags = 0;
+        createInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+        createInfo.surface = window->window;
+
+        VkResult result = s_Vk.createWaylandSurface(
+            s_Vk.instance, 
+            &createInfo, 
+            &s_Vk.allocator, 
+            &surface);
+
+        if (result != VK_SUCCESS) {
+            return false;
+        }
+        *outSurface = surface;
+
+    } else {
+        // TODO: create surface for xlib
+    }
+    return true;
+}
+
 static PalResult vkResultToPal(VkResult result) 
 {
     switch (result) {
@@ -365,6 +513,14 @@ static void* vkRealloc(
 
 static PalResult vkInitGraphics(bool enableDebugLayer)
 {
+    s_Vk.libWayland = nullptr;
+    s_Vk.libWayland = dlopen("libwayland-client.so.0", RTLD_LAZY);
+    if (s_Vk.libWayland) {
+        s_Vk.getDisplayFd = (wl_display_get_fd_fn)dlsym(
+            s_Vk.libWayland, 
+            "wl_display_get_fd");
+    }
+
     // load vulkan
     s_Vk.handle = dlopen("libvulkan.so", RTLD_LAZY);
     if (!s_Vk.handle) {
@@ -420,6 +576,10 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
         s_Vk.handle, 
         "vkGetPhysicalDeviceFeatures2");
 
+    s_Vk.getInstanceProcAddr = (vkGetInstanceProcAddrFn)dlsym(
+        s_Vk.handle, 
+        "vkGetInstanceProcAddr");
+
     s_Vk.createDevice = (vkCreateDeviceFn)dlsym(
         s_Vk.handle, 
         "vkCreateDevice");
@@ -431,6 +591,10 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     s_Vk.getDeviceQueue = (vkGetDeviceQueueFn)dlsym(
         s_Vk.handle, 
         "vkGetDeviceQueue");
+
+    s_Vk.getDeviceProcAddr = (vkGetDeviceProcAddrFn)dlsym(
+        s_Vk.handle, 
+        "vkGetDeviceProcAddr");
     
     // clang-format on
 
@@ -507,7 +671,6 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
         extensionProps);
 
     bool hasXlib = false;
-    bool hasXcb = false;
     bool hasWayland = false;
     bool hasSurface = false;
     bool hasExtDebug = false;
@@ -516,9 +679,6 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
         VkExtensionProperties* prop = &extensionProps[i];
         if (strcmp(prop->extensionName, "VK_KHR_xlib_surface") == 0) {
             hasXlib = true;
-
-        } else if (strcmp(prop->extensionName, "VK_KHR_xcb_surface") == 0) {
-            hasXcb = true;
 
         } else if (strcmp(prop->extensionName, "VK_KHR_wayland_surface") == 0) {
             hasWayland = true;
@@ -542,10 +702,6 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
 
         if (hasXlib) {
             extensions[extensionCount++] = "VK_KHR_xlib_surface";
-        }
-
-        if (hasXcb) {
-            extensions[extensionCount++] = "VK_KHR_xcb_surface";
         }
     }
 
@@ -594,13 +750,13 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
         return vkResultToPal(result);
     }
 
+    // clang-format off
     if (versionFallback) {
         // load get physical device properties2 proc if we are on version 1.0
-        // clang-format off
-        s_Vk.getPhysicalDeviceFeatures2KHR = (vkGetPhysicalDeviceFeatures2KHRFn)dlsym(
-            s_Vk.handle, 
-            "vkGetPhysicalDeviceFeatures2KHR");
-        // clang-format on
+        s_Vk.getPhysicalDeviceFeatures2KHR = 
+            (vkGetPhysicalDeviceFeatures2KHRFn)s_Vk.getInstanceProcAddr(
+                s_Vk.handle, 
+                "vkGetPhysicalDeviceFeatures2KHR");
 
         if (s_Vk.getPhysicalDeviceFeatures2KHR) {
             s_Vk.versionFallback = true;
@@ -608,6 +764,52 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
             s_Vk.versionFallback = false;
         }
     }
+
+    // load surface creation function pointers
+    s_Vk.createWaylandSurface = nullptr;
+    s_Vk.createXlibSurface = nullptr;
+
+    if (hasWayland) {
+        s_Vk.createWaylandSurface = (vkCreateWaylandSurfaceKHRFn)s_Vk.getInstanceProcAddr(
+            instance, 
+            "vkCreateWaylandSurfaceKHR");
+
+        s_Vk.checkWaylandPresentSupport = 
+            (vkGetPhysicalDeviceWaylandPresentationSupportKHRFn)s_Vk.getInstanceProcAddr(
+                instance, 
+                "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
+    }
+
+    if (hasXlib) {
+        s_Vk.createXlibSurface = (vkCreateXlibSurfaceKHRFn)s_Vk.getInstanceProcAddr(
+            instance, 
+            "vkCreateXlibSurfaceKHR");
+
+        s_Vk.checkXlibPresentSupport = 
+            (vkGetPhysicalDeviceXlibPresentationSupportKHRFn)s_Vk.getInstanceProcAddr(
+                instance, 
+                "vkGetPhysicalDeviceXlibPresentationSupportKHR");
+    }
+
+    // remaining function procs
+    s_Vk.destroySurface = (vkDestroySurfaceKHRFn)s_Vk.getInstanceProcAddr(
+        instance,
+        "vkDestroySurfaceKHR");
+
+    s_Vk.getSurfaceCapabilities =
+        (vkGetPhysicalDeviceSurfaceCapabilitiesKHRFn)s_Vk.getInstanceProcAddr(
+            instance,
+            "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+
+    s_Vk.getSurfacePresentModes = 
+        (vkGetPhysicalDeviceSurfacePresentModesKHRFn)s_Vk.getInstanceProcAddr(
+            instance,
+           "vkGetPhysicalDeviceSurfacePresentModesKHR");
+
+    s_Vk.getSurfaceFormats = (vkGetPhysicalDeviceSurfaceFormatsKHRFn)s_Vk.getInstanceProcAddr(
+        instance,
+        "vkGetPhysicalDeviceSurfaceFormatsKHR");
+    // clang-format on
 
     s_Vk.instance = instance;
     return PAL_RESULT_SUCCESS;
@@ -618,6 +820,9 @@ static void vkShutdownGraphics()
     if (s_Vk.instance) {
         s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocator);
         dlclose(s_Vk.handle);
+        if (s_Vk.libWayland) {
+            dlclose(s_Vk.libWayland);
+        }
         memset(&s_Vk, 0, sizeof(s_Vk));
     }
 }
@@ -663,12 +868,12 @@ static PalResult PAL_CALL vkGetAdapterInfo(
     PalGPUAdapter* adapter,
     PalGPUAdapterInfo* info)
 {
-    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
     VkPhysicalDeviceProperties props = {0};
     VkPhysicalDeviceMemoryProperties memProps = {0};
 
-    s_Vk.getPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
-    s_Vk.getPhysicalDeviceProperties(physicalDevice, &props);
+    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
+    s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
 
     info->apiType = PAL_GPU_API_TYPE_VULKAN;
     info->shaderFormats = PAL_GPU_SHADER_FORMAT_SPIRV;
@@ -726,19 +931,19 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
     PalGPUAdapterCapabilities* caps)
 {
     VkResult ret = VK_SUCCESS;
-    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
     caps->debugLayerSupported = s_Vk.hasDebug;
 
     // get supported queue commands
     Uint32 count;
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
-        physicalDevice,
+        phyDevice,
         &count, 
         nullptr);
 
     VkQueueFamilyProperties queueProps[MAX_QUEUE_FAMILIES];
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
-        physicalDevice, 
+        phyDevice, 
         &count, 
         queueProps);
 
@@ -763,7 +968,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
     // get supported extensions
     Uint32 extensionCount = 0;
     ret = s_Vk.enumerateDeviceExtensionProperties(
-        physicalDevice,
+        phyDevice,
         nullptr, 
         &extensionCount, 
         nullptr);
@@ -784,7 +989,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
     }
 
     s_Vk.enumerateDeviceExtensionProperties(
-        physicalDevice, 
+        phyDevice, 
         nullptr, 
         &extensionCount, 
         extensionProps);
@@ -812,10 +1017,10 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             features.pNext = &mesh;
 
             if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
 
             } else {
-                s_Vk.getPhysicalDeviceFeatures2(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
             }
 
             if (mesh.meshShader && mesh.taskShader) {
@@ -832,10 +1037,10 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             features.pNext = &frag;
 
             if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
 
             } else {
-                s_Vk.getPhysicalDeviceFeatures2(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
             }
 
             if (frag.pipelineFragmentShadingRate) {
@@ -852,10 +1057,10 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             features.pNext = &desc;
 
             if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
 
             } else {
-                s_Vk.getPhysicalDeviceFeatures2(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
             }
 
             if (desc.shaderSampledImageArrayNonUniformIndexing) {
@@ -880,10 +1085,10 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             features.pNext = &shader16;
 
             if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
 
             } else {
-                s_Vk.getPhysicalDeviceFeatures2(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
             }
 
             if (shader16.shaderFloat16) {
@@ -900,10 +1105,10 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             features.pNext = &timeline;
 
             if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
 
             } else {
-                s_Vk.getPhysicalDeviceFeatures2(physicalDevice, &features);
+                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
             }
 
             if (timeline.timelineSemaphore) {
@@ -925,10 +1130,10 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
         features.pNext = &ray;
 
         if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-            s_Vk.getPhysicalDeviceFeatures2KHR(physicalDevice, &features);
+            s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
 
         } else {
-            s_Vk.getPhysicalDeviceFeatures2(physicalDevice, &features);
+            s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         }
 
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
@@ -937,7 +1142,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
     }
     // clang-format on
     VkPhysicalDeviceFeatures features;
-    s_Vk.getPhysicalDeviceFeatures(physicalDevice, &features);
+    s_Vk.getPhysicalDeviceFeatures(phyDevice, &features);
 
     // check for additional features
     if (features.geometryShader) {
@@ -983,17 +1188,17 @@ static PalResult PAL_CALL vkCreateGPUDevice(
 {
     VkResult ret = VK_SUCCESS;
     VkDevice device = nullptr;
-    VkPhysicalDevice physicalDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
 
     Uint32 count = 0;
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
-        physicalDevice, 
+        phyDevice, 
         &count, 
         nullptr);
 
     VkQueueFamilyProperties queueProps[MAX_QUEUE_FAMILIES];
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
-        physicalDevice, 
+        phyDevice, 
         &count, 
         queueProps);
 
@@ -1190,7 +1395,7 @@ static PalResult PAL_CALL vkCreateGPUDevice(
     createInfo.pNext = start;
 
     ret = s_Vk.createDevice(
-        physicalDevice, 
+        phyDevice, 
         &createInfo, 
         &s_Vk.allocator, 
         &device);
@@ -1208,16 +1413,20 @@ static PalResult PAL_CALL vkCreateGPUDevice(
     memset(gpuDevice, 0, sizeof(VkGPUDevice));
 
     // get queues
-    gpuDevice->handle = device;
     for (int i = 0; i < queueFamilyCount; i++) {
         QueueFamilyData* data = &queueFamilyData[i];
         for (int j = 0; j < data->count; j++) {
             PhysicalQueue* queue = &gpuDevice->queues[gpuDevice->queueCount++];
-            s_Vk.getDeviceQueue(device, data->index, 0, &queue->handle);
+            s_Vk.getDeviceQueue(device, data->index, j, &queue->handle);
             queue->usages = data->flags;
             queue->usedUsages = 0;
+            queue->familyIndex = data->index;
+            queue->phyDevice = phyDevice;
         }        
     }
+
+    gpuDevice->handle = device;
+    gpuDevice->phyDevice = phyDevice;
 
     *outDevice = (PalGPUDevice*)gpuDevice;
     return PAL_RESULT_SUCCESS;
@@ -1305,6 +1514,162 @@ static void PAL_CALL vkDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
     palFree(s_Graphics.allocator, commandQueue);
 }
 
+bool PAL_CALL vkCanCommandQueuePresent(
+    PalGPUCommandQueue* queue, 
+    PalGPUWindow* window)
+{
+    bool onWayland = vkOnWayland(window->display);
+    VkCommandQueue* commandQueue = (VkCommandQueue*)queue;
+    PhysicalQueue* phyQueue = commandQueue->phyQueue;
+
+    if (!s_Vk.checkWaylandPresentSupport(
+        phyQueue->phyDevice, 
+        phyQueue->familyIndex, window->display)) {
+        return false;
+    } else {
+        // TODO: check presentation for xlib
+    }
+
+    return true;
+}
+
+static PalResult PAL_CALL vkQuerySwapchainCapabilities(
+    PalGPUAdapter* adapter,
+    PalGPUWindow* window,
+    PalSwapchainCapabilities* caps)
+{
+    VkSurfaceKHR surface = nullptr;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+
+    bool ret = vkCreateSurface(window, &surface);
+    if (!ret) {
+        return PAL_RESULT_INVALID_GPU_WINDOW;
+    }
+
+    VkSurfaceCapabilitiesKHR surfaceCaps;
+    s_Vk.getSurfaceCapabilities(phyDevice, surface, &surfaceCaps);
+    caps->minWidth = surfaceCaps.minImageExtent.width;
+    caps->minHeight = surfaceCaps.minImageExtent.height;
+    caps->maxWidth = surfaceCaps.maxImageExtent.width;
+    caps->maxHeight = surfaceCaps.maxImageExtent.height;
+
+    caps->maxBufferCount = surfaceCaps.maxImageCount;
+    caps->minBufferCount = surfaceCaps.minImageCount;
+    caps->maxBufferArrayLayers = surfaceCaps.maxImageArrayLayers;
+
+    if (caps->maxBufferCount == 0) {
+        caps->maxBufferCount = PAL_INFINITE;
+    }
+
+    // get supported transforms
+    VkSurfaceTransformFlagsKHR trans = surfaceCaps.supportedTransforms;
+    if (trans & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+        caps->transforms |= PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE;
+    }
+
+    if (trans & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR) {
+        caps->transforms |= PAL_SWAPCHAIN_TRANSFORM_PORTRAIT;
+    }
+
+    if (trans & VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR) {
+        caps->transforms |= PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE_FLIPPED;
+    }
+
+    if (trans & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR) {
+        caps->transforms |= PAL_SWAPCHAIN_TRANSFORM_PORTRAIT_FLIPPED;
+    }
+
+    // get supported composite alphas
+    VkCompositeAlphaFlagsKHR alpha = surfaceCaps.supportedCompositeAlpha;
+    caps->compositeAlphas = PAL_COMPOSITE_ALPHA_OPAQUE;
+    if (alpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
+        caps->compositeAlphas |= PAL_COMPOSITE_ALPHA_POST_MULTIPLIED;
+    }
+
+    if (alpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
+        caps->compositeAlphas |= PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED;
+    }
+
+    // get supported composite alphas
+    VkImageUsageFlags usage = surfaceCaps.supportedUsageFlags;
+    caps->usages = 0;
+    if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        caps->usages |= PAL_SWAPCHAIN_USAGE_COLOR_ATTACHEMENT;
+    }
+
+    if (usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
+        caps->usages |= PAL_SWAPCHAIN_USAGE_TRANSFER_DST;
+    }
+
+    if (usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
+        caps->usages |= PAL_SWAPCHAIN_USAGE_TRANSFER_SRC;
+    }
+
+    if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+        caps->usages |= PAL_SWAPCHAIN_USAGE_SAMPLED;
+    }
+
+    // sharing modes
+    caps->sharingModes = PAL_SWAPCHAIN_SHARING_MODE_EXCLUSIVE;
+    caps->sharingModes |= PAL_SWAPCHAIN_SHARING_MODE_CONCURRENT;
+
+    // present modes
+    caps->presentModes = PAL_PRESENT_MODE_FIFO;
+    Int32 count = 0;
+    VkPresentModeKHR modes[MAX_PRESENT_MODES] = {0};
+    s_Vk.getSurfacePresentModes(phyDevice, surface, &count, nullptr);
+
+    if (count) {
+        s_Vk.getSurfacePresentModes(phyDevice, surface, &count, modes);
+        for (int i = 0; i < count; i++) {
+            if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+                caps->presentModes |= PAL_PRESENT_MODE_IMMEDIATE;
+            }
+
+            if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+                caps->presentModes |= PAL_PRESENT_MODE_MAILBOX;
+            }
+        }
+    }
+
+    // get format and colorspace
+    count = 0;
+    VkSurfaceFormatKHR formats[MAX_FORMATS] = {0};
+    s_Vk.getSurfaceFormats(phyDevice, surface, &count, nullptr);
+
+    s_Vk.getSurfaceFormats(phyDevice, surface, &count, formats);
+    for (int i = 0; i < count; i++) {
+        VkSurfaceFormatKHR* fmt = &formats[i];
+        if (fmt->format == VK_FORMAT_B8G8R8A8_UNORM) {
+            // find its supported colorspace
+            if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                caps->formats |= PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB;   
+            }
+
+        } else if (fmt->format == VK_FORMAT_B8G8R8A8_SRGB) {
+            // find its supported colorspace
+            if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                caps->formats |= PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB;   
+            }
+
+        } else if (fmt->format == VK_FORMAT_R8G8B8A8_UNORM) {
+            // find its supported colorspace
+            if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                caps->formats |= PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;   
+            }
+
+        } else if (fmt->format == VK_FORMAT_R16G16B16A16_SFLOAT) {
+            // find its supported colorspace
+            if (fmt->colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT) {
+                caps->formats |= PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10;   
+            }
+        }
+    }
+
+    s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocator);
+    return PAL_RESULT_SUCCESS;
+}
+
 static PalGPUBackend s_VkBackend = {
     .enumerateGPUAdapters = vkEnumerateAdapters,
     .getGPUAdapterInfo = vkGetAdapterInfo,
@@ -1312,7 +1677,9 @@ static PalGPUBackend s_VkBackend = {
     .createGPUDevice = vkCreateGPUDevice,
     .destroyGPUDevice = vkDestroyGPUDevice,
     .createGPUCommandQueue = vkCreateGPUCommandQueue,
-    .destroyGPUCommandQueue = vkDestroyGPUCommandQueue
+    .destroyGPUCommandQueue = vkDestroyGPUCommandQueue,
+    .canCommandQueuePresent = vkCanCommandQueuePresent,
+    .getSwapchainCapabilities = vkQuerySwapchainCapabilities
 };
 
 #endif // PAL_HAS_VULKAN
@@ -1478,7 +1845,9 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
         !backend->createGPUDevice           ||
         !backend->destroyGPUDevice          ||
         !backend->createGPUCommandQueue     ||
-        !backend->destroyGPUCommandQueue) {
+        !backend->destroyGPUCommandQueue    ||
+        !backend->canCommandQueuePresent    ||
+        !backend->getSwapchainCapabilities) {
         return PAL_RESULT_INVALID_GPU_BACKEND;
     }
     // clang-format on
@@ -1529,6 +1898,7 @@ PalResult PAL_CALL palCreateGPUDevice(
 
     deviceData->backend = adapterData->backend;
     deviceData->device = device;
+    deviceData->adapter = adapter;
 
     *outDevice = device;
     return PAL_RESULT_SUCCESS;
@@ -1597,4 +1967,46 @@ void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
             data->used = false;
         }
     }
+}
+
+bool PAL_CALL palCanCommandQueuePresent(
+    PalGPUCommandQueue* queue, 
+    PalGPUWindow* window)
+{
+    if (s_Graphics.initialized && queue) {
+        CommandQueueData* data = findCommandQueueData(queue);
+        if (data) {
+            return data->backend->canCommandQueuePresent(queue, window);
+        }
+        return false;
+    }
+    return false;
+}
+
+// ==================================================
+// Swapchain
+// ==================================================
+
+PalResult PAL_CALL palQuerySwapchainCapabilities(
+    PalGPUAdapter* adapter,
+    PalGPUWindow* window,
+    PalSwapchainCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!adapter || !window || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    AdapterData* adapterData = findAdapterData(adapter);
+    if (!adapterData) {
+        return PAL_RESULT_INVALID_GPU_ADAPTER;
+    }
+
+    return adapterData->backend->getSwapchainCapabilities(
+        adapter,
+        window,
+        caps);
 }
