@@ -41,6 +41,8 @@ typedef struct PalGPUAdapter PalGPUAdapter;
 typedef struct PalGPUDevice PalGPUDevice;
 typedef struct PalGPUCommandQueue PalGPUCommandQueue;
 typedef struct PalSwapchain PalSwapchain;
+typedef struct PalGPUBuffer PalGPUBuffer;
+typedef struct PalRenderTargetView PalRenderTargetView;
 
 typedef enum {
     PAL_GPU_TYPE_UNKNOWN,
@@ -232,6 +234,18 @@ typedef struct {
         PalSwapchain** outSwapchain);
 
     void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
+
+    PalResult PAL_CALL (*getSwapchainBuffers)(
+        PalSwapchain* swapchain,
+        Int32* count,
+        PalGPUBuffer** outBuffers);
+
+    PalResult PAL_CALL (*createRenderTargetView)(
+        PalSwapchain* swapchain,
+        PalGPUBuffer* buffer,
+        PalRenderTargetView** outRtv);
+
+    void PAL_CALL (*destroyRenderTargetView)(PalRenderTargetView* rtv);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -284,6 +298,18 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
     PalSwapchain** outSwapchain);
 
 PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
+
+PAL_API PalResult PAL_CALL palGetSwapchainBuffers(
+    PalSwapchain* swapchain,
+    Int32* count,
+    PalGPUBuffer** outBuffers);
+
+PAL_API PalResult PAL_CALL palCreateRenderTargetView(
+    PalSwapchain* swapchain,
+    PalGPUBuffer* buffer,
+    PalRenderTargetView** outRtv);
+
+PAL_API void PAL_CALL palDestroyRenderTargetView(PalRenderTargetView* rtv);
 
 /** @} */ // end of pal_graphics group
 

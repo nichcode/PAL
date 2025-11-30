@@ -410,6 +410,12 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_GPU_WINDOW:
             return "Invalid GPU window";
+
+        case PAL_RESULT_INVALID_SWAPCHAIN:
+            return "Invalid swapchain";
+
+        case PAL_RESULT_INVALID_GPU_BUFFER:
+            return "Invalid GPU buffer";
     }
     return "Unknown";
 }
