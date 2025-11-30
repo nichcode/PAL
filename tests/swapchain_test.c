@@ -277,6 +277,52 @@ bool swapchainTest()
         palLog(nullptr, "  Color attachment");
     }
 
+    // create a swapchain
+    PalSwapchain* swapchain = nullptr;
+    PalSwapchainCreateInfo swapchainCreateInfo = {0};
+    swapchainCreateInfo.bufferArrayLayerCount = 1; // works on all systems
+    
+    // check max count to choose buffers but for this example
+    //we just set it to the minimal supported
+    swapchainCreateInfo.bufferCount = swapchainCaps.minBufferCount;
+    swapchainCreateInfo.clipped = true;
+    swapchainCreateInfo.compositeAlpha = PAL_COMPOSITE_ALPHA_OPAQUE;
+    swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
+
+    // set size
+    swapchainCreateInfo.width = 640;
+    swapchainCreateInfo.height = 480;
+    if (640 > swapchainCaps.maxWidth) {
+        // we set it to the minimal to mak it work across systems
+        swapchainCreateInfo.width = swapchainCaps.minWidth;
+    }
+
+    if (480 > swapchainCaps.maxHeight) {
+        // we set it to the minimal to mak it work across systems
+        swapchainCreateInfo.height = swapchainCaps.minHeight;
+    }
+
+    swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
+    swapchainCreateInfo.transform = PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE;
+    swapchainCreateInfo.usage = PAL_SWAPCHAIN_USAGE_COLOR_ATTACHEMENT;
+    swapchainCreateInfo.sharingMode = PAL_SWAPCHAIN_SHARING_MODE_EXCLUSIVE;
+
+    result = palCreateSwapchain(
+        graphicsQueue, 
+        &gpuWindow, 
+        &swapchainCreateInfo,
+        &swapchain);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create swapchain: %s", error);
+        palFree(nullptr, adapters);
+        return false;
+    }
+
+    // destroy the swapchain
+    palDestroySwapchain(swapchain);
+
     // destroy command queue and gpu device
     palDestroyGPUCommandQueue(graphicsQueue);
     palDestroyGPUDevice(device);

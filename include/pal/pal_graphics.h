@@ -172,14 +172,16 @@ typedef struct {
     bool clipped;
     Uint32 width;
     Uint32 height;
-    Uint32 imageCount;
-    Uint32 imageArrayLayerCount;
+    Uint32 bufferCount;
+    Uint32 bufferArrayLayerCount;
+    Uint32 concurrentQueueCount;
     PalPresentModes presentMode;
-    PalSwapchainUsages usages;
+    PalSwapchainUsages usage;
     PalCompositeAplhas compositeAlpha;
     PalSwapchainFormats format;
     PalSwapchainSharingModes sharingMode;
     PalSwapchainTransforms transform;
+    PalGPUCommandQueue** concurrentQueue;
 } PalSwapchainCreateInfo;
 
 typedef struct {
@@ -222,6 +224,14 @@ typedef struct {
         PalGPUAdapter* adapter,
         PalGPUWindow* window,
         PalSwapchainCapabilities* caps);
+
+    PalResult PAL_CALL (*createSwapchain)(
+        PalGPUCommandQueue* queue,
+        PalGPUWindow* window,
+        const PalSwapchainCreateInfo* info,
+        PalSwapchain** outSwapchain);
+
+    void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -266,6 +276,14 @@ PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
     PalGPUAdapter* adapter,
     PalGPUWindow* window,
     PalSwapchainCapabilities* caps);
+
+PAL_API PalResult PAL_CALL palCreateSwapchain(
+    PalGPUCommandQueue* queue,
+    PalGPUWindow* window,
+    const PalSwapchainCreateInfo* info,
+    PalSwapchain** outSwapchain);
+
+PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 
 /** @} */ // end of pal_graphics group
 

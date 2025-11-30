@@ -39,16 +39,7 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-// FIXME: make all these dynamic if need be
-// but for now its fine
-#define MAX_BACKENDS 16
-#define MAX_ADAPTERS 32
-#define MAX_DEVICE 16
-#define MAX_QUEUE_FAMILIES 8
-#define MAX_PHYSICAL_QUEUES 16
-#define MAX_COMMAND_QUEUES 32
-#define MAX_FORMATS 32
-#define MAX_PRESENT_MODES 16
+#define MAX_BACKENDS 32
 
 #if PAL_HAS_VULKAN
 // VKAPI_PTR expands to nothing on linux
@@ -206,6 +197,35 @@ typedef VkResult (*vkGetPhysicalDeviceSurfacePresentModesKHRFn)(
     uint32_t*,
     VkPresentModeKHR*);
 
+typedef VkResult (*vkCreateSwapchainKHRFn)(
+    VkDevice, 
+    const VkSwapchainCreateInfoKHR*, 
+    const VkAllocationCallbacks*, 
+    VkSwapchainKHR*);
+
+typedef void (*vkDestroySwapchainKHRFn)(
+    VkDevice, 
+    VkSwapchainKHR, 
+    const VkAllocationCallbacks*);
+
+typedef VkResult (*vkGetSwapchainImagesKHRFn)(
+    VkDevice, 
+    VkSwapchainKHR, 
+    uint32_t*, 
+    VkImage*);
+
+typedef VkResult (*vkAcquireNextImageKHRFn)(
+    VkDevice, 
+    VkSwapchainKHR, 
+    uint64_t, 
+    VkSemaphore, 
+    VkFence, 
+    uint32_t*);
+
+typedef VkResult (*vkQueuePresentKHRFn)(
+    VkQueue, 
+    const VkPresentInfoKHR*);
+
 typedef struct {
     bool hasDebug;
     bool versionFallback;
@@ -263,16 +283,28 @@ typedef struct {
 } PhysicalQueue;
 
 typedef struct {
-    VkQueueFlags usage;
-    PhysicalQueue* phyQueue;
-} VkCommandQueue;
-
-typedef struct {
     Int32 queueCount;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
-    PhysicalQueue queues[MAX_PHYSICAL_QUEUES];
-} VkGPUDevice;
+    PhysicalQueue* phyQueues;
+    vkCreateSwapchainKHRFn createSwapchain;
+    vkDestroySwapchainKHRFn destroySwapchain;
+    vkGetSwapchainImagesKHRFn getSwapchainImages;
+    vkAcquireNextImageKHRFn acquireNextImage;
+    vkQueuePresentKHRFn queuePresent;
+} Device;
+
+typedef struct {
+    VkQueueFlags usage;
+    Device* device;
+    PhysicalQueue* phyQueue;
+} CommandQueue;
+
+typedef struct {
+    Device* device;
+    VkSurfaceKHR surface;
+    VkSwapchainKHR handle;
+} Swapchain;
 
 static Vulkan s_Vk = {0};
 
@@ -280,39 +312,23 @@ static Vulkan s_Vk = {0};
 
 typedef struct {
     bool used;
+    void* handle;
     const PalGPUBackend* backend;
-    PalGPUAdapter* adapter;
-} AdapterData;
+} HandleData;
 
 typedef struct {
-    bool used;
-    PalGPUAdapter* adapter;
-    PalGPUDevice* device;
-    const PalGPUBackend* backend;
-} DeviceData;
-
-typedef struct {
-    bool used;
-    PalGPUDevice* device;
-    PalGPUCommandQueue* queue;
-    const PalGPUBackend* backend;
-} CommandQueueData;
-
-typedef struct {
+    Int32 count;
+    Int32 startIndex;
     const PalGPUBackend* base;
-    Uint16 startIndex;
-    Uint16 count;
-} AttachBackend;
+} BackendData;
 
 typedef struct {
     bool initialized;
     Int32 backendCount;
-    Int32 totalAdapterCount;
+    Int32 maxHandleData;
     const PalAllocator* allocator;
-    AdapterData adapterData[MAX_ADAPTERS];
-    DeviceData deviceData[MAX_DEVICE];
-    CommandQueueData commandQueueData[MAX_COMMAND_QUEUES];
-    AttachBackend backends[MAX_BACKENDS];
+    HandleData* handleData;
+    BackendData backends[MAX_BACKENDS];
 } GraphicsLinux;
 
 static GraphicsLinux s_Graphics = {0};
@@ -321,67 +337,43 @@ static GraphicsLinux s_Graphics = {0};
 // Internal API
 // ==================================================
 
-static AdapterData* getFreeAdapterData()
+// FIXME: might be replaced with hashmap for performance
+static HandleData* getFreeHandleData()
 {
-    for (int i = 0; i < MAX_ADAPTERS; ++i) {
-        if (!s_Graphics.adapterData[i].used) {
-            s_Graphics.adapterData[i].used = true;
-            return &s_Graphics.adapterData[i];
+    for (int i = 0; i < s_Graphics.maxHandleData; ++i) {
+        if (!s_Graphics.handleData[i].used) {
+            s_Graphics.handleData[i].used = true;
+            return &s_Graphics.handleData[i];
         }
     }  
-    return nullptr;
-}
 
-static AdapterData* findAdapterData(PalGPUAdapter* adapter)
-{
-    for (int i = 0; i < MAX_ADAPTERS; ++i) {
-        if (s_Graphics.adapterData[i].used &&
-            s_Graphics.adapterData[i].adapter == adapter) {
-            return &s_Graphics.adapterData[i];
-        }
+    // resize the data array
+    HandleData* data = nullptr;
+    int count = s_Graphics.maxHandleData * 2; // double the size
+    int freeIndex = s_Graphics.maxHandleData + 1;
+    data = palAllocate(s_Graphics.allocator, sizeof(HandleData) * count, 0);
+    if (data) {
+        memcpy(
+            data,
+            s_Graphics.handleData,
+            s_Graphics.maxHandleData * sizeof(HandleData));
+
+        palFree(s_Graphics.allocator, s_Graphics.handleData);
+        s_Graphics.handleData = data;
+        s_Graphics.maxHandleData = count;
+
+        s_Graphics.handleData[freeIndex].used = true;
+        return &s_Graphics.handleData[freeIndex];
     }
     return nullptr;
 }
 
-static DeviceData* getFreeDeviceData()
+static HandleData* findHandleData(void* handle)
 {
-    for (int i = 0; i < MAX_DEVICE; ++i) {
-        if (!s_Graphics.deviceData[i].used) {
-            s_Graphics.deviceData[i].used = true;
-            return &s_Graphics.deviceData[i];
-        }
-    }  
-    return nullptr;
-}
-
-static DeviceData* findDeviceData(PalGPUDevice* device)
-{
-    for (int i = 0; i < MAX_DEVICE; ++i) {
-        if (s_Graphics.deviceData[i].used &&
-            s_Graphics.deviceData[i].device == device) {
-            return &s_Graphics.deviceData[i];
-        }
-    }
-    return nullptr;
-}
-
-static CommandQueueData* getFreeCommandQueueData()
-{
-    for (int i = 0; i < MAX_COMMAND_QUEUES; ++i) {
-        if (!s_Graphics.commandQueueData[i].used) {
-            s_Graphics.commandQueueData[i].used = true;
-            return &s_Graphics.commandQueueData[i];
-        }
-    }  
-    return nullptr;
-}
-
-static CommandQueueData* findCommandQueueData(PalGPUCommandQueue* queue)
-{
-    for (int i = 0; i < MAX_COMMAND_QUEUES; ++i) {
-        if (s_Graphics.commandQueueData[i].used &&
-            s_Graphics.commandQueueData[i].queue == queue) {
-            return &s_Graphics.commandQueueData[i];
+    for (int i = 0; i < s_Graphics.maxHandleData; ++i) {
+        if (s_Graphics.handleData[i].used &&
+            s_Graphics.handleData[i].handle == handle) {
+            return &s_Graphics.handleData[i];
         }
     }
     return nullptr;
@@ -595,7 +587,6 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     s_Vk.getDeviceProcAddr = (vkGetDeviceProcAddrFn)dlsym(
         s_Vk.handle, 
         "vkGetDeviceProcAddr");
-    
     // clang-format on
 
     // get version
@@ -817,14 +808,12 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
 
 static void vkShutdownGraphics()
 {
-    if (s_Vk.instance) {
-        s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocator);
-        dlclose(s_Vk.handle);
-        if (s_Vk.libWayland) {
-            dlclose(s_Vk.libWayland);
-        }
-        memset(&s_Vk, 0, sizeof(s_Vk));
+    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocator);
+    dlclose(s_Vk.handle);
+    if (s_Vk.libWayland) {
+        dlclose(s_Vk.libWayland);
     }
+    memset(&s_Vk, 0, sizeof(s_Vk));
 }
 
 static PalResult vkEnumerateAdapters(
@@ -941,7 +930,12 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
         &count, 
         nullptr);
 
-    VkQueueFamilyProperties queueProps[MAX_QUEUE_FAMILIES];
+    VkQueueFamilyProperties* queueProps = nullptr;
+    queueProps = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkQueueFamilyProperties) * count, 
+        0);
+
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
         phyDevice, 
         &count, 
@@ -964,6 +958,8 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             caps->maxCopyQueues += queueProps->queueCount;
         }
     }
+
+    palFree(s_Graphics.allocator, queueProps);
 
     // get supported extensions
     Uint32 extensionCount = 0;
@@ -1185,41 +1181,58 @@ static PalResult PAL_CALL vkCreateGPUDevice(
     PalGPUAdapter* adapter,
     PalGPUFeatures features,
     PalGPUDevice** outDevice)
-{
+{ 
+    float priority = 1.0f;
+    Uint32 count = 0;
     VkResult ret = VK_SUCCESS;
-    VkDevice device = nullptr;
+    Device* device = nullptr;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
 
-    Uint32 count = 0;
+    VkQueueFamilyProperties* queueProps = nullptr;
+    VkDeviceQueueCreateInfo* queueCreateInfos = nullptr;
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
         phyDevice, 
         &count, 
         nullptr);
 
-    VkQueueFamilyProperties queueProps[MAX_QUEUE_FAMILIES];
+    queueProps = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkQueueFamilyProperties) * count, 
+        0);
+
+    queueCreateInfos = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkDeviceQueueCreateInfo) * count, 
+        0);
+
+    device = palAllocate(s_Graphics.allocator, sizeof(Device), 0);
+    if (!queueProps || !queueCreateInfos || !device) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    device->queueCount = count;
+    device->phyDevice = phyDevice;
+    
+    device->phyQueues = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(PhysicalQueue) * count, 
+        0);
+        
+    if (!device->phyQueues) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     s_Vk.getPhysicalDeviceQueueFamilyProperties(
         phyDevice, 
         &count, 
         queueProps);
-
-    Int32 queueFamilyCount = 0;
-    QueueFamilyData queueFamilyData[MAX_QUEUE_FAMILIES];
+        
     for (int i = 0; i < count; i++) {
-        VkQueueFamilyProperties* prop = &queueProps[i];
-        QueueFamilyData* data = &queueFamilyData[queueFamilyCount++];
-        data->count = prop->queueCount;
-        data->flags = prop->queueFlags;
-        data->index = i;
-    }
-
-    float priority = 1.0f;
-    VkDeviceQueueCreateInfo queueCreateInfos[MAX_QUEUE_FAMILIES];
-    for (int i = 0; i < queueFamilyCount; i++) {
         queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfos[i].pNext = nullptr;
         queueCreateInfos[i].pQueuePriorities = &priority;
-        queueCreateInfos[i].queueFamilyIndex = queueFamilyData[i].index;
-        queueCreateInfos[i].queueCount = queueFamilyData[i].count;
+        queueCreateInfos[i].queueFamilyIndex = i;
+        queueCreateInfos[i].queueCount = queueProps[i].queueCount;
         queueCreateInfos[i].flags = 0;
     }
 
@@ -1391,51 +1404,69 @@ static PalResult PAL_CALL vkCreateGPUDevice(
     createInfo.enabledExtensionCount = extCount;
     createInfo.ppEnabledExtensionNames = extensions;
     createInfo.pQueueCreateInfos = queueCreateInfos;
-    createInfo.queueCreateInfoCount = queueFamilyCount;
+    createInfo.queueCreateInfoCount = count;
     createInfo.pNext = start;
 
     ret = s_Vk.createDevice(
         phyDevice, 
         &createInfo, 
         &s_Vk.allocator, 
-        &device);
+        &device->handle);
 
     if (ret != VK_SUCCESS) {
+        palFree(s_Graphics.allocator, queueProps);
+        palFree(s_Graphics.allocator, queueCreateInfos);
+        palFree(s_Graphics.allocator, device->phyQueues);
+        palFree(s_Graphics.allocator, device);
         return vkResultToPal(ret);
     }
 
-    VkGPUDevice* gpuDevice = nullptr;
-    gpuDevice = palAllocate(s_Graphics.allocator, sizeof(VkGPUDevice), 0);
-    if (!gpuDevice) {
-        s_Vk.destroyDevice(device, &s_Vk.allocator);
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-    memset(gpuDevice, 0, sizeof(VkGPUDevice));
-
     // get queues
-    for (int i = 0; i < queueFamilyCount; i++) {
-        QueueFamilyData* data = &queueFamilyData[i];
-        for (int j = 0; j < data->count; j++) {
-            PhysicalQueue* queue = &gpuDevice->queues[gpuDevice->queueCount++];
-            s_Vk.getDeviceQueue(device, data->index, j, &queue->handle);
-            queue->usages = data->flags;
+    for (int i = 0; i < count; i++) {
+        VkQueueFamilyProperties* data = &queueProps[i];
+        for (int j = 0; j < data->queueCount; j++) {
+            PhysicalQueue* queue = &device->phyQueues[i];
+            s_Vk.getDeviceQueue(device->handle, i, j, &queue->handle);
+            queue->usages = data->queueFlags;
             queue->usedUsages = 0;
-            queue->familyIndex = data->index;
+            queue->familyIndex = i;
             queue->phyDevice = phyDevice;
         }        
     }
 
-    gpuDevice->handle = device;
-    gpuDevice->phyDevice = phyDevice;
+    // load procs
+    device->acquireNextImage = (vkAcquireNextImageKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkAcquireNextImageKHR");
 
-    *outDevice = (PalGPUDevice*)gpuDevice;
+    device->createSwapchain = (vkCreateSwapchainKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkCreateSwapchainKHR");
+
+    device->destroySwapchain = (vkDestroySwapchainKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkDestroySwapchainKHR");
+
+    device->getSwapchainImages = (vkGetSwapchainImagesKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkGetSwapchainImagesKHR");
+
+    device->queuePresent = (vkQueuePresentKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkQueuePresentKHR");
+
+    palFree(s_Graphics.allocator, queueProps);
+    palFree(s_Graphics.allocator, queueCreateInfos);
+
+    *outDevice = (PalGPUDevice*)device;
     return PAL_RESULT_SUCCESS;
 }
 
 static void PAL_CALL vkDestroyGPUDevice(PalGPUDevice* device)
 {
-    VkGPUDevice* gpuDevice = (VkGPUDevice*)device;
+    Device* gpuDevice = (Device*)device;
     s_Vk.destroyDevice(gpuDevice->handle, &s_Vk.allocator);
+    palFree(s_Graphics.allocator, gpuDevice->phyQueues);
     palFree(s_Graphics.allocator, gpuDevice);
 }
 
@@ -1444,10 +1475,9 @@ static PalResult PAL_CALL vkCreateGPUCommandQueue(
     PalGPUCommandQueueType type,
     PalGPUCommandQueue** outQueue)
 {
-    VkCommandQueue* commandQueue = nullptr;
     VkQueueFlags queueFlag = 0;
-    
-    VkGPUDevice* gpuDevice = (VkGPUDevice*)device;
+    Device* gpuDevice = (Device*)device;
+    CommandQueue* commandQueue = nullptr;
     if (!gpuDevice->handle) {
         return PAL_RESULT_INVALID_GPU_DEVICE;
     }
@@ -1473,31 +1503,32 @@ static PalResult PAL_CALL vkCreateGPUCommandQueue(
         }
     }
 
-    PhysicalQueue* physicalQueue = nullptr;
+    PhysicalQueue* phyQueue = nullptr;
     for (int i = 0; i < gpuDevice->queueCount; i++) {
-        PhysicalQueue* phyQueue = &gpuDevice->queues[i];
+        PhysicalQueue* queue = &gpuDevice->phyQueues[i];
         // check if the physical queue supports the requested operation
         // and if its not already used
-        if (phyQueue->usages & queueFlag && 
-            phyQueue->usedUsages != queueFlag) {
-            phyQueue->usedUsages |= queueFlag;
-            physicalQueue = phyQueue;
+        if (queue->usages & queueFlag && 
+            queue->usedUsages != queueFlag) {
+            queue->usedUsages |= queueFlag;
+            phyQueue = queue;
             break;
         } 
     }
 
-    if (physicalQueue) {
+    if (phyQueue) {
         commandQueue = palAllocate(
             s_Graphics.allocator, 
-            sizeof(VkCommandQueue), 
+            sizeof(CommandQueue), 
             0);
         
         if (!commandQueue) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        commandQueue->phyQueue = physicalQueue;
+        commandQueue->phyQueue = phyQueue;
         commandQueue->usage = queueFlag;
+        commandQueue->device = gpuDevice;
 
         *outQueue = (PalGPUCommandQueue*)commandQueue;
         return PAL_RESULT_SUCCESS;
@@ -1508,18 +1539,18 @@ static PalResult PAL_CALL vkCreateGPUCommandQueue(
 
 static void PAL_CALL vkDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
 {
-    VkCommandQueue* commandQueue = (VkCommandQueue*)queue;
+    CommandQueue* commandQueue = (CommandQueue*)queue;
     PhysicalQueue* phyQueue = commandQueue->phyQueue;
     phyQueue->usedUsages &= ~commandQueue->usage;
     palFree(s_Graphics.allocator, commandQueue);
 }
 
-bool PAL_CALL vkCanCommandQueuePresent(
+static bool PAL_CALL vkCanCommandQueuePresent(
     PalGPUCommandQueue* queue, 
     PalGPUWindow* window)
 {
     bool onWayland = vkOnWayland(window->display);
-    VkCommandQueue* commandQueue = (VkCommandQueue*)queue;
+    CommandQueue* commandQueue = (CommandQueue*)queue;
     PhysicalQueue* phyQueue = commandQueue->phyQueue;
 
     if (!s_Vk.checkWaylandPresentSupport(
@@ -1538,13 +1569,38 @@ static PalResult PAL_CALL vkQuerySwapchainCapabilities(
     PalGPUWindow* window,
     PalSwapchainCapabilities* caps)
 {
+    Int32 formatCount = 0;
+    Int32 modeCount = 0;
     VkSurfaceKHR surface = nullptr;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkPresentModeKHR* modes = nullptr;
+    VkSurfaceFormatKHR* formats = nullptr;
 
     bool ret = vkCreateSurface(window, &surface);
     if (!ret) {
         return PAL_RESULT_INVALID_GPU_WINDOW;
     }
+
+    s_Vk.getSurfacePresentModes(phyDevice, surface, &modeCount, nullptr);
+    s_Vk.getSurfaceFormats(phyDevice, surface, &formatCount, nullptr);
+
+    modes = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkPresentModeKHR) * modeCount, 
+        0);
+
+    formats = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkSurfaceFormatKHR) * formatCount, 
+        0);
+
+    if (!modes || !formats) {
+        s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocator);
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    s_Vk.getSurfacePresentModes(phyDevice, surface, &modeCount, modes);
+    s_Vk.getSurfaceFormats(phyDevice, surface, &formatCount, formats);
 
     VkSurfaceCapabilitiesKHR surfaceCaps;
     s_Vk.getSurfaceCapabilities(phyDevice, surface, &surfaceCaps);
@@ -1615,30 +1671,18 @@ static PalResult PAL_CALL vkQuerySwapchainCapabilities(
 
     // present modes
     caps->presentModes = PAL_PRESENT_MODE_FIFO;
-    Int32 count = 0;
-    VkPresentModeKHR modes[MAX_PRESENT_MODES] = {0};
-    s_Vk.getSurfacePresentModes(phyDevice, surface, &count, nullptr);
+    for (int i = 0; i < modeCount; i++) {
+        if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+            caps->presentModes |= PAL_PRESENT_MODE_IMMEDIATE;
+        }
 
-    if (count) {
-        s_Vk.getSurfacePresentModes(phyDevice, surface, &count, modes);
-        for (int i = 0; i < count; i++) {
-            if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-                caps->presentModes |= PAL_PRESENT_MODE_IMMEDIATE;
-            }
-
-            if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-                caps->presentModes |= PAL_PRESENT_MODE_MAILBOX;
-            }
+        if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+            caps->presentModes |= PAL_PRESENT_MODE_MAILBOX;
         }
     }
 
     // get format and colorspace
-    count = 0;
-    VkSurfaceFormatKHR formats[MAX_FORMATS] = {0};
-    s_Vk.getSurfaceFormats(phyDevice, surface, &count, nullptr);
-
-    s_Vk.getSurfaceFormats(phyDevice, surface, &count, formats);
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < formatCount; i++) {
         VkSurfaceFormatKHR* fmt = &formats[i];
         if (fmt->format == VK_FORMAT_B8G8R8A8_UNORM) {
             // find its supported colorspace
@@ -1666,8 +1710,162 @@ static PalResult PAL_CALL vkQuerySwapchainCapabilities(
         }
     }
 
+    palFree(s_Graphics.allocator, formats);
+    palFree(s_Graphics.allocator, modes);
     s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocator);
+
     return PAL_RESULT_SUCCESS;
+}
+
+static PalResult PAL_CALL vkCreateSwapchain(
+    PalGPUCommandQueue* queue,
+    PalGPUWindow* window,
+    const PalSwapchainCreateInfo* info,
+    PalSwapchain** outSwapchain)
+{
+    Swapchain* swapchain = nullptr;
+    CommandQueue* commandQueue = (CommandQueue*)queue;
+    PhysicalQueue* phyQueue = commandQueue->phyQueue;
+
+    // check if we enabled swapchain feature
+    if (!commandQueue->device->createSwapchain) {
+        return PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED;
+    }
+
+    swapchain = palAllocate(s_Graphics.allocator, sizeof(Swapchain), 0);
+    if (!swapchain) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    swapchain->device = commandQueue->device;
+    bool ret = vkCreateSurface(window, &swapchain->surface);
+    if (!ret) {
+        return PAL_RESULT_INVALID_GPU_WINDOW;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = swapchain->surface;
+    createInfo.imageArrayLayers = info->bufferArrayLayerCount;
+    createInfo.imageExtent.width = info->width;
+    createInfo.imageExtent.height = info->height;
+    createInfo.minImageCount = info->bufferCount;
+    if (info->clipped) {
+        createInfo.clipped = VK_TRUE;
+    }
+
+    // sharing mode
+    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (info->sharingMode == PAL_SWAPCHAIN_SHARING_MODE_CONCURRENT) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        // set up concurrrent queue families
+        Uint32 count = 0;
+        Uint32 familyQueus[32]; // should be more than enough
+        familyQueus[count++] = phyQueue->familyIndex;
+
+        for (int i = 0; i < info->concurrentQueueCount; i++) {
+            CommandQueue* tmp = (CommandQueue*)info->concurrentQueue[i];
+            if (tmp->phyQueue != phyQueue) {
+                // different queue families. Add index
+                familyQueus[count++] = tmp->phyQueue->familyIndex;
+            }
+        }
+
+        createInfo.queueFamilyIndexCount = count;
+        createInfo.pQueueFamilyIndices = familyQueus;
+    }
+
+    // present modes
+    createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    if (info->presentMode == PAL_PRESENT_MODE_IMMEDIATE) {
+        createInfo.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+    } else if (info->presentMode == PAL_PRESENT_MODE_MAILBOX) {
+        createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+    }
+
+    // usage
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (info->usage == PAL_SWAPCHAIN_USAGE_TRANSFER_SRC) {
+        createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    } else if (info->usage == PAL_SWAPCHAIN_USAGE_TRANSFER_DST) {
+        createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    } else if (info->usage == PAL_SWAPCHAIN_USAGE_SAMPLED) {
+        createInfo.imageUsage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+
+    // composite alpha
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    if (info->compositeAlpha == PAL_COMPOSITE_ALPHA_POST_MULTIPLIED) {
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
+
+    } else if (info->compositeAlpha == PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED) {
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
+    }
+
+    // transform
+    createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    if (info->transform == PAL_SWAPCHAIN_TRANSFORM_PORTRAIT) {
+        createInfo.preTransform = VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR;
+
+    } else if (info->transform == PAL_SWAPCHAIN_TRANSFORM_PORTRAIT_FLIPPED) {
+        createInfo.preTransform = VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR;
+
+    } else if (info->transform == PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE_FLIPPED) {
+        createInfo.preTransform = VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR;
+    }
+
+    // format and colorspace
+    createInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+    createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+    if (info->format == PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB) {
+        createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+        createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+    } else if (info->format == PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB) {
+        createInfo.imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
+        createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+    } else if (info->format == PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10) {
+        createInfo.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+        createInfo.imageColorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT;
+    }
+
+    // create swapchain
+    VkResult result = swapchain->device->createSwapchain(
+        swapchain->device->handle, 
+        &createInfo, 
+        &s_Vk.allocator, 
+        &swapchain->handle);
+
+    if (result != VK_SUCCESS) {
+        s_Vk.destroySurface(
+            s_Vk.instance, 
+            swapchain->surface, 
+            &s_Vk.allocator);
+
+        palFree(s_Graphics.allocator, swapchain);
+        return vkResultToPal(result);
+    }
+
+    *outSwapchain = (PalSwapchain*)swapchain;
+    return PAL_RESULT_SUCCESS;
+}
+
+static void PAL_CALL vkDestroySwapchain(PalSwapchain* swapchain)
+{
+    Swapchain* _swapchain = (Swapchain*)swapchain;
+    _swapchain->device->destroySwapchain(
+        _swapchain->device->handle,
+        _swapchain->handle,
+        &s_Vk.allocator
+    );
+
+    s_Vk.destroySurface(s_Vk.instance, _swapchain->surface, &s_Vk.allocator);
+    palFree(s_Graphics.allocator, _swapchain);
 }
 
 static PalGPUBackend s_VkBackend = {
@@ -1679,7 +1877,9 @@ static PalGPUBackend s_VkBackend = {
     .createGPUCommandQueue = vkCreateGPUCommandQueue,
     .destroyGPUCommandQueue = vkDestroyGPUCommandQueue,
     .canCommandQueuePresent = vkCanCommandQueuePresent,
-    .getSwapchainCapabilities = vkQuerySwapchainCapabilities
+    .getSwapchainCapabilities = vkQuerySwapchainCapabilities,
+    .createSwapchain = vkCreateSwapchain,
+    .destroySwapchain = vkDestroySwapchain
 };
 
 #endif // PAL_HAS_VULKAN
@@ -1701,13 +1901,23 @@ PalResult PAL_CALL palInitGraphics(
     }
 
     s_Graphics.allocator = allocator;
+    s_Graphics.maxHandleData = 16;
+    s_Graphics.handleData = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(HandleData) * s_Graphics.maxHandleData, 
+        0);
+
+    if (!s_Graphics.handleData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
 #if PAL_HAS_VULKAN
     PalResult ret = vkInitGraphics(enableDebugLayer);
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
 
-    AttachBackend* backend = &s_Graphics.backends[s_Graphics.backendCount++];
+    BackendData* backend = &s_Graphics.backends[s_Graphics.backendCount++];
     backend->base = &s_VkBackend;
     backend->count = 0;
     backend->startIndex = 0;
@@ -1727,6 +1937,7 @@ void PAL_CALL palShutdownGraphics()
     vkShutdownGraphics();
 #endif // PAL_HAS_VULKAN
 
+    palFree(s_Graphics.allocator, s_Graphics.handleData);
     memset(&s_Graphics, 0, sizeof(s_Graphics));
     s_Graphics.initialized = false;
 }
@@ -1758,16 +1969,16 @@ PalResult PAL_CALL palEnumerateGPUAdapters(
 
     int _count = outAdapters ? *count : 0;
     for (int i = 0; i < s_Graphics.backendCount; i++) {
-        AttachBackend* backend = &s_Graphics.backends[i];
+        BackendData* backend = &s_Graphics.backends[i];
         if (outAdapters) {
             // offset into the array so all backends write at the correct index
             PalGPUAdapter** adapters = &outAdapters[backend->startIndex];
             result = backend->base->enumerateGPUAdapters(&_count, adapters);
 
             for (int i = 0; i < backend->count; i++) {
-                AdapterData* data = getFreeAdapterData();
-                data->adapter = adapters[i];
+                HandleData* data = getFreeHandleData();
                 data->backend = backend->base;
+                data->handle = adapters[i];
             }
 
         } else {
@@ -1803,7 +2014,7 @@ PalResult PAL_CALL palGetGPUAdapterInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    AdapterData* data = findAdapterData(adapter);
+    HandleData* data = findHandleData(adapter);
     if (data) {
         return data->backend->getGPUAdapterInfo(adapter, info);
     }
@@ -1823,7 +2034,7 @@ PalResult PAL_CALL palGetGPUAdapterCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    AdapterData* data = findAdapterData(adapter);
+    HandleData* data = findHandleData(adapter);
     if (data) {
         return data->backend->getGPUAdapterCapabilities(adapter, caps);
     }
@@ -1847,12 +2058,14 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
         !backend->createGPUCommandQueue     ||
         !backend->destroyGPUCommandQueue    ||
         !backend->canCommandQueuePresent    ||
+        !backend->createSwapchain           ||
+        !backend->destroySwapchain          ||
         !backend->getSwapchainCapabilities) {
         return PAL_RESULT_INVALID_GPU_BACKEND;
     }
     // clang-format on
 
-    AttachBackend* attached = &s_Graphics.backends[s_Graphics.backendCount++];
+    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
     attached->base = backend;
     attached->startIndex = 0;
     attached->count = 0;
@@ -1878,7 +2091,7 @@ PalResult PAL_CALL palCreateGPUDevice(
     }
 
     // check if the adapter is from PAL (custom or internal backend)
-    AdapterData* adapterData = findAdapterData(adapter);
+    HandleData* adapterData = findHandleData(adapter);
     if (!adapterData) {
         return PAL_RESULT_INVALID_GPU_ADAPTER;
     }
@@ -1891,14 +2104,13 @@ PalResult PAL_CALL palCreateGPUDevice(
     }
 
     // create a slot for the created device
-    DeviceData* deviceData = getFreeDeviceData();
+    HandleData* deviceData = getFreeHandleData();
     if (!deviceData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     deviceData->backend = adapterData->backend;
-    deviceData->device = device;
-    deviceData->adapter = adapter;
+    deviceData->handle = device;
 
     *outDevice = device;
     return PAL_RESULT_SUCCESS;
@@ -1907,7 +2119,7 @@ PalResult PAL_CALL palCreateGPUDevice(
 void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device)
 {
     if (s_Graphics.initialized && device) {
-        DeviceData* data = findDeviceData(device);
+        HandleData* data = findHandleData(device);
         if (data) {
             data->backend->destroyGPUDevice(device);
             data->used = false;
@@ -1928,7 +2140,7 @@ PalResult PAL_CALL palCreateGPUCommandQueue(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    DeviceData* data = findDeviceData(device);
+    HandleData* data = findHandleData(device);
     if (!data) {
         return PAL_RESULT_INVALID_GPU_DEVICE;
     }
@@ -1944,15 +2156,14 @@ PalResult PAL_CALL palCreateGPUCommandQueue(
         return ret;
     }
 
-    // create a slot for the created device
-    CommandQueueData* queueData = getFreeCommandQueueData();
+    // create a slot for the created command queue
+    HandleData* queueData = getFreeHandleData();
     if (!queueData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     queueData->backend = data->backend;
-    queueData->queue = queue;
-    queueData->device = device;
+    queueData->handle = queue;
 
     *outQueue = queue;
     return PAL_RESULT_SUCCESS;
@@ -1961,7 +2172,7 @@ PalResult PAL_CALL palCreateGPUCommandQueue(
 void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
 {
     if (s_Graphics.initialized && queue) {
-        CommandQueueData* data = findCommandQueueData(queue);
+        HandleData* data = findHandleData(queue);
         if (data) {
             data->backend->destroyGPUCommandQueue(queue);
             data->used = false;
@@ -1974,7 +2185,7 @@ bool PAL_CALL palCanCommandQueuePresent(
     PalGPUWindow* window)
 {
     if (s_Graphics.initialized && queue) {
-        CommandQueueData* data = findCommandQueueData(queue);
+        HandleData* data = findHandleData(queue);
         if (data) {
             return data->backend->canCommandQueuePresent(queue, window);
         }
@@ -2000,7 +2211,7 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    AdapterData* adapterData = findAdapterData(adapter);
+    HandleData* adapterData = findHandleData(adapter);
     if (!adapterData) {
         return PAL_RESULT_INVALID_GPU_ADAPTER;
     }
@@ -2009,4 +2220,53 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         adapter,
         window,
         caps);
+}
+
+PalResult PAL_CALL palCreateSwapchain(
+    PalGPUCommandQueue* queue,
+    PalGPUWindow* window,
+    const PalSwapchainCreateInfo* info,
+    PalSwapchain** outSwapchain)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!queue || !window || !info || !outSwapchain) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* queueData = findHandleData(queue);
+    if (!queueData) {
+        return PAL_RESULT_INVALID_GPU_COMMAND_QUEUE;
+    }
+
+    PalResult ret;
+    PalSwapchain* swapchain = nullptr;
+    ret = queueData->backend->createSwapchain(queue, window, info, &swapchain);
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    // create a slot for the created swapchain
+    HandleData* swapchainData = getFreeHandleData();
+    if (!swapchainData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+    swapchainData->backend = queueData->backend;
+    swapchainData->handle = swapchain;
+
+    *outSwapchain = swapchain;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
+{
+    if (s_Graphics.initialized && swapchain) {
+        HandleData* data = findHandleData(swapchain);
+        if (data) {
+            data->backend->destroySwapchain(swapchain);
+            data->used = false;
+        }
+    }
 }
