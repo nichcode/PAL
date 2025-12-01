@@ -414,8 +414,8 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_SWAPCHAIN:
             return "Invalid swapchain";
 
-        case PAL_RESULT_INVALID_GPU_BUFFER:
-            return "Invalid GPU buffer";
+        case PAL_RESULT_INVALID_SWAPCHAIN_BUFFER_INDEX:
+            return "Invalid swapchain buffer index";
     }
     return "Unknown";
 }

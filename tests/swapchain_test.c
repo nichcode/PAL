@@ -320,24 +320,15 @@ bool swapchainTest()
 
     // get the number of buffers the swapchain has
     // this should match the buffers used to create the swapchain
-    // for simplicity, you can only create two render target and use 
-    // them for rendering without creating one for each seperate buffer
-    Int32 bufferCount = 1; // we need only one buffer
-    PalGPUBuffer* buffers[1]; 
-    result = palGetSwapchainBuffers(swapchain, &bufferCount, buffers);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get swapchain buffers: %s", error);
-        return false;
-    }
+    Uint32 swapchainBufferCount = palGetSwapchainBufferCount(swapchain);
+    palLog(nullptr, "Swapchain buffer count: %d", swapchainBufferCount);
 
-    // since we wont render in this example, we just create one rtv
+    // create a render target view for the first swapchain buffer
     PalRenderTargetView* rtv = nullptr;
-    result = palCreateRenderTargetView(swapchain, buffers[0], &rtv);
+    result = palCreateRenderTargetView(swapchain, 0, &rtv);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create render target view: %s", error);
-        palFree(nullptr, buffers);
         return false;
     }
 

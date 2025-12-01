@@ -308,10 +308,12 @@ typedef struct {
 } CommandQueue;
 
 typedef struct {
+    Int32 bufferCount;
     VkFormat format;
     Device* device;
     VkSurfaceKHR surface;
     VkSwapchainKHR handle;
+    VkImage* buffers;
 } Swapchain;
 
 typedef struct {
@@ -1876,6 +1878,42 @@ static PalResult PAL_CALL vkCreateSwapchain(
         return vkResultToPal(result);
     }
 
+    // get all images of the created swapchain
+    Int32 count = 0;
+    result = swapchain->device->getSwapchainImages(
+        swapchain->device->handle, 
+        swapchain->handle, 
+        &count,
+        nullptr);
+
+    swapchain->buffers = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkImage) * count, 
+        0);
+
+    if (!swapchain->buffers) {
+        swapchain->device->destroySwapchain(
+            swapchain->device->handle,
+            swapchain->handle,
+            &s_Vk.allocator
+        );
+
+        s_Vk.destroySurface(
+            s_Vk.instance, 
+            swapchain->surface, 
+            &s_Vk.allocator);
+
+        palFree(s_Graphics.allocator, swapchain);
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+    
+    swapchain->bufferCount = count;
+    swapchain->device->getSwapchainImages(
+        swapchain->device->handle, 
+        swapchain->handle, 
+        &count,
+        swapchain->buffers);
+    
     *outSwapchain = (PalSwapchain*)swapchain;
     return PAL_RESULT_SUCCESS;
 }
@@ -1890,62 +1928,29 @@ static void PAL_CALL vkDestroySwapchain(PalSwapchain* swapchain)
     );
 
     s_Vk.destroySurface(s_Vk.instance, _swapchain->surface, &s_Vk.allocator);
+    palFree(s_Graphics.allocator, _swapchain->buffers);
     palFree(s_Graphics.allocator, _swapchain);
 }
 
-PalResult PAL_CALL vkGetSwapchainBuffers(
-    PalSwapchain* swapchain,
-    Int32* count,
-    PalGPUBuffer** outBuffers)
+Uint32 PAL_CALL vkGetSwapchainBufferCount(PalSwapchain* swapchain)
 {
-    VkResult result = VK_SUCCESS;
-    Uint32 _count = 0;
-    VkImage* images = nullptr;
     Swapchain* _swapchain = (Swapchain*)swapchain;
-
-    result = _swapchain->device->getSwapchainImages(
-        _swapchain->device->handle, 
-        _swapchain->handle, 
-        &_count,
-        nullptr);
-
-    if (result != VK_SUCCESS) {
-        return vkResultToPal(result);
-    }
-
-    if (!outBuffers) {
-        *count = _count;
-        return PAL_RESULT_SUCCESS;
-    }
-
-    images = palAllocate(s_Graphics.allocator, sizeof(VkImage) * _count, 0);
-    if (!images) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    _swapchain->device->getSwapchainImages(
-        _swapchain->device->handle, 
-        _swapchain->handle, 
-        &_count,
-        images);
-
-    for (int i = 0; i < _count && i < *count; i++) {
-        outBuffers[i] = (PalGPUBuffer*)images[i];
-    }
-
-    palFree(s_Graphics.allocator, images);
-    return PAL_RESULT_SUCCESS;
+    return _swapchain->bufferCount;
 }
 
 PalResult PAL_CALL vkCreateRenderTargetView(
     PalSwapchain* swapchain,
-    PalGPUBuffer* buffer,
+    Uint32 bufferIndex,
     PalRenderTargetView** outRtv)
 {
     VkResult result = VK_SUCCESS;
     RenderTargetView* rtv = nullptr;
     Swapchain* _swapchain = (Swapchain*)swapchain;
+    if (bufferIndex < 0 && bufferIndex >= _swapchain->bufferCount) {
+        return PAL_RESULT_INVALID_SWAPCHAIN_BUFFER_INDEX;
+    }
 
+    VkImage buffer = _swapchain->buffers[bufferIndex];
     rtv = palAllocate(s_Graphics.allocator, sizeof(RenderTargetView), 0);
     if (!rtv) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -1954,7 +1959,7 @@ PalResult PAL_CALL vkCreateRenderTargetView(
     VkImageViewCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.format = _swapchain->format;
-    createInfo.image = (VkImage)buffer;
+    createInfo.image = buffer;
     createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     createInfo.subresourceRange.levelCount = 1;
     createInfo.subresourceRange.layerCount = 1;
@@ -1995,7 +2000,7 @@ static PalGPUBackend s_VkBackend = {
     .getSwapchainCapabilities = vkQuerySwapchainCapabilities,
     .createSwapchain = vkCreateSwapchain,
     .destroySwapchain = vkDestroySwapchain,
-    .getSwapchainBuffers = vkGetSwapchainBuffers,
+    .getSwapchainBufferCount = vkGetSwapchainBufferCount,
     .createRenderTargetView = vkCreateRenderTargetView,
     .destroyRenderTargetView = vkDestroyRenderTargetView
 };
@@ -2179,7 +2184,7 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
         !backend->createSwapchain           ||
         !backend->destroySwapchain          ||
         !backend->getSwapchainCapabilities  ||
-        !backend->getSwapchainBuffers       ||
+        !backend->getSwapchainBufferCount   ||
         !backend->createRenderTargetView    ||
         !backend->destroyRenderTargetView) {
         return PAL_RESULT_INVALID_GPU_BACKEND;
@@ -2392,44 +2397,30 @@ void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
     }
 }
 
-PalResult PAL_CALL palGetSwapchainBuffers(
-    PalSwapchain* swapchain,
-    Int32* count,
-    PalGPUBuffer** outBuffers)
+Uint32 PAL_CALL palGetSwapchainBufferCount(PalSwapchain* swapchain)
 {
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!swapchain || !count) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (*count == 0 && outBuffers) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    if (!s_Graphics.initialized || !swapchain) {
+        return 0;
     }
 
     HandleData* swapchainData = findHandleData(swapchain);
     if (!swapchainData) {
-        return PAL_RESULT_INVALID_SWAPCHAIN;
+        return 0;
     }
 
-    return swapchainData->backend->getSwapchainBuffers(
-        swapchain, 
-        count, 
-        outBuffers);
+    return swapchainData->backend->getSwapchainBufferCount(swapchain);
 }
 
 PalResult PAL_CALL palCreateRenderTargetView(
     PalSwapchain* swapchain,
-    PalGPUBuffer* buffer,
+    Uint32 bufferIndex,
     PalRenderTargetView** outRtv)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!swapchain || !buffer || !outRtv) {
+    if (!swapchain || !outRtv) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -2442,7 +2433,7 @@ PalResult PAL_CALL palCreateRenderTargetView(
     PalRenderTargetView* rtv = nullptr;
     ret = swapchainData->backend->createRenderTargetView(
         swapchain, 
-        buffer, 
+        bufferIndex,
         &rtv);
 
     if (ret != PAL_RESULT_SUCCESS) {
