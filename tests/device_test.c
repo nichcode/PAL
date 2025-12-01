@@ -2,11 +2,11 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
-bool gpuDeviceTest()
+bool deviceTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "GPU Device Test");
+    palLog(nullptr, "Device Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -18,44 +18,44 @@ bool gpuDeviceTest()
         return false;
     }
 
-    // enumerate all available GPUs from internal and custom backends
+    // enumerate all available adapters
     Int32 count = 0;
-    result = palEnumerateGPUAdapters(&count, nullptr);
+    result = palEnumerateAdapters(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query Adapters (GPUs): %s", error);
+        palLog(nullptr, "Failed to get query adapters: %s", error);
         return false;
     }
 
     if (count == 0) {
-        palLog(nullptr, "No Adapters found");
+        palLog(nullptr, "No adapters found");
         return false;
     }
-    palLog(nullptr, "Adapter (GPUs) Count: %d", count);
+    palLog(nullptr, "Adapter count: %d", count);
 
     // allocate an array of adapters or use a fixed array
-    // Example: PalGPUAdapter* adapters[12];
-    PalGPUAdapter** adapters = nullptr;
-    adapters = palAllocate(nullptr, sizeof(PalGPUAdapter*) * count, 0);
+    // Example: PalAdapter* adapters[12];
+    PalAdapter** adapters = nullptr;
+    adapters = palAllocate(nullptr, sizeof(PalAdapter*) * count, 0);
     if (!adapters) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
     }
 
-    result = palEnumerateGPUAdapters(&count, adapters);
+    result = palEnumerateAdapters(&count, adapters);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query Adapters (GPUs): %s", error);
+        palLog(nullptr, "Failed to get query adapters: %s", error);
         return false;
     }
 
     // filter the adapters for Vulkan
-    PalGPUAdapter* vulkanAdapter = nullptr;
-    PalGPUAdapterInfo info = {0};
+    PalAdapter* vulkanAdapter = nullptr;
+    PalAdapterInfo info = {0};
 
     for (Int32 i = 0; i < count; i++) {
-        PalGPUAdapter* adapter = adapters[i];
-        result = palGetGPUAdapterInfo(adapter, &info);
+        PalAdapter* adapter = adapters[i];
+        result = palGetAdapterInfo(adapter, &info);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter info: %s", error);
@@ -64,7 +64,7 @@ bool gpuDeviceTest()
         }
 
         // check if its Vulkan
-        if (info.apiType == PAL_GPU_API_TYPE_VULKAN) {
+        if (info.apiType == PAL_ADAPTER_API_TYPE_VULKAN) {
             vulkanAdapter = adapter;
             break;
         }
@@ -77,56 +77,32 @@ bool gpuDeviceTest()
     }
 
     // get capabilities about the adapter
-    PalGPUAdapterCapabilities caps = {0};
-    result = palGetGPUAdapterCapabilities(vulkanAdapter, &caps);
+    PalAdapterCapabilities caps = {0};
+    result = palGetAdapterCapabilities(vulkanAdapter, &caps);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get adapter info: %s", error);
         return false;
     }
 
-    // check if we support a graphics command queue
-    const char* msg = "This Adapter (GPU) does not have any graphics queues";
-    if (!(caps.features & PAL_GPU_FEATURE_SWAPCHAIN)) {
-        palLog(nullptr, msg);
-        return false;
-    }
-
-    if (!caps.maxGraphicsQueues) {
-        palLog(nullptr, msg);
-        return false;
-    }
-
     // create a device with the vulkan adapter
-    PalGPUDevice* device = nullptr;
-    PalGPUFeatures features = PAL_GPU_FEATURE_SWAPCHAIN;
+    PalDevice* device = nullptr;
+    PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
     
     // enable multi viewport if supported
-    if (caps.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
-        features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
+    if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
+        features |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
     }
 
-    result = palCreateGPUDevice(vulkanAdapter, features, &device);
+    result = palCreateDevice(vulkanAdapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);
         return false;
     }
 
-    PalGPUCommandQueueType queueType = PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS;
-    PalGPUCommandQueue* graphicsQueue = nullptr;
-    result = palCreateGPUCommandQueue(device, queueType, &graphicsQueue);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create command queue: %s", error);
-        return false;
-    }
-
-    // destroy the command queue
-    palDestroyGPUCommandQueue(graphicsQueue);
-
     // destroy the device
-    palDestroyGPUDevice(device);
+    palDestroyDevice(device);
 
     // shutdown the graphics system
     palShutdownGraphics();

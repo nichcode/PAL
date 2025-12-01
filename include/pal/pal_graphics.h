@@ -196,24 +196,24 @@ typedef enum {
 } PalShaderFormats;
 
 typedef enum {
-    PAL_GPU_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(0),
-    PAL_GPU_FEATURE_SAMPLE_RATE_SHADING = PAL_BIT64(1),
-    PAL_GPU_FEATURE_MULTI_VIEWPORT = PAL_BIT64(2),
-    PAL_GPU_FEATURE_TIMELINE_SEMAPHORE = PAL_BIT64(3),
-    PAL_GPU_FEATURE_TESSELLATION_SHADER = PAL_BIT64(4),
-    PAL_GPU_FEATURE_GEOMETRY_SHADER = PAL_BIT64(5),
-    PAL_GPU_FEATURE_SHADER_FLOAT16 = PAL_BIT64(6),
-    PAL_GPU_FEATURE_SHADER_FLOAT64 = PAL_BIT64(7),
-    PAL_GPU_FEATURE_SHADER_INT16 = PAL_BIT64(8),
-    PAL_GPU_FEATURE_SHADER_INT64 = PAL_BIT64(9),
-    PAL_GPU_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(10),
-    PAL_GPU_FEATURE_RAY_TRACING = PAL_BIT64(11),
-    PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(12),
-    PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
-    PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
-    PAL_GPU_FEATURE_SWAPCHAIN = PAL_BIT64(15),
-    PAL_GPU_FEATURE_MULTI_VIEW = PAL_BIT64(16)
-} PalGPUFeatures;
+    PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(0),
+    PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING = PAL_BIT64(1),
+    PAL_ADAPTER_FEATURE_MULTI_VIEWPORT = PAL_BIT64(2),
+    PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE = PAL_BIT64(3),
+    PAL_ADAPTER_FEATURE_TESSELLATION_SHADER = PAL_BIT64(4),
+    PAL_ADAPTER_FEATURE_GEOMETRY_SHADER = PAL_BIT64(5),
+    PAL_ADAPTER_FEATURE_SHADER_FLOAT16 = PAL_BIT64(6),
+    PAL_ADAPTER_FEATURE_SHADER_FLOAT64 = PAL_BIT64(7),
+    PAL_ADAPTER_FEATURE_SHADER_INT16 = PAL_BIT64(8),
+    PAL_ADAPTER_FEATURE_SHADER_INT64 = PAL_BIT64(9),
+    PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(10),
+    PAL_ADAPTER_FEATURE_RAY_TRACING = PAL_BIT64(11),
+    PAL_ADAPTER_FEATURE_MESH_SHADER = PAL_BIT64(12),
+    PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
+    PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
+    PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(15),
+    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16)
+} PalAdapterFeatures;
 
 typedef enum {
     PAL_LOAD_OP_LOAD,
@@ -258,7 +258,7 @@ typedef struct {
     Uint32 maxUniformBufferSize;
     Uint32 maxStorageBufferSize;
     Uint32 maxPushConstantSize;
-    PalGPUFeatures features;
+    PalAdapterFeatures features;
 } PalAdapterCapabilities;
 
 // typedef struct {
@@ -342,12 +342,12 @@ typedef struct {
         PalAdapter* adapter,
         PalAdapterCapabilities* caps);
 
-    // PalResult PAL_CALL (*createGPUDevice)(
-    //     PalGPUAdapter* adapter,
-    //     PalGPUFeatures features,
-    //     PalGPUDevice** outDevice);
+    PalResult PAL_CALL (*createDevice)(
+        PalAdapter* adapter,
+        PalAdapterFeatures features,
+        PalDevice** outDevice);
 
-    // void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
+    void PAL_CALL (*destroyDevice)(PalDevice* device);
 
     // PalResult PAL_CALL (*createGPUCommandQueue)(
     //     PalGPUDevice* device,
@@ -412,14 +412,14 @@ PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps);
 
-// PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
+PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
-// PAL_API PalResult PAL_CALL palCreateGPUDevice(
-//     PalGPUAdapter* adapter,
-//     PalGPUFeatures features,
-//     PalGPUDevice** outDevice);
+PAL_API PalResult PAL_CALL palCreateDevice(
+    PalAdapter* adapter,
+    PalAdapterFeatures features,
+    PalDevice** outDevice);
 
-// PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);
+PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
 
 // PAL_API PalResult PAL_CALL palCreateGPUCommandQueue(
 //     PalGPUDevice* device,

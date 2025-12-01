@@ -296,10 +296,7 @@ typedef struct {
 
 typedef struct {
     bool dynamicRendering;
-    bool multiView;
-    bool swapchain;
     Int32 queueCount;
-    Int32 multiViewCount;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
@@ -463,7 +460,7 @@ static PalResult vkResultToPal(VkResult result)
     switch (result) {
         case VK_ERROR_FEATURE_NOT_PRESENT:
         case VK_ERROR_EXTENSION_NOT_PRESENT: {
-            return PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED;
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
 
         case VK_ERROR_OUT_OF_HOST_MEMORY:
@@ -860,7 +857,7 @@ static void vkShutdownGraphics()
     memset(&s_Vk, 0, sizeof(s_Vk));
 }
 
-static PalResult vkEnumerateAdapters(
+static PalResult _vkEnumerateAdapters(
     Int32* count, 
     PalAdapter** outAdapters)
 {
@@ -897,7 +894,7 @@ static PalResult vkEnumerateAdapters(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL vkGetAdapterInfo(
+static PalResult PAL_CALL _vkGetAdapterInfo(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
@@ -965,7 +962,7 @@ static PalResult PAL_CALL vkGetAdapterInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL vkGetAdapterCapabilities(
+static PalResult PAL_CALL _vkGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
@@ -1113,7 +1110,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             }
 
             if (mesh.meshShader && mesh.taskShader) {
-                caps->features |= PAL_GPU_FEATURE_MESH_SHADER;
+                caps->features |= PAL_ADAPTER_FEATURE_MESH_SHADER;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_fragment_shading_rate") == 0) {
@@ -1133,7 +1130,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             }
 
             if (frag.pipelineFragmentShadingRate) {
-                caps->features |= PAL_GPU_FEATURE_VARIABLE_RATE_SHADING;
+                caps->features |= PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING;
             }
 
         } else if (strcmp(props->extensionName, "VK_EXT_descriptor_indexing") == 0) {
@@ -1153,16 +1150,16 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             }
 
             if (desc.shaderSampledImageArrayNonUniformIndexing) {
-                caps->features |= PAL_GPU_FEATURE_DESCRIPTOR_INDEXING;
+                caps->features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_swapchain") == 0) {
             // swapchain
-            caps->features |= PAL_GPU_FEATURE_SWAPCHAIN;
+            caps->features |= PAL_ADAPTER_FEATURE_SWAPCHAIN;
 
         } else if (strcmp(props->extensionName, "VK_KHR_dynamic_rendering") == 0) {
             // dynamic rendering
-            caps->features |= PAL_GPU_FEATURE_DYNAMIC_RENDERING;
+            caps->features |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
 
         } else if (strcmp(props->extensionName, "VK_KHR_shader_float16_int8") == 0) {
             // shader float16
@@ -1181,7 +1178,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             }
 
             if (shader16.shaderFloat16) {
-                caps->features |= PAL_GPU_FEATURE_SHADER_FLOAT16;
+                caps->features |= PAL_ADAPTER_FEATURE_SHADER_FLOAT16;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_timeline_semaphore") == 0) {
@@ -1201,7 +1198,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             }
 
             if (timeline.timelineSemaphore) {
-                caps->features |= PAL_GPU_FEATURE_TIMELINE_SEMAPHORE;
+                caps->features |= PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
             }
 
         } else if (strcmp(props->extensionName, "VK_KHR_multiview") == 0) {
@@ -1221,7 +1218,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             }
 
             if (view.multiview) {
-                caps->features |= PAL_GPU_FEATURE_MULTI_VIEW;
+                caps->features |= PAL_ADAPTER_FEATURE_MULTI_VIEW;
             }
         }
     }
@@ -1246,7 +1243,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
         }
 
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
-            caps->features |= PAL_GPU_FEATURE_RAY_TRACING;
+            caps->features |= PAL_ADAPTER_FEATURE_RAY_TRACING;
         }
     }
     // clang-format on
@@ -1255,377 +1252,363 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
 
     // check for additional features
     if (features.geometryShader) {
-        caps->features |= PAL_GPU_FEATURE_GEOMETRY_SHADER;
+        caps->features |= PAL_ADAPTER_FEATURE_GEOMETRY_SHADER;
     }
 
     if (features.multiViewport) {
-        caps->features |= PAL_GPU_FEATURE_MULTI_VIEWPORT;
+        caps->features |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
     }
 
     if (features.samplerAnisotropy) {
-        caps->features |= PAL_GPU_FEATURE_SAMPLER_ANISOTROPY;
+        caps->features |= PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY;
     }
 
     if (features.sampleRateShading) {
-        caps->features |= PAL_GPU_FEATURE_SAMPLE_RATE_SHADING;
+        caps->features |= PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING;
     }
 
     if (features.shaderFloat64) {
-        caps->features |= PAL_GPU_FEATURE_SHADER_FLOAT64;
+        caps->features |= PAL_ADAPTER_FEATURE_SHADER_FLOAT64;
     }
 
     if (features.shaderInt64) {
-        caps->features |= PAL_GPU_FEATURE_SHADER_INT64;
+        caps->features |= PAL_ADAPTER_FEATURE_SHADER_INT64;
     }
 
     if (features.shaderInt16) {
-        caps->features |= PAL_GPU_FEATURE_SHADER_INT16;
+        caps->features |= PAL_ADAPTER_FEATURE_SHADER_INT16;
     }
 
     if (features.tessellationShader) {
-        caps->features |= PAL_GPU_FEATURE_TESSELLATION_SHADER;
+        caps->features |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
     }
 
     palFree(s_Graphics.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
 }
 
-// static PalResult PAL_CALL vkCreateGPUDevice(
-//     PalGPUAdapter* adapter,
-//     PalGPUFeatures features,
-//     PalGPUDevice** outDevice)
-// { 
-//     float priority = 1.0f;
-//     Uint32 count = 0;
-//     VkResult ret = VK_SUCCESS;
-//     Device* device = nullptr;
-//     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+static PalResult PAL_CALL _vkCreateDevice(
+    PalAdapter* adapter,
+    PalAdapterFeatures features,
+    PalDevice** outDevice)
+{ 
+    float priority = 1.0f;
+    Uint32 count = 0;
+    VkResult ret = VK_SUCCESS;
+    Device* device = nullptr;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
 
-//     VkQueueFamilyProperties* queueProps = nullptr;
-//     VkDeviceQueueCreateInfo* queueCreateInfos = nullptr;
-//     s_Vk.getPhysicalDeviceQueueFamilyProperties(
-//         phyDevice, 
-//         &count, 
-//         nullptr);
+    VkQueueFamilyProperties* queueProps = nullptr;
+    VkDeviceQueueCreateInfo* queueCreateInfos = nullptr;
+    s_Vk.getPhysicalDeviceQueueFamilyProperties(
+        phyDevice, 
+        &count, 
+        nullptr);
 
-//     queueProps = palAllocate(
-//         s_Graphics.allocator, 
-//         sizeof(VkQueueFamilyProperties) * count, 
-//         0);
+    queueProps = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkQueueFamilyProperties) * count, 
+        0);
 
-//     queueCreateInfos = palAllocate(
-//         s_Graphics.allocator, 
-//         sizeof(VkDeviceQueueCreateInfo) * count, 
-//         0);
+    queueCreateInfos = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(VkDeviceQueueCreateInfo) * count, 
+        0);
 
-//     device = palAllocate(s_Graphics.allocator, sizeof(Device), 0);
-//     if (!queueProps || !queueCreateInfos || !device) {
-//         return PAL_RESULT_OUT_OF_MEMORY;
-//     }
+    device = palAllocate(s_Graphics.allocator, sizeof(Device), 0);
+    if (!queueProps || !queueCreateInfos || !device) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
 
-//     device->queueCount = count;
-//     device->phyDevice = phyDevice;
-//     device->swapchain = false;
-//     device->multiView = false;
-//     device->dynamicRendering = false;
-//     device->multiViewCount = 1;
+    device->queueCount = count;
+    device->phyDevice = phyDevice;
+    device->dynamicRendering = false;
     
-//     device->phyQueues = palAllocate(
-//         s_Graphics.allocator, 
-//         sizeof(PhysicalQueue) * count, 
-//         0);
+    device->phyQueues = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(PhysicalQueue) * count, 
+        0);
         
-//     if (!device->phyQueues) {
-//         return PAL_RESULT_OUT_OF_MEMORY;
-//     }
+    if (!device->phyQueues) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
 
-//     s_Vk.getPhysicalDeviceQueueFamilyProperties(
-//         phyDevice, 
-//         &count, 
-//         queueProps);
+    s_Vk.getPhysicalDeviceQueueFamilyProperties(
+        phyDevice, 
+        &count, 
+        queueProps);
         
-//     for (int i = 0; i < count; i++) {
-//         queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-//         queueCreateInfos[i].pNext = nullptr;
-//         queueCreateInfos[i].pQueuePriorities = &priority;
-//         queueCreateInfos[i].queueFamilyIndex = i;
-//         queueCreateInfos[i].queueCount = queueProps[i].queueCount;
-//         queueCreateInfos[i].flags = 0;
-//     }
+    for (int i = 0; i < count; i++) {
+        queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfos[i].pNext = nullptr;
+        queueCreateInfos[i].pQueuePriorities = &priority;
+        queueCreateInfos[i].queueFamilyIndex = i;
+        queueCreateInfos[i].queueCount = queueProps[i].queueCount;
+        queueCreateInfos[i].flags = 0;
+    }
 
-//     // build features and extensions capabilities
-//     VkPhysicalDeviceFeatures coreFeatures = {0};
-//     if (features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
-//         coreFeatures.samplerAnisotropy = true;
-//     }
+    // build features and extensions capabilities
+    VkPhysicalDeviceFeatures coreFeatures = {0};
+    if (features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
+        coreFeatures.samplerAnisotropy = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
-//         coreFeatures.sampleRateShading = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
+        coreFeatures.sampleRateShading = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
-//         coreFeatures.multiViewport = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
+        coreFeatures.multiViewport = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
-//         coreFeatures.tessellationShader = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+        coreFeatures.tessellationShader = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
-//         coreFeatures.geometryShader = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
+        coreFeatures.geometryShader = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_SHADER_INT16) {
-//         coreFeatures.shaderInt16 = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
+        coreFeatures.shaderInt16 = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_SHADER_INT64) {
-//         coreFeatures.shaderInt64 = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
+        coreFeatures.shaderInt64 = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
-//         coreFeatures.shaderFloat64 = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
+        coreFeatures.shaderFloat64 = true;
+    }
 
-//     // extensions and features2
-//     int extCount = 0;
-//     const char* extensions[16] = {0};
+    // extensions and features2
+    int extCount = 0;
+    const char* extensions[16] = {0};
 
-//     // clang-format off
+    // clang-format off
 
-//     const void* start = nullptr;
-//     VkPhysicalDeviceTimelineSemaphoreFeatures timeline = {0};
-//     timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    const void* start = nullptr;
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline = {0};
+    timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
 
-//     VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
-//     shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
+    VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
+    shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
 
-//     VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
-//     mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
+    mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 
-//     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
-//     VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
-//     ray.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-//     acc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
+    ray.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    acc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 
-//     VkPhysicalDeviceFragmentShadingRateFeaturesKHR vrs = {0};
-//     vrs.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR vrs = {0};
+    vrs.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
 
-//     VkPhysicalDeviceDescriptorIndexingFeatures descIndex = {0};
-//     descIndex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    VkPhysicalDeviceDescriptorIndexingFeatures descIndex = {0};
+    descIndex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
-//     VkPhysicalDeviceMultiviewFeatures multiView = {0};
-//     multiView.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
+    VkPhysicalDeviceMultiviewFeatures multiView = {0};
+    multiView.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
 
-//     // clang-format on
+    // clang-format on
 
-//     if (features & PAL_GPU_FEATURE_SWAPCHAIN) {
-//         extensions[extCount++] = "VK_KHR_swapchain";
-//         device->swapchain = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
+        extensions[extCount++] = "VK_KHR_swapchain";
+    }
 
-//     if (features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
-//         extensions[extCount++] = "VK_KHR_dynamic_rendering";
-//         device->dynamicRendering = true;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
+        extensions[extCount++] = "VK_KHR_dynamic_rendering";
+        device->dynamicRendering = true;
+    }
 
-//     if (features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
-//         extensions[extCount++] = "VK_KHR_timeline_semaphore";
-//         timeline.timelineSemaphore = true;
-//         start = &timeline;
-//     }
+    if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        extensions[extCount++] = "VK_KHR_timeline_semaphore";
+        timeline.timelineSemaphore = true;
+        start = &timeline;
+    }
 
-//     if (features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
-//         extensions[extCount++] = "VK_KHR_shader_float16_int8";
-//         shader16.shaderFloat16 = true;
+    if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
+        extensions[extCount++] = "VK_KHR_shader_float16_int8";
+        shader16.shaderFloat16 = true;
 
-//         if (timeline.timelineSemaphore) {
-//             timeline.pNext = &shader16;
-//         }
-//         start = &shader16;
-//     }
+        if (timeline.timelineSemaphore) {
+            timeline.pNext = &shader16;
+        }
+        start = &shader16;
+    }
 
-//     if (features & PAL_GPU_FEATURE_RAY_TRACING) {
-//         extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
-//         extensions[extCount++] = "VK_KHR_acceleration_structure";
-//         ray.rayTracingPipeline = true;
-//         acc.accelerationStructure = true;
+    if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
+        extensions[extCount++] = "VK_KHR_acceleration_structure";
+        ray.rayTracingPipeline = true;
+        acc.accelerationStructure = true;
        
-//         if (shader16.shaderFloat16) {
-//             shader16.pNext = &ray;
+        if (shader16.shaderFloat16) {
+            shader16.pNext = &ray;
 
-//         } else if (timeline.timelineSemaphore) {
-//             // no shader16, check timeline
-//             timeline.pNext = &ray;
-//         }
-//         ray.pNext = &acc;
-//         start = &ray;
-//     }
+        } else if (timeline.timelineSemaphore) {
+            // no shader16, check timeline
+            timeline.pNext = &ray;
+        }
+        ray.pNext = &acc;
+        start = &ray;
+    }
 
-//     if (features & PAL_GPU_FEATURE_MESH_SHADER) {
-//         extensions[extCount++] = "VK_EXT_mesh_shader";
-//         mesh.meshShader = true;
-//         mesh.taskShader = true;
+    if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+        extensions[extCount++] = "VK_EXT_mesh_shader";
+        mesh.meshShader = true;
+        mesh.taskShader = true;
 
-//         if (acc.accelerationStructure) {
-//             acc.pNext = &mesh;
+        if (acc.accelerationStructure) {
+            acc.pNext = &mesh;
 
-//         } else if (shader16.shaderFloat16) {
-//             shader16.pNext = &mesh;
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &mesh;
 
-//         } else if (timeline.timelineSemaphore) {
-//             timeline.pNext = &mesh;
-//         }
-//         start = &mesh;
-//     }
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &mesh;
+        }
+        start = &mesh;
+    }
 
-//     if (features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
-//         extensions[extCount++] = "VK_KHR_fragment_shading_rate";
-//         vrs.pipelineFragmentShadingRate = true;
+    if (features & PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING) {
+        extensions[extCount++] = "VK_KHR_fragment_shading_rate";
+        vrs.pipelineFragmentShadingRate = true;
 
-//         if (mesh.meshShader) {
-//             mesh.pNext = &vrs;
+        if (mesh.meshShader) {
+            mesh.pNext = &vrs;
 
-//         } else if (acc.accelerationStructure) {
-//             acc.pNext = &vrs;
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &vrs;
 
-//         } else if (shader16.shaderFloat16) {
-//             shader16.pNext = &vrs;
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &vrs;
 
-//         } else if (timeline.timelineSemaphore) {
-//             timeline.pNext = &vrs;
-//         }
-//         start = &vrs;
-//     }
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &vrs;
+        }
+        start = &vrs;
+    }
 
-//     if (features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
-//         extensions[extCount++] = "VK_EXT_descriptor_indexing";
-//         descIndex.shaderSampledImageArrayNonUniformIndexing = true;
+    if (features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        extensions[extCount++] = "VK_EXT_descriptor_indexing";
+        descIndex.shaderSampledImageArrayNonUniformIndexing = true;
 
-//         if (vrs.pipelineFragmentShadingRate) {
-//             vrs.pNext = &descIndex;
+        if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &descIndex;
 
-//         } else if (mesh.meshShader) {
-//             mesh.pNext = &descIndex;
+        } else if (mesh.meshShader) {
+            mesh.pNext = &descIndex;
 
-//         } else if (acc.accelerationStructure) {
-//             acc.pNext = &descIndex;
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &descIndex;
 
-//         } else if (shader16.shaderFloat16) {
-//             shader16.pNext = &descIndex;
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &descIndex;
 
-//         } else if (timeline.timelineSemaphore) {
-//             timeline.pNext = &descIndex;
-//         }
-//         start = &descIndex;
-//     }
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &descIndex;
+        }
+        start = &descIndex;
+    }
 
-//     if (features & PAL_GPU_FEATURE_MULTI_VIEW) {
-//         extensions[extCount++] = "VK_KHR_multiview";
-//         multiView.multiview = true;
-//         device->multiView = true;
+    if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
+        extensions[extCount++] = "VK_KHR_multiview";
+        multiView.multiview = true;
 
-//         VkPhysicalDeviceMultiviewPropertiesKHR p = {0};
-//         p.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR;
+        if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
+            descIndex.pNext = &multiView;
 
-//         VkPhysicalDeviceProperties2 props = {0};
-//         props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-//         props.pNext = &p;
-//         s_Vk.getPhysicalDeviceProperties2(phyDevice, &props);
-//         device->multiViewCount = p.maxMultiviewViewCount;
+        } else if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &multiView;
 
-//         if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
-//             descIndex.pNext = &multiView;
+        } else if (mesh.meshShader) {
+            mesh.pNext = &multiView;
 
-//         } else if (vrs.pipelineFragmentShadingRate) {
-//             vrs.pNext = &multiView;
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &multiView;
 
-//         } else if (mesh.meshShader) {
-//             mesh.pNext = &multiView;
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &multiView;
 
-//         } else if (acc.accelerationStructure) {
-//             acc.pNext = &multiView;
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &multiView;
+        }
+        start = &multiView;
+    }
 
-//         } else if (shader16.shaderFloat16) {
-//             shader16.pNext = &multiView;
+    VkDeviceCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pEnabledFeatures = &coreFeatures;
+    createInfo.enabledExtensionCount = extCount;
+    createInfo.ppEnabledExtensionNames = extensions;
+    createInfo.pQueueCreateInfos = queueCreateInfos;
+    createInfo.queueCreateInfoCount = count;
+    createInfo.pNext = start;
 
-//         } else if (timeline.timelineSemaphore) {
-//             timeline.pNext = &multiView;
-//         }
-//         start = &multiView;
-//     }
+    ret = s_Vk.createDevice(
+        phyDevice, 
+        &createInfo, 
+        &s_Vk.allocator, 
+        &device->handle);
 
-//     VkDeviceCreateInfo createInfo = {0};
-//     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-//     createInfo.pEnabledFeatures = &coreFeatures;
-//     createInfo.enabledExtensionCount = extCount;
-//     createInfo.ppEnabledExtensionNames = extensions;
-//     createInfo.pQueueCreateInfos = queueCreateInfos;
-//     createInfo.queueCreateInfoCount = count;
-//     createInfo.pNext = start;
+    if (ret != VK_SUCCESS) {
+        palFree(s_Graphics.allocator, queueProps);
+        palFree(s_Graphics.allocator, queueCreateInfos);
+        palFree(s_Graphics.allocator, device->phyQueues);
+        palFree(s_Graphics.allocator, device);
+        return vkResultToPal(ret);
+    }
 
-//     ret = s_Vk.createDevice(
-//         phyDevice, 
-//         &createInfo, 
-//         &s_Vk.allocator, 
-//         &device->handle);
+    // get queues
+    for (int i = 0; i < count; i++) {
+        VkQueueFamilyProperties* data = &queueProps[i];
+        for (int j = 0; j < data->queueCount; j++) {
+            PhysicalQueue* queue = &device->phyQueues[i];
+            s_Vk.getDeviceQueue(device->handle, i, j, &queue->handle);
+            queue->usages = data->queueFlags;
+            queue->usedUsages = 0;
+            queue->familyIndex = i;
+            queue->phyDevice = phyDevice;
+        }        
+    }
 
-//     if (ret != VK_SUCCESS) {
-//         palFree(s_Graphics.allocator, queueProps);
-//         palFree(s_Graphics.allocator, queueCreateInfos);
-//         palFree(s_Graphics.allocator, device->phyQueues);
-//         palFree(s_Graphics.allocator, device);
-//         return vkResultToPal(ret);
-//     }
+    // load procs
+    device->acquireNextImage = (vkAcquireNextImageKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkAcquireNextImageKHR");
 
-//     // get queues
-//     for (int i = 0; i < count; i++) {
-//         VkQueueFamilyProperties* data = &queueProps[i];
-//         for (int j = 0; j < data->queueCount; j++) {
-//             PhysicalQueue* queue = &device->phyQueues[i];
-//             s_Vk.getDeviceQueue(device->handle, i, j, &queue->handle);
-//             queue->usages = data->queueFlags;
-//             queue->usedUsages = 0;
-//             queue->familyIndex = i;
-//             queue->phyDevice = phyDevice;
-//         }        
-//     }
+    device->createSwapchain = (vkCreateSwapchainKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkCreateSwapchainKHR");
 
-//     // load procs
-//     device->acquireNextImage = (vkAcquireNextImageKHRFn)s_Vk.getDeviceProcAddr(
-//         device->handle, 
-//         "vkAcquireNextImageKHR");
+    device->destroySwapchain = (vkDestroySwapchainKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkDestroySwapchainKHR");
 
-//     device->createSwapchain = (vkCreateSwapchainKHRFn)s_Vk.getDeviceProcAddr(
-//         device->handle, 
-//         "vkCreateSwapchainKHR");
+    device->getSwapchainImages = (vkGetSwapchainImagesKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkGetSwapchainImagesKHR");
 
-//     device->destroySwapchain = (vkDestroySwapchainKHRFn)s_Vk.getDeviceProcAddr(
-//         device->handle, 
-//         "vkDestroySwapchainKHR");
+    device->queuePresent = (vkQueuePresentKHRFn)s_Vk.getDeviceProcAddr(
+        device->handle, 
+        "vkQueuePresentKHR");
 
-//     device->getSwapchainImages = (vkGetSwapchainImagesKHRFn)s_Vk.getDeviceProcAddr(
-//         device->handle, 
-//         "vkGetSwapchainImagesKHR");
+    palFree(s_Graphics.allocator, queueProps);
+    palFree(s_Graphics.allocator, queueCreateInfos);
 
-//     device->queuePresent = (vkQueuePresentKHRFn)s_Vk.getDeviceProcAddr(
-//         device->handle, 
-//         "vkQueuePresentKHR");
+    *outDevice = (PalDevice*)device;
+    return PAL_RESULT_SUCCESS;
+}
 
-//     palFree(s_Graphics.allocator, queueProps);
-//     palFree(s_Graphics.allocator, queueCreateInfos);
-
-//     *outDevice = (PalGPUDevice*)device;
-//     return PAL_RESULT_SUCCESS;
-// }
-
-// static void PAL_CALL vkDestroyGPUDevice(PalGPUDevice* device)
-// {
-//     Device* gpuDevice = (Device*)device;
-//     s_Vk.destroyDevice(gpuDevice->handle, &s_Vk.allocator);
-//     palFree(s_Graphics.allocator, gpuDevice->phyQueues);
-//     palFree(s_Graphics.allocator, gpuDevice);
-// }
+static void PAL_CALL _vkDestroyDevice(PalDevice* device)
+{
+    Device* _device = (Device*)device;
+    s_Vk.destroyDevice(_device->handle, &s_Vk.allocator);
+    palFree(s_Graphics.allocator, _device->phyQueues);
+    palFree(s_Graphics.allocator, _device);
+}
 
 // static PalResult PAL_CALL vkCreateGPUCommandQueue(
 //     PalGPUDevice* device,
@@ -1886,7 +1869,7 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
 
 //     // check if we enabled swapchain feature
 //     if (!commandQueue->device->swapchain) {
-//         return PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED;
+//         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
 //     }
 
 //     swapchain = palAllocate(s_Graphics.allocator, sizeof(Swapchain), 0);
@@ -2224,13 +2207,13 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
 
 static PalGPUBackend s_VkBackend = {
     // adapter
-    .enumerateAdapters = vkEnumerateAdapters,
-    .getAdapterInfo = vkGetAdapterInfo,
-    .getAdapterCapabilities = vkGetAdapterCapabilities,
+    .enumerateAdapters = _vkEnumerateAdapters,
+    .getAdapterInfo = _vkGetAdapterInfo,
+    .getAdapterCapabilities = _vkGetAdapterCapabilities,
 
     // device
-    // .createGPUDevice = vkCreateGPUDevice,
-    // .destroyGPUDevice = vkDestroyGPUDevice,
+    .createDevice = _vkCreateDevice,
+    .destroyDevice = _vkDestroyDevice,
 
     // // command queue
     // .createGPUCommandQueue = vkCreateGPUCommandQueue,
@@ -2314,7 +2297,7 @@ void PAL_CALL palShutdownGraphics()
 }
 
 // ==================================================
-// GPU Adapter
+// Adapter
 // ==================================================
 
 PalResult PAL_CALL palEnumerateAdapters(
@@ -2390,7 +2373,7 @@ PalResult PAL_CALL palGetAdapterInfo(
         return data->backend->getAdapterInfo(adapter, info);
     }
 
-    return PAL_RESULT_INVALID_GPU_ADAPTER;
+    return PAL_RESULT_INVALID_ADAPTER;
 }
 
 PalResult PAL_CALL palGetAdapterCapabilities(
@@ -2410,13 +2393,13 @@ PalResult PAL_CALL palGetAdapterCapabilities(
         return data->backend->getAdapterCapabilities(adapter, caps);
     }
 
-    return PAL_RESULT_INVALID_GPU_ADAPTER;
+    return PAL_RESULT_INVALID_ADAPTER;
 }
 
 PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 {
     if (s_Graphics.initialized) {
-        return PAL_RESULT_INVALID_GPU_BACKEND;
+        return PAL_RESULT_INVALID_GRAPHICS_BACKEND;
     }
 
     // // check if all the function pointers are set
@@ -2451,58 +2434,58 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 }
 
 // ==================================================
-// GPU Device
+// Device
 // ==================================================
 
-// PalResult PAL_CALL palCreateGPUDevice(
-//     PalGPUAdapter* adapter,
-//     PalGPUFeatures features,
-//     PalGPUDevice** outDevice)
-// {
-//     if (!s_Graphics.initialized) {
-//         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-//     }
+PalResult PAL_CALL palCreateDevice(
+    PalAdapter* adapter,
+    PalAdapterFeatures features,
+    PalDevice** outDevice)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
 
-//     if (!outDevice) {
-//         return PAL_RESULT_NULL_POINTER;
-//     }
+    if (!outDevice) {
+        return PAL_RESULT_NULL_POINTER;
+    }
 
-//     // check if the adapter is from PAL (custom or internal backend)
-//     HandleData* adapterData = findHandleData(adapter);
-//     if (!adapterData) {
-//         return PAL_RESULT_INVALID_GPU_ADAPTER;
-//     }
+    // check if the adapter is from PAL (custom or internal backend)
+    HandleData* adapterData = findHandleData(adapter);
+    if (!adapterData) {
+        return PAL_RESULT_INVALID_ADAPTER;
+    }
 
-//     PalGPUDevice* device = nullptr;
-//     PalResult ret;
-//     ret = adapterData->backend->createGPUDevice(adapter, features, &device);
-//     if (ret != PAL_RESULT_SUCCESS) {
-//         return ret;
-//     }
+    PalDevice* device = nullptr;
+    PalResult ret;
+    ret = adapterData->backend->createDevice(adapter, features, &device);
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
 
-//     // create a slot for the created device
-//     HandleData* deviceData = getFreeHandleData();
-//     if (!deviceData) {
-//         return PAL_RESULT_OUT_OF_MEMORY;
-//     }
+    // create a slot for the created device
+    HandleData* deviceData = getFreeHandleData();
+    if (!deviceData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
 
-//     deviceData->backend = adapterData->backend;
-//     deviceData->handle = device;
+    deviceData->backend = adapterData->backend;
+    deviceData->handle = device;
 
-//     *outDevice = device;
-//     return PAL_RESULT_SUCCESS;
-// }
+    *outDevice = device;
+    return PAL_RESULT_SUCCESS;
+}
 
-// void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device)
-// {
-//     if (s_Graphics.initialized && device) {
-//         HandleData* data = findHandleData(device);
-//         if (data) {
-//             data->backend->destroyGPUDevice(device);
-//             data->used = false;
-//         }
-//     }
-// }
+void PAL_CALL palDestroyDevice(PalDevice* device)
+{
+    if (s_Graphics.initialized && device) {
+        HandleData* data = findHandleData(device);
+        if (data) {
+            data->backend->destroyDevice(device);
+            data->used = false;
+        }
+    }
+}
 
 // // ==================================================
 // // GPU Command Queue
@@ -2594,7 +2577,7 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 
 //     HandleData* adapterData = findHandleData(adapter);
 //     if (!adapterData) {
-//         return PAL_RESULT_INVALID_GPU_ADAPTER;
+//         return PAL_RESULT_INVALID_ADAPTER;
 //     }
 
 //     return adapterData->backend->querySwapchainCapabilities(

@@ -384,38 +384,35 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_GRAPHICS_NOT_INITIALIZED:
             return "Graphics system not initialized";
 
-        case PAL_RESULT_INVALID_GPU_ADAPTER:
-            return "Invalid GPU adapter";
+        case PAL_RESULT_INVALID_ADAPTER:
+            return "Invalid adapter";
 
-        case PAL_RESULT_INVALID_GPU_BACKEND:
-            return "Invalid GPU backend";
+        case PAL_RESULT_INVALID_GRAPHICS_BACKEND:
+            return "Invalid graphics backend";
 
-        case PAL_RESULT_GPU_COMMAND_QUEUE_NOT_SUPPORTED:
-            return "GPU command queue not supported";
+        case PAL_RESULT_QUEUE_NOT_SUPPORTED:
+            return "Queue not supported";
 
-        case PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED:
-            return "Unsupported gpu feature";
+        case PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED:
+            return "Unsupported adapter feature";
 
         case PAL_RESULT_INVALID_GRAPHICS_DRIVER:
             return "Incompatible graphics driver";
 
-        case PAL_RESULT_INVALID_GPU_DEVICE:
-            return "Invalid GPU device";
+        case PAL_RESULT_INVALID_GRAPHICS_DEVICE:
+            return "Invalid graphics device";
 
-        case PAL_RESULT_INVALID_GPU_COMMAND_QUEUE:
-            return "Invalid GPU command queue";
+        case PAL_RESULT_INVALID_QUEUE:
+            return "Invalid queue";
 
-        case PAL_RESULT_OUT_OF_GPU_COMMAND_QUEUE:
-            return "Out of GPU command queues";
+        case PAL_RESULT_OUT_OF_QUEUE:
+            return "Out of queues";
 
-        case PAL_RESULT_INVALID_GPU_WINDOW:
-            return "Invalid GPU window";
+        case PAL_RESULT_INVALID_GRAPHICS_WINDOW:
+            return "Invalid graphics window";
 
         case PAL_RESULT_INVALID_SWAPCHAIN:
             return "Invalid swapchain";
-
-        case PAL_RESULT_INVALID_SWAPCHAIN_BUFFER_INDEX:
-            return "Invalid swapchain buffer index";
     }
     return "Unknown";
 }

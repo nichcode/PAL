@@ -56,7 +56,7 @@ bool multiThreadOpenGlTest();
 // graphics
 bool graphicsTest();
 bool customGraphicsBackendTest();
-bool gpuDeviceTest();
+bool deviceTest();
 
 // graphics and video
 bool swapchainTest();

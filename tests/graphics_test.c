@@ -213,75 +213,73 @@ bool graphicsTest()
 
         // features
         palLog(nullptr, " Supported Features:");
-        if (caps.features & PAL_GPU_FEATURE_SAMPLER_ANISOTROPY) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
             palLog(nullptr, "  Sampler Anisotropy");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_SAMPLE_RATE_SHADING) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
             palLog(nullptr, "  Sample rate shading");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_MULTI_VIEWPORT) {
+        if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
             palLog(nullptr, "  Multi viewport");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
+        if (caps.features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
             palLog(nullptr, "  Timeline Semaphore");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_TESSELLATION_SHADER) {
+        if (caps.features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
             palLog(nullptr, "  Tesselation Shader");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_GEOMETRY_SHADER) {
+        if (caps.features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
             palLog(nullptr, "  Geometry shader");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_SHADER_FLOAT16) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
             palLog(nullptr, "  Shader float16");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_SHADER_FLOAT64) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
             palLog(nullptr, "  Shader float64");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_SHADER_INT16) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
             palLog(nullptr, "  Shader int16");
         }
-        if (caps.features & PAL_GPU_FEATURE_SHADER_INT64) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
             palLog(nullptr, "  Shader int64");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
+        if (caps.features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
             palLog(nullptr, "  Dynamic rendering");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_RAY_TRACING) {
+        if (caps.features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
             palLog(nullptr, "  Ray tracing");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_MESH_SHADER) {
+        if (caps.features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
             palLog(nullptr, "  Mesh shader");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_VARIABLE_RATE_SHADING) {
+        if (caps.features & PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING) {
             palLog(nullptr, "  Variable rate rendering");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_DESCRIPTOR_INDEXING) {
+        if (caps.features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
             palLog(nullptr, "  Descriptor indexing");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_SWAPCHAIN) {
+        if (caps.features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
             palLog(nullptr, "  Swapchain");
         }
 
-        if (caps.features & PAL_GPU_FEATURE_MULTI_VIEW) {
+        if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
             palLog(nullptr, "  Multiview");
         }
-
         
-
         palLog(nullptr, "");
     }
 
