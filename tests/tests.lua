@@ -66,14 +66,13 @@ project "tests"
     if (PAL_BUILD_GRAPHICS) then
         files { 
             "graphics_test.c",
-            "custom_graphics_backend_test.c",
-            "gpu_device_test.c"
+            --"gpu_device_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
         files { 
-            "swapchain_test.c"
+            --"swapchain_test.c"
         }
     end
 

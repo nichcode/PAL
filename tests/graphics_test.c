@@ -18,43 +18,43 @@ bool graphicsTest()
         return false;
     }
 
-    // enumerate all available GPUs from internal and custom backends
+    // enumerate all available adapters
     Int32 count = 0;
-    result = palEnumerateGPUAdapters(&count, nullptr);
+    result = palEnumerateAdapters(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query Adapters (GPUs): %s", error);
+        palLog(nullptr, "Failed to get query adapters: %s", error);
         return false;
     }
 
     if (count == 0) {
-        palLog(nullptr, "No Adapters found");
+        palLog(nullptr, "No adapters found");
         return false;
     }
-    palLog(nullptr, "Adapter (GPUs) Count: %d", count);
+    palLog(nullptr, "Adapter count: %d", count);
 
     // allocate an array of adapters or use a fixed array
-    // Example: PalGPUAdapter* adapters[12];
-    PalGPUAdapter** adapters = nullptr;
-    adapters = palAllocate(nullptr, sizeof(PalGPUAdapter*) * count, 0);
+    // Example: PalAdapter* adapters[12];
+    PalAdapter** adapters = nullptr;
+    adapters = palAllocate(nullptr, sizeof(PalAdapter*) * count, 0);
     if (!adapters) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
     }
 
-    result = palEnumerateGPUAdapters(&count, adapters);
+    result = palEnumerateAdapters(&count, adapters);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query Adapters (GPUs): %s", error);
+        palLog(nullptr, "Failed to get query adapters: %s", error);
         return false;
     }
 
     // get information about all the adapters
-    PalGPUAdapterInfo info;
-    PalGPUAdapterCapabilities caps;
+    PalAdapterInfo info;
+    PalAdapterCapabilities caps;
     for (Int32 i = 0; i < count; i++) {
-        PalGPUAdapter* adapter = adapters[i];
-        result = palGetGPUAdapterInfo(adapter, &info);
+        PalAdapter* adapter = adapters[i];
+        result = palGetAdapterInfo(adapter, &info);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter info: %s", error);
@@ -62,7 +62,7 @@ bool graphicsTest()
             return false;
         }
 
-        result = palGetGPUAdapterCapabilities(adapter, &caps);
+        result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter capabilities: %s", error);
@@ -70,29 +70,34 @@ bool graphicsTest()
             return false;
         }
 
-        Uint32 memoryGb = info.totalMemory / (1024.0 * 1024.0 * 1024.0);
+        Uint32 vramGb = info.vram / (1024.0 * 1024.0 * 1024.0);
+        Uint32 sharedMemGb = info.sharedMemory / (1024.0 * 1024.0 * 1024.0);
+
         palLog(nullptr, "GPU Name: %s", info.name);
-        palLog(nullptr, " Total Memory %dGB", memoryGb);
+        palLog(nullptr, " Vendor Id: %d", info.vendorId);
+        palLog(nullptr, " Device Id: %d", info.deviceId);
+        palLog(nullptr, " Vram %dGB", vramGb);
+        palLog(nullptr, " Shared Memory %dGB", sharedMemGb);
         palLog(nullptr, " API Version: %s", info.versionString);
 
         const char* typeString;
         switch (info.type) {
-            case PAL_GPU_TYPE_INTEGRATED: {
+            case PAL_ADAPTER_TYPE_INTEGRATED: {
                 typeString = "Integrated";
                 break;
             }
 
-            case PAL_GPU_TYPE_VIRTUAL: {
+            case PAL_ADAPTER_TYPE_VIRTUAL: {
                 typeString = "Virtual";
                 break;
             }
 
-            case PAL_GPU_TYPE_DISCRETE: {
+            case PAL_ADAPTER_TYPE_DISCRETE: {
                 typeString = "Discrete";
                 break;
             }
 
-            case PAL_GPU_TYPE_CPU: {
+            case PAL_ADAPTER_TYPE_CPU: {
                 typeString = "CPU";
                 break;
             }
@@ -101,47 +106,73 @@ bool graphicsTest()
 
         const char* apiTypeString;
         switch (info.apiType) {
-            case PAL_GPU_API_TYPE_D3D12: {
+            case PAL_ADAPTER_API_TYPE_D3D12: {
                 apiTypeString = "D3D12";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_VULKAN: {
+            case PAL_ADAPTER_API_TYPE_VULKAN: {
                 apiTypeString = "Vulkan";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_METAL: {
+            case PAL_ADAPTER_API_TYPE_METAL: {
                 apiTypeString = "Metal";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_OPENGL: {
+            case PAL_ADAPTER_API_TYPE_OPENGL: {
                 apiTypeString = "OpenGL";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_GLES: {
+            case PAL_ADAPTER_API_TYPE_GLES: {
                 apiTypeString = "GLes";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_D3D11: {
+            case PAL_ADAPTER_API_TYPE_D3D11: {
                 apiTypeString = "D3D11";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_D3D9: {
+            case PAL_ADAPTER_API_TYPE_D3D9: {
                 apiTypeString = "D3D9";
                 break;
             }
 
-            case PAL_GPU_API_TYPE_PPM: {
+            case PAL_ADAPTER_API_TYPE_PPM: {
                 apiTypeString = "PPM";
                 break;
             }
         }
         palLog(nullptr, " API Type: %s", apiTypeString);
+
+        // shader formats
+        palLog(nullptr, " Supported Shader Formats:");
+        if (info.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+            palLog(nullptr, "  SPIRV");
+        }
+
+        if (info.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+            palLog(nullptr, "  DXIL");
+        }
+
+        if (info.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+            palLog(nullptr, "  DXBC");
+        }
+
+        if (info.shaderFormats & PAL_SHADER_FORMAT_GLSL) {
+            palLog(nullptr, "  GLSL");
+        }
+
+        if (info.shaderFormats & PAL_SHADER_FORMAT_MSL) {
+            palLog(nullptr, "  MSL");
+        }
+
+        if (info.shaderFormats & PAL_SHADER_FORMAT_PPM) {
+            palLog(nullptr, "  PPM");
+        }
 
         const char* boolToString;
         if (caps.debugLayerSupported) {
@@ -152,13 +183,33 @@ bool graphicsTest()
 
         palLog(nullptr, " Debug Layer: %s", boolToString);
 
-        // command queues
-        Int32 maxComputeQueues = caps.maxComputeQueues;
-        Int32 maxGraphicsQueues = caps.maxGraphicsQueues;
-        Int32 maxCopyQueues = caps.maxCopyQueues;
-        palLog(nullptr, " Max compute command queues: %d", maxComputeQueues);
-        palLog(nullptr, " Max graphics command queues: %d", maxGraphicsQueues);
-        palLog(nullptr, " Max copy command queues: %d", maxCopyQueues);
+        // clang-format off
+
+        Uint32 uniformBufferSize = caps.maxUniformBufferSize / 1024;
+        Uint32 storageBufferSize = caps.maxStorageBufferSize / 1024;
+        Uint32 pushConstantSize = caps.maxStorageBufferSize / 1024;
+
+        palLog(nullptr, " Max compute queues: %d", caps.maxComputeQueues);
+        palLog(nullptr, " Max graphics queues: %d", caps.maxGraphicsQueues);
+        palLog(nullptr, " Max copy queues: %d", caps.maxCopyQueues);
+
+        palLog(nullptr, " Max image width: %d", caps.maxImageWidth);
+        palLog(nullptr, " Max image height: %d", caps.maxImageHeight);
+        palLog(nullptr, " Max image depth: %d", caps.maxImageDepth);
+        palLog(nullptr, " Max image array layers: %d", caps.maxImageArrayLayers);
+        palLog(nullptr, " Max image mip levels: %d", caps.maxImageMipLevels);
+
+        palLog(nullptr, " Max color samples: %d", caps.maxColorSamples);
+        palLog(nullptr, " Max depth samples: %d", caps.maxDepthSamples);
+        palLog(nullptr, " Max color attachment: %d", caps.maxColorAttachments);
+        palLog(nullptr, " Max multi views: %d", caps.maxMultiViews);   
+        palLog(nullptr, " Max viewports: %d", caps.maxViewports);
+        palLog(nullptr, " Max samplers: %d", caps.maxSamplers);
+        palLog(nullptr, " Max uniform buffer size: %dKB", uniformBufferSize);
+        palLog(nullptr, " Max storage buffer size: %dKB", storageBufferSize); 
+        palLog(nullptr, " Max push constant size: %dKB", pushConstantSize); 
+
+        // clang-format on
 
         // features
         palLog(nullptr, " Supported Features:");
@@ -229,31 +280,7 @@ bool graphicsTest()
             palLog(nullptr, "  Multiview");
         }
 
-        // shader formats
-        palLog(nullptr, " Supported Shader Formats:");
-        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_SPIRV) {
-            palLog(nullptr, "  SPIRV");
-        }
-
-        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_DXIL) {
-            palLog(nullptr, "  DXIL");
-        }
-
-        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_DXBC) {
-            palLog(nullptr, "  DXBC");
-        }
-
-        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_GLSL) {
-            palLog(nullptr, "  GLSL");
-        }
-
-        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_MSL) {
-            palLog(nullptr, "  MSL");
-        }
-
-        if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_PPM) {
-            palLog(nullptr, "  PPM");
-        }
+        
 
         palLog(nullptr, "");
     }

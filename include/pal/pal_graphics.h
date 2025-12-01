@@ -23,7 +23,7 @@ freely, subject to the following restrictions:
 
 /**
  * @defgroup pal_graphics Graphics
- * Graphics PAL functionality such as GPUs, GPUDevices, swapchains and more.
+ * Graphics PAL functionality such as Adapters, Device, Swapchains and more.
  *
  * @{
  */
@@ -33,88 +33,167 @@ freely, subject to the following restrictions:
 
 #include "pal_core.h"
 
-#define PAL_GPU_NAME_SIZE 128
-#define PAL_GPU_VERSION_SIZE 16
+#define PAL_ADAPTER_NAME_SIZE 128
+#define PAL_ADAPTER_VERSION_SIZE 16
 #define PAL_INFINITE (2147483647)
 
-typedef struct PalGPUAdapter PalGPUAdapter;
-typedef struct PalGPUDevice PalGPUDevice;
-typedef struct PalGPUCommandQueue PalGPUCommandQueue;
+typedef struct PalAdapter PalAdapter;
+typedef struct PalDevice PalDevice;
+typedef struct PalQueue PalQueue;
 typedef struct PalSwapchain PalSwapchain;
-typedef struct PalRenderTargetView PalRenderTargetView;
+typedef struct PalImage PalImage;
+typedef struct PalImageView PalImageView;
 typedef struct PalRenderPass PalRenderPass;
 
 typedef enum {
-    PAL_GPU_TYPE_UNKNOWN,
-    PAL_GPU_TYPE_DISCRETE,
-    PAL_GPU_TYPE_INTEGRATED,
-    PAL_GPU_TYPE_VIRTUAL,
-    PAL_GPU_TYPE_CPU
-} PalGPUType;
+    PAL_ADAPTER_TYPE_UNKNOWN,
+    PAL_ADAPTER_TYPE_DISCRETE,
+    PAL_ADAPTER_TYPE_INTEGRATED,
+    PAL_ADAPTER_TYPE_VIRTUAL,
+    PAL_ADAPTER_TYPE_CPU
+} PalAdapterType;
 
 typedef enum {
-    PAL_GPU_API_TYPE_VULKAN,
-    PAL_GPU_API_TYPE_D3D12,
-    PAL_GPU_API_TYPE_METAL,
-    PAL_GPU_API_TYPE_OPENGL,
-    PAL_GPU_API_TYPE_GLES,
-    PAL_GPU_API_TYPE_D3D11,
-    PAL_GPU_API_TYPE_D3D9,
-    PAL_GPU_API_TYPE_PPM
-} PalGPUApiType;
+    PAL_ADAPTER_API_TYPE_VULKAN,
+    PAL_ADAPTER_API_TYPE_D3D12,
+    PAL_ADAPTER_API_TYPE_METAL,
+    PAL_ADAPTER_API_TYPE_OPENGL,
+    PAL_ADAPTER_API_TYPE_GLES,
+    PAL_ADAPTER_API_TYPE_D3D11,
+    PAL_ADAPTER_API_TYPE_D3D9,
+    PAL_ADAPTER_API_TYPE_PPM
+} PalAdapterApiType;
 
 typedef enum {
-    PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS,
-    PAL_GPU_COMMAND_QUEUE_TYPE_COMPUTE,
-    PAL_GPU_COMMAND_QUEUE_TYPE_COPY
-} PalGPUCommandQueueType;
+    PAL_QUEUE_TYPE_GRAPHICS,
+    PAL_QUEUE_TYPE_COMPUTE,
+    PAL_QUEUE_TYPE_COPY
+} PalQueueType;
 
 typedef enum {
-    PAL_PRESENT_MODE_FIFO = PAL_BIT(0),
-    PAL_PRESENT_MODE_IMMEDIATE = PAL_BIT(1),
-    PAL_PRESENT_MODE_MAILBOX = PAL_BIT(2)
-} PalPresentModes;
+    PAL_PRESENT_MODE_FIFO,
+    PAL_PRESENT_MODE_IMMEDIATE,
+    PAL_PRESENT_MODE_MAILBOX
+} PalPresentMode;
 
 typedef enum {
-    PAL_COMPOSITE_ALPHA_OPAQUE = PAL_BIT(0),
-    PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED = PAL_BIT(1),
-    PAL_COMPOSITE_ALPHA_POST_MULTIPLIED = PAL_BIT(2)
-} PalCompositeAplhas;
+    PAL_COMPOSITE_ALPHA_OPAQUE,
+    PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED,
+    PAL_COMPOSITE_ALPHA_POST_MULTIPLIED
+} PalCompositeAplha;
 
 typedef enum {
-    PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB = PAL_BIT64(0),
-    PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB = PAL_BIT64(1),
-    PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB = PAL_BIT64(2),
-    PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10 = PAL_BIT64(3)
-} PalSwapchainFormats;
+    PAL_FORMAT_R8_UNORM,
+    PAL_FORMAT_R8_SNORM,
+    PAL_FORMAT_R8_UINT,
+    PAL_FORMAT_R8_SINT,
+    PAL_FORMAT_R8_SRGB,
+    PAL_FORMAT_R16_UNORM,
+    PAL_FORMAT_R16_SNORM,
+    PAL_FORMAT_R16_UINT,
+    PAL_FORMAT_R16_SINT,
+    PAL_FORMAT_R16_SFLOAT,
+    PAL_FORMAT_R32_UINT,
+    PAL_FORMAT_R32_SINT,
+    PAL_FORMAT_R32_SFLOAT,
+    PAL_FORMAT_R64_UINT,
+    PAL_FORMAT_R64_SINT,
+    PAL_FORMAT_R64_SFLOAT,
+    PAL_FORMAT_R8G8_UNORM,
+    PAL_FORMAT_R8G8_SNORM,
+    PAL_FORMAT_R8G8_UINT,
+    PAL_FORMAT_R8G8_SINT,
+    PAL_FORMAT_R8G8_SRGB,
+    PAL_FORMAT_R16G16_UNORM,
+    PAL_FORMAT_R16G16_SNORM,
+    PAL_FORMAT_R16G16_UINT,
+    PAL_FORMAT_R16G16_SINT,
+    PAL_FORMAT_R16G16_SFLOAT,
+    PAL_FORMAT_R32G32_UINT,
+    PAL_FORMAT_R32G32_SINT,
+    PAL_FORMAT_R32G32_SFLOAT,
+    PAL_FORMAT_R64G64_UINT,
+    PAL_FORMAT_R64G64_SINT,
+    PAL_FORMAT_R64G64_SFLOAT,
+    PAL_FORMAT_R8G8B8_UNORM,
+    PAL_FORMAT_R8G8B8_SNORM,
+    PAL_FORMAT_R8G8B8_UINT,
+    PAL_FORMAT_R8G8B8_SINT,
+    PAL_FORMAT_R8G8B8_SRGB,
+    PAL_FORMAT_R16G16B16_UNORM,
+    PAL_FORMAT_R16G16B16_SNORM,
+    PAL_FORMAT_R16G16B16_UINT,
+    PAL_FORMAT_R16G16B16_SINT,
+    PAL_FORMAT_R16G16B16_SFLOAT,
+    PAL_FORMAT_R32G32B32_UINT,
+    PAL_FORMAT_R32G32B32_SINT,
+    PAL_FORMAT_R32G32B32_SFLOAT,
+    PAL_FORMAT_R64G64B64_UINT,
+    PAL_FORMAT_R64G64B64_SINT,
+    PAL_FORMAT_R64G64B64_SFLOAT,
+    PAL_FORMAT_B8G8R8_UNORM,
+    PAL_FORMAT_B8G8R8_SNORM,
+    PAL_FORMAT_B8G8R8_UINT,
+    PAL_FORMAT_B8G8R8_SINT,
+    PAL_FORMAT_B8G8R8_SRGB,
+    PAL_FORMAT_R8G8B8A8_UNORM,
+    PAL_FORMAT_R8G8B8A8_SNORM,
+    PAL_FORMAT_R8G8B8A8_UINT,
+    PAL_FORMAT_R8G8B8A8_SINT,
+    PAL_FORMAT_R8G8B8A8_SRGB,
+    PAL_FORMAT_R16G16B16A16_UNORM,
+    PAL_FORMAT_R16G16B16A16_SNORM,
+    PAL_FORMAT_R16G16B16A16_UINT,
+    PAL_FORMAT_R16G16B16A16_SINT,
+    PAL_FORMAT_R16G16B16A16_SFLOAT,
+    PAL_FORMAT_R32G32B32A32_UINT,
+    PAL_FORMAT_R32G32B32A32_SINT,
+    PAL_FORMAT_R32G32B32A32_SFLOAT,
+    PAL_FORMAT_R64G64B64A64_UINT,
+    PAL_FORMAT_R64G64B64A64_SINT,
+    PAL_FORMAT_R64G64B64A64_SFLOAT,
+    PAL_FORMAT_B8G8RA88_UNORM,
+    PAL_FORMAT_B8G8R8A8_SNORM,
+    PAL_FORMAT_B8G8R8A8_UINT,
+    PAL_FORMAT_B8G8R8A8_SINT,
+    PAL_FORMAT_B8G8R8A8_SRGB,
+    PAL_FORMAT_S8_UINT,
+    PAL_FORMAT_D16_UNORM,
+    PAL_FORMAT_D32_SFLOAT,
+    PAL_FORMAT_D32_SFLOAT_S8_UINT,
+    PAL_FORMAT_D16_UNORM_S8_UINT,
+    PAL_FORMAT_D24_UNORM_S8_UINT,
+} PalFormat;
 
 typedef enum {
-    PAL_SWAPCHAIN_SHARING_MODE_EXCLUSIVE = PAL_BIT(0),
-    PAL_SWAPCHAIN_SHARING_MODE_CONCURRENT = PAL_BIT(1)
-} PalSwapchainSharingModes;
+    PAL_IMAGE_USAGE_COLOR_ATTACHEMENT = PAL_BIT(0),
+    PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT = PAL_BIT(1),
+    PAL_IMAGE_USAGE_TRANSFER_SRC = PAL_BIT(2),
+    PAL_IMAGE_USAGE_TRANSFER_DST = PAL_BIT(3),
+    PAL_IMAGE_USAGE_STORAGE = PAL_BIT(4),
+    PAL_IMAGE_USAGE_SAMPLED = PAL_BIT(5)
+} PalImageUsages;
 
 typedef enum {
-    PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE = PAL_BIT(0),
-    PAL_SWAPCHAIN_TRANSFORM_PORTRAIT = PAL_BIT(1),
-    PAL_SWAPCHAIN_TRANSFORM_LANDSCAPE_FLIPPED = PAL_BIT(2),
-    PAL_SWAPCHAIN_TRANSFORM_PORTRAIT_FLIPPED = PAL_BIT(3)
-} PalSwapchainTransforms;
+    PAL_SHARING_MODE_EXCLUSIVE,
+    PAL_SHARING_MODE_CONCURRENT
+} PalSharingMode;
 
 typedef enum {
-    PAL_SWAPCHAIN_USAGE_COLOR_ATTACHEMENT = PAL_BIT(0),
-    PAL_SWAPCHAIN_USAGE_TRANSFER_SRC = PAL_BIT(1),
-    PAL_SWAPCHAIN_USAGE_TRANSFER_DST = PAL_BIT(2),
-    PAL_SWAPCHAIN_USAGE_SAMPLED = PAL_BIT(3),
-} PalSwapchainUsages;
+    PAL_TRANSFORM_LANDSCAPE,
+    PAL_TRANSFORM_PORTRAIT,
+    PAL_TRANSFORM_LANDSCAPE_FLIPPED,
+    PAL_TRANSFORM_PORTRAIT_FLIPPED
+} PalTransform;
 
 typedef enum {
-    PAL_GPU_SHADER_FORMAT_SPIRV = PAL_BIT(0),
-    PAL_GPU_SHADER_FORMAT_DXIL = PAL_BIT(1),
-    PAL_GPU_SHADER_FORMAT_DXBC = PAL_BIT(2),
-    PAL_GPU_SHADER_FORMAT_GLSL = PAL_BIT(3),
-    PAL_GPU_SHADER_FORMAT_MSL = PAL_BIT(4),
-    PAL_GPU_SHADER_FORMAT_PPM = PAL_BIT(5)
-} PalGPUShaderFormats;
+    PAL_SHADER_FORMAT_SPIRV = PAL_BIT(0),
+    PAL_SHADER_FORMAT_DXIL = PAL_BIT(1),
+    PAL_SHADER_FORMAT_DXBC = PAL_BIT(2),
+    PAL_SHADER_FORMAT_GLSL = PAL_BIT(3),
+    PAL_SHADER_FORMAT_MSL = PAL_BIT(4),
+    PAL_SHADER_FORMAT_PPM = PAL_BIT(5)
+} PalShaderFormats;
 
 typedef enum {
     PAL_GPU_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(0),
@@ -136,132 +215,183 @@ typedef enum {
     PAL_GPU_FEATURE_MULTI_VIEW = PAL_BIT64(16)
 } PalGPUFeatures;
 
+typedef enum {
+    PAL_LOAD_OP_LOAD,
+    PAL_LOAD_OP_CLEAR,
+    PAL_LOAD_OP_DONT_CARE,
+} PalLoadOp;
+
+typedef enum {
+    PAL_STORE_OP_STORE,
+    PAL_STORE_OP_DONT_CARE
+} PalStoreOp;
+
 typedef struct {
-    PalGPUType type;
-    PalGPUApiType apiType;
-    PalGPUShaderFormats shaderFormats;
-    Uint64 totalMemory; // in bytes
-    char versionString[PAL_GPU_VERSION_SIZE];
-    char name[PAL_GPU_NAME_SIZE];
-} PalGPUAdapterInfo;
+    Uint32 vendorId;
+    Uint32 deviceId;
+    PalAdapterType type;
+    PalAdapterApiType apiType;
+    PalShaderFormats shaderFormats;
+    Uint64 vram;
+    Uint64 sharedMemory;
+    Uint64 version;
+    char versionString[PAL_ADAPTER_VERSION_SIZE];
+    char name[PAL_ADAPTER_NAME_SIZE];
+} PalAdapterInfo;
 
 typedef struct {
     bool debugLayerSupported;
     Uint32 maxComputeQueues;
     Uint32 maxGraphicsQueues;
     Uint32 maxCopyQueues;
-    PalGPUFeatures features;
-} PalGPUAdapterCapabilities;
-
-typedef struct {
-    Uint32 minBufferCount;
-    Uint32 maxBufferCount;
-    Uint32 minWidth;
-    Uint32 minHeight;
-    Uint32 maxWidth;
-    Uint32 maxHeight;
-    Uint32 maxBufferArrayLayers;
-    PalSwapchainFormats formats;
-    PalSwapchainUsages usages;
-    PalPresentModes presentModes;
-    PalCompositeAplhas compositeAlphas;
-    PalSwapchainSharingModes sharingModes;
-    PalSwapchainTransforms transforms;
-} PalSwapchainCapabilities;
-
-typedef struct {
-    bool clipped;
-    Uint32 width;
-    Uint32 height;
-    Uint32 bufferCount;
-    Uint32 bufferArrayLayerCount;
-    Uint32 concurrentQueueCount;
-    PalPresentModes presentMode;
-    PalSwapchainUsages usage;
-    PalCompositeAplhas compositeAlpha;
-    PalSwapchainFormats format;
-    PalSwapchainSharingModes sharingMode;
-    PalSwapchainTransforms transform;
-    PalGPUCommandQueue** concurrentQueue;
-} PalSwapchainCreateInfo;
-
-typedef struct {
-    Uint32 maxMultiViews;
+    Uint32 maxImageWidth;
+    Uint32 maxImageHeight;
+    Uint32 maxImageDepth;
+    Uint32 maxImageArrayLayers;
+    Uint32 maxImageMipLevels;
+    Uint32 maxColorSamples;
+    Uint32 maxDepthSamples;
     Uint32 maxColorAttachments;
-} PalRenderPassCapabilities;
+    Uint32 maxMultiViews;
+    Uint32 maxViewports;
+    Uint32 maxSamplers;
+    Uint32 maxUniformBufferSize;
+    Uint32 maxStorageBufferSize;
+    Uint32 maxPushConstantSize;
+    PalGPUFeatures features;
+} PalAdapterCapabilities;
+
+// typedef struct {
+//     Uint32 minBufferCount;
+//     Uint32 maxBufferCount;
+//     Uint32 minWidth;
+//     Uint32 minHeight;
+//     Uint32 maxWidth;
+//     Uint32 maxHeight;
+//     Uint32 maxBufferArrayLayers;
+//     PalSwapchainFormats formats;
+//     PalSwapchainUsages usages;
+//     PalPresentModes presentModes;
+//     PalCompositeAplhas compositeAlphas;
+//     PalSwapchainSharingModes sharingModes;
+//     PalSwapchainTransforms transforms;
+// } PalSwapchainCapabilities;
+
+// typedef struct {
+//     bool clipped;
+//     Uint32 width;
+//     Uint32 height;
+//     Uint32 bufferCount;
+//     Uint32 bufferArrayLayerCount;
+//     Uint32 concurrentQueueCount;
+//     PalPresentModes presentMode;
+//     PalSwapchainUsages usage;
+//     PalCompositeAplhas compositeAlpha;
+//     PalSwapchainFormats format;
+//     PalSwapchainSharingModes sharingMode;
+//     PalSwapchainTransforms transform;
+//     PalGPUCommandQueue** concurrentQueue;
+// } PalSwapchainCreateInfo;
+
+// typedef struct {
+//     Uint32 maxMultiViews;
+//     Uint32 maxColorAttachments;
+// } PalRenderPassCapabilities;
+
+// typedef struct {
+//     Uint32 mipLevel;
+//     Uint32 baseLayer;
+//     Uint32 layerCount;
+//     PalRenderTargetView* renderTargetView;
+// } PalRenderPassResolveInfo;
+
+// typedef struct {
+//     Uint32 mipLevel;
+//     Uint32 baseLayer;
+//     Uint32 layerCount;
+//     PalRenderPassLoadOp loadOp;
+//     PalRenderPassStoreOp storeOp;
+//     float depth;
+//     float stencil;
+//     PalRenderPassResolveInfo* resolve;
+//     float color[4];
+// } PalRenderPassAttachmentInfo;
+
+// typedef struct {
+//     Uint32 attachmentCount;
+//     Uint32 multiViewCount;
+//     PalRenderTargetView* renderTargetView;
+//     PalRenderPassAttachmentInfo* attachments;
+// } PalRenderPassCreateInfo;
+
+// typedef struct {
+//     void* display;
+//     void* window;
+// } PalGPUWindow;
 
 typedef struct {
-    bool clipped;
-} PalRenderPassCreateInfo;
-
-typedef struct {
-    void* display;
-    void* window;
-} PalGPUWindow;
-
-typedef struct {
-    PalResult PAL_CALL (*enumerateGPUAdapters)(
+    PalResult PAL_CALL (*enumerateAdapters)(
         Int32* count,
-        PalGPUAdapter** outAdapters);
+        PalAdapter** outAdapters);
 
-    PalResult PAL_CALL (*getGPUAdapterInfo)(
-        PalGPUAdapter* adapter,
-        PalGPUAdapterInfo* info);
+    PalResult PAL_CALL (*getAdapterInfo)(
+        PalAdapter* adapter,
+        PalAdapterInfo* info);
 
-    PalResult PAL_CALL (*getGPUAdapterCapabilities)(
-        PalGPUAdapter* adapter,
-        PalGPUAdapterCapabilities* caps);
+    PalResult PAL_CALL (*getAdapterCapabilities)(
+        PalAdapter* adapter,
+        PalAdapterCapabilities* caps);
 
-    PalResult PAL_CALL (*createGPUDevice)(
-        PalGPUAdapter* adapter,
-        PalGPUFeatures features,
-        PalGPUDevice** outDevice);
+    // PalResult PAL_CALL (*createGPUDevice)(
+    //     PalGPUAdapter* adapter,
+    //     PalGPUFeatures features,
+    //     PalGPUDevice** outDevice);
 
-    void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
+    // void PAL_CALL (*destroyGPUDevice)(PalGPUDevice* device);
 
-    PalResult PAL_CALL (*createGPUCommandQueue)(
-        PalGPUDevice* device,
-        PalGPUCommandQueueType type,
-        PalGPUCommandQueue** outQueue);
+    // PalResult PAL_CALL (*createGPUCommandQueue)(
+    //     PalGPUDevice* device,
+    //     PalGPUCommandQueueType type,
+    //     PalGPUCommandQueue** outQueue);
 
-    void PAL_CALL (*destroyGPUCommandQueue)(PalGPUCommandQueue* queue);
+    // void PAL_CALL (*destroyGPUCommandQueue)(PalGPUCommandQueue* queue);
 
-    bool PAL_CALL (*canCommandQueuePresent)(
-        PalGPUCommandQueue* queue, 
-        PalGPUWindow* window);
+    // bool PAL_CALL (*canCommandQueuePresent)(
+    //     PalGPUCommandQueue* queue, 
+    //     PalGPUWindow* window);
 
-    PalResult PAL_CALL (*querySwapchainCapabilities)(
-        PalGPUAdapter* adapter,
-        PalGPUWindow* window,
-        PalSwapchainCapabilities* caps);
+    // PalResult PAL_CALL (*querySwapchainCapabilities)(
+    //     PalGPUAdapter* adapter,
+    //     PalGPUWindow* window,
+    //     PalSwapchainCapabilities* caps);
 
-    PalResult PAL_CALL (*createSwapchain)(
-        PalGPUCommandQueue* queue,
-        PalGPUWindow* window,
-        const PalSwapchainCreateInfo* info,
-        PalSwapchain** outSwapchain);
+    // PalResult PAL_CALL (*createSwapchain)(
+    //     PalGPUCommandQueue* queue,
+    //     PalGPUWindow* window,
+    //     const PalSwapchainCreateInfo* info,
+    //     PalSwapchain** outSwapchain);
 
-    void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
+    // void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
 
-    Uint32 PAL_CALL (*getSwapchainBufferCount)(PalSwapchain* swapchain);
+    // Uint32 PAL_CALL (*getSwapchainBufferCount)(PalSwapchain* swapchain);
 
-    PalResult PAL_CALL (*createRenderTargetView)(
-        PalSwapchain* swapchain,
-        Uint32 bufferIndex,
-        PalRenderTargetView** outRtv);
+    // PalResult PAL_CALL (*createRenderTargetView)(
+    //     PalSwapchain* swapchain,
+    //     Uint32 bufferIndex,
+    //     PalRenderTargetView** outRtv);
 
-    void PAL_CALL (*destroyRenderTargetView)(PalRenderTargetView* rtv);
+    // void PAL_CALL (*destroyRenderTargetView)(PalRenderTargetView* rtv);
 
-    PalResult PAL_CALL (*queryRenderPassCapabilities)(
-        PalSwapchain* swapchain,
-        PalRenderPassCapabilities* caps);
+    // PalResult PAL_CALL (*queryRenderPassCapabilities)(
+    //     PalSwapchain* swapchain,
+    //     PalRenderPassCapabilities* caps);
 
-    PalResult PAL_CALL (*createRenderPass)(
-        PalSwapchain* swapchain,
-        PalRenderPassCreateInfo* info,
-        PalRenderPass** outRenderPass);
+    // PalResult PAL_CALL (*createRenderPass)(
+    //     PalSwapchain* swapchain,
+    //     PalRenderPassCreateInfo* info,
+    //     PalRenderPass** outRenderPass);
 
-    void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
+    // void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -270,70 +400,70 @@ PAL_API PalResult PAL_CALL palInitGraphics(
 
 PAL_API void PAL_CALL palShutdownGraphics();
 
-PAL_API PalResult PAL_CALL palEnumerateGPUAdapters(
+PAL_API PalResult PAL_CALL palEnumerateAdapters(
     Int32* count,
-    PalGPUAdapter** outAdapters);
+    PalAdapter** outAdapters);
 
-PAL_API PalResult PAL_CALL palGetGPUAdapterInfo(
-    PalGPUAdapter* adapter,
-    PalGPUAdapterInfo* info);
+PAL_API PalResult PAL_CALL palGetAdapterInfo(
+    PalAdapter* adapter,
+    PalAdapterInfo* info);
 
-PAL_API PalResult PAL_CALL palGetGPUAdapterCapabilities(
-    PalGPUAdapter* adapter,
-    PalGPUAdapterCapabilities* caps);
+PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
+    PalAdapter* adapter,
+    PalAdapterCapabilities* caps);
 
-PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
+// PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
 
-PAL_API PalResult PAL_CALL palCreateGPUDevice(
-    PalGPUAdapter* adapter,
-    PalGPUFeatures features,
-    PalGPUDevice** outDevice);
+// PAL_API PalResult PAL_CALL palCreateGPUDevice(
+//     PalGPUAdapter* adapter,
+//     PalGPUFeatures features,
+//     PalGPUDevice** outDevice);
 
-PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);
+// PAL_API void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device);
 
-PAL_API PalResult PAL_CALL palCreateGPUCommandQueue(
-    PalGPUDevice* device,
-    PalGPUCommandQueueType type,
-    PalGPUCommandQueue** outQueue);
+// PAL_API PalResult PAL_CALL palCreateGPUCommandQueue(
+//     PalGPUDevice* device,
+//     PalGPUCommandQueueType type,
+//     PalGPUCommandQueue** outQueue);
 
-PAL_API void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue);
+// PAL_API void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue);
 
-PAL_API bool PAL_CALL palCanCommandQueuePresent(
-    PalGPUCommandQueue* queue, 
-    PalGPUWindow* window);
+// PAL_API bool PAL_CALL palCanCommandQueuePresent(
+//     PalGPUCommandQueue* queue, 
+//     PalGPUWindow* window);
 
-PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
-    PalGPUAdapter* adapter,
-    PalGPUWindow* window,
-    PalSwapchainCapabilities* caps);
+// PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
+//     PalGPUAdapter* adapter,
+//     PalGPUWindow* window,
+//     PalSwapchainCapabilities* caps);
 
-PAL_API PalResult PAL_CALL palCreateSwapchain(
-    PalGPUCommandQueue* queue,
-    PalGPUWindow* window,
-    const PalSwapchainCreateInfo* info,
-    PalSwapchain** outSwapchain);
+// PAL_API PalResult PAL_CALL palCreateSwapchain(
+//     PalGPUCommandQueue* queue,
+//     PalGPUWindow* window,
+//     const PalSwapchainCreateInfo* info,
+//     PalSwapchain** outSwapchain);
 
-PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
+// PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 
-PAL_API Uint32 PAL_CALL palGetSwapchainBufferCount(PalSwapchain* swapchain);
+// PAL_API Uint32 PAL_CALL palGetSwapchainBufferCount(PalSwapchain* swapchain);
 
-PAL_API PalResult PAL_CALL palCreateRenderTargetView(
-    PalSwapchain* swapchain,
-    Uint32 bufferIndex,
-    PalRenderTargetView** outRtv);
+// PAL_API PalResult PAL_CALL palCreateRenderTargetView(
+//     PalSwapchain* swapchain,
+//     Uint32 bufferIndex,
+//     PalRenderTargetView** outRtv);
 
-PAL_API void PAL_CALL palDestroyRenderTargetView(PalRenderTargetView* rtv);
+// PAL_API void PAL_CALL palDestroyRenderTargetView(PalRenderTargetView* rtv);
 
-PAL_API PalResult PAL_CALL palQueryRenderPassCapabilities(
-    PalSwapchain* swapchain,
-    PalRenderPassCapabilities* caps);
+// PAL_API PalResult PAL_CALL palQueryRenderPassCapabilities(
+//     PalSwapchain* swapchain,
+//     PalRenderPassCapabilities* caps);
 
-PAL_API PalResult PAL_CALL palCreateRenderPass(
-    PalSwapchain* swapchain,
-    PalRenderPassCreateInfo* info,
-    PalRenderPass** outRenderPass);
+// PAL_API PalResult PAL_CALL palCreateRenderPass(
+//     PalSwapchain* swapchain,
+//     PalRenderPassCreateInfo* info,
+//     PalRenderPass** outRenderPass);
 
-PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
+// PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
 
 /** @} */ // end of pal_graphics group
 

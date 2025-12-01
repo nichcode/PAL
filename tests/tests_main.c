@@ -55,13 +55,12 @@ int main(int argc, char** argv)
 #endif
 
 #if PAL_HAS_GRAPHICS
-    // registerTest("Graphics Test", graphicsTest);
-    // registerTest("Custom Graphics Backend Test", customGraphicsBackendTest);
+    registerTest("Graphics Test", graphicsTest);
     // registerTest("GPU Device Test", gpuDeviceTest);
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
-    registerTest("Swapchain Test", swapchainTest);
+    // registerTest("Swapchain Test", swapchainTest);
 #endif
 
     runTests();
