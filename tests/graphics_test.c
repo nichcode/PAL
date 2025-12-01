@@ -225,6 +225,10 @@ bool graphicsTest()
             palLog(nullptr, "  Swapchain");
         }
 
+        if (caps.features & PAL_GPU_FEATURE_MULTI_VIEW) {
+            palLog(nullptr, "  Multiview");
+        }
+
         // shader formats
         palLog(nullptr, " Supported Shader Formats:");
         if (info.shaderFormats & PAL_GPU_SHADER_FORMAT_SPIRV) {

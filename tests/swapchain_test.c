@@ -332,6 +332,24 @@ bool swapchainTest()
         return false;
     }
 
+    // query render pass capabilities of the swapchain
+    PalRenderPassCapabilities renderPassCaps = {0};
+    result = palQueryRenderPassCapabilities(
+        swapchain, 
+        &renderPassCaps);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to query render pass capabilities: %s", error);
+        return false;
+    }
+
+    // log render pass capabilities
+    Uint32 maxColorAttachments = renderPassCaps.maxColorAttachments;
+    palLog(nullptr, "Render pass capabilities:");
+    palLog(nullptr, " Max color attachments: %d", maxColorAttachments);
+    palLog(nullptr, " Max multi views: %d", renderPassCaps.maxMultiViews);
+
     // destroy the render target view
     palDestroyRenderTargetView(rtv);
 

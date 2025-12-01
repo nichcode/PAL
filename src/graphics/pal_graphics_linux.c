@@ -237,6 +237,10 @@ typedef void (*vkDestroyImageViewFn)(
     VkImageView,
     const VkAllocationCallbacks*);
 
+typedef void (*vkGetPhysicalDeviceProperties2Fn)(
+    VkPhysicalDevice,
+    VkPhysicalDeviceProperties2*);
+
 typedef struct {
     bool hasDebug;
     bool versionFallback;
@@ -263,6 +267,7 @@ typedef struct {
     vkGetInstanceProcAddrFn getInstanceProcAddr;
     vkCreateImageViewFn createImageView;
     vkDestroyImageViewFn destroyImageView;
+    vkGetPhysicalDeviceProperties2Fn getPhysicalDeviceProperties2;
     
     vkCreateDeviceFn createDevice;
     vkDestroyDeviceFn destroyDevice;
@@ -290,7 +295,11 @@ typedef struct {
 } PhysicalQueue;
 
 typedef struct {
+    bool dynamicRendering;
+    bool multiView;
+    bool swapchain;
     Int32 queueCount;
+    Int32 multiViewCount;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
@@ -320,6 +329,11 @@ typedef struct {
     Device* device;
     VkImageView handle;
 } RenderTargetView;
+
+typedef struct {
+    Device* device;
+    VkRenderPass handle;
+} RenderPass;
 
 static Vulkan s_Vk = {0};
 
@@ -594,6 +608,10 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     s_Vk.destroyImageView = (vkDestroyImageViewFn)dlsym(
         s_Vk.handle, 
         "vkDestroyImageView");
+
+    s_Vk.getPhysicalDeviceProperties2 = (vkGetPhysicalDeviceProperties2Fn)dlsym(
+        s_Vk.handle, 
+        "vkGetPhysicalDeviceProperties2");
 
     s_Vk.createDevice = (vkCreateDeviceFn)dlsym(
         s_Vk.handle, 
@@ -1133,6 +1151,26 @@ static PalResult PAL_CALL vkGetAdapterCapabilities(
             if (timeline.timelineSemaphore) {
                 caps->features |= PAL_GPU_FEATURE_TIMELINE_SEMAPHORE;
             }
+
+        } else if (strcmp(props->extensionName, "VK_KHR_multiview") == 0) {
+            // multi view
+            VkPhysicalDeviceMultiviewFeaturesKHR view = {0};
+            view.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
+
+            VkPhysicalDeviceFeatures2 features;
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &view;
+
+            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
+                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
+
+            } else {
+                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+            }
+
+            if (view.multiview) {
+                caps->features |= PAL_GPU_FEATURE_MULTI_VIEW;
+            }
         }
     }
 
@@ -1235,6 +1273,10 @@ static PalResult PAL_CALL vkCreateGPUDevice(
 
     device->queueCount = count;
     device->phyDevice = phyDevice;
+    device->swapchain = false;
+    device->multiView = false;
+    device->dynamicRendering = false;
+    device->multiViewCount = 1;
     
     device->phyQueues = palAllocate(
         s_Graphics.allocator, 
@@ -1320,14 +1362,19 @@ static PalResult PAL_CALL vkCreateGPUDevice(
     VkPhysicalDeviceDescriptorIndexingFeatures descIndex = {0};
     descIndex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
+    VkPhysicalDeviceMultiviewFeatures multiView = {0};
+    multiView.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
+
     // clang-format on
 
     if (features & PAL_GPU_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
+        device->swapchain = true;
     }
 
     if (features & PAL_GPU_FEATURE_DYNAMIC_RENDERING) {
         extensions[extCount++] = "VK_KHR_dynamic_rendering";
+        device->dynamicRendering = true;
     }
 
     if (features & PAL_GPU_FEATURE_TIMELINE_SEMAPHORE) {
@@ -1419,6 +1466,41 @@ static PalResult PAL_CALL vkCreateGPUDevice(
             timeline.pNext = &descIndex;
         }
         start = &descIndex;
+    }
+
+    if (features & PAL_GPU_FEATURE_MULTI_VIEW) {
+        extensions[extCount++] = "VK_KHR_multiview";
+        multiView.multiview = true;
+        device->multiView = true;
+
+        VkPhysicalDeviceMultiviewPropertiesKHR p = {0};
+        p.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR;
+
+        VkPhysicalDeviceProperties2 props = {0};
+        props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props.pNext = &p;
+        s_Vk.getPhysicalDeviceProperties2(phyDevice, &props);
+        device->multiViewCount = p.maxMultiviewViewCount;
+
+        if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
+            descIndex.pNext = &multiView;
+
+        } else if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &multiView;
+
+        } else if (mesh.meshShader) {
+            mesh.pNext = &multiView;
+
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &multiView;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &multiView;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &multiView;
+        }
+        start = &multiView;
     }
 
     VkDeviceCreateInfo createInfo = {0};
@@ -1751,7 +1833,7 @@ static PalResult PAL_CALL vkCreateSwapchain(
     PhysicalQueue* phyQueue = commandQueue->phyQueue;
 
     // check if we enabled swapchain feature
-    if (!commandQueue->device->createSwapchain) {
+    if (!commandQueue->device->swapchain) {
         return PAL_RESULT_GPU_FEATURE_NOT_SUPPORTED;
     }
 
@@ -1932,13 +2014,13 @@ static void PAL_CALL vkDestroySwapchain(PalSwapchain* swapchain)
     palFree(s_Graphics.allocator, _swapchain);
 }
 
-Uint32 PAL_CALL vkGetSwapchainBufferCount(PalSwapchain* swapchain)
+static Uint32 PAL_CALL vkGetSwapchainBufferCount(PalSwapchain* swapchain)
 {
     Swapchain* _swapchain = (Swapchain*)swapchain;
     return _swapchain->bufferCount;
 }
 
-PalResult PAL_CALL vkCreateRenderTargetView(
+static PalResult PAL_CALL vkCreateRenderTargetView(
     PalSwapchain* swapchain,
     Uint32 bufferIndex,
     PalRenderTargetView** outRtv)
@@ -1981,28 +2063,83 @@ PalResult PAL_CALL vkCreateRenderTargetView(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL vkDestroyRenderTargetView(PalRenderTargetView* rtv)
+static void PAL_CALL vkDestroyRenderTargetView(PalRenderTargetView* rtv)
 {
     RenderTargetView* _rtv = (RenderTargetView*)rtv;
     s_Vk.destroyImageView(_rtv->device->handle, _rtv->handle, &s_Vk.allocator);
     palFree(s_Graphics.allocator, _rtv);
 }
 
+static PalResult PAL_CALL vkQueryRenderPassCapabilities(
+    PalSwapchain* swapchain,
+    PalRenderPassCapabilities* caps)
+{
+    Swapchain* _swapchain = (Swapchain*)swapchain;
+    Device* device = (Device*)_swapchain->device;
+
+    VkPhysicalDeviceProperties props = {0};
+    s_Vk.getPhysicalDeviceProperties(device->phyDevice, &props);
+    caps->maxColorAttachments = props.limits.maxColorAttachments;
+    caps->maxMultiViews = device->multiViewCount;
+
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult PAL_CALL vkCreateRenderPass_(
+    PalSwapchain* swapchain,
+    PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass)
+{
+    VkResult result = VK_SUCCESS;
+    RenderPass* renderPass = nullptr;
+    Swapchain* _swapchain = (Swapchain*)swapchain;
+    
+    renderPass = palAllocate(s_Graphics.allocator, sizeof(RenderPass), 0);
+    if (!renderPass) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkRenderPassCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+    *outRenderPass = (PalRenderPass*)renderPass;
+    return PAL_RESULT_SUCCESS;
+}
+
+static void PAL_CALL vkDestroyRenderPass_(PalRenderPass* renderPass)
+{
+
+}
+
 static PalGPUBackend s_VkBackend = {
+    // adapter
     .enumerateGPUAdapters = vkEnumerateAdapters,
     .getGPUAdapterInfo = vkGetAdapterInfo,
     .getGPUAdapterCapabilities = vkGetAdapterCapabilities,
+
+    // device
     .createGPUDevice = vkCreateGPUDevice,
     .destroyGPUDevice = vkDestroyGPUDevice,
+
+    // command queue
     .createGPUCommandQueue = vkCreateGPUCommandQueue,
     .destroyGPUCommandQueue = vkDestroyGPUCommandQueue,
     .canCommandQueuePresent = vkCanCommandQueuePresent,
-    .getSwapchainCapabilities = vkQuerySwapchainCapabilities,
+
+    // swapchain
+    .querySwapchainCapabilities = vkQuerySwapchainCapabilities,
     .createSwapchain = vkCreateSwapchain,
     .destroySwapchain = vkDestroySwapchain,
     .getSwapchainBufferCount = vkGetSwapchainBufferCount,
+
+    // render target view
     .createRenderTargetView = vkCreateRenderTargetView,
-    .destroyRenderTargetView = vkDestroyRenderTargetView
+    .destroyRenderTargetView = vkDestroyRenderTargetView,
+
+    // render pass
+    .queryRenderPassCapabilities = vkQueryRenderPassCapabilities,
+    .createRenderPass = vkCreateRenderPass_,
+    .destroyRenderPass = vkDestroyRenderPass_
 };
 
 #endif // PAL_HAS_VULKAN
@@ -2066,7 +2203,7 @@ void PAL_CALL palShutdownGraphics()
 }
 
 // ==================================================
-// GPUAdapter
+// GPU Adapter
 // ==================================================
 
 PalResult PAL_CALL palEnumerateGPUAdapters(
@@ -2173,20 +2310,23 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 
     // check if all the function pointers are set
     // clang-format off
-    if (!backend->enumerateGPUAdapters      || 
-        !backend->getGPUAdapterInfo         ||
-        !backend->getGPUAdapterCapabilities ||
-        !backend->createGPUDevice           ||
-        !backend->destroyGPUDevice          ||
-        !backend->createGPUCommandQueue     ||
-        !backend->destroyGPUCommandQueue    ||
-        !backend->canCommandQueuePresent    ||
-        !backend->createSwapchain           ||
-        !backend->destroySwapchain          ||
-        !backend->getSwapchainCapabilities  ||
-        !backend->getSwapchainBufferCount   ||
-        !backend->createRenderTargetView    ||
-        !backend->destroyRenderTargetView) {
+    if (!backend->enumerateGPUAdapters         || 
+        !backend->getGPUAdapterInfo            ||
+        !backend->getGPUAdapterCapabilities    ||
+        !backend->createGPUDevice              ||
+        !backend->destroyGPUDevice             ||
+        !backend->createGPUCommandQueue        ||
+        !backend->destroyGPUCommandQueue       ||
+        !backend->canCommandQueuePresent       ||
+        !backend->createSwapchain              ||
+        !backend->destroySwapchain             ||
+        !backend->querySwapchainCapabilities   ||
+        !backend->getSwapchainBufferCount      ||
+        !backend->createRenderTargetView       ||
+        !backend->destroyRenderTargetView      ||
+        !backend->queryRenderPassCapabilities  ||
+        !backend->createRenderPass             ||
+        !backend->destroyRenderPass) {
         return PAL_RESULT_INVALID_GPU_BACKEND;
     }
     // clang-format on
@@ -2200,7 +2340,7 @@ PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
 }
 
 // ==================================================
-// GPUDevice
+// GPU Device
 // ==================================================
 
 PalResult PAL_CALL palCreateGPUDevice(
@@ -2252,6 +2392,10 @@ void PAL_CALL palDestroyGPUDevice(PalGPUDevice* device)
         }
     }
 }
+
+// ==================================================
+// GPU Command Queue
+// ==================================================
 
 PalResult PAL_CALL palCreateGPUCommandQueue(
     PalGPUDevice* device,
@@ -2342,7 +2486,7 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         return PAL_RESULT_INVALID_GPU_ADAPTER;
     }
 
-    return adapterData->backend->getSwapchainCapabilities(
+    return adapterData->backend->querySwapchainCapabilities(
         adapter,
         window,
         caps);
@@ -2411,6 +2555,10 @@ Uint32 PAL_CALL palGetSwapchainBufferCount(PalSwapchain* swapchain)
     return swapchainData->backend->getSwapchainBufferCount(swapchain);
 }
 
+// ==================================================
+// Render Target View
+// ==================================================
+
 PalResult PAL_CALL palCreateRenderTargetView(
     PalSwapchain* swapchain,
     Uint32 bufferIndex,
@@ -2459,6 +2607,85 @@ void PAL_CALL palDestroyRenderTargetView(PalRenderTargetView* rtv)
         HandleData* data = findHandleData(rtv);
         if (data) {
             data->backend->destroyRenderTargetView(rtv);
+            data->used = false;
+        }
+    }
+}
+
+// ==================================================
+// Render Pass
+// ==================================================
+
+PalResult PAL_CALL palQueryRenderPassCapabilities(
+    PalSwapchain* swapchain,
+    PalRenderPassCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!swapchain || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* swapchainData = findHandleData(swapchain);
+    if (!swapchainData) {
+        return PAL_RESULT_INVALID_SWAPCHAIN;
+    }
+
+    return swapchainData->backend->queryRenderPassCapabilities(
+        swapchain,
+        caps);
+}
+
+PalResult PAL_CALL palCreateRenderPass(
+    PalSwapchain* swapchain,
+    PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!swapchain || !info || !outRenderPass) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* swapchainData = findHandleData(swapchain);
+    if (!swapchainData) {
+        return PAL_RESULT_INVALID_SWAPCHAIN;
+    }
+
+    PalResult ret;
+    PalRenderPass* renderPass = nullptr;
+    ret = swapchainData->backend->createRenderPass(
+        swapchain,
+        info,
+        &renderPass);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    // create a slot for the created render pass
+    HandleData* renderPassData = getFreeHandleData();
+    if (!renderPassData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    renderPassData->backend = swapchainData->backend;
+    renderPassData->handle = renderPass;
+
+    *outRenderPass = renderPass;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
+{
+    if (s_Graphics.initialized && renderPass) {
+        HandleData* data = findHandleData(renderPass);
+        if (data) {
+            data->backend->destroyRenderPass(renderPass);
             data->used = false;
         }
     }

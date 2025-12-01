@@ -42,6 +42,7 @@ typedef struct PalGPUDevice PalGPUDevice;
 typedef struct PalGPUCommandQueue PalGPUCommandQueue;
 typedef struct PalSwapchain PalSwapchain;
 typedef struct PalRenderTargetView PalRenderTargetView;
+typedef struct PalRenderPass PalRenderPass;
 
 typedef enum {
     PAL_GPU_TYPE_UNKNOWN,
@@ -55,8 +56,6 @@ typedef enum {
     PAL_GPU_API_TYPE_VULKAN,
     PAL_GPU_API_TYPE_D3D12,
     PAL_GPU_API_TYPE_METAL,
-
-    // for custom backends
     PAL_GPU_API_TYPE_OPENGL,
     PAL_GPU_API_TYPE_GLES,
     PAL_GPU_API_TYPE_D3D11,
@@ -133,7 +132,8 @@ typedef enum {
     PAL_GPU_FEATURE_MESH_SHADER = PAL_BIT64(12),
     PAL_GPU_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
     PAL_GPU_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
-    PAL_GPU_FEATURE_SWAPCHAIN = PAL_BIT64(15)
+    PAL_GPU_FEATURE_SWAPCHAIN = PAL_BIT64(15),
+    PAL_GPU_FEATURE_MULTI_VIEW = PAL_BIT64(16)
 } PalGPUFeatures;
 
 typedef struct {
@@ -186,6 +186,15 @@ typedef struct {
 } PalSwapchainCreateInfo;
 
 typedef struct {
+    Uint32 maxMultiViews;
+    Uint32 maxColorAttachments;
+} PalRenderPassCapabilities;
+
+typedef struct {
+    bool clipped;
+} PalRenderPassCreateInfo;
+
+typedef struct {
     void* display;
     void* window;
 } PalGPUWindow;
@@ -221,7 +230,7 @@ typedef struct {
         PalGPUCommandQueue* queue, 
         PalGPUWindow* window);
 
-    PalResult PAL_CALL (*getSwapchainCapabilities)(
+    PalResult PAL_CALL (*querySwapchainCapabilities)(
         PalGPUAdapter* adapter,
         PalGPUWindow* window,
         PalSwapchainCapabilities* caps);
@@ -242,6 +251,17 @@ typedef struct {
         PalRenderTargetView** outRtv);
 
     void PAL_CALL (*destroyRenderTargetView)(PalRenderTargetView* rtv);
+
+    PalResult PAL_CALL (*queryRenderPassCapabilities)(
+        PalSwapchain* swapchain,
+        PalRenderPassCapabilities* caps);
+
+    PalResult PAL_CALL (*createRenderPass)(
+        PalSwapchain* swapchain,
+        PalRenderPassCreateInfo* info,
+        PalRenderPass** outRenderPass);
+
+    void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -303,6 +323,17 @@ PAL_API PalResult PAL_CALL palCreateRenderTargetView(
     PalRenderTargetView** outRtv);
 
 PAL_API void PAL_CALL palDestroyRenderTargetView(PalRenderTargetView* rtv);
+
+PAL_API PalResult PAL_CALL palQueryRenderPassCapabilities(
+    PalSwapchain* swapchain,
+    PalRenderPassCapabilities* caps);
+
+PAL_API PalResult PAL_CALL palCreateRenderPass(
+    PalSwapchain* swapchain,
+    PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass);
+
+PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
 
 /** @} */ // end of pal_graphics group
 
