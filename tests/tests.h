@@ -59,6 +59,6 @@ bool customGraphicsBackendTest();
 bool deviceTest();
 
 // graphics and video
-bool swapchainTest();
+bool queueTest();
 
 #endif // _TESTS_H

@@ -324,10 +324,10 @@ typedef struct {
 //     PalRenderPassAttachmentInfo* attachments;
 // } PalRenderPassCreateInfo;
 
-// typedef struct {
-//     void* display;
-//     void* window;
-// } PalGPUWindow;
+typedef struct {
+    void* display;
+    void* window;
+} PalGraphicsWindow;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateAdapters)(
@@ -349,16 +349,16 @@ typedef struct {
 
     void PAL_CALL (*destroyDevice)(PalDevice* device);
 
-    // PalResult PAL_CALL (*createGPUCommandQueue)(
-    //     PalGPUDevice* device,
-    //     PalGPUCommandQueueType type,
-    //     PalGPUCommandQueue** outQueue);
+    PalResult PAL_CALL (*createQueue)(
+        PalDevice* device,
+        PalQueueType type,
+        PalQueue** outQueue);
 
-    // void PAL_CALL (*destroyGPUCommandQueue)(PalGPUCommandQueue* queue);
+    void PAL_CALL (*destroyQueue)(PalQueue* queue);
 
-    // bool PAL_CALL (*canCommandQueuePresent)(
-    //     PalGPUCommandQueue* queue, 
-    //     PalGPUWindow* window);
+    bool PAL_CALL (*canQueuePresent)(
+        PalQueue* queue, 
+        PalGraphicsWindow* window);
 
     // PalResult PAL_CALL (*querySwapchainCapabilities)(
     //     PalGPUAdapter* adapter,
@@ -421,16 +421,16 @@ PAL_API PalResult PAL_CALL palCreateDevice(
 
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
 
-// PAL_API PalResult PAL_CALL palCreateGPUCommandQueue(
-//     PalGPUDevice* device,
-//     PalGPUCommandQueueType type,
-//     PalGPUCommandQueue** outQueue);
+PAL_API PalResult PAL_CALL palCreateQueue(
+    PalDevice* device,
+    PalQueueType type,
+    PalQueue** outQueue);
 
-// PAL_API void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue);
+PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 
-// PAL_API bool PAL_CALL palCanCommandQueuePresent(
-//     PalGPUCommandQueue* queue, 
-//     PalGPUWindow* window);
+PAL_API bool PAL_CALL palCanQueuePresent(
+    PalQueue* queue, 
+    PalGraphicsWindow* window);
 
 // PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,

@@ -311,7 +311,7 @@ typedef struct {
     VkQueueFlags usage;
     Device* device;
     PhysicalQueue* phyQueue;
-} CommandQueue;
+} Queue;
 
 typedef struct {
     Int32 bufferCount;
@@ -326,7 +326,7 @@ typedef struct {
     VkFormat format;
     Device* device;
     VkImageView handle;
-} RenderTargetView;
+} ImageView;
 
 typedef struct {
     Device* device;
@@ -410,18 +410,18 @@ static HandleData* findHandleData(void* handle)
 
 #if PAL_HAS_VULKAN
 
-// static bool vkOnWayland(struct wl_display* display) 
-// {
-//     if (!s_Vk.libWayland) {
-//         return false;
-//     }
+static bool vkOnWayland(struct wl_display* display) 
+{
+    if (!s_Vk.libWayland) {
+        return false;
+    }
 
-//     int fd = s_Vk.getDisplayFd(display);
-//     if (fd <= 0 || fd > 1024) { // fds are usaually 0-30 but this is fine
-//         return false;
-//     }
-//     return true;
-// }
+    int fd = s_Vk.getDisplayFd(display);
+    if (fd <= 0 || fd > 1024) { // fds are usaually 0-30 but this is fine
+        return false;
+    }
+    return true;
+}
 
 // static bool vkCreateSurface(PalGPUWindow* window, VkSurfaceKHR* outSurface) 
 // {
@@ -1610,99 +1610,99 @@ static void PAL_CALL _vkDestroyDevice(PalDevice* device)
     palFree(s_Graphics.allocator, _device);
 }
 
-// static PalResult PAL_CALL vkCreateGPUCommandQueue(
-//     PalGPUDevice* device,
-//     PalGPUCommandQueueType type,
-//     PalGPUCommandQueue** outQueue)
-// {
-//     VkQueueFlags queueFlag = 0;
-//     Device* gpuDevice = (Device*)device;
-//     CommandQueue* commandQueue = nullptr;
-//     if (!gpuDevice->handle) {
-//         return PAL_RESULT_INVALID_GPU_DEVICE;
-//     }
+static PalResult PAL_CALL _vkCreateQueue(
+    PalDevice* device,
+    PalQueueType type,
+    PalQueue** outQueue)
+{
+    VkQueueFlags queueFlag = 0;
+    Device* _device = (Device*)device;
+    Queue* queue = nullptr;
+    if (!_device->handle) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
 
-//     if (gpuDevice->queueCount == 0) {
-//         return PAL_RESULT_OUT_OF_GPU_COMMAND_QUEUE;
-//     }
+    if (_device->queueCount == 0) {
+        return PAL_RESULT_OUT_OF_QUEUE;
+    }
 
-//     switch (type) {
-//         case PAL_GPU_COMMAND_QUEUE_TYPE_COMPUTE: {
-//             queueFlag = VK_QUEUE_COMPUTE_BIT;
-//             break;
-//         }
+    switch (type) {
+        case PAL_QUEUE_TYPE_COMPUTE: {
+            queueFlag = VK_QUEUE_COMPUTE_BIT;
+            break;
+        }
 
-//         case PAL_GPU_COMMAND_QUEUE_TYPE_GRAPHICS: {
-//             queueFlag = VK_QUEUE_GRAPHICS_BIT;
-//             break;
-//         }
+        case PAL_QUEUE_TYPE_GRAPHICS: {
+            queueFlag = VK_QUEUE_GRAPHICS_BIT;
+            break;
+        }
 
-//         case PAL_GPU_COMMAND_QUEUE_TYPE_COPY: {
-//             queueFlag = VK_QUEUE_TRANSFER_BIT;
-//             break;
-//         }
-//     }
+        case PAL_QUEUE_TYPE_COPY: {
+            queueFlag = VK_QUEUE_TRANSFER_BIT;
+            break;
+        }
+    }
 
-//     PhysicalQueue* phyQueue = nullptr;
-//     for (int i = 0; i < gpuDevice->queueCount; i++) {
-//         PhysicalQueue* queue = &gpuDevice->phyQueues[i];
-//         // check if the physical queue supports the requested operation
-//         // and if its not already used
-//         if (queue->usages & queueFlag && 
-//             queue->usedUsages != queueFlag) {
-//             queue->usedUsages |= queueFlag;
-//             phyQueue = queue;
-//             break;
-//         } 
-//     }
+    PhysicalQueue* phyQueue = nullptr;
+    for (int i = 0; i < _device->queueCount; i++) {
+        PhysicalQueue* queue = &_device->phyQueues[i];
+        // check if the physical queue supports the requested operation
+        // and if its not already used
+        if (queue->usages & queueFlag && 
+            queue->usedUsages != queueFlag) {
+            queue->usedUsages |= queueFlag;
+            phyQueue = queue;
+            break;
+        } 
+    }
 
-//     if (phyQueue) {
-//         commandQueue = palAllocate(
-//             s_Graphics.allocator, 
-//             sizeof(CommandQueue), 
-//             0);
+    if (phyQueue) {
+        queue = palAllocate(
+            s_Graphics.allocator, 
+            sizeof(Queue), 
+            0);
         
-//         if (!commandQueue) {
-//             return PAL_RESULT_OUT_OF_MEMORY;
-//         }
+        if (!queue) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
 
-//         commandQueue->phyQueue = phyQueue;
-//         commandQueue->usage = queueFlag;
-//         commandQueue->device = gpuDevice;
+        queue->phyQueue = phyQueue;
+        queue->usage = queueFlag;
+        queue->device = _device;
 
-//         *outQueue = (PalGPUCommandQueue*)commandQueue;
-//         return PAL_RESULT_SUCCESS;
-//     }
+        *outQueue = (PalQueue*)queue;
+        return PAL_RESULT_SUCCESS;
+    }
 
-//     return PAL_RESULT_OUT_OF_GPU_COMMAND_QUEUE;
-// }
+    return PAL_RESULT_OUT_OF_QUEUE;
+}
 
-// static void PAL_CALL vkDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
-// {
-//     CommandQueue* commandQueue = (CommandQueue*)queue;
-//     PhysicalQueue* phyQueue = commandQueue->phyQueue;
-//     phyQueue->usedUsages &= ~commandQueue->usage;
-//     palFree(s_Graphics.allocator, commandQueue);
-// }
+static void PAL_CALL _vkDestroyQueue(PalQueue* queue)
+{
+    Queue* _queue = (Queue*)queue;
+    PhysicalQueue* phyQueue = _queue->phyQueue;
+    phyQueue->usedUsages &= ~_queue->usage;
+    palFree(s_Graphics.allocator, _queue);
+}
 
-// static bool PAL_CALL vkCanCommandQueuePresent(
-//     PalGPUCommandQueue* queue, 
-//     PalGPUWindow* window)
-// {
-//     bool onWayland = vkOnWayland(window->display);
-//     CommandQueue* commandQueue = (CommandQueue*)queue;
-//     PhysicalQueue* phyQueue = commandQueue->phyQueue;
+static bool PAL_CALL _vkCanQueuePresent(
+    PalQueue* queue, 
+    PalGraphicsWindow* window)
+{
+    bool onWayland = vkOnWayland(window->display);
+    Queue* _queue = (Queue*)queue;
+    PhysicalQueue* phyQueue = _queue->phyQueue;
 
-//     if (!s_Vk.checkWaylandPresentSupport(
-//         phyQueue->phyDevice, 
-//         phyQueue->familyIndex, window->display)) {
-//         return false;
-//     } else {
-//         // TODO: check presentation for xlib
-//     }
+    if (!s_Vk.checkWaylandPresentSupport(
+        phyQueue->phyDevice, 
+        phyQueue->familyIndex, window->display)) {
+        return false;
+    } else {
+        // TODO: check presentation for xlib
+    }
 
-//     return true;
-// }
+    return true;
+}
 
 // static PalResult PAL_CALL vkQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,
@@ -2215,10 +2215,10 @@ static PalGPUBackend s_VkBackend = {
     .createDevice = _vkCreateDevice,
     .destroyDevice = _vkDestroyDevice,
 
-    // // command queue
-    // .createGPUCommandQueue = vkCreateGPUCommandQueue,
-    // .destroyGPUCommandQueue = vkDestroyGPUCommandQueue,
-    // .canCommandQueuePresent = vkCanCommandQueuePresent,
+    // queue
+    .createQueue = _vkCreateQueue,
+    .destroyQueue = _vkDestroyQueue,
+    .canQueuePresent = _vkCanQueuePresent,
 
     // // swapchain
     // .querySwapchainCapabilities = vkQuerySwapchainCapabilities,
@@ -2487,80 +2487,80 @@ void PAL_CALL palDestroyDevice(PalDevice* device)
     }
 }
 
-// // ==================================================
-// // GPU Command Queue
-// // ==================================================
+// ==================================================
+// Queue
+// ==================================================
 
-// PalResult PAL_CALL palCreateGPUCommandQueue(
-//     PalGPUDevice* device,
-//     PalGPUCommandQueueType type,
-//     PalGPUCommandQueue** outQueue)
-// {
-//     if (!s_Graphics.initialized) {
-//         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-//     }
+PalResult PAL_CALL palCreateQueue(
+    PalDevice* device,
+    PalQueueType type,
+    PalQueue** outQueue)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
 
-//     if (!device || !outQueue) {
-//         return PAL_RESULT_NULL_POINTER;
-//     }
+    if (!device || !outQueue) {
+        return PAL_RESULT_NULL_POINTER;
+    }
 
-//     HandleData* data = findHandleData(device);
-//     if (!data) {
-//         return PAL_RESULT_INVALID_GPU_DEVICE;
-//     }
+    HandleData* data = findHandleData(device);
+    if (!data) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
 
-//     PalGPUCommandQueue* queue = nullptr;
-//     PalResult ret;
-//     ret = data->backend->createGPUCommandQueue(
-//         device,
-//         type,
-//         &queue);
+    PalQueue* queue = nullptr;
+    PalResult ret;
+    ret = data->backend->createQueue(
+        device,
+        type,
+        &queue);
 
-//     if (ret != PAL_RESULT_SUCCESS) {
-//         return ret;
-//     }
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
 
-//     // create a slot for the created command queue
-//     HandleData* queueData = getFreeHandleData();
-//     if (!queueData) {
-//         return PAL_RESULT_OUT_OF_MEMORY;
-//     }
+    // create a slot for the created queue
+    HandleData* queueData = getFreeHandleData();
+    if (!queueData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
 
-//     queueData->backend = data->backend;
-//     queueData->handle = queue;
+    queueData->backend = data->backend;
+    queueData->handle = queue;
 
-//     *outQueue = queue;
-//     return PAL_RESULT_SUCCESS;
-// }
+    *outQueue = queue;
+    return PAL_RESULT_SUCCESS;
+}
 
-// void PAL_CALL palDestroyGPUCommandQueue(PalGPUCommandQueue* queue)
-// {
-//     if (s_Graphics.initialized && queue) {
-//         HandleData* data = findHandleData(queue);
-//         if (data) {
-//             data->backend->destroyGPUCommandQueue(queue);
-//             data->used = false;
-//         }
-//     }
-// }
+void PAL_CALL palDestroyQueue(PalQueue* queue)
+{
+    if (s_Graphics.initialized && queue) {
+        HandleData* data = findHandleData(queue);
+        if (data) {
+            data->backend->destroyQueue(queue);
+            data->used = false;
+        }
+    }
+}
 
-// bool PAL_CALL palCanCommandQueuePresent(
-//     PalGPUCommandQueue* queue, 
-//     PalGPUWindow* window)
-// {
-//     if (s_Graphics.initialized && queue) {
-//         HandleData* data = findHandleData(queue);
-//         if (data) {
-//             return data->backend->canCommandQueuePresent(queue, window);
-//         }
-//         return false;
-//     }
-//     return false;
-// }
+bool PAL_CALL palCanQueuePresent(
+    PalQueue* queue, 
+    PalGraphicsWindow* window)
+{
+    if (s_Graphics.initialized && queue) {
+        HandleData* data = findHandleData(queue);
+        if (data) {
+            return data->backend->canQueuePresent(queue, window);
+        }
+        return false;
+    }
+    return false;
+}
 
-// // ==================================================
-// // Swapchain
-// // ==================================================
+// ==================================================
+// Swapchain
+// ==================================================
 
 // PalResult PAL_CALL palQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,

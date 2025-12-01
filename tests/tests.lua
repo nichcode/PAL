@@ -72,6 +72,7 @@ project "tests"
 
     if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
         files { 
+            "queue_test.c"
             --"swapchain_test.c"
         }
     end

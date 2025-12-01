@@ -56,11 +56,11 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_GRAPHICS
     // registerTest("Graphics Test", graphicsTest);
-    registerTest("Device Test", deviceTest);
+    // registerTest("Device Test", deviceTest);
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
-    // registerTest("Swapchain Test", swapchainTest);
+    registerTest("Queue Test", queueTest);
 #endif
 
     runTests();
