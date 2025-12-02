@@ -82,6 +82,7 @@ typedef struct {
     PFN_vkCreateImageView createImageView;
     PFN_vkDestroyImageView destroyImageView;
     PFN_vkGetPhysicalDeviceProperties2 getPhysicalDeviceProperties2;
+    PFN_vkGetPhysicalDeviceFormatProperties getPhysicalDeviceFormatProperties;
     
     PFN_vkCreateDevice createDevice;
     PFN_vkDestroyDevice destroyDevice;
@@ -640,6 +641,283 @@ static Uint32 vkSamplesToSamples(VkSampleCountFlags samples)
     return 1;
 }
 
+static PalFormat vkFormatToPal(VkFormat format)
+{
+    switch (format) {
+        case VK_FORMAT_R8_UNORM:
+            return PAL_FORMAT_R8_UNORM;
+
+        case VK_FORMAT_R8_SNORM:
+            return PAL_FORMAT_R8_SNORM;
+
+        case VK_FORMAT_R8_UINT:
+            return PAL_FORMAT_R8_UINT;
+
+        case VK_FORMAT_R8_SINT:
+            return PAL_FORMAT_R8_SINT;
+
+        case VK_FORMAT_R8_SRGB:
+            return PAL_FORMAT_R8_SRGB;
+
+        case VK_FORMAT_R16_UNORM:
+            return PAL_FORMAT_R16_UNORM;
+
+        case VK_FORMAT_R16_SNORM:
+            return PAL_FORMAT_R16_SNORM;
+
+        case VK_FORMAT_R16_UINT:
+            return PAL_FORMAT_R16_UINT;
+
+        case VK_FORMAT_R16_SINT:
+            return PAL_FORMAT_R16_SINT;
+
+        case VK_FORMAT_R16_SFLOAT:
+            return PAL_FORMAT_R16_SFLOAT;
+
+        case VK_FORMAT_R32_UINT:
+            return PAL_FORMAT_R32_UINT;
+
+        case VK_FORMAT_R32_SINT:
+            return PAL_FORMAT_R32_SINT;
+
+        case VK_FORMAT_R32_SFLOAT:
+            return PAL_FORMAT_R32_SFLOAT;
+
+        case VK_FORMAT_R64_UINT:
+            return PAL_FORMAT_R64_UINT;
+
+        case VK_FORMAT_R64_SINT:
+            return PAL_FORMAT_R64_SINT;
+
+        case VK_FORMAT_R64_SFLOAT:
+            return PAL_FORMAT_R64_SFLOAT;
+
+        case VK_FORMAT_R8G8_UNORM:
+            return PAL_FORMAT_R8G8_UNORM;
+
+        case VK_FORMAT_R8G8_SNORM:
+            return PAL_FORMAT_R8G8_SNORM;
+
+        case VK_FORMAT_R8G8_UINT:
+            return PAL_FORMAT_R8G8_UINT;
+
+        case VK_FORMAT_R8G8_SINT:
+            return PAL_FORMAT_R8G8_SINT;
+
+        case VK_FORMAT_R8G8_SRGB:
+            return PAL_FORMAT_R8G8_SRGB;
+
+        case VK_FORMAT_R16G16_UNORM:
+            return PAL_FORMAT_R16G16_UNORM;
+
+        case VK_FORMAT_R16G16_SNORM:
+            return PAL_FORMAT_R16G16_SNORM;
+
+        case VK_FORMAT_R16G16_UINT:
+            return PAL_FORMAT_R16G16_UINT;
+
+        case VK_FORMAT_R16G16_SINT:
+            return PAL_FORMAT_R16G16_SINT;
+
+        case VK_FORMAT_R16G16_SFLOAT:
+            return PAL_FORMAT_R16G16_SFLOAT;
+
+        case VK_FORMAT_R32G32_UINT:
+            return PAL_FORMAT_R32G32_UINT;
+
+        case VK_FORMAT_R32G32_SINT:
+            return PAL_FORMAT_R32G32_SINT;
+
+        case VK_FORMAT_R32G32_SFLOAT:
+            return PAL_FORMAT_R32G32_SFLOAT;
+
+        case VK_FORMAT_R64G64_UINT:
+            return PAL_FORMAT_R64G64_UINT;
+
+        case VK_FORMAT_R64G64_SINT:
+            return PAL_FORMAT_R64G64_SINT;
+
+        case VK_FORMAT_R64G64_SFLOAT:
+            return PAL_FORMAT_R64G64_SFLOAT;
+
+        case VK_FORMAT_R8G8B8_UNORM:
+            return PAL_FORMAT_R8G8B8_UNORM;
+
+        case VK_FORMAT_R8G8B8_SNORM:
+            return PAL_FORMAT_R8G8B8_SNORM;
+
+        case VK_FORMAT_R8G8B8_UINT:
+            return PAL_FORMAT_R8G8B8_UINT;
+
+        case VK_FORMAT_R8G8B8_SINT:
+            return PAL_FORMAT_R8G8B8_SINT;
+
+        case VK_FORMAT_R8G8B8_SRGB:
+            return PAL_FORMAT_R8G8B8_SRGB;
+
+        case VK_FORMAT_R16G16B16_UNORM:
+            return PAL_FORMAT_R16G16B16_UNORM;
+
+        case VK_FORMAT_R16G16B16_SNORM:
+            return PAL_FORMAT_R16G16B16_SNORM;
+
+        case VK_FORMAT_R16G16B16_UINT:
+            return PAL_FORMAT_R16G16B16_UINT;
+
+        case VK_FORMAT_R16G16B16_SINT:
+            return PAL_FORMAT_R16G16B16_SINT;
+
+        case VK_FORMAT_R16G16B16_SFLOAT:
+            return PAL_FORMAT_R16G16B16_SFLOAT;
+
+        case VK_FORMAT_R32G32B32_UINT:
+            return PAL_FORMAT_R32G32B32_UINT;
+
+        case VK_FORMAT_R32G32B32_SINT:
+            return PAL_FORMAT_R32G32B32_SINT;
+
+        case VK_FORMAT_R32G32B32_SFLOAT:
+            return PAL_FORMAT_R32G32B32_SFLOAT;
+
+        case VK_FORMAT_R64G64B64_UINT:
+            return PAL_FORMAT_R64G64B64_UINT;
+
+        case VK_FORMAT_R64G64B64_SINT:
+            return PAL_FORMAT_R64G64B64_SINT;
+
+        case VK_FORMAT_R64G64B64_SFLOAT:
+            return PAL_FORMAT_R64G64B64_SFLOAT;
+
+        case VK_FORMAT_B8G8R8_UNORM:
+            return PAL_FORMAT_B8G8R8_UNORM;
+
+        case VK_FORMAT_B8G8R8_SNORM:
+            return PAL_FORMAT_B8G8R8_SNORM;
+
+        case VK_FORMAT_B8G8R8_UINT:
+            return PAL_FORMAT_B8G8R8_UINT;
+
+        case VK_FORMAT_B8G8R8_SINT:
+            return PAL_FORMAT_B8G8R8_SINT;
+
+        case VK_FORMAT_B8G8R8_SRGB:
+            return PAL_FORMAT_B8G8R8_SRGB;
+
+        case VK_FORMAT_R8G8B8A8_UNORM:
+            return PAL_FORMAT_R8G8B8A8_UNORM;
+
+        case VK_FORMAT_R8G8B8A8_SNORM:
+            return PAL_FORMAT_R8G8B8A8_SNORM;
+
+        case VK_FORMAT_R8G8B8A8_UINT:
+            return PAL_FORMAT_R8G8B8A8_UINT;
+
+        case VK_FORMAT_R8G8B8A8_SINT:
+            return PAL_FORMAT_R8G8B8A8_SINT;
+
+        case VK_FORMAT_R8G8B8A8_SRGB:
+            return PAL_FORMAT_R8G8B8A8_SRGB;
+
+        case VK_FORMAT_R16G16B16A16_UNORM:
+            return PAL_FORMAT_R16G16B16A16_UNORM;
+
+        case VK_FORMAT_R16G16B16A16_SNORM:
+            return PAL_FORMAT_R16G16B16A16_SNORM;
+
+        case VK_FORMAT_R16G16B16A16_UINT:
+            return PAL_FORMAT_R16G16B16A16_UINT;
+
+        case VK_FORMAT_R16G16B16A16_SINT:
+            return PAL_FORMAT_R16G16B16A16_SINT;
+
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return PAL_FORMAT_R16G16B16A16_SFLOAT;
+
+        case VK_FORMAT_R32G32B32A32_UINT:
+            return PAL_FORMAT_R32G32B32A32_UINT;
+
+        case VK_FORMAT_R32G32B32A32_SINT:
+            return PAL_FORMAT_R32G32B32A32_SINT;
+
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return PAL_FORMAT_R32G32B32A32_SFLOAT;
+
+        case VK_FORMAT_R64G64B64A64_UINT:
+            return PAL_FORMAT_R64G64B64A64_UINT;
+
+        case VK_FORMAT_R64G64B64A64_SINT:
+            return PAL_FORMAT_R64G64B64A64_SINT;
+
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+            return PAL_FORMAT_R64G64B64A64_SFLOAT;
+
+        case VK_FORMAT_B8G8R8A8_UNORM:
+            return PAL_FORMAT_B8G8R8A8_UNORM;
+
+        case VK_FORMAT_B8G8R8A8_SNORM:
+            return PAL_FORMAT_B8G8R8A8_SNORM;
+
+        case VK_FORMAT_B8G8R8A8_UINT:
+            return PAL_FORMAT_B8G8R8A8_UINT;
+
+        case VK_FORMAT_B8G8R8A8_SINT:
+            return PAL_FORMAT_B8G8R8A8_SINT;
+
+        case VK_FORMAT_B8G8R8A8_SRGB:
+            return PAL_FORMAT_B8G8R8A8_SRGB;
+
+        case VK_FORMAT_S8_UINT:
+            return PAL_FORMAT_S8_UINT;
+
+        case VK_FORMAT_D16_UNORM:
+            return PAL_FORMAT_D16_UNORM;
+
+        case VK_FORMAT_D32_SFLOAT:
+            return PAL_FORMAT_D32_SFLOAT;
+
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            return PAL_FORMAT_D32_SFLOAT_S8_UINT;
+
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+            return PAL_FORMAT_D16_UNORM_S8_UINT;
+
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+            return PAL_FORMAT_D24_UNORM_S8_UINT;
+    }
+
+    return PAL_FORMAT_UNDEFINED;
+}
+
+static PalImageUsages vkFeatureToPalUsage(VkFormatFeatureFlags flags)
+{
+    PalImageUsages usages = 0;
+    if (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
+        usages |= PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
+    }
+
+    if (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        usages |= PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT;
+    }
+
+    if (flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) {
+        usages |= PAL_IMAGE_USAGE_TRANSFER_SRC;
+    }
+
+    if (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) {
+        usages |= PAL_IMAGE_USAGE_TRANSFER_DST;
+    }
+
+    if (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) {
+        usages |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
+    if (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) {
+        usages |= PAL_IMAGE_USAGE_SAMPLED;
+    }
+
+    return usages;
+}
+
 static void* vkAlloc(
     void* pUserData,
     size_t size,
@@ -761,6 +1039,10 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceProperties2");
+
+    s_Vk.getPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties)dlsym(
+        s_Vk.handle, 
+        "vkGetPhysicalDeviceFormatProperties");
 
     s_Vk.createDevice = (PFN_vkCreateDevice)dlsym(
         s_Vk.handle, 
@@ -1839,7 +2121,7 @@ static void PAL_CALL _vkDestroyQueue(PalQueue* queue)
 
 static bool PAL_CALL _vkCanQueuePresent(
     PalQueue* queue, 
-    PalGraphicsWindow* window)
+    PalGfxWindow* window)
 {
     bool onWayland = vkOnWayland(window->display);
     Queue* _queue = (Queue*)queue;
@@ -1884,9 +2166,9 @@ static PalResult PAL_CALL _vkCreateImage(
     createInfo.extent.depth = info->depth;
     createInfo.mipLevels = info->mipLevels;
 
-    createInfo.format = palFormatToVk(info->format);
+    createInfo.format = palFormatToVk(info->format.format);
     createInfo.samples = samplesToVk(info->samples);
-    createInfo.usage = palUsageToVk(info->usages);
+    createInfo.usage = palUsageToVk(info->format.usages);
 
     // image type
     if (info->depth > 1) {
@@ -1910,6 +2192,8 @@ static PalResult PAL_CALL _vkCreateImage(
         return vkResultToPal(result);
     }
 
+    // TODO: memory allocation
+
     image->info.arrayLayers = info->arrayLayers;
     image->info.depth = info->depth;
     image->info.format = info->format;
@@ -1917,7 +2201,6 @@ static PalResult PAL_CALL _vkCreateImage(
     image->info.memoryType = info->memoryType;
     image->info.mipLevels = info->mipLevels;
     image->info.samples = info->samples;
-    image->info.usages = info->usages;
     image->info.width = info->width;
 
     *outImage = (PalImage*)image;
@@ -1937,6 +2220,73 @@ PalResult PAL_CALL _vkGetImageInfo(
 {
     Image* _image = (Image*)image;
     *info = _image->info;
+}
+
+PalResult PAL_CALL _vkEnumerateFormats(
+    PalAdapter* adapter,
+    Int32* count,
+    PalFormatInfo* outFormats)
+{
+    Int32 fmtCount = 0;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkFormatProperties props = {0};
+
+    for (int i = 0; i < PAL_FORMAT_MAX; i++) {
+        VkFormat fmt = palFormatToVk((PalFormat)i);
+        s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
+        if (props.optimalTilingFeatures != 0) {
+            // format supported
+            if (outFormats) {
+                if (fmtCount < *count) {
+                    PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
+                    fmtInfo->format = (PalFormat)i;
+                    fmtInfo->usages = 
+                        vkFeatureToPalUsage(props.optimalTilingFeatures);
+                }
+
+            } else {
+                fmtCount++;
+            }
+        }
+    }
+
+    if (!outFormats) {
+        *count = fmtCount;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+bool PAL_CALL _vkIsFormatSupported(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkFormatProperties props = {0};
+
+    VkFormat fmt = palFormatToVk(format);
+    s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
+    if (props.optimalTilingFeatures != 0) {
+        return true;
+    }
+
+    return false;
+}
+
+PalImageUsages PAL_CALL _vkQueryFormatUsages(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkFormatProperties props = {0};
+
+    VkFormat fmt = palFormatToVk(format);
+    s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
+    if (props.optimalTilingFeatures != 0) {
+        return vkFeatureToPalUsage(props.optimalTilingFeatures);
+    }
+
+    return PAL_IMAGE_USAGE_UNDEFINED;
 }
 
 // static PalResult PAL_CALL vkQuerySwapchainCapabilities(
@@ -2458,7 +2808,10 @@ static PalGPUBackend s_VkBackend = {
     // image
     .createImage = _vkCreateImage,
     .destroyImage = _vkDestroyImage,
-    .getImageInfo = _vkGetImageInfo
+    .getImageInfo = _vkGetImageInfo,
+    .enumerateFormats = _vkEnumerateFormats,
+    .isFormatSupported = _vkIsFormatSupported,
+    .queryFormatUsages = _vkQueryFormatUsages
 
     // // swapchain
     // .querySwapchainCapabilities = vkQuerySwapchainCapabilities,
@@ -2786,7 +3139,7 @@ void PAL_CALL palDestroyQueue(PalQueue* queue)
 
 bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
-    PalGraphicsWindow* window)
+    PalGfxWindow* window)
 {
     if (s_Graphics.initialized && queue) {
         HandleData* data = findHandleData(queue);
@@ -2869,6 +3222,63 @@ PalResult PAL_CALL palGetImageInfo(
     }
 
     return data->backend->getImageInfo(image, info);
+}
+
+PalResult PAL_CALL palEnumerateFormats(
+    PalAdapter* adapter,
+    Int32* count,
+    PalFormatInfo* outFormats)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!adapter || !count) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (*count == 0 && outFormats) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    HandleData* adapterData = findHandleData(adapter);
+    if (!adapterData) {
+        return PAL_RESULT_INVALID_ADAPTER;
+    }
+
+    return adapterData->backend->enumerateFormats(adapter, count, outFormats);
+}
+
+bool PAL_CALL palIsFormatSupported(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    if (!s_Graphics.initialized || !adapter) {
+        return false;
+    }
+
+    HandleData* adapterData = findHandleData(adapter);
+    if (!adapterData) {
+        return false;
+    }
+
+    return adapterData->backend->isFormatSupported(adapter, format);
+}
+
+PalImageUsages PAL_CALL palQueryFormatUsages(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    if (!s_Graphics.initialized || !adapter) {
+        return PAL_IMAGE_USAGE_UNDEFINED;
+    }
+
+    HandleData* adapterData = findHandleData(adapter);
+    if (!adapterData) {
+        return PAL_IMAGE_USAGE_UNDEFINED;
+    }
+
+    return adapterData->backend->queryFormatUsages(adapter, format);
 }
 
 // ==================================================

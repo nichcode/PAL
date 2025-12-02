@@ -1,13 +1,12 @@
 
 #include "pal/pal_graphics.h"
-#include "pal/pal_video.h"
 #include "tests.h"
 
-bool queueTest()
+bool imageTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Queue Test");
+    palLog(nullptr, "Image Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -82,24 +81,13 @@ bool queueTest()
     result = palGetAdapterCapabilities(vulkanAdapter, &caps);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get adapter info: %s", error);
-        return false;
-    }
-
-    if (caps.maxGraphicsQueues == 0) {
-        palLog(nullptr, "adapter does not support graphics queues");
+        palLog(nullptr, "Failed to get adapter capabilities: %s", error);
         return false;
     }
 
     // create a device with the vulkan adapter
     PalDevice* device = nullptr;
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
-    
-    // enable multi viewport if supported
-    if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
-        features |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
-    }
-
     result = palCreateDevice(vulkanAdapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -107,62 +95,47 @@ bool queueTest()
         return false;
     }
 
-    // create a graphics queue
-    PalQueue* gfxQueue = nullptr;
-    result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &gfxQueue);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create queue: %s", error);
+    // create a simple 2d image allocated on the gpu
+    // we can either enumerate all the supported formats andd choose one
+    // or we can choose our preffered format and check for support
+
+    // use palEnumerateFormats() to get all supported formats 
+    // and their image usages
+
+    PalFormat format = PAL_FORMAT_R8G8B8A8_UNORM;
+    PalImageUsages usage = PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
+    if (!palIsFormatSupported(vulkanAdapter, format)) {
+        palLog(nullptr, "The preffered format is not supported");
         return false;
     }
 
-    // check if the graphics queue we created is presentable
-    // to the provided window. we need a window
-    result = palInitVideo(nullptr, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
+    if(!(usage & palQueryFormatUsages(vulkanAdapter, format))) {
+        palLog(nullptr, 
+            "The preffered format does not support color attachement");
         return false;
     }
 
-    PalWindow* window = nullptr;
-    PalWindowCreateInfo createInfo = {0};
-    createInfo.height = 480;
-    createInfo.width = 640;
-    createInfo.show = true;
+    PalImage* image = nullptr;
+    PalImageCreateInfo imageCreateInfo = {0};
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.depth = 1;
+    imageCreateInfo.format.format = format;
+    imageCreateInfo.format.usages = usage;
+    imageCreateInfo.height = 240;
+    imageCreateInfo.memoryType = PAL_MEMORY_TYPE_GPU_ONLY;
+    imageCreateInfo.mipLevels = 1; 
+    imageCreateInfo.samples = 1; // very simple
+    imageCreateInfo.width = 320;
 
-    // check if we support decorated windows (title bar, close etc)
-    PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
-    if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
-        // if we dont support, we need to create a borderless window
-        // and create the decorations ourselves
-        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
-    }
-
-    result = palCreateWindow(&createInfo, &window);
+    result = palCreateImage(device, &imageCreateInfo, &image);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
+        palLog(nullptr, "Failed to create image: %s", error);
         return false;
     }
 
-    PalGfxWindow gWindow = {0};
-    PalWindowHandleInfo winInfo = palGetWindowHandleInfo(window);
-    gWindow.display = winInfo.nativeDisplay;
-    gWindow.window = winInfo.nativeWindow;
-
-    bool canPresent = palCanQueuePresent(gfxQueue, &gWindow);
-    const char* boolString = "True";
-    if (!canPresent) {
-        boolString = "False";
-    }
-    palLog(nullptr, "Graphics queue presentable: %s", boolString);
-
-    palDestroyWindow(window);
-    palShutdownVideo();
-
-    // destroy the graphics queue
-    palDestroyQueue(gfxQueue);
+    // destroy image
+    palDestroyImage(image);
 
     // destroy the device
     palDestroyDevice(device);

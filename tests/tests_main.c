@@ -55,8 +55,9 @@ int main(int argc, char** argv)
 #endif
 
 #if PAL_HAS_GRAPHICS
-    registerTest("Graphics Test", graphicsTest);
+    // registerTest("Graphics Test", graphicsTest);
     // registerTest("Device Test", deviceTest);
+    registerTest("Image Test", imageTest);
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO

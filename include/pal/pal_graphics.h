@@ -83,6 +83,8 @@ typedef enum {
 } PalCompositeAplha;
 
 typedef enum {
+    PAL_FORMAT_UNDEFINED,
+
     PAL_FORMAT_R8_UNORM,
     PAL_FORMAT_R8_SNORM,
     PAL_FORMAT_R8_UINT,
@@ -162,10 +164,14 @@ typedef enum {
     PAL_FORMAT_D32_SFLOAT,
     PAL_FORMAT_D32_SFLOAT_S8_UINT,
     PAL_FORMAT_D16_UNORM_S8_UINT,
-    PAL_FORMAT_D24_UNORM_S8_UINT
+    PAL_FORMAT_D24_UNORM_S8_UINT,
+
+    PAL_FORMAT_MAX
 } PalFormat;
 
 typedef enum {
+    PAL_IMAGE_USAGE_UNDEFINED = 0,
+
     PAL_IMAGE_USAGE_COLOR_ATTACHEMENT = PAL_BIT(0),
     PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT = PAL_BIT(1),
     PAL_IMAGE_USAGE_TRANSFER_SRC = PAL_BIT(2),
@@ -326,15 +332,19 @@ typedef struct {
 // } PalRenderPassCreateInfo;
 
 typedef struct {
+    PalFormat format;
+    PalImageUsages usages;
+} PalFormatInfo;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depth;
     Uint32 mipLevels;
     Uint32 arrayLayers;
     Uint32 samples;
-    PalFormat format;
-    PalImageUsages usages;
     PalMemoryType memoryType;
+    PalFormatInfo format;
 } PalImageInfo;
 
 typedef struct {
@@ -344,15 +354,14 @@ typedef struct {
     Uint32 mipLevels;
     Uint32 arrayLayers;
     Uint32 samples;
-    PalFormat format;
-    PalImageUsages usages;
     PalMemoryType memoryType;
+    PalFormatInfo format;
 } PalImageCreateInfo;
 
 typedef struct {
     void* display;
     void* window;
-} PalGraphicsWindow;
+} PalGfxWindow;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateAdapters)(
@@ -383,7 +392,7 @@ typedef struct {
 
     bool PAL_CALL (*canQueuePresent)(
         PalQueue* queue, 
-        PalGraphicsWindow* window);
+        PalGfxWindow* window);
 
     PalResult PAL_CALL (*createImage)(
         PalDevice* device,
@@ -395,6 +404,19 @@ typedef struct {
     PalResult PAL_CALL (*getImageInfo)(
         PalImage* image,
         PalImageInfo* info);
+
+    PalResult PAL_CALL (*enumerateFormats)(
+        PalAdapter* adapter,
+        Int32* count,
+        PalFormatInfo* outFormats);
+
+    bool PAL_CALL (*isFormatSupported)(
+        PalAdapter* adapter,
+        PalFormat format);
+
+    PalImageUsages PAL_CALL (*queryFormatUsages)(
+        PalAdapter* adapter,
+        PalFormat format);
 
     // PalResult PAL_CALL (*querySwapchainCapabilities)(
     //     PalGPUAdapter* adapter,
@@ -466,7 +488,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 
 PAL_API bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
-    PalGraphicsWindow* window);
+    PalGfxWindow* window);
 
 PAL_API PalResult PAL_CALL palCreateImage(
     PalDevice* device,
@@ -478,6 +500,19 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
 PAL_API PalResult PAL_CALL palGetImageInfo(
     PalImage* image,
     PalImageInfo* info);
+
+PAL_API PalResult PAL_CALL palEnumerateFormats(
+    PalAdapter* adapter,
+    Int32* count,
+    PalFormatInfo* outFormats);
+
+PAL_API bool PAL_CALL palIsFormatSupported(
+    PalAdapter* adapter,
+    PalFormat format);
+
+PAL_API PalImageUsages PAL_CALL palQueryFormatUsages(
+    PalAdapter* adapter,
+    PalFormat format);
 
 // PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,

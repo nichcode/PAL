@@ -66,7 +66,8 @@ project "tests"
     if (PAL_BUILD_GRAPHICS) then
         files { 
             "graphics_test.c",
-            "device_test.c"
+            "device_test.c",
+            "image_test.c"
         }
     end
 

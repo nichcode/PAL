@@ -57,6 +57,7 @@ bool multiThreadOpenGlTest();
 bool graphicsTest();
 bool customGraphicsBackendTest();
 bool deviceTest();
+bool imageTest();
 
 // graphics and video
 bool queueTest();
