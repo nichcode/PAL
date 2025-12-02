@@ -413,6 +413,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_SWAPCHAIN:
             return "Invalid swapchain";
+
+        case PAL_RESULT_INVALID_GRAPHICS_IMAGE:
+            return "Invalid graphics image";
     }
     return "Unknown";
 }

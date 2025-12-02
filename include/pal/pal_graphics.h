@@ -152,7 +152,7 @@ typedef enum {
     PAL_FORMAT_R64G64B64A64_UINT,
     PAL_FORMAT_R64G64B64A64_SINT,
     PAL_FORMAT_R64G64B64A64_SFLOAT,
-    PAL_FORMAT_B8G8RA88_UNORM,
+    PAL_FORMAT_B8G8R8A8_UNORM,
     PAL_FORMAT_B8G8R8A8_SNORM,
     PAL_FORMAT_B8G8R8A8_UINT,
     PAL_FORMAT_B8G8R8A8_SINT,
@@ -162,7 +162,7 @@ typedef enum {
     PAL_FORMAT_D32_SFLOAT,
     PAL_FORMAT_D32_SFLOAT_S8_UINT,
     PAL_FORMAT_D16_UNORM_S8_UINT,
-    PAL_FORMAT_D24_UNORM_S8_UINT,
+    PAL_FORMAT_D24_UNORM_S8_UINT
 } PalFormat;
 
 typedef enum {
@@ -173,11 +173,6 @@ typedef enum {
     PAL_IMAGE_USAGE_STORAGE = PAL_BIT(4),
     PAL_IMAGE_USAGE_SAMPLED = PAL_BIT(5)
 } PalImageUsages;
-
-typedef enum {
-    PAL_SHARING_MODE_EXCLUSIVE,
-    PAL_SHARING_MODE_CONCURRENT
-} PalSharingMode;
 
 typedef enum {
     PAL_TRANSFORM_LANDSCAPE,
@@ -225,6 +220,12 @@ typedef enum {
     PAL_STORE_OP_STORE,
     PAL_STORE_OP_DONT_CARE
 } PalStoreOp;
+
+typedef enum {
+    PAL_MEMORY_TYPE_GPU_ONLY,
+    PAL_MEMORY_CPU_UPLOAD,
+    PAL_MEMORY_CPU_READBACK
+} PalMemoryType;
 
 typedef struct {
     Uint32 vendorId;
@@ -325,6 +326,30 @@ typedef struct {
 // } PalRenderPassCreateInfo;
 
 typedef struct {
+    Uint32 width;
+    Uint32 height;
+    Uint32 depth;
+    Uint32 mipLevels;
+    Uint32 arrayLayers;
+    Uint32 samples;
+    PalFormat format;
+    PalImageUsages usages;
+    PalMemoryType memoryType;
+} PalImageInfo;
+
+typedef struct {
+    Uint32 width;
+    Uint32 height;
+    Uint32 depth;
+    Uint32 mipLevels;
+    Uint32 arrayLayers;
+    Uint32 samples;
+    PalFormat format;
+    PalImageUsages usages;
+    PalMemoryType memoryType;
+} PalImageCreateInfo;
+
+typedef struct {
     void* display;
     void* window;
 } PalGraphicsWindow;
@@ -359,6 +384,17 @@ typedef struct {
     bool PAL_CALL (*canQueuePresent)(
         PalQueue* queue, 
         PalGraphicsWindow* window);
+
+    PalResult PAL_CALL (*createImage)(
+        PalDevice* device,
+        const PalImageCreateInfo* info,
+        PalImage** outImage);
+
+    void PAL_CALL (*destroyImage)(PalImage* image);
+
+    PalResult PAL_CALL (*getImageInfo)(
+        PalImage* image,
+        PalImageInfo* info);
 
     // PalResult PAL_CALL (*querySwapchainCapabilities)(
     //     PalGPUAdapter* adapter,
@@ -431,6 +467,17 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 PAL_API bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
     PalGraphicsWindow* window);
+
+PAL_API PalResult PAL_CALL palCreateImage(
+    PalDevice* device,
+    const PalImageCreateInfo* info,
+    PalImage** outImage);
+
+PAL_API void PAL_CALL palDestroyImage(PalImage* image);
+
+PAL_API PalResult PAL_CALL palGetImageInfo(
+    PalImage* image,
+    PalImageInfo* info);
 
 // PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,

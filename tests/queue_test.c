@@ -1,5 +1,6 @@
 
 #include "pal/pal_graphics.h"
+#include "pal/pal_video.h"
 #include "tests.h"
 
 bool queueTest()
@@ -114,6 +115,51 @@ bool queueTest()
         palLog(nullptr, "Failed to create queue: %s", error);
         return false;
     }
+
+    // check if the graphics queue we created is presentable
+    // to the provided window. we need a window
+    result = palInitVideo(nullptr, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    PalWindow* window = nullptr;
+    PalWindowCreateInfo createInfo = {0};
+    createInfo.height = 480;
+    createInfo.width = 640;
+    createInfo.show = true;
+
+    // check if we support decorated windows (title bar, close etc)
+    PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
+    if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
+
+    result = palCreateWindow(&createInfo, &window);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window: %s", error);
+        return false;
+    }
+
+    PalGraphicsWindow gWindow = {0};
+    PalWindowHandleInfo winInfo = palGetWindowHandleInfo(window);
+    gWindow.display = winInfo.nativeDisplay;
+    gWindow.window = winInfo.nativeWindow;
+
+    bool canPresent = palCanQueuePresent(gfxQueue, &gWindow);
+    const char* boolString = "True";
+    if (!canPresent) {
+        boolString = "False";
+    }
+    palLog(nullptr, "Graphics queue presentable: %s", boolString);
+
+    palDestroyWindow(window);
+    palShutdownVideo();
 
     // destroy the graphics queue
     palDestroyQueue(gfxQueue);

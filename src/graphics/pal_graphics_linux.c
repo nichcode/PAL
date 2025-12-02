@@ -33,6 +33,18 @@ freely, subject to the following restrictions:
 #include <dlfcn.h>
 #include <string.h>
 #include <stdio.h>
+
+// HACK: Needed to determine display type
+struct wl_display;
+struct wl_surface;
+typedef struct _XDisplay Display;
+typedef unsigned long Window;
+typedef unsigned long VisualID;
+typedef int (*wl_display_get_fd_fn)(struct wl_display*);
+
+#include <vulkan/vulkan_xlib.h>
+#include <vulkan/vulkan_wayland.h>
+
 #endif // PAL_HAS_VULKAN
 
 // ==================================================
@@ -42,204 +54,6 @@ freely, subject to the following restrictions:
 #define MAX_BACKENDS 32
 
 #if PAL_HAS_VULKAN
-// VKAPI_PTR expands to nothing on linux
-
-// HACK: Needed to determine display type
-struct wl_display;
-typedef int (*wl_display_get_fd_fn)(struct wl_display*);
-
-// wayland
-typedef VkFlags VkWaylandSurfaceCreateFlagsKHR;
-typedef struct VkWaylandSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext;
-    VkWaylandSurfaceCreateFlagsKHR flags;
-    struct wl_display* display;
-    struct wl_surface* surface;
-} VkWaylandSurfaceCreateInfoKHR;
-
-typedef VkResult (*vkCreateWaylandSurfaceKHRFn)(
-    VkInstance, 
-    const VkWaylandSurfaceCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
-    VkSurfaceKHR*);
-
-typedef VkBool32 (*vkGetPhysicalDeviceWaylandPresentationSupportKHRFn)(
-    VkPhysicalDevice, 
-    uint32_t, 
-    struct wl_display*);
-
-// Xlib
-typedef struct _XDisplay Display;
-typedef unsigned long Window;
-typedef unsigned long VisualID;
-typedef VkFlags VkXlibSurfaceCreateFlagsKHR;
-
-typedef struct VkXlibSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext;
-    VkXlibSurfaceCreateFlagsKHR flags;
-    Display* dpy;
-    Window window;
-} VkXlibSurfaceCreateInfoKHR;
-
-typedef VkResult (*vkCreateXlibSurfaceKHRFn)(
-    VkInstance, 
-    const VkXlibSurfaceCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
-    VkSurfaceKHR*);
-
-typedef VkBool32 (*vkGetPhysicalDeviceXlibPresentationSupportKHRFn)(
-    VkPhysicalDevice, 
-    uint32_t, 
-    Display*, 
-    VisualID);
-
-typedef VkResult (*vkEnumerateInstanceVersionFn)(uint32_t*);
-
-typedef VkResult (*vkEnumerateInstanceExtensionPropertiesFn)(
-    const char*, 
-    uint32_t*, 
-    VkExtensionProperties*);
-
-typedef VkResult (*vkCreateInstanceFn)(
-    const VkInstanceCreateInfo*, 
-    const VkAllocationCallbacks*, 
-    VkInstance*);
-
-typedef void (*vkDestroyInstanceFn)(
-    VkInstance, 
-    const VkAllocationCallbacks*);
-
-typedef VkResult (*vkEnumeratePhysicalDevicesFn)(
-    VkInstance, 
-    uint32_t*, 
-    VkPhysicalDevice*);
-
-typedef void (*vkGetPhysicalDevicePropertiesFn)(
-    VkPhysicalDevice, 
-    VkPhysicalDeviceProperties*);
-
-typedef void (*vkGetPhysicalDeviceMemoryPropertiesFn)(
-    VkPhysicalDevice, 
-    VkPhysicalDeviceMemoryProperties*);
-
-typedef VkResult (*vkEnumerateInstanceLayerPropertiesFn)(
-    uint32_t*, 
-    VkLayerProperties*);
-
-typedef void (*vkGetPhysicalDeviceQueueFamilyPropertiesFn)(
-    VkPhysicalDevice, 
-    uint32_t*, 
-    VkQueueFamilyProperties*);
-
-typedef VkResult (*vkEnumerateDeviceExtensionPropertiesFn)(
-    VkPhysicalDevice, 
-    const char*, 
-    uint32_t*, 
-    VkExtensionProperties*);
-
-typedef void (*vkGetPhysicalDeviceFeaturesFn)(
-    VkPhysicalDevice, 
-    VkPhysicalDeviceFeatures*);
-
-typedef void (*vkGetPhysicalDeviceFeatures2Fn)(
-    VkPhysicalDevice, 
-    VkPhysicalDeviceFeatures2*);
-
-typedef void (*vkGetPhysicalDeviceFeatures2KHRFn)(
-    VkPhysicalDevice, 
-    VkPhysicalDeviceFeatures2*);
-
-typedef VkResult (*vkCreateDeviceFn)(
-    VkPhysicalDevice,
-    const VkDeviceCreateInfo*,
-    const VkAllocationCallbacks*,
-    VkDevice*);
-
-typedef void (*vkDestroyDeviceFn)(
-    VkDevice,
-    const VkAllocationCallbacks*);
-
-typedef void (*vkGetDeviceQueueFn)(
-    VkDevice,
-    uint32_t,
-    uint32_t,
-    VkQueue*);
-
-typedef void (*vkDestroySurfaceKHRFn)(
-    VkInstance, 
-    VkSurfaceKHR, 
-    const VkAllocationCallbacks*);
-
-typedef PFN_vkVoidFunction (*vkGetInstanceProcAddrFn)(
-    VkInstance,
-    const char*);
-
-typedef PFN_vkVoidFunction (*vkGetDeviceProcAddrFn)(
-    VkDevice,
-    const char*);
-
-typedef VkResult (*vkGetPhysicalDeviceSurfaceCapabilitiesKHRFn)(
-    VkPhysicalDevice,
-    VkSurfaceKHR,
-    VkSurfaceCapabilitiesKHR*);
-
-typedef VkResult (*vkGetPhysicalDeviceSurfaceFormatsKHRFn)(
-    VkPhysicalDevice,
-    VkSurfaceKHR,
-    uint32_t*,
-    VkSurfaceFormatKHR*);
-
-typedef VkResult (*vkGetPhysicalDeviceSurfacePresentModesKHRFn)(
-    VkPhysicalDevice,
-    VkSurfaceKHR,
-    uint32_t*,
-    VkPresentModeKHR*);
-
-typedef VkResult (*vkCreateSwapchainKHRFn)(
-    VkDevice, 
-    const VkSwapchainCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
-    VkSwapchainKHR*);
-
-typedef void (*vkDestroySwapchainKHRFn)(
-    VkDevice, 
-    VkSwapchainKHR, 
-    const VkAllocationCallbacks*);
-
-typedef VkResult (*vkGetSwapchainImagesKHRFn)(
-    VkDevice, 
-    VkSwapchainKHR, 
-    uint32_t*, 
-    VkImage*);
-
-typedef VkResult (*vkAcquireNextImageKHRFn)(
-    VkDevice, 
-    VkSwapchainKHR, 
-    uint64_t, 
-    VkSemaphore, 
-    VkFence, 
-    uint32_t*);
-
-typedef VkResult (*vkQueuePresentKHRFn)(
-    VkQueue, 
-    const VkPresentInfoKHR*);
-
-typedef VkResult (*vkCreateImageViewFn)(
-    VkDevice,
-    const VkImageViewCreateInfo*,
-    const VkAllocationCallbacks*,
-    VkImageView*);
-
-typedef void (*vkDestroyImageViewFn)(
-    VkDevice,
-    VkImageView,
-    const VkAllocationCallbacks*);
-
-typedef void (*vkGetPhysicalDeviceProperties2Fn)(
-    VkPhysicalDevice,
-    VkPhysicalDeviceProperties2*);
 
 typedef struct {
     bool hasDebug;
@@ -251,37 +65,40 @@ typedef struct {
     void* libWayland;
     wl_display_get_fd_fn getDisplayFd;
     
-    vkEnumerateInstanceVersionFn enumerateInstanceVersion;
-    vkEnumerateInstanceExtensionPropertiesFn enumerateInstanceExtensionProperties;
-    vkDestroyInstanceFn destroyInstance;
-    vkCreateInstanceFn createInstance;
-    vkEnumeratePhysicalDevicesFn enumeratePhysicalDevices;
-    vkGetPhysicalDevicePropertiesFn getPhysicalDeviceProperties;
-    vkGetPhysicalDeviceMemoryPropertiesFn getPhysicalDeviceMemoryProperties;
-    vkEnumerateInstanceLayerPropertiesFn enumerateInstanceLayerProperties;
-    vkGetPhysicalDeviceQueueFamilyPropertiesFn getPhysicalDeviceQueueFamilyProperties;
-    vkEnumerateDeviceExtensionPropertiesFn enumerateDeviceExtensionProperties;
-    vkGetPhysicalDeviceFeaturesFn getPhysicalDeviceFeatures;
-    vkGetPhysicalDeviceFeatures2Fn getPhysicalDeviceFeatures2;
-    vkGetPhysicalDeviceFeatures2KHRFn getPhysicalDeviceFeatures2KHR;
-    vkGetInstanceProcAddrFn getInstanceProcAddr;
-    vkCreateImageViewFn createImageView;
-    vkDestroyImageViewFn destroyImageView;
-    vkGetPhysicalDeviceProperties2Fn getPhysicalDeviceProperties2;
+    PFN_vkEnumerateInstanceVersion enumerateInstanceVersion;
+    PFN_vkEnumerateInstanceExtensionProperties enumerateInstanceExtensionProperties;
+    PFN_vkDestroyInstance destroyInstance;
+    PFN_vkCreateInstance createInstance;
+    PFN_vkEnumeratePhysicalDevices enumeratePhysicalDevices;
+    PFN_vkGetPhysicalDeviceProperties getPhysicalDeviceProperties;
+    PFN_vkGetPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties;
+    PFN_vkEnumerateInstanceLayerProperties enumerateInstanceLayerProperties;
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties getPhysicalDeviceQueueFamilyProperties;
+    PFN_vkEnumerateDeviceExtensionProperties enumerateDeviceExtensionProperties;
+    PFN_vkGetPhysicalDeviceFeatures getPhysicalDeviceFeatures;
+    PFN_vkGetPhysicalDeviceFeatures2 getPhysicalDeviceFeatures2;
+    PFN_vkGetPhysicalDeviceFeatures2KHR getPhysicalDeviceFeatures2KHR;
+    PFN_vkGetInstanceProcAddr getInstanceProcAddr;
+    PFN_vkCreateImageView createImageView;
+    PFN_vkDestroyImageView destroyImageView;
+    PFN_vkGetPhysicalDeviceProperties2 getPhysicalDeviceProperties2;
     
-    vkCreateDeviceFn createDevice;
-    vkDestroyDeviceFn destroyDevice;
-    vkGetDeviceQueueFn getDeviceQueue;
-    vkGetDeviceProcAddrFn getDeviceProcAddr;
+    PFN_vkCreateDevice createDevice;
+    PFN_vkDestroyDevice destroyDevice;
+    PFN_vkGetDeviceQueue getDeviceQueue;
+    PFN_vkGetDeviceProcAddr getDeviceProcAddr;
+    PFN_vkCreateImage createImage;
+    PFN_vkDestroyImage destroyImage;
 
-    vkCreateWaylandSurfaceKHRFn createWaylandSurface;
-    vkGetPhysicalDeviceWaylandPresentationSupportKHRFn checkWaylandPresentSupport;
-    vkCreateXlibSurfaceKHRFn createXlibSurface;
-    vkGetPhysicalDeviceXlibPresentationSupportKHRFn checkXlibPresentSupport;
-    vkDestroySurfaceKHRFn destroySurface;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHRFn getSurfaceCapabilities;
-    vkGetPhysicalDeviceSurfaceFormatsKHRFn getSurfaceFormats;
-    vkGetPhysicalDeviceSurfacePresentModesKHRFn getSurfacePresentModes;
+    PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
+    PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
+    PFN_vkCreateXlibSurfaceKHR createXlibSurface;
+    PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR checkXlibPresentSupport;
+
+    PFN_vkDestroySurfaceKHR destroySurface;
+    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getSurfaceCapabilities;
+    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getSurfaceFormats;
+    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getSurfacePresentModes;
 
     VkAllocationCallbacks allocator;
 } Vulkan;
@@ -300,11 +117,11 @@ typedef struct {
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
-    vkCreateSwapchainKHRFn createSwapchain;
-    vkDestroySwapchainKHRFn destroySwapchain;
-    vkGetSwapchainImagesKHRFn getSwapchainImages;
-    vkAcquireNextImageKHRFn acquireNextImage;
-    vkQueuePresentKHRFn queuePresent;
+    PFN_vkCreateSwapchainKHR createSwapchain;
+    PFN_vkDestroySwapchainKHR destroySwapchain;
+    PFN_vkGetSwapchainImagesKHR getSwapchainImages;
+    PFN_vkAcquireNextImageKHR acquireNextImage;
+    PFN_vkQueuePresentKHR queuePresent;
 } Device;
 
 typedef struct {
@@ -312,6 +129,12 @@ typedef struct {
     Device* device;
     PhysicalQueue* phyQueue;
 } Queue;
+
+typedef struct {
+    Device* device;
+    VkImage handle;
+    PalImageInfo info;
+} Image;
 
 typedef struct {
     Int32 bufferCount;
@@ -491,6 +314,332 @@ static PalResult vkResultToPal(VkResult result)
     return PAL_RESULT_PLATFORM_FAILURE;
 }
 
+static VkImageUsageFlags palUsageToVk(PalImageUsages usages) 
+{
+    VkImageUsageFlags flags = 0;
+    if (usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+        flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+        flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_TRANSFER_SRC) {
+        flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_TRANSFER_DST) {
+        flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_STORAGE) {
+        flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+    
+    if (usages & PAL_IMAGE_USAGE_SAMPLED) {
+        flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+
+    return flags;
+}
+
+static VkFormat palFormatToVk(PalFormat format) 
+{
+    switch (format) {
+        case PAL_FORMAT_R8_UNORM:
+            return VK_FORMAT_R8_UNORM;
+
+        case PAL_FORMAT_R8_SNORM:
+            return VK_FORMAT_R8_SNORM;
+
+        case PAL_FORMAT_R8_UINT:
+            return VK_FORMAT_R8_UINT;
+
+        case PAL_FORMAT_R8_SINT:
+            return VK_FORMAT_R8_SINT;
+
+        case PAL_FORMAT_R8_SRGB:
+            return VK_FORMAT_R8_SRGB;
+
+        case PAL_FORMAT_R16_UNORM:
+            return VK_FORMAT_R16_UNORM;
+
+        case PAL_FORMAT_R16_SNORM:
+            return VK_FORMAT_R16_SNORM;
+
+        case PAL_FORMAT_R16_UINT:
+            return VK_FORMAT_R16_UINT;
+
+        case PAL_FORMAT_R16_SINT:
+            return VK_FORMAT_R16_SINT;
+
+        case PAL_FORMAT_R16_SFLOAT:
+            return VK_FORMAT_R16_SFLOAT;
+
+        case PAL_FORMAT_R32_UINT:
+            return VK_FORMAT_R32_UINT;
+
+        case PAL_FORMAT_R32_SINT:
+            return VK_FORMAT_R32_SINT;
+
+        case PAL_FORMAT_R32_SFLOAT:
+            return VK_FORMAT_R32_SFLOAT;
+
+        case PAL_FORMAT_R64_UINT:
+            return VK_FORMAT_R64_UINT;
+
+        case PAL_FORMAT_R64_SINT:
+            return VK_FORMAT_R64_SINT;
+
+        case PAL_FORMAT_R64_SFLOAT:
+            return VK_FORMAT_R64_SFLOAT;
+
+        case PAL_FORMAT_R8G8_UNORM:
+            return VK_FORMAT_R8G8_UNORM;
+
+        case PAL_FORMAT_R8G8_SNORM:
+            return VK_FORMAT_R8G8_SNORM;
+
+        case PAL_FORMAT_R8G8_UINT:
+            return VK_FORMAT_R8G8_UINT;
+
+        case PAL_FORMAT_R8G8_SINT:
+            return VK_FORMAT_R8G8_SINT;
+
+        case PAL_FORMAT_R8G8_SRGB:
+            return VK_FORMAT_R8G8_SRGB;
+
+        case PAL_FORMAT_R16G16_UNORM:
+            return VK_FORMAT_R16G16_UNORM;
+
+        case PAL_FORMAT_R16G16_SNORM:
+            return VK_FORMAT_R16G16_SNORM;
+
+        case PAL_FORMAT_R16G16_UINT:
+            return VK_FORMAT_R16G16_UINT;
+
+        case PAL_FORMAT_R16G16_SINT:
+            return VK_FORMAT_R16G16_SINT;
+
+        case PAL_FORMAT_R16G16_SFLOAT:
+            return VK_FORMAT_R16G16_SFLOAT;
+
+        case PAL_FORMAT_R32G32_UINT:
+            return VK_FORMAT_R32G32_UINT;
+
+        case PAL_FORMAT_R32G32_SINT:
+            return VK_FORMAT_R32G32_SINT;
+
+        case PAL_FORMAT_R32G32_SFLOAT:
+            return VK_FORMAT_R32G32_SFLOAT;
+
+        case PAL_FORMAT_R64G64_UINT:
+            return VK_FORMAT_R64G64_UINT;
+
+        case PAL_FORMAT_R64G64_SINT:
+            return VK_FORMAT_R64G64_SINT;
+
+        case PAL_FORMAT_R64G64_SFLOAT:
+            return VK_FORMAT_R64G64_SFLOAT;
+
+        case PAL_FORMAT_R8G8B8_UNORM:
+            return VK_FORMAT_R8G8B8_UNORM;
+
+        case PAL_FORMAT_R8G8B8_SNORM:
+            return VK_FORMAT_R8G8B8_SNORM;
+
+        case PAL_FORMAT_R8G8B8_UINT:
+            return VK_FORMAT_R8G8B8_UINT;
+
+        case PAL_FORMAT_R8G8B8_SINT:
+            return VK_FORMAT_R8G8B8_SINT;
+
+        case PAL_FORMAT_R8G8B8_SRGB:
+            return VK_FORMAT_R8G8B8_SRGB;
+
+        case PAL_FORMAT_R16G16B16_UNORM:
+            return VK_FORMAT_R16G16B16_UNORM;
+
+        case PAL_FORMAT_R16G16B16_SNORM:
+            return VK_FORMAT_R16G16B16_SNORM;
+
+        case PAL_FORMAT_R16G16B16_UINT:
+            return VK_FORMAT_R16G16B16_UINT;
+
+        case PAL_FORMAT_R16G16B16_SINT:
+            return VK_FORMAT_R16G16B16_SINT;
+
+        case PAL_FORMAT_R16G16B16_SFLOAT:
+            return VK_FORMAT_R16G16B16_SFLOAT;
+
+        case PAL_FORMAT_R32G32B32_UINT:
+            return VK_FORMAT_R32G32B32_UINT;
+
+        case PAL_FORMAT_R32G32B32_SINT:
+            return VK_FORMAT_R32G32B32_SINT;
+
+        case PAL_FORMAT_R32G32B32_SFLOAT:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+
+        case PAL_FORMAT_R64G64B64_UINT:
+            return VK_FORMAT_R64G64B64_UINT;
+
+        case PAL_FORMAT_R64G64B64_SINT:
+            return VK_FORMAT_R64G64B64_SINT;
+
+        case PAL_FORMAT_R64G64B64_SFLOAT:
+            return VK_FORMAT_R64G64B64_SFLOAT;
+
+        case PAL_FORMAT_B8G8R8_UNORM:
+            return VK_FORMAT_B8G8R8_UNORM;
+
+        case PAL_FORMAT_B8G8R8_SNORM:
+            return VK_FORMAT_B8G8R8_SNORM;
+
+        case PAL_FORMAT_B8G8R8_UINT:
+            return VK_FORMAT_B8G8R8_UINT;
+
+        case PAL_FORMAT_B8G8R8_SINT:
+            return VK_FORMAT_B8G8R8_SINT;
+
+        case PAL_FORMAT_B8G8R8_SRGB:
+            return VK_FORMAT_B8G8R8_SRGB;
+
+        case PAL_FORMAT_R8G8B8A8_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+
+        case PAL_FORMAT_R8G8B8A8_SNORM:
+            return VK_FORMAT_R8G8B8A8_SNORM;
+
+        case PAL_FORMAT_R8G8B8A8_UINT:
+            return VK_FORMAT_R8G8B8A8_UINT;
+
+        case PAL_FORMAT_R8G8B8A8_SINT:
+            return VK_FORMAT_R8G8B8A8_SINT;
+
+        case PAL_FORMAT_R8G8B8A8_SRGB:
+            return VK_FORMAT_R8G8B8A8_SRGB;
+
+        case PAL_FORMAT_R16G16B16A16_UNORM:
+            return VK_FORMAT_R16G16B16A16_UNORM;
+
+        case PAL_FORMAT_R16G16B16A16_SNORM:
+            return VK_FORMAT_R16G16B16A16_SNORM;
+
+        case PAL_FORMAT_R16G16B16A16_UINT:
+            return VK_FORMAT_R16G16B16A16_UINT;
+
+        case PAL_FORMAT_R16G16B16A16_SINT:
+            return VK_FORMAT_R16G16B16A16_SINT;
+
+        case PAL_FORMAT_R16G16B16A16_SFLOAT:
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
+
+        case PAL_FORMAT_R32G32B32A32_UINT:
+            return VK_FORMAT_R32G32B32A32_UINT;
+
+        case PAL_FORMAT_R32G32B32A32_SINT:
+            return VK_FORMAT_R32G32B32A32_SINT;
+
+        case PAL_FORMAT_R32G32B32A32_SFLOAT:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+
+        case PAL_FORMAT_R64G64B64A64_UINT:
+            return VK_FORMAT_R64G64B64A64_UINT;
+
+        case PAL_FORMAT_R64G64B64A64_SINT:
+            return VK_FORMAT_R64G64B64A64_SINT;
+
+        case PAL_FORMAT_R64G64B64A64_SFLOAT:
+            return VK_FORMAT_R64G64B64A64_SFLOAT;
+
+        case PAL_FORMAT_B8G8R8A8_UNORM:
+            return VK_FORMAT_B8G8R8A8_UNORM;
+
+        case PAL_FORMAT_B8G8R8A8_SNORM:
+            return VK_FORMAT_B8G8R8A8_SNORM;
+
+        case PAL_FORMAT_B8G8R8A8_UINT:
+            return VK_FORMAT_B8G8R8A8_UINT;
+
+        case PAL_FORMAT_B8G8R8A8_SINT:
+            return VK_FORMAT_B8G8R8A8_SINT;
+
+        case PAL_FORMAT_B8G8R8A8_SRGB:
+            return VK_FORMAT_B8G8R8A8_SRGB;
+
+        case PAL_FORMAT_S8_UINT:
+            return VK_FORMAT_S8_UINT;
+
+        case PAL_FORMAT_D16_UNORM:
+            return VK_FORMAT_D16_UNORM;
+
+        case PAL_FORMAT_D32_SFLOAT:
+            return VK_FORMAT_D32_SFLOAT;
+
+        case PAL_FORMAT_D32_SFLOAT_S8_UINT:
+            return VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+        case PAL_FORMAT_D16_UNORM_S8_UINT:
+            return VK_FORMAT_D16_UNORM_S8_UINT;
+
+        case PAL_FORMAT_D24_UNORM_S8_UINT:
+            return VK_FORMAT_D24_UNORM_S8_UINT;
+    }
+
+    return VK_FORMAT_UNDEFINED;
+}
+
+static VkSampleCountFlags samplesToVk(Uint32 samples)
+{
+    switch (samples) {
+        case 2:
+            return VK_SAMPLE_COUNT_2_BIT;
+        
+        case 4:
+            return VK_SAMPLE_COUNT_4_BIT;
+
+        case 8:
+            return VK_SAMPLE_COUNT_8_BIT;
+
+        case 16:
+            return VK_SAMPLE_COUNT_16_BIT;
+
+        case 32:
+            return VK_SAMPLE_COUNT_32_BIT;
+
+        case 64:
+            return VK_SAMPLE_COUNT_64_BIT;
+    }
+
+    return VK_SAMPLE_COUNT_1_BIT;
+}
+
+static Uint32 vkSamplesToSamples(VkSampleCountFlags samples)
+{
+    if (samples & VK_SAMPLE_COUNT_2_BIT) {
+        return 2;
+
+    } else if (samples & VK_SAMPLE_COUNT_4_BIT) {
+        return 4;
+
+    } else if (samples & VK_SAMPLE_COUNT_8_BIT) {
+        return 8;
+
+    } else if (samples & VK_SAMPLE_COUNT_16_BIT) {
+        return 16;
+
+    } else if (samples & VK_SAMPLE_COUNT_32_BIT) {
+        return 32;
+
+    } else if (samples & VK_SAMPLE_COUNT_64_BIT) {
+        return 64;
+    }
+
+    return 1;
+}
+
 static void* vkAlloc(
     void* pUserData,
     size_t size,
@@ -549,83 +698,83 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     }
 
     // clang-format off
-    s_Vk.enumerateInstanceVersion = (vkEnumerateInstanceVersionFn)dlsym(
+    s_Vk.enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)dlsym(
         s_Vk.handle, 
         "vkEnumerateInstanceVersion");
 
-    s_Vk.enumerateInstanceExtensionProperties = (vkEnumerateInstanceExtensionPropertiesFn)dlsym(
+    s_Vk.enumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)dlsym(
         s_Vk.handle, 
         "vkEnumerateInstanceExtensionProperties");
 
-    s_Vk.createInstance = (vkCreateInstanceFn)dlsym(
+    s_Vk.createInstance = (PFN_vkCreateInstance)dlsym(
         s_Vk.handle, 
         "vkCreateInstance");
 
-    s_Vk.destroyInstance = (vkDestroyInstanceFn)dlsym(
+    s_Vk.destroyInstance = (PFN_vkDestroyInstance)dlsym(
         s_Vk.handle, 
         "vkDestroyInstance");
 
-    s_Vk.enumeratePhysicalDevices = (vkEnumeratePhysicalDevicesFn)dlsym(
+    s_Vk.enumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)dlsym(
         s_Vk.handle, 
         "vkEnumeratePhysicalDevices");
 
-    s_Vk.getPhysicalDeviceProperties = (vkGetPhysicalDevicePropertiesFn)dlsym(
+    s_Vk.getPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceProperties");
 
-    s_Vk.getPhysicalDeviceMemoryProperties = (vkGetPhysicalDeviceMemoryPropertiesFn)dlsym(
+    s_Vk.getPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceMemoryProperties");
 
-    s_Vk.enumerateInstanceLayerProperties = (vkEnumerateInstanceLayerPropertiesFn)dlsym(
+    s_Vk.enumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)dlsym(
         s_Vk.handle, 
         "vkEnumerateInstanceLayerProperties");
 
-    s_Vk.getPhysicalDeviceQueueFamilyProperties = (vkGetPhysicalDeviceQueueFamilyPropertiesFn)dlsym(
+    s_Vk.getPhysicalDeviceQueueFamilyProperties = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceQueueFamilyProperties");
 
-    s_Vk.enumerateDeviceExtensionProperties = (vkEnumerateDeviceExtensionPropertiesFn)dlsym(
+    s_Vk.enumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)dlsym(
         s_Vk.handle, 
         "vkEnumerateDeviceExtensionProperties");
 
-    s_Vk.getPhysicalDeviceFeatures = (vkGetPhysicalDeviceFeaturesFn)dlsym(
+    s_Vk.getPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceFeatures");
 
-    s_Vk.getPhysicalDeviceFeatures2 = (vkGetPhysicalDeviceFeatures2Fn)dlsym(
+    s_Vk.getPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceFeatures2");
 
-    s_Vk.getInstanceProcAddr = (vkGetInstanceProcAddrFn)dlsym(
+    s_Vk.getInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(
         s_Vk.handle, 
         "vkGetInstanceProcAddr");
 
-    s_Vk.createImageView = (vkCreateImageViewFn)dlsym(
+    s_Vk.createImageView = (PFN_vkCreateImageView)dlsym(
         s_Vk.handle, 
         "vkCreateImageView");
 
-    s_Vk.destroyImageView = (vkDestroyImageViewFn)dlsym(
+    s_Vk.destroyImageView = (PFN_vkDestroyImageView)dlsym(
         s_Vk.handle, 
         "vkDestroyImageView");
 
-    s_Vk.getPhysicalDeviceProperties2 = (vkGetPhysicalDeviceProperties2Fn)dlsym(
+    s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceProperties2");
 
-    s_Vk.createDevice = (vkCreateDeviceFn)dlsym(
+    s_Vk.createDevice = (PFN_vkCreateDevice)dlsym(
         s_Vk.handle, 
         "vkCreateDevice");
 
-    s_Vk.destroyDevice = (vkDestroyDeviceFn)dlsym(
+    s_Vk.destroyDevice = (PFN_vkDestroyDevice)dlsym(
         s_Vk.handle, 
         "vkDestroyDevice");
 
-    s_Vk.getDeviceQueue = (vkGetDeviceQueueFn)dlsym(
+    s_Vk.getDeviceQueue = (PFN_vkGetDeviceQueue)dlsym(
         s_Vk.handle, 
         "vkGetDeviceQueue");
 
-    s_Vk.getDeviceProcAddr = (vkGetDeviceProcAddrFn)dlsym(
+    s_Vk.getDeviceProcAddr = (PFN_vkGetDeviceProcAddr)dlsym(
         s_Vk.handle, 
         "vkGetDeviceProcAddr");
     // clang-format on
@@ -786,7 +935,7 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     if (versionFallback) {
         // load get physical device properties2 proc if we are on version 1.0
         s_Vk.getPhysicalDeviceFeatures2KHR = 
-            (vkGetPhysicalDeviceFeatures2KHRFn)s_Vk.getInstanceProcAddr(
+            (PFN_vkGetPhysicalDeviceFeatures2KHR)s_Vk.getInstanceProcAddr(
                 s_Vk.handle, 
                 "vkGetPhysicalDeviceFeatures2KHR");
 
@@ -802,43 +951,43 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     s_Vk.createXlibSurface = nullptr;
 
     if (hasWayland) {
-        s_Vk.createWaylandSurface = (vkCreateWaylandSurfaceKHRFn)s_Vk.getInstanceProcAddr(
+        s_Vk.createWaylandSurface = (PFN_vkCreateWaylandSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance, 
             "vkCreateWaylandSurfaceKHR");
 
         s_Vk.checkWaylandPresentSupport = 
-            (vkGetPhysicalDeviceWaylandPresentationSupportKHRFn)s_Vk.getInstanceProcAddr(
+            (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)s_Vk.getInstanceProcAddr(
                 instance, 
                 "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
     }
 
     if (hasXlib) {
-        s_Vk.createXlibSurface = (vkCreateXlibSurfaceKHRFn)s_Vk.getInstanceProcAddr(
+        s_Vk.createXlibSurface = (PFN_vkCreateXlibSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance, 
             "vkCreateXlibSurfaceKHR");
 
         s_Vk.checkXlibPresentSupport = 
-            (vkGetPhysicalDeviceXlibPresentationSupportKHRFn)s_Vk.getInstanceProcAddr(
+            (PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR)s_Vk.getInstanceProcAddr(
                 instance, 
                 "vkGetPhysicalDeviceXlibPresentationSupportKHR");
     }
 
     // remaining function procs
-    s_Vk.destroySurface = (vkDestroySurfaceKHRFn)s_Vk.getInstanceProcAddr(
+    s_Vk.destroySurface = (PFN_vkDestroySurfaceKHR)s_Vk.getInstanceProcAddr(
         instance,
         "vkDestroySurfaceKHR");
 
     s_Vk.getSurfaceCapabilities =
-        (vkGetPhysicalDeviceSurfaceCapabilitiesKHRFn)s_Vk.getInstanceProcAddr(
+        (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
 
     s_Vk.getSurfacePresentModes = 
-        (vkGetPhysicalDeviceSurfacePresentModesKHRFn)s_Vk.getInstanceProcAddr(
+        (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)s_Vk.getInstanceProcAddr(
             instance,
            "vkGetPhysicalDeviceSurfacePresentModesKHR");
 
-    s_Vk.getSurfaceFormats = (vkGetPhysicalDeviceSurfaceFormatsKHRFn)s_Vk.getInstanceProcAddr(
+    s_Vk.getSurfaceFormats = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)s_Vk.getInstanceProcAddr(
         instance,
         "vkGetPhysicalDeviceSurfaceFormatsKHR");
     // clang-format on
@@ -984,8 +1133,11 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
     caps->maxImageHeight = props.limits.maxImageDimension2D;
     caps->maxImageDepth = props.limits.maxImageDimension3D;
     caps->maxImageArrayLayers = props.limits.maxImageArrayLayers;
-    caps->maxColorSamples = props.limits.framebufferColorSampleCounts;
-    caps->maxDepthSamples = props.limits.framebufferDepthSampleCounts;
+    
+    Uint32 tmp = vkSamplesToSamples(props.limits.framebufferColorSampleCounts);
+    caps->maxColorSamples = tmp;
+    tmp = vkSamplesToSamples(props.limits.framebufferDepthSampleCounts);
+    caps->maxDepthSamples = tmp;
 
     caps->maxViewports = props.limits.maxViewports;
     caps->maxSamplers = props.limits.maxSamplerAllocationCount;
@@ -1003,7 +1155,7 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
     Uint32 b = caps->maxImageHeight;
     Uint32 c = caps->maxImageDepth;
 
-    Uint32 tmp = a > b ? a : b;
+    tmp = a > b ? a : b;
     Uint32 size = tmp > c ? tmp : c;
     Uint32 levels = 0;
     while (size > 0) {
@@ -1575,23 +1727,23 @@ static PalResult PAL_CALL _vkCreateDevice(
     }
 
     // load procs
-    device->acquireNextImage = (vkAcquireNextImageKHRFn)s_Vk.getDeviceProcAddr(
+    device->acquireNextImage = (PFN_vkAcquireNextImageKHR)s_Vk.getDeviceProcAddr(
         device->handle, 
         "vkAcquireNextImageKHR");
 
-    device->createSwapchain = (vkCreateSwapchainKHRFn)s_Vk.getDeviceProcAddr(
+    device->createSwapchain = (PFN_vkCreateSwapchainKHR)s_Vk.getDeviceProcAddr(
         device->handle, 
         "vkCreateSwapchainKHR");
 
-    device->destroySwapchain = (vkDestroySwapchainKHRFn)s_Vk.getDeviceProcAddr(
+    device->destroySwapchain = (PFN_vkDestroySwapchainKHR)s_Vk.getDeviceProcAddr(
         device->handle, 
         "vkDestroySwapchainKHR");
 
-    device->getSwapchainImages = (vkGetSwapchainImagesKHRFn)s_Vk.getDeviceProcAddr(
+    device->getSwapchainImages = (PFN_vkGetSwapchainImagesKHR)s_Vk.getDeviceProcAddr(
         device->handle, 
         "vkGetSwapchainImagesKHR");
 
-    device->queuePresent = (vkQueuePresentKHRFn)s_Vk.getDeviceProcAddr(
+    device->queuePresent = (PFN_vkQueuePresentKHR)s_Vk.getDeviceProcAddr(
         device->handle, 
         "vkQueuePresentKHR");
 
@@ -1702,6 +1854,89 @@ static bool PAL_CALL _vkCanQueuePresent(
     }
 
     return true;
+}
+
+static PalResult PAL_CALL _vkCreateImage(
+    PalDevice* device,
+    const PalImageCreateInfo* info,
+    PalImage** outImage)
+{
+    VkResult result;
+    Image* image = nullptr;
+    Device* _device = (Device*)device;
+    if (!_device->handle) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
+
+    image = palAllocate(s_Graphics.allocator, sizeof(Image), 0);
+    if (!image) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkImageCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.arrayLayers = info->arrayLayers;
+    createInfo.extent.width = info->width;
+    createInfo.extent.height = info->height;
+    createInfo.extent.depth = info->depth;
+    createInfo.mipLevels = info->mipLevels;
+
+    createInfo.format = palFormatToVk(info->format);
+    createInfo.samples = samplesToVk(info->samples);
+    createInfo.usage = palUsageToVk(info->usages);
+
+    // image type
+    if (info->depth > 1) {
+        createInfo.imageType = VK_IMAGE_TYPE_3D;
+
+    } else if (info->height > 1) {
+        createInfo.imageType = VK_IMAGE_TYPE_2D;
+
+    } else {
+        createInfo.imageType = VK_IMAGE_TYPE_1D;
+    }
+
+    result = s_Vk.createImage(
+        _device->handle, 
+        &createInfo, 
+        &s_Vk.allocator, 
+        &image->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Graphics.allocator, image);
+        return vkResultToPal(result);
+    }
+
+    image->info.arrayLayers = info->arrayLayers;
+    image->info.depth = info->depth;
+    image->info.format = info->format;
+    image->info.height = info->height;
+    image->info.memoryType = info->memoryType;
+    image->info.mipLevels = info->mipLevels;
+    image->info.samples = info->samples;
+    image->info.usages = info->usages;
+    image->info.width = info->width;
+
+    *outImage = (PalImage*)image;
+    return PAL_RESULT_SUCCESS;
+}
+
+static void PAL_CALL _vkDestroyImage(PalImage* image)
+{
+    Image* _image = (Image*)image;
+    s_Vk.destroyImage(_image->device->handle, _image->handle, &s_Vk.allocator);
+    palFree(s_Graphics.allocator, _image);
+}
+
+PalResult PAL_CALL _vkGetImageInfo(
+    PalImage* image,
+    PalImageInfo* info)
+{
+    Image* _image = (Image*)image;
+    *info = _image->info;
 }
 
 // static PalResult PAL_CALL vkQuerySwapchainCapabilities(
@@ -2220,6 +2455,11 @@ static PalGPUBackend s_VkBackend = {
     .destroyQueue = _vkDestroyQueue,
     .canQueuePresent = _vkCanQueuePresent,
 
+    // image
+    .createImage = _vkCreateImage,
+    .destroyImage = _vkDestroyImage,
+    .getImageInfo = _vkGetImageInfo
+
     // // swapchain
     // .querySwapchainCapabilities = vkQuerySwapchainCapabilities,
     // .createSwapchain = vkCreateSwapchain,
@@ -2556,6 +2796,79 @@ bool PAL_CALL palCanQueuePresent(
         return false;
     }
     return false;
+}
+
+PalResult PAL_CALL palCreateImage(
+    PalDevice* device,
+    const PalImageCreateInfo* info,
+    PalImage** outImage)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !outImage) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = findHandleData(device);
+    if (!data) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
+
+    PalImage* image = nullptr;
+    PalResult ret;
+    ret = data->backend->createImage(
+        device,
+        info,
+        &image);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    // create a slot for the created image
+    HandleData* imageData = getFreeHandleData();
+    if (!imageData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    imageData->backend = data->backend;
+    imageData->handle = image;
+
+    *outImage = image;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyImage(PalImage* image)
+{
+    if (s_Graphics.initialized && image) {
+        HandleData* data = findHandleData(image);
+        if (data) {
+            data->backend->destroyImage(image);
+            data->used = false;
+        }
+    }
+}
+
+PalResult PAL_CALL palGetImageInfo(
+    PalImage* image,
+    PalImageInfo* info)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!image || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = findHandleData(image);
+    if (!data) {
+        return PAL_RESULT_INVALID_GRAPHICS_IMAGE;
+    }
+
+    return data->backend->getImageInfo(image, info);
 }
 
 // ==================================================
