@@ -83,6 +83,10 @@ typedef struct {
     PFN_vkDestroyImageView destroyImageView;
     PFN_vkGetPhysicalDeviceProperties2 getPhysicalDeviceProperties2;
     PFN_vkGetPhysicalDeviceFormatProperties getPhysicalDeviceFormatProperties;
+    PFN_vkGetImageMemoryRequirements getImageMemoryRequirements;
+    PFN_vkAllocateMemory allocateMemory;
+    PFN_vkFreeMemory freeMemory;
+    PFN_vkBindImageMemory bindImageMemory;
     
     PFN_vkCreateDevice createDevice;
     PFN_vkDestroyDevice destroyDevice;
@@ -123,6 +127,7 @@ typedef struct {
     PFN_vkGetSwapchainImagesKHR getSwapchainImages;
     PFN_vkAcquireNextImageKHR acquireNextImage;
     PFN_vkQueuePresentKHR queuePresent;
+    Int32 memoryTypeIndex[PAL_MEMORY_TYPE_MAX];
 } Device;
 
 typedef struct {
@@ -132,6 +137,7 @@ typedef struct {
 } Queue;
 
 typedef struct {
+    bool ownsMemory;
     Device* device;
     VkImage handle;
     PalImageInfo info;
@@ -1028,6 +1034,14 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
         s_Vk.handle, 
         "vkGetInstanceProcAddr");
 
+    s_Vk.createImage = (PFN_vkCreateImage)dlsym(
+        s_Vk.handle, 
+        "vkCreateImage");
+
+    s_Vk.destroyImage = (PFN_vkDestroyImage)dlsym(
+        s_Vk.handle, 
+        "vkDestroyImage");
+
     s_Vk.createImageView = (PFN_vkCreateImageView)dlsym(
         s_Vk.handle, 
         "vkCreateImageView");
@@ -1059,6 +1073,23 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     s_Vk.getDeviceProcAddr = (PFN_vkGetDeviceProcAddr)dlsym(
         s_Vk.handle, 
         "vkGetDeviceProcAddr");
+
+    s_Vk.getImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)dlsym(
+        s_Vk.handle, 
+        "vkGetImageMemoryRequirements");
+
+    s_Vk.allocateMemory = (PFN_vkAllocateMemory)dlsym(
+        s_Vk.handle, 
+        "vkAllocateMemory");
+
+    s_Vk.freeMemory = (PFN_vkFreeMemory)dlsym(
+        s_Vk.handle, 
+        "vkFreeMemory");
+
+    s_Vk.bindImageMemory = (PFN_vkBindImageMemory)dlsym(
+        s_Vk.handle, 
+        "vkBindImageMemory");
+
     // clang-format on
 
     // get version
@@ -2008,6 +2039,30 @@ static PalResult PAL_CALL _vkCreateDevice(
         }        
     }
 
+    // cache memory type indices
+    VkPhysicalDeviceMemoryProperties memProps = {0};
+    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
+    device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = -1;
+    device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = -1;
+    device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = -1;
+
+    for (int i = 0; i < memProps.memoryTypeCount; i++) {
+        VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
+        if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = i;
+        }
+
+        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
+             prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+            device->memoryTypeIndex[PAL_MEMORY_TYPE_CPU_UPLOAD] = i;
+        }
+
+        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
+             prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+            device->memoryTypeIndex[PAL_MEMORY_TYPE_CPU_READBACK] = i;
+        }
+    }
+
     // load procs
     device->acquireNextImage = (PFN_vkAcquireNextImageKHR)s_Vk.getDeviceProcAddr(
         device->handle, 
@@ -2192,13 +2247,11 @@ static PalResult PAL_CALL _vkCreateImage(
         return vkResultToPal(result);
     }
 
-    // TODO: memory allocation
-
+    image->device = _device;
     image->info.arrayLayers = info->arrayLayers;
     image->info.depth = info->depth;
     image->info.format = info->format;
     image->info.height = info->height;
-    image->info.memoryType = info->memoryType;
     image->info.mipLevels = info->mipLevels;
     image->info.samples = info->samples;
     image->info.width = info->width;
@@ -2214,7 +2267,7 @@ static void PAL_CALL _vkDestroyImage(PalImage* image)
     palFree(s_Graphics.allocator, _image);
 }
 
-PalResult PAL_CALL _vkGetImageInfo(
+static PalResult PAL_CALL _vkGetImageInfo(
     PalImage* image,
     PalImageInfo* info)
 {
@@ -2222,7 +2275,7 @@ PalResult PAL_CALL _vkGetImageInfo(
     *info = _image->info;
 }
 
-PalResult PAL_CALL _vkEnumerateFormats(
+static PalResult PAL_CALL _vkEnumerateFormats(
     PalAdapter* adapter,
     Int32* count,
     PalFormatInfo* outFormats)
@@ -2257,7 +2310,7 @@ PalResult PAL_CALL _vkEnumerateFormats(
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL _vkIsFormatSupported(
+static bool PAL_CALL _vkIsFormatSupported(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2273,7 +2326,7 @@ bool PAL_CALL _vkIsFormatSupported(
     return false;
 }
 
-PalImageUsages PAL_CALL _vkQueryFormatUsages(
+static PalImageUsages PAL_CALL _vkQueryFormatUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2287,6 +2340,106 @@ PalImageUsages PAL_CALL _vkQueryFormatUsages(
     }
 
     return PAL_IMAGE_USAGE_UNDEFINED;
+}
+
+static PalResult PAL_CALL _vkGetImageMemoryRequirements(
+    PalDevice* device,
+    PalImage* image,
+    PalMemoryRequirements* requirments)
+{
+    Device* _device = (Device*)device;
+    Image* _image = (Image*)image;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)_device->phyDevice;
+
+    VkPhysicalDeviceMemoryProperties memProps = {0};
+    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
+
+    VkMemoryRequirements memReq = {0};
+    s_Vk.getImageMemoryRequirements(_device->handle, _image->handle, &memReq);
+    requirments->alignment = (Uint64)memReq.alignment;
+    requirments->size = (Uint64)memReq.size;
+
+    requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_GPU_ONLY] = false;
+    requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
+    requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+
+    for (int i = 0; i < memProps.memoryTypeCount; i++) {
+        if (!(memReq.memoryTypeBits & (1 << i))) {
+            // memory type not supported
+            continue;
+        }
+
+        bool t = true;
+        VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
+        if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_GPU_ONLY] = t;
+        }
+
+        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
+             prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+            requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_UPLOAD] = t;
+        }
+
+        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
+             prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+            requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_READBACK] = t;
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+static PalResult PAL_CALL _vkAllocate(
+    PalDevice* device,
+    PalMemoryType type,
+    Uint64 size,
+    PalMemory** outMemory)
+{
+    Device* _device = (Device*)device;
+    VkMemoryAllocateInfo allocateInfo = {0};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.allocationSize = (VkDeviceSize)size;
+    allocateInfo.memoryTypeIndex = _device->memoryTypeIndex[type];
+
+    if (allocateInfo.memoryTypeIndex == -1) {
+        // not supported
+        return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
+    }
+
+    VkDeviceMemory memory = nullptr;
+    VkResult result = s_Vk.allocateMemory(
+        _device->handle, 
+        &allocateInfo, 
+        &s_Vk.allocator, 
+        &memory);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    *outMemory = (PalMemory*)memory;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL _vkFree(
+    PalDevice* device,
+    PalMemory* memory)
+{
+    Device* _device = (Device*)device;
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    s_Vk.freeMemory(_device->handle, mem, &s_Vk.allocator);
+}
+
+PalResult PAL_CALL _vkBindImageMemory(
+    PalDevice* device,
+    PalImage* image,
+    PalMemory* memory,
+    Uint64 offset)
+{
+    Device* _device = (Device*)device;
+    Image* _image = (Image*)image;
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    s_Vk.bindImageMemory(_device->handle, _image->handle, mem, offset);
 }
 
 // static PalResult PAL_CALL vkQuerySwapchainCapabilities(
@@ -2811,7 +2964,13 @@ static PalGPUBackend s_VkBackend = {
     .getImageInfo = _vkGetImageInfo,
     .enumerateFormats = _vkEnumerateFormats,
     .isFormatSupported = _vkIsFormatSupported,
-    .queryFormatUsages = _vkQueryFormatUsages
+    .queryFormatUsages = _vkQueryFormatUsages,
+    .getImageMemoryRequirements = _vkGetImageMemoryRequirements,
+
+    // memory
+    .allocate = _vkAllocate,
+    .free = _vkFree,
+    .bindImageMemory = _vkBindImageMemory
 
     // // swapchain
     // .querySwapchainCapabilities = vkQuerySwapchainCapabilities,
@@ -3279,6 +3438,94 @@ PalImageUsages PAL_CALL palQueryFormatUsages(
     }
 
     return adapterData->backend->queryFormatUsages(adapter, format);
+}
+
+PalResult PAL_CALL palGetImageMemoryRequirements(
+    PalDevice* device,
+    PalImage* image,
+    PalMemoryRequirements* requirements)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !image) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = findHandleData(device);
+    if (!deviceData) {
+        return PAL_RESULT_INVALID_GRAPHICS_BACKEND;
+    }
+
+    return deviceData->backend->getImageMemoryRequirements(
+        device, 
+        image, 
+        requirements);
+}
+
+// ==================================================
+// Memory
+// ==================================================
+
+PalResult PAL_CALL palGfxAllocate(
+    PalDevice* device,
+    PalMemoryType type,
+    Uint64 size,
+    PalMemory** outMemory)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!outMemory || !device) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = findHandleData(device);
+    if (!deviceData) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
+
+    return deviceData->backend->allocate(device, type, size, outMemory);
+}
+
+void PAL_CALL palGfxFree(
+    PalDevice* device,
+    PalMemory* memory)
+{
+    if (s_Graphics.initialized && device && memory) {
+        HandleData* data = findHandleData(device);
+        if (data) {
+            data->backend->free(device, memory);
+        }
+    }
+}
+
+PalResult PAL_CALL palBindImageMemory(
+    PalDevice* device,
+    PalImage* image,
+    PalMemory* memory,
+    Uint64 offset)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !image || !memory) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = findHandleData(device);
+    if (!deviceData) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
+
+    return deviceData->backend->bindImageMemory(
+        device, 
+        image, 
+        memory, 
+        offset);
 }
 
 // ==================================================

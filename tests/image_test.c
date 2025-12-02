@@ -122,7 +122,6 @@ bool imageTest()
     imageCreateInfo.format.format = format;
     imageCreateInfo.format.usages = usage;
     imageCreateInfo.height = 240;
-    imageCreateInfo.memoryType = PAL_MEMORY_TYPE_GPU_ONLY;
     imageCreateInfo.mipLevels = 1; 
     imageCreateInfo.samples = 1; // very simple
     imageCreateInfo.width = 320;
@@ -134,8 +133,51 @@ bool imageTest()
         return false;
     }
 
+    // bind memory to the create image
+    PalMemoryRequirements imageMemReq;
+    result = palGetImageMemoryRequirements(device, image, &imageMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get image memory requirements: %s", error);
+        return false;
+    }
+
+    // allocate memory for the image
+    if (!imageMemReq.memoryTypeAllowed[PAL_MEMORY_TYPE_GPU_ONLY]) {
+        palLog(nullptr, "Cannot allocate gpu only memory");
+    }
+
+    PalMemory* imageMemory = nullptr;
+    result = palGfxAllocate(
+        device, 
+        PAL_MEMORY_TYPE_GPU_ONLY, 
+        imageMemReq.size, 
+        &imageMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory for image: %s", error);
+        return false;
+    }
+
+    // bind the memory to the image
+    result = palBindImageMemory(
+        device, 
+        image, 
+        imageMemory, 
+        PAL_DEFAULT_MEMORY_OFFSET);
+        
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind image memory: %s", error);
+        return false;
+    }
+
     // destroy image
     palDestroyImage(image);
+
+    // free the image memory
+    palGfxFree(device, imageMemory);
 
     // destroy the device
     palDestroyDevice(device);

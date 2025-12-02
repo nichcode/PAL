@@ -36,9 +36,11 @@ freely, subject to the following restrictions:
 #define PAL_ADAPTER_NAME_SIZE 128
 #define PAL_ADAPTER_VERSION_SIZE 16
 #define PAL_INFINITE (2147483647)
+#define PAL_DEFAULT_MEMORY_OFFSET 0
 
 typedef struct PalAdapter PalAdapter;
 typedef struct PalDevice PalDevice;
+typedef struct PalMemory PalMemory;
 typedef struct PalQueue PalQueue;
 typedef struct PalSwapchain PalSwapchain;
 typedef struct PalImage PalImage;
@@ -229,8 +231,9 @@ typedef enum {
 
 typedef enum {
     PAL_MEMORY_TYPE_GPU_ONLY,
-    PAL_MEMORY_CPU_UPLOAD,
-    PAL_MEMORY_CPU_READBACK
+    PAL_MEMORY_TYPE_CPU_UPLOAD,
+    PAL_MEMORY_TYPE_CPU_READBACK,
+    PAL_MEMORY_TYPE_MAX
 } PalMemoryType;
 
 typedef struct {
@@ -343,9 +346,14 @@ typedef struct {
     Uint32 mipLevels;
     Uint32 arrayLayers;
     Uint32 samples;
-    PalMemoryType memoryType;
     PalFormatInfo format;
 } PalImageInfo;
+
+typedef struct {
+    bool memoryTypeAllowed[PAL_MEMORY_TYPE_MAX];
+    Uint64 size;
+    Uint32 alignment;
+} PalMemoryRequirements;
 
 typedef struct {
     Uint32 width;
@@ -354,7 +362,6 @@ typedef struct {
     Uint32 mipLevels;
     Uint32 arrayLayers;
     Uint32 samples;
-    PalMemoryType memoryType;
     PalFormatInfo format;
 } PalImageCreateInfo;
 
@@ -417,6 +424,27 @@ typedef struct {
     PalImageUsages PAL_CALL (*queryFormatUsages)(
         PalAdapter* adapter,
         PalFormat format);
+
+    PalResult PAL_CALL (*getImageMemoryRequirements)(
+        PalDevice* device,
+        PalImage* image,
+        PalMemoryRequirements* requirments);
+
+    PalResult PAL_CALL (*allocate)(
+        PalDevice* device,
+        PalMemoryType type,
+        Uint64 size,
+        PalMemory** outMemory);
+
+    void PAL_CALL (*free)(
+        PalDevice* device,
+        PalMemory* memory);
+
+    PalResult PAL_CALL (*bindImageMemory)(
+        PalDevice* device,
+        PalImage* image,
+        PalMemory* memory,
+        Uint64 offset);
 
     // PalResult PAL_CALL (*querySwapchainCapabilities)(
     //     PalGPUAdapter* adapter,
@@ -513,6 +541,27 @@ PAL_API bool PAL_CALL palIsFormatSupported(
 PAL_API PalImageUsages PAL_CALL palQueryFormatUsages(
     PalAdapter* adapter,
     PalFormat format);
+
+PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
+    PalDevice* device,
+    PalImage* image,
+    PalMemoryRequirements* requirements);
+
+PAL_API PalResult PAL_CALL palGfxAllocate(
+    PalDevice* device,
+    PalMemoryType type,
+    Uint64 size,
+    PalMemory** outMemory);
+
+PAL_API void PAL_CALL palGfxFree(
+    PalDevice* device,
+    PalMemory* memory);
+
+PAL_API PalResult PAL_CALL palBindImageMemory(
+    PalDevice* device,
+    PalImage* image,
+    PalMemory* memory,
+    Uint64 offset);
 
 // PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,
