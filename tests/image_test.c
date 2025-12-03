@@ -117,14 +117,17 @@ bool imageTest()
 
     PalImage* image = nullptr;
     PalImageCreateInfo imageCreateInfo = {0};
-    imageCreateInfo.arrayLayers = 1;
-    imageCreateInfo.depth = 1;
     imageCreateInfo.format.format = format;
     imageCreateInfo.format.usages = usage;
     imageCreateInfo.height = 240;
     imageCreateInfo.mipLevels = 1; 
     imageCreateInfo.samples = 1; // very simple
     imageCreateInfo.width = 320;
+
+    // if the image type is 1D or 2D
+    // PalImageCreateInfo::depthOrArraySize is used for the array size
+    imageCreateInfo.type == PAL_IMAGE_TYPE_2D;
+    imageCreateInfo.depthOrArraySize = 1;
 
     result = palCreateImage(device, &imageCreateInfo, &image);
     if (result != PAL_RESULT_SUCCESS) {
@@ -148,7 +151,7 @@ bool imageTest()
     }
 
     PalMemory* imageMemory = nullptr;
-    result = palGfxAllocate(
+    result = palAllocateMemory(
         device, 
         PAL_MEMORY_TYPE_GPU_ONLY, 
         imageMemReq.size, 
@@ -177,7 +180,7 @@ bool imageTest()
     palDestroyImage(image);
 
     // free the image memory
-    palGfxFree(device, imageMemory);
+    palFreeMemory(device, imageMemory);
 
     // destroy the device
     palDestroyDevice(device);

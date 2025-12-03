@@ -144,6 +144,12 @@ typedef struct {
 } Image;
 
 typedef struct {
+    VkFormat format;
+    Device* device;
+    VkImageView handle;
+} ImageView;
+
+typedef struct {
     Int32 bufferCount;
     VkFormat format;
     Device* device;
@@ -151,12 +157,6 @@ typedef struct {
     VkSwapchainKHR handle;
     VkImage* buffers;
 } Swapchain;
-
-typedef struct {
-    VkFormat format;
-    Device* device;
-    VkImageView handle;
-} ImageView;
 
 typedef struct {
     Device* device;
@@ -922,6 +922,50 @@ static PalImageUsages vkFeatureToPalUsage(VkFormatFeatureFlags flags)
     }
 
     return usages;
+}
+
+static VkImageType palImageTypeToVk(PalImageType type)
+{
+    switch (type) {
+        case PAL_IMAGE_TYPE_1D:
+            return VK_IMAGE_TYPE_1D;
+
+        case PAL_IMAGE_TYPE_2D:
+            return VK_IMAGE_TYPE_2D;
+
+        case PAL_IMAGE_TYPE_3D:
+            return VK_IMAGE_TYPE_3D;
+    }
+
+    return VK_IMAGE_TYPE_2D;
+}
+
+static VkImageViewType palImageViewTypeToVk(PalImageViewType type)
+{
+    switch (type) {
+        case PAL_IMAGE_VIEW_TYPE_1D:
+            return VK_IMAGE_VIEW_TYPE_1D;
+
+        case PAL_IMAGE_VIEW_TYPE_1D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+
+        case PAL_IMAGE_VIEW_TYPE_2D:
+            return VK_IMAGE_VIEW_TYPE_2D;
+
+        case PAL_IMAGE_VIEW_TYPE_2D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+
+        case PAL_IMAGE_VIEW_TYPE_3D:
+            return VK_IMAGE_VIEW_TYPE_3D;
+
+        case PAL_IMAGE_VIEW_TYPE_CUBE:
+            return VK_IMAGE_VIEW_TYPE_CUBE;
+
+        case PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    }
+
+    return VK_IMAGE_VIEW_TYPE_2D;
 }
 
 static void* vkAlloc(
@@ -2215,25 +2259,21 @@ static PalResult PAL_CALL _vkCreateImage(
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    createInfo.arrayLayers = info->arrayLayers;
     createInfo.extent.width = info->width;
     createInfo.extent.height = info->height;
-    createInfo.extent.depth = info->depth;
     createInfo.mipLevels = info->mipLevels;
 
     createInfo.format = palFormatToVk(info->format.format);
     createInfo.samples = samplesToVk(info->samples);
     createInfo.usage = palUsageToVk(info->format.usages);
 
-    // image type
-    if (info->depth > 1) {
-        createInfo.imageType = VK_IMAGE_TYPE_3D;
+    createInfo.arrayLayers = info->depthOrArraySize;
+    createInfo.extent.depth = 1;
+    createInfo.imageType = palImageTypeToVk(info->type);
 
-    } else if (info->height > 1) {
-        createInfo.imageType = VK_IMAGE_TYPE_2D;
-
-    } else {
-        createInfo.imageType = VK_IMAGE_TYPE_1D;
+    if (info->type == PAL_IMAGE_TYPE_3D) {
+        createInfo.arrayLayers = 1;
+        createInfo.extent.depth = info->depthOrArraySize;
     }
 
     result = s_Vk.createImage(
@@ -2248,8 +2288,8 @@ static PalResult PAL_CALL _vkCreateImage(
     }
 
     image->device = _device;
-    image->info.arrayLayers = info->arrayLayers;
-    image->info.depth = info->depth;
+    image->info.depthOrArraySize = info->depthOrArraySize;
+    image->info.type = info->type;
     image->info.format = info->format;
     image->info.height = info->height;
     image->info.mipLevels = info->mipLevels;
@@ -2389,7 +2429,7 @@ static PalResult PAL_CALL _vkGetImageMemoryRequirements(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL _vkAllocate(
+static PalResult PAL_CALL _vkAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
     Uint64 size,
@@ -2421,7 +2461,7 @@ static PalResult PAL_CALL _vkAllocate(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL _vkFree(
+void PAL_CALL _vkFreeMemory(
     PalDevice* device,
     PalMemory* memory)
 {
@@ -2968,8 +3008,8 @@ static PalGPUBackend s_VkBackend = {
     .getImageMemoryRequirements = _vkGetImageMemoryRequirements,
 
     // memory
-    .allocate = _vkAllocate,
-    .free = _vkFree,
+    .allocate = _vkAllocateMemory,
+    .free = _vkFreeMemory,
     .bindImageMemory = _vkBindImageMemory
 
     // // swapchain
@@ -3468,7 +3508,7 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
 // Memory
 // ==================================================
 
-PalResult PAL_CALL palGfxAllocate(
+PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
     Uint64 size,
@@ -3490,7 +3530,7 @@ PalResult PAL_CALL palGfxAllocate(
     return deviceData->backend->allocate(device, type, size, outMemory);
 }
 
-void PAL_CALL palGfxFree(
+void PAL_CALL palFreeMemory(
     PalDevice* device,
     PalMemory* memory)
 {

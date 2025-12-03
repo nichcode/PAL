@@ -236,6 +236,22 @@ typedef enum {
     PAL_MEMORY_TYPE_MAX
 } PalMemoryType;
 
+typedef enum {
+    PAL_IMAGE_TYPE_1D,
+    PAL_IMAGE_TYPE_2D,
+    PAL_IMAGE_TYPE_3D
+} PalImageType;
+
+typedef enum {
+    PAL_IMAGE_VIEW_TYPE_1D,
+    PAL_IMAGE_VIEW_TYPE_1D_ARRAY,
+    PAL_IMAGE_VIEW_TYPE_2D,
+    PAL_IMAGE_VIEW_TYPE_2D_ARRAY,
+    PAL_IMAGE_VIEW_TYPE_3D,
+    PAL_IMAGE_VIEW_TYPE_CUBE,
+    PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY,
+} PalImageViewType;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -342,10 +358,10 @@ typedef struct {
 typedef struct {
     Uint32 width;
     Uint32 height;
-    Uint32 depth;
+    Uint32 depthOrArraySize;
     Uint32 mipLevels;
-    Uint32 arrayLayers;
     Uint32 samples;
+    PalImageViewType type;
     PalFormatInfo format;
 } PalImageInfo;
 
@@ -358,10 +374,10 @@ typedef struct {
 typedef struct {
     Uint32 width;
     Uint32 height;
-    Uint32 depth;
+    Uint32 depthOrArraySize;
     Uint32 mipLevels;
-    Uint32 arrayLayers;
     Uint32 samples;
+    PalImageViewType type;
     PalFormatInfo format;
 } PalImageCreateInfo;
 
@@ -547,13 +563,13 @@ PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
     PalImage* image,
     PalMemoryRequirements* requirements);
 
-PAL_API PalResult PAL_CALL palGfxAllocate(
+PAL_API PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
     Uint64 size,
     PalMemory** outMemory);
 
-PAL_API void PAL_CALL palGfxFree(
+PAL_API void PAL_CALL palFreeMemory(
     PalDevice* device,
     PalMemory* memory);
 
