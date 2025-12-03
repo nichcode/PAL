@@ -137,15 +137,16 @@ typedef struct {
 } Queue;
 
 typedef struct {
-    bool ownsMemory;
+    bool belongsToSwapchain;
     Device* device;
     VkImage handle;
     PalImageInfo info;
 } Image;
 
 typedef struct {
-    VkFormat format;
+    VkImageViewType type;
     Device* device;
+    Image* image;
     VkImageView handle;
 } ImageView;
 
@@ -1484,7 +1485,7 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
     properties2.pNext = &vProps;
     s_Vk.getPhysicalDeviceProperties2(phyDevice, &properties2);
 
-    caps->debugLayerSupported = s_Vk.hasDebug;
+    caps->debugLayer = s_Vk.hasDebug;
     caps->maxColorAttachments = props.limits.maxColorAttachments;
     caps->maxImageWidth = props.limits.maxImageDimension2D;
     caps->maxImageHeight = props.limits.maxImageDimension2D;
@@ -1791,6 +1792,9 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
     if (features.tessellationShader) {
         caps->features |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
     }
+
+    // this features are supported on vulkan
+    caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
 
     palFree(s_Graphics.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -2292,6 +2296,7 @@ static PalResult PAL_CALL _vkCreateImage(
         return vkResultToPal(result);
     }
 
+    image->belongsToSwapchain = false;
     image->device = _device;
     image->info.depthOrArraySize = info->depthOrArraySize;
     image->info.type = info->type;
@@ -2308,6 +2313,10 @@ static PalResult PAL_CALL _vkCreateImage(
 static void PAL_CALL _vkDestroyImage(PalImage* image)
 {
     Image* _image = (Image*)image;
+    if (_image->belongsToSwapchain) {
+        return;
+    }
+
     s_Vk.destroyImage(_image->device->handle, _image->handle, &s_Vk.allocator);
     palFree(s_Graphics.allocator, _image);
 }
@@ -2385,6 +2394,44 @@ static PalImageUsages PAL_CALL _vkQueryFormatUsages(
     }
 
     return PAL_IMAGE_USAGE_UNDEFINED;
+}
+
+PalImageViewUsages PAL_CALL _vkQueryFormatViewUsages(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkFormatProperties props = {0};
+
+    VkFormat fmt = palFormatToVk(format);
+    s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
+    if (props.optimalTilingFeatures != 0) {
+        // format supported. check if we have any depth or stencil component
+        // Note: this is a hack
+        PalImageViewUsages usages = 0;
+        if (format == PAL_FORMAT_S8_UINT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+        }
+
+        if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+        }
+
+        if (format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
+            format == PAL_FORMAT_D16_UNORM_S8_UINT  || 
+            format == PAL_FORMAT_D24_UNORM_S8_UINT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+        }
+        
+        if (usages == 0) {
+            usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+        }
+
+        return usages;
+    }
+
+    return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
 }
 
 static PalResult PAL_CALL _vkGetImageMemoryRequirements(
@@ -2485,6 +2532,77 @@ PalResult PAL_CALL _vkBindImageMemory(
     Image* _image = (Image*)image;
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     s_Vk.bindImageMemory(_device->handle, _image->handle, mem, offset);
+}
+
+PalResult PAL_CALL _vkCreateImageView(
+    PalDevice* device,
+    PalImage* image,
+    const PalImageViewCreateInfo* info,
+    PalImageView** outImageView)
+{
+    VkResult result = VK_SUCCESS;
+    ImageView* imageView = nullptr;
+    Device* _device = (Device*)device;
+    Image* _image = (Image*)image;
+
+    imageView = palAllocate(s_Graphics.allocator, sizeof(ImageView), 0);
+    if (!imageView) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkImageViewCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.format = _image->info.format.format;
+    createInfo.image = _image->handle;
+
+    createInfo.subresourceRange.baseArrayLayer = info->startArrayLayer;
+    createInfo.subresourceRange.baseMipLevel = info->startMipLevel;
+    createInfo.subresourceRange.levelCount = info->mipLevelCount;
+    createInfo.subresourceRange.layerCount = info->layerArrayCount;
+    createInfo.viewType = palImageViewTypeToVk(info->type);
+
+    VkImageAspectFlags aspectFlags = 0;
+    if (info->usages & PAL_IMAGE_VIEW_USAGE_DEPTH) {
+        aspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
+    if (info->usages & PAL_IMAGE_VIEW_USAGE_STENCIL) {
+        aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    if (info->usages & PAL_IMAGE_VIEW_USAGE_COLOR) {
+        aspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
+    createInfo.subresourceRange .aspectMask = aspectFlags;
+    result = s_Vk.createImageView(
+        _device->handle, 
+        &createInfo, 
+        &s_Vk.allocator, 
+        &imageView->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Graphics.allocator, imageView);
+        return vkResultToPal(result);
+    }
+
+    imageView->device = _device;
+    imageView->image = _image;
+    imageView->type = createInfo.viewType;
+
+    *outImageView = (PalImageView*)imageView;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL _vkDestroyImageView(PalImageView* imageView)
+{
+    ImageView* _imageView = (ImageView*)imageView;
+    s_Vk.destroyImageView(
+        _imageView->device->handle, 
+        _imageView->handle, 
+        &s_Vk.allocator);
+
+    palFree(s_Graphics.allocator, _imageView);
 }
 
 // static PalResult PAL_CALL vkQuerySwapchainCapabilities(
@@ -3010,12 +3128,17 @@ static PalGPUBackend s_VkBackend = {
     .enumerateFormats = _vkEnumerateFormats,
     .isFormatSupported = _vkIsFormatSupported,
     .queryFormatUsages = _vkQueryFormatUsages,
+    .queryFormatViewUsages = _vkQueryFormatViewUsages,
     .getImageMemoryRequirements = _vkGetImageMemoryRequirements,
 
     // memory
     .allocate = _vkAllocateMemory,
     .free = _vkFreeMemory,
-    .bindImageMemory = _vkBindImageMemory
+    .bindImageMemory = _vkBindImageMemory,
+
+    // image view
+    .createImageView = _vkCreateImageView,
+    .destroyImageView = _vkDestroyImageView
 
     // // swapchain
     // .querySwapchainCapabilities = vkQuerySwapchainCapabilities,
@@ -3364,7 +3487,7 @@ PalResult PAL_CALL palCreateImage(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !outImage) {
+    if (!device ||!info || !outImage) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -3485,6 +3608,22 @@ PalImageUsages PAL_CALL palQueryFormatUsages(
     return adapterData->backend->queryFormatUsages(adapter, format);
 }
 
+PalImageViewUsages PAL_CALL palQueryFormatViewUsages(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    if (!s_Graphics.initialized || !adapter) {
+        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
+    }
+
+    HandleData* adapterData = findHandleData(adapter);
+    if (!adapterData) {
+        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
+    }
+
+    return adapterData->backend->queryFormatViewUsages(adapter, format);
+}
+
 PalResult PAL_CALL palGetImageMemoryRequirements(
     PalDevice* device,
     PalImage* image,
@@ -3571,6 +3710,61 @@ PalResult PAL_CALL palBindImageMemory(
         image, 
         memory, 
         offset);
+}
+
+PalResult PAL_CALL palCreateImageView(
+    PalDevice* device,
+    PalImage* image,
+    const PalImageViewCreateInfo* info,
+    PalImageView** outImageView)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device ||!image || !info || !outImageView) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = findHandleData(device);
+    if (!data) {
+        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+    }
+
+    PalImageView* imageView = nullptr;
+    PalResult ret;
+    ret = data->backend->createImageView(
+        device,
+        image,
+        info,
+        &imageView);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    // create a slot for the created image view
+    HandleData* imageViewData = getFreeHandleData();
+    if (!imageViewData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    imageViewData->backend = data->backend;
+    imageViewData->handle = imageView;
+
+    *outImageView = imageView;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyImageView(PalImageView* imageView)
+{
+    if (s_Graphics.initialized && imageView) {
+        HandleData* data = findHandleData(imageView);
+        if (data) {
+            data->backend->destroyImageView(imageView);
+            data->used = false;
+        }
+    }
 }
 
 // ==================================================

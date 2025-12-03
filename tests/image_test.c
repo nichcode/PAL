@@ -163,6 +163,36 @@ bool imageTest()
         return false;
     }
 
+    PalImageViewUsages viewUsage = PAL_IMAGE_VIEW_USAGE_COLOR;
+    if(!(viewUsage & palQueryFormatViewUsages(vulkanAdapter, format))) {
+        palLog(nullptr, 
+            "The preffered format does not support color image view");
+        return false;
+    }
+
+    // create an image view from the image
+    PalImageView* imageView = nullptr;
+    PalImageViewCreateInfo imageViewCreateInfo = {0};
+    imageViewCreateInfo.startMipLevel = 0; // start from the first
+    imageViewCreateInfo.startArrayLayer = 0; // start from the first
+    imageViewCreateInfo.layerArrayCount = imageCreateInfo.depthOrArraySize;
+    imageViewCreateInfo.mipLevelCount = imageCreateInfo.mipLevels;
+    imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
+
+    result = palCreateImageView(
+        device, 
+        image, 
+        &imageViewCreateInfo, 
+        &imageView);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create image view: %s", error);
+        return false;
+    }
+
+    palDestroyImageView(imageView);
+
     // bind the memory to the image
     result = palBindImageMemory(
         device, 

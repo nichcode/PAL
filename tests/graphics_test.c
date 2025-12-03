@@ -175,7 +175,7 @@ bool graphicsTest()
         }
 
         const char* boolToString;
-        if (caps.debugLayerSupported) {
+        if (caps.debugLayer) {
             boolToString = "True";
         } else {
             boolToString = "False";
@@ -278,6 +278,10 @@ bool graphicsTest()
 
         if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
             palLog(nullptr, "  Multiview");
+        }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW) {
+            palLog(nullptr, "  Cube array image view type");
         }
         
         palLog(nullptr, "");

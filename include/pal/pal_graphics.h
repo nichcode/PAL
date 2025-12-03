@@ -183,6 +183,14 @@ typedef enum {
 } PalImageUsages;
 
 typedef enum {
+    PAL_IMAGE_VIEW_USAGE_UNDEFINED = 0,
+    PAL_IMAGE_VIEW_USAGE_COLOR = PAL_BIT(0),
+    PAL_IMAGE_VIEW_USAGE_DEPTH = PAL_BIT(1),
+    PAL_IMAGE_VIEW_USAGE_STENCIL = PAL_BIT(2)
+} PalImageViewUsages;
+
+typedef enum {
+    PAL_TRANSFORM_IDENTITY,
     PAL_TRANSFORM_LANDSCAPE,
     PAL_TRANSFORM_PORTRAIT,
     PAL_TRANSFORM_LANDSCAPE_FLIPPED,
@@ -215,7 +223,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
     PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
     PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(15),
-    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16)
+    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16),
+    PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(17)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -266,7 +275,7 @@ typedef struct {
 } PalAdapterInfo;
 
 typedef struct {
-    bool debugLayerSupported;
+    bool debugLayer;
     Uint32 maxComputeQueues;
     Uint32 maxGraphicsQueues;
     Uint32 maxCopyQueues;
@@ -353,6 +362,7 @@ typedef struct {
 typedef struct {
     PalFormat format;
     PalImageUsages usages;
+    PalImageViewUsages viewUsages;
 } PalFormatInfo;
 
 typedef struct {
@@ -380,6 +390,15 @@ typedef struct {
     PalImageViewType type;
     PalFormatInfo format;
 } PalImageCreateInfo;
+
+typedef struct {
+    Uint32 startMipLevel;
+    Uint32 mipLevelCount;
+    Uint32 startArrayLayer;
+    Uint32 layerArrayCount;
+    PalImageViewType type;
+    PalImageUsages usages;
+} PalImageViewCreateInfo;
 
 typedef struct {
     void* display;
@@ -441,6 +460,10 @@ typedef struct {
         PalAdapter* adapter,
         PalFormat format);
 
+    PalImageViewUsages PAL_CALL (*queryFormatViewUsages)(
+        PalAdapter* adapter,
+        PalFormat format);
+
     PalResult PAL_CALL (*getImageMemoryRequirements)(
         PalDevice* device,
         PalImage* image,
@@ -461,6 +484,14 @@ typedef struct {
         PalImage* image,
         PalMemory* memory,
         Uint64 offset);
+
+    PalResult PAL_CALL (*createImageView)(
+        PalDevice* device,
+        PalImage* image,
+        const PalImageViewCreateInfo* info,
+        PalImageView** outImageView);
+
+    void PAL_CALL (*destroyImageView)(PalImageView* imageView);
 
     // PalResult PAL_CALL (*querySwapchainCapabilities)(
     //     PalGPUAdapter* adapter,
@@ -558,6 +589,10 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatUsages(
     PalAdapter* adapter,
     PalFormat format);
 
+PAL_API PalImageViewUsages PAL_CALL palQueryFormatViewUsages(
+    PalAdapter* adapter,
+    PalFormat format);
+
 PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
     PalDevice* device,
     PalImage* image,
@@ -578,6 +613,14 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);
+
+PAL_API PalResult PAL_CALL palCreateImageView(
+    PalDevice* device,
+    PalImage* image,
+    const PalImageViewCreateInfo* info,
+    PalImageView** outImageView);
+
+PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
 // PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
 //     PalGPUAdapter* adapter,
