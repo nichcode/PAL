@@ -2222,10 +2222,15 @@ static bool PAL_CALL _vkCanQueuePresent(
     PalQueue* queue, 
     PalGfxWindow* window)
 {
-    bool onWayland = vkOnWayland(window->display);
+    // check if the queue is a graphics queue before we check its family 
+    // index for presentation support.
     Queue* _queue = (Queue*)queue;
-    PhysicalQueue* phyQueue = _queue->phyQueue;
+    if (_queue->usage != VK_QUEUE_GRAPHICS_BIT) {
+        return false;
+    }
 
+    bool onWayland = vkOnWayland(window->display);
+    PhysicalQueue* phyQueue = _queue->phyQueue;
     if (!s_Vk.checkWaylandPresentSupport(
         phyQueue->phyDevice, 
         phyQueue->familyIndex, window->display)) {
