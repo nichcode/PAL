@@ -61,5 +61,6 @@ bool imageTest();
 
 // graphics and video
 bool queueTest();
+bool swapchainTest();
 
 #endif // _TESTS_H

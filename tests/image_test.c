@@ -120,7 +120,7 @@ bool imageTest()
     imageCreateInfo.format.format = format;
     imageCreateInfo.format.usages = usage;
     imageCreateInfo.height = 240;
-    imageCreateInfo.mipLevels = 1; 
+    imageCreateInfo.mipLevelCount = 1; 
     imageCreateInfo.samples = 1; // very simple
     imageCreateInfo.width = 320;
 
@@ -176,7 +176,7 @@ bool imageTest()
     imageViewCreateInfo.startMipLevel = 0; // start from the first
     imageViewCreateInfo.startArrayLayer = 0; // start from the first
     imageViewCreateInfo.layerArrayCount = imageCreateInfo.depthOrArraySize;
-    imageViewCreateInfo.mipLevelCount = imageCreateInfo.mipLevels;
+    imageViewCreateInfo.mipLevelCount = imageCreateInfo.mipLevelCount;
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
 
     result = palCreateImageView(

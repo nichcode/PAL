@@ -146,12 +146,12 @@ bool queueTest()
         return false;
     }
 
-    PalGfxWindow gWindow = {0};
+    PalGfxWindow gfxWindow = {0};
     PalWindowHandleInfo winInfo = palGetWindowHandleInfo(window);
-    gWindow.display = winInfo.nativeDisplay;
-    gWindow.window = winInfo.nativeWindow;
+    gfxWindow.display = winInfo.nativeDisplay;
+    gfxWindow.window = winInfo.nativeWindow;
 
-    bool canPresent = palCanQueuePresent(gfxQueue, &gWindow);
+    bool canPresent = palCanQueuePresent(gfxQueue, &gfxWindow);
     const char* boolString = "True";
     if (!canPresent) {
         boolString = "False";

@@ -75,13 +75,17 @@ typedef enum {
 typedef enum {
     PAL_PRESENT_MODE_FIFO,
     PAL_PRESENT_MODE_IMMEDIATE,
-    PAL_PRESENT_MODE_MAILBOX
+    PAL_PRESENT_MODE_MAILBOX,
+
+    PAL_PRESENT_MODE_MAX
 } PalPresentMode;
 
 typedef enum {
     PAL_COMPOSITE_ALPHA_OPAQUE,
     PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED,
-    PAL_COMPOSITE_ALPHA_POST_MULTIPLIED
+    PAL_COMPOSITE_ALPHA_POST_MULTIPLIED,
+
+    PAL_COMPOSITE_ALPHA_MAX
 } PalCompositeAplha;
 
 typedef enum {
@@ -190,14 +194,6 @@ typedef enum {
 } PalImageViewUsages;
 
 typedef enum {
-    PAL_TRANSFORM_IDENTITY,
-    PAL_TRANSFORM_LANDSCAPE,
-    PAL_TRANSFORM_PORTRAIT,
-    PAL_TRANSFORM_LANDSCAPE_FLIPPED,
-    PAL_TRANSFORM_PORTRAIT_FLIPPED
-} PalTransform;
-
-typedef enum {
     PAL_SHADER_FORMAT_SPIRV = PAL_BIT(0),
     PAL_SHADER_FORMAT_DXIL = PAL_BIT(1),
     PAL_SHADER_FORMAT_DXBC = PAL_BIT(2),
@@ -261,6 +257,15 @@ typedef enum {
     PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY,
 } PalImageViewType;
 
+typedef enum {
+    PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB,
+    PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB,
+    PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB,
+    PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10,
+
+    PAL_SWAPCHAIN_FORMAT_MAX // more pars will be added
+} PalSwapchainFormat;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -296,37 +301,18 @@ typedef struct {
     PalAdapterFeatures features;
 } PalAdapterCapabilities;
 
-// typedef struct {
-//     Uint32 minBufferCount;
-//     Uint32 maxBufferCount;
-//     Uint32 minWidth;
-//     Uint32 minHeight;
-//     Uint32 maxWidth;
-//     Uint32 maxHeight;
-//     Uint32 maxBufferArrayLayers;
-//     PalSwapchainFormats formats;
-//     PalSwapchainUsages usages;
-//     PalPresentModes presentModes;
-//     PalCompositeAplhas compositeAlphas;
-//     PalSwapchainSharingModes sharingModes;
-//     PalSwapchainTransforms transforms;
-// } PalSwapchainCapabilities;
-
-// typedef struct {
-//     bool clipped;
-//     Uint32 width;
-//     Uint32 height;
-//     Uint32 bufferCount;
-//     Uint32 bufferArrayLayerCount;
-//     Uint32 concurrentQueueCount;
-//     PalPresentModes presentMode;
-//     PalSwapchainUsages usage;
-//     PalCompositeAplhas compositeAlpha;
-//     PalSwapchainFormats format;
-//     PalSwapchainSharingModes sharingMode;
-//     PalSwapchainTransforms transform;
-//     PalGPUCommandQueue** concurrentQueue;
-// } PalSwapchainCreateInfo;
+typedef struct {
+    bool presentModessAllowed[PAL_PRESENT_MODE_MAX];
+    bool compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_MAX];
+    bool swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_MAX];
+    Uint32 minImageCount;
+    Uint32 maxImageCount;
+    Uint32 minImageWidth;
+    Uint32 minImageHeight;
+    Uint32 maxImageWidth;
+    Uint32 maxImageHeight;
+    Uint32 maxImageArrayLayers;
+} PalSwapchainCapabilities;
 
 // typedef struct {
 //     Uint32 maxMultiViews;
@@ -369,9 +355,9 @@ typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
-    Uint32 mipLevels;
+    Uint32 mipLevelCount;
     Uint32 samples;
-    PalImageViewType type;
+    PalImageType type;
     PalFormatInfo format;
 } PalImageInfo;
 
@@ -385,7 +371,7 @@ typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
-    Uint32 mipLevels;
+    Uint32 mipLevelCount;
     Uint32 samples;
     PalImageViewType type;
     PalFormatInfo format;
@@ -399,6 +385,17 @@ typedef struct {
     PalImageViewType type;
     PalImageUsages usages;
 } PalImageViewCreateInfo;
+
+typedef struct {
+    bool clipped;
+    Uint32 width;
+    Uint32 height;
+    Uint32 imageCount;
+    Uint32 imageArrayLayerCount;
+    PalPresentMode presentMode;
+    PalCompositeAplha compositeAlpha;
+    PalSwapchainFormat format;
+} PalSwapchainCreateInfo;
 
 typedef struct {
     void* display;
@@ -493,27 +490,25 @@ typedef struct {
 
     void PAL_CALL (*destroyImageView)(PalImageView* imageView);
 
-    // PalResult PAL_CALL (*querySwapchainCapabilities)(
-    //     PalGPUAdapter* adapter,
-    //     PalGPUWindow* window,
-    //     PalSwapchainCapabilities* caps);
+    PalResult PAL_CALL (*querySwapchainCapabilities)(
+        PalAdapter* adapter,
+        PalGfxWindow* window,
+        PalSwapchainCapabilities* caps);
 
-    // PalResult PAL_CALL (*createSwapchain)(
-    //     PalGPUCommandQueue* queue,
-    //     PalGPUWindow* window,
-    //     const PalSwapchainCreateInfo* info,
-    //     PalSwapchain** outSwapchain);
+    PalResult PAL_CALL (*createSwapchain)(
+        PalDevice* device,
+        PalQueue* queue,
+        PalGfxWindow* window,
+        const PalSwapchainCreateInfo* info,
+        PalSwapchain** outSwapchain);
 
-    // void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
+    void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
 
-    // Uint32 PAL_CALL (*getSwapchainBufferCount)(PalSwapchain* swapchain);
+    Uint32 PAL_CALL (*getSwapchainImageCount)(PalSwapchain* swapchain);
 
-    // PalResult PAL_CALL (*createRenderTargetView)(
-    //     PalSwapchain* swapchain,
-    //     Uint32 bufferIndex,
-    //     PalRenderTargetView** outRtv);
-
-    // void PAL_CALL (*destroyRenderTargetView)(PalRenderTargetView* rtv);
+    PalImage* PAL_CALL (*getSwapchainImage)(
+        PalSwapchain* swapchain,
+        Int32 index);
 
     // PalResult PAL_CALL (*queryRenderPassCapabilities)(
     //     PalSwapchain* swapchain,
@@ -622,27 +617,25 @@ PAL_API PalResult PAL_CALL palCreateImageView(
 
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
-// PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
-//     PalGPUAdapter* adapter,
-//     PalGPUWindow* window,
-//     PalSwapchainCapabilities* caps);
+PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
+    PalAdapter* adapter,
+    PalGfxWindow* window,
+    PalSwapchainCapabilities* caps);
 
-// PAL_API PalResult PAL_CALL palCreateSwapchain(
-//     PalGPUCommandQueue* queue,
-//     PalGPUWindow* window,
-//     const PalSwapchainCreateInfo* info,
-//     PalSwapchain** outSwapchain);
+PAL_API PalResult PAL_CALL palCreateSwapchain(
+    PalDevice* device,
+    PalQueue* queue,
+    PalGfxWindow* window,
+    const PalSwapchainCreateInfo* info,
+    PalSwapchain** outSwapchain);
 
-// PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
+PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 
-// PAL_API Uint32 PAL_CALL palGetSwapchainBufferCount(PalSwapchain* swapchain);
+PAL_API Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain);
 
-// PAL_API PalResult PAL_CALL palCreateRenderTargetView(
-//     PalSwapchain* swapchain,
-//     Uint32 bufferIndex,
-//     PalRenderTargetView** outRtv);
-
-// PAL_API void PAL_CALL palDestroyRenderTargetView(PalRenderTargetView* rtv);
+PAL_API PalImage* PAL_CALL palGetSwapchainImage(
+    PalSwapchain* swapchain,
+    Int32 index);
 
 // PAL_API PalResult PAL_CALL palQueryRenderPassCapabilities(
 //     PalSwapchain* swapchain,
