@@ -181,59 +181,46 @@ bool swapchainTest()
     palLog(nullptr, " Max image width: %d", swapchainCaps.maxImageWidth);
     palLog(nullptr, " Max image height: %d", swapchainCaps.maxImageHeight);
 
-    Uint32 bgraSrgbSrgb = PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB;
-    Uint32 bgraUnormSrgb = PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB;
-    Uint32 rgbaFloatHdr = PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10;
-    Uint32 rgbaUnormSrgb = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
-
     palLog(nullptr, " Supported formats:");
-    if (swapchainCaps.swapchainFormatsAllowed[bgraSrgbSrgb]) {
+    if (swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB]) {
         palLog(nullptr, "  BGRA8 SRGB SRGB");
     }
 
-    if (swapchainCaps.swapchainFormatsAllowed[bgraUnormSrgb]) {
+    if (swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB]) {
         palLog(nullptr, "  BGRA8 UNORM SRGB");
     }
 
-    if (swapchainCaps.swapchainFormatsAllowed[rgbaFloatHdr]) {
+    if (swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10]) {
         palLog(nullptr, "  RGBA16 FLOAT HDR10");
     }
 
-    if (swapchainCaps.swapchainFormatsAllowed[rgbaUnormSrgb]) {
+    if (swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB]) {
         palLog(nullptr, "  RGBA8 UNORM SRGB");
     }
 
-    Uint32 fifo = PAL_PRESENT_MODE_FIFO;
-    Uint32 immediate = PAL_PRESENT_MODE_IMMEDIATE;
-    Uint32 mailbox = PAL_PRESENT_MODE_MAILBOX;
-
     palLog(nullptr, " Supported present modes:");
-    if (swapchainCaps.presentModessAllowed[fifo]) {
+    if (swapchainCaps.presentModes[PAL_PRESENT_MODE_FIFO]) {
         palLog(nullptr, "  FIFO");
     }
 
-    if (swapchainCaps.presentModessAllowed[immediate]) {
+    if (swapchainCaps.presentModes[PAL_PRESENT_MODE_IMMEDIATE]) {
         palLog(nullptr, "  Immediate");
     }
 
-    if (swapchainCaps.presentModessAllowed[mailbox]) {
+    if (swapchainCaps.presentModes[PAL_PRESENT_MODE_MAILBOX]) {
         palLog(nullptr, "  Mailbox");
     }
 
-    Uint32 opaque = PAL_COMPOSITE_ALPHA_OPAQUE;
-    Uint32 postMultiplied = PAL_COMPOSITE_ALPHA_POST_MULTIPLIED;
-    Uint32 preMultiplied = PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED;
-
     palLog(nullptr, " Supported composite alphas:");
-    if (swapchainCaps.compositeAlphasAllowed[opaque]) {
+    if (swapchainCaps.compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE]) {
         palLog(nullptr, "  Opaque");
     }
 
-    if (swapchainCaps.compositeAlphasAllowed[preMultiplied]) {
+    if (swapchainCaps.compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED]) {
         palLog(nullptr, "  Pre Multiplied");
     }
 
-    if (swapchainCaps.compositeAlphasAllowed[postMultiplied]) {
+    if (swapchainCaps.compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED]) {
         palLog(nullptr, "  Post Multiplied");
     }
 
@@ -241,14 +228,14 @@ bool swapchainTest()
     PalSwapchain* swapchain = nullptr;
     PalSwapchainCreateInfo swapchainCreateInfo = {0};
     swapchainCreateInfo.clipped = true;
-    swapchainCreateInfo.compositeAlpha = opaque;
-    swapchainCreateInfo.format = rgbaUnormSrgb;
+    swapchainCreateInfo.compositeAlpha = PAL_COMPOSITE_ALPHA_OPAQUE;
+    swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
     swapchainCreateInfo.imageArrayLayerCount = 1; // 2 VR
 
     // check the number and increment it but not passed
     // PalSwapchainCapabilities::maxImageCount
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
-    swapchainCreateInfo.presentMode = fifo;
+    swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     // set size
     swapchainCreateInfo.width = 640;

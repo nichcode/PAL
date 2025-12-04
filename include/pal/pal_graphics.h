@@ -45,7 +45,6 @@ typedef struct PalQueue PalQueue;
 typedef struct PalSwapchain PalSwapchain;
 typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
-typedef struct PalRenderPass PalRenderPass;
 
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -213,14 +212,13 @@ typedef enum {
     PAL_ADAPTER_FEATURE_SHADER_FLOAT64 = PAL_BIT64(7),
     PAL_ADAPTER_FEATURE_SHADER_INT16 = PAL_BIT64(8),
     PAL_ADAPTER_FEATURE_SHADER_INT64 = PAL_BIT64(9),
-    PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(10),
-    PAL_ADAPTER_FEATURE_RAY_TRACING = PAL_BIT64(11),
-    PAL_ADAPTER_FEATURE_MESH_SHADER = PAL_BIT64(12),
-    PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
-    PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
-    PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(15),
-    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16),
-    PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(17)
+    PAL_ADAPTER_FEATURE_RAY_TRACING = PAL_BIT64(10),
+    PAL_ADAPTER_FEATURE_MESH_SHADER = PAL_BIT64(11),
+    PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(12),
+    PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(13),
+    PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(14),
+    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(15),
+    PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(16)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -302,9 +300,9 @@ typedef struct {
 } PalAdapterCapabilities;
 
 typedef struct {
-    bool presentModessAllowed[PAL_PRESENT_MODE_MAX];
-    bool compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_MAX];
-    bool swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_MAX];
+    bool presentModes[PAL_PRESENT_MODE_MAX];
+    bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
+    bool formats[PAL_SWAPCHAIN_FORMAT_MAX];
     Uint32 minImageCount;
     Uint32 maxImageCount;
     Uint32 minImageWidth;
@@ -314,42 +312,19 @@ typedef struct {
     Uint32 maxImageArrayLayers;
 } PalSwapchainCapabilities;
 
-// typedef struct {
-//     Uint32 maxMultiViews;
-//     Uint32 maxColorAttachments;
-// } PalRenderPassCapabilities;
-
-// typedef struct {
-//     Uint32 mipLevel;
-//     Uint32 baseLayer;
-//     Uint32 layerCount;
-//     PalRenderTargetView* renderTargetView;
-// } PalRenderPassResolveInfo;
-
-// typedef struct {
-//     Uint32 mipLevel;
-//     Uint32 baseLayer;
-//     Uint32 layerCount;
-//     PalRenderPassLoadOp loadOp;
-//     PalRenderPassStoreOp storeOp;
-//     float depth;
-//     float stencil;
-//     PalRenderPassResolveInfo* resolve;
-//     float color[4];
-// } PalRenderPassAttachmentInfo;
-
-// typedef struct {
-//     Uint32 attachmentCount;
-//     Uint32 multiViewCount;
-//     PalRenderTargetView* renderTargetView;
-//     PalRenderPassAttachmentInfo* attachments;
-// } PalRenderPassCreateInfo;
-
 typedef struct {
     PalFormat format;
     PalImageUsages usages;
     PalImageViewUsages viewUsages;
 } PalFormatInfo;
+
+typedef struct {
+    Uint32 multiViewCount;
+    PalLoadOp loadOp;
+    PalStoreOp storeOp;
+    PalImageView* target;
+    PalImageView* resolveTarget;
+} PalAttachmentDesc;
 
 typedef struct {
     Uint32 width;
@@ -358,11 +333,12 @@ typedef struct {
     Uint32 mipLevelCount;
     Uint32 samples;
     PalImageType type;
-    PalFormatInfo format;
+    PalFormat format;
+    PalImageUsages usages;
 } PalImageInfo;
 
 typedef struct {
-    bool memoryTypeAllowed[PAL_MEMORY_TYPE_MAX];
+    bool memoryTypes[PAL_MEMORY_TYPE_MAX];
     Uint64 size;
     Uint32 alignment;
 } PalMemoryRequirements;
@@ -373,8 +349,9 @@ typedef struct {
     Uint32 depthOrArraySize;
     Uint32 mipLevelCount;
     Uint32 samples;
-    PalImageViewType type;
-    PalFormatInfo format;
+    PalImageType type;
+    PalFormat format;
+    PalImageUsages usages;
 } PalImageCreateInfo;
 
 typedef struct {
@@ -383,7 +360,7 @@ typedef struct {
     Uint32 startArrayLayer;
     Uint32 layerArrayCount;
     PalImageViewType type;
-    PalImageUsages usages;
+    PalImageViewUsages usages;
 } PalImageViewCreateInfo;
 
 typedef struct {
@@ -509,17 +486,6 @@ typedef struct {
     PalImage* PAL_CALL (*getSwapchainImage)(
         PalSwapchain* swapchain,
         Int32 index);
-
-    // PalResult PAL_CALL (*queryRenderPassCapabilities)(
-    //     PalSwapchain* swapchain,
-    //     PalRenderPassCapabilities* caps);
-
-    // PalResult PAL_CALL (*createRenderPass)(
-    //     PalSwapchain* swapchain,
-    //     PalRenderPassCreateInfo* info,
-    //     PalRenderPass** outRenderPass);
-
-    // void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
 } PalGPUBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -580,11 +546,11 @@ PAL_API bool PAL_CALL palIsFormatSupported(
     PalAdapter* adapter,
     PalFormat format);
 
-PAL_API PalImageUsages PAL_CALL palQueryFormatUsages(
+PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalAdapter* adapter,
     PalFormat format);
 
-PAL_API PalImageViewUsages PAL_CALL palQueryFormatViewUsages(
+PAL_API PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
     PalAdapter* adapter,
     PalFormat format);
 
@@ -636,17 +602,6 @@ PAL_API Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain);
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
-
-// PAL_API PalResult PAL_CALL palQueryRenderPassCapabilities(
-//     PalSwapchain* swapchain,
-//     PalRenderPassCapabilities* caps);
-
-// PAL_API PalResult PAL_CALL palCreateRenderPass(
-//     PalSwapchain* swapchain,
-//     PalRenderPassCreateInfo* info,
-//     PalRenderPass** outRenderPass);
-
-// PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
 
 /** @} */ // end of pal_graphics group
 

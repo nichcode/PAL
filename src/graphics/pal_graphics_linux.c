@@ -57,7 +57,7 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 
 typedef struct {
     bool hasDebug;
-    bool versionFallback;
+    bool hasDynamicRendering;
     void* handle;
     VkInstance instance;
     
@@ -117,7 +117,6 @@ typedef struct {
 } PhysicalQueue;
 
 typedef struct {
-    bool dynamicRendering;
     Int32 queueCount;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
@@ -145,6 +144,7 @@ typedef struct {
 
 typedef struct {
     VkImageViewType type;
+    PalImageViewUsages usages;
     Device* device;
     Image* image;
     VkImageView handle;
@@ -157,13 +157,6 @@ typedef struct {
     VkSwapchainKHR handle;
     Image* images;
 } Swapchain;
-
-typedef struct {
-    Device* device;
-    VkFramebuffer framebuffer;
-    VkRenderPass handle;
-    //PalRenderPassCreateInfo info;
-} RenderPass;
 
 static Vulkan s_Vk = {0};
 
@@ -253,7 +246,9 @@ static bool vkOnWayland(struct wl_display* display)
     return true;
 }
 
-static bool vkCreateSurface(PalGfxWindow* window, VkSurfaceKHR* outSurface) 
+static bool vkCreateSurface(
+    PalGfxWindow* window, 
+    VkSurfaceKHR* outSurface)
 {
     if (vkOnWayland(window->display)) {
         if (!s_Vk.createWaylandSurface) {
@@ -1138,11 +1133,16 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
 
     // get version
     bool versionFallback = false;
+    s_Vk.hasDynamicRendering = false;
     Uint32 version = 0;
     if (s_Vk.enumerateInstanceVersion) {
         s_Vk.enumerateInstanceVersion(&version);
         if (version <= VK_API_VERSION_1_0) {
             versionFallback = true;
+        }
+
+        if (version >= VK_API_VERSION_1_3) {
+            s_Vk.hasDynamicRendering = true;
         }
     }
 
@@ -1290,17 +1290,12 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
 
     // clang-format off
     if (versionFallback) {
+        s_Vk.getPhysicalDeviceFeatures2KHR = nullptr;
         // load get physical device properties2 proc if we are on version 1.0
         s_Vk.getPhysicalDeviceFeatures2KHR = 
             (PFN_vkGetPhysicalDeviceFeatures2KHR)s_Vk.getInstanceProcAddr(
                 s_Vk.handle, 
                 "vkGetPhysicalDeviceFeatures2KHR");
-
-        if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-            s_Vk.versionFallback = true;
-        } else {
-            s_Vk.versionFallback = false;
-        }
     }
 
     // load surface creation function pointers
@@ -1368,6 +1363,7 @@ static PalResult _vkEnumerateAdapters(
     PalAdapter** outAdapters)
 {
     int _count = 0;
+    int deviceCount = 0;
     int maxCount = outAdapters ? *count : 0;
     VkResult result;
 
@@ -1376,15 +1372,10 @@ static PalResult _vkEnumerateAdapters(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    if (!outAdapters) {
-        *count = _count;
-        return PAL_RESULT_SUCCESS;
-    }
-
+    // PAL only supports supports dynamic rendering
     VkPhysicalDevice* devices = nullptr;
-    devices = palAllocate(
-        s_Graphics.allocator, 
-        sizeof(VkPhysicalDevice) * _count,
+    devices = palAllocate(s_Graphics.allocator, 
+        sizeof(VkPhysicalDevice) * _count, 
         0);
 
     if (!devices) {
@@ -1392,8 +1383,78 @@ static PalResult _vkEnumerateAdapters(
     }
 
     s_Vk.enumeratePhysicalDevices(s_Vk.instance, &_count, devices);
-    for (int i = 0; i < _count && i < *count; i++) {
-        outAdapters[i] = (PalAdapter*)devices[i];
+    for (int i = 0; i < _count; i++) {
+        // check if the gpu supports dynamic rendering
+        if (s_Vk.hasDynamicRendering) {
+            if (outAdapters) {
+                if (deviceCount < *count) {
+                    PalAdapter* adapter = (PalAdapter*)devices[i];
+                    outAdapters[deviceCount++] = adapter;
+                }
+                
+            } else {
+                deviceCount++;
+            }
+
+        } else {
+            // check extension
+            Uint32 extCount = 0;
+            VkExtensionProperties* exts = nullptr;
+            VkResult ret;
+            ret = s_Vk.enumerateDeviceExtensionProperties(
+                devices[i],
+                nullptr, 
+                &extCount, 
+                nullptr);
+
+            if (ret != VK_SUCCESS) {
+                // skip
+                continue;
+            }
+
+            exts = palAllocate(
+                s_Graphics.allocator, 
+                sizeof(VkExtensionProperties) * extCount, 
+                0);
+
+            if (!exts) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+
+            s_Vk.enumerateDeviceExtensionProperties(
+                devices[i],
+                nullptr, 
+                &extCount, 
+                exts);
+
+            bool found = false;
+            for (int j = 0; j < extCount; j++) {
+                const char* name = exts[j].extensionName;
+                if (strcmp(name, "VK_KHR_dynamic_rendering") == 0) {
+                    found = true;
+                }
+            }
+
+            palFree(s_Graphics.allocator, exts);
+            if (!found) {
+                // skip
+                continue;
+            }
+
+            if (outAdapters) {
+                if (deviceCount < *count) {
+                    PalAdapter* adapter = (PalAdapter*)devices[i];
+                    outAdapters[deviceCount++] = adapter;
+                }
+                
+            } else {
+                deviceCount++;
+            }
+        }
+    }
+
+    if (!outAdapters) {
+        *count = deviceCount;
     }
 
     palFree(s_Graphics.allocator, devices);
@@ -1666,10 +1727,6 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
             // swapchain
             caps->features |= PAL_ADAPTER_FEATURE_SWAPCHAIN;
 
-        } else if (strcmp(props->extensionName, "VK_KHR_dynamic_rendering") == 0) {
-            // dynamic rendering
-            caps->features |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
-
         } else if (strcmp(props->extensionName, "VK_KHR_shader_float16_int8") == 0) {
             // shader float16
             VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
@@ -1834,7 +1891,6 @@ static PalResult PAL_CALL _vkCreateDevice(
 
     device->queueCount = count;
     device->phyDevice = phyDevice;
-    device->dynamicRendering = false;
     
     device->phyQueues = palAllocate(
         s_Graphics.allocator, 
@@ -1925,13 +1981,9 @@ static PalResult PAL_CALL _vkCreateDevice(
 
     // clang-format on
 
+    extensions[extCount++] = "VK_KHR_dynamic_rendering";
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
-    }
-
-    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
-        extensions[extCount++] = "VK_KHR_dynamic_rendering";
-        device->dynamicRendering = true;
     }
 
     if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
@@ -2272,9 +2324,9 @@ static PalResult PAL_CALL _vkCreateImage(
     createInfo.extent.height = info->height;
     createInfo.mipLevels = info->mipLevelCount;
 
-    createInfo.format = palFormatToVk(info->format.format);
+    createInfo.format = palFormatToVk(info->format);
     createInfo.samples = samplesToVk(info->samples);
-    createInfo.usage = palUsageToVk(info->format.usages);
+    createInfo.usage = palUsageToVk(info->usages);
 
     createInfo.arrayLayers = info->depthOrArraySize;
     createInfo.extent.depth = 1;
@@ -2301,6 +2353,7 @@ static PalResult PAL_CALL _vkCreateImage(
     image->info.depthOrArraySize = info->depthOrArraySize;
     image->info.type = info->type;
     image->info.format = info->format;
+    image->info.usages = info->usages;
     image->info.height = info->height;
     image->info.mipLevelCount = info->mipLevelCount;
     image->info.samples = info->samples;
@@ -2350,6 +2403,28 @@ static PalResult PAL_CALL _vkEnumerateFormats(
                     fmtInfo->format = (PalFormat)i;
                     fmtInfo->usages = 
                         vkFeatureToPalUsage(props.optimalTilingFeatures);
+
+                    PalImageViewUsages usages = 0;
+                    if (i == PAL_FORMAT_S8_UINT) {
+                        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+                    }
+
+                    if (i == PAL_FORMAT_D16_UNORM || i == PAL_FORMAT_D32_SFLOAT) {
+                        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+                    }
+
+                    if (i == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
+                        i == PAL_FORMAT_D16_UNORM_S8_UINT  || 
+                        i == PAL_FORMAT_D24_UNORM_S8_UINT) {
+                        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+                        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+                    }
+                    
+                    if (usages == 0) {
+                        usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+                    }
+
+                    fmtInfo->viewUsages = usages;
                 }
 
             } else {
@@ -2381,7 +2456,7 @@ static bool PAL_CALL _vkIsFormatSupported(
     return false;
 }
 
-static PalImageUsages PAL_CALL _vkQueryFormatUsages(
+static PalImageUsages PAL_CALL _vkQueryFormatImageUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2397,7 +2472,7 @@ static PalImageUsages PAL_CALL _vkQueryFormatUsages(
     return PAL_IMAGE_USAGE_UNDEFINED;
 }
 
-static PalImageViewUsages PAL_CALL _vkQueryFormatViewUsages(
+static PalImageViewUsages PAL_CALL _vkQueryFormatImageViewUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2452,9 +2527,9 @@ static PalResult PAL_CALL _vkGetImageMemoryRequirements(
     requirments->alignment = (Uint64)memReq.alignment;
     requirments->size = (Uint64)memReq.size;
 
-    requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_GPU_ONLY] = false;
-    requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
-    requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+    requirments->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
+    requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
+    requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
 
     for (int i = 0; i < memProps.memoryTypeCount; i++) {
         if (!(memReq.memoryTypeBits & (1 << i))) {
@@ -2462,20 +2537,19 @@ static PalResult PAL_CALL _vkGetImageMemoryRequirements(
             continue;
         }
 
-        bool t = true;
         VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
         if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-            requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_GPU_ONLY] = t;
+            requirments->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
         }
 
         if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
              prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-            requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_UPLOAD] = t;
+            requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
         }
 
         if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
              prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-            requirments->memoryTypeAllowed[PAL_MEMORY_TYPE_CPU_READBACK] = t;
+            requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
         }
     }
 
@@ -2557,7 +2631,7 @@ static PalResult PAL_CALL _vkCreateImageView(
 
     VkImageViewCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.format = _image->info.format.format;
+    createInfo.format = palFormatToVk(_image->info.format);
     createInfo.image = _image->handle;
 
     createInfo.subresourceRange.baseArrayLayer = info->startArrayLayer;
@@ -2594,6 +2668,7 @@ static PalResult PAL_CALL _vkCreateImageView(
     imageView->device = _device;
     imageView->image = _image;
     imageView->type = createInfo.viewType;
+    imageView->usages = info->usages;
 
     *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
@@ -2665,66 +2740,65 @@ static PalResult PAL_CALL _vkQuerySwapchainCapabilities(
 
     // get supported composite alphas
     VkCompositeAlphaFlagsKHR alpha = surfaceCaps.supportedCompositeAlpha;
-    caps->compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_OPAQUE] = true;
-    caps->compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
-    caps->compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
-    bool t = true;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = true;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
 
     if (alpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
-        caps->compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = t;
+        caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = true;
     }
 
     if (alpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
-        caps->compositeAlphasAllowed[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = t;
+        caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = true;
     }
 
     // present modes
-    caps->presentModessAllowed[PAL_PRESENT_MODE_FIFO] = true;
-    caps->presentModessAllowed[PAL_PRESENT_MODE_MAILBOX] = false;
-    caps->presentModessAllowed[PAL_PRESENT_MODE_IMMEDIATE] = false;
+    caps->presentModes[PAL_PRESENT_MODE_FIFO] = true;
+    caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = false;
+    caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = false;
 
     for (int i = 0; i < modeCount; i++) {
         if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-            caps->presentModessAllowed[PAL_PRESENT_MODE_IMMEDIATE] = true;
+            caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = true;
         }
 
         if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            caps->presentModessAllowed[PAL_PRESENT_MODE_MAILBOX] = true;
+            caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = true;
         }
     }
 
     // clang-format off
 
     // get format and colorspace
-    caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10] = false;
-    caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB] = false;
-    caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB] = false;
-    caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB] = false;
+    caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10] = false;
+    caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB] = false;
+    caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB] = false;
+    caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB] = false;
 
     for (int i = 0; i < formatCount; i++) {
         VkSurfaceFormatKHR* fmt = &formats[i];
         if (fmt->format == VK_FORMAT_B8G8R8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB] = true;
+                caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_B8G8R8A8_SRGB) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB] = true;
+                caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_R8G8B8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB] = true;
+                caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_R16G16B16A16_SFLOAT) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT) {   
-                caps->swapchainFormatsAllowed[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10] = true;
+                caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10] = true;
             }
         }
     }
@@ -2890,8 +2964,8 @@ static PalResult PAL_CALL _vkCreateSwapchain(
         image->handle = images[i];
 
         image->info.depthOrArraySize = createInfo.imageArrayLayers;
-        image->info.format.format = imageFormat;
-        image->info.format.viewUsages = PAL_IMAGE_VIEW_USAGE_COLOR;
+        image->info.format = imageFormat;
+        image->info.usages = PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
         image->info.height = createInfo.imageExtent.height;
         image->info.width = createInfo.imageExtent.width;
         image->info.mipLevelCount = 1; 
@@ -2938,104 +3012,6 @@ static PalImage* PAL_CALL _vkGetSwapchainImage(
     return (PalImage*)&_swapchain->images[index];
 }
 
-// static PalResult PAL_CALL vkQueryRenderPassCapabilities(
-//     PalSwapchain* swapchain,
-//     PalRenderPassCapabilities* caps)
-// {
-//     Swapchain* _swapchain = (Swapchain*)swapchain;
-//     Device* device = (Device*)_swapchain->device;
-
-//     VkPhysicalDeviceProperties props = {0};
-//     s_Vk.getPhysicalDeviceProperties(device->phyDevice, &props);
-//     caps->maxColorAttachments = props.limits.maxColorAttachments;
-//     caps->maxMultiViews = device->multiViewCount;
-
-//     return PAL_RESULT_SUCCESS;
-// }
-
-// static PalResult PAL_CALL vkCreateRenderPass_(
-//     PalSwapchain* swapchain,
-//     PalRenderPassCreateInfo* info,
-//     PalRenderPass** outRenderPass)
-// {
-//     VkResult result = VK_SUCCESS;
-//     RenderPass* renderPass = nullptr;
-//     Swapchain* _swapchain = (Swapchain*)swapchain;
-    
-//     renderPass = palAllocate(s_Graphics.allocator, sizeof(RenderPass), 0);
-//     if (!renderPass) {
-//         return PAL_RESULT_OUT_OF_MEMORY;
-//     }
-
-//     renderPass->device = _swapchain->device;
-//     if (_swapchain->device->dynamicRendering) {
-//         // we support dynamic rendering, just store the information
-//         renderPass->info = *info;
-//         renderPass->handle = nullptr;
-//         renderPass->framebuffer = nullptr;
-
-//     } else {
-//         // dynamic rendering not supported
-//         VkAttachmentDescription* attachmentDescs = nullptr;
-//         attachmentDescs = palAllocate(
-//             s_Graphics.allocator, 
-//             sizeof(VkAttachmentDescription) * info->attachmentCount, 
-//             0);
-
-//         if (!attachmentDescs) {
-//             return PAL_RESULT_OUT_OF_MEMORY;
-//         }
-
-//         RenderTargetView* rtv = nullptr;
-//         for (int i = 0; i < info->attachmentCount; i++) {
-//             rtv = (RenderTargetView*)info->renderTargetView;
-//             PalRenderPassAttachmentInfo* aInfo = &info->attachments[i];
-//             VkAttachmentDescription* aDesc = &attachmentDescs[i];
-
-//             aDesc->format = rtv->format;
-//             aDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//             aDesc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-//             // load op
-//             if (aInfo->loadOp == PAL_RENDER_PASS_LOAD_OP_CLEAR) {
-//                 aDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-//             } else if (aInfo->loadOp == PAL_RENDER_PASS_LOAD_OP_LOAD) {
-//                 aDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-//             } else if (aInfo->loadOp == PAL_RENDER_PASS_LOAD_OP_DONT_CARE) {
-//                 aDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//             }
-
-//             // store op
-//             if (aInfo->storeOp == PAL_RENDER_PASS_STORE_OP_STORE) {
-//                 aDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-//             } else if (aInfo->storeOp == PAL_RENDER_PASS_STORE_OP_DONT_CARE) {
-//                 aDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//             }
-//         }
-
-
-//         attachmentDesc.
-
-
-
-
-
-//         VkRenderPassCreateInfo createInfo = {0};
-//         createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//     }
-
-//     *outRenderPass = (PalRenderPass*)renderPass;
-//     return PAL_RESULT_SUCCESS;
-// }
-
-// static void PAL_CALL vkDestroyRenderPass_(PalRenderPass* renderPass)
-// {
-
-// }
-
 static PalGPUBackend s_VkBackend = {
     // adapter
     .enumerateAdapters = _vkEnumerateAdapters,
@@ -3057,8 +3033,8 @@ static PalGPUBackend s_VkBackend = {
     .getImageInfo = _vkGetImageInfo,
     .enumerateFormats = _vkEnumerateFormats,
     .isFormatSupported = _vkIsFormatSupported,
-    .queryFormatUsages = _vkQueryFormatUsages,
-    .queryFormatViewUsages = _vkQueryFormatViewUsages,
+    .queryFormatUsages = _vkQueryFormatImageUsages,
+    .queryFormatViewUsages = _vkQueryFormatImageViewUsages,
     .getImageMemoryRequirements = _vkGetImageMemoryRequirements,
 
     // memory
@@ -3076,15 +3052,6 @@ static PalGPUBackend s_VkBackend = {
     .destroySwapchain = vkDestroySwapchain,
     .getSwapchainImageCount = _vkGetSwapchainImageCount,
     .getSwapchainImage = _vkGetSwapchainImage,
-
-    // // render target view
-    // .createRenderTargetView = vkCreateRenderTargetView,
-    // .destroyRenderTargetView = vkDestroyRenderTargetView,
-
-    // // render pass
-    // .queryRenderPassCapabilities = vkQueryRenderPassCapabilities,
-    // .createRenderPass = vkCreateRenderPass_,
-    // .destroyRenderPass = vkDestroyRenderPass_
 };
 
 #endif // PAL_HAS_VULKAN
@@ -3523,7 +3490,7 @@ bool PAL_CALL palIsFormatSupported(
     return adapterData->backend->isFormatSupported(adapter, format);
 }
 
-PalImageUsages PAL_CALL palQueryFormatUsages(
+PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -3539,7 +3506,7 @@ PalImageUsages PAL_CALL palQueryFormatUsages(
     return adapterData->backend->queryFormatUsages(adapter, format);
 }
 
-PalImageViewUsages PAL_CALL palQueryFormatViewUsages(
+PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -3827,90 +3794,3 @@ PalImage* PAL_CALL palGetSwapchainImage(
     imageData->handle = image;
     return image;
 }
-
-// // ==================================================
-// // Render Pass
-// // ==================================================
-
-// PalResult PAL_CALL palQueryRenderPassCapabilities(
-//     PalSwapchain* swapchain,
-//     PalRenderPassCapabilities* caps)
-// {
-//     if (!s_Graphics.initialized) {
-//         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-//     }
-
-//     if (!swapchain || !caps) {
-//         return PAL_RESULT_NULL_POINTER;
-//     }
-
-//     HandleData* swapchainData = findHandleData(swapchain);
-//     if (!swapchainData) {
-//         return PAL_RESULT_INVALID_SWAPCHAIN;
-//     }
-
-//     return swapchainData->backend->queryRenderPassCapabilities(
-//         swapchain,
-//         caps);
-// }
-
-// PalResult PAL_CALL palCreateRenderPass(
-//     PalSwapchain* swapchain,
-//     PalRenderPassCreateInfo* info,
-//     PalRenderPass** outRenderPass)
-// {
-//     if (!s_Graphics.initialized) {
-//         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-//     }
-
-//     if (!swapchain || !info || !outRenderPass) {
-//         return PAL_RESULT_NULL_POINTER;
-//     }
-
-//     if (!info->attachments) {
-//         return PAL_RESULT_NULL_POINTER;
-//     }
-
-//     if (info->attachmentCount == 0 && info->attachments) {
-//         return PAL_RESULT_INSUFFICIENT_BUFFER;
-//     }
-
-//     HandleData* swapchainData = findHandleData(swapchain);
-//     if (!swapchainData) {
-//         return PAL_RESULT_INVALID_SWAPCHAIN;
-//     }
-
-//     PalResult ret;
-//     PalRenderPass* renderPass = nullptr;
-//     ret = swapchainData->backend->createRenderPass(
-//         swapchain,
-//         info,
-//         &renderPass);
-
-//     if (ret != PAL_RESULT_SUCCESS) {
-//         return ret;
-//     }
-
-//     // create a slot for the created render pass
-//     HandleData* renderPassData = getFreeHandleData();
-//     if (!renderPassData) {
-//         return PAL_RESULT_OUT_OF_MEMORY;
-//     }
-
-//     renderPassData->backend = swapchainData->backend;
-//     renderPassData->handle = renderPass;
-
-//     *outRenderPass = renderPass;
-//     return PAL_RESULT_SUCCESS;
-// }
-
-// void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
-// {
-//     if (s_Graphics.initialized && renderPass) {
-//         HandleData* data = findHandleData(renderPass);
-//         if (data) {
-//             data->backend->destroyRenderPass(renderPass);
-//             data->used = false;
-//         }
-//     }
-// }

@@ -109,7 +109,7 @@ bool imageTest()
         return false;
     }
 
-    if(!(usage & palQueryFormatUsages(vulkanAdapter, format))) {
+    if(!(usage & palQueryFormatImageUsages(vulkanAdapter, format))) {
         palLog(nullptr, 
             "The preffered format does not support color attachement");
         return false;
@@ -117,8 +117,8 @@ bool imageTest()
 
     PalImage* image = nullptr;
     PalImageCreateInfo imageCreateInfo = {0};
-    imageCreateInfo.format.format = format;
-    imageCreateInfo.format.usages = usage;
+    imageCreateInfo.format = format;
+    imageCreateInfo.usages = usage;
     imageCreateInfo.height = 240;
     imageCreateInfo.mipLevelCount = 1; 
     imageCreateInfo.samples = 1; // very simple
@@ -126,7 +126,7 @@ bool imageTest()
 
     // if the image type is 1D or 2D
     // PalImageCreateInfo::depthOrArraySize is used for the array size
-    imageCreateInfo.type == PAL_IMAGE_TYPE_2D;
+    imageCreateInfo.type = PAL_IMAGE_TYPE_2D;
     imageCreateInfo.depthOrArraySize = 1;
 
     result = palCreateImage(device, &imageCreateInfo, &image);
@@ -146,7 +146,7 @@ bool imageTest()
     }
 
     // allocate memory for the image
-    if (!imageMemReq.memoryTypeAllowed[PAL_MEMORY_TYPE_GPU_ONLY]) {
+    if (!imageMemReq.memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY]) {
         palLog(nullptr, "Cannot allocate gpu only memory");
     }
 
@@ -164,7 +164,7 @@ bool imageTest()
     }
 
     PalImageViewUsages viewUsage = PAL_IMAGE_VIEW_USAGE_COLOR;
-    if(!(viewUsage & palQueryFormatViewUsages(vulkanAdapter, format))) {
+    if(!(viewUsage & palQueryFormatImageViewUsages(vulkanAdapter, format))) {
         palLog(nullptr, 
             "The preffered format does not support color image view");
         return false;
@@ -178,6 +178,7 @@ bool imageTest()
     imageViewCreateInfo.layerArrayCount = imageCreateInfo.depthOrArraySize;
     imageViewCreateInfo.mipLevelCount = imageCreateInfo.mipLevelCount;
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.usages = viewUsage;
 
     result = palCreateImageView(
         device, 
@@ -191,8 +192,6 @@ bool imageTest()
         return false;
     }
 
-    palDestroyImageView(imageView);
-
     // bind the memory to the image
     result = palBindImageMemory(
         device, 
@@ -205,6 +204,10 @@ bool imageTest()
         palLog(nullptr, "Failed to bind image memory: %s", error);
         return false;
     }
+
+
+    // destroy image view
+    palDestroyImageView(imageView);
 
     // destroy image
     palDestroyImage(image);

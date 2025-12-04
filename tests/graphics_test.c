@@ -252,10 +252,6 @@ bool graphicsTest()
             palLog(nullptr, "  Shader int64");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
-            palLog(nullptr, "  Dynamic rendering");
-        }
-
         if (caps.features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
             palLog(nullptr, "  Ray tracing");
         }
