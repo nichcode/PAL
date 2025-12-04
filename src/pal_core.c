@@ -387,8 +387,8 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_ADAPTER:
             return "Invalid adapter";
 
-        case PAL_RESULT_INVALID_GRAPHICS_BACKEND:
-            return "Invalid graphics backend";
+        case PAL_RESULT_INVALID_BACKEND:
+            return "Invalid backend";
 
         case PAL_RESULT_QUEUE_NOT_SUPPORTED:
             return "Queue not supported";
@@ -396,11 +396,11 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED:
             return "Unsupported adapter feature";
 
-        case PAL_RESULT_INVALID_GRAPHICS_DRIVER:
-            return "Incompatible graphics driver";
+        case PAL_RESULT_INVALID_DRIVER:
+            return "Incompatible driver";
 
-        case PAL_RESULT_INVALID_GRAPHICS_DEVICE:
-            return "Invalid graphics device";
+        case PAL_RESULT_INVALID_DEVICE:
+            return "Invalid device";
 
         case PAL_RESULT_INVALID_QUEUE:
             return "Invalid queue";
@@ -414,14 +414,14 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_SWAPCHAIN:
             return "Invalid swapchain";
 
-        case PAL_RESULT_INVALID_GRAPHICS_IMAGE:
-            return "Invalid graphics image";
+        case PAL_RESULT_INVALID_IMAGE:
+            return "Invalid image";
 
         case PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED:
             return "memory type not supported";
 
-        case PAL_RESULT_INVALID_GRAPHICS_OPERATION:
-            return "Invalid graphics operation";
+        case PAL_RESULT_INVALID_OPERATION:
+            return "Invalid operation";
     }
     return "Unknown";
 }

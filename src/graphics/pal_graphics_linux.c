@@ -165,13 +165,13 @@ static Vulkan s_Vk = {0};
 typedef struct {
     bool used;
     void* handle;
-    const PalGPUBackend* backend;
+    const PalGfxBackend* backend;
 } HandleData;
 
 typedef struct {
     Int32 count;
     Int32 startIndex;
-    const PalGPUBackend* base;
+    const PalGfxBackend* base;
 } BackendData;
 
 typedef struct {
@@ -300,7 +300,7 @@ static PalResult vkResultToPal(VkResult result)
         }
 
         case VK_ERROR_INCOMPATIBLE_DRIVER:
-            return PAL_RESULT_INVALID_GRAPHICS_DRIVER;
+            return PAL_RESULT_INVALID_DRIVER;
 
         case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
         case VK_ERROR_SURFACE_LOST_KHR: {
@@ -2208,7 +2208,7 @@ static PalResult PAL_CALL _vkCreateQueue(
     Device* _device = (Device*)device;
     Queue* queue = nullptr;
     if (!_device->handle) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     if (_device->queueCount == 0) {
@@ -2307,7 +2307,7 @@ static PalResult PAL_CALL _vkCreateImage(
     Image* image = nullptr;
     Device* _device = (Device*)device;
     if (!_device->handle) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     image = palAllocate(s_Graphics.allocator, sizeof(Image), 0);
@@ -2605,7 +2605,7 @@ static PalResult PAL_CALL _vkBindImageMemory(
 {
     Image* _image = (Image*)image;
     if (_image->belongsToSwapchain) {
-        return PAL_RESULT_INVALID_GRAPHICS_OPERATION;
+        return PAL_RESULT_INVALID_OPERATION;
     }
 
     Device* _device = (Device*)device;
@@ -3012,7 +3012,7 @@ static PalImage* PAL_CALL _vkGetSwapchainImage(
     return (PalImage*)&_swapchain->images[index];
 }
 
-static PalGPUBackend s_VkBackend = {
+static PalGfxBackend s_VkBackend = {
     // adapter
     .enumerateAdapters = _vkEnumerateAdapters,
     .getAdapterInfo = _vkGetAdapterInfo,
@@ -3033,8 +3033,8 @@ static PalGPUBackend s_VkBackend = {
     .getImageInfo = _vkGetImageInfo,
     .enumerateFormats = _vkEnumerateFormats,
     .isFormatSupported = _vkIsFormatSupported,
-    .queryFormatUsages = _vkQueryFormatImageUsages,
-    .queryFormatViewUsages = _vkQueryFormatImageViewUsages,
+    .queryFormatImageUsages = _vkQueryFormatImageUsages,
+    .queryFormatImageViewUsages = _vkQueryFormatImageViewUsages,
     .getImageMemoryRequirements = _vkGetImageMemoryRequirements,
 
     // memory
@@ -3214,34 +3214,43 @@ PalResult PAL_CALL palGetAdapterCapabilities(
     return PAL_RESULT_INVALID_ADAPTER;
 }
 
-PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend)
+PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend)
 {
     if (s_Graphics.initialized) {
-        return PAL_RESULT_INVALID_GRAPHICS_BACKEND;
+        return PAL_RESULT_INVALID_BACKEND;
     }
 
-    // // check if all the function pointers are set
-    // // clang-format off
-    // if (!backend->enumerateGPUAdapters         || 
-    //     !backend->getGPUAdapterInfo            ||
-    //     !backend->getGPUAdapterCapabilities    ||
-    //     !backend->createGPUDevice              ||
-    //     !backend->destroyGPUDevice             ||
-    //     !backend->createGPUCommandQueue        ||
-    //     !backend->destroyGPUCommandQueue       ||
-    //     !backend->canCommandQueuePresent       ||
-    //     !backend->createSwapchain              ||
-    //     !backend->destroySwapchain             ||
-    //     !backend->querySwapchainCapabilities   ||
-    //     !backend->getSwapchainBufferCount      ||
-    //     !backend->createRenderTargetView       ||
-    //     !backend->destroyRenderTargetView      ||
-    //     !backend->queryRenderPassCapabilities  ||
-    //     !backend->createRenderPass             ||
-    //     !backend->destroyRenderPass) {
-    //     return PAL_RESULT_INVALID_GPU_BACKEND;
-    // }
-    // // clang-format on
+    // check if all the function pointers are set
+    // clang-format off
+    if (!backend->enumerateAdapters            || 
+        !backend->getAdapterInfo               ||
+        !backend->getAdapterCapabilities       ||
+        !backend->createDevice                 ||
+        !backend->destroyDevice                ||
+        !backend->createQueue                  ||
+        !backend->destroyQueue                 ||
+        !backend->canQueuePresent              ||
+        !backend->createImage                  ||
+        !backend->destroyImage                 ||
+        !backend->getImageInfo                 ||
+        !backend->enumerateFormats             ||
+        !backend->isFormatSupported            ||
+        !backend->queryFormatImageUsages       ||
+        !backend->queryFormatImageViewUsages   ||
+        !backend->getImageMemoryRequirements   ||
+        !backend->allocate                     ||
+        !backend->free                         ||
+        !backend->bindImageMemory              ||
+        !backend->createImageView              ||
+        !backend->destroyImageView             ||
+        !backend->querySwapchainCapabilities   ||
+        !backend->createSwapchain              ||
+        !backend->destroySwapchain             ||
+        !backend->getSwapchainImageCount       ||
+        !backend->getSwapchainImage) {
+        return PAL_RESULT_INVALID_BACKEND;
+    }
+    // clang-format on
 
     BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
     attached->base = backend;
@@ -3324,7 +3333,7 @@ PalResult PAL_CALL palCreateQueue(
 
     HandleData* data = findHandleData(device);
     if (!data) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     PalQueue* queue = nullptr;
@@ -3391,7 +3400,7 @@ PalResult PAL_CALL palCreateImage(
 
     HandleData* data = findHandleData(device);
     if (!data) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     PalImage* image = nullptr;
@@ -3443,7 +3452,7 @@ PalResult PAL_CALL palGetImageInfo(
 
     HandleData* data = findHandleData(image);
     if (!data) {
-        return PAL_RESULT_INVALID_GRAPHICS_IMAGE;
+        return PAL_RESULT_INVALID_IMAGE;
     }
 
     return data->backend->getImageInfo(image, info);
@@ -3503,7 +3512,7 @@ PalImageUsages PAL_CALL palQueryFormatImageUsages(
         return PAL_IMAGE_USAGE_UNDEFINED;
     }
 
-    return adapterData->backend->queryFormatUsages(adapter, format);
+    return adapterData->backend->queryFormatImageUsages(adapter, format);
 }
 
 PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
@@ -3519,7 +3528,7 @@ PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
         return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
 
-    return adapterData->backend->queryFormatViewUsages(adapter, format);
+    return adapterData->backend->queryFormatImageViewUsages(adapter, format);
 }
 
 PalResult PAL_CALL palGetImageMemoryRequirements(
@@ -3537,7 +3546,7 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
 
     HandleData* deviceData = findHandleData(device);
     if (!deviceData) {
-        return PAL_RESULT_INVALID_GRAPHICS_BACKEND;
+        return PAL_RESULT_INVALID_BACKEND;
     }
 
     return deviceData->backend->getImageMemoryRequirements(
@@ -3566,7 +3575,7 @@ PalResult PAL_CALL palAllocateMemory(
 
     HandleData* deviceData = findHandleData(device);
     if (!deviceData) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     return deviceData->backend->allocate(device, type, size, outMemory);
@@ -3600,7 +3609,7 @@ PalResult PAL_CALL palBindImageMemory(
 
     HandleData* deviceData = findHandleData(device);
     if (!deviceData) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     return deviceData->backend->bindImageMemory(
@@ -3626,7 +3635,7 @@ PalResult PAL_CALL palCreateImageView(
 
     HandleData* data = findHandleData(device);
     if (!data) {
-        return PAL_RESULT_INVALID_GRAPHICS_DEVICE;
+        return PAL_RESULT_INVALID_DEVICE;
     }
 
     PalImageView* imageView = nullptr;

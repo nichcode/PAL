@@ -319,14 +319,6 @@ typedef struct {
 } PalFormatInfo;
 
 typedef struct {
-    Uint32 multiViewCount;
-    PalLoadOp loadOp;
-    PalStoreOp storeOp;
-    PalImageView* target;
-    PalImageView* resolveTarget;
-} PalAttachmentDesc;
-
-typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -430,11 +422,11 @@ typedef struct {
         PalAdapter* adapter,
         PalFormat format);
 
-    PalImageUsages PAL_CALL (*queryFormatUsages)(
+    PalImageUsages PAL_CALL (*queryFormatImageUsages)(
         PalAdapter* adapter,
         PalFormat format);
 
-    PalImageViewUsages PAL_CALL (*queryFormatViewUsages)(
+    PalImageViewUsages PAL_CALL (*queryFormatImageViewUsages)(
         PalAdapter* adapter,
         PalFormat format);
 
@@ -486,7 +478,7 @@ typedef struct {
     PalImage* PAL_CALL (*getSwapchainImage)(
         PalSwapchain* swapchain,
         Int32 index);
-} PalGPUBackend;
+} PalGfxBackend;
 
 PAL_API PalResult PAL_CALL palInitGraphics(
     bool enableDebugLayer,
@@ -506,7 +498,7 @@ PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps);
 
-PAL_API PalResult PAL_CALL palAddGPUBackend(const PalGPUBackend* backend);
+PAL_API PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend);
 
 PAL_API PalResult PAL_CALL palCreateDevice(
     PalAdapter* adapter,
