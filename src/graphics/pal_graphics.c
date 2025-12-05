@@ -224,6 +224,15 @@ PalImage* PAL_CALL getVkSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
 
+PalResult PAL_CALL createVkShader(
+    PalDevice* device,
+    const PalShaderCreateInfo* info,
+    PalShader** outShader);
+
+void PAL_CALL destroyVkShader(PalShader* shader);
+
+PalShaderType PAL_CALL getVkShaderType(PalShader* shader);
+
 static PalGfxBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
     .getAdapterInfo =  getVkAdapterInfo,
@@ -250,7 +259,10 @@ static PalGfxBackend s_VkBackend = {
     .createSwapchain =  createVkSwapchain,
     .destroySwapchain =  destroyVkSwapchain,
     .getSwapchainImageCount =  getVkSwapchainImageCount,
-    .getSwapchainImage =  getVkSwapchainImage
+    .getSwapchainImage =  getVkSwapchainImage,
+    .createShader = createVkShader,
+    .destroyShader = destroyVkShader,
+    .getShaderType = getVkShaderType
 };
 
 #endif // PAL_HAS_VULKAN
@@ -515,7 +527,7 @@ PalResult PAL_CALL palCreateDevice(
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
-    // create a slot for the created device
+    // create a slot for the device
     Uint64 deviceIndex = 0;
     HandleData* deviceData = getFreeHandleData(&deviceIndex);
     if (!deviceData) {
@@ -610,7 +622,7 @@ PalResult PAL_CALL palCreateQueue(
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    // create a slot for the created queue
+    // create a slot for the queue
     Uint64 queueIndex = 0;
     HandleData* queueData = getFreeHandleData(&queueIndex);
     if (!queueData) {
@@ -762,7 +774,7 @@ PalResult PAL_CALL palCreateImage(
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    // create a slot for the created image
+    // create a slot for the image
     Uint64 imageIndex = 0;
     HandleData* imageData = getFreeHandleData(&imageIndex);
     if (!imageData) {
@@ -916,7 +928,7 @@ PalResult PAL_CALL palCreateImageView(
         return PAL_RESULT_INVALID_IMAGE;
     }
 
-    // create a slot for the created image view
+    // create a slot for the image view
     Uint64 imageViewIndex = 0;
     HandleData* imageViewData = getFreeHandleData(&imageViewIndex);
     if (!imageViewData) {
@@ -1011,7 +1023,7 @@ PalResult PAL_CALL palCreateSwapchain(
         return PAL_RESULT_INVALID_QUEUE;
     }
 
-    // create a slot for the created swapchain
+    // create a slot for the swapchain
     Uint64 swapchainIndex = 0;
     HandleData* swapchainData = getFreeHandleData(&swapchainIndex);
     if (!swapchainData) {
@@ -1052,16 +1064,14 @@ void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 
 Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain)
 {
-    if (!s_Graphics.initialized || !swapchain) {
-        return 0;
+    if (s_Graphics.initialized && swapchain) {
+        Uint64 index = FROM_PAL_HANDLE(swapchain);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            return data->backend->getSwapchainImageCount(data->handle);
+        }
     }
-
-    Uint64 index = FROM_PAL_HANDLE(swapchain);
-    HandleData* data = findHandleData(index);
-    if (!data) {
-        return 0;
-    }
-    return data->backend->getSwapchainImageCount(data->handle);
+    return 0;
 }
 
 PalImage* PAL_CALL palGetSwapchainImage(
@@ -1097,4 +1107,76 @@ PalImage* PAL_CALL palGetSwapchainImage(
     imageData->handle = image;
 
     return TO_PAL_HANDLE(PalImage, imageIndex);
+}
+
+PalResult PAL_CALL palCreateShader(
+    PalDevice* device,
+    const PalShaderCreateInfo* info,
+    PalShader** outShader)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outShader) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->type == PAL_SHADER_TYPE_UNDEFINED) {
+        return PAL_RESULT_INVALID_SHADER_TYPE;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(device);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    // create a slot for the shader
+    Uint64 shaderIndex = 0;
+    HandleData* shaderData = getFreeHandleData(&shaderIndex);
+    if (!shaderData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalShader* shader = nullptr;
+    PalResult ret;
+    ret = data->backend->createShader(
+        data->handle,
+        info,
+        &shader);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    shaderData->backend = data->backend;
+    shaderData->handle = shader;
+
+    *outShader = TO_PAL_HANDLE(PalShader, shader);
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyShader(PalShader* shader)
+{
+    if (s_Graphics.initialized && shader) {
+        Uint64 index = FROM_PAL_HANDLE(shader);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            data->backend->destroyShader(data->handle);
+            data->used = false;
+        }
+    }
+}
+
+PalShaderType PAL_CALL palGetShaderType(PalShader* shader)
+{
+    if (s_Graphics.initialized && shader) {
+        Uint64 index = FROM_PAL_HANDLE(shader);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            return data->backend->getShaderType(data->handle);
+        }
+    }
+    return PAL_SHADER_TYPE_UNDEFINED;
 }

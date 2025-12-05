@@ -105,6 +105,8 @@ typedef struct {
     PFN_vkGetDeviceProcAddr getDeviceProcAddr;
     PFN_vkCreateImage createImage;
     PFN_vkDestroyImage destroyImage;
+    PFN_vkCreateShaderModule createShader;
+    PFN_vkDestroyShaderModule destroyShader;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -168,6 +170,13 @@ struct PalSwapchain {
     VkSurfaceKHR surface;
     VkSwapchainKHR handle;
     PalImage* images;
+};
+
+struct PalShader {
+    PalShaderType type;
+    PalDevice* device;
+    VkShaderModule handle;
+    VkPipelineShaderStageCreateInfo info;
 };
 
 static Vulkan s_Vk = {0};
@@ -1043,6 +1052,14 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkDestroyImageView");
 
+    s_Vk.createShader = (PFN_vkCreateShaderModule)dlsym(
+        s_Vk.handle, 
+        "vkCreateShaderModule");
+
+    s_Vk.destroyShader = (PFN_vkDestroyShaderModule)dlsym(
+        s_Vk.handle, 
+        "vkDestroyShaderModule");
+
     s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
         s_Vk.handle, 
         "vkGetPhysicalDeviceProperties2");
@@ -1771,10 +1788,6 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     s_Vk.getPhysicalDeviceFeatures(phyDevice, &features);
 
     // check for additional features
-    if (features.geometryShader) {
-        caps->features |= PAL_ADAPTER_FEATURE_GEOMETRY_SHADER;
-    }
-
     if (features.multiViewport) {
         caps->features |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
     }
@@ -1799,12 +1812,17 @@ PalResult PAL_CALL getVkAdapterCapabilities(
         caps->features |= PAL_ADAPTER_FEATURE_SHADER_INT16;
     }
 
+    if (features.geometryShader) {
+        caps->features |= PAL_ADAPTER_FEATURE_GEOMETRY_SHADER;
+    }
+
     if (features.tessellationShader) {
         caps->features |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
     }
 
     // this features are supported on vulkan
     caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
+    caps->features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
 
     palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -2930,6 +2948,75 @@ PalImage* PAL_CALL getVkSwapchainImage(
         return nullptr;
     }
     return (PalImage*)&swapchain->images[index];
+}
+
+PalResult PAL_CALL createVkShader(
+    PalDevice* device,
+    const PalShaderCreateInfo* info,
+    PalShader** outShader)
+{
+    VkResult result;
+    PalShader* shader = nullptr;
+    shader = palAllocate(s_Vk.allocator, sizeof(PalShader), 0);
+    if (!shader) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkShaderModuleCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = info->bytecodeSize;
+    createInfo.pCode = (const Uint32*)info->bytecode;
+
+    result = s_Vk.createShader(
+        device->handle, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &shader->handle);
+    
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, shader);
+        vkResultToPal(result);
+    }
+
+    shader->device = device;
+    shader->type = info->type;
+    shader->info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shader->info.module = shader->handle;
+    shader->info.pName = "main";
+
+    if (info->type == PAL_SHADER_TYPE_VERTEX) {
+        shader->info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_PIXEL) {
+        shader->info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
+        shader->info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
+        shader->info.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
+        shader->info.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    }
+
+    *outShader = shader;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkShader(PalShader* shader)
+{
+    s_Vk.destroyShader(
+        shader->device->handle, 
+        shader->handle, 
+        &s_Vk.vkAllocator);
+    
+    palFree(s_Vk.allocator, shader);
+}
+
+PalShaderType PAL_CALL getVkShaderType(PalShader* shader)
+{
+    return shader->type;
 }
 
 #endif // PAL_HAS_VULKAN

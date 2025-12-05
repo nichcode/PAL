@@ -237,6 +237,10 @@ bool graphicsTest()
             palLog(nullptr, "  Geometry shader");
         }
 
+        if (caps.features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
+            palLog(nullptr, "  Compute shader");
+        }
+
         if (caps.features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
             palLog(nullptr, "  Shader float16");
         }

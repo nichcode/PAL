@@ -45,6 +45,7 @@ typedef struct PalQueue PalQueue;
 typedef struct PalSwapchain PalSwapchain;
 typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
+typedef struct PalShader PalShader;
 
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -208,17 +209,18 @@ typedef enum {
     PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE = PAL_BIT64(3),
     PAL_ADAPTER_FEATURE_TESSELLATION_SHADER = PAL_BIT64(4),
     PAL_ADAPTER_FEATURE_GEOMETRY_SHADER = PAL_BIT64(5),
-    PAL_ADAPTER_FEATURE_SHADER_FLOAT16 = PAL_BIT64(6),
-    PAL_ADAPTER_FEATURE_SHADER_FLOAT64 = PAL_BIT64(7),
-    PAL_ADAPTER_FEATURE_SHADER_INT16 = PAL_BIT64(8),
-    PAL_ADAPTER_FEATURE_SHADER_INT64 = PAL_BIT64(9),
-    PAL_ADAPTER_FEATURE_RAY_TRACING = PAL_BIT64(10),
-    PAL_ADAPTER_FEATURE_MESH_SHADER = PAL_BIT64(11),
-    PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(12),
-    PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(13),
-    PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(14),
-    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(15),
-    PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(16)
+    PAL_ADAPTER_FEATURE_COMPUTE_SHADER = PAL_BIT64(6),
+    PAL_ADAPTER_FEATURE_SHADER_FLOAT16 = PAL_BIT64(7),
+    PAL_ADAPTER_FEATURE_SHADER_FLOAT64 = PAL_BIT64(8),
+    PAL_ADAPTER_FEATURE_SHADER_INT16 = PAL_BIT64(9),
+    PAL_ADAPTER_FEATURE_SHADER_INT64 = PAL_BIT64(10),
+    PAL_ADAPTER_FEATURE_RAY_TRACING = PAL_BIT64(11),
+    PAL_ADAPTER_FEATURE_MESH_SHADER = PAL_BIT64(12),
+    PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(13),
+    PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(14),
+    PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(15),
+    PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16),
+    PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(17)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -263,6 +265,16 @@ typedef enum {
 
     PAL_SWAPCHAIN_FORMAT_MAX // more pars will be added
 } PalSwapchainFormat;
+
+typedef enum {
+    PAL_SHADER_TYPE_UNDEFINED,
+    PAL_SHADER_TYPE_VERTEX,
+    PAL_SHADER_TYPE_PIXEL,
+    PAL_SHADER_TYPE_COMPUTE,
+    PAL_SHADER_TYPE_GEOMETRY,
+    PAL_SHADER_TYPE_TESSELLATION_CONTROL,
+    PAL_SHADER_TYPE_TESSELLATION_EVALUATION
+} PalShaderType;
 
 typedef struct {
     Uint32 vendorId;
@@ -365,6 +377,12 @@ typedef struct {
     PalCompositeAplha compositeAlpha;
     PalSwapchainFormat format;
 } PalSwapchainCreateInfo;
+
+typedef struct {
+    PalShaderType type;
+    const void* bytecode;
+    Uint64 bytecodeSize;
+} PalShaderCreateInfo;
 
 typedef struct {
     void* display;
@@ -478,6 +496,15 @@ typedef struct {
     PalImage* PAL_CALL (*getSwapchainImage)(
         PalSwapchain* swapchain,
         Int32 index);
+
+    PalResult PAL_CALL (*createShader)(
+        PalDevice* device,
+        const PalShaderCreateInfo* info,
+        PalShader** outShader);
+
+    void PAL_CALL (*destroyShader)(PalShader* shader);
+
+    PalShaderType PAL_CALL (*getShaderType)(PalShader* shader);
 } PalGfxBackend;
 
 PAL_API PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend);
@@ -594,6 +621,15 @@ PAL_API Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain);
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
+
+PAL_API PalResult PAL_CALL palCreateShader(
+    PalDevice* device,
+    const PalShaderCreateInfo* info,
+    PalShader** outShader);
+
+PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
+
+PAL_API PalShaderType PAL_CALL palGetShaderType(PalShader* shader);
 
 /** @} */ // end of pal_graphics group
 
