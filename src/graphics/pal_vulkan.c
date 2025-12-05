@@ -34,7 +34,11 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <stdio.h>
 
-// HACK: Needed to determine display type
+// HACK: Needed to determine display type if on linux
+#ifdef _WIN32
+#define VK_LIB_NAME ""
+
+#elif defined(__linux__)
 struct wl_display;
 struct wl_surface;
 typedef struct _XDisplay Display;
@@ -44,26 +48,33 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 
 #include <vulkan/vulkan_xlib.h>
 #include <vulkan/vulkan_wayland.h>
+#define VK_LIB_NAME "libvulkan.so"
 
-#endif // PAL_HAS_VULKAN
+#else
+// Android
+#define VK_LIB_NAME ""
+
+#endif // _WIN32
 
 // ==================================================
 // Typedefs, enums and structs
 // ==================================================
 
-#define MAX_BACKENDS 32
-
-#if PAL_HAS_VULKAN
+#define VK_WIN32_PLATFORM 1
+#define VK_XLIB_PLATFORM 2
+#define VK_WAYLAND_PLATFORM 3
 
 typedef struct {
     bool hasDebug;
     bool hasDynamicRendering;
     void* handle;
     VkInstance instance;
-    
+
+#ifdef __linux__
     // HACK: for display testing
     void* libWayland;
     wl_display_get_fd_fn getDisplayFd;
+#endif // __linux__
     
     PFN_vkEnumerateInstanceVersion enumerateInstanceVersion;
     PFN_vkEnumerateInstanceExtensionProperties enumerateInstanceExtensionProperties;
@@ -105,7 +116,8 @@ typedef struct {
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getSurfaceFormats;
     PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getSurfacePresentModes;
 
-    VkAllocationCallbacks allocator;
+    VkAllocationCallbacks vkAllocator;
+    const PalAllocator* allocator;
 } Vulkan;
 
 typedef struct {
@@ -116,7 +128,7 @@ typedef struct {
     VkQueueFlags usedUsages;
 } PhysicalQueue;
 
-typedef struct {
+struct PalDevice {
     Int32 queueCount;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
@@ -127,130 +139,69 @@ typedef struct {
     PFN_vkAcquireNextImageKHR acquireNextImage;
     PFN_vkQueuePresentKHR queuePresent;
     Int32 memoryTypeIndex[PAL_MEMORY_TYPE_MAX];
-} Device;
+};
 
-typedef struct {
+struct PalQueue {
     VkQueueFlags usage;
-    Device* device;
+    PalDevice* device;
     PhysicalQueue* phyQueue;
-} Queue;
+};
 
-typedef struct {
+struct PalImage {
     bool belongsToSwapchain;
-    Device* device;
+    PalDevice* device;
     VkImage handle;
     PalImageInfo info;
-} Image;
+};
 
-typedef struct {
+struct PalImageView {
     VkImageViewType type;
     PalImageViewUsages usages;
-    Device* device;
-    Image* image;
+    PalDevice* device;
+    PalImage* image;
     VkImageView handle;
-} ImageView;
+};
 
-typedef struct {
+struct PalSwapchain {
     Uint32 imageCount;
-    Device* device;
+    PalDevice* device;
     VkSurfaceKHR surface;
     VkSwapchainKHR handle;
-    Image* images;
-} Swapchain;
+    PalImage* images;
+};
 
 static Vulkan s_Vk = {0};
 
-#endif // PAL_HAS_VULKAN
-
-typedef struct {
-    bool used;
-    void* handle;
-    const PalGfxBackend* backend;
-} HandleData;
-
-typedef struct {
-    Int32 count;
-    Int32 startIndex;
-    const PalGfxBackend* base;
-} BackendData;
-
-typedef struct {
-    bool initialized;
-    Int32 backendCount;
-    Int32 maxHandleData;
-    const PalAllocator* allocator;
-    HandleData* handleData;
-    BackendData backends[MAX_BACKENDS];
-} GraphicsLinux;
-
-static GraphicsLinux s_Graphics = {0};
-
 // ==================================================
-// Internal API
+// API
 // ==================================================
 
-// FIXME: might be replaced with hashmap for performance
-static HandleData* getFreeHandleData()
+static Uint32 checkPlatform(struct wl_display* display) 
 {
-    for (int i = 0; i < s_Graphics.maxHandleData; ++i) {
-        if (!s_Graphics.handleData[i].used) {
-            s_Graphics.handleData[i].used = true;
-            return &s_Graphics.handleData[i];
-        }
-    }  
-
-    // resize the data array
-    HandleData* data = nullptr;
-    int count = s_Graphics.maxHandleData * 2; // double the size
-    int freeIndex = s_Graphics.maxHandleData + 1;
-    data = palAllocate(s_Graphics.allocator, sizeof(HandleData) * count, 0);
-    if (data) {
-        memcpy(
-            data,
-            s_Graphics.handleData,
-            s_Graphics.maxHandleData * sizeof(HandleData));
-
-        palFree(s_Graphics.allocator, s_Graphics.handleData);
-        s_Graphics.handleData = data;
-        s_Graphics.maxHandleData = count;
-
-        s_Graphics.handleData[freeIndex].used = true;
-        return &s_Graphics.handleData[freeIndex];
-    }
-    return nullptr;
-}
-
-static HandleData* findHandleData(void* handle)
-{
-    for (int i = 0; i < s_Graphics.maxHandleData; ++i) {
-        if (s_Graphics.handleData[i].used &&
-            s_Graphics.handleData[i].handle == handle) {
-            return &s_Graphics.handleData[i];
-        }
-    }
-    return nullptr;
-}
-
-#if PAL_HAS_VULKAN
-
-static bool vkOnWayland(struct wl_display* display) 
-{
+#ifdef _WIN32
+#elif defined(__linux__)
     if (!s_Vk.libWayland) {
-        return false;
+        return VK_XLIB_PLATFORM;
     }
 
     int fd = s_Vk.getDisplayFd(display);
     if (fd <= 0 || fd > 1024) { // fds are usaually 0-30 but this is fine
-        return false;
+        return VK_XLIB_PLATFORM;
     }
-    return true;
+    return VK_WAYLAND_PLATFORM;
+#else
+    // Android
+#endif // _WIN32
 }
 
-static bool vkCreateSurface(
+static bool createSurface(
     PalGfxWindow* window, 
     VkSurfaceKHR* outSurface)
 {
-    if (vkOnWayland(window->display)) {
+    Uint32 platform = checkPlatform(window->display);
+    if (platform == VK_WIN32_PLATFORM) {
+
+    } else if (platform == VK_WAYLAND_PLATFORM) {
         if (!s_Vk.createWaylandSurface) {
             return false;
         }
@@ -266,18 +217,19 @@ static bool vkCreateSurface(
         VkResult result = s_Vk.createWaylandSurface(
             s_Vk.instance, 
             &createInfo, 
-            &s_Vk.allocator, 
+            &s_Vk.vkAllocator, 
             &surface);
 
         if (result != VK_SUCCESS) {
             return false;
         }
-        *outSurface = surface;
 
-    } else {
-        // TODO: create surface for xlib
+        *outSurface = surface;
+        return true;
+        
+    } else if (platform == VK_XLIB_PLATFORM) {
+        
     }
-    return true;
 }
 
 static PalResult vkResultToPal(VkResult result) 
@@ -969,14 +921,14 @@ static void* vkAlloc(
     size_t alignment,
     VkSystemAllocationScope allocationScope)
 {
-    return palAllocate(s_Graphics.allocator, size, alignment);
+    return palAllocate(s_Vk.allocator, size, alignment);
 }
 
 static void vkFree(
     void* pUserData,
     void* ptr)
 {
-    palFree(s_Graphics.allocator, ptr);
+    palFree(s_Vk.allocator, ptr);
 }
 
 static void* vkRealloc(
@@ -991,7 +943,7 @@ static void* vkRealloc(
     // this is because we dont know the old size
     void* block = realloc(pOriginal, size);
     if (block) {
-        void* memory = palAllocate(s_Graphics.allocator, size, alignment);
+        void* memory = palAllocate(s_Vk.allocator, size, alignment);
         if (!memory) {
             free(block);
             return nullptr;
@@ -1004,7 +956,9 @@ static void* vkRealloc(
     return nullptr;
 }
 
-static PalResult vkInitGraphics(bool enableDebugLayer)
+PalResult PAL_CALL initGraphicsVk(
+    bool enableDebugLayer,
+    const PalAllocator* allocator)
 {
     s_Vk.libWayland = nullptr;
     s_Vk.libWayland = dlopen("libwayland-client.so.0", RTLD_LAZY);
@@ -1015,7 +969,7 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     }
 
     // load vulkan
-    s_Vk.handle = dlopen("libvulkan.so", RTLD_LAZY);
+    s_Vk.handle = dlopen(VK_LIB_NAME, RTLD_LAZY);
     if (!s_Vk.handle) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -1161,7 +1115,7 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
 
         VkLayerProperties* props = nullptr;
         props = palAllocate(
-            s_Graphics.allocator, 
+            s_Vk.allocator, 
             sizeof(VkLayerProperties) * layerCount,
             0);
 
@@ -1178,7 +1132,7 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
             }
         }
 
-        palFree(s_Graphics.allocator, props);
+        palFree(s_Vk.allocator, props);
     }
 
     // extensions
@@ -1195,7 +1149,7 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
 
     VkExtensionProperties* extensionProps = nullptr;
     extensionProps = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkExtensionProperties) * extCount, 
         0);
 
@@ -1229,7 +1183,7 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
         }
     }
 
-    palFree(s_Graphics.allocator, extensionProps);
+    palFree(s_Vk.allocator, extensionProps);
 
     int extensionCount = 0;
     if (hasSurface) {
@@ -1274,14 +1228,14 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     instanceCreateInfo.ppEnabledLayerNames = layers;
 
     // vk allocator
-    s_Vk.allocator.pfnAllocation = vkAlloc;
-    s_Vk.allocator.pfnFree = vkFree;
-    s_Vk.allocator.pfnReallocation = vkRealloc;
+    s_Vk.vkAllocator.pfnAllocation = vkAlloc;
+    s_Vk.vkAllocator.pfnFree = vkFree;
+    s_Vk.vkAllocator.pfnReallocation = vkRealloc;
 
     VkInstance instance = nullptr;
     VkResult result = s_Vk.createInstance(
         &instanceCreateInfo, 
-        &s_Vk.allocator, 
+        &s_Vk.vkAllocator, 
         &instance);
 
     if (result != VK_SUCCESS) {
@@ -1348,9 +1302,9 @@ static PalResult vkInitGraphics(bool enableDebugLayer)
     return PAL_RESULT_SUCCESS;
 }
 
-static void vkShutdownGraphics()
+PalResult PAL_CALL shutdownGraphicsVk()
 {
-    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocator);
+    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.vkAllocator);
     dlclose(s_Vk.handle);
     if (s_Vk.libWayland) {
         dlclose(s_Vk.libWayland);
@@ -1358,8 +1312,8 @@ static void vkShutdownGraphics()
     memset(&s_Vk, 0, sizeof(s_Vk));
 }
 
-static PalResult _vkEnumerateAdapters(
-    Int32* count, 
+PalResult PAL_CALL enumerateVkAdapters(
+    Int32* count,
     PalAdapter** outAdapters)
 {
     int _count = 0;
@@ -1374,7 +1328,7 @@ static PalResult _vkEnumerateAdapters(
 
     // PAL only supports supports dynamic rendering
     VkPhysicalDevice* devices = nullptr;
-    devices = palAllocate(s_Graphics.allocator, 
+    devices = palAllocate(s_Vk.allocator, 
         sizeof(VkPhysicalDevice) * _count, 
         0);
 
@@ -1413,7 +1367,7 @@ static PalResult _vkEnumerateAdapters(
             }
 
             exts = palAllocate(
-                s_Graphics.allocator, 
+                s_Vk.allocator, 
                 sizeof(VkExtensionProperties) * extCount, 
                 0);
 
@@ -1435,7 +1389,7 @@ static PalResult _vkEnumerateAdapters(
                 }
             }
 
-            palFree(s_Graphics.allocator, exts);
+            palFree(s_Vk.allocator, exts);
             if (!found) {
                 // skip
                 continue;
@@ -1457,11 +1411,11 @@ static PalResult _vkEnumerateAdapters(
         *count = deviceCount;
     }
 
-    palFree(s_Graphics.allocator, devices);
+    palFree(s_Vk.allocator, devices);
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL _vkGetAdapterInfo(
+PalResult PAL_CALL getVkAdapterInfo(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
@@ -1529,7 +1483,7 @@ static PalResult PAL_CALL _vkGetAdapterInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL _vkGetAdapterCapabilities(
+PalResult PAL_CALL getVkAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
@@ -1592,7 +1546,7 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
 
     VkQueueFamilyProperties* queueProps = nullptr;
     queueProps = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkQueueFamilyProperties) * count, 
         0);
 
@@ -1619,7 +1573,7 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
         }
     }
 
-    palFree(s_Graphics.allocator, queueProps);
+    palFree(s_Vk.allocator, queueProps);
 
     // get supported extensions
     Uint32 extensionCount = 0;
@@ -1636,7 +1590,7 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
 
     VkExtensionProperties* extensionProps = nullptr;
     extensionProps = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkExtensionProperties) * extensionCount, 
         0);
 
@@ -1852,19 +1806,19 @@ static PalResult PAL_CALL _vkGetAdapterCapabilities(
     // this features are supported on vulkan
     caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
 
-    palFree(s_Graphics.allocator, extensionProps);
+    palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL _vkCreateDevice(
+PalResult PAL_CALL createVkDevice(
     PalAdapter* adapter,
     PalAdapterFeatures features,
     PalDevice** outDevice)
-{ 
+{
     float priority = 1.0f;
     Uint32 count = 0;
     VkResult ret = VK_SUCCESS;
-    Device* device = nullptr;
+    PalDevice* device = nullptr;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
 
     VkQueueFamilyProperties* queueProps = nullptr;
@@ -1875,16 +1829,16 @@ static PalResult PAL_CALL _vkCreateDevice(
         nullptr);
 
     queueProps = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkQueueFamilyProperties) * count, 
         0);
 
     queueCreateInfos = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkDeviceQueueCreateInfo) * count, 
         0);
 
-    device = palAllocate(s_Graphics.allocator, sizeof(Device), 0);
+    device = palAllocate(s_Vk.allocator, sizeof(PalDevice), 0);
     if (!queueProps || !queueCreateInfos || !device) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -1893,7 +1847,7 @@ static PalResult PAL_CALL _vkCreateDevice(
     device->phyDevice = phyDevice;
     
     device->phyQueues = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(PhysicalQueue) * count, 
         0);
         
@@ -2114,14 +2068,14 @@ static PalResult PAL_CALL _vkCreateDevice(
     ret = s_Vk.createDevice(
         phyDevice, 
         &createInfo, 
-        &s_Vk.allocator, 
+        &s_Vk.vkAllocator, 
         &device->handle);
 
     if (ret != VK_SUCCESS) {
-        palFree(s_Graphics.allocator, queueProps);
-        palFree(s_Graphics.allocator, queueCreateInfos);
-        palFree(s_Graphics.allocator, device->phyQueues);
-        palFree(s_Graphics.allocator, device);
+        palFree(s_Vk.allocator, queueProps);
+        palFree(s_Vk.allocator, queueCreateInfos);
+        palFree(s_Vk.allocator, device->phyQueues);
+        palFree(s_Vk.allocator, device);
         return vkResultToPal(ret);
     }
 
@@ -2184,34 +2138,71 @@ static PalResult PAL_CALL _vkCreateDevice(
         device->handle, 
         "vkQueuePresentKHR");
 
-    palFree(s_Graphics.allocator, queueProps);
-    palFree(s_Graphics.allocator, queueCreateInfos);
+    palFree(s_Vk.allocator, queueProps);
+    palFree(s_Vk.allocator, queueCreateInfos);
 
-    *outDevice = (PalDevice*)device;
+    *outDevice = device;
     return PAL_RESULT_SUCCESS;
 }
 
-static void PAL_CALL _vkDestroyDevice(PalDevice* device)
+void PAL_CALL destroyVkDevice(PalDevice* device)
 {
-    Device* _device = (Device*)device;
-    s_Vk.destroyDevice(_device->handle, &s_Vk.allocator);
-    palFree(s_Graphics.allocator, _device->phyQueues);
-    palFree(s_Graphics.allocator, _device);
+    s_Vk.destroyDevice(device->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, device->phyQueues);
+    palFree(s_Vk.allocator, device);
 }
 
-static PalResult PAL_CALL _vkCreateQueue(
+PalResult PAL_CALL allocateVkMemory(
+    PalDevice* device,
+    PalMemoryType type,
+    Uint64 size,
+    PalMemory** outMemory)
+{
+    VkMemoryAllocateInfo allocateInfo = {0};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.allocationSize = (VkDeviceSize)size;
+    allocateInfo.memoryTypeIndex = device->memoryTypeIndex[type];
+
+    if (allocateInfo.memoryTypeIndex == -1) {
+        // not supported
+        return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
+    }
+
+    VkDeviceMemory memory = nullptr;
+    VkResult result = s_Vk.allocateMemory(
+        device->handle, 
+        &allocateInfo, 
+        &s_Vk.vkAllocator, 
+        &memory);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    *outMemory = (PalMemory*)memory;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL freeVkMemory(
+    PalDevice* device,
+    PalMemory* memory)
+{
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    s_Vk.freeMemory(device->handle, mem, &s_Vk.vkAllocator);
+}
+
+PalResult PAL_CALL createVkQueue(
     PalDevice* device,
     PalQueueType type,
     PalQueue** outQueue)
 {
     VkQueueFlags queueFlag = 0;
-    Device* _device = (Device*)device;
-    Queue* queue = nullptr;
-    if (!_device->handle) {
+    PalQueue* queue = nullptr;
+    if (!device->handle) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    if (_device->queueCount == 0) {
+    if (device->queueCount == 0) {
         return PAL_RESULT_OUT_OF_QUEUE;
     }
 
@@ -2233,157 +2224,70 @@ static PalResult PAL_CALL _vkCreateQueue(
     }
 
     PhysicalQueue* phyQueue = nullptr;
-    for (int i = 0; i < _device->queueCount; i++) {
-        PhysicalQueue* queue = &_device->phyQueues[i];
+    for (int i = 0; i < device->queueCount; i++) {
+        PhysicalQueue* pq = &device->phyQueues[i];
         // check if the physical queue supports the requested operation
         // and if its not already used
-        if (queue->usages & queueFlag && 
-            queue->usedUsages != queueFlag) {
-            queue->usedUsages |= queueFlag;
-            phyQueue = queue;
+        if (pq->usages & queueFlag && 
+            pq->usedUsages != queueFlag) {
+            pq->usedUsages |= queueFlag;
+            phyQueue = pq;
             break;
         } 
     }
 
-    if (phyQueue) {
-        queue = palAllocate(
-            s_Graphics.allocator, 
-            sizeof(Queue), 
-            0);
-        
-        if (!queue) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
-
-        queue->phyQueue = phyQueue;
-        queue->usage = queueFlag;
-        queue->device = _device;
-
-        *outQueue = (PalQueue*)queue;
-        return PAL_RESULT_SUCCESS;
+    if (!phyQueue) {
+        return PAL_RESULT_OUT_OF_QUEUE;
     }
 
-    return PAL_RESULT_OUT_OF_QUEUE;
+    queue = palAllocate(s_Vk.allocator, sizeof(PalQueue), 0);
+    if (!queue) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    queue->phyQueue = phyQueue;
+    queue->usage = queueFlag;
+    queue->device = device;
+
+    *outQueue = queue;
+    return PAL_RESULT_SUCCESS;
 }
 
-static void PAL_CALL _vkDestroyQueue(PalQueue* queue)
+void PAL_CALL destroyVkQueue(PalQueue* queue)
 {
-    Queue* _queue = (Queue*)queue;
-    PhysicalQueue* phyQueue = _queue->phyQueue;
-    phyQueue->usedUsages &= ~_queue->usage;
-    palFree(s_Graphics.allocator, _queue);
+    PhysicalQueue* phyQueue = queue->phyQueue;
+    phyQueue->usedUsages &= ~queue->usage;
+    palFree(s_Vk.allocator, queue);
 }
 
-static bool PAL_CALL _vkCanQueuePresent(
+bool PAL_CALL canVkQueuePresent(
     PalQueue* queue, 
     PalGfxWindow* window)
 {
     // check if the queue is a graphics queue before we check its family 
     // index for presentation support.
-    Queue* _queue = (Queue*)queue;
-    if (_queue->usage != VK_QUEUE_GRAPHICS_BIT) {
+    if (queue->usage != VK_QUEUE_GRAPHICS_BIT) {
         return false;
     }
 
-    bool onWayland = vkOnWayland(window->display);
-    PhysicalQueue* phyQueue = _queue->phyQueue;
-    if (!s_Vk.checkWaylandPresentSupport(
-        phyQueue->phyDevice, 
-        phyQueue->familyIndex, window->display)) {
-        return false;
-    } else {
-        // TODO: check presentation for xlib
-    }
+    Uint32 platform = checkPlatform(window->display);
+    PhysicalQueue* phyQueue = queue->phyQueue;
+    if (platform == VK_WIN32_PLATFORM) {
 
-    return true;
+    } else if (platform == VK_WAYLAND_PLATFORM) {
+        if (s_Vk.checkWaylandPresentSupport(
+            phyQueue->phyDevice, 
+            phyQueue->familyIndex, window->display)) {
+            return true;
+        }
+
+    } else if (platform == VK_XLIB_PLATFORM) {
+        
+    }
+    return false;
 }
 
-static PalResult PAL_CALL _vkCreateImage(
-    PalDevice* device,
-    const PalImageCreateInfo* info,
-    PalImage** outImage)
-{
-    VkResult result;
-    Image* image = nullptr;
-    Device* _device = (Device*)device;
-    if (!_device->handle) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    image = palAllocate(s_Graphics.allocator, sizeof(Image), 0);
-    if (!image) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    VkImageCreateInfo createInfo = {0};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    createInfo.extent.width = info->width;
-    createInfo.extent.height = info->height;
-    createInfo.mipLevels = info->mipLevelCount;
-
-    createInfo.format = palFormatToVk(info->format);
-    createInfo.samples = samplesToVk(info->samples);
-    createInfo.usage = palUsageToVk(info->usages);
-
-    createInfo.arrayLayers = info->depthOrArraySize;
-    createInfo.extent.depth = 1;
-    createInfo.imageType = palImageTypeToVk(info->type);
-
-    if (info->type == PAL_IMAGE_TYPE_3D) {
-        createInfo.arrayLayers = 1;
-        createInfo.extent.depth = info->depthOrArraySize;
-    }
-
-    result = s_Vk.createImage(
-        _device->handle, 
-        &createInfo, 
-        &s_Vk.allocator, 
-        &image->handle);
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Graphics.allocator, image);
-        return vkResultToPal(result);
-    }
-
-    image->belongsToSwapchain = false;
-    image->device = _device;
-    image->info.depthOrArraySize = info->depthOrArraySize;
-    image->info.type = info->type;
-    image->info.format = info->format;
-    image->info.usages = info->usages;
-    image->info.height = info->height;
-    image->info.mipLevelCount = info->mipLevelCount;
-    image->info.samples = info->samples;
-    image->info.width = info->width;
-
-    *outImage = (PalImage*)image;
-    return PAL_RESULT_SUCCESS;
-}
-
-static void PAL_CALL _vkDestroyImage(PalImage* image)
-{
-    Image* _image = (Image*)image;
-    if (_image->belongsToSwapchain) {
-        return;
-    }
-
-    s_Vk.destroyImage(_image->device->handle, _image->handle, &s_Vk.allocator);
-    palFree(s_Graphics.allocator, _image);
-}
-
-static PalResult PAL_CALL _vkGetImageInfo(
-    PalImage* image,
-    PalImageInfo* info)
-{
-    Image* _image = (Image*)image;
-    *info = _image->info;
-    return PAL_RESULT_SUCCESS;
-}
-
-static PalResult PAL_CALL _vkEnumerateFormats(
+PalResult PAL_CALL enumerateVkFormats(
     PalAdapter* adapter,
     Int32* count,
     PalFormatInfo* outFormats)
@@ -2432,15 +2336,13 @@ static PalResult PAL_CALL _vkEnumerateFormats(
             }
         }
     }
-
     if (!outFormats) {
         *count = fmtCount;
     }
-
     return PAL_RESULT_SUCCESS;
 }
 
-static bool PAL_CALL _vkIsFormatSupported(
+bool PAL_CALL isVkFormatSupported(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2452,11 +2354,10 @@ static bool PAL_CALL _vkIsFormatSupported(
     if (props.optimalTilingFeatures != 0) {
         return true;
     }
-
     return false;
 }
 
-static PalImageUsages PAL_CALL _vkQueryFormatImageUsages(
+PalImageUsages PAL_CALL queryVkFormatImageUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2465,14 +2366,13 @@ static PalImageUsages PAL_CALL _vkQueryFormatImageUsages(
 
     VkFormat fmt = palFormatToVk(format);
     s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
-    if (props.optimalTilingFeatures != 0) {
-        return vkFeatureToPalUsage(props.optimalTilingFeatures);
+    if (props.optimalTilingFeatures == 0) {
+        return PAL_IMAGE_USAGE_UNDEFINED;
     }
-
-    return PAL_IMAGE_USAGE_UNDEFINED;
+    return vkFeatureToPalUsage(props.optimalTilingFeatures);
 }
 
-static PalImageViewUsages PAL_CALL _vkQueryFormatImageViewUsages(
+PalImageViewUsages PAL_CALL queryVkFormatImageViewUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2481,55 +2381,132 @@ static PalImageViewUsages PAL_CALL _vkQueryFormatImageViewUsages(
 
     VkFormat fmt = palFormatToVk(format);
     s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
-    if (props.optimalTilingFeatures != 0) {
-        // format supported. check if we have any depth or stencil component
-        // Note: this is a hack
-        PalImageViewUsages usages = 0;
-        if (format == PAL_FORMAT_S8_UINT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-        }
-
-        if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-        }
-
-        if (format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
-            format == PAL_FORMAT_D16_UNORM_S8_UINT  || 
-            format == PAL_FORMAT_D24_UNORM_S8_UINT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-        }
-        
-        if (usages == 0) {
-            usages = PAL_IMAGE_VIEW_USAGE_COLOR;
-        }
-
-        return usages;
+    if (props.optimalTilingFeatures == 0) {
+        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
 
-    return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
+    // format supported. check if we have any depth or stencil component
+    // Note: this is a hack
+    PalImageViewUsages usages = 0;
+    if (format == PAL_FORMAT_S8_UINT) {
+        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+    }
+
+    if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
+        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+    }
+
+    if (format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
+        format == PAL_FORMAT_D16_UNORM_S8_UINT  || 
+        format == PAL_FORMAT_D24_UNORM_S8_UINT) {
+        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+    }
+    
+    if (usages == 0) {
+        usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+    }
+    return usages;
 }
 
-static PalResult PAL_CALL _vkGetImageMemoryRequirements(
+PalResult PAL_CALL createVkImage(
+    PalDevice* device,
+    const PalImageCreateInfo* info,
+    PalImage** outImage)
+{
+    VkResult result;
+    PalImage* image = nullptr;
+    if (!device->handle) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    image = palAllocate(s_Vk.allocator, sizeof(PalImage), 0);
+    if (!image) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkImageCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.extent.width = info->width;
+    createInfo.extent.height = info->height;
+    createInfo.mipLevels = info->mipLevelCount;
+
+    createInfo.format = palFormatToVk(info->format);
+    createInfo.samples = samplesToVk(info->samples);
+    createInfo.usage = palUsageToVk(info->usages);
+
+    createInfo.arrayLayers = info->depthOrArraySize;
+    createInfo.extent.depth = 1;
+    createInfo.imageType = palImageTypeToVk(info->type);
+
+    if (info->type == PAL_IMAGE_TYPE_3D) {
+        createInfo.arrayLayers = 1;
+        createInfo.extent.depth = info->depthOrArraySize;
+    }
+
+    result = s_Vk.createImage(
+        device->handle, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &image->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, image);
+        return vkResultToPal(result);
+    }
+
+    image->belongsToSwapchain = false;
+    image->device = device;
+    image->info.depthOrArraySize = info->depthOrArraySize;
+    image->info.type = info->type;
+    image->info.format = info->format;
+    image->info.usages = info->usages;
+    image->info.height = info->height;
+    image->info.mipLevelCount = info->mipLevelCount;
+    image->info.samples = info->samples;
+    image->info.width = info->width;
+
+    *outImage = image;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkImage(PalImage* image)
+{
+    if (image->belongsToSwapchain) {
+        return;
+    }
+    s_Vk.destroyImage(image->device->handle, image->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, image);
+}
+
+PalResult PAL_CALL getVkImageInfo(
+    PalImage* image,
+    PalImageInfo* info)
+{
+    *info = image->info;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL getVkImageMemoryRequirements(
     PalDevice* device,
     PalImage* image,
-    PalMemoryRequirements* requirments)
+    PalMemoryRequirements* requirements)
 {
-    Device* _device = (Device*)device;
-    Image* _image = (Image*)image;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)_device->phyDevice;
-
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)device->phyDevice;
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
 
     VkMemoryRequirements memReq = {0};
-    s_Vk.getImageMemoryRequirements(_device->handle, _image->handle, &memReq);
-    requirments->alignment = (Uint64)memReq.alignment;
-    requirments->size = (Uint64)memReq.size;
+    s_Vk.getImageMemoryRequirements(device->handle, image->handle, &memReq);
+    requirements->alignment = (Uint64)memReq.alignment;
+    requirements->size = (Uint64)memReq.size;
 
-    requirments->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
-    requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
-    requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
 
     for (int i = 0; i < memProps.memoryTypeCount; i++) {
         if (!(memReq.memoryTypeBits & (1 << i))) {
@@ -2539,100 +2516,52 @@ static PalResult PAL_CALL _vkGetImageMemoryRequirements(
 
         VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
         if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-            requirments->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
+            requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
         }
 
         if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
              prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-            requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
+            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
         }
 
         if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
              prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-            requirments->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
+            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
         }
     }
-
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL _vkAllocateMemory(
-    PalDevice* device,
-    PalMemoryType type,
-    Uint64 size,
-    PalMemory** outMemory)
-{
-    Device* _device = (Device*)device;
-    VkMemoryAllocateInfo allocateInfo = {0};
-    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocateInfo.allocationSize = (VkDeviceSize)size;
-    allocateInfo.memoryTypeIndex = _device->memoryTypeIndex[type];
-
-    if (allocateInfo.memoryTypeIndex == -1) {
-        // not supported
-        return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
-    }
-
-    VkDeviceMemory memory = nullptr;
-    VkResult result = s_Vk.allocateMemory(
-        _device->handle, 
-        &allocateInfo, 
-        &s_Vk.allocator, 
-        &memory);
-
-    if (result != VK_SUCCESS) {
-        return vkResultToPal(result);
-    }
-
-    *outMemory = (PalMemory*)memory;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL _vkFreeMemory(
-    PalDevice* device,
-    PalMemory* memory)
-{
-    Device* _device = (Device*)device;
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    s_Vk.freeMemory(_device->handle, mem, &s_Vk.allocator);
-}
-
-static PalResult PAL_CALL _vkBindImageMemory(
+PalResult PAL_CALL bindVkImageMemory(
     PalDevice* device,
     PalImage* image,
     PalMemory* memory,
     Uint64 offset)
 {
-    Image* _image = (Image*)image;
-    if (_image->belongsToSwapchain) {
+    if (image->belongsToSwapchain) {
         return PAL_RESULT_INVALID_OPERATION;
     }
-
-    Device* _device = (Device*)device;
     VkDeviceMemory mem = (VkDeviceMemory)memory;
-    s_Vk.bindImageMemory(_device->handle, _image->handle, mem, offset);
+    s_Vk.bindImageMemory(device->handle, image->handle, mem, offset);
 }
 
-static PalResult PAL_CALL _vkCreateImageView(
+PalResult PAL_CALL createVkImageView(
     PalDevice* device,
     PalImage* image,
     const PalImageViewCreateInfo* info,
     PalImageView** outImageView)
 {
     VkResult result = VK_SUCCESS;
-    ImageView* imageView = nullptr;
-    Device* _device = (Device*)device;
-    Image* _image = (Image*)image;
-
-    imageView = palAllocate(s_Graphics.allocator, sizeof(ImageView), 0);
+    PalImageView* imageView = nullptr;
+    imageView = palAllocate(s_Vk.allocator, sizeof(PalImageView), 0);
     if (!imageView) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     VkImageViewCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.format = palFormatToVk(_image->info.format);
-    createInfo.image = _image->handle;
+    createInfo.format = palFormatToVk(image->info.format);
+    createInfo.image = image->handle;
 
     createInfo.subresourceRange.baseArrayLayer = info->startArrayLayer;
     createInfo.subresourceRange.baseMipLevel = info->startMipLevel;
@@ -2655,37 +2584,36 @@ static PalResult PAL_CALL _vkCreateImageView(
 
     createInfo.subresourceRange .aspectMask = aspectFlags;
     result = s_Vk.createImageView(
-        _device->handle, 
+        device->handle, 
         &createInfo, 
-        &s_Vk.allocator, 
+        &s_Vk.vkAllocator, 
         &imageView->handle);
 
     if (result != VK_SUCCESS) {
-        palFree(s_Graphics.allocator, imageView);
+        palFree(s_Vk.allocator, imageView);
         return vkResultToPal(result);
     }
 
-    imageView->device = _device;
-    imageView->image = _image;
+    imageView->device = device;
+    imageView->image = image;
     imageView->type = createInfo.viewType;
     imageView->usages = info->usages;
 
-    *outImageView = (PalImageView*)imageView;
+    *outImageView = imageView;
     return PAL_RESULT_SUCCESS;
 }
 
-static void PAL_CALL _vkDestroyImageView(PalImageView* imageView)
+void PAL_CALL destroyVkImageView(PalImageView* imageView)
 {
-    ImageView* _imageView = (ImageView*)imageView;
     s_Vk.destroyImageView(
-        _imageView->device->handle, 
-        _imageView->handle, 
-        &s_Vk.allocator);
+        imageView->device->handle, 
+        imageView->handle, 
+        &s_Vk.vkAllocator);
 
-    palFree(s_Graphics.allocator, _imageView);
+    palFree(s_Vk.allocator, imageView);
 }
 
-static PalResult PAL_CALL _vkQuerySwapchainCapabilities(
+PalResult PAL_CALL queryVkSwapchainCapabilities(
     PalAdapter* adapter,
     PalGfxWindow* window,
     PalSwapchainCapabilities* caps)
@@ -2697,7 +2625,7 @@ static PalResult PAL_CALL _vkQuerySwapchainCapabilities(
     VkPresentModeKHR* modes = nullptr;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
 
-    bool ret = vkCreateSurface(window, &surface);
+    bool ret = createSurface(window, &surface);
     if (!ret) {
         return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
     }
@@ -2706,17 +2634,17 @@ static PalResult PAL_CALL _vkQuerySwapchainCapabilities(
     s_Vk.getSurfaceFormats(phyDevice, surface, &formatCount, nullptr);
 
     modes = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkPresentModeKHR) * modeCount, 
         0);
 
     formats = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkSurfaceFormatKHR) * formatCount, 
         0);
 
     if (!modes || !formats) {
-        s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocator);
+        s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.vkAllocator);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
@@ -2805,14 +2733,13 @@ static PalResult PAL_CALL _vkQuerySwapchainCapabilities(
 
     // clang-format on
 
-    palFree(s_Graphics.allocator, formats);
-    palFree(s_Graphics.allocator, modes);
-    s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocator);
-
+    palFree(s_Vk.allocator, formats);
+    palFree(s_Vk.allocator, modes);
+    s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.vkAllocator);
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult PAL_CALL _vkCreateSwapchain(
+PalResult PAL_CALL createVkSwapchain(
     PalDevice* device,
     PalQueue* queue,
     PalGfxWindow* window,
@@ -2820,30 +2747,27 @@ static PalResult PAL_CALL _vkCreateSwapchain(
     PalSwapchain** outSwapchain)
 {
     PalFormat imageFormat = 0;
-    Swapchain* swapchain = nullptr;
+    PalSwapchain* swapchain = nullptr;
     VkImage* images = nullptr;
-
-    Queue* _queue = (Queue*)queue;
-    Device* _device = (Device*)device;
-    PhysicalQueue* phyQueue = _queue->phyQueue;
+    PhysicalQueue* phyQueue = queue->phyQueue;
 
     // check if we enabled swapchain feature
-    if (!_device->createSwapchain) {
+    if (!device->createSwapchain) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     // check if the queue is a graphics queue before we check its family 
     // index for presentation support.
-    if (_queue->usage != VK_QUEUE_GRAPHICS_BIT) {
+    if (queue->usage != VK_QUEUE_GRAPHICS_BIT) {
         PAL_RESULT_INVALID_QUEUE;
     }
 
-    swapchain = palAllocate(s_Graphics.allocator, sizeof(Swapchain), 0);
+    swapchain = palAllocate(s_Vk.allocator, sizeof(PalSwapchain), 0);
     if (!swapchain) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    bool ret = vkCreateSurface(window, &swapchain->surface);
+    bool ret = createSurface(window, &swapchain->surface);
     if (!ret) {
         return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
     }
@@ -2900,67 +2824,67 @@ static PalResult PAL_CALL _vkCreateSwapchain(
     }
 
     // create swapchain
-    VkResult result = _device->createSwapchain(
-        _device->handle, 
+    VkResult result = device->createSwapchain(
+        device->handle, 
         &createInfo, 
-        &s_Vk.allocator, 
+        &s_Vk.vkAllocator, 
         &swapchain->handle);
 
     if (result != VK_SUCCESS) {
         s_Vk.destroySurface(
             s_Vk.instance, 
             swapchain->surface, 
-            &s_Vk.allocator);
+            &s_Vk.vkAllocator);
 
-        palFree(s_Graphics.allocator, swapchain);
+        palFree(s_Vk.allocator, swapchain);
         return vkResultToPal(result);
     }
 
     // get and cache all images
     Int32 count = 0;
-    result = _device->getSwapchainImages(
-        _device->handle,
+    result = device->getSwapchainImages(
+        device->handle,
         swapchain->handle, 
         &count,
         nullptr);
 
     swapchain->images = palAllocate(
-        s_Graphics.allocator, 
-        sizeof(Image) * count, 
+        s_Vk.allocator, 
+        sizeof(PalImage) * count, 
         0);
 
     images = palAllocate(
-        s_Graphics.allocator, 
+        s_Vk.allocator, 
         sizeof(VkImage) * count, 
         0);
 
     if (!swapchain->images || !images) {
-        _device->destroySwapchain(
-            _device->handle,
+        device->destroySwapchain(
+            device->handle,
             swapchain->handle,
-            &s_Vk.allocator
+            &s_Vk.vkAllocator
         );
 
         s_Vk.destroySurface(
             s_Vk.instance, 
             swapchain->surface, 
-            &s_Vk.allocator);
+            &s_Vk.vkAllocator);
 
-        palFree(s_Graphics.allocator, swapchain);
+        palFree(s_Vk.allocator, swapchain);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
     
-    _device->getSwapchainImages(
-        _device->handle, 
+    device->getSwapchainImages(
+        device->handle, 
         swapchain->handle, 
         &count,
         images);
 
     // fill all images with the creatio info
     for (int i = 0; i < count; i++) {
-        Image* image = &swapchain->images[i];
+        PalImage* image = &swapchain->images[i];
         image->belongsToSwapchain = true;
-        image->device = _device;
+        image->device = device;
         image->handle = images[i];
 
         image->info.depthOrArraySize = createInfo.imageArrayLayers;
@@ -2973,833 +2897,39 @@ static PalResult PAL_CALL _vkCreateSwapchain(
         image->info.type = PAL_IMAGE_TYPE_2D;
     }
     
-    swapchain->device = _device;
+    swapchain->device = device;
     swapchain->imageCount = count;
-
-    *outSwapchain = (PalSwapchain*)swapchain;
-    return PAL_RESULT_SUCCESS;
-}
-
-static void PAL_CALL vkDestroySwapchain(PalSwapchain* swapchain)
-{
-    Swapchain* _swapchain = (Swapchain*)swapchain;
-    _swapchain->device->destroySwapchain(
-        _swapchain->device->handle,
-        _swapchain->handle,
-        &s_Vk.allocator
-    );
-
-    s_Vk.destroySurface(s_Vk.instance, _swapchain->surface, &s_Vk.allocator);
-    palFree(s_Graphics.allocator, _swapchain->images);
-    palFree(s_Graphics.allocator, _swapchain);
-}
-
-static Uint32 PAL_CALL _vkGetSwapchainImageCount(PalSwapchain* swapchain)
-{
-    Swapchain* _swapchain = (Swapchain*)swapchain;
-    return _swapchain->imageCount;
-}
-
-static PalImage* PAL_CALL _vkGetSwapchainImage(
-    PalSwapchain* swapchain,
-    Int32 index)
-{
-    Swapchain* _swapchain = (Swapchain*)swapchain;
-    if (index > _swapchain->imageCount) {
-        return nullptr;
-    }
-
-    return (PalImage*)&_swapchain->images[index];
-}
-
-static PalGfxBackend s_VkBackend = {
-    // adapter
-    .enumerateAdapters = _vkEnumerateAdapters,
-    .getAdapterInfo = _vkGetAdapterInfo,
-    .getAdapterCapabilities = _vkGetAdapterCapabilities,
-
-    // device
-    .createDevice = _vkCreateDevice,
-    .destroyDevice = _vkDestroyDevice,
-
-    // queue
-    .createQueue = _vkCreateQueue,
-    .destroyQueue = _vkDestroyQueue,
-    .canQueuePresent = _vkCanQueuePresent,
-
-    // image
-    .createImage = _vkCreateImage,
-    .destroyImage = _vkDestroyImage,
-    .getImageInfo = _vkGetImageInfo,
-    .enumerateFormats = _vkEnumerateFormats,
-    .isFormatSupported = _vkIsFormatSupported,
-    .queryFormatImageUsages = _vkQueryFormatImageUsages,
-    .queryFormatImageViewUsages = _vkQueryFormatImageViewUsages,
-    .getImageMemoryRequirements = _vkGetImageMemoryRequirements,
-
-    // memory
-    .allocate = _vkAllocateMemory,
-    .free = _vkFreeMemory,
-    .bindImageMemory = _vkBindImageMemory,
-
-    // image view
-    .createImageView = _vkCreateImageView,
-    .destroyImageView = _vkDestroyImageView,
-
-    // swapchain
-    .querySwapchainCapabilities = _vkQuerySwapchainCapabilities,
-    .createSwapchain = _vkCreateSwapchain,
-    .destroySwapchain = vkDestroySwapchain,
-    .getSwapchainImageCount = _vkGetSwapchainImageCount,
-    .getSwapchainImage = _vkGetSwapchainImage,
-};
-
-#endif // PAL_HAS_VULKAN
-
-// ==================================================
-// Public API
-// ==================================================
-
-PalResult PAL_CALL palInitGraphics(
-    bool enableDebugLayer,
-    const PalAllocator* allocator)
-{
-    if (s_Graphics.initialized) {
-        return PAL_RESULT_SUCCESS;
-    }
-
-    if (allocator && (!allocator->allocate || !allocator->free)) {
-        return PAL_RESULT_INVALID_ALLOCATOR;
-    }
-
-    s_Graphics.allocator = allocator;
-    s_Graphics.maxHandleData = 32;
-    s_Graphics.handleData = palAllocate(
-        s_Graphics.allocator, 
-        sizeof(HandleData) * s_Graphics.maxHandleData, 
-        0);
-
-    if (!s_Graphics.handleData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-#if PAL_HAS_VULKAN
-    PalResult ret = vkInitGraphics(enableDebugLayer);
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    BackendData* backend = &s_Graphics.backends[s_Graphics.backendCount++];
-    backend->base = &s_VkBackend;
-    backend->count = 0;
-    backend->startIndex = 0;
-#endif // PAL_HAS_VULKAN
-
-    s_Graphics.initialized = true;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palShutdownGraphics()
-{
-    if (!s_Graphics.initialized) {
-        return;
-    }
-
-#if PAL_HAS_VULKAN
-    vkShutdownGraphics();
-#endif // PAL_HAS_VULKAN
-
-    palFree(s_Graphics.allocator, s_Graphics.handleData);
-    memset(&s_Graphics, 0, sizeof(s_Graphics));
-    s_Graphics.initialized = false;
-}
-
-// ==================================================
-// Adapter
-// ==================================================
-
-PalResult PAL_CALL palEnumerateAdapters(
-   Int32* count,
-   PalAdapter** outAdapters)
-{
-    // enumerate all adapters for both custom and PAL backends
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!count) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (*count == 0 && outAdapters) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
-    }
-
-    PalResult result;
-    int totalCount = 0;
-    int index = 0;
-
-    int _count = outAdapters ? *count : 0;
-    for (int i = 0; i < s_Graphics.backendCount; i++) {
-        BackendData* backend = &s_Graphics.backends[i];
-        if (outAdapters) {
-            // offset into the array so all backends write at the correct index
-            PalAdapter** adapters = &outAdapters[backend->startIndex];
-            result = backend->base->enumerateAdapters(&_count, adapters);
-
-            for (int i = 0; i < backend->count; i++) {
-                HandleData* data = getFreeHandleData();
-                data->backend = backend->base;
-                data->handle = adapters[i];
-            }
-
-        } else {
-            result = backend->base->enumerateAdapters(&_count, nullptr);
-            backend->startIndex = totalCount;
-            backend->count = _count;
-            totalCount += _count;
-            _count = 0;
-        }
-        
-        // break if a backend fails
-        if (result != PAL_RESULT_SUCCESS) {
-            return result;
-        }
-    }
-
-    if (!outAdapters) {
-        *count = totalCount;
-    }
-
-    return PAL_RESULT_SUCCESS;
-}
-
-PalResult PAL_CALL palGetAdapterInfo(
-    PalAdapter* adapter,
-    PalAdapterInfo* info)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!adapter || !info) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = findHandleData(adapter);
-    if (data) {
-        return data->backend->getAdapterInfo(adapter, info);
-    }
-
-    return PAL_RESULT_INVALID_ADAPTER;
-}
-
-PalResult PAL_CALL palGetAdapterCapabilities(
-    PalAdapter* adapter,
-    PalAdapterCapabilities* caps)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!adapter || !caps) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = findHandleData(adapter);
-    if (data) {
-        return data->backend->getAdapterCapabilities(adapter, caps);
-    }
-
-    return PAL_RESULT_INVALID_ADAPTER;
-}
-
-PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend)
-{
-    if (s_Graphics.initialized) {
-        return PAL_RESULT_INVALID_BACKEND;
-    }
-
-    // check if all the function pointers are set
-    // clang-format off
-    if (!backend->enumerateAdapters            || 
-        !backend->getAdapterInfo               ||
-        !backend->getAdapterCapabilities       ||
-        !backend->createDevice                 ||
-        !backend->destroyDevice                ||
-        !backend->createQueue                  ||
-        !backend->destroyQueue                 ||
-        !backend->canQueuePresent              ||
-        !backend->createImage                  ||
-        !backend->destroyImage                 ||
-        !backend->getImageInfo                 ||
-        !backend->enumerateFormats             ||
-        !backend->isFormatSupported            ||
-        !backend->queryFormatImageUsages       ||
-        !backend->queryFormatImageViewUsages   ||
-        !backend->getImageMemoryRequirements   ||
-        !backend->allocate                     ||
-        !backend->free                         ||
-        !backend->bindImageMemory              ||
-        !backend->createImageView              ||
-        !backend->destroyImageView             ||
-        !backend->querySwapchainCapabilities   ||
-        !backend->createSwapchain              ||
-        !backend->destroySwapchain             ||
-        !backend->getSwapchainImageCount       ||
-        !backend->getSwapchainImage) {
-        return PAL_RESULT_INVALID_BACKEND;
-    }
-    // clang-format on
-
-    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
-    attached->base = backend;
-    attached->startIndex = 0;
-    attached->count = 0;
-
-    return PAL_RESULT_SUCCESS;
-}
-
-// ==================================================
-// Device
-// ==================================================
-
-PalResult PAL_CALL palCreateDevice(
-    PalAdapter* adapter,
-    PalAdapterFeatures features,
-    PalDevice** outDevice)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!outDevice) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    // check if the adapter is from PAL (custom or internal backend)
-    HandleData* adapterData = findHandleData(adapter);
-    if (!adapterData) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    PalDevice* device = nullptr;
-    PalResult ret;
-    ret = adapterData->backend->createDevice(adapter, features, &device);
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    // create a slot for the created device
-    HandleData* deviceData = getFreeHandleData();
-    if (!deviceData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    deviceData->backend = adapterData->backend;
-    deviceData->handle = device;
-
-    *outDevice = device;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palDestroyDevice(PalDevice* device)
-{
-    if (s_Graphics.initialized && device) {
-        HandleData* data = findHandleData(device);
-        if (data) {
-            data->backend->destroyDevice(device);
-            data->used = false;
-        }
-    }
-}
-
-// ==================================================
-// Queue
-// ==================================================
-
-PalResult PAL_CALL palCreateQueue(
-    PalDevice* device,
-    PalQueueType type,
-    PalQueue** outQueue)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device || !outQueue) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = findHandleData(device);
-    if (!data) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    PalQueue* queue = nullptr;
-    PalResult ret;
-    ret = data->backend->createQueue(
-        device,
-        type,
-        &queue);
-
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    // create a slot for the created queue
-    HandleData* queueData = getFreeHandleData();
-    if (!queueData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    queueData->backend = data->backend;
-    queueData->handle = queue;
-
-    *outQueue = queue;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palDestroyQueue(PalQueue* queue)
-{
-    if (s_Graphics.initialized && queue) {
-        HandleData* data = findHandleData(queue);
-        if (data) {
-            data->backend->destroyQueue(queue);
-            data->used = false;
-        }
-    }
-}
-
-bool PAL_CALL palCanQueuePresent(
-    PalQueue* queue, 
-    PalGfxWindow* window)
-{
-    if (s_Graphics.initialized && queue) {
-        HandleData* data = findHandleData(queue);
-        if (data) {
-            return data->backend->canQueuePresent(queue, window);
-        }
-        return false;
-    }
-    return false;
-}
-
-PalResult PAL_CALL palCreateImage(
-    PalDevice* device,
-    const PalImageCreateInfo* info,
-    PalImage** outImage)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device ||!info || !outImage) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = findHandleData(device);
-    if (!data) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    PalImage* image = nullptr;
-    PalResult ret;
-    ret = data->backend->createImage(
-        device,
-        info,
-        &image);
-
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    // create a slot for the created image
-    HandleData* imageData = getFreeHandleData();
-    if (!imageData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    imageData->backend = data->backend;
-    imageData->handle = image;
-
-    *outImage = image;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palDestroyImage(PalImage* image)
-{
-    if (s_Graphics.initialized && image) {
-        HandleData* data = findHandleData(image);
-        if (data) {
-            data->backend->destroyImage(image);
-            data->used = false;
-        }
-    }
-}
-
-PalResult PAL_CALL palGetImageInfo(
-    PalImage* image,
-    PalImageInfo* info)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!image || !info) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = findHandleData(image);
-    if (!data) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    return data->backend->getImageInfo(image, info);
-}
-
-PalResult PAL_CALL palEnumerateFormats(
-    PalAdapter* adapter,
-    Int32* count,
-    PalFormatInfo* outFormats)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!adapter || !count) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (*count == 0 && outFormats) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
-    }
-
-    HandleData* adapterData = findHandleData(adapter);
-    if (!adapterData) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    return adapterData->backend->enumerateFormats(adapter, count, outFormats);
-}
-
-bool PAL_CALL palIsFormatSupported(
-    PalAdapter* adapter,
-    PalFormat format)
-{
-    if (!s_Graphics.initialized || !adapter) {
-        return false;
-    }
-
-    HandleData* adapterData = findHandleData(adapter);
-    if (!adapterData) {
-        return false;
-    }
-
-    return adapterData->backend->isFormatSupported(adapter, format);
-}
-
-PalImageUsages PAL_CALL palQueryFormatImageUsages(
-    PalAdapter* adapter,
-    PalFormat format)
-{
-    if (!s_Graphics.initialized || !adapter) {
-        return PAL_IMAGE_USAGE_UNDEFINED;
-    }
-
-    HandleData* adapterData = findHandleData(adapter);
-    if (!adapterData) {
-        return PAL_IMAGE_USAGE_UNDEFINED;
-    }
-
-    return adapterData->backend->queryFormatImageUsages(adapter, format);
-}
-
-PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
-    PalAdapter* adapter,
-    PalFormat format)
-{
-    if (!s_Graphics.initialized || !adapter) {
-        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
-    }
-
-    HandleData* adapterData = findHandleData(adapter);
-    if (!adapterData) {
-        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
-    }
-
-    return adapterData->backend->queryFormatImageViewUsages(adapter, format);
-}
-
-PalResult PAL_CALL palGetImageMemoryRequirements(
-    PalDevice* device,
-    PalImage* image,
-    PalMemoryRequirements* requirements)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device || !image) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* deviceData = findHandleData(device);
-    if (!deviceData) {
-        return PAL_RESULT_INVALID_BACKEND;
-    }
-
-    return deviceData->backend->getImageMemoryRequirements(
-        device, 
-        image, 
-        requirements);
-}
-
-// ==================================================
-// Memory
-// ==================================================
-
-PalResult PAL_CALL palAllocateMemory(
-    PalDevice* device,
-    PalMemoryType type,
-    Uint64 size,
-    PalMemory** outMemory)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!outMemory || !device) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* deviceData = findHandleData(device);
-    if (!deviceData) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    return deviceData->backend->allocate(device, type, size, outMemory);
-}
-
-void PAL_CALL palFreeMemory(
-    PalDevice* device,
-    PalMemory* memory)
-{
-    if (s_Graphics.initialized && device && memory) {
-        HandleData* data = findHandleData(device);
-        if (data) {
-            data->backend->free(device, memory);
-        }
-    }
-}
-
-PalResult PAL_CALL palBindImageMemory(
-    PalDevice* device,
-    PalImage* image,
-    PalMemory* memory,
-    Uint64 offset)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device || !image || !memory) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* deviceData = findHandleData(device);
-    if (!deviceData) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    return deviceData->backend->bindImageMemory(
-        device, 
-        image, 
-        memory, 
-        offset);
-}
-
-PalResult PAL_CALL palCreateImageView(
-    PalDevice* device,
-    PalImage* image,
-    const PalImageViewCreateInfo* info,
-    PalImageView** outImageView)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device ||!image || !info || !outImageView) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = findHandleData(device);
-    if (!data) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    PalImageView* imageView = nullptr;
-    PalResult ret;
-    ret = data->backend->createImageView(
-        device,
-        image,
-        info,
-        &imageView);
-
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    // create a slot for the created image view
-    HandleData* imageViewData = getFreeHandleData();
-    if (!imageViewData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    imageViewData->backend = data->backend;
-    imageViewData->handle = imageView;
-
-    *outImageView = imageView;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palDestroyImageView(PalImageView* imageView)
-{
-    if (s_Graphics.initialized && imageView) {
-        HandleData* data = findHandleData(imageView);
-        if (data) {
-            data->backend->destroyImageView(imageView);
-            data->used = false;
-        }
-    }
-}
-
-// ==================================================
-// Swapchain
-// ==================================================
-
-PalResult PAL_CALL palQuerySwapchainCapabilities(
-    PalAdapter* adapter,
-    PalGfxWindow* window,
-    PalSwapchainCapabilities* caps)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!adapter || !window || !caps) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* adapterData = findHandleData(adapter);
-    if (!adapterData) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    return adapterData->backend->querySwapchainCapabilities(
-        adapter,
-        window,
-        caps);
-}
-
-PalResult PAL_CALL palCreateSwapchain(
-    PalDevice* device,
-    PalQueue* queue,
-    PalGfxWindow* window,
-    const PalSwapchainCreateInfo* info,
-    PalSwapchain** outSwapchain)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device || !queue || !window || !info || !outSwapchain) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* deviceData = findHandleData(device);
-    if (!deviceData) {
-        return PAL_RESULT_INVALID_QUEUE;
-    }
-
-    PalResult ret;
-    PalSwapchain* swapchain = nullptr;
-    ret = deviceData->backend->createSwapchain(
-        device, 
-        queue, 
-        window, 
-        info, 
-        &swapchain);
-
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    // create a slot for the created swapchain
-    HandleData* swapchainData = getFreeHandleData();
-    if (!swapchainData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-    swapchainData->backend = deviceData->backend;
-    swapchainData->handle = swapchain;
 
     *outSwapchain = swapchain;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
+void PAL_CALL destroyVkSwapchain(PalSwapchain* swapchain)
 {
-    if (s_Graphics.initialized && swapchain) {
-        HandleData* data = findHandleData(swapchain);
-        if (data) {
-            data->backend->destroySwapchain(swapchain);
-            data->used = false;
-        }
-    }
+    swapchain->device->destroySwapchain(
+        swapchain->device->handle,
+        swapchain->handle,
+        &s_Vk.vkAllocator
+    );
+
+    s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, swapchain->images);
+    palFree(s_Vk.allocator, swapchain);
 }
 
-Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain)
+Uint32 PAL_CALL getVkSwapchainImageCount(PalSwapchain* swapchain)
 {
-    if (!s_Graphics.initialized || !swapchain) {
-        return 0;
-    }
-
-    HandleData* swapchainData = findHandleData(swapchain);
-    if (!swapchainData) {
-        return 0;
-    }
-
-    return swapchainData->backend->getSwapchainImageCount(swapchain);
+    return swapchain->imageCount;
 }
 
-PalImage* PAL_CALL palGetSwapchainImage(
+PalImage* PAL_CALL getVkSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index)
 {
-    if (!s_Graphics.initialized || !swapchain || index < 0) {
+    if (index > swapchain->imageCount) {
         return nullptr;
     }
-
-    HandleData* swapchainData = findHandleData(swapchain);
-    if (!swapchainData) {
-        return nullptr;
-    }
-
-    PalImage* image = swapchainData->backend->getSwapchainImage(
-        swapchain, 
-        index);
-
-    // check if the user has already requested for the image
-    HandleData* imageData = findHandleData(image);
-    if (!imageData) {
-        // create a new slot
-        imageData = getFreeHandleData();
-        if (!imageData) {
-            return nullptr;
-        }
-    }
-
-    imageData->backend = swapchainData->backend;
-    imageData->handle = image;
-    return image;
+    return (PalImage*)&swapchain->images[index];
 }
+
+#endif // PAL_HAS_VULKAN

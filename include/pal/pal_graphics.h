@@ -391,6 +391,16 @@ typedef struct {
 
     void PAL_CALL (*destroyDevice)(PalDevice* device);
 
+    PalResult PAL_CALL (*allocateMemory)(
+        PalDevice* device,
+        PalMemoryType type,
+        Uint64 size,
+        PalMemory** outMemory);
+
+    void PAL_CALL (*freeMemory)(
+        PalDevice* device,
+        PalMemory* memory);
+
     PalResult PAL_CALL (*createQueue)(
         PalDevice* device,
         PalQueueType type,
@@ -401,17 +411,6 @@ typedef struct {
     bool PAL_CALL (*canQueuePresent)(
         PalQueue* queue, 
         PalGfxWindow* window);
-
-    PalResult PAL_CALL (*createImage)(
-        PalDevice* device,
-        const PalImageCreateInfo* info,
-        PalImage** outImage);
-
-    void PAL_CALL (*destroyImage)(PalImage* image);
-
-    PalResult PAL_CALL (*getImageInfo)(
-        PalImage* image,
-        PalImageInfo* info);
 
     PalResult PAL_CALL (*enumerateFormats)(
         PalAdapter* adapter,
@@ -430,20 +429,21 @@ typedef struct {
         PalAdapter* adapter,
         PalFormat format);
 
+    PalResult PAL_CALL (*createImage)(
+        PalDevice* device,
+        const PalImageCreateInfo* info,
+        PalImage** outImage);
+
+    void PAL_CALL (*destroyImage)(PalImage* image);
+
+    PalResult PAL_CALL (*getImageInfo)(
+        PalImage* image,
+        PalImageInfo* info);
+
     PalResult PAL_CALL (*getImageMemoryRequirements)(
         PalDevice* device,
         PalImage* image,
         PalMemoryRequirements* requirments);
-
-    PalResult PAL_CALL (*allocate)(
-        PalDevice* device,
-        PalMemoryType type,
-        Uint64 size,
-        PalMemory** outMemory);
-
-    void PAL_CALL (*free)(
-        PalDevice* device,
-        PalMemory* memory);
 
     PalResult PAL_CALL (*bindImageMemory)(
         PalDevice* device,
@@ -480,6 +480,8 @@ typedef struct {
         Int32 index);
 } PalGfxBackend;
 
+PAL_API PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend);
+
 PAL_API PalResult PAL_CALL palInitGraphics(
     bool enableDebugLayer,
     const PalAllocator* allocator);
@@ -498,14 +500,22 @@ PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps);
 
-PAL_API PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend);
-
 PAL_API PalResult PAL_CALL palCreateDevice(
     PalAdapter* adapter,
     PalAdapterFeatures features,
     PalDevice** outDevice);
 
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
+
+PAL_API PalResult PAL_CALL palAllocateMemory(
+    PalDevice* device,
+    PalMemoryType type,
+    Uint64 size,
+    PalMemory** outMemory);
+
+PAL_API void PAL_CALL palFreeMemory(
+    PalDevice* device,
+    PalMemory* memory);
 
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,
@@ -517,17 +527,6 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 PAL_API bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
     PalGfxWindow* window);
-
-PAL_API PalResult PAL_CALL palCreateImage(
-    PalDevice* device,
-    const PalImageCreateInfo* info,
-    PalImage** outImage);
-
-PAL_API void PAL_CALL palDestroyImage(PalImage* image);
-
-PAL_API PalResult PAL_CALL palGetImageInfo(
-    PalImage* image,
-    PalImageInfo* info);
 
 PAL_API PalResult PAL_CALL palEnumerateFormats(
     PalAdapter* adapter,
@@ -546,20 +545,21 @@ PAL_API PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
     PalAdapter* adapter,
     PalFormat format);
 
+PAL_API PalResult PAL_CALL palCreateImage(
+    PalDevice* device,
+    const PalImageCreateInfo* info,
+    PalImage** outImage);
+
+PAL_API void PAL_CALL palDestroyImage(PalImage* image);
+
+PAL_API PalResult PAL_CALL palGetImageInfo(
+    PalImage* image,
+    PalImageInfo* info);
+
 PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
     PalDevice* device,
     PalImage* image,
     PalMemoryRequirements* requirements);
-
-PAL_API PalResult PAL_CALL palAllocateMemory(
-    PalDevice* device,
-    PalMemoryType type,
-    Uint64 size,
-    PalMemory** outMemory);
-
-PAL_API void PAL_CALL palFreeMemory(
-    PalDevice* device,
-    PalMemory* memory);
 
 PAL_API PalResult PAL_CALL palBindImageMemory(
     PalDevice* device,

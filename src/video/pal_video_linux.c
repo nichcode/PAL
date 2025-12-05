@@ -2797,6 +2797,7 @@ static int compareModes(
     }
 }
 
+// FIXME: manual copy
 static WindowData* getFreeWindowData()
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
@@ -2829,6 +2830,7 @@ static WindowData* getFreeWindowData()
     return nullptr;
 }
 
+// FIXME: make it performant
 static WindowData* findWindowData(PalWindow* window)
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
@@ -2848,6 +2850,7 @@ static void resetMonitorData()
         s_Video.maxMonitorData * sizeof(MonitorData));
 }
 
+// FIXME: manual copy
 static MonitorData* getFreeMonitorData()
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
@@ -2879,6 +2882,7 @@ static MonitorData* getFreeMonitorData()
     return nullptr;
 }
 
+// FIXME: make it performant
 static MonitorData* findMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
