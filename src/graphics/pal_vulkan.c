@@ -66,7 +66,6 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 
 typedef struct {
     bool hasDebug;
-    bool hasDynamicRendering;
     void* handle;
     VkInstance instance;
 
@@ -131,6 +130,7 @@ typedef struct {
 } PhysicalQueue;
 
 struct PalDevice {
+    PalAdapterFeatures features;
     Int32 queueCount;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
@@ -1104,16 +1104,11 @@ PalResult PAL_CALL initGraphicsVk(
 
     // get version
     bool versionFallback = false;
-    s_Vk.hasDynamicRendering = false;
     Uint32 version = 0;
     if (s_Vk.enumerateInstanceVersion) {
         s_Vk.enumerateInstanceVersion(&version);
         if (version <= VK_API_VERSION_1_0) {
             versionFallback = true;
-        }
-
-        if (version >= VK_API_VERSION_1_3) {
-            s_Vk.hasDynamicRendering = true;
         }
     }
 
@@ -1333,99 +1328,36 @@ PalResult PAL_CALL enumerateVkAdapters(
     Int32* count,
     PalAdapter** outAdapters)
 {
-    int _count = 0;
     int deviceCount = 0;
     int maxCount = outAdapters ? *count : 0;
     VkResult result;
 
-    result = s_Vk.enumeratePhysicalDevices(s_Vk.instance, &_count, nullptr);
+    result = s_Vk.enumeratePhysicalDevices(
+        s_Vk.instance, 
+        &deviceCount, 
+        nullptr);
+
     if (result != VK_SUCCESS) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    // PAL only supports supports dynamic rendering
+    if (!outAdapters) {
+        *count = deviceCount;
+        return PAL_RESULT_SUCCESS;
+    }
+
     VkPhysicalDevice* devices = nullptr;
     devices = palAllocate(s_Vk.allocator, 
-        sizeof(VkPhysicalDevice) * _count, 
+        sizeof(VkPhysicalDevice) * deviceCount, 
         0);
 
     if (!devices) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    s_Vk.enumeratePhysicalDevices(s_Vk.instance, &_count, devices);
-    for (int i = 0; i < _count; i++) {
-        // check if the gpu supports dynamic rendering
-        if (s_Vk.hasDynamicRendering) {
-            if (outAdapters) {
-                if (deviceCount < *count) {
-                    PalAdapter* adapter = (PalAdapter*)devices[i];
-                    outAdapters[deviceCount++] = adapter;
-                }
-                
-            } else {
-                deviceCount++;
-            }
-
-        } else {
-            // check extension
-            Uint32 extCount = 0;
-            VkExtensionProperties* exts = nullptr;
-            VkResult ret;
-            ret = s_Vk.enumerateDeviceExtensionProperties(
-                devices[i],
-                nullptr, 
-                &extCount, 
-                nullptr);
-
-            if (ret != VK_SUCCESS) {
-                // skip
-                continue;
-            }
-
-            exts = palAllocate(
-                s_Vk.allocator, 
-                sizeof(VkExtensionProperties) * extCount, 
-                0);
-
-            if (!exts) {
-                return PAL_RESULT_OUT_OF_MEMORY;
-            }
-
-            s_Vk.enumerateDeviceExtensionProperties(
-                devices[i],
-                nullptr, 
-                &extCount, 
-                exts);
-
-            bool found = false;
-            for (int j = 0; j < extCount; j++) {
-                const char* name = exts[j].extensionName;
-                if (strcmp(name, "VK_KHR_dynamic_rendering") == 0) {
-                    found = true;
-                }
-            }
-
-            palFree(s_Vk.allocator, exts);
-            if (!found) {
-                // skip
-                continue;
-            }
-
-            if (outAdapters) {
-                if (deviceCount < *count) {
-                    PalAdapter* adapter = (PalAdapter*)devices[i];
-                    outAdapters[deviceCount++] = adapter;
-                }
-                
-            } else {
-                deviceCount++;
-            }
-        }
-    }
-
-    if (!outAdapters) {
-        *count = deviceCount;
+    s_Vk.enumeratePhysicalDevices(s_Vk.instance, &deviceCount, devices);
+    for (int i = 0; i < *count && i < deviceCount; i++) {
+        outAdapters[i] = (PalAdapter*)devices[i];
     }
 
     palFree(s_Vk.allocator, devices);
@@ -1623,7 +1555,16 @@ PalResult PAL_CALL getVkAdapterCapabilities(
 
     bool rayTracingFound = false;
     bool accelerateFound = false;
+    bool dynamicRendering = false;
     caps->features = 0;
+
+    Uint32 version = 0;
+    if (s_Vk.enumerateInstanceVersion) {
+        s_Vk.enumerateInstanceVersion(&version);
+        if (version >= VK_API_VERSION_1_3) {
+            dynamicRendering = true;
+        }
+    }
 
     // clang-format off
     for (int i = 0; i < extensionCount; i++) {
@@ -1633,6 +1574,9 @@ PalResult PAL_CALL getVkAdapterCapabilities(
 
         } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structure") == 0) {
             accelerateFound = true;
+
+        } else if (strcmp(props->extensionName, "VK_KHR_dynamic_rendering") == 0) {
+            dynamicRendering = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
             // mesh shader
@@ -1820,6 +1764,10 @@ PalResult PAL_CALL getVkAdapterCapabilities(
         caps->features |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
     }
 
+    if (dynamicRendering) {
+        caps->features |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
+    }
+
     // this features are supported on vulkan
     caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
     caps->features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
@@ -1953,9 +1901,12 @@ PalResult PAL_CALL createVkDevice(
 
     // clang-format on
 
-    extensions[extCount++] = "VK_KHR_dynamic_rendering";
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
+        extensions[extCount++] = "VK_KHR_dynamic_rendering";
     }
 
     if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
@@ -2156,6 +2107,7 @@ PalResult PAL_CALL createVkDevice(
         device->handle, 
         "vkQueuePresentKHR");
 
+    device->features = features;
     palFree(s_Vk.allocator, queueProps);
     palFree(s_Vk.allocator, queueCreateInfos);
 
@@ -2770,7 +2722,7 @@ PalResult PAL_CALL createVkSwapchain(
     PhysicalQueue* phyQueue = queue->phyQueue;
 
     // check if we enabled swapchain feature
-    if (!device->createSwapchain) {
+    if (!device->features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -2957,6 +2909,33 @@ PalResult PAL_CALL createVkShader(
 {
     VkResult result;
     PalShader* shader = nullptr;
+    VkShaderStageFlags stage = 0;
+
+    if (info->type == PAL_SHADER_TYPE_VERTEX) {
+        stage = VK_SHADER_STAGE_VERTEX_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_PIXEL) {
+        stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
+        if (device->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+        stage = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
+        if (device->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+        stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
+        if (device->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+        stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    }
+
     shader = palAllocate(s_Vk.allocator, sizeof(PalShader), 0);
     if (!shader) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -2983,22 +2962,7 @@ PalResult PAL_CALL createVkShader(
     shader->info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shader->info.module = shader->handle;
     shader->info.pName = "main";
-
-    if (info->type == PAL_SHADER_TYPE_VERTEX) {
-        shader->info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-
-    } else if (info->type == PAL_SHADER_TYPE_PIXEL) {
-        shader->info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
-        shader->info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-
-    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
-        shader->info.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-
-    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
-        shader->info.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    }
+    shader->info.stage = stage;
 
     *outShader = shader;
     return PAL_RESULT_SUCCESS;

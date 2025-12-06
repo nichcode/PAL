@@ -283,6 +283,10 @@ bool graphicsTest()
         if (caps.features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW) {
             palLog(nullptr, "  Cube array image view type");
         }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
+            palLog(nullptr, "  Dynamic rendering");
+        }
         
         palLog(nullptr, "");
     }
