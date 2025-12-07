@@ -63,6 +63,7 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 #define VK_WIN32_PLATFORM 1
 #define VK_XLIB_PLATFORM 2
 #define VK_WAYLAND_PLATFORM 3
+#define MAX_ATTACHMENTS 16 // //TODO: should be fine but maybe 32 to be safe
 
 typedef struct {
     bool hasDebug;
@@ -106,6 +107,10 @@ typedef struct {
     PFN_vkDestroyImage destroyImage;
     PFN_vkCreateShaderModule createShader;
     PFN_vkDestroyShaderModule destroyShader;
+    PFN_vkCreateRenderPass createRenderPass;
+    PFN_vkDestroyRenderPass destroyRenderPass;
+    PFN_vkCreateFramebuffer createFramebuffer;
+    PFN_vkDestroyFramebuffer destroyFramebuffer;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -177,6 +182,19 @@ struct PalShader {
     PalDevice* device;
     VkShaderModule handle;
     VkPipelineShaderStageCreateInfo info;
+};
+
+struct PalRenderPass {
+    bool hasDepth;
+    Uint32 attachmentCount;
+    PalDevice* device;
+    VkRenderPass handle;
+    VkFramebuffer framebuffer;
+    VkAttachmentReference depthRef;
+    VkAttachmentDescription attachments[MAX_ATTACHMENTS];
+    VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
+    VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
+    VkImageView views[MAX_ATTACHMENTS];
 };
 
 static Vulkan s_Vk = {0};
@@ -1059,6 +1077,22 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.destroyShader = (PFN_vkDestroyShaderModule)dlsym(
         s_Vk.handle, 
         "vkDestroyShaderModule");
+
+    s_Vk.createRenderPass = (PFN_vkCreateRenderPass)dlsym(
+        s_Vk.handle, 
+        "vkCreateRenderPass");
+
+    s_Vk.destroyRenderPass = (PFN_vkDestroyRenderPass)dlsym(
+        s_Vk.handle, 
+        "vkDestroyRenderPass");
+
+    s_Vk.createFramebuffer = (PFN_vkCreateFramebuffer)dlsym(
+        s_Vk.handle, 
+        "vkCreateFramebuffer");
+
+    s_Vk.destroyFramebuffer = (PFN_vkDestroyFramebuffer)dlsym(
+        s_Vk.handle, 
+        "vkDestroyFramebuffer");
 
     s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
         s_Vk.handle, 
@@ -2521,6 +2555,13 @@ PalResult PAL_CALL createVkImageView(
     const PalImageViewCreateInfo* info,
     PalImageView** outImageView)
 {
+    // mimic the actual requested features at device creation
+    if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+        if (!(device->features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+    }
+
     VkResult result = VK_SUCCESS;
     PalImageView* imageView = nullptr;
     imageView = palAllocate(s_Vk.allocator, sizeof(PalImageView), 0);
@@ -2981,6 +3022,159 @@ void PAL_CALL destroyVkShader(PalShader* shader)
 PalShaderType PAL_CALL getVkShaderType(PalShader* shader)
 {
     return shader->type;
+}
+
+PalResult PAL_CALL createVkRenderPass(
+    PalDevice* device,
+    const PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass)
+{
+    VkResult result;
+    PalRenderPass* renderpass = nullptr;
+    renderpass = palAllocate(s_Vk.allocator, sizeof(PalRenderPass), 0);
+    if (!renderpass) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    renderpass->hasDepth = false;
+    Uint32 colorRefCount = 0;
+    Uint32 layers = 0;
+    for (int i = 0; i < info->attachmentCount; i++) {
+        PalAttachmentDesc* desc = &info->attachments[i];
+        VkAttachmentDescription* rDesc = &renderpass->attachments[i];
+
+        rDesc->format = palFormatToVk(desc->target->image->info.format);
+        rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        rDesc->samples = vkSamplesToSamples(desc->target->image->info.samples);
+        rDesc->flags = 0;
+        rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+        layers = desc->target->image->info.depthOrArraySize;
+        if (desc->resolveTarget) {
+            // on legacy rendering, this should make but PAL supports both
+            // so we use the highest on legacy rendering
+            layers = desc->resolveTarget->image->info.depthOrArraySize;
+        }
+
+        // load op
+        if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
+            rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+        } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
+            rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+        } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
+            rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        }
+
+        // store op
+        if (desc->storeOp == PAL_STORE_OP_STORE) {
+            rDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+        } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
+            rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        }
+
+        // add the image views from the attachments into a seperate array
+        renderpass->views[i] = desc->target->handle;
+
+        if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
+            VkAttachmentReference* ref = &renderpass->colorRefs[colorRefCount];
+            rDesc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            ref->attachment = i;
+            ref->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            colorRefCount++;
+            if (desc->target->image->belongsToSwapchain) {
+                rDesc->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            }
+
+        } else {
+            rDesc->finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            rDesc->stencilLoadOp = rDesc->loadOp;
+            rDesc->stencilStoreOp = rDesc->storeOp;
+            VkAttachmentReference* ref = &renderpass->depthRef;
+            ref->attachment = i;
+            ref->layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            renderpass->hasDepth = true;
+        }
+    }
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING)) {
+        // subpass
+        VkSubpassDescription subpassDesc = {0};
+        subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpassDesc.colorAttachmentCount = colorRefCount;
+        subpassDesc.pColorAttachments = renderpass->colorRefs;
+        if (renderpass->hasDepth) {
+            subpassDesc.pDepthStencilAttachment = &renderpass->depthRef;
+        }
+
+        // render pass
+        VkRenderPassCreateInfo createInfo = {0};
+        createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        createInfo.attachmentCount = info->attachmentCount;
+        createInfo.pAttachments = renderpass->attachments;
+        createInfo.subpassCount = 1;
+        createInfo.pSubpasses = &subpassDesc;
+
+        result = s_Vk.createRenderPass(
+            device->handle, 
+            &createInfo, 
+            &s_Vk.vkAllocator, 
+            &renderpass->handle);
+
+        if (result != VK_SUCCESS) {
+            palFree(s_Vk.allocator, renderpass);
+            vkResultToPal(result);
+        }
+
+        // create framebuffer
+        VkFramebufferCreateInfo fbCreateInfo = {0};
+        fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fbCreateInfo.attachmentCount = info->attachmentCount;
+        fbCreateInfo.pAttachments = renderpass->views;
+        fbCreateInfo.height = info->height;
+        fbCreateInfo.width = info->width;
+        fbCreateInfo.layers = layers;
+
+        result = s_Vk.createFramebuffer(
+            device->handle, 
+            &fbCreateInfo, 
+            &s_Vk.vkAllocator, 
+            &renderpass->framebuffer);
+
+        if (result != VK_SUCCESS) {
+            s_Vk.destroyRenderPass(
+                device->handle, 
+                renderpass->handle, 
+                &s_Vk.vkAllocator);
+
+            palFree(s_Vk.allocator, renderpass);
+            // legacy rendering needs all image views to have
+            // the same layers/width/height
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+    }
+
+    renderpass->device = device;
+    *outRenderPass = renderpass;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass)
+{
+    s_Vk.destroyFramebuffer(
+        renderPass->device->handle,
+        renderPass->framebuffer, 
+        &s_Vk.vkAllocator);
+
+    s_Vk.destroyRenderPass(
+        renderPass->device->handle, 
+        renderPass->handle, 
+        &s_Vk.vkAllocator);
+    
+    palFree(s_Vk.allocator, renderPass);
 }
 
 #endif // PAL_HAS_VULKAN

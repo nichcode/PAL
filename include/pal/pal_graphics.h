@@ -46,6 +46,7 @@ typedef struct PalSwapchain PalSwapchain;
 typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
 typedef struct PalShader PalShader;
+typedef struct PalRenderPass PalRenderPass;
 
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -277,6 +278,11 @@ typedef enum {
     PAL_SHADER_TYPE_TESSELLATION_EVALUATION
 } PalShaderType;
 
+typedef enum {
+    PAL_ATTACHMENT_TYPE_COLOR,
+    PAL_ATTACHMENT_TYPE_DEPTH
+} PalAttachmentType;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -343,6 +349,14 @@ typedef struct {
 } PalImageInfo;
 
 typedef struct {
+    PalAttachmentType type;
+    PalLoadOp loadOp;
+    PalStoreOp storeOp;
+    PalImageView* target;
+    PalImageView* resolveTarget;
+} PalAttachmentDesc;
+
+typedef struct {
     bool memoryTypes[PAL_MEMORY_TYPE_MAX];
     Uint64 size;
     Uint32 alignment;
@@ -384,6 +398,13 @@ typedef struct {
     const void* bytecode;
     Uint64 bytecodeSize;
 } PalShaderCreateInfo;
+
+typedef struct {
+    Uint32 width;
+    Uint32 height;
+    Uint32 attachmentCount;
+    PalAttachmentDesc* attachments;
+} PalRenderPassCreateInfo;
 
 typedef struct {
     void* display;
@@ -506,6 +527,13 @@ typedef struct {
     void PAL_CALL (*destroyShader)(PalShader* shader);
 
     PalShaderType PAL_CALL (*getShaderType)(PalShader* shader);
+
+    PalResult PAL_CALL (*createRenderPass)(
+        PalDevice* device,
+        const PalRenderPassCreateInfo* info,
+        PalRenderPass** outRenderPass);
+
+    void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
 } PalGfxBackend;
 
 PAL_API PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend);
@@ -631,6 +659,13 @@ PAL_API PalResult PAL_CALL palCreateShader(
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
 
 PAL_API PalShaderType PAL_CALL palGetShaderType(PalShader* shader);
+
+PAL_API PalResult PAL_CALL palCreateRenderPass(
+    PalDevice* device,
+    const PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass);
+
+PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
 
 /** @} */ // end of pal_graphics group
 

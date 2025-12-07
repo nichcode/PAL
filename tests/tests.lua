@@ -67,7 +67,8 @@ project "tests"
         files { 
             "graphics_test.c",
             "device_test.c",
-            "image_test.c"
+            "image_test.c",
+            "renderpass_test.c"
         }
     end
 

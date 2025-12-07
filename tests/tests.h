@@ -58,6 +58,7 @@ bool graphicsTest();
 bool customGraphicsBackendTest();
 bool deviceTest();
 bool imageTest();
+bool renderPassTest();
 
 // graphics and video
 bool queueTest();

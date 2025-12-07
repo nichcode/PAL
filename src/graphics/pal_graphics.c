@@ -233,6 +233,13 @@ void PAL_CALL destroyVkShader(PalShader* shader);
 
 PalShaderType PAL_CALL getVkShaderType(PalShader* shader);
 
+PalResult PAL_CALL createVkRenderPass(
+    PalDevice* device,
+    const PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass);
+
+void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass);
+
 static PalGfxBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
     .getAdapterInfo =  getVkAdapterInfo,
@@ -262,7 +269,9 @@ static PalGfxBackend s_VkBackend = {
     .getSwapchainImage =  getVkSwapchainImage,
     .createShader = createVkShader,
     .destroyShader = destroyVkShader,
-    .getShaderType = getVkShaderType
+    .getShaderType = getVkShaderType,
+    .createRenderPass = createVkRenderPass,
+    .destroyRenderPass = destroyVkRenderPass
 };
 
 #endif // PAL_HAS_VULKAN
@@ -1109,6 +1118,10 @@ PalImage* PAL_CALL palGetSwapchainImage(
     return TO_PAL_HANDLE(PalImage, imageIndex);
 }
 
+// ==================================================
+// Shader
+// ==================================================
+
 PalResult PAL_CALL palCreateShader(
     PalDevice* device,
     const PalShaderCreateInfo* info,
@@ -1153,7 +1166,7 @@ PalResult PAL_CALL palCreateShader(
     shaderData->backend = data->backend;
     shaderData->handle = shader;
 
-    *outShader = TO_PAL_HANDLE(PalShader, shader);
+    *outShader = TO_PAL_HANDLE(PalShader, shaderIndex);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1179,4 +1192,93 @@ PalShaderType PAL_CALL palGetShaderType(PalShader* shader)
         }
     }
     return PAL_SHADER_TYPE_UNDEFINED;
+}
+
+// ==================================================
+// Render Pass
+// ==================================================
+
+PalResult PAL_CALL palCreateRenderPass(
+    PalDevice* device,
+    const PalRenderPassCreateInfo* info,
+    PalRenderPass** outRenderPass)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outRenderPass) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->attachmentCount == 0 && info->attachments) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(device);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    PalAttachmentDesc attachments[16]; // should be fine
+    PalRenderPassCreateInfo createInfo = {0};
+    createInfo.attachmentCount = info->attachmentCount;
+    createInfo.attachments = attachments;
+
+    for (int i = 0; i < info->attachmentCount; i++) {
+        if (!info->attachments[i].target) {
+            return PAL_RESULT_NULL_POINTER;
+        }
+
+        index = FROM_PAL_HANDLE(info->attachments[i].target);
+        HandleData* tmp = findHandleData(index);
+        attachments[i].target = tmp->handle;
+        attachments[i].loadOp = info->attachments[i].loadOp;
+        attachments[i].storeOp = info->attachments[i].storeOp;
+        attachments[i].type = info->attachments[i].type;
+        attachments[i].resolveTarget = nullptr;
+
+        if (info->attachments[i].resolveTarget) {
+            index = FROM_PAL_HANDLE(info->attachments[i].target);
+            tmp = findHandleData(index);
+            attachments[i].resolveTarget = tmp->handle;
+        }
+    }
+
+    // create a slot for the renderpass
+    Uint64 renderPassIndex = 0;
+    HandleData* renderPassData = getFreeHandleData(&renderPassIndex);
+    if (!renderPassData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalRenderPass* renderpass = nullptr;
+    PalResult ret;
+    ret = data->backend->createRenderPass(
+        data->handle,
+        &createInfo,
+        &renderpass);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    renderPassData->backend = data->backend;
+    renderPassData->handle = renderpass;
+
+    *outRenderPass = TO_PAL_HANDLE(PalRenderPass, renderPassIndex);
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
+{
+    if (s_Graphics.initialized && renderPass) {
+        Uint64 index = FROM_PAL_HANDLE(renderPass);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            data->backend->destroyRenderPass(data->handle);
+            data->used = false;
+        }
+    }
 }
