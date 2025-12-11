@@ -295,6 +295,14 @@ bool graphicsTest()
         if (caps.features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT) {
             palLog(nullptr, "  Transient command pool");
         }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_RESET_FENCE) {
+            palLog(nullptr, "  Resetting fence");
+        }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_TIMEOUT_FENCE) {
+            palLog(nullptr, "  Timeout fence");
+        }
         
         palLog(nullptr, "");
     }

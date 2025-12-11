@@ -240,12 +240,45 @@ PalResult PAL_CALL createVkRenderPass(
 
 void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass);
 
+PalResult PAL_CALL createVkFence(
+    PalDevice* device,
+    PalFence** outFence);
+
+void PAL_CALL destroyVkFence(PalFence* fence);
+
+PalResult PAL_CALL waitVkFenceTimeout(
+    PalFence* fence, 
+    Uint64 nanoseconds);
+
+bool PAL_CALL isVkFenceSignaled(PalFence* fence);
+
 PalResult PAL_CALL createVkCommandPool(
     PalDevice* device,
     const PalCommandPoolCreateInfo* info,
     PalCommandPool** outPool);
 
 void PAL_CALL destroyVkCommandPool(PalCommandPool* pool);
+
+PalResult PAL_CALL createVkCommandBuffer(
+    PalDevice* device,
+    PalCommandPool* pool,
+    bool primary,
+    PalCommandBuffer** outBuffer);
+
+void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
+
+PalResult PAL_CALL cmdBeginVk(PalCommandBuffer* cmdBuffer);
+
+PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer);
+
+PalResult PAL_CALL cmdExecuteCommandBufferVk(
+    PalCommandBuffer* primaryCmdBuffer,
+    PalCommandBuffer* secondaryCmdBuffer);
+
+PalResult PAL_CALL queueSubmitVk(
+    PalQueue* queue,
+    PalCommandBuffer* primaryCmdBuffer,
+    PalFence* fence);
 
 static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
@@ -279,8 +312,18 @@ static PalGraphicsBackend s_VkBackend = {
     .getShaderType = getVkShaderType,
     .createRenderPass = createVkRenderPass,
     .destroyRenderPass = destroyVkRenderPass,
+    .createFence = createVkFence,
+    .destroyFence = destroyVkFence,
+    .waitFenceTimeout = waitVkFenceTimeout,
+    .isFenceSignaled = isVkFenceSignaled,
     .createCommandPool = createVkCommandPool,
-    .destroyCommandPool = destroyVkCommandPool
+    .destroyCommandPool = destroyVkCommandPool,
+    .createCommandBuffer = createVkCommandBuffer,
+    .destroyCommandBuffer = destroyVkCommandBuffer,
+    .cmdBegin = cmdBeginVk,
+    .cmdEnd = cmdEndVk,
+    .cmdExecuteCommandBuffer = cmdExecuteCommandBufferVk,
+    .queueSubmit = queueSubmitVk
 };
 
 #endif // PAL_HAS_VULKAN
@@ -322,19 +365,19 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getAdapterCapabilities       ||
         !backend->createDevice                 ||
         !backend->destroyDevice                ||
+        !backend->allocateMemory               ||
+        !backend->freeMemory                   ||
         !backend->createQueue                  ||
         !backend->destroyQueue                 ||
         !backend->canQueuePresent              ||
-        !backend->createImage                  ||
-        !backend->destroyImage                 ||
-        !backend->getImageInfo                 ||
         !backend->enumerateFormats             ||
         !backend->isFormatSupported            ||
         !backend->queryFormatImageUsages       ||
         !backend->queryFormatImageViewUsages   ||
+        !backend->createImage                  ||
+        !backend->destroyImage                 ||
+        !backend->getImageInfo                 ||
         !backend->getImageMemoryRequirements   ||
-        !backend->allocateMemory               ||
-        !backend->freeMemory                   ||
         !backend->bindImageMemory              ||
         !backend->createImageView              ||
         !backend->destroyImageView             ||
@@ -343,10 +386,35 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroySwapchain             ||
         !backend->getSwapchainImageCount       ||
         !backend->getSwapchainImage            ||
+        !backend->createShader                 ||
+        !backend->destroyShader                ||
+        !backend->getShaderType                ||
+        !backend->createRenderPass             ||
+        !backend->destroyRenderPass            ||
+        !backend->createFence                  ||
+        !backend->destroyFence                 ||
+        !backend->waitFenceTimeout             ||
+        !backend->isFenceSignaled              ||
         !backend->createCommandPool            ||
-        !backend->destroyCommandPool) {
+        !backend->destroyCommandPool           ||
+        !backend->createCommandBuffer          ||
+        !backend->destroyCommandBuffer         ||
+        !backend->cmdBegin                     ||
+        !backend->cmdEnd                       ||
+        !backend->cmdExecuteCommandBuffer      ||
+        !backend->queueSubmit) {
         return PAL_RESULT_INVALID_BACKEND;
     }
+    // palCreateFence
+    // palDestroyFence
+    // palWaitFence
+    // palIsFenceSignaled
+    // palCreateCommandBuffer
+    // palDestroyCommandBuffer
+    // palCmdBegin
+    // palCmdEnd
+    // palCmdExecuteCommandBuffer
+    // palQueueSubmit
     // clang-format on
 
     BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
@@ -1295,6 +1363,113 @@ void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
 }
 
 // ==================================================
+// Fences
+// ==================================================
+
+PalResult PAL_CALL palCreateFence(
+    PalDevice* device,
+    PalFence** outFence)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !outFence) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(device);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    // create a slot for the fence
+    Uint64 fenceIndex = 0;
+    HandleData* fenceData = getFreeHandleData(&fenceIndex);
+    if (!fenceData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalFence* fence = nullptr;
+    PalResult ret;
+    ret = data->backend->createFence(data->handle, &fence);
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    fenceData->backend = data->backend;
+    fenceData->handle = fence;
+
+    *outFence = TO_PAL_HANDLE(PalFence, fenceIndex);
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyFence(PalFence* fence)
+{
+    if (s_Graphics.initialized && fence) {
+        Uint64 index = FROM_PAL_HANDLE(fence);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            data->backend->destroyFence(data->handle);
+            data->used = false;
+        }
+    }
+}
+
+PalResult PAL_CALL palWaitFence(PalFence* fence)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!fence) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(fence);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_FENCE;
+    }
+
+    return data->backend->waitFenceTimeout(data->handle, UINT64_MAX);
+}
+
+PalResult PAL_CALL palWaitFenceTimeout(
+    PalFence* fence, 
+    Uint64 nanoseconds)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!fence) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(fence);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_FENCE;
+    }
+
+    return data->backend->waitFenceTimeout(data->handle, nanoseconds);
+}
+
+bool PAL_CALL palIsFenceSignaled(PalFence* fence)
+{
+    if (s_Graphics.initialized && fence) {
+        Uint64 index = FROM_PAL_HANDLE(fence);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            return data->backend->isFenceSignaled(data->handle);
+        }
+    }
+    return false;
+}
+
+// ==================================================
 // Command Pool And Buffer
 // ==================================================
 
@@ -1352,4 +1527,168 @@ void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
             data->used = false;
         }
     }
+}
+
+PalResult PAL_CALL palCreateCommandBuffer(
+    PalDevice* device,
+    PalCommandPool* pool,
+    bool primary,
+    PalCommandBuffer** outCmdBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !pool || !outCmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(device);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    index = FROM_PAL_HANDLE(pool);
+    HandleData* poolData = findHandleData(index);
+    if (!poolData) {
+        return PAL_RESULT_INVALID_COMMAND_POOL;
+    }
+
+    // create a slot for the command buffer
+    Uint64 cmdBufferIndex = 0;
+    HandleData* cmdBufferData = getFreeHandleData(&cmdBufferIndex);
+    if (!cmdBufferData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalCommandBuffer* cmdBuffer = nullptr;
+    PalResult ret;
+    ret = data->backend->createCommandBuffer(
+        data->handle,
+        poolData->handle,
+        primary,
+        &cmdBuffer);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    cmdBufferData->backend = data->backend;
+    cmdBufferData->handle = cmdBuffer;
+
+    *outCmdBuffer = TO_PAL_HANDLE(PalCommandBuffer, cmdBufferIndex);
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
+{
+    if (s_Graphics.initialized && cmdBuffer) {
+        Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            data->backend->destroyCommandBuffer(data->handle);
+            data->used = false;
+        }
+    }
+}
+
+PalResult PAL_CALL palCmdBegin(PalCommandBuffer* cmdBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    return data->backend->cmdBegin(data->handle);
+}
+
+PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    return data->backend->cmdEnd(data->handle);
+}
+
+PalResult PAL_CALL palCmdExecuteCommandBuffer(
+    PalCommandBuffer* primaryCmdBuffer,
+    PalCommandBuffer* secondaryCmdBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!primaryCmdBuffer || !secondaryCmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(primaryCmdBuffer);
+    HandleData* data = findHandleData(index);
+    index = FROM_PAL_HANDLE(secondaryCmdBuffer);
+    HandleData* secondaryCmdBufferData = findHandleData(index);
+    if (!data || !secondaryCmdBufferData) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    return data->backend->cmdExecuteCommandBuffer(
+        data->handle, 
+        secondaryCmdBufferData->handle);
+}
+
+PalResult PAL_CALL palQueueSubmit(
+    PalQueue* queue,
+    PalCommandBuffer* primaryCmdBuffer,
+    PalFence* fence)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!queue || !primaryCmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(queue);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_QUEUE;
+    }
+
+    index = FROM_PAL_HANDLE(primaryCmdBuffer);
+    HandleData* cmdBufferData = findHandleData(index);
+    if (!cmdBufferData) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    HandleData* fenceData = nullptr;
+    if (fence) {
+        index = FROM_PAL_HANDLE(fence);
+        fenceData = findHandleData(index);
+    }
+
+    return data->backend->queueSubmit(
+        data->handle,
+        cmdBufferData->handle, 
+        fence);
 }

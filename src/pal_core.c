@@ -425,6 +425,15 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_SHADER_TYPE:
             return "Invalid shader type";
+
+        case PAL_RESULT_INVALID_COMMAND_POOL:
+            return "Invalid command pool";
+
+        case PAL_RESULT_INVALID_COMMAND_BUFFER:
+            return "Invalid command buffer";
+
+        case PAL_RESULT_INVALID_FENCE:
+            return "Invalid fence";
     }
     return "Unknown";
 }

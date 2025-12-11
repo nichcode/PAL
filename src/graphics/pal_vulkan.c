@@ -115,6 +115,17 @@ typedef struct {
 
     PFN_vkCreateCommandPool createCommandPool;
     PFN_vkDestroyCommandPool destroyCommandPool;
+    PFN_vkAllocateCommandBuffers createCommandBuffer;
+    PFN_vkFreeCommandBuffers destroyCommandBuffer;
+    PFN_vkCreateFence createFence;
+    PFN_vkDestroyFence destroyFence;
+    PFN_vkResetFences resetFence;
+    PFN_vkWaitForFences waitFence;
+    PFN_vkGetFenceStatus isFenceSignaled;
+    PFN_vkBeginCommandBuffer cmdBegin;
+    PFN_vkEndCommandBuffer cmdEnd;
+    PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
+    PFN_vkQueueSubmit queueSubmit;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -204,6 +215,17 @@ struct PalRenderPass {
 struct PalCommandPool {
     PalDevice* device;
     VkCommandPool handle;
+};
+
+struct PalCommandBuffer {
+    PalDevice* device;
+    VkCommandPool pool;
+    VkCommandBuffer handle;
+};
+
+struct PalFence {
+    PalDevice* device;
+    VkFence handle;
 };
 
 static Vulkan s_Vk = {0};
@@ -1155,6 +1177,50 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkDestroyCommandPool");
 
+    s_Vk.createCommandBuffer = (PFN_vkAllocateCommandBuffers)dlsym(
+        s_Vk.handle, 
+        "vkAllocateCommandBuffers");
+
+    s_Vk.destroyCommandBuffer = (PFN_vkFreeCommandBuffers)dlsym(
+        s_Vk.handle, 
+        "vkFreeCommandBuffers");
+
+    s_Vk.createFence = (PFN_vkCreateFence)dlsym(
+        s_Vk.handle, 
+        "vkCreateFence");
+
+    s_Vk.destroyFence = (PFN_vkDestroyFence)dlsym(
+        s_Vk.handle, 
+        "vkDestroyFence");
+
+    s_Vk.resetFence = (PFN_vkResetFences)dlsym(
+        s_Vk.handle, 
+        "vkResetFences");
+
+    s_Vk.waitFence = (PFN_vkWaitForFences)dlsym(
+        s_Vk.handle, 
+        "vkWaitForFences");
+
+    s_Vk.isFenceSignaled = (PFN_vkGetFenceStatus)dlsym(
+        s_Vk.handle, 
+        "vkGetFenceStatus");
+
+    s_Vk.cmdBegin = (PFN_vkBeginCommandBuffer)dlsym(
+        s_Vk.handle, 
+        "vkBeginCommandBuffer");
+
+    s_Vk.cmdEnd = (PFN_vkEndCommandBuffer)dlsym(
+        s_Vk.handle, 
+        "vkEndCommandBuffer");
+
+    s_Vk.cmdExecuteCommandBuffer = (PFN_vkCmdExecuteCommands)dlsym(
+        s_Vk.handle, 
+        "vkCmdExecuteCommands");
+
+    s_Vk.queueSubmit = (PFN_vkQueueSubmit)dlsym(
+        s_Vk.handle, 
+        "vkQueueSubmit");
+
     // clang-format on
 
     // get version
@@ -1828,6 +1894,8 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
     caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE;
     caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
+    caps->features |= PAL_ADAPTER_FEATURE_RESET_FENCE;
+    caps->features |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
 
     palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -2725,7 +2793,7 @@ PalResult PAL_CALL queryVkSwapchainCapabilities(
     caps->maxImageArrayLayers = surfaceCaps.maxImageArrayLayers;
 
     if (caps->maxImageCount == 0) {
-        caps->maxImageCount = PAL_INFINITE;
+        caps->maxImageCount = INT32_MAX;
     }
 
     // get supported composite alphas
@@ -3050,7 +3118,7 @@ PalResult PAL_CALL createVkShader(
     
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, shader);
-        vkResultToPal(result);
+        return vkResultToPal(result);
     }
 
     shader->device = device;
@@ -3185,7 +3253,7 @@ PalResult PAL_CALL createVkRenderPass(
 
         if (result != VK_SUCCESS) {
             palFree(s_Vk.allocator, renderpass);
-            vkResultToPal(result);
+            return vkResultToPal(result);
         }
 
         // create framebuffer
@@ -3237,6 +3305,72 @@ void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass)
 }
 
 // ==================================================
+// Fences
+// ==================================================
+
+PalResult PAL_CALL createVkFence(
+    PalDevice* device,
+    PalFence** outFence)
+{
+    VkResult result;
+    PalFence* fence = nullptr;
+    fence = palAllocate(s_Vk.allocator, sizeof(PalFence), 0);
+    if (!fence) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkFenceCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    result = s_Vk.createFence(
+        device->handle, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &fence->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, fence);
+        vkResultToPal(result);
+    }
+
+    fence->device = device;
+    *outFence = fence;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkFence(PalFence* fence)
+{
+    s_Vk.destroyFence(fence->device->handle, fence->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, fence);
+}
+
+PalResult PAL_CALL waitVkFenceTimeout(
+    PalFence* fence, 
+    Uint64 nanoseconds)
+{
+    VkResult result = s_Vk.waitFence(
+        fence->device->handle, 
+        1, 
+        &fence->handle, 
+        true,
+        nanoseconds);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+bool PAL_CALL isVkFenceSignaled(PalFence* fence)
+{
+    VkResult ret = s_Vk.isFenceSignaled(fence->device->handle, fence->handle);
+    if (ret == VK_SUCCESS) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// ==================================================
 // Command Pool And Buffer
 // ==================================================
 
@@ -3274,9 +3408,10 @@ PalResult PAL_CALL createVkCommandPool(
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pool);
-        vkResultToPal(result);
+        return vkResultToPal(result);
     }
 
+    pool->device = device;
     *outPool = pool;
     return PAL_RESULT_SUCCESS;
 }
@@ -3289,6 +3424,80 @@ void PAL_CALL destroyVkCommandPool(PalCommandPool* pool)
         &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, pool);
+}
+
+PalResult PAL_CALL createVkCommandBuffer(
+    PalDevice* device,
+    PalCommandPool* pool,
+    bool primary,
+    PalCommandBuffer** outCmdBuffer)
+{
+    VkResult result;
+    PalCommandBuffer* cmdBuffer = nullptr;
+    cmdBuffer = palAllocate(s_Vk.allocator, sizeof(PalCommandBuffer), 0);
+    if (!cmdBuffer) {
+        PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkCommandBufferAllocateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    createInfo.commandBufferCount = 1;
+    createInfo.commandPool = pool->handle;
+    createInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    if (!primary) {
+        createInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    }
+
+    result = s_Vk.createCommandBuffer(
+        device->handle, 
+        &createInfo, 
+        &cmdBuffer->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, cmdBuffer);
+        return vkResultToPal(result);
+    }
+
+    cmdBuffer->device = device;
+    cmdBuffer->pool = pool->handle;
+    *outCmdBuffer = cmdBuffer;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
+{
+    s_Vk.destroyCommandBuffer(
+        cmdBuffer->device->handle,
+        cmdBuffer->pool,
+        1,
+        &cmdBuffer->handle);
+
+    palFree(s_Vk.allocator, cmdBuffer);
+}
+
+PalResult PAL_CALL cmdBeginVk(PalCommandBuffer* cmdBuffer)
+{
+
+}
+
+PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer)
+{
+
+}
+
+PalResult PAL_CALL cmdExecuteCommandBufferVk(
+    PalCommandBuffer* primaryCmdBuffer,
+    PalCommandBuffer* secondaryCmdBuffer)
+{
+
+}
+
+PalResult PAL_CALL queueSubmitVk(
+    PalQueue* queue,
+    PalCommandBuffer* primaryCmdBuffer,
+    PalFence* fence)
+{
+
 }
 
 #endif // PAL_HAS_VULKAN

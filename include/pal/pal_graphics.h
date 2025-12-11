@@ -35,7 +35,6 @@ freely, subject to the following restrictions:
 
 #define PAL_ADAPTER_NAME_SIZE 128
 #define PAL_ADAPTER_VERSION_SIZE 16
-#define PAL_INFINITE (2147483647)
 #define PAL_DEFAULT_MEMORY_OFFSET 0
 
 typedef struct PalAdapter PalAdapter;
@@ -48,7 +47,10 @@ typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
 typedef struct PalShader PalShader;
 typedef struct PalRenderPass PalRenderPass;
+
+typedef struct PalFence PalFence;
 typedef struct PalCommandPool PalCommandPool;
+typedef struct PalCommandBuffer PalCommandBuffer;
 
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -225,7 +227,9 @@ typedef enum {
     PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(17),
     PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(18),
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT = PAL_BIT64(19),
-    PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(20)
+    PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(20),
+    PAL_ADAPTER_FEATURE_RESET_FENCE = PAL_BIT64(21),
+    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(22)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -544,12 +548,45 @@ typedef struct {
 
     void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
 
+    PalResult PAL_CALL (*createFence)(
+        PalDevice* device,
+        PalFence** outFence);
+
+    void PAL_CALL (*destroyFence)(PalFence* fence);
+
+    PalResult PAL_CALL (*waitFenceTimeout)(
+        PalFence* fence, 
+        Uint64 nanoseconds);
+
+    bool PAL_CALL (*isFenceSignaled)(PalFence* fence);
+
     PalResult PAL_CALL (*createCommandPool)(
         PalDevice* device,
         const PalCommandPoolCreateInfo* info,
         PalCommandPool** outPool);
 
     void PAL_CALL (*destroyCommandPool)(PalCommandPool* pool);
+
+    PalResult PAL_CALL (*createCommandBuffer)(
+        PalDevice* device,
+        PalCommandPool* pool,
+        bool primary,
+        PalCommandBuffer** outCmdBuffer);
+
+    void PAL_CALL (*destroyCommandBuffer)(PalCommandBuffer* cmdBuffer);
+
+    PalResult PAL_CALL (*cmdBegin)(PalCommandBuffer* cmdBuffer);
+
+    PalResult PAL_CALL (*cmdEnd)(PalCommandBuffer* cmdBuffer);
+
+    PalResult PAL_CALL (*cmdExecuteCommandBuffer)(
+        PalCommandBuffer* primaryCmdBuffer,
+        PalCommandBuffer* secondaryCmdBuffer);
+
+    PalResult PAL_CALL (*queueSubmit)(
+        PalQueue* queue,
+        PalCommandBuffer* primaryCmdBuffer,
+        PalFence* fence);
 } PalGraphicsBackend;
 
 PAL_API PalResult PAL_CALL palAddGraphicsBackend(
@@ -690,6 +727,41 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
     PalCommandPool** outPool);
 
 PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
+
+PAL_API PalResult PAL_CALL palCreateFence(
+    PalDevice* device,
+    PalFence** outFence);
+
+PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
+
+PAL_API PalResult PAL_CALL palWaitFence(PalFence* fence);
+
+PAL_API PalResult PAL_CALL palWaitFenceTimeout(
+    PalFence* fence, 
+    Uint64 nanoseconds);
+
+PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
+
+PAL_API PalResult PAL_CALL palCreateCommandBuffer(
+    PalDevice* device,
+    PalCommandPool* pool,
+    bool primary,
+    PalCommandBuffer** outCmdbuffer);
+
+PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
+
+PAL_API PalResult PAL_CALL palCmdBegin(PalCommandBuffer* cmdBuffer);
+
+PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
+
+PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
+    PalCommandBuffer* primaryCmdBuffer,
+    PalCommandBuffer* secondaryCmdBuffer);
+
+PAL_API PalResult PAL_CALL palQueueSubmit(
+    PalQueue* queue,
+    PalCommandBuffer* primaryCmdBuffer,
+    PalFence* fence);
 
 /** @} */ // end of pal_graphics group
 
