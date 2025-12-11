@@ -43,6 +43,7 @@ typedef struct PalDevice PalDevice;
 typedef struct PalMemory PalMemory;
 typedef struct PalQueue PalQueue;
 typedef struct PalSwapchain PalSwapchain;
+
 typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
 typedef struct PalShader PalShader;
@@ -265,7 +266,7 @@ typedef enum {
     PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB,
     PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10,
 
-    PAL_SWAPCHAIN_FORMAT_MAX // more pars will be added
+    PAL_SWAPCHAIN_FORMAT_MAX
 } PalSwapchainFormat;
 
 typedef enum {
@@ -409,7 +410,7 @@ typedef struct {
 typedef struct {
     void* display;
     void* window;
-} PalGfxWindow;
+} PalGraphicsWindow;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateAdapters)(
@@ -450,7 +451,7 @@ typedef struct {
 
     bool PAL_CALL (*canQueuePresent)(
         PalQueue* queue, 
-        PalGfxWindow* window);
+        PalGraphicsWindow* window);
 
     PalResult PAL_CALL (*enumerateFormats)(
         PalAdapter* adapter,
@@ -501,13 +502,13 @@ typedef struct {
 
     PalResult PAL_CALL (*querySwapchainCapabilities)(
         PalAdapter* adapter,
-        PalGfxWindow* window,
+        PalGraphicsWindow* window,
         PalSwapchainCapabilities* caps);
 
     PalResult PAL_CALL (*createSwapchain)(
         PalDevice* device,
         PalQueue* queue,
-        PalGfxWindow* window,
+        PalGraphicsWindow* window,
         const PalSwapchainCreateInfo* info,
         PalSwapchain** outSwapchain);
 
@@ -534,9 +535,10 @@ typedef struct {
         PalRenderPass** outRenderPass);
 
     void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
-} PalGfxBackend;
+} PalGraphicsBackend;
 
-PAL_API PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend);
+PAL_API PalResult PAL_CALL palAddGraphicsBackend(
+    const PalGraphicsBackend* backend);
 
 PAL_API PalResult PAL_CALL palInitGraphics(
     bool enableDebugLayer,
@@ -582,7 +584,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 
 PAL_API bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
-    PalGfxWindow* window);
+    PalGraphicsWindow* window);
 
 PAL_API PalResult PAL_CALL palEnumerateFormats(
     PalAdapter* adapter,
@@ -633,13 +635,13 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
 PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
     PalAdapter* adapter,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps);
 
 PAL_API PalResult PAL_CALL palCreateSwapchain(
     PalDevice* device,
     PalQueue* queue,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain);
 

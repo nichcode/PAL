@@ -38,13 +38,13 @@ freely, subject to the following restrictions:
 typedef struct {
     bool used;
     void* handle;
-    const PalGfxBackend* backend;
+    const PalGraphicsBackend* backend;
 } HandleData;
 
 typedef struct {
     Int32 count;
     Int32 startIndex;
-    const PalGfxBackend* base;
+    const PalGraphicsBackend* base;
 } BackendData;
 
 typedef struct {
@@ -155,7 +155,7 @@ void PAL_CALL destroyVkQueue(PalQueue* queue);
 
 bool PAL_CALL canVkQueuePresent(
     PalQueue* queue, 
-    PalGfxWindow* window);
+    PalGraphicsWindow* window);
 
 PalResult PAL_CALL enumerateVkFormats(
     PalAdapter* adapter,
@@ -206,13 +206,13 @@ void PAL_CALL destroyVkImageView(PalImageView* imageView);
 
 PalResult PAL_CALL queryVkSwapchainCapabilities(
     PalAdapter* adapter,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps);
 
 PalResult PAL_CALL createVkSwapchain(
     PalDevice* device,
     PalQueue* queue,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain);
 
@@ -240,7 +240,7 @@ PalResult PAL_CALL createVkRenderPass(
 
 void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass);
 
-static PalGfxBackend s_VkBackend = {
+static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
     .getAdapterInfo =  getVkAdapterInfo,
     .getAdapterCapabilities =  getVkAdapterCapabilities,
@@ -288,7 +288,7 @@ static PalGfxBackend s_VkBackend = {
 // Public API
 // ==================================================
 
-PalResult PAL_CALL palAddGfxBackend(const PalGfxBackend* backend)
+PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 {
     if (s_Graphics.initialized) {
         return PAL_RESULT_INVALID_BACKEND;
@@ -670,7 +670,7 @@ void PAL_CALL palDestroyQueue(PalQueue* queue)
 
 bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
-    PalGfxWindow* window)
+    PalGraphicsWindow* window)
 {
     if (s_Graphics.initialized && queue) {
         Uint64 index = FROM_PAL_HANDLE(queue);
@@ -981,7 +981,7 @@ void PAL_CALL palDestroyImageView(PalImageView* imageView)
 
 PalResult PAL_CALL palQuerySwapchainCapabilities(
     PalAdapter* adapter,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
@@ -1007,7 +1007,7 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
 PalResult PAL_CALL palCreateSwapchain(
     PalDevice* device,
     PalQueue* queue,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain)
 {

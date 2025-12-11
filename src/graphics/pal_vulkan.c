@@ -48,6 +48,7 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 
 #include <vulkan/vulkan_xlib.h>
 #include <vulkan/vulkan_wayland.h>
+
 #define VK_LIB_NAME "libvulkan.so"
 
 #else
@@ -63,7 +64,7 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 #define VK_WIN32_PLATFORM 1
 #define VK_XLIB_PLATFORM 2
 #define VK_WAYLAND_PLATFORM 3
-#define MAX_ATTACHMENTS 16 // //TODO: should be fine but maybe 32 to be safe
+#define MAX_ATTACHMENTS 32
 
 typedef struct {
     bool hasDebug;
@@ -200,7 +201,7 @@ struct PalRenderPass {
 static Vulkan s_Vk = {0};
 
 // ==================================================
-// API
+// Helper Functions
 // ==================================================
 
 static Uint32 checkPlatform(struct wl_display* display) 
@@ -222,7 +223,7 @@ static Uint32 checkPlatform(struct wl_display* display)
 }
 
 static bool createSurface(
-    PalGfxWindow* window, 
+    PalGraphicsWindow* window, 
     VkSurfaceKHR* outSurface)
 {
     Uint32 platform = checkPlatform(window->display);
@@ -982,6 +983,10 @@ static void* vkRealloc(
     }
     return nullptr;
 }
+
+// ==================================================
+// Adapter
+// ==================================================
 
 PalResult PAL_CALL initGraphicsVk(
     bool enableDebugLayer,
@@ -1810,6 +1815,10 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     return PAL_RESULT_SUCCESS;
 }
 
+// ==================================================
+// Device
+// ==================================================
+
 PalResult PAL_CALL createVkDevice(
     PalAdapter* adapter,
     PalAdapterFeatures features,
@@ -2156,6 +2165,10 @@ void PAL_CALL destroyVkDevice(PalDevice* device)
     palFree(s_Vk.allocator, device);
 }
 
+// ==================================================
+// Memory
+// ==================================================
+
 PalResult PAL_CALL allocateVkMemory(
     PalDevice* device,
     PalMemoryType type,
@@ -2194,6 +2207,10 @@ void PAL_CALL freeVkMemory(
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     s_Vk.freeMemory(device->handle, mem, &s_Vk.vkAllocator);
 }
+
+// ==================================================
+// Queue
+// ==================================================
 
 PalResult PAL_CALL createVkQueue(
     PalDevice* device,
@@ -2266,7 +2283,7 @@ void PAL_CALL destroyVkQueue(PalQueue* queue)
 
 bool PAL_CALL canVkQueuePresent(
     PalQueue* queue, 
-    PalGfxWindow* window)
+    PalGraphicsWindow* window)
 {
     // check if the queue is a graphics queue before we check its family 
     // index for presentation support.
@@ -2290,6 +2307,10 @@ bool PAL_CALL canVkQueuePresent(
     }
     return false;
 }
+
+// ==================================================
+// Formats
+// ==================================================
 
 PalResult PAL_CALL enumerateVkFormats(
     PalAdapter* adapter,
@@ -2412,6 +2433,10 @@ PalImageViewUsages PAL_CALL queryVkFormatImageViewUsages(
     }
     return usages;
 }
+
+// ==================================================
+// Image
+// ==================================================
 
 PalResult PAL_CALL createVkImage(
     PalDevice* device,
@@ -2549,6 +2574,10 @@ PalResult PAL_CALL bindVkImageMemory(
     s_Vk.bindImageMemory(device->handle, image->handle, mem, offset);
 }
 
+// ==================================================
+// Image View
+// ==================================================
+
 PalResult PAL_CALL createVkImageView(
     PalDevice* device,
     PalImage* image,
@@ -2624,9 +2653,13 @@ void PAL_CALL destroyVkImageView(PalImageView* imageView)
     palFree(s_Vk.allocator, imageView);
 }
 
+// ==================================================
+// Swapchain
+// ==================================================
+
 PalResult PAL_CALL queryVkSwapchainCapabilities(
     PalAdapter* adapter,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps)
 {
     Int32 formatCount = 0;
@@ -2753,7 +2786,7 @@ PalResult PAL_CALL queryVkSwapchainCapabilities(
 PalResult PAL_CALL createVkSwapchain(
     PalDevice* device,
     PalQueue* queue,
-    PalGfxWindow* window,
+    PalGraphicsWindow* window,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain)
 {
@@ -2943,6 +2976,10 @@ PalImage* PAL_CALL getVkSwapchainImage(
     return (PalImage*)&swapchain->images[index];
 }
 
+// ==================================================
+// Shader
+// ==================================================
+
 PalResult PAL_CALL createVkShader(
     PalDevice* device,
     const PalShaderCreateInfo* info,
@@ -3023,6 +3060,10 @@ PalShaderType PAL_CALL getVkShaderType(PalShader* shader)
 {
     return shader->type;
 }
+
+// ==================================================
+// Render Pass
+// ==================================================
 
 PalResult PAL_CALL createVkRenderPass(
     PalDevice* device,
