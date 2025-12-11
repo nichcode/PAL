@@ -303,6 +303,10 @@ bool graphicsTest()
         if (caps.features & PAL_ADAPTER_FEATURE_TIMEOUT_FENCE) {
             palLog(nullptr, "  Timeout fence");
         }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_MULTI_QUEUE_SUBMIT) {
+            palLog(nullptr, "  Multi queue submit");
+        }
         
         palLog(nullptr, "");
     }

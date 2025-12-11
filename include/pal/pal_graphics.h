@@ -229,7 +229,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT = PAL_BIT64(19),
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(20),
     PAL_ADAPTER_FEATURE_RESET_FENCE = PAL_BIT64(21),
-    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(22)
+    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(22),
+    PAL_ADAPTER_FEATURE_MULTI_QUEUE_SUBMIT = PAL_BIT64(23)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -585,7 +586,8 @@ typedef struct {
 
     PalResult PAL_CALL (*queueSubmit)(
         PalQueue* queue,
-        PalCommandBuffer* primaryCmdBuffer,
+        Uint32 cmdBufferCount,
+        PalCommandBuffer** cmdBuffers,
         PalFence* fence);
 } PalGraphicsBackend;
 
@@ -734,9 +736,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
 
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
 
-PAL_API PalResult PAL_CALL palWaitFence(PalFence* fence);
-
-PAL_API PalResult PAL_CALL palWaitFenceTimeout(
+PAL_API PalResult PAL_CALL palWaitFence(
     PalFence* fence, 
     Uint64 nanoseconds);
 
@@ -760,7 +760,8 @@ PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
 
 PAL_API PalResult PAL_CALL palQueueSubmit(
     PalQueue* queue,
-    PalCommandBuffer* primaryCmdBuffer,
+    Uint32 cmdBufferCount,
+    PalCommandBuffer** cmdBuffers,
     PalFence* fence);
 
 /** @} */ // end of pal_graphics group

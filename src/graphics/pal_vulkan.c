@@ -218,6 +218,7 @@ struct PalCommandPool {
 };
 
 struct PalCommandBuffer {
+    bool primary;
     PalDevice* device;
     VkCommandPool pool;
     VkCommandBuffer handle;
@@ -1896,6 +1897,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
     caps->features |= PAL_ADAPTER_FEATURE_RESET_FENCE;
     caps->features |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
+    caps->features |= PAL_ADAPTER_FEATURE_MULTI_QUEUE_SUBMIT;
 
     palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -3458,6 +3460,12 @@ PalResult PAL_CALL createVkCommandBuffer(
         return vkResultToPal(result);
     }
 
+    if (primary) {
+        cmdBuffer->primary = true;
+    } else {
+        cmdBuffer->primary = false;
+    }
+
     cmdBuffer->device = device;
     cmdBuffer->pool = pool->handle;
     *outCmdBuffer = cmdBuffer;
@@ -3477,27 +3485,83 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL cmdBeginVk(PalCommandBuffer* cmdBuffer)
 {
+    VkCommandBufferBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
+    VkResult result = s_Vk.cmdBegin(cmdBuffer->handle, &beginInfo);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer)
 {
-
+    VkResult result = s_Vk.cmdEnd(cmdBuffer->handle);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdExecuteCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
+    // check if both are primary cmd buffers
+    if (primaryCmdBuffer->primary && secondaryCmdBuffer->primary) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
 
+    if (!primaryCmdBuffer->primary && !secondaryCmdBuffer->primary) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    if (!primaryCmdBuffer->primary) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    s_Vk.cmdExecuteCommandBuffer(
+        primaryCmdBuffer->handle, 
+        1,
+        &secondaryCmdBuffer->handle);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL queueSubmitVk(
     PalQueue* queue,
-    PalCommandBuffer* primaryCmdBuffer,
+    Uint32 cmdBufferCount,
+    PalCommandBuffer** cmdBuffers,
     PalFence* fence)
 {
+    VkResult result;
+    VkFence fenceHandle = nullptr;
+    VkCommandBuffer cmdHandles[16]; // 16 should be more than enough
+    for (int i = 0; i < cmdBufferCount; i++) {
+        cmdHandles[i] = cmdBuffers[i]->handle;
+    }
 
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = cmdBufferCount;
+    submitInfo.pCommandBuffers = cmdHandles;
+
+    if (fence) {
+        fenceHandle = fence->handle; 
+    }
+
+    result = s_Vk.queueSubmit(
+        queue->phyQueue->handle,
+        1,
+        &submitInfo, 
+        fenceHandle);
+
+    if (result != VK_SUCCESS) {
+        vkResultToPal(result);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_VULKAN

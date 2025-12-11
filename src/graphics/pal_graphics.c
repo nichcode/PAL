@@ -277,7 +277,8 @@ PalResult PAL_CALL cmdExecuteCommandBufferVk(
 
 PalResult PAL_CALL queueSubmitVk(
     PalQueue* queue,
-    PalCommandBuffer* primaryCmdBuffer,
+    Uint32 cmdBufferCount,
+    PalCommandBuffer** cmdBuffers,
     PalFence* fence);
 
 static PalGraphicsBackend s_VkBackend = {
@@ -1417,26 +1418,7 @@ void PAL_CALL palDestroyFence(PalFence* fence)
     }
 }
 
-PalResult PAL_CALL palWaitFence(PalFence* fence)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!fence) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    Uint64 index = FROM_PAL_HANDLE(fence);
-    HandleData* data = findHandleData(index);
-    if (!data) {
-        return PAL_RESULT_INVALID_FENCE;
-    }
-
-    return data->backend->waitFenceTimeout(data->handle, UINT64_MAX);
-}
-
-PalResult PAL_CALL palWaitFenceTimeout(
+PalResult PAL_CALL palWaitFence(
     PalFence* fence, 
     Uint64 nanoseconds)
 {
@@ -1658,15 +1640,20 @@ PalResult PAL_CALL palCmdExecuteCommandBuffer(
 
 PalResult PAL_CALL palQueueSubmit(
     PalQueue* queue,
-    PalCommandBuffer* primaryCmdBuffer,
+    Uint32 cmdBufferCount,
+    PalCommandBuffer** cmdBuffers,
     PalFence* fence)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!queue || !primaryCmdBuffer) {
+    if (!queue || !cmdBuffers) {
         return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (cmdBufferCount == 0) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
     Uint64 index = FROM_PAL_HANDLE(queue);
@@ -1675,20 +1662,29 @@ PalResult PAL_CALL palQueueSubmit(
         return PAL_RESULT_INVALID_QUEUE;
     }
 
-    index = FROM_PAL_HANDLE(primaryCmdBuffer);
-    HandleData* cmdBufferData = findHandleData(index);
-    if (!cmdBufferData) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
     HandleData* fenceData = nullptr;
+    void* fenceHandle = nullptr;
     if (fence) {
         index = FROM_PAL_HANDLE(fence);
         fenceData = findHandleData(index);
+        fenceHandle = fenceData->handle;
+    }
+
+    // 16 should be more than enough
+    PalCommandBuffer* cmdHandles[16];
+    for (int i = 0; i < cmdBufferCount; i++) {
+        // get the cmd buffer handles
+        index = FROM_PAL_HANDLE(cmdBuffers[i]);
+        HandleData* cmdBufferData = findHandleData(index);
+        if (!cmdBufferData) {
+            return PAL_RESULT_INVALID_COMMAND_BUFFER;
+        }
+        cmdHandles[i] = cmdBufferData->handle;
     }
 
     return data->backend->queueSubmit(
         data->handle,
-        cmdBufferData->handle, 
-        fence);
+        cmdBufferCount,
+        cmdHandles,
+        fenceHandle);
 }
