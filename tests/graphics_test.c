@@ -287,6 +287,14 @@ bool graphicsTest()
         if (caps.features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
             palLog(nullptr, "  Dynamic rendering");
         }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE) {
+            palLog(nullptr, "  Resettable command pool");
+        }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT) {
+            palLog(nullptr, "  Transient command pool");
+        }
         
         palLog(nullptr, "");
     }

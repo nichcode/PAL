@@ -113,6 +113,9 @@ typedef struct {
     PFN_vkCreateFramebuffer createFramebuffer;
     PFN_vkDestroyFramebuffer destroyFramebuffer;
 
+    PFN_vkCreateCommandPool createCommandPool;
+    PFN_vkDestroyCommandPool destroyCommandPool;
+
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
     PFN_vkCreateXlibSurfaceKHR createXlibSurface;
@@ -196,6 +199,11 @@ struct PalRenderPass {
     VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
     VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
     VkImageView views[MAX_ATTACHMENTS];
+};
+
+struct PalCommandPool {
+    PalDevice* device;
+    VkCommandPool handle;
 };
 
 static Vulkan s_Vk = {0};
@@ -1139,6 +1147,14 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkBindImageMemory");
 
+    s_Vk.createCommandPool = (PFN_vkCreateCommandPool)dlsym(
+        s_Vk.handle, 
+        "vkCreateCommandPool");
+
+    s_Vk.destroyCommandPool = (PFN_vkDestroyCommandPool)dlsym(
+        s_Vk.handle, 
+        "vkDestroyCommandPool");
+
     // clang-format on
 
     // get version
@@ -1810,6 +1826,8 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     // this features are supported on vulkan
     caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
     caps->features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
+    caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE;
+    caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
 
     palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -3216,6 +3234,61 @@ void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass)
         &s_Vk.vkAllocator);
     
     palFree(s_Vk.allocator, renderPass);
+}
+
+// ==================================================
+// Command Pool And Buffer
+// ==================================================
+
+PalResult PAL_CALL createVkCommandPool(
+    PalDevice* device,
+    const PalCommandPoolCreateInfo* info,
+    PalCommandPool** outPool)
+{
+    VkResult result;
+    PalCommandPool* pool = nullptr;
+    PhysicalQueue* phyQueue = info->queue->phyQueue;
+
+    pool = palAllocate(s_Vk.allocator, sizeof(PalCommandPool), 0);
+    if (!pool) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkCommandPoolCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    createInfo.queueFamilyIndex = phyQueue->familyIndex;
+
+    if (info->resettable) {
+        createInfo.flags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    }
+
+    if (info->transient) {
+        createInfo.flags |= VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    }
+
+    result = s_Vk.createCommandPool(
+        device->handle, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &pool->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pool);
+        vkResultToPal(result);
+    }
+
+    *outPool = pool;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkCommandPool(PalCommandPool* pool)
+{
+    s_Vk.destroyCommandPool(
+        pool->device->handle, 
+        pool->handle, 
+        &s_Vk.vkAllocator);
+
+    palFree(s_Vk.allocator, pool);
 }
 
 #endif // PAL_HAS_VULKAN

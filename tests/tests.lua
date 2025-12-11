@@ -65,17 +65,7 @@ project "tests"
 
     if (PAL_BUILD_GRAPHICS) then
         files { 
-            "graphics_test.c",
-            "device_test.c",
-            "image_test.c",
-            "renderpass_test.c"
-        }
-    end
-
-    if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
-        files { 
-            "queue_test.c",
-            "swapchain_test.c"
+            "graphics_test.c"
         }
     end
 

@@ -240,6 +240,13 @@ PalResult PAL_CALL createVkRenderPass(
 
 void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass);
 
+PalResult PAL_CALL createVkCommandPool(
+    PalDevice* device,
+    const PalCommandPoolCreateInfo* info,
+    PalCommandPool** outPool);
+
+void PAL_CALL destroyVkCommandPool(PalCommandPool* pool);
+
 static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
     .getAdapterInfo =  getVkAdapterInfo,
@@ -271,7 +278,9 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyShader = destroyVkShader,
     .getShaderType = getVkShaderType,
     .createRenderPass = createVkRenderPass,
-    .destroyRenderPass = destroyVkRenderPass
+    .destroyRenderPass = destroyVkRenderPass,
+    .createCommandPool = createVkCommandPool,
+    .destroyCommandPool = destroyVkCommandPool
 };
 
 #endif // PAL_HAS_VULKAN
@@ -333,7 +342,9 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createSwapchain              ||
         !backend->destroySwapchain             ||
         !backend->getSwapchainImageCount       ||
-        !backend->getSwapchainImage) {
+        !backend->getSwapchainImage            ||
+        !backend->createCommandPool            ||
+        !backend->destroyCommandPool) {
         return PAL_RESULT_INVALID_BACKEND;
     }
     // clang-format on
@@ -1278,6 +1289,66 @@ void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
         HandleData* data = findHandleData(index);
         if (data) {
             data->backend->destroyRenderPass(data->handle);
+            data->used = false;
+        }
+    }
+}
+
+// ==================================================
+// Command Pool And Buffer
+// ==================================================
+
+PalResult PAL_CALL palCreateCommandPool(
+    PalDevice* device,
+    const PalCommandPoolCreateInfo* info,
+    PalCommandPool** outPool)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outPool) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(device);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    // create a slot for the command pool
+    Uint64 poolIndex = 0;
+    HandleData* poolData = getFreeHandleData(&poolIndex);
+    if (!poolData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalCommandPool* pool = nullptr;
+    PalResult ret;
+    ret = data->backend->createCommandPool(
+        data->handle,
+        info,
+        &pool);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    poolData->backend = data->backend;
+    poolData->handle = pool;
+
+    *outPool = TO_PAL_HANDLE(PalCommandPool, poolIndex);
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
+{
+    if (s_Graphics.initialized && pool) {
+        Uint64 index = FROM_PAL_HANDLE(pool);
+        HandleData* data = findHandleData(index);
+        if (data) {
+            data->backend->destroyCommandPool(data->handle);
             data->used = false;
         }
     }

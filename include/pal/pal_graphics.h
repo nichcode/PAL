@@ -48,6 +48,7 @@ typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
 typedef struct PalShader PalShader;
 typedef struct PalRenderPass PalRenderPass;
+typedef struct PalCommandPool PalCommandPool;
 
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -179,7 +180,6 @@ typedef enum {
 
 typedef enum {
     PAL_IMAGE_USAGE_UNDEFINED = 0,
-
     PAL_IMAGE_USAGE_COLOR_ATTACHEMENT = PAL_BIT(0),
     PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT = PAL_BIT(1),
     PAL_IMAGE_USAGE_TRANSFER_SRC = PAL_BIT(2),
@@ -223,7 +223,9 @@ typedef enum {
     PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(15),
     PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16),
     PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW = PAL_BIT64(17),
-    PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(18)
+    PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING = PAL_BIT64(18),
+    PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT = PAL_BIT64(19),
+    PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(20)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -408,6 +410,12 @@ typedef struct {
 } PalRenderPassCreateInfo;
 
 typedef struct {
+    bool transient;
+    bool resettable;
+    PalQueue* queue;
+} PalCommandPoolCreateInfo;
+
+typedef struct {
     void* display;
     void* window;
 } PalGraphicsWindow;
@@ -535,6 +543,13 @@ typedef struct {
         PalRenderPass** outRenderPass);
 
     void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
+
+    PalResult PAL_CALL (*createCommandPool)(
+        PalDevice* device,
+        const PalCommandPoolCreateInfo* info,
+        PalCommandPool** outPool);
+
+    void PAL_CALL (*destroyCommandPool)(PalCommandPool* pool);
 } PalGraphicsBackend;
 
 PAL_API PalResult PAL_CALL palAddGraphicsBackend(
@@ -668,6 +683,13 @@ PAL_API PalResult PAL_CALL palCreateRenderPass(
     PalRenderPass** outRenderPass);
 
 PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
+
+PAL_API PalResult PAL_CALL palCreateCommandPool(
+    PalDevice* device,
+    const PalCommandPoolCreateInfo* info,
+    PalCommandPool** outPool);
+
+PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
 
 /** @} */ // end of pal_graphics group
 
