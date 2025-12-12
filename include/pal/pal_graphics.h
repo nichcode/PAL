@@ -288,7 +288,8 @@ typedef enum {
 
 typedef enum {
     PAL_ATTACHMENT_TYPE_COLOR,
-    PAL_ATTACHMENT_TYPE_DEPTH
+    PAL_ATTACHMENT_TYPE_DEPTH,
+    PAL_ATTACHMENT_TYPE_STENCIL
 } PalAttachmentType;
 
 typedef struct {
@@ -369,6 +370,12 @@ typedef struct {
     Uint64 size;
     Uint32 alignment;
 } PalMemoryRequirements;
+
+typedef struct {
+    float color[4];
+    float depth;
+    Uint32 stencil;
+} PalClearValue;
 
 typedef struct {
     Uint32 width;
@@ -533,6 +540,15 @@ typedef struct {
         PalSwapchain* swapchain,
         Int32 index);
 
+    PalImage* PAL_CALL (*getNextSwapchainImage)(
+        PalSwapchain* swapchain,
+        PalFence* fence,
+        Uint64 timeout);
+
+    PalResult PAL_CALL (*presentSwapchain)(
+        PalSwapchain* swapchain,
+        PalImage* image);
+
     PalResult PAL_CALL (*createShader)(
         PalDevice* device,
         const PalShaderCreateInfo* info,
@@ -557,7 +573,7 @@ typedef struct {
 
     PalResult PAL_CALL (*waitFenceTimeout)(
         PalFence* fence, 
-        Uint64 nanoseconds);
+        Uint64 timeout);
 
     bool PAL_CALL (*isFenceSignaled)(PalFence* fence);
 
@@ -576,17 +592,25 @@ typedef struct {
 
     void PAL_CALL (*destroyCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
-    PalResult PAL_CALL (*cmdBegin)(PalCommandBuffer* cmdBuffer);
+    PalResult PAL_CALL (*beginRendering)(PalCommandBuffer* cmdBuffer);
 
-    PalResult PAL_CALL (*cmdEnd)(PalCommandBuffer* cmdBuffer);
+    PalResult PAL_CALL (*endRendering)(PalCommandBuffer* cmdBuffer);
 
-    PalResult PAL_CALL (*cmdExecuteCommandBuffer)(
+    PalResult PAL_CALL (*executeCommandBuffer)(
         PalCommandBuffer* primaryCmdBuffer,
         PalCommandBuffer* secondaryCmdBuffer);
 
-    PalResult PAL_CALL (*queueSubmit)(
+    PalResult PAL_CALL (*beginRenderPass)(
+        PalCommandBuffer* cmdBuffer,
+        PalRenderPass* renderPass,
+        Int32 clearValuecount,
+        PalClearValue* clearValues);
+
+    PalResult PAL_CALL (*endRenderPass)(PalCommandBuffer* cmdBuffer);
+
+    PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
-        Uint32 cmdBufferCount,
+        Int32 cmdBufferCount,
         PalCommandBuffer** cmdBuffers,
         PalFence* fence);
 } PalGraphicsBackend;
@@ -707,6 +731,15 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
 
+PAL_API PalImage* PAL_CALL palGetNextSwapchainImage(
+    PalSwapchain* swapchain,
+    PalFence* fence,
+    Uint64 timeout);
+
+PAL_API PalResult PAL_CALL palPresentSwapchain(
+    PalSwapchain* swapchain,
+    PalImage* image);
+
 PAL_API PalResult PAL_CALL palCreateShader(
     PalDevice* device,
     const PalShaderCreateInfo* info,
@@ -738,7 +771,7 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
 
 PAL_API PalResult PAL_CALL palWaitFence(
     PalFence* fence, 
-    Uint64 nanoseconds);
+    Uint64 timeout);
 
 PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
 
@@ -750,17 +783,25 @@ PAL_API PalResult PAL_CALL palCreateCommandBuffer(
 
 PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 
-PAL_API PalResult PAL_CALL palCmdBegin(PalCommandBuffer* cmdBuffer);
+PAL_API PalResult PAL_CALL palBeginRendering(PalCommandBuffer* cmdBuffer);
 
-PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
+PAL_API PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer);
 
-PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
+PAL_API PalResult PAL_CALL palExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
 
-PAL_API PalResult PAL_CALL palQueueSubmit(
+PAL_API PalResult PAL_CALL palBeginRenderPass(
+    PalCommandBuffer* cmdBuffer,
+    PalRenderPass* renderPass,
+    Int32 clearValueCount,
+    PalClearValue* clearValues);
+
+PAL_API PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer);
+
+PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
-    Uint32 cmdBufferCount,
+    Int32 cmdBufferCount,
     PalCommandBuffer** cmdBuffers,
     PalFence* fence);
 

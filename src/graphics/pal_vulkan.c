@@ -126,6 +126,8 @@ typedef struct {
     PFN_vkEndCommandBuffer cmdEnd;
     PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
     PFN_vkQueueSubmit queueSubmit;
+    PFN_vkCmdBeginRenderPass cmdBeginRenderPass;
+    PFN_vkCmdEndRenderPass cmdEndRenderPass;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -171,6 +173,7 @@ struct PalQueue {
 
 struct PalImage {
     bool belongsToSwapchain;
+    Int32 index;
     PalDevice* device;
     VkImage handle;
     PalImageInfo info;
@@ -187,6 +190,7 @@ struct PalImageView {
 struct PalSwapchain {
     Uint32 imageCount;
     PalDevice* device;
+    PalQueue* queue;
     VkSurfaceKHR surface;
     VkSwapchainKHR handle;
     PalImage* images;
@@ -202,6 +206,8 @@ struct PalShader {
 struct PalRenderPass {
     bool hasDepth;
     Uint32 attachmentCount;
+    Uint32 width;
+    Uint32 height;
     PalDevice* device;
     VkRenderPass handle;
     VkFramebuffer framebuffer;
@@ -1217,6 +1223,14 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.cmdExecuteCommandBuffer = (PFN_vkCmdExecuteCommands)dlsym(
         s_Vk.handle, 
         "vkCmdExecuteCommands");
+
+    s_Vk.cmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)dlsym(
+        s_Vk.handle, 
+        "vkCmdBeginRenderPass");
+
+    s_Vk.cmdEndRenderPass = (PFN_vkCmdEndRenderPass)dlsym(
+        s_Vk.handle, 
+        "vkCmdEndRenderPass");
 
     s_Vk.queueSubmit = (PFN_vkQueueSubmit)dlsym(
         s_Vk.handle, 
@@ -3018,6 +3032,7 @@ PalResult PAL_CALL createVkSwapchain(
         image->belongsToSwapchain = true;
         image->device = device;
         image->handle = images[i];
+        image->index = -1;
 
         image->info.depthOrArraySize = createInfo.imageArrayLayers;
         image->info.format = imageFormat;
@@ -3030,6 +3045,7 @@ PalResult PAL_CALL createVkSwapchain(
     }
     
     swapchain->device = device;
+    swapchain->queue = queue;
     swapchain->imageCount = count;
 
     *outSwapchain = swapchain;
@@ -3061,7 +3077,60 @@ PalImage* PAL_CALL getVkSwapchainImage(
     if (index > swapchain->imageCount) {
         return nullptr;
     }
-    return (PalImage*)&swapchain->images[index];
+    return &swapchain->images[index];
+}
+
+PalImage* PAL_CALL getVkNextSwapchainImage(
+    PalSwapchain* swapchain,
+    PalFence* fence,
+    Uint64 timeout)
+{
+    Uint32 index = 0;
+    VkResult result;
+    result = swapchain->device->acquireNextImage(
+        swapchain->device->handle, 
+        swapchain->handle,
+        timeout,
+        VK_NULL_HANDLE,
+        fence->handle,
+        &index);
+
+    if (result != VK_SUCCESS) {
+        return nullptr;
+    }
+
+    PalImage* image = &swapchain->images[index];
+    image->index = index;
+    return image;
+}
+
+PalResult PAL_CALL presentVkSwapchain(
+    PalSwapchain* swapchain, 
+    PalImage* image)
+{
+    if (image->index == -1) {
+        // image was not the next image
+        // this prevents UB
+        return PAL_RESULT_INVALID_IMAGE;
+    }
+
+    VkResult result;
+    VkPresentInfoKHR presentInfo = {0};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &swapchain->handle;
+    presentInfo.pImageIndices = &image->index;
+
+    result = swapchain->device->queuePresent(
+        swapchain->queue->phyQueue->handle, 
+        &presentInfo);
+
+    if (result != VK_SUCCESS) {
+        vkResultToPal(result);
+    }
+
+    image->index = -1;
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
@@ -3286,7 +3355,9 @@ PalResult PAL_CALL createVkRenderPass(
         }
     }
 
-    renderpass->device = device;
+    renderpass->device = device; 
+    renderpass->width = info->width;
+    renderpass->height = info->height;
     *outRenderPass = renderpass;
     return PAL_RESULT_SUCCESS;
 }
@@ -3307,7 +3378,7 @@ void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass)
 }
 
 // ==================================================
-// Fences
+// Fence
 // ==================================================
 
 PalResult PAL_CALL createVkFence(
@@ -3345,16 +3416,16 @@ void PAL_CALL destroyVkFence(PalFence* fence)
     palFree(s_Vk.allocator, fence);
 }
 
-PalResult PAL_CALL waitVkFenceTimeout(
+PalResult PAL_CALL waitVkFence(
     PalFence* fence, 
-    Uint64 nanoseconds)
+    Uint64 timeout)
 {
     VkResult result = s_Vk.waitFence(
         fence->device->handle, 
         1, 
         &fence->handle, 
         true,
-        nanoseconds);
+        timeout);
 
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
@@ -3483,7 +3554,7 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
     palFree(s_Vk.allocator, cmdBuffer);
 }
 
-PalResult PAL_CALL cmdBeginVk(PalCommandBuffer* cmdBuffer)
+PalResult PAL_CALL beginRenderingVk(PalCommandBuffer* cmdBuffer)
 {
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -3495,7 +3566,7 @@ PalResult PAL_CALL cmdBeginVk(PalCommandBuffer* cmdBuffer)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer)
+PalResult PAL_CALL endRenderingVk(PalCommandBuffer* cmdBuffer)
 {
     VkResult result = s_Vk.cmdEnd(cmdBuffer->handle);
     if (result != VK_SUCCESS) {
@@ -3504,7 +3575,7 @@ PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdExecuteCommandBufferVk(
+PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
@@ -3529,9 +3600,61 @@ PalResult PAL_CALL cmdExecuteCommandBufferVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queueSubmitVk(
+PalResult PAL_CALL beginRenderPassVk(
+    PalCommandBuffer* cmdBuffer,
+    PalRenderPass* renderPass,
+    Int32 clearValueCount,
+    PalClearValue* clearValues)
+{
+    if (clearValueCount != renderPass->attachmentCount) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    VkRenderPassBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkClearValue tmp[MAX_ATTACHMENTS];
+
+    for (int i = 0; i < clearValueCount; i++) {
+        VkAttachmentDescription* desc = &renderPass->attachments[i];
+        PalClearValue* clearValue = &clearValues[i];
+        if (desc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            // color attachment
+            tmp[i].color.float32[0] = clearValue->color[0];
+            tmp[i].color.float32[1] = clearValue->color[1];
+            tmp[i].color.float32[2] = clearValue->color[2];
+            tmp[i].color.float32[3] = clearValue->color[3];
+
+        } else {
+            // depth/stencil attachment
+            tmp[i].depthStencil.depth = clearValue->depth;
+            tmp[i].depthStencil.stencil = clearValue->stencil;
+        }
+    }
+
+    beginInfo.clearValueCount = clearValueCount;
+    beginInfo.pClearValues = tmp;
+    beginInfo.framebuffer = renderPass->framebuffer;
+    beginInfo.renderPass = renderPass->handle;
+    beginInfo.renderArea.extent.width = renderPass->width;
+    beginInfo.renderArea.extent.height = renderPass->height;
+
+    s_Vk.cmdBeginRenderPass(
+        cmdBuffer->handle, 
+        &beginInfo, 
+        VK_SUBPASS_CONTENTS_INLINE);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer)
+{
+    s_Vk.cmdEndRenderPass(cmdBuffer->handle);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
-    Uint32 cmdBufferCount,
+    Int32 cmdBufferCount,
     PalCommandBuffer** cmdBuffers,
     PalFence* fence)
 {

@@ -224,6 +224,15 @@ PalImage* PAL_CALL getVkSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
 
+PalImage* PAL_CALL getVkNextSwapchainImage(
+    PalSwapchain* swapchain,
+    PalFence* fence,
+    Uint64 timeout);
+
+PalResult PAL_CALL presentVkSwapchain(
+    PalSwapchain* swapchain, 
+    PalImage* image);
+
 PalResult PAL_CALL createVkShader(
     PalDevice* device,
     const PalShaderCreateInfo* info,
@@ -246,9 +255,9 @@ PalResult PAL_CALL createVkFence(
 
 void PAL_CALL destroyVkFence(PalFence* fence);
 
-PalResult PAL_CALL waitVkFenceTimeout(
+PalResult PAL_CALL waitVkFence(
     PalFence* fence, 
-    Uint64 nanoseconds);
+    Uint64 timeout);
 
 bool PAL_CALL isVkFenceSignaled(PalFence* fence);
 
@@ -267,17 +276,25 @@ PalResult PAL_CALL createVkCommandBuffer(
 
 void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
-PalResult PAL_CALL cmdBeginVk(PalCommandBuffer* cmdBuffer);
+PalResult PAL_CALL beginRenderingVk(PalCommandBuffer* cmdBuffer);
 
-PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer);
+PalResult PAL_CALL endRenderingVk(PalCommandBuffer* cmdBuffer);
 
-PalResult PAL_CALL cmdExecuteCommandBufferVk(
+PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
 
-PalResult PAL_CALL queueSubmitVk(
+PalResult PAL_CALL beginRenderPassVk(
+    PalCommandBuffer* cmdBuffer,
+    PalRenderPass* renderPass,
+    Int32 clearValueCount,
+    PalClearValue* clearValues);
+
+PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer);
+
+PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
-    Uint32 cmdBufferCount,
+    Int32 cmdBufferCount,
     PalCommandBuffer** cmdBuffers,
     PalFence* fence);
 
@@ -308,6 +325,8 @@ static PalGraphicsBackend s_VkBackend = {
     .destroySwapchain =  destroyVkSwapchain,
     .getSwapchainImageCount =  getVkSwapchainImageCount,
     .getSwapchainImage =  getVkSwapchainImage,
+    .getNextSwapchainImage =  getVkNextSwapchainImage,
+    .presentSwapchain =  presentVkSwapchain,
     .createShader = createVkShader,
     .destroyShader = destroyVkShader,
     .getShaderType = getVkShaderType,
@@ -315,16 +334,18 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyRenderPass = destroyVkRenderPass,
     .createFence = createVkFence,
     .destroyFence = destroyVkFence,
-    .waitFenceTimeout = waitVkFenceTimeout,
+    .waitFenceTimeout = waitVkFence,
     .isFenceSignaled = isVkFenceSignaled,
     .createCommandPool = createVkCommandPool,
     .destroyCommandPool = destroyVkCommandPool,
     .createCommandBuffer = createVkCommandBuffer,
     .destroyCommandBuffer = destroyVkCommandBuffer,
-    .cmdBegin = cmdBeginVk,
-    .cmdEnd = cmdEndVk,
-    .cmdExecuteCommandBuffer = cmdExecuteCommandBufferVk,
-    .queueSubmit = queueSubmitVk
+    .beginRendering = beginRenderingVk,
+    .endRendering = endRenderingVk,
+    .executeCommandBuffer = executeCommandBufferVk,
+    .beginRenderPass = beginRenderPassVk,
+    .endRenderPass = endRenderPassVk,
+    .submitCommandBuffer = submitVkCommandBuffer
 };
 
 #endif // PAL_HAS_VULKAN
@@ -387,6 +408,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroySwapchain             ||
         !backend->getSwapchainImageCount       ||
         !backend->getSwapchainImage            ||
+        !backend->getNextSwapchainImage        ||
+        !backend->presentSwapchain             ||
         !backend->createShader                 ||
         !backend->destroyShader                ||
         !backend->getShaderType                ||
@@ -400,22 +423,15 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyCommandPool           ||
         !backend->createCommandBuffer          ||
         !backend->destroyCommandBuffer         ||
-        !backend->cmdBegin                     ||
-        !backend->cmdEnd                       ||
-        !backend->cmdExecuteCommandBuffer      ||
-        !backend->queueSubmit) {
+        !backend->beginRendering               ||
+        !backend->endRendering                 ||
+        !backend->beginRenderPass              ||
+        !backend->endRenderPass                ||
+        !backend->endRendering                 ||
+        !backend->executeCommandBuffer         ||
+        !backend->submitCommandBuffer) {
         return PAL_RESULT_INVALID_BACKEND;
     }
-    // palCreateFence
-    // palDestroyFence
-    // palWaitFence
-    // palIsFenceSignaled
-    // palCreateCommandBuffer
-    // palDestroyCommandBuffer
-    // palCmdBegin
-    // palCmdEnd
-    // palCmdExecuteCommandBuffer
-    // palQueueSubmit
     // clang-format on
 
     BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
@@ -1198,6 +1214,80 @@ PalImage* PAL_CALL palGetSwapchainImage(
     return TO_PAL_HANDLE(PalImage, imageIndex);
 }
 
+PalImage* PAL_CALL palGetNextSwapchainImage(
+    PalSwapchain* swapchain,
+    PalFence* fence,
+    Uint64 timeout)
+{
+    if (!s_Graphics.initialized || !swapchain) {
+        return nullptr;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(swapchain);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return nullptr;
+    }
+
+    void* FenceHandle = nullptr;
+    if (fence) {
+        index = FROM_PAL_HANDLE(fence);
+        HandleData* tmp = findHandleData(index);
+        if (!tmp) {
+            return nullptr;
+        }
+        FenceHandle = tmp->handle;
+    }
+
+    PalImage* image = data->backend->getNextSwapchainImage(
+        data->handle,
+        FenceHandle,
+        timeout);
+
+    // check if the image has been requested already
+    Uint64 imageIndex = FROM_PAL_HANDLE(image);
+    HandleData* imageData = findHandleData(imageIndex);
+    if (!imageData) {
+        // create a new slot
+        imageData = getFreeHandleData(&imageIndex);
+        if (!imageData) {
+            return nullptr;
+        }
+    }
+
+    imageData->backend = data->backend;
+    imageData->handle = image;
+
+    return TO_PAL_HANDLE(PalImage, imageIndex);
+}
+
+PalResult PAL_CALL palPresentSwapchain(
+    PalSwapchain* swapchain,
+    PalImage* image)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!swapchain || !image) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(swapchain);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_SWAPCHAIN;
+    }
+
+    index = FROM_PAL_HANDLE(image);
+    HandleData* imageData = findHandleData(index);
+    if (!imageData) {
+        return PAL_RESULT_INVALID_IMAGE;
+    }
+
+    return data->backend->presentSwapchain(data->handle, imageData->handle);
+}
+
 // ==================================================
 // Shader
 // ==================================================
@@ -1364,7 +1454,7 @@ void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
 }
 
 // ==================================================
-// Fences
+// Fence
 // ==================================================
 
 PalResult PAL_CALL palCreateFence(
@@ -1420,7 +1510,7 @@ void PAL_CALL palDestroyFence(PalFence* fence)
 
 PalResult PAL_CALL palWaitFence(
     PalFence* fence, 
-    Uint64 nanoseconds)
+    Uint64 timeout)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1436,7 +1526,7 @@ PalResult PAL_CALL palWaitFence(
         return PAL_RESULT_INVALID_FENCE;
     }
 
-    return data->backend->waitFenceTimeout(data->handle, nanoseconds);
+    return data->backend->waitFenceTimeout(data->handle, timeout);
 }
 
 bool PAL_CALL palIsFenceSignaled(PalFence* fence)
@@ -1575,7 +1665,7 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
     }
 }
 
-PalResult PAL_CALL palCmdBegin(PalCommandBuffer* cmdBuffer)
+PalResult PAL_CALL palBeginRendering(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1591,10 +1681,10 @@ PalResult PAL_CALL palCmdBegin(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
-    return data->backend->cmdBegin(data->handle);
+    return data->backend->beginRendering(data->handle);
 }
 
-PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
+PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1610,10 +1700,10 @@ PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
-    return data->backend->cmdEnd(data->handle);
+    return data->backend->endRendering(data->handle);
 }
 
-PalResult PAL_CALL palCmdExecuteCommandBuffer(
+PalResult PAL_CALL palExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
@@ -1633,14 +1723,70 @@ PalResult PAL_CALL palCmdExecuteCommandBuffer(
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
-    return data->backend->cmdExecuteCommandBuffer(
+    return data->backend->executeCommandBuffer(
         data->handle, 
         secondaryCmdBufferData->handle);
 }
 
-PalResult PAL_CALL palQueueSubmit(
+PalResult PAL_CALL palBeginRenderPass(
+    PalCommandBuffer* cmdBuffer,
+    PalRenderPass* renderPass,
+    Int32 clearValueCount,
+    PalClearValue* clearValues)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !renderPass) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (clearValueCount == 0 && clearValues) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    index = FROM_PAL_HANDLE(renderPass);
+    HandleData* renderPassData = findHandleData(index);
+    if (!renderPassData) {
+        return PAL_RESULT_INVALID_RENDER_PASS;
+    }
+
+    return data->backend->beginRenderPass(
+        data->handle,
+        renderPassData->handle,
+        clearValueCount,
+        clearValues);
+}
+
+PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
+    HandleData* data = findHandleData(index);
+    if (!data) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    return data->backend->endRenderPass(data->handle);
+}
+
+PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
-    Uint32 cmdBufferCount,
+    Int32 cmdBufferCount,
     PalCommandBuffer** cmdBuffers,
     PalFence* fence)
 {
@@ -1682,7 +1828,7 @@ PalResult PAL_CALL palQueueSubmit(
         cmdHandles[i] = cmdBufferData->handle;
     }
 
-    return data->backend->queueSubmit(
+    return data->backend->submitCommandBuffer(
         data->handle,
         cmdBufferCount,
         cmdHandles,
