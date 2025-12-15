@@ -2797,6 +2797,7 @@ static int compareModes(
     }
 }
 
+// TODO: rewrite this
 static WindowData* getFreeWindowData()
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
@@ -2829,6 +2830,7 @@ static WindowData* getFreeWindowData()
     return nullptr;
 }
 
+// TODO: remove this
 static WindowData* findWindowData(PalWindow* window)
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
@@ -2848,6 +2850,7 @@ static void resetMonitorData()
         s_Video.maxMonitorData * sizeof(MonitorData));
 }
 
+// TODO: rewrite this
 static MonitorData* getFreeMonitorData()
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
@@ -2879,6 +2882,7 @@ static MonitorData* getFreeMonitorData()
     return nullptr;
 }
 
+// TODO: remove this
 static MonitorData* findMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
@@ -2890,6 +2894,7 @@ static MonitorData* findMonitorData(PalMonitor* monitor)
     return nullptr;
 }
 
+// TODO: remove this
 static void freeMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {

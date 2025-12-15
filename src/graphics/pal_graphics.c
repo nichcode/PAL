@@ -32,12 +32,13 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define MAX_BACKENDS 32
-#define TO_PAL_HANDLE(type, value) ((type*)(UintPtr)(value))
-#define FROM_PAL_HANDLE(handle) ((Uint64)(UintPtr)(handle))
 
 typedef struct {
     bool used;
+    bool shouldFree;
+    Uint32 data2;
     void* handle;
+    void* data;
     const PalGraphicsBackend* backend;
 } HandleData;
 
@@ -62,47 +63,35 @@ static GraphicsLinux s_Graphics = {0};
 // Internal API
 // ==================================================
 
-static HandleData* getFreeHandleData(Uint64* outIndex)
+static HandleData* getFreeHandleData()
 {
     for (int i = 0; i < s_Graphics.maxHandleData; ++i) {
         if (!s_Graphics.handleData[i].used) {
             s_Graphics.handleData[i].used = true;
-            *outIndex = i + 1;
+            s_Graphics.handleData[i].shouldFree = false;
             return &s_Graphics.handleData[i];
         }
     }  
 
-    // resize the data array
+    // It will be rare to have more than 128 handles at the same time
     HandleData* data = nullptr;
-
-
-    Uint32 newSize = s_Graphics.maxHandleData * 2; // double the size
-    int freeIndex = s_Graphics.maxHandleData + 1;
-    data = palAllocate(s_Graphics.allocator, sizeof(HandleData) * newSize, 0);
-    if (data) {
-        memset(data, 0, sizeof(HandleData) * newSize);
-        for (int i = 0; i < s_Graphics.maxHandleData; i++) {
-            // copy (shallow) old array into the new one
-            data[i] = s_Graphics.handleData[i];
-        }
-
-        palFree(s_Graphics.allocator, s_Graphics.handleData);
-        s_Graphics.handleData = data;
-        s_Graphics.maxHandleData = newSize;
-
-        s_Graphics.handleData[freeIndex].used = true;
-        *outIndex = freeIndex;
-        return &s_Graphics.handleData[freeIndex];
-    }
-    return nullptr;
-}
-
-static HandleData* findHandleData(Uint64 index)
-{
-    if (index < 1 || index > s_Graphics.maxHandleData) {
+    data = palAllocate(s_Graphics.allocator, sizeof(HandleData), 0);
+    if (!data) {
         return nullptr;
     }
-    return &s_Graphics.handleData[index - 1];
+
+    data->used = true;
+    data->shouldFree = true;
+    return data;
+}
+
+static void freeHandleData(HandleData* data)
+{
+    if (data->shouldFree) {
+        palFree(s_Graphics.allocator, data);
+    } else {
+        data->used = false;
+    }
 }
 
 // ==================================================
@@ -186,12 +175,10 @@ PalResult PAL_CALL getVkImageInfo(
     PalImageInfo* info);
 
 PalResult PAL_CALL getVkImageMemoryRequirements(
-    PalDevice* device,
     PalImage* image,
     PalMemoryRequirements* requirements);
 
 PalResult PAL_CALL bindVkImageMemory(
-    PalDevice* device,
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);
@@ -217,8 +204,6 @@ PalResult PAL_CALL createVkSwapchain(
     PalSwapchain** outSwapchain);
 
 void PAL_CALL destroyVkSwapchain(PalSwapchain* swapchain);
-
-Uint32 PAL_CALL getVkSwapchainImageCount(PalSwapchain* swapchain);
 
 PalImage* PAL_CALL getVkSwapchainImage(
     PalSwapchain* swapchain,
@@ -323,7 +308,6 @@ static PalGraphicsBackend s_VkBackend = {
     .querySwapchainCapabilities =  queryVkSwapchainCapabilities,
     .createSwapchain =  createVkSwapchain,
     .destroySwapchain =  destroyVkSwapchain,
-    .getSwapchainImageCount =  getVkSwapchainImageCount,
     .getSwapchainImage =  getVkSwapchainImage,
     .getNextSwapchainImage =  getVkNextSwapchainImage,
     .presentSwapchain =  presentVkSwapchain,
@@ -406,7 +390,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->querySwapchainCapabilities   ||
         !backend->createSwapchain              ||
         !backend->destroySwapchain             ||
-        !backend->getSwapchainImageCount       ||
         !backend->getSwapchainImage            ||
         !backend->getNextSwapchainImage        ||
         !backend->presentSwapchain             ||
@@ -454,7 +437,7 @@ PalResult PAL_CALL palInitGraphics(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
-    s_Graphics.maxHandleData = 32;
+    s_Graphics.maxHandleData = 128;
     s_Graphics.handleData = palAllocate(
         s_Graphics.allocator, 
         sizeof(HandleData) * s_Graphics.maxHandleData, 
@@ -538,14 +521,12 @@ PalResult PAL_CALL palEnumerateAdapters(
             result = backend->base->enumerateAdapters(&_count, adapters);
 
             for (int i = 0; i < backend->count; i++) {
-                Uint64 adapterIndex = 0;
-                HandleData* data = getFreeHandleData(&adapterIndex);
+                HandleData* data = getFreeHandleData();
                 data->backend = backend->base;
                 data->handle = adapters[i];
 
-                // reset the adapter handle into our index generated handle
-                PalAdapter* tmp = TO_PAL_HANDLE(PalAdapter, adapterIndex);
-                adapters[i] = tmp;
+                // set the adapter handle into our index generated handle
+                adapters[i] = (PalAdapter*)data;
             }
 
         } else {
@@ -580,11 +561,11 @@ PalResult PAL_CALL palGetAdapterInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
+
     return data->backend->getAdapterInfo(data->handle, info);
 }
 
@@ -600,11 +581,11 @@ PalResult PAL_CALL palGetAdapterCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
+
     return data->backend->getAdapterCapabilities(data->handle, caps);
 }
 
@@ -625,42 +606,42 @@ PalResult PAL_CALL palCreateDevice(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    // check if the adapter is from PAL (custom or internal backend)
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* adapterData = (HandleData*)adapter;
+    if (!adapterData->used) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
     // create a slot for the device
-    Uint64 deviceIndex = 0;
-    HandleData* deviceData = getFreeHandleData(&deviceIndex);
+    HandleData* deviceData = getFreeHandleData();
     if (!deviceData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     PalDevice* device = nullptr;
     PalResult ret;
-    ret = data->backend->createDevice(data->handle, features, &device);
+    ret = adapterData->backend->createDevice(
+        adapterData->handle, 
+        features, 
+        &device);
+
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
     
-    deviceData->backend = data->backend;
+    deviceData->backend = adapterData->backend;
     deviceData->handle = device;
 
-    *outDevice = TO_PAL_HANDLE(PalDevice, deviceIndex);
+    *outDevice = (PalDevice*)deviceData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyDevice(PalDevice* device)
 {
     if (s_Graphics.initialized && device) {
-        Uint64 index = FROM_PAL_HANDLE(device);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)device;
+        if (data->used) {
             data->backend->destroyDevice(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -679,13 +660,13 @@ PalResult PAL_CALL palAllocateMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* deviceData = findHandleData(index);
-    if (!deviceData) {
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
-    return deviceData->backend->allocateMemory(
-        deviceData->handle, 
+
+    return data->backend->allocateMemory(
+        data->handle, 
         type, 
         size, 
         outMemory);
@@ -696,10 +677,10 @@ void PAL_CALL palFreeMemory(
     PalMemory* memory)
 {
     if (s_Graphics.initialized && device && memory) {
-        Uint64 index = FROM_PAL_HANDLE(device);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)device;
+        if (data->used) {
             data->backend->freeMemory(data->handle, memory);
+            freeHandleData(data);
         }
     }
 }
@@ -721,23 +702,21 @@ PalResult PAL_CALL palCreateQueue(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* deviceData = (HandleData*)device;
+    if (!deviceData->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
     // create a slot for the queue
-    Uint64 queueIndex = 0;
-    HandleData* queueData = getFreeHandleData(&queueIndex);
+    HandleData* queueData = getFreeHandleData();
     if (!queueData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     PalQueue* queue = nullptr;
     PalResult ret;
-    ret = data->backend->createQueue(
-        data->handle,
+    ret = deviceData->backend->createQueue(
+        deviceData->handle,
         type,
         &queue);
 
@@ -745,21 +724,20 @@ PalResult PAL_CALL palCreateQueue(
         return ret;
     }
 
-    queueData->backend = data->backend;
+    queueData->backend = deviceData->backend;
     queueData->handle = queue;
 
-    *outQueue = TO_PAL_HANDLE(PalQueue, queueIndex);
+    *outQueue = (PalQueue*)queueData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyQueue(PalQueue* queue)
 {
     if (s_Graphics.initialized && queue) {
-        Uint64 index = FROM_PAL_HANDLE(queue);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)queue;
+        if (data->used) {
             data->backend->destroyQueue(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -769,12 +747,10 @@ bool PAL_CALL palCanQueuePresent(
     PalGraphicsWindow* window)
 {
     if (s_Graphics.initialized && queue) {
-        Uint64 index = FROM_PAL_HANDLE(queue);
-        HandleData* data = findHandleData(index);
-        if (!data) {
-            return false;
+        HandleData* data = (HandleData*)queue;
+        if (data->used) {
+            return data->backend->canQueuePresent(data->handle, window);
         }
-        return data->backend->canQueuePresent(data->handle, window);
     }
     return false;
 }
@@ -800,11 +776,11 @@ PalResult PAL_CALL palEnumerateFormats(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
+
     return data->backend->enumerateFormats(data->handle, count, outFormats);
 }
 
@@ -816,11 +792,11 @@ bool PAL_CALL palIsFormatSupported(
         return false;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return false;
     }
+
     return data->backend->isFormatSupported(data->handle, format);
 }
 
@@ -832,11 +808,11 @@ PalImageUsages PAL_CALL palQueryFormatImageUsages(
         return PAL_IMAGE_USAGE_UNDEFINED;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return PAL_IMAGE_USAGE_UNDEFINED;
     }
+
     return data->backend->queryFormatImageUsages(data->handle, format);
 }
 
@@ -848,11 +824,11 @@ PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
         return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
+
     return data->backend->queryFormatImageViewUsages(data->handle, format);
 }
 
@@ -873,15 +849,13 @@ PalResult PAL_CALL palCreateImage(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
     // create a slot for the image
-    Uint64 imageIndex = 0;
-    HandleData* imageData = getFreeHandleData(&imageIndex);
+    HandleData* imageData = getFreeHandleData();
     if (!imageData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -900,18 +874,17 @@ PalResult PAL_CALL palCreateImage(
     imageData->backend = data->backend;
     imageData->handle = image;
 
-    *outImage = TO_PAL_HANDLE(PalImage, imageIndex);
+    *outImage = (PalImage*)imageData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyImage(PalImage* image)
 {
     if (s_Graphics.initialized && image) {
-        Uint64 index = FROM_PAL_HANDLE(image);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)image;
+        if (data->used) {
             data->backend->destroyImage(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -928,16 +901,15 @@ PalResult PAL_CALL palGetImageInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(image);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)image;
+    if (!data->used) {
         return PAL_RESULT_INVALID_IMAGE;
     }
+
     return data->backend->getImageInfo(data->handle, info);
 }
 
 PalResult PAL_CALL palGetImageMemoryRequirements(
-    PalDevice* device,
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
@@ -945,31 +917,25 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !image) {
+    if (!image) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-
-    index = FROM_PAL_HANDLE(image);
-    HandleData* imageData = findHandleData(index);
+    HandleData* data = (HandleData*)image;
     if (!data) {
-        return PAL_RESULT_INVALID_DEVICE;
+        return PAL_RESULT_INVALID_IMAGE;
     }
 
-    if (!imageData) {
+    if (!data->used) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
     return data->backend->getImageMemoryRequirements(
         data->handle, 
-        imageData->handle, 
         requirements);
 }
 
 PalResult PAL_CALL palBindImageMemory(
-    PalDevice* device,
     PalImage* image,
     PalMemory* memory,
     Uint64 offset)
@@ -978,26 +944,17 @@ PalResult PAL_CALL palBindImageMemory(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !image || !memory) {
+    if (!image || !memory) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-
-    index = FROM_PAL_HANDLE(image);
-    HandleData* imageData = findHandleData(index);
+    HandleData* data = (HandleData*)image;
     if (!data) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (!imageData) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
     return data->backend->bindImageMemory(
         data->handle, 
-        imageData->handle, 
         memory, 
         offset);
 }
@@ -1020,30 +977,26 @@ PalResult PAL_CALL palCreateImageView(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-
-    index = FROM_PAL_HANDLE(image);
-    HandleData* imageData = findHandleData(index);
-    if (!data) {
+    HandleData* deviceData = (HandleData*)device;
+    HandleData* imageData = (HandleData*)image;
+    if (!deviceData->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    if (!imageData) {
+    if (!imageData->used) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
-    // create a slot for the image view
-    Uint64 imageViewIndex = 0;
-    HandleData* imageViewData = getFreeHandleData(&imageViewIndex);
+    // create a slot for the image views
+    HandleData* imageViewData = getFreeHandleData();
     if (!imageViewData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     PalImageView* imageView = nullptr;
     PalResult ret;
-    ret = data->backend->createImageView(
-        data->handle,
+    ret = deviceData->backend->createImageView(
+        deviceData->handle,
         imageData->handle,
         info,
         &imageView);
@@ -1052,21 +1005,20 @@ PalResult PAL_CALL palCreateImageView(
         return ret;
     }
 
-    imageViewData->backend = data->backend;
+    imageViewData->backend = deviceData->backend;
     imageViewData->handle = imageView;
 
-    *outImageView = TO_PAL_HANDLE(PalImageView, imageViewIndex);
+    *outImageView = (PalImageView*)imageViewData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyImageView(PalImageView* imageView)
 {
     if (s_Graphics.initialized && imageView) {
-        Uint64 index = FROM_PAL_HANDLE(imageView);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)imageView;
+        if (data->used) {
             data->backend->destroyImageView(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -1088,9 +1040,8 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(adapter);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)adapter;
+    if (!data->used) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
@@ -1115,30 +1066,36 @@ PalResult PAL_CALL palCreateSwapchain(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
+    HandleData* imagesData = nullptr;
+    imagesData = palAllocate(
+        s_Graphics.allocator, 
+        sizeof(HandleData) * info->imageCount, 
+        0);
 
-    index = FROM_PAL_HANDLE(queue);
-    HandleData* queueData = findHandleData(index);
-    if (!data) {
+    if (!imagesData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    HandleData* deviceData = (HandleData*)device;
+    HandleData* queueData = (HandleData*)queue;
+    if (!deviceData->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    if (!queueData) {
+    if (!queueData->used) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
     // create a slot for the swapchain
-    Uint64 swapchainIndex = 0;
-    HandleData* swapchainData = getFreeHandleData(&swapchainIndex);
+    HandleData* swapchainData = getFreeHandleData();
     if (!swapchainData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     PalResult ret;
     PalSwapchain* swapchain = nullptr;
-    ret = data->backend->createSwapchain(
-        data->handle, 
+    ret = deviceData->backend->createSwapchain(
+        deviceData->handle, 
         queueData->handle, 
         window, 
         info, 
@@ -1147,22 +1104,36 @@ PalResult PAL_CALL palCreateSwapchain(
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
-    
-    swapchainData->backend = data->backend;
-    swapchainData->handle = swapchain;
 
-    *outSwapchain = TO_PAL_HANDLE(PalSwapchain, swapchainIndex);
+    // cache the swapchain images so we dont create new handles
+    // for them anytime they are queried
+    for (int i = 0; i < info->imageCount; i++) {
+        PalImage* image = deviceData->backend->getSwapchainImage(swapchain, i);
+        HandleData* tmp = &imagesData[i];
+        tmp->backend = swapchainData->backend;
+        tmp->handle = image;
+        tmp->used = true;
+        tmp->shouldFree = false; // we free all at once
+        tmp->data = nullptr;
+    }
+    
+    swapchainData->backend = deviceData->backend;
+    swapchainData->handle = swapchain;
+    swapchainData->data = (void*)imagesData;
+    swapchainData->data2 = info->imageCount;
+
+    *outSwapchain = (PalSwapchain*)swapchainData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 {
     if (s_Graphics.initialized && swapchain) {
-        Uint64 index = FROM_PAL_HANDLE(swapchain);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)swapchain;
+        if (data->used) {
             data->backend->destroySwapchain(data->handle);
-            data->used = false;
+            palFree(s_Graphics.allocator, data->data);
+            freeHandleData(data);
         }
     }
 }
@@ -1170,11 +1141,8 @@ void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain)
 {
     if (s_Graphics.initialized && swapchain) {
-        Uint64 index = FROM_PAL_HANDLE(swapchain);
-        HandleData* data = findHandleData(index);
-        if (data) {
-            return data->backend->getSwapchainImageCount(data->handle);
-        }
+        HandleData* data = (HandleData*)swapchain;
+        return data->data2;
     }
     return 0;
 }
@@ -1187,31 +1155,17 @@ PalImage* PAL_CALL palGetSwapchainImage(
         return nullptr;
     }
 
-    Uint64 swapchainIndex = FROM_PAL_HANDLE(swapchain);
-    HandleData* data = findHandleData(swapchainIndex);
-    if (!data) {
+    HandleData* data = (HandleData*)swapchain;
+    if (!data->used) {
         return nullptr;
     }
 
-    PalImage* image = data->backend->getSwapchainImage(
-        data->handle, 
-        index);
-
-    // check if the user has already requested for the image
-    Uint64 imageIndex = FROM_PAL_HANDLE(image);
-    HandleData* imageData = findHandleData(imageIndex);
-    if (!imageData) {
-        // create a new slot
-        imageData = getFreeHandleData(&imageIndex);
-        if (!imageData) {
-            return nullptr;
-        }
+    if (index > data->data2) {
+        return nullptr;
     }
 
-    imageData->backend = data->backend;
-    imageData->handle = image;
-
-    return TO_PAL_HANDLE(PalImage, imageIndex);
+    HandleData* imagesData = data->data;
+    return (PalImage*)&imagesData[index];
 }
 
 PalImage* PAL_CALL palGetNextSwapchainImage(
@@ -1223,42 +1177,38 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
         return nullptr;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(swapchain);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)swapchain;
+    if (!data->used) {
         return nullptr;
     }
 
     void* FenceHandle = nullptr;
     if (fence) {
-        index = FROM_PAL_HANDLE(fence);
-        HandleData* tmp = findHandleData(index);
-        if (!tmp) {
+        HandleData* tmp = (HandleData*)fence;
+        if (!tmp->used) {
             return nullptr;
         }
         FenceHandle = tmp->handle;
     }
 
-    PalImage* image = data->backend->getNextSwapchainImage(
+    PalImage* tmp = data->backend->getNextSwapchainImage(
         data->handle,
         FenceHandle,
         timeout);
 
-    // check if the image has been requested already
-    Uint64 imageIndex = FROM_PAL_HANDLE(image);
-    HandleData* imageData = findHandleData(imageIndex);
-    if (!imageData) {
-        // create a new slot
-        imageData = getFreeHandleData(&imageIndex);
-        if (!imageData) {
-            return nullptr;
+    // loop through all our cache images and get the handle data
+    // associated with the image
+    HandleData* imagesData = data->data;
+    HandleData* imageData = nullptr;
+    for (int i = 0; i < data->data2; i++) {
+        if (imagesData[i].handle == tmp) {
+            // found our handle info
+            imageData = &imagesData[i];
+            break;
         }
     }
 
-    imageData->backend = data->backend;
-    imageData->handle = image;
-
-    return TO_PAL_HANDLE(PalImage, imageIndex);
+    return (PalImage*)imageData;
 }
 
 PalResult PAL_CALL palPresentSwapchain(
@@ -1273,19 +1223,19 @@ PalResult PAL_CALL palPresentSwapchain(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(swapchain);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* swapchainData = (HandleData*)swapchain;
+    if (!swapchainData->used) {
         return PAL_RESULT_INVALID_SWAPCHAIN;
     }
 
-    index = FROM_PAL_HANDLE(image);
-    HandleData* imageData = findHandleData(index);
-    if (!imageData) {
+    HandleData* imageData = (HandleData*)image;
+    if (!imageData->used) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
-    return data->backend->presentSwapchain(data->handle, imageData->handle);
+    return swapchainData->backend->presentSwapchain(
+        swapchainData->handle, 
+        imageData->handle);
 }
 
 // ==================================================
@@ -1309,15 +1259,13 @@ PalResult PAL_CALL palCreateShader(
         return PAL_RESULT_INVALID_SHADER_TYPE;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
     // create a slot for the shader
-    Uint64 shaderIndex = 0;
-    HandleData* shaderData = getFreeHandleData(&shaderIndex);
+    HandleData* shaderData = getFreeHandleData();
     if (!shaderData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -1336,18 +1284,17 @@ PalResult PAL_CALL palCreateShader(
     shaderData->backend = data->backend;
     shaderData->handle = shader;
 
-    *outShader = TO_PAL_HANDLE(PalShader, shaderIndex);
+    *outShader = (PalShader*)shaderData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyShader(PalShader* shader)
 {
     if (s_Graphics.initialized && shader) {
-        Uint64 index = FROM_PAL_HANDLE(shader);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)shader;
+        if (data->used) {
             data->backend->destroyShader(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -1355,9 +1302,8 @@ void PAL_CALL palDestroyShader(PalShader* shader)
 PalShaderType PAL_CALL palGetShaderType(PalShader* shader)
 {
     if (s_Graphics.initialized && shader) {
-        Uint64 index = FROM_PAL_HANDLE(shader);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)shader;
+        if (data->used) {
             return data->backend->getShaderType(data->handle);
         }
     }
@@ -1385,9 +1331,8 @@ PalResult PAL_CALL palCreateRenderPass(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -1395,14 +1340,19 @@ PalResult PAL_CALL palCreateRenderPass(
     PalRenderPassCreateInfo createInfo = {0};
     createInfo.attachmentCount = info->attachmentCount;
     createInfo.attachments = attachments;
+    createInfo.width = info->width;
+    createInfo.height = info->height;
 
     for (int i = 0; i < info->attachmentCount; i++) {
         if (!info->attachments[i].target) {
             return PAL_RESULT_NULL_POINTER;
         }
 
-        index = FROM_PAL_HANDLE(info->attachments[i].target);
-        HandleData* tmp = findHandleData(index);
+        HandleData* tmp = (HandleData*)info->attachments[i].target;
+        if (!tmp->used) {
+            return PAL_RESULT_INVALID_IMAGE_VIEW;
+        }
+
         attachments[i].target = tmp->handle;
         attachments[i].loadOp = info->attachments[i].loadOp;
         attachments[i].storeOp = info->attachments[i].storeOp;
@@ -1410,15 +1360,16 @@ PalResult PAL_CALL palCreateRenderPass(
         attachments[i].resolveTarget = nullptr;
 
         if (info->attachments[i].resolveTarget) {
-            index = FROM_PAL_HANDLE(info->attachments[i].target);
-            tmp = findHandleData(index);
+            tmp = (HandleData*)info->attachments[i].resolveTarget;
+            if (!tmp->used) {
+                return PAL_RESULT_INVALID_IMAGE_VIEW;
+            }
             attachments[i].resolveTarget = tmp->handle;
         }
     }
 
     // create a slot for the renderpass
-    Uint64 renderPassIndex = 0;
-    HandleData* renderPassData = getFreeHandleData(&renderPassIndex);
+    HandleData* renderPassData = getFreeHandleData();
     if (!renderPassData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -1437,18 +1388,17 @@ PalResult PAL_CALL palCreateRenderPass(
     renderPassData->backend = data->backend;
     renderPassData->handle = renderpass;
 
-    *outRenderPass = TO_PAL_HANDLE(PalRenderPass, renderPassIndex);
+    *outRenderPass = (PalRenderPass*)renderPassData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
 {
     if (s_Graphics.initialized && renderPass) {
-        Uint64 index = FROM_PAL_HANDLE(renderPass);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)renderPass;
+        if (data->used) {
             data->backend->destroyRenderPass(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -1469,15 +1419,13 @@ PalResult PAL_CALL palCreateFence(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
     // create a slot for the fence
-    Uint64 fenceIndex = 0;
-    HandleData* fenceData = getFreeHandleData(&fenceIndex);
+    HandleData* fenceData = getFreeHandleData();
     if (!fenceData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -1492,18 +1440,17 @@ PalResult PAL_CALL palCreateFence(
     fenceData->backend = data->backend;
     fenceData->handle = fence;
 
-    *outFence = TO_PAL_HANDLE(PalFence, fenceIndex);
+    *outFence = (PalFence*)fenceData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyFence(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
-        Uint64 index = FROM_PAL_HANDLE(fence);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)fence;
+        if (data->used) {
             data->backend->destroyFence(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -1520,9 +1467,8 @@ PalResult PAL_CALL palWaitFence(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(fence);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)fence;
+    if (!data->used) {
         return PAL_RESULT_INVALID_FENCE;
     }
 
@@ -1532,9 +1478,8 @@ PalResult PAL_CALL palWaitFence(
 bool PAL_CALL palIsFenceSignaled(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
-        Uint64 index = FROM_PAL_HANDLE(fence);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)fence;
+        if (data->used) {
             return data->backend->isFenceSignaled(data->handle);
         }
     }
@@ -1558,45 +1503,56 @@ PalResult PAL_CALL palCreateCommandPool(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    if (!info->queue) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = (HandleData*)device;
+    if (!deviceData->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
+    HandleData* queueData = (HandleData*)info->queue;
+    if (!queueData->used) {
+        return PAL_RESULT_INVALID_QUEUE;
+    }
+
+    PalCommandPoolCreateInfo createInfo = {0};
+    createInfo.queue = queueData->handle;
+    createInfo.resettable = info->resettable;
+    createInfo.transient = info->transient;
+
     // create a slot for the command pool
-    Uint64 poolIndex = 0;
-    HandleData* poolData = getFreeHandleData(&poolIndex);
+    HandleData* poolData = getFreeHandleData();
     if (!poolData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     PalCommandPool* pool = nullptr;
     PalResult ret;
-    ret = data->backend->createCommandPool(
-        data->handle,
-        info,
+    ret = deviceData->backend->createCommandPool(
+        deviceData->handle,
+        &createInfo,
         &pool);
 
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
 
-    poolData->backend = data->backend;
+    poolData->backend = deviceData->backend;
     poolData->handle = pool;
 
-    *outPool = TO_PAL_HANDLE(PalCommandPool, poolIndex);
+    *outPool = (PalCommandPool*)poolData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 {
     if (s_Graphics.initialized && pool) {
-        Uint64 index = FROM_PAL_HANDLE(pool);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)pool;
+        if (data->used) {
             data->backend->destroyCommandPool(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -1615,21 +1571,18 @@ PalResult PAL_CALL palCreateCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(device);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    index = FROM_PAL_HANDLE(pool);
-    HandleData* poolData = findHandleData(index);
-    if (!poolData) {
+    HandleData* poolData = (HandleData*)pool;
+    if (!poolData->used) {
         return PAL_RESULT_INVALID_COMMAND_POOL;
     }
 
     // create a slot for the command buffer
-    Uint64 cmdBufferIndex = 0;
-    HandleData* cmdBufferData = getFreeHandleData(&cmdBufferIndex);
+    HandleData* cmdBufferData = getFreeHandleData();
     if (!cmdBufferData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -1649,18 +1602,17 @@ PalResult PAL_CALL palCreateCommandBuffer(
     cmdBufferData->backend = data->backend;
     cmdBufferData->handle = cmdBuffer;
 
-    *outCmdBuffer = TO_PAL_HANDLE(PalCommandBuffer, cmdBufferIndex);
+    *outCmdBuffer = (PalCommandBuffer*)cmdBufferData;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     if (s_Graphics.initialized && cmdBuffer) {
-        Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
-        HandleData* data = findHandleData(index);
-        if (data) {
+        HandleData* data = (HandleData*)cmdBuffer;
+        if (data->used) {
             data->backend->destroyCommandBuffer(data->handle);
-            data->used = false;
+            freeHandleData(data);
         }
     }
 }
@@ -1675,9 +1627,8 @@ PalResult PAL_CALL palBeginRendering(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)cmdBuffer;
+    if (!data->used) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1694,9 +1645,8 @@ PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)cmdBuffer;
+    if (!data->used) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1715,16 +1665,14 @@ PalResult PAL_CALL palExecuteCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(primaryCmdBuffer);
-    HandleData* data = findHandleData(index);
-    index = FROM_PAL_HANDLE(secondaryCmdBuffer);
-    HandleData* secondaryCmdBufferData = findHandleData(index);
-    if (!data || !secondaryCmdBufferData) {
+    HandleData* primaryCmdBufferData = (HandleData*)primaryCmdBuffer;
+    HandleData* secondaryCmdBufferData = (HandleData*)secondaryCmdBuffer;
+    if (!primaryCmdBufferData->used || secondaryCmdBufferData->used) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
-    return data->backend->executeCommandBuffer(
-        data->handle, 
+    return primaryCmdBufferData->backend->executeCommandBuffer(
+        primaryCmdBufferData->handle, 
         secondaryCmdBufferData->handle);
 }
 
@@ -1746,20 +1694,18 @@ PalResult PAL_CALL palBeginRenderPass(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* cmdBufferData = (HandleData*)cmdBuffer;
+    if (!cmdBufferData->used) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
-    index = FROM_PAL_HANDLE(renderPass);
-    HandleData* renderPassData = findHandleData(index);
-    if (!renderPassData) {
+    HandleData* renderPassData = (HandleData*)renderPass;
+    if (!renderPassData->used) {
         return PAL_RESULT_INVALID_RENDER_PASS;
     }
 
-    return data->backend->beginRenderPass(
-        data->handle,
+    return cmdBufferData->backend->beginRenderPass(
+        cmdBufferData->handle,
         renderPassData->handle,
         clearValueCount,
         clearValues);
@@ -1775,9 +1721,8 @@ PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(cmdBuffer);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)cmdBuffer;
+    if (!data->used) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1802,30 +1747,28 @@ PalResult PAL_CALL palSubmitCommandBuffer(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    Uint64 index = FROM_PAL_HANDLE(queue);
-    HandleData* data = findHandleData(index);
-    if (!data) {
+    HandleData* data = (HandleData*)queue;
+    if (!data->used) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
-    HandleData* fenceData = nullptr;
     void* fenceHandle = nullptr;
     if (fence) {
-        index = FROM_PAL_HANDLE(fence);
-        fenceData = findHandleData(index);
-        fenceHandle = fenceData->handle;
+        HandleData* tmp = (HandleData*)fence;
+        if (tmp->used) {
+            fenceHandle = tmp->handle;
+        }
     }
 
     // 16 should be more than enough
     PalCommandBuffer* cmdHandles[16];
     for (int i = 0; i < cmdBufferCount; i++) {
         // get the cmd buffer handles
-        index = FROM_PAL_HANDLE(cmdBuffers[i]);
-        HandleData* cmdBufferData = findHandleData(index);
-        if (!cmdBufferData) {
+        HandleData* tmp = (HandleData*)cmdBuffers[i];
+        if (!tmp->used) {
             return PAL_RESULT_INVALID_COMMAND_BUFFER;
         }
-        cmdHandles[i] = cmdBufferData->handle;
+        cmdHandles[i] = tmp->handle;
     }
 
     return data->backend->submitCommandBuffer(

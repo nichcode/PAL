@@ -502,12 +502,10 @@ typedef struct {
         PalImageInfo* info);
 
     PalResult PAL_CALL (*getImageMemoryRequirements)(
-        PalDevice* device,
         PalImage* image,
         PalMemoryRequirements* requirments);
 
     PalResult PAL_CALL (*bindImageMemory)(
-        PalDevice* device,
         PalImage* image,
         PalMemory* memory,
         Uint64 offset);
@@ -533,8 +531,6 @@ typedef struct {
         PalSwapchain** outSwapchain);
 
     void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
-
-    Uint32 PAL_CALL (*getSwapchainImageCount)(PalSwapchain* swapchain);
 
     PalImage* PAL_CALL (*getSwapchainImage)(
         PalSwapchain* swapchain,
@@ -693,12 +689,10 @@ PAL_API PalResult PAL_CALL palGetImageInfo(
     PalImageInfo* info);
 
 PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
-    PalDevice* device,
     PalImage* image,
     PalMemoryRequirements* requirements);
 
 PAL_API PalResult PAL_CALL palBindImageMemory(
-    PalDevice* device,
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);

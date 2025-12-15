@@ -55,13 +55,8 @@ bool multiThreadOpenGlTest();
 
 // graphics
 bool graphicsTest();
-bool customGraphicsBackendTest();
-bool deviceTest();
-bool imageTest();
-bool renderPassTest();
 
 // graphics and video
-bool queueTest();
-bool swapchainTest();
+bool clearColorTest();
 
 #endif // _TESTS_H

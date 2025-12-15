@@ -154,6 +154,9 @@ typedef struct {
 struct PalDevice {
     PalAdapterFeatures features;
     Int32 queueCount;
+    Int32 gpuOnlyMemoryIndex;
+    Int32 cpuUploadMemoryIndex;
+    Int32 cpuReadbackMemoryIndex;
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
@@ -162,7 +165,6 @@ struct PalDevice {
     PFN_vkGetSwapchainImagesKHR getSwapchainImages;
     PFN_vkAcquireNextImageKHR acquireNextImage;
     PFN_vkQueuePresentKHR queuePresent;
-    Int32 memoryTypeIndex[PAL_MEMORY_TYPE_MAX];
 };
 
 struct PalQueue {
@@ -211,11 +213,6 @@ struct PalRenderPass {
     PalDevice* device;
     VkRenderPass handle;
     VkFramebuffer framebuffer;
-    VkAttachmentReference depthRef;
-    VkAttachmentDescription attachments[MAX_ATTACHMENTS];
-    VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
-    VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
-    VkImageView views[MAX_ATTACHMENTS];
 };
 
 struct PalCommandPool {
@@ -2209,24 +2206,20 @@ PalResult PAL_CALL createVkDevice(
     // cache memory type indices
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
-    device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = -1;
-    device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = -1;
-    device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = -1;
-
     for (int i = 0; i < memProps.memoryTypeCount; i++) {
         VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
         if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-            device->memoryTypeIndex[PAL_MEMORY_TYPE_GPU_ONLY] = i;
+            device->gpuOnlyMemoryIndex = i;
         }
 
         if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
              prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-            device->memoryTypeIndex[PAL_MEMORY_TYPE_CPU_UPLOAD] = i;
+            device->cpuUploadMemoryIndex = i;
         }
 
         if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
              prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-            device->memoryTypeIndex[PAL_MEMORY_TYPE_CPU_READBACK] = i;
+            device->cpuReadbackMemoryIndex = i;
         }
     }
 
@@ -2280,7 +2273,15 @@ PalResult PAL_CALL allocateVkMemory(
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = (VkDeviceSize)size;
-    allocateInfo.memoryTypeIndex = device->memoryTypeIndex[type];
+    if (type == PAL_MEMORY_TYPE_GPU_ONLY) {
+        allocateInfo.memoryTypeIndex = device->gpuOnlyMemoryIndex;
+
+    } else if (type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
+        allocateInfo.memoryTypeIndex = device->cpuUploadMemoryIndex;
+
+    } else if (type == PAL_MEMORY_TYPE_CPU_READBACK) {
+        allocateInfo.memoryTypeIndex = device->cpuReadbackMemoryIndex;
+    }
 
     if (allocateInfo.memoryTypeIndex == -1) {
         // not supported
@@ -2622,10 +2623,10 @@ PalResult PAL_CALL getVkImageInfo(
 }
 
 PalResult PAL_CALL getVkImageMemoryRequirements(
-    PalDevice* device,
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
+    PalDevice* device = image->device;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)device->phyDevice;
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
@@ -2664,7 +2665,6 @@ PalResult PAL_CALL getVkImageMemoryRequirements(
 }
 
 PalResult PAL_CALL bindVkImageMemory(
-    PalDevice* device,
     PalImage* image,
     PalMemory* memory,
     Uint64 offset)
@@ -2672,8 +2672,9 @@ PalResult PAL_CALL bindVkImageMemory(
     if (image->belongsToSwapchain) {
         return PAL_RESULT_INVALID_OPERATION;
     }
+
     VkDeviceMemory mem = (VkDeviceMemory)memory;
-    s_Vk.bindImageMemory(device->handle, image->handle, mem, offset);
+    s_Vk.bindImageMemory(image->device->handle, image->handle, mem, offset);
 }
 
 // ==================================================
@@ -3065,11 +3066,6 @@ void PAL_CALL destroyVkSwapchain(PalSwapchain* swapchain)
     palFree(s_Vk.allocator, swapchain);
 }
 
-Uint32 PAL_CALL getVkSwapchainImageCount(PalSwapchain* swapchain)
-{
-    return swapchain->imageCount;
-}
-
 PalImage* PAL_CALL getVkSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index)
@@ -3085,14 +3081,19 @@ PalImage* PAL_CALL getVkNextSwapchainImage(
     PalFence* fence,
     Uint64 timeout)
 {
-    Uint32 index = 0;
     VkResult result;
+    Uint32 index = 0;
+    VkFence fenceHandle = nullptr;
+    if (fence) {
+        fenceHandle = fence->handle;
+    }
+
     result = swapchain->device->acquireNextImage(
-        swapchain->device->handle, 
+        swapchain->device->handle,
         swapchain->handle,
         timeout,
         VK_NULL_HANDLE,
-        fence->handle,
+        fenceHandle,
         &index);
 
     if (result != VK_SUCCESS) {
@@ -3234,12 +3235,18 @@ PalResult PAL_CALL createVkRenderPass(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    VkAttachmentReference depthRef;
+    VkAttachmentDescription attachments[MAX_ATTACHMENTS];
+    VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
+    VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
+    VkImageView views[MAX_ATTACHMENTS];
+
     renderpass->hasDepth = false;
     Uint32 colorRefCount = 0;
     Uint32 layers = 0;
     for (int i = 0; i < info->attachmentCount; i++) {
         PalAttachmentDesc* desc = &info->attachments[i];
-        VkAttachmentDescription* rDesc = &renderpass->attachments[i];
+        VkAttachmentDescription* rDesc = &attachments[i];
 
         rDesc->format = palFormatToVk(desc->target->image->info.format);
         rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -3275,10 +3282,10 @@ PalResult PAL_CALL createVkRenderPass(
         }
 
         // add the image views from the attachments into a seperate array
-        renderpass->views[i] = desc->target->handle;
+        views[i] = desc->target->handle;
 
         if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
-            VkAttachmentReference* ref = &renderpass->colorRefs[colorRefCount];
+            VkAttachmentReference* ref = &colorRefs[colorRefCount];
             rDesc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             ref->attachment = i;
             ref->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -3291,9 +3298,8 @@ PalResult PAL_CALL createVkRenderPass(
             rDesc->finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             rDesc->stencilLoadOp = rDesc->loadOp;
             rDesc->stencilStoreOp = rDesc->storeOp;
-            VkAttachmentReference* ref = &renderpass->depthRef;
-            ref->attachment = i;
-            ref->layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            depthRef.attachment = i;
+            depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             renderpass->hasDepth = true;
         }
     }
@@ -3303,16 +3309,16 @@ PalResult PAL_CALL createVkRenderPass(
         VkSubpassDescription subpassDesc = {0};
         subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpassDesc.colorAttachmentCount = colorRefCount;
-        subpassDesc.pColorAttachments = renderpass->colorRefs;
+        subpassDesc.pColorAttachments = colorRefs;
         if (renderpass->hasDepth) {
-            subpassDesc.pDepthStencilAttachment = &renderpass->depthRef;
+            subpassDesc.pDepthStencilAttachment = &depthRef;
         }
 
         // render pass
         VkRenderPassCreateInfo createInfo = {0};
         createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         createInfo.attachmentCount = info->attachmentCount;
-        createInfo.pAttachments = renderpass->attachments;
+        createInfo.pAttachments = attachments;
         createInfo.subpassCount = 1;
         createInfo.pSubpasses = &subpassDesc;
 
@@ -3331,10 +3337,11 @@ PalResult PAL_CALL createVkRenderPass(
         VkFramebufferCreateInfo fbCreateInfo = {0};
         fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         fbCreateInfo.attachmentCount = info->attachmentCount;
-        fbCreateInfo.pAttachments = renderpass->views;
+        fbCreateInfo.pAttachments = views;
         fbCreateInfo.height = info->height;
         fbCreateInfo.width = info->width;
         fbCreateInfo.layers = layers;
+        fbCreateInfo.renderPass = renderpass->handle;
 
         result = s_Vk.createFramebuffer(
             device->handle, 
@@ -3358,6 +3365,8 @@ PalResult PAL_CALL createVkRenderPass(
     renderpass->device = device; 
     renderpass->width = info->width;
     renderpass->height = info->height;
+    renderpass->attachmentCount = info->attachmentCount;
+
     *outRenderPass = renderpass;
     return PAL_RESULT_SUCCESS;
 }
@@ -3615,9 +3624,8 @@ PalResult PAL_CALL beginRenderPassVk(
     VkClearValue tmp[MAX_ATTACHMENTS];
 
     for (int i = 0; i < clearValueCount; i++) {
-        VkAttachmentDescription* desc = &renderPass->attachments[i];
         PalClearValue* clearValue = &clearValues[i];
-        if (desc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        if (clearValue->depth == 0 && clearValue->stencil == 0) {
             // color attachment
             tmp[i].color.float32[0] = clearValue->color[0];
             tmp[i].color.float32[1] = clearValue->color[1];

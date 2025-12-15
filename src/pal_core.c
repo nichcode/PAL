@@ -417,6 +417,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_IMAGE:
             return "Invalid image";
 
+        case PAL_RESULT_INVALID_IMAGE_VIEW:
+            return "Invalid image view";
+
         case PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED:
             return "memory type not supported";
 
