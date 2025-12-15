@@ -121,24 +121,41 @@ void* retval;
 palJoinThread(thread, &retval);
 ```
 
-## [1.3.0] - 2025-00-00
+## [1.4.0] - 2025-00-00
 
 ### Features
 
-- **Core:** Added **PAL_RESULT_GRAPHICS_NOT_INITIALIZED** to `PalResult` enum to indicate that a graphics function was called whiles the graphics system has not been initialized.
+- **Core:** Added **PAL_RESULT_GRAPHICS_NOT_INITIALIZED** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_ADAPTER** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_BACKEND** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_QUEUE_NOT_SUPPORTED** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_DRIVER** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_DEVICE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_QUEUE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_OUT_OF_QUEUE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_GRAPHICS_WINDOW** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_SWAPCHAIN** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_IMAGE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_IMAGE_VIEW** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_OPERATION** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_SHADER_TYPE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_COMMAND_POOL** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_COMMAND_BUFFER** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_FENCE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_SEMAPHORE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_RENDER_PASS** to `PalResult` enum.
 
-- **Core:** Added **PAL_RESULT_INVALID_GPU_ADAPTER** to `PalResult` enum to indiate an invalid `PalGPUAdapter` handle error.
-
-- **Core:** Added **PAL_RESULT_INVALID_GPU_BACKEND** to `PalResult` enum to indiate an invalid `PalGPUBackend` handle error.
-
-- **Graphics:** Added **Graphics System To PAL**. This system allows users to use modern graphics APIs (eg. Vulkan, D3D12, and Metal). Systems which do not support this APIs are not left out, the graphics system also has an API to allow users set custom backends to the graphics system and use its API as though its part of the internal ones. see **custom_graphics_backend_test.c**.
+- **Graphics:** Added **Graphics System To PAL**.
 
 ### Tests
 
-- Added grapics test example: demonstrating **Enumerating GPU Adapters And Selecting The Best One For Your Needs**. see **graphics_test.c**.
+- Added grapics example: see **graphics_test.c**
 
-- Added custom graphics backend example: demonstrating **Adding Custom Graphics Backends to PAL**.
-see **custom_graphics_backend_test.c**.
+- Added clear color example: see **clear_color_test.c**
 
 ### Notes
-- **No ABI changes** - existing code remains compatible.
+- No API or ABI changes - existing code remains compatible.
+- Safe upgrade from **v1.3.0** - just rebuild your project after updating.
+- The graphics system supports both legacy and dynamic rendering on vulkan.
