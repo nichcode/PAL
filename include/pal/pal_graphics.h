@@ -231,8 +231,7 @@ typedef enum {
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT = PAL_BIT64(20),
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(21),
     PAL_ADAPTER_FEATURE_RESET_FENCE = PAL_BIT64(22),
-    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(23),
-    PAL_ADAPTER_FEATURE_MULTI_QUEUE_SUBMIT = PAL_BIT64(24)
+    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(23)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -378,6 +377,28 @@ typedef struct {
     float depth;
     Uint32 stencil;
 } PalClearValue;
+
+typedef struct {
+    Uint64 waitValue;
+    Uint64 signalValue;
+    PalCommandBuffer* cmdBuffer;
+    PalSemaphore* waitSemaphore;
+    PalSemaphore* signalSemaphore;
+    PalFence* fence;
+} PalSubmitInfo;
+
+typedef struct {
+    Uint64 timeout;
+    Uint64 signalValue;
+    PalSemaphore* signalSemaphore;
+    PalFence* fence;
+} PalNextImageInfo;
+
+typedef struct {
+    Uint64 waitValue;
+    PalImage* image;
+    PalSemaphore* waitSemaphore;
+} PalPresentInfo;
 
 typedef struct {
     Uint32 width;
@@ -540,12 +561,11 @@ typedef struct {
 
     PalImage* PAL_CALL (*getNextSwapchainImage)(
         PalSwapchain* swapchain,
-        PalFence* fence,
-        Uint64 timeout);
+        PalNextImageInfo* info);
 
     PalResult PAL_CALL (*presentSwapchain)(
         PalSwapchain* swapchain,
-        PalImage* image);
+        PalPresentInfo* info);
 
     PalResult PAL_CALL (*createShader)(
         PalDevice* device,
@@ -576,6 +596,23 @@ typedef struct {
     PalResult PAL_CALL (*resetFence)(PalFence* fence);
 
     bool PAL_CALL (*isFenceSignaled)(PalFence* fence);
+
+    PalResult PAL_CALL (*createSemaphore)(
+        PalDevice* device,
+        PalSemaphore** outSemaphore);
+
+    void PAL_CALL (*destroySemaphore)(PalSemaphore* semaphore);
+
+    PalResult PAL_CALL (*waitSemaphore)(
+        PalSemaphore* semaphore, 
+        PalQueue* queue,
+        Uint64 value,
+        Uint64 timeout);
+
+    PalResult PAL_CALL (*signalSemaphore)(
+        PalSemaphore* semaphore, 
+        PalQueue* queue,
+        Uint64 value);
 
     PalResult PAL_CALL (*createCommandPool)(
         PalDevice* device,
@@ -610,9 +647,7 @@ typedef struct {
 
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
-        Int32 cmdBufferCount,
-        PalCommandBuffer** cmdBuffers,
-        PalFence* fence);
+        PalSubmitInfo* info);
 } PalGraphicsBackend;
 
 PAL_API PalResult PAL_CALL palAddGraphicsBackend(
@@ -731,12 +766,11 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
 
 PAL_API PalImage* PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalFence* fence,
-    Uint64 timeout);
+    PalNextImageInfo* info);
 
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
-    PalImage* image);
+    PalPresentInfo* info);
 
 PAL_API PalResult PAL_CALL palCreateShader(
     PalDevice* device,
@@ -775,6 +809,23 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
 
 PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
 
+PAL_API PalResult PAL_CALL palCreateSemaphore(
+    PalDevice* device,
+    PalSemaphore** outSemaphore);
+
+PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
+
+PAL_API PalResult PAL_CALL palWaitSemaphore(
+    PalSemaphore* semaphore, 
+    PalQueue* queue,
+    Uint64 value,
+    Uint64 timeout);
+
+PAL_API PalResult PAL_CALL palSignalSemaphore(
+    PalSemaphore* semaphore, 
+    PalQueue* queue,
+    Uint64 value);
+
 PAL_API PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
@@ -801,9 +852,7 @@ PAL_API PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
-    Int32 cmdBufferCount,
-    PalCommandBuffer** cmdBuffers,
-    PalFence* fence);
+    PalSubmitInfo* info);
 
 /** @} */ // end of pal_graphics group
 

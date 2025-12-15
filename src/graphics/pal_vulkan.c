@@ -122,6 +122,12 @@ typedef struct {
     PFN_vkResetFences resetFence;
     PFN_vkWaitForFences waitFence;
     PFN_vkGetFenceStatus isFenceSignaled;
+    PFN_vkCreateSemaphore createSemaphore;
+    PFN_vkDestroySemaphore destroySemaphore;
+    PFN_vkWaitSemaphores waitSemaphores;
+    PFN_vkSignalSemaphore signalSemaphore;
+    PFN_vkGetSemaphoreCounterValue getSemaphoreValue;
+
     PFN_vkBeginCommandBuffer cmdBegin;
     PFN_vkEndCommandBuffer cmdEnd;
     PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
@@ -230,6 +236,12 @@ struct PalCommandBuffer {
 struct PalFence {
     PalDevice* device;
     VkFence handle;
+};
+
+struct PalSemaphore {
+    bool isTimeline;
+    PalDevice* device;
+    VkSemaphore handle;
 };
 
 static Vulkan s_Vk = {0};
@@ -1209,6 +1221,26 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkGetFenceStatus");
 
+    s_Vk.createSemaphore = (PFN_vkCreateSemaphore)dlsym(
+        s_Vk.handle, 
+        "vkCreateSemaphore");
+
+    s_Vk.destroySemaphore = (PFN_vkDestroySemaphore)dlsym(
+        s_Vk.handle, 
+        "vkDestroySemaphore");
+
+    s_Vk.waitSemaphores = (PFN_vkWaitSemaphores)dlsym(
+        s_Vk.handle, 
+        "vkWaitSemaphores");
+
+    s_Vk.signalSemaphore = (PFN_vkSignalSemaphore)dlsym(
+        s_Vk.handle, 
+        "vkSignalSemaphore");
+
+    s_Vk.getSemaphoreValue = (PFN_vkGetSemaphoreCounterValue)dlsym(
+        s_Vk.handle, 
+        "vkGetSemaphoreCounterValue");
+
     s_Vk.cmdBegin = (PFN_vkBeginCommandBuffer)dlsym(
         s_Vk.handle, 
         "vkBeginCommandBuffer");
@@ -1908,7 +1940,6 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
     caps->features |= PAL_ADAPTER_FEATURE_RESET_FENCE;
     caps->features |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
-    caps->features |= PAL_ADAPTER_FEATURE_MULTI_QUEUE_SUBMIT;
     caps->features |= PAL_ADAPTER_FEATURE_SEMAPHORE;
 
     palFree(s_Vk.allocator, extensionProps);
@@ -3079,21 +3110,26 @@ PalImage* PAL_CALL getVkSwapchainImage(
 
 PalImage* PAL_CALL getVkNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalFence* fence,
-    Uint64 timeout)
+    PalNextImageInfo* info)
 {
     VkResult result;
     Uint32 index = 0;
     VkFence fenceHandle = nullptr;
-    if (fence) {
-        fenceHandle = fence->handle;
+    VkSemaphore semaphoreHandle = nullptr;
+
+    if (info->fence) {
+        fenceHandle = info->fence->handle;
+    }
+
+    if (info->signalSemaphore) {
+        semaphoreHandle = info->signalSemaphore->handle;
     }
 
     result = swapchain->device->acquireNextImage(
         swapchain->device->handle,
         swapchain->handle,
-        timeout,
-        VK_NULL_HANDLE,
+        info->timeout,
+        semaphoreHandle,
         fenceHandle,
         &index);
 
@@ -3108,12 +3144,19 @@ PalImage* PAL_CALL getVkNextSwapchainImage(
 
 PalResult PAL_CALL presentVkSwapchain(
     PalSwapchain* swapchain, 
-    PalImage* image)
+    PalPresentInfo* info)
 {
-    if (image->index == -1) {
+    if (info->image->index == -1) {
         // image was not the next image
         // this prevents UB
         return PAL_RESULT_INVALID_IMAGE;
+    }
+
+    Int32 semaphoreCount = 0;
+    VkSemaphore semaphoreHandle = nullptr;
+    if (info->waitSemaphore) {
+        semaphoreHandle = info->waitSemaphore->handle;
+        semaphoreCount = 1;
     }
 
     VkResult result;
@@ -3121,17 +3164,19 @@ PalResult PAL_CALL presentVkSwapchain(
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &swapchain->handle;
-    presentInfo.pImageIndices = &image->index;
+    presentInfo.pImageIndices = &info->image->index;
+    presentInfo.pWaitSemaphores = &semaphoreHandle;
+    presentInfo.waitSemaphoreCount = semaphoreCount;
 
     result = swapchain->device->queuePresent(
         swapchain->queue->phyQueue->handle, 
         &presentInfo);
 
     if (result != VK_SUCCESS) {
-        vkResultToPal(result);
+        return vkResultToPal(result);
     }
 
-    image->index = -1;
+    info->image->index = -1;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3412,7 +3457,7 @@ PalResult PAL_CALL createVkFence(
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, fence);
-        vkResultToPal(result);
+        return vkResultToPal(result);
     }
 
     fence->device = device;
@@ -3451,7 +3496,7 @@ PalResult PAL_CALL resetVkFence(PalFence* fence)
 
     VkResult ret = s_Vk.resetFence(fence->device->handle, 1, &fence->handle);
     if (ret != VK_SUCCESS) {
-        vkResultToPal(ret);
+        return vkResultToPal(ret);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -3465,6 +3510,106 @@ bool PAL_CALL isVkFenceSignaled(PalFence* fence)
     } else {
         return false;
     }
+}
+
+// ==================================================
+// Semaphore
+// ==================================================
+
+PalResult PAL_CALL createVkSemaphore(
+    PalDevice* device,
+    PalSemaphore** outSemaphore)
+{
+    VkResult result;
+    PalSemaphore* semaphore = nullptr;
+    semaphore = palAllocate(s_Vk.allocator, sizeof(PalSemaphore), 0);
+    if (!semaphore) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkSemaphoreTypeCreateInfo timelineCreateInfo = {0};
+    timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+    timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+    VkSemaphoreCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    const void* next = nullptr;
+    semaphore->isTimeline = false;
+    if (device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        next = &timelineCreateInfo;
+        semaphore->isTimeline = true;
+    }
+
+    createInfo.pNext = next;
+    result = s_Vk.createSemaphore(
+        device->handle,
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &semaphore->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, semaphore);
+        return vkResultToPal(result);
+    }
+
+    semaphore->device = device;
+    *outSemaphore = semaphore;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkSemaphore(PalSemaphore* semaphore)
+{
+    s_Vk.destroySemaphore(
+        semaphore->device->handle, 
+        semaphore->handle, 
+        &s_Vk.vkAllocator);
+
+    palFree(s_Vk.allocator, semaphore);
+}
+
+PalResult PAL_CALL waitVkSemaphore(
+    PalSemaphore* semaphore, 
+    PalQueue* queue,
+    Uint64 value,
+    Uint64 timeout)
+{
+    VkResult result;
+    VkSemaphoreWaitInfo waitInfo = {0};
+    waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+    waitInfo.semaphoreCount = 1;
+    waitInfo.pSemaphores = &semaphore->handle;
+    waitInfo.pValues = &value;
+
+    result = s_Vk.waitSemaphores(
+        semaphore->device->handle, 
+        &waitInfo, 
+        timeout);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL signalVkSemaphore(
+    PalSemaphore* semaphore,
+    PalQueue* queue,
+    Uint64 value)
+{
+    VkResult result;
+    VkSemaphoreSignalInfo signalInfo = {0};
+    signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+    signalInfo.semaphore = semaphore->handle;
+    signalInfo.value = value;
+
+    result = s_Vk.signalSemaphore(semaphore->device->handle, &signalInfo);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
@@ -3677,25 +3822,37 @@ PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
-    Int32 cmdBufferCount,
-    PalCommandBuffer** cmdBuffers,
-    PalFence* fence)
+    PalSubmitInfo* info)
 {
     VkResult result;
+    Int32 waitSemaphoreCount = 0;
+    Int32 signalSemaphoreCount = 0;
     VkFence fenceHandle = nullptr;
-    VkCommandBuffer cmdHandles[16]; // 16 should be more than enough
-    for (int i = 0; i < cmdBufferCount; i++) {
-        cmdHandles[i] = cmdBuffers[i]->handle;
+    VkSemaphore waitSemaphoreHandle = nullptr;
+    VkSemaphore signalSemaphoreHandle = nullptr;
+
+    if (info->waitSemaphore) {
+        waitSemaphoreHandle = info->waitSemaphore->handle;
+        waitSemaphoreCount = 1;
+    }
+
+    if (info->signalSemaphore) {
+        signalSemaphoreHandle = info->signalSemaphore->handle;
+        signalSemaphoreCount = 1;
+    }
+
+    if (info->fence) {
+        fenceHandle = info->fence->handle; 
     }
 
     VkSubmitInfo submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = cmdBufferCount;
-    submitInfo.pCommandBuffers = cmdHandles;
-
-    if (fence) {
-        fenceHandle = fence->handle; 
-    }
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &info->cmdBuffer->handle;
+    submitInfo.pSignalSemaphores = &signalSemaphoreHandle;
+    submitInfo.pWaitSemaphores = &waitSemaphoreHandle;
+    submitInfo.waitSemaphoreCount = waitSemaphoreCount;
+    submitInfo.waitSemaphoreCount = signalSemaphoreCount;
 
     result = s_Vk.queueSubmit(
         queue->phyQueue->handle,
@@ -3704,7 +3861,7 @@ PalResult PAL_CALL submitVkCommandBuffer(
         fenceHandle);
 
     if (result != VK_SUCCESS) {
-        vkResultToPal(result);
+        return vkResultToPal(result);
     }
 
     return PAL_RESULT_SUCCESS;

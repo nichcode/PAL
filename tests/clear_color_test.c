@@ -383,7 +383,9 @@ bool clearColorTest()
 
         // get the next image that we can render too
         PalImage* image = nullptr;
-        image = palGetNextSwapchainImage(swapchain, nullptr, UINT64_MAX);
+        PalNextImageInfo nextImageInfo = {0};
+        nextImageInfo.timeout = UINT64_MAX;
+        image = palGetNextSwapchainImage(swapchain, &nextImageInfo);
 
         // find the command buffer associated with the image
         // this is fast, the swapchain caches all it images internally
@@ -396,14 +398,20 @@ bool clearColorTest()
         }
 
         // submit to the queue and present
-        result = palSubmitCommandBuffer(queue, 1, &cmdBuffer, nullptr);
+        PalSubmitInfo submitInfo = {0};
+        submitInfo.cmdBuffer = cmdBuffer;
+
+        result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to submit command buffer: %s", error);
             return false;
         }
 
-        result = palPresentSwapchain(swapchain, image);
+        PalPresentInfo presentInfo = {0};
+        presentInfo.image = image;
+
+        result = palPresentSwapchain(swapchain, &presentInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to present swapchain: %s", error);

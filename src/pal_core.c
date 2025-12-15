@@ -438,6 +438,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_FENCE:
             return "Invalid fence";
 
+        case PAL_RESULT_INVALID_SEMAPHORE:
+            return "Invalid semaphore";
+
         case PAL_RESULT_INVALID_RENDER_PASS:
             return "Invalid render pass";
     }

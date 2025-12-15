@@ -211,12 +211,11 @@ PalImage* PAL_CALL getVkSwapchainImage(
 
 PalImage* PAL_CALL getVkNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalFence* fence,
-    Uint64 timeout);
+    PalNextImageInfo* info);
 
 PalResult PAL_CALL presentVkSwapchain(
     PalSwapchain* swapchain, 
-    PalImage* image);
+    PalPresentInfo* info);
 
 PalResult PAL_CALL createVkShader(
     PalDevice* device,
@@ -247,6 +246,23 @@ PalResult PAL_CALL waitVkFence(
 PalResult PAL_CALL resetVkFence(PalFence* fence);
 
 bool PAL_CALL isVkFenceSignaled(PalFence* fence);
+
+PalResult PAL_CALL createVkSemaphore(
+    PalDevice* device,
+    PalSemaphore** outSemaphore);
+
+void PAL_CALL destroyVkSemaphore(PalSemaphore* semaphore);
+
+PalResult PAL_CALL waitVkSemaphore(
+    PalSemaphore* semaphore,
+    PalQueue* queue,
+    Uint64 value,
+    Uint64 timeout);
+
+PalResult PAL_CALL signalVkSemaphore(
+    PalSemaphore* semaphore, 
+    PalQueue* queue,
+    Uint64 value);
 
 PalResult PAL_CALL createVkCommandPool(
     PalDevice* device,
@@ -281,9 +297,7 @@ PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer);
 
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
-    Int32 cmdBufferCount,
-    PalCommandBuffer** cmdBuffers,
-    PalFence* fence);
+    PalSubmitInfo* info);
 
 static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
@@ -323,6 +337,10 @@ static PalGraphicsBackend s_VkBackend = {
     .waitFenceTimeout = waitVkFence,
     .resetFence = resetVkFence,
     .isFenceSignaled = isVkFenceSignaled,
+    .createSemaphore = createVkSemaphore,
+    .destroySemaphore = destroyVkSemaphore,
+    .waitSemaphore = waitVkSemaphore,
+    .signalSemaphore = signalVkSemaphore,
     .createCommandPool = createVkCommandPool,
     .destroyCommandPool = destroyVkCommandPool,
     .createCommandBuffer = createVkCommandBuffer,
@@ -406,6 +424,10 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->waitFenceTimeout             ||
         !backend->resetFence                   ||
         !backend->isFenceSignaled              ||
+        !backend->createSemaphore              ||
+        !backend->destroySemaphore             ||
+        !backend->waitSemaphore                ||
+        !backend->signalSemaphore              ||
         !backend->createCommandPool            ||
         !backend->destroyCommandPool           ||
         !backend->createCommandBuffer          ||
@@ -1174,10 +1196,9 @@ PalImage* PAL_CALL palGetSwapchainImage(
 
 PalImage* PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalFence* fence,
-    Uint64 timeout)
+    PalNextImageInfo* info)
 {
-    if (!s_Graphics.initialized || !swapchain) {
+    if (!s_Graphics.initialized || !swapchain || !info) {
         return nullptr;
     }
 
@@ -1187,18 +1208,32 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
     }
 
     void* FenceHandle = nullptr;
-    if (fence) {
-        HandleData* tmp = (HandleData*)fence;
+    void* signalSemaphoreHandle = nullptr;
+    if (info->fence) {
+        HandleData* tmp = (HandleData*)info->signalSemaphore;
         if (!tmp->used) {
             return nullptr;
         }
         FenceHandle = tmp->handle;
     }
 
+    if (info->signalSemaphore) {
+        HandleData* tmp = (HandleData*)info->signalSemaphore;
+        if (!tmp->used) {
+            return nullptr;
+        }
+        signalSemaphoreHandle = tmp->handle;
+    }
+
+    PalNextImageInfo nextInfo;
+    nextInfo.fence = FenceHandle;
+    nextInfo.signalSemaphore = signalSemaphoreHandle;
+    nextInfo.signalValue = info->signalValue;
+    nextInfo.timeout = info->timeout;
+
     PalImage* tmp = data->backend->getNextSwapchainImage(
         data->handle,
-        FenceHandle,
-        timeout);
+        &nextInfo);
 
     // loop through all our cache images and get the handle data
     // associated with the image
@@ -1217,13 +1252,13 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
 
 PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
-    PalImage* image)
+    PalPresentInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!swapchain || !image) {
+    if (!swapchain || !info) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -1232,14 +1267,28 @@ PalResult PAL_CALL palPresentSwapchain(
         return PAL_RESULT_INVALID_SWAPCHAIN;
     }
 
-    HandleData* imageData = (HandleData*)image;
+    HandleData* imageData = (HandleData*)info->image;
     if (!imageData->used) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
+    void* waitSemaphoreHandle = nullptr;
+    if (info->waitSemaphore) {
+        HandleData* tmp = (HandleData*)info->waitSemaphore;
+        if (!tmp->used) {
+            return PAL_RESULT_INVALID_SEMAPHORE;
+        }
+        waitSemaphoreHandle = tmp->handle;
+    }
+
+    PalPresentInfo presentInfo;
+    presentInfo.image = imageData->handle;
+    presentInfo.waitValue = info->waitValue;
+    presentInfo.waitSemaphore = waitSemaphoreHandle;
+
     return swapchainData->backend->presentSwapchain(
         swapchainData->handle, 
-        imageData->handle);
+        &presentInfo);
 }
 
 // ==================================================
@@ -1509,6 +1558,118 @@ bool PAL_CALL palIsFenceSignaled(PalFence* fence)
 }
 
 // ==================================================
+// Semaphore
+// ==================================================
+
+PalResult PAL_CALL palCreateSemaphore(
+    PalDevice* device,
+    PalSemaphore** outSemaphore)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !outSemaphore) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)device;
+    if (!data->used) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    // create a slot for the semaphore
+    HandleData* semaphoreData = getFreeHandleData();
+    if (!semaphoreData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalSemaphore* semaphore = nullptr;
+    PalResult ret;
+    ret = data->backend->createSemaphore(data->handle, &semaphore);
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    semaphoreData->backend = data->backend;
+    semaphoreData->handle = semaphore;
+
+    *outSemaphore = (PalSemaphore*)semaphoreData;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
+{
+    if (s_Graphics.initialized && semaphore) {
+        HandleData* data = (HandleData*)semaphore;
+        if (data->used) {
+            data->backend->destroySemaphore(data->handle);
+            freeHandleData(data);
+        }
+    }
+}
+
+PalResult PAL_CALL palWaitSemaphore(
+    PalSemaphore* semaphore, 
+    PalQueue* queue,
+    Uint64 value,
+    Uint64 timeout)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!semaphore || !queue) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* semaphoreData = (HandleData*)semaphore;
+    if (!semaphoreData->used) {
+        return PAL_RESULT_INVALID_SEMAPHORE;
+    }
+
+    HandleData* queueData = (HandleData*)queue;
+    if (!queueData->used) {
+        return PAL_RESULT_INVALID_QUEUE;
+    }
+
+    return semaphoreData->backend->waitSemaphore(
+        semaphoreData->handle, 
+        queueData->handle,
+        value,
+        timeout);
+}
+
+PalResult PAL_CALL palSignalSemaphore(
+    PalSemaphore* semaphore, 
+    PalQueue* queue,
+    Uint64 value)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!semaphore || !queue) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* semaphoreData = (HandleData*)semaphore;
+    if (!semaphoreData->used) {
+        return PAL_RESULT_INVALID_SEMAPHORE;
+    }
+
+    HandleData* queueData = (HandleData*)queue;
+    if (!queueData->used) {
+        return PAL_RESULT_INVALID_QUEUE;
+    }
+
+    return semaphoreData->backend->signalSemaphore(
+        semaphoreData->handle, 
+        queueData->handle,
+        value);
+}
+
+// ==================================================
 // Command Pool And Buffer
 // ==================================================
 
@@ -1753,20 +1914,14 @@ PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
-    Int32 cmdBufferCount,
-    PalCommandBuffer** cmdBuffers,
-    PalFence* fence)
+    PalSubmitInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!queue || !cmdBuffers) {
+    if (!queue || !info) {
         return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (cmdBufferCount == 0) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
     HandleData* data = (HandleData*)queue;
@@ -1774,28 +1929,44 @@ PalResult PAL_CALL palSubmitCommandBuffer(
         return PAL_RESULT_INVALID_QUEUE;
     }
 
+    HandleData* cmdBufferData = (HandleData*)info->cmdBuffer;
+    if (!cmdBufferData->used) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
     void* fenceHandle = nullptr;
-    if (fence) {
-        HandleData* tmp = (HandleData*)fence;
+    void* waitSemaphoreHandle = nullptr;
+    void* signalSemaphoreHandle = nullptr;
+    if (info->fence) {
+        HandleData* tmp = (HandleData*)info->fence;
         if (tmp->used) {
             fenceHandle = tmp->handle;
         }
     }
 
-    // 16 should be more than enough
-    PalCommandBuffer* cmdHandles[16];
-    for (int i = 0; i < cmdBufferCount; i++) {
-        // get the cmd buffer handles
-        HandleData* tmp = (HandleData*)cmdBuffers[i];
-        if (!tmp->used) {
-            return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    if (info->waitSemaphore) {
+        HandleData* tmp = (HandleData*)info->waitSemaphore;
+        if (tmp->used) {
+            waitSemaphoreHandle = tmp->handle;
         }
-        cmdHandles[i] = tmp->handle;
     }
+
+    if (info->signalSemaphore) {
+        HandleData* tmp = (HandleData*)info->signalSemaphore;
+        if (tmp->used) {
+            signalSemaphoreHandle = tmp->handle;
+        }
+    }
+
+    PalSubmitInfo submitInfo;
+    submitInfo.cmdBuffer = cmdBufferData->handle;
+    submitInfo.fence = fenceHandle;
+    submitInfo.signalSemaphore = signalSemaphoreHandle;
+    submitInfo.waitSemaphore = waitSemaphoreHandle;
+    submitInfo.signalValue = info->signalValue;
+    submitInfo.waitValue = info->waitValue;
 
     return data->backend->submitCommandBuffer(
         data->handle,
-        cmdBufferCount,
-        cmdHandles,
-        fenceHandle);
+        &submitInfo);
 }
