@@ -244,6 +244,8 @@ PalResult PAL_CALL waitVkFence(
     PalFence* fence, 
     Uint64 timeout);
 
+PalResult PAL_CALL resetVkFence(PalFence* fence);
+
 bool PAL_CALL isVkFenceSignaled(PalFence* fence);
 
 PalResult PAL_CALL createVkCommandPool(
@@ -319,6 +321,7 @@ static PalGraphicsBackend s_VkBackend = {
     .createFence = createVkFence,
     .destroyFence = destroyVkFence,
     .waitFenceTimeout = waitVkFence,
+    .resetFence = resetVkFence,
     .isFenceSignaled = isVkFenceSignaled,
     .createCommandPool = createVkCommandPool,
     .destroyCommandPool = destroyVkCommandPool,
@@ -401,6 +404,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createFence                  ||
         !backend->destroyFence                 ||
         !backend->waitFenceTimeout             ||
+        !backend->resetFence                   ||
         !backend->isFenceSignaled              ||
         !backend->createCommandPool            ||
         !backend->destroyCommandPool           ||
@@ -1473,6 +1477,24 @@ PalResult PAL_CALL palWaitFence(
     }
 
     return data->backend->waitFenceTimeout(data->handle, timeout);
+}
+
+PalResult PAL_CALL palResetFence(PalFence* fence)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!fence) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)fence;
+    if (!data->used) {
+        return PAL_RESULT_INVALID_FENCE;
+    }
+
+    return data->backend->resetFence(data->handle);
 }
 
 bool PAL_CALL palIsFenceSignaled(PalFence* fence)

@@ -1909,6 +1909,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->features |= PAL_ADAPTER_FEATURE_RESET_FENCE;
     caps->features |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
     caps->features |= PAL_ADAPTER_FEATURE_MULTI_QUEUE_SUBMIT;
+    caps->features |= PAL_ADAPTER_FEATURE_SEMAPHORE;
 
     palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -3439,6 +3440,20 @@ PalResult PAL_CALL waitVkFence(
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
     }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL resetVkFence(PalFence* fence)
+{
+    if (!(fence->device->features & PAL_ADAPTER_FEATURE_RESET_FENCE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkResult ret = s_Vk.resetFence(fence->device->handle, 1, &fence->handle);
+    if (ret != VK_SUCCESS) {
+        vkResultToPal(ret);
+    }
+
     return PAL_RESULT_SUCCESS;
 }
 

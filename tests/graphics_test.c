@@ -225,6 +225,10 @@ bool graphicsTest()
             palLog(nullptr, "  Multi viewport");
         }
 
+        if (caps.features & PAL_ADAPTER_FEATURE_SEMAPHORE) {
+            palLog(nullptr, "  Semaphore");
+        }
+
         if (caps.features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
             palLog(nullptr, "  Timeline Semaphore");
         }
