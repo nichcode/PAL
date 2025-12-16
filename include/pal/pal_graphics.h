@@ -285,6 +285,7 @@ typedef enum {
     PAL_SHADER_TYPE_FRAGMENT,
     PAL_SHADER_TYPE_COMPUTE,
     PAL_SHADER_TYPE_GEOMETRY,
+    PAL_SHADER_TYPE_MESH,
     PAL_SHADER_TYPE_TESSELLATION_CONTROL,
     PAL_SHADER_TYPE_TESSELLATION_EVALUATION
 } PalShaderType;
@@ -780,8 +781,6 @@ typedef struct {
 
     void PAL_CALL (*destroyShader)(PalShader* shader);
 
-    PalShaderType PAL_CALL (*getShaderType)(PalShader* shader);
-
     PalResult PAL_CALL (*createRenderPass)(
         PalDevice* device,
         const PalRenderPassCreateInfo* info,
@@ -819,6 +818,10 @@ typedef struct {
         PalSemaphore* semaphore, 
         PalQueue* queue,
         Uint64 value);
+
+    PalResult PAL_CALL (*getSemaphoreValue)(
+        PalSemaphore* semaphore, 
+        Uint64* value);
 
     PalResult PAL_CALL (*createCommandPool)(
         PalDevice* device,
@@ -1039,6 +1042,12 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
     PalQueue* queue,
     Uint64 value);
 
+PAL_API PalResult PAL_CALL palGetSemaphoreValue(
+    PalSemaphore* semaphore, 
+    Uint64* value);
+
+PAL_API bool PAL_CALL palIsTimelineSemaphore(PalSemaphore* semaphore);
+
 PAL_API PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
@@ -1073,6 +1082,8 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalPipeline** outPipeline);
 
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
+
+PAL_API bool PAL_CALL palIsGraphicsPipeline(PalPipeline* pipeline);
 
 /** @} */ // end of pal_graphics group
 

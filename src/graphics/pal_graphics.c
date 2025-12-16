@@ -32,10 +32,33 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define MAX_BACKENDS 32
+#define BINARY_SEMAPHORE 4
+#define TIMELINE_SEMAPHORE 5
+#define GRAPHICS_PIPELINE 6
+#define COMPUTE_PIPELINE 7
+#define SWAPCHAIN_IMAGE 12
+
+typedef enum {
+    HANDLE_TYPE_NONE,
+    HANDLE_TYPE_ADAPTER,
+    HANDLE_TYPE_DEVICE,
+    HANDLE_TYPE_IMAGE,
+    HANDLE_TYPE_IMAGE_VIEW,
+    HANDLE_TYPE_SWAPCHAIN,
+    HANDLE_TYPE_RENDER_PASS,
+    HANDLE_TYPE_COMMAND_POOL,
+    HANDLE_TYPE_COMMAND_BUFFER,
+    HANDLE_TYPE_QUEUE,
+    HANDLE_TYPE_FENCE,
+    HANDLE_TYPE_SEMAPHORE,
+    HANDLE_TYPE_PIPELINE,
+    HANDLE_TYPE_SHADER
+} HandleType;
 
 typedef struct {
     bool used;
     bool shouldFree;
+    HandleType type;
     Uint32 data2;
     void* handle;
     void* data;
@@ -69,6 +92,7 @@ static HandleData* getFreeHandleData()
         if (!s_Graphics.handleData[i].used) {
             s_Graphics.handleData[i].used = true;
             s_Graphics.handleData[i].shouldFree = false;
+            s_Graphics.handleData[i].type = HANDLE_TYPE_NONE;
             return &s_Graphics.handleData[i];
         }
     }  
@@ -82,6 +106,7 @@ static HandleData* getFreeHandleData()
 
     data->used = true;
     data->shouldFree = true;
+    data->type = HANDLE_TYPE_NONE;
     return data;
 }
 
@@ -92,6 +117,7 @@ static void freeHandleData(HandleData* data)
     } else {
         data->used = false;
     }
+    data->type = HANDLE_TYPE_NONE;
 }
 
 // ==================================================
@@ -224,8 +250,6 @@ PalResult PAL_CALL createVkShader(
 
 void PAL_CALL destroyVkShader(PalShader* shader);
 
-PalShaderType PAL_CALL getVkShaderType(PalShader* shader);
-
 PalResult PAL_CALL createVkRenderPass(
     PalDevice* device,
     const PalRenderPassCreateInfo* info,
@@ -263,6 +287,10 @@ PalResult PAL_CALL signalVkSemaphore(
     PalSemaphore* semaphore, 
     PalQueue* queue,
     Uint64 value);
+
+PalResult PAL_CALL getVkSemaphoreValue(
+    PalSemaphore* semaphore, 
+    Uint64* value);
 
 PalResult PAL_CALL createVkCommandPool(
     PalDevice* device,
@@ -336,7 +364,6 @@ static PalGraphicsBackend s_VkBackend = {
     .presentSwapchain =  presentVkSwapchain,
     .createShader = createVkShader,
     .destroyShader = destroyVkShader,
-    .getShaderType = getVkShaderType,
     .createRenderPass = createVkRenderPass,
     .destroyRenderPass = destroyVkRenderPass,
     .createFence = createVkFence,
@@ -348,6 +375,7 @@ static PalGraphicsBackend s_VkBackend = {
     .destroySemaphore = destroyVkSemaphore,
     .waitSemaphore = waitVkSemaphore,
     .signalSemaphore = signalVkSemaphore,
+    .getSemaphoreValue = getVkSemaphoreValue,
     .createCommandPool = createVkCommandPool,
     .destroyCommandPool = destroyVkCommandPool,
     .createCommandBuffer = createVkCommandBuffer,
@@ -425,7 +453,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->presentSwapchain             ||
         !backend->createShader                 ||
         !backend->destroyShader                ||
-        !backend->getShaderType                ||
         !backend->createRenderPass             ||
         !backend->destroyRenderPass            ||
         !backend->createFence                  ||
@@ -437,6 +464,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroySemaphore             ||
         !backend->waitSemaphore                ||
         !backend->signalSemaphore              ||
+        !backend->getSemaphoreValue            ||
         !backend->createCommandPool            ||
         !backend->destroyCommandPool           ||
         !backend->createCommandBuffer          ||
@@ -561,6 +589,7 @@ PalResult PAL_CALL palEnumerateAdapters(
                 HandleData* data = getFreeHandleData();
                 data->backend = backend->base;
                 data->handle = adapters[i];
+                data->type = HANDLE_TYPE_ADAPTER;
 
                 // set the adapter handle into our index generated handle
                 adapters[i] = (PalAdapter*)data;
@@ -599,7 +628,7 @@ PalResult PAL_CALL palGetAdapterInfo(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_ADAPTER) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
@@ -619,7 +648,7 @@ PalResult PAL_CALL palGetAdapterCapabilities(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_ADAPTER) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
@@ -644,7 +673,7 @@ PalResult PAL_CALL palCreateDevice(
     }
 
     HandleData* adapterData = (HandleData*)adapter;
-    if (!adapterData->used) {
+    if (adapterData->type != HANDLE_TYPE_ADAPTER) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
@@ -667,6 +696,8 @@ PalResult PAL_CALL palCreateDevice(
     
     deviceData->backend = adapterData->backend;
     deviceData->handle = device;
+    deviceData->type = HANDLE_TYPE_DEVICE;
+    deviceData->data2 = features;
 
     *outDevice = (PalDevice*)deviceData;
     return PAL_RESULT_SUCCESS;
@@ -676,7 +707,7 @@ void PAL_CALL palDestroyDevice(PalDevice* device)
 {
     if (s_Graphics.initialized && device) {
         HandleData* data = (HandleData*)device;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_DEVICE) {
             data->backend->destroyDevice(data->handle);
             freeHandleData(data);
         }
@@ -698,7 +729,7 @@ PalResult PAL_CALL palAllocateMemory(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -715,7 +746,7 @@ void PAL_CALL palFreeMemory(
 {
     if (s_Graphics.initialized && device && memory) {
         HandleData* data = (HandleData*)device;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_DEVICE) {
             data->backend->freeMemory(data->handle, memory);
             freeHandleData(data);
         }
@@ -740,7 +771,7 @@ PalResult PAL_CALL palCreateQueue(
     }
 
     HandleData* deviceData = (HandleData*)device;
-    if (!deviceData->used) {
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -763,6 +794,7 @@ PalResult PAL_CALL palCreateQueue(
 
     queueData->backend = deviceData->backend;
     queueData->handle = queue;
+    queueData->type = HANDLE_TYPE_QUEUE;
 
     *outQueue = (PalQueue*)queueData;
     return PAL_RESULT_SUCCESS;
@@ -772,7 +804,7 @@ void PAL_CALL palDestroyQueue(PalQueue* queue)
 {
     if (s_Graphics.initialized && queue) {
         HandleData* data = (HandleData*)queue;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_QUEUE) {
             data->backend->destroyQueue(data->handle);
             freeHandleData(data);
         }
@@ -785,7 +817,7 @@ bool PAL_CALL palCanQueuePresent(
 {
     if (s_Graphics.initialized && queue) {
         HandleData* data = (HandleData*)queue;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_QUEUE) {
             return data->backend->canQueuePresent(data->handle, window);
         }
     }
@@ -814,7 +846,7 @@ PalResult PAL_CALL palEnumerateFormats(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_ADAPTER) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
@@ -830,7 +862,7 @@ bool PAL_CALL palIsFormatSupported(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_ADAPTER) {
         return false;
     }
 
@@ -846,7 +878,7 @@ PalImageUsages PAL_CALL palQueryFormatImageUsages(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_ADAPTER) {
         return PAL_IMAGE_USAGE_UNDEFINED;
     }
 
@@ -862,7 +894,7 @@ PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type == HANDLE_TYPE_ADAPTER) {
         return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
 
@@ -887,7 +919,7 @@ PalResult PAL_CALL palCreateImage(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -910,6 +942,8 @@ PalResult PAL_CALL palCreateImage(
 
     imageData->backend = data->backend;
     imageData->handle = image;
+    imageData->type = HANDLE_TYPE_IMAGE;
+    imageData->data2 = 0;
 
     *outImage = (PalImage*)imageData;
     return PAL_RESULT_SUCCESS;
@@ -919,9 +953,11 @@ void PAL_CALL palDestroyImage(PalImage* image)
 {
     if (s_Graphics.initialized && image) {
         HandleData* data = (HandleData*)image;
-        if (data->used) {
-            data->backend->destroyImage(data->handle);
-            freeHandleData(data);
+        if (data->type == HANDLE_TYPE_IMAGE) {
+            if (data->data2 == SWAPCHAIN_IMAGE) {
+                data->backend->destroyImage(data->handle);
+                freeHandleData(data);
+            }     
         }
     }
 }
@@ -939,7 +975,7 @@ PalResult PAL_CALL palGetImageInfo(
     }
 
     HandleData* data = (HandleData*)image;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_IMAGE) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
@@ -959,11 +995,11 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
     }
 
     HandleData* data = (HandleData*)image;
-    if (!data) {
+    if (data->type != HANDLE_TYPE_IMAGE) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
-    if (!data->used) {
+    if (data->data2 == SWAPCHAIN_IMAGE) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
@@ -986,7 +1022,11 @@ PalResult PAL_CALL palBindImageMemory(
     }
 
     HandleData* data = (HandleData*)image;
-    if (!data) {
+    if (data->type != HANDLE_TYPE_IMAGE) {
+        return PAL_RESULT_INVALID_IMAGE;
+    }
+
+    if (data->data2 == SWAPCHAIN_IMAGE) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
@@ -1016,15 +1056,15 @@ PalResult PAL_CALL palCreateImageView(
 
     HandleData* deviceData = (HandleData*)device;
     HandleData* imageData = (HandleData*)image;
-    if (!deviceData->used) {
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    if (!imageData->used) {
+    if (imageData->type != HANDLE_TYPE_IMAGE) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
-    // create a slot for the image views
+    // create a slot for the image view
     HandleData* imageViewData = getFreeHandleData();
     if (!imageViewData) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -1044,6 +1084,7 @@ PalResult PAL_CALL palCreateImageView(
 
     imageViewData->backend = deviceData->backend;
     imageViewData->handle = imageView;
+    imageViewData->type = HANDLE_TYPE_IMAGE_VIEW;
 
     *outImageView = (PalImageView*)imageViewData;
     return PAL_RESULT_SUCCESS;
@@ -1053,7 +1094,7 @@ void PAL_CALL palDestroyImageView(PalImageView* imageView)
 {
     if (s_Graphics.initialized && imageView) {
         HandleData* data = (HandleData*)imageView;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_IMAGE_VIEW) {
             data->backend->destroyImageView(data->handle);
             freeHandleData(data);
         }
@@ -1078,7 +1119,7 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
     }
 
     HandleData* data = (HandleData*)adapter;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_ADAPTER) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
@@ -1115,11 +1156,11 @@ PalResult PAL_CALL palCreateSwapchain(
 
     HandleData* deviceData = (HandleData*)device;
     HandleData* queueData = (HandleData*)queue;
-    if (!deviceData->used) {
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    if (!queueData->used) {
+    if (queueData->type != HANDLE_TYPE_QUEUE) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
@@ -1152,12 +1193,15 @@ PalResult PAL_CALL palCreateSwapchain(
         tmp->used = true;
         tmp->shouldFree = false; // we free all at once
         tmp->data = nullptr;
+        tmp->type = HANDLE_TYPE_IMAGE;
+        tmp->data2 = SWAPCHAIN_IMAGE;
     }
     
     swapchainData->backend = deviceData->backend;
     swapchainData->handle = swapchain;
     swapchainData->data = (void*)imagesData;
     swapchainData->data2 = info->imageCount;
+    swapchainData->type = HANDLE_TYPE_SWAPCHAIN;
 
     *outSwapchain = (PalSwapchain*)swapchainData;
     return PAL_RESULT_SUCCESS;
@@ -1167,7 +1211,7 @@ void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 {
     if (s_Graphics.initialized && swapchain) {
         HandleData* data = (HandleData*)swapchain;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_SWAPCHAIN) {
             data->backend->destroySwapchain(data->handle);
             palFree(s_Graphics.allocator, data->data);
             freeHandleData(data);
@@ -1179,7 +1223,9 @@ Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain)
 {
     if (s_Graphics.initialized && swapchain) {
         HandleData* data = (HandleData*)swapchain;
-        return data->data2;
+        if (data->type == HANDLE_TYPE_SWAPCHAIN) {
+            return data->data2;
+        }
     }
     return 0;
 }
@@ -1193,7 +1239,7 @@ PalImage* PAL_CALL palGetSwapchainImage(
     }
 
     HandleData* data = (HandleData*)swapchain;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_SWAPCHAIN) {
         return nullptr;
     }
 
@@ -1214,23 +1260,24 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
     }
 
     HandleData* data = (HandleData*)swapchain;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_SWAPCHAIN) {
         return nullptr;
     }
 
     void* FenceHandle = nullptr;
     void* signalSemaphoreHandle = nullptr;
+    HandleData* tmp = (HandleData*)info->signalSemaphore;
     if (info->fence) {
-        HandleData* tmp = (HandleData*)info->signalSemaphore;
-        if (!tmp->used) {
+        tmp = (HandleData*)info->signalSemaphore;
+        if (tmp->type != HANDLE_TYPE_FENCE) {
             return nullptr;
         }
         FenceHandle = tmp->handle;
     }
 
     if (info->signalSemaphore) {
-        HandleData* tmp = (HandleData*)info->signalSemaphore;
-        if (!tmp->used) {
+        tmp = (HandleData*)info->signalSemaphore;
+        if (tmp->type != HANDLE_TYPE_SEMAPHORE) {
             return nullptr;
         }
         signalSemaphoreHandle = tmp->handle;
@@ -1242,7 +1289,7 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
     nextInfo.signalValue = info->signalValue;
     nextInfo.timeout = info->timeout;
 
-    PalImage* tmp = data->backend->getNextSwapchainImage(
+    PalImage* tmpImage = data->backend->getNextSwapchainImage(
         data->handle,
         &nextInfo);
 
@@ -1251,7 +1298,7 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
     HandleData* imagesData = data->data;
     HandleData* imageData = nullptr;
     for (int i = 0; i < data->data2; i++) {
-        if (imagesData[i].handle == tmp) {
+        if (imagesData[i].handle == tmpImage) {
             // found our handle info
             imageData = &imagesData[i];
             break;
@@ -1274,19 +1321,23 @@ PalResult PAL_CALL palPresentSwapchain(
     }
 
     HandleData* swapchainData = (HandleData*)swapchain;
-    if (!swapchainData->used) {
+    if (swapchainData->type != HANDLE_TYPE_SWAPCHAIN) {
         return PAL_RESULT_INVALID_SWAPCHAIN;
     }
 
     HandleData* imageData = (HandleData*)info->image;
-    if (!imageData->used) {
+    if (imageData->type != HANDLE_TYPE_IMAGE) {
+        return PAL_RESULT_INVALID_IMAGE;
+    }
+
+    if (imageData->data2 != SWAPCHAIN_IMAGE) {
         return PAL_RESULT_INVALID_IMAGE;
     }
 
     void* waitSemaphoreHandle = nullptr;
     if (info->waitSemaphore) {
         HandleData* tmp = (HandleData*)info->waitSemaphore;
-        if (!tmp->used) {
+        if (tmp->type != HANDLE_TYPE_SEMAPHORE) {
             return PAL_RESULT_INVALID_SEMAPHORE;
         }
         waitSemaphoreHandle = tmp->handle;
@@ -1324,7 +1375,7 @@ PalResult PAL_CALL palCreateShader(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -1347,6 +1398,8 @@ PalResult PAL_CALL palCreateShader(
 
     shaderData->backend = data->backend;
     shaderData->handle = shader;
+    shaderData->type = HANDLE_TYPE_SHADER;
+    shaderData->data2 = (Uint32)info->type;
 
     *outShader = (PalShader*)shaderData;
     return PAL_RESULT_SUCCESS;
@@ -1356,7 +1409,7 @@ void PAL_CALL palDestroyShader(PalShader* shader)
 {
     if (s_Graphics.initialized && shader) {
         HandleData* data = (HandleData*)shader;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_SHADER) {
             data->backend->destroyShader(data->handle);
             freeHandleData(data);
         }
@@ -1367,8 +1420,8 @@ PalShaderType PAL_CALL palGetShaderType(PalShader* shader)
 {
     if (s_Graphics.initialized && shader) {
         HandleData* data = (HandleData*)shader;
-        if (data->used) {
-            return data->backend->getShaderType(data->handle);
+        if (data->type == HANDLE_TYPE_SHADER) {
+            return (PalShaderType)data->data2;
         }
     }
     return PAL_SHADER_TYPE_UNDEFINED;
@@ -1396,7 +1449,7 @@ PalResult PAL_CALL palCreateRenderPass(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -1407,13 +1460,14 @@ PalResult PAL_CALL palCreateRenderPass(
     createInfo.width = info->width;
     createInfo.height = info->height;
 
+    HandleData* tmp = nullptr;
     for (int i = 0; i < info->attachmentCount; i++) {
         if (!info->attachments[i].target) {
             return PAL_RESULT_NULL_POINTER;
         }
 
-        HandleData* tmp = (HandleData*)info->attachments[i].target;
-        if (!tmp->used) {
+        tmp = (HandleData*)info->attachments[i].target;
+        if (tmp->type != HANDLE_TYPE_IMAGE_VIEW) {
             return PAL_RESULT_INVALID_IMAGE_VIEW;
         }
 
@@ -1425,7 +1479,7 @@ PalResult PAL_CALL palCreateRenderPass(
 
         if (info->attachments[i].resolveTarget) {
             tmp = (HandleData*)info->attachments[i].resolveTarget;
-            if (!tmp->used) {
+            if (tmp->type != HANDLE_TYPE_IMAGE_VIEW) {
                 return PAL_RESULT_INVALID_IMAGE_VIEW;
             }
             attachments[i].resolveTarget = tmp->handle;
@@ -1451,6 +1505,7 @@ PalResult PAL_CALL palCreateRenderPass(
 
     renderPassData->backend = data->backend;
     renderPassData->handle = renderpass;
+    renderPassData->type = HANDLE_TYPE_RENDER_PASS;
 
     *outRenderPass = (PalRenderPass*)renderPassData;
     return PAL_RESULT_SUCCESS;
@@ -1460,7 +1515,7 @@ void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
 {
     if (s_Graphics.initialized && renderPass) {
         HandleData* data = (HandleData*)renderPass;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_RENDER_PASS) {
             data->backend->destroyRenderPass(data->handle);
             freeHandleData(data);
         }
@@ -1484,7 +1539,7 @@ PalResult PAL_CALL palCreateFence(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -1503,6 +1558,7 @@ PalResult PAL_CALL palCreateFence(
 
     fenceData->backend = data->backend;
     fenceData->handle = fence;
+    fenceData->type = HANDLE_TYPE_FENCE;
 
     *outFence = (PalFence*)fenceData;
     return PAL_RESULT_SUCCESS;
@@ -1512,7 +1568,7 @@ void PAL_CALL palDestroyFence(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
         HandleData* data = (HandleData*)fence;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_FENCE) {
             data->backend->destroyFence(data->handle);
             freeHandleData(data);
         }
@@ -1532,7 +1588,7 @@ PalResult PAL_CALL palWaitFence(
     }
 
     HandleData* data = (HandleData*)fence;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_FENCE) {
         return PAL_RESULT_INVALID_FENCE;
     }
 
@@ -1550,7 +1606,7 @@ PalResult PAL_CALL palResetFence(PalFence* fence)
     }
 
     HandleData* data = (HandleData*)fence;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_FENCE) {
         return PAL_RESULT_INVALID_FENCE;
     }
 
@@ -1561,7 +1617,7 @@ bool PAL_CALL palIsFenceSignaled(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
         HandleData* data = (HandleData*)fence;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_FENCE) {
             return data->backend->isFenceSignaled(data->handle);
         }
     }
@@ -1585,7 +1641,7 @@ PalResult PAL_CALL palCreateSemaphore(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -1604,6 +1660,12 @@ PalResult PAL_CALL palCreateSemaphore(
 
     semaphoreData->backend = data->backend;
     semaphoreData->handle = semaphore;
+    semaphoreData->type = HANDLE_TYPE_SEMAPHORE;
+
+    semaphoreData->data2 = BINARY_SEMAPHORE;
+    if (data->data2 & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        semaphoreData->data2 = TIMELINE_SEMAPHORE;
+    }
 
     *outSemaphore = (PalSemaphore*)semaphoreData;
     return PAL_RESULT_SUCCESS;
@@ -1613,7 +1675,7 @@ void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
 {
     if (s_Graphics.initialized && semaphore) {
         HandleData* data = (HandleData*)semaphore;
-        if (data->used) {
+        if (data->type != HANDLE_TYPE_SEMAPHORE) {
             data->backend->destroySemaphore(data->handle);
             freeHandleData(data);
         }
@@ -1635,12 +1697,12 @@ PalResult PAL_CALL palWaitSemaphore(
     }
 
     HandleData* semaphoreData = (HandleData*)semaphore;
-    if (!semaphoreData->used) {
+    if (semaphoreData->type != HANDLE_TYPE_SEMAPHORE) {
         return PAL_RESULT_INVALID_SEMAPHORE;
     }
 
     HandleData* queueData = (HandleData*)queue;
-    if (!queueData->used) {
+    if (queueData->type != HANDLE_TYPE_QUEUE) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
@@ -1665,12 +1727,12 @@ PalResult PAL_CALL palSignalSemaphore(
     }
 
     HandleData* semaphoreData = (HandleData*)semaphore;
-    if (!semaphoreData->used) {
+    if (semaphoreData->type != HANDLE_TYPE_SEMAPHORE) {
         return PAL_RESULT_INVALID_SEMAPHORE;
     }
 
     HandleData* queueData = (HandleData*)queue;
-    if (!queueData->used) {
+    if (queueData->type != HANDLE_TYPE_QUEUE) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
@@ -1678,6 +1740,45 @@ PalResult PAL_CALL palSignalSemaphore(
         semaphoreData->handle, 
         queueData->handle,
         value);
+}
+
+PalResult PAL_CALL palGetSemaphoreValue(
+    PalSemaphore* semaphore, 
+    Uint64* value)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!semaphore || !value) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)semaphore;
+    if (data->type != HANDLE_TYPE_SEMAPHORE) {
+        return PAL_RESULT_INVALID_SEMAPHORE;
+    }
+
+    if (data->data2 == BINARY_SEMAPHORE) {
+        return PAL_RESULT_INVALID_SEMAPHORE;
+    }
+
+    return data->backend->getSemaphoreValue(
+        data->handle, 
+        value);
+}
+
+bool PAL_CALL palIsTimelineSemaphore(PalSemaphore* semaphore)
+{
+    if (s_Graphics.initialized && semaphore) {
+        HandleData* data = (HandleData*)semaphore;
+        if (data->type == HANDLE_TYPE_SEMAPHORE) {
+            if (data->data2 == TIMELINE_SEMAPHORE) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 // ==================================================
@@ -1702,12 +1803,12 @@ PalResult PAL_CALL palCreateCommandPool(
     }
 
     HandleData* deviceData = (HandleData*)device;
-    if (!deviceData->used) {
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
     HandleData* queueData = (HandleData*)info->queue;
-    if (!queueData->used) {
+    if (queueData->type != HANDLE_TYPE_QUEUE) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
@@ -1735,6 +1836,7 @@ PalResult PAL_CALL palCreateCommandPool(
 
     poolData->backend = deviceData->backend;
     poolData->handle = pool;
+    poolData->type = HANDLE_TYPE_COMMAND_POOL;
 
     *outPool = (PalCommandPool*)poolData;
     return PAL_RESULT_SUCCESS;
@@ -1744,7 +1846,7 @@ void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 {
     if (s_Graphics.initialized && pool) {
         HandleData* data = (HandleData*)pool;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_COMMAND_POOL) {
             data->backend->destroyCommandPool(data->handle);
             freeHandleData(data);
         }
@@ -1766,12 +1868,12 @@ PalResult PAL_CALL palCreateCommandBuffer(
     }
 
     HandleData* data = (HandleData*)device;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
     HandleData* poolData = (HandleData*)pool;
-    if (!poolData->used) {
+    if (poolData->type != HANDLE_TYPE_COMMAND_POOL) {
         return PAL_RESULT_INVALID_COMMAND_POOL;
     }
 
@@ -1795,6 +1897,7 @@ PalResult PAL_CALL palCreateCommandBuffer(
 
     cmdBufferData->backend = data->backend;
     cmdBufferData->handle = cmdBuffer;
+    cmdBufferData->type = HANDLE_TYPE_COMMAND_BUFFER;
 
     *outCmdBuffer = (PalCommandBuffer*)cmdBufferData;
     return PAL_RESULT_SUCCESS;
@@ -1804,7 +1907,7 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     if (s_Graphics.initialized && cmdBuffer) {
         HandleData* data = (HandleData*)cmdBuffer;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_COMMAND_BUFFER) {
             data->backend->destroyCommandBuffer(data->handle);
             freeHandleData(data);
         }
@@ -1822,7 +1925,7 @@ PalResult PAL_CALL palBeginRendering(PalCommandBuffer* cmdBuffer)
     }
 
     HandleData* data = (HandleData*)cmdBuffer;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1840,7 +1943,7 @@ PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer)
     }
 
     HandleData* data = (HandleData*)cmdBuffer;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1861,7 +1964,11 @@ PalResult PAL_CALL palExecuteCommandBuffer(
 
     HandleData* primaryCmdBufferData = (HandleData*)primaryCmdBuffer;
     HandleData* secondaryCmdBufferData = (HandleData*)secondaryCmdBuffer;
-    if (!primaryCmdBufferData->used || secondaryCmdBufferData->used) {
+    if (primaryCmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    if (secondaryCmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1889,12 +1996,12 @@ PalResult PAL_CALL palBeginRenderPass(
     }
 
     HandleData* cmdBufferData = (HandleData*)cmdBuffer;
-    if (!cmdBufferData->used) {
+    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
     HandleData* renderPassData = (HandleData*)renderPass;
-    if (!renderPassData->used) {
+    if (renderPassData->type != HANDLE_TYPE_RENDER_PASS) {
         return PAL_RESULT_INVALID_RENDER_PASS;
     }
 
@@ -1916,7 +2023,7 @@ PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
     }
 
     HandleData* data = (HandleData*)cmdBuffer;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1936,12 +2043,12 @@ PalResult PAL_CALL palSubmitCommandBuffer(
     }
 
     HandleData* data = (HandleData*)queue;
-    if (!data->used) {
+    if (data->type != HANDLE_TYPE_QUEUE) {
         return PAL_RESULT_INVALID_QUEUE;
     }
 
     HandleData* cmdBufferData = (HandleData*)info->cmdBuffer;
-    if (!cmdBufferData->used) {
+    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
@@ -1950,21 +2057,21 @@ PalResult PAL_CALL palSubmitCommandBuffer(
     void* signalSemaphoreHandle = nullptr;
     if (info->fence) {
         HandleData* tmp = (HandleData*)info->fence;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_FENCE) {
             fenceHandle = tmp->handle;
         }
     }
 
     if (info->waitSemaphore) {
         HandleData* tmp = (HandleData*)info->waitSemaphore;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_SEMAPHORE) {
             waitSemaphoreHandle = tmp->handle;
         }
     }
 
     if (info->signalSemaphore) {
         HandleData* tmp = (HandleData*)info->signalSemaphore;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_SEMAPHORE) {
             signalSemaphoreHandle = tmp->handle;
         }
     }
@@ -2008,7 +2115,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     }
 
     HandleData* deviceData = (HandleData*)device;
-    if (!deviceData->used) {
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
     }
 
@@ -2030,33 +2137,46 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     // vertex shader path
     if (info->vertexShader) {
         tmp = (HandleData*)info->vertexShader;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_SHADER && 
+            tmp->data2 == PAL_SHADER_TYPE_VERTEX) {
             vShaderHandle = tmp->handle;
-        }
-
-        // fragment shader
-        tmp = (HandleData*)info->fragmentShader;
-        if (tmp->used) {
-            fShaderHandle = tmp->handle;
         }
 
         // tessellation control shader
         tmp = (HandleData*)info->tessellationControlShader;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_SHADER && 
+            tmp->data2 == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
             tessCShaderHandle = tmp->handle;
         }
 
         // tessellation evaluation shader
         tmp = (HandleData*)info->tessellationEvaluationShader;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_SHADER && 
+            tmp->data2 == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
             tessEShaderHandle = tmp->handle;
         }
 
         // geometry shader
         tmp = (HandleData*)info->geometryShader;
-        if (tmp->used) {
+        if (tmp->type == HANDLE_TYPE_SHADER && 
+            tmp->data2 == PAL_SHADER_TYPE_GEOMETRY) {
             gShaderHandle = tmp->handle;
         }
+
+    } else {
+        // mesh shader
+        tmp = (HandleData*)info->meshShader;
+        if (tmp->type == HANDLE_TYPE_SHADER && 
+            tmp->data2 == PAL_SHADER_TYPE_MESH) {
+            mShaderHandle = tmp->handle;
+        }
+    }
+
+    // fragment shader
+    tmp = (HandleData*)info->fragmentShader;
+    if (tmp->type == HANDLE_TYPE_SHADER && 
+        tmp->data2 == PAL_SHADER_TYPE_FRAGMENT) {
+        fShaderHandle = tmp->handle;
     }
 
     PalGraphicsPipelineCreateInfo createInfo;
@@ -2091,6 +2211,8 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     
     pipelineData->backend = deviceData->backend;
     pipelineData->handle = pipeline;
+    pipelineData->type = HANDLE_TYPE_PIPELINE;
+    pipelineData->data2 = GRAPHICS_PIPELINE;
 
     *outPipeline = (PalPipeline*)pipelineData;
     return PAL_RESULT_SUCCESS;
@@ -2100,9 +2222,22 @@ void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
 {
     if (s_Graphics.initialized && pipeline) {
         HandleData* data = (HandleData*)pipeline;
-        if (data->used) {
+        if (data->type == HANDLE_TYPE_PIPELINE) {
             data->backend->destroyPipeline(data->handle);
             freeHandleData(data);
         }
     }
+}
+
+bool PAL_CALL palIsGraphicsPipeline(PalPipeline* pipeline)
+{
+    if (s_Graphics.initialized && pipeline) {
+        HandleData* data = (HandleData*)pipeline;
+        if (data->type == HANDLE_TYPE_PIPELINE) {
+            if (data->data2 == GRAPHICS_PIPELINE) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

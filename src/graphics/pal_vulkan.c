@@ -3222,6 +3222,12 @@ PalResult PAL_CALL createVkShader(
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
+    } else if (info->type == PAL_SHADER_TYPE_MESH) {
+        if (device->features & PAL_SHADER_TYPE_MESH) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+        stage = VK_SHADER_STAGE_MESH_BIT_EXT;
     }
 
     shader = palAllocate(s_Vk.allocator, sizeof(PalShader), 0);
@@ -3264,11 +3270,6 @@ void PAL_CALL destroyVkShader(PalShader* shader)
         &s_Vk.vkAllocator);
     
     palFree(s_Vk.allocator, shader);
-}
-
-PalShaderType PAL_CALL getVkShaderType(PalShader* shader)
-{
-    return shader->type;
 }
 
 // ==================================================
@@ -3611,6 +3612,22 @@ PalResult PAL_CALL signalVkSemaphore(
     signalInfo.value = value;
 
     result = s_Vk.signalSemaphore(semaphore->device->handle, &signalInfo);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL getVkSemaphoreValue(
+    PalSemaphore* semaphore, 
+    Uint64* value) 
+{
+    VkResult result = s_Vk.getSemaphoreValue(
+        semaphore->device->handle, 
+        semaphore->handle, 
+        value);
+
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
     }
