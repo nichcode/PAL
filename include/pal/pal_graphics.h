@@ -231,7 +231,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT = PAL_BIT64(20),
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(21),
     PAL_ADAPTER_FEATURE_RESET_FENCE = PAL_BIT64(22),
-    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(23)
+    PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(23),
+    PAL_ADAPTER_FEATURE_LINE_POLYGON_MODE = PAL_BIT64(24)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -303,6 +304,127 @@ typedef enum {
     PAL_SAMPLE_COUNT_64
 } PalSampleCount;
 
+typedef enum {
+    PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+    PAL_PRIMITIVE_TOPOLOGY_LINE_LIST,
+    PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+    PAL_PRIMITIVE_TOPOLOGY_POINT_LIST
+} PalPrimitiveTopology;
+
+typedef enum {
+    PAL_CULL_MODE_NONE,
+    PAL_CULL_MODE_FRONT,
+    PAL_CULL_MODE_BACK
+} PalCullMode;
+
+typedef enum {
+    PAL_FRONT_FACE_CLOCKWISE,
+    PAL_FRONT_FACE_COUNTER_CLOCKWISE
+} PalFrontFace;
+
+typedef enum {
+    PAL_POLYGON_MODE_FILL,
+    PAL_POLYGON_MODE_LINE
+} PalPolygonMode;
+
+typedef enum {
+    PAL_VERTEX_TYPE_UNDEFINED,
+
+    PAL_VERTEX_TYPE_INT32,
+    PAL_VERTEX_TYPE_INT32_2,
+    PAL_VERTEX_TYPE_INT32_3,
+    PAL_VERTEX_TYPE_INT32_4,
+
+    PAL_VERTEX_TYPE_UINT32,
+    PAL_VERTEX_TYPE_UINT32_2,
+    PAL_VERTEX_TYPE_UINT32_3,
+    PAL_VERTEX_TYPE_UINT32_4,
+
+    PAL_VERTEX_TYPE_INT8_2,
+    PAL_VERTEX_TYPE_INT8_4,
+    PAL_VERTEX_TYPE_UINT8_2,
+    PAL_VERTEX_TYPE_UINT8_4,
+
+    PAL_VERTEX_TYPE_INT8_2NORM,
+    PAL_VERTEX_TYPE_INT8_4NORM,
+    PAL_VERTEX_TYPE_UINT8_2NORM,
+    PAL_VERTEX_TYPE_UINT8_4NORM,
+
+    PAL_VERTEX_TYPE_INT16_2,
+    PAL_VERTEX_TYPE_INT16_4,
+    PAL_VERTEX_TYPE_UINT16_2,
+    PAL_VERTEX_TYPE_UINT16_4,
+
+    PAL_VERTEX_TYPE_INT16_2NORM,
+    PAL_VERTEX_TYPE_INT16_4NORM,
+    PAL_VERTEX_TYPE_UINT16_2NORM,
+    PAL_VERTEX_TYPE_UINT16_4NORM,
+
+    PAL_VERTEX_TYPE_FLOAT,
+    PAL_VERTEX_TYPE_FLOAT2,
+    PAL_VERTEX_TYPE_FLOAT3,
+    PAL_VERTEX_TYPE_FLOAT4,
+
+    PAL_VERTEX_TYPE_HALF_FLOAT16_2,
+    PAL_VERTEX_TYPE_HALF_FLOAT16_4
+} PalVertexType;
+
+typedef enum {
+    PAL_COMPARE_OP_NEVER,
+    PAL_COMPARE_OP_LESS,
+    PAL_COMPARE_OP_EQUAL,
+    PAL_COMPARE_OP_LESS_EQUAL,
+    PAL_COMPARE_OP_GREATER,
+    PAL_COMPARE_OP_NOT_EQUAL,
+    PAL_COMPARE_OP_GREATER_EQUAL,
+    PAL_COMPARE_OP_ALWAYS
+} PalCompareOp;
+
+typedef enum {
+    PAL_STENCIL_OP_KEEP,
+    PAL_STENCIL_OP_ZERO,
+    PAL_STENCIL_OP_REPLACE,
+    PAL_STENCIL_OP_INCREMENT_AND_CLAMP,
+    PAL_STENCIL_OP_DECREMENT_AND_CLAMP,
+    PAL_STENCIL_OP_INVERT,
+    PAL_STENCIL_OP_INCREMENT_AND_WRAP,
+    PAL_STENCIL_OP_DECREMENT_AND_WRAP
+} PalStencilOp;
+
+typedef enum {
+    PAL_BLEND_OP_ADD,
+    PAL_BLEND_OP_SUBTRACT,
+    PAL_BLEND_OP_REVERSE_SUBTRACT,
+    PAL_BLEND_OP_MIN,
+    PAL_BLEND_OP_MAX
+} PalBlendOp;
+
+typedef enum {
+    PAL_BLEND_FACTOR_ZERO,
+    PAL_BLEND_FACTOR_ONE,
+    PAL_BLEND_FACTOR_SRC_COLOR,
+    PAL_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+    PAL_BLEND_FACTOR_DST_COLOR,
+    PAL_BLEND_FACTOR_ONE_MINUX_DST_COLOR,
+    PAL_BLEND_FACTOR_SRC_ALPHA,
+    PAL_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    PAL_BLEND_FACTOR_DST_ALPHA,
+    PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+    PAL_BLEND_FACTOR_CONSTANT_COLOR,
+    PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+    PAL_BLEND_FACTOR_CONSTANT_ALPHA,
+    PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA
+} PalBlendFactor;
+
+typedef enum {
+    PAL_COLOR_MASK_NONE = 0,
+    PAL_COLOR_MASK_RED = PAL_BIT(0),
+    PAL_COLOR_MASK_GREEN = PAL_BIT(1),
+    PAL_COLOR_MASK_BLUE = PAL_BIT(2),
+    PAL_COLOR_MASK_ALPHA = PAL_BIT(3),
+} PalColorMask;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -351,6 +473,11 @@ typedef struct {
     Uint32 maxImageHeight;
     Uint32 maxImageArrayLayers;
 } PalSwapchainCapabilities;
+
+typedef struct {
+    void* display;
+    void* window;
+} PalGraphicsWindow;
 
 typedef struct {
     PalFormat format;
@@ -412,6 +539,61 @@ typedef struct {
 } PalPresentInfo;
 
 typedef struct {
+    PalVertexType type;
+    Uint32 location;
+} PalVertexAttribute;
+
+typedef struct {
+    bool perInstance;
+    Uint32 binding;
+    Uint32 vertexCount;
+    PalVertexAttribute* vertices;
+} PalVertexLayout;
+
+typedef struct {
+    bool enableDepthClamp;
+    bool enableDepthBias;
+    PalPolygonMode polygonMode;
+    PalCullMode cullMode;
+    PalFrontFace frontFace;
+} PalRasterizerState;
+
+typedef struct {
+    bool enableSampleShading;
+    bool enableAlphaToCoverage;
+    PalSampleCount sampleCount;
+    Uint32 sampleMask;
+    float minSampleShading;
+} PalMultisampleState;
+
+typedef struct {
+    PalStencilOp failOp;
+    PalStencilOp passOp;
+    PalStencilOp depthFailOp;
+    PalCompareOp compareOp;
+} PalStencilOpState;
+
+typedef struct {
+    bool enableDepthTest;
+    bool enableDepthWrite;
+    bool enableStencilTest;
+    PalCompareOp compareOp;
+    PalStencilOpState frontStencilOpState;
+    PalStencilOpState backStencilOpState;
+} PalDepthStencilState;
+
+typedef struct {
+    bool enableBlend;
+    PalColorMask colorWriteMask;
+    PalBlendFactor srcColorBlendFactor;
+    PalBlendFactor dstColorBlendFactor;
+    PalBlendOp colorBlendOp;
+    PalBlendFactor srcAlphaBlendFactor;
+    PalBlendFactor dstAlphaBlendFactor;
+    PalBlendOp alphaBlendOp;
+} PalColorBlendAttachmentState;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -462,9 +644,21 @@ typedef struct {
 } PalCommandPoolCreateInfo;
 
 typedef struct {
-    void* display;
-    void* window;
-} PalGraphicsWindow;
+    PalPrimitiveTopology topology;
+    Uint32 vertexLayoutCount;
+    Uint32 colorBlendAttachmentStateCount;
+    PalShader* vertexShader;
+    PalShader* pixelShader;
+    PalShader* geometryShader;
+    PalShader* meshShader;
+    PalShader* tessellationEvaluationShader;
+    PalShader* tessellationControlShader;
+    PalVertexLayout* vertexLayouts;
+    PalColorBlendAttachmentState* colorBlendAttachmentStates;
+    PalRasterizerState rasterizerState;
+    PalMultisampleState multisampleState;
+    PalDepthStencilState depthStencilState;
+} PalGraphicsPipelineCreateInfo;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateAdapters)(

@@ -1935,6 +1935,10 @@ PalResult PAL_CALL getVkAdapterCapabilities(
         caps->features |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
     }
 
+    if (features.fillModeNonSolid) {
+        caps->features |= PAL_ADAPTER_FEATURE_LINE_POLYGON_MODE;
+    }
+
     // this features are supported on vulkan
     caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
     caps->features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;

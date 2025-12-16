@@ -339,6 +339,10 @@ bool graphicsTest()
         if (caps.features & PAL_ADAPTER_FEATURE_TIMEOUT_FENCE) {
             palLog(nullptr, "  Timeout fence");
         }
+
+        if (caps.features & PAL_ADAPTER_FEATURE_LINE_POLYGON_MODE) {
+            palLog(nullptr, "  Line Polygon Mode");
+        }
         
         palLog(nullptr, "");
     }
