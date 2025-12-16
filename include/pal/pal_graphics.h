@@ -293,6 +293,16 @@ typedef enum {
     PAL_ATTACHMENT_TYPE_STENCIL
 } PalAttachmentType;
 
+typedef enum {
+    PAL_SAMPLE_COUNT_1,
+    PAL_SAMPLE_COUNT_2,
+    PAL_SAMPLE_COUNT_4,
+    PAL_SAMPLE_COUNT_8,
+    PAL_SAMPLE_COUNT_16,
+    PAL_SAMPLE_COUNT_32,
+    PAL_SAMPLE_COUNT_64
+} PalSampleCount;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -304,6 +314,7 @@ typedef struct {
     Uint64 version;
     char versionString[PAL_ADAPTER_VERSION_SIZE];
     char name[PAL_ADAPTER_NAME_SIZE];
+    char backendName[PAL_ADAPTER_NAME_SIZE];
 } PalAdapterInfo;
 
 typedef struct {
@@ -316,8 +327,8 @@ typedef struct {
     Uint32 maxImageDepth;
     Uint32 maxImageArrayLayers;
     Uint32 maxImageMipLevels;
-    Uint32 maxColorSamples;
-    Uint32 maxDepthSamples;
+    PalSampleCount maxColorSampleCount;
+    PalSampleCount maxDepthSampleCount;
     Uint32 maxColorAttachments;
     Uint32 maxMultiViews;
     Uint32 maxViewports;
@@ -352,7 +363,7 @@ typedef struct {
     Uint32 height;
     Uint32 depthOrArraySize;
     Uint32 mipLevelCount;
-    Uint32 samples;
+    PalSampleCount sampleCount;
     PalImageType type;
     PalFormat format;
     PalImageUsages usages;
@@ -405,7 +416,7 @@ typedef struct {
     Uint32 height;
     Uint32 depthOrArraySize;
     Uint32 mipLevelCount;
-    Uint32 samples;
+    PalSampleCount sampleCount;
     PalImageType type;
     PalFormat format;
     PalImageUsages usages;

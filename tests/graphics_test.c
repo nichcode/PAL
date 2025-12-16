@@ -2,6 +2,34 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
+static Uint32 getSampleCount(PalSampleCount sampleCount)
+{
+    switch (sampleCount) {
+        case PAL_SAMPLE_COUNT_1:
+            return 1;
+
+        case PAL_SAMPLE_COUNT_2:
+            return 2;
+
+        case PAL_SAMPLE_COUNT_4:
+            return 4;
+
+        case PAL_SAMPLE_COUNT_8:
+            return 8;
+
+        case PAL_SAMPLE_COUNT_16:
+            return 16;
+
+        case PAL_SAMPLE_COUNT_32:
+            return 32;
+
+        case PAL_SAMPLE_COUNT_64:
+            return 64;
+    }
+
+    return 1;
+}
+
 bool graphicsTest()
 {
     palLog(nullptr, "");
@@ -74,6 +102,7 @@ bool graphicsTest()
         Uint32 sharedMemGb = info.sharedMemory / (1024.0 * 1024.0 * 1024.0);
 
         palLog(nullptr, "GPU Name: %s", info.name);
+        palLog(nullptr, " Backend Name: %s", info.backendName);
         palLog(nullptr, " Vendor Id: %d", info.vendorId);
         palLog(nullptr, " Device Id: %d", info.deviceId);
         palLog(nullptr, " Vram %dGB", vramGb);
@@ -185,6 +214,9 @@ bool graphicsTest()
 
         // clang-format off
 
+        Uint32 colorSampleCount = getSampleCount(caps.maxColorSampleCount);
+        Uint32 depthSampleCount = getSampleCount(caps.maxDepthSampleCount);
+
         Uint32 uniformBufferSize = caps.maxUniformBufferSize / 1024;
         Uint32 storageBufferSize = caps.maxStorageBufferSize / 1024;
         Uint32 pushConstantSize = caps.maxStorageBufferSize / 1024;
@@ -199,8 +231,8 @@ bool graphicsTest()
         palLog(nullptr, " Max image array layers: %d", caps.maxImageArrayLayers);
         palLog(nullptr, " Max image mip levels: %d", caps.maxImageMipLevels);
 
-        palLog(nullptr, " Max color samples: %d", caps.maxColorSamples);
-        palLog(nullptr, " Max depth samples: %d", caps.maxDepthSamples);
+        palLog(nullptr, " Max color samples: %d", colorSampleCount);
+        palLog(nullptr, " Max depth samples: %d", depthSampleCount);
         palLog(nullptr, " Max color attachment: %d", caps.maxColorAttachments);
         palLog(nullptr, " Max multi views: %d", caps.maxMultiViews);   
         palLog(nullptr, " Max viewports: %d", caps.maxViewports);

@@ -619,53 +619,53 @@ static VkFormat palFormatToVk(PalFormat format)
     return VK_FORMAT_UNDEFINED;
 }
 
-static VkSampleCountFlags samplesToVk(Uint32 samples)
+static VkSampleCountFlags samplesToVk(PalSampleCount count)
 {
-    switch (samples) {
-        case 2:
+    switch (count) {
+        case PAL_SAMPLE_COUNT_2:
             return VK_SAMPLE_COUNT_2_BIT;
         
-        case 4:
+        case PAL_SAMPLE_COUNT_4:
             return VK_SAMPLE_COUNT_4_BIT;
 
-        case 8:
+        case PAL_SAMPLE_COUNT_8:
             return VK_SAMPLE_COUNT_8_BIT;
 
-        case 16:
+        case PAL_SAMPLE_COUNT_16:
             return VK_SAMPLE_COUNT_16_BIT;
 
-        case 32:
+        case PAL_SAMPLE_COUNT_32:
             return VK_SAMPLE_COUNT_32_BIT;
 
-        case 64:
+        case PAL_SAMPLE_COUNT_64:
             return VK_SAMPLE_COUNT_64_BIT;
     }
 
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-static Uint32 vkSamplesToSamples(VkSampleCountFlags samples)
+static PalSampleCount vkSamplesToSamples(VkSampleCountFlags count)
 {
-    if (samples & VK_SAMPLE_COUNT_2_BIT) {
-        return 2;
+    if (count & VK_SAMPLE_COUNT_2_BIT) {
+        return PAL_SAMPLE_COUNT_2;
 
-    } else if (samples & VK_SAMPLE_COUNT_4_BIT) {
-        return 4;
+    } else if (count & VK_SAMPLE_COUNT_4_BIT) {
+        return PAL_SAMPLE_COUNT_4;
 
-    } else if (samples & VK_SAMPLE_COUNT_8_BIT) {
-        return 8;
+    } else if (count & VK_SAMPLE_COUNT_8_BIT) {
+        return PAL_SAMPLE_COUNT_8;
 
-    } else if (samples & VK_SAMPLE_COUNT_16_BIT) {
-        return 16;
+    } else if (count & VK_SAMPLE_COUNT_16_BIT) {
+        return PAL_SAMPLE_COUNT_16;
 
-    } else if (samples & VK_SAMPLE_COUNT_32_BIT) {
-        return 32;
+    } else if (count & VK_SAMPLE_COUNT_32_BIT) {
+        return PAL_SAMPLE_COUNT_32;
 
-    } else if (samples & VK_SAMPLE_COUNT_64_BIT) {
-        return 64;
+    } else if (count & VK_SAMPLE_COUNT_64_BIT) {
+        return PAL_SAMPLE_COUNT_64;
     }
 
-    return 1;
+    return PAL_SAMPLE_COUNT_1;
 }
 
 static PalFormat vkFormatToPal(VkFormat format)
@@ -1546,6 +1546,7 @@ PalResult PAL_CALL getVkAdapterInfo(
     info->deviceId = props.deviceID;
     info->vendorId = props.vendorID;
     strcpy(info->name, props.deviceName);
+    strcpy(info->backendName, "PAL");
 
     info->vram = 0;
     info->sharedMemory = 0;
@@ -1619,11 +1620,12 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->maxImageHeight = props.limits.maxImageDimension2D;
     caps->maxImageDepth = props.limits.maxImageDimension3D;
     caps->maxImageArrayLayers = props.limits.maxImageArrayLayers;
-    
-    Uint32 tmp = vkSamplesToSamples(props.limits.framebufferColorSampleCounts);
-    caps->maxColorSamples = tmp;
+
+    PalSampleCount tmp = PAL_SAMPLE_COUNT_1;
+    tmp = vkSamplesToSamples(props.limits.framebufferColorSampleCounts);
+    caps->maxColorSampleCount = tmp;
     tmp = vkSamplesToSamples(props.limits.framebufferDepthSampleCounts);
-    caps->maxDepthSamples = tmp;
+    caps->maxDepthSampleCount = tmp;
 
     caps->maxViewports = props.limits.maxViewports;
     caps->maxSamplers = props.limits.maxSamplerAllocationCount;
@@ -2599,7 +2601,7 @@ PalResult PAL_CALL createVkImage(
     createInfo.mipLevels = info->mipLevelCount;
 
     createInfo.format = palFormatToVk(info->format);
-    createInfo.samples = samplesToVk(info->samples);
+    createInfo.samples = samplesToVk(info->sampleCount);
     createInfo.usage = palUsageToVk(info->usages);
 
     createInfo.arrayLayers = info->depthOrArraySize;
@@ -2630,7 +2632,7 @@ PalResult PAL_CALL createVkImage(
     image->info.usages = info->usages;
     image->info.height = info->height;
     image->info.mipLevelCount = info->mipLevelCount;
-    image->info.samples = info->samples;
+    image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
 
     *outImage = image;
@@ -3073,7 +3075,7 @@ PalResult PAL_CALL createVkSwapchain(
         image->info.height = createInfo.imageExtent.height;
         image->info.width = createInfo.imageExtent.width;
         image->info.mipLevelCount = 1; 
-        image->info.samples = 1; // swapchain images are not multisampled
+        image->info.sampleCount = PAL_SAMPLE_COUNT_1; // swapchain images are not multisampled
         image->info.type = PAL_IMAGE_TYPE_2D;
     }
     
@@ -3296,7 +3298,7 @@ PalResult PAL_CALL createVkRenderPass(
 
         rDesc->format = palFormatToVk(desc->target->image->info.format);
         rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        rDesc->samples = vkSamplesToSamples(desc->target->image->info.samples);
+        rDesc->samples = vkSamplesToSamples(desc->target->image->info.sampleCount);
         rDesc->flags = 0;
         rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
