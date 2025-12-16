@@ -52,6 +52,7 @@ typedef struct PalFence PalFence;
 typedef struct PalSemaphore PalSemaphore;
 typedef struct PalCommandPool PalCommandPool;
 typedef struct PalCommandBuffer PalCommandBuffer;
+typedef struct PalPipeline PalPipeline;
 
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -281,7 +282,7 @@ typedef enum {
 typedef enum {
     PAL_SHADER_TYPE_UNDEFINED,
     PAL_SHADER_TYPE_VERTEX,
-    PAL_SHADER_TYPE_PIXEL,
+    PAL_SHADER_TYPE_FRAGMENT,
     PAL_SHADER_TYPE_COMPUTE,
     PAL_SHADER_TYPE_GEOMETRY,
     PAL_SHADER_TYPE_TESSELLATION_CONTROL,
@@ -591,7 +592,7 @@ typedef struct {
     PalBlendFactor srcAlphaBlendFactor;
     PalBlendFactor dstAlphaBlendFactor;
     PalBlendOp alphaBlendOp;
-} PalColorBlendAttachmentState;
+} PalBlendAttachment;
 
 typedef struct {
     Uint32 width;
@@ -646,15 +647,15 @@ typedef struct {
 typedef struct {
     PalPrimitiveTopology topology;
     Uint32 vertexLayoutCount;
-    Uint32 colorBlendAttachmentStateCount;
+    Uint32 blendAttachmentCount;
     PalShader* vertexShader;
-    PalShader* pixelShader;
+    PalShader* fragmentShader;
     PalShader* geometryShader;
     PalShader* meshShader;
     PalShader* tessellationEvaluationShader;
     PalShader* tessellationControlShader;
     PalVertexLayout* vertexLayouts;
-    PalColorBlendAttachmentState* colorBlendAttachmentStates;
+    PalBlendAttachment* blendAttachments;
     PalRasterizerState rasterizerState;
     PalMultisampleState multisampleState;
     PalDepthStencilState depthStencilState;
@@ -853,6 +854,13 @@ typedef struct {
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalSubmitInfo* info);
+
+    PalResult PAL_CALL (*createGraphicsPipeline)(
+        PalDevice* device,
+        const PalGraphicsPipelineCreateInfo* info,
+        PalPipeline** outPipeline);
+
+    void PAL_CALL (*destroyPipeline)(PalPipeline* pipeline);
 } PalGraphicsBackend;
 
 PAL_API PalResult PAL_CALL palAddGraphicsBackend(
@@ -1058,6 +1066,13 @@ PAL_API PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer);
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
+
+PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
+    PalDevice* device,
+    const PalGraphicsPipelineCreateInfo* info,
+    PalPipeline** outPipeline);
+
+PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
 
 /** @} */ // end of pal_graphics group
 

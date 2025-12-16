@@ -299,6 +299,13 @@ PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
 
+PalResult PAL_CALL createVkGraphicsPipeline(
+    PalDevice* device,
+    const PalGraphicsPipelineCreateInfo* info,
+    PalPipeline** outPipeline);
+
+void PAL_CALL destroyVkPipeline(PalPipeline* pipeline);
+
 static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
     .getAdapterInfo =  getVkAdapterInfo,
@@ -350,7 +357,9 @@ static PalGraphicsBackend s_VkBackend = {
     .executeCommandBuffer = executeCommandBufferVk,
     .beginRenderPass = beginRenderPassVk,
     .endRenderPass = endRenderPassVk,
-    .submitCommandBuffer = submitVkCommandBuffer
+    .submitCommandBuffer = submitVkCommandBuffer,
+    .createGraphicsPipeline = createVkGraphicsPipeline,
+    .destroyPipeline = destroyVkPipeline
 };
 
 #endif // PAL_HAS_VULKAN
@@ -437,7 +446,9 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->beginRenderPass              ||
         !backend->endRenderPass                ||
         !backend->endRendering                 ||
-        !backend->executeCommandBuffer         ||
+        !backend->createGraphicsPipeline       ||
+        !backend->destroyPipeline              ||
+        !backend->submitCommandBuffer          ||
         !backend->submitCommandBuffer) {
         return PAL_RESULT_INVALID_BACKEND;
     }
@@ -1969,4 +1980,129 @@ PalResult PAL_CALL palSubmitCommandBuffer(
     return data->backend->submitCommandBuffer(
         data->handle,
         &submitInfo);
+}
+
+// ==================================================
+// Pipeline
+// ==================================================
+
+PalResult PAL_CALL palCreateGraphicsPipeline(
+    PalDevice* device,
+    const PalGraphicsPipelineCreateInfo* info,
+    PalPipeline** outPipeline)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outPipeline) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->fragmentShader) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->meshShader && !info->vertexShader) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = (HandleData*)device;
+    if (!deviceData->used) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    // shaders
+    void* vShaderHandle = nullptr;
+    void* fShaderHandle = nullptr;
+    void* gShaderHandle = nullptr;
+    void* mShaderHandle = nullptr;
+    void* tessEShaderHandle = nullptr;
+    void* tessCShaderHandle = nullptr;
+
+    // create a slot for the pipeline
+    HandleData* pipelineData = getFreeHandleData();
+    if (!pipelineData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    HandleData* tmp = nullptr;
+    // vertex shader path
+    if (info->vertexShader) {
+        tmp = (HandleData*)info->vertexShader;
+        if (tmp->used) {
+            vShaderHandle = tmp->handle;
+        }
+
+        // fragment shader
+        tmp = (HandleData*)info->fragmentShader;
+        if (tmp->used) {
+            fShaderHandle = tmp->handle;
+        }
+
+        // tessellation control shader
+        tmp = (HandleData*)info->tessellationControlShader;
+        if (tmp->used) {
+            tessCShaderHandle = tmp->handle;
+        }
+
+        // tessellation evaluation shader
+        tmp = (HandleData*)info->tessellationEvaluationShader;
+        if (tmp->used) {
+            tessEShaderHandle = tmp->handle;
+        }
+
+        // geometry shader
+        tmp = (HandleData*)info->geometryShader;
+        if (tmp->used) {
+            gShaderHandle = tmp->handle;
+        }
+    }
+
+    PalGraphicsPipelineCreateInfo createInfo;
+    createInfo.fragmentShader = fShaderHandle;
+    createInfo.geometryShader = gShaderHandle;
+    createInfo.meshShader = mShaderHandle;
+    createInfo.tessellationControlShader = tessCShaderHandle;
+    createInfo.tessellationEvaluationShader = tessEShaderHandle;
+    createInfo.vertexShader = vShaderHandle;
+
+    createInfo.topology = info->topology;
+    createInfo.blendAttachmentCount = info->blendAttachmentCount;
+    createInfo.blendAttachments = info->blendAttachments;
+
+    createInfo.depthStencilState = info->depthStencilState;
+    createInfo.multisampleState = info->multisampleState;
+    createInfo.rasterizerState = info->rasterizerState;
+    
+    createInfo.vertexLayoutCount = info->vertexLayoutCount;
+    createInfo.vertexLayouts = info->vertexLayouts;
+
+    PalResult ret;
+    PalPipeline* pipeline = nullptr;
+    ret = deviceData->backend->createGraphicsPipeline(
+        deviceData->handle,
+        &createInfo,
+        &pipeline);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+    
+    pipelineData->backend = deviceData->backend;
+    pipelineData->handle = pipeline;
+
+    *outPipeline = (PalPipeline*)pipelineData;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
+{
+    if (s_Graphics.initialized && pipeline) {
+        HandleData* data = (HandleData*)pipeline;
+        if (data->used) {
+            data->backend->destroyPipeline(data->handle);
+            freeHandleData(data);
+        }
+    }
 }

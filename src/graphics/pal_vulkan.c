@@ -3202,7 +3202,7 @@ PalResult PAL_CALL createVkShader(
     if (info->type == PAL_SHADER_TYPE_VERTEX) {
         stage = VK_SHADER_STAGE_VERTEX_BIT;
 
-    } else if (info->type == PAL_SHADER_TYPE_PIXEL) {
+    } else if (info->type == PAL_SHADER_TYPE_FRAGMENT) {
         stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
@@ -3871,6 +3871,23 @@ PalResult PAL_CALL submitVkCommandBuffer(
     }
 
     return PAL_RESULT_SUCCESS;
+}
+
+// ==================================================
+// Pipeline
+// ==================================================
+
+PalResult PAL_CALL createVkGraphicsPipeline(
+    PalDevice* device,
+    const PalGraphicsPipelineCreateInfo* info,
+    PalPipeline** outPipeline)
+{
+
+}
+
+void PAL_CALL destroyVkPipeline(PalPipeline* pipeline)
+{
+
 }
 
 #endif // PAL_HAS_VULKAN
