@@ -3234,10 +3234,16 @@ PalResult PAL_CALL createVkShader(
         stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 
     } else if (info->type == PAL_SHADER_TYPE_MESH) {
-        if (device->features & PAL_SHADER_TYPE_MESH) {
+        if (device->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_MESH_BIT_EXT;
+
+    } else if (info->type == PAL_SHADER_TYPE_TASK) {
+        if (device->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+        stage = VK_SHADER_STAGE_TASK_BIT_EXT;
     }
 
     shader = palAllocate(s_Vk.allocator, sizeof(PalShader), 0);
