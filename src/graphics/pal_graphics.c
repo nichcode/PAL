@@ -309,10 +309,6 @@ PalResult PAL_CALL createVkCommandBuffer(
 
 void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
-PalResult PAL_CALL beginRenderingVk(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL endRenderingVk(PalCommandBuffer* cmdBuffer);
-
 PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
@@ -383,8 +379,6 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyCommandPool = destroyVkCommandPool,
     .createCommandBuffer = createVkCommandBuffer,
     .destroyCommandBuffer = destroyVkCommandBuffer,
-    .beginRendering = beginRenderingVk,
-    .endRendering = endRenderingVk,
     .executeCommandBuffer = executeCommandBufferVk,
     .beginRenderPass = beginRenderPassVk,
     .endRenderPass = endRenderPassVk,
@@ -473,11 +467,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyCommandPool           ||
         !backend->createCommandBuffer          ||
         !backend->destroyCommandBuffer         ||
-        !backend->beginRendering               ||
-        !backend->endRendering                 ||
         !backend->beginRenderPass              ||
         !backend->endRenderPass                ||
-        !backend->endRendering                 ||
         !backend->createGraphicsPipeline       ||
         !backend->destroyPipeline              ||
         !backend->submitCommandBuffer          ||
@@ -666,12 +657,12 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
     }
 
     if (!adapter) {
-        return PAL_RESULT_NULL_POINTER;
+        return 0;
     }
 
     HandleData* data = (HandleData*)adapter;
     if (data->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_RESULT_INVALID_ADAPTER;
+        return 0;
     }
 
     return data->backend->getAdapterFeatures(data->handle);
@@ -1934,42 +1925,6 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
             freeHandleData(data);
         }
     }
-}
-
-PalResult PAL_CALL palBeginRendering(PalCommandBuffer* cmdBuffer)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = (HandleData*)cmdBuffer;
-    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    return data->backend->beginRendering(data->handle);
-}
-
-PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    HandleData* data = (HandleData*)cmdBuffer;
-    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    return data->backend->endRendering(data->handle);
 }
 
 PalResult PAL_CALL palExecuteCommandBuffer(

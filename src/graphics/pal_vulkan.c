@@ -89,7 +89,6 @@ typedef struct {
     PFN_vkEnumerateDeviceExtensionProperties enumerateDeviceExtensionProperties;
     PFN_vkGetPhysicalDeviceFeatures getPhysicalDeviceFeatures;
     PFN_vkGetPhysicalDeviceFeatures2 getPhysicalDeviceFeatures2;
-    PFN_vkGetPhysicalDeviceFeatures2KHR getPhysicalDeviceFeatures2KHR;
     PFN_vkGetInstanceProcAddr getInstanceProcAddr;
     PFN_vkCreateImageView createImageView;
     PFN_vkDestroyImageView destroyImageView;
@@ -1421,9 +1420,8 @@ PalResult PAL_CALL initGraphicsVk(
 
     // clang-format off
     if (versionFallback) {
-        s_Vk.getPhysicalDeviceFeatures2KHR = nullptr;
         // load get physical device properties2 proc if we are on version 1.0
-        s_Vk.getPhysicalDeviceFeatures2KHR = 
+        s_Vk.getPhysicalDeviceFeatures2 = 
             (PFN_vkGetPhysicalDeviceFeatures2KHR)s_Vk.getInstanceProcAddr(
                 s_Vk.handle, 
                 "vkGetPhysicalDeviceFeatures2KHR");
@@ -1734,7 +1732,6 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     // check extensions
     bool rayTracingFound = false;
     bool accelerateFound = false;
-    bool dynamicRendering = false;
     bool meshShader = false;
     bool fragmentRateShading = false;
     bool timelineSemaphore = false;
@@ -1751,9 +1748,6 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 
         } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structure") == 0) {
             accelerateFound = true;
-
-        } else if (strcmp(props->extensionName, "VK_KHR_dynamic_rendering") == 0) {
-            dynamicRendering = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
             meshShader = true;
@@ -1775,6 +1769,16 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 
         } else if (strcmp(props->extensionName, "VK_KHR_multiview") == 0) {
             multiiView = true;
+
+        } else if (strcmp(props->extensionName, "VK_EXT_extended_dynamic_state") == 0) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY;
+
+        } else if (strcmp(props->extensionName, "VK_EXT_extended_dynamic_state2") == 0) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP;
         }
     }
 
@@ -1797,21 +1801,6 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_RAY_TRACING;
-        }
-    }
-
-    // dynamic rendering is part of core 1.3
-    if (props.apiVersion >= VK_API_VERSION_1_3 || dynamicRendering) {
-        VkPhysicalDeviceDynamicRenderingFeaturesKHR dyn;
-        dyn.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-
-        VkPhysicalDeviceFeatures2 features;
-        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        features.pNext = &dyn;
-
-        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-        if (dyn.dynamicRendering) {
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
         }
     }
 
@@ -1942,25 +1931,21 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         adapterFeatures |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
     }
 
-    if (dynamicRendering) {
-        adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
-    }
-
     if (features.fillModeNonSolid) {
         adapterFeatures |= PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE;
     }
 
     // this features are supported on vulkan
-    adapterFeatures |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY;
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE;
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
-    adapterFeatures |= PAL_ADAPTER_FEATURE_RESET_FENCE;
-    adapterFeatures |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_TIMEOUT;
     adapterFeatures |= PAL_ADAPTER_FEATURE_SEMAPHORE;
 
     palFree(s_Vk.allocator, extensionProps);
-    return PAL_RESULT_SUCCESS;
+    return adapterFeatures;
 }
 
 // ==================================================
@@ -1976,7 +1961,10 @@ PalResult PAL_CALL createVkDevice(
     Uint32 count = 0;
     VkResult ret = VK_SUCCESS;
     PalDevice* device = nullptr;
+    VkPhysicalDeviceProperties props = {0};
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+
+    s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
 
     VkQueueFamilyProperties* queueProps = nullptr;
     VkDeviceQueueCreateInfo* queueCreateInfos = nullptr;
@@ -2096,20 +2084,21 @@ PalResult PAL_CALL createVkDevice(
         extensions[extCount++] = "VK_KHR_swapchain";
     }
 
-    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
-        extensions[extCount++] = "VK_KHR_dynamic_rendering";
-    }
-
     if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-        extensions[extCount++] = "VK_KHR_timeline_semaphore";
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_timeline_semaphore";
+        }
+
         timeline.timelineSemaphore = true;
         start = &timeline;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
-        extensions[extCount++] = "VK_KHR_shader_float16_int8";
-        shader16.shaderFloat16 = true;
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_shader_float16_int8";
+        }
 
+        shader16.shaderFloat16 = true;
         if (timeline.timelineSemaphore) {
             timeline.pNext = &shader16;
         }
@@ -2117,11 +2106,13 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
-        extensions[extCount++] = "VK_KHR_acceleration_structure";
+        if (props.apiVersion < VK_API_VERSION_1_3) {
+            extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
+            extensions[extCount++] = "VK_KHR_acceleration_structure";
+        }
+
         ray.rayTracingPipeline = true;
         acc.accelerationStructure = true;
-       
         if (shader16.shaderFloat16) {
             shader16.pNext = &ray;
 
@@ -2134,10 +2125,12 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-        extensions[extCount++] = "VK_EXT_mesh_shader";
+        if (props.apiVersion < VK_API_VERSION_1_3) {
+            extensions[extCount++] = "VK_EXT_mesh_shader";
+        }
+
         mesh.meshShader = true;
         mesh.taskShader = true;
-
         if (acc.accelerationStructure) {
             acc.pNext = &mesh;
 
@@ -2151,9 +2144,11 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
-        extensions[extCount++] = "VK_KHR_fragment_shading_rate";
-        vrs.pipelineFragmentShadingRate = true;
+        if (props.apiVersion < VK_API_VERSION_1_3) {
+            extensions[extCount++] = "VK_KHR_fragment_shading_rate";
+        }
 
+        vrs.pipelineFragmentShadingRate = true;
         if (mesh.meshShader) {
             mesh.pNext = &vrs;
 
@@ -2170,9 +2165,11 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        extensions[extCount++] = "VK_EXT_descriptor_indexing";
-        descIndex.shaderSampledImageArrayNonUniformIndexing = true;
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_EXT_descriptor_indexing";
+        }
 
+        descIndex.shaderSampledImageArrayNonUniformIndexing = true;
         if (vrs.pipelineFragmentShadingRate) {
             vrs.pNext = &descIndex;
 
@@ -2192,9 +2189,11 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
-        extensions[extCount++] = "VK_KHR_multiview";
-        multiView.multiview = true;
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_multiview";
+        }
 
+        multiView.multiview = true;
         if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
             descIndex.pNext = &multiView;
 
@@ -2738,7 +2737,7 @@ PalResult PAL_CALL createVkImageView(
 {
     // mimic the actual requested features at device creation
     if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-        if (!(device->features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW)) {
+        if (!(device->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
     }
@@ -3368,62 +3367,60 @@ PalResult PAL_CALL createVkRenderPass(
         }
     }
 
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING)) {
-        // subpass
-        VkSubpassDescription subpassDesc = {0};
-        subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpassDesc.colorAttachmentCount = colorRefCount;
-        subpassDesc.pColorAttachments = colorRefs;
-        if (renderpass->hasDepth) {
-            subpassDesc.pDepthStencilAttachment = &depthRef;
-        }
+    // subpass
+    VkSubpassDescription subpassDesc = {0};
+    subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpassDesc.colorAttachmentCount = colorRefCount;
+    subpassDesc.pColorAttachments = colorRefs;
+    if (renderpass->hasDepth) {
+        subpassDesc.pDepthStencilAttachment = &depthRef;
+    }
 
-        // render pass
-        VkRenderPassCreateInfo createInfo = {0};
-        createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        createInfo.attachmentCount = info->attachmentCount;
-        createInfo.pAttachments = attachments;
-        createInfo.subpassCount = 1;
-        createInfo.pSubpasses = &subpassDesc;
+    // render pass
+    VkRenderPassCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    createInfo.attachmentCount = info->attachmentCount;
+    createInfo.pAttachments = attachments;
+    createInfo.subpassCount = 1;
+    createInfo.pSubpasses = &subpassDesc;
 
-        result = s_Vk.createRenderPass(
+    result = s_Vk.createRenderPass(
+        device->handle, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &renderpass->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, renderpass);
+        return vkResultToPal(result);
+    }
+
+    // create framebuffer
+    VkFramebufferCreateInfo fbCreateInfo = {0};
+    fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fbCreateInfo.attachmentCount = info->attachmentCount;
+    fbCreateInfo.pAttachments = views;
+    fbCreateInfo.height = info->height;
+    fbCreateInfo.width = info->width;
+    fbCreateInfo.layers = layers;
+    fbCreateInfo.renderPass = renderpass->handle;
+
+    result = s_Vk.createFramebuffer(
+        device->handle, 
+        &fbCreateInfo, 
+        &s_Vk.vkAllocator, 
+        &renderpass->framebuffer);
+
+    if (result != VK_SUCCESS) {
+        s_Vk.destroyRenderPass(
             device->handle, 
-            &createInfo, 
-            &s_Vk.vkAllocator, 
-            &renderpass->handle);
+            renderpass->handle, 
+            &s_Vk.vkAllocator);
 
-        if (result != VK_SUCCESS) {
-            palFree(s_Vk.allocator, renderpass);
-            return vkResultToPal(result);
-        }
-
-        // create framebuffer
-        VkFramebufferCreateInfo fbCreateInfo = {0};
-        fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fbCreateInfo.attachmentCount = info->attachmentCount;
-        fbCreateInfo.pAttachments = views;
-        fbCreateInfo.height = info->height;
-        fbCreateInfo.width = info->width;
-        fbCreateInfo.layers = layers;
-        fbCreateInfo.renderPass = renderpass->handle;
-
-        result = s_Vk.createFramebuffer(
-            device->handle, 
-            &fbCreateInfo, 
-            &s_Vk.vkAllocator, 
-            &renderpass->framebuffer);
-
-        if (result != VK_SUCCESS) {
-            s_Vk.destroyRenderPass(
-                device->handle, 
-                renderpass->handle, 
-                &s_Vk.vkAllocator);
-
-            palFree(s_Vk.allocator, renderpass);
-            // legacy rendering needs all image views to have
-            // the same layers/width/height
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
+        palFree(s_Vk.allocator, renderpass);
+        // legacy rendering needs all image views to have
+        // the same layers/width/height
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     renderpass->device = device; 
@@ -3508,7 +3505,7 @@ PalResult PAL_CALL waitVkFence(
 
 PalResult PAL_CALL resetVkFence(PalFence* fence)
 {
-    if (!(fence->device->features & PAL_ADAPTER_FEATURE_RESET_FENCE)) {
+    if (!(fence->device->features & PAL_ADAPTER_FEATURE_FENCE_RESET)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -3757,27 +3754,6 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
     palFree(s_Vk.allocator, cmdBuffer);
 }
 
-PalResult PAL_CALL beginRenderingVk(PalCommandBuffer* cmdBuffer)
-{
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    VkResult result = s_Vk.cmdBegin(cmdBuffer->handle, &beginInfo);
-    if (result != VK_SUCCESS) {
-        return vkResultToPal(result);
-    }
-    return PAL_RESULT_SUCCESS;
-}
-
-PalResult PAL_CALL endRenderingVk(PalCommandBuffer* cmdBuffer)
-{
-    VkResult result = s_Vk.cmdEnd(cmdBuffer->handle);
-    if (result != VK_SUCCESS) {
-        return vkResultToPal(result);
-    }
-    return PAL_RESULT_SUCCESS;
-}
-
 PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
@@ -3813,8 +3789,16 @@ PalResult PAL_CALL beginRenderPassVk(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    VkRenderPassBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkCommandBufferBeginInfo cmdBeginInfo = {0};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    VkResult result = s_Vk.cmdBegin(cmdBuffer->handle, &cmdBeginInfo);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    VkRenderPassBeginInfo renderPassBeginInfo = {0};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     VkClearValue tmp[MAX_ATTACHMENTS];
 
     for (int i = 0; i < clearValueCount; i++) {
@@ -3833,16 +3817,16 @@ PalResult PAL_CALL beginRenderPassVk(
         }
     }
 
-    beginInfo.clearValueCount = clearValueCount;
-    beginInfo.pClearValues = tmp;
-    beginInfo.framebuffer = renderPass->framebuffer;
-    beginInfo.renderPass = renderPass->handle;
-    beginInfo.renderArea.extent.width = renderPass->width;
-    beginInfo.renderArea.extent.height = renderPass->height;
+    renderPassBeginInfo.clearValueCount = clearValueCount;
+    renderPassBeginInfo.pClearValues = tmp;
+    renderPassBeginInfo.framebuffer = renderPass->framebuffer;
+    renderPassBeginInfo.renderPass = renderPass->handle;
+    renderPassBeginInfo.renderArea.extent.width = renderPass->width;
+    renderPassBeginInfo.renderArea.extent.height = renderPass->height;
 
     s_Vk.cmdBeginRenderPass(
         cmdBuffer->handle, 
-        &beginInfo, 
+        &renderPassBeginInfo, 
         VK_SUBPASS_CONTENTS_INLINE);
 
     return PAL_RESULT_SUCCESS;
@@ -3850,6 +3834,11 @@ PalResult PAL_CALL beginRenderPassVk(
 
 PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer)
 {
+    VkResult result = s_Vk.cmdEnd(cmdBuffer->handle);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
     s_Vk.cmdEndRenderPass(cmdBuffer->handle);
     return PAL_RESULT_SUCCESS;
 }

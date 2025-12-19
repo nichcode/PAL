@@ -62,8 +62,7 @@ bool graphicsTest()
             return false;
         }
 
-        result = palGetAdapterFeatures(adapter);
-
+        features = palGetAdapterFeatures(adapter);
         Uint32 vramGb = info.vram / (1024.0 * 1024.0 * 1024.0);
         Uint32 sharedMemGb = info.sharedMemory / (1024.0 * 1024.0 * 1024.0);
 
@@ -144,6 +143,7 @@ bool graphicsTest()
         palLog(nullptr, " API Type: %s", apiTypeString);
 
         // shader formats
+        palLog(nullptr, "");
         palLog(nullptr, " Supported Shader Formats:");
         if (info.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             palLog(nullptr, "  SPIRV");
@@ -170,6 +170,7 @@ bool graphicsTest()
         }
 
         // features
+        palLog(nullptr, "");
         palLog(nullptr, " Supported Features:");
         if (features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
             palLog(nullptr, "  Sampler Anisotropy");
@@ -214,6 +215,7 @@ bool graphicsTest()
         if (features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
             palLog(nullptr, "  Shader int16");
         }
+
         if (features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
             palLog(nullptr, "  Shader int64");
         }
@@ -223,7 +225,7 @@ bool graphicsTest()
         }
 
         if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-            palLog(nullptr, "  Mesh shader");
+            palLog(nullptr, "  Mesh and task shader");
         }
 
         if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
@@ -242,12 +244,8 @@ bool graphicsTest()
             palLog(nullptr, "  Multiview");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW) {
-            palLog(nullptr, "  Cube array image view type");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
-            palLog(nullptr, "  Dynamic rendering");
+        if (features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY) {
+            palLog(nullptr, "  Image view type Cube array");
         }
 
         if (features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE) {
@@ -258,16 +256,40 @@ bool graphicsTest()
             palLog(nullptr, "  Transient command pool");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_RESET_FENCE) {
+        if (features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
             palLog(nullptr, "  Resetting fence");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_TIMEOUT_FENCE) {
+        if (features & PAL_ADAPTER_FEATURE_FENCE_TIMEOUT) {
             palLog(nullptr, "  Timeout fence");
         }
 
         if (features & PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE) {
             palLog(nullptr, "  Polygon mode line");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
+            palLog(nullptr, "  Dynamic cull mode");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
+            palLog(nullptr, "  Dynamic front face");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+            palLog(nullptr, "  Dynamic primitive topology");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
+            palLog(nullptr, "  Dynamic depth test enable");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
+            palLog(nullptr, "  Dynamic depth write enable");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
+            palLog(nullptr, "  Dynamic stencil op");
         }
         
         palLog(nullptr, "");

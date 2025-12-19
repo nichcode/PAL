@@ -158,4 +158,3 @@ palJoinThread(thread, &retval);
 ### Notes
 - No API or ABI changes - existing code remains compatible.
 - Safe upgrade from **v1.3.0** - just rebuild your project after updating.
-- The graphics system supports both legacy and dynamic rendering on vulkan.

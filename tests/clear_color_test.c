@@ -322,13 +322,6 @@ bool clearColorTest()
         clearValue.color[2] = 0.2f;
         clearValue.color[3] = 1.0f;
 
-        result = palBeginRendering(cmdBuffer);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to begin rendering: %s", error);
-            return false;
-        }
-
         result = palBeginRenderPass(cmdBuffer, renderPass, 1, &clearValue);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -340,13 +333,6 @@ bool clearColorTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end render pass: %s", error);
-            return false;
-        }
-
-        result = palEndRendering(cmdBuffer);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to end rendering: %s", error);
             return false;
         }
         
