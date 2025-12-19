@@ -144,6 +144,8 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps);
 
+PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter);
+
 PalResult PAL_CALL createVkDevice(
     PalAdapter* adapter,
     PalAdapterFeatures features,
@@ -338,6 +340,7 @@ static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
     .getAdapterInfo =  getVkAdapterInfo,
     .getAdapterCapabilities =  getVkAdapterCapabilities,
+    .getAdapterFeatures = getVkAdapterFeatures,
     .createDevice =  createVkDevice,
     .destroyDevice =  destroyVkDevice,
     .allocateMemory =  allocateVkMemory,
@@ -427,6 +430,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
     if (!backend->enumerateAdapters            || 
         !backend->getAdapterInfo               ||
         !backend->getAdapterCapabilities       ||
+        !backend->getAdapterFeatures           ||
         !backend->createDevice                 ||
         !backend->destroyDevice                ||
         !backend->allocateMemory               ||
@@ -653,6 +657,24 @@ PalResult PAL_CALL palGetAdapterCapabilities(
     }
 
     return data->backend->getAdapterCapabilities(data->handle, caps);
+}
+
+PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
+{
+    if (!s_Graphics.initialized) {
+        return 0;
+    }
+
+    if (!adapter) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)adapter;
+    if (data->type != HANDLE_TYPE_ADAPTER) {
+        return PAL_RESULT_INVALID_ADAPTER;
+    }
+
+    return data->backend->getAdapterFeatures(data->handle);
 }
 
 // ==================================================

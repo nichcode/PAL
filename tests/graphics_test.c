@@ -2,34 +2,6 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
-static Uint32 getSampleCount(PalSampleCount sampleCount)
-{
-    switch (sampleCount) {
-        case PAL_SAMPLE_COUNT_1:
-            return 1;
-
-        case PAL_SAMPLE_COUNT_2:
-            return 2;
-
-        case PAL_SAMPLE_COUNT_4:
-            return 4;
-
-        case PAL_SAMPLE_COUNT_8:
-            return 8;
-
-        case PAL_SAMPLE_COUNT_16:
-            return 16;
-
-        case PAL_SAMPLE_COUNT_32:
-            return 32;
-
-        case PAL_SAMPLE_COUNT_64:
-            return 64;
-    }
-
-    return 1;
-}
-
 bool graphicsTest()
 {
     palLog(nullptr, "");
@@ -79,7 +51,7 @@ bool graphicsTest()
 
     // get information about all the adapters
     PalAdapterInfo info;
-    PalAdapterCapabilities caps;
+    PalAdapterFeatures features = 0;
     for (Int32 i = 0; i < count; i++) {
         PalAdapter* adapter = adapters[i];
         result = palGetAdapterInfo(adapter, &info);
@@ -90,13 +62,7 @@ bool graphicsTest()
             return false;
         }
 
-        result = palGetAdapterCapabilities(adapter, &caps);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
-            palFree(nullptr, adapters);
-            return false;
-        }
+        result = palGetAdapterFeatures(adapter);
 
         Uint32 vramGb = info.vram / (1024.0 * 1024.0 * 1024.0);
         Uint32 sharedMemGb = info.sharedMemory / (1024.0 * 1024.0 * 1024.0);
@@ -203,145 +169,105 @@ bool graphicsTest()
             palLog(nullptr, "  PPM");
         }
 
-        const char* boolToString;
-        if (caps.debugLayer) {
-            boolToString = "True";
-        } else {
-            boolToString = "False";
-        }
-
-        palLog(nullptr, " Debug Layer: %s", boolToString);
-
-        // clang-format off
-
-        Uint32 colorSampleCount = getSampleCount(caps.maxColorSampleCount);
-        Uint32 depthSampleCount = getSampleCount(caps.maxDepthSampleCount);
-
-        Uint32 uniformBufferSize = caps.maxUniformBufferSize / 1024;
-        Uint32 storageBufferSize = caps.maxStorageBufferSize / 1024;
-        Uint32 pushConstantSize = caps.maxStorageBufferSize / 1024;
-
-        palLog(nullptr, " Max compute queues: %d", caps.maxComputeQueues);
-        palLog(nullptr, " Max graphics queues: %d", caps.maxGraphicsQueues);
-        palLog(nullptr, " Max copy queues: %d", caps.maxCopyQueues);
-
-        palLog(nullptr, " Max image width: %d", caps.maxImageWidth);
-        palLog(nullptr, " Max image height: %d", caps.maxImageHeight);
-        palLog(nullptr, " Max image depth: %d", caps.maxImageDepth);
-        palLog(nullptr, " Max image array layers: %d", caps.maxImageArrayLayers);
-        palLog(nullptr, " Max image mip levels: %d", caps.maxImageMipLevels);
-
-        palLog(nullptr, " Max color samples: %d", colorSampleCount);
-        palLog(nullptr, " Max depth samples: %d", depthSampleCount);
-        palLog(nullptr, " Max color attachment: %d", caps.maxColorAttachments);
-        palLog(nullptr, " Max multi views: %d", caps.maxMultiViews);   
-        palLog(nullptr, " Max viewports: %d", caps.maxViewports);
-        palLog(nullptr, " Max samplers: %d", caps.maxSamplers);
-        palLog(nullptr, " Max uniform buffer size: %dKB", uniformBufferSize);
-        palLog(nullptr, " Max storage buffer size: %dKB", storageBufferSize); 
-        palLog(nullptr, " Max push constant size: %dKB", pushConstantSize); 
-
-        // clang-format on
-
         // features
         palLog(nullptr, " Supported Features:");
-        if (caps.features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
+        if (features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
             palLog(nullptr, "  Sampler Anisotropy");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
+        if (features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
             palLog(nullptr, "  Sample rate shading");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
+        if (features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
             palLog(nullptr, "  Multi viewport");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_SEMAPHORE) {
+        if (features & PAL_ADAPTER_FEATURE_SEMAPHORE) {
             palLog(nullptr, "  Semaphore");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
             palLog(nullptr, "  Timeline Semaphore");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+        if (features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
             palLog(nullptr, "  Tesselation Shader");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
+        if (features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
             palLog(nullptr, "  Geometry shader");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
+        if (features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
             palLog(nullptr, "  Compute shader");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
+        if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
             palLog(nullptr, "  Shader float16");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
+        if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
             palLog(nullptr, "  Shader float64");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
+        if (features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
             palLog(nullptr, "  Shader int16");
         }
-        if (caps.features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
+        if (features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
             palLog(nullptr, "  Shader int64");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
             palLog(nullptr, "  Ray tracing");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+        if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
             palLog(nullptr, "  Mesh shader");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING) {
-            palLog(nullptr, "  Variable rate rendering");
+        if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
+            palLog(nullptr, "  Fragment rendering rate");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        if (features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
             palLog(nullptr, "  Descriptor indexing");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
+        if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
             palLog(nullptr, "  Swapchain");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
+        if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
             palLog(nullptr, "  Multiview");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW) {
+        if (features & PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW) {
             palLog(nullptr, "  Cube array image view type");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING) {
             palLog(nullptr, "  Dynamic rendering");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE) {
+        if (features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE) {
             palLog(nullptr, "  Resettable command pool");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT) {
+        if (features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT) {
             palLog(nullptr, "  Transient command pool");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_RESET_FENCE) {
+        if (features & PAL_ADAPTER_FEATURE_RESET_FENCE) {
             palLog(nullptr, "  Resetting fence");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_TIMEOUT_FENCE) {
+        if (features & PAL_ADAPTER_FEATURE_TIMEOUT_FENCE) {
             palLog(nullptr, "  Timeout fence");
         }
 
-        if (caps.features & PAL_ADAPTER_FEATURE_LINE_POLYGON_MODE) {
-            palLog(nullptr, "  Line Polygon Mode");
+        if (features & PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE) {
+            palLog(nullptr, "  Polygon mode line");
         }
         
         palLog(nullptr, "");

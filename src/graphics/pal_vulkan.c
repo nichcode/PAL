@@ -1605,13 +1605,14 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     VkResult ret = VK_SUCCESS;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
     VkPhysicalDeviceProperties props = {0};
-    VkPhysicalDeviceMultiviewPropertiesKHR vProps = {0};
+    VkPhysicalDeviceMultiviewPropertiesKHR multiViewProps = {0};
     VkPhysicalDeviceProperties2 properties2 = {0};
-    vProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR;
+    multiViewProps.sType = 
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR;
 
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    properties2.pNext = &vProps;
+    properties2.pNext = &multiViewProps;
     s_Vk.getPhysicalDeviceProperties2(phyDevice, &properties2);
 
     caps->debugLayer = s_Vk.hasDebug;
@@ -1633,7 +1634,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->maxStorageBufferSize = props.limits.maxStorageBufferRange;
     caps->maxPushConstantSize = props.limits.maxPushConstantsSize;
     
-    caps->maxMultiViews = vProps.maxMultiviewViewCount;
+    caps->maxMultiViews = multiViewProps.maxMultiviewViewCount;
     if (caps->maxMultiViews == 0) {
         caps->maxMultiViews = 1;
     }
@@ -1690,9 +1691,19 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     }
 
     palFree(s_Vk.allocator, queueProps);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
+{
+    VkResult ret;
+    PalAdapterFeatures adapterFeatures = 0;
+    Uint32 extensionCount = 0;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDeviceProperties props = {0};
 
     // get supported extensions
-    Uint32 extensionCount = 0;
+    s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
     ret = s_Vk.enumerateDeviceExtensionProperties(
         phyDevice,
         nullptr, 
@@ -1701,7 +1712,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
 
     if (ret != VK_SUCCESS) {
         // we just return without any modern features which is rare
-        return PAL_RESULT_SUCCESS;
+        return 0;
     }
 
     VkExtensionProperties* extensionProps = nullptr;
@@ -1711,7 +1722,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
         0);
 
     if (!extensionProps) {
-        return PAL_RESULT_SUCCESS;
+        return 0;
     }
 
     s_Vk.enumerateDeviceExtensionProperties(
@@ -1720,20 +1731,19 @@ PalResult PAL_CALL getVkAdapterCapabilities(
         &extensionCount, 
         extensionProps);
 
+    // check extensions
     bool rayTracingFound = false;
     bool accelerateFound = false;
     bool dynamicRendering = false;
-    caps->features = 0;
-
-    Uint32 version = 0;
-    if (s_Vk.enumerateInstanceVersion) {
-        s_Vk.enumerateInstanceVersion(&version);
-        if (version >= VK_API_VERSION_1_3) {
-            dynamicRendering = true;
-        }
-    }
+    bool meshShader = false;
+    bool fragmentRateShading = false;
+    bool timelineSemaphore = false;
+    bool descriptorIndexing = false;
+    bool shaderFloat16 = false;
+    bool multiiView = false;
 
     // clang-format off
+    // check if the extensions are present
     for (int i = 0; i < extensionCount; i++) {
         VkExtensionProperties* props = &extensionProps[i];
         if (strcmp(props->extensionName, "VK_KHR_ray_tracing_pipeline") == 0) {
@@ -1746,135 +1756,36 @@ PalResult PAL_CALL getVkAdapterCapabilities(
             dynamicRendering = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
-            // mesh shader
-            VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
-            mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &mesh;
-
-            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-            } else {
-                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            }
-
-            if (mesh.meshShader && mesh.taskShader) {
-                caps->features |= PAL_ADAPTER_FEATURE_MESH_SHADER;
-            }
+            meshShader = true;
 
         } else if (strcmp(props->extensionName, "VK_KHR_fragment_shading_rate") == 0) {
-            // variable rate shading
-            VkPhysicalDeviceFragmentShadingRateFeaturesKHR frag = {0};
-            frag.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
-
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &frag;
-
-            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-            } else {
-                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            }
-
-            if (frag.pipelineFragmentShadingRate) {
-                caps->features |= PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING;
-            }
+            fragmentRateShading = true;         
 
         } else if (strcmp(props->extensionName, "VK_EXT_descriptor_indexing") == 0) {
-            // descriptor indexing
-            VkPhysicalDeviceDescriptorIndexingFeatures desc = {0};
-            desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &desc;
-
-            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-            } else {
-                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            }
-
-            if (desc.shaderSampledImageArrayNonUniformIndexing) {
-                caps->features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-            }
-
+            descriptorIndexing = true;
+          
         } else if (strcmp(props->extensionName, "VK_KHR_swapchain") == 0) {
-            // swapchain
-            caps->features |= PAL_ADAPTER_FEATURE_SWAPCHAIN;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_SWAPCHAIN;
 
         } else if (strcmp(props->extensionName, "VK_KHR_shader_float16_int8") == 0) {
-            // shader float16
-            VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
-            shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
-
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &shader16;
-
-            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-            } else {
-                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            }
-
-            if (shader16.shaderFloat16) {
-                caps->features |= PAL_ADAPTER_FEATURE_SHADER_FLOAT16;
-            }
+            shaderFloat16 = true;
 
         } else if (strcmp(props->extensionName, "VK_KHR_timeline_semaphore") == 0) {
-            // timeline semaphore
-            VkPhysicalDeviceTimelineSemaphoreFeatures timeline = {0};
-            timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &timeline;
-
-            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-            } else {
-                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            }
-
-            if (timeline.timelineSemaphore) {
-                caps->features |= PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
-            }
+            timelineSemaphore = true;
 
         } else if (strcmp(props->extensionName, "VK_KHR_multiview") == 0) {
-            // multi view
-            VkPhysicalDeviceMultiviewFeaturesKHR view = {0};
-            view.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
-
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &view;
-
-            if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-                s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-            } else {
-                s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            }
-
-            if (view.multiview) {
-                caps->features |= PAL_ADAPTER_FEATURE_MULTI_VIEW;
-            }
+            multiiView = true;
         }
     }
 
-    if (accelerateFound && rayTracingFound) {
-        // ray tracing
+    // features that require core and extension support
+    // ray tracing is part of core 1.3
+    if (props.apiVersion >= VK_API_VERSION_1_3 || 
+        (rayTracingFound && accelerateFound)) {
+
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
         VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
+
         ray.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         acc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 
@@ -1883,70 +1794,170 @@ PalResult PAL_CALL getVkAdapterCapabilities(
         features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
         features.pNext = &ray;
 
-        if (s_Vk.getPhysicalDeviceFeatures2KHR) {
-            s_Vk.getPhysicalDeviceFeatures2KHR(phyDevice, &features);
-
-        } else {
-            s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-        }
-
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
-            caps->features |= PAL_ADAPTER_FEATURE_RAY_TRACING;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_RAY_TRACING;
         }
     }
+
+    // dynamic rendering is part of core 1.3
+    if (props.apiVersion >= VK_API_VERSION_1_3 || dynamicRendering) {
+        VkPhysicalDeviceDynamicRenderingFeaturesKHR dyn;
+        dyn.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &dyn;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (dyn.dynamicRendering) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
+        }
+    }
+
+    // mesh shader is part of core 1.3
+    if (props.apiVersion >= VK_API_VERSION_1_3 || meshShader) {
+        VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
+        mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &mesh;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (mesh.meshShader && mesh.taskShader) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_MESH_SHADER;
+        }
+    }
+
+    // fragment shading rate is part of core 1.3
+    if (props.apiVersion >= VK_API_VERSION_1_3 || fragmentRateShading) {
+        VkPhysicalDeviceFragmentShadingRateFeaturesKHR frag = {0};
+        frag.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &frag;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (frag.pipelineFragmentShadingRate) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE;
+        }
+    }
+
+    // descriptor indexing is part of core 1.2
+    if (props.apiVersion >= VK_API_VERSION_1_2 || descriptorIndexing) {
+        VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
+        desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &desc;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (desc.shaderSampledImageArrayNonUniformIndexing) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+        }
+    }
+
+    // timeline semaphore is part of core 1.2
+    if (props.apiVersion >= VK_API_VERSION_1_2 || timelineSemaphore) {
+        VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline = {0};
+        timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &timeline;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (timeline.timelineSemaphore) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
+        }
+    }
+
+    // shader float 16 is part of core 1.2
+    if (props.apiVersion >= VK_API_VERSION_1_2 || shaderFloat16) {
+        VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
+        shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &shader16;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (shader16.shaderFloat16) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_SHADER_FLOAT16;
+        }
+    }
+
+    // multi view is part of core 1.1
+    if (props.apiVersion >= VK_API_VERSION_1_1 || multiiView) {
+        VkPhysicalDeviceMultiviewFeaturesKHR multiView = {0};
+        multiView.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &multiView;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (multiView.multiview) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_MULTI_VIEW;
+        }
+    }
+
     // clang-format on
     VkPhysicalDeviceFeatures features;
     s_Vk.getPhysicalDeviceFeatures(phyDevice, &features);
 
     // check for additional features
     if (features.multiViewport) {
-        caps->features |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
     }
 
     if (features.samplerAnisotropy) {
-        caps->features |= PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY;
     }
 
     if (features.sampleRateShading) {
-        caps->features |= PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING;
     }
 
     if (features.shaderFloat64) {
-        caps->features |= PAL_ADAPTER_FEATURE_SHADER_FLOAT64;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_SHADER_FLOAT64;
     }
 
     if (features.shaderInt64) {
-        caps->features |= PAL_ADAPTER_FEATURE_SHADER_INT64;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_SHADER_INT64;
     }
 
     if (features.shaderInt16) {
-        caps->features |= PAL_ADAPTER_FEATURE_SHADER_INT16;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_SHADER_INT16;
     }
 
     if (features.geometryShader) {
-        caps->features |= PAL_ADAPTER_FEATURE_GEOMETRY_SHADER;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_GEOMETRY_SHADER;
     }
 
     if (features.tessellationShader) {
-        caps->features |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_TESSELLATION_SHADER;
     }
 
     if (dynamicRendering) {
-        caps->features |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_RENDERING;
     }
 
     if (features.fillModeNonSolid) {
-        caps->features |= PAL_ADAPTER_FEATURE_LINE_POLYGON_MODE;
+        adapterFeatures |= PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE;
     }
 
     // this features are supported on vulkan
-    caps->features |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
-    caps->features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
-    caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE;
-    caps->features |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
-    caps->features |= PAL_ADAPTER_FEATURE_RESET_FENCE;
-    caps->features |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
-    caps->features |= PAL_ADAPTER_FEATURE_SEMAPHORE;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_CUBE_ARRAY_IMAGE_VIEW;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_RESET_FENCE;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_TIMEOUT_FENCE;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_SEMAPHORE;
 
     palFree(s_Vk.allocator, extensionProps);
     return PAL_RESULT_SUCCESS;
@@ -2139,7 +2150,7 @@ PalResult PAL_CALL createVkDevice(
         start = &mesh;
     }
 
-    if (features & PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING) {
+    if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
         extensions[extCount++] = "VK_KHR_fragment_shading_rate";
         vrs.pipelineFragmentShadingRate = true;
 

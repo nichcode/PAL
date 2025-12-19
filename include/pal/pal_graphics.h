@@ -223,7 +223,7 @@ typedef enum {
     PAL_ADAPTER_FEATURE_SHADER_INT64 = PAL_BIT64(11),
     PAL_ADAPTER_FEATURE_RAY_TRACING = PAL_BIT64(12),
     PAL_ADAPTER_FEATURE_MESH_SHADER = PAL_BIT64(13),
-    PAL_ADAPTER_FEATURE_VARIABLE_RATE_SHADING = PAL_BIT64(14),
+    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE = PAL_BIT64(14),
     PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING = PAL_BIT64(15),
     PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(16),
     PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(17),
@@ -233,7 +233,7 @@ typedef enum {
     PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(21),
     PAL_ADAPTER_FEATURE_RESET_FENCE = PAL_BIT64(22),
     PAL_ADAPTER_FEATURE_TIMEOUT_FENCE = PAL_BIT64(23),
-    PAL_ADAPTER_FEATURE_LINE_POLYGON_MODE = PAL_BIT64(24)
+    PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE = PAL_BIT64(24)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -460,7 +460,9 @@ typedef struct {
     Uint32 maxUniformBufferSize;
     Uint32 maxStorageBufferSize;
     Uint32 maxPushConstantSize;
-    PalAdapterFeatures features;
+    Uint32 maxComputeWorkGroupInvocations;
+    Uint32 maxComputeWorkGroupCount[3];
+    Uint32 maxComputeWorkGroupSize[3];
 } PalAdapterCapabilities;
 
 typedef struct {
@@ -675,6 +677,8 @@ typedef struct {
         PalAdapter* adapter,
         PalAdapterCapabilities* caps);
 
+    PalAdapterFeatures PAL_CALL (*getAdapterFeatures)(PalAdapter* adapter);
+
     PalResult PAL_CALL (*createDevice)(
         PalAdapter* adapter,
         PalAdapterFeatures features,
@@ -886,6 +890,8 @@ PAL_API PalResult PAL_CALL palGetAdapterInfo(
 PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps);
+
+PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
 
 PAL_API PalResult PAL_CALL palCreateDevice(
     PalAdapter* adapter,
