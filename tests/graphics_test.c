@@ -291,7 +291,11 @@ bool graphicsTest()
         if (features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
             palLog(nullptr, "  Dynamic stencil op");
         }
-        
+
+        if (features & PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE) {
+            palLog(nullptr, "  Depth stencil resolve");
+        }
+
         palLog(nullptr, "");
     }
 

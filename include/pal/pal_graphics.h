@@ -36,6 +36,7 @@ freely, subject to the following restrictions:
 #define PAL_ADAPTER_NAME_SIZE 128
 #define PAL_ADAPTER_VERSION_SIZE 16
 #define PAL_DEFAULT_MEMORY_OFFSET 0
+#define PAL_MAX_RESOLVE_MODES 8
 
 typedef struct PalAdapter PalAdapter;
 typedef struct PalDevice PalDevice;
@@ -238,7 +239,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY = PAL_BIT64(26),
     PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE = PAL_BIT64(27),
     PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(28),
-    PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(29)
+    PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(29),
+    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(30)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -299,7 +301,8 @@ typedef enum {
 typedef enum {
     PAL_ATTACHMENT_TYPE_COLOR,
     PAL_ATTACHMENT_TYPE_DEPTH,
-    PAL_ATTACHMENT_TYPE_STENCIL
+    PAL_ATTACHMENT_TYPE_STENCIL,
+    PAL_ATTACHMENT_TYPE_DEPTH_STENCIL
 } PalAttachmentType;
 
 typedef enum {
@@ -433,6 +436,14 @@ typedef enum {
     PAL_COLOR_MASK_ALPHA = PAL_BIT(3),
 } PalColorMask;
 
+typedef enum {
+    PAL_RESOLVE_MODE_NONE = 0,
+    PAL_RESOLVE_MODE_SAMPLE_ZERO,
+    PAL_RESOLVE_MODE_AVERAGE,
+    PAL_RESOLVE_MODE_MIN,
+    PAL_RESOLVE_MODE_MAX
+} PalResolveMode;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -470,6 +481,12 @@ typedef struct {
     Uint32 maxComputeWorkGroupCount[3];
     Uint32 maxComputeWorkGroupSize[3];
 } PalAdapterCapabilities;
+
+typedef struct {
+    bool independentDepthStencilResolve;
+    bool depthResolveModes[PAL_MAX_RESOLVE_MODES];
+    bool stencilResolveModes[PAL_MAX_RESOLVE_MODES];
+} PalDepthStencilCapabilities;
 
 typedef struct {
     bool presentModes[PAL_PRESENT_MODE_MAX];
@@ -510,6 +527,10 @@ typedef struct {
     PalAttachmentType type;
     PalLoadOp loadOp;
     PalStoreOp storeOp;
+    PalLoadOp stencilLoadOp;
+    PalStoreOp stencilStoreOp;
+    PalResolveMode resolveMode;
+    PalResolveMode stencilResolveMode;
     PalImageView* target;
     PalImageView* resolveTarget;
 } PalAttachmentDesc;
@@ -661,6 +682,7 @@ typedef struct {
     PalShader* fragmentShader;
     PalShader* geometryShader;
     PalShader* meshShader;
+    PalShader* taskShader;
     PalShader* tessellationEvaluationShader;
     PalShader* tessellationControlShader;
     PalVertexLayout* vertexLayouts;
@@ -701,6 +723,10 @@ typedef struct {
     void PAL_CALL (*freeMemory)(
         PalDevice* device,
         PalMemory* memory);
+
+    PalResult PAL_CALL (*queryDepthStencilCapabilities)(
+        PalDevice* device,
+        PalDepthStencilCapabilities* caps);
 
     PalResult PAL_CALL (*createQueue)(
         PalDevice* device,
@@ -759,7 +785,7 @@ typedef struct {
     void PAL_CALL (*destroyImageView)(PalImageView* imageView);
 
     PalResult PAL_CALL (*querySwapchainCapabilities)(
-        PalAdapter* adapter,
+        PalDevice* device,
         PalGraphicsWindow* window,
         PalSwapchainCapabilities* caps);
 
@@ -912,6 +938,10 @@ PAL_API void PAL_CALL palFreeMemory(
     PalDevice* device,
     PalMemory* memory);
 
+PAL_API PalResult PAL_CALL palQueryDepthStencilCapabilities(
+    PalDevice* device,
+    PalDepthStencilCapabilities* caps);
+
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,
     PalQueueType type,
@@ -969,7 +999,7 @@ PAL_API PalResult PAL_CALL palCreateImageView(
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
 PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
-    PalAdapter* adapter,
+    PalDevice* device,
     PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps);
 

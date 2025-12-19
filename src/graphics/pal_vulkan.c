@@ -123,9 +123,6 @@ typedef struct {
     PFN_vkGetFenceStatus isFenceSignaled;
     PFN_vkCreateSemaphore createSemaphore;
     PFN_vkDestroySemaphore destroySemaphore;
-    PFN_vkWaitSemaphores waitSemaphores;
-    PFN_vkSignalSemaphore signalSemaphore;
-    PFN_vkGetSemaphoreCounterValue getSemaphoreValue;
 
     PFN_vkBeginCommandBuffer cmdBegin;
     PFN_vkEndCommandBuffer cmdEnd;
@@ -170,6 +167,13 @@ struct PalDevice {
     PFN_vkGetSwapchainImagesKHR getSwapchainImages;
     PFN_vkAcquireNextImageKHR acquireNextImage;
     PFN_vkQueuePresentKHR queuePresent;
+
+    // semaphore
+    PFN_vkCreateSemaphore createSemaphore;
+    PFN_vkDestroySemaphore destroySemaphore;
+    PFN_vkWaitSemaphores waitSemaphore;
+    PFN_vkSignalSemaphore signalSemaphore;
+    PFN_vkGetSemaphoreCounterValue getSemaphoreValue;
 };
 
 struct PalQueue {
@@ -1228,18 +1232,6 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkDestroySemaphore");
 
-    s_Vk.waitSemaphores = (PFN_vkWaitSemaphores)dlsym(
-        s_Vk.handle, 
-        "vkWaitSemaphores");
-
-    s_Vk.signalSemaphore = (PFN_vkSignalSemaphore)dlsym(
-        s_Vk.handle, 
-        "vkSignalSemaphore");
-
-    s_Vk.getSemaphoreValue = (PFN_vkGetSemaphoreCounterValue)dlsym(
-        s_Vk.handle, 
-        "vkGetSemaphoreCounterValue");
-
     s_Vk.cmdBegin = (PFN_vkBeginCommandBuffer)dlsym(
         s_Vk.handle, 
         "vkBeginCommandBuffer");
@@ -1738,6 +1730,7 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     bool descriptorIndexing = false;
     bool shaderFloat16 = false;
     bool multiiView = false;
+    bool dynamicstate = false;
 
     // clang-format off
     // check if the extensions are present
@@ -1771,14 +1764,25 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
             multiiView = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_extended_dynamic_state") == 0) {
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE;
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE;
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY;
+            dynamicstate = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_extended_dynamic_state2") == 0) {
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE;
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE;
-            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP;
+            VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynState2 = {0};
+            dynState2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
+
+            VkPhysicalDeviceFeatures2 features;
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &dynState2;
+
+            s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+            if (dynState2.extendedDynamicState2) {
+                adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE;
+                adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE;
+                adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP;
+            }
+
+        } else if (strcmp(props->extensionName, "VK_KHR_depth_stencil_resolve") == 0) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
         }
     }
 
@@ -1894,6 +1898,23 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         }
     }
 
+    // dynamic state is part of core 1.3
+    if (props.apiVersion >= VK_API_VERSION_1_3 || dynamicstate) {
+        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynState = {0};
+        dynState.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &dynState;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (dynState.extendedDynamicState) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY;
+        }
+    }
+
     // clang-format on
     VkPhysicalDeviceFeatures features;
     s_Vk.getPhysicalDeviceFeatures(phyDevice, &features);
@@ -1988,6 +2009,7 @@ PalResult PAL_CALL createVkDevice(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    memset(device, 0, sizeof(PalDevice));
     device->queueCount = count;
     device->phyDevice = phyDevice;
     
@@ -2078,10 +2100,21 @@ PalResult PAL_CALL createVkDevice(
     VkPhysicalDeviceMultiviewFeatures multiView = {0};
     multiView.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
 
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamicState = {0};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamicState2 = {0};
+    dynamicState2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
+
     // clang-format on
+    bool coreSemaphore = false;
 
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE) {
+        extensions[extCount++] = "VK_KHR_depth_stencil_resolve";
     }
 
     if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
@@ -2091,6 +2124,7 @@ PalResult PAL_CALL createVkDevice(
 
         timeline.timelineSemaphore = true;
         start = &timeline;
+        coreSemaphore = true;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
@@ -2215,6 +2249,71 @@ PalResult PAL_CALL createVkDevice(
         start = &multiView;
     }
 
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE || 
+        features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE || 
+        features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+        if (props.apiVersion < VK_API_VERSION_1_3) {
+            extensions[extCount++] = "VK_EXT_extended_dynamic_state";
+        }
+
+        dynamicState.extendedDynamicState = true;
+        if (multiView.multiview) {
+            multiView.pNext = &dynamicState;
+
+        } else if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
+            descIndex.pNext = &dynamicState;
+
+        } else if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &dynamicState;
+
+        } else if (mesh.meshShader) {
+            mesh.pNext = &dynamicState;
+
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &dynamicState;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &dynamicState;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &dynamicState;
+        }
+        start = &dynamicState;
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE || 
+        features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE || 
+        features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
+        extensions[extCount++] = "VK_EXT_extended_dynamic_state2";
+        dynamicState2.extendedDynamicState2 = true;
+
+        if (dynamicState.extendedDynamicState) {
+            dynamicState.pNext = &dynamicState2;
+            
+        } else if (multiView.multiview) {
+            multiView.pNext = &dynamicState2;
+
+        } else if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
+            descIndex.pNext = &dynamicState2;
+
+        } else if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &dynamicState2;
+
+        } else if (mesh.meshShader) {
+            mesh.pNext = &dynamicState2;
+
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &dynamicState2;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &dynamicState2;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &dynamicState2;
+        }
+        start = &dynamicState2;
+    }
+
     VkDeviceCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pEnabledFeatures = &coreFeatures;
@@ -2271,27 +2370,58 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
-    // load procs
-    device->createSwapchain = nullptr;
-    device->acquireNextImage = (PFN_vkAcquireNextImageKHR)s_Vk.getDeviceProcAddr(
-        device->handle, 
-        "vkAcquireNextImageKHR");
+    // load swapchain procs
+    if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
+        device->acquireNextImage = (PFN_vkAcquireNextImageKHR)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkAcquireNextImageKHR");
 
-    device->createSwapchain = (PFN_vkCreateSwapchainKHR)s_Vk.getDeviceProcAddr(
-        device->handle, 
-        "vkCreateSwapchainKHR");
+        device->createSwapchain = (PFN_vkCreateSwapchainKHR)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkCreateSwapchainKHR");
 
-    device->destroySwapchain = (PFN_vkDestroySwapchainKHR)s_Vk.getDeviceProcAddr(
-        device->handle, 
-        "vkDestroySwapchainKHR");
+        device->destroySwapchain = (PFN_vkDestroySwapchainKHR)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkDestroySwapchainKHR");
 
-    device->getSwapchainImages = (PFN_vkGetSwapchainImagesKHR)s_Vk.getDeviceProcAddr(
-        device->handle, 
-        "vkGetSwapchainImagesKHR");
+        device->getSwapchainImages = (PFN_vkGetSwapchainImagesKHR)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkGetSwapchainImagesKHR");
 
-    device->queuePresent = (PFN_vkQueuePresentKHR)s_Vk.getDeviceProcAddr(
-        device->handle, 
-        "vkQueuePresentKHR");
+        device->queuePresent = (PFN_vkQueuePresentKHR)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkQueuePresentKHR");
+    }
+
+    // load semaphore procs
+    if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        if (coreSemaphore) {
+            device->waitSemaphore = (PFN_vkWaitSemaphores)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkWaitSemaphores");
+
+            device->signalSemaphore = (PFN_vkSignalSemaphore)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkSignalSemaphore");
+
+            device->getSemaphoreValue = (PFN_vkGetSemaphoreCounterValue)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkGetSemaphoreCounterValue");
+
+        } else {
+            device->waitSemaphore = (PFN_vkWaitSemaphoresKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkWaitSemaphoresKHR");
+
+            device->signalSemaphore = (PFN_vkSignalSemaphoreKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkSignalSemaphoreKHR");
+
+            device->getSemaphoreValue = (PFN_vkGetSemaphoreCounterValueKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkGetSemaphoreCounterValueKHR");
+        }
+    }
 
     device->features = features;
     palFree(s_Vk.allocator, queueProps);
@@ -2357,6 +2487,60 @@ void PAL_CALL freeVkMemory(
 {
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     s_Vk.freeMemory(device->handle, mem, &s_Vk.vkAllocator);
+}
+
+PalResult PAL_CALL queryVkDepthStencilCapabilities(
+    PalDevice* device,
+    PalDepthStencilCapabilities* caps)
+{
+    VkPhysicalDeviceProperties2 properties2 = {0};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+    VkPhysicalDeviceDepthStencilResolvePropertiesKHR props = {0};
+    props.sType = 
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR;
+
+    properties2.pNext = &props;
+    s_Vk.getPhysicalDeviceProperties2(device->phyDevice, &properties2);
+
+    caps->independentDepthStencilResolve = props.independentResolve;
+
+    if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
+        caps->depthResolveModes[PAL_RESOLVE_MODE_AVERAGE] = true;
+    }
+
+    if (props.supportedDepthResolveModes & 
+        VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) {
+        caps->depthResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+    }
+
+    if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT_KHR) {
+        caps->depthResolveModes[PAL_RESOLVE_MODE_MIN] = true;
+    }
+
+    if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
+        caps->depthResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+    }
+
+    // stencil
+    if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
+        caps->stencilResolveModes[PAL_RESOLVE_MODE_AVERAGE] = true;
+    }
+
+    if (props.supportedStencilResolveModes & 
+        VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) {
+        caps->stencilResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+    }
+
+    if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MIN_BIT_KHR) {
+        caps->stencilResolveModes[PAL_RESOLVE_MODE_MIN] = true;
+    }
+
+    if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
+        caps->stencilResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
@@ -2735,13 +2919,6 @@ PalResult PAL_CALL createVkImageView(
     const PalImageViewCreateInfo* info,
     PalImageView** outImageView)
 {
-    // mimic the actual requested features at device creation
-    if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-        if (!(device->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-    }
-
     VkResult result = VK_SUCCESS;
     PalImageView* imageView = nullptr;
     imageView = palAllocate(s_Vk.allocator, sizeof(PalImageView), 0);
@@ -2809,7 +2986,7 @@ void PAL_CALL destroyVkImageView(PalImageView* imageView)
 // ==================================================
 
 PalResult PAL_CALL queryVkSwapchainCapabilities(
-    PalAdapter* adapter,
+    PalDevice* device,
     PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps)
 {
@@ -2818,7 +2995,7 @@ PalResult PAL_CALL queryVkSwapchainCapabilities(
     VkSurfaceKHR surface = nullptr;
     VkSurfaceFormatKHR* formats = nullptr;
     VkPresentModeKHR* modes = nullptr;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)device->phyDevice;
 
     bool ret = createSurface(window, &surface);
     if (!ret) {
@@ -2945,11 +3122,6 @@ PalResult PAL_CALL createVkSwapchain(
     PalSwapchain* swapchain = nullptr;
     VkImage* images = nullptr;
     PhysicalQueue* phyQueue = queue->phyQueue;
-
-    // check if we enabled swapchain feature
-    if (!device->features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
 
     // check if the queue is a graphics queue before we check its family 
     // index for presentation support.
@@ -3216,33 +3388,18 @@ PalResult PAL_CALL createVkShader(
         stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
-        if (device->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
         stage = VK_SHADER_STAGE_COMPUTE_BIT;
 
     } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
-        if (device->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
         stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 
     } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
-        if (device->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
         stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 
     } else if (info->type == PAL_SHADER_TYPE_MESH) {
-        if (device->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
         stage = VK_SHADER_STAGE_MESH_BIT_EXT;
 
     } else if (info->type == PAL_SHADER_TYPE_TASK) {
-        if (device->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
         stage = VK_SHADER_STAGE_TASK_BIT_EXT;
     }
 
@@ -3321,13 +3478,11 @@ PalResult PAL_CALL createVkRenderPass(
         rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         rDesc->samples = vkSamplesToSamples(desc->target->image->info.sampleCount);
         rDesc->flags = 0;
-        rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
         layers = desc->target->image->info.depthOrArraySize;
         if (desc->resolveTarget) {
-            // on legacy rendering, this should make but PAL supports both
-            // so we use the highest on legacy rendering
+            // the layer count must be the same so to validate as well
+            // we use the highest from the attachments
             layers = desc->resolveTarget->image->info.depthOrArraySize;
         }
 
@@ -3365,11 +3520,27 @@ PalResult PAL_CALL createVkRenderPass(
 
         } else {
             rDesc->finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            rDesc->stencilLoadOp = rDesc->loadOp;
-            rDesc->stencilStoreOp = rDesc->storeOp;
             depthRef.attachment = i;
             depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             renderpass->hasDepth = true;
+
+            // stencil is only used with depth attachment
+            if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
+                rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+            } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
+                rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+            } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
+                rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            }
+
+            if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
+                rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+            } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
+                rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            }
         }
     }
 
@@ -3424,9 +3595,9 @@ PalResult PAL_CALL createVkRenderPass(
             &s_Vk.vkAllocator);
 
         palFree(s_Vk.allocator, renderpass);
-        // legacy rendering needs all image views to have
-        // the same layers/width/height
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        // all image views in a single render pass must have the same
+        // width/height/layers
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     renderpass->device = device; 
@@ -3511,10 +3682,6 @@ PalResult PAL_CALL waitVkFence(
 
 PalResult PAL_CALL resetVkFence(PalFence* fence)
 {
-    if (!(fence->device->features & PAL_ADAPTER_FEATURE_FENCE_RESET)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
     VkResult ret = s_Vk.resetFence(fence->device->handle, 1, &fence->handle);
     if (ret != VK_SUCCESS) {
         return vkResultToPal(ret);
@@ -3602,7 +3769,7 @@ PalResult PAL_CALL waitVkSemaphore(
     waitInfo.pSemaphores = &semaphore->handle;
     waitInfo.pValues = &value;
 
-    result = s_Vk.waitSemaphores(
+    result = semaphore->device->waitSemaphore(
         semaphore->device->handle, 
         &waitInfo, 
         timeout);
@@ -3625,7 +3792,10 @@ PalResult PAL_CALL signalVkSemaphore(
     signalInfo.semaphore = semaphore->handle;
     signalInfo.value = value;
 
-    result = s_Vk.signalSemaphore(semaphore->device->handle, &signalInfo);
+    result = semaphore->device->signalSemaphore(
+        semaphore->device->handle, 
+        &signalInfo);
+
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
     }
@@ -3637,7 +3807,7 @@ PalResult PAL_CALL getVkSemaphoreValue(
     PalSemaphore* semaphore, 
     Uint64* value) 
 {
-    VkResult result = s_Vk.getSemaphoreValue(
+    VkResult result = semaphore->device->getSemaphoreValue(
         semaphore->device->handle, 
         semaphore->handle, 
         value);

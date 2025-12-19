@@ -60,6 +60,7 @@ typedef struct {
     bool shouldFree;
     HandleType type;
     Uint32 data2;
+    PalAdapterFeatures features;
     void* handle;
     void* data;
     const PalGraphicsBackend* backend;
@@ -163,6 +164,10 @@ void PAL_CALL freeVkMemory(
     PalDevice* device,
     PalMemory* memory);
 
+PalResult PAL_CALL queryVkDepthStencilCapabilities(
+    PalDevice* device,
+    PalDepthStencilCapabilities* caps);
+
 PalResult PAL_CALL createVkQueue(
     PalDevice* device,
     PalQueueType type,
@@ -220,7 +225,7 @@ PalResult PAL_CALL createVkImageView(
 void PAL_CALL destroyVkImageView(PalImageView* imageView);
 
 PalResult PAL_CALL queryVkSwapchainCapabilities(
-    PalAdapter* adapter,
+    PalDevice* device,
     PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps);
 
@@ -421,57 +426,58 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 
     // check if all the function pointers are set
     // clang-format off
-    if (!backend->enumerateAdapters            || 
-        !backend->getAdapterInfo               ||
-        !backend->getAdapterCapabilities       ||
-        !backend->getAdapterFeatures           ||
-        !backend->createDevice                 ||
-        !backend->destroyDevice                ||
-        !backend->allocateMemory               ||
-        !backend->freeMemory                   ||
-        !backend->createQueue                  ||
-        !backend->destroyQueue                 ||
-        !backend->canQueuePresent              ||
-        !backend->enumerateFormats             ||
-        !backend->isFormatSupported            ||
-        !backend->queryFormatImageUsages       ||
-        !backend->queryFormatImageViewUsages   ||
-        !backend->createImage                  ||
-        !backend->destroyImage                 ||
-        !backend->getImageInfo                 ||
-        !backend->getImageMemoryRequirements   ||
-        !backend->bindImageMemory              ||
-        !backend->createImageView              ||
-        !backend->destroyImageView             ||
-        !backend->querySwapchainCapabilities   ||
-        !backend->createSwapchain              ||
-        !backend->destroySwapchain             ||
-        !backend->getSwapchainImage            ||
-        !backend->getNextSwapchainImage        ||
-        !backend->presentSwapchain             ||
-        !backend->createShader                 ||
-        !backend->destroyShader                ||
-        !backend->createRenderPass             ||
-        !backend->destroyRenderPass            ||
-        !backend->createFence                  ||
-        !backend->destroyFence                 ||
-        !backend->waitFenceTimeout             ||
-        !backend->resetFence                   ||
-        !backend->isFenceSignaled              ||
-        !backend->createSemaphore              ||
-        !backend->destroySemaphore             ||
-        !backend->waitSemaphore                ||
-        !backend->signalSemaphore              ||
-        !backend->getSemaphoreValue            ||
-        !backend->createCommandPool            ||
-        !backend->destroyCommandPool           ||
-        !backend->createCommandBuffer          ||
-        !backend->destroyCommandBuffer         ||
-        !backend->beginRenderPass              ||
-        !backend->endRenderPass                ||
-        !backend->createGraphicsPipeline       ||
-        !backend->destroyPipeline              ||
-        !backend->submitCommandBuffer          ||
+    if (!backend->enumerateAdapters             || 
+        !backend->getAdapterInfo                ||
+        !backend->getAdapterCapabilities        ||
+        !backend->queryDepthStencilCapabilities ||
+        !backend->getAdapterFeatures            ||
+        !backend->createDevice                  ||
+        !backend->destroyDevice                 ||
+        !backend->allocateMemory                ||
+        !backend->freeMemory                    ||
+        !backend->createQueue                   ||
+        !backend->destroyQueue                  ||
+        !backend->canQueuePresent               ||
+        !backend->enumerateFormats              ||
+        !backend->isFormatSupported             ||
+        !backend->queryFormatImageUsages        ||
+        !backend->queryFormatImageViewUsages    ||
+        !backend->createImage                   ||
+        !backend->destroyImage                  ||
+        !backend->getImageInfo                  ||
+        !backend->getImageMemoryRequirements    ||
+        !backend->bindImageMemory               ||
+        !backend->createImageView               ||
+        !backend->destroyImageView              ||
+        !backend->querySwapchainCapabilities    ||
+        !backend->createSwapchain               ||
+        !backend->destroySwapchain              ||
+        !backend->getSwapchainImage             ||
+        !backend->getNextSwapchainImage         ||
+        !backend->presentSwapchain              ||
+        !backend->createShader                  ||
+        !backend->destroyShader                 ||
+        !backend->createRenderPass              ||
+        !backend->destroyRenderPass             ||
+        !backend->createFence                   ||
+        !backend->destroyFence                  ||
+        !backend->waitFenceTimeout              ||
+        !backend->resetFence                    ||
+        !backend->isFenceSignaled               ||
+        !backend->createSemaphore               ||
+        !backend->destroySemaphore              ||
+        !backend->waitSemaphore                 ||
+        !backend->signalSemaphore               ||
+        !backend->getSemaphoreValue             ||
+        !backend->createCommandPool             ||
+        !backend->destroyCommandPool            ||
+        !backend->createCommandBuffer           ||
+        !backend->destroyCommandBuffer          ||
+        !backend->beginRenderPass               ||
+        !backend->endRenderPass                 ||
+        !backend->createGraphicsPipeline        ||
+        !backend->destroyPipeline               ||
+        !backend->submitCommandBuffer           ||
         !backend->submitCommandBuffer) {
         return PAL_RESULT_INVALID_BACKEND;
     }
@@ -710,7 +716,7 @@ PalResult PAL_CALL palCreateDevice(
     deviceData->backend = adapterData->backend;
     deviceData->handle = device;
     deviceData->type = HANDLE_TYPE_DEVICE;
-    deviceData->data2 = features;
+    deviceData->features = features;
 
     *outDevice = (PalDevice*)deviceData;
     return PAL_RESULT_SUCCESS;
@@ -766,6 +772,30 @@ void PAL_CALL palFreeMemory(
     }
 }
 
+PalResult PAL_CALL palQueryDepthStencilCapabilities(
+    PalDevice* device,
+    PalDepthStencilCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)device;
+    if (data->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return data->backend->queryDepthStencilCapabilities(data->handle, caps);
+}
+
 // ==================================================
 // Queue
 // ==================================================
@@ -808,6 +838,7 @@ PalResult PAL_CALL palCreateQueue(
     queueData->backend = deviceData->backend;
     queueData->handle = queue;
     queueData->type = HANDLE_TYPE_QUEUE;
+    queueData->features = deviceData->features;
 
     *outQueue = (PalQueue*)queueData;
     return PAL_RESULT_SUCCESS;
@@ -957,6 +988,7 @@ PalResult PAL_CALL palCreateImage(
     imageData->handle = image;
     imageData->type = HANDLE_TYPE_IMAGE;
     imageData->data2 = 0;
+    imageData->features = data->features;
 
     *outImage = (PalImage*)imageData;
     return PAL_RESULT_SUCCESS;
@@ -1098,6 +1130,7 @@ PalResult PAL_CALL palCreateImageView(
     imageViewData->backend = deviceData->backend;
     imageViewData->handle = imageView;
     imageViewData->type = HANDLE_TYPE_IMAGE_VIEW;
+    imageViewData->features = deviceData->features;
 
     *outImageView = (PalImageView*)imageViewData;
     return PAL_RESULT_SUCCESS;
@@ -1119,7 +1152,7 @@ void PAL_CALL palDestroyImageView(PalImageView* imageView)
 // ==================================================
 
 PalResult PAL_CALL palQuerySwapchainCapabilities(
-    PalAdapter* adapter,
+    PalDevice* device,
     PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps)
 {
@@ -1127,13 +1160,17 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!adapter || !window || !caps) {
+    if (!device || !window || !caps) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_RESULT_INVALID_ADAPTER;
+    HandleData* data = (HandleData*)device;
+    if (data->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     return data->backend->querySwapchainCapabilities(
@@ -1208,6 +1245,7 @@ PalResult PAL_CALL palCreateSwapchain(
         tmp->data = nullptr;
         tmp->type = HANDLE_TYPE_IMAGE;
         tmp->data2 = SWAPCHAIN_IMAGE;
+        tmp->features = deviceData->features;
     }
     
     swapchainData->backend = deviceData->backend;
@@ -1215,6 +1253,7 @@ PalResult PAL_CALL palCreateSwapchain(
     swapchainData->data = (void*)imagesData;
     swapchainData->data2 = info->imageCount;
     swapchainData->type = HANDLE_TYPE_SWAPCHAIN;
+    swapchainData->features = deviceData->features;
 
     *outSwapchain = (PalSwapchain*)swapchainData;
     return PAL_RESULT_SUCCESS;
@@ -1383,13 +1422,38 @@ PalResult PAL_CALL palCreateShader(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (info->type == PAL_SHADER_TYPE_UNDEFINED) {
-        return PAL_RESULT_INVALID_SHADER_TYPE;
-    }
-
     HandleData* data = (HandleData*)device;
     if (data->type != HANDLE_TYPE_DEVICE) {
         return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    if (info->type == PAL_SHADER_TYPE_UNDEFINED) {
+        return PAL_RESULT_INVALID_SHADER_TYPE;
+    
+    } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
+        if (data->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
+        if (data->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
+        if (data->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else if (info->type == PAL_SHADER_TYPE_MESH) {
+        if (data->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else if (info->type == PAL_SHADER_TYPE_TASK) {
+        if (data->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
     }
 
     // create a slot for the shader
@@ -1413,6 +1477,7 @@ PalResult PAL_CALL palCreateShader(
     shaderData->handle = shader;
     shaderData->type = HANDLE_TYPE_SHADER;
     shaderData->data2 = (Uint32)info->type;
+    shaderData->features = data->features;
 
     *outShader = (PalShader*)shaderData;
     return PAL_RESULT_SUCCESS;
@@ -1487,8 +1552,13 @@ PalResult PAL_CALL palCreateRenderPass(
         attachments[i].target = tmp->handle;
         attachments[i].loadOp = info->attachments[i].loadOp;
         attachments[i].storeOp = info->attachments[i].storeOp;
+        attachments[i].stencilLoadOp = info->attachments[i].stencilLoadOp;
+        attachments[i].stencilStoreOp = info->attachments[i].stencilStoreOp;
+        attachments[i].resolveMode = info->attachments[i].resolveMode ;
         attachments[i].type = info->attachments[i].type;
         attachments[i].resolveTarget = nullptr;
+        attachments[i].stencilResolveMode = 
+            info->attachments[i].stencilResolveMode;
 
         if (info->attachments[i].resolveTarget) {
             tmp = (HandleData*)info->attachments[i].resolveTarget;
@@ -1519,6 +1589,7 @@ PalResult PAL_CALL palCreateRenderPass(
     renderPassData->backend = data->backend;
     renderPassData->handle = renderpass;
     renderPassData->type = HANDLE_TYPE_RENDER_PASS;
+    renderPassData->features = data->features;
 
     *outRenderPass = (PalRenderPass*)renderPassData;
     return PAL_RESULT_SUCCESS;
@@ -1572,6 +1643,7 @@ PalResult PAL_CALL palCreateFence(
     fenceData->backend = data->backend;
     fenceData->handle = fence;
     fenceData->type = HANDLE_TYPE_FENCE;
+    fenceData->features = data->features;
 
     *outFence = (PalFence*)fenceData;
     return PAL_RESULT_SUCCESS;
@@ -1621,6 +1693,10 @@ PalResult PAL_CALL palResetFence(PalFence* fence)
     HandleData* data = (HandleData*)fence;
     if (data->type != HANDLE_TYPE_FENCE) {
         return PAL_RESULT_INVALID_FENCE;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_FENCE_RESET)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     return data->backend->resetFence(data->handle);
@@ -1674,9 +1750,10 @@ PalResult PAL_CALL palCreateSemaphore(
     semaphoreData->backend = data->backend;
     semaphoreData->handle = semaphore;
     semaphoreData->type = HANDLE_TYPE_SEMAPHORE;
+    semaphoreData->features = data->features;
 
     semaphoreData->data2 = BINARY_SEMAPHORE;
-    if (data->data2 & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+    if (data->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
         semaphoreData->data2 = TIMELINE_SEMAPHORE;
     }
 
@@ -1850,6 +1927,7 @@ PalResult PAL_CALL palCreateCommandPool(
     poolData->backend = deviceData->backend;
     poolData->handle = pool;
     poolData->type = HANDLE_TYPE_COMMAND_POOL;
+    poolData->features = deviceData->features;
 
     *outPool = (PalCommandPool*)poolData;
     return PAL_RESULT_SUCCESS;
@@ -1911,6 +1989,7 @@ PalResult PAL_CALL palCreateCommandBuffer(
     cmdBufferData->backend = data->backend;
     cmdBufferData->handle = cmdBuffer;
     cmdBufferData->type = HANDLE_TYPE_COMMAND_BUFFER;
+    cmdBufferData->features = data->features;
 
     *outCmdBuffer = (PalCommandBuffer*)cmdBufferData;
     return PAL_RESULT_SUCCESS;
@@ -2101,6 +2180,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     void* fShaderHandle = nullptr;
     void* gShaderHandle = nullptr;
     void* mShaderHandle = nullptr;
+    void* taskShaderHandle = nullptr;
     void* tessEShaderHandle = nullptr;
     void* tessCShaderHandle = nullptr;
 
@@ -2141,6 +2221,13 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
         }
 
     } else {
+        // task shader
+        tmp = (HandleData*)info->taskShader;
+        if (tmp->type == HANDLE_TYPE_SHADER && 
+            tmp->data2 == PAL_SHADER_TYPE_TASK) {
+            taskShaderHandle = tmp->handle;
+        }
+
         // mesh shader
         tmp = (HandleData*)info->meshShader;
         if (tmp->type == HANDLE_TYPE_SHADER && 
@@ -2160,6 +2247,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     createInfo.fragmentShader = fShaderHandle;
     createInfo.geometryShader = gShaderHandle;
     createInfo.meshShader = mShaderHandle;
+    createInfo.taskShader = taskShaderHandle;
     createInfo.tessellationControlShader = tessCShaderHandle;
     createInfo.tessellationEvaluationShader = tessEShaderHandle;
     createInfo.vertexShader = vShaderHandle;
@@ -2190,6 +2278,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     pipelineData->handle = pipeline;
     pipelineData->type = HANDLE_TYPE_PIPELINE;
     pipelineData->data2 = GRAPHICS_PIPELINE;
+    pipelineData->features = deviceData->features;
 
     *outPipeline = (PalPipeline*)pipelineData;
     return PAL_RESULT_SUCCESS;

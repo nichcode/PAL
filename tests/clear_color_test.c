@@ -167,7 +167,7 @@ bool clearColorTest()
     // create a swapchain with the graphics queue
     PalSwapchainCapabilities swapchainCaps = {0};
     result = palQuerySwapchainCapabilities(
-        adapter, 
+        device, 
         &gfxWindow, 
         &swapchainCaps);
 

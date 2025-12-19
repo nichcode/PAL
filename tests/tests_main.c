@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
-    // registerTest("Clear Color Test", clearColorTest);
+    registerTest("Clear Color Test", clearColorTest);
 #endif //
 
     runTests();
