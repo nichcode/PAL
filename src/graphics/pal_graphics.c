@@ -168,6 +168,10 @@ PalResult PAL_CALL queryVkDepthStencilCapabilities(
     PalDevice* device,
     PalDepthStencilCapabilities* caps);
 
+PalResult PAL_CALL queryVkFragmentShadingRateCapabilities(
+    PalDevice* device,
+    PalFragmentShadingRateCapabilities* caps);
+
 PalResult PAL_CALL createVkQueue(
     PalDevice* device,
     PalQueueType type,
@@ -346,6 +350,8 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyDevice =  destroyVkDevice,
     .allocateMemory =  allocateVkMemory,
     .freeMemory =  freeVkMemory,
+    .queryDepthStencilCapabilities = queryVkDepthStencilCapabilities,
+    .queryFragmentShadingRateCapabilities = queryVkFragmentShadingRateCapabilities,
     .createQueue =  createVkQueue,
     .destroyQueue =  destroyVkQueue,
     .canQueuePresent =  canVkQueuePresent,
@@ -430,6 +436,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getAdapterInfo                ||
         !backend->getAdapterCapabilities        ||
         !backend->queryDepthStencilCapabilities ||
+        !backend->queryFragmentShadingRateCapabilities ||
         !backend->getAdapterFeatures            ||
         !backend->createDevice                  ||
         !backend->destroyDevice                 ||
@@ -794,6 +801,32 @@ PalResult PAL_CALL palQueryDepthStencilCapabilities(
     }
 
     return data->backend->queryDepthStencilCapabilities(data->handle, caps);
+}
+
+PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
+    PalDevice* device,
+    PalFragmentShadingRateCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)device;
+    if (data->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return data->backend->queryFragmentShadingRateCapabilities(
+        data->handle, 
+        caps);
 }
 
 // ==================================================

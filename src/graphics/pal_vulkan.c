@@ -174,6 +174,9 @@ struct PalDevice {
     PFN_vkWaitSemaphores waitSemaphore;
     PFN_vkSignalSemaphore signalSemaphore;
     PFN_vkGetSemaphoreCounterValue getSemaphoreValue;
+
+    // fragment shading rate
+    PFN_vkCmdSetFragmentShadingRateKHR cmdSetFragmentShadingRate;
 };
 
 struct PalQueue {
@@ -990,6 +993,34 @@ static VkImageViewType palImageViewTypeToVk(PalImageViewType type)
     }
 
     return VK_IMAGE_VIEW_TYPE_2D;
+}
+
+static VkExtent2D getShadingRateSize(PalFragmentShadingRate rate)
+{
+    switch (rate) {
+        case PAL_FRAGMENT_SHADING_RATE_1X1:
+            return (VkExtent2D){1, 1};
+
+        case PAL_FRAGMENT_SHADING_RATE_1X2:
+            return (VkExtent2D){1, 2};
+
+        case PAL_FRAGMENT_SHADING_RATE_2X1:
+            return (VkExtent2D){2, 1};
+
+        case PAL_FRAGMENT_SHADING_RATE_2X2:
+            return (VkExtent2D){2, 2};
+
+        case PAL_FRAGMENT_SHADING_RATE_2X4:
+            return (VkExtent2D){2, 4};
+
+        case PAL_FRAGMENT_SHADING_RATE_4X2:
+            return (VkExtent2D){4, 2};
+
+        case PAL_FRAGMENT_SHADING_RATE_4X4:
+            return (VkExtent2D){4, 4};
+    }
+
+    return (VkExtent2D){0, 0};
 }
 
 static void* vkAlloc(
@@ -2423,6 +2454,14 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
+    // load fragment shading rate procs
+    if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
+        device->cmdSetFragmentShadingRate = 
+            (PFN_vkCmdSetFragmentShadingRateKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdSetFragmentShadingRateKHR");      
+    }
+
     device->features = features;
     palFree(s_Vk.allocator, queueProps);
     palFree(s_Vk.allocator, queueCreateInfos);
@@ -2538,6 +2577,44 @@ PalResult PAL_CALL queryVkDepthStencilCapabilities(
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
         caps->stencilResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL queryVkFragmentShadingRateCapabilities(
+    PalDevice* device,
+    PalFragmentShadingRateCapabilities* caps)
+{
+    VkPhysicalDeviceProperties2 properties2 = {0};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR props = {0};
+    props.sType = 
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
+
+    properties2.pNext = &props;
+    s_Vk.getPhysicalDeviceProperties2(device->phyDevice, &properties2);
+
+    memset(caps, 0, sizeof(PalFragmentShadingRateCapabilities));
+    for (int i = 0; i < PAL_FRAGMENT_SHADING_RATE_MAX; i++) {
+        VkExtent2D size = getShadingRateSize((PalFragmentShadingRate)i);
+
+        // clang-format off
+        // check against the max size
+        if (size.width <= props.maxFragmentSize.width || 
+            size.height <= props.maxFragmentSize.height) {
+            caps->shadingRates[i] = true;
+        }
+        // clang-format on
+    }
+
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE] = true;
+    if (props.fragmentShadingRateNonTrivialCombinerOps) {
+        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN] = true;
+        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX] = true;
+        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = true;
     }
 
     return PAL_RESULT_SUCCESS;

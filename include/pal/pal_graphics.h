@@ -37,6 +37,7 @@ freely, subject to the following restrictions:
 #define PAL_ADAPTER_VERSION_SIZE 16
 #define PAL_DEFAULT_MEMORY_OFFSET 0
 #define PAL_MAX_RESOLVE_MODES 8
+#define PAL_MAX_COMBINER_OPS 8
 
 typedef struct PalAdapter PalAdapter;
 typedef struct PalDevice PalDevice;
@@ -444,6 +445,26 @@ typedef enum {
     PAL_RESOLVE_MODE_MAX
 } PalResolveMode;
 
+typedef enum {
+    PAL_FRAGMENT_SHADING_RATE_1X1,
+    PAL_FRAGMENT_SHADING_RATE_1X2,
+    PAL_FRAGMENT_SHADING_RATE_2X1,
+    PAL_FRAGMENT_SHADING_RATE_2X2,
+    PAL_FRAGMENT_SHADING_RATE_2X4,
+    PAL_FRAGMENT_SHADING_RATE_4X2,
+    PAL_FRAGMENT_SHADING_RATE_4X4,
+
+    PAL_FRAGMENT_SHADING_RATE_MAX
+} PalFragmentShadingRate;
+
+typedef enum {
+    PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP,
+    PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE,
+    PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN,
+    PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX,
+    PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL
+} PalFragmentShadingRateCombinerOp;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -487,6 +508,11 @@ typedef struct {
     bool depthResolveModes[PAL_MAX_RESOLVE_MODES];
     bool stencilResolveModes[PAL_MAX_RESOLVE_MODES];
 } PalDepthStencilCapabilities;
+
+typedef struct {
+    bool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
+    bool combinerOps[PAL_MAX_COMBINER_OPS];
+} PalFragmentShadingRateCapabilities;
 
 typedef struct {
     bool presentModes[PAL_PRESENT_MODE_MAX];
@@ -625,6 +651,11 @@ typedef struct {
 } PalBlendAttachment;
 
 typedef struct {
+    PalFragmentShadingRate rate;
+    PalFragmentShadingRateCombinerOp combinerOps[2];
+} PalFragmentShadingRateState;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -676,6 +707,7 @@ typedef struct {
 } PalCommandPoolCreateInfo;
 
 typedef struct {
+    bool fragmentShadingRateEnabled;
     PalPrimitiveTopology topology;
     Uint32 vertexLayoutCount;
     Uint32 blendAttachmentCount;
@@ -691,6 +723,7 @@ typedef struct {
     PalRasterizerState rasterizerState;
     PalMultisampleState multisampleState;
     PalDepthStencilState depthStencilState;
+    PalFragmentShadingRateState fragmentShadingRateState;
 } PalGraphicsPipelineCreateInfo;
 
 typedef struct {
@@ -728,6 +761,10 @@ typedef struct {
     PalResult PAL_CALL (*queryDepthStencilCapabilities)(
         PalDevice* device,
         PalDepthStencilCapabilities* caps);
+
+    PalResult PAL_CALL (*queryFragmentShadingRateCapabilities)(
+        PalDevice* device,
+        PalFragmentShadingRateCapabilities* caps);
 
     PalResult PAL_CALL (*createQueue)(
         PalDevice* device,
@@ -942,6 +979,10 @@ PAL_API void PAL_CALL palFreeMemory(
 PAL_API PalResult PAL_CALL palQueryDepthStencilCapabilities(
     PalDevice* device,
     PalDepthStencilCapabilities* caps);
+
+PAL_API PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
+    PalDevice* device,
+    PalFragmentShadingRateCapabilities* caps);
 
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,
