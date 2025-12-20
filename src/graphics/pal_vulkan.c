@@ -3553,6 +3553,13 @@ PalResult PAL_CALL createVkRenderPass(
         subpassDesc.pDepthStencilAttachment = &depthRef;
     }
 
+    // multi view
+    Uint32 viewMask = (1 << info->multiViewCount) - 1;
+    VkRenderPassMultiviewCreateInfo viewCreateInfo = {0};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
+    viewCreateInfo.pViewMasks = &viewMask;
+    viewCreateInfo.subpassCount = 1;
+
     // render pass
     VkRenderPassCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -3560,6 +3567,10 @@ PalResult PAL_CALL createVkRenderPass(
     createInfo.pAttachments = attachments;
     createInfo.subpassCount = 1;
     createInfo.pSubpasses = &subpassDesc;
+
+    if (info->multiViewCount > 1) {
+        createInfo.pNext = &viewCreateInfo;
+    }
 
     result = s_Vk.createRenderPass(
         device->handle, 

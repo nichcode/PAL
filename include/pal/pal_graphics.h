@@ -664,6 +664,7 @@ typedef struct {
 typedef struct {
     Uint32 width;
     Uint32 height;
+    Uint32 multiViewCount;;
     Uint32 attachmentCount;
     PalAttachmentDesc* attachments;
 } PalRenderPassCreateInfo;
