@@ -146,6 +146,7 @@ palJoinThread(thread, &retval);
 - **Core:** Added **PAL_RESULT_INVALID_FENCE** to `PalResult` enum.
 - **Core:** Added **PAL_RESULT_INVALID_SEMAPHORE** to `PalResult` enum.
 - **Core:** Added **PAL_RESULT_INVALID_RENDER_PASS** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_BUFFER** to `PalResult` enum.
 
 - **Graphics:** Added **Graphics System To PAL**.
 

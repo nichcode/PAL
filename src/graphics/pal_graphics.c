@@ -37,6 +37,7 @@ freely, subject to the following restrictions:
 #define GRAPHICS_PIPELINE 6
 #define COMPUTE_PIPELINE 7
 #define SWAPCHAIN_IMAGE 12
+#define PRIMARY_CMD_BUFFER 19
 
 typedef enum {
     HANDLE_TYPE_NONE,
@@ -52,7 +53,8 @@ typedef enum {
     HANDLE_TYPE_FENCE,
     HANDLE_TYPE_SEMAPHORE,
     HANDLE_TYPE_PIPELINE,
-    HANDLE_TYPE_SHADER
+    HANDLE_TYPE_SHADER,
+    HANDLE_TYPE_BUFFER,
 } HandleType;
 
 typedef struct {
@@ -171,6 +173,10 @@ PalResult PAL_CALL queryVkDepthStencilCapabilities(
 PalResult PAL_CALL queryVkFragmentShadingRateCapabilities(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps);
+
+PalResult PAL_CALL queryVkMeshShaderCapabilities(
+    PalDevice* device,
+    PalMeshShaderCapabilities* caps);
 
 PalResult PAL_CALL createVkQueue(
     PalDevice* device,
@@ -322,6 +328,32 @@ PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
 
+PalResult PAL_CALL setVkFragmentShadingRate(
+    PalCommandBuffer* cmdBuffer,
+    PalFragmentShadingRateState* state);
+
+PalResult PAL_CALL drawVkMeshTasks(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ);
+
+PalResult PAL_CALL drawVkMeshTasksIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 drawCount,
+    Uint32 stride);
+
+PalResult PAL_CALL drawVkMeshTasksIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 maxDrawCount,
+    Uint32 stride);
+
 PalResult PAL_CALL beginRenderPassVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderPass* renderPass,
@@ -352,6 +384,7 @@ static PalGraphicsBackend s_VkBackend = {
     .freeMemory =  freeVkMemory,
     .queryDepthStencilCapabilities = queryVkDepthStencilCapabilities,
     .queryFragmentShadingRateCapabilities = queryVkFragmentShadingRateCapabilities,
+    .queryMeshShaderCapabilities = queryVkMeshShaderCapabilities,
     .createQueue =  createVkQueue,
     .destroyQueue =  destroyVkQueue,
     .canQueuePresent =  canVkQueuePresent,
@@ -391,6 +424,10 @@ static PalGraphicsBackend s_VkBackend = {
     .createCommandBuffer = createVkCommandBuffer,
     .destroyCommandBuffer = destroyVkCommandBuffer,
     .executeCommandBuffer = executeCommandBufferVk,
+    .setFragmentShadingRate = setVkFragmentShadingRate,
+    .drawMeshTasks = drawVkMeshTasks,
+    .drawMeshTasksIndirect = drawVkMeshTasksIndirect,
+    .drawMeshTasksIndirectCount = drawVkMeshTasksIndirectCount,
     .beginRenderPass = beginRenderPassVk,
     .endRenderPass = endRenderPassVk,
     .submitCommandBuffer = submitVkCommandBuffer,
@@ -432,59 +469,65 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 
     // check if all the function pointers are set
     // clang-format off
-    if (!backend->enumerateAdapters             || 
-        !backend->getAdapterInfo                ||
-        !backend->getAdapterCapabilities        ||
-        !backend->queryDepthStencilCapabilities ||
-        !backend->queryFragmentShadingRateCapabilities ||
-        !backend->getAdapterFeatures            ||
-        !backend->createDevice                  ||
-        !backend->destroyDevice                 ||
-        !backend->allocateMemory                ||
-        !backend->freeMemory                    ||
-        !backend->createQueue                   ||
-        !backend->destroyQueue                  ||
-        !backend->canQueuePresent               ||
-        !backend->enumerateFormats              ||
-        !backend->isFormatSupported             ||
-        !backend->queryFormatImageUsages        ||
-        !backend->queryFormatImageViewUsages    ||
-        !backend->createImage                   ||
-        !backend->destroyImage                  ||
-        !backend->getImageInfo                  ||
-        !backend->getImageMemoryRequirements    ||
-        !backend->bindImageMemory               ||
-        !backend->createImageView               ||
-        !backend->destroyImageView              ||
-        !backend->querySwapchainCapabilities    ||
-        !backend->createSwapchain               ||
-        !backend->destroySwapchain              ||
-        !backend->getSwapchainImage             ||
-        !backend->getNextSwapchainImage         ||
-        !backend->presentSwapchain              ||
-        !backend->createShader                  ||
-        !backend->destroyShader                 ||
-        !backend->createRenderPass              ||
-        !backend->destroyRenderPass             ||
-        !backend->createFence                   ||
-        !backend->destroyFence                  ||
-        !backend->waitFenceTimeout              ||
-        !backend->resetFence                    ||
-        !backend->isFenceSignaled               ||
-        !backend->createSemaphore               ||
-        !backend->destroySemaphore              ||
-        !backend->waitSemaphore                 ||
-        !backend->signalSemaphore               ||
-        !backend->getSemaphoreValue             ||
-        !backend->createCommandPool             ||
-        !backend->destroyCommandPool            ||
-        !backend->createCommandBuffer           ||
-        !backend->destroyCommandBuffer          ||
-        !backend->beginRenderPass               ||
-        !backend->endRenderPass                 ||
-        !backend->createGraphicsPipeline        ||
-        !backend->destroyPipeline               ||
-        !backend->submitCommandBuffer           ||
+    if (!backend->enumerateAdapters                     || 
+        !backend->getAdapterInfo                        ||
+        !backend->getAdapterCapabilities                ||
+        !backend->queryDepthStencilCapabilities         ||
+        !backend->queryFragmentShadingRateCapabilities  ||
+        !backend->queryMeshShaderCapabilities           ||
+        !backend->getAdapterFeatures                    ||
+        !backend->createDevice                          ||
+        !backend->destroyDevice                         ||
+        !backend->allocateMemory                        ||
+        !backend->freeMemory                            ||
+        !backend->createQueue                           ||
+        !backend->destroyQueue                          ||
+        !backend->canQueuePresent                       ||
+        !backend->enumerateFormats                      ||
+        !backend->isFormatSupported                     ||
+        !backend->queryFormatImageUsages                ||
+        !backend->queryFormatImageViewUsages            ||
+        !backend->createImage                           ||
+        !backend->destroyImage                          ||
+        !backend->getImageInfo                          ||
+        !backend->getImageMemoryRequirements            ||
+        !backend->bindImageMemory                       ||
+        !backend->createImageView                       ||
+        !backend->destroyImageView                      ||
+        !backend->querySwapchainCapabilities            ||
+        !backend->createSwapchain                       ||
+        !backend->destroySwapchain                      ||
+        !backend->getSwapchainImage                     ||
+        !backend->getNextSwapchainImage                 ||
+        !backend->presentSwapchain                      ||
+        !backend->createShader                          ||
+        !backend->destroyShader                         ||
+        !backend->createRenderPass                      ||
+        !backend->destroyRenderPass                     ||
+        !backend->createFence                           ||
+        !backend->destroyFence                          ||
+        !backend->waitFenceTimeout                      ||
+        !backend->resetFence                            ||
+        !backend->isFenceSignaled                       ||
+        !backend->createSemaphore                       ||
+        !backend->destroySemaphore                      ||
+        !backend->waitSemaphore                         ||
+        !backend->signalSemaphore                       ||
+        !backend->getSemaphoreValue                     ||
+        !backend->createCommandPool                     ||
+        !backend->destroyCommandPool                    ||
+        !backend->createCommandBuffer                   ||
+        !backend->destroyCommandBuffer                  ||
+        !backend->executeCommandBuffer                  ||
+        !backend->setFragmentShadingRate                ||
+        !backend->drawMeshTasks                         ||
+        !backend->drawMeshTasksIndirect                 ||
+        !backend->drawMeshTasksIndirectCount            ||
+        !backend->beginRenderPass                       ||
+        !backend->endRenderPass                         ||
+        !backend->createGraphicsPipeline                ||
+        !backend->destroyPipeline                       ||
+        !backend->submitCommandBuffer                   ||
         !backend->submitCommandBuffer) {
         return PAL_RESULT_INVALID_BACKEND;
     }
@@ -825,6 +868,32 @@ PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
     }
 
     return data->backend->queryFragmentShadingRateCapabilities(
+        data->handle, 
+        caps);
+}
+
+PalResult PAL_CALL palQueryMeshShaderCapabilities(
+    PalDevice* device,
+    PalMeshShaderCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)device;
+    if (data->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return data->backend->queryMeshShaderCapabilities(
         data->handle, 
         caps);
 }
@@ -2030,6 +2099,11 @@ PalResult PAL_CALL palCreateCommandBuffer(
     cmdBufferData->handle = cmdBuffer;
     cmdBufferData->type = HANDLE_TYPE_COMMAND_BUFFER;
     cmdBufferData->features = data->features;
+    cmdBufferData->data2 = 0;
+
+    if (primary) {
+        cmdBufferData->data2 = PRIMARY_CMD_BUFFER;
+    }
 
     *outCmdBuffer = (PalCommandBuffer*)cmdBufferData;
     return PAL_RESULT_SUCCESS;
@@ -2068,9 +2142,163 @@ PalResult PAL_CALL palExecuteCommandBuffer(
         return PAL_RESULT_INVALID_COMMAND_BUFFER;
     }
 
+    // clang-format off
+    // check if both are primary cmd buffers
+    if (primaryCmdBufferData->data2 == PRIMARY_CMD_BUFFER 
+        && secondaryCmdBufferData->data2 == PRIMARY_CMD_BUFFER) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    // check if both are secondary cmd buffers
+    if (primaryCmdBufferData->data2 == 0 
+        && secondaryCmdBufferData->data2 == 0) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    if (primaryCmdBufferData->data2 != PRIMARY_CMD_BUFFER) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+    // clang-format on
+
     return primaryCmdBufferData->backend->executeCommandBuffer(
         primaryCmdBufferData->handle, 
         secondaryCmdBufferData->handle);
+}
+
+PalResult PAL_CALL palSetFragmentShadingRate(
+    PalCommandBuffer* cmdBuffer,
+    PalFragmentShadingRateState* state)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !state) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)cmdBuffer;
+    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    return data->backend->setFragmentShadingRate(
+        data->handle,
+        state);
+}
+
+PalResult PAL_CALL palDrawMeshTasks(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)cmdBuffer;
+    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return data->backend->drawMeshTasks(
+        data->handle,
+        groupCountX,
+        groupCountY,
+        groupCountZ);
+}
+
+PalResult PAL_CALL palDrawMeshTasksIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 drawCount,
+    Uint32 stride)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* cmdBufferData = (HandleData*)cmdBuffer;
+    HandleData* bufferData = (HandleData*)buffer;
+    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    if (bufferData->type != HANDLE_TYPE_BUFFER) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
+    if (!(cmdBufferData->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return cmdBufferData->backend->drawMeshTasksIndirect(
+        cmdBufferData->handle,
+        bufferData->handle,
+        offset,
+        drawCount,
+        stride);
+}
+
+PalResult PAL_CALL palDrawMeshTasksIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 maxDrawCount,
+    Uint32 stride)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer || !countBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* cmdBufferData = (HandleData*)cmdBuffer;
+    HandleData* bufferData = (HandleData*)buffer;
+    HandleData* countBufferData = (HandleData*)countBuffer;
+    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    if (bufferData->type != HANDLE_TYPE_BUFFER) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
+    if (countBufferData->type != HANDLE_TYPE_BUFFER) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
+    if (!(cmdBufferData->features & 
+        PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return cmdBufferData->backend->drawMeshTasksIndirectCount(
+        cmdBufferData->handle,
+        bufferData->handle,
+        countBufferData->handle,
+        offset,
+        countBufferOffset,
+        maxDrawCount,
+        stride);
 }
 
 PalResult PAL_CALL palBeginRenderPass(

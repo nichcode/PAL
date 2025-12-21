@@ -164,6 +164,7 @@ struct PalDevice {
     PhysicalQueue* phyQueues;
     PFN_vkCreateRenderPass2 createRenderPass2;
 
+    // swapchain
     PFN_vkCreateSwapchainKHR createSwapchain;
     PFN_vkDestroySwapchainKHR destroySwapchain;
     PFN_vkGetSwapchainImagesKHR getSwapchainImages;
@@ -179,6 +180,11 @@ struct PalDevice {
 
     // fragment shading rate
     PFN_vkCmdSetFragmentShadingRateKHR cmdSetFragmentShadingRate;
+
+    // mesh shader
+    PFN_vkCmdDrawMeshTasksEXT cmdDrawMeshTask;
+    PFN_vkCmdDrawMeshTasksIndirectEXT cmdDrawMeshTaskIndirect;
+    PFN_vkCmdDrawMeshTasksIndirectCountEXT cmdDrawMeshTaskIndirectCount;
 };
 
 struct PalQueue {
@@ -249,6 +255,10 @@ struct PalSemaphore {
     bool isTimeline;
     PalDevice* device;
     VkSemaphore handle;
+};
+
+struct PalBuffer {
+    VkBuffer handle;
 };
 
 static Vulkan s_Vk = {0};
@@ -1815,6 +1825,9 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 
         } else if (strcmp(props->extensionName, "VK_KHR_depth_stencil_resolve") == 0) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
+
+        } else if (strcmp(props->extensionName, "VK_KHR_draw_indirect_count") == 0) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT;
         }
     }
 
@@ -2195,9 +2208,16 @@ PalResult PAL_CALL createVkDevice(
         start = &ray;
     }
 
-    if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+    if ((features & PAL_ADAPTER_FEATURE_MESH_SHADER) || 
+       (features & PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT)) {
         if (props.apiVersion < VK_API_VERSION_1_3) {
             extensions[extCount++] = "VK_EXT_mesh_shader";
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT) {
+            if (props.apiVersion < VK_API_VERSION_1_2) {
+                extensions[extCount++] = "VK_KHR_draw_indirect_count";
+            }
         }
 
         mesh.meshShader = true;
@@ -2494,6 +2514,23 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
+    // mesh shader
+    if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+        device->cmdDrawMeshTask = (PFN_vkCmdDrawMeshTasksEXT)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkCmdDrawMeshTasksEXT");
+
+        device->cmdDrawMeshTaskIndirect = 
+            (PFN_vkCmdDrawMeshTasksIndirectEXT)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdDrawMeshTasksIndirectEXT");
+
+        device->cmdDrawMeshTaskIndirectCount = 
+            (PFN_vkCmdDrawMeshTasksIndirectCountEXT)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdDrawMeshTasksIndirectCountEXT"); 
+    }
+
     device->features = features;
     palFree(s_Vk.allocator, queueProps);
     palFree(s_Vk.allocator, queueCreateInfos);
@@ -2656,6 +2693,34 @@ PalResult PAL_CALL queryVkFragmentShadingRateCapabilities(
     size = props.maxFragmentShadingRateAttachmentTexelSize;
     caps->maxTexelWidth = size.width;
     caps->maxTexelHeight = size.height;
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL queryVkMeshShaderCapabilities(
+    PalDevice* device,
+    PalMeshShaderCapabilities* caps)
+{
+    VkPhysicalDeviceProperties2 properties2 = {0};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT props = {0};
+    props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+    properties2.pNext = &props;
+    s_Vk.getPhysicalDeviceProperties2(device->phyDevice, &properties2);
+
+    caps->maxMeshOutputPrimitives = props.maxMeshOutputPrimitives;
+    caps->maxMeshOutputVertices = props.maxMeshOutputVertices;
+    caps->maxTaskWorkGroupInvocations = props.maxTaskWorkGroupInvocations;
+    caps->maxMeshWorkGroupInvocations = props.maxMeshWorkGroupInvocations;
+
+    caps->maxTaskWorkGroupCount[0] = props.maxTaskWorkGroupCount[0];
+    caps->maxTaskWorkGroupCount[1] = props.maxTaskWorkGroupCount[1];
+    caps->maxTaskWorkGroupCount[2] = props.maxTaskWorkGroupCount[2];
+
+    caps->maxMeshWorkGroupCount[0] = props.maxMeshWorkGroupCount[0];
+    caps->maxMeshWorkGroupCount[1] = props.maxMeshWorkGroupCount[1];
+    caps->maxMeshWorkGroupCount[2] = props.maxMeshWorkGroupCount[2];
 
     return PAL_RESULT_SUCCESS;
 }
@@ -3892,6 +3957,7 @@ PalResult PAL_CALL createVkRenderPass(
         return vkResultToPal(result);
     }
 
+    // clamg-format on
     // create framebuffer
     VkFramebufferCreateInfo fbCreateInfo = {0};
     fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -4254,23 +4320,110 @@ PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
-    // check if both are primary cmd buffers
-    if (primaryCmdBuffer->primary && secondaryCmdBuffer->primary) {
-        return PAL_RESULT_INVALID_OPERATION;
-    }
-
-    if (!primaryCmdBuffer->primary && !secondaryCmdBuffer->primary) {
-        return PAL_RESULT_INVALID_OPERATION;
-    }
-
-    if (!primaryCmdBuffer->primary) {
-        return PAL_RESULT_INVALID_OPERATION;
-    }
-
     s_Vk.cmdExecuteCommandBuffer(
         primaryCmdBuffer->handle, 
         1,
         &secondaryCmdBuffer->handle);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL setVkFragmentShadingRate(
+    PalCommandBuffer* cmdBuffer,
+    PalFragmentShadingRateState* state)
+{
+    VkExtent2D size = getShadingRateSize(state->rate);
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2];
+
+    for (int i = 0; i < 2; i++) {
+        switch (state->combinerOps[i]) {
+            case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP: {
+                combinerOps[i] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+                continue;
+            }
+
+            case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE: {
+                combinerOps[i] = 
+                    VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+                continue;
+            }
+
+            case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN: {
+                combinerOps[i] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN_KHR;
+                continue;
+            }
+
+            case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX: {
+                combinerOps[i] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_KHR;
+                continue;
+            }
+
+            case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL: {
+                combinerOps[i] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
+                continue;
+            }
+
+            combinerOps[i] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+        }
+    }
+
+    cmdBuffer->device->cmdSetFragmentShadingRate(
+        cmdBuffer->handle,
+        &size,
+        combinerOps);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawVkMeshTasks(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ)
+{
+    cmdBuffer->device->cmdDrawMeshTask(
+        cmdBuffer->handle, 
+        groupCountX, 
+        groupCountY, 
+        groupCountZ);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawVkMeshTasksIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 drawCount,
+    Uint32 stride)
+{
+    cmdBuffer->device->cmdDrawMeshTaskIndirect(
+        cmdBuffer->handle,
+        buffer->handle,
+        offset,
+        drawCount,
+        stride);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawVkMeshTasksIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 maxDrawCount,
+    Uint32 stride)
+{
+    cmdBuffer->device->cmdDrawMeshTaskIndirectCount(
+        cmdBuffer->handle,
+        buffer->handle,
+        offset,
+        countBuffer->handle,
+        countBufferOffset,
+        maxDrawCount,
+        stride);
 
     return PAL_RESULT_SUCCESS;
 }

@@ -300,6 +300,10 @@ bool graphicsTest()
             palLog(nullptr, "  Fragment shading rate attachment");
         }
 
+        if (features & PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT) {
+            palLog(nullptr, "  Mesh shader indirect count");
+        }
+
         palLog(nullptr, "");
     }
 

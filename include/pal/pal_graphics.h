@@ -49,6 +49,7 @@ typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
 typedef struct PalShader PalShader;
 typedef struct PalRenderPass PalRenderPass;
+typedef struct PalBuffer PalBuffer;
 
 typedef struct PalFence PalFence;
 typedef struct PalSemaphore PalSemaphore;
@@ -243,7 +244,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(28),
     PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(29),
     PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(31)
+    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(31),
+    PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT = PAL_BIT64(32)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -522,6 +524,15 @@ typedef struct {
 } PalFragmentShadingRateCapabilities;
 
 typedef struct {
+    Uint32 maxMeshOutputPrimitives;
+    Uint32 maxMeshOutputVertices;
+    Uint32 maxTaskWorkGroupInvocations;
+    Uint32 maxMeshWorkGroupInvocations;
+    Uint32 maxTaskWorkGroupCount[3];
+    Uint32 maxMeshWorkGroupCount[3];
+} PalMeshShaderCapabilities;
+
+typedef struct {
     bool presentModes[PAL_PRESENT_MODE_MAX];
     bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
     bool formats[PAL_SWAPCHAIN_FORMAT_MAX];
@@ -775,6 +786,10 @@ typedef struct {
         PalDevice* device,
         PalFragmentShadingRateCapabilities* caps);
 
+    PalResult PAL_CALL (*queryMeshShaderCapabilities)(
+        PalDevice* device,
+        PalMeshShaderCapabilities* caps);
+
     PalResult PAL_CALL (*createQueue)(
         PalDevice* device,
         PalQueueType type,
@@ -925,6 +940,32 @@ typedef struct {
         PalCommandBuffer* primaryCmdBuffer,
         PalCommandBuffer* secondaryCmdBuffer);
 
+    PalResult PAL_CALL (*setFragmentShadingRate)(
+        PalCommandBuffer* cmdBuffer,
+        PalFragmentShadingRateState* state);
+
+    PalResult PAL_CALL (*drawMeshTasks)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 groupCountX,
+        Uint32 groupCountY,
+        Uint32 groupCountZ);
+
+    PalResult PAL_CALL (*drawMeshTasksIndirect)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        Uint64 offset,
+        Uint32 drawCount,
+        Uint32 stride);
+
+    PalResult PAL_CALL (*drawMeshTasksIndirectCount)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        PalBuffer* countBuffer,
+        Uint64 offset,
+        Uint64 countBufferOffset,
+        Uint32 maxDrawCount,
+        Uint32 stride);
+
     PalResult PAL_CALL (*beginRenderPass)(
         PalCommandBuffer* cmdBuffer,
         PalRenderPass* renderPass,
@@ -992,6 +1033,10 @@ PAL_API PalResult PAL_CALL palQueryDepthStencilCapabilities(
 PAL_API PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps);
+
+PAL_API PalResult PAL_CALL palQueryMeshShaderCapabilities(
+    PalDevice* device,
+    PalMeshShaderCapabilities* caps);
 
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,
@@ -1148,6 +1193,32 @@ PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 PAL_API PalResult PAL_CALL palExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
+
+PAL_API PalResult PAL_CALL palSetFragmentShadingRate(
+    PalCommandBuffer* cmdBuffer,
+    PalFragmentShadingRateState* state);
+
+PAL_API PalResult PAL_CALL palDrawMeshTasks(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ);
+
+PAL_API PalResult PAL_CALL palDrawMeshTasksIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 drawCount,
+    Uint32 stride);
+
+PAL_API PalResult PAL_CALL palDrawMeshTasksIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 maxDrawCount,
+    Uint32 stride);
 
 PAL_API PalResult PAL_CALL palBeginRenderPass(
     PalCommandBuffer* cmdBuffer,
