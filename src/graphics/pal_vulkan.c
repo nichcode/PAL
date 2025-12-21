@@ -162,6 +162,8 @@ struct PalDevice {
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
+    PFN_vkCreateRenderPass2 createRenderPass2;
+
     PFN_vkCreateSwapchainKHR createSwapchain;
     PFN_vkDestroySwapchainKHR destroySwapchain;
     PFN_vkGetSwapchainImagesKHR getSwapchainImages;
@@ -218,7 +220,6 @@ struct PalShader {
 };
 
 struct PalRenderPass {
-    bool hasDepth;
     Uint32 attachmentCount;
     Uint32 width;
     Uint32 height;
@@ -1867,6 +1868,11 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         if (frag.pipelineFragmentShadingRate) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE;
         }
+
+        if (frag.attachmentFragmentShadingRate) {
+            adapterFeatures |= 
+                PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT;
+        }
     }
 
     // descriptor indexing is part of core 1.2
@@ -2208,12 +2214,21 @@ PalResult PAL_CALL createVkDevice(
         start = &mesh;
     }
 
-    if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
+    if ((features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) || 
+       (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT)) {
         if (props.apiVersion < VK_API_VERSION_1_3) {
             extensions[extCount++] = "VK_KHR_fragment_shading_rate";
+            vrs.pipelineFragmentShadingRate = true;
+    
+            // fragment shading rate attachment needs this
+            if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
+                if (props.apiVersion < VK_API_VERSION_1_2) {
+                    extensions[extCount++] = "VK_KHR_create_renderpass2";
+                }
+                vrs.attachmentFragmentShadingRate = true;
+            }
         }
 
-        vrs.pipelineFragmentShadingRate = true;
         if (mesh.meshShader) {
             mesh.pNext = &vrs;
 
@@ -2459,7 +2474,24 @@ PalResult PAL_CALL createVkDevice(
         device->cmdSetFragmentShadingRate = 
             (PFN_vkCmdSetFragmentShadingRateKHR)s_Vk.getDeviceProcAddr(
                 device->handle, 
-                "vkCmdSetFragmentShadingRateKHR");      
+                "vkCmdSetFragmentShadingRateKHR");
+
+        device->createRenderPass2 = (PFN_vkCreateRenderPass2)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkCreateRenderPass2");
+    }
+
+    // load fragment shading rate attachment procs
+    if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
+        device->createRenderPass2 = (PFN_vkCreateRenderPass2)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkCreateRenderPass2");
+
+        if (!device->createRenderPass2) {
+            device->createRenderPass2 = (PFN_vkCreateRenderPass2KHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCreateRenderPass2KHR");
+        }
     }
 
     device->features = features;
@@ -2617,6 +2649,14 @@ PalResult PAL_CALL queryVkFragmentShadingRateCapabilities(
         caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = true;
     }
 
+    VkExtent2D size = props.minFragmentShadingRateAttachmentTexelSize;
+    caps->minTexelWidth = size.width;
+    caps->minTexelHeight = size.height;
+
+    size = props.maxFragmentShadingRateAttachmentTexelSize;
+    caps->maxTexelWidth = size.width;
+    caps->maxTexelHeight = size.height;
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2760,6 +2800,12 @@ PalResult PAL_CALL enumerateVkFormats(
                         usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
                         usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
                     }
+
+                    // fragment shading rate
+                    if (i == PAL_FORMAT_R8_UINT) {
+                        usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+                        usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
+                    }
                     
                     if (usages == 0) {
                         usages = PAL_IMAGE_VIEW_USAGE_COLOR;
@@ -2838,6 +2884,12 @@ PalImageViewUsages PAL_CALL queryVkFormatImageViewUsages(
         format == PAL_FORMAT_D24_UNORM_S8_UINT) {
         usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
         usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+    }
+
+    // fragment shading rate
+    if (format == PAL_FORMAT_R8_UINT) {
+        usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+        usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
     }
     
     if (usages == 0) {
@@ -3538,97 +3590,12 @@ PalResult PAL_CALL createVkRenderPass(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    VkAttachmentReference depthRef;
-    VkAttachmentDescription attachments[MAX_ATTACHMENTS];
-    VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
-    VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
-    VkImageView views[MAX_ATTACHMENTS];
-
-    renderpass->hasDepth = false;
+    bool hasDepth = false;
+    bool hasFsr;
     Uint32 colorRefCount = 0;
+    Uint32 resolveRefCount = 0;
     Uint32 layers = 0;
-    for (int i = 0; i < info->attachmentCount; i++) {
-        PalAttachmentDesc* desc = &info->attachments[i];
-        VkAttachmentDescription* rDesc = &attachments[i];
-
-        rDesc->format = palFormatToVk(desc->target->image->info.format);
-        rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        rDesc->samples = vkSamplesToSamples(desc->target->image->info.sampleCount);
-        rDesc->flags = 0;
-
-        layers = desc->target->image->info.depthOrArraySize;
-        if (desc->resolveTarget) {
-            // the layer count must be the same so to validate as well
-            // we use the highest from the attachments
-            layers = desc->resolveTarget->image->info.depthOrArraySize;
-        }
-
-        // load op
-        if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
-            rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-        } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
-            rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-        } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
-            rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        }
-
-        // store op
-        if (desc->storeOp == PAL_STORE_OP_STORE) {
-            rDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-        } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
-            rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        }
-
-        // add the image views from the attachments into a seperate array
-        views[i] = desc->target->handle;
-
-        if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
-            VkAttachmentReference* ref = &colorRefs[colorRefCount];
-            rDesc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            ref->attachment = i;
-            ref->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            colorRefCount++;
-            if (desc->target->image->belongsToSwapchain) {
-                rDesc->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            }
-
-        } else {
-            rDesc->finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            depthRef.attachment = i;
-            depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            renderpass->hasDepth = true;
-
-            // stencil is only used with depth attachment
-            if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
-                rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-            } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
-                rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-            } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
-                rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            }
-
-            if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
-                rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-            } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
-                rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            }
-        }
-    }
-
-    // subpass
-    VkSubpassDescription subpassDesc = {0};
-    subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpassDesc.colorAttachmentCount = colorRefCount;
-    subpassDesc.pColorAttachments = colorRefs;
-    if (renderpass->hasDepth) {
-        subpassDesc.pDepthStencilAttachment = &depthRef;
-    }
+    VkImageView views[MAX_ATTACHMENTS];
 
     // multi view
     Uint32 viewMask = (1 << info->multiViewCount) - 1;
@@ -3637,23 +3604,288 @@ PalResult PAL_CALL createVkRenderPass(
     viewCreateInfo.pViewMasks = &viewMask;
     viewCreateInfo.subpassCount = 1;
 
-    // render pass
-    VkRenderPassCreateInfo createInfo = {0};
-    createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    createInfo.attachmentCount = info->attachmentCount;
-    createInfo.pAttachments = attachments;
-    createInfo.subpassCount = 1;
-    createInfo.pSubpasses = &subpassDesc;
+    // clang-format off
+    if (device->createRenderPass2) {
+        VkAttachmentDescription2KHR attachments[MAX_ATTACHMENTS];
+        VkAttachmentReference2KHR depthRef;
+        VkAttachmentReference2KHR fsrRef;
+        VkAttachmentReference2KHR colorRefs[MAX_ATTACHMENTS];
+        VkAttachmentReference2KHR resolveRefs[MAX_ATTACHMENTS];
+        VkFragmentShadingRateAttachmentInfoKHR fsrAttachment = {0};
+        fsrAttachment.sType = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
 
-    if (info->multiViewCount > 1) {
-        createInfo.pNext = &viewCreateInfo;
+        for (int i = 0; i < info->attachmentCount; i++) {
+            PalAttachmentDesc* desc = &info->attachments[i];
+            VkAttachmentDescription2KHR* rDesc = &attachments[i];
+
+            rDesc->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+            rDesc->flags = 0;
+            rDesc->pNext = nullptr;
+
+            rDesc->format = palFormatToVk(desc->target->image->info.format);
+            rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            rDesc->samples = vkSamplesToSamples(desc->target->image->info.sampleCount);
+            rDesc->flags = 0;
+
+            layers = desc->target->image->info.depthOrArraySize;
+            VkAttachmentReference2KHR* resolveRef = &resolveRefs[resolveRefCount];
+            if (desc->resolveTarget) {
+                // the layer count must be the same so to validate as well
+                // we use the highest from the attachments
+                layers = desc->resolveTarget->image->info.depthOrArraySize;
+                resolveRef->attachment = i;
+                resolveRef->pNext = 0;
+                resolveRef->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+            }
+
+            // load op
+            if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
+                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+            } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
+                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+            } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
+                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            }
+
+            // store op
+            if (desc->storeOp == PAL_STORE_OP_STORE) {
+                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+            } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
+                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            }
+
+            // add the image views from the attachments into a seperate array
+            views[i] = desc->target->handle;
+
+            if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
+                VkAttachmentReference2KHR* ref = &colorRefs[colorRefCount];
+                ref->attachment = i;
+                ref->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                ref->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                ref->pNext = 0;
+                ref->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+
+                rDesc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                colorRefCount++;
+                if (desc->target->image->belongsToSwapchain) {
+                    rDesc->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                }
+
+                if (resolveRef) {
+                    resolveRef->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    resolveRef->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    resolveRefCount++;
+                }
+
+            } else {
+                // fragment shading rate attachment
+                if (desc->type == PAL_ATTACHMENT_TYPE_FRAGMENT_SHADING_RATE) {
+                    VkExtent2D size;
+                    size.width = desc->texelWidth;
+                    size.height = desc->texelHeight;
+                    fsrAttachment.shadingRateAttachmentTexelSize = size;
+
+                    fsrRef.attachment = i;
+                    rDesc->finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+                    fsrRef.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+                    fsrAttachment.pFragmentShadingRateAttachment = &fsrRef;
+                    hasFsr = true;
+
+                } else {
+                    depthRef.attachment = i;
+                    depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                    depthRef.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    depthRef.pNext = 0;
+                    depthRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+                    
+                    rDesc->finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                    hasDepth = true;
+                    // stencil is only used with depth attachment
+                    if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
+                        rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+                    } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
+                        rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+                    } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
+                        rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                    }
+
+                    if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
+                        rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+                    } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
+                        rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                    }
+
+                    if (resolveRef) {
+                        resolveRef->layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                        resolveRef->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                        resolveRefCount++;
+                    }
+                }
+            }
+        }
+
+        // subpass
+        VkSubpassDescription2 subpassDesc = {0};
+        subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpassDesc.colorAttachmentCount = colorRefCount;
+        subpassDesc.pColorAttachments = colorRefs;
+        subpassDesc.pNext = &fsrAttachment;
+
+        if (hasDepth) {
+            subpassDesc.pDepthStencilAttachment = &depthRef;
+        }
+
+        if (resolveRefCount) {
+            subpassDesc.pResolveAttachments = resolveRefs;
+        }
+
+        VkRenderPassCreateInfo2KHR createInfo = {0};
+        createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
+        createInfo.attachmentCount = info->attachmentCount;
+        createInfo.pAttachments = attachments;
+        createInfo.subpassCount = 1;
+        createInfo.pSubpasses = &subpassDesc;
+
+        if (info->multiViewCount > 1) {
+            createInfo.pNext = &viewCreateInfo;
+        }
+
+        result = device->createRenderPass2(
+            device->handle,
+            &createInfo, 
+            &s_Vk.vkAllocator, 
+            &renderpass->handle);
+
+    } else {
+        // legacy path
+        VkAttachmentDescription attachments[MAX_ATTACHMENTS];
+        VkAttachmentReference depthRef;
+        VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
+        VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
+
+        for (int i = 0; i < info->attachmentCount; i++) {
+            PalAttachmentDesc* desc = &info->attachments[i];
+            VkAttachmentDescription* rDesc = &attachments[i];
+
+            rDesc->format = palFormatToVk(desc->target->image->info.format);
+            rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            rDesc->samples = vkSamplesToSamples(desc->target->image->info.sampleCount);
+            rDesc->flags = 0;
+
+            layers = desc->target->image->info.depthOrArraySize;
+            VkAttachmentReference* resolveRef = &resolveRefs[resolveRefCount];
+            if (desc->resolveTarget) {
+                // the layer count must be the same so to validate as well
+                // we use the highest from the attachments
+                layers = desc->resolveTarget->image->info.depthOrArraySize;
+                resolveRef->attachment = i;
+            }
+
+            // load op
+            if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
+                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+            } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
+                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+            } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
+                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            }
+
+            // store op
+            if (desc->storeOp == PAL_STORE_OP_STORE) {
+                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+            } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
+                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            }
+
+            // add the image views from the attachments into a seperate array
+            views[i] = desc->target->handle;
+
+            if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
+                VkAttachmentReference* ref = &colorRefs[colorRefCount];
+                ref->attachment = i;
+                ref->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+                rDesc->finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                colorRefCount++;
+                if (desc->target->image->belongsToSwapchain) {
+                    rDesc->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                }
+
+                if (resolveRef) {
+                    resolveRef->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    resolveRefCount++;
+                }
+
+            } else {
+                depthRef.attachment = i;
+                depthRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                
+                rDesc->finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                hasDepth = true;
+                // stencil is only used with depth attachment
+                if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
+                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+                } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
+                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+                } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
+                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                }
+
+                if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
+                    rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+                } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
+                    rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                }
+
+                if (resolveRef) {
+                    resolveRef->layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                    resolveRefCount++;
+                }
+            }
+        }
+
+        // subpass legacy
+        VkSubpassDescription subpassDesc = {0};
+        subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpassDesc.colorAttachmentCount = colorRefCount;
+        subpassDesc.pColorAttachments = colorRefs;
+        if (hasDepth) {
+            subpassDesc.pDepthStencilAttachment = &depthRef;
+        }
+
+        if (resolveRefCount) {
+            subpassDesc.pResolveAttachments = resolveRefs;
+        }
+
+        VkRenderPassCreateInfo createInfo = {0};
+        createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        createInfo.attachmentCount = info->attachmentCount;
+        createInfo.pAttachments = attachments;
+        createInfo.subpassCount = 1;
+        createInfo.pSubpasses = &subpassDesc;
+
+        if (info->multiViewCount > 1) {
+            createInfo.pNext = &viewCreateInfo;
+        }
+
+        result = s_Vk.createRenderPass(
+            device->handle, 
+            &createInfo, 
+            &s_Vk.vkAllocator, 
+            &renderpass->handle);
     }
-
-    result = s_Vk.createRenderPass(
-        device->handle, 
-        &createInfo, 
-        &s_Vk.vkAllocator, 
-        &renderpass->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, renderpass);

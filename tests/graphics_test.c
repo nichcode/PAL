@@ -296,6 +296,10 @@ bool graphicsTest()
             palLog(nullptr, "  Depth stencil resolve");
         }
 
+        if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
+            palLog(nullptr, "  Fragment shading rate attachment");
+        }
+
         palLog(nullptr, "");
     }
 

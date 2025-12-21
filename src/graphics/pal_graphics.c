@@ -1577,6 +1577,13 @@ PalResult PAL_CALL palCreateRenderPass(
             return PAL_RESULT_NULL_POINTER;
         }
 
+        // clang-format of
+        if (info->attachments[i].type == PAL_ATTACHMENT_TYPE_FRAGMENT_SHADING_RATE) {
+            if (!(data->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT)) {
+                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            }
+        }
+
         tmp = (HandleData*)info->attachments[i].target;
         if (tmp->type != HANDLE_TYPE_IMAGE_VIEW) {
             return PAL_RESULT_INVALID_IMAGE_VIEW;

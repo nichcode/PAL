@@ -198,7 +198,8 @@ typedef enum {
     PAL_IMAGE_VIEW_USAGE_UNDEFINED = 0,
     PAL_IMAGE_VIEW_USAGE_COLOR = PAL_BIT(0),
     PAL_IMAGE_VIEW_USAGE_DEPTH = PAL_BIT(1),
-    PAL_IMAGE_VIEW_USAGE_STENCIL = PAL_BIT(2)
+    PAL_IMAGE_VIEW_USAGE_STENCIL = PAL_BIT(2),
+    PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE = PAL_BIT(3)
 } PalImageViewUsages;
 
 typedef enum {
@@ -241,7 +242,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE = PAL_BIT64(27),
     PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(28),
     PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(29),
-    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(30)
+    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(30),
+    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(31)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -303,7 +305,8 @@ typedef enum {
     PAL_ATTACHMENT_TYPE_COLOR,
     PAL_ATTACHMENT_TYPE_DEPTH,
     PAL_ATTACHMENT_TYPE_STENCIL,
-    PAL_ATTACHMENT_TYPE_DEPTH_STENCIL
+    PAL_ATTACHMENT_TYPE_DEPTH_STENCIL,
+    PAL_ATTACHMENT_TYPE_FRAGMENT_SHADING_RATE
 } PalAttachmentType;
 
 typedef enum {
@@ -511,6 +514,10 @@ typedef struct {
 
 typedef struct {
     bool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
+    Uint32 minTexelWidth;
+    Uint32 minTexelHeight;
+    Uint32 maxTexelWidth;
+    Uint32 maxTexelHeight;
     bool combinerOps[PAL_MAX_COMBINER_OPS];
 } PalFragmentShadingRateCapabilities;
 
@@ -557,6 +564,8 @@ typedef struct {
     PalStoreOp stencilStoreOp;
     PalResolveMode resolveMode;
     PalResolveMode stencilResolveMode;
+    Uint32 texelWidth;
+    Uint32 texelHeight;
     PalImageView* target;
     PalImageView* resolveTarget;
 } PalAttachmentDesc;
