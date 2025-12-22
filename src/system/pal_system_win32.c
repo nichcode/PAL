@@ -1,7 +1,7 @@
 
 /**
 
-Copyright (C) 2025 Nicholas Agbo <agbonicholas04@gmail.com>
+Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages

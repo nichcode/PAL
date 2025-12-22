@@ -121,7 +121,7 @@ void* retval;
 palJoinThread(thread, &retval);
 ```
 
-## [1.4.0] - 2025-00-00
+## [1.4.0] - 2026-01-00
 
 ### Features
 
