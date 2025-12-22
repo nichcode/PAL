@@ -533,6 +533,20 @@ typedef struct {
 } PalMeshShaderCapabilities;
 
 typedef struct {
+    Uint32 maxRecursionDepth;
+    Uint32 maxHitAttributeSize;
+    Uint32 maxInstanceCount;
+    Uint32 maxPrimitiveCount;
+    Uint32 maxGeometryCount;
+    Uint32 maxPayloadSize;
+    Uint32 maxDispatchInvocations;
+    Uint32 maxShaderGroupStride;
+    Uint32 shaderGroupHandleSize;
+    Uint32 shaderGroupHandleAlignment;
+    Uint32 shaderGroupBaseAlignment;
+} PalRayTracingCapabilities;
+
+typedef struct {
     bool presentModes[PAL_PRESENT_MODE_MAX];
     bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
     bool formats[PAL_SWAPCHAIN_FORMAT_MAX];
@@ -790,6 +804,10 @@ typedef struct {
         PalDevice* device,
         PalMeshShaderCapabilities* caps);
 
+    PalResult PAL_CALL (*queryRayTracingCapabilities)(
+        PalDevice* device,
+        PalRayTracingCapabilities* caps);
+
     PalResult PAL_CALL (*createQueue)(
         PalDevice* device,
         PalQueueType type,
@@ -1037,6 +1055,10 @@ PAL_API PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
 PAL_API PalResult PAL_CALL palQueryMeshShaderCapabilities(
     PalDevice* device,
     PalMeshShaderCapabilities* caps);
+
+PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
+    PalDevice* device,
+    PalRayTracingCapabilities* caps);
 
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,

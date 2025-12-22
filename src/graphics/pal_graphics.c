@@ -178,6 +178,10 @@ PalResult PAL_CALL queryVkMeshShaderCapabilities(
     PalDevice* device,
     PalMeshShaderCapabilities* caps);
 
+PalResult PAL_CALL queryVkRayTracingCapabilities(
+    PalDevice* device,
+    PalRayTracingCapabilities* caps);
+
 PalResult PAL_CALL createVkQueue(
     PalDevice* device,
     PalQueueType type,
@@ -385,6 +389,7 @@ static PalGraphicsBackend s_VkBackend = {
     .queryDepthStencilCapabilities = queryVkDepthStencilCapabilities,
     .queryFragmentShadingRateCapabilities = queryVkFragmentShadingRateCapabilities,
     .queryMeshShaderCapabilities = queryVkMeshShaderCapabilities,
+    .queryRayTracingCapabilities = queryVkRayTracingCapabilities,
     .createQueue =  createVkQueue,
     .destroyQueue =  destroyVkQueue,
     .canQueuePresent =  canVkQueuePresent,
@@ -475,6 +480,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->queryDepthStencilCapabilities         ||
         !backend->queryFragmentShadingRateCapabilities  ||
         !backend->queryMeshShaderCapabilities           ||
+        !backend->queryRayTracingCapabilities           ||
         !backend->getAdapterFeatures                    ||
         !backend->createDevice                          ||
         !backend->destroyDevice                         ||
@@ -894,6 +900,32 @@ PalResult PAL_CALL palQueryMeshShaderCapabilities(
     }
 
     return data->backend->queryMeshShaderCapabilities(
+        data->handle, 
+        caps);
+}
+
+PalResult PAL_CALL palQueryRayTracingCapabilities(
+    PalDevice* device,
+    PalRayTracingCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)device;
+    if (data->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    if (!(data->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    return data->backend->queryRayTracingCapabilities(
         data->handle, 
         caps);
 }

@@ -185,6 +185,18 @@ struct PalDevice {
     PFN_vkCmdDrawMeshTasksEXT cmdDrawMeshTask;
     PFN_vkCmdDrawMeshTasksIndirectEXT cmdDrawMeshTaskIndirect;
     PFN_vkCmdDrawMeshTasksIndirectCountEXT cmdDrawMeshTaskIndirectCount;
+
+    // ray tracing
+    PFN_vkCreateAccelerationStructureKHR createAccelerationStructure;
+    PFN_vkDestroyAccelerationStructureKHR destroyAccelerationStructure;
+    PFN_vkGetAccelerationStructureBuildSizesKHR getAccelerationBuildsize;
+    PFN_vkCmdBuildAccelerationStructuresKHR cmdBuildAccelerationStructures;
+    PFN_vkGetAccelerationStructureDeviceAddressKHR getAccelerationDeviceAddress;
+    PFN_vkCmdCopyAccelerationStructureKHR cmdCopyAccelerationStructure;
+    PFN_vkCmdWriteAccelerationStructuresPropertiesKHR cmdWriteAccelerationProps;
+    PFN_vkCmdTraceRaysKHR cmdTraceRays;
+    PFN_vkCreateRayTracingPipelinesKHR createRayTracingPipeline;
+    PFN_vkCmdTraceRaysIndirectKHR cmdTraceRaysIndirect;
 };
 
 struct PalQueue {
@@ -2531,6 +2543,59 @@ PalResult PAL_CALL createVkDevice(
                 "vkCmdDrawMeshTasksIndirectCountEXT"); 
     }
 
+    // ray tracing
+    if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        device->createAccelerationStructure = 
+            (PFN_vkCreateAccelerationStructureKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCreateAccelerationStructureKHR");
+
+        device->destroyAccelerationStructure = 
+            (PFN_vkDestroyAccelerationStructureKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkDestroyAccelerationStructureKHR");
+
+        device->getAccelerationBuildsize = 
+            (PFN_vkGetAccelerationStructureBuildSizesKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkGetAccelerationStructureBuildSizesKHR");
+
+        device->cmdBuildAccelerationStructures = 
+            (PFN_vkCmdBuildAccelerationStructuresKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdBuildAccelerationStructuresKHR");
+
+        device->getAccelerationDeviceAddress = 
+            (PFN_vkGetAccelerationStructureDeviceAddressKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkGetAccelerationStructureDeviceAddressKHR");
+
+        device->cmdCopyAccelerationStructure = 
+            (PFN_vkCmdCopyAccelerationStructureKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdCopyAccelerationStructureKHR");
+
+        device->cmdWriteAccelerationProps = 
+            (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdWriteAccelerationStructuresPropertiesKHR");
+
+        device->cmdTraceRays = 
+            (PFN_vkCmdTraceRaysKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdTraceRaysKHR");
+
+        device->createRayTracingPipeline = 
+            (PFN_vkCreateRayTracingPipelinesKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCreateRayTracingPipelinesKHR");
+
+        device->cmdTraceRaysIndirect = 
+            (PFN_vkCmdTraceRaysIndirectKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdTraceRaysIndirectKHR");
+    }
+
     device->features = features;
     palFree(s_Vk.allocator, queueProps);
     palFree(s_Vk.allocator, queueCreateInfos);
@@ -2721,6 +2786,41 @@ PalResult PAL_CALL queryVkMeshShaderCapabilities(
     caps->maxMeshWorkGroupCount[0] = props.maxMeshWorkGroupCount[0];
     caps->maxMeshWorkGroupCount[1] = props.maxMeshWorkGroupCount[1];
     caps->maxMeshWorkGroupCount[2] = props.maxMeshWorkGroupCount[2];
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL queryVkRayTracingCapabilities(
+    PalDevice* device,
+    PalRayTracingCapabilities* caps)
+{
+    VkPhysicalDeviceProperties2 properties2 = {0};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR props = {0};
+    props.sType = 
+       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR accProps = {0};
+    accProps.sType = 
+       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+
+    props.pNext = &accProps;
+    properties2.pNext = &props;
+    s_Vk.getPhysicalDeviceProperties2(device->phyDevice, &properties2);
+
+    caps->maxRecursionDepth = props.maxRayRecursionDepth;
+    caps->maxHitAttributeSize = props.maxRayHitAttributeSize;
+    caps->maxInstanceCount = accProps.maxInstanceCount;
+    caps->maxPrimitiveCount = accProps.maxPrimitiveCount;
+    caps->maxGeometryCount = accProps.maxGeometryCount;
+
+    caps->maxPayloadSize = INT32_MAX; // depends on memory
+    caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
+    caps->maxShaderGroupStride = props.maxShaderGroupStride;
+    caps->shaderGroupHandleSize = props.shaderGroupHandleSize;
+    caps->shaderGroupHandleAlignment = props.shaderGroupHandleAlignment;
+    caps->shaderGroupBaseAlignment = props.shaderGroupBaseAlignment;
 
     return PAL_RESULT_SUCCESS;
 }
