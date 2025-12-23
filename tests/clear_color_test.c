@@ -308,7 +308,12 @@ bool clearColorTest()
 
         // create a command buffer for the image view
         PalCommandBuffer* cmdBuffer = nullptr;
-        result = palCreateCommandBuffer(device, cmdPool, true, &cmdBuffer);
+        result = palCreateCommandBuffer(
+            device, 
+            cmdPool, 
+            PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+            &cmdBuffer);
+
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create command buffer: %s", error);

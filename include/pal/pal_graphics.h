@@ -1234,8 +1234,6 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
 
 PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 
-PAL_API Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain);
-
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
@@ -1254,8 +1252,6 @@ PAL_API PalResult PAL_CALL palCreateShader(
     PalShader** outShader);
 
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
-
-PAL_API PalShaderType PAL_CALL palGetShaderType(PalShader* shader);
 
 PAL_API PalResult PAL_CALL palCreateRenderPass(
     PalDevice* device,
@@ -1305,8 +1301,6 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
 PAL_API PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore, 
     Uint64* value);
-
-PAL_API bool PAL_CALL palIsTimelineSemaphore(PalSemaphore* semaphore);
 
 PAL_API PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
@@ -1382,8 +1376,6 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalPipeline** outPipeline);
 
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
-
-PAL_API bool PAL_CALL palIsGraphicsPipeline(PalPipeline* pipeline);
 
 /** @} */ // end of pal_graphics group
 

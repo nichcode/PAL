@@ -32,41 +32,24 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define MAX_BACKENDS 32
-#define BINARY_SEMAPHORE 4
-#define TIMELINE_SEMAPHORE 5
-#define GRAPHICS_PIPELINE 6
-#define COMPUTE_PIPELINE 7
-#define SWAPCHAIN_IMAGE 12
+#define PAL_HANDLE(name) struct name { const PalGraphicsBackend* backend; };
 
-typedef enum {
-    HANDLE_TYPE_NONE,
-    HANDLE_TYPE_ADAPTER,
-    HANDLE_TYPE_DEVICE,
-    HANDLE_TYPE_IMAGE,
-    HANDLE_TYPE_IMAGE_VIEW,
-    HANDLE_TYPE_SWAPCHAIN,
-    HANDLE_TYPE_RENDER_PASS,
-    HANDLE_TYPE_COMMAND_POOL,
-    HANDLE_TYPE_COMMAND_BUFFER,
-    HANDLE_TYPE_QUEUE,
-    HANDLE_TYPE_FENCE,
-    HANDLE_TYPE_SEMAPHORE,
-    HANDLE_TYPE_PIPELINE,
-    HANDLE_TYPE_SHADER,
-    HANDLE_TYPE_BUFFER,
-    HANDLE_TYPE_ACCELERATION_STRUCTURE
-} HandleType;
+PAL_HANDLE(PalAdapter)
+PAL_HANDLE(PalDevice)
+PAL_HANDLE(PalQueue)
+PAL_HANDLE(PalSwapchain)
+PAL_HANDLE(PalImage)
+PAL_HANDLE(PalImageView)
+PAL_HANDLE(PalShader)
+PAL_HANDLE(PalRenderPass)
+PAL_HANDLE(PalBuffer)
 
-typedef struct {
-    bool used;
-    bool shouldFree;
-    HandleType type;
-    Uint32 data2;
-    PalAdapterFeatures features;
-    void* handle;
-    void* data;
-    const PalGraphicsBackend* backend;
-} HandleData;
+PAL_HANDLE(PalFence)
+PAL_HANDLE(PalSemaphore)
+PAL_HANDLE(PalCommandPool)
+PAL_HANDLE(PalCommandBuffer)
+PAL_HANDLE(PalPipeline)
+PAL_HANDLE(PalAccelerationStructure)
 
 typedef struct {
     Int32 count;
@@ -77,9 +60,7 @@ typedef struct {
 typedef struct {
     bool initialized;
     Int32 backendCount;
-    Int32 maxHandleData;
     const PalAllocator* allocator;
-    HandleData* handleData;
     BackendData backends[MAX_BACKENDS];
 } GraphicsLinux;
 
@@ -89,39 +70,6 @@ static GraphicsLinux s_Graphics = {0};
 // Internal API
 // ==================================================
 
-static HandleData* getFreeHandleData()
-{
-    for (int i = 0; i < s_Graphics.maxHandleData; ++i) {
-        if (!s_Graphics.handleData[i].used) {
-            s_Graphics.handleData[i].used = true;
-            s_Graphics.handleData[i].shouldFree = false;
-            s_Graphics.handleData[i].type = HANDLE_TYPE_NONE;
-            return &s_Graphics.handleData[i];
-        }
-    }  
-
-    // It will be rare to have more than 128 handles at the same time
-    HandleData* data = nullptr;
-    data = palAllocate(s_Graphics.allocator, sizeof(HandleData), 0);
-    if (!data) {
-        return nullptr;
-    }
-
-    data->used = true;
-    data->shouldFree = true;
-    data->type = HANDLE_TYPE_NONE;
-    return data;
-}
-
-static void freeHandleData(HandleData* data)
-{
-    if (data->shouldFree) {
-        palFree(s_Graphics.allocator, data);
-    } else {
-        data->used = false;
-    }
-    data->type = HANDLE_TYPE_NONE;
-}
 
 // ==================================================
 // Vulkan API
@@ -584,16 +532,6 @@ PalResult PAL_CALL palInitGraphics(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
-    s_Graphics.maxHandleData = 128;
-    s_Graphics.handleData = palAllocate(
-        s_Graphics.allocator, 
-        sizeof(HandleData) * s_Graphics.maxHandleData, 
-        0);
-
-    if (!s_Graphics.handleData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
 #ifdef _WIN32
     // vulkan and d3d12
 #elif defined(__linux__)
@@ -629,7 +567,6 @@ void PAL_CALL palShutdownGraphics()
     // metal or andriod
 #endif // _WIN32
 
-    palFree(s_Graphics.allocator, s_Graphics.handleData);
     memset(&s_Graphics, 0, sizeof(s_Graphics));
     s_Graphics.initialized = false;
 }
@@ -667,14 +604,8 @@ PalResult PAL_CALL palEnumerateAdapters(
             PalAdapter** adapters = &outAdapters[backend->startIndex];
             result = backend->base->enumerateAdapters(&_count, adapters);
 
-            for (int i = 0; i < backend->count; i++) {
-                HandleData* data = getFreeHandleData();
-                data->backend = backend->base;
-                data->handle = adapters[i];
-                data->type = HANDLE_TYPE_ADAPTER;
-
-                // set the adapter handle into our index generated handle
-                adapters[i] = (PalAdapter*)data;
+            for (int i = 0; i < _count; i++) {
+                adapters[i]->backend = backend->base;
             }
 
         } else {
@@ -709,12 +640,7 @@ PalResult PAL_CALL palGetAdapterInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    return data->backend->getAdapterInfo(data->handle, info);
+    return adapter->backend->getAdapterInfo(adapter, info);
 }
 
 PalResult PAL_CALL palGetAdapterCapabilities(
@@ -729,12 +655,7 @@ PalResult PAL_CALL palGetAdapterCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    return data->backend->getAdapterCapabilities(data->handle, caps);
+    return adapter->backend->getAdapterCapabilities(adapter, caps);
 }
 
 PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
@@ -747,12 +668,7 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
         return 0;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return 0;
-    }
-
-    return data->backend->getAdapterFeatures(data->handle);
+    return adapter->backend->getAdapterFeatures(adapter);
 }
 
 // ==================================================
@@ -772,45 +688,26 @@ PalResult PAL_CALL palCreateDevice(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* adapterData = (HandleData*)adapter;
-    if (adapterData->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    // create a slot for the device
-    HandleData* deviceData = getFreeHandleData();
-    if (!deviceData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalDevice* device = nullptr;
-    PalResult ret;
-    ret = adapterData->backend->createDevice(
-        adapterData->handle, 
+    PalResult result;
+    result = adapter->backend->createDevice(
+        adapter, 
         features, 
         &device);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
-    
-    deviceData->backend = adapterData->backend;
-    deviceData->handle = device;
-    deviceData->type = HANDLE_TYPE_DEVICE;
-    deviceData->features = features;
 
-    *outDevice = (PalDevice*)deviceData;
+    device->backend = adapter->backend;
+    *outDevice = device;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyDevice(PalDevice* device)
 {
     if (s_Graphics.initialized && device) {
-        HandleData* data = (HandleData*)device;
-        if (data->type == HANDLE_TYPE_DEVICE) {
-            data->backend->destroyDevice(data->handle);
-            freeHandleData(data);
-        }
+        device->backend->destroyDevice(device);
     }
 }
 
@@ -828,13 +725,8 @@ PalResult PAL_CALL palAllocateMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    return data->backend->allocateMemory(
-        data->handle, 
+    return device->backend->allocateMemory(
+        device, 
         type, 
         size, 
         outMemory);
@@ -845,11 +737,7 @@ void PAL_CALL palFreeMemory(
     PalMemory* memory)
 {
     if (s_Graphics.initialized && device && memory) {
-        HandleData* data = (HandleData*)device;
-        if (data->type == HANDLE_TYPE_DEVICE) {
-            data->backend->freeMemory(data->handle, memory);
-            freeHandleData(data);
-        }
+        device->backend->freeMemory(device, memory);
     }
 }
 
@@ -865,16 +753,7 @@ PalResult PAL_CALL palQueryDepthStencilCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->queryDepthStencilCapabilities(data->handle, caps);
+    return device->backend->queryDepthStencilCapabilities(device, caps);
 }
 
 PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
@@ -889,17 +768,8 @@ PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->queryFragmentShadingRateCapabilities(
-        data->handle, 
+    return device->backend->queryFragmentShadingRateCapabilities(
+        device, 
         caps);
 }
 
@@ -915,17 +785,8 @@ PalResult PAL_CALL palQueryMeshShaderCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->queryMeshShaderCapabilities(
-        data->handle, 
+    return device->backend->queryMeshShaderCapabilities(
+        device, 
         caps);
 }
 
@@ -941,17 +802,8 @@ PalResult PAL_CALL palQueryRayTracingCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->queryRayTracingCapabilities(
-        data->handle, 
+    return device->backend->queryRayTracingCapabilities(
+        device, 
         caps);
 }
 
@@ -972,45 +824,26 @@ PalResult PAL_CALL palCreateQueue(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* deviceData = (HandleData*)device;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    // create a slot for the queue
-    HandleData* queueData = getFreeHandleData();
-    if (!queueData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalQueue* queue = nullptr;
-    PalResult ret;
-    ret = deviceData->backend->createQueue(
-        deviceData->handle,
+    PalResult result;
+    result = device->backend->createQueue(
+        device,
         type,
         &queue);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    queueData->backend = deviceData->backend;
-    queueData->handle = queue;
-    queueData->type = HANDLE_TYPE_QUEUE;
-    queueData->features = deviceData->features;
-
-    *outQueue = (PalQueue*)queueData;
+    queue->backend = device->backend;
+    *outQueue = queue;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyQueue(PalQueue* queue)
 {
     if (s_Graphics.initialized && queue) {
-        HandleData* data = (HandleData*)queue;
-        if (data->type == HANDLE_TYPE_QUEUE) {
-            data->backend->destroyQueue(data->handle);
-            freeHandleData(data);
-        }
+        queue->backend->destroyQueue(queue);
     }
 }
 
@@ -1019,10 +852,7 @@ bool PAL_CALL palCanQueuePresent(
     PalGraphicsWindow* window)
 {
     if (s_Graphics.initialized && queue) {
-        HandleData* data = (HandleData*)queue;
-        if (data->type == HANDLE_TYPE_QUEUE) {
-            return data->backend->canQueuePresent(data->handle, window);
-        }
+        return queue->backend->canQueuePresent(queue, window);
     }
     return false;
 }
@@ -1048,12 +878,7 @@ PalResult PAL_CALL palEnumerateFormats(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_RESULT_INVALID_ADAPTER;
-    }
-
-    return data->backend->enumerateFormats(data->handle, count, outFormats);
+    return adapter->backend->enumerateFormats(adapter, count, outFormats);
 }
 
 bool PAL_CALL palIsFormatSupported(
@@ -1064,12 +889,7 @@ bool PAL_CALL palIsFormatSupported(
         return false;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return false;
-    }
-
-    return data->backend->isFormatSupported(data->handle, format);
+    return adapter->backend->isFormatSupported(adapter, format);
 }
 
 PalImageUsages PAL_CALL palQueryFormatImageUsages(
@@ -1080,12 +900,7 @@ PalImageUsages PAL_CALL palQueryFormatImageUsages(
         return PAL_IMAGE_USAGE_UNDEFINED;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type != HANDLE_TYPE_ADAPTER) {
-        return PAL_IMAGE_USAGE_UNDEFINED;
-    }
-
-    return data->backend->queryFormatImageUsages(data->handle, format);
+    return adapter->backend->queryFormatImageUsages(adapter, format);
 }
 
 PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
@@ -1096,12 +911,7 @@ PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
         return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
 
-    HandleData* data = (HandleData*)adapter;
-    if (data->type == HANDLE_TYPE_ADAPTER) {
-        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
-    }
-
-    return data->backend->queryFormatImageViewUsages(data->handle, format);
+    return adapter->backend->queryFormatImageViewUsages(adapter, format);
 }
 
 // ==================================================
@@ -1121,48 +931,26 @@ PalResult PAL_CALL palCreateImage(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    // create a slot for the image
-    HandleData* imageData = getFreeHandleData();
-    if (!imageData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalImage* image = nullptr;
-    PalResult ret;
-    ret = data->backend->createImage(
-        data->handle,
+    PalResult result;
+    result = device->backend->createImage(
+        device,
         info,
         &image);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    imageData->backend = data->backend;
-    imageData->handle = image;
-    imageData->type = HANDLE_TYPE_IMAGE;
-    imageData->data2 = 0;
-    imageData->features = data->features;
-
-    *outImage = (PalImage*)imageData;
+    image->backend = device->backend;
+    *outImage = image;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyImage(PalImage* image)
 {
     if (s_Graphics.initialized && image) {
-        HandleData* data = (HandleData*)image;
-        if (data->type == HANDLE_TYPE_IMAGE) {
-            if (data->data2 == SWAPCHAIN_IMAGE) {
-                data->backend->destroyImage(data->handle);
-                freeHandleData(data);
-            }     
-        }
+        image->backend->destroyImage(image);
     }
 }
 
@@ -1178,12 +966,7 @@ PalResult PAL_CALL palGetImageInfo(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)image;
-    if (data->type != HANDLE_TYPE_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    return data->backend->getImageInfo(data->handle, info);
+    return image->backend->getImageInfo(image, info);
 }
 
 PalResult PAL_CALL palGetImageMemoryRequirements(
@@ -1198,17 +981,8 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)image;
-    if (data->type != HANDLE_TYPE_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    if (data->data2 == SWAPCHAIN_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    return data->backend->getImageMemoryRequirements(
-        data->handle, 
+    return image->backend->getImageMemoryRequirements(
+        image, 
         requirements);
 }
 
@@ -1225,17 +999,8 @@ PalResult PAL_CALL palBindImageMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)image;
-    if (data->type != HANDLE_TYPE_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    if (data->data2 == SWAPCHAIN_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    return data->backend->bindImageMemory(
-        data->handle, 
+    return image->backend->bindImageMemory(
+        image, 
         memory, 
         offset);
 }
@@ -1258,51 +1023,27 @@ PalResult PAL_CALL palCreateImageView(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* deviceData = (HandleData*)device;
-    HandleData* imageData = (HandleData*)image;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (imageData->type != HANDLE_TYPE_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    // create a slot for the image view
-    HandleData* imageViewData = getFreeHandleData();
-    if (!imageViewData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalImageView* imageView = nullptr;
-    PalResult ret;
-    ret = deviceData->backend->createImageView(
-        deviceData->handle,
-        imageData->handle,
+    PalResult result;
+    result = device->backend->createImageView(
+        device,
+        image,
         info,
         &imageView);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    imageViewData->backend = deviceData->backend;
-    imageViewData->handle = imageView;
-    imageViewData->type = HANDLE_TYPE_IMAGE_VIEW;
-    imageViewData->features = deviceData->features;
-
-    *outImageView = (PalImageView*)imageViewData;
+    imageView->backend = device->backend;
+    *outImageView = imageView;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyImageView(PalImageView* imageView)
 {
     if (s_Graphics.initialized && imageView) {
-        HandleData* data = (HandleData*)imageView;
-        if (data->type == HANDLE_TYPE_IMAGE_VIEW) {
-            data->backend->destroyImageView(data->handle);
-            freeHandleData(data);
-        }
+        imageView->backend->destroyImageView(imageView);
     }
 }
 
@@ -1323,17 +1064,8 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->querySwapchainCapabilities(
-        data->handle,
+    return device->backend->querySwapchainCapabilities(
+        device,
         window,
         caps);
 }
@@ -1353,92 +1085,29 @@ PalResult PAL_CALL palCreateSwapchain(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* imagesData = nullptr;
-    imagesData = palAllocate(
-        s_Graphics.allocator, 
-        sizeof(HandleData) * info->imageCount, 
-        0);
-
-    if (!imagesData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    HandleData* deviceData = (HandleData*)device;
-    HandleData* queueData = (HandleData*)queue;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (queueData->type != HANDLE_TYPE_QUEUE) {
-        return PAL_RESULT_INVALID_QUEUE;
-    }
-
-    // create a slot for the swapchain
-    HandleData* swapchainData = getFreeHandleData();
-    if (!swapchainData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    PalResult ret;
+    PalResult result;
     PalSwapchain* swapchain = nullptr;
-    ret = deviceData->backend->createSwapchain(
-        deviceData->handle, 
-        queueData->handle, 
+    result = device->backend->createSwapchain(
+        device, 
+        queue, 
         window, 
         info, 
         &swapchain);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    // cache the swapchain images so we dont create new handles
-    // for them anytime they are queried
-    for (int i = 0; i < info->imageCount; i++) {
-        PalImage* image = deviceData->backend->getSwapchainImage(swapchain, i);
-        HandleData* tmp = &imagesData[i];
-        tmp->backend = swapchainData->backend;
-        tmp->handle = image;
-        tmp->used = true;
-        tmp->shouldFree = false; // we free all at once
-        tmp->data = nullptr;
-        tmp->type = HANDLE_TYPE_IMAGE;
-        tmp->data2 = SWAPCHAIN_IMAGE;
-        tmp->features = deviceData->features;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
     
-    swapchainData->backend = deviceData->backend;
-    swapchainData->handle = swapchain;
-    swapchainData->data = (void*)imagesData;
-    swapchainData->data2 = info->imageCount;
-    swapchainData->type = HANDLE_TYPE_SWAPCHAIN;
-    swapchainData->features = deviceData->features;
-
-    *outSwapchain = (PalSwapchain*)swapchainData;
+    swapchain->backend = device->backend;
+    *outSwapchain = swapchain;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 {
     if (s_Graphics.initialized && swapchain) {
-        HandleData* data = (HandleData*)swapchain;
-        if (data->type == HANDLE_TYPE_SWAPCHAIN) {
-            data->backend->destroySwapchain(data->handle);
-            palFree(s_Graphics.allocator, data->data);
-            freeHandleData(data);
-        }
+        swapchain->backend->destroySwapchain(swapchain);
     }
-}
-
-Uint32 PAL_CALL palGetSwapchainImageCount(PalSwapchain* swapchain)
-{
-    if (s_Graphics.initialized && swapchain) {
-        HandleData* data = (HandleData*)swapchain;
-        if (data->type == HANDLE_TYPE_SWAPCHAIN) {
-            return data->data2;
-        }
-    }
-    return 0;
 }
 
 PalImage* PAL_CALL palGetSwapchainImage(
@@ -1449,17 +1118,7 @@ PalImage* PAL_CALL palGetSwapchainImage(
         return nullptr;
     }
 
-    HandleData* data = (HandleData*)swapchain;
-    if (data->type != HANDLE_TYPE_SWAPCHAIN) {
-        return nullptr;
-    }
-
-    if (index > data->data2) {
-        return nullptr;
-    }
-
-    HandleData* imagesData = data->data;
-    return (PalImage*)&imagesData[index];
+    return swapchain->backend->getSwapchainImage(swapchain, index);
 }
 
 PalImage* PAL_CALL palGetNextSwapchainImage(
@@ -1470,53 +1129,9 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
         return nullptr;
     }
 
-    HandleData* data = (HandleData*)swapchain;
-    if (data->type != HANDLE_TYPE_SWAPCHAIN) {
-        return nullptr;
-    }
-
-    void* FenceHandle = nullptr;
-    void* signalSemaphoreHandle = nullptr;
-    HandleData* tmp = (HandleData*)info->signalSemaphore;
-    if (info->fence) {
-        tmp = (HandleData*)info->signalSemaphore;
-        if (tmp->type != HANDLE_TYPE_FENCE) {
-            return nullptr;
-        }
-        FenceHandle = tmp->handle;
-    }
-
-    if (info->signalSemaphore) {
-        tmp = (HandleData*)info->signalSemaphore;
-        if (tmp->type != HANDLE_TYPE_SEMAPHORE) {
-            return nullptr;
-        }
-        signalSemaphoreHandle = tmp->handle;
-    }
-
-    PalNextImageInfo nextInfo;
-    nextInfo.fence = FenceHandle;
-    nextInfo.signalSemaphore = signalSemaphoreHandle;
-    nextInfo.signalValue = info->signalValue;
-    nextInfo.timeout = info->timeout;
-
-    PalImage* tmpImage = data->backend->getNextSwapchainImage(
-        data->handle,
-        &nextInfo);
-
-    // loop through all our cache images and get the handle data
-    // associated with the image
-    HandleData* imagesData = data->data;
-    HandleData* imageData = nullptr;
-    for (int i = 0; i < data->data2; i++) {
-        if (imagesData[i].handle == tmpImage) {
-            // found our handle info
-            imageData = &imagesData[i];
-            break;
-        }
-    }
-
-    return (PalImage*)imageData;
+    return swapchain->backend->getNextSwapchainImage(
+        swapchain,
+        info);
 }
 
 PalResult PAL_CALL palPresentSwapchain(
@@ -1531,37 +1146,9 @@ PalResult PAL_CALL palPresentSwapchain(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* swapchainData = (HandleData*)swapchain;
-    if (swapchainData->type != HANDLE_TYPE_SWAPCHAIN) {
-        return PAL_RESULT_INVALID_SWAPCHAIN;
-    }
-
-    HandleData* imageData = (HandleData*)info->image;
-    if (imageData->type != HANDLE_TYPE_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    if (imageData->data2 != SWAPCHAIN_IMAGE) {
-        return PAL_RESULT_INVALID_IMAGE;
-    }
-
-    void* waitSemaphoreHandle = nullptr;
-    if (info->waitSemaphore) {
-        HandleData* tmp = (HandleData*)info->waitSemaphore;
-        if (tmp->type != HANDLE_TYPE_SEMAPHORE) {
-            return PAL_RESULT_INVALID_SEMAPHORE;
-        }
-        waitSemaphoreHandle = tmp->handle;
-    }
-
-    PalPresentInfo presentInfo;
-    presentInfo.image = imageData->handle;
-    presentInfo.waitValue = info->waitValue;
-    presentInfo.waitSemaphore = waitSemaphoreHandle;
-
-    return swapchainData->backend->presentSwapchain(
-        swapchainData->handle, 
-        &presentInfo);
+    return swapchain->backend->presentSwapchain(
+        swapchain, 
+        info);
 }
 
 // ==================================================
@@ -1581,87 +1168,27 @@ PalResult PAL_CALL palCreateShader(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    if (info->type == PAL_SHADER_TYPE_UNDEFINED) {
-        return PAL_RESULT_INVALID_SHADER_TYPE;
-    
-    } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
-        if (data->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
-        if (data->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
-        if (data->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-    } else if (info->type == PAL_SHADER_TYPE_MESH) {
-        if (data->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-    } else if (info->type == PAL_SHADER_TYPE_TASK) {
-        if (data->features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-    }
-
-    // create a slot for the shader
-    HandleData* shaderData = getFreeHandleData();
-    if (!shaderData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalShader* shader = nullptr;
-    PalResult ret;
-    ret = data->backend->createShader(
-        data->handle,
+    PalResult result;
+    result = device->backend->createShader(
+        device,
         info,
         &shader);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    shaderData->backend = data->backend;
-    shaderData->handle = shader;
-    shaderData->type = HANDLE_TYPE_SHADER;
-    shaderData->data2 = (Uint32)info->type;
-    shaderData->features = data->features;
-
-    *outShader = (PalShader*)shaderData;
+    shader->backend = device->backend;    
+    *outShader = shader;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyShader(PalShader* shader)
 {
     if (s_Graphics.initialized && shader) {
-        HandleData* data = (HandleData*)shader;
-        if (data->type == HANDLE_TYPE_SHADER) {
-            data->backend->destroyShader(data->handle);
-            freeHandleData(data);
-        }
+        shader->backend->destroyShader(shader);
     }
-}
-
-PalShaderType PAL_CALL palGetShaderType(PalShader* shader)
-{
-    if (s_Graphics.initialized && shader) {
-        HandleData* data = (HandleData*)shader;
-        if (data->type == HANDLE_TYPE_SHADER) {
-            return (PalShaderType)data->data2;
-        }
-    }
-    return PAL_SHADER_TYPE_UNDEFINED;
 }
 
 // ==================================================
@@ -1685,90 +1212,26 @@ PalResult PAL_CALL palCreateRenderPass(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
+    PalRenderPass* renderPass = nullptr;
+    PalResult result;
+    result = device->backend->createRenderPass(
+        device,
+        info,
+        &renderPass);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    PalAttachmentDesc attachments[16]; // should be fine
-    PalRenderPassCreateInfo createInfo = {0};
-    createInfo.attachmentCount = info->attachmentCount;
-    createInfo.attachments = attachments;
-    createInfo.width = info->width;
-    createInfo.height = info->height;
-
-    HandleData* tmp = nullptr;
-    for (int i = 0; i < info->attachmentCount; i++) {
-        if (!info->attachments[i].target) {
-            return PAL_RESULT_NULL_POINTER;
-        }
-
-        // clang-format of
-        if (info->attachments[i].type == PAL_ATTACHMENT_TYPE_FRAGMENT_SHADING_RATE) {
-            if (!(data->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT)) {
-                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-            }
-        }
-
-        tmp = (HandleData*)info->attachments[i].target;
-        if (tmp->type != HANDLE_TYPE_IMAGE_VIEW) {
-            return PAL_RESULT_INVALID_IMAGE_VIEW;
-        }
-
-        attachments[i].target = tmp->handle;
-        attachments[i].loadOp = info->attachments[i].loadOp;
-        attachments[i].storeOp = info->attachments[i].storeOp;
-        attachments[i].stencilLoadOp = info->attachments[i].stencilLoadOp;
-        attachments[i].stencilStoreOp = info->attachments[i].stencilStoreOp;
-        attachments[i].resolveMode = info->attachments[i].resolveMode ;
-        attachments[i].type = info->attachments[i].type;
-        attachments[i].resolveTarget = nullptr;
-        attachments[i].stencilResolveMode = 
-            info->attachments[i].stencilResolveMode;
-
-        if (info->attachments[i].resolveTarget) {
-            tmp = (HandleData*)info->attachments[i].resolveTarget;
-            if (tmp->type != HANDLE_TYPE_IMAGE_VIEW) {
-                return PAL_RESULT_INVALID_IMAGE_VIEW;
-            }
-            attachments[i].resolveTarget = tmp->handle;
-        }
-    }
-
-    // create a slot for the renderpass
-    HandleData* renderPassData = getFreeHandleData();
-    if (!renderPassData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    PalRenderPass* renderpass = nullptr;
-    PalResult ret;
-    ret = data->backend->createRenderPass(
-        data->handle,
-        &createInfo,
-        &renderpass);
-
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    renderPassData->backend = data->backend;
-    renderPassData->handle = renderpass;
-    renderPassData->type = HANDLE_TYPE_RENDER_PASS;
-    renderPassData->features = data->features;
-
-    *outRenderPass = (PalRenderPass*)renderPassData;
+    renderPass->backend = device->backend;
+    *outRenderPass = renderPass;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
 {
     if (s_Graphics.initialized && renderPass) {
-        HandleData* data = (HandleData*)renderPass;
-        if (data->type == HANDLE_TYPE_RENDER_PASS) {
-            data->backend->destroyRenderPass(data->handle);
-            freeHandleData(data);
-        }
+        renderPass->backend->destroyRenderPass(renderPass);
     }
 }
 
@@ -1788,41 +1251,22 @@ PalResult PAL_CALL palCreateFence(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    // create a slot for the fence
-    HandleData* fenceData = getFreeHandleData();
-    if (!fenceData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalFence* fence = nullptr;
-    PalResult ret;
-    ret = data->backend->createFence(data->handle, &fence);
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    PalResult result;
+    result = device->backend->createFence(device, &fence);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    fenceData->backend = data->backend;
-    fenceData->handle = fence;
-    fenceData->type = HANDLE_TYPE_FENCE;
-    fenceData->features = data->features;
-
-    *outFence = (PalFence*)fenceData;
+    fence->backend = device->backend;
+    *outFence = fence;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyFence(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
-        HandleData* data = (HandleData*)fence;
-        if (data->type == HANDLE_TYPE_FENCE) {
-            data->backend->destroyFence(data->handle);
-            freeHandleData(data);
-        }
+        fence->backend->destroyFence(fence);
     }
 }
 
@@ -1838,12 +1282,7 @@ PalResult PAL_CALL palWaitFence(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)fence;
-    if (data->type != HANDLE_TYPE_FENCE) {
-        return PAL_RESULT_INVALID_FENCE;
-    }
-
-    return data->backend->waitFenceTimeout(data->handle, timeout);
+    return fence->backend->waitFenceTimeout(fence, timeout);
 }
 
 PalResult PAL_CALL palResetFence(PalFence* fence)
@@ -1856,25 +1295,13 @@ PalResult PAL_CALL palResetFence(PalFence* fence)
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)fence;
-    if (data->type != HANDLE_TYPE_FENCE) {
-        return PAL_RESULT_INVALID_FENCE;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_FENCE_RESET)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->resetFence(data->handle);
+    return fence->backend->resetFence(fence);
 }
 
 bool PAL_CALL palIsFenceSignaled(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
-        HandleData* data = (HandleData*)fence;
-        if (data->type == HANDLE_TYPE_FENCE) {
-            return data->backend->isFenceSignaled(data->handle);
-        }
+        return fence->backend->isFenceSignaled(fence);
     }
     return false;
 }
@@ -1895,46 +1322,22 @@ PalResult PAL_CALL palCreateSemaphore(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    // create a slot for the semaphore
-    HandleData* semaphoreData = getFreeHandleData();
-    if (!semaphoreData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalSemaphore* semaphore = nullptr;
-    PalResult ret;
-    ret = data->backend->createSemaphore(data->handle, &semaphore);
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    PalResult result;
+    result = device->backend->createSemaphore(device, &semaphore);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    semaphoreData->backend = data->backend;
-    semaphoreData->handle = semaphore;
-    semaphoreData->type = HANDLE_TYPE_SEMAPHORE;
-    semaphoreData->features = data->features;
-
-    semaphoreData->data2 = BINARY_SEMAPHORE;
-    if (data->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-        semaphoreData->data2 = TIMELINE_SEMAPHORE;
-    }
-
-    *outSemaphore = (PalSemaphore*)semaphoreData;
+    semaphore->backend = device->backend;
+    *outSemaphore = semaphore;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
 {
     if (s_Graphics.initialized && semaphore) {
-        HandleData* data = (HandleData*)semaphore;
-        if (data->type != HANDLE_TYPE_SEMAPHORE) {
-            data->backend->destroySemaphore(data->handle);
-            freeHandleData(data);
-        }
+        semaphore->backend->destroySemaphore(semaphore);
     }
 }
 
@@ -1952,19 +1355,9 @@ PalResult PAL_CALL palWaitSemaphore(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* semaphoreData = (HandleData*)semaphore;
-    if (semaphoreData->type != HANDLE_TYPE_SEMAPHORE) {
-        return PAL_RESULT_INVALID_SEMAPHORE;
-    }
-
-    HandleData* queueData = (HandleData*)queue;
-    if (queueData->type != HANDLE_TYPE_QUEUE) {
-        return PAL_RESULT_INVALID_QUEUE;
-    }
-
-    return semaphoreData->backend->waitSemaphore(
-        semaphoreData->handle, 
-        queueData->handle,
+    return semaphore->backend->waitSemaphore(
+        semaphore, 
+        queue,
         value,
         timeout);
 }
@@ -1982,19 +1375,9 @@ PalResult PAL_CALL palSignalSemaphore(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* semaphoreData = (HandleData*)semaphore;
-    if (semaphoreData->type != HANDLE_TYPE_SEMAPHORE) {
-        return PAL_RESULT_INVALID_SEMAPHORE;
-    }
-
-    HandleData* queueData = (HandleData*)queue;
-    if (queueData->type != HANDLE_TYPE_QUEUE) {
-        return PAL_RESULT_INVALID_QUEUE;
-    }
-
-    return semaphoreData->backend->signalSemaphore(
-        semaphoreData->handle, 
-        queueData->handle,
+    return semaphore->backend->signalSemaphore(
+        semaphore, 
+        queue,
         value);
 }
 
@@ -2010,31 +1393,9 @@ PalResult PAL_CALL palGetSemaphoreValue(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)semaphore;
-    if (data->type != HANDLE_TYPE_SEMAPHORE) {
-        return PAL_RESULT_INVALID_SEMAPHORE;
-    }
-
-    if (data->data2 == BINARY_SEMAPHORE) {
-        return PAL_RESULT_INVALID_SEMAPHORE;
-    }
-
-    return data->backend->getSemaphoreValue(
-        data->handle, 
+    return semaphore->backend->getSemaphoreValue(
+        semaphore, 
         value);
-}
-
-bool PAL_CALL palIsTimelineSemaphore(PalSemaphore* semaphore)
-{
-    if (s_Graphics.initialized && semaphore) {
-        HandleData* data = (HandleData*)semaphore;
-        if (data->type == HANDLE_TYPE_SEMAPHORE) {
-            if (data->data2 == TIMELINE_SEMAPHORE) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 // ==================================================
@@ -2058,55 +1419,26 @@ PalResult PAL_CALL palCreateCommandPool(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* deviceData = (HandleData*)device;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    HandleData* queueData = (HandleData*)info->queue;
-    if (queueData->type != HANDLE_TYPE_QUEUE) {
-        return PAL_RESULT_INVALID_QUEUE;
-    }
-
-    PalCommandPoolCreateInfo createInfo = {0};
-    createInfo.queue = queueData->handle;
-    createInfo.resettable = info->resettable;
-    createInfo.transient = info->transient;
-
-    // create a slot for the command pool
-    HandleData* poolData = getFreeHandleData();
-    if (!poolData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalCommandPool* pool = nullptr;
-    PalResult ret;
-    ret = deviceData->backend->createCommandPool(
-        deviceData->handle,
-        &createInfo,
+    PalResult result;
+    result = device->backend->createCommandPool(
+        device,
+        info,
         &pool);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    poolData->backend = deviceData->backend;
-    poolData->handle = pool;
-    poolData->type = HANDLE_TYPE_COMMAND_POOL;
-    poolData->features = deviceData->features;
-
-    *outPool = (PalCommandPool*)poolData;
+    pool->backend = device->backend;
+    *outPool = pool;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 {
     if (s_Graphics.initialized && pool) {
-        HandleData* data = (HandleData*)pool;
-        if (data->type == HANDLE_TYPE_COMMAND_POOL) {
-            data->backend->destroyCommandPool(data->handle);
-            freeHandleData(data);
-        }
+        pool->backend->destroyCommandPool(pool);
     }
 }
 
@@ -2124,52 +1456,27 @@ PalResult PAL_CALL palCreateCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    HandleData* poolData = (HandleData*)pool;
-    if (poolData->type != HANDLE_TYPE_COMMAND_POOL) {
-        return PAL_RESULT_INVALID_COMMAND_POOL;
-    }
-
-    // create a slot for the command buffer
-    HandleData* cmdBufferData = getFreeHandleData();
-    if (!cmdBufferData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
     PalCommandBuffer* cmdBuffer = nullptr;
-    PalResult ret;
-    ret = data->backend->createCommandBuffer(
-        data->handle,
-        poolData->handle,
+    PalResult result;
+    result = device->backend->createCommandBuffer(
+        device,
+        pool,
         type,
         &cmdBuffer);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
-    cmdBufferData->backend = data->backend;
-    cmdBufferData->handle = cmdBuffer;
-    cmdBufferData->type = HANDLE_TYPE_COMMAND_BUFFER;
-    cmdBufferData->features = data->features;
-    cmdBufferData->data2 = type;
-
-    *outCmdBuffer = (PalCommandBuffer*)cmdBufferData;
+    cmdBuffer->backend = device->backend;
+    *outCmdBuffer = cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     if (s_Graphics.initialized && cmdBuffer) {
-        HandleData* data = (HandleData*)cmdBuffer;
-        if (data->type == HANDLE_TYPE_COMMAND_BUFFER) {
-            data->backend->destroyCommandBuffer(data->handle);
-            freeHandleData(data);
-        }
+        cmdBuffer->backend->destroyCommandBuffer(cmdBuffer);
     }
 }
 
@@ -2185,37 +1492,9 @@ PalResult PAL_CALL palExecuteCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* primaryCmdBufferData = (HandleData*)primaryCmdBuffer;
-    HandleData* secondaryCmdBufferData = (HandleData*)secondaryCmdBuffer;
-    if (primaryCmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    if (secondaryCmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    // clang-format off
-    // check if both are primary cmd buffers
-    if (primaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_PRIMARY && 
-        secondaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_PRIMARY) {
-        return PAL_RESULT_INVALID_OPERATION;
-    }
-
-    // check if both are secondary cmd buffers
-    if (primaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_SECONDARY && 
-        secondaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
-        return PAL_RESULT_INVALID_OPERATION;
-    }
-
-    if (primaryCmdBufferData->data2 != PAL_COMMAND_BUFFER_TYPE_PRIMARY) {
-        return PAL_RESULT_INVALID_OPERATION;
-    }
-    // clang-format on
-
-    return primaryCmdBufferData->backend->executeCommandBuffer(
-        primaryCmdBufferData->handle, 
-        secondaryCmdBufferData->handle);
+    return primaryCmdBuffer->backend->executeCommandBuffer(
+        primaryCmdBuffer, 
+        secondaryCmdBuffer);
 }
 
 PalResult PAL_CALL palSetFragmentShadingRate(
@@ -2230,13 +1509,8 @@ PalResult PAL_CALL palSetFragmentShadingRate(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)cmdBuffer;
-    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    return data->backend->setFragmentShadingRate(
-        data->handle,
+    return cmdBuffer->backend->setFragmentShadingRate(
+        cmdBuffer,
         state);
 }
 
@@ -2254,17 +1528,8 @@ PalResult PAL_CALL palDrawMeshTasks(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)cmdBuffer;
-    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    if (!(data->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return data->backend->drawMeshTasks(
-        data->handle,
+    return cmdBuffer->backend->drawMeshTasks(
+        cmdBuffer,
         groupCountX,
         groupCountY,
         groupCountZ);
@@ -2285,23 +1550,9 @@ PalResult PAL_CALL palDrawMeshTasksIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* cmdBufferData = (HandleData*)cmdBuffer;
-    HandleData* bufferData = (HandleData*)buffer;
-    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    if (bufferData->type != HANDLE_TYPE_BUFFER) {
-        return PAL_RESULT_INVALID_BUFFER;
-    }
-
-    if (!(cmdBufferData->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return cmdBufferData->backend->drawMeshTasksIndirect(
-        cmdBufferData->handle,
-        bufferData->handle,
+    return cmdBuffer->backend->drawMeshTasksIndirect(
+        cmdBuffer,
+        buffer,
         offset,
         drawCount,
         stride);
@@ -2324,30 +1575,10 @@ PalResult PAL_CALL palDrawMeshTasksIndirectCount(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* cmdBufferData = (HandleData*)cmdBuffer;
-    HandleData* bufferData = (HandleData*)buffer;
-    HandleData* countBufferData = (HandleData*)countBuffer;
-    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    if (bufferData->type != HANDLE_TYPE_BUFFER) {
-        return PAL_RESULT_INVALID_BUFFER;
-    }
-
-    if (countBufferData->type != HANDLE_TYPE_BUFFER) {
-        return PAL_RESULT_INVALID_BUFFER;
-    }
-
-    if (!(cmdBufferData->features & 
-        PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    return cmdBufferData->backend->drawMeshTasksIndirectCount(
-        cmdBufferData->handle,
-        bufferData->handle,
-        countBufferData->handle,
+    return cmdBuffer->backend->drawMeshTasksIndirectCount(
+        cmdBuffer,
+        buffer,
+        countBuffer,
         offset,
         countBufferOffset,
         maxDrawCount,
@@ -2359,153 +1590,18 @@ PalResult PAL_CALL palBuildAccelerationStructures(
     Int32 infoCount,
     PalAccelerationStructureBuildInfo* infos)
 {
-    // if (!s_Graphics.initialized) {
-    //     return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    // }
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
 
-    // if (!device || !infos || infoCount <= 0) {
-    //     return PAL_RESULT_NULL_POINTER;
-    // }
+    if (!device || !infos || infoCount <= 0) {
+        return PAL_RESULT_NULL_POINTER;
+    }
 
-    // HandleData* data = (HandleData*)device;
-    // if (data->type != HANDLE_TYPE_DEVICE) {
-    //     return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    // }
-
-    // // fast path. 1 to 4 build info
-    // bool free = false;
-    // PalAccelerationStructureBuildInfo buildInfos[4];
-    // PalAccelerationStructureBuildInfo* tmpInfos = buildInfos;
-    // if (infoCount > 4) {
-    //     // allocate memory
-    //     tmpInfos = nullptr;
-    //     tmpInfos = palAllocate(
-    //         s_Graphics.allocator, 
-    //         sizeof(PalAccelerationStructureBuildInfo) * infoCount, 
-    //         0);
-
-    //     if (!tmpInfos) {
-    //         return PAL_RESULT_OUT_OF_MEMORY;
-    //     }
-    //     free = true;
-    // }
-
-    // PalGeometry* tmpBuildInfoGeometries[8];
-    // for (int i = 0; i < infoCount; i++) {
-    //     PalAccelerationStructureBuildInfo* info = &tmpInfos[i];
-    //     // scratch buffer and acceleration source
-    //     HandleData* asData = (HandleData*)info->dst;
-    //     if (asData->type != HANDLE_TYPE_ACCELERATION_STRUCTURE) {
-    //         return PAL_RESULT_INVALID_ACCELERATION_STRUCTURE;
-    //     }
-
-    //     HandleData* scratchBufferData = (HandleData*)info->scratchBuffer;
-    //     if (scratchBufferData->type != HANDLE_TYPE_BUFFER) {
-    //         return PAL_RESULT_INVALID_BUFFER;
-    //     }
-
-    //     PalGeometry* tmp = tmpBuildInfoGeometries[i];
-    //     PalAccelerationStructureBuildInfo buildInfo = {0};
-    //     buildInfo.scratchBuffer = scratchBufferData->handle;
-    //     buildInfo.dst = asData->handle;
-    //     buildInfo.scratchBufferOffset = info->scratchBufferOffset;
-
-    //     if (info->geometriesCount >= 1) {
-    //         // geometry path
-    //         tmp = palAllocate(
-    //             s_Graphics.allocator, 
-    //             sizeof(PalGeometry) * info->geometriesCount, 
-    //             0);
-
-    //         if (!tmp) {
-    //             return PAL_RESULT_OUT_OF_MEMORY;
-    //         }
-
-    //         buildInfo.instanceCount = info->instanceCount;
-    //         for (int i = 0; i < info->instanceCount; i++) {
-    //             PalGeometry* srcGeometry = &info->instances[i];
-    //             PalGeometry* dstGeometry = &tmp[i];
-    //             dstGeometry->type = srcGeometry->type;
-    //             dstGeometry->primitiveCount = srcGeometry->primitiveCount;
-
-    //             if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
-    //                 PalGeometryDataAABBS* dstData = dstGeometry->data;
-    //                 PalGeometryDataAABBS* srcData = srcGeometry->data;
-    //                 dstData->count = srcData->count;
-    //                 dstData->offset = srcData->offset;
-    //                 dstData->stride = srcData->stride;
-
-    //                 HandleData* BufferData = (HandleData*)srcData->buffer;
-    //                 dstData->buffer = BufferData->handle;
-
-    //             } else {
-    //                 // triangle
-    //                 PalGeometryDataTriangle* dstData = dstGeometry->data;
-    //                 PalGeometryDataTriangle* srcData = srcGeometry->data;
-
-    //                 dstData->indexCount = srcData->indexCount;
-    //                 dstData->indexOffset = srcData->indexOffset;
-    //                 dstData->indexType = srcData->indexType;
-    //                 dstData->vertexCount = srcData->vertexCount;
-    //                 dstData->vertexOffset = srcData->vertexOffset;
-    //                 dstData->vertexStride = srcData->vertexStride;
-    //                 dstData->vertexType = srcData->vertexType;
-
-    //                 HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
-    //                 dstData->vertexBuffer = BufferData->handle;
-
-    //                 // index buffer
-    //                 BufferData = (HandleData*)srcData->indexBuffer;
-    //                 dstData->indexBuffer = BufferData->handle;
-    //             }
-    //         }
-
-    //     } else {
-    //         // instance path
-    //         tmp = palAllocate(
-    //             s_Graphics.allocator, 
-    //             sizeof(PalGeometry) * info->instanceCount, 
-    //             0);
-
-    //         if (!tmp) {
-    //             return PAL_RESULT_OUT_OF_MEMORY;
-    //         }
-
-    //         buildInfo.instanceCount = info->instanceCount;
-    //         for (int i = 0; i < info->instanceCount; i++) {
-    //             PalGeometry* srcGeometry = &info->instances[i];
-    //             PalGeometry* dstGeometry = &tmp[i];
-    //             dstGeometry->type = srcGeometry->type;
-    //             dstGeometry->primitiveCount = srcGeometry->primitiveCount;
-
-    //             // always instance data in instance path
-    //             PalGeometryDataInstance* dstData = dstGeometry->data;
-    //             PalGeometryDataInstance* srcData = srcGeometry->data;
-    //             dstData->count = srcData->count;
-    //             dstData->offset = srcData->offset;
-
-    //             HandleData* bufferData = (HandleData*)srcData->buffer;
-    //             dstData->buffer = bufferData->handle;
-    //         }
-    //     }
-    // }
-
-    // PalResult result = data->backend->buildAccelerationStructures(
-    //     data->handle,
-    //     infoCount,
-    //     tmpInfos);
-
-    // // free the allocated arrays
-    // for (int i = 0; i < infoCount; i++) {
-    //     PalGeometry* tmp = tmpBuildInfoGeometries[i];
-    //     palFree(s_Graphics.allocator, tmp);
-    // }
-
-    // if (free) {
-    //     palFree(s_Graphics.allocator, tmpInfos);
-    // }
-
-    // return result;
+    return device->backend->buildAccelerationStructures(
+        device,
+        infoCount,
+        infos);
 }
 
 PalResult PAL_CALL palBeginRenderPass(
@@ -2526,19 +1622,9 @@ PalResult PAL_CALL palBeginRenderPass(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    HandleData* cmdBufferData = (HandleData*)cmdBuffer;
-    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    HandleData* renderPassData = (HandleData*)renderPass;
-    if (renderPassData->type != HANDLE_TYPE_RENDER_PASS) {
-        return PAL_RESULT_INVALID_RENDER_PASS;
-    }
-
-    return cmdBufferData->backend->beginRenderPass(
-        cmdBufferData->handle,
-        renderPassData->handle,
+    return cmdBuffer->backend->beginRenderPass(
+        cmdBuffer,
+        renderPass,
         clearValueCount,
         clearValues);
 }
@@ -2553,12 +1639,7 @@ PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)cmdBuffer;
-    if (data->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    return data->backend->endRenderPass(data->handle);
+    return cmdBuffer->backend->endRenderPass(cmdBuffer);
 }
 
 PalResult PAL_CALL palSubmitCommandBuffer(
@@ -2573,51 +1654,9 @@ PalResult PAL_CALL palSubmitCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* data = (HandleData*)queue;
-    if (data->type != HANDLE_TYPE_QUEUE) {
-        return PAL_RESULT_INVALID_QUEUE;
-    }
-
-    HandleData* cmdBufferData = (HandleData*)info->cmdBuffer;
-    if (cmdBufferData->type != HANDLE_TYPE_COMMAND_BUFFER) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
-
-    void* fenceHandle = nullptr;
-    void* waitSemaphoreHandle = nullptr;
-    void* signalSemaphoreHandle = nullptr;
-    if (info->fence) {
-        HandleData* tmp = (HandleData*)info->fence;
-        if (tmp->type == HANDLE_TYPE_FENCE) {
-            fenceHandle = tmp->handle;
-        }
-    }
-
-    if (info->waitSemaphore) {
-        HandleData* tmp = (HandleData*)info->waitSemaphore;
-        if (tmp->type == HANDLE_TYPE_SEMAPHORE) {
-            waitSemaphoreHandle = tmp->handle;
-        }
-    }
-
-    if (info->signalSemaphore) {
-        HandleData* tmp = (HandleData*)info->signalSemaphore;
-        if (tmp->type == HANDLE_TYPE_SEMAPHORE) {
-            signalSemaphoreHandle = tmp->handle;
-        }
-    }
-
-    PalSubmitInfo submitInfo;
-    submitInfo.cmdBuffer = cmdBufferData->handle;
-    submitInfo.fence = fenceHandle;
-    submitInfo.signalSemaphore = signalSemaphoreHandle;
-    submitInfo.waitSemaphore = waitSemaphoreHandle;
-    submitInfo.signalValue = info->signalValue;
-    submitInfo.waitValue = info->waitValue;
-
-    return data->backend->submitCommandBuffer(
-        data->handle,
-        &submitInfo);
+    return queue->backend->submitCommandBuffer(
+        queue,
+        info);
 }
 
 // ==================================================
@@ -2641,45 +1680,19 @@ PalResult PAL_CALL palCreateAccelerationstructure(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* deviceData = (HandleData*)device;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    HandleData* bufferData = (HandleData*)info->buffer;
-    if (bufferData->type != HANDLE_TYPE_BUFFER) {
-        return PAL_RESULT_INVALID_BUFFER;
-    }
-   
-    // create a slot for the acceleration structure
-    HandleData* asData = getFreeHandleData();
-    if (!asData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    PalAccelerationStructureCreateInfo createInfo;
-    createInfo.buffer = bufferData->handle;
-    createInfo.type = info->type;
-    createInfo.offset = info->offset;
-    createInfo.size = info->size;
-
-    PalResult ret;
+    PalResult result;
     PalAccelerationStructure* as = nullptr;
-    ret = deviceData->backend->createAccelerationstructure(
-        deviceData->handle,
-        &createInfo,
+    result = device->backend->createAccelerationstructure(
+        device,
+        info,
         &as);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
     
-    asData->backend = deviceData->backend;
-    asData->handle = as;
-    asData->type = HANDLE_TYPE_ACCELERATION_STRUCTURE;
-    asData->features = deviceData->features;
-
-    *outAs = (PalAccelerationStructure*)asData;
+    as->backend = device->backend;
+    *outAs = as;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2687,11 +1700,7 @@ void PAL_CALL palDestroyAccelerationstructure(
     PalAccelerationStructure* as)
 {
     if (s_Graphics.initialized && as) {
-        HandleData* data = (HandleData*)as;
-        if (data->type == HANDLE_TYPE_ACCELERATION_STRUCTURE) {
-            data->backend->destroyAccelerationstructure(data->handle);
-            freeHandleData(data);
-        }
+        as->backend->destroyAccelerationstructure(as);
     }
 }
 
@@ -2712,114 +1721,10 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* deviceData = (HandleData*)device;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    // scratch buffer and acceleration source
-    HandleData* asData = (HandleData*)info->dst;
-    if (asData->type != HANDLE_TYPE_ACCELERATION_STRUCTURE) {
-        return PAL_RESULT_INVALID_ACCELERATION_STRUCTURE;
-    }
-
-    HandleData* scratchBufferData = (HandleData*)info->scratchBuffer;
-    if (scratchBufferData->type != HANDLE_TYPE_BUFFER) {
-        return PAL_RESULT_INVALID_BUFFER;
-    }
-
-    // PalGeometry* tmp = nullptr;
-    // PalAccelerationStructureBuildInfo buildInfo = {0};
-    // buildInfo.scratchBuffer = scratchBufferData->handle;
-    // buildInfo.dst = asData->handle;
-    // buildInfo.scratchBufferOffset = info->scratchBufferOffset;
-
-    // if (info->geometriesCount >= 1) {
-    //     // geometry path
-    //     tmp = palAllocate(
-    //         s_Graphics.allocator, 
-    //         sizeof(PalGeometry) * info->geometriesCount, 
-    //         0);
-
-    //     if (!tmp) {
-    //         return PAL_RESULT_OUT_OF_MEMORY;
-    //     }
-
-    //     buildInfo.instanceCount = info->instanceCount;
-    //     for (int i = 0; i < info->instanceCount; i++) {
-    //         PalGeometry* srcGeometry = &info->instances[i];
-    //         PalGeometry* dstGeometry = &tmp[i];
-    //         dstGeometry->type = srcGeometry->type;
-    //         dstGeometry->primitiveCount = srcGeometry->primitiveCount;
-
-    //         if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
-    //             PalGeometryDataAABBS* dstData = dstGeometry->data;
-    //             PalGeometryDataAABBS* srcData = srcGeometry->data;
-    //             dstData->count = srcData->count;
-    //             dstData->offset = srcData->offset;
-    //             dstData->stride = srcData->stride;
-
-    //             HandleData* BufferData = (HandleData*)srcData->buffer;
-    //             dstData->buffer = BufferData->handle;
-
-    //         } else {
-    //             // triangle
-    //             PalGeometryDataTriangle* dstData = dstGeometry->data;
-    //             PalGeometryDataTriangle* srcData = srcGeometry->data;
-
-    //             dstData->indexCount = srcData->indexCount;
-    //             dstData->indexOffset = srcData->indexOffset;
-    //             dstData->indexType = srcData->indexType;
-    //             dstData->vertexCount = srcData->vertexCount;
-    //             dstData->vertexOffset = srcData->vertexOffset;
-    //             dstData->vertexStride = srcData->vertexStride;
-    //             dstData->vertexType = srcData->vertexType;
-
-    //             HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
-    //             dstData->vertexBuffer = BufferData->handle;
-
-    //             // index buffer
-    //             BufferData = (HandleData*)srcData->indexBuffer;
-    //             dstData->indexBuffer = BufferData->handle;
-    //         }
-    //     }
-
-    // } else {
-    //     // instance path
-    //     tmp = palAllocate(
-    //         s_Graphics.allocator, 
-    //         sizeof(PalGeometry) * info->instanceCount, 
-    //         0);
-
-    //     if (!tmp) {
-    //         return PAL_RESULT_OUT_OF_MEMORY;
-    //     }
-
-    //     buildInfo.instanceCount = info->instanceCount;
-    //     for (int i = 0; i < info->instanceCount; i++) {
-    //         PalGeometry* srcGeometry = &info->instances[i];
-    //         PalGeometry* dstGeometry = &tmp[i];
-    //         dstGeometry->type = srcGeometry->type;
-    //         dstGeometry->primitiveCount = srcGeometry->primitiveCount;
-
-    //         // always instance data in instance path
-    //         PalGeometryDataInstance* dstData = dstGeometry->data;
-    //         PalGeometryDataInstance* srcData = srcGeometry->data;
-    //         dstData->count = srcData->count;
-    //         dstData->offset = srcData->offset;
-
-    //         HandleData* bufferData = (HandleData*)srcData->buffer;
-    //         dstData->buffer = bufferData->handle;
-    //     }
-    // }
-
-    // PalResult result = deviceData->backend->getAccelerationStructureBuildSize(
-    //     deviceData->handle,
-    //     &buildInfo,
-    //     size);
-
-    // palFree(s_Graphics.allocator, tmp);
-    // return result;
+    return device->backend->getAccelerationStructureBuildSize(
+        device,
+        info,
+        size);
 }
 
 // ==================================================
@@ -2847,140 +1752,25 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    HandleData* deviceData = (HandleData*)device;
-    if (deviceData->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
-    // shaders
-    void* vShaderHandle = nullptr;
-    void* fShaderHandle = nullptr;
-    void* gShaderHandle = nullptr;
-    void* mShaderHandle = nullptr;
-    void* taskShaderHandle = nullptr;
-    void* tessEShaderHandle = nullptr;
-    void* tessCShaderHandle = nullptr;
-
-    // create a slot for the pipeline
-    HandleData* pipelineData = getFreeHandleData();
-    if (!pipelineData) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    HandleData* tmp = nullptr;
-    // vertex shader path
-    if (info->vertexShader) {
-        tmp = (HandleData*)info->vertexShader;
-        if (tmp->type == HANDLE_TYPE_SHADER && 
-            tmp->data2 == PAL_SHADER_TYPE_VERTEX) {
-            vShaderHandle = tmp->handle;
-        }
-
-        // tessellation control shader
-        tmp = (HandleData*)info->tessellationControlShader;
-        if (tmp->type == HANDLE_TYPE_SHADER && 
-            tmp->data2 == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
-            tessCShaderHandle = tmp->handle;
-        }
-
-        // tessellation evaluation shader
-        tmp = (HandleData*)info->tessellationEvaluationShader;
-        if (tmp->type == HANDLE_TYPE_SHADER && 
-            tmp->data2 == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
-            tessEShaderHandle = tmp->handle;
-        }
-
-        // geometry shader
-        tmp = (HandleData*)info->geometryShader;
-        if (tmp->type == HANDLE_TYPE_SHADER && 
-            tmp->data2 == PAL_SHADER_TYPE_GEOMETRY) {
-            gShaderHandle = tmp->handle;
-        }
-
-    } else {
-        // task shader
-        tmp = (HandleData*)info->taskShader;
-        if (tmp->type == HANDLE_TYPE_SHADER && 
-            tmp->data2 == PAL_SHADER_TYPE_TASK) {
-            taskShaderHandle = tmp->handle;
-        }
-
-        // mesh shader
-        tmp = (HandleData*)info->meshShader;
-        if (tmp->type == HANDLE_TYPE_SHADER && 
-            tmp->data2 == PAL_SHADER_TYPE_MESH) {
-            mShaderHandle = tmp->handle;
-        }
-    }
-
-    // fragment shader
-    tmp = (HandleData*)info->fragmentShader;
-    if (tmp->type == HANDLE_TYPE_SHADER && 
-        tmp->data2 == PAL_SHADER_TYPE_FRAGMENT) {
-        fShaderHandle = tmp->handle;
-    }
-
-    PalGraphicsPipelineCreateInfo createInfo;
-    createInfo.fragmentShader = fShaderHandle;
-    createInfo.geometryShader = gShaderHandle;
-    createInfo.meshShader = mShaderHandle;
-    createInfo.taskShader = taskShaderHandle;
-    createInfo.tessellationControlShader = tessCShaderHandle;
-    createInfo.tessellationEvaluationShader = tessEShaderHandle;
-    createInfo.vertexShader = vShaderHandle;
-
-    createInfo.topology = info->topology;
-    createInfo.blendAttachmentCount = info->blendAttachmentCount;
-    createInfo.blendAttachments = info->blendAttachments;
-
-    createInfo.depthStencilState = info->depthStencilState;
-    createInfo.multisampleState = info->multisampleState;
-    createInfo.rasterizerState = info->rasterizerState;
-    
-    createInfo.vertexLayoutCount = info->vertexLayoutCount;
-    createInfo.vertexLayouts = info->vertexLayouts;
-
-    PalResult ret;
+    PalResult result;
     PalPipeline* pipeline = nullptr;
-    ret = deviceData->backend->createGraphicsPipeline(
-        deviceData->handle,
-        &createInfo,
+    result = device->backend->createGraphicsPipeline(
+        device,
+        info,
         &pipeline);
 
-    if (ret != PAL_RESULT_SUCCESS) {
-        return ret;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
     
-    pipelineData->backend = deviceData->backend;
-    pipelineData->handle = pipeline;
-    pipelineData->type = HANDLE_TYPE_PIPELINE;
-    pipelineData->data2 = GRAPHICS_PIPELINE;
-    pipelineData->features = deviceData->features;
-
-    *outPipeline = (PalPipeline*)pipelineData;
+    pipeline->backend = device->backend;
+    *outPipeline = pipeline;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
 {
     if (s_Graphics.initialized && pipeline) {
-        HandleData* data = (HandleData*)pipeline;
-        if (data->type == HANDLE_TYPE_PIPELINE) {
-            data->backend->destroyPipeline(data->handle);
-            freeHandleData(data);
-        }
+        pipeline->backend->destroyPipeline(pipeline);
     }
-}
-
-bool PAL_CALL palIsGraphicsPipeline(PalPipeline* pipeline)
-{
-    if (s_Graphics.initialized && pipeline) {
-        HandleData* data = (HandleData*)pipeline;
-        if (data->type == HANDLE_TYPE_PIPELINE) {
-            if (data->data2 == GRAPHICS_PIPELINE) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
