@@ -37,7 +37,6 @@ freely, subject to the following restrictions:
 #define GRAPHICS_PIPELINE 6
 #define COMPUTE_PIPELINE 7
 #define SWAPCHAIN_IMAGE 12
-#define PRIMARY_CMD_BUFFER 19
 
 typedef enum {
     HANDLE_TYPE_NONE,
@@ -55,6 +54,7 @@ typedef enum {
     HANDLE_TYPE_PIPELINE,
     HANDLE_TYPE_SHADER,
     HANDLE_TYPE_BUFFER,
+    HANDLE_TYPE_ACCELERATION_STRUCTURE
 } HandleType;
 
 typedef struct {
@@ -323,7 +323,7 @@ void PAL_CALL destroyVkCommandPool(PalCommandPool* pool);
 PalResult PAL_CALL createVkCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
-    bool primary,
+    PalCommandBufferType type,
     PalCommandBuffer** outBuffer);
 
 void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
@@ -358,6 +358,11 @@ PalResult PAL_CALL drawVkMeshTasksIndirectCount(
     Uint32 maxDrawCount,
     Uint32 stride);
 
+PalResult PAL_CALL buildVkAccelerationStructures(
+    PalDevice* device,
+    Int32 infoCount,
+    PalAccelerationStructureBuildInfo* infos);
+
 PalResult PAL_CALL beginRenderPassVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderPass* renderPass,
@@ -369,6 +374,19 @@ PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer);
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
+
+PalResult PAL_CALL createVkAccelerationstructure(
+    PalDevice* device,
+    const PalAccelerationStructureCreateInfo* info,
+    PalAccelerationStructure** outAs);
+
+void PAL_CALL destroyVkAccelerationstructure(
+    PalAccelerationStructure* as);
+
+PalResult PAL_CALL getVkAccelerationStructureBuildSize(
+    PalDevice* device,
+    PalAccelerationStructureBuildInfo* info,
+    PalAccelerationStructureBuildSize* size);
 
 PalResult PAL_CALL createVkGraphicsPipeline(
     PalDevice* device,
@@ -433,9 +451,13 @@ static PalGraphicsBackend s_VkBackend = {
     .drawMeshTasks = drawVkMeshTasks,
     .drawMeshTasksIndirect = drawVkMeshTasksIndirect,
     .drawMeshTasksIndirectCount = drawVkMeshTasksIndirectCount,
+    .buildAccelerationStructures = buildVkAccelerationStructures,
     .beginRenderPass = beginRenderPassVk,
     .endRenderPass = endRenderPassVk,
     .submitCommandBuffer = submitVkCommandBuffer,
+    .createAccelerationstructure = createVkAccelerationstructure,
+    .destroyAccelerationstructure = destroyVkAccelerationstructure,
+    .getAccelerationStructureBuildSize = getVkAccelerationStructureBuildSize,
     .createGraphicsPipeline = createVkGraphicsPipeline,
     .destroyPipeline = destroyVkPipeline
 };
@@ -529,12 +551,15 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->drawMeshTasks                         ||
         !backend->drawMeshTasksIndirect                 ||
         !backend->drawMeshTasksIndirectCount            ||
+        !backend->buildAccelerationStructures           ||
         !backend->beginRenderPass                       ||
         !backend->endRenderPass                         ||
-        !backend->createGraphicsPipeline                ||
-        !backend->destroyPipeline                       ||
         !backend->submitCommandBuffer                   ||
-        !backend->submitCommandBuffer) {
+        !backend->createAccelerationstructure           ||
+        !backend->destroyAccelerationstructure          ||
+        !backend->getAccelerationStructureBuildSize     ||
+        !backend->createGraphicsPipeline                ||
+        !backend->destroyPipeline) {
         return PAL_RESULT_INVALID_BACKEND;
     }
     // clang-format on
@@ -2088,7 +2113,7 @@ void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
-    bool primary,
+    PalCommandBufferType type,
     PalCommandBuffer** outCmdBuffer)
 {
     if (!s_Graphics.initialized) {
@@ -2120,7 +2145,7 @@ PalResult PAL_CALL palCreateCommandBuffer(
     ret = data->backend->createCommandBuffer(
         data->handle,
         poolData->handle,
-        primary,
+        type,
         &cmdBuffer);
 
     if (ret != PAL_RESULT_SUCCESS) {
@@ -2131,11 +2156,7 @@ PalResult PAL_CALL palCreateCommandBuffer(
     cmdBufferData->handle = cmdBuffer;
     cmdBufferData->type = HANDLE_TYPE_COMMAND_BUFFER;
     cmdBufferData->features = data->features;
-    cmdBufferData->data2 = 0;
-
-    if (primary) {
-        cmdBufferData->data2 = PRIMARY_CMD_BUFFER;
-    }
+    cmdBufferData->data2 = type;
 
     *outCmdBuffer = (PalCommandBuffer*)cmdBufferData;
     return PAL_RESULT_SUCCESS;
@@ -2176,18 +2197,18 @@ PalResult PAL_CALL palExecuteCommandBuffer(
 
     // clang-format off
     // check if both are primary cmd buffers
-    if (primaryCmdBufferData->data2 == PRIMARY_CMD_BUFFER 
-        && secondaryCmdBufferData->data2 == PRIMARY_CMD_BUFFER) {
+    if (primaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_PRIMARY && 
+        secondaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_PRIMARY) {
         return PAL_RESULT_INVALID_OPERATION;
     }
 
     // check if both are secondary cmd buffers
-    if (primaryCmdBufferData->data2 == 0 
-        && secondaryCmdBufferData->data2 == 0) {
+    if (primaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_SECONDARY && 
+        secondaryCmdBufferData->data2 == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         return PAL_RESULT_INVALID_OPERATION;
     }
 
-    if (primaryCmdBufferData->data2 != PRIMARY_CMD_BUFFER) {
+    if (primaryCmdBufferData->data2 != PAL_COMMAND_BUFFER_TYPE_PRIMARY) {
         return PAL_RESULT_INVALID_OPERATION;
     }
     // clang-format on
@@ -2333,6 +2354,160 @@ PalResult PAL_CALL palDrawMeshTasksIndirectCount(
         stride);
 }
 
+PalResult PAL_CALL palBuildAccelerationStructures(
+    PalDevice* device,
+    Int32 infoCount,
+    PalAccelerationStructureBuildInfo* infos)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !infos || infoCount <= 0) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* data = (HandleData*)device;
+    if (data->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    }
+
+    // fast path. 1 to 4 build info
+    bool free = false;
+    PalAccelerationStructureBuildInfo buildInfos[4];
+    PalAccelerationStructureBuildInfo* tmpInfos = buildInfos;
+    if (infoCount > 4) {
+        // allocate memory
+        tmpInfos = nullptr;
+        tmpInfos = palAllocate(
+            s_Graphics.allocator, 
+            sizeof(PalAccelerationStructureBuildInfo) * infoCount, 
+            0);
+
+        if (!tmpInfos) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        free = true;
+    }
+
+    PalGeometry* tmpBuildInfoGeometries[8];
+    for (int i = 0; i < infoCount; i++) {
+        PalAccelerationStructureBuildInfo* info = &tmpInfos[i];
+        // scratch buffer and acceleration source
+        HandleData* asData = (HandleData*)info->dst;
+        if (asData->type != HANDLE_TYPE_ACCELERATION_STRUCTURE) {
+            return PAL_RESULT_INVALID_ACCELERATION_STRUCTURE;
+        }
+
+        HandleData* scratchBufferData = (HandleData*)info->scratchBuffer;
+        if (scratchBufferData->type != HANDLE_TYPE_BUFFER) {
+            return PAL_RESULT_INVALID_BUFFER;
+        }
+
+        PalGeometry* tmp = tmpBuildInfoGeometries[i];
+        PalAccelerationStructureBuildInfo buildInfo = {0};
+        buildInfo.scratchBuffer = scratchBufferData->handle;
+        buildInfo.dst = asData->handle;
+        buildInfo.scratchBufferOffset = info->scratchBufferOffset;
+
+        if (info->geometriesCount >= 1) {
+            // geometry path
+            tmp = palAllocate(
+                s_Graphics.allocator, 
+                sizeof(PalGeometry) * info->geometriesCount, 
+                0);
+
+            if (!tmp) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+
+            buildInfo.instanceCount = info->instanceCount;
+            for (int i = 0; i < info->instanceCount; i++) {
+                PalGeometry* srcGeometry = &info->instances[i];
+                PalGeometry* dstGeometry = &tmp[i];
+                dstGeometry->type = srcGeometry->type;
+                dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+
+                if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
+                    PalGeometryDataAABBS* dstData = dstGeometry->data;
+                    PalGeometryDataAABBS* srcData = srcGeometry->data;
+                    dstData->count = srcData->count;
+                    dstData->offset = srcData->offset;
+                    dstData->stride = srcData->stride;
+
+                    HandleData* BufferData = (HandleData*)srcData->buffer;
+                    dstData->buffer = BufferData->handle;
+
+                } else {
+                    // triangle
+                    PalGeometryDataTriangle* dstData = dstGeometry->data;
+                    PalGeometryDataTriangle* srcData = srcGeometry->data;
+
+                    dstData->indexCount = srcData->indexCount;
+                    dstData->indexOffset = srcData->indexOffset;
+                    dstData->indexType = srcData->indexType;
+                    dstData->vertexCount = srcData->vertexCount;
+                    dstData->vertexOffset = srcData->vertexOffset;
+                    dstData->vertexStride = srcData->vertexStride;
+                    dstData->vertexType = srcData->vertexType;
+
+                    HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
+                    dstData->vertexBuffer = BufferData->handle;
+
+                    // index buffer
+                    BufferData = (HandleData*)srcData->indexBuffer;
+                    dstData->indexBuffer = BufferData->handle;
+                }
+            }
+
+        } else {
+            // instance path
+            tmp = palAllocate(
+                s_Graphics.allocator, 
+                sizeof(PalGeometry) * info->instanceCount, 
+                0);
+
+            if (!tmp) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+
+            buildInfo.instanceCount = info->instanceCount;
+            for (int i = 0; i < info->instanceCount; i++) {
+                PalGeometry* srcGeometry = &info->instances[i];
+                PalGeometry* dstGeometry = &tmp[i];
+                dstGeometry->type = srcGeometry->type;
+                dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+
+                // always instance data in instance path
+                PalGeometryDataInstance* dstData = dstGeometry->data;
+                PalGeometryDataInstance* srcData = srcGeometry->data;
+                dstData->count = srcData->count;
+                dstData->offset = srcData->offset;
+
+                HandleData* bufferData = (HandleData*)srcData->buffer;
+                dstData->buffer = bufferData->handle;
+            }
+        }
+    }
+
+    PalResult result = data->backend->buildAccelerationStructures(
+        data->handle,
+        infoCount,
+        tmpInfos);
+
+    // free the allocated arrays
+    for (int i = 0; i < infoCount; i++) {
+        PalGeometry* tmp = tmpBuildInfoGeometries[i];
+        palFree(s_Graphics.allocator, tmp);
+    }
+
+    if (free) {
+        palFree(s_Graphics.allocator, tmpInfos);
+    }
+
+    return result;
+}
+
 PalResult PAL_CALL palBeginRenderPass(
     PalCommandBuffer* cmdBuffer,
     PalRenderPass* renderPass,
@@ -2443,6 +2618,208 @@ PalResult PAL_CALL palSubmitCommandBuffer(
     return data->backend->submitCommandBuffer(
         data->handle,
         &submitInfo);
+}
+
+// ==================================================
+// Ray Tracing Pipeline
+// ==================================================
+
+PalResult PAL_CALL palCreateAccelerationstructure(
+    PalDevice* device,
+    const PalAccelerationStructureCreateInfo* info,
+    PalAccelerationStructure** outAs)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outAs) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->buffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = (HandleData*)device;
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    HandleData* bufferData = (HandleData*)info->buffer;
+    if (bufferData->type != HANDLE_TYPE_BUFFER) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+   
+    // create a slot for the acceleration structure
+    HandleData* asData = getFreeHandleData();
+    if (!asData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    PalAccelerationStructureCreateInfo createInfo;
+    createInfo.buffer = bufferData->handle;
+    createInfo.type = info->type;
+    createInfo.offset = info->offset;
+    createInfo.size = info->size;
+
+    PalResult ret;
+    PalAccelerationStructure* as = nullptr;
+    ret = deviceData->backend->createAccelerationstructure(
+        deviceData->handle,
+        &createInfo,
+        &as);
+
+    if (ret != PAL_RESULT_SUCCESS) {
+        return ret;
+    }
+    
+    asData->backend = deviceData->backend;
+    asData->handle = as;
+    asData->type = HANDLE_TYPE_ACCELERATION_STRUCTURE;
+    asData->features = deviceData->features;
+
+    *outAs = (PalAccelerationStructure*)asData;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyAccelerationstructure(
+    PalAccelerationStructure* as)
+{
+    if (s_Graphics.initialized && as) {
+        HandleData* data = (HandleData*)as;
+        if (data->type == HANDLE_TYPE_ACCELERATION_STRUCTURE) {
+            data->backend->destroyAccelerationstructure(data->handle);
+            freeHandleData(data);
+        }
+    }
+}
+
+PalResult PAL_CALL palGetAccelerationStructureBuildSize(
+    PalDevice* device,
+    PalAccelerationStructureBuildInfo* info,
+    PalAccelerationStructureBuildSize* size)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !size) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->scratchBuffer || !info->dst) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    HandleData* deviceData = (HandleData*)device;
+    if (deviceData->type != HANDLE_TYPE_DEVICE) {
+        return PAL_RESULT_INVALID_DEVICE;
+    }
+
+    // scratch buffer and acceleration source
+    HandleData* asData = (HandleData*)info->dst;
+    if (asData->type != HANDLE_TYPE_ACCELERATION_STRUCTURE) {
+        return PAL_RESULT_INVALID_ACCELERATION_STRUCTURE;
+    }
+
+    HandleData* scratchBufferData = (HandleData*)info->scratchBuffer;
+    if (scratchBufferData->type != HANDLE_TYPE_BUFFER) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
+    PalGeometry* tmp = nullptr;
+    PalAccelerationStructureBuildInfo buildInfo = {0};
+    buildInfo.scratchBuffer = scratchBufferData->handle;
+    buildInfo.dst = asData->handle;
+    buildInfo.scratchBufferOffset = info->scratchBufferOffset;
+
+    if (info->geometriesCount >= 1) {
+        // geometry path
+        tmp = palAllocate(
+            s_Graphics.allocator, 
+            sizeof(PalGeometry) * info->geometriesCount, 
+            0);
+
+        if (!tmp) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        buildInfo.instanceCount = info->instanceCount;
+        for (int i = 0; i < info->instanceCount; i++) {
+            PalGeometry* srcGeometry = &info->instances[i];
+            PalGeometry* dstGeometry = &tmp[i];
+            dstGeometry->type = srcGeometry->type;
+            dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+
+            if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
+                PalGeometryDataAABBS* dstData = dstGeometry->data;
+                PalGeometryDataAABBS* srcData = srcGeometry->data;
+                dstData->count = srcData->count;
+                dstData->offset = srcData->offset;
+                dstData->stride = srcData->stride;
+
+                HandleData* BufferData = (HandleData*)srcData->buffer;
+                dstData->buffer = BufferData->handle;
+
+            } else {
+                // triangle
+                PalGeometryDataTriangle* dstData = dstGeometry->data;
+                PalGeometryDataTriangle* srcData = srcGeometry->data;
+
+                dstData->indexCount = srcData->indexCount;
+                dstData->indexOffset = srcData->indexOffset;
+                dstData->indexType = srcData->indexType;
+                dstData->vertexCount = srcData->vertexCount;
+                dstData->vertexOffset = srcData->vertexOffset;
+                dstData->vertexStride = srcData->vertexStride;
+                dstData->vertexType = srcData->vertexType;
+
+                HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
+                dstData->vertexBuffer = BufferData->handle;
+
+                // index buffer
+                BufferData = (HandleData*)srcData->indexBuffer;
+                dstData->indexBuffer = BufferData->handle;
+            }
+        }
+
+    } else {
+        // instance path
+        tmp = palAllocate(
+            s_Graphics.allocator, 
+            sizeof(PalGeometry) * info->instanceCount, 
+            0);
+
+        if (!tmp) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        buildInfo.instanceCount = info->instanceCount;
+        for (int i = 0; i < info->instanceCount; i++) {
+            PalGeometry* srcGeometry = &info->instances[i];
+            PalGeometry* dstGeometry = &tmp[i];
+            dstGeometry->type = srcGeometry->type;
+            dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+
+            // always instance data in instance path
+            PalGeometryDataInstance* dstData = dstGeometry->data;
+            PalGeometryDataInstance* srcData = srcGeometry->data;
+            dstData->count = srcData->count;
+            dstData->offset = srcData->offset;
+
+            HandleData* bufferData = (HandleData*)srcData->buffer;
+            dstData->buffer = bufferData->handle;
+        }
+    }
+
+    PalResult result = deviceData->backend->getAccelerationStructureBuildSize(
+        deviceData->handle,
+        &buildInfo,
+        size);
+
+    palFree(s_Graphics.allocator, tmp);
+    return result;
 }
 
 // ==================================================

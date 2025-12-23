@@ -192,8 +192,7 @@ struct PalDevice {
     PFN_vkGetAccelerationStructureBuildSizesKHR getAccelerationBuildsize;
     PFN_vkCmdBuildAccelerationStructuresKHR cmdBuildAccelerationStructures;
     PFN_vkGetAccelerationStructureDeviceAddressKHR getAccelerationDeviceAddress;
-    PFN_vkCmdCopyAccelerationStructureKHR cmdCopyAccelerationStructure;
-    PFN_vkCmdWriteAccelerationStructuresPropertiesKHR cmdWriteAccelerationProps;
+
     PFN_vkCmdTraceRaysKHR cmdTraceRays;
     PFN_vkCreateRayTracingPipelinesKHR createRayTracingPipeline;
     PFN_vkCmdTraceRaysIndirectKHR cmdTraceRaysIndirect;
@@ -271,6 +270,11 @@ struct PalSemaphore {
 
 struct PalBuffer {
     VkBuffer handle;
+};
+
+struct PalAccelerationStructure {
+    PalDevice* device;
+    VkAccelerationStructureKHR handle;
 };
 
 static Vulkan s_Vk = {0};
@@ -2570,16 +2574,6 @@ PalResult PAL_CALL createVkDevice(
                 device->handle, 
                 "vkGetAccelerationStructureDeviceAddressKHR");
 
-        device->cmdCopyAccelerationStructure = 
-            (PFN_vkCmdCopyAccelerationStructureKHR)s_Vk.getDeviceProcAddr(
-                device->handle, 
-                "vkCmdCopyAccelerationStructureKHR");
-
-        device->cmdWriteAccelerationProps = 
-            (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)s_Vk.getDeviceProcAddr(
-                device->handle, 
-                "vkCmdWriteAccelerationStructuresPropertiesKHR");
-
         device->cmdTraceRays = 
             (PFN_vkCmdTraceRaysKHR)s_Vk.getDeviceProcAddr(
                 device->handle, 
@@ -4364,7 +4358,7 @@ void PAL_CALL destroyVkCommandPool(PalCommandPool* pool)
 PalResult PAL_CALL createVkCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
-    bool primary,
+    PalCommandBufferType type,
     PalCommandBuffer** outCmdBuffer)
 {
     VkResult result;
@@ -4378,9 +4372,12 @@ PalResult PAL_CALL createVkCommandBuffer(
     createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     createInfo.commandBufferCount = 1;
     createInfo.commandPool = pool->handle;
+
     createInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    if (!primary) {
+    cmdBuffer->primary = true;
+    if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         createInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+        cmdBuffer->primary = false;
     }
 
     result = s_Vk.createCommandBuffer(
@@ -4393,14 +4390,9 @@ PalResult PAL_CALL createVkCommandBuffer(
         return vkResultToPal(result);
     }
 
-    if (primary) {
-        cmdBuffer->primary = true;
-    } else {
-        cmdBuffer->primary = false;
-    }
-
     cmdBuffer->device = device;
     cmdBuffer->pool = pool->handle;
+
     *outCmdBuffer = cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -4528,6 +4520,15 @@ PalResult PAL_CALL drawVkMeshTasksIndirectCount(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL buildVkAccelerationStructures(
+    PalDevice* device,
+    Int32 infoCount,
+    PalAccelerationStructureBuildInfo* infos)
+{
+    
+
+}
+
 PalResult PAL_CALL beginRenderPassVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderPass* renderPass,
@@ -4635,6 +4636,109 @@ PalResult PAL_CALL submitVkCommandBuffer(
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
     }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+// ==================================================
+// Ray Tracing Pipeline
+// ==================================================
+
+PalResult PAL_CALL createVkAccelerationstructure(
+    PalDevice* device,
+    const PalAccelerationStructureCreateInfo* info,
+    PalAccelerationStructure** outAs)
+{
+    VkResult result;
+    PalAccelerationStructure* as = nullptr;
+    as = palAllocate(s_Vk.allocator, sizeof(PalAccelerationStructure), 0);
+    if (!as) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkAccelerationStructureCreateInfoKHR createInfo = {0};
+    createInfo.sType = 
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+
+    createInfo.offset = (VkDeviceSize)info->offset;
+    createInfo.size = (VkDeviceSize)info->size;
+    createInfo.buffer = info->buffer->handle;
+    createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    }
+
+    result = device->createAccelerationStructure(
+        device->handle,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &as->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, as);
+        return vkResultToPal(result);
+    }
+
+    *outAs = as;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkAccelerationstructure(
+    PalAccelerationStructure* as)
+{
+    as->device->destroyAccelerationStructure(
+        as->device->handle, 
+        as->handle, 
+        &s_Vk.vkAllocator);
+
+    palFree(s_Vk.allocator, as);
+}
+
+PalResult PAL_CALL getVkAccelerationStructureBuildSize(
+    PalDevice* device,
+    PalAccelerationStructureBuildInfo* info,
+    PalAccelerationStructureBuildSize* size)
+{
+    Uint32* maxPrimities = nullptr;
+    Uint32 count = info->geometriesCount;
+    PalGeometry* geometries = info->geometries;
+    
+    if (info->instanceCount) {
+        count = info->instanceCount;
+        geometries = info->instances;
+    }
+
+    maxPrimities = palAllocate(s_Vk.allocator, sizeof(Uint32) * count, 0);
+    if (!maxPrimities) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < count; i++) {
+        maxPrimities[i] = geometries[i].primitiveCount;
+    }
+
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
+    buildInfo.dstAccelerationStructure = info->dst;
+    // buildInfo.ppGeometries
+
+
+    buildInfo.sType = 
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+
+    VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
+    sizeInfo.sType = 
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+    device->getAccelerationBuildsize(
+        device->handle, 
+        VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, 
+        &buildInfo,
+        &count,
+        &sizeInfo);
+
+    size->accelerationStructureSize = sizeInfo.accelerationStructureSize;
+    size->scratchBufferSize = sizeInfo.buildScratchSize;
 
     return PAL_RESULT_SUCCESS;
 }

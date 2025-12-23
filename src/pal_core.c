@@ -443,6 +443,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_RENDER_PASS:
             return "Invalid render pass";
+
+        case PAL_RESULT_INVALID_ACCELERATION_STRUCTURE:
+            return "Invalid acceleration structure";
     }
     return "Unknown";
 }

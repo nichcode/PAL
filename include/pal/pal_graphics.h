@@ -57,6 +57,8 @@ typedef struct PalCommandPool PalCommandPool;
 typedef struct PalCommandBuffer PalCommandBuffer;
 typedef struct PalPipeline PalPipeline;
 
+typedef struct PalAccelerationStructure PalAccelerationStructure;
+
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
     PAL_ADAPTER_TYPE_DISCRETE,
@@ -388,6 +390,16 @@ typedef enum {
 } PalVertexType;
 
 typedef enum {
+    PAL_COMMAND_BUFFER_TYPE_PRIMARY,
+    PAL_COMMAND_BUFFER_TYPE_SECONDARY
+} PalCommandBufferType;
+
+typedef enum {
+    PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX,
+    PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE
+} PalVertexLayoutType;
+
+typedef enum {
     PAL_COMPARE_OP_NEVER,
     PAL_COMPARE_OP_LESS,
     PAL_COMPARE_OP_EQUAL,
@@ -469,6 +481,21 @@ typedef enum {
     PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX,
     PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL
 } PalFragmentShadingRateCombinerOp;
+
+typedef enum {
+    PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL,
+    PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL
+} PalAccelerationStructureType;
+
+typedef enum {
+    PAL_GEOMETRY_TYPE_TRIANGLE,
+    PAL_GEOMETRY_TYPE_AABBS
+} PalGeometryType;
+
+typedef enum {
+    PAL_INDEX_TYPE_UINT16,
+    PAL_INDEX_TYPE_UINT32
+} PalIndexType;
 
 typedef struct {
     Uint32 vendorId;
@@ -635,7 +662,7 @@ typedef struct {
 } PalVertexAttribute;
 
 typedef struct {
-    bool perInstance;
+    PalVertexLayoutType type;
     Uint32 binding;
     Uint32 vertexCount;
     PalVertexAttribute* vertices;
@@ -690,6 +717,58 @@ typedef struct {
 } PalFragmentShadingRateState;
 
 typedef struct {
+    Uint32 instanceId;
+    Uint32 mask;
+    PalAccelerationStructure* blas;
+    float transform[12]; // row major (3x4)
+} PalAccelerationStructureInstance;
+
+typedef struct {
+    Uint32 accelerationStructureSize;
+    Uint32 scratchBufferSize;
+} PalAccelerationStructureBuildSize;
+
+typedef struct {
+    PalVertexType vertexType;
+    PalIndexType indexType;
+    Uint32 vertexStride;
+    Uint32 indexCount;
+    Uint32 vertexCount;
+    Uint64 vertexOffset;
+    Uint64 indexOffset;
+    PalBuffer* vertexBuffer;
+    PalBuffer* indexBuffer;
+} PalGeometryDataTriangle;
+
+typedef struct {
+    Uint32 count;
+    Uint32 stride;
+    Uint64 offset;
+    PalBuffer* buffer;
+} PalGeometryDataAABBS;
+
+typedef struct {
+    Uint32 count;
+    Uint64 offset;
+    PalBuffer* buffer;
+} PalGeometryDataInstance;
+
+typedef struct {
+    Uint32 primitiveCount;
+    PalGeometryType type;
+    void* data; // based on type
+} PalGeometry;
+
+typedef struct {
+    PalAccelerationStructureType type;
+    Uint32 geometryCount;
+    Uint64 scratchBufferOffset;
+    PalAccelerationStructure* dst;
+    PalBuffer* scratchBuffer;
+    PalGeometry* geometries;
+} PalAccelerationStructureBuildInfo;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -739,6 +818,13 @@ typedef struct {
     bool resettable;
     PalQueue* queue;
 } PalCommandPoolCreateInfo;
+
+typedef struct {
+    PalAccelerationStructureType type;
+    PalBuffer* buffer;
+    Uint64 offset;
+    Uint64 size;
+} PalAccelerationStructureCreateInfo;
 
 typedef struct {
     bool fragmentShadingRateEnabled;
@@ -949,7 +1035,7 @@ typedef struct {
     PalResult PAL_CALL (*createCommandBuffer)(
         PalDevice* device,
         PalCommandPool* pool,
-        bool primary,
+        PalCommandBufferType type,
         PalCommandBuffer** outCmdBuffer);
 
     void PAL_CALL (*destroyCommandBuffer)(PalCommandBuffer* cmdBuffer);
@@ -984,6 +1070,11 @@ typedef struct {
         Uint32 maxDrawCount,
         Uint32 stride);
 
+    PalResult PAL_CALL (*buildAccelerationStructures)(
+        PalDevice* device,
+        Int32 infoCount,
+        PalAccelerationStructureBuildInfo* infos);
+
     PalResult PAL_CALL (*beginRenderPass)(
         PalCommandBuffer* cmdBuffer,
         PalRenderPass* renderPass,
@@ -995,6 +1086,19 @@ typedef struct {
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalSubmitInfo* info);
+
+    PalResult PAL_CALL (*createAccelerationstructure)(
+        PalDevice* device,
+        const PalAccelerationStructureCreateInfo* info,
+        PalAccelerationStructure** outAs);
+
+    void PAL_CALL (*destroyAccelerationstructure)(
+        PalAccelerationStructure* as);
+
+    PalResult PAL_CALL (*getAccelerationStructureBuildSize)(
+        PalDevice* device,
+        PalAccelerationStructureBuildInfo* info,
+        PalAccelerationStructureBuildSize* size);
 
     PalResult PAL_CALL (*createGraphicsPipeline)(
         PalDevice* device,
@@ -1207,7 +1311,7 @@ PAL_API bool PAL_CALL palIsTimelineSemaphore(PalSemaphore* semaphore);
 PAL_API PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
-    bool primary,
+    PalCommandBufferType type,
     PalCommandBuffer** outCmdbuffer);
 
 PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
@@ -1242,6 +1346,11 @@ PAL_API PalResult PAL_CALL palDrawMeshTasksIndirectCount(
     Uint32 maxDrawCount,
     Uint32 stride);
 
+PAL_API PalResult PAL_CALL palBuildAccelerationStructures(
+    PalDevice* device,
+    Int32 infoCount,
+    PalAccelerationStructureBuildInfo* infos);
+
 PAL_API PalResult PAL_CALL palBeginRenderPass(
     PalCommandBuffer* cmdBuffer,
     PalRenderPass* renderPass,
@@ -1253,6 +1362,19 @@ PAL_API PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer);
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
+
+PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
+    PalDevice* device,
+    const PalAccelerationStructureCreateInfo* info,
+    PalAccelerationStructure** outAs);
+
+PAL_API void PAL_CALL palDestroyAccelerationstructure(
+    PalAccelerationStructure* as);
+
+PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
+    PalDevice* device,
+    PalAccelerationStructureBuildInfo* info,
+    PalAccelerationStructureBuildSize* size);
 
 PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalDevice* device,
