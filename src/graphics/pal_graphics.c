@@ -2359,153 +2359,153 @@ PalResult PAL_CALL palBuildAccelerationStructures(
     Int32 infoCount,
     PalAccelerationStructureBuildInfo* infos)
 {
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
+    // if (!s_Graphics.initialized) {
+    //     return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    // }
 
-    if (!device || !infos || infoCount <= 0) {
-        return PAL_RESULT_NULL_POINTER;
-    }
+    // if (!device || !infos || infoCount <= 0) {
+    //     return PAL_RESULT_NULL_POINTER;
+    // }
 
-    HandleData* data = (HandleData*)device;
-    if (data->type != HANDLE_TYPE_DEVICE) {
-        return PAL_RESULT_INVALID_COMMAND_BUFFER;
-    }
+    // HandleData* data = (HandleData*)device;
+    // if (data->type != HANDLE_TYPE_DEVICE) {
+    //     return PAL_RESULT_INVALID_COMMAND_BUFFER;
+    // }
 
-    // fast path. 1 to 4 build info
-    bool free = false;
-    PalAccelerationStructureBuildInfo buildInfos[4];
-    PalAccelerationStructureBuildInfo* tmpInfos = buildInfos;
-    if (infoCount > 4) {
-        // allocate memory
-        tmpInfos = nullptr;
-        tmpInfos = palAllocate(
-            s_Graphics.allocator, 
-            sizeof(PalAccelerationStructureBuildInfo) * infoCount, 
-            0);
+    // // fast path. 1 to 4 build info
+    // bool free = false;
+    // PalAccelerationStructureBuildInfo buildInfos[4];
+    // PalAccelerationStructureBuildInfo* tmpInfos = buildInfos;
+    // if (infoCount > 4) {
+    //     // allocate memory
+    //     tmpInfos = nullptr;
+    //     tmpInfos = palAllocate(
+    //         s_Graphics.allocator, 
+    //         sizeof(PalAccelerationStructureBuildInfo) * infoCount, 
+    //         0);
 
-        if (!tmpInfos) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
-        free = true;
-    }
+    //     if (!tmpInfos) {
+    //         return PAL_RESULT_OUT_OF_MEMORY;
+    //     }
+    //     free = true;
+    // }
 
-    PalGeometry* tmpBuildInfoGeometries[8];
-    for (int i = 0; i < infoCount; i++) {
-        PalAccelerationStructureBuildInfo* info = &tmpInfos[i];
-        // scratch buffer and acceleration source
-        HandleData* asData = (HandleData*)info->dst;
-        if (asData->type != HANDLE_TYPE_ACCELERATION_STRUCTURE) {
-            return PAL_RESULT_INVALID_ACCELERATION_STRUCTURE;
-        }
+    // PalGeometry* tmpBuildInfoGeometries[8];
+    // for (int i = 0; i < infoCount; i++) {
+    //     PalAccelerationStructureBuildInfo* info = &tmpInfos[i];
+    //     // scratch buffer and acceleration source
+    //     HandleData* asData = (HandleData*)info->dst;
+    //     if (asData->type != HANDLE_TYPE_ACCELERATION_STRUCTURE) {
+    //         return PAL_RESULT_INVALID_ACCELERATION_STRUCTURE;
+    //     }
 
-        HandleData* scratchBufferData = (HandleData*)info->scratchBuffer;
-        if (scratchBufferData->type != HANDLE_TYPE_BUFFER) {
-            return PAL_RESULT_INVALID_BUFFER;
-        }
+    //     HandleData* scratchBufferData = (HandleData*)info->scratchBuffer;
+    //     if (scratchBufferData->type != HANDLE_TYPE_BUFFER) {
+    //         return PAL_RESULT_INVALID_BUFFER;
+    //     }
 
-        PalGeometry* tmp = tmpBuildInfoGeometries[i];
-        PalAccelerationStructureBuildInfo buildInfo = {0};
-        buildInfo.scratchBuffer = scratchBufferData->handle;
-        buildInfo.dst = asData->handle;
-        buildInfo.scratchBufferOffset = info->scratchBufferOffset;
+    //     PalGeometry* tmp = tmpBuildInfoGeometries[i];
+    //     PalAccelerationStructureBuildInfo buildInfo = {0};
+    //     buildInfo.scratchBuffer = scratchBufferData->handle;
+    //     buildInfo.dst = asData->handle;
+    //     buildInfo.scratchBufferOffset = info->scratchBufferOffset;
 
-        if (info->geometriesCount >= 1) {
-            // geometry path
-            tmp = palAllocate(
-                s_Graphics.allocator, 
-                sizeof(PalGeometry) * info->geometriesCount, 
-                0);
+    //     if (info->geometriesCount >= 1) {
+    //         // geometry path
+    //         tmp = palAllocate(
+    //             s_Graphics.allocator, 
+    //             sizeof(PalGeometry) * info->geometriesCount, 
+    //             0);
 
-            if (!tmp) {
-                return PAL_RESULT_OUT_OF_MEMORY;
-            }
+    //         if (!tmp) {
+    //             return PAL_RESULT_OUT_OF_MEMORY;
+    //         }
 
-            buildInfo.instanceCount = info->instanceCount;
-            for (int i = 0; i < info->instanceCount; i++) {
-                PalGeometry* srcGeometry = &info->instances[i];
-                PalGeometry* dstGeometry = &tmp[i];
-                dstGeometry->type = srcGeometry->type;
-                dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+    //         buildInfo.instanceCount = info->instanceCount;
+    //         for (int i = 0; i < info->instanceCount; i++) {
+    //             PalGeometry* srcGeometry = &info->instances[i];
+    //             PalGeometry* dstGeometry = &tmp[i];
+    //             dstGeometry->type = srcGeometry->type;
+    //             dstGeometry->primitiveCount = srcGeometry->primitiveCount;
 
-                if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
-                    PalGeometryDataAABBS* dstData = dstGeometry->data;
-                    PalGeometryDataAABBS* srcData = srcGeometry->data;
-                    dstData->count = srcData->count;
-                    dstData->offset = srcData->offset;
-                    dstData->stride = srcData->stride;
+    //             if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
+    //                 PalGeometryDataAABBS* dstData = dstGeometry->data;
+    //                 PalGeometryDataAABBS* srcData = srcGeometry->data;
+    //                 dstData->count = srcData->count;
+    //                 dstData->offset = srcData->offset;
+    //                 dstData->stride = srcData->stride;
 
-                    HandleData* BufferData = (HandleData*)srcData->buffer;
-                    dstData->buffer = BufferData->handle;
+    //                 HandleData* BufferData = (HandleData*)srcData->buffer;
+    //                 dstData->buffer = BufferData->handle;
 
-                } else {
-                    // triangle
-                    PalGeometryDataTriangle* dstData = dstGeometry->data;
-                    PalGeometryDataTriangle* srcData = srcGeometry->data;
+    //             } else {
+    //                 // triangle
+    //                 PalGeometryDataTriangle* dstData = dstGeometry->data;
+    //                 PalGeometryDataTriangle* srcData = srcGeometry->data;
 
-                    dstData->indexCount = srcData->indexCount;
-                    dstData->indexOffset = srcData->indexOffset;
-                    dstData->indexType = srcData->indexType;
-                    dstData->vertexCount = srcData->vertexCount;
-                    dstData->vertexOffset = srcData->vertexOffset;
-                    dstData->vertexStride = srcData->vertexStride;
-                    dstData->vertexType = srcData->vertexType;
+    //                 dstData->indexCount = srcData->indexCount;
+    //                 dstData->indexOffset = srcData->indexOffset;
+    //                 dstData->indexType = srcData->indexType;
+    //                 dstData->vertexCount = srcData->vertexCount;
+    //                 dstData->vertexOffset = srcData->vertexOffset;
+    //                 dstData->vertexStride = srcData->vertexStride;
+    //                 dstData->vertexType = srcData->vertexType;
 
-                    HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
-                    dstData->vertexBuffer = BufferData->handle;
+    //                 HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
+    //                 dstData->vertexBuffer = BufferData->handle;
 
-                    // index buffer
-                    BufferData = (HandleData*)srcData->indexBuffer;
-                    dstData->indexBuffer = BufferData->handle;
-                }
-            }
+    //                 // index buffer
+    //                 BufferData = (HandleData*)srcData->indexBuffer;
+    //                 dstData->indexBuffer = BufferData->handle;
+    //             }
+    //         }
 
-        } else {
-            // instance path
-            tmp = palAllocate(
-                s_Graphics.allocator, 
-                sizeof(PalGeometry) * info->instanceCount, 
-                0);
+    //     } else {
+    //         // instance path
+    //         tmp = palAllocate(
+    //             s_Graphics.allocator, 
+    //             sizeof(PalGeometry) * info->instanceCount, 
+    //             0);
 
-            if (!tmp) {
-                return PAL_RESULT_OUT_OF_MEMORY;
-            }
+    //         if (!tmp) {
+    //             return PAL_RESULT_OUT_OF_MEMORY;
+    //         }
 
-            buildInfo.instanceCount = info->instanceCount;
-            for (int i = 0; i < info->instanceCount; i++) {
-                PalGeometry* srcGeometry = &info->instances[i];
-                PalGeometry* dstGeometry = &tmp[i];
-                dstGeometry->type = srcGeometry->type;
-                dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+    //         buildInfo.instanceCount = info->instanceCount;
+    //         for (int i = 0; i < info->instanceCount; i++) {
+    //             PalGeometry* srcGeometry = &info->instances[i];
+    //             PalGeometry* dstGeometry = &tmp[i];
+    //             dstGeometry->type = srcGeometry->type;
+    //             dstGeometry->primitiveCount = srcGeometry->primitiveCount;
 
-                // always instance data in instance path
-                PalGeometryDataInstance* dstData = dstGeometry->data;
-                PalGeometryDataInstance* srcData = srcGeometry->data;
-                dstData->count = srcData->count;
-                dstData->offset = srcData->offset;
+    //             // always instance data in instance path
+    //             PalGeometryDataInstance* dstData = dstGeometry->data;
+    //             PalGeometryDataInstance* srcData = srcGeometry->data;
+    //             dstData->count = srcData->count;
+    //             dstData->offset = srcData->offset;
 
-                HandleData* bufferData = (HandleData*)srcData->buffer;
-                dstData->buffer = bufferData->handle;
-            }
-        }
-    }
+    //             HandleData* bufferData = (HandleData*)srcData->buffer;
+    //             dstData->buffer = bufferData->handle;
+    //         }
+    //     }
+    // }
 
-    PalResult result = data->backend->buildAccelerationStructures(
-        data->handle,
-        infoCount,
-        tmpInfos);
+    // PalResult result = data->backend->buildAccelerationStructures(
+    //     data->handle,
+    //     infoCount,
+    //     tmpInfos);
 
-    // free the allocated arrays
-    for (int i = 0; i < infoCount; i++) {
-        PalGeometry* tmp = tmpBuildInfoGeometries[i];
-        palFree(s_Graphics.allocator, tmp);
-    }
+    // // free the allocated arrays
+    // for (int i = 0; i < infoCount; i++) {
+    //     PalGeometry* tmp = tmpBuildInfoGeometries[i];
+    //     palFree(s_Graphics.allocator, tmp);
+    // }
 
-    if (free) {
-        palFree(s_Graphics.allocator, tmpInfos);
-    }
+    // if (free) {
+    //     palFree(s_Graphics.allocator, tmpInfos);
+    // }
 
-    return result;
+    // return result;
 }
 
 PalResult PAL_CALL palBeginRenderPass(
@@ -2728,98 +2728,98 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
-    PalGeometry* tmp = nullptr;
-    PalAccelerationStructureBuildInfo buildInfo = {0};
-    buildInfo.scratchBuffer = scratchBufferData->handle;
-    buildInfo.dst = asData->handle;
-    buildInfo.scratchBufferOffset = info->scratchBufferOffset;
+    // PalGeometry* tmp = nullptr;
+    // PalAccelerationStructureBuildInfo buildInfo = {0};
+    // buildInfo.scratchBuffer = scratchBufferData->handle;
+    // buildInfo.dst = asData->handle;
+    // buildInfo.scratchBufferOffset = info->scratchBufferOffset;
 
-    if (info->geometriesCount >= 1) {
-        // geometry path
-        tmp = palAllocate(
-            s_Graphics.allocator, 
-            sizeof(PalGeometry) * info->geometriesCount, 
-            0);
+    // if (info->geometriesCount >= 1) {
+    //     // geometry path
+    //     tmp = palAllocate(
+    //         s_Graphics.allocator, 
+    //         sizeof(PalGeometry) * info->geometriesCount, 
+    //         0);
 
-        if (!tmp) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
+    //     if (!tmp) {
+    //         return PAL_RESULT_OUT_OF_MEMORY;
+    //     }
 
-        buildInfo.instanceCount = info->instanceCount;
-        for (int i = 0; i < info->instanceCount; i++) {
-            PalGeometry* srcGeometry = &info->instances[i];
-            PalGeometry* dstGeometry = &tmp[i];
-            dstGeometry->type = srcGeometry->type;
-            dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+    //     buildInfo.instanceCount = info->instanceCount;
+    //     for (int i = 0; i < info->instanceCount; i++) {
+    //         PalGeometry* srcGeometry = &info->instances[i];
+    //         PalGeometry* dstGeometry = &tmp[i];
+    //         dstGeometry->type = srcGeometry->type;
+    //         dstGeometry->primitiveCount = srcGeometry->primitiveCount;
 
-            if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
-                PalGeometryDataAABBS* dstData = dstGeometry->data;
-                PalGeometryDataAABBS* srcData = srcGeometry->data;
-                dstData->count = srcData->count;
-                dstData->offset = srcData->offset;
-                dstData->stride = srcData->stride;
+    //         if (srcGeometry->type == PAL_GEOMETRY_TYPE_AABBS) {
+    //             PalGeometryDataAABBS* dstData = dstGeometry->data;
+    //             PalGeometryDataAABBS* srcData = srcGeometry->data;
+    //             dstData->count = srcData->count;
+    //             dstData->offset = srcData->offset;
+    //             dstData->stride = srcData->stride;
 
-                HandleData* BufferData = (HandleData*)srcData->buffer;
-                dstData->buffer = BufferData->handle;
+    //             HandleData* BufferData = (HandleData*)srcData->buffer;
+    //             dstData->buffer = BufferData->handle;
 
-            } else {
-                // triangle
-                PalGeometryDataTriangle* dstData = dstGeometry->data;
-                PalGeometryDataTriangle* srcData = srcGeometry->data;
+    //         } else {
+    //             // triangle
+    //             PalGeometryDataTriangle* dstData = dstGeometry->data;
+    //             PalGeometryDataTriangle* srcData = srcGeometry->data;
 
-                dstData->indexCount = srcData->indexCount;
-                dstData->indexOffset = srcData->indexOffset;
-                dstData->indexType = srcData->indexType;
-                dstData->vertexCount = srcData->vertexCount;
-                dstData->vertexOffset = srcData->vertexOffset;
-                dstData->vertexStride = srcData->vertexStride;
-                dstData->vertexType = srcData->vertexType;
+    //             dstData->indexCount = srcData->indexCount;
+    //             dstData->indexOffset = srcData->indexOffset;
+    //             dstData->indexType = srcData->indexType;
+    //             dstData->vertexCount = srcData->vertexCount;
+    //             dstData->vertexOffset = srcData->vertexOffset;
+    //             dstData->vertexStride = srcData->vertexStride;
+    //             dstData->vertexType = srcData->vertexType;
 
-                HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
-                dstData->vertexBuffer = BufferData->handle;
+    //             HandleData* BufferData = (HandleData*)srcData->vertexBuffer;
+    //             dstData->vertexBuffer = BufferData->handle;
 
-                // index buffer
-                BufferData = (HandleData*)srcData->indexBuffer;
-                dstData->indexBuffer = BufferData->handle;
-            }
-        }
+    //             // index buffer
+    //             BufferData = (HandleData*)srcData->indexBuffer;
+    //             dstData->indexBuffer = BufferData->handle;
+    //         }
+    //     }
 
-    } else {
-        // instance path
-        tmp = palAllocate(
-            s_Graphics.allocator, 
-            sizeof(PalGeometry) * info->instanceCount, 
-            0);
+    // } else {
+    //     // instance path
+    //     tmp = palAllocate(
+    //         s_Graphics.allocator, 
+    //         sizeof(PalGeometry) * info->instanceCount, 
+    //         0);
 
-        if (!tmp) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
+    //     if (!tmp) {
+    //         return PAL_RESULT_OUT_OF_MEMORY;
+    //     }
 
-        buildInfo.instanceCount = info->instanceCount;
-        for (int i = 0; i < info->instanceCount; i++) {
-            PalGeometry* srcGeometry = &info->instances[i];
-            PalGeometry* dstGeometry = &tmp[i];
-            dstGeometry->type = srcGeometry->type;
-            dstGeometry->primitiveCount = srcGeometry->primitiveCount;
+    //     buildInfo.instanceCount = info->instanceCount;
+    //     for (int i = 0; i < info->instanceCount; i++) {
+    //         PalGeometry* srcGeometry = &info->instances[i];
+    //         PalGeometry* dstGeometry = &tmp[i];
+    //         dstGeometry->type = srcGeometry->type;
+    //         dstGeometry->primitiveCount = srcGeometry->primitiveCount;
 
-            // always instance data in instance path
-            PalGeometryDataInstance* dstData = dstGeometry->data;
-            PalGeometryDataInstance* srcData = srcGeometry->data;
-            dstData->count = srcData->count;
-            dstData->offset = srcData->offset;
+    //         // always instance data in instance path
+    //         PalGeometryDataInstance* dstData = dstGeometry->data;
+    //         PalGeometryDataInstance* srcData = srcGeometry->data;
+    //         dstData->count = srcData->count;
+    //         dstData->offset = srcData->offset;
 
-            HandleData* bufferData = (HandleData*)srcData->buffer;
-            dstData->buffer = bufferData->handle;
-        }
-    }
+    //         HandleData* bufferData = (HandleData*)srcData->buffer;
+    //         dstData->buffer = bufferData->handle;
+    //     }
+    // }
 
-    PalResult result = deviceData->backend->getAccelerationStructureBuildSize(
-        deviceData->handle,
-        &buildInfo,
-        size);
+    // PalResult result = deviceData->backend->getAccelerationStructureBuildSize(
+    //     deviceData->handle,
+    //     &buildInfo,
+    //     size);
 
-    palFree(s_Graphics.allocator, tmp);
-    return result;
+    // palFree(s_Graphics.allocator, tmp);
+    // return result;
 }
 
 // ==================================================
