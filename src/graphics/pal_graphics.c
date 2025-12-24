@@ -276,6 +276,12 @@ PalResult PAL_CALL createVkCommandBuffer(
 
 void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
+PalResult PAL_CALL beginVkCommandBuffer(
+    PalCommandBuffer* cmdBuffer, 
+    PalRenderPass* renderPass);
+
+PalResult PAL_CALL endVkCommandBuffer(PalCommandBuffer* cmdBuffer);
+
 PalResult PAL_CALL executeCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
@@ -306,10 +312,9 @@ PalResult PAL_CALL drawVkMeshTasksIndirectCount(
     Uint32 maxDrawCount,
     Uint32 stride);
 
-PalResult PAL_CALL buildVkAccelerationStructures(
-    PalDevice* device,
-    Int32 infoCount,
-    PalAccelerationStructureBuildInfo* infos);
+PalResult PAL_CALL buildVkAccelerationStructure(
+    PalCommandBuffer* cmdBuffer,
+    PalAccelerationStructureBuildInfo* info);
 
 PalResult PAL_CALL beginRenderPassVk(
     PalCommandBuffer* cmdBuffer,
@@ -394,12 +399,14 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyCommandPool = destroyVkCommandPool,
     .createCommandBuffer = createVkCommandBuffer,
     .destroyCommandBuffer = destroyVkCommandBuffer,
+    .beginCommandBuffer = beginVkCommandBuffer,
+    .endCommandBuffer = endVkCommandBuffer,
     .executeCommandBuffer = executeCommandBufferVk,
     .setFragmentShadingRate = setVkFragmentShadingRate,
     .drawMeshTasks = drawVkMeshTasks,
     .drawMeshTasksIndirect = drawVkMeshTasksIndirect,
     .drawMeshTasksIndirectCount = drawVkMeshTasksIndirectCount,
-    .buildAccelerationStructures = buildVkAccelerationStructures,
+    .buildAccelerationStructure = buildVkAccelerationStructure,
     .beginRenderPass = beginRenderPassVk,
     .endRenderPass = endRenderPassVk,
     .submitCommandBuffer = submitVkCommandBuffer,
@@ -447,15 +454,15 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
     if (!backend->enumerateAdapters                     || 
         !backend->getAdapterInfo                        ||
         !backend->getAdapterCapabilities                ||
-        !backend->queryDepthStencilCapabilities         ||
-        !backend->queryFragmentShadingRateCapabilities  ||
-        !backend->queryMeshShaderCapabilities           ||
-        !backend->queryRayTracingCapabilities           ||
         !backend->getAdapterFeatures                    ||
         !backend->createDevice                          ||
         !backend->destroyDevice                         ||
         !backend->allocateMemory                        ||
         !backend->freeMemory                            ||
+        !backend->queryDepthStencilCapabilities         ||
+        !backend->queryFragmentShadingRateCapabilities  ||
+        !backend->queryMeshShaderCapabilities           ||
+        !backend->queryRayTracingCapabilities           ||
         !backend->createQueue                           ||
         !backend->destroyQueue                          ||
         !backend->canQueuePresent                       ||
@@ -494,12 +501,14 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyCommandPool                    ||
         !backend->createCommandBuffer                   ||
         !backend->destroyCommandBuffer                  ||
+        !backend->beginCommandBuffer                    ||
+        !backend->endCommandBuffer                      ||
         !backend->executeCommandBuffer                  ||
         !backend->setFragmentShadingRate                ||
         !backend->drawMeshTasks                         ||
         !backend->drawMeshTasksIndirect                 ||
         !backend->drawMeshTasksIndirectCount            ||
-        !backend->buildAccelerationStructures           ||
+        !backend->buildAccelerationStructure            ||
         !backend->beginRenderPass                       ||
         !backend->endRenderPass                         ||
         !backend->submitCommandBuffer                   ||
@@ -1480,6 +1489,34 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
     }
 }
 
+PalResult PAL_CALL palBeginCommandBuffer(
+    PalCommandBuffer* cmdBuffer, 
+    PalRenderPass* renderPass)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->beginCommandBuffer(cmdBuffer, renderPass);
+}
+
+PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->endCommandBuffer(cmdBuffer);
+}
+
 PalResult PAL_CALL palExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
@@ -1586,22 +1623,20 @@ PalResult PAL_CALL palDrawMeshTasksIndirectCount(
 }
 
 PalResult PAL_CALL palBuildAccelerationStructures(
-    PalDevice* device,
-    Int32 infoCount,
-    PalAccelerationStructureBuildInfo* infos)
+    PalCommandBuffer* cmdBuffer,
+    PalAccelerationStructureBuildInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !infos || infoCount <= 0) {
+    if (!cmdBuffer) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->buildAccelerationStructures(
-        device,
-        infoCount,
-        infos);
+    return cmdBuffer->backend->buildAccelerationStructure(
+        cmdBuffer,
+        info);
 }
 
 PalResult PAL_CALL palBeginRenderPass(

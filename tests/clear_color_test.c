@@ -327,6 +327,16 @@ bool clearColorTest()
         clearValue.color[2] = 0.2f;
         clearValue.color[3] = 1.0f;
 
+        // begin command buffer recording
+        // the optional render pass is used for secondary command buffer
+        // which will be used with a render pass
+        result = palBeginCommandBuffer(cmdBuffer, nullptr);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to begin command buffer: %s", error);
+            return false;
+        }
+
         result = palBeginRenderPass(cmdBuffer, renderPass, 1, &clearValue);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -338,6 +348,14 @@ bool clearColorTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end render pass: %s", error);
+            return false;
+        }
+
+        // end command buffer recording
+        result = palEndCommandBuffer(cmdBuffer);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to end command buffer: %s", error);
             return false;
         }
         

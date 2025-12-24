@@ -489,7 +489,8 @@ typedef enum {
 
 typedef enum {
     PAL_GEOMETRY_TYPE_TRIANGLE,
-    PAL_GEOMETRY_TYPE_AABBS
+    PAL_GEOMETRY_TYPE_AABBS,
+    PAL_GEOMETRY_TYPE_INSTANCE
 } PalGeometryType;
 
 typedef enum {
@@ -741,14 +742,12 @@ typedef struct {
 } PalGeometryDataTriangle;
 
 typedef struct {
-    Uint32 count;
     Uint32 stride;
     Uint64 offset;
     PalBuffer* buffer;
 } PalGeometryDataAABBS;
 
 typedef struct {
-    Uint32 count;
     Uint64 offset;
     PalBuffer* buffer;
 } PalGeometryDataInstance;
@@ -1040,6 +1039,12 @@ typedef struct {
 
     void PAL_CALL (*destroyCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
+    PalResult PAL_CALL (*beginCommandBuffer)(
+        PalCommandBuffer* cmdBuffer, 
+        PalRenderPass* renderPass);
+
+    PalResult PAL_CALL (*endCommandBuffer)(PalCommandBuffer* cmdBuffer);
+
     PalResult PAL_CALL (*executeCommandBuffer)(
         PalCommandBuffer* primaryCmdBuffer,
         PalCommandBuffer* secondaryCmdBuffer);
@@ -1070,10 +1075,9 @@ typedef struct {
         Uint32 maxDrawCount,
         Uint32 stride);
 
-    PalResult PAL_CALL (*buildAccelerationStructures)(
-        PalDevice* device,
-        Int32 infoCount,
-        PalAccelerationStructureBuildInfo* infos);
+    PalResult PAL_CALL (*buildAccelerationStructure)(
+        PalCommandBuffer* cmdBuffer,
+        PalAccelerationStructureBuildInfo* info);
 
     PalResult PAL_CALL (*beginRenderPass)(
         PalCommandBuffer* cmdBuffer,
@@ -1310,6 +1314,12 @@ PAL_API PalResult PAL_CALL palCreateCommandBuffer(
 
 PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 
+PAL_API PalResult PAL_CALL palBeginCommandBuffer(
+    PalCommandBuffer* cmdBuffer, 
+    PalRenderPass* renderPass);
+
+PAL_API PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer);
+
 PAL_API PalResult PAL_CALL palExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
@@ -1340,10 +1350,9 @@ PAL_API PalResult PAL_CALL palDrawMeshTasksIndirectCount(
     Uint32 maxDrawCount,
     Uint32 stride);
 
-PAL_API PalResult PAL_CALL palBuildAccelerationStructures(
-    PalDevice* device,
-    Int32 infoCount,
-    PalAccelerationStructureBuildInfo* infos);
+PAL_API PalResult PAL_CALL palBuildAccelerationStructure(
+    PalCommandBuffer* cmdBuffer,
+    PalAccelerationStructureBuildInfo* info);
 
 PAL_API PalResult PAL_CALL palBeginRenderPass(
     PalCommandBuffer* cmdBuffer,
