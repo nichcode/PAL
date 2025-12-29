@@ -1963,14 +1963,6 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (!info->fragmentShader) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (!info->meshShader && !info->vertexShader) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
     PalResult result;
     PalPipeline* pipeline = nullptr;
     result = device->backend->createGraphicsPipeline(

@@ -295,16 +295,16 @@ typedef enum {
 } PalSwapchainFormat;
 
 typedef enum {
-    PAL_SHADER_TYPE_UNDEFINED,
-    PAL_SHADER_TYPE_VERTEX,
-    PAL_SHADER_TYPE_FRAGMENT,
-    PAL_SHADER_TYPE_COMPUTE,
-    PAL_SHADER_TYPE_GEOMETRY,
-    PAL_SHADER_TYPE_MESH,
-    PAL_SHADER_TYPE_TASK,
-    PAL_SHADER_TYPE_TESSELLATION_CONTROL,
-    PAL_SHADER_TYPE_TESSELLATION_EVALUATION
-} PalShaderType;
+    PAL_SHADER_STAGE_UNDEFINED,
+    PAL_SHADER_STAGE_VERTEX,
+    PAL_SHADER_STAGE_FRAGMENT,
+    PAL_SHADER_STAGE_COMPUTE,
+    PAL_SHADER_STAGE_GEOMETRY,
+    PAL_SHADER_STAGE_MESH,
+    PAL_SHADER_STAGE_TASK,
+    PAL_SHADER_STAGE_TESSELLATION_CONTROL,
+    PAL_SHADER_STAGE_TESSELLATION_EVALUATION
+} PalShaderStage;
 
 typedef enum {
     PAL_ATTACHMENT_TYPE_COLOR,
@@ -404,10 +404,10 @@ typedef enum {
     PAL_COMPARE_OP_NEVER,
     PAL_COMPARE_OP_LESS,
     PAL_COMPARE_OP_EQUAL,
-    PAL_COMPARE_OP_LESS_EQUAL,
+    PAL_COMPARE_OP_LESS_OR_EQUAL,
     PAL_COMPARE_OP_GREATER,
     PAL_COMPARE_OP_NOT_EQUAL,
-    PAL_COMPARE_OP_GREATER_EQUAL,
+    PAL_COMPARE_OP_GREATER_OR_EQUAL,
     PAL_COMPARE_OP_ALWAYS
 } PalCompareOp;
 
@@ -693,7 +693,7 @@ typedef struct {
     bool enableSampleShading;
     bool enableAlphaToCoverage;
     PalSampleCount sampleCount;
-    Uint32 sampleMask;
+    Uint64 sampleMask;
     float minSampleShading;
 } PalMultisampleState;
 
@@ -811,7 +811,7 @@ typedef struct {
 } PalSwapchainCreateInfo;
 
 typedef struct {
-    PalShaderType type;
+    PalShaderStage type;
     const void* bytecode;
     Uint64 bytecodeSize;
 } PalShaderCreateInfo;
@@ -847,13 +847,9 @@ typedef struct {
     PalPrimitiveTopology topology;
     Uint32 vertexLayoutCount;
     Uint32 blendAttachmentCount;
-    PalShader* vertexShader;
-    PalShader* fragmentShader;
-    PalShader* geometryShader;
-    PalShader* meshShader;
-    PalShader* taskShader;
-    PalShader* tessellationEvaluationShader;
-    PalShader* tessellationControlShader;
+    Uint32 shaderCount;
+    PalRenderPass* renderPass;
+    const PalShader** shaders;
     PalVertexLayout* vertexLayouts;
     PalBlendAttachment* blendAttachments;
     PalRasterizerState rasterizerState;

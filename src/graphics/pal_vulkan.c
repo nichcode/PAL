@@ -65,6 +65,9 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 #define VK_XLIB_PLATFORM 2
 #define VK_WAYLAND_PLATFORM 3
 #define MAX_ATTACHMENTS 32
+#define GRAPHICS_PIPELINE 125
+#define RAY_TRACING_PIPELINE 126
+#define COMPUTE_PIPELINE 127
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -330,6 +333,14 @@ typedef struct {
     Device* device;
     VkAccelerationStructureKHR handle;
 } AccelerationStructure;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Uint32 type;
+    Device* device;
+    VkPipeline handle;
+} Pipeline;
 
 static Vulkan s_Vk = {0};
 
@@ -1245,6 +1256,192 @@ static VkBufferUsageFlags palBufferUsageToVk(PalBufferUsages usages)
     }
 
     return flags;
+}
+
+static Uint32 getVertexTypeSize(PalVertexType type) 
+{
+    // count x sizeof type returned as size
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT8_2:
+        case PAL_VERTEX_TYPE_UINT8_2:
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+        case PAL_VERTEX_TYPE_UINT8_2NORM: {
+            return 2;
+        }
+
+        case PAL_VERTEX_TYPE_INT32:
+        case PAL_VERTEX_TYPE_UINT32:
+        case PAL_VERTEX_TYPE_INT8_4:
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+        case PAL_VERTEX_TYPE_UINT8_4:
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+        case PAL_VERTEX_TYPE_INT16_2:
+        case PAL_VERTEX_TYPE_UINT16_2:
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+        case PAL_VERTEX_TYPE_FLOAT:
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2: {
+            return 4;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_2:
+        case PAL_VERTEX_TYPE_UINT32_2: 
+        case PAL_VERTEX_TYPE_INT16_4:
+        case PAL_VERTEX_TYPE_UINT16_4:
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+        case PAL_VERTEX_TYPE_FLOAT2:
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4: {
+            return 8;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_3:
+        case PAL_VERTEX_TYPE_UINT32_3:
+        case PAL_VERTEX_TYPE_FLOAT3: {
+            return 12;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_4:
+        case PAL_VERTEX_TYPE_UINT32_4:
+        case PAL_VERTEX_TYPE_FLOAT4: {
+            return 16;
+        }
+    }
+
+    return 0;
+}
+
+static VkStencilOp stencilOpToVk(PalStencilOp op) 
+{
+    switch (op) {
+        case PAL_STENCIL_OP_KEEP:
+            return VK_STENCIL_OP_KEEP;
+
+        case PAL_STENCIL_OP_ZERO:
+            return VK_STENCIL_OP_ZERO;
+
+        case PAL_STENCIL_OP_REPLACE:
+            return VK_STENCIL_OP_REPLACE;
+
+        case PAL_STENCIL_OP_INCREMENT_AND_CLAMP:
+            return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+
+        case PAL_STENCIL_OP_DECREMENT_AND_CLAMP:
+            return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+
+        case PAL_STENCIL_OP_INVERT:
+            return VK_STENCIL_OP_INVERT;
+
+        case PAL_STENCIL_OP_INCREMENT_AND_WRAP:
+            return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+
+        case PAL_STENCIL_OP_DECREMENT_AND_WRAP:
+            return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+    }
+
+    return VK_STENCIL_OP_KEEP;
+}
+
+static VkCompareOp compareOpToVk(PalCompareOp op) 
+{
+    switch (op) {
+        case PAL_COMPARE_OP_NEVER:
+            return VK_COMPARE_OP_NEVER;
+
+        case PAL_COMPARE_OP_LESS:
+            return VK_COMPARE_OP_LESS;
+
+        case PAL_COMPARE_OP_EQUAL:
+            return VK_COMPARE_OP_EQUAL;
+
+        case PAL_COMPARE_OP_LESS_OR_EQUAL:
+            return VK_COMPARE_OP_LESS_OR_EQUAL;
+
+        case PAL_COMPARE_OP_GREATER:
+            return VK_COMPARE_OP_GREATER;
+
+        case PAL_COMPARE_OP_NOT_EQUAL:
+            return VK_COMPARE_OP_NOT_EQUAL;
+
+        case PAL_COMPARE_OP_GREATER_OR_EQUAL:
+            return VK_COMPARE_OP_GREATER_OR_EQUAL;
+
+        case PAL_COMPARE_OP_ALWAYS:
+            return VK_COMPARE_OP_ALWAYS;
+    }
+
+    return VK_COMPARE_OP_NEVER;
+}
+
+static VkBlendOp blendOpToVk(PalBlendOp op)
+{
+    switch (op) {
+        case PAL_BLEND_OP_ADD:
+            return VK_BLEND_OP_ADD;
+
+        case PAL_BLEND_OP_SUBTRACT:
+            return VK_BLEND_OP_SUBTRACT;
+
+        case PAL_BLEND_OP_REVERSE_SUBTRACT:
+            return VK_BLEND_OP_REVERSE_SUBTRACT;
+
+        case PAL_BLEND_OP_MIN:
+            return VK_BLEND_OP_MIN;
+
+        case PAL_BLEND_OP_MAX:
+            return VK_BLEND_OP_MAX;
+    }
+
+    return VK_BLEND_OP_ADD;
+}
+
+static VkBlendFactor blendFactorToVk(PalBlendFactor op)
+{
+    switch (op) {
+        case PAL_BLEND_FACTOR_ZERO:
+            return VK_BLEND_FACTOR_ZERO;
+
+        case PAL_BLEND_FACTOR_ONE:
+            return VK_BLEND_FACTOR_ONE;
+
+        case PAL_BLEND_FACTOR_SRC_COLOR:
+            return VK_BLEND_FACTOR_SRC_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+
+        case PAL_BLEND_FACTOR_DST_COLOR:
+            return VK_BLEND_FACTOR_DST_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUX_DST_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+
+        case PAL_BLEND_FACTOR_SRC_ALPHA:
+            return VK_BLEND_FACTOR_SRC_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+
+        case PAL_BLEND_FACTOR_DST_ALPHA:
+            return VK_BLEND_FACTOR_DST_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+
+        case PAL_BLEND_FACTOR_CONSTANT_COLOR:
+            return VK_BLEND_FACTOR_CONSTANT_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR:
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+
+        case PAL_BLEND_FACTOR_CONSTANT_ALPHA:
+            return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    }
+
+    return VK_BLEND_FACTOR_ZERO;
 }
 
 static void* vkAlloc(
@@ -4086,37 +4283,37 @@ PalResult PAL_CALL createVkShader(
     VkShaderStageFlags stage = 0;
     Device* vkDevice = (Device*)device;
 
-    if (info->type == PAL_SHADER_TYPE_VERTEX) {
+    if (info->type == PAL_SHADER_STAGE_VERTEX) {
         stage = VK_SHADER_STAGE_VERTEX_BIT;
 
-    } else if (info->type == PAL_SHADER_TYPE_FRAGMENT) {
+    } else if (info->type == PAL_SHADER_STAGE_FRAGMENT) {
         stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    } else if (info->type == PAL_SHADER_TYPE_COMPUTE) {
+    } else if (info->type == PAL_SHADER_STAGE_COMPUTE) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_COMPUTE_BIT;
 
-    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_CONTROL) {
+    } else if (info->type == PAL_SHADER_STAGE_TESSELLATION_CONTROL) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 
-    } else if (info->type == PAL_SHADER_TYPE_TESSELLATION_EVALUATION) {
+    } else if (info->type == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 
-    } else if (info->type == PAL_SHADER_TYPE_MESH) {
+    } else if (info->type == PAL_SHADER_STAGE_MESH) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_MESH_BIT_EXT;
 
-    } else if (info->type == PAL_SHADER_TYPE_TASK) {
+    } else if (info->type == PAL_SHADER_STAGE_TASK) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
@@ -5766,13 +5963,325 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     const PalGraphicsPipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    VkResult result;
+    Pipeline* pipeline = nullptr;
+    Device* vkDevice = (Device*)device;
+    RenderPass* renderPass = (RenderPass*)info->renderPass;
 
+    VkPipelineShaderStageCreateInfo shaderStages[7]; // PAL supports 7 types
+    VkDynamicState dynamicStates[16];
+    VkVertexInputBindingDescription* bindingDescs = nullptr;
+    VkVertexInputAttributeDescription* attribDescs = nullptr;
+    VkPipelineColorBlendAttachmentState* blendattachments = nullptr;
+
+    VkPipelineVertexInputStateCreateInfo VI = {0};
+    VI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+    VkPipelineInputAssemblyStateCreateInfo IA = {0};
+    IA.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+    VkPipelineDynamicStateCreateInfo DS = {0};
+    DS.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+
+    VkPipelineRasterizationStateCreateInfo RS = {0};
+    RS.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+    VkPipelineMultisampleStateCreateInfo MS = {0};
+    MS.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+    VkPipelineDepthStencilStateCreateInfo SS = {0};
+    SS.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+    VkPipelineColorBlendStateCreateInfo CBS = {0};
+    CBS.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+
+    VkGraphicsPipelineCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
+    if (!pipeline) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    // shaders
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+        shaderStages[i] = tmp->info;
+    }
+
+    // Vertex input state
+    // get the max size of vertex attributes in all layouts
+    Uint32 vertexCount = 0;
+    for (int i = 0; i < info->vertexLayoutCount; i++) {
+        PalVertexLayout* layout = &info->vertexLayouts[i];
+        vertexCount += layout->vertexCount;
+    }
+
+    bindingDescs = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkVertexInputBindingDescription) * info->vertexLayoutCount,
+        0);
+
+    attribDescs = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkVertexInputAttributeDescription) * vertexCount,
+        0);
+
+    if (!bindingDescs || !attribDescs) {
+        palFree(s_Vk.allocator, pipeline);
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < info->vertexLayoutCount; i++) {
+        PalVertexLayout* layout = &info->vertexLayouts[i];
+        VkVertexInputBindingDescription* bindingDesc = &bindingDescs[i];
+        bindingDesc->binding = layout->binding;
+        if (layout->type == PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE) {
+            bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+        } else {
+            bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        }
+
+        // find the stride and offset of the layout
+        bindingDesc->stride = 0;
+        Uint32 offset = 0;
+        for (int j = 0; j < layout->vertexCount; j++) {
+            PalVertexAttribute* vertexAttrib = &layout->vertices[j];
+            VkVertexInputAttributeDescription* attrib = &attribDescs[j];
+
+            attrib->format = vertexTypeToVkFormat(vertexAttrib->type);
+            attrib->binding = bindingDesc->binding;
+            attrib->location = attrib->location;
+
+            // build offsets and stride
+            Uint32 size = getVertexTypeSize(vertexAttrib->type);
+            attrib->offset = offset;
+            offset += size;
+            bindingDesc->stride += size;
+        }
+    }
+
+    VI.pVertexAttributeDescriptions = attribDescs;
+    VI.vertexAttributeDescriptionCount = vertexCount;
+    VI.pVertexBindingDescriptions = bindingDescs;
+    VI.vertexBindingDescriptionCount = info->vertexLayoutCount;
+    createInfo.pVertexInputState = &VI;
+
+    // Input assembly
+    VkPrimitiveTopology topology;
+    switch (info->topology) {
+        case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
+            topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: {
+            topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_LINE_LIST: {
+            topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP: {
+            topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_POINT_LIST: {
+            topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            break;
+        }
+    }
+
+    // Dynamic states
+    Uint32 dynCount = 0;
+    dynamicStates[dynCount++] = VK_DYNAMIC_STATE_VIEWPORT;
+    dynamicStates[dynCount++] = VK_DYNAMIC_STATE_SCISSOR;
+    dynamicStates[dynCount++] = VK_DYNAMIC_STATE_LINE_WIDTH;
+    dynamicStates[dynCount++] = VK_DYNAMIC_STATE_BLEND_CONSTANTS;
+    dynamicStates[dynCount++] = VK_DYNAMIC_STATE_DEPTH_BIAS;
+    dynamicStates[dynCount++] = VK_DYNAMIC_STATE_STENCIL_REFERENCE;
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_CULL_MODE_EXT;
+    }
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_FRONT_FACE_EXT;
+    }
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT;
+    }
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
+    }
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT;
+    }
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_STENCIL_OP_EXT;
+    }
+
+    DS.dynamicStateCount = dynCount;
+    DS.pDynamicStates = dynamicStates;
+    createInfo.pDynamicState = &DS;
+
+    // Rasterizer state
+    if (info->rasterizerState.cullMode == PAL_CULL_MODE_NONE) {
+        RS.cullMode = VK_CULL_MODE_NONE;
+    } else if (info->rasterizerState.cullMode == PAL_CULL_MODE_BACK) {
+        RS.cullMode = VK_CULL_MODE_BACK_BIT;
+    } else if (info->rasterizerState.cullMode == PAL_CULL_MODE_FRONT) {
+        RS.cullMode = VK_CULL_MODE_FRONT_BIT;
+    }
+
+    if (info->rasterizerState.polygonMode == PAL_POLYGON_MODE_FILL) {
+        RS.cullMode = VK_POLYGON_MODE_FILL;
+    } else {
+        RS.cullMode = VK_POLYGON_MODE_LINE;
+    }
+
+    if (info->rasterizerState.frontFace == PAL_FRONT_FACE_CLOCKWISE) {
+        RS.cullMode = VK_FRONT_FACE_CLOCKWISE;
+    } else {
+        RS.cullMode = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    }
+
+    RS.depthBiasEnable = info->rasterizerState.enableDepthBias;
+    RS.depthClampEnable = info->rasterizerState.enableDepthClamp;
+
+    // Multisample state
+    MS.alphaToCoverageEnable = info->multisampleState.enableAlphaToCoverage;
+    MS.minSampleShading = info->multisampleState.minSampleShading;
+    MS.sampleShadingEnable = info->multisampleState.enableSampleShading;
+    MS.rasterizationSamples = samplesToVk(info->multisampleState.sampleCount);
+
+    VkSampleMask sampleMasks[2];
+    Uint32 mask1 = 0;
+    Uint32 mask2 = 0;
+    palUnpackUint32(info->multisampleState.sampleMask, &mask1, &mask2);
+    sampleMasks[0] = mask1;
+    sampleMasks[1] = mask2;
+    MS.pSampleMask = sampleMasks;
+
+    // Depth stencil state
+    const PalStencilOpState* front = nullptr;
+    const PalStencilOpState* back = nullptr;
+    back = &info->depthStencilState.backStencilOpState;
+    front = &info->depthStencilState.frontStencilOpState;
+
+    SS.back.compareOp = compareOpToVk(back->compareOp);
+    SS.back.depthFailOp = stencilOpToVk(back->depthFailOp);
+    SS.back.failOp = stencilOpToVk(back->failOp);
+    SS.back.passOp = stencilOpToVk(back->passOp);
+
+    SS.front.compareOp = compareOpToVk(front->compareOp);
+    SS.front.depthFailOp = stencilOpToVk(front->depthFailOp);
+    SS.front.failOp = stencilOpToVk(front->failOp);
+    SS.front.passOp = stencilOpToVk(front->passOp);
+
+    SS.depthCompareOp = compareOpToVk(info->depthStencilState.compareOp);
+    SS.depthTestEnable = info->depthStencilState.enableDepthTest;
+    SS.depthWriteEnable = info->depthStencilState.enableDepthWrite;
+    SS.stencilTestEnable = info->depthStencilState.enableStencilTest;
+
+    // Color blend state
+    CBS.attachmentCount = info->blendAttachmentCount;
+    if (info->blendAttachmentCount) {
+        blendattachments = palAllocate(
+            s_Vk.allocator, 
+            sizeof(VkPipelineColorBlendAttachmentState) * CBS.attachmentCount,
+            0);
+
+        if (!blendattachments) {
+            palFree(s_Vk.allocator, pipeline);
+            palFree(s_Vk.allocator, bindingDescs);
+            palFree(s_Vk.allocator, attribDescs);
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        for (int i = 0; i < CBS.attachmentCount; i++) {
+            VkPipelineColorBlendAttachmentState* tmp = &blendattachments[i];
+            PalBlendAttachment* desc = &info->blendAttachments[i];
+
+            tmp->blendEnable = desc->enableBlend;
+            tmp->alphaBlendOp = blendOpToVk(desc->alphaBlendOp);
+            tmp->colorBlendOp = blendOpToVk(desc->colorBlendOp);
+
+            tmp->srcAlphaBlendFactor = 
+                blendFactorToVk(desc->srcAlphaBlendFactor);
+            tmp->srcColorBlendFactor = 
+                blendFactorToVk(desc->srcColorBlendFactor);
+
+            tmp->dstAlphaBlendFactor = 
+                blendFactorToVk(desc->dstAlphaBlendFactor);
+            tmp->dstColorBlendFactor = 
+                blendFactorToVk(desc->dstColorBlendFactor);
+
+            // blend color write mask
+            tmp->colorWriteMask = 0;
+            if (desc->colorWriteMask & PAL_COLOR_MASK_RED) {
+                tmp->colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+            }
+
+            if (desc->colorWriteMask & PAL_COLOR_MASK_GREEN) {
+                tmp->colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
+            }
+
+            if (desc->colorWriteMask & PAL_COLOR_MASK_BLUE) {
+                tmp->colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+            }
+
+            if (desc->colorWriteMask & PAL_COLOR_MASK_ALPHA) {
+                tmp->colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+            }
+        }
+    }
+
+    // TODO: pipeline layout
+    createInfo.layout = nullptr;
+    createInfo.stageCount = info->shaderCount;
+    createInfo.pStages = shaderStages;
+    createInfo.pVertexInputState = &VI;
+    createInfo.pInputAssemblyState = &IA;
+    createInfo.pDepthStencilState = &SS;
+    createInfo.pDynamicState = &DS;
+    createInfo.pRasterizationState = &RS;
+    createInfo.pMultisampleState = &MS;
+    createInfo.pColorBlendState = &CBS;
+    createInfo.renderPass = renderPass->handle;
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        return vkResultToPal(result);
+    }
+
+    palFree(s_Vk.allocator, bindingDescs);
+    palFree(s_Vk.allocator, attribDescs);
+    palFree(s_Vk.allocator, blendattachments);
+
+    pipeline->device = vkDevice;
+    pipeline->type = GRAPHICS_PIPELINE;
+    *outPipeline = (PalPipeline*)pipeline;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyVkPipeline(PalPipeline* pipeline)
 {
-    
+    Pipeline* vkPipeline = (Pipeline*)pipeline;
+    s_Vk.destroyPipeline(
+        vkPipeline->device->handle,
+        vkPipeline->handle, 
+        &s_Vk.vkAllocator);
 
+    palFree(s_Vk.allocator, pipeline);
 }
 
 #endif // PAL_HAS_VULKAN
