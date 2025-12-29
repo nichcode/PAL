@@ -50,6 +50,7 @@ PAL_HANDLE(PalCommandPool)
 PAL_HANDLE(PalCommandBuffer)
 PAL_HANDLE(PalPipeline)
 PAL_HANDLE(PalAccelerationStructure)
+PAL_HANDLE(PalBufferView)
 
 typedef struct {
     Int32 count;
@@ -324,6 +325,14 @@ PalResult PAL_CALL beginRenderPassVk(
 
 PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer);
 
+PalResult PAL_CALL copyVkBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dst,
+    PalBuffer* src,
+    Uint64 dstOffset,
+    Uint64 srcOffset,
+    Uint32 size);
+
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
@@ -340,6 +349,33 @@ PalResult PAL_CALL getVkAccelerationStructureBuildSize(
     PalDevice* device,
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size);
+
+PalResult PAL_CALL createVkBuffer(
+    PalDevice* device,
+    const PalBufferCreateInfo* info,
+    PalBuffer** outBuffer);
+
+void PAL_CALL destroyVkBuffer(PalBuffer* buffer);
+
+PalResult PAL_CALL getVkBufferMemoryRequirements(
+    PalBuffer* buffer,
+    PalMemoryRequirements* requirements);
+
+PalResult PAL_CALL bindVkBufferMemory(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset);
+
+PalResult PAL_CALL mapVkBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset, 
+    Uint64 size,
+    void** outPtr);
+
+void PAL_CALL unmapVkBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory);
 
 PalResult PAL_CALL createVkGraphicsPipeline(
     PalDevice* device,
@@ -409,10 +445,17 @@ static PalGraphicsBackend s_VkBackend = {
     .buildAccelerationStructure = buildVkAccelerationStructure,
     .beginRenderPass = beginRenderPassVk,
     .endRenderPass = endRenderPassVk,
+    .copyBuffer = copyVkBuffer,
     .submitCommandBuffer = submitVkCommandBuffer,
     .createAccelerationstructure = createVkAccelerationstructure,
     .destroyAccelerationstructure = destroyVkAccelerationstructure,
     .getAccelerationStructureBuildSize = getVkAccelerationStructureBuildSize,
+    .createBuffer = createVkBuffer,
+    .destroyBuffer = destroyVkBuffer,
+    .getBufferMemoryRequirements = getVkBufferMemoryRequirements,
+    .bindBufferMemory = bindVkBufferMemory,
+    .mapBuffer = mapVkBuffer,
+    .unmapBuffer = unmapVkBuffer,
     .createGraphicsPipeline = createVkGraphicsPipeline,
     .destroyPipeline = destroyVkPipeline
 };
@@ -511,10 +554,17 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->buildAccelerationStructure            ||
         !backend->beginRenderPass                       ||
         !backend->endRenderPass                         ||
+        !backend->copyBuffer                            ||
         !backend->submitCommandBuffer                   ||
         !backend->createAccelerationstructure           ||
         !backend->destroyAccelerationstructure          ||
         !backend->getAccelerationStructureBuildSize     ||
+        !backend->createBuffer                          ||
+        !backend->destroyBuffer                         ||
+        !backend->getBufferMemoryRequirements           ||
+        !backend->bindBufferMemory                      ||
+        !backend->mapBuffer                             ||
+        !backend->unmapBuffer                           ||
         !backend->createGraphicsPipeline                ||
         !backend->destroyPipeline) {
         return PAL_RESULT_INVALID_BACKEND;
@@ -1677,6 +1727,31 @@ PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
     return cmdBuffer->backend->endRenderPass(cmdBuffer);
 }
 
+PalResult PAL_CALL palCopyBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dst,
+    PalBuffer* src,
+    Uint64 dstOffset,
+    Uint64 srcOffset,
+    Uint32 size)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !dst || !src) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->copyBuffer(
+        cmdBuffer,
+        dst,
+        src,
+        dstOffset,
+        srcOffset,
+        size);
+}
+
 PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info)
@@ -1760,6 +1835,115 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
         device,
         info,
         size);
+}
+
+// ==================================================
+// Buffer
+// ==================================================
+
+PalResult PAL_CALL palCreateBuffer(
+    PalDevice* device,
+    const PalBufferCreateInfo* info,
+    PalBuffer** outBuffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalBuffer* buffer = nullptr;
+    result = device->backend->createBuffer(
+        device,
+        info,
+        &buffer);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    buffer->backend = device->backend;
+    *outBuffer = buffer;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyBuffer(PalBuffer* buffer)
+{
+    if (s_Graphics.initialized && buffer) {
+        buffer->backend->destroyBuffer(buffer);
+    }
+}
+
+PalResult PAL_CALL palGetBufferMemoryRequirements(
+    PalBuffer* buffer,
+    PalMemoryRequirements* requirements)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!buffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return buffer->backend->getBufferMemoryRequirements(
+        buffer, 
+        requirements);
+}
+
+PalResult PAL_CALL palBindBufferMemory(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!buffer || !memory) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return buffer->backend->bindBufferMemory(
+        buffer, 
+        memory, 
+        offset);
+}
+
+PalResult PAL_CALL palMapBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset, 
+    Uint64 size,
+    void** outPtr)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!buffer || !memory || !outPtr) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return buffer->backend->mapBuffer(
+        buffer,
+        memory,
+        offset,
+        size,
+        outPtr);
+}
+
+void PAL_CALL palUnmapBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory)
+{
+    if (!s_Graphics.initialized || !buffer || !memory) {
+        return;
+    }
+    buffer->backend->unmapBuffer(buffer, memory);
 }
 
 // ==================================================

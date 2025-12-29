@@ -136,6 +136,7 @@ typedef struct {
     PFN_vkQueueSubmit queueSubmit;
     PFN_vkCmdBeginRenderPass cmdBeginRenderPass;
     PFN_vkCmdEndRenderPass cmdEndRenderPass;
+    PFN_vkCmdCopyBuffer cmdCopyBuffer;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -146,6 +147,16 @@ typedef struct {
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getSurfaceCapabilities;
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getSurfaceFormats;
     PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getSurfacePresentModes;
+
+    PFN_vkCreateBuffer createBuffer;
+    PFN_vkDestroyBuffer destroyBuffer;
+    PFN_vkGetBufferMemoryRequirements getBufferMemoryRequirements;
+    PFN_vkBindBufferMemory bindBufferMemory;
+    PFN_vkMapMemory mapMemory;
+    PFN_vkUnmapMemory unmapMemory;
+
+    PFN_vkCreateGraphicsPipelines createGraphicsPipeline;
+    PFN_vkDestroyPipeline destroyPipeline;
 
     VkAllocationCallbacks vkAllocator;
     const PalAllocator* allocator;
@@ -171,6 +182,7 @@ typedef struct {
     VkDevice handle;
     PhysicalQueue* phyQueues;
     PFN_vkCreateRenderPass2 createRenderPass2;
+    PFN_vkGetBufferDeviceAddress getBufferrAddress;
 
     // swapchain
     PFN_vkCreateSwapchainKHR createSwapchain;
@@ -306,6 +318,14 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    PalBuffer* buffer;
+    Device* device;
+    VkBufferView handle;
+} BufferView;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
     VkDeviceAddress address;
     Device* device;
     VkAccelerationStructureKHR handle;
@@ -409,7 +429,7 @@ static PalResult vkResultToPal(VkResult result)
     return PAL_RESULT_PLATFORM_FAILURE;
 }
 
-static VkImageUsageFlags palUsageToVk(PalImageUsages usages) 
+static VkImageUsageFlags palImageUsageToVk(PalImageUsages usages) 
 {
     VkImageUsageFlags flags = 0;
     if (usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
@@ -1187,6 +1207,46 @@ static VkFormat vertexTypeToVkFormat(PalVertexType type)
     return VK_FORMAT_UNDEFINED;
 }
 
+static VkBufferUsageFlags palBufferUsageToVk(PalBufferUsages usages) 
+{
+    VkBufferUsageFlags flags = 0;
+    if (usages & PAL_BUFFER_USAGE_VERTEX) {
+        flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_INDEX) {
+        flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_UNIFORM) {
+        flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_STORAGE) {
+        flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_TRANSFER_SRC) {
+        flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_TRANSFER_DST) {
+        flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_RAY_TRACING) {
+        flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        flags |= 
+          VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+    
+    if (usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
+        flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    }
+
+    return flags;
+}
+
 static void* vkAlloc(
     void* pUserData,
     size_t size,
@@ -1447,9 +1507,45 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkCmdEndRenderPass");
 
+    s_Vk.cmdCopyBuffer = (PFN_vkCmdCopyBuffer)dlsym(
+        s_Vk.handle, 
+        "vkCmdCopyBuffer");
+
     s_Vk.queueSubmit = (PFN_vkQueueSubmit)dlsym(
         s_Vk.handle, 
         "vkQueueSubmit");
+
+    s_Vk.createBuffer = (PFN_vkCreateBuffer)dlsym(
+        s_Vk.handle, 
+        "vkCreateBuffer");
+
+    s_Vk.destroyBuffer = (PFN_vkDestroyBuffer)dlsym(
+        s_Vk.handle, 
+        "vkDestroyBuffer");
+
+    s_Vk.mapMemory = (PFN_vkMapMemory)dlsym(
+        s_Vk.handle, 
+        "vkMapMemory");
+
+    s_Vk.unmapMemory = (PFN_vkUnmapMemory)dlsym(
+        s_Vk.handle, 
+        "vkUnmapMemory");
+
+    s_Vk.getBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)dlsym(
+        s_Vk.handle, 
+        "vkGetBufferMemoryRequirements");
+
+    s_Vk.bindBufferMemory = (PFN_vkBindBufferMemory)dlsym(
+        s_Vk.handle, 
+        "vkBindBufferMemory");
+
+    s_Vk.createGraphicsPipeline = (PFN_vkCreateGraphicsPipelines)dlsym(
+        s_Vk.handle, 
+        "vkCreateGraphicsPipelines");
+
+    s_Vk.destroyPipeline = (PFN_vkDestroyPipeline)dlsym(
+        s_Vk.handle, 
+        "vkDestroyPipeline");
 
     // clang-format on
 
@@ -1948,6 +2044,7 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     bool shaderFloat16 = false;
     bool multiiView = false;
     bool dynamicstate = false;
+    bool bufferDeviceAddress = false;
 
     // clang-format off
     // check if the extensions are present
@@ -2003,6 +2100,9 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 
         } else if (strcmp(props->extensionName, "VK_KHR_draw_indirect_count") == 0) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT;
+
+        } else if (strcmp(props->extensionName, "VK_KHR_buffer_device_address") == 0) {
+            bufferDeviceAddress = true;
         }
     }
 
@@ -2137,6 +2237,26 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
             adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE;
             adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE;
             adapterFeatures |= PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY;
+        }
+    }
+
+    // buffer device address is part of core 1.2
+    // if ray tracing is supported, buffer device address will be supported as well
+    if (adapterFeatures & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        adapterFeatures |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
+    } else {
+        if (props.apiVersion >= VK_API_VERSION_1_2 || bufferDeviceAddress) {
+            VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferAddress = {0};
+            bufferAddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+
+            VkPhysicalDeviceFeatures2 features;
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &bufferAddress;
+
+            s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+            if (bufferAddress.bufferDeviceAddress) {
+                adapterFeatures |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
+            }
         }
     }
 
@@ -2332,9 +2452,10 @@ PalResult PAL_CALL createVkDevice(
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamicState2 = {0};
     dynamicState2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
 
-    // clang-format on
-    bool coreSemaphore = false;
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferAddress = {0};
+    bufferAddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 
+    // clang-format on
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
     }
@@ -2350,7 +2471,6 @@ PalResult PAL_CALL createVkDevice(
 
         timeline.timelineSemaphore = true;
         start = &timeline;
-        coreSemaphore = true;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
@@ -2556,6 +2676,42 @@ PalResult PAL_CALL createVkDevice(
         start = &dynamicState2;
     }
 
+    if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_buffer_device_address";
+        }
+        bufferAddress.bufferDeviceAddress = true;
+        
+        if (dynamicState2.extendedDynamicState2) {
+            dynamicState2.pNext = &bufferAddress;
+
+        } else if (dynamicState.extendedDynamicState) {
+            dynamicState.pNext = &dynamicState2;
+            
+        } else if (multiView.multiview) {
+            multiView.pNext = &dynamicState2;
+
+        } else if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
+            descIndex.pNext = &dynamicState2;
+
+        } else if (vrs.pipelineFragmentShadingRate) {
+            vrs.pNext = &dynamicState2;
+
+        } else if (mesh.meshShader) {
+            mesh.pNext = &dynamicState2;
+
+        } else if (acc.accelerationStructure) {
+            acc.pNext = &dynamicState2;
+
+        } else if (shader16.shaderFloat16) {
+            shader16.pNext = &dynamicState2;
+
+        } else if (timeline.timelineSemaphore) {
+            timeline.pNext = &dynamicState2;
+        }
+        start = &dynamicState2;
+    }
+
     VkDeviceCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pEnabledFeatures = &coreFeatures;
@@ -2637,20 +2793,19 @@ PalResult PAL_CALL createVkDevice(
 
     // load semaphore procs
     if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-        if (coreSemaphore) {
-            device->waitSemaphore = (PFN_vkWaitSemaphores)s_Vk.getDeviceProcAddr(
-                device->handle, 
-                "vkWaitSemaphores");
+        device->waitSemaphore = (PFN_vkWaitSemaphores)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkWaitSemaphores");
 
-            device->signalSemaphore = (PFN_vkSignalSemaphore)s_Vk.getDeviceProcAddr(
-                device->handle, 
-                "vkSignalSemaphore");
+        device->signalSemaphore = (PFN_vkSignalSemaphore)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkSignalSemaphore");
 
-            device->getSemaphoreValue = (PFN_vkGetSemaphoreCounterValue)s_Vk.getDeviceProcAddr(
-                device->handle, 
-                "vkGetSemaphoreCounterValue");
+        device->getSemaphoreValue = (PFN_vkGetSemaphoreCounterValue)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkGetSemaphoreCounterValue");
 
-        } else {
+        if (!device->waitSemaphore) {
             device->waitSemaphore = (PFN_vkWaitSemaphoresKHR)s_Vk.getDeviceProcAddr(
                 device->handle, 
                 "vkWaitSemaphoresKHR");
@@ -2748,6 +2903,21 @@ PalResult PAL_CALL createVkDevice(
             (PFN_vkCmdTraceRaysIndirectKHR)s_Vk.getDeviceProcAddr(
                 device->handle, 
                 "vkCmdTraceRaysIndirectKHR");
+    }
+
+    // buffer address
+    if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
+        device->getBufferrAddress = 
+            (PFN_vkGetBufferDeviceAddress)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkGetBufferDeviceAddress");
+
+        if (!device->getBufferrAddress) {
+            device->getBufferrAddress = 
+                (PFN_vkGetBufferDeviceAddressKHR)s_Vk.getDeviceProcAddr(
+                    device->handle, 
+                    "vkGetBufferDeviceAddressKHR");
+        }
     }
 
     device->features = features;
@@ -3283,7 +3453,7 @@ PalResult PAL_CALL createVkImage(
 
     createInfo.format = palFormatToVk(info->format);
     createInfo.samples = samplesToVk(info->sampleCount);
-    createInfo.usage = palUsageToVk(info->usages);
+    createInfo.usage = palImageUsageToVk(info->usages);
 
     createInfo.arrayLayers = info->depthOrArraySize;
     createInfo.extent.depth = 1;
@@ -3404,7 +3574,7 @@ PalResult PAL_CALL bindVkImageMemory(
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     s_Vk.bindImageMemory(
         vkImage->device->handle, 
-        vkImage->handle, 
+        vkImage->handle,
         mem, 
         offset);
 }
@@ -3460,7 +3630,7 @@ PalResult PAL_CALL createVkImageView(
         aspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
-    createInfo.subresourceRange .aspectMask = aspectFlags;
+    createInfo.subresourceRange.aspectMask = aspectFlags;
     result = s_Vk.createImageView(
         vkDevice->handle, 
         &createInfo, 
@@ -4939,8 +5109,8 @@ PalResult PAL_CALL buildVkAccelerationStructure(
     
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
-    AccelerationStructure* vkAs = (AccelerationStructure*)info->dst;
-    Buffer* vkScratchBuffer = (Buffer*)info->scratchBuffer;
+    AccelerationStructure* as = (AccelerationStructure*)info->dst;
+    Buffer* scratchBuffer = (Buffer*)info->scratchBuffer;
 
     geometries = palAllocate(
         s_Vk.allocator, 
@@ -5040,11 +5210,11 @@ PalResult PAL_CALL buildVkAccelerationStructure(
 
     buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     buildInfo.geometryCount = info->geometryCount;
-    buildInfo.dstAccelerationStructure = vkAs->handle;
+    buildInfo.dstAccelerationStructure = as->handle;
 
     VkDeviceOrHostAddressKHR scratchData = {0};
     scratchData.deviceAddress = 
-        vkScratchBuffer->address + info->scratchBufferOffset;
+        scratchBuffer->address + info->scratchBufferOffset;
     buildInfo.scratchData = scratchData;
 
     buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
@@ -5115,6 +5285,32 @@ PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdEndRenderPass(vkCmdBuffer->handle);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL copyVkBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dst,
+    PalBuffer* src,
+    Uint64 dstOffset,
+    Uint64 srcOffset,
+    Uint32 size)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* dstbuffer = (Buffer*)dst;
+    Buffer* srcBuffer = (Buffer*)src;
+
+    VkBufferCopy copyRegion = {0};
+    copyRegion.size = size;
+    copyRegion.dstOffset = dstOffset;
+    copyRegion.srcOffset = srcOffset;
+    s_Vk.cmdCopyBuffer(
+        vkCmdBuffer->handle, 
+        srcBuffer->handle, 
+        dstbuffer->handle, 
+        1, 
+        &copyRegion);
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5388,6 +5584,180 @@ PalResult PAL_CALL getVkAccelerationStructureBuildSize(
 }
 
 // ==================================================
+// Buffer
+// ==================================================
+
+PalResult PAL_CALL createVkBuffer(
+    PalDevice* device,
+    const PalBufferCreateInfo* info,
+    PalBuffer** outBuffer)
+{
+    VkResult result;
+    Buffer* buffer = nullptr;
+    Device* vkDevice = (Device*)device;
+    if (info->usages & PAL_BUFFER_USAGE_RAY_TRACING) {
+        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+        // buffer device address feature is supported if ray tracing is
+
+    } else if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
+        if (!(vkDevice->features & 
+            PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+    }
+
+    buffer = palAllocate(s_Vk.allocator, sizeof(Buffer), 0);
+    if (!buffer) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkBufferCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.size = info->size;
+    createInfo.usage = palBufferUsageToVk(info->usages);
+    
+    result = s_Vk.createBuffer(
+        vkDevice->handle, 
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &buffer->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, buffer);
+        return vkResultToPal(result);
+    }
+
+    // get the address if the address usage is set
+    buffer->address = 0;
+    if (createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+        VkBufferDeviceAddressInfoKHR bufferInfo = {0};
+        bufferInfo.buffer = buffer->handle;
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+        buffer->address = 
+            vkDevice->getBufferrAddress(vkDevice->handle, &bufferInfo);
+    }
+
+    buffer->device = vkDevice;
+    *outBuffer = (PalBuffer*)buffer;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkBuffer(PalBuffer* buffer)
+{
+    Buffer* vkBuffer = (Buffer*)buffer;
+    s_Vk.destroyBuffer(
+        vkBuffer->device->handle, 
+        vkBuffer->handle, 
+        &s_Vk.vkAllocator);
+
+    palFree(s_Vk.allocator, buffer);
+}
+
+PalResult PAL_CALL getVkBufferMemoryRequirements(
+    PalBuffer* buffer,
+    PalMemoryRequirements* requirements)
+{
+    Buffer* vkBuffer = (Buffer*)buffer;
+    Device* device = vkBuffer->device;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)device->phyDevice;
+    VkPhysicalDeviceMemoryProperties memProps = {0};
+    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
+
+    VkMemoryRequirements memReq = {0};
+    s_Vk.getBufferMemoryRequirements(
+        device->handle, 
+        vkBuffer->handle,
+        &memReq);
+
+    requirements->alignment = (Uint64)memReq.alignment;
+    requirements->size = (Uint64)memReq.size;
+
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+
+    for (int i = 0; i < memProps.memoryTypeCount; i++) {
+        if (!(memReq.memoryTypeBits & (1 << i))) {
+            // memory type not supported
+            continue;
+        }
+
+        VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
+        if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
+        }
+
+        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
+             prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
+        }
+
+        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
+             prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
+        }
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bindVkBufferMemory(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset)
+{
+    VkResult result;
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    result = s_Vk.bindBufferMemory(
+        vkBuffer->device->handle, 
+        vkBuffer->handle, 
+        mem, 
+        offset);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL mapVkBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+    VkResult result;
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    Buffer* vkBuffer = (Buffer*)buffer;
+
+    result = s_Vk.mapMemory(
+        vkBuffer->device->handle, 
+        mem, 
+        offset, 
+        size, 
+        0, 
+        outPtr);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+    return PAL_RESULT_SUCCESS; 
+}
+
+void PAL_CALL unmapVkBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory)
+{
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    s_Vk.unmapMemory(vkBuffer->device->handle, mem);
+}
+
+// ==================================================
 // Pipeline
 // ==================================================
 
@@ -5401,6 +5771,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
 
 void PAL_CALL destroyVkPipeline(PalPipeline* pipeline)
 {
+    
 
 }
 

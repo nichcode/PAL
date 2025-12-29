@@ -304,6 +304,10 @@ bool graphicsTest()
             palLog(nullptr, "  Mesh shader indirect count");
         }
 
+        if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
+            palLog(nullptr, "  Buffer device address");
+        }
+
         palLog(nullptr, "");
     }
 

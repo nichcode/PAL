@@ -247,7 +247,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(29),
     PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(30),
     PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(31),
-    PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT = PAL_BIT64(32)
+    PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT = PAL_BIT64(32),
+    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(33)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -497,6 +498,17 @@ typedef enum {
     PAL_INDEX_TYPE_UINT16,
     PAL_INDEX_TYPE_UINT32
 } PalIndexType;
+
+typedef enum {
+    PAL_BUFFER_USAGE_VERTEX = PAL_BIT(0),
+    PAL_BUFFER_USAGE_INDEX = PAL_BIT(1),
+    PAL_BUFFER_USAGE_UNIFORM = PAL_BIT(2),
+    PAL_BUFFER_USAGE_STORAGE = PAL_BIT(3),
+    PAL_BUFFER_USAGE_TRANSFER_SRC = PAL_BIT(4),
+    PAL_BUFFER_USAGE_TRANSFER_DST = PAL_BIT(5),
+    PAL_BUFFER_USAGE_RAY_TRACING = PAL_BIT(6),
+    PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(7)
+} PalBufferUsages;
 
 typedef struct {
     Uint32 vendorId;
@@ -819,6 +831,11 @@ typedef struct {
 } PalCommandPoolCreateInfo;
 
 typedef struct {
+    PalBufferUsages usages;
+    Uint64 size;
+} PalBufferCreateInfo;
+
+typedef struct {
     PalAccelerationStructureType type;
     PalBuffer* buffer;
     Uint64 offset;
@@ -934,7 +951,7 @@ typedef struct {
 
     PalResult PAL_CALL (*getImageMemoryRequirements)(
         PalImage* image,
-        PalMemoryRequirements* requirments);
+        PalMemoryRequirements* requirements);
 
     PalResult PAL_CALL (*bindImageMemory)(
         PalImage* image,
@@ -1087,6 +1104,14 @@ typedef struct {
 
     PalResult PAL_CALL (*endRenderPass)(PalCommandBuffer* cmdBuffer);
 
+    PalResult PAL_CALL (*copyBuffer)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* dst,
+        PalBuffer* src,
+        Uint64 dstOffset,
+        Uint64 srcOffset,
+        Uint32 size);
+
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalSubmitInfo* info);
@@ -1103,6 +1128,33 @@ typedef struct {
         PalDevice* device,
         PalAccelerationStructureBuildInfo* info,
         PalAccelerationStructureBuildSize* size);
+
+    PalResult PAL_CALL (*createBuffer)(
+        PalDevice* device,
+        const PalBufferCreateInfo* info,
+        PalBuffer** outBuffer);
+
+    void PAL_CALL (*destroyBuffer)(PalBuffer* buffer);
+
+    PalResult PAL_CALL (*getBufferMemoryRequirements)(
+        PalBuffer* buffer,
+        PalMemoryRequirements* requirements);
+
+    PalResult PAL_CALL (*bindBufferMemory)(
+        PalBuffer* buffer,
+        PalMemory* memory,
+        Uint64 offset);
+
+    PalResult PAL_CALL (*mapBuffer)(
+        PalBuffer* buffer,
+        PalMemory* memory,
+        Uint64 offset, 
+        Uint64 size,
+        void** outPtr);
+
+    void PAL_CALL (*unmapBuffer)(
+        PalBuffer* buffer,
+        PalMemory* memory);
 
     PalResult PAL_CALL (*createGraphicsPipeline)(
         PalDevice* device,
@@ -1362,6 +1414,14 @@ PAL_API PalResult PAL_CALL palBeginRenderPass(
 
 PAL_API PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer);
 
+PAL_API PalResult PAL_CALL palCopyBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dst,
+    PalBuffer* src,
+    Uint64 dstOffset,
+    Uint64 srcOffset,
+    Uint32 size);
+
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
@@ -1378,6 +1438,33 @@ PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
     PalDevice* device,
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size);
+
+PAL_API PalResult PAL_CALL palCreateBuffer(
+    PalDevice* device,
+    const PalBufferCreateInfo* info,
+    PalBuffer** outBuffer);
+
+PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
+
+PAL_API PalResult PAL_CALL palGetBufferMemoryRequirements(
+    PalBuffer* buffer,
+    PalMemoryRequirements* requirements);
+
+PAL_API PalResult PAL_CALL palBindBufferMemory(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset);
+
+PAL_API PalResult PAL_CALL palMapBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory,
+    Uint64 offset, 
+    Uint64 size,
+    void** outPtr);
+
+PAL_API void PAL_CALL palUnmapBuffer(
+    PalBuffer* buffer,
+    PalMemory* memory);
 
 PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalDevice* device,
