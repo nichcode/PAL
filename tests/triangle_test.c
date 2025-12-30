@@ -3,6 +3,30 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
+#include <stdio.h>
+
+static bool readFile(const char* filename, char* buffer, Uint32* size)
+{
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        return false;
+    }
+
+    if (!buffer) {
+        fseek(file, 0, SEEK_END);
+        Uint64 tmpSize = ftell(file);
+        fclose(file);
+
+        *size = tmpSize;
+        return true;
+    }
+
+    fseek(file, 0, SEEK_SET);
+    fread(buffer, 1, (Uint64)size, file);
+    fclose(file);
+    return true;
+}
+
 static bool initVideo(
     PalWindow** outWindow, 
     PalEventDriver** outEventDriver)
@@ -117,7 +141,7 @@ bool triangleTest()
     PalRenderPassView** renderPassViews = nullptr;
 
     PalShader* vertexShader = nullptr;
-    PalShader* indexShader = nullptr;
+    PalShader* fragmentShader = nullptr;
     PalPipeline* pipeline = nullptr;
 
     // initialize the graphics system 
@@ -315,6 +339,58 @@ bool triangleTest()
     }
 
     // create shaders
+    Uint32 vertexShaderSize = 0;
+    Uint32 fragmentShaderSize = 0;
+    char* vertexShaderBytecode = nullptr;
+    char* fragmentShaderBytecode = nullptr;
+    readFile("shaders/triangle.vertex.spv", nullptr, &vertexShaderSize);
+    readFile("shaders/triangle.fragment.spv", nullptr, &vertexShaderSize);
+
+    if (!vertexShaderSize && !fragmentShaderSize) {
+        palLog(nullptr, "Failed to find shader files");
+        return false;
+    }
+
+    vertexShaderBytecode = palAllocate(nullptr, vertexShaderSize, 0);
+    fragmentShaderBytecode = palAllocate(nullptr, fragmentShaderSize, 0);
+    if (!vertexShaderBytecode && !fragmentShaderBytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(
+        "shaders/triangle.vertex.spv", 
+        vertexShaderBytecode, 
+        &vertexShaderSize);
+
+    readFile(
+        "shaders/triangle.fragment.spv", 
+        fragmentShaderBytecode, 
+        &vertexShaderSize);
+
+    PalShaderCreateInfo shaderCreateInfo = {0};
+    shaderCreateInfo.bytecode = (const void*)vertexShaderBytecode;
+    shaderCreateInfo.bytecodeSize = vertexShaderSize;
+    shaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
+    result = palCreateShader(device, &shaderCreateInfo, &vertexShader);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create vertex shader: %s", error);
+        return false;
+    }
+
+    shaderCreateInfo.bytecode = (const void*)fragmentShaderBytecode;
+    shaderCreateInfo.bytecodeSize = fragmentShaderSize;
+    shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
+    result = palCreateShader(device, &shaderCreateInfo, &vertexShader);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create fragment shader: %s", error);
+        return false;
+    }
+
+    palFree(nullptr, vertexShaderBytecode);
+    palFree(nullptr, fragmentShaderBytecode);
 
     // create graphics pipeline
     // vertex attributes and vertex layout
@@ -342,14 +418,13 @@ bool triangleTest()
     pipelineCreateInfo.topology = PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     // shaders
-    PalShader* shaders[2]; // vertex and index
+    PalShader* shaders[2]; // vertex and fragment
     shaders[0] = vertexShader;
-    shaders[1] = indexShader;
+    shaders[1] = fragmentShader;
     pipelineCreateInfo.shaders = shaders;
     pipelineCreateInfo.shaderCount = 2;
 
     pipelineCreateInfo.renderPass = renderPass;
-    // TODO:
     // result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);

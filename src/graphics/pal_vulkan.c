@@ -6288,7 +6288,6 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         }
     }
 
-    // TODO: pipeline layout
     createInfo.layout = nullptr;
     createInfo.stageCount = info->shaderCount;
     createInfo.pStages = shaderStages;
