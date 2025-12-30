@@ -3,25 +3,13 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool clearColorTest()
+static bool initVideo(
+    PalWindow** outWindow, 
+    PalEventDriver** outEventDriver)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Clear Color Test");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
-
     PalResult result;
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
-    PalAdapter* adapter = nullptr;
-    PalDevice* device = nullptr;
-    PalQueue* queue = nullptr;
-    PalSwapchain* swapchain = nullptr;
-    PalCommandPool* cmdPool = nullptr;
-    PalImageView** imageViews = nullptr;
-    PalCommandBuffer** cmdBuffers = nullptr;
-    PalRenderPass** renderPasses = nullptr;
 
     // create an event driver
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
@@ -44,7 +32,6 @@ bool clearColorTest()
         PAL_DISPATCH_POLL);
 
     // initialize the video system
-    // you can use any library you want
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -74,8 +61,63 @@ bool clearColorTest()
         return false;
     }
 
+    *outWindow = window;
+    *outEventDriver = eventDriver;
+    return true;
+}
+
+static PalWindowHandleInfo getWindowInfo(
+    PalWindow* window, 
+    Uint32* width, 
+    Uint32* height)
+{
+    *width = 640;
+    *height = 480;
+    return palGetWindowHandleInfo(window);
+}
+
+static bool shutdownVideo(
+    PalWindow* window, 
+    PalEventDriver* eventDriver)
+{
+    palDestroyWindow(window);
+    palShutdownVideo();
+    palDestroyEventDriver(eventDriver);
+}
+
+bool clearColorTest()
+{
+    palLog(nullptr, "");
+    palLog(nullptr, "===========================================");
+    palLog(nullptr, "Clear Color Test");
+    palLog(nullptr, "===========================================");
+    palLog(nullptr, "");
+
+    // initialize video system
+    PalWindow* window = nullptr;
+    PalEventDriver* eventDriver = nullptr;
+    Uint32 windowWidth = 0;
+    Uint32 windowHeight = 0;
+    PalWindowHandleInfo windowHandleInfo;
+
+    if (!initVideo(&window, &eventDriver)) {
+        palLog(nullptr, "Failed to initialize video");
+        return false;
+    }
+    windowHandleInfo = getWindowInfo(window, &windowWidth, &windowHeight);
+
+    PalAdapter* adapter = nullptr;
+    PalDevice* device = nullptr;
+    PalQueue* queue = nullptr;
+    PalSwapchain* swapchain = nullptr;
+    PalCommandPool* cmdPool = nullptr;
+    PalImageView** imageViews = nullptr;
+    PalCommandBuffer** cmdBuffers = nullptr;
+    PalRenderPass* renderPass = nullptr;
+    PalRenderPassView** renderPassViews = nullptr;
+
     // initialize the graphics system 
-    result = palInitGraphics(false, nullptr);
+    PalResult result = palInitGraphics(false, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -153,12 +195,9 @@ bool clearColorTest()
     }
 
     // check if the queue can present on our window
-    PalWindowHandleInfo handleInfo;
     PalGraphicsWindow gfxWindow;
-    handleInfo = palGetWindowHandleInfo(window);
-    gfxWindow.window = handleInfo.nativeWindow;
-    gfxWindow.display = handleInfo.nativeDisplay;
-
+    gfxWindow.window = windowHandleInfo.nativeWindow;
+    gfxWindow.display = windowHandleInfo.nativeDisplay;
     if (!palCanQueuePresent(queue, &gfxWindow)) {
         palLog(nullptr, "Queue cannot present to window");
         return false;
@@ -181,21 +220,21 @@ bool clearColorTest()
     swapchainCreateInfo.clipped = true;
     swapchainCreateInfo.compositeAlpha = PAL_COMPOSITE_ALPHA_OPAQUE;
     swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
-    swapchainCreateInfo.height = windowCreateInfo.height;
-    swapchainCreateInfo.width = windowCreateInfo.width;
+    swapchainCreateInfo.height = windowHeight;
+    swapchainCreateInfo.width = windowWidth;
     swapchainCreateInfo.imageArrayLayerCount = 1;
 
     // rare but possible on andriod
-    if (windowCreateInfo.width > swapchainCaps.maxImageWidth) {
+    if (windowWidth > swapchainCaps.maxImageWidth) {
         swapchainCreateInfo.width = swapchainCaps.maxImageWidth / 2;
     }
 
-    if (windowCreateInfo.height > swapchainCaps.maxImageHeight) {
+    if (windowHeight > swapchainCaps.maxImageHeight) {
         swapchainCreateInfo.height = swapchainCaps.maxImageHeight / 2;
     }
 
     // check if the minimal image count is not good for you 
-    // and increase it nut not pass the max count
+    // and increase it but not pass the max count
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
@@ -230,9 +269,9 @@ bool clearColorTest()
         sizeof(PalImageView*) * imageCount,
         0);
 
-    renderPasses = palAllocate(
+    renderPassViews = palAllocate(
         nullptr, 
-        sizeof(PalRenderPass*) * imageCount,
+        sizeof(PalRenderPassView*) * imageCount,
         0);
 
     cmdBuffers = palAllocate(
@@ -240,11 +279,34 @@ bool clearColorTest()
         sizeof(PalCommandBuffer*) * imageCount,
         0);
 
-    if (!imageViews || !renderPasses || !cmdBuffers) {
+    if (!imageViews || !renderPassViews || !cmdBuffers) {
         palLog(nullptr, "Failed to allocate memory");
         palFree(nullptr, imageViews);
         palFree(nullptr, cmdBuffers);
-        palFree(nullptr, renderPasses);
+        palFree(nullptr, renderPassViews);
+        return false;
+    }
+
+    // create render pass
+    PalAttachmentDesc presentAttachment = {0};
+    presentAttachment.loadOp = PAL_LOAD_OP_CLEAR;
+    presentAttachment.storeOp = PAL_STORE_OP_STORE;
+    presentAttachment.type = PAL_ATTACHMENT_TYPE_PRESENT;
+    presentAttachment.sampleCount = PAL_SAMPLE_COUNT_1;
+    presentAttachment.format = palGetSwapchainFormat(swapchain);
+    
+    PalRenderPassCreateInfo renderPasscreateInfo = {0};
+    renderPasscreateInfo.attachmentCount = 1;
+    renderPasscreateInfo.attachments = &presentAttachment;
+
+    result = palCreateRenderPass(
+        device, 
+        &renderPasscreateInfo, 
+        &renderPass);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create render pass: %s", error);
         return false;
     }
 
@@ -278,35 +340,8 @@ bool clearColorTest()
             palLog(nullptr, "Failed to create image view: %s", error);
             return false;
         }
-
-        // create a render pass with the image view as a color attahcment
-        PalAttachmentDesc colorAttachment = {0};
-        colorAttachment.loadOp = PAL_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = PAL_STORE_OP_STORE;
-        colorAttachment.type = PAL_ATTACHMENT_TYPE_COLOR;
-        colorAttachment.target = imageView;
-
-        PalRenderPassCreateInfo renderPasscreateInfo = {0};
-        renderPasscreateInfo.attachmentCount = 1;
-        renderPasscreateInfo.attachments = &colorAttachment;
-
-        // render area
-        renderPasscreateInfo.width = swapchainCreateInfo.width;
-        renderPasscreateInfo.height = swapchainCreateInfo.height;
-
-        PalRenderPass* renderPass = nullptr;
-        result = palCreateRenderPass(
-            device, 
-            &renderPasscreateInfo, 
-            &renderPass);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create render pass: %s", error);
-            return false;
-        }
-
-        // create a command buffer for the image view
+        
+        // create a command buffer
         PalCommandBuffer* cmdBuffer = nullptr;
         result = palCreateCommandBuffer(
             device, 
@@ -320,12 +355,25 @@ bool clearColorTest()
             return false;
         }
 
-        // record commands
-        PalClearValue clearValue = {0};
-        clearValue.color[0] = 0.2f;
-        clearValue.color[1] = 0.2f;
-        clearValue.color[2] = 0.2f;
-        clearValue.color[3] = 1.0f;
+        // create a render pass view
+        PalRenderPassView* renderPassView = nullptr;
+        PalRenderPassViewCreateInfo renderPassViewCreateInfo = {0};
+        renderPassViewCreateInfo.width = swapchainCreateInfo.width;
+        renderPassViewCreateInfo.height = swapchainCreateInfo.height;
+        renderPassViewCreateInfo.imageViewCount = 1;
+        renderPassViewCreateInfo.imageViews = &imageView;
+
+        result = palCreateRenderPassView(
+            device,
+            renderPass,
+            &renderPassViewCreateInfo,
+            &renderPassView);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create render pass view: %s", error);
+            return false;
+        }
 
         // begin command buffer recording
         // the optional render pass is used for secondary command buffer
@@ -337,7 +385,20 @@ bool clearColorTest()
             return false;
         }
 
-        result = palBeginRenderPass(cmdBuffer, renderPass, 1, &clearValue);
+        // record commands
+        PalClearValue clearValue = {0};
+        clearValue.color[0] = 0.2f;
+        clearValue.color[1] = 0.2f;
+        clearValue.color[2] = 0.2f;
+        clearValue.color[3] = 1.0f;
+
+        PalRenderPassBeginInfo renderPassBeginInfo = {0};
+        renderPassBeginInfo.clearValueCount = 1;
+        renderPassBeginInfo.clearValues = &clearValue;
+        renderPassBeginInfo.renderPass = renderPass;
+        renderPassBeginInfo.view = renderPassView;
+
+        result = palBeginRenderPass(cmdBuffer, &renderPassBeginInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin render pass: %s", error);
@@ -360,7 +421,7 @@ bool clearColorTest()
         }
         
         // cache everything so we can reference and destroy later
-        renderPasses[i] = renderPass;
+        renderPassViews[i] = renderPassView;
         cmdBuffers[i] = cmdBuffer;
         imageViews[i] = imageView;
     }
@@ -439,24 +500,22 @@ bool clearColorTest()
 
     // cleanup
     for (int i = 0; i < imageCount; i++) {
-        palDestroyRenderPass(renderPasses[i]);
+        palDestroyRenderPassView(renderPassViews[i]);
         palDestroyCommandBuffer(cmdBuffers[i]);
         palDestroyImageView(imageViews[i]);
     }
 
+    palDestroyRenderPass(renderPass);
     palDestroyCommandPool(cmdPool);
     palDestroySwapchain(swapchain); 
     palDestroyQueue(queue);
     palDestroyDevice(device);
-
-    palDestroyWindow(window);
-    palShutdownVideo();
-
     palShutdownGraphics();
 
     palFree(nullptr, imageViews);
     palFree(nullptr, cmdBuffers);
-    palFree(nullptr, renderPasses);
+    palFree(nullptr, renderPassViews);
 
+    shutdownVideo(window, eventDriver);
     return true;
 }

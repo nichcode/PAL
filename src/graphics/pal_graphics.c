@@ -50,7 +50,7 @@ PAL_HANDLE(PalCommandPool)
 PAL_HANDLE(PalCommandBuffer)
 PAL_HANDLE(PalPipeline)
 PAL_HANDLE(PalAccelerationStructure)
-PAL_HANDLE(PalBufferView)
+PAL_HANDLE(PalRenderPassView)
 
 typedef struct {
     Int32 count;
@@ -209,6 +209,8 @@ PalImage* PAL_CALL getVkNextSwapchainImage(
     PalSwapchain* swapchain,
     PalNextImageInfo* info);
 
+PalFormat PAL_CALL getVkSwapchainFormat(PalSwapchain* swapchain);
+
 PalResult PAL_CALL presentVkSwapchain(
     PalSwapchain* swapchain, 
     PalPresentInfo* info);
@@ -226,6 +228,14 @@ PalResult PAL_CALL createVkRenderPass(
     PalRenderPass** outRenderPass);
 
 void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass);
+
+PalResult PAL_CALL createVkRenderPassView(
+    PalDevice* device,
+    PalRenderPass* renderPass,
+    const PalRenderPassViewCreateInfo* info,
+    PalRenderPassView** outRenderPassView);
+
+void PAL_CALL destroyVkRenderPassView(PalRenderPassView* view);
 
 PalResult PAL_CALL createVkFence(
     PalDevice* device,
@@ -279,7 +289,7 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
 PalResult PAL_CALL beginVkCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalRenderPass* renderPass);
+    PalBeginInfo* info);
 
 PalResult PAL_CALL endVkCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -319,9 +329,7 @@ PalResult PAL_CALL buildVkAccelerationStructure(
 
 PalResult PAL_CALL beginRenderPassVk(
     PalCommandBuffer* cmdBuffer,
-    PalRenderPass* renderPass,
-    Int32 clearValueCount,
-    PalClearValue* clearValues);
+    PalRenderPassBeginInfo* info);
 
 PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer);
 
@@ -416,11 +424,14 @@ static PalGraphicsBackend s_VkBackend = {
     .destroySwapchain =  destroyVkSwapchain,
     .getSwapchainImage =  getVkSwapchainImage,
     .getNextSwapchainImage =  getVkNextSwapchainImage,
+    .getSwapchainFormat = getVkSwapchainFormat,
     .presentSwapchain =  presentVkSwapchain,
     .createShader = createVkShader,
     .destroyShader = destroyVkShader,
     .createRenderPass = createVkRenderPass,
     .destroyRenderPass = destroyVkRenderPass,
+    .createRenderPassView = createVkRenderPassView,
+    .destroyRenderPassView = destroyVkRenderPassView,
     .createFence = createVkFence,
     .destroyFence = destroyVkFence,
     .waitFenceTimeout = waitVkFence,
@@ -525,11 +536,14 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroySwapchain                      ||
         !backend->getSwapchainImage                     ||
         !backend->getNextSwapchainImage                 ||
+        !backend->getSwapchainFormat                    ||
         !backend->presentSwapchain                      ||
         !backend->createShader                          ||
         !backend->destroyShader                         ||
         !backend->createRenderPass                      ||
         !backend->destroyRenderPass                     ||
+        !backend->createRenderPassView                  ||
+        !backend->destroyRenderPassView                 ||
         !backend->createFence                           ||
         !backend->destroyFence                          ||
         !backend->waitFenceTimeout                      ||
@@ -1193,6 +1207,14 @@ PalImage* PAL_CALL palGetNextSwapchainImage(
         info);
 }
 
+PalFormat PAL_CALL palGetSwapchainFormat(PalSwapchain* swapchain)
+{
+    if (!s_Graphics.initialized || !swapchain) {
+        return PAL_FORMAT_UNDEFINED;
+    }
+    return swapchain->backend->getSwapchainFormat(swapchain);
+}
+
 PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
     PalPresentInfo* info)
@@ -1291,6 +1313,48 @@ void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
 {
     if (s_Graphics.initialized && renderPass) {
         renderPass->backend->destroyRenderPass(renderPass);
+    }
+}
+
+PalResult PAL_CALL palCreateRenderPassView(
+    PalDevice* device,
+    PalRenderPass* renderPass,
+    const PalRenderPassViewCreateInfo* info,
+    PalRenderPassView** outRenderPassView)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !renderPass || !info || !outRenderPassView) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (info->imageViewCount == 0 && info->imageViews) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    PalRenderPassView* renderPassView = nullptr;
+    PalResult result;
+    result = device->backend->createRenderPassView(
+        device,
+        renderPass,
+        info,
+        &renderPassView);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    renderPassView->backend = device->backend;
+    *outRenderPassView = renderPassView;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyRenderPassView(PalRenderPassView* view)
+{
+    if (s_Graphics.initialized && view) {
+        view->backend->destroyRenderPassView(view);
     }
 }
 
@@ -1541,7 +1605,7 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalRenderPass* renderPass)
+    PalBeginInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1551,7 +1615,7 @@ PalResult PAL_CALL palBeginCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->beginCommandBuffer(cmdBuffer, renderPass);
+    return cmdBuffer->backend->beginCommandBuffer(cmdBuffer, info);
 }
 
 PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer)
@@ -1691,27 +1755,19 @@ PalResult PAL_CALL palBuildAccelerationStructures(
 
 PalResult PAL_CALL palBeginRenderPass(
     PalCommandBuffer* cmdBuffer,
-    PalRenderPass* renderPass,
-    Int32 clearValueCount,
-    PalClearValue* clearValues)
+    PalRenderPassBeginInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !renderPass) {
+    if (!cmdBuffer || !info) {
         return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (clearValueCount == 0 && clearValues) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
     return cmdBuffer->backend->beginRenderPass(
         cmdBuffer,
-        renderPass,
-        clearValueCount,
-        clearValues);
+        info);
 }
 
 PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)

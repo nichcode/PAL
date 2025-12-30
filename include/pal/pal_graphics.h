@@ -49,14 +49,15 @@ typedef struct PalImage PalImage;
 typedef struct PalImageView PalImageView;
 typedef struct PalShader PalShader;
 typedef struct PalRenderPass PalRenderPass;
-typedef struct PalBuffer PalBuffer;
+typedef struct PalRenderPassView PalRenderPassView;
 
+typedef struct PalBuffer PalBuffer;
 typedef struct PalFence PalFence;
 typedef struct PalSemaphore PalSemaphore;
 typedef struct PalCommandPool PalCommandPool;
 typedef struct PalCommandBuffer PalCommandBuffer;
-typedef struct PalPipeline PalPipeline;
 
+typedef struct PalPipeline PalPipeline;
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 typedef enum {
@@ -309,8 +310,9 @@ typedef enum {
 typedef enum {
     PAL_ATTACHMENT_TYPE_COLOR,
     PAL_ATTACHMENT_TYPE_DEPTH,
-    PAL_ATTACHMENT_TYPE_STENCIL,
-    PAL_ATTACHMENT_TYPE_DEPTH_STENCIL,
+    PAL_ATTACHMENT_TYPE_COLOR_RESOLVE,
+    PAL_ATTACHMENT_TYPE_DEPTH_RESOLVE,
+    PAL_ATTACHMENT_TYPE_PRESENT,
     PAL_ATTACHMENT_TYPE_FRAGMENT_SHADING_RATE
 } PalAttachmentType;
 
@@ -623,6 +625,8 @@ typedef struct {
 
 typedef struct {
     PalAttachmentType type;
+    PalFormat format;
+    PalSampleCount sampleCount;
     PalLoadOp loadOp;
     PalStoreOp storeOp;
     PalLoadOp stencilLoadOp;
@@ -631,8 +635,6 @@ typedef struct {
     PalResolveMode stencilResolveMode;
     Uint32 texelWidth;
     Uint32 texelHeight;
-    PalImageView* target;
-    PalImageView* resolveTarget;
 } PalAttachmentDesc;
 
 typedef struct {
@@ -668,6 +670,18 @@ typedef struct {
     PalImage* image;
     PalSemaphore* waitSemaphore;
 } PalPresentInfo;
+
+typedef struct {
+    PalRenderPass* renderPass;
+    PalRenderPassView* view;
+} PalBeginInfo;
+
+typedef struct {
+    Int32 clearValueCount;
+    PalRenderPass* renderPass;
+    PalRenderPassView* view;
+    PalClearValue* clearValues;
+} PalRenderPassBeginInfo;
 
 typedef struct {
     PalVertexType type;
@@ -811,18 +825,23 @@ typedef struct {
 } PalSwapchainCreateInfo;
 
 typedef struct {
-    PalShaderStage type;
+    PalShaderStage stage;
     const void* bytecode;
     Uint64 bytecodeSize;
 } PalShaderCreateInfo;
 
 typedef struct {
-    Uint32 width;
-    Uint32 height;
-    Uint32 multiViewCount;;
+    Uint32 multiViewCount;
     Uint32 attachmentCount;
     PalAttachmentDesc* attachments;
 } PalRenderPassCreateInfo;
+
+typedef struct {
+    Uint32 imageViewCount;
+    Uint32 width;
+    Uint32 height;
+    PalImageView** imageViews;
+} PalRenderPassViewCreateInfo;
 
 typedef struct {
     bool transient;
@@ -984,6 +1003,8 @@ typedef struct {
         PalSwapchain* swapchain,
         PalNextImageInfo* info);
 
+    PalFormat PAL_CALL (*getSwapchainFormat)(PalSwapchain* swapchain);
+
     PalResult PAL_CALL (*presentSwapchain)(
         PalSwapchain* swapchain,
         PalPresentInfo* info);
@@ -1001,6 +1022,14 @@ typedef struct {
         PalRenderPass** outRenderPass);
 
     void PAL_CALL (*destroyRenderPass)(PalRenderPass* renderPass);
+
+    PalResult PAL_CALL (*createRenderPassView)(
+        PalDevice* device,
+        PalRenderPass* renderPass,
+        const PalRenderPassViewCreateInfo* info,
+        PalRenderPassView** outRenderPassView);
+
+    void PAL_CALL (*destroyRenderPassView)(PalRenderPassView* renderPassView);
 
     PalResult PAL_CALL (*createFence)(
         PalDevice* device,
@@ -1054,7 +1083,7 @@ typedef struct {
 
     PalResult PAL_CALL (*beginCommandBuffer)(
         PalCommandBuffer* cmdBuffer, 
-        PalRenderPass* renderPass);
+        PalBeginInfo* info);
 
     PalResult PAL_CALL (*endCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
@@ -1094,9 +1123,7 @@ typedef struct {
 
     PalResult PAL_CALL (*beginRenderPass)(
         PalCommandBuffer* cmdBuffer,
-        PalRenderPass* renderPass,
-        Int32 clearValuecount,
-        PalClearValue* clearValues);
+        PalRenderPassBeginInfo* info);
 
     PalResult PAL_CALL (*endRenderPass)(PalCommandBuffer* cmdBuffer);
 
@@ -1294,6 +1321,8 @@ PAL_API PalImage* PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
     PalNextImageInfo* info);
 
+PAL_API PalFormat PAL_CALL palGetSwapchainFormat(PalSwapchain* swapchain);
+
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
     PalPresentInfo* info);
@@ -1311,6 +1340,14 @@ PAL_API PalResult PAL_CALL palCreateRenderPass(
     PalRenderPass** outRenderPass);
 
 PAL_API void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass);
+
+PAL_API PalResult PAL_CALL palCreateRenderPassView(
+    PalDevice* device,
+    PalRenderPass* renderPass,
+    const PalRenderPassViewCreateInfo* info,
+    PalRenderPassView** outRenderPassView);
+
+PAL_API void PAL_CALL palDestroyRenderPassView(PalRenderPassView* view);
 
 PAL_API PalResult PAL_CALL palCreateCommandPool(
     PalDevice* device,
@@ -1364,7 +1401,7 @@ PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalRenderPass* renderPass);
+    PalBeginInfo* info);
 
 PAL_API PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -1404,9 +1441,7 @@ PAL_API PalResult PAL_CALL palBuildAccelerationStructure(
 
 PAL_API PalResult PAL_CALL palBeginRenderPass(
     PalCommandBuffer* cmdBuffer,
-    PalRenderPass* renderPass,
-    Int32 clearValueCount,
-    PalClearValue* clearValues);
+    PalRenderPassBeginInfo* info);
 
 PAL_API PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer);
 
