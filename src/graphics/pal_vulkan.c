@@ -263,6 +263,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    Uint32 patchControlPoints;
     Device* device;
     VkShaderModule handle;
     VkPipelineShaderStageCreateInfo info;
@@ -2125,6 +2126,10 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->maxImageHeight = props.limits.maxImageDimension2D;
     caps->maxImageDepth = props.limits.maxImageDimension3D;
     caps->maxImageArrayLayers = props.limits.maxImageArrayLayers;
+
+    caps->maxRenderPassViewWidth = props.limits.maxFramebufferWidth;
+    caps->maxRenderPassViewHeight = props.limits.maxFramebufferHeight;
+    caps->maxRenderPassViewArrayLayers = props.limits.maxFramebufferLayers;
 
     PalSampleCount tmp = PAL_SAMPLE_COUNT_1;
     tmp = vkSamplesToSamples(props.limits.framebufferColorSampleCounts);
@@ -4293,6 +4298,7 @@ PalResult PAL_CALL createVkShader(
     VkResult result;
     Shader* shader = nullptr;
     VkShaderStageFlags stage = 0;
+    Uint32 patchControlPoints = 0;
     Device* vkDevice = (Device*)device;
 
     if (info->stage == PAL_SHADER_STAGE_VERTEX) {
@@ -4312,6 +4318,7 @@ PalResult PAL_CALL createVkShader(
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        patchControlPoints = info->patchControlPoints;
 
     } else if (info->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
@@ -4354,6 +4361,7 @@ PalResult PAL_CALL createVkShader(
     }
 
     shader->device = vkDevice;
+    shader->patchControlPoints = patchControlPoints;
     shader->info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shader->info.module = shader->handle;
     shader->info.pName = "main";
@@ -5990,6 +5998,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     PalPipeline** outPipeline)
 {
     VkResult result;
+    Uint32 patchControlPoints = 0;
     Pipeline* pipeline = nullptr;
     Device* vkDevice = (Device*)device;
     RenderPass* renderPass = (RenderPass*)info->renderPass;
@@ -6021,6 +6030,9 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     VkPipelineColorBlendStateCreateInfo CBS = {0};
     CBS.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
+    VkPipelineTessellationStateCreateInfo TS = {0};
+    TS.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+
     VkGraphicsPipelineCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -6033,6 +6045,11 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
         shaderStages[i] = tmp->info;
+
+        if (tmp->patchControlPoints) {
+            TS.patchControlPoints = tmp->patchControlPoints;
+            createInfo.pTessellationState = &TS;
+        }
     }
 
     // Vertex input state

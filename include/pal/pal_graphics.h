@@ -536,6 +536,9 @@ typedef struct {
     Uint32 maxImageDepth;
     Uint32 maxImageArrayLayers;
     Uint32 maxImageMipLevels;
+    Uint32 maxRenderPassViewWidth;
+    Uint32 maxRenderPassViewHeight;
+    Uint32 maxRenderPassViewArrayLayers;
     PalSampleCount maxColorSampleCount;
     PalSampleCount maxDepthSampleCount;
     Uint32 maxColorAttachments;
@@ -825,6 +828,7 @@ typedef struct {
 } PalSwapchainCreateInfo;
 
 typedef struct {
+    Uint32 patchControlPoints;
     PalShaderStage stage;
     const void* bytecode;
     Uint64 bytecodeSize;
@@ -868,7 +872,7 @@ typedef struct {
     Uint32 blendAttachmentCount;
     Uint32 shaderCount;
     PalRenderPass* renderPass;
-    const PalShader** shaders;
+    PalShader** shaders;
     PalVertexLayout* vertexLayouts;
     PalBlendAttachment* blendAttachments;
     PalRasterizerState rasterizerState;

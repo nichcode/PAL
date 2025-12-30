@@ -58,5 +58,6 @@ bool graphicsTest();
 
 // graphics and video
 bool clearColorTest();
+bool triangleTest();
 
 #endif // _TESTS_H
