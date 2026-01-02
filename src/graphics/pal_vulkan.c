@@ -158,6 +158,8 @@ typedef struct {
     PFN_vkMapMemory mapMemory;
     PFN_vkUnmapMemory unmapMemory;
 
+    PFN_vkCreatePipelineLayout createPipelineLayout;
+    PFN_vkDestroyPipelineLayout destroyPipelineLayout;
     PFN_vkCreateGraphicsPipelines createGraphicsPipeline;
     PFN_vkDestroyPipeline destroyPipeline;
 
@@ -340,6 +342,13 @@ typedef struct {
     Device* device;
     VkAccelerationStructureKHR handle;
 } AccelerationStructure;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Device* device;
+    VkPipelineLayout handle;
+} PipelineLayout;
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -1451,6 +1460,29 @@ static VkBlendFactor blendFactorToVk(PalBlendFactor op)
     return VK_BLEND_FACTOR_ZERO;
 }
 
+static VkFragmentShadingRateCombinerOpKHR combinerOpsToVk(
+    PalFragmentShadingRateCombinerOp op)
+{
+    switch (op) {
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP:
+            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE:
+            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN:
+            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN_KHR;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX:
+            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_KHR;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL:
+            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
+    }
+
+    return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+}
+
 static void* vkAlloc(
     void* pUserData,
     size_t size,
@@ -1742,6 +1774,14 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.bindBufferMemory = (PFN_vkBindBufferMemory)dlsym(
         s_Vk.handle, 
         "vkBindBufferMemory");
+
+    s_Vk.createPipelineLayout = (PFN_vkCreatePipelineLayout)dlsym(
+        s_Vk.handle, 
+        "vkCreatePipelineLayout");
+
+    s_Vk.destroyPipelineLayout = (PFN_vkDestroyPipelineLayout)dlsym(
+        s_Vk.handle, 
+        "vkDestroyPipelineLayout");
 
     s_Vk.createGraphicsPipeline = (PFN_vkCreateGraphicsPipelines)dlsym(
         s_Vk.handle, 
@@ -2629,8 +2669,6 @@ PalResult PAL_CALL createVkDevice(
     const char* extensions[16] = {0};
 
     // clang-format off
-
-    const void* start = nullptr;
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline = {0};
     timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
 
@@ -2645,8 +2683,8 @@ PalResult PAL_CALL createVkDevice(
     ray.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
     acc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR vrs = {0};
-    vrs.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr = {0};
+    fsr.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
 
     VkPhysicalDeviceDescriptorIndexingFeatures descIndex = {0};
     descIndex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
@@ -2663,6 +2701,9 @@ PalResult PAL_CALL createVkDevice(
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferAddress = {0};
     bufferAddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 
+    VkDeviceCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
     // clang-format on
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
@@ -2678,19 +2719,17 @@ PalResult PAL_CALL createVkDevice(
         }
 
         timeline.timelineSemaphore = true;
-        start = &timeline;
+        createInfo.pNext = &timeline;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_shader_float16_int8";
         }
-
         shader16.shaderFloat16 = true;
-        if (timeline.timelineSemaphore) {
-            timeline.pNext = &shader16;
-        }
-        start = &shader16;
+
+        shader16.pNext = &createInfo.pNext;
+        createInfo.pNext = &shader16;
     }
 
     if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
@@ -2698,18 +2737,12 @@ PalResult PAL_CALL createVkDevice(
             extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
             extensions[extCount++] = "VK_KHR_acceleration_structure";
         }
-
         ray.rayTracingPipeline = true;
         acc.accelerationStructure = true;
-        if (shader16.shaderFloat16) {
-            shader16.pNext = &ray;
 
-        } else if (timeline.timelineSemaphore) {
-            // no shader16, check timeline
-            timeline.pNext = &ray;
-        }
-        ray.pNext = &acc;
-        start = &ray;
+        ray.pNext = &createInfo.pNext;
+        acc.pNext = ray.pNext;
+        createInfo.pNext = &acc;
     }
 
     if ((features & PAL_ADAPTER_FEATURE_MESH_SHADER) || 
@@ -2723,100 +2756,50 @@ PalResult PAL_CALL createVkDevice(
                 extensions[extCount++] = "VK_KHR_draw_indirect_count";
             }
         }
-
         mesh.meshShader = true;
         mesh.taskShader = true;
-        if (acc.accelerationStructure) {
-            acc.pNext = &mesh;
 
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &mesh;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &mesh;
-        }
-        start = &mesh;
+        mesh.pNext = &createInfo.pNext;
+        createInfo.pNext = &mesh;
     }
 
     if ((features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) || 
        (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT)) {
         if (props.apiVersion < VK_API_VERSION_1_3) {
             extensions[extCount++] = "VK_KHR_fragment_shading_rate";
-            vrs.pipelineFragmentShadingRate = true;
+            fsr.pipelineFragmentShadingRate = true;
     
             // fragment shading rate attachment needs this
             if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
                 if (props.apiVersion < VK_API_VERSION_1_2) {
                     extensions[extCount++] = "VK_KHR_create_renderpass2";
                 }
-                vrs.attachmentFragmentShadingRate = true;
+                fsr.attachmentFragmentShadingRate = true;
             }
         }
 
-        if (mesh.meshShader) {
-            mesh.pNext = &vrs;
-
-        } else if (acc.accelerationStructure) {
-            acc.pNext = &vrs;
-
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &vrs;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &vrs;
-        }
-        start = &vrs;
+        fsr.pNext = &createInfo.pNext;
+        createInfo.pNext = &fsr;
     }
 
     if (features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_EXT_descriptor_indexing";
         }
-
         descIndex.shaderSampledImageArrayNonUniformIndexing = true;
-        if (vrs.pipelineFragmentShadingRate) {
-            vrs.pNext = &descIndex;
 
-        } else if (mesh.meshShader) {
-            mesh.pNext = &descIndex;
-
-        } else if (acc.accelerationStructure) {
-            acc.pNext = &descIndex;
-
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &descIndex;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &descIndex;
-        }
-        start = &descIndex;
+        descIndex.pNext = &createInfo.pNext;
+        createInfo.pNext = &descIndex;
     }
 
     if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_multiview";
         }
-
         multiView.multiview = true;
-        if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
-            descIndex.pNext = &multiView;
 
-        } else if (vrs.pipelineFragmentShadingRate) {
-            vrs.pNext = &multiView;
-
-        } else if (mesh.meshShader) {
-            mesh.pNext = &multiView;
-
-        } else if (acc.accelerationStructure) {
-            acc.pNext = &multiView;
-
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &multiView;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &multiView;
-        }
-        start = &multiView;
+        multiView.pNext = &createInfo.pNext;
+        createInfo.pNext = &multiView;
     }
 
     if (features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE || 
@@ -2825,30 +2808,10 @@ PalResult PAL_CALL createVkDevice(
         if (props.apiVersion < VK_API_VERSION_1_3) {
             extensions[extCount++] = "VK_EXT_extended_dynamic_state";
         }
-
         dynamicState.extendedDynamicState = true;
-        if (multiView.multiview) {
-            multiView.pNext = &dynamicState;
 
-        } else if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
-            descIndex.pNext = &dynamicState;
-
-        } else if (vrs.pipelineFragmentShadingRate) {
-            vrs.pNext = &dynamicState;
-
-        } else if (mesh.meshShader) {
-            mesh.pNext = &dynamicState;
-
-        } else if (acc.accelerationStructure) {
-            acc.pNext = &dynamicState;
-
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &dynamicState;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &dynamicState;
-        }
-        start = &dynamicState;
+        dynamicState.pNext = &createInfo.pNext;
+        createInfo.pNext = &dynamicState;
     }
 
     if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE || 
@@ -2857,31 +2820,8 @@ PalResult PAL_CALL createVkDevice(
         extensions[extCount++] = "VK_EXT_extended_dynamic_state2";
         dynamicState2.extendedDynamicState2 = true;
 
-        if (dynamicState.extendedDynamicState) {
-            dynamicState.pNext = &dynamicState2;
-            
-        } else if (multiView.multiview) {
-            multiView.pNext = &dynamicState2;
-
-        } else if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
-            descIndex.pNext = &dynamicState2;
-
-        } else if (vrs.pipelineFragmentShadingRate) {
-            vrs.pNext = &dynamicState2;
-
-        } else if (mesh.meshShader) {
-            mesh.pNext = &dynamicState2;
-
-        } else if (acc.accelerationStructure) {
-            acc.pNext = &dynamicState2;
-
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &dynamicState2;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &dynamicState2;
-        }
-        start = &dynamicState2;
+        dynamicState2.pNext = &createInfo.pNext;
+        createInfo.pNext = &dynamicState2;
     }
 
     if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
@@ -2889,45 +2829,16 @@ PalResult PAL_CALL createVkDevice(
             extensions[extCount++] = "VK_KHR_buffer_device_address";
         }
         bufferAddress.bufferDeviceAddress = true;
-        
-        if (dynamicState2.extendedDynamicState2) {
-            dynamicState2.pNext = &bufferAddress;
 
-        } else if (dynamicState.extendedDynamicState) {
-            dynamicState.pNext = &dynamicState2;
-            
-        } else if (multiView.multiview) {
-            multiView.pNext = &dynamicState2;
-
-        } else if (descIndex.shaderSampledImageArrayNonUniformIndexing) {
-            descIndex.pNext = &dynamicState2;
-
-        } else if (vrs.pipelineFragmentShadingRate) {
-            vrs.pNext = &dynamicState2;
-
-        } else if (mesh.meshShader) {
-            mesh.pNext = &dynamicState2;
-
-        } else if (acc.accelerationStructure) {
-            acc.pNext = &dynamicState2;
-
-        } else if (shader16.shaderFloat16) {
-            shader16.pNext = &dynamicState2;
-
-        } else if (timeline.timelineSemaphore) {
-            timeline.pNext = &dynamicState2;
-        }
-        start = &dynamicState2;
+        bufferAddress.pNext = &createInfo.pNext;
+        createInfo.pNext = &bufferAddress;
     }
 
-    VkDeviceCreateInfo createInfo = {0};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pEnabledFeatures = &coreFeatures;
     createInfo.enabledExtensionCount = extCount;
     createInfo.ppEnabledExtensionNames = extensions;
     createInfo.pQueueCreateInfos = queueCreateInfos;
     createInfo.queueCreateInfoCount = count;
-    createInfo.pNext = start;
 
     ret = s_Vk.createDevice(
         phyDevice, 
@@ -4343,6 +4254,7 @@ PalResult PAL_CALL createVkShader(
     if (!shader) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
+    memset(shader, 0, sizeof(Shader));
 
     VkShaderModuleCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -4432,7 +4344,7 @@ PalResult PAL_CALL createVkRenderPass(
 
             rDesc->format = palFormatToVk(desc->format);
             rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            rDesc->samples = vkSamplesToSamples(desc->sampleCount);
+            rDesc->samples = samplesToVk(desc->sampleCount);
             rDesc->flags = 0;
 
             // load op
@@ -4456,20 +4368,23 @@ PalResult PAL_CALL createVkRenderPass(
 
             VkAttachmentReference2KHR* ref = nullptr;
             VkImageAspectFlags aspectMask = 0;
-            VkImageLayout layout = 0;
+            VkImageLayout layout, refLayout = 0;
             if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
                 ref = &colorRefs[colorRefCount++];
                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_COLOR_RESOLVE) {
                 ref = &resolveRefs[resolveRefCount++];
                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH) {
                 ref = &depthRef;
                 layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
                 hasDepth = true;
@@ -4494,11 +4409,13 @@ PalResult PAL_CALL createVkRenderPass(
             } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH_RESOLVE) {
                 ref = &resolveRefs[resolveRefCount++];
                 layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_PRESENT) {
                 ref = &colorRefs[colorRefCount++];
                 layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                
             } else {
@@ -4510,13 +4427,14 @@ PalResult PAL_CALL createVkRenderPass(
 
                 ref = &fsrRef;
                 layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+                refLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
                 aspectMask = 0;
                 fsrAttachment.pFragmentShadingRateAttachment = &fsrRef;
                 hasFsr = true;
             }
 
             ref->attachment = i;
-            ref->layout = layout;
+            ref->layout = refLayout;
             ref->aspectMask = aspectMask;
             ref->pNext = 0;
             ref->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
@@ -4569,7 +4487,7 @@ PalResult PAL_CALL createVkRenderPass(
             rDesc->flags = 0;
             rDesc->format = palFormatToVk(desc->format);
             rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            rDesc->samples = vkSamplesToSamples(desc->sampleCount);
+            rDesc->samples = samplesToVk(desc->sampleCount);
             rDesc->flags = 0;
 
             // load op
@@ -4591,22 +4509,29 @@ PalResult PAL_CALL createVkRenderPass(
                 rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             }
 
+            // stencil op. set to default
+            rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
             VkAttachmentReference* ref = nullptr;
             VkImageAspectFlags aspectMask = 0;
-            VkImageLayout layout = 0;
+            VkImageLayout layout, refLayout = 0;
             if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
                 ref = &colorRefs[colorRefCount++];
                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_COLOR_RESOLVE) {
                 ref = &resolveRefs[resolveRefCount++];
                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH) {
                 ref = &depthRef;
                 layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
                 hasDepth = true;
@@ -4631,16 +4556,18 @@ PalResult PAL_CALL createVkRenderPass(
             } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH_RESOLVE) {
                 ref = &resolveRefs[resolveRefCount++];
                 layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
             } else {
                 ref = &colorRefs[colorRefCount++];
                 layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  
             }
 
             ref->attachment = i;
-            ref->layout = layout;
+            ref->layout = refLayout;
             rDesc->finalLayout = layout;
         }
 
@@ -5992,6 +5919,49 @@ void PAL_CALL unmapVkBuffer(
 // Pipeline
 // ==================================================
 
+PalResult PAL_CALL createVkPipelineLayout(
+    PalDevice* device,
+    const PalPipelineLayoutCreateInfo* info,
+    PalPipelineLayout** outLayout)
+{
+    VkResult result;
+    Device* vkDevice = (Device*)device;
+    PipelineLayout* layout = nullptr;
+
+    layout = palAllocate(s_Vk.allocator, sizeof(PipelineLayout), 0);
+    if (!layout) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkPipelineLayoutCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+    result = s_Vk.createPipelineLayout(
+        vkDevice->handle, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &layout->handle);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+
+    layout->device = vkDevice;
+    *outLayout = (PalPipelineLayout*)layout;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkPipelineLayout(PalPipelineLayout* layout)
+{
+    PipelineLayout* pipelineLayout = (PipelineLayout*)layout;
+    s_Vk.destroyPipelineLayout(
+        pipelineLayout->device->handle,
+        pipelineLayout->handle, 
+        &s_Vk.vkAllocator);
+
+    palFree(s_Vk.allocator, layout);
+}
+
 PalResult PAL_CALL createVkGraphicsPipeline(
     PalDevice* device,
     const PalGraphicsPipelineCreateInfo* info,
@@ -6002,6 +5972,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     Pipeline* pipeline = nullptr;
     Device* vkDevice = (Device*)device;
     RenderPass* renderPass = (RenderPass*)info->renderPass;
+    PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
 
     VkPipelineShaderStageCreateInfo shaderStages[7]; // PAL supports 7 types
     VkDynamicState dynamicStates[16];
@@ -6010,7 +5981,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     VkPipelineColorBlendAttachmentState* blendattachments = nullptr;
 
     VkPipelineVertexInputStateCreateInfo VI = {0};
-    VI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    VI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     VkPipelineInputAssemblyStateCreateInfo IA = {0};
     IA.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -6033,6 +6004,13 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     VkPipelineTessellationStateCreateInfo TS = {0};
     TS.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 
+    VkPipelineViewportStateCreateInfo VS = {0};
+    VS.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+
+    VkPipelineFragmentShadingRateStateCreateInfoKHR FSRS = {0};
+    FSRS.sType = 
+        VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
+
     VkGraphicsPipelineCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -6042,6 +6020,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     }
 
     // shaders
+    memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo));
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
         shaderStages[i] = tmp->info;
@@ -6049,6 +6028,11 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         if (tmp->patchControlPoints) {
             TS.patchControlPoints = tmp->patchControlPoints;
             createInfo.pTessellationState = &TS;
+
+            if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
+                palFree(s_Vk.allocator, pipeline);
+                return PAL_RESULT_INVALID_OPERATION;
+            }
         }
     }
 
@@ -6078,6 +6062,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     for (int i = 0; i < info->vertexLayoutCount; i++) {
         PalVertexLayout* layout = &info->vertexLayouts[i];
         VkVertexInputBindingDescription* bindingDesc = &bindingDescs[i];
+
         bindingDesc->binding = layout->binding;
         if (layout->type == PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE) {
             bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
@@ -6090,15 +6075,15 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         Uint32 offset = 0;
         for (int j = 0; j < layout->vertexCount; j++) {
             PalVertexAttribute* vertexAttrib = &layout->vertices[j];
-            VkVertexInputAttributeDescription* attrib = &attribDescs[j];
+            VkVertexInputAttributeDescription* attribDesc = &attribDescs[j];
 
-            attrib->format = vertexTypeToVkFormat(vertexAttrib->type);
-            attrib->binding = bindingDesc->binding;
-            attrib->location = attrib->location;
+            attribDesc->format = vertexTypeToVkFormat(vertexAttrib->type);
+            attribDesc->binding = bindingDesc->binding;
+            attribDesc->location = vertexAttrib->location;
 
             // build offsets and stride
             Uint32 size = getVertexTypeSize(vertexAttrib->type);
-            attrib->offset = offset;
+            attribDesc->offset = offset;
             offset += size;
             bindingDesc->stride += size;
         }
@@ -6139,6 +6124,9 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         }
     }
 
+    IA.topology = topology;
+    IA.primitiveRestartEnable = VK_FALSE;
+
     // Dynamic states
     Uint32 dynCount = 0;
     dynamicStates[dynCount++] = VK_DYNAMIC_STATE_VIEWPORT;
@@ -6172,11 +6160,16 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_STENCIL_OP_EXT;
     }
 
+    if (info->fragmentShadingRateEnabled) {
+        dynamicStates[dynCount++] = VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR;
+    }
+
     DS.dynamicStateCount = dynCount;
     DS.pDynamicStates = dynamicStates;
     createInfo.pDynamicState = &DS;
 
     // Rasterizer state
+    RS.lineWidth = 1.0f;
     if (info->rasterizerState.cullMode == PAL_CULL_MODE_NONE) {
         RS.cullMode = VK_CULL_MODE_NONE;
     } else if (info->rasterizerState.cullMode == PAL_CULL_MODE_BACK) {
@@ -6186,15 +6179,15 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     }
 
     if (info->rasterizerState.polygonMode == PAL_POLYGON_MODE_FILL) {
-        RS.cullMode = VK_POLYGON_MODE_FILL;
+        RS.polygonMode = VK_POLYGON_MODE_FILL;
     } else {
-        RS.cullMode = VK_POLYGON_MODE_LINE;
+        RS.polygonMode = VK_POLYGON_MODE_LINE;
     }
 
     if (info->rasterizerState.frontFace == PAL_FRONT_FACE_CLOCKWISE) {
-        RS.cullMode = VK_FRONT_FACE_CLOCKWISE;
+        RS.frontFace = VK_FRONT_FACE_CLOCKWISE;
     } else {
-        RS.cullMode = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        RS.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     }
 
     RS.depthBiasEnable = info->rasterizerState.enableDepthBias;
@@ -6287,8 +6280,12 @@ PalResult PAL_CALL createVkGraphicsPipeline(
             }
         }
     }
+    CBS.pAttachments = blendattachments;
 
-    createInfo.layout = nullptr;
+    // viewport state
+    VS.viewportCount = 1;
+    VS.scissorCount = 1;
+
     createInfo.stageCount = info->shaderCount;
     createInfo.pStages = shaderStages;
     createInfo.pVertexInputState = &VI;
@@ -6298,9 +6295,28 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     createInfo.pRasterizationState = &RS;
     createInfo.pMultisampleState = &MS;
     createInfo.pColorBlendState = &CBS;
+    createInfo.pViewportState = &VS;
     createInfo.renderPass = renderPass->handle;
+    createInfo.layout = layout->handle;
 
-    // TODO: Fragment shading rate
+    if (info->fragmentShadingRateEnabled) {
+        FSRS.combinerOps[0] = 
+            combinerOpsToVk(info->fragmentShadingRateState.combinerOps[0]);
+        FSRS.combinerOps[1] = 
+            combinerOpsToVk(info->fragmentShadingRateState.combinerOps[1]);
+        FSRS.fragmentSize = 
+            getShadingRateSize(info->fragmentShadingRateState.rate);
+
+        createInfo.pNext = &FSRS;
+    }
+
+    result = s_Vk.createGraphicsPipeline(
+        vkDevice->handle, 
+        0, 
+        1, 
+        &createInfo, 
+        &s_Vk.vkAllocator, 
+        &pipeline->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);

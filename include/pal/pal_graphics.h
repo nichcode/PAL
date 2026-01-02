@@ -58,6 +58,7 @@ typedef struct PalCommandPool PalCommandPool;
 typedef struct PalCommandBuffer PalCommandBuffer;
 
 typedef struct PalPipeline PalPipeline;
+typedef struct PalPipelineLayout PalPipelineLayout;
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 typedef enum {
@@ -331,7 +332,8 @@ typedef enum {
     PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
     PAL_PRIMITIVE_TOPOLOGY_LINE_LIST,
     PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-    PAL_PRIMITIVE_TOPOLOGY_POINT_LIST
+    PAL_PRIMITIVE_TOPOLOGY_POINT_LIST,
+    PAL_PRIMITIVE_TOPOLOGY_PATCH
 } PalPrimitiveTopology;
 
 typedef enum {
@@ -830,7 +832,7 @@ typedef struct {
 typedef struct {
     Uint32 patchControlPoints;
     PalShaderStage stage;
-    const void* bytecode;
+    void* bytecode;
     Uint64 bytecodeSize;
 } PalShaderCreateInfo;
 
@@ -866,12 +868,17 @@ typedef struct {
 } PalAccelerationStructureCreateInfo;
 
 typedef struct {
+    bool unused;
+} PalPipelineLayoutCreateInfo;
+
+typedef struct {
     bool fragmentShadingRateEnabled;
     PalPrimitiveTopology topology;
     Uint32 vertexLayoutCount;
     Uint32 blendAttachmentCount;
     Uint32 shaderCount;
     PalRenderPass* renderPass;
+    PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
     PalVertexLayout* vertexLayouts;
     PalBlendAttachment* blendAttachments;
@@ -1182,6 +1189,13 @@ typedef struct {
     void PAL_CALL (*unmapBuffer)(
         PalBuffer* buffer,
         PalMemory* memory);
+
+    PalResult PAL_CALL (*createPipelineLayout)(
+        PalDevice* device,
+        const PalPipelineLayoutCreateInfo* info,
+        PalPipelineLayout** outLayout);
+
+    void PAL_CALL (*destroyPipelineLayout)(PalPipelineLayout* layout);
 
     PalResult PAL_CALL (*createGraphicsPipeline)(
         PalDevice* device,
@@ -1500,6 +1514,13 @@ PAL_API PalResult PAL_CALL palMapBuffer(
 PAL_API void PAL_CALL palUnmapBuffer(
     PalBuffer* buffer,
     PalMemory* memory);
+
+PAL_API PalResult PAL_CALL palCreatePipelineLayout(
+    PalDevice* device,
+    const PalPipelineLayoutCreateInfo* info,
+    PalPipelineLayout** outLayout);
+
+PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
 
 PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalDevice* device,

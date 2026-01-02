@@ -5,25 +5,23 @@
 
 #include <stdio.h>
 
-static bool readFile(const char* filename, char* buffer, Uint32* size)
+static bool readFile(const char* filename, void* buffer, Uint64* size)
 {
     FILE* file = fopen(filename, "rb");
     if (!file) {
         return false;
     }
 
-    if (!buffer) {
-        fseek(file, 0, SEEK_END);
-        Uint64 tmpSize = ftell(file);
-        fclose(file);
-
-        *size = tmpSize;
-        return true;
-    }
-
+    fseek(file, 0, SEEK_END);
+    Uint64 tmpSize = ftell(file);
     fseek(file, 0, SEEK_SET);
-    fread(buffer, 1, (Uint64)size, file);
+
+    if (buffer) {
+        fread(buffer, 1, (size_t)size, file);
+    }
+    
     fclose(file);
+    *size = tmpSize;
     return true;
 }
 
@@ -142,6 +140,7 @@ bool triangleTest()
 
     PalShader* vertexShader = nullptr;
     PalShader* fragmentShader = nullptr;
+    PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
 
     // initialize the graphics system 
@@ -339,12 +338,12 @@ bool triangleTest()
     }
 
     // create shaders
-    Uint32 vertexShaderSize = 0;
-    Uint32 fragmentShaderSize = 0;
-    char* vertexShaderBytecode = nullptr;
-    char* fragmentShaderBytecode = nullptr;
+    Uint64 vertexShaderSize = 0;
+    Uint64 fragmentShaderSize = 0;
+    void* vertexShaderBytecode = nullptr;
+    void* fragmentShaderBytecode = nullptr;
     readFile("shaders/triangle.vertex.spv", nullptr, &vertexShaderSize);
-    readFile("shaders/triangle.fragment.spv", nullptr, &vertexShaderSize);
+    readFile("shaders/triangle.fragment.spv", nullptr, &fragmentShaderSize);
 
     if (!vertexShaderSize && !fragmentShaderSize) {
         palLog(nullptr, "Failed to find shader files");
@@ -360,16 +359,16 @@ bool triangleTest()
 
     readFile(
         "shaders/triangle.vertex.spv", 
-        vertexShaderBytecode, 
+        vertexShaderBytecode,
         &vertexShaderSize);
 
     readFile(
         "shaders/triangle.fragment.spv", 
         fragmentShaderBytecode, 
-        &vertexShaderSize);
+        &fragmentShaderSize);
 
     PalShaderCreateInfo shaderCreateInfo = {0};
-    shaderCreateInfo.bytecode = (const void*)vertexShaderBytecode;
+    shaderCreateInfo.bytecode = vertexShaderBytecode;
     shaderCreateInfo.bytecodeSize = vertexShaderSize;
     shaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
     result = palCreateShader(device, &shaderCreateInfo, &vertexShader);
@@ -379,10 +378,10 @@ bool triangleTest()
         return false;
     }
 
-    shaderCreateInfo.bytecode = (const void*)fragmentShaderBytecode;
+    shaderCreateInfo.bytecode = fragmentShaderBytecode;
     shaderCreateInfo.bytecodeSize = fragmentShaderSize;
     shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
-    result = palCreateShader(device, &shaderCreateInfo, &vertexShader);
+    result = palCreateShader(device, &shaderCreateInfo, &fragmentShader);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fragment shader: %s", error);
@@ -424,8 +423,22 @@ bool triangleTest()
     pipelineCreateInfo.shaders = shaders;
     pipelineCreateInfo.shaderCount = 2;
 
+    // pipeline layput
+    PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
+    result = palCreatePipelineLayout(
+        device, 
+        &pipelineLayoutCreateInfo, 
+        &pipelineLayout);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create pipeline layout: %s", error);
+        return false;
+    }
+
     pipelineCreateInfo.renderPass = renderPass;
-    // result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
+    pipelineCreateInfo.pipelineLayout = pipelineLayout;
+    result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline: %s", error);
@@ -628,6 +641,7 @@ bool triangleTest()
     }
 
     palDestroyPipeline(pipeline);
+    palDestroyPipelineLayout(pipelineLayout);
     palDestroyRenderPass(renderPass);
     palDestroyCommandPool(cmdPool);
     palDestroySwapchain(swapchain); 

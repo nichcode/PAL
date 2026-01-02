@@ -51,6 +51,7 @@ PAL_HANDLE(PalCommandBuffer)
 PAL_HANDLE(PalPipeline)
 PAL_HANDLE(PalAccelerationStructure)
 PAL_HANDLE(PalRenderPassView)
+PAL_HANDLE(PalPipelineLayout)
 
 typedef struct {
     Int32 count;
@@ -385,6 +386,13 @@ void PAL_CALL unmapVkBuffer(
     PalBuffer* buffer,
     PalMemory* memory);
 
+PalResult PAL_CALL createVkPipelineLayout(
+    PalDevice* device,
+    const PalPipelineLayoutCreateInfo* info,
+    PalPipelineLayout** outLayout);
+
+void PAL_CALL destroyVkPipelineLayout(PalPipelineLayout* layout);
+
 PalResult PAL_CALL createVkGraphicsPipeline(
     PalDevice* device,
     const PalGraphicsPipelineCreateInfo* info,
@@ -467,6 +475,8 @@ static PalGraphicsBackend s_VkBackend = {
     .bindBufferMemory = bindVkBufferMemory,
     .mapBuffer = mapVkBuffer,
     .unmapBuffer = unmapVkBuffer,
+    .createPipelineLayout = createVkPipelineLayout,
+    .destroyPipelineLayout = destroyVkPipelineLayout,
     .createGraphicsPipeline = createVkGraphicsPipeline,
     .destroyPipeline = destroyVkPipeline
 };
@@ -579,6 +589,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->bindBufferMemory                      ||
         !backend->mapBuffer                             ||
         !backend->unmapBuffer                           ||
+        !backend->createPipelineLayout                  ||
+        !backend->destroyPipelineLayout                 ||
         !backend->createGraphicsPipeline                ||
         !backend->destroyPipeline) {
         return PAL_RESULT_INVALID_BACKEND;
@@ -2005,6 +2017,42 @@ void PAL_CALL palUnmapBuffer(
 // ==================================================
 // Pipeline
 // ==================================================
+
+PalResult PAL_CALL palCreatePipelineLayout(
+    PalDevice* device,
+    const PalPipelineLayoutCreateInfo* info,
+    PalPipelineLayout** outLayout)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outLayout) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalPipelineLayout* layout = nullptr;
+    result = device->backend->createPipelineLayout(
+        device,
+        info,
+        &layout);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+    
+    layout->backend = device->backend;
+    *outLayout = layout;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout)
+{
+    if (s_Graphics.initialized && layout) {
+        layout->backend->destroyPipelineLayout(layout);
+    }
+}
 
 PalResult PAL_CALL palCreateGraphicsPipeline(
     PalDevice* device,
