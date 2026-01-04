@@ -75,6 +75,7 @@ typedef struct {
 } Adapter;
 
 typedef struct {
+    bool useCache;
     bool hasDebug;
     void* handle;
     Adapter* adapters;
@@ -118,10 +119,6 @@ typedef struct {
     PFN_vkDestroyImage destroyImage;
     PFN_vkCreateShaderModule createShader;
     PFN_vkDestroyShaderModule destroyShader;
-    PFN_vkCreateRenderPass createRenderPass;
-    PFN_vkDestroyRenderPass destroyRenderPass;
-    PFN_vkCreateFramebuffer createFramebuffer;
-    PFN_vkDestroyFramebuffer destroyFramebuffer;
 
     PFN_vkCreateCommandPool createCommandPool;
     PFN_vkDestroyCommandPool destroyCommandPool;
@@ -139,8 +136,6 @@ typedef struct {
     PFN_vkEndCommandBuffer cmdEnd;
     PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
     PFN_vkQueueSubmit queueSubmit;
-    PFN_vkCmdBeginRenderPass cmdBeginRenderPass;
-    PFN_vkCmdEndRenderPass cmdEndRenderPass;
     PFN_vkCmdCopyBuffer cmdCopyBuffer;
     PFN_vkCmdBindPipeline cmdBindPipeline;
     PFN_vkCmdSetViewport cmdSetViewports;
@@ -199,7 +194,6 @@ typedef struct {
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
-    PFN_vkCreateRenderPass2 createRenderPass2;
     PFN_vkGetBufferDeviceAddress getBufferrAddress;
 
     // swapchain
@@ -234,6 +228,10 @@ typedef struct {
     PFN_vkCmdTraceRaysKHR cmdTraceRays;
     PFN_vkCreateRayTracingPipelinesKHR createRayTracingPipeline;
     PFN_vkCmdTraceRaysIndirectKHR cmdTraceRaysIndirect;
+    
+    // dynamic rendering
+    PFN_vkCmdBeginRendering cmdBeginRendering;
+    PFN_vkCmdEndRendering cmdEndRendering;
 } Device;
 
 typedef struct {
@@ -286,23 +284,6 @@ typedef struct {
 
 typedef struct {
     const PalGraphicsBackend* backend;
-    
-    Uint32 attachmentCount;
-    Device* device;
-    VkRenderPass handle;
-} RenderPass;
-
-typedef struct {
-    const PalGraphicsBackend* backend;
-
-    Uint32 width;
-    Uint32 height;
-    Device* device;
-    VkFramebuffer handle;
-} RenderPassView;
-
-typedef struct {
-    const PalGraphicsBackend* backend;
 
     Device* device;
     VkCommandPool handle;
@@ -339,14 +320,6 @@ typedef struct {
     Device* device;
     VkBuffer handle;
 } Buffer;
-
-typedef struct {
-    const PalGraphicsBackend* backend;
-
-    PalBuffer* buffer;
-    Device* device;
-    VkBufferView handle;
-} BufferView;
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -1614,7 +1587,7 @@ static Uint32 getMemoryTypeScore(
 // ==================================================
 
 PalResult PAL_CALL initGraphicsVk(
-    PalGraphicsDebugger* debugger,
+    const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
 {
     s_Vk.libWayland = nullptr;
@@ -1707,22 +1680,6 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.destroyShader = (PFN_vkDestroyShaderModule)dlsym(
         s_Vk.handle, 
         "vkDestroyShaderModule");
-
-    s_Vk.createRenderPass = (PFN_vkCreateRenderPass)dlsym(
-        s_Vk.handle, 
-        "vkCreateRenderPass");
-
-    s_Vk.destroyRenderPass = (PFN_vkDestroyRenderPass)dlsym(
-        s_Vk.handle, 
-        "vkDestroyRenderPass");
-
-    s_Vk.createFramebuffer = (PFN_vkCreateFramebuffer)dlsym(
-        s_Vk.handle, 
-        "vkCreateFramebuffer");
-
-    s_Vk.destroyFramebuffer = (PFN_vkDestroyFramebuffer)dlsym(
-        s_Vk.handle, 
-        "vkDestroyFramebuffer");
 
     s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
         s_Vk.handle, 
@@ -1820,14 +1777,6 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkCmdExecuteCommands");
 
-    s_Vk.cmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)dlsym(
-        s_Vk.handle, 
-        "vkCmdBeginRenderPass");
-
-    s_Vk.cmdEndRenderPass = (PFN_vkCmdEndRenderPass)dlsym(
-        s_Vk.handle, 
-        "vkCmdEndRenderPass");
-
     s_Vk.cmdCopyBuffer = (PFN_vkCmdCopyBuffer)dlsym(
         s_Vk.handle, 
         "vkCmdCopyBuffer");
@@ -1924,7 +1873,7 @@ PalResult PAL_CALL initGraphicsVk(
         }
     }
 
-    VkResult ret;
+    VkResult result;
     Uint32 layerCount = 0;
     bool hasValidationLayer = false;
     s_Vk.messenger = nullptr;
@@ -1934,11 +1883,11 @@ PalResult PAL_CALL initGraphicsVk(
 
     if (debugger) {
         // layers
-        ret = s_Vk.enumerateInstanceLayerProperties(
+        result = s_Vk.enumerateInstanceLayerProperties(
             &layerCount, 
             nullptr);
 
-        if (ret != VK_SUCCESS) {
+        if (result != VK_SUCCESS) {
             s_Vk.hasDebug = false;
         }
 
@@ -1985,12 +1934,12 @@ PalResult PAL_CALL initGraphicsVk(
     // extensions
     Uint32 extCount = 0;
     const char* extensions[8];
-    ret = s_Vk.enumerateInstanceExtensionProperties(
+    result = s_Vk.enumerateInstanceExtensionProperties(
         nullptr,
         &extCount,
         nullptr);
 
-    if (ret != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -2029,7 +1978,6 @@ PalResult PAL_CALL initGraphicsVk(
             hasExtDebug = true;
         }
     }
-
     palFree(s_Vk.allocator, extensionProps);
 
     int extensionCount = 0;
@@ -2084,7 +2032,7 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.vkAllocator.pfnReallocation = vkRealloc;
 
     VkInstance instance = nullptr;
-    VkResult result = s_Vk.createInstance(
+    result = s_Vk.createInstance(
         &instanceCreateInfo, 
         &s_Vk.vkAllocator, 
         &instance);
@@ -2194,8 +2142,11 @@ PalResult PAL_CALL enumerateVkAdapters(
     PalAdapter** outAdapters)
 {
     int deviceCount = 0;
-    int maxCount = outAdapters ? *count : 0;
+    int adapterCount = 0;
+    int extensionCount = 0;
     VkResult result;
+    VkExtensionProperties* extensions = nullptr;
+    VkPhysicalDeviceProperties props = {0};
 
     result = s_Vk.enumeratePhysicalDevices(
         s_Vk.instance, 
@@ -2206,9 +2157,8 @@ PalResult PAL_CALL enumerateVkAdapters(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    if (!outAdapters) {
-        *count = deviceCount;
-        return PAL_RESULT_SUCCESS;
+    if (s_Vk.adapters) {
+        palFree(s_Vk.allocator, s_Vk.adapters);
     }
 
     VkPhysicalDevice* devices = nullptr;
@@ -2216,25 +2166,69 @@ PalResult PAL_CALL enumerateVkAdapters(
         sizeof(VkPhysicalDevice) * deviceCount, 
         0);
 
-    if (!devices) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    if (s_Vk.adapters) {
-        // free the adapters and cache them again
-        palFree(s_Vk.allocator, s_Vk.adapters);
-    }
-
     s_Vk.adapters = palAllocate(
         s_Vk.allocator, 
         sizeof(Adapter) * deviceCount, 
         0);
 
+    if (!devices || !s_Vk.adapters) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     s_Vk.enumeratePhysicalDevices(s_Vk.instance, &deviceCount, devices);
-    for (int i = 0; i < *count && i < deviceCount; i++) {
-        Adapter* tmp = &s_Vk.adapters[i];
-        tmp->handle = devices[i];
-        outAdapters[i] = (PalAdapter*)tmp;
+    for (int i = 0; i < deviceCount; i++) {
+        VkPhysicalDevice phyDevice = devices[i];
+        s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
+        if (props.apiVersion < VK_API_VERSION_1_3) {
+            // check extension
+            result = s_Vk.enumerateDeviceExtensionProperties(
+                phyDevice,
+                nullptr, 
+                &extensionCount, 
+                nullptr);
+    
+            extensions = palAllocate(
+                s_Vk.allocator, 
+                sizeof(VkExtensionProperties) * extensionCount, 
+                0);
+
+            if (!extensions) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+
+            s_Vk.enumerateDeviceExtensionProperties(
+                phyDevice, 
+                nullptr, 
+                &extensionCount, 
+                extensions);
+
+            bool found = false;
+            for (int i = 0; i < extensionCount; i++) {
+                const char* ext = extensions[i].extensionName;
+                if (strcmp(ext, "VK_KHR_dynamic_rendering") == 0) {
+                    found = true;
+                    break;
+                }
+            }
+
+            palFree(s_Vk.allocator, extensions);
+            if (!found) {
+                continue;
+            }
+        }
+
+        if (outAdapters) {
+            if (adapterCount < *count) {
+                Adapter* tmp = &s_Vk.adapters[adapterCount];
+                tmp->handle = devices[i];
+                outAdapters[adapterCount] = (PalAdapter*)tmp;
+            }
+        }
+        adapterCount++;
+    }
+
+    if (!outAdapters) {
+        *count = adapterCount;
     }
 
     palFree(s_Vk.allocator, devices);
@@ -2315,7 +2309,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    VkResult ret = VK_SUCCESS;
+    VkResult result = VK_SUCCESS;
     Adapter* vkAdapter = (Adapter*)adapter;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
 
@@ -2336,10 +2330,6 @@ PalResult PAL_CALL getVkAdapterCapabilities(
     caps->maxImageHeight = props.limits.maxImageDimension2D;
     caps->maxImageDepth = props.limits.maxImageDimension3D;
     caps->maxImageArrayLayers = props.limits.maxImageArrayLayers;
-
-    caps->maxRenderPassViewWidth = props.limits.maxFramebufferWidth;
-    caps->maxRenderPassViewHeight = props.limits.maxFramebufferHeight;
-    caps->maxRenderPassViewArrayLayers = props.limits.maxFramebufferLayers;
 
     PalSampleCount tmp = PAL_SAMPLE_COUNT_1;
     tmp = vkSamplesToSamples(props.limits.framebufferColorSampleCounts);
@@ -2415,7 +2405,7 @@ PalResult PAL_CALL getVkAdapterCapabilities(
 
 PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 {
-    VkResult ret;
+    VkResult result;
     PalAdapterFeatures adapterFeatures = 0;
     Uint32 extensionCount = 0;
     VkPhysicalDeviceProperties props = {0};
@@ -2425,13 +2415,13 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 
     // get supported extensions
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
-    ret = s_Vk.enumerateDeviceExtensionProperties(
+    result = s_Vk.enumerateDeviceExtensionProperties(
         phyDevice,
         nullptr, 
         &extensionCount, 
         nullptr);
 
-    if (ret != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         // we just return without any modern features which is rare
         return 0;
     }
@@ -2726,7 +2716,6 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_TIMEOUT;
-    adapterFeatures |= PAL_ADAPTER_FEATURE_SEMAPHORE;
     adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
 
     palFree(s_Vk.allocator, extensionProps);
@@ -2744,7 +2733,7 @@ PalResult PAL_CALL createVkDevice(
 {
     float priority = 1.0f;
     Uint32 count = 0;
-    VkResult ret = VK_SUCCESS;
+    VkResult result = VK_SUCCESS;
     Device* device = nullptr;
     VkPhysicalDeviceProperties props = {0};
 
@@ -2876,6 +2865,10 @@ PalResult PAL_CALL createVkDevice(
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
     // clang-format on
+    if (props.apiVersion < VK_API_VERSION_1_3) {
+        extensions[extCount++] = "VK_KHR_dynamic_rendering";
+    }
+
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         extensions[extCount++] = "VK_KHR_swapchain";
     }
@@ -2942,9 +2935,6 @@ PalResult PAL_CALL createVkDevice(
     
             // fragment shading rate attachment needs this
             if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
-                if (props.apiVersion < VK_API_VERSION_1_2) {
-                    extensions[extCount++] = "VK_KHR_create_renderpass2";
-                }
                 fsr.attachmentFragmentShadingRate = true;
             }
         }
@@ -3011,18 +3001,18 @@ PalResult PAL_CALL createVkDevice(
     createInfo.pQueueCreateInfos = queueCreateInfos;
     createInfo.queueCreateInfoCount = count;
 
-    ret = s_Vk.createDevice(
+    result = s_Vk.createDevice(
         phyDevice, 
         &createInfo, 
         &s_Vk.vkAllocator, 
         &device->handle);
 
-    if (ret != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, queueProps);
         palFree(s_Vk.allocator, queueCreateInfos);
         palFree(s_Vk.allocator, device->phyQueues);
         palFree(s_Vk.allocator, device);
-        return vkResultToPal(ret);
+        return vkResultToPal(result);
     }
 
     // get queues
@@ -3149,23 +3139,6 @@ PalResult PAL_CALL createVkDevice(
             (PFN_vkCmdSetFragmentShadingRateKHR)s_Vk.getDeviceProcAddr(
                 device->handle, 
                 "vkCmdSetFragmentShadingRateKHR");
-
-        device->createRenderPass2 = (PFN_vkCreateRenderPass2)s_Vk.getDeviceProcAddr(
-            device->handle, 
-            "vkCreateRenderPass2");
-    }
-
-    // load fragment shading rate attachment procs
-    if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
-        device->createRenderPass2 = (PFN_vkCreateRenderPass2)s_Vk.getDeviceProcAddr(
-            device->handle, 
-            "vkCreateRenderPass2");
-
-        if (!device->createRenderPass2) {
-            device->createRenderPass2 = (PFN_vkCreateRenderPass2KHR)s_Vk.getDeviceProcAddr(
-                device->handle, 
-                "vkCreateRenderPass2KHR");
-        }
     }
 
     // mesh shader
@@ -3243,6 +3216,29 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
+    // dynamic rendering
+    device->cmdBeginRendering = 
+        (PFN_vkCmdBeginRendering)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkCmdBeginRendering");
+
+    device->cmdEndRendering = 
+        (PFN_vkCmdEndRendering)s_Vk.getDeviceProcAddr(
+            device->handle, 
+            "vkCmdEndRendering");
+
+    if (!device->cmdBeginRendering) {
+        device->cmdBeginRendering = 
+            (PFN_vkCmdBeginRenderingKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdBeginRenderingKHR");
+
+        device->cmdEndRendering = 
+            (PFN_vkCmdEndRenderingKHR)s_Vk.getDeviceProcAddr(
+                device->handle, 
+                "vkCmdEndRenderingKHR");
+    }
+
     device->features = features;
     palFree(s_Vk.allocator, queueProps);
     palFree(s_Vk.allocator, queueCreateInfos);
@@ -3311,6 +3307,40 @@ void PAL_CALL freeVkMemory(
     Device* vkDevice = (Device*)device;
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     s_Vk.freeMemory(vkDevice->handle, mem, &s_Vk.vkAllocator);
+}
+
+PalResult PAL_CALL mapVkMemory(
+    PalDevice* device,
+    PalMemory* memory,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+    VkResult result;
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    Device* vkDevice = (Device*)device;
+
+    result = s_Vk.mapMemory(
+        vkDevice->handle, 
+        mem,
+        offset,
+        size, 
+        0, 
+        outPtr);
+
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
+    }
+    return PAL_RESULT_SUCCESS; 
+}
+
+void PAL_CALL unmapVkMemory(
+    PalDevice* device,
+    PalMemory* memory)
+{
+    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    Device* vkDevice = (Device*)device;
+    s_Vk.unmapMemory(vkDevice->handle, mem);
 }
 
 PalResult PAL_CALL queryVkDepthStencilCapabilities(
@@ -4007,8 +4037,8 @@ PalResult PAL_CALL queryVkSwapchainCapabilities(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    bool ret = createSurface(window, &surface);
-    if (!ret) {
+    bool result = createSurface(window, &surface);
+    if (!result) {
         return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
     }
 
@@ -4149,8 +4179,7 @@ PalResult PAL_CALL createVkSwapchain(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    bool ret = createSurface(window, &swapchain->surface);
-    if (!ret) {
+    if (!createSurface(window, &swapchain->surface)) {
         return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
     }
 
@@ -4319,7 +4348,7 @@ PalImage* PAL_CALL getVkSwapchainImage(
 
 PalImage* PAL_CALL getVkNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalNextImageInfo* info)
+    PalSwapchainNextImageInfo* info)
 {
     VkResult result;
     Uint32 index = 0;
@@ -4362,7 +4391,7 @@ PalFormat PAL_CALL getVkSwapchainFormat(PalSwapchain* swapchain)
 
 PalResult PAL_CALL presentVkSwapchain(
     PalSwapchain* swapchain, 
-    PalPresentInfo* info)
+    PalSwapchainPresentInfo* info)
 {
     Swapchain* vkSwapchain = (Swapchain*)swapchain;
     Image* vkImage = (Image*)info->image;
@@ -4499,418 +4528,6 @@ void PAL_CALL destroyVkShader(PalShader* shader)
 }
 
 // ==================================================
-// Render Pass
-// ==================================================
-
-PalResult PAL_CALL createVkRenderPass(
-    PalDevice* device,
-    const PalRenderPassCreateInfo* info,
-    PalRenderPass** outRenderPass)
-{
-    VkResult result;
-    RenderPass* renderPass = nullptr;
-    Device* vkDevice = (Device*)device;
-
-    renderPass = palAllocate(s_Vk.allocator, sizeof(RenderPass), 0);
-    if (!renderPass) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    bool hasDepth = false;
-    bool hasFsr;
-    Uint32 colorRefCount = 0;
-    Uint32 resolveRefCount = 0;
-
-    // multi view
-    Uint32 viewMask = (1 << info->multiViewCount) - 1;
-    VkRenderPassMultiviewCreateInfo viewCreateInfo = {0};
-    viewCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
-    viewCreateInfo.pViewMasks = &viewMask;
-    viewCreateInfo.subpassCount = 1;
-
-    // clang-format off
-    if (vkDevice->createRenderPass2) {
-        VkAttachmentDescription2KHR attachments[MAX_ATTACHMENTS];
-        VkAttachmentReference2KHR depthRef;
-        VkAttachmentReference2KHR fsrRef;
-        VkAttachmentReference2KHR colorRefs[MAX_ATTACHMENTS];
-        VkAttachmentReference2KHR resolveRefs[MAX_ATTACHMENTS];
-        VkFragmentShadingRateAttachmentInfoKHR fsrAttachment = {0};
-        fsrAttachment.sType = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
-
-        for (int i = 0; i < info->attachmentCount; i++) {
-            PalAttachmentDesc* desc = &info->attachments[i];
-            VkAttachmentDescription2KHR* rDesc = &attachments[i];
-
-            rDesc->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
-            rDesc->flags = 0;
-            rDesc->pNext = nullptr;
-
-            rDesc->format = palFormatToVk(desc->format);
-            rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            rDesc->samples = samplesToVk(desc->sampleCount);
-            rDesc->flags = 0;
-
-            // load op
-            if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
-                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-            } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
-                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-            } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
-                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            }
-
-            // store op
-            if (desc->storeOp == PAL_STORE_OP_STORE) {
-                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-            } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
-                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            }
-
-            VkAttachmentReference2KHR* ref = nullptr;
-            VkImageAspectFlags aspectMask = 0;
-            VkImageLayout layout, refLayout = 0;
-            if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
-                ref = &colorRefs[colorRefCount++];
-                layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_COLOR_RESOLVE) {
-                ref = &resolveRefs[resolveRefCount++];
-                layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH) {
-                ref = &depthRef;
-                layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-                hasDepth = true;
-                // stencil is only used with depth attachment
-                if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
-                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-                } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
-                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-                } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
-                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                }
-
-                if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
-                    rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-                } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
-                    rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                }
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH_RESOLVE) {
-                ref = &resolveRefs[resolveRefCount++];
-                layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_PRESENT) {
-                ref = &colorRefs[colorRefCount++];
-                layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-               
-            } else {
-                // fragment shading rate attachment
-                VkExtent2D size;
-                size.width = desc->texelWidth;
-                size.height = desc->texelHeight;
-                fsrAttachment.shadingRateAttachmentTexelSize = size;
-
-                ref = &fsrRef;
-                layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-                refLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-                aspectMask = 0;
-                fsrAttachment.pFragmentShadingRateAttachment = &fsrRef;
-                hasFsr = true;
-            }
-
-            ref->attachment = i;
-            ref->layout = refLayout;
-            ref->aspectMask = aspectMask;
-            ref->pNext = 0;
-            ref->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
-            rDesc->finalLayout = layout;
-        }        
-
-        // subpass
-        VkSubpassDescription2 subpassDesc = {0};
-        subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpassDesc.colorAttachmentCount = colorRefCount;
-        subpassDesc.pColorAttachments = colorRefs;
-        subpassDesc.pNext = &fsrAttachment;
-
-        if (hasDepth) {
-            subpassDesc.pDepthStencilAttachment = &depthRef;
-        }
-
-        if (resolveRefCount) {
-            subpassDesc.pResolveAttachments = resolveRefs;
-        }
-
-        VkRenderPassCreateInfo2KHR createInfo = {0};
-        createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
-        createInfo.attachmentCount = info->attachmentCount;
-        createInfo.pAttachments = attachments;
-        createInfo.subpassCount = 1;
-        createInfo.pSubpasses = &subpassDesc;
-
-        if (info->multiViewCount > 1) {
-            createInfo.pNext = &viewCreateInfo;
-        }
-
-        result = vkDevice->createRenderPass2(
-            vkDevice->handle,
-            &createInfo, 
-            &s_Vk.vkAllocator, 
-            &renderPass->handle);
-
-    } else {
-        // legacy path
-        VkAttachmentDescription attachments[MAX_ATTACHMENTS];
-        VkAttachmentReference depthRef;
-        VkAttachmentReference colorRefs[MAX_ATTACHMENTS];
-        VkAttachmentReference resolveRefs[MAX_ATTACHMENTS];
-
-        for (int i = 0; i < info->attachmentCount; i++) {
-            PalAttachmentDesc* desc = &info->attachments[i];
-            VkAttachmentDescription* rDesc = &attachments[i];
-
-            rDesc->flags = 0;
-            rDesc->format = palFormatToVk(desc->format);
-            rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            rDesc->samples = samplesToVk(desc->sampleCount);
-
-            // load op
-            if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
-                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-            } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
-                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-            } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
-                rDesc->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            }
-
-            // store op
-            if (desc->storeOp == PAL_STORE_OP_STORE) {
-                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-            } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
-                rDesc->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            }
-
-            // stencil op. set to default
-            rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-            VkAttachmentReference* ref = nullptr;
-            VkImageLayout layout, refLayout = 0;
-            if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
-                ref = &colorRefs[colorRefCount++];
-                layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_COLOR_RESOLVE) {
-                ref = &resolveRefs[resolveRefCount++];
-                layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH) {
-                ref = &depthRef;
-                layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-
-                hasDepth = true;
-                // stencil is only used with depth attachment
-                if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
-                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-                } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
-                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-                } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
-                    rDesc->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                }
-
-                if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
-                    rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-                } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
-                    rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                }
-
-            } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH_RESOLVE) {
-                ref = &resolveRefs[resolveRefCount++];
-                layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-
-            } else {
-                ref = &colorRefs[colorRefCount++];
-                layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            }
-
-            ref->attachment = i;
-            ref->layout = refLayout;
-            rDesc->finalLayout = layout;
-        }
-
-        VkSubpassDependency dependency = {0};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        // subpass legacy
-        VkSubpassDescription subpassDesc = {0};
-        subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpassDesc.colorAttachmentCount = colorRefCount;
-        subpassDesc.pColorAttachments = colorRefs;
-        if (hasDepth) {
-            subpassDesc.pDepthStencilAttachment = &depthRef;
-        }
-
-        if (resolveRefCount) {
-            subpassDesc.pResolveAttachments = resolveRefs;
-        }
-
-        VkRenderPassCreateInfo createInfo = {0};
-        createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        createInfo.attachmentCount = info->attachmentCount;
-        createInfo.pAttachments = attachments;
-        createInfo.subpassCount = 1;
-        createInfo.pSubpasses = &subpassDesc;
-        createInfo.dependencyCount = 1;
-        createInfo.pDependencies = &dependency;
-
-        if (info->multiViewCount > 1) {
-            createInfo.pNext = &viewCreateInfo;
-        }
-
-        result = s_Vk.createRenderPass(
-            vkDevice->handle, 
-            &createInfo, 
-            &s_Vk.vkAllocator, 
-            &renderPass->handle);
-    }
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, renderPass);
-        return vkResultToPal(result);
-    }
-    // clamg-format on
-
-    renderPass->device = vkDevice; 
-    renderPass->attachmentCount = info->attachmentCount;
-    *outRenderPass = (PalRenderPass*)renderPass;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass)
-{
-    RenderPass* vkRenderPass = (RenderPass*)renderPass;
-    s_Vk.destroyRenderPass(
-        vkRenderPass->device->handle, 
-        vkRenderPass->handle, 
-        &s_Vk.vkAllocator);
-    
-    palFree(s_Vk.allocator, renderPass);
-}
-
-PalResult PAL_CALL createVkRenderPassView(
-    PalDevice* device,
-    PalRenderPass* renderPass,
-    const PalRenderPassViewCreateInfo* info,
-    PalRenderPassView** outRenderPassView)
-{
-    VkResult result;
-    RenderPassView* view = nullptr;
-    Device* vkDevice = (Device*)device;
-    RenderPass* vkRenderPass = (RenderPass*)renderPass;
-    VkImageView attachments[MAX_ATTACHMENTS];
-
-    memset(attachments, 0, sizeof(VkImageView) * MAX_ATTACHMENTS);
-    view = palAllocate(s_Vk.allocator, sizeof(RenderPassView), 0);
-    if (!view) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    Uint32 layers = 0;
-    Uint32 width  = 0;
-    Uint32 height = 0;
-    for (int i = 0; i < info->imageViewCount; i++) {
-        ImageView* tmp = (ImageView*)info->imageViews[i];
-        attachments[i] = tmp->handle;
-        layers = tmp->image->info.depthOrArraySize;
-
-        // find the largest width and height from all image views
-        if (width < tmp->image->info.width) {
-            width = tmp->image->info.width;
-        }
-
-        if (height < tmp->image->info.height) {
-            height = tmp->image->info.height;
-        }
-    }
-
-    if (info->width > width || info->height > height) {
-        palFree(s_Vk.allocator, view);
-        return PAL_RESULT_INVALID_ARGUMENT;
-    }
-
-    VkFramebufferCreateInfo createInfo = {0};
-    createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    createInfo.attachmentCount = info->imageViewCount;
-    createInfo.pAttachments = attachments;
-    createInfo.height = height;
-    createInfo.width = width;
-    createInfo.layers = layers;
-    createInfo.renderPass = vkRenderPass->handle;
-
-    result = s_Vk.createFramebuffer(
-        vkDevice->handle, 
-        &createInfo, 
-        &s_Vk.vkAllocator, 
-        &view->handle);
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, view);
-        return vkResultToPal(result);
-    }
-
-    view->device = vkDevice;
-    view->width = width;
-    view->height = height;
-    *outRenderPassView = (PalRenderPassView*)view;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL destroyVkRenderPassView(PalRenderPassView* view)
-{
-    RenderPassView* framebuffer = (RenderPassView*)view;
-    s_Vk.destroyFramebuffer(
-        framebuffer->device->handle,
-        framebuffer->handle, 
-        &s_Vk.vkAllocator);
-    
-    palFree(s_Vk.allocator, view);
-}
-
-// ==================================================
 // Fence
 // ==================================================
 
@@ -4988,13 +4605,13 @@ PalResult PAL_CALL resetVkFence(PalFence* fence)
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    VkResult ret = s_Vk.resetFence(
+    VkResult result = s_Vk.resetFence(
         vkFence->device->handle, 
         1, 
         &vkFence->handle);
 
-    if (ret != VK_SUCCESS) {
-        return vkResultToPal(ret);
+    if (result != VK_SUCCESS) {
+        return vkResultToPal(result);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -5003,11 +4620,11 @@ PalResult PAL_CALL resetVkFence(PalFence* fence)
 bool PAL_CALL isVkFenceSignaled(PalFence* fence)
 {
     Fence* vkFence = (Fence*)fence;
-    VkResult ret = s_Vk.isFenceSignaled(
+    VkResult result = s_Vk.isFenceSignaled(
         vkFence->device->handle, 
         vkFence->handle);
 
-    if (ret == VK_SUCCESS) {
+    if (result == VK_SUCCESS) {
         return true;
     } else {
         return false;
@@ -5280,7 +4897,7 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL beginVkCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalBeginInfo* info)
+    PalCommandBufferBeginInfo* info)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     VkRenderPass renderPassHandle = nullptr;
@@ -5289,21 +4906,15 @@ PalResult PAL_CALL beginVkCommandBuffer(
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    VkCommandBufferInheritanceInfo inheritanceInfo = {0};
-    inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    VkCommandBufferInheritanceRenderingInfoKHR inheritanceInfo = {0};
+    inheritanceInfo.sType = 
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
 
     if (!vkCmdBuffer->primary) {
         // secondary command buffer
-        if (info->renderPass && info->view) {
-            RenderPass* renderPass = (RenderPass*)info->renderPass;
-            RenderPassView* view = (RenderPassView*)info->view;
-            renderPassHandle = renderPass->handle;
-            viewHandle = view->handle;
-            inheritanceInfo.framebuffer = viewHandle;
-            inheritanceInfo.renderPass = renderPassHandle;
-
-            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-            beginInfo.pInheritanceInfo = &inheritanceInfo;
+        if (info->attachmentCount && info->attachmentCount) {
+            // TODO:
+            beginInfo.pNext = &inheritanceInfo;
         }
     }
 
@@ -5602,58 +5213,57 @@ PalResult PAL_CALL buildVkAccelerationStructure(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL beginRenderPassVk(
+PalResult PAL_CALL beginRenderingVk(
     PalCommandBuffer* cmdBuffer,
-    PalRenderPassBeginInfo* info)
+    PalRenderingInfo* info)
 {
-    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    RenderPass* renderPass = (RenderPass*)info->renderPass;
-    RenderPassView* view = (RenderPassView*)info->view;
+    // TODO:
+    // CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
 
-    if (info->clearValueCount != renderPass->attachmentCount) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
-    }
+    // if (info->clearValueCount != renderPass->attachmentCount) {
+    //     return PAL_RESULT_INSUFFICIENT_BUFFER;
+    // }
 
-    VkRenderPassBeginInfo renderPassBeginInfo = {0};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    VkClearValue tmp[MAX_ATTACHMENTS];
-    memset(tmp, 0, sizeof(VkClearValue) * MAX_ATTACHMENTS);
+    // VkRenderPassBeginInfo renderPassBeginInfo = {0};
+    // renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    // VkClearValue tmp[MAX_ATTACHMENTS];
+    // memset(tmp, 0, sizeof(VkClearValue) * MAX_ATTACHMENTS);
 
-    for (int i = 0; i < info->clearValueCount; i++) {
-        PalClearValue* clearValue = &info->clearValues[i];
-        if (clearValue->depth == 0 && clearValue->stencil == 0) {
-            // color attachment
-            tmp[i].color.float32[0] = clearValue->color[0];
-            tmp[i].color.float32[1] = clearValue->color[1];
-            tmp[i].color.float32[2] = clearValue->color[2];
-            tmp[i].color.float32[3] = clearValue->color[3];
+    // for (int i = 0; i < info->clearValueCount; i++) {
+    //     PalClearValue* clearValue = &info->clearValues[i];
+    //     if (clearValue->depth == 0 && clearValue->stencil == 0) {
+    //         // color attachment
+    //         tmp[i].color.float32[0] = clearValue->color[0];
+    //         tmp[i].color.float32[1] = clearValue->color[1];
+    //         tmp[i].color.float32[2] = clearValue->color[2];
+    //         tmp[i].color.float32[3] = clearValue->color[3];
 
-        } else {
-            // depth/stencil attachment
-            tmp[i].depthStencil.depth = clearValue->depth;
-            tmp[i].depthStencil.stencil = clearValue->stencil;
-        }
-    }
+    //     } else {
+    //         // depth/stencil attachment
+    //         tmp[i].depthStencil.depth = clearValue->depth;
+    //         tmp[i].depthStencil.stencil = clearValue->stencil;
+    //     }
+    // }
 
-    renderPassBeginInfo.clearValueCount = info->clearValueCount;
-    renderPassBeginInfo.pClearValues = tmp;
-    renderPassBeginInfo.framebuffer = view->handle;
-    renderPassBeginInfo.renderPass = renderPass->handle;
-    renderPassBeginInfo.renderArea.extent.width = view->width;
-    renderPassBeginInfo.renderArea.extent.height = view->height;
+    // renderPassBeginInfo.clearValueCount = info->clearValueCount;
+    // renderPassBeginInfo.pClearValues = tmp;
+    // renderPassBeginInfo.framebuffer = view->handle;
+    // renderPassBeginInfo.renderPass = renderPass->handle;
+    // renderPassBeginInfo.renderArea.extent.width = view->width;
+    // renderPassBeginInfo.renderArea.extent.height = view->height;
 
-    s_Vk.cmdBeginRenderPass(
-        vkCmdBuffer->handle, 
-        &renderPassBeginInfo, 
-        VK_SUBPASS_CONTENTS_INLINE);
+    // s_Vk.cmdBeginRenderPass(
+    //     vkCmdBuffer->handle, 
+    //     &renderPassBeginInfo, 
+    //     VK_SUBPASS_CONTENTS_INLINE);
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer)
+PalResult PAL_CALL endRenderingVk(PalCommandBuffer* cmdBuffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    s_Vk.cmdEndRenderPass(vkCmdBuffer->handle);
+    vkCmdBuffer->device->cmdEndRendering(vkCmdBuffer->handle);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5744,7 +5354,7 @@ PalResult PAL_CALL setVkViewport(
 PalResult PAL_CALL setVkScissors(
     PalCommandBuffer* cmdBuffer,
     Uint32 count,
-    PalScissor* scissors)
+    PalRect2D* scissors)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     VkRect2D cacheScissor;
@@ -5913,7 +5523,7 @@ PalResult PAL_CALL drawIndexedIndirectVk(
 
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
-    PalSubmitInfo* info)
+    PalCommandBufferSubmitInfo* info)
 {
     VkResult result;
     Int32 waitSemaphoreCount = 0;
@@ -6320,40 +5930,6 @@ PalResult PAL_CALL bindVkBufferMemory(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL mapVkMemory(
-    PalDevice* device,
-    PalMemory* memory,
-    Uint64 offset,
-    Uint64 size,
-    void** outPtr)
-{
-    VkResult result;
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    Device* vkDevice = (Device*)device;
-
-    result = s_Vk.mapMemory(
-        vkDevice->handle, 
-        mem,
-        offset,
-        size, 
-        0, 
-        outPtr);
-
-    if (result != VK_SUCCESS) {
-        return vkResultToPal(result);
-    }
-    return PAL_RESULT_SUCCESS; 
-}
-
-void PAL_CALL unmapVkMemory(
-    PalDevice* device,
-    PalMemory* memory)
-{
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    Device* vkDevice = (Device*)device;
-    s_Vk.unmapMemory(vkDevice->handle, mem);
-}
-
 // ==================================================
 // Pipeline
 // ==================================================
@@ -6410,7 +5986,6 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     Uint32 patchControlPoints = 0;
     Pipeline* pipeline = nullptr;
     Device* vkDevice = (Device*)device;
-    RenderPass* renderPass = (RenderPass*)info->renderPass;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
 
     VkPipelineShaderStageCreateInfo shaderStages[7]; // PAL supports 7 types
@@ -6419,40 +5994,41 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     VkVertexInputAttributeDescription* attribDescs = nullptr;
     VkPipelineColorBlendAttachmentState* blendattachments = nullptr;
 
-    VkPipelineVertexInputStateCreateInfo VI = {0};
-    VI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    // clang-format off
+    VkPipelineVertexInputStateCreateInfo vertexInputState = {0};
+    vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    VkPipelineInputAssemblyStateCreateInfo IA = {0};
-    IA.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {0};
+    inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
-    VkPipelineDynamicStateCreateInfo DS = {0};
-    DS.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dynamicState = {0};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 
-    VkPipelineRasterizationStateCreateInfo RS = {0};
-    RS.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    VkPipelineRasterizationStateCreateInfo rasterizerState = {0};
+    rasterizerState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 
-    VkPipelineMultisampleStateCreateInfo MS = {0};
-    MS.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    VkPipelineMultisampleStateCreateInfo multisampleState = {0};
+    multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 
-    VkPipelineDepthStencilStateCreateInfo SS = {0};
-    SS.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    VkPipelineDepthStencilStateCreateInfo depthStencilState = {0};
+    depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 
-    VkPipelineColorBlendStateCreateInfo CBS = {0};
-    CBS.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    VkPipelineColorBlendStateCreateInfo colorBlendState = {0};
+    colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
-    VkPipelineTessellationStateCreateInfo TS = {0};
-    TS.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    VkPipelineTessellationStateCreateInfo tessellationState = {0};
+    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 
-    VkPipelineViewportStateCreateInfo VS = {0};
-    VS.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    VkPipelineViewportStateCreateInfo viewportState = {0};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 
-    VkPipelineFragmentShadingRateStateCreateInfoKHR FSRS = {0};
-    FSRS.sType = 
-        VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
+    VkPipelineFragmentShadingRateStateCreateInfoKHR fragmentShadingRateState = {0};
+    fragmentShadingRateState.sType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
 
     VkGraphicsPipelineCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
+    // clang-format on
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
     if (!pipeline) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -6465,8 +6041,8 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         shaderStages[i] = tmp->info;
 
         if (tmp->patchControlPoints) {
-            TS.patchControlPoints = tmp->patchControlPoints;
-            createInfo.pTessellationState = &TS;
+            tessellationState.patchControlPoints = tmp->patchControlPoints;
+            createInfo.pTessellationState = &tessellationState;
 
             if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
                 palFree(s_Vk.allocator, pipeline);
@@ -6474,6 +6050,9 @@ PalResult PAL_CALL createVkGraphicsPipeline(
             }
         }
     }
+
+    createInfo.stageCount = info->shaderCount;
+    createInfo.pStages = shaderStages;
 
     // Vertex input state
     // get the max size of vertex attributes in all layouts
@@ -6525,16 +6104,14 @@ PalResult PAL_CALL createVkGraphicsPipeline(
             attribDesc->offset = offset;
             offset += size;
             bindingDesc->stride += size;
-
-            int a = 1;
         }
     }
 
-    VI.pVertexAttributeDescriptions = attribDescs;
-    VI.vertexAttributeDescriptionCount = vertexCount;
-    VI.pVertexBindingDescriptions = bindingDescs;
-    VI.vertexBindingDescriptionCount = info->vertexLayoutCount;
-    createInfo.pVertexInputState = &VI;
+    vertexInputState.pVertexAttributeDescriptions = attribDescs;
+    vertexInputState.vertexAttributeDescriptionCount = vertexCount;
+    vertexInputState.pVertexBindingDescriptions = bindingDescs;
+    vertexInputState.vertexBindingDescriptionCount = info->vertexLayoutCount;
+    createInfo.pVertexInputState = &vertexInputState;
 
     // Input assembly
     VkPrimitiveTopology topology;
@@ -6565,8 +6142,9 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         }
     }
 
-    IA.topology = topology;
-    IA.primitiveRestartEnable = VK_FALSE;
+    inputAssemblyState.topology = topology;
+    inputAssemblyState.primitiveRestartEnable = VK_FALSE;
+    createInfo.pInputAssemblyState = &inputAssemblyState;
 
     // Dynamic states
     Uint32 dynCount = 0;
@@ -6601,80 +6179,99 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_STENCIL_OP_EXT;
     }
 
-    if (info->fragmentShadingRateEnabled) {
+    if (info->fragmentShadingRateState) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR;
     }
 
-    DS.dynamicStateCount = dynCount;
-    DS.pDynamicStates = dynamicStates;
-    createInfo.pDynamicState = &DS;
+    dynamicState.dynamicStateCount = dynCount;
+    dynamicState.pDynamicStates = dynamicStates;
+    createInfo.pDynamicState = &dynamicState;
 
     // Rasterizer state
-    RS.lineWidth = 1.0f;
-    if (info->rasterizerState.cullMode == PAL_CULL_MODE_NONE) {
-        RS.cullMode = VK_CULL_MODE_NONE;
-    } else if (info->rasterizerState.cullMode == PAL_CULL_MODE_BACK) {
-        RS.cullMode = VK_CULL_MODE_BACK_BIT;
-    } else if (info->rasterizerState.cullMode == PAL_CULL_MODE_FRONT) {
-        RS.cullMode = VK_CULL_MODE_FRONT_BIT;
-    }
+    if (info->rasterizerState) {
+        PalRasterizerState* state = info->rasterizerState;
+        if (state->cullMode == PAL_CULL_MODE_NONE) {
+            rasterizerState.cullMode = VK_CULL_MODE_NONE;
 
-    if (info->rasterizerState.polygonMode == PAL_POLYGON_MODE_FILL) {
-        RS.polygonMode = VK_POLYGON_MODE_FILL;
-    } else {
-        RS.polygonMode = VK_POLYGON_MODE_LINE;
-    }
+        } else if (state->cullMode == PAL_CULL_MODE_BACK) {
+            rasterizerState.cullMode = VK_CULL_MODE_BACK_BIT;
 
-    if (info->rasterizerState.frontFace == PAL_FRONT_FACE_CLOCKWISE) {
-        RS.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    } else {
-        RS.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    }
+        } else if (state->cullMode == PAL_CULL_MODE_FRONT) {
+            rasterizerState.cullMode = VK_CULL_MODE_FRONT_BIT;
+        }
 
-    RS.depthBiasEnable = info->rasterizerState.enableDepthBias;
-    RS.depthClampEnable = info->rasterizerState.enableDepthClamp;
+        if (state->polygonMode == PAL_POLYGON_MODE_FILL) {
+            rasterizerState.polygonMode = VK_POLYGON_MODE_FILL;
+
+        } else {
+            rasterizerState.polygonMode = VK_POLYGON_MODE_LINE;
+        }
+
+        if (state->frontFace == PAL_FRONT_FACE_CLOCKWISE) {
+            rasterizerState.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+        } else {
+            rasterizerState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        }
+
+        rasterizerState.lineWidth = 1.0f;
+        rasterizerState.depthBiasEnable = state->enableDepthBias;
+        rasterizerState.depthClampEnable = state->enableDepthClamp;
+        createInfo.pRasterizationState = &rasterizerState;
+    }
 
     // Multisample state
-    MS.alphaToCoverageEnable = info->multisampleState.enableAlphaToCoverage;
-    MS.minSampleShading = info->multisampleState.minSampleShading;
-    MS.sampleShadingEnable = info->multisampleState.enableSampleShading;
-    MS.rasterizationSamples = samplesToVk(info->multisampleState.sampleCount);
+    if (info->multisampleState) {
+        PalMultisampleState* state = info->multisampleState;
+        multisampleState.alphaToCoverageEnable = state->enableAlphaToCoverage;
+        multisampleState.minSampleShading = state->minSampleShading;
+        multisampleState.sampleShadingEnable = state->enableSampleShading;
+        multisampleState.rasterizationSamples = samplesToVk(state->sampleCount);
 
-    VkSampleMask sampleMasks[2];
-    Uint32 mask1 = 0;
-    Uint32 mask2 = 0;
-    palUnpackUint32(info->multisampleState.sampleMask, &mask1, &mask2);
-    sampleMasks[0] = mask1;
-    sampleMasks[1] = mask2;
-    MS.pSampleMask = sampleMasks;
+        VkSampleMask sampleMasks[2];
+        Uint32 mask1 = 0;
+        Uint32 mask2 = 0;
+        palUnpackUint32(state->sampleMask, &mask1, &mask2);
+        sampleMasks[0] = mask1;
+        sampleMasks[1] = mask2;
+        multisampleState.pSampleMask = sampleMasks;
+
+        createInfo.pMultisampleState = &multisampleState;
+    }
 
     // Depth stencil state
-    const PalStencilOpState* front = nullptr;
-    const PalStencilOpState* back = nullptr;
-    back = &info->depthStencilState.backStencilOpState;
-    front = &info->depthStencilState.frontStencilOpState;
+    if (info->depthStencilState) {
+        PalDepthStencilState* state = info->depthStencilState;
+        PalStencilOpState* back = &state->backStencilOpState;
+        PalStencilOpState* front = &state->frontStencilOpState;
 
-    SS.back.compareOp = compareOpToVk(back->compareOp);
-    SS.back.depthFailOp = stencilOpToVk(back->depthFailOp);
-    SS.back.failOp = stencilOpToVk(back->failOp);
-    SS.back.passOp = stencilOpToVk(back->passOp);
+        VkStencilOpState* vkBack = &depthStencilState.back;
+        VkStencilOpState* vkFront = &depthStencilState.back;
 
-    SS.front.compareOp = compareOpToVk(front->compareOp);
-    SS.front.depthFailOp = stencilOpToVk(front->depthFailOp);
-    SS.front.failOp = stencilOpToVk(front->failOp);
-    SS.front.passOp = stencilOpToVk(front->passOp);
+        vkBack->compareOp = compareOpToVk(back->compareOp);
+        vkBack->depthFailOp = stencilOpToVk(back->depthFailOp);
+        vkBack->failOp = stencilOpToVk(back->failOp);
+        vkBack->passOp = stencilOpToVk(back->passOp);
 
-    SS.depthCompareOp = compareOpToVk(info->depthStencilState.compareOp);
-    SS.depthTestEnable = info->depthStencilState.enableDepthTest;
-    SS.depthWriteEnable = info->depthStencilState.enableDepthWrite;
-    SS.stencilTestEnable = info->depthStencilState.enableStencilTest;
+        vkFront->compareOp = compareOpToVk(front->compareOp);
+        vkFront->depthFailOp = stencilOpToVk(front->depthFailOp);
+        vkFront->failOp = stencilOpToVk(front->failOp);
+        vkFront->passOp = stencilOpToVk(front->passOp);
 
+        depthStencilState.depthCompareOp = compareOpToVk(state->compareOp);
+        depthStencilState.depthTestEnable = state->enableDepthTest;
+        depthStencilState.depthWriteEnable = state->enableDepthWrite;
+        depthStencilState.stencilTestEnable = state->enableStencilTest;
+
+        createInfo.pDepthStencilState = &depthStencilState;
+    }
+    
     // Color blend state
-    CBS.attachmentCount = info->blendAttachmentCount;
     if (info->blendAttachmentCount) {
+        Uint32 count = info->blendAttachmentCount;
         blendattachments = palAllocate(
             s_Vk.allocator, 
-            sizeof(VkPipelineColorBlendAttachmentState) * CBS.attachmentCount,
+            sizeof(VkPipelineColorBlendAttachmentState) * count,
             0);
 
         if (!blendattachments) {
@@ -6684,7 +6281,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        for (int i = 0; i < CBS.attachmentCount; i++) {
+        for (int i = 0; i < count; i++) {
             VkPipelineColorBlendAttachmentState* tmp = &blendattachments[i];
             PalBlendAttachment* desc = &info->blendAttachments[i];
 
@@ -6720,35 +6317,30 @@ PalResult PAL_CALL createVkGraphicsPipeline(
                 tmp->colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
             }
         }
+
+        colorBlendState.attachmentCount = count;
+        colorBlendState.pAttachments = blendattachments;
+        createInfo.pColorBlendState = &colorBlendState;
     }
-    CBS.pAttachments = blendattachments;
 
     // viewport state
-    VS.viewportCount = 1;
-    VS.scissorCount = 1;
+    viewportState.viewportCount = 1;
+    viewportState.scissorCount = 1;
+    createInfo.pViewportState = &viewportState;
 
-    createInfo.stageCount = info->shaderCount;
-    createInfo.pStages = shaderStages;
-    createInfo.pVertexInputState = &VI;
-    createInfo.pInputAssemblyState = &IA;
-    createInfo.pDepthStencilState = &SS;
-    createInfo.pDynamicState = &DS;
-    createInfo.pRasterizationState = &RS;
-    createInfo.pMultisampleState = &MS;
-    createInfo.pColorBlendState = &CBS;
-    createInfo.pViewportState = &VS;
-    createInfo.renderPass = renderPass->handle;
+    createInfo.renderPass = VK_NULL_HANDLE;
     createInfo.layout = layout->handle;
 
-    if (info->fragmentShadingRateEnabled) {
-        FSRS.combinerOps[0] = 
-            combinerOpsToVk(info->fragmentShadingRateState.combinerOps[0]);
-        FSRS.combinerOps[1] = 
-            combinerOpsToVk(info->fragmentShadingRateState.combinerOps[1]);
-        FSRS.fragmentSize = 
-            getShadingRateSize(info->fragmentShadingRateState.rate);
+    if (info->fragmentShadingRateState) {
+        // TODO:
+        // FSRS.combinerOps[0] = 
+        //     combinerOpsToVk(info->fragmentShadingRateState.combinerOps[0]);
+        // FSRS.combinerOps[1] = 
+        //     combinerOpsToVk(info->fragmentShadingRateState.combinerOps[1]);
+        // FSRS.fragmentSize = 
+        //     getShadingRateSize(info->fragmentShadingRateState.rate);
 
-        createInfo.pNext = &FSRS;
+        // createInfo.pNext = &FSRS;
     }
 
     result = s_Vk.createGraphicsPipeline(

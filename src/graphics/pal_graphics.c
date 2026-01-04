@@ -41,7 +41,6 @@ PAL_HANDLE(PalSwapchain)
 PAL_HANDLE(PalImage)
 PAL_HANDLE(PalImageView)
 PAL_HANDLE(PalShader)
-PAL_HANDLE(PalRenderPass)
 PAL_HANDLE(PalBuffer)
 
 PAL_HANDLE(PalFence)
@@ -50,7 +49,6 @@ PAL_HANDLE(PalCommandPool)
 PAL_HANDLE(PalCommandBuffer)
 PAL_HANDLE(PalPipeline)
 PAL_HANDLE(PalAccelerationStructure)
-PAL_HANDLE(PalRenderPassView)
 PAL_HANDLE(PalPipelineLayout)
 
 typedef struct {
@@ -80,7 +78,7 @@ static GraphicsLinux s_Graphics = {0};
 #if PAL_HAS_VULKAN
 
 PalResult PAL_CALL initGraphicsVk(
-    PalGraphicsDebugger* debugger,
+    const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator);
 
 PalResult PAL_CALL shutdownGraphicsVk();
@@ -208,13 +206,13 @@ PalImage* PAL_CALL getVkSwapchainImage(
 
 PalImage* PAL_CALL getVkNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalNextImageInfo* info);
+    PalSwapchainNextImageInfo* info);
 
 PalFormat PAL_CALL getVkSwapchainFormat(PalSwapchain* swapchain);
 
 PalResult PAL_CALL presentVkSwapchain(
     PalSwapchain* swapchain, 
-    PalPresentInfo* info);
+    PalSwapchainPresentInfo* info);
 
 PalResult PAL_CALL createVkShader(
     PalDevice* device,
@@ -222,21 +220,6 @@ PalResult PAL_CALL createVkShader(
     PalShader** outShader);
 
 void PAL_CALL destroyVkShader(PalShader* shader);
-
-PalResult PAL_CALL createVkRenderPass(
-    PalDevice* device,
-    const PalRenderPassCreateInfo* info,
-    PalRenderPass** outRenderPass);
-
-void PAL_CALL destroyVkRenderPass(PalRenderPass* renderPass);
-
-PalResult PAL_CALL createVkRenderPassView(
-    PalDevice* device,
-    PalRenderPass* renderPass,
-    const PalRenderPassViewCreateInfo* info,
-    PalRenderPassView** outRenderPassView);
-
-void PAL_CALL destroyVkRenderPassView(PalRenderPassView* view);
 
 PalResult PAL_CALL createVkFence(
     PalDevice* device,
@@ -290,7 +273,7 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
 PalResult PAL_CALL beginVkCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalBeginInfo* info);
+    PalCommandBufferBeginInfo* info);
 
 PalResult PAL_CALL endVkCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -328,11 +311,11 @@ PalResult PAL_CALL buildVkAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info);
 
-PalResult PAL_CALL beginRenderPassVk(
+PalResult PAL_CALL beginRenderingVk(
     PalCommandBuffer* cmdBuffer,
-    PalRenderPassBeginInfo* info);
+    PalRenderingInfo* info);
 
-PalResult PAL_CALL endRenderPassVk(PalCommandBuffer* cmdBuffer);
+PalResult PAL_CALL endRenderingVk(PalCommandBuffer* cmdBuffer);
 
 PalResult PAL_CALL copyVkBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -354,7 +337,7 @@ PalResult PAL_CALL setVkViewport(
 PalResult PAL_CALL setVkScissors(
     PalCommandBuffer* cmdBuffer,
     Uint32 count,
-    PalScissor* scissors);
+    PalRect2D* scissors);
 
 PalResult PAL_CALL bindVkVertexBuffers(
     PalCommandBuffer* cmdBuffer,
@@ -391,7 +374,7 @@ PalResult PAL_CALL drawIndexedIndirectVk(
 
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
-    PalSubmitInfo* info);
+    PalCommandBufferSubmitInfo* info);
 
 PalResult PAL_CALL createVkAccelerationstructure(
     PalDevice* device,
@@ -485,10 +468,6 @@ static PalGraphicsBackend s_VkBackend = {
     .presentSwapchain =  presentVkSwapchain,
     .createShader = createVkShader,
     .destroyShader = destroyVkShader,
-    .createRenderPass = createVkRenderPass,
-    .destroyRenderPass = destroyVkRenderPass,
-    .createRenderPassView = createVkRenderPassView,
-    .destroyRenderPassView = destroyVkRenderPassView,
     .createFence = createVkFence,
     .destroyFence = destroyVkFence,
     .waitFenceTimeout = waitVkFence,
@@ -511,8 +490,8 @@ static PalGraphicsBackend s_VkBackend = {
     .drawMeshTasksIndirect = drawVkMeshTasksIndirect,
     .drawMeshTasksIndirectCount = drawVkMeshTasksIndirectCount,
     .buildAccelerationStructure = buildVkAccelerationStructure,
-    .beginRenderPass = beginRenderPassVk,
-    .endRenderPass = endRenderPassVk,
+    .beginRendering = beginRenderingVk,
+    .endRendering = endRenderingVk,
     .copyBuffer = copyVkBuffer,
     .bindPipeline = bindVkPipeline,
     .setViewport = setVkViewport,
@@ -606,10 +585,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->presentSwapchain                      ||
         !backend->createShader                          ||
         !backend->destroyShader                         ||
-        !backend->createRenderPass                      ||
-        !backend->destroyRenderPass                     ||
-        !backend->createRenderPassView                  ||
-        !backend->destroyRenderPassView                 ||
         !backend->createFence                           ||
         !backend->destroyFence                          ||
         !backend->waitFenceTimeout                      ||
@@ -632,8 +607,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->drawMeshTasksIndirect                 ||
         !backend->drawMeshTasksIndirectCount            ||
         !backend->buildAccelerationStructure            ||
-        !backend->beginRenderPass                       ||
-        !backend->endRenderPass                         ||
+        !backend->beginRendering                        ||
+        !backend->endRendering                          ||
         !backend->copyBuffer                            ||
         !backend->bindPipeline                          ||
         !backend->setViewport                           ||
@@ -671,7 +646,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 }
 
 PalResult PAL_CALL palInitGraphics(
-    PalGraphicsDebugger* debugger,
+    const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
 {
     if (s_Graphics.initialized) {
@@ -1273,7 +1248,7 @@ PalImage* PAL_CALL palGetSwapchainImage(
 
 PalImage* PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalNextImageInfo* info)
+    PalSwapchainNextImageInfo* info)
 {
     if (!s_Graphics.initialized || !swapchain || !info) {
         return nullptr;
@@ -1294,7 +1269,7 @@ PalFormat PAL_CALL palGetSwapchainFormat(PalSwapchain* swapchain)
 
 PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
-    PalPresentInfo* info)
+    PalSwapchainPresentInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1346,92 +1321,6 @@ void PAL_CALL palDestroyShader(PalShader* shader)
 {
     if (s_Graphics.initialized && shader) {
         shader->backend->destroyShader(shader);
-    }
-}
-
-// ==================================================
-// Render Pass
-// ==================================================
-
-PalResult PAL_CALL palCreateRenderPass(
-    PalDevice* device,
-    const PalRenderPassCreateInfo* info,
-    PalRenderPass** outRenderPass)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device || !info || !outRenderPass) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (info->attachmentCount == 0 && info->attachments) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
-    }
-
-    PalRenderPass* renderPass = nullptr;
-    PalResult result;
-    result = device->backend->createRenderPass(
-        device,
-        info,
-        &renderPass);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-
-    renderPass->backend = device->backend;
-    *outRenderPass = renderPass;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palDestroyRenderPass(PalRenderPass* renderPass)
-{
-    if (s_Graphics.initialized && renderPass) {
-        renderPass->backend->destroyRenderPass(renderPass);
-    }
-}
-
-PalResult PAL_CALL palCreateRenderPassView(
-    PalDevice* device,
-    PalRenderPass* renderPass,
-    const PalRenderPassViewCreateInfo* info,
-    PalRenderPassView** outRenderPassView)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device || !renderPass || !info || !outRenderPassView) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (info->imageViewCount == 0 && info->imageViews) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
-    }
-
-    PalRenderPassView* renderPassView = nullptr;
-    PalResult result;
-    result = device->backend->createRenderPassView(
-        device,
-        renderPass,
-        info,
-        &renderPassView);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-
-    renderPassView->backend = device->backend;
-    *outRenderPassView = renderPassView;
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL palDestroyRenderPassView(PalRenderPassView* view)
-{
-    if (s_Graphics.initialized && view) {
-        view->backend->destroyRenderPassView(view);
     }
 }
 
@@ -1682,7 +1571,7 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalBeginInfo* info)
+    PalCommandBufferBeginInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1830,9 +1719,9 @@ PalResult PAL_CALL palBuildAccelerationStructures(
         info);
 }
 
-PalResult PAL_CALL palBeginRenderPass(
+PalResult PAL_CALL palBeginRendering(
     PalCommandBuffer* cmdBuffer,
-    PalRenderPassBeginInfo* info)
+    PalRenderingInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1842,12 +1731,12 @@ PalResult PAL_CALL palBeginRenderPass(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->beginRenderPass(
+    return cmdBuffer->backend->beginRendering(
         cmdBuffer,
         info);
 }
 
-PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
+PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1857,7 +1746,7 @@ PalResult PAL_CALL palEndRenderPass(PalCommandBuffer* cmdBuffer)
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->endRenderPass(cmdBuffer);
+    return cmdBuffer->backend->endRendering(cmdBuffer);
 }
 
 PalResult PAL_CALL palCopyBuffer(
@@ -1924,7 +1813,7 @@ PalResult PAL_CALL palSetViewport(
 PalResult PAL_CALL palSetScissors(
     PalCommandBuffer* cmdBuffer,
     Uint32 count,
-    PalScissor* scissors)
+    PalRect2D* scissors)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2062,7 +1951,7 @@ PalResult PAL_CALL palDrawIndexedIndirect(
 
 PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
-    PalSubmitInfo* info)
+    PalCommandBufferSubmitInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
