@@ -61,6 +61,12 @@ typedef struct PalPipeline PalPipeline;
 typedef struct PalPipelineLayout PalPipelineLayout;
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
+typedef void(PAL_CALL* PalDebugCallback)(
+    void* userData,
+    Uint32 severity,
+    Uint32 type,
+    const char* msg);
+
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
     PAL_ADAPTER_TYPE_DISCRETE,
@@ -250,7 +256,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(30),
     PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(31),
     PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT = PAL_BIT64(32),
-    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(33)
+    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(33),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(34)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -514,6 +521,18 @@ typedef enum {
     PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(7)
 } PalBufferUsages;
 
+typedef enum {
+    PAL_DEBUG_MESSAGE_SEVERITY_INFO,
+    PAL_DEBUG_MESSAGE_SEVERITY_WARNING,
+    PAL_DEBUG_MESSAGE_SEVERITY_ERROR
+} PalDebugMessageSeverity;
+
+typedef enum {
+    PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+    PAL_DEBUG_MESSAGE_TYPE_VALIDATION,
+    PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE
+} PalDebugMessageType;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -689,6 +708,37 @@ typedef struct {
 } PalRenderPassBeginInfo;
 
 typedef struct {
+    float x;
+    float y;
+    float width;
+    float height;
+    float minDepth;
+    float maxDepth;
+} PalViewport;
+
+typedef struct {
+    Int32 x;
+    Int32 y;
+    Uint32 width;
+    Uint32 height;
+} PalScissor;
+
+typedef struct {
+    Uint32 vertexCount;
+    Uint32 instancecCount;
+    Uint32 firstVertex;
+    Uint32 firstInstance;
+} PalDrawData;
+
+typedef struct {
+    Uint32 indexCount;
+    Uint32 instancecCount;
+    Uint32 firstIndex;
+    Int32 vertexOffset;
+    Uint32 firstInstance;
+} PalDrawIndexedData;
+
+typedef struct {
     PalVertexType type;
     Uint32 location;
 } PalVertexAttribute;
@@ -696,9 +746,14 @@ typedef struct {
 typedef struct {
     PalVertexLayoutType type;
     Uint32 binding;
-    Uint32 vertexCount;
-    PalVertexAttribute* vertices;
+    Uint32 attributeCount;
+    PalVertexAttribute* attributes;
 } PalVertexLayout;
+
+typedef struct {
+    void* userData;
+    PalDebugCallback callback;
+} PalGraphicsDebugger;
 
 typedef struct {
     bool enableDepthClamp;
@@ -917,6 +972,17 @@ typedef struct {
         PalMemory** outMemory);
 
     void PAL_CALL (*freeMemory)(
+        PalDevice* device,
+        PalMemory* memory);
+
+    PalResult PAL_CALL (*mapMemory)(
+        PalDevice* device,
+        PalMemory* memory,
+        Uint64 offset, 
+        Uint64 size,
+        void** outPtr);
+
+    void PAL_CALL (*unmapMemory)(
         PalDevice* device,
         PalMemory* memory);
 
@@ -1146,6 +1212,53 @@ typedef struct {
         Uint64 srcOffset,
         Uint32 size);
 
+    PalResult PAL_CALL (*bindPipeline)(
+        PalCommandBuffer* cmdBuffer,
+        PalPipeline* pipeline);
+
+    PalResult PAL_CALL (*setViewport)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 count,
+        PalViewport* viewports);
+
+    PalResult PAL_CALL (*setScissors)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 count,
+        PalScissor* scissors);
+
+    PalResult PAL_CALL (*bindVertexBuffers)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 firstSlot,
+        Uint32 count,
+        PalBuffer** buffers,
+        Uint64* offsets);
+
+    PalResult PAL_CALL (*bindIndexBuffer)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        Uint64 offset,
+        PalIndexType type);
+
+    PalResult PAL_CALL (*draw)(
+        PalCommandBuffer* cmdBuffer,
+        PalDrawData* data);
+
+    PalResult PAL_CALL (*drawIndirect)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        Uint64 offset,
+        Uint32 count);
+
+    PalResult PAL_CALL (*drawIndexed)(
+        PalCommandBuffer* cmdBuffer,
+        PalDrawIndexedData* data);
+
+    PalResult PAL_CALL (*drawIndexedIndirect)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        Uint64 offset,
+        Uint32 count);
+
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalSubmitInfo* info);
@@ -1179,17 +1292,6 @@ typedef struct {
         PalMemory* memory,
         Uint64 offset);
 
-    PalResult PAL_CALL (*mapBuffer)(
-        PalBuffer* buffer,
-        PalMemory* memory,
-        Uint64 offset, 
-        Uint64 size,
-        void** outPtr);
-
-    void PAL_CALL (*unmapBuffer)(
-        PalBuffer* buffer,
-        PalMemory* memory);
-
     PalResult PAL_CALL (*createPipelineLayout)(
         PalDevice* device,
         const PalPipelineLayoutCreateInfo* info,
@@ -1209,7 +1311,7 @@ PAL_API PalResult PAL_CALL palAddGraphicsBackend(
     const PalGraphicsBackend* backend);
 
 PAL_API PalResult PAL_CALL palInitGraphics(
-    bool enableDebugLayer,
+    PalGraphicsDebugger* debugger,
     const PalAllocator* allocator);
 
 PAL_API void PAL_CALL palShutdownGraphics();
@@ -1242,6 +1344,17 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
     PalMemory** outMemory);
 
 PAL_API void PAL_CALL palFreeMemory(
+    PalDevice* device,
+    PalMemory* memory);
+
+PAL_API PalResult PAL_CALL palMapMemory(
+    PalDevice* device,
+    PalMemory* memory,
+    Uint64 offset, 
+    Uint64 size,
+    void** outPtr);
+
+PAL_API void PAL_CALL palUnmapMemory(
     PalDevice* device,
     PalMemory* memory);
 
@@ -1471,6 +1584,53 @@ PAL_API PalResult PAL_CALL palCopyBuffer(
     Uint64 srcOffset,
     Uint32 size);
 
+PAL_API PalResult PAL_CALL palBindPipeline(
+    PalCommandBuffer* cmdBuffer,
+    PalPipeline* pipeline);
+
+PAL_API PalResult PAL_CALL palSetViewport(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 count,
+    PalViewport* viewports);
+
+PAL_API PalResult PAL_CALL palSetScissors(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 count,
+    PalScissor* scissors);
+
+PAL_API PalResult PAL_CALL palBindVertexBuffers(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 firstSlot,
+    Uint32 count,
+    PalBuffer** buffers,
+    Uint64* offsets);
+
+PAL_API PalResult PAL_CALL palBindIndexBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    PalIndexType type);
+
+PAL_API PalResult PAL_CALL palDraw(
+    PalCommandBuffer* cmdBuffer,
+    PalDrawData* data);
+
+PAL_API PalResult PAL_CALL palDrawIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 count);
+
+PAL_API PalResult PAL_CALL palDrawIndexed(
+    PalCommandBuffer* cmdBuffer,
+    PalDrawIndexedData* data);
+
+PAL_API PalResult PAL_CALL palDrawIndexedIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 count);
+
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalSubmitInfo* info);
@@ -1503,17 +1663,6 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
     PalBuffer* buffer,
     PalMemory* memory,
     Uint64 offset);
-
-PAL_API PalResult PAL_CALL palMapBuffer(
-    PalBuffer* buffer,
-    PalMemory* memory,
-    Uint64 offset, 
-    Uint64 size,
-    void** outPtr);
-
-PAL_API void PAL_CALL palUnmapBuffer(
-    PalBuffer* buffer,
-    PalMemory* memory);
 
 PAL_API PalResult PAL_CALL palCreatePipelineLayout(
     PalDevice* device,

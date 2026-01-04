@@ -446,6 +446,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_INVALID_ACCELERATION_STRUCTURE:
             return "Invalid acceleration structure";
+
+        case PAL_RESULT_MEMORY_MAP_FAILED:
+            return "Memory map failed";
     }
     return "Unknown";
 }

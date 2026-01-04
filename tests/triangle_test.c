@@ -107,6 +107,15 @@ static bool shutdownVideo(
     palDestroyEventDriver(eventDriver);
 }
 
+static void PAL_CALL onGraphicsDebug(
+    void* userData,
+    Uint32 severity,
+    Uint32 type,
+    const char* msg)
+{
+    palLog(nullptr, msg);
+}
+
 bool triangleTest()
 {
     palLog(nullptr, "");
@@ -138,13 +147,19 @@ bool triangleTest()
     PalRenderPass* renderPass = nullptr;
     PalRenderPassView** renderPassViews = nullptr;
 
+    PalMemory* vertexbufferMemory = nullptr;
+    PalBuffer* vertexBuffer = nullptr;
     PalShader* vertexShader = nullptr;
     PalShader* fragmentShader = nullptr;
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
+    PalFence** fences = nullptr;
 
     // initialize the graphics system 
-    PalResult result = palInitGraphics(false, nullptr);
+    PalGraphicsDebugger gfxDebugger = {0};
+    gfxDebugger.callback = onGraphicsDebug;
+
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -203,9 +218,14 @@ bool triangleTest()
     }
 
     palFree(nullptr, adapters);
+    PalAdapterFeatures adapterFeatures = palGetAdapterFeatures(adapter);
 
     // create a device
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
+    if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
+        features |= PAL_ADAPTER_FEATURE_FENCE_RESET;
+    }
+
     result = palCreateDevice(adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -306,11 +326,13 @@ bool triangleTest()
         sizeof(PalCommandBuffer*) * imageCount,
         0);
 
-    if (!imageViews || !renderPassViews || !cmdBuffers) {
+    fences = palAllocate(
+        nullptr, 
+        sizeof(PalFence*) * imageCount + 1, // next image fence
+        0);
+
+    if (!imageViews || !renderPassViews || !cmdBuffers || !fences) {
         palLog(nullptr, "Failed to allocate memory");
-        palFree(nullptr, imageViews);
-        palFree(nullptr, cmdBuffers);
-        palFree(nullptr, renderPassViews);
         return false;
     }
 
@@ -342,8 +364,8 @@ bool triangleTest()
     Uint64 fragmentShaderSize = 0;
     void* vertexShaderBytecode = nullptr;
     void* fragmentShaderBytecode = nullptr;
-    readFile("shaders/triangle.vertex.spv", nullptr, &vertexShaderSize);
-    readFile("shaders/triangle.fragment.spv", nullptr, &fragmentShaderSize);
+    readFile("shaders/triangle_vert.spv", nullptr, &vertexShaderSize);
+    readFile("shaders/triangle_frag.spv", nullptr, &fragmentShaderSize);
 
     if (!vertexShaderSize && !fragmentShaderSize) {
         palLog(nullptr, "Failed to find shader files");
@@ -358,12 +380,12 @@ bool triangleTest()
     }
 
     readFile(
-        "shaders/triangle.vertex.spv", 
+        "shaders/triangle_vert.spv", 
         vertexShaderBytecode,
         &vertexShaderSize);
 
     readFile(
-        "shaders/triangle.fragment.spv", 
+        "shaders/triangle_frag.spv", 
         fragmentShaderBytecode, 
         &fragmentShaderSize);
 
@@ -393,21 +415,21 @@ bool triangleTest()
 
     // create graphics pipeline
     // vertex attributes and vertex layout
-    PalVertexAttribute vertices[2];
+    PalVertexAttribute attributes[2];
     PalVertexLayout layout;
 
-    PalVertexAttribute* position = &vertices[0];
+    PalVertexAttribute* position = &attributes[0];
     position->location = 0;
     position->type = PAL_VERTEX_TYPE_FLOAT2;
 
-    PalVertexAttribute* color = &vertices[1];
+    PalVertexAttribute* color = &attributes[1];
     color->location = 1;
     color->type = PAL_VERTEX_TYPE_FLOAT3; // no alpha
 
     layout.binding = 0;
     layout.type = PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX;
-    layout.vertexCount = 2;
-    layout.vertices = vertices;
+    layout.attributeCount = 2;
+    layout.attributes = attributes;
 
     PalGraphicsPipelineCreateInfo pipelineCreateInfo = {0};
     pipelineCreateInfo.vertexLayouts = &layout;
@@ -415,6 +437,17 @@ bool triangleTest()
 
     // Input assembly
     pipelineCreateInfo.topology = PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    // Color blend attachment
+    // we need one for each attachment in our render pass
+    PalBlendAttachment blendAttachment = {0};
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_RED;
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_GREEN;
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_BLUE;
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_ALPHA;
+
+    pipelineCreateInfo.blendAttachmentCount = 1;
+    pipelineCreateInfo.blendAttachments = &blendAttachment;
 
     // shaders
     PalShader* shaders[2]; // vertex and fragment
@@ -442,6 +475,88 @@ bool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline: %s", error);
+        return false;
+    }
+
+    // triangle vertices
+    // float 2 for pos and float 3 for color
+    float vertices[] = {
+        0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
+        -0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
+       0.5f,  -0.5f, 0.0f, 0.0f, 1.0f
+    };
+
+    PalBufferCreateInfo bufferCreateInfo = {0};
+    bufferCreateInfo.size = sizeof(vertices);
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_VERTEX;
+    result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create buffer: %s", error);
+        return false;
+    }
+
+    PalMemoryRequirements memReq = {0};
+    result = palGetBufferMemoryRequirements(vertexBuffer, &memReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create buffer: %s", error);
+        return false;
+    }
+
+    // check if the memory type is supported
+    result = palAllocateMemory(
+        device, 
+        PAL_MEMORY_TYPE_CPU_UPLOAD, 
+        memReq.size, 
+        &vertexbufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate gpu memory: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(vertexBuffer, vertexbufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind gpu memory: %s", error);
+        return false;
+    }
+
+    // map the memory and fill with our vertices
+    void* data = nullptr;
+    result = palMapMemory(
+        device, 
+        vertexbufferMemory,
+        0, 
+        sizeof(vertices), 
+        &data);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to map gpu memory: %s", error);
+        return false;
+    }
+
+    memcpy(data, vertices, sizeof(vertices));
+    palUnmapMemory(device, vertexbufferMemory);
+
+    // viewport and scissor
+    PalViewport viewport = {0};
+    viewport.width = (float)swapchainCreateInfo.width;
+    viewport.height = (float)swapchainCreateInfo.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    PalScissor scissor = {0};
+    scissor.width = swapchainCreateInfo.width;
+    scissor.height = swapchainCreateInfo.height;
+
+    result = palCreateFence(device, &fences[imageCount]);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create fence: %s", error);
         return false;
     }
 
@@ -487,6 +602,15 @@ bool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create command buffer: %s", error);
+            return false;
+        }
+
+        // create fences
+        PalFence* fence = nullptr;
+        result = palCreateFence(device, &fence);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create fence: %s", error);
             return false;
         }
 
@@ -540,6 +664,47 @@ bool triangleTest()
             return false;
         }
 
+        // bind pipeline and set scissors and viewports
+        result = palBindPipeline(cmdBuffer, pipeline);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind pipeline: %s", error);
+            return false;
+        }
+
+        result = palSetViewport(cmdBuffer, 1, &viewport);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set viewport: %s", error);
+            return false;
+        }
+
+        result = palSetScissors(cmdBuffer, 1, &scissor);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set scissor: %s", error);
+            return false;
+        }
+
+        Uint64 offset[] = { 0 };
+        result = palBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, offset);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind vertex buffer: %s", error);
+            return false;
+        }
+
+        PalDrawData drawData = {0};
+        drawData.vertexCount = 3;
+        drawData.instancecCount = 1;
+
+        result = palDraw(cmdBuffer, &drawData);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to draw vertices: %s", error);
+            return false;
+        }
+
         result = palEndRenderPass(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -559,6 +724,7 @@ bool triangleTest()
         renderPassViews[i] = renderPassView;
         cmdBuffers[i] = cmdBuffer;
         imageViews[i] = imageView;
+        fences[i] = fence;
     }
 
     // main loop
@@ -586,18 +752,53 @@ bool triangleTest()
             }
         }
 
+        if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
+            for (int i = 0; i < imageCount + 1; i++) {
+                result = palResetFence(fences[i]);
+                if (result != PAL_RESULT_SUCCESS) {
+                    const char* error = palFormatResult(result);
+                    palLog(nullptr, "Failed to reset fence: %s", error);
+                    return false;
+                }
+            }
+
+        } else {
+            for (int i = 0; i < imageCount + 1; i++) {
+                palDestroyFence(fences[i]);
+
+                result = palCreateFence(device, &fences[i]);
+                if (result != PAL_RESULT_SUCCESS) {
+                    const char* error = palFormatResult(result);
+                    palLog(nullptr, "Failed to create fence: %s", error);
+                    return false;
+                }
+            }
+        }
+
         // get the next image that we can render too
         PalImage* image = nullptr;
         PalNextImageInfo nextImageInfo = {0};
         nextImageInfo.timeout = UINT64_MAX;
+        nextImageInfo.fence = fences[imageCount];
+
         image = palGetNextSwapchainImage(swapchain, &nextImageInfo);
+
+        // wait till the image is acquired
+        result = palWaitFence(fences[imageCount], UINT64_MAX);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to wait for fence: %s", error);
+            return false;
+        }
 
         // find the command buffer associated with the image
         // this is fast, the swapchain caches all it images internally
         PalCommandBuffer* cmdBuffer = nullptr;
+        PalFence* fence = nullptr;
         for (int i = 0; i < imageCount; i++) {
             if (image == palGetSwapchainImage(swapchain, i)) {
                 cmdBuffer = cmdBuffers[i];
+                fence = fences[i];
                 break;
             }
         }
@@ -605,11 +806,20 @@ bool triangleTest()
         // submit to the queue and present
         PalSubmitInfo submitInfo = {0};
         submitInfo.cmdBuffer = cmdBuffer;
+        submitInfo.fence = fence;
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to submit command buffer: %s", error);
+            return false;
+        }
+
+        // wait for the commands to be executed
+        result = palWaitFence(fence, UINT64_MAX);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to wait for fence: %s", error);
             return false;
         }
 
@@ -624,26 +834,26 @@ bool triangleTest()
         }
     }
 
-    // since we dont use a fence or sempahore, there is no way to know
-    // if the GPU is done presenting and we can now destroy the swapchain
-    // so we just wait for a while
-    // and we dont want to use thread system for this
-    Int32 counter = 0;
-    for (int i = 0; i < 30000; i++) {
-        counter++;
-    }
-
     // cleanup
     for (int i = 0; i < imageCount; i++) {
         palDestroyRenderPassView(renderPassViews[i]);
         palDestroyCommandBuffer(cmdBuffers[i]);
         palDestroyImageView(imageViews[i]);
+        palDestroyFence(fences[i]);
     }
+
+    palDestroyFence(fences[imageCount]);
 
     palDestroyPipeline(pipeline);
     palDestroyPipelineLayout(pipelineLayout);
+    palDestroyBuffer(vertexBuffer);
+    palFreeMemory(device, vertexbufferMemory);
+
     palDestroyRenderPass(renderPass);
     palDestroyCommandPool(cmdPool);
+    palDestroyShader(vertexShader);
+    palDestroyShader(fragmentShader);
+    
     palDestroySwapchain(swapchain); 
     palDestroyQueue(queue);
     palDestroyDevice(device);

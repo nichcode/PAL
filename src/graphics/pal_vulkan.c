@@ -79,6 +79,8 @@ typedef struct {
     void* handle;
     Adapter* adapters;
     VkInstance instance;
+    VkDebugUtilsMessengerEXT messenger;
+    PalDebugCallback callback;
 
 #ifdef __linux__
     // HACK: for display testing
@@ -140,6 +142,15 @@ typedef struct {
     PFN_vkCmdBeginRenderPass cmdBeginRenderPass;
     PFN_vkCmdEndRenderPass cmdEndRenderPass;
     PFN_vkCmdCopyBuffer cmdCopyBuffer;
+    PFN_vkCmdBindPipeline cmdBindPipeline;
+    PFN_vkCmdSetViewport cmdSetViewports;
+    PFN_vkCmdSetScissor cmdSetScissors;
+    PFN_vkCmdBindVertexBuffers bindVertexBuffers;
+    PFN_vkCmdBindIndexBuffer bindIndexBuffer;
+    PFN_vkCmdDraw cmdDraw;
+    PFN_vkCmdDrawIndirect cmdDrawIndirect;
+    PFN_vkCmdDrawIndexed cmdDrawIndexed;
+    PFN_vkCmdDrawIndexedIndirect cmdDrawIndexedIndirect;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -162,6 +173,8 @@ typedef struct {
     PFN_vkDestroyPipelineLayout destroyPipelineLayout;
     PFN_vkCreateGraphicsPipelines createGraphicsPipeline;
     PFN_vkDestroyPipeline destroyPipeline;
+    PFN_vkCreateDebugUtilsMessengerEXT createMessenger;
+    PFN_vkDestroyDebugUtilsMessengerEXT destroyMessenger;
 
     VkAllocationCallbacks vkAllocator;
     const PalAllocator* allocator;
@@ -449,6 +462,9 @@ static PalResult vkResultToPal(VkResult result)
 
         case VK_TIMEOUT:
             return PAL_RESULT_TIMEOUT;
+
+        case VK_ERROR_MEMORY_MAP_FAILED:
+            return PAL_RESULT_MEMORY_MAP_FAILED;
 
         default:
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -1524,12 +1540,81 @@ static void* vkRealloc(
     return nullptr;
 }
 
+VkBool32 debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagBitsEXT type,
+    const VkDebugUtilsMessengerCallbackDataEXT* data,
+    void* userData)
+{
+    if (!s_Vk.callback) {
+        return VK_FALSE;
+    }
+
+    PalDebugMessageSeverity debugSeverity = 0;
+    PalDebugMessageType debugType = 0;
+    if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
+        debugType = PAL_DEBUG_MESSAGE_TYPE_GENERAL;
+    }
+
+    if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+        debugType = PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE;
+    }
+
+    if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+        debugType = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
+    }
+
+    if (type & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        debugSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
+    }
+
+    if (type & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        debugSeverity = PAL_DEBUG_MESSAGE_SEVERITY_WARNING;
+    }
+
+    if (type & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        debugSeverity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
+    }
+
+    s_Vk.callback(userData, debugSeverity, debugType, data->pMessage);
+    return VK_FALSE;
+}
+
+static Uint32 getMemoryTypeScore(
+    VkMemoryPropertyFlags flags,
+    VkMemoryPropertyFlags required,
+    VkMemoryPropertyFlags preferred,
+    VkMemoryPropertyFlags excluded)
+{
+    // hard constraint
+    if ((flags & required) != required) {
+        return 0;
+    }
+
+    // hard constraint
+    if ((flags & excluded) != 0) {
+        return 0;
+    }
+
+    int score = 0;
+    if (flags & preferred) {
+        score += 10;
+    }
+
+    // GPU memory is general preferred
+    if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+        score += 5;
+    }
+
+    return score;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
 
 PalResult PAL_CALL initGraphicsVk(
-    bool enableDebugLayer,
+    PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
 {
     s_Vk.libWayland = nullptr;
@@ -1747,6 +1832,42 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle, 
         "vkCmdCopyBuffer");
 
+    s_Vk.cmdBindPipeline = (PFN_vkCmdBindPipeline)dlsym(
+        s_Vk.handle, 
+        "vkCmdBindPipeline");
+
+    s_Vk.cmdSetViewports = (PFN_vkCmdSetViewport)dlsym(
+        s_Vk.handle, 
+        "vkCmdSetViewport");
+
+    s_Vk.cmdSetScissors = (PFN_vkCmdSetScissor)dlsym(
+        s_Vk.handle, 
+        "vkCmdSetScissor");
+
+    s_Vk.bindVertexBuffers = (PFN_vkCmdBindVertexBuffers)dlsym(
+        s_Vk.handle, 
+        "vkCmdBindVertexBuffers");
+
+    s_Vk.bindIndexBuffer = (PFN_vkCmdBindIndexBuffer)dlsym(
+        s_Vk.handle, 
+        "vkCmdBindIndexBuffer");
+
+    s_Vk.cmdDraw = (PFN_vkCmdDraw)dlsym(
+        s_Vk.handle, 
+        "vkCmdDraw");
+
+    s_Vk.cmdDrawIndirect = (PFN_vkCmdDrawIndirect)dlsym(
+        s_Vk.handle, 
+        "vkCmdDrawIndirect");
+
+    s_Vk.cmdDrawIndexed = (PFN_vkCmdDrawIndexed)dlsym(
+        s_Vk.handle, 
+        "vkCmdDrawIndexed");
+
+    s_Vk.cmdDrawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect)dlsym(
+        s_Vk.handle, 
+        "vkCmdDrawIndexedIndirect");
+
     s_Vk.queueSubmit = (PFN_vkQueueSubmit)dlsym(
         s_Vk.handle, 
         "vkQueueSubmit");
@@ -1806,7 +1927,12 @@ PalResult PAL_CALL initGraphicsVk(
     VkResult ret;
     Uint32 layerCount = 0;
     bool hasValidationLayer = false;
-    if (enableDebugLayer) {
+    s_Vk.messenger = nullptr;
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {0};
+    debugCreateInfo.sType = 
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+    if (debugger) {
         // layers
         ret = s_Vk.enumerateInstanceLayerProperties(
             &layerCount, 
@@ -1836,6 +1962,24 @@ PalResult PAL_CALL initGraphicsVk(
         }
 
         palFree(s_Vk.allocator, props);
+
+        debugCreateInfo.messageType |= 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+        debugCreateInfo.messageType |= 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+        debugCreateInfo.messageType |= 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+        debugCreateInfo.messageSeverity |= 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        debugCreateInfo.messageSeverity |= 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        debugCreateInfo.messageSeverity |= 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+        debugCreateInfo.pUserData = debugger->userData;
+        debugCreateInfo.pfnUserCallback = debugCallback;
+        s_Vk.callback = debugger->callback;
     }
 
     // extensions
@@ -1930,6 +2074,10 @@ PalResult PAL_CALL initGraphicsVk(
     instanceCreateInfo.ppEnabledExtensionNames = extensions;
     instanceCreateInfo.ppEnabledLayerNames = layers;
 
+    if (debugger) {
+        instanceCreateInfo.pNext = &debugCreateInfo;
+    }
+
     // vk allocator
     s_Vk.vkAllocator.pfnAllocation = vkAlloc;
     s_Vk.vkAllocator.pfnFree = vkFree;
@@ -1998,6 +2146,21 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.getSurfaceFormats = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)s_Vk.getInstanceProcAddr(
         instance,
         "vkGetPhysicalDeviceSurfaceFormatsKHR");
+
+    if (debugger) {
+        s_Vk.createMessenger = 
+            (PFN_vkCreateDebugUtilsMessengerEXT)s_Vk.getInstanceProcAddr(
+                instance,
+                "vkCreateDebugUtilsMessengerEXT");
+
+        s_Vk.destroyMessenger = 
+            (PFN_vkDestroyDebugUtilsMessengerEXT)s_Vk.getInstanceProcAddr(
+                instance,
+                "vkDestroyDebugUtilsMessengerEXT");
+
+        s_Vk.createMessenger(instance, &debugCreateInfo, &s_Vk.vkAllocator, &s_Vk.messenger);
+    }
+
     // clang-format on
 
     s_Vk.adapters = nullptr;
@@ -2007,6 +2170,13 @@ PalResult PAL_CALL initGraphicsVk(
 
 PalResult PAL_CALL shutdownGraphicsVk()
 {
+    if (s_Vk.messenger) {
+        s_Vk.destroyMessenger(
+            s_Vk.instance, 
+            s_Vk.messenger, 
+            &s_Vk.vkAllocator);
+    }
+
     s_Vk.destroyInstance(s_Vk.instance, &s_Vk.vkAllocator);
     dlclose(s_Vk.handle);
     if (s_Vk.libWayland) {
@@ -2557,6 +2727,7 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_TIMEOUT;
     adapterFeatures |= PAL_ADAPTER_FEATURE_SEMAPHORE;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
 
     palFree(s_Vk.allocator, extensionProps);
     return adapterFeatures;
@@ -2870,19 +3041,52 @@ PalResult PAL_CALL createVkDevice(
     // cache memory type indices
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
+    device->gpuOnlyMemoryIndex = -1;
+    device->cpuUploadMemoryIndex = -1;
+    device->cpuReadbackMemoryIndex = -1;
+
+    Uint32 gpuBestScore = 0;
+    Uint32 cpuUploadBestScore = 0;
+    Uint32 cpuReadbackBestScore = 0;
+
     for (int i = 0; i < memProps.memoryTypeCount; i++) {
-        VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
-        if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+        VkMemoryPropertyFlags flags = memProps.memoryTypes[i].propertyFlags;
+        Uint32 score = 0;
+
+        // GPU memory
+        score = getMemoryTypeScore(
+            flags, 
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+            0, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+        if (score > gpuBestScore) {
+            gpuBestScore = score;
             device->gpuOnlyMemoryIndex = i;
         }
 
-        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
-             prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        // CPU upload
+        score = getMemoryTypeScore(
+            flags, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            0);
+
+        if (score > cpuUploadBestScore) {
+            cpuUploadBestScore = score;
             device->cpuUploadMemoryIndex = i;
         }
 
-        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && 
-             prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+        // CPU readback
+        score = getMemoryTypeScore(
+            flags, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+            VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+            0,
+            0);
+
+        if (score > cpuReadbackBestScore) {
+            cpuReadbackBestScore = score;
             device->cpuReadbackMemoryIndex = i;
         }
     }
@@ -4439,7 +4643,7 @@ PalResult PAL_CALL createVkRenderPass(
             ref->pNext = 0;
             ref->sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
             rDesc->finalLayout = layout;
-        }
+        }        
 
         // subpass
         VkSubpassDescription2 subpassDesc = {0};
@@ -4488,7 +4692,6 @@ PalResult PAL_CALL createVkRenderPass(
             rDesc->format = palFormatToVk(desc->format);
             rDesc->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             rDesc->samples = samplesToVk(desc->sampleCount);
-            rDesc->flags = 0;
 
             // load op
             if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
@@ -4514,25 +4717,20 @@ PalResult PAL_CALL createVkRenderPass(
             rDesc->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
             VkAttachmentReference* ref = nullptr;
-            VkImageAspectFlags aspectMask = 0;
             VkImageLayout layout, refLayout = 0;
             if (desc->type == PAL_ATTACHMENT_TYPE_COLOR) {
                 ref = &colorRefs[colorRefCount++];
                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_COLOR_RESOLVE) {
                 ref = &resolveRefs[resolveRefCount++];
                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
             } else if (desc->type == PAL_ATTACHMENT_TYPE_DEPTH) {
                 ref = &depthRef;
                 layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
                 refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
                 hasDepth = true;
                 // stencil is only used with depth attachment
@@ -4557,19 +4755,25 @@ PalResult PAL_CALL createVkRenderPass(
                 ref = &resolveRefs[resolveRefCount++];
                 layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
                 refLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
             } else {
                 ref = &colorRefs[colorRefCount++];
                 layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
                 refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  
             }
 
             ref->attachment = i;
             ref->layout = refLayout;
             rDesc->finalLayout = layout;
         }
+
+        VkSubpassDependency dependency = {0};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
         // subpass legacy
         VkSubpassDescription subpassDesc = {0};
@@ -4590,6 +4794,8 @@ PalResult PAL_CALL createVkRenderPass(
         createInfo.pAttachments = attachments;
         createInfo.subpassCount = 1;
         createInfo.pSubpasses = &subpassDesc;
+        createInfo.dependencyCount = 1;
+        createInfo.pDependencies = &dependency;
 
         if (info->multiViewCount > 1) {
             createInfo.pNext = &viewCreateInfo;
@@ -4637,6 +4843,7 @@ PalResult PAL_CALL createVkRenderPassView(
     RenderPass* vkRenderPass = (RenderPass*)renderPass;
     VkImageView attachments[MAX_ATTACHMENTS];
 
+    memset(attachments, 0, sizeof(VkImageView) * MAX_ATTACHMENTS);
     view = palAllocate(s_Vk.allocator, sizeof(RenderPassView), 0);
     if (!view) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -4660,26 +4867,29 @@ PalResult PAL_CALL createVkRenderPassView(
         }
     }
 
-    VkFramebufferCreateInfo fbCreateInfo = {0};
-    fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fbCreateInfo.attachmentCount = info->imageViewCount;
-    fbCreateInfo.pAttachments = attachments;
-    fbCreateInfo.height = info->height;
-    fbCreateInfo.width = info->width;
-    fbCreateInfo.layers = layers;
-    fbCreateInfo.renderPass = vkRenderPass->handle;
+    if (info->width > width || info->height > height) {
+        palFree(s_Vk.allocator, view);
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    VkFramebufferCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    createInfo.attachmentCount = info->imageViewCount;
+    createInfo.pAttachments = attachments;
+    createInfo.height = height;
+    createInfo.width = width;
+    createInfo.layers = layers;
+    createInfo.renderPass = vkRenderPass->handle;
 
     result = s_Vk.createFramebuffer(
         vkDevice->handle, 
-        &fbCreateInfo, 
+        &createInfo, 
         &s_Vk.vkAllocator, 
         &view->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, view);
-        // all image views in a single render pass must have the same
-        // width/height/layers
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return vkResultToPal(result);
     }
 
     view->device = vkDevice;
@@ -5407,6 +5617,7 @@ PalResult PAL_CALL beginRenderPassVk(
     VkRenderPassBeginInfo renderPassBeginInfo = {0};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     VkClearValue tmp[MAX_ATTACHMENTS];
+    memset(tmp, 0, sizeof(VkClearValue) * MAX_ATTACHMENTS);
 
     for (int i = 0; i < info->clearValueCount; i++) {
         PalClearValue* clearValue = &info->clearValues[i];
@@ -5468,6 +5679,234 @@ PalResult PAL_CALL copyVkBuffer(
         dstbuffer->handle, 
         1, 
         &copyRegion);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bindVkPipeline(
+    PalCommandBuffer* cmdBuffer,
+    PalPipeline* pipeline)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Pipeline* vkPipeline = (Pipeline*)pipeline;
+    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    if (vkPipeline->type == COMPUTE_PIPELINE) {
+        bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+
+    } else if (vkPipeline->type == RAY_TRACING_PIPELINE) {
+        bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+    }
+    
+    s_Vk.cmdBindPipeline(vkCmdBuffer->handle, bindPoint, vkPipeline->handle);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL setVkViewport(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 count,
+    PalViewport* viewports)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    VkViewport cacheViewport;
+    VkViewport* vkViewports = nullptr;
+
+    if (count > 1) {
+        vkViewports = palAllocate(
+            s_Vk.allocator, 
+            sizeof(VkViewport) * count, 
+            0);
+
+        if (!vkViewports) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+    } else {
+        vkViewports = &cacheViewport;
+    }
+
+    for (int i = 0; i < count; i++) {
+        VkViewport* tmp = &vkViewports[i];
+        tmp->x = viewports[i].x;
+        tmp->y = viewports[i].y;
+        tmp->width = viewports[i].width;
+        tmp->height = viewports[i].height;
+        tmp->minDepth = viewports[i].minDepth;
+        tmp->maxDepth = viewports[i].maxDepth;
+    }
+
+    s_Vk.cmdSetViewports(vkCmdBuffer->handle, 0, count, vkViewports);
+    if (count > 1) {
+        palFree(s_Vk.allocator, vkViewports);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL setVkScissors(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 count,
+    PalScissor* scissors)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    VkRect2D cacheScissor;
+    VkRect2D* vkScissors = nullptr;
+
+    if (count > 1) {
+        vkScissors = palAllocate(
+            s_Vk.allocator, 
+            sizeof(VkRect2D) * count, 
+            0);
+
+        if (!vkScissors) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+    } else {
+        vkScissors = &cacheScissor;
+    }
+
+    for (int i = 0; i < count; i++) {
+        VkRect2D* tmp = &vkScissors[i];
+        tmp->offset.x = scissors[i].x;
+        tmp->offset.y = scissors[i].y;
+        tmp->extent.width = scissors[i].width;
+        tmp->extent.height = scissors[i].height;
+    }
+
+    s_Vk.cmdSetScissors(vkCmdBuffer->handle, 0, count, vkScissors);
+    if (count > 1) {
+        palFree(s_Vk.allocator, vkScissors);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bindVkVertexBuffers(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 firstSlot,
+    Uint32 count,
+    PalBuffer** buffers,
+    Uint64* offsets)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    VkBuffer cachebuffer = nullptr;
+    VkBuffer* vkBuffers = nullptr;
+
+    if (count > 1) {
+        vkBuffers = palAllocate(s_Vk.allocator, sizeof(VkBuffer) * count, 0);
+        if (!vkBuffers) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+    } else {
+        vkBuffers = &cachebuffer;
+    }
+
+    for (int i = 0; i < count; i++) {
+        Buffer* tmp = (Buffer*)buffers[i];
+        vkBuffers[i] = tmp->handle;
+    }
+
+    s_Vk.bindVertexBuffers(
+        vkCmdBuffer->handle, 
+        firstSlot, 
+        count, 
+        vkBuffers, 
+        offsets);
+
+    if (count > 1) {
+        palFree(s_Vk.allocator, vkBuffers);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bindVkIndexBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    PalIndexType type)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    VkIndexType bufferType = VK_INDEX_TYPE_UINT32;
+    if (type == PAL_INDEX_TYPE_UINT16) {
+        bufferType = VK_INDEX_TYPE_UINT16;
+    }
+
+    s_Vk.bindIndexBuffer(
+        vkCmdBuffer->handle, 
+        vkBuffer->handle, 
+        offset, 
+        bufferType);
+        
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawVk(
+    PalCommandBuffer* cmdBuffer,
+    PalDrawData* data)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    s_Vk.cmdDraw(
+        vkCmdBuffer->handle,
+        data->vertexCount,
+        data->instancecCount,
+        data->firstVertex,
+        data->firstInstance);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawIndirectVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 count)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    Uint32 stride = sizeof(VkDrawIndirectCommand);
+    
+    s_Vk.cmdDrawIndirect(
+        vkCmdBuffer->handle, 
+        vkBuffer->handle, 
+        offset,
+        count,
+        stride);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawIndexedVk(
+    PalCommandBuffer* cmdBuffer,
+    PalDrawIndexedData* data)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    s_Vk.cmdDrawIndexed(
+        vkCmdBuffer->handle, 
+        data->indexCount,
+        data->instancecCount,
+        data->firstIndex,
+        data->vertexOffset,
+        data->firstInstance);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL drawIndexedIndirectVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint32 count)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
+
+    s_Vk.cmdDrawIndexedIndirect(
+        vkCmdBuffer->handle,
+        vkBuffer->handle, 
+        offset, 
+        count,
+        stride);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -5881,8 +6320,8 @@ PalResult PAL_CALL bindVkBufferMemory(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL mapVkBuffer(
-    PalBuffer* buffer,
+PalResult PAL_CALL mapVkMemory(
+    PalDevice* device,
     PalMemory* memory,
     Uint64 offset,
     Uint64 size,
@@ -5890,12 +6329,12 @@ PalResult PAL_CALL mapVkBuffer(
 {
     VkResult result;
     VkDeviceMemory mem = (VkDeviceMemory)memory;
-    Buffer* vkBuffer = (Buffer*)buffer;
+    Device* vkDevice = (Device*)device;
 
     result = s_Vk.mapMemory(
-        vkBuffer->device->handle, 
-        mem, 
-        offset, 
+        vkDevice->handle, 
+        mem,
+        offset,
         size, 
         0, 
         outPtr);
@@ -5906,13 +6345,13 @@ PalResult PAL_CALL mapVkBuffer(
     return PAL_RESULT_SUCCESS; 
 }
 
-void PAL_CALL unmapVkBuffer(
-    PalBuffer* buffer,
+void PAL_CALL unmapVkMemory(
+    PalDevice* device,
     PalMemory* memory)
 {
     VkDeviceMemory mem = (VkDeviceMemory)memory;
-    Buffer* vkBuffer = (Buffer*)buffer;
-    s_Vk.unmapMemory(vkBuffer->device->handle, mem);
+    Device* vkDevice = (Device*)device;
+    s_Vk.unmapMemory(vkDevice->handle, mem);
 }
 
 // ==================================================
@@ -6041,7 +6480,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     Uint32 vertexCount = 0;
     for (int i = 0; i < info->vertexLayoutCount; i++) {
         PalVertexLayout* layout = &info->vertexLayouts[i];
-        vertexCount += layout->vertexCount;
+        vertexCount += layout->attributeCount;
     }
 
     bindingDescs = palAllocate(
@@ -6073,8 +6512,8 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         // find the stride and offset of the layout
         bindingDesc->stride = 0;
         Uint32 offset = 0;
-        for (int j = 0; j < layout->vertexCount; j++) {
-            PalVertexAttribute* vertexAttrib = &layout->vertices[j];
+        for (int j = 0; j < layout->attributeCount; j++) {
+            PalVertexAttribute* vertexAttrib = &layout->attributes[j];
             VkVertexInputAttributeDescription* attribDesc = &attribDescs[j];
 
             attribDesc->format = vertexTypeToVkFormat(vertexAttrib->type);
@@ -6086,6 +6525,8 @@ PalResult PAL_CALL createVkGraphicsPipeline(
             attribDesc->offset = offset;
             offset += size;
             bindingDesc->stride += size;
+
+            int a = 1;
         }
     }
 

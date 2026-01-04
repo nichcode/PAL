@@ -11,7 +11,7 @@ bool graphicsTest()
     palLog(nullptr, "");
 
     // initialize the graphics system 
-    PalResult result = palInitGraphics(false, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -306,6 +306,10 @@ bool graphicsTest()
 
         if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
             palLog(nullptr, "  Buffer device address");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW) {
+            palLog(nullptr, "  Indirect draw");
         }
 
         palLog(nullptr, "");

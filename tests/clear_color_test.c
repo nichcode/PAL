@@ -117,7 +117,7 @@ bool clearColorTest()
     PalRenderPassView** renderPassViews = nullptr;
 
     // initialize the graphics system 
-    PalResult result = palInitGraphics(false, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
