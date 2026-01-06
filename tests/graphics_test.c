@@ -244,14 +244,6 @@ bool graphicsTest()
             palLog(nullptr, "  Image view type Cube array");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE) {
-            palLog(nullptr, "  Resettable command pool");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT) {
-            palLog(nullptr, "  Transient command pool");
-        }
-
         if (features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
             palLog(nullptr, "  Resetting fence");
         }

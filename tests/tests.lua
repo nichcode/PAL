@@ -71,7 +71,7 @@ project "tests"
 
     if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
         files { 
-            --"clear_color_test.c",
+            "clear_color_test.c",
             --"triangle_test.c"
         }
     end

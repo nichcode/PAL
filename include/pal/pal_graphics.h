@@ -241,22 +241,20 @@ typedef enum {
     PAL_ADAPTER_FEATURE_SWAPCHAIN = PAL_BIT64(15),
     PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16),
     PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY = PAL_BIT64(17),
-    PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_TRANSIENT = PAL_BIT64(18),
-    PAL_ADAPTER_FEATURE_COMMAND_POOL_FLAG_RESETTABLE = PAL_BIT64(19),
-    PAL_ADAPTER_FEATURE_FENCE_RESET = PAL_BIT64(20),
-    PAL_ADAPTER_FEATURE_FENCE_TIMEOUT = PAL_BIT64(21),
-    PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE = PAL_BIT64(22),
-    PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE = PAL_BIT64(23),
-    PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE = PAL_BIT64(24),
-    PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY = PAL_BIT64(25),
-    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE = PAL_BIT64(26),
-    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(27),
-    PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(28),
-    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(29),
-    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT = PAL_BIT64(31),
-    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(32),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(33)
+    PAL_ADAPTER_FEATURE_FENCE_RESET = PAL_BIT64(18),
+    PAL_ADAPTER_FEATURE_FENCE_TIMEOUT = PAL_BIT64(19),
+    PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE = PAL_BIT64(20),
+    PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE = PAL_BIT64(21),
+    PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE = PAL_BIT64(22),
+    PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY = PAL_BIT64(23),
+    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE = PAL_BIT64(24),
+    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(25),
+    PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(26),
+    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(27),
+    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(28),
+    PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT = PAL_BIT64(29),
+    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(30),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(31)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -313,12 +311,6 @@ typedef enum {
     PAL_SHADER_STAGE_TESSELLATION_CONTROL,
     PAL_SHADER_STAGE_TESSELLATION_EVALUATION
 } PalShaderStage;
-
-typedef enum {
-    PAL_ATTACHMENT_TYPE_COLOR,
-    PAL_ATTACHMENT_TYPE_DEPTH,
-    PAL_ATTACHMENT_TYPE_FRAGMENT_SHADING_RATE
-} PalAttachmentType;
 
 typedef enum {
     PAL_SAMPLE_COUNT_1,
@@ -529,6 +521,15 @@ enum PalDebugMessageType {
     PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE
 };
 
+typedef enum {
+    PAL_IMAGE_VIEW_STATE_UNDEFINED,
+    PAL_IMAGE_VIEW_STATE_PRESENT,
+    PAL_IMAGE_VIEW_STATE_COLOR_ATTACHMENT,
+    PAL_IMAGE_VIEW_STATE_DEPTH_ATTACHMENT,
+    PAL_IMAGE_VIEW_STATE_STENCIL_ATTACHMENT,
+    PAL_IMAGE_VIEW_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT
+} PalImageViewState;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -647,18 +648,13 @@ typedef struct {
 } PalClearValue;
 
 typedef struct {
-    PalAttachmentType type;
-    PalFormat format;
-    PalSampleCount sampleCount;
     PalLoadOp loadOp;
     PalStoreOp storeOp;
-    PalLoadOp stencilLoadOp;
-    PalStoreOp stencilStoreOp;
     PalResolveMode resolveMode;
-    PalResolveMode stencilResolveMode;
     Uint32 texelWidth;
     Uint32 texelHeight;
     PalImageView* imageView;
+    PalImageView* resolveImageView;
     PalClearValue clearValue;
 } PalAttachmentDesc;
 
@@ -701,22 +697,21 @@ typedef struct {
 } PalSwapchainNextImageInfo;
 
 typedef struct {
+    Uint32 imageIndex;
     Uint64 waitValue;
-    PalImage* image;
     PalSemaphore* waitSemaphore;
 } PalSwapchainPresentInfo;
 
 typedef struct {
-    Uint32 attachmentCount;
-    PalAttachmentDesc* attachments;
-} PalCommandBufferBeginInfo;
-
-typedef struct {
+    Uint32 viewCount;
     Uint32 layerCount;
     Uint32 colorAttachentCount;
-    PalAttachmentDesc* colorAttachment;
+    PalSampleCount multisampleCount;
+    PalAttachmentDesc* colorAttachments;
     PalAttachmentDesc* depthAttachment;
     PalAttachmentDesc* stencilAttachment;
+    PalAttachmentDesc* fragmentShadingRateAttachment;
+    PalRect2D renderArea;
 } PalRenderingInfo;
 
 typedef struct {
@@ -888,12 +883,6 @@ typedef struct {
 } PalShaderCreateInfo;
 
 typedef struct {
-    bool transient;
-    bool resettable;
-    PalQueue* queue;
-} PalCommandPoolCreateInfo;
-
-typedef struct {
     PalBufferUsages usages;
     Uint64 size;
 } PalBufferCreateInfo;
@@ -946,6 +935,8 @@ typedef struct {
 
     void PAL_CALL (*destroyDevice)(PalDevice* device);
 
+    PalResult PAL_CALL (*waitDevice)(PalDevice* device);
+
     PalResult PAL_CALL (*allocateMemory)(
         PalDevice* device,
         PalMemoryType type,
@@ -993,6 +984,8 @@ typedef struct {
     bool PAL_CALL (*canQueuePresent)(
         PalQueue* queue, 
         PalGraphicsWindow* window);
+
+    PalResult PAL_CALL (*waitQueue)(PalQueue* queue);
 
     PalResult PAL_CALL (*enumerateFormats)(
         PalAdapter* adapter,
@@ -1057,11 +1050,10 @@ typedef struct {
         PalSwapchain* swapchain,
         Int32 index);
 
-    PalImage* PAL_CALL (*getNextSwapchainImage)(
+    PalResult PAL_CALL (*getNextSwapchainImage)(
         PalSwapchain* swapchain,
-        PalSwapchainNextImageInfo* info);
-
-    PalFormat PAL_CALL (*getSwapchainFormat)(PalSwapchain* swapchain);
+        PalSwapchainNextImageInfo* info,
+        Uint32 *outIndex);
 
     PalResult PAL_CALL (*presentSwapchain)(
         PalSwapchain* swapchain,
@@ -1076,6 +1068,7 @@ typedef struct {
 
     PalResult PAL_CALL (*createFence)(
         PalDevice* device,
+        bool signaled,
         PalFence** outFence);
 
     void PAL_CALL (*destroyFence)(PalFence* fence);
@@ -1111,7 +1104,7 @@ typedef struct {
 
     PalResult PAL_CALL (*createCommandPool)(
         PalDevice* device,
-        const PalCommandPoolCreateInfo* info,
+        PalQueue* queue,
         PalCommandPool** outPool);
 
     void PAL_CALL (*destroyCommandPool)(PalCommandPool* pool);
@@ -1125,10 +1118,12 @@ typedef struct {
     void PAL_CALL (*destroyCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
     PalResult PAL_CALL (*beginCommandBuffer)(
-        PalCommandBuffer* cmdBuffer, 
-        PalCommandBufferBeginInfo* info);
+        PalCommandBuffer* cmdBuffer,
+        PalRenderingInfo* info);
 
     PalResult PAL_CALL (*endCommandBuffer)(PalCommandBuffer* cmdBuffer);
+
+    PalResult PAL_CALL (*resetCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
     PalResult PAL_CALL (*executeCommandBuffer)(
         PalCommandBuffer* primaryCmdBuffer,
@@ -1225,6 +1220,12 @@ typedef struct {
         Uint64 offset,
         Uint32 count);
 
+    PalResult PAL_CALL (*imageViewBarrier)(
+        PalCommandBuffer* cmdBuffer,
+        PalImageView* imageView,
+        PalImageViewState oldState,
+        PalImageViewState newState);
+
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalCommandBufferSubmitInfo* info);
@@ -1303,6 +1304,8 @@ PAL_API PalResult PAL_CALL palCreateDevice(
 
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
 
+PAL_API PalResult PAL_CALL palWaitDevice(PalDevice* device);
+
 PAL_API PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
@@ -1350,6 +1353,8 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 PAL_API bool PAL_CALL palCanQueuePresent(
     PalQueue* queue, 
     PalGraphicsWindow* window);
+
+PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
 PAL_API PalResult PAL_CALL palEnumerateFormats(
     PalAdapter* adapter,
@@ -1414,11 +1419,10 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
 
-PAL_API PalImage* PAL_CALL palGetNextSwapchainImage(
+PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalSwapchainNextImageInfo* info);
-
-PAL_API PalFormat PAL_CALL palGetSwapchainFormat(PalSwapchain* swapchain);
+    PalSwapchainNextImageInfo* info, 
+    Uint32 *outIndex);
 
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
@@ -1431,15 +1435,9 @@ PAL_API PalResult PAL_CALL palCreateShader(
 
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
 
-PAL_API PalResult PAL_CALL palCreateCommandPool(
-    PalDevice* device,
-    const PalCommandPoolCreateInfo* info,
-    PalCommandPool** outPool);
-
-PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
-
 PAL_API PalResult PAL_CALL palCreateFence(
     PalDevice* device,
+    bool signaled,
     PalFence** outFence);
 
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
@@ -1473,6 +1471,13 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore, 
     Uint64* value);
 
+PAL_API PalResult PAL_CALL palCreateCommandPool(
+    PalDevice* device,
+    PalQueue* queue,
+    PalCommandPool** outPool);
+
+PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
+
 PAL_API PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
@@ -1483,9 +1488,12 @@ PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalCommandBufferBeginInfo* info);
+    // only used for secomdary command buffers
+    PalRenderingInfo* info);
 
 PAL_API PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer);
+
+PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
@@ -1581,6 +1589,12 @@ PAL_API PalResult PAL_CALL palDrawIndexedIndirect(
     PalBuffer* buffer,
     Uint64 offset,
     Uint32 count);
+
+PAL_API PalResult PAL_CALL palImageViewBarrier(
+    PalCommandBuffer* cmdBuffer,
+    PalImageView* imageView,
+    PalImageViewState oldState,
+    PalImageViewState newState);
 
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
