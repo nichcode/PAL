@@ -522,13 +522,21 @@ enum PalDebugMessageType {
 };
 
 typedef enum {
-    PAL_IMAGE_VIEW_STATE_UNDEFINED,
-    PAL_IMAGE_VIEW_STATE_PRESENT,
-    PAL_IMAGE_VIEW_STATE_COLOR_ATTACHMENT,
-    PAL_IMAGE_VIEW_STATE_DEPTH_ATTACHMENT,
-    PAL_IMAGE_VIEW_STATE_STENCIL_ATTACHMENT,
-    PAL_IMAGE_VIEW_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT
-} PalImageViewState;
+    PAL_USAGE_STATE_UNDEFINED,
+    PAL_USAGE_STATE_PRESENT,
+    PAL_USAGE_STATE_COLOR_ATTACHMENT,
+    PAL_USAGE_STATE_DEPTH_ATTACHMENT,
+    PAL_USAGE_STATE_STENCIL_ATTACHMENT,
+    PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT,
+    PAL_USAGE_STATE_TRANSFER_WRITE,
+    PAL_USAGE_STATE_TRANSFER_READ,
+    PAL_USAGE_STATE_VERTEX_READ,
+    PAL_USAGE_STATE_INDEX_READ,
+    PAL_USAGE_STATE_UNIFORM_READ,
+    PAL_USAGE_STATE_SHADER_READ,
+    PAL_USAGE_STATE_STORAGE_READ,
+    PAL_USAGE_STATE_STORAGE_WRITE
+} PalUsageState;
 
 typedef struct {
     Uint32 vendorId;
@@ -715,15 +723,25 @@ typedef struct {
 } PalRenderingInfo;
 
 typedef struct {
+    Uint32 viewCount;
+    Uint32 colorAttachentCount;
+    PalSampleCount multisampleCount;
+    PalFormat depthAttachmentFormat;
+    PalFormat stencilAttachmentFormat;
+    PalFormat fragmentShadingRateAttachmentFormat;
+    PalFormat* colorAttachmentsFormat;
+} PalRenderingLayoutInfo;
+
+typedef struct {
     Uint32 vertexCount;
-    Uint32 instancecCount;
+    Uint32 instanceCount;
     Uint32 firstVertex;
     Uint32 firstInstance;
 } PalDrawData;
 
 typedef struct {
     Uint32 indexCount;
-    Uint32 instancecCount;
+    Uint32 instanceCount;
     Uint32 firstIndex;
     Int32 vertexOffset;
     Uint32 firstInstance;
@@ -911,6 +929,7 @@ typedef struct {
     PalMultisampleState* multisampleState;
     PalDepthStencilState* depthStencilState;
     PalFragmentShadingRateState* fragmentShadingRateState;
+    PalRenderingLayoutInfo* renderingLayout;
 } PalGraphicsPipelineCreateInfo;
 
 typedef struct {
@@ -1109,6 +1128,8 @@ typedef struct {
 
     void PAL_CALL (*destroyCommandPool)(PalCommandPool* pool);
 
+    PalResult PAL_CALL (*resetCommandPool)(PalCommandPool* pool);
+
     PalResult PAL_CALL (*createCommandBuffer)(
         PalDevice* device,
         PalCommandPool* pool,
@@ -1119,7 +1140,7 @@ typedef struct {
 
     PalResult PAL_CALL (*beginCommandBuffer)(
         PalCommandBuffer* cmdBuffer,
-        PalRenderingInfo* info);
+        PalRenderingLayoutInfo* info);
 
     PalResult PAL_CALL (*endCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
@@ -1223,8 +1244,14 @@ typedef struct {
     PalResult PAL_CALL (*imageViewBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalImageView* imageView,
-        PalImageViewState oldState,
-        PalImageViewState newState);
+        PalUsageState oldUsageState,
+        PalUsageState newUsageState);
+
+    PalResult PAL_CALL (*bufferBarrier)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        PalUsageState oldUsageState,
+        PalUsageState newUsageState);
 
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
@@ -1478,6 +1505,8 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
 
 PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
 
+PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
+
 PAL_API PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
@@ -1488,8 +1517,7 @@ PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    // only used for secomdary command buffers
-    PalRenderingInfo* info);
+    PalRenderingLayoutInfo* info);
 
 PAL_API PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -1593,8 +1621,14 @@ PAL_API PalResult PAL_CALL palDrawIndexedIndirect(
 PAL_API PalResult PAL_CALL palImageViewBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalImageViewState oldState,
-    PalImageViewState newState);
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
+
+PAL_API PalResult PAL_CALL palBufferBarrier(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
 
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,

@@ -437,18 +437,18 @@ bool clearColorTest()
         renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
         // change the state of the image view to make it renderable
-        PalImageViewState oldstate;
+        PalUsageState oldUsageState;
         if (firstImageViewUse[index]) {
-            oldstate = PAL_IMAGE_VIEW_STATE_UNDEFINED;
+            oldUsageState = PAL_USAGE_STATE_UNDEFINED;
         } else {
-            oldstate = PAL_IMAGE_VIEW_STATE_PRESENT;
+            oldUsageState = PAL_USAGE_STATE_PRESENT;
         }
 
         result = palImageViewBarrier(
             cmdBuffer, 
             imageViews[index], 
-            oldstate, 
-            PAL_IMAGE_VIEW_STATE_COLOR_ATTACHMENT);
+            oldUsageState, 
+            PAL_USAGE_STATE_COLOR_ATTACHMENT);
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -474,8 +474,8 @@ bool clearColorTest()
         result = palImageViewBarrier(
             cmdBuffer, 
             imageViews[index], 
-            PAL_IMAGE_VIEW_STATE_COLOR_ATTACHMENT, 
-            PAL_IMAGE_VIEW_STATE_PRESENT);
+            PAL_USAGE_STATE_COLOR_ATTACHMENT, 
+            PAL_USAGE_STATE_PRESENT);
             
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

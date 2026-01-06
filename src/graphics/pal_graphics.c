@@ -279,7 +279,7 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
 PalResult PAL_CALL beginVkCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalRenderingInfo* info);
+    PalRenderingLayoutInfo* info);
 
 PalResult PAL_CALL endVkCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -383,8 +383,14 @@ PalResult PAL_CALL drawIndexedIndirectVk(
 PalResult PAL_CALL imageViewBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalImageViewState oldstate,
-    PalImageViewState newstate);
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
+
+PalResult PAL_CALL bufferBarrierVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
 
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
@@ -495,6 +501,7 @@ static PalGraphicsBackend s_VkBackend = {
     .getSemaphoreValue = getVkSemaphoreValue,
     .createCommandPool = createVkCommandPool,
     .destroyCommandPool = destroyVkCommandPool,
+    .resetCommandPool = resetVkCommandPool,
     .createCommandBuffer = createVkCommandBuffer,
     .destroyCommandBuffer = destroyVkCommandBuffer,
     .beginCommandBuffer = beginVkCommandBuffer,
@@ -519,6 +526,7 @@ static PalGraphicsBackend s_VkBackend = {
     .drawIndexed = drawIndexedVk,
     .drawIndexedIndirect = drawIndexedIndirectVk,
     .imageViewBarrier = imageViewBarrierVk,
+    .bufferBarrier = bufferBarrierVk,
     .submitCommandBuffer = submitVkCommandBuffer,
     .createAccelerationstructure = createVkAccelerationstructure,
     .destroyAccelerationstructure = destroyVkAccelerationstructure,
@@ -615,6 +623,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getSemaphoreValue                     ||
         !backend->createCommandPool                     ||
         !backend->destroyCommandPool                    ||
+        !backend->resetCommandPool                      ||
         !backend->createCommandBuffer                   ||
         !backend->destroyCommandBuffer                  ||
         !backend->beginCommandBuffer                    ||
@@ -639,6 +648,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->drawIndexed                           ||
         !backend->drawIndexedIndirect                   ||
         !backend->imageViewBarrier                      ||
+        !backend->bufferBarrier                         ||
         !backend->submitCommandBuffer                   ||
         !backend->createAccelerationstructure           ||
         !backend->destroyAccelerationstructure          ||
@@ -1268,6 +1278,12 @@ PalResult PAL_CALL palCreateSwapchain(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
+
+    // set the backend for all swapchain images
+    for (int i = 0; i < info->imageCount; i++) {
+        PalImage* image = device->backend->getSwapchainImage(swapchain, i);
+        image->backend = device->backend;
+    }
     
     swapchain->backend = device->backend;
     *outSwapchain = swapchain;
@@ -1572,6 +1588,19 @@ void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
     }
 }
 
+PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!pool) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return pool->backend->resetCommandPool(pool);
+}
+
 PalResult PAL_CALL palCreateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
@@ -1612,7 +1641,7 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalRenderingInfo* info)
+    PalRenderingLayoutInfo* info)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2003,11 +2032,11 @@ PalResult PAL_CALL palDrawIndexedIndirect(
         count);
 }
 
-PAL_API PalResult PAL_CALL palImageViewBarrier(
+PalResult PAL_CALL palImageViewBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalImageViewState oldState,
-    PalImageViewState newState)
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2020,8 +2049,29 @@ PAL_API PalResult PAL_CALL palImageViewBarrier(
     return cmdBuffer->backend->imageViewBarrier(
         cmdBuffer,
         imageView,
-        oldState,
-        newState);
+        oldUsageState,
+        newUsageState);
+}
+
+PalResult PAL_CALL palBufferBarrier(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->bufferBarrier(
+        cmdBuffer,
+        buffer,
+        oldUsageState,
+        newUsageState);
 }
 
 PalResult PAL_CALL palSubmitCommandBuffer(
@@ -2268,6 +2318,10 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     }
 
     if (!device || !info || !outPipeline) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->renderingLayout) {
         return PAL_RESULT_NULL_POINTER;
     }
 

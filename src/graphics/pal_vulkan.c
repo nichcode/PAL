@@ -134,6 +134,7 @@ typedef struct {
 
     PFN_vkBeginCommandBuffer cmdBegin;
     PFN_vkEndCommandBuffer cmdEnd;
+    PFN_vkResetCommandPool resetCommandPool;
     PFN_vkResetCommandBuffer resetCommandBuffer;
     PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
     PFN_vkCmdCopyBuffer cmdCopyBuffer;
@@ -350,12 +351,12 @@ typedef struct {
     VkPipeline handle;
 } Pipeline;
 
-typedef struct ImageViewTransition {
+typedef struct {
     VkPipelineStageFlags2 stages;
     VkPipelineStageFlags2 dstStagess;
     VkAccessFlags2 access;
     VkImageLayout layout;
-} ImageViewBarrier;
+} Barrier;
 
 static Vulkan s_Vk = {0};
 
@@ -1504,11 +1505,11 @@ static VkResolveModeFlagBits resolveModeToVk(PalResolveMode mode)
     return VK_RESOLVE_MODE_NONE_KHR;
 }
 
-static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
+static Barrier barrierToVk(PalUsageState state)
 {
-    ImageViewBarrier barrier = {0};
+    Barrier barrier = {0};
     switch (state) {
-        case PAL_IMAGE_VIEW_STATE_UNDEFINED: {
+        case PAL_USAGE_STATE_UNDEFINED: {
             barrier.stages = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
             barrier.dstStagess = barrier.dstStagess;
             barrier.access = 0;
@@ -1517,7 +1518,7 @@ static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
             return barrier;
         }
 
-        case PAL_IMAGE_VIEW_STATE_PRESENT: {
+        case PAL_USAGE_STATE_PRESENT: {
             barrier.stages = 
                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.dstStagess = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR;
@@ -1528,7 +1529,7 @@ static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
             return barrier;
         }
 
-        case PAL_IMAGE_VIEW_STATE_COLOR_ATTACHMENT: {
+        case PAL_USAGE_STATE_COLOR_ATTACHMENT: {
             barrier.stages = 
                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.dstStagess = barrier.stages;
@@ -1540,7 +1541,7 @@ static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
             return barrier;
         }
 
-        case PAL_IMAGE_VIEW_STATE_DEPTH_ATTACHMENT: {
+        case PAL_USAGE_STATE_DEPTH_ATTACHMENT: {
             barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
             barrier.stages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.dstStagess = barrier.stages;
@@ -1552,7 +1553,7 @@ static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
             return barrier;
         }
 
-        case PAL_IMAGE_VIEW_STATE_STENCIL_ATTACHMENT: {
+        case PAL_USAGE_STATE_STENCIL_ATTACHMENT: {
             barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
             barrier.stages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.dstStagess = barrier.stages;
@@ -1564,7 +1565,7 @@ static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
             return barrier;
         }
 
-        case PAL_IMAGE_VIEW_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT: {
+        case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT: {
             barrier.stages = 
                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
             barrier.dstStagess = barrier.stages;
@@ -1574,6 +1575,85 @@ static ImageViewBarrier imageViewBarrierToVk(PalImageViewState state)
             
             barrier.layout = 
                 VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_TRANSFER_WRITE: {
+            barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+            barrier.access = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_TRANSFER_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+            barrier.access = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_VERTEX_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+            barrier.access = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_INDEX_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+            barrier.access = VK_ACCESS_2_INDEX_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_UNIFORM_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR;
+            barrier.stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+
+            barrier.access = VK_ACCESS_2_UNIFORM_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_SHADER_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+
+            barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_STORAGE_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR;
+            barrier.stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+
+            barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_STORAGE_WRITE: {
+            barrier.stages = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR;
+            barrier.stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+            barrier.dstStagess = barrier.dstStagess;
+
+            barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             return barrier;
         }
@@ -1887,6 +1967,10 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.cmdEnd = (PFN_vkEndCommandBuffer)dlsym(
         s_Vk.handle, 
         "vkEndCommandBuffer");
+
+    s_Vk.resetCommandPool = (PFN_vkResetCommandPool)dlsym(
+        s_Vk.handle, 
+        "vkResetCommandPool");
 
     s_Vk.resetCommandBuffer = (PFN_vkResetCommandBuffer)dlsym(
         s_Vk.handle, 
@@ -5006,6 +5090,13 @@ void PAL_CALL destroyVkCommandPool(PalCommandPool* pool)
     palFree(s_Vk.allocator, vkPool);
 }
 
+PalResult PAL_CALL resetVkCommandPool(PalCommandPool* pool)
+{
+    CommandPool* vkCmdPool = (CommandPool*)pool;
+    s_Vk.resetCommandPool(vkCmdPool->device->handle, vkCmdPool->handle, 0);
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL createVkCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
@@ -5065,7 +5156,7 @@ void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
 
 PalResult PAL_CALL beginVkCommandBuffer(
     PalCommandBuffer* cmdBuffer, 
-    PalRenderingInfo* info)
+    PalRenderingLayoutInfo* info)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     VkCommandBufferBeginInfo beginInfo = {0};
@@ -5073,69 +5164,38 @@ PalResult PAL_CALL beginVkCommandBuffer(
 
     VkCommandBufferInheritanceInfo inheritanceInfo = {0};
     inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-    VkCommandBufferInheritanceRenderingInfoKHR tmp = {0};
-    tmp.sType = 
+    VkCommandBufferInheritanceRenderingInfoKHR layout = {0};
+    layout.sType = 
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
 
-    VkRenderingFragmentShadingRateAttachmentInfoKHR fsrInfo = {0};
-    fsrInfo.sType = 
-        VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
-
     VkFormat format = VK_FORMAT_UNDEFINED;
-    ImageView* imageView = nullptr;
     VkFormat colorAttachments[MAX_ATTACHMENTS];
 
     if (!vkCmdBuffer->primary) {
         // secondary command buffer
         for (int i = 0; i < info->colorAttachentCount; i++) {
-            imageView = (ImageView*)info->colorAttachments[i].imageView;
-            format = palFormatToVk(imageView->image->info.format);
+            format = palFormatToVk(info->colorAttachmentsFormat[i]);
             colorAttachments[i] = format;
         }
-        tmp.colorAttachmentCount = info->colorAttachentCount;
-        tmp.pColorAttachmentFormats = colorAttachments;
+        layout.colorAttachmentCount = info->colorAttachentCount;
+        layout.pColorAttachmentFormats = colorAttachments;
 
         // depth attachment
-        if (info->depthAttachment) {
-            imageView = (ImageView*)info->depthAttachment->imageView;
-            format = palFormatToVk(imageView->image->info.format);
-            tmp.depthAttachmentFormat = format;
-        }
+        format = palFormatToVk(info->depthAttachmentFormat);
+        layout.depthAttachmentFormat = format;
 
         // stencil attachment
-        if (info->stencilAttachment) {
-            imageView = (ImageView*)info->stencilAttachment->imageView;
-            format = palFormatToVk(imageView->image->info.format);
-            tmp.stencilAttachmentFormat = format;
-        }
+        format = palFormatToVk(info->stencilAttachmentFormat);
+        layout.stencilAttachmentFormat = format;
 
-        // fragment shading rate attachment
-        if (info->fragmentShadingRateAttachment) {
-            imageView = 
-                (ImageView*)info->fragmentShadingRateAttachment->imageView;
-            fsrInfo.imageView = imageView->handle;
-
-            fsrInfo.shadingRateAttachmentTexelSize.width = 
-                info->fragmentShadingRateAttachment->texelWidth;
-
-            fsrInfo.shadingRateAttachmentTexelSize.height = 
-                info->fragmentShadingRateAttachment->texelHeight;
-
-            fsrInfo.imageLayout = 
-                VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-
-            tmp.pNext = &fsrInfo;
-        }
-
-        tmp.rasterizationSamples = samplesToVk(info->multisampleCount);
-
+        layout.rasterizationSamples = samplesToVk(info->multisampleCount);
         if (info->viewCount == 1) {
-            tmp.viewMask = 0;
+            layout.viewMask = 0;
         } else {
-            tmp.viewMask = (1 << info->viewCount) - 1;
+            layout.viewMask = (1 << info->viewCount) - 1;
         }
 
-        inheritanceInfo.pNext = &tmp;
+        inheritanceInfo.pNext = &layout;
         beginInfo.pNext = &inheritanceInfo;
     }
 
@@ -5834,7 +5894,7 @@ PalResult PAL_CALL drawVk(
     s_Vk.cmdDraw(
         vkCmdBuffer->handle,
         data->vertexCount,
-        data->instancecCount,
+        data->instanceCount,
         data->firstVertex,
         data->firstInstance);
 
@@ -5869,7 +5929,7 @@ PalResult PAL_CALL drawIndexedVk(
     s_Vk.cmdDrawIndexed(
         vkCmdBuffer->handle, 
         data->indexCount,
-        data->instancecCount,
+        data->instanceCount,
         data->firstIndex,
         data->vertexOffset,
         data->firstInstance);
@@ -5900,17 +5960,17 @@ PalResult PAL_CALL drawIndexedIndirectVk(
 PalResult PAL_CALL imageViewBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalImageViewState oldstate,
-    PalImageViewState newstate)
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     ImageView* vkImageView = (ImageView*)imageView;
     VkImageMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
 
-    ImageViewBarrier old, new;
-    old = imageViewBarrierToVk(oldstate);
-    new = imageViewBarrierToVk(newstate);
+    Barrier old, new;
+    old = barrierToVk(oldUsageState);
+    new = barrierToVk(newUsageState);
 
     barrier.srcStageMask = old.stages;
     barrier.srcAccessMask = old.access;
@@ -5927,6 +5987,44 @@ PalResult PAL_CALL imageViewBarrierVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.imageMemoryBarrierCount = 1;
     dependencyInfo.pImageMemoryBarriers = &barrier;
+
+    vkCmdBuffer->device->cmdPipelineBarrier(
+        vkCmdBuffer->handle,
+        &dependencyInfo);
+
+    vkCmdBuffer->dstStage = new.stages;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bufferBarrierVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    VkBufferMemoryBarrier2KHR barrier = {0};
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
+
+    Barrier old, new;
+    old = barrierToVk(oldUsageState);
+    new = barrierToVk(newUsageState);
+
+    barrier.srcStageMask = old.stages;
+    barrier.srcAccessMask = old.access;
+
+    barrier.dstStageMask = new.stages;
+    barrier.dstAccessMask = new.access;
+
+    barrier.buffer = vkBuffer->handle;
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
+
+    VkDependencyInfo dependencyInfo = {0};
+    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dependencyInfo.bufferMemoryBarrierCount = 1;
+    dependencyInfo.pBufferMemoryBarriers = &barrier;
 
     vkCmdBuffer->device->cmdPipelineBarrier(
         vkCmdBuffer->handle,
@@ -6463,6 +6561,9 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     VkPipelineFragmentShadingRateStateCreateInfoKHR fragmentShadingRateState = {0};
     fragmentShadingRateState.sType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
 
+    VkPipelineRenderingCreateInfoKHR dynRendering = {0};
+    dynRendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+
     VkGraphicsPipelineCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -6803,6 +6904,34 @@ PalResult PAL_CALL createVkGraphicsPipeline(
         createInfo.pNext = &fragmentShadingRateState;
     }
 
+    // layout info
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    VkFormat colorAttachments[MAX_ATTACHMENTS];
+    PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
+
+    // color attachments
+    for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
+        format = palFormatToVk(renderingLayout->colorAttachmentsFormat[i]);
+        colorAttachments[i] = format;
+    }
+    dynRendering.colorAttachmentCount = renderingLayout->colorAttachentCount;
+    dynRendering.pColorAttachmentFormats = colorAttachments;
+
+    // depth attachment
+    format = palFormatToVk(renderingLayout->depthAttachmentFormat);
+    dynRendering.depthAttachmentFormat = format;
+
+    // stencil attachment
+    format = palFormatToVk(renderingLayout->stencilAttachmentFormat);
+    dynRendering.stencilAttachmentFormat = format;
+
+    if (renderingLayout->viewCount == 1) {
+        dynRendering.viewMask = 0;
+    } else {
+        dynRendering.viewMask = (1 << renderingLayout->viewCount) - 1;
+    }
+
+    createInfo.pNext = &dynRendering;
     result = s_Vk.createGraphicsPipeline(
         vkDevice->handle, 
         0, 
