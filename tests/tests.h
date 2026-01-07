@@ -6,10 +6,7 @@
 
 typedef bool (*TestFn)();
 
-void registerTest(
-    const char* name,
-    TestFn func);
-
+void registerTest(TestFn func);
 void runTests();
 
 // core tests
@@ -59,5 +56,6 @@ bool graphicsTest();
 // graphics and video
 bool clearColorTest();
 bool triangleTest();
+bool meshTest();
 
 #endif // _TESTS_H

@@ -208,8 +208,6 @@ typedef struct {
     PFN_vkQueuePresentKHR queuePresent;
 
     // semaphore
-    PFN_vkCreateSemaphore createSemaphore;
-    PFN_vkDestroySemaphore destroySemaphore;
     PFN_vkWaitSemaphores waitSemaphore;
     PFN_vkSignalSemaphore signalSemaphore;
     PFN_vkGetSemaphoreCounterValue getSemaphoreValue;
@@ -2735,10 +2733,8 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     }
 
     // features that require core and extension support
-    // ray tracing is part of core 1.3
-    if (props.apiVersion >= VK_API_VERSION_1_3 || 
-        (rayTracingFound && accelerateFound)) {
-
+    // ray tracing is not part of core
+    if (rayTracingFound && accelerateFound) {
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
         VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
 
@@ -2756,8 +2752,8 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         }
     }
 
-    // mesh shader is part of core 1.3
-    if (props.apiVersion >= VK_API_VERSION_1_3 || meshShader) {
+    // mesh shader is not part of core
+    if (meshShader) {
         VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
         mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 
@@ -2771,8 +2767,8 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         }
     }
 
-    // fragment shading rate is part of core 1.3
-    if (props.apiVersion >= VK_API_VERSION_1_3 || fragmentRateShading) {
+    // fragment shading rate is not part of core
+    if (fragmentRateShading) {
         VkPhysicalDeviceFragmentShadingRateFeaturesKHR frag = {0};
         frag.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
 
@@ -3149,10 +3145,8 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        if (props.apiVersion < VK_API_VERSION_1_3) {
-            extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
-            extensions[extCount++] = "VK_KHR_acceleration_structure";
-        }
+        extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
+        extensions[extCount++] = "VK_KHR_acceleration_structure";
         ray.rayTracingPipeline = true;
         acc.accelerationStructure = true;
 
@@ -3162,11 +3156,12 @@ PalResult PAL_CALL createVkDevice(
     }
 
     if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
-        if (props.apiVersion < VK_API_VERSION_1_3) {
-            extensions[extCount++] = "VK_EXT_mesh_shader";
-        }
+        extensions[extCount++] = "VK_EXT_mesh_shader";
         mesh.meshShader = true;
         mesh.taskShader = true;
+
+        // mesh shader needs geometry feature for primitives
+        coreFeatures.geometryShader = true;
 
         mesh.pNext = next;
         next = &mesh;
@@ -3184,14 +3179,12 @@ PalResult PAL_CALL createVkDevice(
 
     if ((features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) || 
        (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT)) {
-        if (props.apiVersion < VK_API_VERSION_1_3) {
-            extensions[extCount++] = "VK_KHR_fragment_shading_rate";
-            fsr.pipelineFragmentShadingRate = true;
+        extensions[extCount++] = "VK_KHR_fragment_shading_rate";
+        fsr.pipelineFragmentShadingRate = true;
     
-            // fragment shading rate attachment needs this
-            if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
-                fsr.attachmentFragmentShadingRate = true;
-            }
+        // fragment shading rate attachment needs this
+        if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
+            fsr.attachmentFragmentShadingRate = true;
         }
 
         fsr.pNext = next;
@@ -5330,7 +5323,7 @@ PalResult PAL_CALL drawVkMeshTasks(
     }
 
     vkCmdBuffer->device->cmdDrawMeshTask(
-        vkCmdBuffer->handle, 
+        vkCmdBuffer->handle,
         groupCountX, 
         groupCountY, 
         groupCountZ);

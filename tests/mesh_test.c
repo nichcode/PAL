@@ -3,6 +3,28 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
+#include <stdio.h>
+
+static bool readFile(const char* filename, void* buffer, Uint64* size)
+{
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        return false;
+    }
+
+    fseek(file, 0, SEEK_END);
+    Uint64 tmpSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    if (buffer) {
+        fread(buffer, 1, (size_t)size, file);
+    }
+    
+    fclose(file);
+    *size = tmpSize;
+    return true;
+}
+
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2
@@ -16,11 +38,11 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
-bool clearColorTest()
+bool meshTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Clear Color Test");
+    palLog(nullptr, "Mesh Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -40,6 +62,11 @@ bool clearColorTest()
     PalSemaphore* presentCompleteSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalSemaphore** renderFinishedSemaphores; // count of swapchain images
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
+
+    PalPipelineLayout* pipelineLayout = nullptr;
+    PalPipeline* pipeline = nullptr;
+    PalShader* meshShader = nullptr;
+    PalShader* fragmentShader = nullptr;
 
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
@@ -129,6 +156,8 @@ bool clearColorTest()
     }
 
     PalAdapterCapabilities caps;
+    PalAdapterFeatures adapterFeatures;
+    bool hasGfxQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -142,20 +171,38 @@ bool clearColorTest()
         if (caps.maxGraphicsQueues == 0) {
             continue;
         } else {
-            break;
+            hasGfxQueue = true;
+            adapterFeatures = palGetAdapterFeatures(adapter);
+            if (adapterFeatures & PAL_ADAPTER_FEATURE_MESH_SHADER) {
+                break;
+            }   
         }
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, 
-            "Failed to find an adapter that supports graphics queue");
+        if (hasGfxQueue) {
+            palLog(nullptr, 
+                "Failed to find an adapter that supports graphics queue");
+
+        } else {
+            palLog(nullptr, 
+                "Failed to find an adapter that supports mesh shader");
+        }
+        return false;
+    }
+
+    PalAdapterInfo adapterInfo = {0};
+    result = palGetAdapterInfo(adapter, &adapterInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get adapter info: %s", error);
         return false;
     }
     
     // create a device
-    PalAdapterFeatures adapterFeatures = palGetAdapterFeatures(adapter);
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
+    features |= PAL_ADAPTER_FEATURE_MESH_SHADER;
     if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
         features |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     }
@@ -324,6 +371,154 @@ bool clearColorTest()
         }
     }
 
+    // create shaders
+    Uint64 bytecodeSize = 0;
+    void* bytecode = nullptr;
+    PalShaderCreateInfo shaderCreateInfo = {0};
+
+    const char* meshShaderPath = nullptr;
+    const char* fragShaderPath = nullptr;
+    if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+        meshShaderPath = "shaders/mesh.spv";
+        fragShaderPath = "shaders/triangle_frag.spv";
+    }
+
+    if (!readFile(meshShaderPath, nullptr, &bytecodeSize)) {
+        palLog(nullptr, "Failed to find shader file");
+        return false;
+    }
+
+    bytecode = palAllocate(nullptr, bytecodeSize, 0);
+    if (!bytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(meshShaderPath, bytecode, &bytecodeSize);
+    shaderCreateInfo.bytecode = bytecode;
+    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.stage = PAL_SHADER_STAGE_MESH;
+
+    result = palCreateShader(
+        device, 
+        &shaderCreateInfo, 
+        &meshShader);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create mesh shader: %s", error);
+        return false;
+    }
+
+    // fragment shader
+    bytecodeSize = 0;
+    palFree(nullptr, bytecode);
+    bytecode = nullptr;
+
+    if (!readFile(fragShaderPath, nullptr, &bytecodeSize)) {
+        palLog(nullptr, "Failed to find shader file");
+        return false;
+    }
+
+    bytecode = palAllocate(nullptr, bytecodeSize, 0);
+    if (!bytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(fragShaderPath, bytecode, &bytecodeSize);
+    shaderCreateInfo.bytecode = bytecode;
+    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
+
+    result = palCreateShader(
+        device, 
+        &shaderCreateInfo, 
+        &fragmentShader);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create fragment shader: %s", error);
+        return false;
+    }
+
+    palFree(nullptr, bytecode);
+
+    // create a pipeline layout
+    PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
+    result = palCreatePipelineLayout(
+        device, 
+        &pipelineLayoutCreateInfo, 
+        &pipelineLayout);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create pipeline layout: %s", error);
+        return false;
+    }
+
+    // the graphics pipeline needs the layout of the rendering
+    // info it will be used with
+    // we get the any image from the swapchain and get the format
+    // on the image since our color attachment takes a swapchain image
+    PalImage* image = palGetSwapchainImage(swapchain, 0);
+    PalImageInfo imageInfo = {0};
+    result = palGetImageInfo(image, &imageInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get image info: %s", error);
+        return false;
+    }
+
+    PalRenderingLayoutInfo renderingLayoutInfo = {0};
+    renderingLayoutInfo.colorAttachentCount = 1;
+    renderingLayoutInfo.colorAttachmentsFormat = &imageInfo.format;
+    renderingLayoutInfo.multisampleCount = PAL_SAMPLE_COUNT_1;
+    renderingLayoutInfo.viewCount = 1;
+
+    // create graphics pipeline
+    PalGraphicsPipelineCreateInfo pipelineCreateInfo = {0};
+
+    // color blend attachment
+    PalBlendAttachment blendAttachment = {0};
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_RED;
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_GREEN;
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_BLUE;
+    blendAttachment.colorWriteMask |= PAL_COLOR_MASK_ALPHA;
+
+    pipelineCreateInfo.blendAttachments = &blendAttachment;
+    pipelineCreateInfo.blendAttachmentCount = 1;
+
+    // multisample state
+    PalMultisampleState multisampleState = {0};
+    multisampleState.sampleCount = PAL_SAMPLE_COUNT_1;
+    pipelineCreateInfo.multisampleState = &multisampleState;
+
+    // shaders
+    PalShader* shaders[2];
+    shaders[0] = meshShader;
+    shaders[1] = fragmentShader;
+    pipelineCreateInfo.shaderCount = 2;
+    pipelineCreateInfo.shaders = shaders;
+
+    pipelineCreateInfo.topology = PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pipelineCreateInfo.pipelineLayout = pipelineLayout;
+    pipelineCreateInfo.renderingLayout = &renderingLayoutInfo;
+
+    result = palCreateGraphicsPipeline(
+        device, 
+        &pipelineCreateInfo,
+        &pipeline);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create graphics pipeline: %s", error);
+        return false;
+    }
+    
+    palDestroyShader(meshShader);
+    palDestroyShader(fragmentShader);
+
     // main loop
     Uint32 currentFrame = 0;
     bool running = true;
@@ -334,6 +529,16 @@ bool clearColorTest()
 
     bool firstImageViewUse[8];
     memset(firstImageViewUse, 1, sizeof(bool) * 8);
+
+    // we are not resizing for the viewport and scissor will not change
+    PalViewport viewport = {0};
+    viewport.height = (float)WINDOW_HEIGHT;
+    viewport.width = (float)WINDOW_WIDTH;
+    viewport.maxDepth = 1.0f;
+
+    PalRect2D scissor = {0};
+    scissor.height = WINDOW_HEIGHT;
+    scissor.width = WINDOW_WIDTH;
 
     while (running) {
         // update the video system to push video events
@@ -420,6 +625,26 @@ bool clearColorTest()
             return false;
         }
 
+        // change the state of the image view to make it renderable
+        PalUsageState oldUsageState;
+        if (firstImageViewUse[index]) {
+            oldUsageState = PAL_USAGE_STATE_UNDEFINED;
+        } else {
+            oldUsageState = PAL_USAGE_STATE_PRESENT;
+        }
+
+        result = palImageViewBarrier(
+            cmdBuffer, 
+            imageViews[index], 
+            oldUsageState, 
+            PAL_USAGE_STATE_COLOR_ATTACHMENT);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set image view barrier: %s", error);
+            return false;
+        }
+
         PalClearValue clearValue;
         clearValue.color[0] = 0.2f;
         clearValue.color[1] = 0.2f;
@@ -441,30 +666,41 @@ bool clearColorTest()
         renderingInfo.renderArea.width = WINDOW_WIDTH;
         renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
-        // change the state of the image view to make it renderable
-        PalUsageState oldUsageState;
-        if (firstImageViewUse[index]) {
-            oldUsageState = PAL_USAGE_STATE_UNDEFINED;
-        } else {
-            oldUsageState = PAL_USAGE_STATE_PRESENT;
-        }
-
-        result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            oldUsageState, 
-            PAL_USAGE_STATE_COLOR_ATTACHMENT);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set image view barrier: %s", error);
-            return false;
-        }
-
         result = palBeginRendering(cmdBuffer, &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
+            return false;
+        }
+
+        // bind pipeline
+        result = palBindPipeline(cmdBuffer, pipeline);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind pipeline: %s", error);
+            return false;
+        }
+
+        // set viewport and scissors
+        result = palSetViewport(cmdBuffer, 1, &viewport);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set viewport: %s", error);
+            return false;
+        }
+
+        result = palSetScissors(cmdBuffer, 1, &scissor);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set scissors: %s", error);
+            return false;
+        }
+
+        // draw a single triangle with the mesh shader
+        result = palDrawMeshTasks(cmdBuffer, 1, 1, 1);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to issue draw command: %s", error);
             return false;
         }
 
@@ -529,6 +765,9 @@ bool clearColorTest()
         palLog(nullptr, "Failed to wait for device: %s", error);
         return false;
     }
+
+    palDestroyPipeline(pipeline);
+    palDestroyPipelineLayout(pipelineLayout);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         palDestroySemaphore(presentCompleteSemaphores[i]);

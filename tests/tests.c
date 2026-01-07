@@ -3,35 +3,22 @@
 
 #define MAX_TESTS 64 // will change
 
-typedef struct {
-    TestFn func;
-    const char* name;
-} TestEntry;
-
-typedef struct {
-    TestEntry tests[MAX_TESTS];
-    Int32 count;
-} Tests;
-
-static Tests s_Test;
+static Uint32 s_Count = 0;
+static TestFn s_Test[MAX_TESTS];
 static const char* s_FailedString = "FAILED";
 static const char* s_PassedString = "PASSED";
 
-void registerTest(
-    const char* name,
-    TestFn func)
+void registerTest(TestFn func)
 {
-    TestEntry* entry = &s_Test.tests[s_Test.count++];
-    entry->func = func;
-    entry->name = name;
+    s_Test[s_Count++] = func;
 }
 
 void runTests()
 {
     bool status = false;
     const char* statusString = nullptr;
-    for (Int32 i = 0; i < s_Test.count; i++) {
-        status = s_Test.tests[i].func();
+    for (Int32 i = 0; i < s_Count; i++) {
+        status = s_Test[i]();
 
         if (status) {
             statusString = s_PassedString;
@@ -39,6 +26,6 @@ void runTests()
             statusString = s_FailedString;
         }
 
-        palLog(nullptr, "%s: %s", s_Test.tests[i].name, statusString);
+        palLog(nullptr, statusString);
     }
 }

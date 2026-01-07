@@ -178,16 +178,20 @@ bool triangleTest()
         }
     }
 
+    palFree(nullptr, adapters);
+    if (!adapter) {
+        palLog(nullptr, 
+            "Failed to find an adapter that supports graphics queue");
+        return false;
+    }
+
     PalAdapterInfo adapterInfo = {0};
     result = palGetAdapterInfo(adapter, &adapterInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get adapter info: %s", error);
-        palFree(nullptr, adapters);
         return false;
     }
-
-    palFree(nullptr, adapters);
     
     // create a device
     PalAdapterFeatures adapterFeatures = palGetAdapterFeatures(adapter);
@@ -513,7 +517,7 @@ bool triangleTest()
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set image view barrier: %s", error);
+        palLog(nullptr, "Failed to set buffer barrier: %s", error);
         return false;
     }
 
@@ -547,7 +551,7 @@ bool triangleTest()
     }
 
     if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
-        palLog(nullptr, "Failed to find shader files");
+        palLog(nullptr, "Failed to find shader file");
         return false;
     }
 
@@ -579,7 +583,7 @@ bool triangleTest()
     bytecode = nullptr;
 
     if (!readFile(fragShaderPath, nullptr, &bytecodeSize)) {
-        palLog(nullptr, "Failed to find shader files");
+        palLog(nullptr, "Failed to find shader file");
         return false;
     }
 
