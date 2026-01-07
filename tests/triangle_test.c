@@ -178,6 +178,15 @@ bool triangleTest()
         }
     }
 
+    PalAdapterInfo adapterInfo = {0};
+    result = palGetAdapterInfo(adapter, &adapterInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get adapter info: %s", error);
+        palFree(nullptr, adapters);
+        return false;
+    }
+
     palFree(nullptr, adapters);
     
     // create a device
@@ -408,6 +417,10 @@ bool triangleTest()
         return false;
     }
 
+    // we need to check if the memory type we want are supported
+    // but almost every GPU supports a GPU only memory 
+    // and CPU writable memory
+
     result = palAllocateMemory(
         device, 
         PAL_MEMORY_TYPE_GPU_ONLY, 
@@ -526,7 +539,14 @@ bool triangleTest()
     void* bytecode = nullptr;
     PalShaderCreateInfo shaderCreateInfo = {0};
 
-    if (!readFile("shaders/triangle_vert.spv", nullptr, &bytecodeSize)) {
+    const char* vertexShaderPath = nullptr;
+    const char* fragShaderPath = nullptr;
+    if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+        vertexShaderPath = "shaders/triangle_vert.spv";
+        fragShaderPath = "shaders/triangle_frag.spv";
+    }
+
+    if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
         palLog(nullptr, "Failed to find shader files");
         return false;
     }
@@ -537,7 +557,7 @@ bool triangleTest()
         return false;
     }
 
-    readFile("shaders/triangle_vert.spv", bytecode, &bytecodeSize);
+    readFile(vertexShaderPath, bytecode, &bytecodeSize);
     shaderCreateInfo.bytecode = bytecode;
     shaderCreateInfo.bytecodeSize = bytecodeSize;
     shaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
@@ -558,7 +578,7 @@ bool triangleTest()
     palFree(nullptr, bytecode);
     bytecode = nullptr;
 
-    if (!readFile("shaders/triangle_frag.spv", nullptr, &bytecodeSize)) {
+    if (!readFile(fragShaderPath, nullptr, &bytecodeSize)) {
         palLog(nullptr, "Failed to find shader files");
         return false;
     }
@@ -569,7 +589,7 @@ bool triangleTest()
         return false;
     }
 
-    readFile("shaders/triangle_frag.spv", bytecode, &bytecodeSize);
+    readFile(fragShaderPath, bytecode, &bytecodeSize);
     shaderCreateInfo.bytecode = bytecode;
     shaderCreateInfo.bytecodeSize = bytecodeSize;
     shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;

@@ -2727,7 +2727,7 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
             adapterFeatures |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
 
         } else if (strcmp(props->extensionName, "VK_KHR_draw_indirect_count") == 0) {
-            adapterFeatures |= PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT;
+            adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT;
 
         } else if (strcmp(props->extensionName, "VK_KHR_buffer_device_address") == 0) {
             bufferDeviceAddress = true;
@@ -2885,6 +2885,21 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
             if (bufferAddress.bufferDeviceAddress) {
                 adapterFeatures |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
             }
+        }
+    }
+
+    // indirect draw count is part of core 1.2
+    if (props.apiVersion >= VK_API_VERSION_1_2) {
+        VkPhysicalDeviceVulkan12Features features12 = {0};
+        features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &features12;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (features12.drawIndirectCount) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT;
         }
     }
 
@@ -3048,8 +3063,8 @@ PalResult PAL_CALL createVkDevice(
     const char* extensions[16] = {0};
 
     // clang-format off
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline = {0};
-    timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline = {0};
+    timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR;
 
     VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
     shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
@@ -3086,6 +3101,9 @@ PalResult PAL_CALL createVkDevice(
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2 = {0};
     sync2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
 
+    VkPhysicalDeviceVulkan12Features features12 = {0};
+    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
     // clang-format on
     if (props.apiVersion < VK_API_VERSION_1_3) {
         extensions[extCount++] = "VK_KHR_dynamic_rendering";
@@ -3112,6 +3130,7 @@ PalResult PAL_CALL createVkDevice(
             extensions[extCount++] = "VK_KHR_timeline_semaphore";
         }
         timeline.timelineSemaphore = true;
+        features12.timelineSemaphore = true;
 
         timeline.pNext = next;
         next = &timeline;
@@ -3122,6 +3141,8 @@ PalResult PAL_CALL createVkDevice(
             extensions[extCount++] = "VK_KHR_shader_float16_int8";
         }
         shader16.shaderFloat16 = true;
+        features12.shaderFloat16 = true;
+        features12.shaderInt8 = true;
 
         shader16.pNext = next;
         next = &shader16;
@@ -3140,22 +3161,25 @@ PalResult PAL_CALL createVkDevice(
         next = &acc;
     }
 
-    if ((features & PAL_ADAPTER_FEATURE_MESH_SHADER) || 
-       (features & PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT)) {
+    if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
         if (props.apiVersion < VK_API_VERSION_1_3) {
             extensions[extCount++] = "VK_EXT_mesh_shader";
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT) {
-            if (props.apiVersion < VK_API_VERSION_1_2) {
-                extensions[extCount++] = "VK_KHR_draw_indirect_count";
-            }
         }
         mesh.meshShader = true;
         mesh.taskShader = true;
 
         mesh.pNext = next;
         next = &mesh;
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT) {
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_draw_indirect_count";
+        }
+        features12.drawIndirectCount = true;
+
+        features12.pNext = next;
+        next = &features12;
     }
 
     if ((features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) || 
@@ -3179,6 +3203,7 @@ PalResult PAL_CALL createVkDevice(
             extensions[extCount++] = "VK_EXT_descriptor_indexing";
         }
         descIndex.shaderSampledImageArrayNonUniformIndexing = true;
+        features12.descriptorIndexing = true;
 
         descIndex.pNext = next;
         next = &descIndex;
@@ -3221,6 +3246,7 @@ PalResult PAL_CALL createVkDevice(
             extensions[extCount++] = "VK_KHR_buffer_device_address";
         }
         bufferAddress.bufferDeviceAddress = true;
+        features12.bufferDeviceAddress = true;
 
         bufferAddress.pNext = next;
         next = &bufferAddress;
@@ -5346,7 +5372,7 @@ PalResult PAL_CALL drawVkMeshTasksIndirectCount(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     if (!(vkCmdBuffer->device->features & 
-        PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT)) {
+        PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 

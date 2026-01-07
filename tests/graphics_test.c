@@ -288,8 +288,8 @@ bool graphicsTest()
             palLog(nullptr, "  Fragment shading rate attachment");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_MESH_SHADER_INDIRECT_COUNT) {
-            palLog(nullptr, "  Mesh shader indirect count");
+        if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT) {
+            palLog(nullptr, "  Indirect draw count");
         }
 
         if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
