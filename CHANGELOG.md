@@ -147,6 +147,8 @@ palJoinThread(thread, &retval);
 - **Core:** Added **PAL_RESULT_INVALID_SEMAPHORE** to `PalResult` enum.
 - **Core:** Added **PAL_RESULT_INVALID_RENDER_PASS** to `PalResult` enum.
 - **Core:** Added **PAL_RESULT_INVALID_BUFFER** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_ACCELERATION_STRUCTURE** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_MEMORY_MAP_FAILED** to `PalResult` enum.
 
 - **Graphics:** Added **Graphics System To PAL**.
 
@@ -155,6 +157,10 @@ palJoinThread(thread, &retval);
 - Added grapics example: see **graphics_test.c**
 
 - Added clear color example: see **clear_color_test.c**
+
+- Added vertex shader/buffer triangle example: see **triangle_test.c**
+
+- Added mesh example: see **mesh_test.c.c**
 
 ### Notes
 - No API or ABI changes - existing code remains compatible.
