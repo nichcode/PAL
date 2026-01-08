@@ -300,6 +300,10 @@ bool graphicsTest()
             palLog(nullptr, "  Indirect draw");
         }
 
+        if (features & PAL_ADAPTER_FEATURE_DISPATCH_BASE) {
+            palLog(nullptr, "  Dispatch base");
+        }
+
         palLog(nullptr, "");
     }
 

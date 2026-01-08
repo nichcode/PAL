@@ -254,7 +254,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(28),
     PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(29),
     PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(31)
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(31),
+    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(32)
 } PalAdapterFeatures;
 
 typedef enum {
@@ -1286,6 +1287,15 @@ typedef struct {
         Uint32 groupCountY,
         Uint32 groupCountZ);
 
+    PalResult PAL_CALL (*dispatchBase)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 baseGroupX,
+        Uint32 baseGroupY,
+        Uint32 baseGroupZ,
+        Uint32 groupCountX,
+        Uint32 groupCountY,
+        Uint32 groupCountZ);
+
     PalResult PAL_CALL (*dispatchIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
@@ -1686,6 +1696,15 @@ PAL_API PalResult PAL_CALL palBufferBarrier(
 
 PAL_API PalResult PAL_CALL palDispatch(
     PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ);
+
+PAL_API PalResult PAL_CALL palDispatchBase(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 baseGroupX,
+    Uint32 baseGroupY,
+    Uint32 baseGroupZ,
     Uint32 groupCountX,
     Uint32 groupCountY,
     Uint32 groupCountZ);

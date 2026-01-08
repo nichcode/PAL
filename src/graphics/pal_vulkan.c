@@ -200,6 +200,7 @@ typedef struct {
     VkDevice handle;
     PhysicalQueue* phyQueues;
     PFN_vkGetBufferDeviceAddress getBufferrAddress;
+    PFN_vkCmdDispatchBase cmdDispatchBase;
 
     // draw indirect
     PFN_vkCmdDrawIndirectCount cmdDrawIndirectCount;
@@ -2684,6 +2685,7 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
     bool multiiView = false;
     bool dynamicstate = false;
     bool bufferDeviceAddress = false;
+    bool shaderParameters = false;
 
     // clang-format off
     // check if the extensions are present
@@ -2742,6 +2744,9 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
 
         } else if (strcmp(props->extensionName, "VK_KHR_buffer_device_address") == 0) {
             bufferDeviceAddress = true;
+
+        }  else if (strcmp(props->extensionName, "VK_KHR_shader_draw_parameters") == 0) {
+            shaderParameters = true;
         }
     }
 
@@ -2909,6 +2914,21 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         if (features12.drawIndirectCount) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT;
+        }
+    }
+
+    // shader draw parameters is part of core 1.2
+    if (props.apiVersion >= VK_API_VERSION_1_2 || shaderParameters) {
+        VkPhysicalDeviceShaderDrawParametersFeatures drawParameters = {0};
+        drawParameters.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &drawParameters;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (drawParameters.shaderDrawParameters) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_DISPATCH_BASE;
         }
     }
 
@@ -3113,6 +3133,9 @@ PalResult PAL_CALL createVkDevice(
     VkPhysicalDeviceVulkan12Features features12 = {0};
     features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 
+    VkPhysicalDeviceShaderDrawParametersFeatures drawParameters = {0};
+    drawParameters.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+
     // clang-format on
     if (props.apiVersion < VK_API_VERSION_1_3) {
         extensions[extCount++] = "VK_KHR_dynamic_rendering";
@@ -3258,6 +3281,16 @@ PalResult PAL_CALL createVkDevice(
         next = &bufferAddress;
     }
 
+    if (features & PAL_ADAPTER_FEATURE_DISPATCH_BASE) {
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_shader_draw_parameters";
+        }
+        drawParameters.shaderDrawParameters = true;
+
+        drawParameters.pNext = next;
+        next = &drawParameters;
+    }
+
     VkDeviceCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pEnabledFeatures = &coreFeatures;
@@ -3347,7 +3380,7 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
-    // load swapchain procs
+    // swapchain procs
     if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
         device->acquireNextImage = (PFN_vkAcquireNextImageKHR)s_Vk.getDeviceProcAddr(
             device->handle,
@@ -3370,7 +3403,7 @@ PalResult PAL_CALL createVkDevice(
             "vkQueuePresentKHR");
     }
 
-    // load semaphore procs
+    // semaphore procs
     if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
         device->waitSemaphore = (PFN_vkWaitSemaphores)s_Vk.getDeviceProcAddr(
             device->handle,
@@ -3399,7 +3432,7 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
-    // load fragment shading rate procs
+    // fragment shading rate procs
     if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
         device->cmdSetFragmentShadingRate =
             (PFN_vkCmdSetFragmentShadingRateKHR)s_Vk.getDeviceProcAddr(
@@ -3407,7 +3440,7 @@ PalResult PAL_CALL createVkDevice(
                 "vkCmdSetFragmentShadingRateKHR");
     }
 
-    // mesh shader
+    // mesh shader procs
     if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
         device->cmdDrawMeshTask = (PFN_vkCmdDrawMeshTasksEXT)s_Vk.getDeviceProcAddr(
             device->handle,
@@ -3424,7 +3457,7 @@ PalResult PAL_CALL createVkDevice(
                 "vkCmdDrawMeshTasksIndirectCountEXT");
     }
 
-    // ray tracing
+    // ray tracing procs
     if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
         device->createAccelerationStructure =
             (PFN_vkCreateAccelerationStructureKHR)s_Vk.getDeviceProcAddr(
@@ -3467,7 +3500,7 @@ PalResult PAL_CALL createVkDevice(
                 "vkCmdTraceRaysIndirectKHR");
     }
 
-    // buffer address
+    // buffer address procs
     if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
         device->getBufferrAddress =
             (PFN_vkGetBufferDeviceAddress)s_Vk.getDeviceProcAddr(
@@ -3482,7 +3515,7 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
-    // buffer address
+    // indirect draw count procs
     if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT) {
         device->cmdDrawIndirectCount =
             (PFN_vkCmdDrawIndirectCount)s_Vk.getDeviceProcAddr(
@@ -3507,7 +3540,22 @@ PalResult PAL_CALL createVkDevice(
         }
     }
 
-    // dynamic rendering
+    // dispatch base procs
+    if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
+        device->cmdDispatchBase =
+            (PFN_vkCmdDispatchBase)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkCmdDispatchBase");
+
+        if (!device->cmdDispatchBase) {
+            device->cmdDispatchBase =
+                (PFN_vkCmdDispatchBaseKHR)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkCmdDispatchBaseKHR");
+        }
+    }
+
+    // dynamic rendering procs
     device->cmdBeginRendering =
         (PFN_vkCmdBeginRendering)s_Vk.getDeviceProcAddr(
             device->handle,
@@ -6160,6 +6208,32 @@ PalResult PAL_CALL dispatchVk(
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDispatch(
         vkCmdBuffer->handle,
+        groupCountX,
+        groupCountY,
+        groupCountZ);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL dispatchBaseVk(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 baseGroupX,
+    Uint32 baseGroupY,
+    Uint32 baseGroupZ,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DISPATCH_BASE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    vkCmdBuffer->device->cmdDispatchBase(
+        vkCmdBuffer->handle,
+        baseGroupX,
+        baseGroupY,
+        baseGroupZ,
         groupCountX,
         groupCountY,
         groupCountZ);

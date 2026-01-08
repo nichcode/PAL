@@ -423,6 +423,15 @@ PalResult PAL_CALL dispatchVk(
     Uint32 groupCountY,
     Uint32 groupCountZ);
 
+PalResult PAL_CALL dispatchBaseVk(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 baseGroupX,
+    Uint32 baseGroupY,
+    Uint32 baseGroupZ,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ);
+
 PalResult PAL_CALL dispatchIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
@@ -566,6 +575,7 @@ static PalGraphicsBackend s_VkBackend = {
     .imageViewBarrier = imageViewBarrierVk,
     .bufferBarrier = bufferBarrierVk,
     .dispatch = dispatchVk,
+    .dispatchBase = dispatchBaseVk,
     .dispatchIndirect = dispatchIndirectVk,
     .submitCommandBuffer = submitVkCommandBuffer,
     .createAccelerationstructure = createVkAccelerationstructure,
@@ -692,6 +702,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->imageViewBarrier                      ||
         !backend->bufferBarrier                         ||
         !backend->dispatch                              ||
+        !backend->dispatchBase                          ||
         !backend->dispatchIndirect                      ||
         !backend->submitCommandBuffer                   ||
         !backend->createAccelerationstructure           ||
@@ -2184,6 +2195,33 @@ PalResult PAL_CALL palDispatch(
 
     return cmdBuffer->backend->dispatch(
         cmdBuffer,
+        groupCountX,
+        groupCountY,
+        groupCountZ);
+}
+
+PalResult PAL_CALL palDispatchBase(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 baseGroupX,
+    Uint32 baseGroupY,
+    Uint32 baseGroupZ,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->dispatchBase(
+        cmdBuffer,
+        baseGroupX,
+        baseGroupY,
+        baseGroupZ,
         groupCountX,
         groupCountY,
         groupCountZ);
