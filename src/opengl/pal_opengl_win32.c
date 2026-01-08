@@ -306,15 +306,15 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     // load gdi function pointers
     s_Gdi.choosePixelFormat = (ChoosePixelFormatFn)GetProcAddress(
-        s_Gdi.handle, 
+        s_Gdi.handle,
         "ChoosePixelFormat");
 
     s_Gdi.setPixelFormat = (SetPixelFormatFn)GetProcAddress(
-        s_Gdi.handle, 
+        s_Gdi.handle,
         "SetPixelFormat");
 
     s_Gdi.getPixelFormat = (GetPixelFormatFn)GetProcAddress(
-        s_Gdi.handle, 
+        s_Gdi.handle,
         "GetPixelFormat");
 
     s_Gdi.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
@@ -322,28 +322,28 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         "DescribePixelFormat");
 
     s_Gdi.swapBuffers = (SwapBuffersFn)GetProcAddress(
-        s_Gdi.handle, 
+        s_Gdi.handle,
         "SwapBuffers");
 
     // load wgl function pointers
     s_Wgl.wglGetProcAddress = (wglGetProcAddressFn)GetProcAddress(
-        s_Wgl.opengl, 
+        s_Wgl.opengl,
         "wglGetProcAddress");
 
     s_Wgl.wglCreateContext = (wglCreateContextFn)GetProcAddress(
-        s_Wgl.opengl, 
+        s_Wgl.opengl,
         "wglCreateContext");
 
     s_Wgl.wglDeleteContext = (wglDeleteContextFn)GetProcAddress(
-        s_Wgl.opengl, 
+        s_Wgl.opengl,
         "wglDeleteContext");
 
     s_Wgl.wglMakeCurrent = (wglMakeCurrentFn)GetProcAddress(
-        s_Wgl.opengl, 
+        s_Wgl.opengl,
         "wglMakeCurrent");
 
     s_Wgl.wglShareLists = (wglShareListsFn)GetProcAddress(
-        s_Wgl.opengl, 
+        s_Wgl.opengl,
         "wglShareLists");
 
     if (!s_Gdi.choosePixelFormat     ||
@@ -355,9 +355,9 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    if (!s_Wgl.wglGetProcAddress    || 
+    if (!s_Wgl.wglGetProcAddress    ||
         !s_Wgl.wglCreateContext     ||
-        !s_Wgl.wglDeleteContext     || 
+        !s_Wgl.wglDeleteContext     ||
         !s_Wgl.wglMakeCurrent) {
         DWORD error = GetLastError();
         palSetLastPlatformError(error);
@@ -411,7 +411,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     // load gl functions
     s_Wgl.glGetString = (glGetStringFn)GetProcAddress(
-        s_Wgl.opengl, 
+        s_Wgl.opengl,
         "glGetString");
 
     // clang-format on

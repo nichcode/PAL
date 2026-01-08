@@ -82,7 +82,7 @@ static inline bool getVersionWin32(PalVersion* version)
 
     // clang-format off
     RtlGetVersionFn getVer = (RtlGetVersionFn)GetProcAddress(
-        ntdll, 
+        ntdll,
         "RtlGetVersion");
     // clang-format on
 

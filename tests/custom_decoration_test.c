@@ -448,31 +448,31 @@ static void openDisplayWayland()
 
     // clang-format off
     s_wl_display_connect = (wl_display_connect_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_display_connect");
 
     s_wl_display_disconnect = (wl_display_disconnect_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_display_disconnect");
 
     s_wl_display_roundtrip = (wl_display_roundtrip_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_display_roundtrip");
 
     s_wl_proxy_marshal_flags = (wl_proxy_marshal_flags_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_marshal_flags");
 
     s_wl_proxy_get_version = (wl_proxy_get_version_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_get_version");
 
     s_wl_proxy_add_listener = (wl_proxy_add_listener_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_add_listener");
 
     s_wl_proxy_destroy = (wl_proxy_destroy_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_destroy");
 
     registryInterface = dlsym(s_LibWayland, "wl_registry_interface");
@@ -560,7 +560,7 @@ static struct wl_buffer* createShmBuffer(
     if (!buffer) {
         return nullptr;
     }
-    
+
     wlShmPoolDestroy(pool);
 
     *outPixels = (Uint32*)data;
@@ -570,13 +570,13 @@ static struct wl_buffer* createShmBuffer(
 }
 
 void fillRect(
-    uint32_t *pixels, 
-    int stride, 
-    int x, 
-    int y, 
-    int w, 
-    int h, 
-    uint32_t color) 
+    uint32_t *pixels,
+    int stride,
+    int x,
+    int y,
+    int w,
+    int h,
+    uint32_t color)
 {
     for (int j = 0; j < h; j++) {
         for (int i = 0; i < w; i++) {
@@ -615,7 +615,7 @@ static const Uint8 s_FontBasic[128][8] = {
     ['X'] = {0x42,0x42,0x24,0x18,0x18,0x24,0x42,0x42},
     ['Y'] = {0x42,0x42,0x24,0x18,0x08,0x08,0x08,0x08},
     ['Z'] = {0x7E,0x02,0x04,0x08,0x10,0x20,0x40,0x7E},
-    
+
     ['a'] = {0x00,0x00,0x3C,0x02,0x3E,0x42,0x46,0x3A},
     ['b'] = {0x40,0x40,0x5C,0x62,0x42,0x42,0x62,0x5C},
     ['c'] = {0x00,0x00,0x3C,0x42,0x40,0x40,0x42,0x3C},
@@ -645,12 +645,12 @@ static const Uint8 s_FontBasic[128][8] = {
 };
 
 void drawCharacter(
-    uint32_t *pixels, 
-    int stride, 
-    int x, 
-    int y, 
-    char c, 
-    uint32_t color) 
+    uint32_t *pixels,
+    int stride,
+    int x,
+    int y,
+    char c,
+    uint32_t color)
 {
     if (c < 0 || c > 127) return; // not in out font
 
@@ -670,12 +670,12 @@ void drawCharacter(
 }
 
 void drawText(
-    uint32_t *pixels, 
-    int stride, 
-    int x, 
-    int y, 
-    const char *text, 
-    uint32_t color) 
+    uint32_t *pixels,
+    int stride,
+    int x,
+    int y,
+    const char *text,
+    uint32_t color)
 {
     while (*text) {
         drawCharacter(pixels, stride, x, y, *text, color);
@@ -726,43 +726,43 @@ static void createDecoration()
     // write pixels
     // title bar color (dark grey)
     fillRect(
-        s_Decoration.pixels, 
-        width, 
-        0, 
+        s_Decoration.pixels,
+        width,
         0,
-        width, 
-        TITLEBAR_HEIGHT, 
+        0,
+        width,
+        TITLEBAR_HEIGHT,
         0x002F3030);
 
     // Close button
     // this is just a rectangle for this simple example
     // to show CSD works with PAL
     fillRect(
-        s_Decoration.pixels, 
-        width, 
-        width - BUTTON_SIZE, 
-        BUTTON_POSY, 
-        BUTTON_SIZE, 
+        s_Decoration.pixels,
+        width,
+        width - BUTTON_SIZE,
+        BUTTON_POSY,
+        BUTTON_SIZE,
         TITLEBAR_HEIGHT / 2, // half of the size of the title bar
         0x00AA3333);
 
     // Maximize button
     fillRect(
-        s_Decoration.pixels, 
-        width, 
-        width - (BUTTON_OFFSET + BUTTON_SIZE), 
+        s_Decoration.pixels,
+        width,
+        width - (BUTTON_OFFSET + BUTTON_SIZE),
         BUTTON_POSY,
-        BUTTON_SIZE, 
+        BUTTON_SIZE,
         TITLEBAR_HEIGHT / 2, // half of the size of the title bar
         0x0033AA33);
 
     // Minimize button
     fillRect(
         s_Decoration.pixels,
-        width, 
-        width - (BUTTON_OFFSET * 2 + BUTTON_SIZE), 
+        width,
+        width - (BUTTON_OFFSET * 2 + BUTTON_SIZE),
         BUTTON_POSY,
-        BUTTON_SIZE, 
+        BUTTON_SIZE,
         TITLEBAR_HEIGHT / 2, // half of the size of the title bar
         0x0033AAAA);
 
@@ -780,11 +780,11 @@ static void createDecoration()
     int y = (TITLEBAR_HEIGHT - 8) / 2;
 
     drawText(
-        s_Decoration.pixels, 
-        width, 
-        x, 
-        y, 
-        WINDOW_TITLE, 
+        s_Decoration.pixels,
+        width,
+        x,
+        y,
+        WINDOW_TITLE,
         0x00FFFFFF);
 
     // set opaque regions for optimazation
@@ -829,9 +829,9 @@ static void PAL_CALL onEvent(
             // we skip maximize and minimize button for simplicity
             // we just deal with the close button
             int buttonX = 640 - BUTTON_SIZE;
-            if (x >= buttonX              && 
-                x < buttonX + BUTTON_SIZE && 
-                y >= BUTTON_POSY          && 
+            if (x >= buttonX              &&
+                x < buttonX + BUTTON_SIZE &&
+                y >= BUTTON_POSY          &&
                 y < BUTTON_POSY + BUTTON_SIZE) {
                 // inside close button
                 // trigger a window close event
@@ -841,7 +841,7 @@ static void PAL_CALL onEvent(
                 event.type = PAL_EVENT_WINDOW_CLOSE;
                 palPushEvent(s_Decoration.driver, &event);
             }
-        }   
+        }
 
     } else if (event->type == PAL_EVENT_MOUSE_MOVE) {
         Int32 x, y;
@@ -861,7 +861,7 @@ bool customDecorationTest()
     palLog(nullptr, "Custom Decoration Test");
     palLog(nullptr, "Press Escape or click close button to close Test");
 
-    palLog(nullptr, 
+    palLog(nullptr,
         "This only implements close and window movement for simplicity");
 
     palLog(nullptr, "===========================================");
@@ -900,7 +900,7 @@ bool customDecorationTest()
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
-    // we use PAL_DISPATCH_CALLBACK for the mouse button to get 
+    // we use PAL_DISPATCH_CALLBACK for the mouse button to get
     // real time events which we then use for moving and resizing
     palSetEventDispatchMode(
         eventDriver,
@@ -1004,7 +1004,7 @@ bool customDecorationTest()
     return true;
 }
 
-#else 
+#else
 #include "tests.h"
 bool customDecorationTest()
 {

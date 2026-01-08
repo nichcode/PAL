@@ -206,7 +206,7 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
     if (kernel32) {
         // clang-format off
         FARPROC setThreadDesc = GetProcAddress(
-            kernel32, 
+            kernel32,
             "SetThreadDescription");
         // clang-format on
 
@@ -562,8 +562,8 @@ PalResult PAL_CALL palWaitCondVarTimeout(
 
     // clang-format off
     BOOL ret = SleepConditionVariableCS(
-        &condVar->cv, 
-        &mutex->sc, 
+        &condVar->cv,
+        &mutex->sc,
         (DWORD)milliseconds);
     // clang-format on
 

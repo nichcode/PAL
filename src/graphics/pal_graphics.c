@@ -142,7 +142,7 @@ void PAL_CALL destroyVkQueue(PalQueue* queue);
 PalResult PAL_CALL waitVkQueue(PalQueue* queue);
 
 bool PAL_CALL canVkQueuePresent(
-    PalQueue* queue, 
+    PalQueue* queue,
     PalGraphicsWindow* window);
 
 PalResult PAL_CALL enumerateVkFormats(
@@ -210,11 +210,11 @@ PalImage* PAL_CALL getVkSwapchainImage(
 
 PalResult PAL_CALL getVkNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalSwapchainNextImageInfo* info, 
+    PalSwapchainNextImageInfo* info,
     Uint32* outIndex);
 
 PalResult PAL_CALL presentVkSwapchain(
-    PalSwapchain* swapchain, 
+    PalSwapchain* swapchain,
     PalSwapchainPresentInfo* info);
 
 PalResult PAL_CALL createVkShader(
@@ -232,7 +232,7 @@ PalResult PAL_CALL createVkFence(
 void PAL_CALL destroyVkFence(PalFence* fence);
 
 PalResult PAL_CALL waitVkFence(
-    PalFence* fence, 
+    PalFence* fence,
     Uint64 timeout);
 
 PalResult PAL_CALL resetVkFence(PalFence* fence);
@@ -252,12 +252,12 @@ PalResult PAL_CALL waitVkSemaphore(
     Uint64 timeout);
 
 PalResult PAL_CALL signalVkSemaphore(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     PalQueue* queue,
     Uint64 value);
 
 PalResult PAL_CALL getVkSemaphoreValue(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     Uint64* value);
 
 PalResult PAL_CALL createVkCommandPool(
@@ -278,7 +278,7 @@ PalResult PAL_CALL createVkCommandBuffer(
 void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
 
 PalResult PAL_CALL beginVkCommandBuffer(
-    PalCommandBuffer* cmdBuffer, 
+    PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info);
 
 PalResult PAL_CALL endVkCommandBuffer(PalCommandBuffer* cmdBuffer);
@@ -428,7 +428,7 @@ PalResult PAL_CALL bindVkBufferMemory(
 PalResult PAL_CALL mapVkMemory(
     PalDevice* device,
     PalMemory* memory,
-    Uint64 offset, 
+    Uint64 offset,
     Uint64 size,
     void** outPtr);
 
@@ -575,7 +575,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 
     // check if all the function pointers are set
     // clang-format off
-    if (!backend->enumerateAdapters                     || 
+    if (!backend->enumerateAdapters                     ||
         !backend->getAdapterInfo                        ||
         !backend->getAdapterCapabilities                ||
         !backend->getAdapterFeatures                    ||
@@ -770,7 +770,7 @@ PalResult PAL_CALL palEnumerateAdapters(
             totalCount += _count;
             _count = 0;
         }
-        
+
         // break if a backend fails
         if (result != PAL_RESULT_SUCCESS) {
             return result;
@@ -846,8 +846,8 @@ PalResult PAL_CALL palCreateDevice(
     PalDevice* device = nullptr;
     PalResult result;
     result = adapter->backend->createDevice(
-        adapter, 
-        features, 
+        adapter,
+        features,
         &device);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -894,9 +894,9 @@ PalResult PAL_CALL palAllocateMemory(
     }
 
     return device->backend->allocateMemory(
-        device, 
-        type, 
-        size, 
+        device,
+        type,
+        size,
         outMemory);
 }
 
@@ -937,7 +937,7 @@ PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
     }
 
     return device->backend->queryFragmentShadingRateCapabilities(
-        device, 
+        device,
         caps);
 }
 
@@ -954,7 +954,7 @@ PalResult PAL_CALL palQueryMeshShaderCapabilities(
     }
 
     return device->backend->queryMeshShaderCapabilities(
-        device, 
+        device,
         caps);
 }
 
@@ -971,7 +971,7 @@ PalResult PAL_CALL palQueryRayTracingCapabilities(
     }
 
     return device->backend->queryRayTracingCapabilities(
-        device, 
+        device,
         caps);
 }
 
@@ -1016,7 +1016,7 @@ void PAL_CALL palDestroyQueue(PalQueue* queue)
 }
 
 bool PAL_CALL palCanQueuePresent(
-    PalQueue* queue, 
+    PalQueue* queue,
     PalGraphicsWindow* window)
 {
     if (s_Graphics.initialized && queue) {
@@ -1163,7 +1163,7 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
     }
 
     return image->backend->getImageMemoryRequirements(
-        image, 
+        image,
         requirements);
 }
 
@@ -1181,8 +1181,8 @@ PalResult PAL_CALL palBindImageMemory(
     }
 
     return image->backend->bindImageMemory(
-        image, 
-        memory, 
+        image,
+        memory,
         offset);
 }
 
@@ -1269,10 +1269,10 @@ PalResult PAL_CALL palCreateSwapchain(
     PalResult result;
     PalSwapchain* swapchain = nullptr;
     result = device->backend->createSwapchain(
-        device, 
-        queue, 
-        window, 
-        info, 
+        device,
+        queue,
+        window,
+        info,
         &swapchain);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -1284,7 +1284,7 @@ PalResult PAL_CALL palCreateSwapchain(
         PalImage* image = device->backend->getSwapchainImage(swapchain, i);
         image->backend = device->backend;
     }
-    
+
     swapchain->backend = device->backend;
     *outSwapchain = swapchain;
     return PAL_RESULT_SUCCESS;
@@ -1310,7 +1310,7 @@ PalImage* PAL_CALL palGetSwapchainImage(
 
 PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalSwapchainNextImageInfo* info, 
+    PalSwapchainNextImageInfo* info,
     Uint32 *outIndex)
 {
     if (!s_Graphics.initialized) {
@@ -1323,7 +1323,7 @@ PalResult PAL_CALL palGetNextSwapchainImage(
 
     return swapchain->backend->getNextSwapchainImage(
         swapchain,
-        info, 
+        info,
         outIndex);
 }
 
@@ -1340,7 +1340,7 @@ PalResult PAL_CALL palPresentSwapchain(
     }
 
     return swapchain->backend->presentSwapchain(
-        swapchain, 
+        swapchain,
         info);
 }
 
@@ -1372,7 +1372,7 @@ PalResult PAL_CALL palCreateShader(
         return result;
     }
 
-    shader->backend = device->backend;    
+    shader->backend = device->backend;
     *outShader = shader;
     return PAL_RESULT_SUCCESS;
 }
@@ -1421,7 +1421,7 @@ void PAL_CALL palDestroyFence(PalFence* fence)
 }
 
 PalResult PAL_CALL palWaitFence(
-    PalFence* fence, 
+    PalFence* fence,
     Uint64 timeout)
 {
     if (!s_Graphics.initialized) {
@@ -1492,7 +1492,7 @@ void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
 }
 
 PalResult PAL_CALL palWaitSemaphore(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     PalQueue* queue,
     Uint64 value,
     Uint64 timeout)
@@ -1506,14 +1506,14 @@ PalResult PAL_CALL palWaitSemaphore(
     }
 
     return semaphore->backend->waitSemaphore(
-        semaphore, 
+        semaphore,
         queue,
         value,
         timeout);
 }
 
 PalResult PAL_CALL palSignalSemaphore(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     PalQueue* queue,
     Uint64 value)
 {
@@ -1526,13 +1526,13 @@ PalResult PAL_CALL palSignalSemaphore(
     }
 
     return semaphore->backend->signalSemaphore(
-        semaphore, 
+        semaphore,
         queue,
         value);
 }
 
 PalResult PAL_CALL palGetSemaphoreValue(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     Uint64* value)
 {
     if (!s_Graphics.initialized) {
@@ -1544,7 +1544,7 @@ PalResult PAL_CALL palGetSemaphoreValue(
     }
 
     return semaphore->backend->getSemaphoreValue(
-        semaphore, 
+        semaphore,
         value);
 }
 
@@ -1640,7 +1640,7 @@ void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
 }
 
 PalResult PAL_CALL palBeginCommandBuffer(
-    PalCommandBuffer* cmdBuffer, 
+    PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
 {
     if (!s_Graphics.initialized) {
@@ -1693,7 +1693,7 @@ PalResult PAL_CALL palExecuteCommandBuffer(
     }
 
     return primaryCmdBuffer->backend->executeCommandBuffer(
-        primaryCmdBuffer, 
+        primaryCmdBuffer,
         secondaryCmdBuffer);
 }
 
@@ -2122,7 +2122,7 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
-    
+
     as->backend = device->backend;
     *outAs = as;
     return PAL_RESULT_SUCCESS;
@@ -2186,7 +2186,7 @@ PalResult PAL_CALL palCreateBuffer(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
-    
+
     buffer->backend = device->backend;
     *outBuffer = buffer;
     return PAL_RESULT_SUCCESS;
@@ -2212,7 +2212,7 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
     }
 
     return buffer->backend->getBufferMemoryRequirements(
-        buffer, 
+        buffer,
         requirements);
 }
 
@@ -2230,15 +2230,15 @@ PalResult PAL_CALL palBindBufferMemory(
     }
 
     return buffer->backend->bindBufferMemory(
-        buffer, 
-        memory, 
+        buffer,
+        memory,
         offset);
 }
 
 PalResult PAL_CALL palMapMemory(
     PalDevice* device,
     PalMemory* memory,
-    Uint64 offset, 
+    Uint64 offset,
     Uint64 size,
     void** outPtr)
 {
@@ -2295,7 +2295,7 @@ PalResult PAL_CALL palCreatePipelineLayout(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
-    
+
     layout->backend = device->backend;
     *outLayout = layout;
     return PAL_RESULT_SUCCESS;
@@ -2335,7 +2335,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
-    
+
     pipeline->backend = device->backend;
     *outPipeline = pipeline;
     return PAL_RESULT_SUCCESS;

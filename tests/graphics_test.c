@@ -10,7 +10,7 @@ bool graphicsTest()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    // initialize the graphics system 
+    // initialize the graphics system
     PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -307,6 +307,6 @@ bool graphicsTest()
     palShutdownGraphics();
 
     palFree(nullptr, adapters);
-    
+
     return true;
 }

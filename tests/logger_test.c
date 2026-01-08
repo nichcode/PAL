@@ -5,9 +5,9 @@
 
 // clang-format off
 static const char* g_LoggerNames[LOGGER_COUNT] = {
-    "Logger1", 
-    "Logger2", 
-    "Logger3", 
+    "Logger1",
+    "Logger2",
+    "Logger3",
     "Logger4"};
 // clang-format on
 

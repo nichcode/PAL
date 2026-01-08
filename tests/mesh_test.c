@@ -19,7 +19,7 @@ static bool readFile(const char* filename, void* buffer, Uint64* size)
     if (buffer) {
         fread(buffer, 1, (size_t)size, file);
     }
-    
+
     fclose(file);
     *size = tmpSize;
     return true;
@@ -77,13 +77,13 @@ bool meshTest()
     }
 
     palSetEventDispatchMode(
-        eventDriver, 
-        PAL_EVENT_WINDOW_CLOSE, 
+        eventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(
-        eventDriver, 
-        PAL_EVENT_KEYDOWN, 
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
         PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
@@ -175,18 +175,18 @@ bool meshTest()
             adapterFeatures = palGetAdapterFeatures(adapter);
             if (adapterFeatures & PAL_ADAPTER_FEATURE_MESH_SHADER) {
                 break;
-            }   
+            }
         }
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
         if (hasGfxQueue) {
-            palLog(nullptr, 
+            palLog(nullptr,
                 "Failed to find an adapter that supports graphics queue");
 
         } else {
-            palLog(nullptr, 
+            palLog(nullptr,
                 "Failed to find an adapter that supports mesh shader");
         }
         return false;
@@ -199,7 +199,7 @@ bool meshTest()
         palLog(nullptr, "Failed to get adapter info: %s", error);
         return false;
     }
-    
+
     // create a device
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
     features |= PAL_ADAPTER_FEATURE_MESH_SHADER;
@@ -230,8 +230,8 @@ bool meshTest()
     // create a swapchain with the graphics queue
     PalSwapchainCapabilities swapchainCaps = {0};
     result = palQuerySwapchainCapabilities(
-        device, 
-        &gfxWindow, 
+        device,
+        &gfxWindow,
         &swapchainCaps);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -257,16 +257,16 @@ bool meshTest()
         swapchainCreateInfo.height = swapchainCaps.maxImageHeight / 2;
     }
 
-    // check if the minimal image count is not good for you 
+    // check if the minimal image count is not good for you
     // and increase it but not pass the max count
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     result = palCreateSwapchain(
-        device, 
-        queue, 
-        &gfxWindow, 
-        &swapchainCreateInfo, 
+        device,
+        queue,
+        &gfxWindow,
+        &swapchainCreateInfo,
         &swapchain);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -278,12 +278,12 @@ bool meshTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(
-        nullptr, 
+        nullptr,
         sizeof(PalImageView*) * imageCount,
         0);
 
     renderFinishedSemaphores = palAllocate(
-        nullptr, 
+        nullptr,
         sizeof(PalSemaphore*) * imageCount,
         0);
 
@@ -309,9 +309,9 @@ bool meshTest()
         }
 
         result = palCreateImageView(
-            device, 
-            image, 
-            &imageViewCreateInfo, 
+            device,
+            image,
+            &imageViewCreateInfo,
             &imageViews[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -349,9 +349,9 @@ bool meshTest()
         }
 
         result = palCreateCommandBuffer(
-            device, 
-            cmdPool, 
-            PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+            device,
+            cmdPool,
+            PAL_COMMAND_BUFFER_TYPE_PRIMARY,
             &cmdBuffers[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -400,8 +400,8 @@ bool meshTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_MESH;
 
     result = palCreateShader(
-        device, 
-        &shaderCreateInfo, 
+        device,
+        &shaderCreateInfo,
         &meshShader);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -432,8 +432,8 @@ bool meshTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
 
     result = palCreateShader(
-        device, 
-        &shaderCreateInfo, 
+        device,
+        &shaderCreateInfo,
         &fragmentShader);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -447,8 +447,8 @@ bool meshTest()
     // create a pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     result = palCreatePipelineLayout(
-        device, 
-        &pipelineLayoutCreateInfo, 
+        device,
+        &pipelineLayoutCreateInfo,
         &pipelineLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -506,7 +506,7 @@ bool meshTest()
     pipelineCreateInfo.renderingLayout = &renderingLayoutInfo;
 
     result = palCreateGraphicsPipeline(
-        device, 
+        device,
         &pipelineCreateInfo,
         &pipeline);
 
@@ -515,7 +515,7 @@ bool meshTest()
         palLog(nullptr, "Failed to create graphics pipeline: %s", error);
         return false;
     }
-    
+
     palDestroyShader(meshShader);
     palDestroyShader(fragmentShader);
 
@@ -585,7 +585,7 @@ bool meshTest()
         } else {
             // recreate since we dont support fence resetting
             palDestroyFence(fence);
-            
+
             result = palCreateFence(device, false, &fence);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -634,9 +634,9 @@ bool meshTest()
         }
 
         result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            oldUsageState, 
+            cmdBuffer,
+            imageViews[index],
+            oldUsageState,
             PAL_USAGE_STATE_COLOR_ATTACHMENT);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -713,11 +713,11 @@ bool meshTest()
 
         // change the state of the image view to make it presentable
         result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            PAL_USAGE_STATE_COLOR_ATTACHMENT, 
+            cmdBuffer,
+            imageViews[index],
+            PAL_USAGE_STATE_COLOR_ATTACHMENT,
             PAL_USAGE_STATE_PRESENT);
-            
+
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
@@ -781,7 +781,7 @@ bool meshTest()
     }
 
     palDestroyCommandPool(cmdPool);
-    palDestroySwapchain(swapchain); 
+    palDestroySwapchain(swapchain);
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();

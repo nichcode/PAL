@@ -132,31 +132,31 @@ void setWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
 
     // clang-format off
     s_XInternAtom = (XInternAtomFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XInternAtom");
 
     s_XChangeProperty = (XChangePropertyFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XChangeProperty");
 
     s_XGetWMName = (XGetWMNameFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XGetWMName");
 
     s_XStoreName = (XStoreNameFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XStoreName");
 
     s_XGetWindowProperty = (XGetWindowPropertyFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XGetWindowProperty");
 
     s_XFlush = (XFlushFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XFlush");
 
     s_XFree = (XFreeFn)dlsym(
-        s_X11Lib, 
+        s_X11Lib,
         "XFree");
 
     // clang-format on

@@ -50,13 +50,13 @@ bool clearColorTest()
     }
 
     palSetEventDispatchMode(
-        eventDriver, 
-        PAL_EVENT_WINDOW_CLOSE, 
+        eventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(
-        eventDriver, 
-        PAL_EVENT_KEYDOWN, 
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
         PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
@@ -148,11 +148,11 @@ bool clearColorTest()
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, 
+        palLog(nullptr,
             "Failed to find an adapter that supports graphics queue");
         return false;
     }
-    
+
     // create a device
     PalAdapterFeatures adapterFeatures = palGetAdapterFeatures(adapter);
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
@@ -183,8 +183,8 @@ bool clearColorTest()
     // create a swapchain with the graphics queue
     PalSwapchainCapabilities swapchainCaps = {0};
     result = palQuerySwapchainCapabilities(
-        device, 
-        &gfxWindow, 
+        device,
+        &gfxWindow,
         &swapchainCaps);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -210,16 +210,16 @@ bool clearColorTest()
         swapchainCreateInfo.height = swapchainCaps.maxImageHeight / 2;
     }
 
-    // check if the minimal image count is not good for you 
+    // check if the minimal image count is not good for you
     // and increase it but not pass the max count
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     result = palCreateSwapchain(
-        device, 
-        queue, 
-        &gfxWindow, 
-        &swapchainCreateInfo, 
+        device,
+        queue,
+        &gfxWindow,
+        &swapchainCreateInfo,
         &swapchain);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -231,12 +231,12 @@ bool clearColorTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(
-        nullptr, 
+        nullptr,
         sizeof(PalImageView*) * imageCount,
         0);
 
     renderFinishedSemaphores = palAllocate(
-        nullptr, 
+        nullptr,
         sizeof(PalSemaphore*) * imageCount,
         0);
 
@@ -262,9 +262,9 @@ bool clearColorTest()
         }
 
         result = palCreateImageView(
-            device, 
-            image, 
-            &imageViewCreateInfo, 
+            device,
+            image,
+            &imageViewCreateInfo,
             &imageViews[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -302,9 +302,9 @@ bool clearColorTest()
         }
 
         result = palCreateCommandBuffer(
-            device, 
-            cmdPool, 
-            PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+            device,
+            cmdPool,
+            PAL_COMMAND_BUFFER_TYPE_PRIMARY,
             &cmdBuffers[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -380,7 +380,7 @@ bool clearColorTest()
         } else {
             // recreate since we dont support fence resetting
             palDestroyFence(fence);
-            
+
             result = palCreateFence(device, false, &fence);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -450,9 +450,9 @@ bool clearColorTest()
         }
 
         result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            oldUsageState, 
+            cmdBuffer,
+            imageViews[index],
+            oldUsageState,
             PAL_USAGE_STATE_COLOR_ATTACHMENT);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -477,11 +477,11 @@ bool clearColorTest()
 
         // change the state of the image view to make it presentable
         result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            PAL_USAGE_STATE_COLOR_ATTACHMENT, 
+            cmdBuffer,
+            imageViews[index],
+            PAL_USAGE_STATE_COLOR_ATTACHMENT,
             PAL_USAGE_STATE_PRESENT);
-            
+
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
@@ -542,7 +542,7 @@ bool clearColorTest()
     }
 
     palDestroyCommandPool(cmdPool);
-    palDestroySwapchain(swapchain); 
+    palDestroySwapchain(swapchain);
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();

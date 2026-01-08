@@ -969,7 +969,7 @@ typedef struct {
     PalResult PAL_CALL (*mapMemory)(
         PalDevice* device,
         PalMemory* memory,
-        Uint64 offset, 
+        Uint64 offset,
         Uint64 size,
         void** outPtr);
 
@@ -1001,7 +1001,7 @@ typedef struct {
     void PAL_CALL (*destroyQueue)(PalQueue* queue);
 
     bool PAL_CALL (*canQueuePresent)(
-        PalQueue* queue, 
+        PalQueue* queue,
         PalGraphicsWindow* window);
 
     PalResult PAL_CALL (*waitQueue)(PalQueue* queue);
@@ -1093,7 +1093,7 @@ typedef struct {
     void PAL_CALL (*destroyFence)(PalFence* fence);
 
     PalResult PAL_CALL (*waitFenceTimeout)(
-        PalFence* fence, 
+        PalFence* fence,
         Uint64 timeout);
 
     PalResult PAL_CALL (*resetFence)(PalFence* fence);
@@ -1107,18 +1107,18 @@ typedef struct {
     void PAL_CALL (*destroySemaphore)(PalSemaphore* semaphore);
 
     PalResult PAL_CALL (*waitSemaphore)(
-        PalSemaphore* semaphore, 
+        PalSemaphore* semaphore,
         PalQueue* queue,
         Uint64 value,
         Uint64 timeout);
 
     PalResult PAL_CALL (*signalSemaphore)(
-        PalSemaphore* semaphore, 
+        PalSemaphore* semaphore,
         PalQueue* queue,
         Uint64 value);
 
     PalResult PAL_CALL (*getSemaphoreValue)(
-        PalSemaphore* semaphore, 
+        PalSemaphore* semaphore,
         Uint64* value);
 
     PalResult PAL_CALL (*createCommandPool)(
@@ -1346,7 +1346,7 @@ PAL_API void PAL_CALL palFreeMemory(
 PAL_API PalResult PAL_CALL palMapMemory(
     PalDevice* device,
     PalMemory* memory,
-    Uint64 offset, 
+    Uint64 offset,
     Uint64 size,
     void** outPtr);
 
@@ -1378,7 +1378,7 @@ PAL_API PalResult PAL_CALL palCreateQueue(
 PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 
 PAL_API bool PAL_CALL palCanQueuePresent(
-    PalQueue* queue, 
+    PalQueue* queue,
     PalGraphicsWindow* window);
 
 PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
@@ -1448,7 +1448,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
 
 PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
-    PalSwapchainNextImageInfo* info, 
+    PalSwapchainNextImageInfo* info,
     Uint32 *outIndex);
 
 PAL_API PalResult PAL_CALL palPresentSwapchain(
@@ -1470,7 +1470,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
 
 PAL_API PalResult PAL_CALL palWaitFence(
-    PalFence* fence, 
+    PalFence* fence,
     Uint64 timeout);
 
 PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
@@ -1484,18 +1484,18 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
 PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
 
 PAL_API PalResult PAL_CALL palWaitSemaphore(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     PalQueue* queue,
     Uint64 value,
     Uint64 timeout);
 
 PAL_API PalResult PAL_CALL palSignalSemaphore(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     PalQueue* queue,
     Uint64 value);
 
 PAL_API PalResult PAL_CALL palGetSemaphoreValue(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     Uint64* value);
 
 PAL_API PalResult PAL_CALL palCreateCommandPool(
@@ -1516,7 +1516,7 @@ PAL_API PalResult PAL_CALL palCreateCommandBuffer(
 PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palBeginCommandBuffer(
-    PalCommandBuffer* cmdBuffer, 
+    PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info);
 
 PAL_API PalResult PAL_CALL palEndCommandBuffer(PalCommandBuffer* cmdBuffer);

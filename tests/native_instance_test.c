@@ -180,11 +180,11 @@ void* openDisplayX11()
 
     // clang-format off
     s_XOpenDisplay = (XOpenDisplayFn)dlsym(
-        s_LibX, 
+        s_LibX,
         "XOpenDisplay");
 
     s_XCloseDisplay = (XCloseDisplayFn)dlsym(
-        s_LibX, 
+        s_LibX,
         "XCloseDisplay");
 
     return s_XOpenDisplay(nullptr);
@@ -210,31 +210,31 @@ void* openDisplayWayland()
 
     // clang-format off
     s_wl_display_connect = (wl_display_connect_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_display_connect");
 
     s_wl_display_disconnect = (wl_display_disconnect_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_display_disconnect");
 
     s_wl_display_roundtrip = (wl_display_roundtrip_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_display_roundtrip");
 
     s_wl_proxy_marshal_flags = (wl_proxy_marshal_flags_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_marshal_flags");
 
     s_wl_proxy_get_version = (wl_proxy_get_version_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_get_version");
 
     s_wl_proxy_add_listener = (wl_proxy_add_listener_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_add_listener");
 
     s_wl_proxy_destroy = (wl_proxy_destroy_fn)dlsym(
-        s_LibWayland, 
+        s_LibWayland,
         "wl_proxy_destroy");
 
     registryInterface = dlsym(s_LibWayland, "wl_registry_interface");
@@ -360,7 +360,7 @@ bool nativeInstanceTest()
     createInfo.show = true;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Native Instance Test";
-  
+
     // check if we support decorated windows (title bar, close etc)
     PalVideoFeatures64 features = palGetVideoFeaturesEx();
     if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {

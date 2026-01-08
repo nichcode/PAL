@@ -868,20 +868,20 @@ typedef int (*wl_display_dispatch_fn)(struct wl_display*);
 typedef void (*wl_proxy_destroy_fn)(struct wl_proxy*);
 
 typedef int (*wl_proxy_add_listener_fn)(
-    struct wl_proxy*, 
+    struct wl_proxy*,
     void (**)(void), void*);
 
 typedef struct wl_proxy* (*wl_proxy_marshal_constructor_v_fn)(
-    struct wl_proxy*, 
-    uint32_t, 
-    const struct wl_interface*, 
+    struct wl_proxy*,
+    uint32_t,
+    const struct wl_interface*,
     uint32_t, ...);
 
 typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
-    struct wl_proxy*, 
-    uint32_t, 
-    const struct wl_interface*, 
-    uint32_t, 
+    struct wl_proxy*,
+    uint32_t,
+    const struct wl_interface*,
+    uint32_t,
     uint32_t, ...);
 
 typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
@@ -907,11 +907,11 @@ typedef struct xkb_context* (*xkb_context_new_fn)(enum xkb_context_flags);
 typedef uint32_t (*xkb_keysym_to_utf32_fn)(xkb_keysym_t);
 
 typedef xkb_keysym_t (*xkb_state_key_get_one_sym_fn)(
-    struct xkb_state*, 
+    struct xkb_state*,
     xkb_keycode_t);
 
 typedef struct xkb_keymap* (*xkb_keymap_new_from_string_fn)(
-    struct xkb_context*, 
+    struct xkb_context*,
     const char*,
     enum xkb_keymap_format,
     enum xkb_keymap_compile_flags);
@@ -926,13 +926,13 @@ typedef enum xkb_state_component (*xkb_state_update_mask_fn)(
     xkb_layout_index_t);
 
 typedef int (*xkb_keymap_key_repeats_fn)(
-    struct xkb_keymap*, 
+    struct xkb_keymap*,
     xkb_keycode_t);
 
 // wayland cursor
 typedef struct wl_cursor_theme* (*wl_cursor_theme_load_fn)(
-    const char*, 
-    int, 
+    const char*,
+    int,
     struct wl_shm*);
 
 typedef struct wl_cursor* (*wl_cursor_theme_get_cursor_fn)(
@@ -948,22 +948,22 @@ struct wl_surface;
 
 typedef struct wl_egl_window* (*wl_egl_window_create_fn)(
     struct wl_surface*,
-    int, 
+    int,
     int);
 
 typedef void (*wl_egl_window_destroy_fn)(struct wl_egl_window*);
 
 typedef void (*wl_egl_window_resize_fn)(
     struct wl_egl_window*,
-    int, 
-    int, 
-    int, 
+    int,
+    int,
+    int,
     int);
 
 typedef struct {
     bool checkFeatures;
     int monitorCount;
-    
+
     void* handle;
     void* xkbCommon;
     void* libCursor;
@@ -1061,21 +1061,21 @@ static inline Uint64 getTime()
 }
 
 static inline void* wlRegistryBind(
-    struct wl_registry *wl_registry, 
-    uint32_t name, 
-    const struct wl_interface *interface, 
+    struct wl_registry *wl_registry,
+    uint32_t name,
+    const struct wl_interface *interface,
     uint32_t version)
 {
 	struct wl_proxy *id;
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *)wl_registry,
-        WL_REGISTRY_BIND, 
-        interface, 
-        version, 
-        0, 
-        name, 
-        interface->name, 
-        version, 
+        WL_REGISTRY_BIND,
+        interface,
+        version,
+        0,
+        name,
+        interface->name,
+        version,
         NULL);
 
 	return (void *)id;
@@ -1083,7 +1083,7 @@ static inline void* wlRegistryBind(
 
 static inline int wlRegistryAddListener(
     struct wl_registry *wl_registry,
-    const struct wl_registry_listener *listener, 
+    const struct wl_registry_listener *listener,
     void *data)
 {
 	return s_Wl.proxyAddListener(
@@ -1098,10 +1098,10 @@ static inline struct wl_registry* wlDisplayGetRegistry(
 	registry = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_display,
         1, // WL_DISPLAY_GET_REGISTRY
-        s_Wl.registryInterface, 
+        s_Wl.registryInterface,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_display), 
-            0, 
+            (struct wl_proxy *) wl_display),
+            0,
             NULL);
 
 	return (struct wl_registry *)registry;
@@ -1109,7 +1109,7 @@ static inline struct wl_registry* wlDisplayGetRegistry(
 
 static inline int wlOutputAddListener(
     struct wl_output *wl_output,
-    const struct wl_output_listener *listener, 
+    const struct wl_output_listener *listener,
     void *data)
 {
 	return s_Wl.proxyAddListener(
@@ -1124,10 +1124,10 @@ static inline struct wl_surface* wlCompositorCreateSurface(
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_compositor,
         0, // WL_COMPOSITOR_CREATE_SURFACE,
-        s_Wl.surfaceInterface, 
+        s_Wl.surfaceInterface,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_compositor), 
-            0, 
+            (struct wl_proxy *) wl_compositor),
+            0,
             NULL);
 
 	return (struct wl_surface*) id;
@@ -1138,9 +1138,9 @@ static inline void wlSurfaceCommit(struct wl_surface *wl_surface)
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_surface,
         6, // WL_SURFACE_COMMIT
-        NULL, 
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface), 
+            (struct wl_proxy *) wl_surface),
             0);
 }
 
@@ -1149,27 +1149,27 @@ static inline void wlSurfaceDestroy(struct wl_surface *wl_surface)
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_surface,
         0, // WL_SURFACE_DESTROY
-        NULL, 
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface), 
+            (struct wl_proxy *) wl_surface),
             WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct wl_shm_pool* wlShmCreatePool(
-    struct wl_shm *wl_shm, 
-    int32_t fd, 
+    struct wl_shm *wl_shm,
+    int32_t fd,
     int32_t size)
 {
 	struct wl_proxy *id;
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_shm,
         0, // WL_SHM_CREATE_POOL
-        s_Wl.shmPoolInterface, 
+        s_Wl.shmPoolInterface,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_shm), 
-            0, 
-            NULL, 
-            fd, 
+            (struct wl_proxy *) wl_shm),
+            0,
+            NULL,
+            fd,
             size);
 
 	return (struct wl_shm_pool *) id;
@@ -1179,34 +1179,34 @@ static inline void wlShmPoolDestroy(struct wl_shm_pool *wl_shm_pool)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_shm_pool,
-        WL_SHM_POOL_DESTROY, 
-        NULL, 
+        WL_SHM_POOL_DESTROY,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_shm_pool), 
+            (struct wl_proxy *) wl_shm_pool),
             WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct wl_buffer* wlShmPoolCreateBuffer(
-    struct wl_shm_pool *wl_shm_pool, 
-    int32_t offset, 
-    int32_t width, 
-    int32_t height, 
-    int32_t stride, 
+    struct wl_shm_pool *wl_shm_pool,
+    int32_t offset,
+    int32_t width,
+    int32_t height,
+    int32_t stride,
     uint32_t format)
 {
 	struct wl_proxy *id;
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_shm_pool,
-        WL_SHM_POOL_CREATE_BUFFER, 
-        s_Wl.bufferInterface, 
+        WL_SHM_POOL_CREATE_BUFFER,
+        s_Wl.bufferInterface,
         s_Wl.proxyGetVersion(
             (struct wl_proxy *) wl_shm_pool),
-            0, 
-            NULL, 
+            0,
+            NULL,
             offset,
-            width, 
-            height, 
-            stride, 
+            width,
+            height,
+            stride,
             format);
 
 	return (struct wl_buffer *) id;
@@ -1216,54 +1216,54 @@ static inline void wlBufferDestroy(struct wl_buffer *wl_buffer)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_buffer,
-        WL_BUFFER_DESTROY, 
-        NULL, 
+        WL_BUFFER_DESTROY,
+        NULL,
         s_Wl.proxyGetVersion(
             (struct wl_proxy *) wl_buffer),
             WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void wlSurfaceAttach(
-    struct wl_surface *wl_surface, 
-    struct wl_buffer *buffer, 
-    int32_t x, 
+    struct wl_surface *wl_surface,
+    struct wl_buffer *buffer,
+    int32_t x,
     int32_t y)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_surface,
-        WL_SURFACE_ATTACH, 
-        NULL, 
+        WL_SURFACE_ATTACH,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface), 
-            0, 
-            buffer, 
-            x, 
+            (struct wl_proxy *) wl_surface),
+            0,
+            buffer,
+            x,
             y);
 }
 
 static inline void wlSurfaceDamageBuffer(
-    struct wl_surface *wl_surface, 
-    int32_t x, 
-    int32_t y, 
-    int32_t width, 
+    struct wl_surface *wl_surface,
+    int32_t x,
+    int32_t y,
+    int32_t width,
     int32_t height)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_surface,
-        WL_SURFACE_DAMAGE_BUFFER, 
-        NULL, 
+        WL_SURFACE_DAMAGE_BUFFER,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface), 
-            0, 
-            x, 
-            y, 
-            width, 
+            (struct wl_proxy *) wl_surface),
+            0,
+            x,
+            y,
+            width,
             height);
 }
 
 static inline int wlSurfaceAddListener(
     struct wl_surface *wl_surface,
-    const struct wl_surface_listener *listener, 
+    const struct wl_surface_listener *listener,
     void *data)
 {
 	return s_Wl.proxyAddListener(
@@ -1273,7 +1273,7 @@ static inline int wlSurfaceAddListener(
 
 static inline int wlSeatAddListener(
     struct wl_seat *wl_seat,
-    const struct wl_seat_listener *listener, 
+    const struct wl_seat_listener *listener,
     void *data)
 {
 	return s_Wl.proxyAddListener(
@@ -1286,11 +1286,11 @@ static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat *wl_seat)
 	struct wl_proxy *id;
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_seat,
-        WL_SEAT_GET_POINTER, 
-        s_Wl.pointerInterface, 
+        WL_SEAT_GET_POINTER,
+        s_Wl.pointerInterface,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_seat), 
-            0, 
+            (struct wl_proxy *) wl_seat),
+            0,
             NULL);
 
 	return (struct wl_pointer *) id;
@@ -1301,11 +1301,11 @@ static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat *wl_seat)
 	struct wl_proxy *id;
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_seat,
-        WL_SEAT_GET_KEYBOARD, 
-        s_Wl.keyboardInterface, 
+        WL_SEAT_GET_KEYBOARD,
+        s_Wl.keyboardInterface,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_seat), 
-            0, 
+            (struct wl_proxy *) wl_seat),
+            0,
             NULL);
 
 	return (struct wl_keyboard *) id;
@@ -1313,7 +1313,7 @@ static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat *wl_seat)
 
 static inline int wlPointerAddListener(
     struct wl_pointer *wl_pointer,
-    const struct wl_pointer_listener *listener, 
+    const struct wl_pointer_listener *listener,
     void *data)
 {
 	return s_Wl.proxyAddListener(
@@ -1322,28 +1322,28 @@ static inline int wlPointerAddListener(
 }
 
 static inline void wlPointerSetCursor(
-    struct wl_pointer *wl_pointer, 
-    uint32_t serial, 
-    struct wl_surface *surface, 
-    int32_t hotspot_x, 
+    struct wl_pointer *wl_pointer,
+    uint32_t serial,
+    struct wl_surface *surface,
+    int32_t hotspot_x,
     int32_t hotspot_y)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_pointer,
-        WL_POINTER_SET_CURSOR, 
-        NULL, 
+        WL_POINTER_SET_CURSOR,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_pointer), 
-            0, 
-            serial, 
-            surface, 
-            hotspot_x, 
+            (struct wl_proxy *) wl_pointer),
+            0,
+            serial,
+            surface,
+            hotspot_x,
             hotspot_y);
 }
 
 static inline int wlKeyboardAddListener(
     struct wl_keyboard *wl_keyboard,
-    const struct wl_keyboard_listener *listener, 
+    const struct wl_keyboard_listener *listener,
     void *data)
 {
 	return s_Wl.proxyAddListener(
@@ -1357,47 +1357,47 @@ static inline struct wl_region* wlCompositorCreateRegion(
 	struct wl_proxy *id;
 	id = s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_compositor,
-        WL_COMPOSITOR_CREATE_REGION, 
-        s_Wl.regionInterface, 
+        WL_COMPOSITOR_CREATE_REGION,
+        s_Wl.regionInterface,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_compositor), 
-            0, 
+            (struct wl_proxy *) wl_compositor),
+            0,
             NULL);
 
 	return (struct wl_region *) id;
 }
 
 static inline void wlRegionAdd(
-    struct wl_region *wl_region, 
-    int32_t x, 
-    int32_t y, 
-    int32_t width, 
+    struct wl_region *wl_region,
+    int32_t x,
+    int32_t y,
+    int32_t width,
     int32_t height)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_region,
-        WL_REGION_ADD, 
-        NULL, 
+        WL_REGION_ADD,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_region), 
-            0, 
-            x, 
-            y, 
-            width, 
+            (struct wl_proxy *) wl_region),
+            0,
+            x,
+            y,
+            width,
             height);
 }
 
 static inline void wlSurfaceSetOpaqueRegion(
-    struct wl_surface *wl_surface, 
+    struct wl_surface *wl_surface,
     struct wl_region *region)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_surface,
-        WL_SURFACE_SET_OPAQUE_REGION, 
-        NULL, 
+        WL_SURFACE_SET_OPAQUE_REGION,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface), 
-            0, 
+            (struct wl_proxy *) wl_surface),
+            0,
             region);
 }
 
@@ -1405,10 +1405,10 @@ static inline void wlRegionDestroy(struct wl_region *wl_region)
 {
 	s_Wl.proxyMarshalFlags(
         (struct wl_proxy *) wl_region,
-        WL_REGION_DESTROY, 
-        NULL, 
+        WL_REGION_DESTROY,
+        NULL,
         s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_region), 
+            (struct wl_proxy *) wl_region),
             WL_MARSHAL_FLAG_DESTROY);
 }
 
@@ -1456,11 +1456,11 @@ static void surfaceHandleEnter(
     if (data->dpi == 0) {
         // this is triggered when the window is created
         // we cache the DPI and skip the event
-        data->dpi = monitorData->dpi;        
+        data->dpi = monitorData->dpi;
         return;
     }
 
-    // the code below should be skipped if users are not 
+    // the code below should be skipped if users are not
     // interested in DPI changed events
     PalDispatchMode mode = PAL_DISPATCH_NONE;
     PalEventType type = PAL_EVENT_MONITOR_DPI_CHANGED;
@@ -1545,10 +1545,10 @@ static void pointerHandleEnter(
         // our window
         WaylandCursor* cursor = data->cursor;
         wlPointerSetCursor(
-            pointer, 
-            serial, 
+            pointer,
+            serial,
             cursor->surface,
-            cursor->hotspotX, 
+            cursor->hotspotX,
             cursor->hotspotY);
     }
 
@@ -1628,7 +1628,7 @@ static void pointerHandleButton(
         // cannot recieve events without a focused surface
         return;
     }
-    
+
     bool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
     PalMouseButton _button = 0;
     PalEventType type = PAL_EVENT_MOUSE_BUTTONUP;
@@ -1688,7 +1688,7 @@ static void pointerHandleAxis(
         s_Mouse.tmpScrollY += delta;
         s_Mouse.accumScrollY += delta;
     }
-    
+
     s_Mouse.pendingScroll = true;
 }
 
@@ -1706,7 +1706,7 @@ static void pointerHandleAxisDiscrete(
         s_Mouse.tmpScrollY += discrete;
         s_Mouse.accumScrollY += discrete;
     }
-    
+
     s_Mouse.pendingScroll = true;
 }
 
@@ -1765,7 +1765,7 @@ static void pointerHandleAxisStop(
     uint32_t time,
 	uint32_t axis)
 {
-    
+
 }
 
 static void keyboardHandleEnter(
@@ -1873,7 +1873,7 @@ static void keyboardHandleKey(
         scancode = PAL_SCANCODE_UP;
     } else if (key == 102) {
         scancode = PAL_SCANCODE_HOME;
-    
+
     } else {
         scancode = s_Keyboard.scancodes[key];
     }
@@ -2035,7 +2035,7 @@ static void seatHandleName(
     struct wl_seat* seat,
     const char* name)
 {
-    
+
 }
 
 static struct wl_seat_listener seatListener = {
@@ -3044,8 +3044,8 @@ static PalResult glxBackend(const int index)
 
     int count = 0;
     GLXFBConfig* configs = s_X11.glxGetFBConfigs(
-        s_X11.display, 
-        s_X11.screen, 
+        s_X11.display,
+        s_X11.screen,
         &count);
 
     GLXFBConfig fbConfig = configs[index];
@@ -3055,7 +3055,7 @@ static PalResult glxBackend(const int index)
 
     // get a matching visual
     XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(
-        s_X11.display, 
+        s_X11.display,
         fbConfig);
 
     if (!visualInfo) {
@@ -3067,7 +3067,7 @@ static PalResult glxBackend(const int index)
 }
 
 static PalResult eglXBackend(int index)
-{    
+{
     // user choose EGL FBConfig backend
     if (!s_Egl.handle) {
         palSetLastPlatformError(errno);
@@ -3110,9 +3110,9 @@ static PalResult eglXBackend(int index)
     // clang-format off
     // get a matching visual info
     XVisualInfo* visualInfo = s_X11.getVisualInfo(
-        s_X11.display, 
-        VisualIDMask, 
-        &tmp, 
+        s_X11.display,
+        VisualIDMask,
+        &tmp,
         &numVisuals);
     // clang-format on
 
@@ -3513,301 +3513,301 @@ static PalResult xInitVideo()
 
     // load procs
     s_X11.openDisplay = (XOpenDisplayFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XOpenDisplay");
 
     s_X11.closeDisplay = (XCloseDisplayFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCloseDisplay");
 
     s_X11.getWindowAttributes = (XGetWindowAttributesFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetWindowAttributes");
 
     s_X11.setCrtcConfig = (XRRSetCrtcConfigFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XRRSetCrtcConfig");
 
     s_X11.getWindowProperty = (XGetWindowPropertyFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetWindowProperty");
 
     s_X11.internAtom = (XInternAtomFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XInternAtom");
 
     s_X11.getSelectionOwner = (XGetSelectionOwnerFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetSelectionOwner");
 
     s_X11.freeColormap = (XFreeColormapFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XFreeColormap");
 
     s_X11.storeName = (XStoreNameFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XStoreName");
 
     s_X11.changeProperty = (XChangePropertyFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XChangeProperty");
 
     s_X11.flush = (XFlushFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XFlush");
 
     s_X11.createColormap = (XCreateColormapFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCreateColormap");
 
     s_X11.mapWindow = (XMapWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XMapWindow");
 
     s_X11.unmapWindow = (XUnmapWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XUnmapWindow");
 
     s_X11.createWindow = (XCreateWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCreateWindow");
-    
+
     s_X11.destroyWindow = (XDestroyWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XDestroyWindow");
 
     s_X11.matchVisualInfo = (XMatchVisualInfoFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XMatchVisualInfo");
 
     s_X11.pending = (XPendingFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XPending");
 
     s_X11.setWMProtocols = (XSetWMProtocolsFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetWMProtocols");
 
     s_X11.nextEvent = (XNextEventFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XNextEvent");
 
     s_X11.setWMNormalHints = (XSetWMNormalHintsFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetWMNormalHints");
 
     s_X11.getWMNormalHints = (XGetWMNormalHintsFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetWMNormalHints");
 
     s_X11.sendEvent = (XSendEventFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSendEvent");
 
     s_X11.moveWindow = (XMoveWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XMoveWindow");
 
     s_X11.resizeWindow = (XResizeWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XResizeWindow");
 
     s_X11.iconifyWindow = (XIconifyWindowFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XIconifyWindow");
 
     s_X11.setErrorHandler = (XSetErrorHandlerFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetErrorHandler");
 
     s_X11.sync = (XSyncFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSync");
 
     s_X11.saveContext = (XSaveContextFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSaveContext");
 
     s_X11.findContext = (XFindContextFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XFindContext");
 
     s_X11.uniqueContext = (XrmUniqueQuarkFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XrmUniqueQuark");
 
     // load Xrandr functions
     s_X11.getScreenResources = (XRRGetScreenResourcesFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRGetScreenResources");
 
     s_X11.getOutputPrimary = (XRRGetOutputPrimaryFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRGetOutputPrimary");
 
     s_X11.getOutputInfo = (XRRGetOutputInfoFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRGetOutputInfo");
-    
+
     s_X11.getCrtcInfo = (XRRGetCrtcInfoFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRGetCrtcInfo");
-    
+
     s_X11.freeScreenResources = (XRRFreeScreenResourcesFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRFreeScreenResources");
-    
+
     s_X11.freeOutputInfo = (XRRFreeOutputInfoFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRFreeScreenResources");
-    
+
     s_X11.freeCrtcInfo = (XRRFreeCrtcInfoFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRFreeCrtcInfo");
 
     s_X11.selectRRInput = (XRRSelectInputFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRSelectInput");
 
     s_X11.queryRRExtension = (XRRQueryExtensionFn)dlsym(
-        s_X11.xrandr, 
+        s_X11.xrandr,
         "XRRQueryExtension");
 
     s_X11.allocClassHint = (XAllocClassHintFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XAllocClassHint");
 
     s_X11.setClassHint = (XSetClassHintFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetClassHint");
 
     s_X11.free = (XFreeFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XFree");
 
     s_X11.getVisualInfo = (XGetVisualInfoFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetVisualInfo");
 
     s_X11.createFontCursor = (XCreateFontCursorFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCreateFontCursor");
-    
+
     s_X11.freePixmap = (XFreePixmapFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XFreePixmap");
 
     s_X11.setWMHints = (XSetWMHintsFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetWMHints");
 
     s_X11.grabPointer = (XGrabPointerFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGrabPointer");
 
     s_X11.createPixmapCursor = (XCreatePixmapCursorFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCreatePixmapCursor");
 
     s_X11.warpPointer = (XWarpPointerFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XWarpPointer");
 
     s_X11.getWMName = (XGetWMNameFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetWMName");
 
     s_X11.queryPointer = (XQueryPointerFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XQueryPointer");
 
     s_X11.ungrabPointer = (XUngrabPointerFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XUngrabPointer");
 
     s_X11.allocWMHints = (XAllocWMHintsFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XAllocWMHints");
 
     s_X11.mapRaised = (XMapRaisedFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XMapRaised");
 
     s_X11.undefineCursor = (XUndefineCursorFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XUndefineCursor");
 
     s_X11.defineCursor = (XDefineCursorFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XDefineCursor");
 
     s_X11.freeCursor = (XFreeCursorFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XFreeCursor");
 
     s_X11.getWMHints = (XGetWMHintsFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetWMHints");
 
     s_X11.createPixmap = (XCreatePixmapFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCreatePixmap");
 
     s_X11.setInputFocus = (XSetInputFocusFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetInputFocus");
 
     s_X11.getInputFocus = (XGetInputFocusFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XGetInputFocus");
 
     s_X11.selectInput = (XSelectInputFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSelectInput");
 
     // libXcursor
     s_X11.cursorImageLoadCursor = (XcursorImageLoadCursorFn)dlsym(
-        s_X11.libCursor, 
+        s_X11.libCursor,
         "XcursorImageLoadCursor");
 
     s_X11.cursorImageCreate = (XcursorImageCreateFn)dlsym(
-        s_X11.libCursor, 
+        s_X11.libCursor,
         "XcursorImageCreate");
 
     s_X11.cursorImageDestroy = (XcursorImageDestroyFn)dlsym(
-        s_X11.libCursor, 
+        s_X11.libCursor,
         "XcursorImageDestroy");
 
     s_X11.lookupKeysym = (XLookupKeysymFn)dlsym(
-        s_X11.libCursor, 
+        s_X11.libCursor,
         "XLookupKeysym");
 
     s_X11.setDetectableAutoRepeat = (XkbSetDetectableAutoRepeatFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XkbSetDetectableAutoRepeat");
 
     s_X11.setLocaleModifiers = (XSetLocaleModifiersFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XSetLocaleModifiers");
 
     s_X11.openIM = (XOpenIMFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XOpenIM");
 
     s_X11.closeIM = (XCloseIMFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCloseIM");
 
     s_X11.createIC = (XCreateICFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XCreateIC");
 
     s_X11.destroyIC = (XDestroyICFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "XDestroyIC");
 
     s_X11.utf8LookupString = (Xutf8LookupStringFn)dlsym(
-        s_X11.handle, 
+        s_X11.handle,
         "Xutf8LookupString");
 
     // X11 server
@@ -3828,11 +3828,11 @@ static PalResult xInitVideo()
     s_X11.screen = DefaultScreen(s_X11.display);
 
     xCheckFeatures();
-   
+
     // subscribe for monitor events
     s_X11.selectRRInput(
-        s_X11.display, 
-        s_X11.root, 
+        s_X11.display,
+        s_X11.root,
         RRScreenChangeNotifyMask | RRNotify);
 
     int eventBase, errorBase = 0;
@@ -3915,7 +3915,7 @@ PalResult xSetFBConfig(
     if (backend == PAL_CONFIG_BACKEND_GLX) {
         return glxBackend(index);
 
-    } else if (backend == PAL_CONFIG_BACKEND_EGL || 
+    } else if (backend == PAL_CONFIG_BACKEND_EGL ||
               backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         return eglXBackend(index);
 
@@ -4155,7 +4155,7 @@ static void xUpdateVideo()
                 }
                 break;
             }
-  
+
             case MotionNotify: {
                 // mouse moved
                 const int x = event.xmotion.x;
@@ -4366,17 +4366,17 @@ static void xUpdateVideo()
                         } else if ((ch >> 4) == 0xE && len >= 3) {
                             // 3 byte
                             // clang-format off
-                            codepoint = ((ch & 0x0F) << 12)       | 
-                                        ((buffer[1] & 0x3F) << 6) | 
+                            codepoint = ((ch & 0x0F) << 12)       |
+                                        ((buffer[1] & 0x3F) << 6) |
                                         (buffer[2] & 0x3F);
                             // clang-format on
 
                         } else if ((ch >> 3) == 0x1E && len >= 4) {
                             // 4 byte
                             // clang-format off
-                            codepoint = ((ch & 0x07) << 18)        | 
-                                        ((buffer[1] & 0x3F) << 12) | 
-                                        ((buffer[2] & 0x3F) << 6)  | 
+                            codepoint = ((ch & 0x07) << 18)        |
+                                        ((buffer[1] & 0x3F) << 12) |
+                                        ((buffer[2] & 0x3F) << 6)  |
                                         (buffer[3] & 0x3F);
                             // clang-format on
                         }
@@ -4861,11 +4861,11 @@ static PalResult xCreateWindow(
         borderPixel = 0;
 
         // clang-format off
-        
+
         colormap = s_X11.createColormap(
-            s_X11.display, 
-            s_X11.root, 
-            visual, 
+            s_X11.display,
+            s_X11.root,
+            visual,
             AllocNone);
         // clang-format on
 
@@ -4933,8 +4933,8 @@ static PalResult xCreateWindow(
 
             // clang-format off
             XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-                s_X11.display, 
-                resources, 
+                s_X11.display,
+                resources,
                 outputInfo->crtc);
             // clang-format on
 
@@ -5778,7 +5778,7 @@ PalResult xCreateIcon(
         Uint8 a = info->pixels[i * 4 + 3]; // Alpha
 
         // clang-format off
-        icon[2 + i] = ((unsigned long)a << 24) | 
+        icon[2 + i] = ((unsigned long)a << 24) |
                       ((unsigned long)r << 16) |
                       ((unsigned long)g << 8) |
                       ((unsigned long)b);
@@ -5839,7 +5839,7 @@ PalResult xCreateCursor(
         Uint8 a = info->pixels[i * 4 + 3]; // Alpha
 
         // clang-format off
-        image->pixels[i] = ((unsigned long)a << 24) | 
+        image->pixels[i] = ((unsigned long)a << 24) |
                            ((unsigned long)r << 16) |
                            ((unsigned long)g << 8) |
                            ((unsigned long)b);
@@ -6300,7 +6300,7 @@ static struct wl_buffer* createShmBuffer(
             Uint8 a = pixels[i * 4 + 3]; // Alpha
 
             // clang-format off
-            dataPixels[i] = ((unsigned long)a << 24) | 
+            dataPixels[i] = ((unsigned long)a << 24) |
                             ((unsigned long)r << 16) |
                             ((unsigned long)g << 8) |
                             ((unsigned long)b);
@@ -6533,9 +6533,9 @@ PalResult wlInitVideo()
     s_Wl.libWaylandEgl = dlopen("libwayland-egl.so", RTLD_LAZY);
 
     // clang-format off
-    if (!s_Wl.handle || 
-        !s_Wl.xkbCommon || 
-        !s_Wl.libCursor || 
+    if (!s_Wl.handle ||
+        !s_Wl.xkbCommon ||
+        !s_Wl.libCursor ||
         !s_Wl.libWaylandEgl) {
         palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -6556,134 +6556,134 @@ PalResult wlInitVideo()
 
     // load function procs
     s_Wl.displayConnect = (wl_display_connect_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_connect");
 
     s_Wl.displayDisconnect = (wl_display_disconnect_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_disconnect");
 
     s_Wl.displayRoundtrip = (wl_display_roundtrip_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_roundtrip");
 
     s_Wl.displayDispatch = (wl_display_dispatch_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_dispatch");
 
     s_Wl.proxyAddListener = (wl_proxy_add_listener_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_proxy_add_listener");
 
     s_Wl.proxyMarshalCnstructor = (wl_proxy_marshal_constructor_v_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_proxy_marshal_constructor_versioned");
 
     s_Wl.proxyDestroy = (wl_proxy_destroy_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_proxy_destroy");
 
     s_Wl.proxyMarshalFlags = (wl_proxy_marshal_flags_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_proxy_marshal_flags");
 
     s_Wl.proxyGetVersion = (wl_proxy_get_version_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_proxy_get_version");
 
     s_Wl.getError = (wl_display_get_error_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_get_error");
 
     s_Wl.dispatchPending = (wl_display_dispatch_pending_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_dispatch_pending");
 
     s_Wl.displayFlush = (wl_display_flush_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_flush");
 
     s_Wl.prepareRead = (wl_display_prepare_read_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_prepare_read");
 
     s_Wl.readEvents = (wl_display_read_events_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_read_events");
 
     s_Wl.displayGetFd = (wl_display_get_fd_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_get_fd");
 
     s_Wl.cancelRead = (wl_display_cancel_read_fn)dlsym(
-        s_Wl.handle, 
+        s_Wl.handle,
         "wl_display_cancel_read");
 
     // load xkbcommon procs
     s_Wl.xkbKeymapUnref = (xkb_keymap_unref_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_keymap_unref");
 
     s_Wl.xkbStateKeyGetOneSym = (xkb_state_key_get_one_sym_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_state_key_get_one_sym");
 
     s_Wl.xkbStateNew = (xkb_state_new_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_state_new");
 
     s_Wl.xkbStateUnref = (xkb_state_unref_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_state_unref");
 
     s_Wl.xkbContextUnref = (xkb_context_unref_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_context_unref");
 
     s_Wl.xkbContextNew = (xkb_context_new_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_context_new");
 
     s_Wl.xkbKeymapNewFromString = (xkb_keymap_new_from_string_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_keymap_new_from_string");
 
     s_Wl.xkbKeysymToUtf32 = (xkb_keysym_to_utf32_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_keysym_to_utf32");
 
     s_Wl.xkbStateUpdateMask = (xkb_state_update_mask_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_state_update_mask");
 
     s_Wl.xkbKeymapKeyRepeats = (xkb_keymap_key_repeats_fn)dlsym(
-        s_Wl.xkbCommon, 
+        s_Wl.xkbCommon,
         "xkb_keymap_key_repeats");
 
     // load wayland cursor procs
     s_Wl.cursorImageGetBuffer = (wl_cursor_image_get_buffer_fn)dlsym(
-        s_Wl.libCursor, 
+        s_Wl.libCursor,
         "wl_cursor_image_get_buffer");
 
     s_Wl.cursorThemeLoad = (wl_cursor_theme_load_fn)dlsym(
-        s_Wl.libCursor, 
+        s_Wl.libCursor,
         "wl_cursor_theme_load");
 
     s_Wl.cursorThemeGetCursor = (wl_cursor_theme_get_cursor_fn)dlsym(
-        s_Wl.libCursor, 
+        s_Wl.libCursor,
         "wl_cursor_theme_get_cursor");
 
     // wl_egl procs
     s_Wl.eglWindowCreate = (wl_egl_window_create_fn)dlsym(
-        s_Wl.libWaylandEgl, 
+        s_Wl.libWaylandEgl,
         "wl_egl_window_create");
 
     s_Wl.eglWindowDestroy = (wl_egl_window_destroy_fn)dlsym(
-        s_Wl.libWaylandEgl, 
+        s_Wl.libWaylandEgl,
         "wl_egl_window_destroy");
 
     s_Wl.eglWindowResize = (wl_egl_window_resize_fn)dlsym(
-        s_Wl.libWaylandEgl, 
+        s_Wl.libWaylandEgl,
         "wl_egl_window_resize");
 
     // clang-format on
@@ -8030,9 +8030,9 @@ PalResult PAL_CALL palGetWindowTitle(
 
     // clang-format off
     return s_Video.backend->getWindowTitle(
-        window, 
-        bufferSize, 
-        outSize, 
+        window,
+        bufferSize,
+        outSize,
         outBuffer);
     // clang-format on
 }

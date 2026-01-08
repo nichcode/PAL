@@ -73,19 +73,19 @@ static void* createX11Window()
 
     // clang-format off
     s_XCreateWindow = (XCreateSimpleWindowFn)dlsym(
-        s_LibX, 
+        s_LibX,
         "XCreateSimpleWindow");
-    
+
     s_XSync = (XSyncFn)dlsym(
-        s_LibX, 
+        s_LibX,
         "XSync");
 
     s_XMapRaised = (XMapRaisedFn)dlsym(
-        s_LibX, 
+        s_LibX,
         "XMapRaised");
 
     s_XDestroyWindow = (XDestroyWindowFn)dlsym(
-        s_LibX, 
+        s_LibX,
         "XDestroyWindow");
 
     if (!s_XCreateWindow || !s_XSync || !s_XMapRaised || !s_XDestroyWindow) {
@@ -102,11 +102,11 @@ static void* createX11Window()
     Window root = RootWindow(display, screen);
 
     Window window = s_XCreateWindow(
-        display, 
-        root, 
-        WINDOW_POSX, 
-        WINDOW_POSX, 
-        WINDOW_WIDTH, 
+        display,
+        root,
+        WINDOW_POSX,
+        WINDOW_POSX,
+        WINDOW_WIDTH,
         WINDOW_HEIGHT,
         1,
         BlackPixel(display, screen),

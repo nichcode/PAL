@@ -527,9 +527,9 @@ LRESULT CALLBACK videoProc(
             // clang-format off
 
             // check if we pressed or released the button
-            if (msg == WM_LBUTTONDOWN || 
+            if (msg == WM_LBUTTONDOWN ||
                 msg == WM_RBUTTONDOWN ||
-                msg == WM_MBUTTONDOWN || 
+                msg == WM_MBUTTONDOWN ||
                 msg == WM_XBUTTONDOWN) {
                 pressed = true;
                 type = PAL_EVENT_MOUSE_BUTTONDOWN;
@@ -821,8 +821,8 @@ static inline bool compareMonitorMode(
 
     // clang-format off
 
-    return a->bpp == b->bpp            && 
-           a->width == b->width        && 
+    return a->bpp == b->bpp            &&
+           a->width == b->width        &&
            a->height == b->height      &&
            a->refreshRate == b->refreshRate;
 
@@ -1160,15 +1160,15 @@ PalResult PAL_CALL palInitVideo(
     s_Video.gdi = LoadLibraryA("gdi32.dll");
     if (s_Video.gdi) {
         s_Video.createDIBSection = (CreateDIBSectionFn)GetProcAddress(
-            s_Video.gdi, 
+            s_Video.gdi,
             "CreateDIBSection");
 
         s_Video.createBitmap = (CreateBitmapFn)GetProcAddress(
-            s_Video.gdi, 
+            s_Video.gdi,
             "CreateBitmap");
 
         s_Video.deleteObject = (DeleteObjectFn)GetProcAddress(
-            s_Video.gdi, 
+            s_Video.gdi,
             "DeleteObject");
 
         s_Video.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
@@ -1176,7 +1176,7 @@ PalResult PAL_CALL palInitVideo(
             "DescribePixelFormat");
 
         s_Video.setPixelFormat = (SetPixelFormatFn)GetProcAddress(
-            s_Video.gdi, 
+            s_Video.gdi,
             "SetPixelFormat");
     }
 
@@ -1677,10 +1677,10 @@ PalResult PAL_CALL palSetMonitorOrientation(
     // clang-format off
 
     // only swap size if switching between landscape and portrait
-    bool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT || 
+    bool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT ||
                                monitorOrientation == DMDO_180);
 
-    bool isLandscape = (win32Orientation == DMDO_DEFAULT || 
+    bool isLandscape = (win32Orientation == DMDO_DEFAULT ||
                         win32Orientation == DMDO_180);
 
     if (isMonitorLandscape != isLandscape) {
@@ -1693,10 +1693,10 @@ PalResult PAL_CALL palSetMonitorOrientation(
     devMode.dmDisplayOrientation = win32Orientation;
 
     ULONG result = ChangeDisplaySettingsExW(
-        mi.szDevice, 
-        &devMode, 
-        NULL, 
-        CDS_RESET, 
+        mi.szDevice,
+        &devMode,
+        NULL,
+        CDS_RESET,
         NULL);
 
     // clang-format on

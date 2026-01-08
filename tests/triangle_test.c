@@ -19,7 +19,7 @@ static bool readFile(const char* filename, void* buffer, Uint64* size)
     if (buffer) {
         fread(buffer, 1, (size_t)size, file);
     }
-    
+
     fclose(file);
     *size = tmpSize;
     return true;
@@ -67,7 +67,7 @@ bool triangleTest()
     PalPipeline* pipeline = nullptr;
     PalShader* vertexShader = nullptr;
     PalShader* fragmentShader = nullptr;
-    
+
     PalBuffer* vertexBuffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
     PalMemory* vertexBufferMemory = nullptr;
@@ -82,13 +82,13 @@ bool triangleTest()
     }
 
     palSetEventDispatchMode(
-        eventDriver, 
-        PAL_EVENT_WINDOW_CLOSE, 
+        eventDriver,
+        PAL_EVENT_WINDOW_CLOSE,
         PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(
-        eventDriver, 
-        PAL_EVENT_KEYDOWN, 
+        eventDriver,
+        PAL_EVENT_KEYDOWN,
         PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
@@ -180,7 +180,7 @@ bool triangleTest()
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, 
+        palLog(nullptr,
             "Failed to find an adapter that supports graphics queue");
         return false;
     }
@@ -192,7 +192,7 @@ bool triangleTest()
         palLog(nullptr, "Failed to get adapter info: %s", error);
         return false;
     }
-    
+
     // create a device
     PalAdapterFeatures adapterFeatures = palGetAdapterFeatures(adapter);
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
@@ -223,8 +223,8 @@ bool triangleTest()
     // create a swapchain with the graphics queue
     PalSwapchainCapabilities swapchainCaps = {0};
     result = palQuerySwapchainCapabilities(
-        device, 
-        &gfxWindow, 
+        device,
+        &gfxWindow,
         &swapchainCaps);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -250,16 +250,16 @@ bool triangleTest()
         swapchainCreateInfo.height = swapchainCaps.maxImageHeight / 2;
     }
 
-    // check if the minimal image count is not good for you 
+    // check if the minimal image count is not good for you
     // and increase it but not pass the max count
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     result = palCreateSwapchain(
-        device, 
-        queue, 
-        &gfxWindow, 
-        &swapchainCreateInfo, 
+        device,
+        queue,
+        &gfxWindow,
+        &swapchainCreateInfo,
         &swapchain);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -271,12 +271,12 @@ bool triangleTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(
-        nullptr, 
+        nullptr,
         sizeof(PalImageView*) * imageCount,
         0);
 
     renderFinishedSemaphores = palAllocate(
-        nullptr, 
+        nullptr,
         sizeof(PalSemaphore*) * imageCount,
         0);
 
@@ -302,9 +302,9 @@ bool triangleTest()
         }
 
         result = palCreateImageView(
-            device, 
-            image, 
-            &imageViewCreateInfo, 
+            device,
+            image,
+            &imageViewCreateInfo,
             &imageViews[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -342,9 +342,9 @@ bool triangleTest()
         }
 
         result = palCreateCommandBuffer(
-            device, 
-            cmdPool, 
-            PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+            device,
+            cmdPool,
+            PAL_COMMAND_BUFFER_TYPE_PRIMARY,
             &cmdBuffers[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -376,7 +376,7 @@ bool triangleTest()
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_TRANSFER_DST; // will recieve
 
     result = palCreateBuffer(
-        device, 
+        device,
         &bufferCreateInfo,
         &vertexBuffer);
 
@@ -388,7 +388,7 @@ bool triangleTest()
 
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC; // will send
     result = palCreateBuffer(
-        device, 
+        device,
         &bufferCreateInfo,
         &stagingBuffer);
 
@@ -402,7 +402,7 @@ bool triangleTest()
     PalMemoryRequirements vertexBufferMemReq = {0};
     PalMemoryRequirements stagingBufferMemReq = {0};
     result = palGetBufferMemoryRequirements(
-        vertexBuffer, 
+        vertexBuffer,
         &vertexBufferMemReq);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -412,7 +412,7 @@ bool triangleTest()
     }
 
     result = palGetBufferMemoryRequirements(
-        stagingBuffer, 
+        stagingBuffer,
         &stagingBufferMemReq);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -422,13 +422,13 @@ bool triangleTest()
     }
 
     // we need to check if the memory type we want are supported
-    // but almost every GPU supports a GPU only memory 
+    // but almost every GPU supports a GPU only memory
     // and CPU writable memory
 
     result = palAllocateMemory(
-        device, 
-        PAL_MEMORY_TYPE_GPU_ONLY, 
-        vertexBufferMemReq.size, 
+        device,
+        PAL_MEMORY_TYPE_GPU_ONLY,
+        vertexBufferMemReq.size,
         &vertexBufferMemory);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -438,9 +438,9 @@ bool triangleTest()
     }
 
     result = palAllocateMemory(
-        device, 
-        PAL_MEMORY_TYPE_CPU_UPLOAD, 
-        stagingBufferMemReq.size, 
+        device,
+        PAL_MEMORY_TYPE_CPU_UPLOAD,
+        stagingBufferMemReq.size,
         &stagingBufferMemory);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -467,10 +467,10 @@ bool triangleTest()
     // map the staging buffer and upload the vertices
     void* ptr = nullptr;
     result = palMapMemory(
-        device, 
-        stagingBufferMemory, 
-        0, 
-        sizeof(vertices), 
+        device,
+        stagingBufferMemory,
+        0,
+        sizeof(vertices),
         &ptr);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -502,17 +502,17 @@ bool triangleTest()
     }
 
     result = palCopyBuffer(
-        cmdBuffers[0], 
-        vertexBuffer, 
-        stagingBuffer, 
-        0, 
-        0, 
+        cmdBuffers[0],
+        vertexBuffer,
+        stagingBuffer,
+        0,
+        0,
         sizeof(vertices));
 
     result = palBufferBarrier(
-        cmdBuffers[0], 
-        vertexBuffer, 
-        PAL_USAGE_STATE_TRANSFER_WRITE, 
+        cmdBuffers[0],
+        vertexBuffer,
+        PAL_USAGE_STATE_TRANSFER_WRITE,
         PAL_USAGE_STATE_VERTEX_READ);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -567,8 +567,8 @@ bool triangleTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
 
     result = palCreateShader(
-        device, 
-        &shaderCreateInfo, 
+        device,
+        &shaderCreateInfo,
         &vertexShader);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -599,8 +599,8 @@ bool triangleTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
 
     result = palCreateShader(
-        device, 
-        &shaderCreateInfo, 
+        device,
+        &shaderCreateInfo,
         &fragmentShader);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -614,8 +614,8 @@ bool triangleTest()
     // create a pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     result = palCreatePipelineLayout(
-        device, 
-        &pipelineLayoutCreateInfo, 
+        device,
+        &pipelineLayoutCreateInfo,
         &pipelineLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -691,7 +691,7 @@ bool triangleTest()
     pipelineCreateInfo.renderingLayout = &renderingLayoutInfo;
 
     result = palCreateGraphicsPipeline(
-        device, 
+        device,
         &pipelineCreateInfo,
         &pipeline);
 
@@ -700,7 +700,7 @@ bool triangleTest()
         palLog(nullptr, "Failed to create graphics pipeline: %s", error);
         return false;
     }
-    
+
     palDestroyShader(vertexShader);
     palDestroyShader(fragmentShader);
 
@@ -787,7 +787,7 @@ bool triangleTest()
         } else {
             // recreate since we dont support fence resetting
             palDestroyFence(fence);
-            
+
             result = palCreateFence(device, false, &fence);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -836,9 +836,9 @@ bool triangleTest()
         }
 
         result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            oldUsageState, 
+            cmdBuffer,
+            imageViews[index],
+            oldUsageState,
             PAL_USAGE_STATE_COLOR_ATTACHMENT);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -923,11 +923,11 @@ bool triangleTest()
 
         // change the state of the image view to make it presentable
         result = palImageViewBarrier(
-            cmdBuffer, 
-            imageViews[index], 
-            PAL_USAGE_STATE_COLOR_ATTACHMENT, 
+            cmdBuffer,
+            imageViews[index],
+            PAL_USAGE_STATE_COLOR_ATTACHMENT,
             PAL_USAGE_STATE_PRESENT);
-            
+
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
@@ -994,7 +994,7 @@ bool triangleTest()
     palFreeMemory(device, vertexBufferMemory);
 
     palDestroyCommandPool(cmdPool);
-    palDestroySwapchain(swapchain); 
+    palDestroySwapchain(swapchain);
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();

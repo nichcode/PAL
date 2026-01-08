@@ -35,7 +35,7 @@ function writeConfig(path)
     else
         file:write("#define PAL_HAS_GRAPHICS 0\n")
     end
-    
+
     file:close()
 end
 
@@ -46,7 +46,7 @@ project "PAL"
         kind "StaticLib"
     else
         kind "SharedLib"
-        defines { 
+        defines {
             "_PAL_EXPORT",
             "_PAL_BUILD_DLL"
         }
@@ -60,7 +60,7 @@ project "PAL"
         "src"
     }
 
-    files { 
+    files {
         "src/pal_core.c",
         "src/pal_event.c"
     }
@@ -134,7 +134,7 @@ project "PAL"
             else
                 defines { "PAL_HAS_X11=0" }
             end
-            
+
         filter {}
     end
 

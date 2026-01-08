@@ -27,7 +27,7 @@ workspace "PAL_workspace"
     else
         staticruntime "off"
     end
- 
+
     configurations { "Debug", "Release" }
     flags { "MultiProcessorCompile" }
 
@@ -39,7 +39,7 @@ workspace "PAL_workspace"
     filter {"system:linux", "configurations:*"}
         architecture "x86_64"
         cdialect "C99"
-        
+
     filter "configurations:Debug"
         symbols "on"
         runtime "Debug"
@@ -60,14 +60,14 @@ workspace "PAL_workspace"
                 "-I" .. ucrt .. "/include",
                 "-I" .. ucrt .. "/ucrt/include",
                 "-I" .. ucrt .. "/mingw/include",
-    
+
                 -- warnings
                 "-Wno-switch",        -- for switch statements
                 "-Wno-switch-enum"    -- for switch statements
             }
 
             linkoptions {
-                "-target x86_64-w64-windows-gnu",  
+                "-target x86_64-w64-windows-gnu",
                 "-L" .. ucrt .. "/lib",
                 "-L" .. ucrt .. "/mingw/lib"
             }
@@ -75,7 +75,7 @@ workspace "PAL_workspace"
     end
 
     if (_ACTION == "vs2022") then
-        if (_OPTIONS["compiler"] == "clang") then  
+        if (_OPTIONS["compiler"] == "clang") then
             toolset("clang")
         end
 
@@ -92,4 +92,3 @@ workspace "PAL_workspace"
     end
 
     include "pal.lua"
-    

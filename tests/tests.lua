@@ -6,7 +6,7 @@ project "tests"
     targetdir(target_dir)
     objdir(obj_dir)
 
-    files { 
+    files {
         "tests_main.c",
         "tests.c",
         "logger_test.c",
@@ -16,13 +16,13 @@ project "tests"
     }
 
     if (PAL_BUILD_SYSTEM) then
-        files { 
+        files {
             "system_test.c"
         }
     end
 
     if (PAL_BUILD_THREAD) then
-        files { 
+        files {
             "thread_test.c",
             "tls_test.c",
             "mutex_test.c",
@@ -31,7 +31,7 @@ project "tests"
     end
 
     if (PAL_BUILD_VIDEO) then
-        files { 
+        files {
             "video_test.c",
             "monitor_test.c",
             "monitor_mode_test.c",
@@ -49,7 +49,7 @@ project "tests"
     end
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
-        files { 
+        files {
             "opengl_test.c",
             "opengl_fbconfig_test.c",
             "opengl_context_test.c",
@@ -58,19 +58,19 @@ project "tests"
     end
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO and PAL_BUILD_THREAD) then
-        files { 
+        files {
             "multi_thread_opengl_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS) then
-        files { 
+        files {
             "graphics_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
-        files { 
+        files {
             "clear_color_test.c",
             "triangle_test.c",
             "mesh_test.c"
