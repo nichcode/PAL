@@ -697,6 +697,9 @@ bool meshTest()
         }
 
         // draw a single triangle with the mesh shader
+        // palBuildWorkGroupInfo() is a helper to build
+        // the workgroup count per axis using normal
+        // workCount (image size, buffer size)
         result = palDrawMeshTasks(cmdBuffer, 1, 1, 1);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

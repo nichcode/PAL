@@ -733,6 +733,17 @@ typedef struct {
 } PalRenderingLayoutInfo;
 
 typedef struct {
+    Uint32 workCount[3];
+    Uint32 workGroupSize[3];
+    Uint32 workGroupCount[3];
+} PalWorkGroupBuildData;
+
+typedef struct {
+    Uint32 workGroupBase[3];
+    Uint32 workGroupCount[3];
+} PalWorkGroupInfo;
+
+typedef struct {
     Uint32 vertexCount;
     Uint32 instanceCount;
     Uint32 firstVertex;
@@ -1231,6 +1242,14 @@ typedef struct {
         Uint64 offset,
         Uint32 count);
 
+    PalResult PAL_CALL (*drawIndirectCount)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        PalBuffer* countBuffer,
+        Uint64 offset,
+        Uint64 countBufferOffset,
+        Uint32 count);
+
     PalResult PAL_CALL (*drawIndexed)(
         PalCommandBuffer* cmdBuffer,
         PalDrawIndexedData* data);
@@ -1239,6 +1258,14 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset,
+        Uint32 count);
+
+    PalResult PAL_CALL (*drawIndexedIndirectCount)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        PalBuffer* countBuffer,
+        Uint64 offset,
+        Uint64 countBufferOffset,
         Uint32 count);
 
     PalResult PAL_CALL (*imageViewBarrier)(
@@ -1252,6 +1279,17 @@ typedef struct {
         PalBuffer* buffer,
         PalUsageState oldUsageState,
         PalUsageState newUsageState);
+
+    PalResult PAL_CALL (*dispatch)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 groupCountX,
+        Uint32 groupCountY,
+        Uint32 groupCountZ);
+
+    PalResult PAL_CALL (*dispatchIndirect)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        Uint64 offset);
 
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
@@ -1608,6 +1646,14 @@ PAL_API PalResult PAL_CALL palDrawIndirect(
     Uint64 offset,
     Uint32 count);
 
+PAL_API PalResult PAL_CALL palDrawIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 count);
+
 PAL_API PalResult PAL_CALL palDrawIndexed(
     PalCommandBuffer* cmdBuffer,
     PalDrawIndexedData* data);
@@ -1616,6 +1662,14 @@ PAL_API PalResult PAL_CALL palDrawIndexedIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
+    Uint32 count);
+
+PAL_API PalResult PAL_CALL palDrawIndexedIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
     Uint32 count);
 
 PAL_API PalResult PAL_CALL palImageViewBarrier(
@@ -1629,6 +1683,17 @@ PAL_API PalResult PAL_CALL palBufferBarrier(
     PalBuffer* buffer,
     PalUsageState oldUsageState,
     PalUsageState newUsageState);
+
+PAL_API PalResult PAL_CALL palDispatch(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ);
+
+PAL_API PalResult PAL_CALL palDispatchIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset);
 
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
@@ -1676,6 +1741,11 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalPipeline** outPipeline);
 
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
+
+PAL_API bool PAL_CALL palBuildWorkGroupInfo(
+    const PalWorkGroupBuildData* data,
+    Int32* count,
+    PalWorkGroupInfo* info);
 
 /** @} */ // end of pal_graphics group
 

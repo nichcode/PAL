@@ -2,6 +2,8 @@
 #include "pal/pal_config.h" // for systems reflection
 #include "tests.h"
 
+#include "pal/pal_graphics.h"
+
 // clang-format off
 int main(int argc, char** argv)
 {

@@ -70,6 +70,15 @@ static GraphicsLinux s_Graphics = {0};
 // Internal API
 // ==================================================
 
+static inline Uint32 _ceil(Uint32 a, Uint32 b)
+{
+    return (a + b - 1) / b;
+}
+
+static inline Uint32 _min(Uint32 a, Uint32 b)
+{
+    return (a < b) ? a : b;
+}
 
 // ==================================================
 // Vulkan API
@@ -370,6 +379,14 @@ PalResult PAL_CALL drawIndirectVk(
     Uint64 offset,
     Uint32 count);
 
+PalResult PAL_CALL drawIndirectCountVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 count);
+
 PalResult PAL_CALL drawIndexedVk(
     PalCommandBuffer* cmdBuffer,
     PalDrawIndexedData* data);
@@ -378,6 +395,14 @@ PalResult PAL_CALL drawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
+    Uint32 count);
+
+PalResult PAL_CALL drawIndexedIndirectCountVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
     Uint32 count);
 
 PalResult PAL_CALL imageViewBarrierVk(
@@ -391,6 +416,17 @@ PalResult PAL_CALL bufferBarrierVk(
     PalBuffer* buffer,
     PalUsageState oldUsageState,
     PalUsageState newUsageState);
+
+PalResult PAL_CALL dispatchVk(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ);
+
+PalResult PAL_CALL dispatchIndirectVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset);
 
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
@@ -523,10 +559,14 @@ static PalGraphicsBackend s_VkBackend = {
     .bindIndexBuffer = bindVkIndexBuffer,
     .draw = drawVk,
     .drawIndirect = drawIndirectVk,
+    .drawIndexedIndirectCount = drawIndirectCountVk,
     .drawIndexed = drawIndexedVk,
     .drawIndexedIndirect = drawIndexedIndirectVk,
+    .drawIndexedIndirectCount = drawIndexedIndirectCountVk,
     .imageViewBarrier = imageViewBarrierVk,
     .bufferBarrier = bufferBarrierVk,
+    .dispatch = dispatchVk,
+    .dispatchIndirect = dispatchIndirectVk,
     .submitCommandBuffer = submitVkCommandBuffer,
     .createAccelerationstructure = createVkAccelerationstructure,
     .destroyAccelerationstructure = destroyVkAccelerationstructure,
@@ -645,10 +685,14 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->bindIndexBuffer                       ||
         !backend->draw                                  ||
         !backend->drawIndirect                          ||
+        !backend->drawIndirectCount                     ||
         !backend->drawIndexed                           ||
         !backend->drawIndexedIndirect                   ||
+        !backend->drawIndexedIndirectCount              ||
         !backend->imageViewBarrier                      ||
         !backend->bufferBarrier                         ||
+        !backend->dispatch                              ||
+        !backend->dispatchIndirect                      ||
         !backend->submitCommandBuffer                   ||
         !backend->createAccelerationstructure           ||
         !backend->destroyAccelerationstructure          ||
@@ -1994,6 +2038,31 @@ PalResult PAL_CALL palDrawIndirect(
         count);
 }
 
+PalResult PAL_CALL palDrawIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 count)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer || !countBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->drawIndirectCount(
+        cmdBuffer,
+        buffer,
+        countBuffer,
+        offset,
+        countBufferOffset,
+        count);
+}
+
 PalResult PAL_CALL palDrawIndexed(
     PalCommandBuffer* cmdBuffer,
     PalDrawIndexedData* data)
@@ -2029,6 +2098,31 @@ PalResult PAL_CALL palDrawIndexedIndirect(
         cmdBuffer,
         buffer,
         offset,
+        count);
+}
+
+PalResult PAL_CALL palDrawIndexedIndirectCount(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBuffer* countBuffer,
+    Uint64 offset,
+    Uint64 countBufferOffset,
+    Uint32 count)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer || !countBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->drawIndexedIndirectCount(
+        cmdBuffer,
+        buffer,
+        countBuffer,
+        offset,
+        countBufferOffset,
         count);
 }
 
@@ -2072,6 +2166,46 @@ PalResult PAL_CALL palBufferBarrier(
         buffer,
         oldUsageState,
         newUsageState);
+}
+
+PalResult PAL_CALL palDispatch(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 groupCountX,
+    Uint32 groupCountY,
+    Uint32 groupCountZ)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->dispatch(
+        cmdBuffer,
+        groupCountX,
+        groupCountY,
+        groupCountZ);
+}
+
+PalResult PAL_CALL palDispatchIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    Uint64 offset)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->dispatchIndirect(
+        cmdBuffer,
+        buffer,
+        offset);
 }
 
 PalResult PAL_CALL palSubmitCommandBuffer(
@@ -2346,4 +2480,53 @@ void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
     if (s_Graphics.initialized && pipeline) {
         pipeline->backend->destroyPipeline(pipeline);
     }
+}
+
+// ==================================================
+// Helpers
+// ==================================================
+
+bool PAL_CALL palBuildWorkGroupInfo(
+    const PalWorkGroupBuildData* data,
+    Int32* count,
+    PalWorkGroupInfo* info)
+{
+    if (!data) {
+        return false;
+    }
+
+    Uint32 workGroupCount[3];
+    Uint32 groupInfoCount[3];
+    for (int i = 0; i < 3; i++) {
+        Uint32 tmp = _ceil(data->workCount[i], data->workGroupSize[i]);
+        workGroupCount[i] = tmp;
+        groupInfoCount[i] = _ceil(tmp, data->workGroupCount[i]);
+    }
+
+    if (!info) {
+        // total number of group build info on all axis
+        *count = groupInfoCount[0] * groupInfoCount[1] * groupInfoCount[2];;
+        return true;
+    }
+
+    for (int i = 0; i < *count; i++) {
+        PalWorkGroupInfo* buildInfo = &info[i];
+        // find index
+        Uint32 index[3];
+        index[0] = i % groupInfoCount[0];
+        index[1] = (i / groupInfoCount[0]) % groupInfoCount[1];
+        index[2] = i / (groupInfoCount[0] * groupInfoCount[1]);
+
+        // fill group build info
+        for (int j = 0; j < 3; j++) {
+            buildInfo->workGroupBase[j] = index[j] * data->workGroupCount[j];
+            buildInfo->workGroupBase[j] = index[j] * data->workGroupCount[j];
+            buildInfo->workGroupBase[j] = index[j] * data->workGroupCount[j];
+
+            Uint32 tmp = workGroupCount[j] - buildInfo->workGroupBase[j];
+            buildInfo->workGroupCount[j] = _min(data->workGroupCount[j], tmp);
+        }
+    }
+
+    return true;
 }
