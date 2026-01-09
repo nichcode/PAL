@@ -11,8 +11,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
     float blue,
     float alpha);
 
-typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(
-    Uint32 mask); // use GL typedefs if needed
+typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(Uint32 mask); // use GL typedefs if needed
 
 typedef void (*glFlushFn)();
 typedef void (*glBeginFn)(unsigned int);
@@ -70,26 +69,14 @@ static void* PAL_CALL eventDriverWorker(void* arg)
     }
 
     // set dispatch modes. opengl needs only window resize
-    palSetEventDispatchMode(
-        shared->openglEventDriver,
-        PAL_EVENT_WINDOW_SIZE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(shared->openglEventDriver, PAL_EVENT_WINDOW_SIZE, PAL_DISPATCH_POLL);
 
     // video needs window close and resize
-    palSetEventDispatchMode(
-        shared->videoEventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        shared->videoEventDriver,
-        PAL_EVENT_WINDOW_SIZE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_WINDOW_SIZE, PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        shared->videoEventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // we are done
     shared->driverCreated = true;
@@ -147,11 +134,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
                 case PAL_EVENT_WINDOW_SIZE: {
                     Uint32 width, height;
                     palUnpackUint32(event.data, &width, &height);
-                    palLog(
-                        nullptr,
-                        "Video driver sent a resize event (%d, %d)",
-                        width,
-                        height);
+                    palLog(nullptr, "Video driver sent a resize event (%d, %d)", width, height);
 
                     glViewport(0, 0, width, height);
                     // we can optionally send back a user event

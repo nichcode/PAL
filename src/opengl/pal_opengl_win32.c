@@ -303,7 +303,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     // clang-format off
-
     // load gdi function pointers
     s_Gdi.choosePixelFormat = (ChoosePixelFormatFn)GetProcAddress(
         s_Gdi.handle,
@@ -363,7 +362,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         palSetLastPlatformError(error);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
-
     // clang-format on
 
     s_Wgl.hdc = GetDC(s_Wgl.window);
@@ -389,7 +387,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     // clang-format off
-
     // load wgl extension function pointers
     s_Wgl.wglChoosePixelFormatARB = (wglChoosePixelFormatARBFn)s_Wgl.wglGetProcAddress(
         "wglChoosePixelFormatARB");
@@ -413,7 +410,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     s_Wgl.glGetString = (glGetStringFn)GetProcAddress(
         s_Wgl.opengl,
         "glGetString");
-
     // clang-format on
 
     const char* version = (const char*)s_Wgl.glGetString(GL_VERSION);
@@ -570,13 +566,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     // check if we support modern extention
     if (s_Wgl.wglGetPixelFormatAttribivARB) {
         // get framebuffer config with extensions
-        if (!s_Wgl.wglGetPixelFormatAttribivARB(
-                s_Wgl.hdc,
-                0,
-                0,
-                1,
-                &configAttrib,
-                &nativeCount)) {
+        if (!s_Wgl.wglGetPixelFormatAttribivARB(s_Wgl.hdc, 0, 0, 1, &configAttrib, &nativeCount)) {
             DWORD error = GetLastError();
             palSetLastPlatformError(error);
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -662,17 +652,12 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
         for (Int32 i = 1; i <= nativeCount; i++) {
             PIXELFORMATDESCRIPTOR pfd;
-            if (!s_Gdi.describePixelFormat(
-                    s_Wgl.hdc,
-                    i,
-                    sizeof(PIXELFORMATDESCRIPTOR),
-                    &pfd)) {
+            if (!s_Gdi.describePixelFormat(s_Wgl.hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pfd)) {
                 continue;
             }
 
             // filter for opengl pixel formats
-            if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) ||
-                !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
+            if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) || !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
                 continue;
             }
 
@@ -680,8 +665,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
                 continue;
             }
 
-            if (!(pfd.dwFlags & PFD_GENERIC_ACCELERATED) &&
-                (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
+            if (!(pfd.dwFlags & PFD_GENERIC_ACCELERATED) && (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
                 continue;
             }
 
@@ -699,10 +683,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
                 config->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
                 config->sRGB = false;
-
-                // clang-format off
                 config->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
-                // clang-format on
             }
             configCount++;
         }
@@ -822,7 +803,6 @@ PalResult PAL_CALL palCreateGLContext(
     }
 
     // clang-format off
-
     // check version
     bool valid = info->major < s_Wgl.info.major ||
         (info->major == s_Wgl.info.major && info->minor <= s_Wgl.info.minor);

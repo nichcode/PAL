@@ -158,7 +158,6 @@ void setWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
     s_XFree = (XFreeFn)dlsym(
         s_X11Lib,
         "XFree");
-
     // clang-format on
 
     Display* display = (Display*)windowInfo->nativeDisplay;
@@ -236,15 +235,12 @@ void setWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
         return;
     }
 
-    s_wl_proxy_marshal_flags = (wl_proxy_marshal_flags_fn)dlsym(
-        s_WaylandLib,
-        "wl_proxy_marshal_flags");
+    s_wl_proxy_marshal_flags =
+        (wl_proxy_marshal_flags_fn)dlsym(s_WaylandLib, "wl_proxy_marshal_flags");
 
-    s_wl_proxy_get_version =
-        (wl_proxy_get_version_fn)dlsym(s_WaylandLib, "wl_proxy_get_version");
+    s_wl_proxy_get_version = (wl_proxy_get_version_fn)dlsym(s_WaylandLib, "wl_proxy_get_version");
 
-    s_wl_display_flush =
-        (wl_display_flush_fn)dlsym(s_WaylandLib, "wl_display_flush");
+    s_wl_display_flush = (wl_display_flush_fn)dlsym(s_WaylandLib, "wl_display_flush");
 
     struct xdg_toplevel* toplevel = nullptr;
     struct wl_display* display = nullptr;
@@ -277,10 +273,7 @@ void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 void getWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 {
 #ifdef _WIN32
-    GetWindowTextA(
-        (HWND)windowInfo->nativeWindow,
-        s_TitleBuffer,
-        sizeof(s_TitleBuffer));
+    GetWindowTextA((HWND)windowInfo->nativeWindow, s_TitleBuffer, sizeof(s_TitleBuffer));
 #endif // _WIN32
 }
 
@@ -378,10 +371,7 @@ bool nativeIntegrationTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 

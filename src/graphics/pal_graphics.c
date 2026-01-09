@@ -32,7 +32,10 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define MAX_BACKENDS 32
-#define PAL_HANDLE(name) struct name { const PalGraphicsBackend* backend; };
+#define PAL_HANDLE(name)                                                                           \
+    struct name {                                                                                  \
+        const PalGraphicsBackend* backend;                                                         \
+    };
 
 PAL_HANDLE(PalAdapter)
 PAL_HANDLE(PalDevice)
@@ -70,12 +73,16 @@ static GraphicsLinux s_Graphics = {0};
 // Internal API
 // ==================================================
 
-static inline Uint32 _ceil(Uint32 a, Uint32 b)
+static inline Uint32 _ceil(
+    Uint32 a,
+    Uint32 b)
 {
     return (a + b - 1) / b;
 }
 
-static inline Uint32 _min(Uint32 a, Uint32 b)
+static inline Uint32 _min(
+    Uint32 a,
+    Uint32 b)
 {
     return (a < b) ? a : b;
 }
@@ -446,8 +453,7 @@ PalResult PAL_CALL createVkAccelerationstructure(
     const PalAccelerationStructureCreateInfo* info,
     PalAccelerationStructure** outAs);
 
-void PAL_CALL destroyVkAccelerationstructure(
-    PalAccelerationStructure* as);
+void PAL_CALL destroyVkAccelerationstructure(PalAccelerationStructure* as);
 
 PalResult PAL_CALL getVkAccelerationStructureBuildSize(
     PalDevice* device,
@@ -497,41 +503,41 @@ void PAL_CALL destroyVkPipeline(PalPipeline* pipeline);
 
 static PalGraphicsBackend s_VkBackend = {
     .enumerateAdapters = enumerateVkAdapters,
-    .getAdapterInfo =  getVkAdapterInfo,
-    .getAdapterCapabilities =  getVkAdapterCapabilities,
+    .getAdapterInfo = getVkAdapterInfo,
+    .getAdapterCapabilities = getVkAdapterCapabilities,
     .getAdapterFeatures = getVkAdapterFeatures,
-    .createDevice =  createVkDevice,
-    .destroyDevice =  destroyVkDevice,
+    .createDevice = createVkDevice,
+    .destroyDevice = destroyVkDevice,
     .waitDevice = waitVkDevice,
-    .allocateMemory =  allocateVkMemory,
-    .freeMemory =  freeVkMemory,
+    .allocateMemory = allocateVkMemory,
+    .freeMemory = freeVkMemory,
     .mapMemory = mapVkMemory,
     .unmapMemory = unmapVkMemory,
     .queryDepthStencilCapabilities = queryVkDepthStencilCapabilities,
     .queryFragmentShadingRateCapabilities = queryVkFragmentShadingRateCapabilities,
     .queryMeshShaderCapabilities = queryVkMeshShaderCapabilities,
     .queryRayTracingCapabilities = queryVkRayTracingCapabilities,
-    .createQueue =  createVkQueue,
-    .destroyQueue =  destroyVkQueue,
+    .createQueue = createVkQueue,
+    .destroyQueue = destroyVkQueue,
     .waitQueue = waitVkQueue,
-    .canQueuePresent =  canVkQueuePresent,
-    .enumerateFormats =  enumerateVkFormats,
-    .isFormatSupported =  isVkFormatSupported,
-    .queryFormatImageUsages =  queryVkFormatImageUsages,
-    .queryFormatImageViewUsages =  queryVkFormatImageViewUsages,
-    .createImage =  createVkImage,
-    .destroyImage =  destroyVkImage,
-    .getImageInfo =  getVkImageInfo,
-    .getImageMemoryRequirements =  getVkImageMemoryRequirements,
-    .bindImageMemory =  bindVkImageMemory,
-    .createImageView =  createVkImageView,
-    .destroyImageView =  destroyVkImageView,
-    .querySwapchainCapabilities =  queryVkSwapchainCapabilities,
-    .createSwapchain =  createVkSwapchain,
-    .destroySwapchain =  destroyVkSwapchain,
-    .getSwapchainImage =  getVkSwapchainImage,
-    .getNextSwapchainImage =  getVkNextSwapchainImage,
-    .presentSwapchain =  presentVkSwapchain,
+    .canQueuePresent = canVkQueuePresent,
+    .enumerateFormats = enumerateVkFormats,
+    .isFormatSupported = isVkFormatSupported,
+    .queryFormatImageUsages = queryVkFormatImageUsages,
+    .queryFormatImageViewUsages = queryVkFormatImageViewUsages,
+    .createImage = createVkImage,
+    .destroyImage = destroyVkImage,
+    .getImageInfo = getVkImageInfo,
+    .getImageMemoryRequirements = getVkImageMemoryRequirements,
+    .bindImageMemory = bindVkImageMemory,
+    .createImageView = createVkImageView,
+    .destroyImageView = destroyVkImageView,
+    .querySwapchainCapabilities = queryVkSwapchainCapabilities,
+    .createSwapchain = createVkSwapchain,
+    .destroySwapchain = destroyVkSwapchain,
+    .getSwapchainImage = getVkSwapchainImage,
+    .getNextSwapchainImage = getVkNextSwapchainImage,
+    .presentSwapchain = presentVkSwapchain,
     .createShader = createVkShader,
     .destroyShader = destroyVkShader,
     .createFence = createVkFence,
@@ -588,8 +594,7 @@ static PalGraphicsBackend s_VkBackend = {
     .createPipelineLayout = createVkPipelineLayout,
     .destroyPipelineLayout = destroyVkPipelineLayout,
     .createGraphicsPipeline = createVkGraphicsPipeline,
-    .destroyPipeline = destroyVkPipeline
-};
+    .destroyPipeline = destroyVkPipeline};
 
 #endif // PAL_HAS_VULKAN
 
@@ -900,10 +905,7 @@ PalResult PAL_CALL palCreateDevice(
 
     PalDevice* device = nullptr;
     PalResult result;
-    result = adapter->backend->createDevice(
-        adapter,
-        features,
-        &device);
+    result = adapter->backend->createDevice(adapter, features, &device);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -948,11 +950,7 @@ PalResult PAL_CALL palAllocateMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->allocateMemory(
-        device,
-        type,
-        size,
-        outMemory);
+    return device->backend->allocateMemory(device, type, size, outMemory);
 }
 
 void PAL_CALL palFreeMemory(
@@ -991,9 +989,7 @@ PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->queryFragmentShadingRateCapabilities(
-        device,
-        caps);
+    return device->backend->queryFragmentShadingRateCapabilities(device, caps);
 }
 
 PalResult PAL_CALL palQueryMeshShaderCapabilities(
@@ -1008,9 +1004,7 @@ PalResult PAL_CALL palQueryMeshShaderCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->queryMeshShaderCapabilities(
-        device,
-        caps);
+    return device->backend->queryMeshShaderCapabilities(device, caps);
 }
 
 PalResult PAL_CALL palQueryRayTracingCapabilities(
@@ -1025,9 +1019,7 @@ PalResult PAL_CALL palQueryRayTracingCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->queryRayTracingCapabilities(
-        device,
-        caps);
+    return device->backend->queryRayTracingCapabilities(device, caps);
 }
 
 // ==================================================
@@ -1049,10 +1041,7 @@ PalResult PAL_CALL palCreateQueue(
 
     PalQueue* queue = nullptr;
     PalResult result;
-    result = device->backend->createQueue(
-        device,
-        type,
-        &queue);
+    result = device->backend->createQueue(device, type, &queue);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1163,16 +1152,13 @@ PalResult PAL_CALL palCreateImage(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device ||!info || !outImage) {
+    if (!device || !info || !outImage) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     PalImage* image = nullptr;
     PalResult result;
-    result = device->backend->createImage(
-        device,
-        info,
-        &image);
+    result = device->backend->createImage(device, info, &image);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1217,9 +1203,7 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return image->backend->getImageMemoryRequirements(
-        image,
-        requirements);
+    return image->backend->getImageMemoryRequirements(image, requirements);
 }
 
 PalResult PAL_CALL palBindImageMemory(
@@ -1235,10 +1219,7 @@ PalResult PAL_CALL palBindImageMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return image->backend->bindImageMemory(
-        image,
-        memory,
-        offset);
+    return image->backend->bindImageMemory(image, memory, offset);
 }
 
 // ==================================================
@@ -1255,17 +1236,13 @@ PalResult PAL_CALL palCreateImageView(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device ||!image || !info || !outImageView) {
+    if (!device || !image || !info || !outImageView) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     PalImageView* imageView = nullptr;
     PalResult result;
-    result = device->backend->createImageView(
-        device,
-        image,
-        info,
-        &imageView);
+    result = device->backend->createImageView(device, image, info, &imageView);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1300,10 +1277,7 @@ PalResult PAL_CALL palQuerySwapchainCapabilities(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->querySwapchainCapabilities(
-        device,
-        window,
-        caps);
+    return device->backend->querySwapchainCapabilities(device, window, caps);
 }
 
 PalResult PAL_CALL palCreateSwapchain(
@@ -1323,12 +1297,7 @@ PalResult PAL_CALL palCreateSwapchain(
 
     PalResult result;
     PalSwapchain* swapchain = nullptr;
-    result = device->backend->createSwapchain(
-        device,
-        queue,
-        window,
-        info,
-        &swapchain);
+    result = device->backend->createSwapchain(device, queue, window, info, &swapchain);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1366,7 +1335,7 @@ PalImage* PAL_CALL palGetSwapchainImage(
 PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32 *outIndex)
+    Uint32* outIndex)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -1376,10 +1345,7 @@ PalResult PAL_CALL palGetNextSwapchainImage(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return swapchain->backend->getNextSwapchainImage(
-        swapchain,
-        info,
-        outIndex);
+    return swapchain->backend->getNextSwapchainImage(swapchain, info, outIndex);
 }
 
 PalResult PAL_CALL palPresentSwapchain(
@@ -1394,9 +1360,7 @@ PalResult PAL_CALL palPresentSwapchain(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return swapchain->backend->presentSwapchain(
-        swapchain,
-        info);
+    return swapchain->backend->presentSwapchain(swapchain, info);
 }
 
 // ==================================================
@@ -1418,10 +1382,7 @@ PalResult PAL_CALL palCreateShader(
 
     PalShader* shader = nullptr;
     PalResult result;
-    result = device->backend->createShader(
-        device,
-        info,
-        &shader);
+    result = device->backend->createShader(device, info, &shader);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1560,11 +1521,7 @@ PalResult PAL_CALL palWaitSemaphore(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return semaphore->backend->waitSemaphore(
-        semaphore,
-        queue,
-        value,
-        timeout);
+    return semaphore->backend->waitSemaphore(semaphore, queue, value, timeout);
 }
 
 PalResult PAL_CALL palSignalSemaphore(
@@ -1580,10 +1537,7 @@ PalResult PAL_CALL palSignalSemaphore(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return semaphore->backend->signalSemaphore(
-        semaphore,
-        queue,
-        value);
+    return semaphore->backend->signalSemaphore(semaphore, queue, value);
 }
 
 PalResult PAL_CALL palGetSemaphoreValue(
@@ -1598,9 +1552,7 @@ PalResult PAL_CALL palGetSemaphoreValue(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return semaphore->backend->getSemaphoreValue(
-        semaphore,
-        value);
+    return semaphore->backend->getSemaphoreValue(semaphore, value);
 }
 
 // ==================================================
@@ -1622,10 +1574,7 @@ PalResult PAL_CALL palCreateCommandPool(
 
     PalCommandPool* pool = nullptr;
     PalResult result;
-    result = device->backend->createCommandPool(
-        device,
-        queue,
-        &pool);
+    result = device->backend->createCommandPool(device, queue, &pool);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1672,11 +1621,7 @@ PalResult PAL_CALL palCreateCommandBuffer(
 
     PalCommandBuffer* cmdBuffer = nullptr;
     PalResult result;
-    result = device->backend->createCommandBuffer(
-        device,
-        pool,
-        type,
-        &cmdBuffer);
+    result = device->backend->createCommandBuffer(device, pool, type, &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1747,9 +1692,7 @@ PalResult PAL_CALL palExecuteCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return primaryCmdBuffer->backend->executeCommandBuffer(
-        primaryCmdBuffer,
-        secondaryCmdBuffer);
+    return primaryCmdBuffer->backend->executeCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
 }
 
 PalResult PAL_CALL palSetFragmentShadingRate(
@@ -1764,9 +1707,7 @@ PalResult PAL_CALL palSetFragmentShadingRate(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->setFragmentShadingRate(
-        cmdBuffer,
-        state);
+    return cmdBuffer->backend->setFragmentShadingRate(cmdBuffer, state);
 }
 
 PalResult PAL_CALL palDrawMeshTasks(
@@ -1783,11 +1724,7 @@ PalResult PAL_CALL palDrawMeshTasks(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->drawMeshTasks(
-        cmdBuffer,
-        groupCountX,
-        groupCountY,
-        groupCountZ);
+    return cmdBuffer->backend->drawMeshTasks(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
 PalResult PAL_CALL palDrawMeshTasksIndirect(
@@ -1805,12 +1742,7 @@ PalResult PAL_CALL palDrawMeshTasksIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->drawMeshTasksIndirect(
-        cmdBuffer,
-        buffer,
-        offset,
-        drawCount,
-        stride);
+    return cmdBuffer->backend->drawMeshTasksIndirect(cmdBuffer, buffer, offset, drawCount, stride);
 }
 
 PalResult PAL_CALL palDrawMeshTasksIndirectCount(
@@ -1852,9 +1784,7 @@ PalResult PAL_CALL palBuildAccelerationStructures(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->buildAccelerationStructure(
-        cmdBuffer,
-        info);
+    return cmdBuffer->backend->buildAccelerationStructure(cmdBuffer, info);
 }
 
 PalResult PAL_CALL palBeginRendering(
@@ -1869,9 +1799,7 @@ PalResult PAL_CALL palBeginRendering(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->beginRendering(
-        cmdBuffer,
-        info);
+    return cmdBuffer->backend->beginRendering(cmdBuffer, info);
 }
 
 PalResult PAL_CALL palEndRendering(PalCommandBuffer* cmdBuffer)
@@ -1903,13 +1831,7 @@ PalResult PAL_CALL palCopyBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->copyBuffer(
-        cmdBuffer,
-        dst,
-        src,
-        dstOffset,
-        srcOffset,
-        size);
+    return cmdBuffer->backend->copyBuffer(cmdBuffer, dst, src, dstOffset, srcOffset, size);
 }
 
 PalResult PAL_CALL palBindPipeline(
@@ -1924,9 +1846,7 @@ PalResult PAL_CALL palBindPipeline(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->bindPipeline(
-        cmdBuffer,
-        pipeline);
+    return cmdBuffer->backend->bindPipeline(cmdBuffer, pipeline);
 }
 
 PalResult PAL_CALL palSetViewport(
@@ -1942,10 +1862,7 @@ PalResult PAL_CALL palSetViewport(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->setViewport(
-        cmdBuffer,
-        count,
-        viewports);
+    return cmdBuffer->backend->setViewport(cmdBuffer, count, viewports);
 }
 
 PalResult PAL_CALL palSetScissors(
@@ -1961,10 +1878,7 @@ PalResult PAL_CALL palSetScissors(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->setScissors(
-        cmdBuffer,
-        count,
-        scissors);
+    return cmdBuffer->backend->setScissors(cmdBuffer, count, scissors);
 }
 
 PalResult PAL_CALL palBindVertexBuffers(
@@ -1982,12 +1896,7 @@ PalResult PAL_CALL palBindVertexBuffers(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->bindVertexBuffers(
-        cmdBuffer,
-        firstSlot,
-        count,
-        buffers,
-        offsets);
+    return cmdBuffer->backend->bindVertexBuffers(cmdBuffer, firstSlot, count, buffers, offsets);
 }
 
 PalResult PAL_CALL palBindIndexBuffer(
@@ -2004,11 +1913,7 @@ PalResult PAL_CALL palBindIndexBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->bindIndexBuffer(
-        cmdBuffer,
-        buffer,
-        offset,
-        type);
+    return cmdBuffer->backend->bindIndexBuffer(cmdBuffer, buffer, offset, type);
 }
 
 PalResult PAL_CALL palDraw(
@@ -2023,9 +1928,7 @@ PalResult PAL_CALL palDraw(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->draw(
-        cmdBuffer,
-        data);
+    return cmdBuffer->backend->draw(cmdBuffer, data);
 }
 
 PalResult PAL_CALL palDrawIndirect(
@@ -2042,11 +1945,7 @@ PalResult PAL_CALL palDrawIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->drawIndirect(
-        cmdBuffer,
-        buffer,
-        offset,
-        count);
+    return cmdBuffer->backend->drawIndirect(cmdBuffer, buffer, offset, count);
 }
 
 PalResult PAL_CALL palDrawIndirectCount(
@@ -2065,13 +1964,8 @@ PalResult PAL_CALL palDrawIndirectCount(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->drawIndirectCount(
-        cmdBuffer,
-        buffer,
-        countBuffer,
-        offset,
-        countBufferOffset,
-        count);
+    return cmdBuffer->backend
+        ->drawIndirectCount(cmdBuffer, buffer, countBuffer, offset, countBufferOffset, count);
 }
 
 PalResult PAL_CALL palDrawIndexed(
@@ -2086,9 +1980,7 @@ PalResult PAL_CALL palDrawIndexed(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->drawIndexed(
-        cmdBuffer,
-        data);
+    return cmdBuffer->backend->drawIndexed(cmdBuffer, data);
 }
 
 PalResult PAL_CALL palDrawIndexedIndirect(
@@ -2105,11 +1997,7 @@ PalResult PAL_CALL palDrawIndexedIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->drawIndexedIndirect(
-        cmdBuffer,
-        buffer,
-        offset,
-        count);
+    return cmdBuffer->backend->drawIndexedIndirect(cmdBuffer, buffer, offset, count);
 }
 
 PalResult PAL_CALL palDrawIndexedIndirectCount(
@@ -2151,11 +2039,7 @@ PalResult PAL_CALL palImageViewBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->imageViewBarrier(
-        cmdBuffer,
-        imageView,
-        oldUsageState,
-        newUsageState);
+    return cmdBuffer->backend->imageViewBarrier(cmdBuffer, imageView, oldUsageState, newUsageState);
 }
 
 PalResult PAL_CALL palBufferBarrier(
@@ -2172,11 +2056,7 @@ PalResult PAL_CALL palBufferBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->bufferBarrier(
-        cmdBuffer,
-        buffer,
-        oldUsageState,
-        newUsageState);
+    return cmdBuffer->backend->bufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
 }
 
 PalResult PAL_CALL palDispatch(
@@ -2193,11 +2073,7 @@ PalResult PAL_CALL palDispatch(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->dispatch(
-        cmdBuffer,
-        groupCountX,
-        groupCountY,
-        groupCountZ);
+    return cmdBuffer->backend->dispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
 PalResult PAL_CALL palDispatchBase(
@@ -2240,10 +2116,7 @@ PalResult PAL_CALL palDispatchIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->dispatchIndirect(
-        cmdBuffer,
-        buffer,
-        offset);
+    return cmdBuffer->backend->dispatchIndirect(cmdBuffer, buffer, offset);
 }
 
 PalResult PAL_CALL palSubmitCommandBuffer(
@@ -2258,9 +2131,7 @@ PalResult PAL_CALL palSubmitCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return queue->backend->submitCommandBuffer(
-        queue,
-        info);
+    return queue->backend->submitCommandBuffer(queue, info);
 }
 
 // ==================================================
@@ -2286,10 +2157,7 @@ PalResult PAL_CALL palCreateAccelerationstructure(
 
     PalResult result;
     PalAccelerationStructure* as = nullptr;
-    result = device->backend->createAccelerationstructure(
-        device,
-        info,
-        &as);
+    result = device->backend->createAccelerationstructure(device, info, &as);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -2300,8 +2168,7 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyAccelerationstructure(
-    PalAccelerationStructure* as)
+void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* as)
 {
     if (s_Graphics.initialized && as) {
         as->backend->destroyAccelerationstructure(as);
@@ -2325,10 +2192,7 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->getAccelerationStructureBuildSize(
-        device,
-        info,
-        size);
+    return device->backend->getAccelerationStructureBuildSize(device, info, size);
 }
 
 // ==================================================
@@ -2350,10 +2214,7 @@ PalResult PAL_CALL palCreateBuffer(
 
     PalResult result;
     PalBuffer* buffer = nullptr;
-    result = device->backend->createBuffer(
-        device,
-        info,
-        &buffer);
+    result = device->backend->createBuffer(device, info, &buffer);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -2383,9 +2244,7 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return buffer->backend->getBufferMemoryRequirements(
-        buffer,
-        requirements);
+    return buffer->backend->getBufferMemoryRequirements(buffer, requirements);
 }
 
 PalResult PAL_CALL palBindBufferMemory(
@@ -2401,10 +2260,7 @@ PalResult PAL_CALL palBindBufferMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return buffer->backend->bindBufferMemory(
-        buffer,
-        memory,
-        offset);
+    return buffer->backend->bindBufferMemory(buffer, memory, offset);
 }
 
 PalResult PAL_CALL palMapMemory(
@@ -2422,12 +2278,7 @@ PalResult PAL_CALL palMapMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->mapMemory(
-        device,
-        memory,
-        offset,
-        size,
-        outPtr);
+    return device->backend->mapMemory(device, memory, offset, size, outPtr);
 }
 
 void PAL_CALL palUnmapMemory(
@@ -2459,10 +2310,7 @@ PalResult PAL_CALL palCreatePipelineLayout(
 
     PalResult result;
     PalPipelineLayout* layout = nullptr;
-    result = device->backend->createPipelineLayout(
-        device,
-        info,
-        &layout);
+    result = device->backend->createPipelineLayout(device, info, &layout);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -2499,10 +2347,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
 
     PalResult result;
     PalPipeline* pipeline = nullptr;
-    result = device->backend->createGraphicsPipeline(
-        device,
-        info,
-        &pipeline);
+    result = device->backend->createGraphicsPipeline(device, info, &pipeline);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -2543,7 +2388,8 @@ bool PAL_CALL palBuildWorkGroupInfo(
 
     if (!info) {
         // total number of group build info on all axis
-        *count = groupInfoCount[0] * groupInfoCount[1] * groupInfoCount[2];;
+        *count = groupInfoCount[0] * groupInfoCount[1] * groupInfoCount[2];
+        ;
         return true;
     }
 

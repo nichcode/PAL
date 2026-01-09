@@ -33,12 +33,7 @@ static inline void onWindowResize(const PalEvent* event)
     Uint32 width, height; // width == low, height == high
     palUnpackUint32(event->data, &width, &height);
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(
-        nullptr,
-        "%s: Window Resized: (%d, %d)",
-        dispatchString,
-        width,
-        height);
+    palLog(nullptr, "%s: Window Resized: (%d, %d)", dispatchString, width, height);
 }
 
 static inline void onWindowMove(const PalEvent* event)
@@ -192,29 +187,17 @@ bool windowTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // we set callback mode for modal begin and end. Since we want to capture
     // that instantly
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_MODAL_BEGIN,
-        PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_BEGIN, PAL_DISPATCH_CALLBACK);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_MODAL_END,
-        PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_END, PAL_DISPATCH_CALLBACK);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_DECORATION_MODE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_DECORATION_MODE, PAL_DISPATCH_POLL);
 
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must

@@ -66,10 +66,9 @@ static inline void cpuid(
     __cpuidex(regs, leaf, subLeaf);
 #else
     // gcc, clang
-    __asm__ __volatile__(
-        "cpuid"
-        : "=a"(regs[0]), "=b"(regs[1]), "=c"(regs[2]), "=d"(regs[3])
-        : "a"(leaf), "b"(subLeaf));
+    __asm__ __volatile__("cpuid"
+                         : "=a"(regs[0]), "=b"(regs[1]), "=c"(regs[2]), "=d"(regs[3])
+                         : "a"(leaf), "b"(subLeaf));
 #endif // _MSC_VER
 }
 
@@ -77,15 +76,8 @@ static inline bool getVersionWin32(PalVersion* version)
 {
     OSVERSIONINFOEXW ver = {0};
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
-
     HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
-
-    // clang-format off
-    RtlGetVersionFn getVer = (RtlGetVersionFn)GetProcAddress(
-        ntdll,
-        "RtlGetVersion");
-    // clang-format on
-
+    RtlGetVersionFn getVer = (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion");
     if (!getVer) {
         return false;
     }

@@ -142,7 +142,7 @@ typedef struct {
     Uint64 stackSize;              /**< Set to 0 to use default*/
     const PalAllocator* allocator; /**< Set to nullptr to use default.*/
     PalThreadFn entry;             /**< Thread entry function*/
-    void* arg; /**< Optional user-provided data. Can be nullptr.*/
+    void* arg;                     /**< Optional user-provided data. Can be nullptr.*/
 } PalThreadCreateInfo;
 
 /**

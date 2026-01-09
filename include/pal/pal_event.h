@@ -430,7 +430,7 @@ typedef struct {
     const PalAllocator* allocator; /**< Set to nullptr to use default.*/
     PalEventQueue* queue;          /**< Set to nullptr to use default.*/
     PalEventCallback callback;     /**< Can be nullptr.*/
-    void* userData; /**< Optional user-provided data. Can be nullptr.*/
+    void* userData;                /**< Optional user-provided data. Can be nullptr.*/
 } PalEventDriverCreateInfo;
 
 /**

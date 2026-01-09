@@ -525,7 +525,6 @@ LRESULT CALLBACK videoProc(
             }
 
             // clang-format off
-
             // check if we pressed or released the button
             if (msg == WM_LBUTTONDOWN ||
                 msg == WM_RBUTTONDOWN ||
@@ -538,7 +537,6 @@ LRESULT CALLBACK videoProc(
                 pressed = false;
                 type = PAL_EVENT_MOUSE_BUTTONUP;
             }
-
             // clang-format on
 
             // set mouse capture
@@ -800,12 +798,7 @@ static inline PalResult setMonitorMode(
         settingsFlag = CDS_TEST;
     }
 
-    ULONG result = ChangeDisplaySettingsExW(
-        mi.szDevice,
-        &devMode,
-        NULL,
-        settingsFlag,
-        NULL);
+    ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, settingsFlag, NULL);
 
     if (result == DISP_CHANGE_SUCCESSFUL) {
         return PAL_RESULT_SUCCESS;
@@ -820,12 +813,10 @@ static inline bool compareMonitorMode(
 {
 
     // clang-format off
-
     return a->bpp == b->bpp            &&
            a->width == b->width        &&
            a->height == b->height      &&
            a->refreshRate == b->refreshRate;
-
     // clang-format on
 }
 
@@ -1039,10 +1030,7 @@ static WindowData* getFreeWindowData()
     int freeIndex = s_Video.maxWindowData + 1;
     data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_Video.windowData,
-            s_Video.maxWindowData * sizeof(WindowData));
+        memcpy(data, s_Video.windowData, s_Video.maxWindowData * sizeof(WindowData));
 
         palFree(s_Video.allocator, s_Video.windowData);
         s_Video.windowData = data;
@@ -1071,10 +1059,8 @@ PalResult PAL_CALL palInitVideo(
     }
 
     s_Video.maxWindowData = 32;
-    s_Video.windowData = palAllocate(
-        s_Video.allocator,
-        sizeof(WindowData) * s_Video.maxWindowData,
-        0);
+    s_Video.windowData =
+        palAllocate(s_Video.allocator, sizeof(WindowData) * s_Video.maxWindowData, 0);
 
     // get the instance
     if (!s_Video.instance) {
@@ -1145,17 +1131,14 @@ PalResult PAL_CALL palInitVideo(
     // shcore
     s_Video.shcore = LoadLibraryA("shcore.dll");
     if (s_Video.shcore) {
-        s_Video.getDpiForMonitor = (GetDpiForMonitorFn)GetProcAddress(
-            s_Video.shcore,
-            "GetDpiForMonitor");
+        s_Video.getDpiForMonitor =
+            (GetDpiForMonitorFn)GetProcAddress(s_Video.shcore, "GetDpiForMonitor");
 
-        s_Video.setProcessAwareness = (SetProcessAwarenessFn)GetProcAddress(
-            s_Video.shcore,
-            "SetProcessDpiAwareness");
+        s_Video.setProcessAwareness =
+            (SetProcessAwarenessFn)GetProcAddress(s_Video.shcore, "SetProcessDpiAwareness");
     }
 
     // clang-format off
-
     // gdi functios
     s_Video.gdi = LoadLibraryA("gdi32.dll");
     if (s_Video.gdi) {
@@ -1179,7 +1162,6 @@ PalResult PAL_CALL palInitVideo(
             s_Video.gdi,
             "SetPixelFormat");
     }
-
     // clang-format on
 
     // set features
@@ -1364,8 +1346,7 @@ PalResult PAL_CALL palSetFBConfig(
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }
 
-    if (backend == PAL_CONFIG_BACKEND_EGL ||
-        backend == PAL_CONFIG_BACKEND_GLES ||
+    if (backend == PAL_CONFIG_BACKEND_EGL || backend == PAL_CONFIG_BACKEND_GLES ||
         backend == PAL_CONFIG_BACKEND_GLX) {
         return PAL_RESULT_INVALID_FBCONFIG_BACKEND;
     }
@@ -1462,15 +1443,7 @@ PalResult PAL_CALL palGetMonitorInfo(
     info->height = mi.rcMonitor.bottom - mi.rcWork.top;
 
     // get name
-    WideCharToMultiByte(
-        CP_UTF8,
-        0,
-        mi.szDevice,
-        -1,
-        info->name,
-        32,
-        NULL,
-        NULL);
+    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
 
     DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
@@ -1540,10 +1513,7 @@ PalResult PAL_CALL palEnumerateMonitorModes(
     if (!modes) {
         // allocate and store tmp monitor modesand check for the interested
         // fields.
-        monitorModes = palAllocate(
-            s_Video.allocator,
-            sizeof(PalMonitorMode) * MAX_MODE_COUNT,
-            0);
+        monitorModes = palAllocate(s_Video.allocator, sizeof(PalMonitorMode) * MAX_MODE_COUNT, 0);
 
         if (!monitorModes) {
             return PAL_RESULT_OUT_OF_MEMORY;
@@ -1675,13 +1645,13 @@ PalResult PAL_CALL palSetMonitorOrientation(
     DWORD monitorOrientation = devMode.dmDisplayOrientation;
 
     // clang-format off
-
     // only swap size if switching between landscape and portrait
     bool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT ||
                                monitorOrientation == DMDO_180);
 
     bool isLandscape = (win32Orientation == DMDO_DEFAULT ||
                         win32Orientation == DMDO_180);
+    // clang-format on
 
     if (isMonitorLandscape != isLandscape) {
         DWORD tmp = devMode.dmPelsWidth;
@@ -1692,14 +1662,7 @@ PalResult PAL_CALL palSetMonitorOrientation(
     devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYORIENTATION;
     devMode.dmDisplayOrientation = win32Orientation;
 
-    ULONG result = ChangeDisplaySettingsExW(
-        mi.szDevice,
-        &devMode,
-        NULL,
-        CDS_RESET,
-        NULL);
-
-    // clang-format on
+    ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, CDS_RESET, NULL);
 
     if (result == DISP_CHANGE_SUCCESSFUL) {
         return PAL_RESULT_SUCCESS;
@@ -1777,9 +1740,7 @@ PalResult PAL_CALL palCreateWindow(
 
     } else {
         // get primary monitor
-        monitor = (PalMonitor*)MonitorFromPoint(
-            (POINT){0, 0},
-            MONITOR_DEFAULTTOPRIMARY);
+        monitor = (PalMonitor*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
 
         if (!monitor) {
             DWORD error = GetLastError();
@@ -2403,11 +2364,7 @@ PalResult PAL_CALL palSetWindowOpacity(
         opacity = 1.0f;
     }
 
-    bool ret = SetLayeredWindowAttributes(
-        (HWND)window,
-        0,
-        (BYTE)(opacity * 255),
-        LWA_ALPHA);
+    bool ret = SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);
 
     if (!ret) {
         DWORD error = GetLastError();
@@ -2545,14 +2502,8 @@ PalResult PAL_CALL palSetWindowPos(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    bool success = SetWindowPos(
-        (HWND)window,
-        nullptr,
-        x,
-        y,
-        0,
-        0,
-        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
+    bool success =
+        SetWindowPos((HWND)window, nullptr, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
 
     if (!success) {
         DWORD error = GetLastError();
@@ -2666,13 +2617,9 @@ PalResult PAL_CALL palCreateIcon(
     void* dibPixels = nullptr;
 
     // create dib section
-    HBITMAP bitmap = s_Video.createDIBSection(
-        hdc,
-        (BITMAPINFO*)&bitInfo,
-        DIB_RGB_COLORS,
-        &dibPixels,
-        nullptr,
-        0);
+    HBITMAP bitmap =
+        s_Video
+            .createDIBSection(hdc, (BITMAPINFO*)&bitInfo, DIB_RGB_COLORS, &dibPixels, nullptr, 0);
 
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
@@ -2787,13 +2734,9 @@ PalResult PAL_CALL palCreateCursor(
     void* dibPixels = nullptr;
 
     // create dib section
-    HBITMAP bitmap = s_Video.createDIBSection(
-        hdc,
-        (BITMAPINFO*)&bitInfo,
-        DIB_RGB_COLORS,
-        &dibPixels,
-        nullptr,
-        0);
+    HBITMAP bitmap =
+        s_Video
+            .createDIBSection(hdc, (BITMAPINFO*)&bitInfo, DIB_RGB_COLORS, &dibPixels, nullptr, 0);
 
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
@@ -3060,10 +3003,7 @@ PalResult PAL_CALL palAttachWindow(
 
     PalWindow* window = (PalWindow*)windowHandle;
     data->isAttached = true;
-    data->wndProc = SetWindowLongPtrW(
-        (HWND)windowHandle,
-        GWLP_WNDPROC,
-        (LONG_PTR)videoProc);
+    data->wndProc = SetWindowLongPtrW((HWND)windowHandle, GWLP_WNDPROC, (LONG_PTR)videoProc);
 
     // use default PAL video cursor
     // there is no way to get the cursor set on the native window

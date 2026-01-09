@@ -86,10 +86,8 @@ bool systemCursorTest()
     }
 
     // set the dispatch mode for window close event to recieve it
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL); // polling
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE,
+                            PAL_DISPATCH_POLL); // polling
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 

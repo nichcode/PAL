@@ -281,7 +281,7 @@ typedef struct {
 
     PalResult (*attachWindow)(void*, PalWindow**);
     PalResult (*detachWindow)(PalWindow*, void**);
-    // clang-format off
+    // clang-format on
 } Backend;
 
 typedef struct {
@@ -869,26 +869,30 @@ typedef void (*wl_proxy_destroy_fn)(struct wl_proxy*);
 
 typedef int (*wl_proxy_add_listener_fn)(
     struct wl_proxy*,
-    void (**)(void), void*);
+    void (**)(void),
+    void*);
 
 typedef struct wl_proxy* (*wl_proxy_marshal_constructor_v_fn)(
     struct wl_proxy*,
     uint32_t,
     const struct wl_interface*,
-    uint32_t, ...);
+    uint32_t,
+    ...);
 
 typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
     struct wl_proxy*,
     uint32_t,
     const struct wl_interface*,
     uint32_t,
-    uint32_t, ...);
+    uint32_t,
+    ...);
 
 typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
 
 typedef int (*wl_proxy_add_listener_fn)(
     struct wl_proxy*,
-    void (**)(void), void*);
+    void (**)(void),
+    void*);
 
 typedef int (*wl_display_get_error_fn)(struct wl_display*);
 typedef int (*wl_display_dispatch_pending_fn)(struct wl_display*);
@@ -939,8 +943,7 @@ typedef struct wl_cursor* (*wl_cursor_theme_get_cursor_fn)(
     struct wl_cursor_theme*,
     const char*);
 
-typedef struct wl_buffer* (*wl_cursor_image_get_buffer_fn)(
-    struct wl_cursor_image*);
+typedef struct wl_buffer* (*wl_cursor_image_get_buffer_fn)(struct wl_cursor_image*);
 
 // egl_window
 struct wl_egl_window;
@@ -1061,14 +1064,14 @@ static inline Uint64 getTime()
 }
 
 static inline void* wlRegistryBind(
-    struct wl_registry *wl_registry,
+    struct wl_registry* wl_registry,
     uint32_t name,
-    const struct wl_interface *interface,
+    const struct wl_interface* interface,
     uint32_t version)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *)wl_registry,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_registry,
         WL_REGISTRY_BIND,
         interface,
         version,
@@ -1078,338 +1081,306 @@ static inline void* wlRegistryBind(
         version,
         NULL);
 
-	return (void *)id;
+    return (void*)id;
 }
 
 static inline int wlRegistryAddListener(
-    struct wl_registry *wl_registry,
-    const struct wl_registry_listener *listener,
-    void *data)
+    struct wl_registry* wl_registry,
+    const struct wl_registry_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) wl_registry,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)wl_registry, (void (**)(void))listener, data);
 }
 
-static inline struct wl_registry* wlDisplayGetRegistry(
-    struct wl_display *wl_display)
+static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_display)
 {
-	struct wl_proxy *registry;
-	registry = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_display,
+    struct wl_proxy* registry;
+    registry = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_display,
         1, // WL_DISPLAY_GET_REGISTRY
         s_Wl.registryInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_display),
-            0,
-            NULL);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_display),
+        0,
+        NULL);
 
-	return (struct wl_registry *)registry;
+    return (struct wl_registry*)registry;
 }
 
 static inline int wlOutputAddListener(
-    struct wl_output *wl_output,
-    const struct wl_output_listener *listener,
-    void *data)
+    struct wl_output* wl_output,
+    const struct wl_output_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) wl_output,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)wl_output, (void (**)(void))listener, data);
 }
 
-static inline struct wl_surface* wlCompositorCreateSurface(
-    struct wl_compositor *wl_compositor)
+static inline struct wl_surface* wlCompositorCreateSurface(struct wl_compositor* wl_compositor)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_compositor,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_compositor,
         0, // WL_COMPOSITOR_CREATE_SURFACE,
         s_Wl.surfaceInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_compositor),
-            0,
-            NULL);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_compositor),
+        0,
+        NULL);
 
-	return (struct wl_surface*) id;
+    return (struct wl_surface*)id;
 }
 
-static inline void wlSurfaceCommit(struct wl_surface *wl_surface)
+static inline void wlSurfaceCommit(struct wl_surface* wl_surface)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_surface,
         6, // WL_SURFACE_COMMIT
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface),
-            0);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
+        0);
 }
 
-static inline void wlSurfaceDestroy(struct wl_surface *wl_surface)
+static inline void wlSurfaceDestroy(struct wl_surface* wl_surface)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_surface,
         0, // WL_SURFACE_DESTROY
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface),
-            WL_MARSHAL_FLAG_DESTROY);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct wl_shm_pool* wlShmCreatePool(
-    struct wl_shm *wl_shm,
+    struct wl_shm* wl_shm,
     int32_t fd,
     int32_t size)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_shm,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_shm,
         0, // WL_SHM_CREATE_POOL
         s_Wl.shmPoolInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_shm),
-            0,
-            NULL,
-            fd,
-            size);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_shm),
+        0,
+        NULL,
+        fd,
+        size);
 
-	return (struct wl_shm_pool *) id;
+    return (struct wl_shm_pool*)id;
 }
 
-static inline void wlShmPoolDestroy(struct wl_shm_pool *wl_shm_pool)
+static inline void wlShmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_shm_pool,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_shm_pool,
         WL_SHM_POOL_DESTROY,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_shm_pool),
-            WL_MARSHAL_FLAG_DESTROY);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline struct wl_buffer* wlShmPoolCreateBuffer(
-    struct wl_shm_pool *wl_shm_pool,
+    struct wl_shm_pool* wl_shm_pool,
     int32_t offset,
     int32_t width,
     int32_t height,
     int32_t stride,
     uint32_t format)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_shm_pool,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_shm_pool,
         WL_SHM_POOL_CREATE_BUFFER,
         s_Wl.bufferInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_shm_pool),
-            0,
-            NULL,
-            offset,
-            width,
-            height,
-            stride,
-            format);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
+        0,
+        NULL,
+        offset,
+        width,
+        height,
+        stride,
+        format);
 
-	return (struct wl_buffer *) id;
+    return (struct wl_buffer*)id;
 }
 
-static inline void wlBufferDestroy(struct wl_buffer *wl_buffer)
+static inline void wlBufferDestroy(struct wl_buffer* wl_buffer)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_buffer,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_buffer,
         WL_BUFFER_DESTROY,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_buffer),
-            WL_MARSHAL_FLAG_DESTROY);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_buffer),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static inline void wlSurfaceAttach(
-    struct wl_surface *wl_surface,
-    struct wl_buffer *buffer,
+    struct wl_surface* wl_surface,
+    struct wl_buffer* buffer,
     int32_t x,
     int32_t y)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_surface,
         WL_SURFACE_ATTACH,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface),
-            0,
-            buffer,
-            x,
-            y);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
+        0,
+        buffer,
+        x,
+        y);
 }
 
 static inline void wlSurfaceDamageBuffer(
-    struct wl_surface *wl_surface,
+    struct wl_surface* wl_surface,
     int32_t x,
     int32_t y,
     int32_t width,
     int32_t height)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_surface,
         WL_SURFACE_DAMAGE_BUFFER,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface),
-            0,
-            x,
-            y,
-            width,
-            height);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
+        0,
+        x,
+        y,
+        width,
+        height);
 }
 
 static inline int wlSurfaceAddListener(
-    struct wl_surface *wl_surface,
-    const struct wl_surface_listener *listener,
-    void *data)
+    struct wl_surface* wl_surface,
+    const struct wl_surface_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) wl_surface,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)wl_surface, (void (**)(void))listener, data);
 }
 
 static inline int wlSeatAddListener(
-    struct wl_seat *wl_seat,
-    const struct wl_seat_listener *listener,
-    void *data)
+    struct wl_seat* wl_seat,
+    const struct wl_seat_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) wl_seat,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)wl_seat, (void (**)(void))listener, data);
 }
 
-static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat *wl_seat)
+static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat* wl_seat)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_seat,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_seat,
         WL_SEAT_GET_POINTER,
         s_Wl.pointerInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_seat),
-            0,
-            NULL);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_seat),
+        0,
+        NULL);
 
-	return (struct wl_pointer *) id;
+    return (struct wl_pointer*)id;
 }
 
-static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat *wl_seat)
+static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat* wl_seat)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_seat,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_seat,
         WL_SEAT_GET_KEYBOARD,
         s_Wl.keyboardInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_seat),
-            0,
-            NULL);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_seat),
+        0,
+        NULL);
 
-	return (struct wl_keyboard *) id;
+    return (struct wl_keyboard*)id;
 }
 
 static inline int wlPointerAddListener(
-    struct wl_pointer *wl_pointer,
-    const struct wl_pointer_listener *listener,
-    void *data)
+    struct wl_pointer* wl_pointer,
+    const struct wl_pointer_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) wl_pointer,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)wl_pointer, (void (**)(void))listener, data);
 }
 
 static inline void wlPointerSetCursor(
-    struct wl_pointer *wl_pointer,
+    struct wl_pointer* wl_pointer,
     uint32_t serial,
-    struct wl_surface *surface,
+    struct wl_surface* surface,
     int32_t hotspot_x,
     int32_t hotspot_y)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_pointer,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_pointer,
         WL_POINTER_SET_CURSOR,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_pointer),
-            0,
-            serial,
-            surface,
-            hotspot_x,
-            hotspot_y);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_pointer),
+        0,
+        serial,
+        surface,
+        hotspot_x,
+        hotspot_y);
 }
 
 static inline int wlKeyboardAddListener(
-    struct wl_keyboard *wl_keyboard,
-    const struct wl_keyboard_listener *listener,
-    void *data)
+    struct wl_keyboard* wl_keyboard,
+    const struct wl_keyboard_listener* listener,
+    void* data)
 {
-	return s_Wl.proxyAddListener(
-        (struct wl_proxy *) wl_keyboard,
-        (void (**)(void)) listener, data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)wl_keyboard, (void (**)(void))listener, data);
 }
 
-static inline struct wl_region* wlCompositorCreateRegion(
-    struct wl_compositor *wl_compositor)
+static inline struct wl_region* wlCompositorCreateRegion(struct wl_compositor* wl_compositor)
 {
-	struct wl_proxy *id;
-	id = s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_compositor,
+    struct wl_proxy* id;
+    id = s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_compositor,
         WL_COMPOSITOR_CREATE_REGION,
         s_Wl.regionInterface,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_compositor),
-            0,
-            NULL);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_compositor),
+        0,
+        NULL);
 
-	return (struct wl_region *) id;
+    return (struct wl_region*)id;
 }
 
 static inline void wlRegionAdd(
-    struct wl_region *wl_region,
+    struct wl_region* wl_region,
     int32_t x,
     int32_t y,
     int32_t width,
     int32_t height)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_region,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_region,
         WL_REGION_ADD,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_region),
-            0,
-            x,
-            y,
-            width,
-            height);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_region),
+        0,
+        x,
+        y,
+        width,
+        height);
 }
 
 static inline void wlSurfaceSetOpaqueRegion(
-    struct wl_surface *wl_surface,
-    struct wl_region *region)
+    struct wl_surface* wl_surface,
+    struct wl_region* region)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_surface,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_surface,
         WL_SURFACE_SET_OPAQUE_REGION,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_surface),
-            0,
-            region);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
+        0,
+        region);
 }
 
-static inline void wlRegionDestroy(struct wl_region *wl_region)
+static inline void wlRegionDestroy(struct wl_region* wl_region)
 {
-	s_Wl.proxyMarshalFlags(
-        (struct wl_proxy *) wl_region,
+    s_Wl.proxyMarshalFlags(
+        (struct wl_proxy*)wl_region,
         WL_REGION_DESTROY,
         NULL,
-        s_Wl.proxyGetVersion(
-            (struct wl_proxy *) wl_region),
-            WL_MARSHAL_FLAG_DESTROY);
+        s_Wl.proxyGetVersion((struct wl_proxy*)wl_region),
+        WL_MARSHAL_FLAG_DESTROY);
 }
 
 static void surfaceHandleEnter(
@@ -1525,8 +1496,7 @@ static void surfaceHandleLeave(
 
 static struct wl_surface_listener surfaceListener = {
     .enter = surfaceHandleEnter,
-    .leave = surfaceHandleLeave
-};
+    .leave = surfaceHandleLeave};
 
 static void pointerHandleEnter(
     void* userData,
@@ -1544,12 +1514,7 @@ static void pointerHandleEnter(
     if (data->cursor) {
         // our window
         WaylandCursor* cursor = data->cursor;
-        wlPointerSetCursor(
-            pointer,
-            serial,
-            cursor->surface,
-            cursor->hotspotX,
-            cursor->hotspotY);
+        wlPointerSetCursor(pointer, serial, cursor->surface, cursor->hotspotX, cursor->hotspotY);
     }
 
     // cache the surface the pointer is currently on
@@ -1756,16 +1721,14 @@ static void pointerHandleAxisSource(
     struct wl_pointer* pointer,
     uint32_t axis_source)
 {
-
 }
 
 static void pointerHandleAxisStop(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t time,
-	uint32_t axis)
+    uint32_t axis)
 {
-
 }
 
 static void keyboardHandleEnter(
@@ -1982,14 +1945,7 @@ static void keyboardHandleModifiers(
     uint32_t group)
 {
     if (s_Wl.state) {
-        s_Wl.xkbStateUpdateMask(
-            s_Wl.state,
-            mods_depressed,
-            mods_latched,
-            mods_locked,
-            group,
-            0,
-            0);
+        s_Wl.xkbStateUpdateMask(s_Wl.state, mods_depressed, mods_latched, mods_locked, group, 0, 0);
     }
 }
 
@@ -2002,8 +1958,7 @@ static struct wl_pointer_listener pointerListener = {
     .axis_discrete = pointerHandleAxisDiscrete,
     .frame = pointerHandleFrame,
     .axis_source = pointerHandleAxisSource,
-    .axis_stop = pointerHandleAxisStop
-};
+    .axis_stop = pointerHandleAxisStop};
 
 static struct wl_keyboard_listener keyboardListener = {
     .enter = keyboardHandleEnter,
@@ -2011,8 +1966,7 @@ static struct wl_keyboard_listener keyboardListener = {
     .keymap = keyboardHandleRemap,
     .key = keyboardHandleKey,
     .repeat_info = keyboardHandleRepeatInfo,
-    .modifiers = keyboardHandleModifiers
-};
+    .modifiers = keyboardHandleModifiers};
 
 static void seatHandleCapabilities(
     void* userData,
@@ -2035,13 +1989,11 @@ static void seatHandleName(
     struct wl_seat* seat,
     const char* name)
 {
-
 }
 
 static struct wl_seat_listener seatListener = {
     .capabilities = seatHandleCapabilities,
-    .name = seatHandleName
-};
+    .name = seatHandleName};
 
 #endif // PAL_HAS_WAYLAND
 #pragma endregion
@@ -2066,11 +2018,17 @@ const struct wl_interface xdg_surface_interface;
 const struct wl_interface xdg_toplevel_interface;
 
 struct xdg_wm_base_listener {
-	void (*ping)(void*, struct xdg_wm_base*, uint32_t);
+    void (*ping)(
+        void*,
+        struct xdg_wm_base*,
+        uint32_t);
 };
 
 struct xdg_surface_listener {
-	void (*configure)(void*, struct xdg_surface*, uint32_t);
+    void (*configure)(
+        void*,
+        struct xdg_surface*,
+        uint32_t);
 };
 
 struct xdg_toplevel_listener {
@@ -2100,10 +2058,7 @@ static inline int xdgWmBaseAddListener(
     const struct xdg_wm_base_listener* listener,
     void* data)
 {
-    return s_Wl.proxyAddListener(
-        (struct wl_proxy*)xdg_wm_base,
-        (void (**)(void))listener,
-        data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)xdg_wm_base, (void (**)(void))listener, data);
 }
 
 static inline struct xdg_surface* xdgWmBaseGetXdgSurface(
@@ -2123,8 +2078,7 @@ static inline struct xdg_surface* xdgWmBaseGetXdgSurface(
     return (struct xdg_surface*)id;
 }
 
-static inline struct xdg_toplevel*
-xdgSurfaceGetToplevel(struct xdg_surface* xdg_surface)
+static inline struct xdg_toplevel* xdgSurfaceGetToplevel(struct xdg_surface* xdg_surface)
 {
     struct wl_proxy* id;
     id = s_Wl.proxyMarshalFlags(
@@ -2171,18 +2125,12 @@ static void xdgSurfaceHandleConfigure(
     if (!winData->skipConfigure) {
         if (winData->pushConfigureEvent) {
             if (winData->eglWindow) {
-                s_Wl.eglWindowResize(
-                    winData->eglWindow,
-                    winData->w,
-                    winData->h,
-                    0,
-                    0);
+                s_Wl.eglWindowResize(winData->eglWindow, winData->w, winData->h, 0, 0);
 
             } else {
                 // create a new buffer with the new size
                 struct wl_buffer* buffer = nullptr;
-                buffer =
-                    createShmBuffer(winData->w, winData->h, nullptr, false);
+                buffer = createShmBuffer(winData->w, winData->h, nullptr, false);
                 if (!buffer) {
                     return;
                 }
@@ -2329,10 +2277,7 @@ static inline int xdgSurfaceAddListener(
     const struct xdg_surface_listener* listener,
     void* data)
 {
-    return s_Wl.proxyAddListener(
-        (struct wl_proxy*)xdg_surface,
-        (void (**)(void))listener,
-        data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)xdg_surface, (void (**)(void))listener, data);
 }
 
 static inline void xdgSurfaceDestroy(struct xdg_surface* xdg_surface)
@@ -2393,10 +2338,7 @@ static inline int xdgToplevelAddListener(
     const struct xdg_toplevel_listener* listener,
     void* data)
 {
-    return s_Wl.proxyAddListener(
-        (struct wl_proxy*)xdg_toplevel,
-        (void (**)(void))listener,
-        data);
+    return s_Wl.proxyAddListener((struct wl_proxy*)xdg_toplevel, (void (**)(void))listener, data);
 }
 
 static inline void xdgToplevelSetMinSize(
@@ -2601,8 +2543,7 @@ static void setupXdgShellProtocol()
     xdg_shell_types[25] = NULL;
 }
 
-static const struct xdg_wm_base_listener wmBaseListener = {
-    .ping = wmBaseHandlePing};
+static const struct xdg_wm_base_listener wmBaseListener = {.ping = wmBaseHandlePing};
 
 static const struct xdg_surface_listener xdgSurfaceListener = {
     .configure = xdgSurfaceHandleConfigure};
@@ -2633,8 +2574,8 @@ struct zxdg_toplevel_decoration_v1_listener {
 const struct wl_interface zxdg_decoration_manager_v1_interface;
 const struct wl_interface zxdg_toplevel_decoration_v1_interface;
 
-static inline void zxdgDecorationManagerV1Destroy(
-    struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1)
+static inline void
+zxdgDecorationManagerV1Destroy(struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1)
 {
     s_Wl.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_decoration_manager_v1,
@@ -2672,8 +2613,8 @@ static inline int zxdgToplevelDecorationV1AddListener(
         data);
 }
 
-static inline void zxdgToplevelDecorationV1Destroy(
-    struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1)
+static inline void
+zxdgToplevelDecorationV1Destroy(struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1)
 {
     s_Wl.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_toplevel_decoration_v1,
@@ -2814,10 +2755,7 @@ static WindowData* getFreeWindowData()
     int freeIndex = s_Video.maxWindowData + 1;
     data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_Video.windowData,
-            s_Video.maxWindowData * sizeof(WindowData));
+        memcpy(data, s_Video.windowData, s_Video.maxWindowData * sizeof(WindowData));
 
         palFree(s_Video.allocator, s_Video.windowData);
         s_Video.windowData = data;
@@ -2832,8 +2770,7 @@ static WindowData* getFreeWindowData()
 static WindowData* findWindowData(PalWindow* window)
 {
     for (int i = 0; i < s_Video.maxWindowData; ++i) {
-        if (s_Video.windowData[i].used &&
-            s_Video.windowData[i].window == window) {
+        if (s_Video.windowData[i].used && s_Video.windowData[i].window == window) {
             return &s_Video.windowData[i];
         }
     }
@@ -2842,10 +2779,7 @@ static WindowData* findWindowData(PalWindow* window)
 
 static void resetMonitorData()
 {
-    memset(
-        s_Video.monitorData,
-        0,
-        s_Video.maxMonitorData * sizeof(MonitorData));
+    memset(s_Video.monitorData, 0, s_Video.maxMonitorData * sizeof(MonitorData));
 }
 
 static MonitorData* getFreeMonitorData()
@@ -2864,10 +2798,7 @@ static MonitorData* getFreeMonitorData()
     int freeIndex = s_Video.maxMonitorData + 1;
     data = palAllocate(s_Video.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_Video.monitorData,
-            s_Video.maxMonitorData * sizeof(MonitorData));
+        memcpy(data, s_Video.monitorData, s_Video.maxMonitorData * sizeof(MonitorData));
 
         palFree(s_Video.allocator, s_Video.monitorData);
         s_Video.monitorData = data;
@@ -2882,8 +2813,7 @@ static MonitorData* getFreeMonitorData()
 static MonitorData* findMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
-        if (s_Video.monitorData[i].used &&
-            s_Video.monitorData[i].monitor == monitor) {
+        if (s_Video.monitorData[i].used && s_Video.monitorData[i].monitor == monitor) {
             return &s_Video.monitorData[i];
         }
     }
@@ -2893,8 +2823,7 @@ static MonitorData* findMonitorData(PalMonitor* monitor)
 static void freeMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
-        if (s_Video.monitorData[i].used &&
-            s_Video.monitorData[i].monitor == monitor) {
+        if (s_Video.monitorData[i].used && s_Video.monitorData[i].monitor == monitor) {
             s_Video.monitorData[i].used = false;
         }
     }
@@ -3040,13 +2969,9 @@ static PalResult glxBackend(const int index)
         palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
-    // clang-format off
 
     int count = 0;
-    GLXFBConfig* configs = s_X11.glxGetFBConfigs(
-        s_X11.display,
-        s_X11.screen,
-        &count);
+    GLXFBConfig* configs = s_X11.glxGetFBConfigs(s_X11.display, s_X11.screen, &count);
 
     GLXFBConfig fbConfig = configs[index];
     if (!fbConfig) {
@@ -3054,9 +2979,7 @@ static PalResult glxBackend(const int index)
     }
 
     // get a matching visual
-    XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(
-        s_X11.display,
-        fbConfig);
+    XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(s_X11.display, fbConfig);
 
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
@@ -3107,14 +3030,8 @@ static PalResult eglXBackend(int index)
     XVisualInfo tmp;
     tmp.visualid = visualID;
 
-    // clang-format off
     // get a matching visual info
-    XVisualInfo* visualInfo = s_X11.getVisualInfo(
-        s_X11.display,
-        VisualIDMask,
-        &tmp,
-        &numVisuals);
-    // clang-format on
+    XVisualInfo* visualInfo = s_X11.getVisualInfo(s_X11.display, VisualIDMask, &tmp, &numVisuals);
 
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
@@ -3335,10 +3252,7 @@ static void xCacheMonitors()
 
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
-        // clang-format off
         XRROutputInfo* info = s_X11.getOutputInfo(s_X11.display, resources, output);
-        // clang-format on
-
         if (info->connection == RR_Connected && info->crtc != None) {
             // get monitor data and update info
             PalMonitor* monitor = TO_PAL_HANDLE(PalMonitor, output);
@@ -3349,10 +3263,7 @@ static void xCacheMonitors()
             }
 
             data->monitor = monitor;
-
-            // clang-format off
             XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, info->crtc);
-            // clang-format on
 
             // get DPI
             float raw = crtc->width / 1920.0f;
@@ -3510,7 +3421,6 @@ static PalResult xInitVideo()
     }
 
     // clang-format off
-
     // load procs
     s_X11.openDisplay = (XOpenDisplayFn)dlsym(
         s_X11.handle,
@@ -3809,6 +3719,7 @@ static PalResult xInitVideo()
     s_X11.utf8LookupString = (Xutf8LookupStringFn)dlsym(
         s_X11.handle,
         "Xutf8LookupString");
+    // clang-format on
 
     // X11 server
     if (s_Video.platformInstance) {
@@ -3830,10 +3741,7 @@ static PalResult xInitVideo()
     xCheckFeatures();
 
     // subscribe for monitor events
-    s_X11.selectRRInput(
-        s_X11.display,
-        s_X11.root,
-        RRScreenChangeNotifyMask | RRNotify);
+    s_X11.selectRRInput(s_X11.display, s_X11.root, RRScreenChangeNotifyMask | RRNotify);
 
     int eventBase, errorBase = 0;
     s_X11.queryRRExtension(s_X11.display, &eventBase, &errorBase);
@@ -3854,18 +3762,14 @@ static PalResult xInitVideo()
     if (s_X11.glxHandle) {
 
         GLXGetProcAddressFn load = nullptr;
-        load = (GLXGetProcAddressFn)dlsym(
-            s_X11.glxHandle,
-            "glXGetProcAddress");
+        load = (GLXGetProcAddressFn)dlsym(s_X11.glxHandle, "glXGetProcAddress");
 
-        s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)load(
-            "glXGetFBConfigs");
+        s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)load("glXGetFBConfigs");
 
-        s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)load(
-            "glXGetFBConfigAttrib");
+        s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)load("glXGetFBConfigAttrib");
 
-        s_X11.glxGetVisualFromFBConfig = (GLXGetVisualFromFBConfigFn)load(
-            "glXGetVisualFromFBConfig");
+        s_X11.glxGetVisualFromFBConfig =
+            (GLXGetVisualFromFBConfigFn)load("glXGetVisualFromFBConfig");
     }
 
     xCreateKeycodeTable();
@@ -3915,8 +3819,7 @@ PalResult xSetFBConfig(
     if (backend == PAL_CONFIG_BACKEND_GLX) {
         return glxBackend(index);
 
-    } else if (backend == PAL_CONFIG_BACKEND_EGL ||
-              backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+    } else if (backend == PAL_CONFIG_BACKEND_EGL || backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         return eglXBackend(index);
 
     } else {
@@ -3976,8 +3879,7 @@ static void xUpdateVideo()
                 // real configure event
                 if (s_Video.eventDriver) {
                     // check if its a resize event
-                    if (data->w != event.xconfigure.width ||
-                        data->h != event.xconfigure.height) {
+                    if (data->w != event.xconfigure.width || data->h != event.xconfigure.height) {
                         data->w = event.xconfigure.width;
                         data->h = event.xconfigure.height;
 
@@ -4005,8 +3907,7 @@ static void xUpdateVideo()
                     }
 
                     // check if its a move event
-                    if (data->x != event.xconfigure.x ||
-                        data->y != event.xconfigure.y) {
+                    if (data->x != event.xconfigure.x || data->y != event.xconfigure.y) {
                         data->x = event.xconfigure.x;
                         data->y = event.xconfigure.y;
 
@@ -4248,10 +4149,7 @@ static void xUpdateVideo()
                 s_Mouse.WheelY = scrollY;
                 if (s_Video.eventDriver && (scrollX || scrollY)) {
                     PalEventDriver* driver = s_Video.eventDriver;
-                    // clang-format off
                     mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
-                    // clang-format on
-
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = PAL_EVENT_MOUSE_WHEEL;
@@ -4402,18 +4300,11 @@ static PalResult xEnumerateMonitors(
 {
     int _count = 0;
     int maxCount = outMonitors ? *count : 0;
-    // clang-format off
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    // clang-format on
-
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
-        // clang-format off
         XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
-        // clang-format on
-
-        if (outputInfo->connection == RR_Connected &&
-            outputInfo->crtc != None) {
+        if (outputInfo->connection == RR_Connected && outputInfo->crtc != None) {
             // a monitor
             if (outMonitors) {
                 if (_count < maxCount) {
@@ -4446,14 +4337,9 @@ static PalResult xGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
-    // clang-format off
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    // clang-format on
-
-    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-        s_X11.display,
-        resources,
-        FROM_PAL_HANDLE(RROutput, monitor));
+    XRROutputInfo* outputInfo =
+        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
 
     if (!outputInfo) {
         // invalid monitor
@@ -4479,10 +4365,7 @@ static PalResult xGetMonitorInfo(
     }
 
     // get monitor pos and size
-    // clang-format off
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
-    // clang-format on
-
     info->x = crtc->x;
     info->y = crtc->y;
     info->width = crtc->width;
@@ -4558,16 +4441,11 @@ static PalResult xEnumerateMonitorModes(
 {
     Int32 modeCount = 0;
     int maxModeCount = modes ? *count : 0;
-
-    // clang-format off
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    // clang-format on
 
     // get the monitor info
-    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-        s_X11.display,
-        resources,
-        FROM_PAL_HANDLE(RROutput, monitor));
+    XRROutputInfo* outputInfo =
+        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
 
     if (!outputInfo) {
         // invalid monitor
@@ -4595,11 +4473,8 @@ static PalResult xEnumerateMonitorModes(
                         mode->height = info->height;
                         mode->bpp = s_X11.bpp;
 
-                        // clang-format off
-                        double tmp = (double)info->hTotal * (double)info->vTotal;
-                        // clang-format on
-
-                        double rate = (double)info->dotClock / tmp;
+                        double tmp = (double)info->hTotal * (double)info->vTotal double rate =
+                                         (double)info->dotClock / tmp;
                         mode->refreshRate = rate + 0.5;
                     }
                 }
@@ -4622,15 +4497,11 @@ static PalResult xGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    // clang-format off
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    // clang-format on
 
     // get the monitor info
-    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-        s_X11.display,
-        resources,
-        FROM_PAL_HANDLE(RROutput, monitor));
+    XRROutputInfo* outputInfo =
+        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
 
     if (!outputInfo) {
         // invalid monitor
@@ -4645,9 +4516,7 @@ static PalResult xGetCurrentMonitorMode(
     }
 
     // get the current display mode
-    // clang-format off
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
-    // clang-format on
 
     // find the display mode
     XRRModeInfo* info = nullptr;
@@ -4680,15 +4549,11 @@ static PalResult xSetMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    // clang-format off
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    // clang-format on
 
     // get the monitor info
-    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-        s_X11.display,
-        resources,
-        FROM_PAL_HANDLE(RROutput, monitor));
+    XRROutputInfo* outputInfo =
+        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
 
     if (!outputInfo) {
         // invalid monitor
@@ -4711,9 +4576,7 @@ static PalResult xSetMonitorMode(
     }
 
     // apply the display mode
-    // clang-format off
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
-    // clang-format on
 
     RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
     int ret = s_X11.setCrtcConfig(
@@ -4751,15 +4614,11 @@ static PalResult xSetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation)
 {
-    // clang-format off
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    // clang-format on
 
     // get the monitor info
-    XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-        s_X11.display,
-        resources,
-        FROM_PAL_HANDLE(RROutput, monitor));
+    XRROutputInfo* outputInfo =
+        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
 
     if (!outputInfo) {
         // invalid monitor
@@ -4774,9 +4633,7 @@ static PalResult xSetMonitorOrientation(
     }
 
     // get the current display mode
-    // clang-format off
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
-    // clang-format on
 
     // check if the new orientation is supported
     Rotation rotation = 0;
@@ -4859,15 +4716,7 @@ static PalResult xCreateWindow(
         depth = s_X11.visualInfo->depth;
         bgPixel = 0;
         borderPixel = 0;
-
-        // clang-format off
-
-        colormap = s_X11.createColormap(
-            s_X11.display,
-            s_X11.root,
-            visual,
-            AllocNone);
-        // clang-format on
+        colormap = s_X11.createColormap(s_X11.display, s_X11.root, visual, AllocNone);
 
         if (!colormap) {
             palSetLastPlatformError(errno);
@@ -4919,24 +4768,16 @@ static PalResult xCreateWindow(
         resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
         for (int i = 0; i < resources->noutput; ++i) {
             RROutput output = resources->outputs[i];
-            XRROutputInfo* outputInfo = s_X11.getOutputInfo(
-                s_X11.display,
-                resources,
-                FROM_PAL_HANDLE(RROutput, monitor));
+            XRROutputInfo* outputInfo =
+                s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
 
             // check if its a monitor
-            if (outputInfo->connection != RR_Connected ||
-                outputInfo->crtc == None) {
+            if (outputInfo->connection != RR_Connected || outputInfo->crtc == None) {
                 s_X11.freeOutputInfo(outputInfo);
                 continue;
             }
 
-            // clang-format off
-            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(
-                s_X11.display,
-                resources,
-                outputInfo->crtc);
-            // clang-format on
+            XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
 
             monitorX = crtc->x;
             monitorY = crtc->y;
@@ -5203,8 +5044,7 @@ static PalResult xCreateWindow(
         s_X11.iconifyWindow(s_X11.display, window, s_X11.screen);
     }
 
-    s_X11
-        .setWMProtocols(s_X11.display, window, &s_X11Atoms.WM_DELETE_WINDOW, 1);
+    s_X11.setWMProtocols(s_X11.display, window, &s_X11Atoms.WM_DELETE_WINDOW, 1);
 
     s_X11.flush(s_X11.display);
 
@@ -5737,14 +5577,8 @@ PalResult xSetFocusWindow(PalWindow* window)
     }
 
     if (s_X11Atoms._NET_ACTIVE_WINDOW) {
-        xSendWMEvent(
-            xWin,
-            s_X11Atoms._NET_ACTIVE_WINDOW,
-            CurrentTime,
-            0,
-            0,
-            0,
-            true); // 1
+        xSendWMEvent(xWin, s_X11Atoms._NET_ACTIVE_WINDOW, CurrentTime, 0, 0, 0,
+                     true); // 1
 
     } else {
         s_X11.setInputFocus(s_X11.display, xWin, RevertToParent, CurrentTime);
@@ -5953,16 +5787,7 @@ PalResult xGetCursorPos(
     Window root, rootChild;
     int rootX, rootY, winX, winY;
     unsigned int mask;
-    s_X11.queryPointer(
-        s_X11.display,
-        xWin,
-        &root,
-        &rootChild,
-        &rootX,
-        &rootY,
-        &winX,
-        &winY,
-        &mask);
+    s_X11.queryPointer(s_X11.display, xWin, &root, &rootChild, &rootX, &rootY, &winX, &winY, &mask);
 
     if (x) {
         *x = winX;
@@ -6459,12 +6284,10 @@ static void globalHandle(
     }
 
     if (strcmp(interface, "wl_compositor") == 0) {
-        s_Wl.compositor =
-            wlRegistryBind(registry, name, s_Wl.compositorInterface, 4);
+        s_Wl.compositor = wlRegistryBind(registry, name, s_Wl.compositorInterface, 4);
 
     } else if (strcmp(interface, "xdg_wm_base") == 0) {
-        s_Wl.xdgBase =
-            wlRegistryBind(registry, name, &xdg_wm_base_interface, 1);
+        s_Wl.xdgBase = wlRegistryBind(registry, name, &xdg_wm_base_interface, 1);
 
         xdgWmBaseAddListener(s_Wl.xdgBase, &wmBaseListener, nullptr);
 
@@ -6477,11 +6300,8 @@ static void globalHandle(
         wlSeatAddListener(s_Wl.seat, &seatListener, nullptr);
 
     } else if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
-        s_Wl.decorationManager = wlRegistryBind(
-            registry,
-            name,
-            &zxdg_decoration_manager_v1_interface,
-            1);
+        s_Wl.decorationManager =
+            wlRegistryBind(registry, name, &zxdg_decoration_manager_v1_interface, 1);
 
         s_Video.features64 |= PAL_VIDEO_FEATURE64_DECORATED_WINDOW;
 
@@ -6510,8 +6330,7 @@ static void globalRemove(
     uint32_t name)
 {
     for (int i = 0; i < s_Video.maxMonitorData; ++i) {
-        if (s_Video.monitorData[i].used &&
-            s_Video.monitorData[i].wlName == name) {
+        if (s_Video.monitorData[i].used && s_Video.monitorData[i].wlName == name) {
             MonitorData* data = &s_Video.monitorData[i];
             data->used = false;
             s_Wl.proxyDestroy((struct wl_proxy*)data->monitor);
@@ -6685,7 +6504,6 @@ PalResult wlInitVideo()
     s_Wl.eglWindowResize = (wl_egl_window_resize_fn)dlsym(
         s_Wl.libWaylandEgl,
         "wl_egl_window_resize");
-
     // clang-format on
 
     // initialize wayland
@@ -6774,8 +6592,7 @@ PalResult wlSetFBConfig(
     const int index,
     PalFBConfigBackend backend)
 {
-    if (backend == PAL_CONFIG_BACKEND_GLES ||
-        backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+    if (backend == PAL_CONFIG_BACKEND_GLES || backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
         return eglWlBackend(index);
 
     } else {
@@ -7023,13 +6840,9 @@ PalResult wlCreateWindow(
     // decorated window
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         struct zxdg_toplevel_decoration_v1* decoration = nullptr;
-        decoration =
-            zxdgGetToplevelDecoration(s_Wl.decorationManager, xdgToplevel);
+        decoration = zxdgGetToplevelDecoration(s_Wl.decorationManager, xdgToplevel);
 
-        zxdgToplevelDecorationV1AddListener(
-            decoration,
-            &decorationListener,
-            surface);
+        zxdgToplevelDecorationV1AddListener(decoration, &decorationListener, surface);
 
         zxdgToplevelDecorationV1SetMode(decoration, 2);
         data->decoration = decoration;
@@ -7372,8 +7185,7 @@ PalResult wlCreateCursor(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    cursor->buffer =
-        createShmBuffer(info->width, info->height, info->pixels, true);
+    cursor->buffer = createShmBuffer(info->width, info->height, info->pixels, true);
 
     if (!cursor->buffer) {
         palSetLastPlatformError(errno);
@@ -7608,15 +7420,11 @@ PalResult PAL_CALL palInitVideo(
     s_Video.maxMonitorData = 16; // initial size
     s_Video.maxWindowData = 32;  // initial size
 
-    s_Video.windowData = palAllocate(
-        s_Video.allocator,
-        sizeof(WindowData) * s_Video.maxWindowData,
-        0);
+    s_Video.windowData =
+        palAllocate(s_Video.allocator, sizeof(WindowData) * s_Video.maxWindowData, 0);
 
-    s_Video.monitorData = palAllocate(
-        s_Video.allocator,
-        sizeof(MonitorData) * s_Video.maxMonitorData,
-        0);
+    s_Video.monitorData =
+        palAllocate(s_Video.allocator, sizeof(MonitorData) * s_Video.maxMonitorData, 0);
 
     if (!s_Video.monitorData || !s_Video.windowData) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -7661,10 +7469,7 @@ PalResult PAL_CALL palInitVideo(
         s_Egl.eglGetError = (eglGetErrorFn)load("eglGetError");
         s_Egl.eglBindAPI = (eglBindAPIFn)load("eglBindAPI");
         s_Egl.eglGetConfigs = (eglGetConfigsFn)load("eglGetConfigs");
-
-        // clang-format off
         s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
-        // clang-format on
     }
 
     s_Video.allocator = allocator;
@@ -7797,11 +7602,7 @@ PalResult PAL_CALL palEnumerateMonitorModes(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    // clang-format off
-
     PalResult ret = s_Video.backend->enumerateMonitorModes(monitor, count, modes);
-    // clang-format on
-
     if (ret == PAL_RESULT_SUCCESS && modes) {
         // sort the modes so that they are lowest to highest
         qsort(modes, *count, sizeof(PalMonitorMode), compareModes);
@@ -8028,13 +7829,7 @@ PalResult PAL_CALL palGetWindowTitle(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    // clang-format off
-    return s_Video.backend->getWindowTitle(
-        window,
-        bufferSize,
-        outSize,
-        outBuffer);
-    // clang-format on
+    return s_Video.backend->getWindowTitle(window, bufferSize, outSize, outBuffer);
 }
 
 PalResult PAL_CALL palGetWindowPos(

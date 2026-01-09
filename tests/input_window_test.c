@@ -284,12 +284,7 @@ static inline void onKeydown(const PalEvent* event)
     // get keycode and scancode name
     const char* keyName = s_KeyNames[keycode];
     const char* scancodeName = s_ScancodeNames[scancode];
-    palLog(
-        nullptr,
-        "%s: Key pressed: (%s, %s)",
-        dispatchString,
-        keyName,
-        scancodeName);
+    palLog(nullptr, "%s: Key pressed: (%s, %s)", dispatchString, keyName, scancodeName);
 
     if (keycode == PAL_KEYCODE_ESCAPE) {
         s_Running = false;
@@ -305,12 +300,7 @@ static inline void onKeyrepeat(const PalEvent* event)
     // get keycode and scancode name
     const char* keyName = s_KeyNames[keycode];
     const char* scancodeName = s_ScancodeNames[scancode];
-    palLog(
-        nullptr,
-        "%s: Key repeat: (%s, %s)",
-        dispatchString,
-        keyName,
-        scancodeName);
+    palLog(nullptr, "%s: Key repeat: (%s, %s)", dispatchString, keyName, scancodeName);
 }
 
 static inline void onKeyup(const PalEvent* event)
@@ -322,12 +312,7 @@ static inline void onKeyup(const PalEvent* event)
     // get keycode and scancode name
     const char* keyName = s_KeyNames[keycode];
     const char* scancodeName = s_ScancodeNames[scancode];
-    palLog(
-        nullptr,
-        "%s: Key released: (%s, %s)",
-        dispatchString,
-        keyName,
-        scancodeName);
+    palLog(nullptr, "%s: Key released: (%s, %s)", dispatchString, keyName, scancodeName);
 }
 
 static inline void onMouseButtondown(const PalEvent* event)
@@ -379,12 +364,7 @@ static inline void onMouseWheel(const PalEvent* event)
 
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Mouse Wheel: (%d, %d)", dispatchString, dx, dy);
-    palLog(
-        nullptr,
-        "%s: Mouse Wheel Raw: (%.2f, %.2f)",
-        dispatchString,
-        fdx,
-        fdy);
+    palLog(nullptr, "%s: Mouse Wheel Raw: (%.2f, %.2f)", dispatchString, fdx, fdy);
 }
 
 static void PAL_CALL onEvent(
@@ -484,10 +464,7 @@ bool inputWindowTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
     PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
 #if DISPATCH_MODE_POLL

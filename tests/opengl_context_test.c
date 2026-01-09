@@ -12,8 +12,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
     float blue,
     float alpha);
 
-typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(
-    Uint32 mask); // use GL typedefs if needed
+typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(Uint32 mask); // use GL typedefs if needed
 
 bool openglContextTest()
 {
@@ -196,10 +195,7 @@ bool openglContextTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 

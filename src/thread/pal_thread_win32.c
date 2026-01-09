@@ -116,13 +116,7 @@ PalResult PAL_CALL palCreateThread(
     data->func = info->entry;
     data->allocator = info->allocator;
 
-    HANDLE thread = CreateThread(
-        nullptr,
-        info->stackSize,
-        threadEntryToWin32,
-        data,
-        0,
-        nullptr);
+    HANDLE thread = CreateThread(nullptr, info->stackSize, threadEntryToWin32, data, 0, nullptr);
 
     if (!thread) {
         // error
@@ -204,11 +198,7 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
     // check support for PAL_THREAD_FEATURE_NAME feature
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
     if (kernel32) {
-        // clang-format off
-        FARPROC setThreadDesc = GetProcAddress(
-            kernel32,
-            "SetThreadDescription");
-        // clang-format on
+        FARPROC setThreadDesc = GetProcAddress(kernel32, "SetThreadDescription");
 
         if (setThreadDesc) {
             features |= PAL_THREAD_FEATURE_NAME;
@@ -269,9 +259,8 @@ PalResult PAL_CALL palGetThreadName(
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
     GetThreadDescriptionFn getThreadDescription = nullptr;
     if (kernel32) {
-        getThreadDescription = (GetThreadDescriptionFn)GetProcAddress(
-            kernel32,
-            "GetThreadDescription");
+        getThreadDescription =
+            (GetThreadDescriptionFn)GetProcAddress(kernel32, "GetThreadDescription");
     }
 
     if (!getThreadDescription) {
@@ -378,9 +367,8 @@ PalResult PAL_CALL palSetThreadName(
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
     SetThreadDescriptionFn setThreadDescription = nullptr;
     if (kernel32) {
-        setThreadDescription = (SetThreadDescriptionFn)GetProcAddress(
-            kernel32,
-            "SetThreadDescription");
+        setThreadDescription =
+            (SetThreadDescriptionFn)GetProcAddress(kernel32, "SetThreadDescription");
     }
 
     if (!setThreadDescription) {
@@ -560,12 +548,7 @@ PalResult PAL_CALL palWaitCondVarTimeout(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    // clang-format off
-    BOOL ret = SleepConditionVariableCS(
-        &condVar->cv,
-        &mutex->sc,
-        (DWORD)milliseconds);
-    // clang-format on
+    BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, (DWORD)milliseconds);
 
     if (!ret) {
         DWORD error = GetLastError();

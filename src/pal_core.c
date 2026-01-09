@@ -110,8 +110,7 @@ static inline void* alignedAlloc(
 {
 #if defined(_MSC_VER) || defined(__MINGW32__)
     return _aligned_malloc(size, alignment);
-#elif defined(_ISOC11_SOURCE) ||                                               \
-    defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#elif defined(_ISOC11_SOURCE) || defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     return aligned_alloc(alignment, size);
 #else
     void* ptr = nullptr;
@@ -158,10 +157,7 @@ static inline LogTLSData* getLogTlsData()
                 return nullptr;
             } else {
                 // update the TLS using atomic operations to avoid thread race
-                LONG prev = InterlockedCompareExchange(
-                    (volatile LONG*)&s_TlsID,
-                    (LONG)TLSIndex,
-                    0);
+                LONG prev = InterlockedCompareExchange((volatile LONG*)&s_TlsID, (LONG)TLSIndex, 0);
 
                 if (prev != 0) {
                     // Another thread has already set this,

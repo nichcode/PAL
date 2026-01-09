@@ -38,20 +38,12 @@ bool timeTest()
         double now = getTime(&timer);
         totalTime = now - lastTime;
 
-        palLog(
-            nullptr,
-            "Frame %d, Total Time %f seconds",
-            frameCount,
-            totalTime);
+        palLog(nullptr, "Frame %d, Total Time %f seconds", frameCount, totalTime);
 
         frameCount++;
     }
 
-    palLog(
-        nullptr,
-        "Loop finished after %f seconds and %d frames",
-        totalTime,
-        frameCount);
+    palLog(nullptr, "Loop finished after %f seconds and %d frames", totalTime, frameCount);
 
     return true;
 }

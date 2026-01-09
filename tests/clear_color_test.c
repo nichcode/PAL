@@ -49,15 +49,9 @@ bool clearColorTest()
         return false;
     }
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
@@ -148,8 +142,7 @@ bool clearColorTest()
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr,
-            "Failed to find an adapter that supports graphics queue");
+        palLog(nullptr, "Failed to find an adapter that supports graphics queue");
         return false;
     }
 
@@ -182,10 +175,7 @@ bool clearColorTest()
 
     // create a swapchain with the graphics queue
     PalSwapchainCapabilities swapchainCaps = {0};
-    result = palQuerySwapchainCapabilities(
-        device,
-        &gfxWindow,
-        &swapchainCaps);
+    result = palQuerySwapchainCapabilities(device, &gfxWindow, &swapchainCaps);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -215,12 +205,7 @@ bool clearColorTest()
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
-    result = palCreateSwapchain(
-        device,
-        queue,
-        &gfxWindow,
-        &swapchainCreateInfo,
-        &swapchain);
+    result = palCreateSwapchain(device, queue, &gfxWindow, &swapchainCreateInfo, &swapchain);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -230,15 +215,9 @@ bool clearColorTest()
 
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
-    imageViews = palAllocate(
-        nullptr,
-        sizeof(PalImageView*) * imageCount,
-        0);
+    imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
 
-    renderFinishedSemaphores = palAllocate(
-        nullptr,
-        sizeof(PalSemaphore*) * imageCount,
-        0);
+    renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
 
     if (!imageViews || !renderFinishedSemaphores) {
         palLog(nullptr, "Failed to allocate memory");
@@ -253,7 +232,7 @@ bool clearColorTest()
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
     imageViewCreateInfo.usages = PAL_IMAGE_VIEW_USAGE_COLOR;
 
-     for (int i = 0; i < imageCount; i++) {
+    for (int i = 0; i < imageCount; i++) {
         // get swapchain image
         // this is fast since the images are cache by PAL
         PalImage* image = palGetSwapchainImage(swapchain, i);
@@ -261,11 +240,7 @@ bool clearColorTest()
             palLog(nullptr, "Failed to get swapchain image");
         }
 
-        result = palCreateImageView(
-            device,
-            image,
-            &imageViewCreateInfo,
-            &imageViews[i]);
+        result = palCreateImageView(device, image, &imageViewCreateInfo, &imageViews[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -274,10 +249,7 @@ bool clearColorTest()
         }
     }
 
-    result = palCreateCommandPool(
-        device,
-        queue,
-        &cmdPool);
+    result = palCreateCommandPool(device, queue, &cmdPool);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);

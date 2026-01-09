@@ -115,14 +115,10 @@ static inline int wlRegistryAddListener(
     const struct wl_registry_listener* listener,
     void* data)
 {
-    return s_wl_proxy_add_listener(
-        (struct wl_proxy*)wl_registry,
-        (void (**)(void))listener,
-        data);
+    return s_wl_proxy_add_listener((struct wl_proxy*)wl_registry, (void (**)(void))listener, data);
 }
 
-static inline struct wl_registry*
-wlDisplayGetRegistry(struct wl_display* wl_display)
+static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_display)
 {
     struct wl_proxy* registry;
     registry = s_wl_proxy_marshal_flags(
@@ -186,6 +182,7 @@ void* openDisplayX11()
     s_XCloseDisplay = (XCloseDisplayFn)dlsym(
         s_LibX,
         "XCloseDisplay");
+    // clang-format on
 
     return s_XOpenDisplay(nullptr);
 #endif // __linux__
@@ -236,9 +233,9 @@ void* openDisplayWayland()
     s_wl_proxy_destroy = (wl_proxy_destroy_fn)dlsym(
         s_LibWayland,
         "wl_proxy_destroy");
+    // clang-format on
 
     registryInterface = dlsym(s_LibWayland, "wl_registry_interface");
-
     struct wl_display* display = s_wl_display_connect(nullptr);
     if (display) {
         s_Registry = wlDisplayGetRegistry(display);
@@ -377,15 +374,9 @@ bool nativeInstanceTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_KEYDOWN,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     bool running = true;
     while (running) {

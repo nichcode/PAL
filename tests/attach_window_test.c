@@ -87,6 +87,7 @@ static void* createX11Window()
     s_XDestroyWindow = (XDestroyWindowFn)dlsym(
         s_LibX,
         "XDestroyWindow");
+    // clang-format on
 
     if (!s_XCreateWindow || !s_XSync || !s_XMapRaised || !s_XDestroyWindow) {
         return nullptr;
@@ -119,7 +120,6 @@ static void* createX11Window()
     // make sure the window is mapped
     s_XMapRaised(display, window);
     s_XSync(display, False);
-    // clang-format on
 
     return (void*)(UintPtr)window;
 #endif // __linux__
@@ -242,25 +242,16 @@ bool attachWindowTest()
     // check for support
     PalVideoFeatures64 features = palGetVideoFeaturesEx();
     if (!(features & PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS)) {
-        // clang-format off
         palLog(nullptr, "Attaching and detaching foreign windows feature not supported");
-        // clang-format on
-
         palDestroyEventDriver(eventDriver);
         palShutdownVideo();
         return false;
     }
 
     // we are interested in move and close events
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_CLOSE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
 
-    palSetEventDispatchMode(
-        eventDriver,
-        PAL_EVENT_WINDOW_MOVE,
-        PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MOVE, PAL_DISPATCH_POLL);
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 

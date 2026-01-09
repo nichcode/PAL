@@ -308,10 +308,7 @@ static ContextData* getFreeContextData()
     int freeIndex = s_GL.maxContextData + 1;
     data = palAllocate(s_GL.allocator, sizeof(ContextData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_GL.contextData,
-            s_GL.maxContextData * sizeof(ContextData));
+        memcpy(data, s_GL.contextData, s_GL.maxContextData * sizeof(ContextData));
 
         palFree(s_GL.allocator, s_GL.contextData);
         s_GL.contextData = data;
@@ -326,8 +323,7 @@ static ContextData* getFreeContextData()
 static ContextData* findContextData(PalGLContext* context)
 {
     for (int i = 0; i < s_GL.maxContextData; ++i) {
-        if (s_GL.contextData[i].used &&
-            s_GL.contextData[i].context == context) {
+        if (s_GL.contextData[i].used && s_GL.contextData[i].context == context) {
             return &s_GL.contextData[i];
         }
     }
@@ -336,8 +332,7 @@ static ContextData* findContextData(PalGLContext* context)
 static void freeContextData(PalGLContext* context)
 {
     for (int i = 0; i < s_GL.maxContextData; ++i) {
-        if (s_GL.contextData[i].used &&
-            s_GL.contextData[i].context == context) {
+        if (s_GL.contextData[i].used && s_GL.contextData[i].context == context) {
             s_GL.contextData[i].used = false;
         }
     }
@@ -365,10 +360,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     s_GL.maxContextData = 16; // initial size
-    s_GL.contextData = palAllocate(
-        s_GL.allocator,
-        sizeof(ContextData) * s_GL.maxContextData,
-        0);
+    s_GL.contextData = palAllocate(s_GL.allocator, sizeof(ContextData) * s_GL.maxContextData, 0);
 
     if (!s_GL.maxContextData) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -381,7 +373,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     // clang-format off
-
     s_GL.eglGetProcAddress = (eglGetProcAddressFn)dlsym(
         s_GL.handle,
         "eglGetProcAddress");
@@ -457,6 +448,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
+    // clang-format on
 
     // get backend type
     const char* session = getenv("XDG_SESSION_TYPE");
@@ -477,7 +469,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     EGLDisplay display = s_GL.eglGetDisplay(s_GL.platformDisplay);
-    EGLDisplay * tmpDisplay = EGL_NO_DISPLAY;
+    EGLDisplay* tmpDisplay = EGL_NO_DISPLAY;
     if (display == EGL_NO_DISPLAY) {
         palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -492,12 +484,8 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     EGLConfig config;
     int numConfigs;
     EGLint type;
-    EGLint attribs[] = {
-        EGL_RENDERABLE_TYPE,
-        s_GL.apiTypeBit,
-        EGL_SURFACE_TYPE,
-        EGL_PBUFFER_BIT,
-        EGL_NONE};
+    EGLint attribs[] =
+        {EGL_RENDERABLE_TYPE, s_GL.apiTypeBit, EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_NONE};
 
     s_GL.eglChooseConfig(display, attribs, &config, 1, &numConfigs);
     if (!config || numConfigs == 0) {
@@ -542,15 +530,9 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     EGLSurface surface = EGL_NO_SURFACE;
-    EGLint pBufferAttribs[] = {
-        EGL_WIDTH, 1,
-        EGL_HEIGHT, 1,
-        EGL_NONE};
+    EGLint pBufferAttribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
 
-    surface = s_GL.eglCreatePbufferSurface(
-        tmpDisplay,
-        config,
-        pBufferAttribs);
+    surface = s_GL.eglCreatePbufferSurface(tmpDisplay, config, pBufferAttribs);
 
     if (surface == EGL_NO_SURFACE) {
         palSetLastPlatformError(errno);
@@ -560,27 +542,15 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     // create a dummy context
     EGLContext context = EGL_NO_CONTEXT;
     if (s_GL.apiType == EGL_OPENGL_API) {
-        EGLint contextAttrib[] = {
-            EGL_CONTEXT_MAJOR_VERSION, 2,
-            EGL_CONTEXT_MINOR_VERSION, 1,
-            EGL_NONE};
+        EGLint contextAttrib[] =
+            {EGL_CONTEXT_MAJOR_VERSION, 2, EGL_CONTEXT_MINOR_VERSION, 1, EGL_NONE};
 
-        context = s_GL.eglCreateContext(
-            tmpDisplay,
-            config,
-            EGL_NO_CONTEXT,
-            contextAttrib);
+        context = s_GL.eglCreateContext(tmpDisplay, config, EGL_NO_CONTEXT, contextAttrib);
 
     } else {
-        EGLint contextAttrib[] = {
-            EGL_CONTEXT_CLIENT_VERSION, 2,
-            EGL_NONE};
+        EGLint contextAttrib[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
 
-        context = s_GL.eglCreateContext(
-            tmpDisplay,
-            config,
-            EGL_NO_CONTEXT,
-            contextAttrib);
+        context = s_GL.eglCreateContext(tmpDisplay, config, EGL_NO_CONTEXT, contextAttrib);
     }
 
     if (context == EGL_NO_CONTEXT) {
@@ -649,8 +619,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     // part of the core API
     s_GL.info.extensions |= PAL_GL_EXTENSION_MULTISAMPLE;
 
-    if (type & EGL_OPENGL_ES_BIT ||
-        type & EGL_OPENGL_ES2_BIT) {
+    if (type & EGL_OPENGL_ES_BIT || type & EGL_OPENGL_ES2_BIT) {
         s_GL.info.extensions |= PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2;
     }
 
@@ -670,13 +639,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         }
     }
 
-    s_GL.eglMakeCurrent(
-        tmpDisplay,
-        EGL_NO_SURFACE,
-        EGL_NO_SURFACE,
-        EGL_NO_CONTEXT);
-
-    // clang-format on
+    s_GL.eglMakeCurrent(tmpDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
     s_GL.eglDestroyContext(tmpDisplay, context);
     s_GL.eglDestroySurface(tmpDisplay, surface);
@@ -761,23 +724,11 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         EGLint colorType = 0;
 
         EGLConfig config = eglConfigs[i];
-        s_GL.eglGetConfigAttrib(
-            s_GL.display,
-            config,
-            EGL_SURFACE_TYPE,
-            &surfaceType);
+        s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_SURFACE_TYPE, &surfaceType);
 
-        s_GL.eglGetConfigAttrib(
-            s_GL.display,
-            config,
-            EGL_RENDERABLE_TYPE,
-            &renderable);
+        s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_RENDERABLE_TYPE, &renderable);
 
-        s_GL.eglGetConfigAttrib(
-            s_GL.display,
-            config,
-            EGL_COLOR_BUFFER_TYPE,
-            &colorType);
+        s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_COLOR_BUFFER_TYPE, &colorType);
 
         // we need only opengl API configs
         if (colorType != EGL_RGB_BUFFER) {
@@ -786,8 +737,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
         if (s_GL.apiType == EGL_OPENGL_ES3_BIT) {
             // EGL_OPENGL_ES2_BIT
-            if (!(renderable & EGL_OPENGL_ES2_BIT) &&
-                !(renderable & EGL_OPENGL_ES3_BIT)) {
+            if (!(renderable & EGL_OPENGL_ES2_BIT) && !(renderable & EGL_OPENGL_ES3_BIT)) {
                 continue;
             }
 
@@ -814,47 +764,19 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             EGLint redBits, greenBits, blueBits, alphaBits;
             EGLint depthBits, stencilBits, samples;
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_RED_SIZE,
-                &redBits);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_RED_SIZE, &redBits);
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_GREEN_SIZE,
-                &greenBits);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_GREEN_SIZE, &greenBits);
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_BLUE_SIZE,
-                &blueBits);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_BLUE_SIZE, &blueBits);
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_ALPHA_SIZE,
-                &alphaBits);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_ALPHA_SIZE, &alphaBits);
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_DEPTH_SIZE,
-                &depthBits);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_DEPTH_SIZE, &depthBits);
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_STENCIL_SIZE,
-                &stencilBits);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_STENCIL_SIZE, &stencilBits);
 
-            s_GL.eglGetConfigAttrib(
-                s_GL.display,
-                config,
-                EGL_SAMPLES,
-                &samples);
+            s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_SAMPLES, &samples);
 
             if (samples == 0) {
                 samples = 1;
@@ -875,8 +797,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             if (s_GL.info.extensions & PAL_GL_EXTENSION_COLORSPACE_SRGB) {
                 // since EGL does not have a bit to check SRGB support
                 // we check if all the color bits are greater than or equal to 8
-                if (fbConfig->redBits >= 8 && fbConfig->greenBits >= 8 &&
-                    fbConfig->blueBits >= 8) {
+                if (fbConfig->redBits >= 8 && fbConfig->greenBits >= 8 && fbConfig->blueBits >= 8) {
                     fbConfig->sRGB = true;
                 }
             } else {
@@ -1011,12 +932,9 @@ PalResult PAL_CALL palCreateGLContext(
         }
     }
 
-    // clang-format off
-
     // check version
     bool valid = info->major < s_GL.info.major ||
-        (info->major == s_GL.info.major && info->minor <= s_GL.info.minor);
-    // clang-format on
+                 (info->major == s_GL.info.major && info->minor <= s_GL.info.minor);
 
     if (!valid) {
         return PAL_RESULT_INVALID_GL_VERSION;
@@ -1123,17 +1041,10 @@ PalResult PAL_CALL palCreateGLContext(
         attribs[index++] = EGL_CONTEXT_FLAGS_KHR;
         attribs[index++] = flags;
     }
-
     attribs[index++] = EGL_NONE;
 
-    // clang-format off
     // create context
-    EGLContext context = s_GL.eglCreateContext(
-        s_GL.display,
-        config,
-        share,
-        attribs);
-    // clang-format on
+    EGLContext context = s_GL.eglCreateContext(s_GL.display, config, share, attribs);
 
     if (context == EGL_NO_CONTEXT) {
         EGLint error = s_GL.eglGetError();
@@ -1187,11 +1098,7 @@ PalResult PAL_CALL palCreateGLContext(
         s_GL.eglSwapBuffers(s_GL.display, surface);
 
         // revert
-        s_GL.eglMakeCurrent(
-            s_GL.display,
-            EGL_NO_SURFACE,
-            EGL_NO_SURFACE,
-            EGL_NO_CONTEXT);
+        s_GL.eglMakeCurrent(s_GL.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
 
     palFree(s_GL.allocator, eglConfigs);
@@ -1208,11 +1115,7 @@ void PAL_CALL palDestroyGLContext(PalGLContext* context)
         ContextData* data = findContextData(context);
         if (data) {
             // make it not current if it was current
-            s_GL.eglMakeCurrent(
-                s_GL.display,
-                EGL_NO_SURFACE,
-                EGL_NO_SURFACE,
-                EGL_NO_CONTEXT);
+            s_GL.eglMakeCurrent(s_GL.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
             s_GL.eglDestroyContext(s_GL.display, (EGLContext)context);
             s_GL.eglDestroySurface(s_GL.display, data->surface);
@@ -1239,11 +1142,8 @@ PalResult PAL_CALL palMakeContextCurrent(
             return PAL_RESULT_INVALID_GL_CONTEXT;
         }
 
-        EGLint ret = s_GL.eglMakeCurrent(
-            s_GL.display,
-            data->surface,
-            data->surface,
-            (EGLConfig)context);
+        EGLint ret =
+            s_GL.eglMakeCurrent(s_GL.display, data->surface, data->surface, (EGLConfig)context);
 
         if (!ret) {
             EGLint error = s_GL.eglGetError();
@@ -1261,11 +1161,7 @@ PalResult PAL_CALL palMakeContextCurrent(
         }
 
     } else if (!context && !glWindow) {
-        s_GL.eglMakeCurrent(
-            s_GL.display,
-            EGL_NO_SURFACE,
-            EGL_NO_SURFACE,
-            EGL_NO_CONTEXT);
+        s_GL.eglMakeCurrent(s_GL.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
 
     return PAL_RESULT_SUCCESS;

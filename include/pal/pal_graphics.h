@@ -1084,7 +1084,7 @@ typedef struct {
     PalResult PAL_CALL (*getNextSwapchainImage)(
         PalSwapchain* swapchain,
         PalSwapchainNextImageInfo* info,
-        Uint32 *outIndex);
+        Uint32* outIndex);
 
     PalResult PAL_CALL (*presentSwapchain)(
         PalSwapchain* swapchain,
@@ -1310,8 +1310,7 @@ typedef struct {
         const PalAccelerationStructureCreateInfo* info,
         PalAccelerationStructure** outAs);
 
-    void PAL_CALL (*destroyAccelerationstructure)(
-        PalAccelerationStructure* as);
+    void PAL_CALL (*destroyAccelerationstructure)(PalAccelerationStructure* as);
 
     PalResult PAL_CALL (*getAccelerationStructureBuildSize)(
         PalDevice* device,
@@ -1349,8 +1348,7 @@ typedef struct {
     void PAL_CALL (*destroyPipeline)(PalPipeline* pipeline);
 } PalGraphicsBackend;
 
-PAL_API PalResult PAL_CALL palAddGraphicsBackend(
-    const PalGraphicsBackend* backend);
+PAL_API PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend);
 
 PAL_API PalResult PAL_CALL palInitGraphics(
     const PalGraphicsDebugger* debugger,
@@ -1497,7 +1495,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
 PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32 *outIndex);
+    Uint32* outIndex);
 
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
@@ -1723,8 +1721,7 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
     const PalAccelerationStructureCreateInfo* info,
     PalAccelerationStructure** outAs);
 
-PAL_API void PAL_CALL palDestroyAccelerationstructure(
-    PalAccelerationStructure* as);
+PAL_API void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* as);
 
 PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
     PalDevice* device,
