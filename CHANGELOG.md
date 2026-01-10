@@ -149,6 +149,7 @@ palJoinThread(thread, &retval);
 - **Core:** Added **PAL_RESULT_INVALID_BUFFER** to `PalResult` enum.
 - **Core:** Added **PAL_RESULT_INVALID_ACCELERATION_STRUCTURE** to `PalResult` enum.
 - **Core:** Added **PAL_RESULT_MEMORY_MAP_FAILED** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_DEVICE_LOST** to `PalResult` enum.
 
 - **Graphics:** Added **Graphics System To PAL**.
 

@@ -149,6 +149,7 @@ typedef struct {
     PFN_vkCmdDrawIndexedIndirect cmdDrawIndexedIndirect;
     PFN_vkCmdDispatch cmdDispatch;
     PFN_vkCmdDispatchIndirect cmdDispatchIndirect;
+    PFN_vkCmdBindDescriptorSets bindDescriptorSets;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -171,8 +172,10 @@ typedef struct {
     PFN_vkDestroyDescriptorSetLayout destroyDescriptorSetLayout;
     PFN_vkCreateDescriptorPool createDescriptorPool;
     PFN_vkDestroyDescriptorPool destroyDescriptorPool;
+    PFN_vkResetDescriptorPool resetDescriptorPool;
     PFN_vkAllocateDescriptorSets allocateDescriptorSet;
     PFN_vkFreeDescriptorSets freeDescriptorSet;
+    PFN_vkUpdateDescriptorSets updateDescriptorSet;
 
     PFN_vkCreatePipelineLayout createPipelineLayout;
     PFN_vkDestroyPipelineLayout destroyPipelineLayout;
@@ -373,13 +376,20 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     Device* device;
+    VkSampler handle;
+} Sampler;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Device* device;
     VkPipelineLayout handle;
 } PipelineLayout;
 
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 type;
+    VkPipelineBindPoint bindPoint;
     Device* device;
     VkPipeline handle;
 } Pipeline;
@@ -464,9 +474,7 @@ static PalResult vkResultToPal(VkResult result)
         }
 
         case VK_ERROR_INITIALIZATION_FAILED:
-        case VK_ERROR_DEVICE_LOST: {
             return PAL_RESULT_PLATFORM_FAILURE;
-        }
 
         case VK_ERROR_INCOMPATIBLE_DRIVER:
             return PAL_RESULT_INVALID_DRIVER;
@@ -481,6 +489,9 @@ static PalResult vkResultToPal(VkResult result)
 
         case VK_ERROR_MEMORY_MAP_FAILED:
             return PAL_RESULT_MEMORY_MAP_FAILED;
+
+        case VK_ERROR_DEVICE_LOST:
+            return PAL_RESULT_DEVICE_LOST;
 
         default:
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -2114,6 +2125,10 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkCmdDispatchIndirect");
 
+    s_Vk.bindDescriptorSets = (PFN_vkCmdBindDescriptorSets)dlsym(
+        s_Vk.handle,
+        "vkCmdBindDescriptorSets");
+
     s_Vk.createBuffer = (PFN_vkCreateBuffer)dlsym(
         s_Vk.handle,
         "vkCreateBuffer");
@@ -2154,6 +2169,10 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkDestroyDescriptorPool");
 
+    s_Vk.resetDescriptorPool = (PFN_vkResetDescriptorPool)dlsym(
+        s_Vk.handle,
+        "vkResetDescriptorPool");
+
     s_Vk.allocateDescriptorSet = (PFN_vkAllocateDescriptorSets)dlsym(
         s_Vk.handle,
         "vkAllocateDescriptorSets");
@@ -2161,6 +2180,10 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.freeDescriptorSet = (PFN_vkFreeDescriptorSets)dlsym(
         s_Vk.handle,
         "vkFreeDescriptorSets");
+
+    s_Vk.updateDescriptorSet = (PFN_vkUpdateDescriptorSets)dlsym(
+        s_Vk.handle,
+        "vkUpdateDescriptorSets");
 
     s_Vk.createPipelineLayout = (PFN_vkCreatePipelineLayout)dlsym(
         s_Vk.handle,
@@ -5687,15 +5710,7 @@ PalResult PAL_CALL bindVkPipeline(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* vkPipeline = (Pipeline*)pipeline;
-    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    if (vkPipeline->type == COMPUTE_PIPELINE) {
-        bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-
-    } else if (vkPipeline->type == RAY_TRACING_PIPELINE) {
-        bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-    }
-
-    s_Vk.cmdBindPipeline(vkCmdBuffer->handle, bindPoint, vkPipeline->handle);
+    s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6062,6 +6077,31 @@ PalResult PAL_CALL dispatchIndirectVk(
     Buffer* vkBuffer = (Buffer*)buffer;
 
     s_Vk.cmdDispatchIndirect(vkCmdBuffer->handle, vkBuffer->handle, offset);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bindVkDescriptorSet(
+    PalCommandBuffer* cmdBuffer,
+    PalPipeline* pipeline,
+    PalPipelineLayout* layout,
+    Uint32 setIndex,
+    PalDescriptorSet* set)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Pipeline* vkPipeline = (Pipeline*)pipeline;
+    PipelineLayout* vkLayout = (PipelineLayout*)layout;
+    DescriptorSet* vkSet = (DescriptorSet*)set;
+
+    s_Vk.bindDescriptorSets(
+        vkCmdBuffer->handle,
+        vkPipeline->bindPoint,
+        vkLayout->handle,
+        setIndex,
+        1,
+        &vkSet->handle,
+        0,
+        nullptr);
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6622,11 +6662,81 @@ PalResult PAL_CALL allocateVkDescriptorSet(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL freeVkDescriptorSet(PalDescriptorSet* set)
+PalResult PAL_CALL resetVkDescriptorPool(PalDescriptorPool* pool)
 {
-    DescriptorSet* vkSet = (DescriptorSet*)set;
-    s_Vk.freeDescriptorSet(vkSet->device->handle, vkSet->pool->handle, 1, &vkSet->handle);
-    palFree(s_Vk.allocator, set);
+    DescriptorPool* vkPool = (DescriptorPool*)pool;
+    s_Vk.resetDescriptorPool(vkPool->device->handle, vkPool->handle, 0);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL updateVkDescriptorSet(
+    PalDevice* device,
+    Uint32 count,
+    PalDescriptorSetWriteInfo* infos)
+{
+    VkResult result;
+    Device* vkDevice = (Device*)device;
+    VkWriteDescriptorSet* writes = nullptr;
+    VkDescriptorBufferInfo* bufferInfos = nullptr;
+    VkDescriptorImageInfo* imageInfos = nullptr;
+
+    writes = palAllocate(s_Vk.allocator, sizeof(VkWriteDescriptorSet) * count, 0);
+
+    // FIXME: loop through to find the buffers from the images
+    bufferInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBufferInfo) * count, 0);
+    imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * count, 0);
+    if (!writes || !bufferInfos || !imageInfos) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    Uint32 bufferIndex = 0;
+    Uint32 imageIndex = 0;
+    for (int i = 0; i < count; i++) {
+        VkWriteDescriptorSet* write = &writes[i];
+        write->dstArrayElement = infos[i].arrayElement;
+        write->dstBinding = infos[i].binding;
+        write->descriptorCount = infos[i].descriptorCount;
+        write->descriptorType = descriptortypeToVk(infos[i].descriptorType);
+
+        DescriptorSet* set = (DescriptorSet*)infos[i].descriptorSet;
+        write->dstSet = set->handle;
+
+        if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+            infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+            VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferIndex++];
+            Buffer* vkBuffer = (Buffer*)infos[i].bufferInfo->buffer;
+            bufferInfo->buffer = vkBuffer->handle;
+            bufferInfo->offset = infos[i].bufferInfo->offset;
+            bufferInfo->range = infos[i].bufferInfo->size;
+
+        } else {
+            VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
+            ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+            Sampler* vkSampler = (Sampler*)infos[i].imageViewInfo->sampler;
+
+            if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
+                imageInfo->sampler = vkSampler->handle;
+                imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageInfo->imageView = nullptr;
+
+            } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                imageInfo->sampler = vkSampler->handle;
+                imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageInfo->imageView = vkImageView->handle;
+
+            } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                imageInfo->sampler = vkSampler->handle;
+                imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo->imageView = vkImageView->handle;
+            }
+        }
+    }
+    s_Vk.updateDescriptorSet(vkDevice->handle, count, writes, 0, nullptr);
+
+    palFree(s_Vk.allocator, writes);
+    palFree(s_Vk.allocator, bufferInfos);
+    palFree(s_Vk.allocator, imageInfos);
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
@@ -7103,7 +7213,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     palFree(s_Vk.allocator, blendattachments);
 
     pipeline->device = vkDevice;
-    pipeline->type = GRAPHICS_PIPELINE;
+    pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }

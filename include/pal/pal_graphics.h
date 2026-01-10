@@ -57,8 +57,9 @@ typedef struct PalCommandBuffer PalCommandBuffer;
 typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
 typedef struct PalDescriptorPool PalDescriptorPool;
 typedef struct PalDescriptorSet PalDescriptorSet;
-typedef struct PalPipelineLayout PalPipelineLayout;
+typedef struct PalSampler PalSampler;
 
+typedef struct PalPipelineLayout PalPipelineLayout;
 typedef struct PalPipeline PalPipeline;
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
@@ -906,6 +907,27 @@ typedef struct {
 } PalDescriptorPoolBindingSize;
 
 typedef struct {
+    Uint32 size;
+    Uint64 offset;
+    PalBuffer* buffer;
+} PalDescriptorBufferInfo;
+
+typedef struct {
+    PalSampler* sampler;
+    PalImageView* imageView;
+} PalDescriptorImageViewInfo;
+
+typedef struct {
+    Uint32 binding;
+    Uint32 arrayElement;
+    Uint32 descriptorCount;
+    PalDescriptorType descriptorType;
+    PalDescriptorSet* descriptorSet;
+    PalDescriptorBufferInfo* bufferInfo;
+    PalDescriptorImageViewInfo* imageViewInfo;
+} PalDescriptorSetWriteInfo;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -1343,6 +1365,13 @@ typedef struct {
         PalBuffer* buffer,
         Uint64 offset);
 
+    PalResult PAL_CALL (*bindDescriptorSet)(
+        PalCommandBuffer* cmdBuffer,
+        PalPipeline* pipeline,
+        PalPipelineLayout* layout,
+        Uint32 setIndex,
+        PalDescriptorSet* set);
+
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalCommandBufferSubmitInfo* info);
@@ -1389,13 +1418,18 @@ typedef struct {
 
     void PAL_CALL (*destroyDescriptorPool)(PalDescriptorPool* pool);
 
+    PalResult PAL_CALL (*resetDescriptorPool)(PalDescriptorPool* pool);
+
     PalResult PAL_CALL (*allocateDescriptorSet)(
         PalDevice* device,
         PalDescriptorPool* pool,
         PalDescriptorSetLayout* layout,
         PalDescriptorSet** outSet);
 
-    void PAL_CALL (*freeDescriptorSet)(PalDescriptorSet* set);
+    PalResult PAL_CALL (*updateDescriptorSet)(
+        PalDevice* device,
+        Uint32 count,
+        PalDescriptorSetWriteInfo* infos);
 
     PalResult PAL_CALL (*createPipelineLayout)(
         PalDevice* device,
@@ -1776,6 +1810,13 @@ PAL_API PalResult PAL_CALL palDispatchIndirect(
     PalBuffer* buffer,
     Uint64 offset);
 
+PAL_API PalResult PAL_CALL palBindDescriptorSet(
+    PalCommandBuffer* cmdBuffer,
+    PalPipeline* pipeline,
+    PalPipelineLayout* layout,
+    Uint32 setIndex,
+    PalDescriptorSet* set);
+
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalCommandBufferSubmitInfo* info);
@@ -1822,13 +1863,18 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
 
 PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
 
+PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
+
 PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
     PalDevice* device,
     PalDescriptorPool* pool,
     PalDescriptorSetLayout* layout,
     PalDescriptorSet** outSet);
 
-PAL_API void PAL_CALL palFreeDescriptorSet(PalDescriptorSet* set);
+PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
+    PalDevice* device,
+    Uint32 count,
+    PalDescriptorSetWriteInfo* infos);
 
 PAL_API PalResult PAL_CALL palCreatePipelineLayout(
     PalDevice* device,

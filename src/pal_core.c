@@ -445,6 +445,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_MEMORY_MAP_FAILED:
             return "Memory map failed";
+
+        case PAL_RESULT_DEVICE_LOST:
+            return "Device lost";
     }
     return "Unknown";
 }
