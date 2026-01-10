@@ -300,7 +300,7 @@ bool triangleTest()
         return false;
     }
 
-    // create synchronization objects
+    // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         result = palCreateSemaphore(device, &presentCompleteSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
@@ -316,7 +316,7 @@ bool triangleTest()
             return false;
         }
 
-        result = palCreateCommandBuffer(
+        result = palAllocateCommandBuffer(
             device,
             cmdPool,
             PAL_COMMAND_BUFFER_TYPE_PRIMARY,
@@ -622,14 +622,14 @@ bool triangleTest()
     pipelineCreateInfo.vertexLayouts = &vertexLayout;
 
     // color blend attachment
-    PalBlendAttachment blendAttachment = {0};
+    PalColorBlendAttachment blendAttachment = {0};
     blendAttachment.colorWriteMask |= PAL_COLOR_MASK_RED;
     blendAttachment.colorWriteMask |= PAL_COLOR_MASK_GREEN;
     blendAttachment.colorWriteMask |= PAL_COLOR_MASK_BLUE;
     blendAttachment.colorWriteMask |= PAL_COLOR_MASK_ALPHA;
 
-    pipelineCreateInfo.blendAttachments = &blendAttachment;
-    pipelineCreateInfo.blendAttachmentCount = 1;
+    pipelineCreateInfo.colorBlendAttachments = &blendAttachment;
+    pipelineCreateInfo.colorBlendAttachmentCount = 1;
 
     // multisample state
     PalMultisampleState multisampleState = {0};
@@ -936,7 +936,7 @@ bool triangleTest()
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         palDestroySemaphore(presentCompleteSemaphores[i]);
         palDestroyFence(inFlightFences[i]);
-        palDestroyCommandBuffer(cmdBuffers[i]);
+        palFreeCommandBuffer(cmdBuffers[i]);
     }
 
     for (int i = 0; i < imageCount; i++) {

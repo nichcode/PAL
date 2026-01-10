@@ -53,6 +53,8 @@ PAL_HANDLE(PalCommandBuffer)
 PAL_HANDLE(PalPipeline)
 PAL_HANDLE(PalAccelerationStructure)
 PAL_HANDLE(PalPipelineLayout)
+PAL_HANDLE(PalDescriptorSetLayout)
+PAL_HANDLE(PalDescriptorPool)
 
 typedef struct {
     Int32 count;
@@ -285,13 +287,13 @@ void PAL_CALL destroyVkCommandPool(PalCommandPool* pool);
 
 PalResult PAL_CALL resetVkCommandPool(PalCommandPool* pool);
 
-PalResult PAL_CALL createVkCommandBuffer(
+PalResult PAL_CALL allocateVkCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
     PalCommandBuffer** outBuffer);
 
-void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* buffer);
+void PAL_CALL freeVkCommandBuffer(PalCommandBuffer* buffer);
 
 PalResult PAL_CALL beginVkCommandBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -487,6 +489,20 @@ void PAL_CALL unmapVkMemory(
     PalDevice* device,
     PalMemory* memory);
 
+PalResult PAL_CALL createVkDescriptorSetLayout(
+    PalDevice* device,
+    const PalDescriptorSetLayoutCreateInfo* info,
+    PalDescriptorSetLayout** outLayout);
+
+void PAL_CALL destroyVkDescriptorSetLayout(PalDescriptorSetLayout* layout);
+
+PalResult PAL_CALL createVkDescriptorPool(
+    PalDevice* device,
+    const PalDescriptorPoolCreateInfo* info,
+    PalDescriptorPool** outPool);
+
+void PAL_CALL destroyVkDescriptorPool(PalDescriptorPool* pool);
+
 PalResult PAL_CALL createVkPipelineLayout(
     PalDevice* device,
     const PalPipelineLayoutCreateInfo* info,
@@ -553,8 +569,8 @@ static PalGraphicsBackend s_VkBackend = {
     .createCommandPool = createVkCommandPool,
     .destroyCommandPool = destroyVkCommandPool,
     .resetCommandPool = resetVkCommandPool,
-    .createCommandBuffer = createVkCommandBuffer,
-    .destroyCommandBuffer = destroyVkCommandBuffer,
+    .allocateCommandBuffer = allocateVkCommandBuffer,
+    .freeCommandBuffer = freeVkCommandBuffer,
     .beginCommandBuffer = beginVkCommandBuffer,
     .endCommandBuffer = endVkCommandBuffer,
     .resetCommandBuffer = resetVkCommandBuffer,
@@ -591,6 +607,10 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyBuffer = destroyVkBuffer,
     .getBufferMemoryRequirements = getVkBufferMemoryRequirements,
     .bindBufferMemory = bindVkBufferMemory,
+    .createDescriptorSetLayout = createVkDescriptorSetLayout,
+    .destroyDescriptorSetLayout = destroyVkDescriptorSetLayout,
+    .createDescriptorPool = createVkDescriptorPool,
+    .destroyDescriptorPool = destroyVkDescriptorPool,
     .createPipelineLayout = createVkPipelineLayout,
     .destroyPipelineLayout = destroyVkPipelineLayout,
     .createGraphicsPipeline = createVkGraphicsPipeline,
@@ -679,8 +699,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createCommandPool                     ||
         !backend->destroyCommandPool                    ||
         !backend->resetCommandPool                      ||
-        !backend->createCommandBuffer                   ||
-        !backend->destroyCommandBuffer                  ||
+        !backend->allocateCommandBuffer                 ||
+        !backend->freeCommandBuffer                     ||
         !backend->beginCommandBuffer                    ||
         !backend->endCommandBuffer                      ||
         !backend->resetCommandBuffer                    ||
@@ -719,6 +739,10 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->bindBufferMemory                      ||
         !backend->mapMemory                             ||
         !backend->unmapMemory                           ||
+        !backend->createDescriptorSetLayout             ||
+        !backend->destroyDescriptorSetLayout            ||
+        !backend->createDescriptorPool                  ||
+        !backend->destroyDescriptorPool                 ||
         !backend->createPipelineLayout                  ||
         !backend->destroyPipelineLayout                 ||
         !backend->createGraphicsPipeline                ||
@@ -1605,7 +1629,7 @@ PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool)
     return pool->backend->resetCommandPool(pool);
 }
 
-PalResult PAL_CALL palCreateCommandBuffer(
+PalResult PAL_CALL palAllocateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
@@ -1621,7 +1645,7 @@ PalResult PAL_CALL palCreateCommandBuffer(
 
     PalCommandBuffer* cmdBuffer = nullptr;
     PalResult result;
-    result = device->backend->createCommandBuffer(device, pool, type, &cmdBuffer);
+    result = device->backend->allocateCommandBuffer(device, pool, type, &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -1632,10 +1656,10 @@ PalResult PAL_CALL palCreateCommandBuffer(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer)
+void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     if (s_Graphics.initialized && cmdBuffer) {
-        cmdBuffer->backend->destroyCommandBuffer(cmdBuffer);
+        cmdBuffer->backend->freeCommandBuffer(cmdBuffer);
     }
 }
 
@@ -2292,6 +2316,74 @@ void PAL_CALL palUnmapMemory(
 }
 
 // ==================================================
+// Descriptor Pool, Set and Layout
+// ==================================================
+
+PalResult PAL_CALL palCreateDescriptorSetLayout(
+    PalDevice* device,
+    const PalDescriptorSetLayoutCreateInfo* info,
+    PalDescriptorSetLayout** outLayout)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outLayout) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalDescriptorSetLayout* layout = nullptr;
+    result = device->backend->createDescriptorSetLayout(device, info, &layout);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    layout->backend = device->backend;
+    *outLayout = layout;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layout)
+{
+    if (s_Graphics.initialized && layout) {
+        layout->backend->destroyDescriptorSetLayout(layout);
+    }
+}
+
+PalResult PAL_CALL palCreateDescriptorPool(
+    PalDevice* device,
+    const PalDescriptorPoolCreateInfo* info,
+    PalDescriptorPool** outPool)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outPool) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalDescriptorPool* pool = nullptr;
+    result = device->backend->createDescriptorPool(device, info, &pool);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    pool->backend = device->backend;
+    *outPool = pool;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool)
+{
+    if (s_Graphics.initialized && pool) {
+        pool->backend->destroyDescriptorPool(pool);
+    }
+}
+
+// ==================================================
 // Pipeline
 // ==================================================
 
@@ -2366,7 +2458,7 @@ void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
 }
 
 // ==================================================
-// Helpers
+// Utils
 // ==================================================
 
 bool PAL_CALL palBuildWorkGroupInfo(

@@ -54,8 +54,13 @@ typedef struct PalSemaphore PalSemaphore;
 typedef struct PalCommandPool PalCommandPool;
 typedef struct PalCommandBuffer PalCommandBuffer;
 
-typedef struct PalPipeline PalPipeline;
+typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
+typedef struct PalDescriptorPool PalDescriptorPool;
+
+typedef struct PalDescriptorSet PalDescriptorSet;
 typedef struct PalPipelineLayout PalPipelineLayout;
+
+typedef struct PalPipeline PalPipeline;
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 typedef enum PalDebugMessageSeverity PalDebugMessageSeverity;
@@ -539,6 +544,11 @@ typedef enum {
     PAL_USAGE_STATE_STORAGE_WRITE
 } PalUsageState;
 
+typedef enum {
+    PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+} PalDescriptorType;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -817,7 +827,7 @@ typedef struct {
     PalBlendFactor srcAlphaBlendFactor;
     PalBlendFactor dstAlphaBlendFactor;
     PalBlendOp alphaBlendOp;
-} PalBlendAttachment;
+} PalColorBlendAttachment;
 
 typedef struct {
     PalFragmentShadingRate rate;
@@ -875,6 +885,19 @@ typedef struct {
 } PalAccelerationStructureBuildInfo;
 
 typedef struct {
+    Uint32 binding;
+    Uint32 descriptorCount;
+    Uint32 shaderStageCount;
+    PalShaderStage* shaderStages;
+    PalDescriptorType descriptorType;
+} PalDescriptorSetLayoutBinding;
+
+typedef struct {
+    Uint32 bindingCount;
+    PalDescriptorType descriptorType;
+} PalDescriptorPoolBindingSize;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -925,18 +948,29 @@ typedef struct {
 } PalAccelerationStructureCreateInfo;
 
 typedef struct {
+    Uint32 bindingCount;
+    PalDescriptorSetLayoutBinding* bindings;
+} PalDescriptorSetLayoutCreateInfo;
+
+typedef struct {
+    Uint32 maxDescriptorSets;
+    Uint32 maxDescriptorBindingSizes;
+    PalDescriptorPoolBindingSize* bindingSizes;
+} PalDescriptorPoolCreateInfo;
+
+typedef struct {
     bool unused;
 } PalPipelineLayoutCreateInfo;
 
 typedef struct {
     Uint32 vertexLayoutCount;
-    Uint32 blendAttachmentCount;
+    Uint32 colorBlendAttachmentCount;
     Uint32 shaderCount;
     PalPrimitiveTopology topology;
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
     PalVertexLayout* vertexLayouts;
-    PalBlendAttachment* blendAttachments;
+    PalColorBlendAttachment* colorBlendAttachments;
     PalRasterizerState* rasterizerState;
     PalMultisampleState* multisampleState;
     PalDepthStencilState* depthStencilState;
@@ -1142,13 +1176,13 @@ typedef struct {
 
     PalResult PAL_CALL (*resetCommandPool)(PalCommandPool* pool);
 
-    PalResult PAL_CALL (*createCommandBuffer)(
+    PalResult PAL_CALL (*allocateCommandBuffer)(
         PalDevice* device,
         PalCommandPool* pool,
         PalCommandBufferType type,
         PalCommandBuffer** outCmdBuffer);
 
-    void PAL_CALL (*destroyCommandBuffer)(PalCommandBuffer* cmdBuffer);
+    void PAL_CALL (*freeCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
     PalResult PAL_CALL (*beginCommandBuffer)(
         PalCommandBuffer* cmdBuffer,
@@ -1332,6 +1366,20 @@ typedef struct {
         PalBuffer* buffer,
         PalMemory* memory,
         Uint64 offset);
+
+    PalResult PAL_CALL (*createDescriptorSetLayout)(
+        PalDevice* device,
+        const PalDescriptorSetLayoutCreateInfo* info,
+        PalDescriptorSetLayout** outLayout);
+
+    void PAL_CALL (*destroyDescriptorSetLayout)(PalDescriptorSetLayout* layout);
+
+    PalResult PAL_CALL (*createDescriptorPool)(
+        PalDevice* device,
+        const PalDescriptorPoolCreateInfo* info,
+        PalDescriptorPool** outPool);
+
+    void PAL_CALL (*destroyDescriptorPool)(PalDescriptorPool* pool);
 
     PalResult PAL_CALL (*createPipelineLayout)(
         PalDevice* device,
@@ -1553,13 +1601,13 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
 
 PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
 
-PAL_API PalResult PAL_CALL palCreateCommandBuffer(
+PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
     PalCommandBuffer** outCmdbuffer);
 
-PAL_API void PAL_CALL palDestroyCommandBuffer(PalCommandBuffer* cmdBuffer);
+PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
 
 PAL_API PalResult PAL_CALL palBeginCommandBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -1743,6 +1791,20 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
     PalBuffer* buffer,
     PalMemory* memory,
     Uint64 offset);
+
+PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
+    PalDevice* device,
+    const PalDescriptorSetLayoutCreateInfo* info,
+    PalDescriptorSetLayout** outLayout);
+
+PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layout);
+
+PAL_API PalResult PAL_CALL palCreateDescriptorPool(
+    PalDevice* device,
+    const PalDescriptorPoolCreateInfo* info,
+    PalDescriptorPool** outPool);
+
+PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
 
 PAL_API PalResult PAL_CALL palCreatePipelineLayout(
     PalDevice* device,

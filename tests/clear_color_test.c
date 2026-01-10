@@ -257,7 +257,7 @@ bool clearColorTest()
         return false;
     }
 
-    // create synchronization objects
+    // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         result = palCreateSemaphore(device, &presentCompleteSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
@@ -273,7 +273,7 @@ bool clearColorTest()
             return false;
         }
 
-        result = palCreateCommandBuffer(
+        result = palAllocateCommandBuffer(
             device,
             cmdPool,
             PAL_COMMAND_BUFFER_TYPE_PRIMARY,
@@ -505,7 +505,7 @@ bool clearColorTest()
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         palDestroySemaphore(presentCompleteSemaphores[i]);
         palDestroyFence(inFlightFences[i]);
-        palDestroyCommandBuffer(cmdBuffers[i]);
+        palFreeCommandBuffer(cmdBuffers[i]);
     }
 
     for (int i = 0; i < imageCount; i++) {

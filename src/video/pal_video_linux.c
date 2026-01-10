@@ -4473,8 +4473,8 @@ static PalResult xEnumerateMonitorModes(
                         mode->height = info->height;
                         mode->bpp = s_X11.bpp;
 
-                        double tmp = (double)info->hTotal * (double)info->vTotal double rate =
-                                         (double)info->dotClock / tmp;
+                        double tmp = (double)info->hTotal * (double)info->vTotal;
+                        double rate = (double)info->dotClock / tmp;
                         mode->refreshRate = rate + 0.5;
                     }
                 }

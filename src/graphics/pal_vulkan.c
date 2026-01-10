@@ -122,8 +122,8 @@ typedef struct {
 
     PFN_vkCreateCommandPool createCommandPool;
     PFN_vkDestroyCommandPool destroyCommandPool;
-    PFN_vkAllocateCommandBuffers createCommandBuffer;
-    PFN_vkFreeCommandBuffers destroyCommandBuffer;
+    PFN_vkAllocateCommandBuffers allocateCommandBuffer;
+    PFN_vkFreeCommandBuffers freeCommandBuffer;
     PFN_vkCreateFence createFence;
     PFN_vkDestroyFence destroyFence;
     PFN_vkResetFences resetFence;
@@ -166,6 +166,11 @@ typedef struct {
     PFN_vkBindBufferMemory bindBufferMemory;
     PFN_vkMapMemory mapMemory;
     PFN_vkUnmapMemory unmapMemory;
+
+    PFN_vkCreateDescriptorSetLayout createDescriptorSetLayout;
+    PFN_vkDestroyDescriptorSetLayout destroyDescriptorSetLayout;
+    PFN_vkCreateDescriptorPool createDescriptorPool;
+    PFN_vkDestroyDescriptorPool destroyDescriptorPool;
 
     PFN_vkCreatePipelineLayout createPipelineLayout;
     PFN_vkDestroyPipelineLayout destroyPipelineLayout;
@@ -339,6 +344,20 @@ typedef struct {
     Device* device;
     VkAccelerationStructureKHR handle;
 } AccelerationStructure;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Device* device;
+    VkDescriptorSetLayout handle;
+} DescriptorSetLayout;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Device* device;
+    VkDescriptorPool handle;
+} DescriptorPool;
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -1654,6 +1673,50 @@ static Barrier barrierToVk(PalUsageState state)
     return barrier;
 }
 
+static VkDescriptorType descriptortypeToVk(PalDescriptorType type)
+{
+    switch (type) {
+        case PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+        case PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    }
+
+    return 0;
+}
+
+static VkShaderStageFlagBits shaderStageToVK(PalShaderStage stage)
+{
+    switch (stage) {
+        case PAL_SHADER_STAGE_VERTEX:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+
+        case PAL_SHADER_STAGE_FRAGMENT:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        case PAL_SHADER_STAGE_COMPUTE:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+
+        case PAL_SHADER_STAGE_GEOMETRY:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+
+        case PAL_SHADER_STAGE_MESH:
+            return VK_SHADER_STAGE_MESH_BIT_EXT;
+
+        case PAL_SHADER_STAGE_TASK:
+            return VK_SHADER_STAGE_TASK_BIT_EXT;
+
+        case PAL_SHADER_STAGE_TESSELLATION_CONTROL:
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+
+        case PAL_SHADER_STAGE_TESSELLATION_EVALUATION:
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    }
+
+    return 0;
+}
+
 static void* vkAlloc(
     void* pUserData,
     size_t size,
@@ -1909,11 +1972,11 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkDestroyCommandPool");
 
-    s_Vk.createCommandBuffer = (PFN_vkAllocateCommandBuffers)dlsym(
+    s_Vk.allocateCommandBuffer = (PFN_vkAllocateCommandBuffers)dlsym(
         s_Vk.handle,
         "vkAllocateCommandBuffers");
 
-    s_Vk.destroyCommandBuffer = (PFN_vkFreeCommandBuffers)dlsym(
+    s_Vk.freeCommandBuffer = (PFN_vkFreeCommandBuffers)dlsym(
         s_Vk.handle,
         "vkFreeCommandBuffers");
 
@@ -2036,6 +2099,22 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.bindBufferMemory = (PFN_vkBindBufferMemory)dlsym(
         s_Vk.handle,
         "vkBindBufferMemory");
+
+    s_Vk.createDescriptorSetLayout = (PFN_vkCreateDescriptorSetLayout)dlsym(
+        s_Vk.handle,
+        "vkCreateDescriptorSetLayout");
+
+    s_Vk.destroyDescriptorSetLayout = (PFN_vkDestroyDescriptorSetLayout)dlsym(
+        s_Vk.handle,
+        "vkDestroyDescriptorSetLayout");
+
+    s_Vk.createDescriptorPool = (PFN_vkCreateDescriptorPool)dlsym(
+        s_Vk.handle,
+        "vkCreateDescriptorPool");
+
+    s_Vk.destroyDescriptorPool = (PFN_vkDestroyDescriptorPool)dlsym(
+        s_Vk.handle,
+        "vkDestroyDescriptorPool");
 
     s_Vk.createPipelineLayout = (PFN_vkCreatePipelineLayout)dlsym(
         s_Vk.handle,
@@ -4981,7 +5060,7 @@ PalResult PAL_CALL resetVkCommandPool(PalCommandPool* pool)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL createVkCommandBuffer(
+PalResult PAL_CALL allocateVkCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
@@ -5009,7 +5088,7 @@ PalResult PAL_CALL createVkCommandBuffer(
         cmdBuffer->primary = false;
     }
 
-    result = s_Vk.createCommandBuffer(vkDevice->handle, &createInfo, &cmdBuffer->handle);
+    result = s_Vk.allocateCommandBuffer(vkDevice->handle, &createInfo, &cmdBuffer->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, cmdBuffer);
@@ -5023,10 +5102,10 @@ PalResult PAL_CALL createVkCommandBuffer(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL destroyVkCommandBuffer(PalCommandBuffer* cmdBuffer)
+void PAL_CALL freeVkCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    s_Vk.destroyCommandBuffer(
+    s_Vk.freeCommandBuffer(
         vkCmdBuffer->device->handle,
         vkCmdBuffer->pool->handle,
         1,
@@ -6356,6 +6435,132 @@ PalResult PAL_CALL bindVkBufferMemory(
 }
 
 // ==================================================
+// Descriptor Pool, Set and Layout
+// ==================================================
+
+PalResult PAL_CALL createVkDescriptorSetLayout(
+    PalDevice* device,
+    const PalDescriptorSetLayoutCreateInfo* info,
+    PalDescriptorSetLayout** outLayout)
+{
+    VkResult result;
+    Device* vkDevice = (Device*)device;
+    VkDescriptorSetLayoutBinding* bindings = nullptr;
+    DescriptorSetLayout* layout = nullptr;
+
+    layout = palAllocate(s_Vk.allocator, sizeof(DescriptorSetLayout), 0);
+    bindings = palAllocate(
+        s_Vk.allocator,
+        sizeof(VkDescriptorSetLayoutBinding) * info->bindingCount,
+        0);
+
+    if (!layout || !bindings) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkDescriptorSetLayoutCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = info->bindingCount;
+    createInfo.pBindings = bindings;
+
+    for (int i = 0; i < info->bindingCount; i++) {
+        VkDescriptorSetLayoutBinding* binding = &bindings[i];
+        binding->binding = info->bindings[i].binding;
+        binding->descriptorCount = info->bindings[i].descriptorCount;
+        binding->descriptorType = descriptortypeToVk(info->bindings[i].descriptorType);
+
+        binding->pImmutableSamplers = nullptr;
+        binding->stageFlags = 0;
+        for (int j = 0; j < info->bindings[i].shaderStageCount; j++) {
+            VkShaderStageFlagBits bit = shaderStageToVK(info->bindings[i].shaderStages[j]);
+            binding->stageFlags |= bit;
+        }
+    }
+
+    result = s_Vk.createDescriptorSetLayout(
+        vkDevice->handle,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &layout->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, layout);
+        palFree(s_Vk.allocator, bindings);
+        return vkResultToPal(result);
+    }
+
+    layout->device = vkDevice;
+    palFree(s_Vk.allocator, bindings);
+    *outLayout = (PalDescriptorSetLayout*)layout;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkDescriptorSetLayout(PalDescriptorSetLayout* layout)
+{
+    DescriptorSetLayout* vkLayout = (DescriptorSetLayout*)layout;
+    s_Vk.destroyDescriptorSetLayout(vkLayout->device->handle, vkLayout->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, layout);
+}
+
+PalResult PAL_CALL createVkDescriptorPool(
+    PalDevice* device,
+    const PalDescriptorPoolCreateInfo* info,
+    PalDescriptorPool** outPool)
+{
+    VkResult result;
+    Device* vkDevice = (Device*)device;
+    DescriptorPool* pool = nullptr;
+    VkDescriptorPoolSize* poolSizes = nullptr;
+
+    pool = palAllocate(s_Vk.allocator, sizeof(DescriptorPool), 0);
+    poolSizes = palAllocate(
+        s_Vk.allocator,
+        sizeof(VkDescriptorPoolSize) * info->maxDescriptorBindingSizes,
+        0);
+
+    if (!pool || !poolSizes) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < info->maxDescriptorBindingSizes; i++) {
+        VkDescriptorPoolSize* poolSize = &poolSizes[i];
+
+        poolSize->descriptorCount = info->bindingSizes[i].bindingCount;
+        poolSize->type = descriptortypeToVk(info->bindingSizes[i].descriptorType);
+    }
+
+    VkDescriptorPoolCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    createInfo.maxSets = info->maxDescriptorSets;
+    createInfo.poolSizeCount = info->maxDescriptorBindingSizes;
+    createInfo.pPoolSizes = poolSizes;
+
+    result = s_Vk.createDescriptorPool(
+        vkDevice->handle,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &pool->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pool);
+        palFree(s_Vk.allocator, poolSizes);
+        return vkResultToPal(result);
+    }
+
+    pool->device = vkDevice;
+    palFree(s_Vk.allocator, poolSizes);
+    *outPool = (PalDescriptorPool*)pool;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyVkDescriptorPool(PalDescriptorPool* pool)
+{
+    DescriptorPool* vkPool = (DescriptorPool*)pool;
+    s_Vk.destroyDescriptorPool(vkPool->device->handle, vkPool->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, pool);
+}
+
+// ==================================================
 // Pipeline
 // ==================================================
 
@@ -6712,8 +6917,8 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     createInfo.pDepthStencilState = &depthStencilState;
 
     // Color blend state
-    if (info->blendAttachmentCount) {
-        Uint32 count = info->blendAttachmentCount;
+    if (info->colorBlendAttachmentCount) {
+        Uint32 count = info->colorBlendAttachmentCount;
         blendattachments =
             palAllocate(s_Vk.allocator, sizeof(VkPipelineColorBlendAttachmentState) * count, 0);
 
@@ -6726,7 +6931,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
 
         for (int i = 0; i < count; i++) {
             VkPipelineColorBlendAttachmentState* tmp = &blendattachments[i];
-            PalBlendAttachment* desc = &info->blendAttachments[i];
+            PalColorBlendAttachment* desc = &info->colorBlendAttachments[i];
 
             tmp->blendEnable = desc->enableBlend;
             tmp->alphaBlendOp = blendOpToVk(desc->alphaBlendOp);
