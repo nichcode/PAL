@@ -56,7 +56,6 @@ typedef struct PalCommandBuffer PalCommandBuffer;
 
 typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
 typedef struct PalDescriptorPool PalDescriptorPool;
-
 typedef struct PalDescriptorSet PalDescriptorSet;
 typedef struct PalPipelineLayout PalPipelineLayout;
 
@@ -315,7 +314,13 @@ typedef enum {
     PAL_SHADER_STAGE_MESH,
     PAL_SHADER_STAGE_TASK,
     PAL_SHADER_STAGE_TESSELLATION_CONTROL,
-    PAL_SHADER_STAGE_TESSELLATION_EVALUATION
+    PAL_SHADER_STAGE_TESSELLATION_EVALUATION,
+    PAL_SHADER_STAGE_RAYGEN,
+    PAL_SHADER_STAGE_CLOSEST_HIT,
+    PAL_SHADER_STAGE_ANY_HIT,
+    PAL_SHADER_STAGE_MISS,
+    PAL_SHADER_STAGE_INTERSECTION,
+    PAL_SHADER_STAGE_CALLABLE
 } PalShaderStage;
 
 typedef enum {
@@ -546,7 +551,10 @@ typedef enum {
 
 typedef enum {
     PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-    PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    PAL_DESCRIPTOR_TYPE_SAMPLER
 } PalDescriptorType;
 
 typedef struct {
@@ -1381,6 +1389,14 @@ typedef struct {
 
     void PAL_CALL (*destroyDescriptorPool)(PalDescriptorPool* pool);
 
+    PalResult PAL_CALL (*allocateDescriptorSet)(
+        PalDevice* device,
+        PalDescriptorPool* pool,
+        PalDescriptorSetLayout* layout,
+        PalDescriptorSet** outSet);
+
+    void PAL_CALL (*freeDescriptorSet)(PalDescriptorSet* set);
+
     PalResult PAL_CALL (*createPipelineLayout)(
         PalDevice* device,
         const PalPipelineLayoutCreateInfo* info,
@@ -1805,6 +1821,14 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
     PalDescriptorPool** outPool);
 
 PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
+
+PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
+    PalDevice* device,
+    PalDescriptorPool* pool,
+    PalDescriptorSetLayout* layout,
+    PalDescriptorSet** outSet);
+
+PAL_API void PAL_CALL palFreeDescriptorSet(PalDescriptorSet* set);
 
 PAL_API PalResult PAL_CALL palCreatePipelineLayout(
     PalDevice* device,

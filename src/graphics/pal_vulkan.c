@@ -171,6 +171,8 @@ typedef struct {
     PFN_vkDestroyDescriptorSetLayout destroyDescriptorSetLayout;
     PFN_vkCreateDescriptorPool createDescriptorPool;
     PFN_vkDestroyDescriptorPool destroyDescriptorPool;
+    PFN_vkAllocateDescriptorSets allocateDescriptorSet;
+    PFN_vkFreeDescriptorSets freeDescriptorSet;
 
     PFN_vkCreatePipelineLayout createPipelineLayout;
     PFN_vkDestroyPipelineLayout destroyPipelineLayout;
@@ -358,6 +360,14 @@ typedef struct {
     Device* device;
     VkDescriptorPool handle;
 } DescriptorPool;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Device* device;
+    DescriptorPool* pool;
+    VkDescriptorSet handle;
+} DescriptorSet;
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -1681,6 +1691,15 @@ static VkDescriptorType descriptortypeToVk(PalDescriptorType type)
 
         case PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+        case PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+        case PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+        case PAL_DESCRIPTOR_TYPE_SAMPLER:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
     }
 
     return 0;
@@ -1712,6 +1731,25 @@ static VkShaderStageFlagBits shaderStageToVK(PalShaderStage stage)
 
         case PAL_SHADER_STAGE_TESSELLATION_EVALUATION:
             return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
+        case PAL_SHADER_STAGE_RAYGEN:
+            return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+
+        case PAL_SHADER_STAGE_CLOSEST_HIT:
+            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+
+        case PAL_SHADER_STAGE_ANY_HIT:
+            return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+
+        case PAL_SHADER_STAGE_MISS:
+            return VK_SHADER_STAGE_MISS_BIT_KHR;
+
+        case PAL_SHADER_STAGE_INTERSECTION:
+            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+
+        case PAL_SHADER_STAGE_CALLABLE:
+            return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+
     }
 
     return 0;
@@ -2115,6 +2153,14 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.destroyDescriptorPool = (PFN_vkDestroyDescriptorPool)dlsym(
         s_Vk.handle,
         "vkDestroyDescriptorPool");
+
+    s_Vk.allocateDescriptorSet = (PFN_vkAllocateDescriptorSets)dlsym(
+        s_Vk.handle,
+        "vkAllocateDescriptorSets");
+
+    s_Vk.freeDescriptorSet = (PFN_vkFreeDescriptorSets)dlsym(
+        s_Vk.handle,
+        "vkFreeDescriptorSets");
 
     s_Vk.createPipelineLayout = (PFN_vkCreatePipelineLayout)dlsym(
         s_Vk.handle,
@@ -4714,43 +4760,24 @@ PalResult PAL_CALL createVkShader(
     Uint32 patchControlPoints = 0;
     Device* vkDevice = (Device*)device;
 
-    if (info->stage == PAL_SHADER_STAGE_VERTEX) {
-        stage = VK_SHADER_STAGE_VERTEX_BIT;
-
-    } else if (info->stage == PAL_SHADER_STAGE_FRAGMENT) {
-        stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    } else if (info->stage == PAL_SHADER_STAGE_COMPUTE) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-        stage = VK_SHADER_STAGE_COMPUTE_BIT;
-
-    } else if (info->stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-        stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        patchControlPoints = info->patchControlPoints;
-
-    } else if (info->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-        stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-
-    } else if (info->stage == PAL_SHADER_STAGE_MESH) {
+    stage = shaderStageToVK(info->stage);
+    if (info->stage == PAL_SHADER_STAGE_MESH || info->stage == PAL_SHADER_STAGE_TASK) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
-        stage = VK_SHADER_STAGE_MESH_BIT_EXT;
 
-    } else if (info->stage == PAL_SHADER_STAGE_TASK) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+    // clang-format off
+    } else if (info->stage == PAL_SHADER_STAGE_RAYGEN ||
+               info->stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
+               info->stage == PAL_SHADER_STAGE_ANY_HIT ||
+               info->stage == PAL_SHADER_STAGE_MISS ||
+               info->stage == PAL_SHADER_STAGE_INTERSECTION ||
+               info->stage == PAL_SHADER_STAGE_CALLABLE) {
+        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
-        stage = VK_SHADER_STAGE_TASK_BIT_EXT;
     }
+    // clang-format on
 
     shader = palAllocate(s_Vk.allocator, sizeof(Shader), 0);
     if (!shader) {
@@ -5076,19 +5103,19 @@ PalResult PAL_CALL allocateVkCommandBuffer(
         PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    VkCommandBufferAllocateInfo createInfo = {0};
-    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    createInfo.commandBufferCount = 1;
-    createInfo.commandPool = vkPool->handle;
+    VkCommandBufferAllocateInfo allocateInfo = {0};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandBufferCount = 1;
+    allocateInfo.commandPool = vkPool->handle;
 
-    createInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmdBuffer->primary = true;
     if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
-        createInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
         cmdBuffer->primary = false;
     }
 
-    result = s_Vk.allocateCommandBuffer(vkDevice->handle, &createInfo, &cmdBuffer->handle);
+    result = s_Vk.allocateCommandBuffer(vkDevice->handle, &allocateInfo, &cmdBuffer->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, cmdBuffer);
@@ -6558,6 +6585,48 @@ void PAL_CALL destroyVkDescriptorPool(PalDescriptorPool* pool)
     DescriptorPool* vkPool = (DescriptorPool*)pool;
     s_Vk.destroyDescriptorPool(vkPool->device->handle, vkPool->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, pool);
+}
+
+PalResult PAL_CALL allocateVkDescriptorSet(
+    PalDevice* device,
+    PalDescriptorPool* pool,
+    PalDescriptorSetLayout* layout,
+    PalDescriptorSet** outSet)
+{
+    VkResult result;
+    Device* vkDevice = (Device*)device;
+    DescriptorPool* vkPool = (DescriptorPool*)pool;
+    DescriptorSetLayout* vkLayout = (DescriptorSetLayout*)layout;
+    DescriptorSet* set = nullptr;
+
+    set = palAllocate(s_Vk.allocator, sizeof(DescriptorSet), 0);
+    if (!set) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    VkDescriptorSetAllocateInfo allocateInfo = {0};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocateInfo.descriptorPool = vkPool->handle;
+    allocateInfo.descriptorSetCount = 1;
+    allocateInfo.pSetLayouts = &vkLayout->handle;
+
+    result = s_Vk.allocateDescriptorSet(vkDevice->handle, &allocateInfo, &set->handle);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, set);
+        return vkResultToPal(result);
+    }
+
+    set->pool = vkPool;
+    set->device = vkDevice;
+    *outSet = (PalDescriptorSet*)set;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL freeVkDescriptorSet(PalDescriptorSet* set)
+{
+    DescriptorSet* vkSet = (DescriptorSet*)set;
+    s_Vk.freeDescriptorSet(vkSet->device->handle, vkSet->pool->handle, 1, &vkSet->handle);
+    palFree(s_Vk.allocator, set);
 }
 
 // ==================================================

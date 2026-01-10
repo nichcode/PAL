@@ -55,6 +55,7 @@ PAL_HANDLE(PalAccelerationStructure)
 PAL_HANDLE(PalPipelineLayout)
 PAL_HANDLE(PalDescriptorSetLayout)
 PAL_HANDLE(PalDescriptorPool)
+PAL_HANDLE(PalDescriptorSet)
 
 typedef struct {
     Int32 count;
@@ -503,6 +504,14 @@ PalResult PAL_CALL createVkDescriptorPool(
 
 void PAL_CALL destroyVkDescriptorPool(PalDescriptorPool* pool);
 
+PalResult PAL_CALL allocateVkDescriptorSet(
+    PalDevice* device,
+    PalDescriptorPool* pool,
+    PalDescriptorSetLayout* layout,
+    PalDescriptorSet** outSet);
+
+void PAL_CALL freeVkDescriptorSet(PalDescriptorSet* set);
+
 PalResult PAL_CALL createVkPipelineLayout(
     PalDevice* device,
     const PalPipelineLayoutCreateInfo* info,
@@ -611,6 +620,8 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyDescriptorSetLayout = destroyVkDescriptorSetLayout,
     .createDescriptorPool = createVkDescriptorPool,
     .destroyDescriptorPool = destroyVkDescriptorPool,
+    .allocateDescriptorSet = allocateVkDescriptorSet,
+    .freeDescriptorSet = freeVkDescriptorSet,
     .createPipelineLayout = createVkPipelineLayout,
     .destroyPipelineLayout = destroyVkPipelineLayout,
     .createGraphicsPipeline = createVkGraphicsPipeline,
@@ -743,6 +754,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyDescriptorSetLayout            ||
         !backend->createDescriptorPool                  ||
         !backend->destroyDescriptorPool                 ||
+        !backend->allocateDescriptorSet                 ||
+        !backend->freeDescriptorSet                     ||
         !backend->createPipelineLayout                  ||
         !backend->destroyPipelineLayout                 ||
         !backend->createGraphicsPipeline                ||
@@ -2380,6 +2393,39 @@ void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool)
 {
     if (s_Graphics.initialized && pool) {
         pool->backend->destroyDescriptorPool(pool);
+    }
+}
+
+PalResult PAL_CALL palAllocateDescriptorSet(
+    PalDevice* device,
+    PalDescriptorPool* pool,
+    PalDescriptorSetLayout* layout,
+    PalDescriptorSet** outSet)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !pool || !layout || !outSet) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalDescriptorSet* set = nullptr;
+    result = device->backend->allocateDescriptorSet(device, pool, layout, &set);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    set->backend = device->backend;
+    *outSet = set;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palFreeDescriptorSet(PalDescriptorSet* set)
+{
+    if (s_Graphics.initialized && set) {
+        set->backend->freeDescriptorSet(set);
     }
 }
 
