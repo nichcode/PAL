@@ -281,7 +281,7 @@ bool clearColorTest()
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create command buffer: %s", error);
+            palLog(nullptr, "Failed to allocate command buffer: %s", error);
             return false;
         }
     }
@@ -414,18 +414,27 @@ bool clearColorTest()
         renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
         // change the state of the image view to make it renderable
-        PalUsageState oldUsageState;
+        PalUsageStateInfo oldUsageStateInfo = {0};
+        PalUsageStateInfo newUsageStateInfo = {0};
+        newUsageStateInfo.usageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+
         if (firstImageViewUse[index]) {
-            oldUsageState = PAL_USAGE_STATE_UNDEFINED;
+            oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
         } else {
-            oldUsageState = PAL_USAGE_STATE_PRESENT;
+            oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
         result = palImageViewBarrier(
             cmdBuffer,
             imageViews[index],
-            oldUsageState,
-            PAL_USAGE_STATE_COLOR_ATTACHMENT);
+            &oldUsageStateInfo,
+            &newUsageStateInfo);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set image view barrier: %s", error);
+            return false;
+        }
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -448,11 +457,13 @@ bool clearColorTest()
         }
 
         // change the state of the image view to make it presentable
+        oldUsageStateInfo = newUsageStateInfo;
+        newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         result = palImageViewBarrier(
             cmdBuffer,
             imageViews[index],
-            PAL_USAGE_STATE_COLOR_ATTACHMENT,
-            PAL_USAGE_STATE_PRESENT);
+            &oldUsageStateInfo,
+            &newUsageStateInfo);
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

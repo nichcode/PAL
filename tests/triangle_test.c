@@ -324,7 +324,7 @@ bool triangleTest()
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create command buffer: %s", error);
+            palLog(nullptr, "Failed to allocate command buffer: %s", error);
             return false;
         }
     }
@@ -340,22 +340,12 @@ bool triangleTest()
     }
 
     // create vertex and staging buffer
+    // clang-format off
     float vertices[] = {
-        0.0f,
-        0.5f,
-        1.0f,
-        0.0f,
-        0.0f,
-        0.5f,
-        -0.5f,
-        0.0f,
-        1.0f,
-        0.0f,
-        -0.5f,
-        -0.5f,
-        0.0f,
-        0.0f,
-        1.0f};
+        0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+       -0.5f, -0.5f, 0.0f, 0.0f, 1.0f};
+    // clang-format on
 
     PalBufferCreateInfo bufferCreateInfo = {0};
     bufferCreateInfo.size = sizeof(vertices);
@@ -475,12 +465,15 @@ bool triangleTest()
 
     result = palCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, 0, 0, sizeof(vertices));
 
-    result = palBufferBarrier(
-        cmdBuffers[0],
-        vertexBuffer,
-        PAL_USAGE_STATE_TRANSFER_WRITE,
-        PAL_USAGE_STATE_VERTEX_READ);
+    PalUsageStateInfo oldUsageStateInfo = {0};
+    oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
+    oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
+    PalUsageStateInfo newUsageStateInfo = {0};
+    newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_VERTEX;
+    newUsageStateInfo.usageState = PAL_USAGE_STATE_VERTEX_READ;
+
+    result = palBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -782,18 +775,21 @@ bool triangleTest()
         }
 
         // change the state of the image view to make it renderable
-        PalUsageState oldUsageState;
+        PalUsageStateInfo oldUsageStateInfo = {0};
+        PalUsageStateInfo newUsageStateInfo = {0};
+        newUsageStateInfo.usageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+
         if (firstImageViewUse[index]) {
-            oldUsageState = PAL_USAGE_STATE_UNDEFINED;
+            oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
         } else {
-            oldUsageState = PAL_USAGE_STATE_PRESENT;
+            oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
         result = palImageViewBarrier(
             cmdBuffer,
             imageViews[index],
-            oldUsageState,
-            PAL_USAGE_STATE_COLOR_ATTACHMENT);
+            &oldUsageStateInfo,
+            &newUsageStateInfo);
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -876,11 +872,13 @@ bool triangleTest()
         }
 
         // change the state of the image view to make it presentable
+        oldUsageStateInfo = newUsageStateInfo;
+        newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         result = palImageViewBarrier(
             cmdBuffer,
             imageViews[index],
-            PAL_USAGE_STATE_COLOR_ATTACHMENT,
-            PAL_USAGE_STATE_PRESENT);
+            &oldUsageStateInfo,
+            &newUsageStateInfo);
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

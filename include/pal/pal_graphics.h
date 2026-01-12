@@ -536,18 +536,24 @@ enum PalDebugMessageType {
 typedef enum {
     PAL_USAGE_STATE_UNDEFINED,
     PAL_USAGE_STATE_PRESENT,
-    PAL_USAGE_STATE_COLOR_ATTACHMENT,
-    PAL_USAGE_STATE_DEPTH_ATTACHMENT,
-    PAL_USAGE_STATE_STENCIL_ATTACHMENT,
-    PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT,
-    PAL_USAGE_STATE_TRANSFER_WRITE,
+    PAL_USAGE_STATE_COLOR_ATTACHMENT_READ,
+    PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE,
+    PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ,
+    PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE,
+    PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ,
+    PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE,
+    PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ,
     PAL_USAGE_STATE_TRANSFER_READ,
+    PAL_USAGE_STATE_TRANSFER_WRITE,
     PAL_USAGE_STATE_VERTEX_READ,
     PAL_USAGE_STATE_INDEX_READ,
     PAL_USAGE_STATE_UNIFORM_READ,
     PAL_USAGE_STATE_SHADER_READ,
+    PAL_USAGE_STATE_SHADER_WRITE,
     PAL_USAGE_STATE_STORAGE_READ,
-    PAL_USAGE_STATE_STORAGE_WRITE
+    PAL_USAGE_STATE_STORAGE_WRITE,
+    PAL_USAGE_STATE_HOST_READ,
+    PAL_USAGE_STATE_HOST_WRITE,
 } PalUsageState;
 
 typedef enum {
@@ -685,6 +691,11 @@ typedef struct {
     PalImageView* resolveImageView;
     PalClearValue clearValue;
 } PalAttachmentDesc;
+
+typedef struct {
+    PalUsageState usageState;
+    PalShaderStage shaderStage;
+} PalUsageStateInfo;
 
 typedef struct {
     float x;
@@ -1019,6 +1030,11 @@ typedef struct {
 } PalGraphicsPipelineCreateInfo;
 
 typedef struct {
+    PalPipelineLayout* pipelineLayout;
+    PalShader* computeShader;
+} PalComputePipelineCreateInfo;
+
+typedef struct {
     PalResult PAL_CALL (*enumerateAdapters)(
         Int32* count,
         PalAdapter** outAdapters);
@@ -1346,14 +1362,14 @@ typedef struct {
     PalResult PAL_CALL (*imageViewBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalImageView* imageView,
-        PalUsageState oldUsageState,
-        PalUsageState newUsageState);
+        PalUsageStateInfo* oldUsageStateInfo,
+        PalUsageStateInfo* newUsageStateInfo);
 
     PalResult PAL_CALL (*bufferBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
-        PalUsageState oldUsageState,
-        PalUsageState newUsageState);
+        PalUsageStateInfo* oldUsageStateInfo,
+        PalUsageStateInfo* newUsageStateInfo);
 
     PalResult PAL_CALL (*dispatch)(
         PalCommandBuffer* cmdBuffer,
@@ -1460,6 +1476,11 @@ typedef struct {
     PalResult PAL_CALL (*createGraphicsPipeline)(
         PalDevice* device,
         const PalGraphicsPipelineCreateInfo* info,
+        PalPipeline** outPipeline);
+
+    PalResult PAL_CALL (*createComputePipeline)(
+        PalDevice* device,
+        const PalComputePipelineCreateInfo* info,
         PalPipeline** outPipeline);
 
     void PAL_CALL (*destroyPipeline)(PalPipeline* pipeline);
@@ -1800,14 +1821,14 @@ PAL_API PalResult PAL_CALL palDrawIndexedIndirectCount(
 PAL_API PalResult PAL_CALL palImageViewBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo);
 
 PAL_API PalResult PAL_CALL palBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo);
 
 PAL_API PalResult PAL_CALL palDispatch(
     PalCommandBuffer* cmdBuffer,
@@ -1914,6 +1935,11 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
 PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
     PalDevice* device,
     const PalGraphicsPipelineCreateInfo* info,
+    PalPipeline** outPipeline);
+
+PAL_API PalResult PAL_CALL palCreateComputePipeline(
+    PalDevice* device,
+    const PalComputePipelineCreateInfo* info,
     PalPipeline** outPipeline);
 
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);

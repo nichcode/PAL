@@ -419,14 +419,14 @@ PalResult PAL_CALL drawIndexedIndirectCountVk(
 PalResult PAL_CALL imageViewBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo);
 
 PalResult PAL_CALL bufferBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo);
 
 PalResult PAL_CALL dispatchVk(
     PalCommandBuffer* cmdBuffer,
@@ -548,6 +548,11 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     const PalGraphicsPipelineCreateInfo* info,
     PalPipeline** outPipeline);
 
+PalResult PAL_CALL createVkComputePipeline(
+    PalDevice* device,
+    const PalComputePipelineCreateInfo* info,
+    PalPipeline** outPipeline);
+
 void PAL_CALL destroyVkPipeline(PalPipeline* pipeline);
 
 static PalGraphicsBackend s_VkBackend = {
@@ -652,6 +657,7 @@ static PalGraphicsBackend s_VkBackend = {
     .createPipelineLayout = createVkPipelineLayout,
     .destroyPipelineLayout = destroyVkPipelineLayout,
     .createGraphicsPipeline = createVkGraphicsPipeline,
+    .createComputePipeline = createVkComputePipeline,
     .destroyPipeline = destroyVkPipeline};
 
 #endif // PAL_HAS_VULKAN
@@ -789,6 +795,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createPipelineLayout                  ||
         !backend->destroyPipelineLayout                 ||
         !backend->createGraphicsPipeline                ||
+        !backend->createComputePipeline                 ||
         !backend->destroyPipeline) {
         return PAL_RESULT_INVALID_BACKEND;
     }
@@ -2095,8 +2102,8 @@ PalResult PAL_CALL palDrawIndexedIndirectCount(
 PalResult PAL_CALL palImageViewBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2106,14 +2113,18 @@ PalResult PAL_CALL palImageViewBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->imageViewBarrier(cmdBuffer, imageView, oldUsageState, newUsageState);
+    return cmdBuffer->backend->imageViewBarrier(
+        cmdBuffer,
+        imageView,
+        oldUsageStateInfo,
+        newUsageStateInfo);
 }
 
 PalResult PAL_CALL palBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2123,7 +2134,11 @@ PalResult PAL_CALL palBufferBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->bufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    return cmdBuffer->backend->bufferBarrier(
+        cmdBuffer,
+        buffer,
+        oldUsageStateInfo,
+        newUsageStateInfo);
 }
 
 PalResult PAL_CALL palDispatch(
@@ -2584,6 +2599,31 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     PalPipeline* pipeline = nullptr;
     result = device->backend->createGraphicsPipeline(device, info, &pipeline);
 
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    pipeline->backend = device->backend;
+    *outPipeline = pipeline;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palCreateComputePipeline(
+    PalDevice* device,
+    const PalComputePipelineCreateInfo* info,
+    PalPipeline** outPipeline)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outPipeline) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalPipeline* pipeline = nullptr;
+    result = device->backend->createComputePipeline(device, info, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }

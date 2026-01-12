@@ -21,3 +21,6 @@ Makefile
 
 # docs
 docs/**html
+
+# ppm files
+**.ppm

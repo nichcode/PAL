@@ -52,6 +52,7 @@ bool multiThreadOpenGlTest();
 
 // graphics
 bool graphicsTest();
+bool computeTest();
 
 // graphics and video
 bool clearColorTest();
