@@ -141,15 +141,16 @@ typedef struct {
     PFN_vkCmdBindPipeline cmdBindPipeline;
     PFN_vkCmdSetViewport cmdSetViewports;
     PFN_vkCmdSetScissor cmdSetScissors;
-    PFN_vkCmdBindVertexBuffers bindVertexBuffers;
-    PFN_vkCmdBindIndexBuffer bindIndexBuffer;
+    PFN_vkCmdBindVertexBuffers cmdBindVertexBuffers;
+    PFN_vkCmdBindIndexBuffer cmdBindIndexBuffer;
     PFN_vkCmdDraw cmdDraw;
     PFN_vkCmdDrawIndirect cmdDrawIndirect;
     PFN_vkCmdDrawIndexed cmdDrawIndexed;
     PFN_vkCmdDrawIndexedIndirect cmdDrawIndexedIndirect;
     PFN_vkCmdDispatch cmdDispatch;
     PFN_vkCmdDispatchIndirect cmdDispatchIndirect;
-    PFN_vkCmdBindDescriptorSets bindDescriptorSets;
+    PFN_vkCmdBindDescriptorSets cmdBindDescriptorSets;
+    PFN_vkCmdPushConstants cmdPushConstants;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
@@ -2093,11 +2094,11 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkCmdSetScissor");
 
-    s_Vk.bindVertexBuffers = (PFN_vkCmdBindVertexBuffers)dlsym(
+    s_Vk.cmdBindVertexBuffers = (PFN_vkCmdBindVertexBuffers)dlsym(
         s_Vk.handle,
         "vkCmdBindVertexBuffers");
 
-    s_Vk.bindIndexBuffer = (PFN_vkCmdBindIndexBuffer)dlsym(
+    s_Vk.cmdBindIndexBuffer = (PFN_vkCmdBindIndexBuffer)dlsym(
         s_Vk.handle,
         "vkCmdBindIndexBuffer");
 
@@ -2125,9 +2126,13 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkCmdDispatchIndirect");
 
-    s_Vk.bindDescriptorSets = (PFN_vkCmdBindDescriptorSets)dlsym(
+    s_Vk.cmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets)dlsym(
         s_Vk.handle,
         "vkCmdBindDescriptorSets");
+
+    s_Vk.cmdPushConstants = (PFN_vkCmdPushConstants)dlsym(
+        s_Vk.handle,
+        "vkCmdPushConstants");
 
     s_Vk.createBuffer = (PFN_vkCreateBuffer)dlsym(
         s_Vk.handle,
@@ -5812,7 +5817,7 @@ PalResult PAL_CALL bindVkVertexBuffers(
         vkBuffers[i] = tmp->handle;
     }
 
-    s_Vk.bindVertexBuffers(vkCmdBuffer->handle, firstSlot, count, vkBuffers, offsets);
+    s_Vk.cmdBindVertexBuffers(vkCmdBuffer->handle, firstSlot, count, vkBuffers, offsets);
 
     if (count > 1) {
         palFree(s_Vk.allocator, vkBuffers);
@@ -5833,7 +5838,7 @@ PalResult PAL_CALL bindVkIndexBuffer(
         bufferType = VK_INDEX_TYPE_UINT16;
     }
 
-    s_Vk.bindIndexBuffer(vkCmdBuffer->handle, vkBuffer->handle, offset, bufferType);
+    s_Vk.cmdBindIndexBuffer(vkCmdBuffer->handle, vkBuffer->handle, offset, bufferType);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6092,7 +6097,7 @@ PalResult PAL_CALL bindVkDescriptorSet(
     PipelineLayout* vkLayout = (PipelineLayout*)layout;
     DescriptorSet* vkSet = (DescriptorSet*)set;
 
-    s_Vk.bindDescriptorSets(
+    s_Vk.cmdBindDescriptorSets(
         vkCmdBuffer->handle,
         vkPipeline->bindPoint,
         vkLayout->handle,
@@ -6103,6 +6108,33 @@ PalResult PAL_CALL bindVkDescriptorSet(
         nullptr);
 
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL pushConstantsVk(
+    PalCommandBuffer* cmdBuffer,
+    PalPipelineLayout* layout,
+    Uint32 shaderStageCount,
+    PalShaderStage* shaderStages,
+    Uint64 offset,
+    Uint64 size,
+    const void* value)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    PipelineLayout* vkLayout = (PipelineLayout*)layout;
+    VkShaderStageFlags stages = 0;
+
+    for (int i = 0; i < shaderStageCount; i++) {
+        VkShaderStageFlagBits bit = shaderStageToVK(shaderStages[i]);
+        stages |= bit;
+    }
+
+    s_Vk.cmdPushConstants(
+        vkCmdBuffer->handle,
+        vkLayout->handle,
+        stages,
+        offset,
+        size,
+        value);
 }
 
 PalResult PAL_CALL submitVkCommandBuffer(
@@ -6751,14 +6783,48 @@ PalResult PAL_CALL createVkPipelineLayout(
     VkResult result;
     Device* vkDevice = (Device*)device;
     PipelineLayout* layout = nullptr;
+    VkPushConstantRange* pushConstants = nullptr;
+    VkDescriptorSetLayout* descriptorLayouts = nullptr;
 
     layout = palAllocate(s_Vk.allocator, sizeof(PipelineLayout), 0);
-    if (!layout) {
+    pushConstants = palAllocate(
+        s_Vk.allocator,
+        sizeof(VkPushConstantRange) * info->pushConstantRangeCount,
+        0);
+
+    descriptorLayouts = palAllocate(
+        s_Vk.allocator,
+        sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount,
+        0);
+
+    if (!layout || !pushConstants || !descriptorLayouts) {
         return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
+        DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
+        descriptorLayouts[i] = tmp->handle;
+    }
+
+    for (int i = 0; i < info->pushConstantRangeCount; i++) {
+        VkPushConstantRange* range = &pushConstants[i];
+        range->offset = info->pushConstantRanges[i].offset;
+        range->size = info->pushConstantRanges[i].size;
+
+        range->offset = info->pushConstantRanges[i].offset;
+        for (int j = 0; j < info->pushConstantRanges[i].shaderStageCount; j++) {
+            VkShaderStageFlagBits bit =
+                shaderStageToVK(info->pushConstantRanges[i].shaderStages[j]);
+            range->stageFlags |= bit;
+        }
     }
 
     VkPipelineLayoutCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    createInfo.setLayoutCount = info->descriptorSetLayoutCount;
+    createInfo.pSetLayouts = descriptorLayouts;
+    createInfo.pPushConstantRanges = pushConstants;
+    createInfo.pushConstantRangeCount = info->pushConstantRangeCount;
 
     result = s_Vk.createPipelineLayout(
         vkDevice->handle,
@@ -6767,8 +6833,14 @@ PalResult PAL_CALL createVkPipelineLayout(
         &layout->handle);
 
     if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, descriptorLayouts);
+        palFree(s_Vk.allocator, pushConstants);
+        palFree(s_Vk.allocator, layout);
         return vkResultToPal(result);
     }
+
+    palFree(s_Vk.allocator, descriptorLayouts);
+    palFree(s_Vk.allocator, pushConstants);
 
     layout->device = vkDevice;
     *outLayout = (PalPipelineLayout*)layout;

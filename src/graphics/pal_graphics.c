@@ -455,6 +455,15 @@ PalResult PAL_CALL bindVkDescriptorSet(
     Uint32 setIndex,
     PalDescriptorSet* set);
 
+PalResult PAL_CALL pushConstantsVk(
+    PalCommandBuffer* cmdBuffer,
+    PalPipelineLayout* layout,
+    Uint32 shaderStageCount,
+    PalShaderStage* shaderStages,
+    Uint32 offset,
+    Uint32 size,
+    const void* value);
+
 PalResult PAL_CALL submitVkCommandBuffer(
     PalQueue* queue,
     PalCommandBufferSubmitInfo* info);
@@ -624,6 +633,7 @@ static PalGraphicsBackend s_VkBackend = {
     .dispatchBase = dispatchBaseVk,
     .dispatchIndirect = dispatchIndirectVk,
     .bindDescriptorSet = bindVkDescriptorSet,
+    .pushConstants = pushConstantsVk,
     .submitCommandBuffer = submitVkCommandBuffer,
     .createAccelerationstructure = createVkAccelerationstructure,
     .destroyAccelerationstructure = destroyVkAccelerationstructure,
@@ -758,6 +768,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->dispatchBase                          ||
         !backend->dispatchIndirect                      ||
         !backend->bindDescriptorSet                     ||
+        !backend->pushConstants                         ||
         !backend->submitCommandBuffer                   ||
         !backend->createAccelerationstructure           ||
         !backend->destroyAccelerationstructure          ||
@@ -2191,6 +2202,33 @@ PalResult PAL_CALL palBindDescriptorSet(
     }
 
     return cmdBuffer->backend->bindDescriptorSet(cmdBuffer, pipeline, layout, setIndex, set);
+}
+
+PalResult PAL_CALL palPushConstants(
+    PalCommandBuffer* cmdBuffer,
+    PalPipelineLayout* layout,
+    Uint32 shaderStageCount,
+    PalShaderStage* shaderStages,
+    Uint32 offset,
+    Uint32 size,
+    const void* value)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !layout || !shaderStages || !value) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->pushConstants(
+        cmdBuffer,
+        layout,
+        shaderStageCount,
+        shaderStages,
+        offset,
+        size,
+        value);
 }
 
 PalResult PAL_CALL palSubmitCommandBuffer(

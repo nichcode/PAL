@@ -928,6 +928,13 @@ typedef struct {
 } PalDescriptorSetWriteInfo;
 
 typedef struct {
+    Uint64 offset;
+    Uint64 size;
+    Uint32 shaderStageCount;
+    PalShaderStage* shaderStages;
+} PalPushConstantRange;
+
+typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depthOrArraySize;
@@ -989,7 +996,10 @@ typedef struct {
 } PalDescriptorPoolCreateInfo;
 
 typedef struct {
-    bool unused;
+    Uint32 descriptorSetLayoutCount;
+    Uint32 pushConstantRangeCount;
+    PalDescriptorSetLayout** descriptorSetLayouts;
+    PalPushConstantRange* pushConstantRanges;
 } PalPipelineLayoutCreateInfo;
 
 typedef struct {
@@ -1371,6 +1381,15 @@ typedef struct {
         PalPipelineLayout* layout,
         Uint32 setIndex,
         PalDescriptorSet* set);
+
+    PalResult PAL_CALL (*pushConstants)(
+        PalCommandBuffer* cmdBuffer,
+        PalPipelineLayout* layout,
+        Uint32 shaderStageCount,
+        PalShaderStage* shaderStages,
+        Uint32 offset,
+        Uint32 size,
+        const void* value);
 
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
@@ -1816,6 +1835,15 @@ PAL_API PalResult PAL_CALL palBindDescriptorSet(
     PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set);
+
+PAL_API PalResult PAL_CALL palPushConstants(
+    PalCommandBuffer* cmdBuffer,
+    PalPipelineLayout* layout,
+    Uint32 shaderStageCount,
+    PalShaderStage* shaderStages,
+    Uint32 offset,
+    Uint32 size,
+    const void* value);
 
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
