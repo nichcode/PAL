@@ -446,8 +446,6 @@ bool computeTest()
         return false;
     }
 
-    palLog(nullptr, "%d", sizeof(PushConstant));
-
     result = palPushConstants(
         cmdBuffer,
         pipelineLayout,

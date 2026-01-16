@@ -152,6 +152,10 @@ PalResult PAL_CALL queryVkRayTracingCapabilities(
     PalDevice* device,
     PalRayTracingCapabilities* caps);
 
+PalResult PAL_CALL queryVkDescriptorIndexingCapabilities(
+    PalDevice* device,
+    PalDescriptorIndexingCapabilities* caps);
+
 PalResult PAL_CALL createVkQueue(
     PalDevice* device,
     PalQueueType type,
@@ -571,6 +575,7 @@ static PalGraphicsBackend s_VkBackend = {
     .queryFragmentShadingRateCapabilities = queryVkFragmentShadingRateCapabilities,
     .queryMeshShaderCapabilities = queryVkMeshShaderCapabilities,
     .queryRayTracingCapabilities = queryVkRayTracingCapabilities,
+    .queryDescriptorIndexingCapabilities = queryVkDescriptorIndexingCapabilities,
     .createQueue = createVkQueue,
     .destroyQueue = destroyVkQueue,
     .waitQueue = waitVkQueue,
@@ -707,6 +712,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->queryFragmentShadingRateCapabilities  ||
         !backend->queryMeshShaderCapabilities           ||
         !backend->queryRayTracingCapabilities           ||
+        !backend->queryDescriptorIndexingCapabilities   ||
         !backend->createQueue                           ||
         !backend->destroyQueue                          ||
         !backend->waitQueue                             ||
@@ -1094,6 +1100,21 @@ PalResult PAL_CALL palQueryRayTracingCapabilities(
     }
 
     return device->backend->queryRayTracingCapabilities(device, caps);
+}
+
+PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
+    PalDevice* device,
+    PalDescriptorIndexingCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->queryDescriptorIndexingCapabilities(device, caps);
 }
 
 // ==================================================

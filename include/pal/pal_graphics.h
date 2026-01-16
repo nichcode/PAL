@@ -641,6 +641,18 @@ typedef struct {
 } PalRayTracingCapabilities;
 
 typedef struct {
+    bool bindlessStorageBuffers;
+    bool bindlessUniformBuffers;
+    Uint32 maxImagesPerShaderStage;
+    Uint32 maxImagesPerDescriptorSet;
+    Uint32 maxStorageBuffersPerShaderStage;
+    Uint32 maxStorageBuffersPerDescriptorSet;
+    Uint32 maxUniformBuffersPerShaderStage;
+    Uint32 maxUniformBuffersPerDescriptorSet;
+    Uint32 maxDescriptors;
+} PalDescriptorIndexingCapabilities;
+
+typedef struct {
     bool presentModes[PAL_PRESENT_MODE_MAX];
     bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
     bool formats[PAL_SWAPCHAIN_FORMAT_MAX];
@@ -1094,6 +1106,10 @@ typedef struct {
     PalResult PAL_CALL (*queryRayTracingCapabilities)(
         PalDevice* device,
         PalRayTracingCapabilities* caps);
+
+    PalResult PAL_CALL (*queryDescriptorIndexingCapabilities)(
+        PalDevice* device,
+        PalDescriptorIndexingCapabilities* caps);
 
     PalResult PAL_CALL (*createQueue)(
         PalDevice* device,
@@ -1553,6 +1569,10 @@ PAL_API PalResult PAL_CALL palQueryMeshShaderCapabilities(
 PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
     PalDevice* device,
     PalRayTracingCapabilities* caps);
+
+PAL_API PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
+    PalDevice* device,
+    PalDescriptorIndexingCapabilities* caps);
 
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,
