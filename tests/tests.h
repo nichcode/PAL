@@ -53,6 +53,7 @@ bool multiThreadOpenGlTest();
 // graphics
 bool graphicsTest();
 bool computeTest();
+bool rayTracingTest();
 
 // graphics and video
 bool clearColorTest();

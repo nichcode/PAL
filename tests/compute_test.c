@@ -165,7 +165,7 @@ bool computeTest()
         return false;
     }
 
-    // create a graphics command queue
+    // create a compute command queue
     result = palCreateQueue(device, PAL_QUEUE_TYPE_COMPUTE, &queue);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);

@@ -70,10 +70,11 @@ typedef int (*wl_display_get_fd_fn)(struct wl_display*);
 #define COMPUTE_PIPELINE 127
 
 typedef struct {
+    const PalGraphicsBackend* backend;
+
     // For descriptor Indexing
     bool bindlessStorageBuffers;
     bool bindlessUniformBuffers;
-    const PalGraphicsBackend* backend;
     VkPhysicalDevice handle;
 } Adapter;
 
@@ -2595,7 +2596,6 @@ PalResult PAL_CALL enumerateVkAdapters(
     VkPhysicalDeviceProperties props = {0};
 
     result = s_Vk.enumeratePhysicalDevices(s_Vk.instance, &deviceCount, nullptr);
-
     if (result != VK_SUCCESS) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
@@ -2606,7 +2606,6 @@ PalResult PAL_CALL enumerateVkAdapters(
 
     VkPhysicalDevice* devices = nullptr;
     devices = palAllocate(s_Vk.allocator, sizeof(VkPhysicalDevice) * deviceCount, 0);
-
     s_Vk.adapters = palAllocate(s_Vk.allocator, sizeof(Adapter) * deviceCount, 0);
 
     if (!devices || !s_Vk.adapters) {

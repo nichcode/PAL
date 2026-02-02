@@ -906,8 +906,8 @@ PalResult PAL_CALL palEnumerateAdapters(
             PalAdapter** adapters = &outAdapters[backend->startIndex];
             result = backend->base->enumerateAdapters(&_count, adapters);
 
-            for (int i = 0; i < _count; i++) {
-                adapters[i]->backend = backend->base;
+            for (int j = 0; j < _count; j++) {
+                adapters[j]->backend = backend->base;
             }
 
         } else {
