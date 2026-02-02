@@ -557,6 +557,11 @@ PalResult PAL_CALL createVkComputePipeline(
     const PalComputePipelineCreateInfo* info,
     PalPipeline** outPipeline);
 
+PalResult PAL_CALL createVkRayTracingPipeline(
+    PalDevice* device,
+    const PalRayTracingPipelineCreateInfo* info,
+    PalPipeline** outPipeline);
+
 void PAL_CALL destroyVkPipeline(PalPipeline* pipeline);
 
 static PalGraphicsBackend s_VkBackend = {
@@ -663,6 +668,7 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyPipelineLayout = destroyVkPipelineLayout,
     .createGraphicsPipeline = createVkGraphicsPipeline,
     .createComputePipeline = createVkComputePipeline,
+    .createRayTracingPipeline = createVkRayTracingPipeline,
     .destroyPipeline = destroyVkPipeline};
 
 #endif // PAL_HAS_VULKAN
@@ -802,6 +808,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyPipelineLayout                 ||
         !backend->createGraphicsPipeline                ||
         !backend->createComputePipeline                 ||
+        !backend->createRayTracingPipeline              ||
         !backend->destroyPipeline) {
         return PAL_RESULT_INVALID_BACKEND;
     }
@@ -2645,6 +2652,31 @@ PalResult PAL_CALL palCreateComputePipeline(
     PalResult result;
     PalPipeline* pipeline = nullptr;
     result = device->backend->createComputePipeline(device, info, &pipeline);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    pipeline->backend = device->backend;
+    *outPipeline = pipeline;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL palCreateRayTracingPipeline(
+    PalDevice* device,
+    const PalRayTracingPipelineCreateInfo* info,
+    PalPipeline** outPipeline)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outPipeline) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalPipeline* pipeline = nullptr;
+    result = device->backend->createRayTracingPipeline(device, info, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }

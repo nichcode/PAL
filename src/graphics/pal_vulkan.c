@@ -117,6 +117,7 @@ typedef struct {
     PFN_vkCreateDevice createDevice;
     PFN_vkDestroyDevice destroyDevice;
     PFN_vkGetDeviceQueue getDeviceQueue;
+    PFN_vkQueueSubmit queueSubmit;
     PFN_vkGetDeviceProcAddr getDeviceProcAddr;
     PFN_vkCreateImage createImage;
     PFN_vkDestroyImage destroyImage;
@@ -253,6 +254,7 @@ typedef struct {
     PFN_vkCmdTraceRaysKHR cmdTraceRays;
     PFN_vkCreateRayTracingPipelinesKHR createRayTracingPipeline;
     PFN_vkCmdTraceRaysIndirectKHR cmdTraceRaysIndirect;
+    PFN_vkGetRayTracingShaderGroupHandlesKHR getRayTracingShaderGroupHandles;
 
     // dynamic rendering
     PFN_vkCmdBeginRendering cmdBeginRendering;
@@ -320,6 +322,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
+    bool hasTraceRays;
     VkPipelineStageFlagBits2 dstStage;
     Device* device;
     CommandPool* pool;
@@ -394,11 +397,33 @@ typedef struct {
 } PipelineLayout;
 
 typedef struct {
+    Uint32 raygenOffset;
+    Uint32 missOffset;
+    Uint32 hitOffset;
+    Uint32 callableOffset;
+
+    Uint32 raygenStride;
+    Uint32 missStride;
+    Uint32 hitStride;
+    Uint32 callableStride;
+
+    VkBuffer buffer;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory bufferMemory;
+    VkDeviceMemory stagingBufferMemory;
+    VkDeviceAddress baseAddress;
+    VkSemaphore semaphore;
+    VkCommandPool pool;
+    VkCommandBuffer cmdBuffer;
+} ShaderBindingTable;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     VkPipelineBindPoint bindPoint;
     Device* device;
     VkPipeline handle;
+    ShaderBindingTable* sbt;
 } Pipeline;
 
 typedef struct {
@@ -1590,7 +1615,8 @@ static Barrier barrierToVk(PalUsageState state,
     switch (state) {
         case PAL_USAGE_STATE_UNDEFINED: {
             barrier.stages = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = 0;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1599,6 +1625,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_PRESENT: {
             barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.dstStages = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR;
+
             barrier.access = 0;
             barrier.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             return barrier;
@@ -1607,6 +1634,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_COLOR_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1615,6 +1643,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1623,6 +1652,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1631,6 +1661,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1639,6 +1670,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1647,6 +1679,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1655,6 +1688,7 @@ static Barrier barrierToVk(PalUsageState state,
         case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
             barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
             VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
@@ -1663,7 +1697,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_TRANSFER_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1671,7 +1706,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_TRANSFER_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1679,7 +1715,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_VERTEX_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1687,7 +1724,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_INDEX_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_INDEX_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1695,7 +1733,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_UNIFORM_READ: {
             barrier.stages = stageToVkPipelineStage(shaderStage);
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_UNIFORM_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1703,7 +1742,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_SHADER_READ: {
             barrier.stages = stageToVkPipelineStage(shaderStage);
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1711,7 +1751,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_SHADER_WRITE: {
             barrier.stages = stageToVkPipelineStage(shaderStage);
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1719,7 +1760,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_STORAGE_READ: {
             barrier.stages = stageToVkPipelineStage(shaderStage);
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1727,7 +1769,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_STORAGE_WRITE: {
             barrier.stages = stageToVkPipelineStage(shaderStage);
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1735,7 +1778,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_HOST_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_HOST_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_HOST_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1743,7 +1787,8 @@ static Barrier barrierToVk(PalUsageState state,
 
         case PAL_USAGE_STATE_HOST_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_HOST_BIT_KHR;
-            barrier.dstStages = barrier.dstStages;
+            barrier.dstStages = barrier.stages;
+
             barrier.access = VK_ACCESS_2_HOST_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1752,6 +1797,7 @@ static Barrier barrierToVk(PalUsageState state,
 
     barrier.stages = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
     barrier.dstStages = barrier.stages;
+
     barrier.access = 0;
     barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -1940,6 +1986,11 @@ static Uint32 getMemoryTypeScore(
     return score;
 }
 
+static inline Uint32 align(Uint32 value, Uint32 alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -2056,6 +2107,10 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.getDeviceQueue = (PFN_vkGetDeviceQueue)dlsym(
         s_Vk.handle,
         "vkGetDeviceQueue");
+
+    s_Vk.queueSubmit = (PFN_vkQueueSubmit)dlsym(
+        s_Vk.handle,
+        "vkQueueSubmit");
 
     s_Vk.getDeviceProcAddr = (PFN_vkGetDeviceProcAddr)dlsym(
         s_Vk.handle,
@@ -2965,6 +3020,7 @@ PalAdapterFeatures PAL_CALL getVkAdapterFeatures(PalAdapter* adapter)
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         if (desc.runtimeDescriptorArray &&
             desc.descriptorBindingPartiallyBound &&
+            desc.descriptorBindingVariableDescriptorCount &&
             desc.shaderSampledImageArrayNonUniformIndexing &&
             desc.descriptorBindingSampledImageUpdateAfterBind) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
@@ -3378,6 +3434,7 @@ PalResult PAL_CALL createVkDevice(
         descIndex.descriptorBindingPartiallyBound = true;
         descIndex.shaderSampledImageArrayNonUniformIndexing = true;
         descIndex.descriptorBindingSampledImageUpdateAfterBind = true;
+        descIndex.descriptorBindingVariableDescriptorCount = true;
         features12.descriptorIndexing = true;
 
         if (vkAdapter->bindlessStorageBuffers) {
@@ -3652,6 +3709,11 @@ PalResult PAL_CALL createVkDevice(
             (PFN_vkCmdTraceRaysIndirectKHR)s_Vk.getDeviceProcAddr(
                 device->handle,
                 "vkCmdTraceRaysIndirectKHR");
+
+        device->getRayTracingShaderGroupHandles =
+            (PFN_vkGetRayTracingShaderGroupHandlesKHR)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkGetRayTracingShaderGroupHandlesKHR");
     }
 
     // buffer address procs
@@ -4026,11 +4088,6 @@ PalResult PAL_CALL queryVkRayTracingCapabilities(
 
     caps->maxPayloadSize = INT32_MAX; // depends on memory
     caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
-    caps->maxShaderGroupStride = props.maxShaderGroupStride;
-    caps->shaderGroupHandleSize = props.shaderGroupHandleSize;
-    caps->shaderGroupHandleAlignment = props.shaderGroupHandleAlignment;
-    caps->shaderGroupBaseAlignment = props.shaderGroupBaseAlignment;
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5296,6 +5353,7 @@ PalResult PAL_CALL allocateVkCommandBuffer(
 
     cmdBuffer->device = vkDevice;
     cmdBuffer->pool = vkPool;
+    cmdBuffer->hasTraceRays = false;
 
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
@@ -5380,6 +5438,7 @@ PalResult PAL_CALL resetVkCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.resetCommandBuffer(vkCmdBuffer->handle, 0);
+    vkCmdBuffer->hasTraceRays = false;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6691,6 +6750,7 @@ PalResult PAL_CALL createVkDescriptorSetLayout(
     VkResult result;
     Device* vkDevice = (Device*)device;
     VkDescriptorSetLayoutBinding* bindings = nullptr;
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlags = {0};
     DescriptorSetLayout* layout = nullptr;
 
     layout = palAllocate(s_Vk.allocator, sizeof(DescriptorSetLayout), 0);
@@ -6720,6 +6780,16 @@ PalResult PAL_CALL createVkDescriptorSetLayout(
             VkShaderStageFlagBits bit = shaderStageToVK(info->bindings[i].shaderStages[j]);
             binding->stageFlags |= bit;
         }
+    }
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        bindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+        bindingFlags.bindingCount = info->bindingCount;
+        VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
+        flags |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
+        flags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+        bindingFlags.pBindingFlags = &flags;
+        createInfo.pNext = &bindingFlags;
     }
 
     result = s_Vk.createDescriptorSetLayout(
@@ -6769,7 +6839,6 @@ PalResult PAL_CALL createVkDescriptorPool(
 
     for (int i = 0; i < info->maxDescriptorBindingSizes; i++) {
         VkDescriptorPoolSize* poolSize = &poolSizes[i];
-
         poolSize->descriptorCount = info->bindingSizes[i].bindingCount;
         poolSize->type = descriptortypeToVk(info->bindingSizes[i].descriptorType);
     }
@@ -6779,6 +6848,7 @@ PalResult PAL_CALL createVkDescriptorPool(
     createInfo.maxSets = info->maxDescriptorSets;
     createInfo.poolSizeCount = info->maxDescriptorBindingSizes;
     createInfo.pPoolSizes = poolSizes;
+    createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
     result = s_Vk.createDescriptorPool(
         vkDevice->handle,
@@ -6857,12 +6927,22 @@ PalResult PAL_CALL updateVkDescriptorSet(
     VkWriteDescriptorSet* writes = nullptr;
     VkDescriptorBufferInfo* bufferInfos = nullptr;
     VkDescriptorImageInfo* imageInfos = nullptr;
+    Uint32 bufferCount = 0;
+    Uint32 imageCount = 0;
+
+    for (int i = 0; i < count; i++) {
+        if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+            infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+            bufferCount++;
+
+        } else {
+            imageCount++;
+        }
+    }
 
     writes = palAllocate(s_Vk.allocator, sizeof(VkWriteDescriptorSet) * count, 0);
-
-    // FIXME: loop through to find the buffers from the images
-    bufferInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBufferInfo) * count, 0);
-    imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * count, 0);
+    bufferInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBufferInfo) * bufferCount, 0);
+    imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * imageCount, 0);
     if (!writes || !bufferInfos || !imageInfos) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -7024,7 +7104,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
     Device* vkDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
 
-    VkPipelineShaderStageCreateInfo shaderStages[7]; // PAL supports 7 types
+    VkPipelineShaderStageCreateInfo shaderStages[7]; // 7 shader types for graphics pipeline
     VkDynamicState dynamicStates[16];
     VkVertexInputBindingDescription* bindingDescs = nullptr;
     VkVertexInputAttributeDescription* attribDescs = nullptr;
@@ -7441,6 +7521,7 @@ PalResult PAL_CALL createVkGraphicsPipeline(
 
     pipeline->device = vkDevice;
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    pipeline->sbt = nullptr;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -7480,6 +7561,372 @@ PalResult PAL_CALL createVkComputePipeline(
 
     pipeline->device = vkDevice;
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+    pipeline->sbt = nullptr;
+    *outPipeline = (PalPipeline*)pipeline;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL createVkRayTracingPipeline(
+    PalDevice* device,
+    const PalRayTracingPipelineCreateInfo* info,
+    PalPipeline** outPipeline)
+{
+    VkResult result;
+    Device* vkDevice = (Device*)device;
+    PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
+    Pipeline* pipeline = nullptr;
+    VkPipelineShaderStageCreateInfo shaderStages[6]; // 6 shader types for ray tracing pipeline
+    VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
+    ShaderBindingTable* sbt = nullptr;
+
+    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkRayTracingPipelineCreateInfoKHR createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+
+    pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
+    sbt = palAllocate(s_Vk.allocator, sizeof(ShaderBindingTable), 0);
+    groups = palAllocate(
+        s_Vk.allocator,
+        sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount,
+        0);
+
+    if (!pipeline || !groups || !sbt) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount);
+    memset(groups, 0, sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount);
+    memset(sbt, 0, sizeof(ShaderBindingTable));
+
+    // shaders
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+        shaderStages[i] = tmp->info;
+    }
+
+    // shader groups
+    Uint32 numRaygen = 0;
+    Uint32 numMiss = 0;
+    Uint32 numHit = 0;
+    Uint32 numCallable = 0;
+    for (int i = 0; i < info->shaderGroupCount; i++) {
+        VkRayTracingShaderGroupCreateInfoKHR* group = &groups[i];
+        group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        if (info->shaderGroups[i].type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
+            group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+
+            // check which general shader it is
+            Shader* tmp = (Shader*)info->shaders[info->shaderGroups[i].generalShaderIndex];
+            if (tmp->info.stage == VK_SHADER_STAGE_CALLABLE_BIT_KHR) {
+                numCallable++;
+
+            } else if (tmp->info.stage == VK_SHADER_STAGE_MISS_BIT_KHR) {
+                numMiss++;
+
+            } else {
+                numRaygen++;
+            }
+
+        } else if (info->shaderGroups[i].type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
+            group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+            numHit++;
+
+        } else {
+            group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+            numHit++;
+        }
+
+        group->anyHitShader = info->shaderGroups[i].anyHitShaderIndex;
+        group->closestHitShader = info->shaderGroups[i].closestHitShaderIndex;
+        group->generalShader= info->shaderGroups[i].generalShaderIndex;
+        group->intersectionShader = info->shaderGroups[i].intersectionShaderIndex;
+    }
+
+    createInfo.stageCount = info->shaderCount;
+    createInfo.pStages = shaderStages;
+    createInfo.pGroups = groups;
+    createInfo.groupCount = info->shaderGroupCount;
+    createInfo.maxPipelineRayRecursionDepth = info->maxRecursionDepth;
+
+    result = vkDevice->createRayTracingPipeline(
+        vkDevice->handle,
+        nullptr,
+        nullptr,
+        1,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &pipeline->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, groups);
+        return vkResultToPal(result);
+    }
+    palFree(s_Vk.allocator, groups);
+
+    // create SBT and dispatch buffer
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayProps = {0};
+    rayProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+    VkPhysicalDeviceProperties2KHR props = {0};
+    props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+    props.pNext = &rayProps;
+    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &props);
+
+    Uint32 groupHandleSize = rayProps.shaderGroupHandleSize;
+    Uint32 groupHandleAlignment = rayProps.shaderGroupHandleAlignment;
+    Uint32 groupBaseAlignment = rayProps.shaderGroupBaseAlignment;
+    Uint32 stride = align(groupHandleSize, groupHandleAlignment);
+
+    // get region size
+    Uint32 raygenRegionSize = stride * numRaygen;
+    Uint32 missRegionSize = stride * numMiss;
+    Uint32 hitRegionSize = stride * numHit;
+    Uint32 callableRegionSize = stride * numCallable;
+
+    // get offsets
+    Uint32 raygenOffset = 0; // always 0
+    Uint32 missOffset = align(raygenRegionSize, groupBaseAlignment);
+    Uint32 hitOffset = align(missOffset + missRegionSize, groupBaseAlignment);
+    Uint32 callableOffset = align(hitOffset + hitRegionSize, groupBaseAlignment);
+    Uint32 bufferSize = callableOffset + callableRegionSize;
+
+    // create gpu buffer
+    VkBufferCreateInfo bufCreateInfo = {0};
+    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufCreateInfo.size = bufferSize;
+    bufCreateInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+    bufCreateInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    bufCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    result = s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->buffer);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    // allocate GPU only memory and bind
+    VkMemoryRequirements memReq = {0};
+    s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->buffer, &memReq);
+
+    VkMemoryAllocateInfo allocateInfo = {0};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.allocationSize = memReq.size;
+    allocateInfo.memoryTypeIndex = vkDevice->gpuOnlyMemoryIndex;
+
+    result = s_Vk.allocateMemory(
+        vkDevice->handle,
+        &allocateInfo,
+        &s_Vk.vkAllocator,
+        &sbt->bufferMemory);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+    s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->bufferMemory, 0);
+
+    // create staging buffer
+    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufCreateInfo.size = bufferSize;
+    bufCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    result = s_Vk.createBuffer(
+        vkDevice->handle,
+        &bufCreateInfo,
+        &s_Vk.vkAllocator,
+        &sbt->stagingBuffer);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->stagingBuffer, &memReq);
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.allocationSize = memReq.size;
+    allocateInfo.memoryTypeIndex = vkDevice->cpuUploadMemoryIndex;
+
+    result = s_Vk.allocateMemory(
+        vkDevice->handle,
+        &allocateInfo,
+        &s_Vk.vkAllocator,
+        &sbt->stagingBufferMemory);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+    s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->stagingBufferMemory, 0);
+
+    // get shader handles
+    Uint32 totalGroups = numRaygen + numHit + numMiss + numCallable;
+    Uint8* handles = palAllocate(s_Vk.allocator, totalGroups * groupHandleSize, 0);
+    if (!handles) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    result = vkDevice->getRayTracingShaderGroupHandles(
+        vkDevice->handle,
+        pipeline->handle,
+        0, totalGroups,
+        totalGroups * groupHandleSize,
+        handles);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    // copy handles into the GPU buffer
+    // we need a one time submit command buffer to do this operation
+    Uint32 index = 0;
+    void* ptr = nullptr;
+    result = s_Vk.mapMemory(vkDevice->handle, sbt->stagingBufferMemory, 0, memReq.size, 0, ptr);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    // raygen
+    for (int i = 0; i < numRaygen; i++) {
+        memcpy(
+            ptr + raygenOffset + i * stride,
+            handles + index * groupHandleSize,
+            groupHandleSize);
+
+        index++;
+    }
+
+    // miss
+    for (int i = 0; i < numMiss; i++) {
+        memcpy(
+            ptr + raygenOffset + i * stride,
+            handles + index * groupHandleSize,
+            groupHandleSize);
+
+        index++;
+    }
+
+    // hit
+    for (int i = 0; i < numHit; i++) {
+        memcpy(
+            ptr + hitOffset + i * stride,
+            handles + index * groupHandleSize,
+            groupHandleSize);
+
+        index++;
+    }
+
+    // callable
+    for (int i = 0; i < numCallable; i++) {
+        memcpy(
+            ptr + callableOffset + i * stride,
+            handles + index * groupHandleSize,
+            groupHandleSize);
+
+        index++;
+    }
+    s_Vk.unmapMemory(vkDevice->handle, sbt->bufferMemory);
+
+    // copy to the GPU buffer
+    VkCommandPoolCreateInfo poolCreateInfo = {0};
+    poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+
+    // technically, every queue type (compute, graphics, etc) will support
+    // buffer copy operation. So we use the first physical queue
+    poolCreateInfo.queueFamilyIndex = vkDevice->phyQueues[0].familyIndex;
+    result = s_Vk.createCommandPool(
+        vkDevice->handle,
+        &poolCreateInfo,
+        &s_Vk.vkAllocator,
+        &sbt->pool);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    VkCommandBufferAllocateInfo cmdAllocateInfo = {0};
+    cmdAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdAllocateInfo.commandBufferCount = 1;
+    cmdAllocateInfo.commandPool = sbt->pool;
+    cmdAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    result = s_Vk.allocateCommandBuffer(vkDevice->handle, &cmdAllocateInfo, &sbt->cmdBuffer);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    // make copy
+    VkCommandBufferBeginInfo cmdBeginInfo = {0};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    result = s_Vk.cmdBegin(sbt->cmdBuffer, &cmdBeginInfo);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    VkBufferCopy copyRegion = {0};
+    copyRegion.size = bufferSize;
+    s_Vk.cmdCopyBuffer(sbt->cmdBuffer, sbt->stagingBuffer, sbt->buffer, 1, &copyRegion);
+
+    result = s_Vk.cmdEnd(sbt->cmdBuffer);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    // create a signal semaphore so we dont block until GPU finishes
+    VkSemaphoreCreateInfo semaphoreCreateInfo = {0};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    result = s_Vk.createSemaphore(
+        vkDevice->handle,
+        &semaphoreCreateInfo,
+        &s_Vk.vkAllocator,
+        &sbt->semaphore);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &sbt->cmdBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &sbt->semaphore;
+
+    result = s_Vk.queueSubmit(vkDevice->phyQueues[0].handle, 1, &submitInfo, VK_NULL_HANDLE);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, pipeline);
+        palFree(s_Vk.allocator, sbt);
+        return vkResultToPal(result);
+    }
+
+    palFree(s_Vk.allocator, handles);
+    pipeline->device = vkDevice;
+    pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -7488,6 +7935,22 @@ void PAL_CALL destroyVkPipeline(PalPipeline* pipeline)
 {
     Pipeline* vkPipeline = (Pipeline*)pipeline;
     s_Vk.destroyPipeline(vkPipeline->device->handle, vkPipeline->handle, &s_Vk.vkAllocator);
+
+    if (vkPipeline->sbt) {
+        VkDevice device = vkPipeline->device->handle;
+        ShaderBindingTable* sbt = vkPipeline->sbt;
+
+        s_Vk.freeCommandBuffer(device, sbt->pool, 1, &sbt->cmdBuffer);
+        s_Vk.destroyCommandPool(device, sbt->pool, &s_Vk.vkAllocator);
+        s_Vk.destroySemaphore(device, sbt->semaphore, &s_Vk.vkAllocator);
+
+        s_Vk.destroyBuffer(device, sbt->buffer, &s_Vk.vkAllocator);
+        s_Vk.freeMemory(device, sbt->bufferMemory, &s_Vk.vkAllocator);
+        s_Vk.destroyBuffer(device, sbt->stagingBuffer, &s_Vk.vkAllocator);
+        s_Vk.freeMemory(device, sbt->stagingBufferMemory, &s_Vk.vkAllocator);
+
+        palFree(s_Vk.allocator, vkPipeline->sbt);
+    }
 
     palFree(s_Vk.allocator, pipeline);
 }

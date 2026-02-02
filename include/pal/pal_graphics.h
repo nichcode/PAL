@@ -564,6 +564,12 @@ typedef enum {
     PAL_DESCRIPTOR_TYPE_SAMPLER
 } PalDescriptorType;
 
+typedef enum {
+    PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL,
+    PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT,
+    PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT
+} PalRayTracingShaderGroupType;
+
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
@@ -634,10 +640,6 @@ typedef struct {
     Uint32 maxGeometryCount;
     Uint32 maxPayloadSize;
     Uint32 maxDispatchInvocations;
-    Uint32 maxShaderGroupStride;
-    Uint32 shaderGroupHandleSize;
-    Uint32 shaderGroupHandleAlignment;
-    Uint32 shaderGroupBaseAlignment;
 } PalRayTracingCapabilities;
 
 typedef struct {
@@ -1045,6 +1047,23 @@ typedef struct {
     PalPipelineLayout* pipelineLayout;
     PalShader* computeShader;
 } PalComputePipelineCreateInfo;
+
+typedef struct {
+    PalRayTracingShaderGroupType type;
+    Uint32 anyHitShaderIndex;
+    Uint32 closestHitShaderIndex;
+    Uint32 generalShaderIndex;
+    Uint32 intersectionShaderIndex;
+} PalRayTracingShaderGroupCreateInfo;
+
+typedef struct {
+    Uint32 shaderCount;
+    Uint32 shaderGroupCount;
+    Uint32 maxRecursionDepth;
+    PalPipelineLayout* pipelineLayout;
+    PalRayTracingShaderGroupCreateInfo* shaderGroups;
+    PalShader** shaders;
+} PalRayTracingPipelineCreateInfo;
 
 typedef struct {
     PalResult PAL_CALL (*enumerateAdapters)(
@@ -1497,6 +1516,11 @@ typedef struct {
     PalResult PAL_CALL (*createComputePipeline)(
         PalDevice* device,
         const PalComputePipelineCreateInfo* info,
+        PalPipeline** outPipeline);
+
+    PalResult PAL_CALL (*createRayTracingPipeline)(
+        PalDevice* device,
+        const PalRayTracingPipelineCreateInfo* info,
         PalPipeline** outPipeline);
 
     void PAL_CALL (*destroyPipeline)(PalPipeline* pipeline);
@@ -1960,6 +1984,11 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
 PAL_API PalResult PAL_CALL palCreateComputePipeline(
     PalDevice* device,
     const PalComputePipelineCreateInfo* info,
+    PalPipeline** outPipeline);
+
+PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
+    PalDevice* device,
+    const PalRayTracingPipelineCreateInfo* info,
     PalPipeline** outPipeline);
 
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
