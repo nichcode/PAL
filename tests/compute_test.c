@@ -68,7 +68,7 @@ bool computeTest()
     PalDescriptorSetLayout* descriptorSetLayout = nullptr;
     PalDescriptorPool* descriptorPool = nullptr;
     PalDescriptorSet* descriptorSet = nullptr;
-    PalPipelineLayout* pipelineLayout;
+    PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
     PalFence* fence = nullptr;
 
@@ -272,6 +272,7 @@ bool computeTest()
     result = palAllocateMemory(
         device,
         PAL_MEMORY_TYPE_GPU_ONLY,
+        bufferMemReq.memoryMask,
         bufferMemReq.size,
         &bufferMemory);
 
@@ -284,6 +285,7 @@ bool computeTest()
     result = palAllocateMemory(
         device,
         PAL_MEMORY_TYPE_CPU_READBACK,
+        stagingBufferMemReq.memoryMask,
         stagingBufferMemReq.size,
         &stagingBufferMemory);
 
@@ -629,7 +631,6 @@ bool computeTest()
     }
 
     fclose(file);
-
     palUnmapMemory(device, stagingBufferMemory);
 
     palDestroyPipeline(pipeline);

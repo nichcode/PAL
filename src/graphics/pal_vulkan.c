@@ -173,6 +173,7 @@ typedef struct {
     PFN_vkBindBufferMemory bindBufferMemory;
     PFN_vkMapMemory mapMemory;
     PFN_vkUnmapMemory unmapMemory;
+    PFN_vkGetBufferDeviceAddress getBufferDeviceAddress;
 
     PFN_vkCreateDescriptorSetLayout createDescriptorSetLayout;
     PFN_vkDestroyDescriptorSetLayout destroyDescriptorSetLayout;
@@ -212,12 +213,12 @@ typedef struct {
     bool bindlessUniformBuffers;
     PalAdapterFeatures features;
     Int32 queueCount;
-    Int32 gpuOnlyMemoryIndex;
-    Int32 cpuUploadMemoryIndex;
-    Int32 cpuReadbackMemoryIndex;
+    Uint32 memoryClassMask[3];
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
+    VkCommandPool cmdPool;
+    VkCommandBuffer cmdBuffer;
     PFN_vkGetBufferDeviceAddress getBufferrAddress;
     PFN_vkCmdDispatchBase cmdDispatchBase;
 
@@ -320,10 +321,24 @@ typedef struct {
 } CommandPool;
 
 typedef struct {
+    VkBuffer buffer;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory bufferMemory;
+    VkDeviceMemory stagingBufferMemory;
+    VkDeviceAddress baseAddress;
+    VkSemaphore semaphore;
+
+    VkStridedDeviceAddressRegionKHR raygenAddress;
+    VkStridedDeviceAddressRegionKHR missAddress;
+    VkStridedDeviceAddressRegionKHR hitAddress;
+    VkStridedDeviceAddressRegionKHR callableAddress;
+} ShaderBindingTable;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
-    bool hasTraceRays;
+    ShaderBindingTable* sbt;
     VkPipelineStageFlagBits2 dstStage;
     Device* device;
     CommandPool* pool;
@@ -396,27 +411,6 @@ typedef struct {
     Device* device;
     VkPipelineLayout handle;
 } PipelineLayout;
-
-typedef struct {
-    Uint32 raygenOffset;
-    Uint32 missOffset;
-    Uint32 hitOffset;
-    Uint32 callableOffset;
-
-    Uint32 raygenStride;
-    Uint32 missStride;
-    Uint32 hitStride;
-    Uint32 callableStride;
-
-    VkBuffer buffer;
-    VkBuffer stagingBuffer;
-    VkDeviceMemory bufferMemory;
-    VkDeviceMemory stagingBufferMemory;
-    VkDeviceAddress baseAddress;
-    VkSemaphore semaphore;
-    VkCommandPool pool;
-    VkCommandBuffer cmdBuffer;
-} ShaderBindingTable;
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -1958,33 +1952,47 @@ VkBool32 debugCallback(
     return VK_FALSE;
 }
 
-static Uint32 getMemoryTypeScore(
-    VkMemoryPropertyFlags flags,
-    VkMemoryPropertyFlags required,
-    VkMemoryPropertyFlags preferred,
-    VkMemoryPropertyFlags excluded)
+static Uint32 findBestMemoryIndex(
+    VkPhysicalDevice phyDevice,
+    Uint32 memoryMask)
 {
-    // hard constraint
-    if ((flags & required) != required) {
-        return 0;
+    int bestScore = -1;
+    Uint32 bestIndex = UINT32_MAX;
+    VkPhysicalDeviceMemoryProperties memProps = {0};
+    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
+
+    for (int i = 0; i < memProps.memoryTypeCount; i++) {
+        if (!(memoryMask & (1u << i))) {
+            continue;
+        }
+
+        int score = 0;
+        VkMemoryPropertyFlags flags = memProps.memoryTypes[i].propertyFlags;
+
+        // GPU only memory
+        if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            score += 100;
+        }
+
+        // CPU memory
+        if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+            score += 50;
+        }
+
+        if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+            score += 25;
+        }
+
+        if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+            score += 10;
+        }
+
+        if (score > bestScore) {
+            bestIndex = i;
+        }
     }
 
-    // hard constraint
-    if ((flags & excluded) != 0) {
-        return 0;
-    }
-
-    int score = 0;
-    if (flags & preferred) {
-        score += 10;
-    }
-
-    // GPU memory is general preferred
-    if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-        score += 5;
-    }
-
-    return score;
+    return bestIndex;
 }
 
 static inline Uint32 align(Uint32 value, Uint32 alignment)
@@ -2268,6 +2276,10 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.unmapMemory = (PFN_vkUnmapMemory)dlsym(
         s_Vk.handle,
         "vkUnmapMemory");
+
+    s_Vk.getBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)dlsym(
+        s_Vk.handle,
+        "vkGetBufferDeviceAddress");
 
     s_Vk.getBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)dlsym(
         s_Vk.handle,
@@ -3228,6 +3240,7 @@ PalResult PAL_CALL createVkDevice(
     queueProps = palAllocate(s_Vk.allocator, sizeof(VkQueueFamilyProperties) * queueCount, 0);
     queueCreateInfos = palAllocate(s_Vk.allocator, sizeof(VkDeviceQueueCreateInfo) * queueCount, 0);
     device = palAllocate(s_Vk.allocator, sizeof(Device), 0);
+
     if (!queueProps || !queueCreateInfos || !device) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -3380,12 +3393,21 @@ PalResult PAL_CALL createVkDevice(
     if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
         extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
         extensions[extCount++] = "VK_KHR_acceleration_structure";
+        extensions[extCount++] = "VK_KHR_deferred_host_operations";
         ray.rayTracingPipeline = true;
         acc.accelerationStructure = true;
 
+        // ray tracing needs buffer address feature enabled
+        if (props.apiVersion < VK_API_VERSION_1_2) {
+            extensions[extCount++] = "VK_KHR_buffer_device_address";
+        }
+        bufferAddress.bufferDeviceAddress = true;
+        features12.bufferDeviceAddress = true;
+
         ray.pNext = next;
         acc.pNext = &ray;
-        next = &acc;
+        bufferAddress.pNext = &acc;
+        next = &bufferAddress;
     }
 
     if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
@@ -3540,53 +3562,32 @@ PalResult PAL_CALL createVkDevice(
     // cache memory type indices
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
-    device->gpuOnlyMemoryIndex = -1;
-    device->cpuUploadMemoryIndex = -1;
-    device->cpuReadbackMemoryIndex = -1;
 
-    Uint32 gpuBestScore = 0;
-    Uint32 cpuUploadBestScore = 0;
-    Uint32 cpuReadbackBestScore = 0;
-
+    memset(device->memoryClassMask, 0, sizeof(Uint32) * 3);
     for (int i = 0; i < memProps.memoryTypeCount; i++) {
         VkMemoryPropertyFlags flags = memProps.memoryTypes[i].propertyFlags;
-        Uint32 score = 0;
 
-        // GPU memory
-        score = getMemoryTypeScore(
-            flags,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            0,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-        if (score > gpuBestScore) {
-            gpuBestScore = score;
-            device->gpuOnlyMemoryIndex = i;
+        Uint32 bit = (1u << i);
+        if ((flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) &&
+           !(flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+            device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] |= bit;
         }
 
-        // CPU upload
-        score = getMemoryTypeScore(
-            flags,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            0);
-
-        if (score > cpuUploadBestScore) {
-            cpuUploadBestScore = score;
-            device->cpuUploadMemoryIndex = i;
+        if ((flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
+           (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+            device->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD] |= bit;
         }
 
-        // CPU readback
-        score = getMemoryTypeScore(
-            flags,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-            0,
-            0);
-
-        if (score > cpuReadbackBestScore) {
-            cpuReadbackBestScore = score;
-            device->cpuReadbackMemoryIndex = i;
+        if ((flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
+           (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)) {
+            device->memoryClassMask[PAL_MEMORY_TYPE_CPU_READBACK] |= bit;
         }
+    }
+
+    // HACK: most CPU drivers dont have a vram so we set the vram to system memory
+    if (device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] == 0) {
+        device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] =
+        device->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD];
     }
 
     // clang-format off
@@ -3713,6 +3714,36 @@ PalResult PAL_CALL createVkDevice(
             (PFN_vkGetRayTracingShaderGroupHandlesKHR)s_Vk.getDeviceProcAddr(
                 device->handle,
                 "vkGetRayTracingShaderGroupHandlesKHR");
+
+        // create a temporary command pool and buffer to be used with ray tracing pipeline
+        // copy to the GPU buffer
+        VkCommandPoolCreateInfo poolCreateInfo = {0};
+        poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+
+        // technically, every queue type (compute, graphics, etc) will support
+        // buffer copy operation. So we use the first physical queue
+        poolCreateInfo.queueFamilyIndex = device->phyQueues[0].familyIndex;
+        result = s_Vk.createCommandPool(
+            device->handle,
+            &poolCreateInfo,
+            &s_Vk.vkAllocator,
+            &device->cmdPool);
+
+        if (result != VK_SUCCESS) {
+            palFree(s_Vk.allocator, device);
+            return vkResultToPal(result);
+        }
+
+        VkCommandBufferAllocateInfo cmdAllocateInfo = {0};
+        cmdAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        cmdAllocateInfo.commandBufferCount = 1;
+        cmdAllocateInfo.commandPool = device->cmdPool;
+        cmdAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        result = s_Vk.allocateCommandBuffer(device->handle, &cmdAllocateInfo, &device->cmdBuffer);
+        if (result != VK_SUCCESS) {
+            palFree(s_Vk.allocator, device);
+            return vkResultToPal(result);
+        }
     }
 
     // buffer address procs
@@ -3825,6 +3856,11 @@ PalResult PAL_CALL createVkDevice(
 void PAL_CALL destroyVkDevice(PalDevice* device)
 {
     Device* vkDevice = (Device*)device;
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        s_Vk.freeCommandBuffer(vkDevice->handle, vkDevice->cmdPool, 1, &vkDevice->cmdBuffer);
+        s_Vk.destroyCommandPool(vkDevice->handle, vkDevice->cmdPool, &s_Vk.vkAllocator);
+    }
+
     s_Vk.destroyDevice(vkDevice->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkDevice->phyQueues);
     palFree(s_Vk.allocator, vkDevice);
@@ -3848,33 +3884,36 @@ PalResult PAL_CALL waitVkDevice(PalDevice* device)
 PalResult PAL_CALL allocateVkMemory(
     PalDevice* device,
     PalMemoryType type,
+    Uint32 memoryMask,
     Uint64 size,
     PalMemory** outMemory)
 {
+    VkResult result;
+    VkDeviceMemory memory = nullptr;
+
     Device* vkDevice = (Device*)device;
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = (VkDeviceSize)size;
 
-    if (type == PAL_MEMORY_TYPE_GPU_ONLY) {
-        allocateInfo.memoryTypeIndex = vkDevice->gpuOnlyMemoryIndex;
-
-    } else if (type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
-        allocateInfo.memoryTypeIndex = vkDevice->cpuUploadMemoryIndex;
-
-    } else if (type == PAL_MEMORY_TYPE_CPU_READBACK) {
-        allocateInfo.memoryTypeIndex = vkDevice->cpuReadbackMemoryIndex;
-    }
-
-    if (allocateInfo.memoryTypeIndex == -1) {
-        // not supported
+    Uint32 memoryClassMask = vkDevice->memoryClassMask[type] & memoryMask;
+    if (memoryClassMask == 0) {
         return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
     }
 
-    VkDeviceMemory memory = nullptr;
-    VkResult result =
-        s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory);
+    // pick an index using the scoring system
+    Uint32 memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memoryMask);
+    if (memoryIndex == UINT32_MAX) {
+        return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
+    }
 
+    // check if the memory index is valid
+    if (!(memoryMask & (1u << memoryIndex))) {
+        return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
+    }
+
+    allocateInfo.memoryTypeIndex = memoryIndex;
+    result = s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory);
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
     }
@@ -4483,40 +4522,20 @@ PalResult PAL_CALL getVkImageMemoryRequirements(
     }
 
     Device* device = vkImage->device;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)device->phyDevice;
-    VkPhysicalDeviceMemoryProperties memProps = {0};
-    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
-
     VkMemoryRequirements memReq = {0};
     s_Vk.getImageMemoryRequirements(device->handle, vkImage->handle, &memReq);
     requirements->alignment = (Uint64)memReq.alignment;
     requirements->size = (Uint64)memReq.size;
+    requirements->memoryMask = memReq.memoryTypeBits;
 
     requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
     requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
     requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
 
-    for (int i = 0; i < memProps.memoryTypeCount; i++) {
-        if (!(memReq.memoryTypeBits & (1 << i))) {
-            // memory type not supported
-            continue;
-        }
-
-        VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
-        if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-            requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
-        }
-
-        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
-            prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
-        }
-
-        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
-            prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
-        }
+    for (int i = 0; i < PAL_MEMORY_TYPE_MAX; i++) {
+        requirements->memoryTypes[i] = (memReq.memoryTypeBits & device->memoryClassMask[i]) != 0;
     }
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5352,7 +5371,7 @@ PalResult PAL_CALL allocateVkCommandBuffer(
 
     cmdBuffer->device = vkDevice;
     cmdBuffer->pool = vkPool;
-    cmdBuffer->hasTraceRays = false;
+    cmdBuffer->sbt = nullptr;
 
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
@@ -5437,7 +5456,7 @@ PalResult PAL_CALL resetVkCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.resetCommandBuffer(vkCmdBuffer->handle, 0);
-    vkCmdBuffer->hasTraceRays = false;
+    vkCmdBuffer->sbt = nullptr;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5918,6 +5937,11 @@ PalResult PAL_CALL bindVkPipeline(
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* vkPipeline = (Pipeline*)pipeline;
     s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
+
+    if (vkPipeline->bindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        vkCmdBuffer->sbt = vkPipeline->sbt;
+    }
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6287,6 +6311,77 @@ PalResult PAL_CALL dispatchIndirectVk(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL traceRaysVk(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 width,
+    Uint32 height,
+    Uint32 depth)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    ShaderBindingTable* sbt = vkCmdBuffer->sbt;
+    if (!sbt) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    vkCmdBuffer->device->cmdTraceRays(
+        vkCmdBuffer->handle,
+        &sbt->raygenAddress,
+        &sbt->missAddress,
+        &sbt->hitAddress,
+        &sbt->callableAddress,
+        width,
+        height,
+        depth);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL traceRaysIndirectVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* vkBuffer = (Buffer*)buffer;
+
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    ShaderBindingTable* sbt = vkCmdBuffer->sbt;
+    if (!sbt) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
+    VkStridedDeviceAddressRegionKHR* miss = nullptr;
+    VkStridedDeviceAddressRegionKHR* hit = nullptr;
+    VkStridedDeviceAddressRegionKHR* callable = nullptr;
+    if (sbt->missAddress.size == 0) {
+        miss = &sbt->missAddress;
+    }
+
+    if (sbt->hitAddress.size == 0) {
+        hit = &sbt->hitAddress;
+    }
+
+    if (sbt->callableAddress.size == 0) {
+        callable = &sbt->callableAddress;
+    }
+
+    vkCmdBuffer->device->cmdTraceRaysIndirect(
+        vkCmdBuffer->handle,
+        &sbt->raygenAddress,
+        miss,
+        hit,
+        callable,
+        vkBuffer->address);
+
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL bindVkDescriptorSet(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline,
@@ -6390,6 +6485,10 @@ PalResult PAL_CALL submitVkCommandBuffer(
     if (vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
         waitSubmitInfo.value = info->waitValue;
         signalSubmitInfo.value = info->signalValue;
+    }
+
+    if (vkCmdBuffer->sbt) {
+        vkCmdBuffer->dstStage |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     }
 
     VkSubmitInfo2KHR submitInfo = {0};
@@ -6683,41 +6782,21 @@ PalResult PAL_CALL getVkBufferMemoryRequirements(
 {
     Buffer* vkBuffer = (Buffer*)buffer;
     Device* device = vkBuffer->device;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)device->phyDevice;
-    VkPhysicalDeviceMemoryProperties memProps = {0};
-    s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
-
     VkMemoryRequirements memReq = {0};
     s_Vk.getBufferMemoryRequirements(device->handle, vkBuffer->handle, &memReq);
 
     requirements->alignment = (Uint64)memReq.alignment;
     requirements->size = (Uint64)memReq.size;
+    requirements->memoryMask = memReq.memoryTypeBits;
 
     requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
     requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
     requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
 
-    for (int i = 0; i < memProps.memoryTypeCount; i++) {
-        if (!(memReq.memoryTypeBits & (1 << i))) {
-            // memory type not supported
-            continue;
-        }
-
-        VkMemoryPropertyFlags prop = memProps.memoryTypes[i].propertyFlags;
-        if (prop & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-            requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
-        }
-
-        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
-            prop & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
-        }
-
-        if ((prop & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
-            prop & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-            requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
-        }
+    for (int i = 0; i < PAL_MEMORY_TYPE_MAX; i++) {
+        requirements->memoryTypes[i] = (memReq.memoryTypeBits & device->memoryClassMask[i]) != 0;
     }
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7649,6 +7728,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     createInfo.pGroups = groups;
     createInfo.groupCount = info->shaderGroupCount;
     createInfo.maxPipelineRayRecursionDepth = info->maxRecursionDepth;
+    createInfo.layout = layout->handle;
 
     result = vkDevice->createRayTracingPipeline(
         vkDevice->handle,
@@ -7666,7 +7746,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     }
     palFree(s_Vk.allocator, groups);
 
-    // create SBT and dispatch buffer
+    // create SBT buffer
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayProps = {0};
     rayProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 
@@ -7716,7 +7796,14 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = memReq.size;
-    allocateInfo.memoryTypeIndex = vkDevice->gpuOnlyMemoryIndex;
+
+    Uint32 memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memReq.memoryTypeBits);
+    allocateInfo.memoryTypeIndex = memoryIndex;
+
+    VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
+    allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+    allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    allocateInfo.pNext = &allocateFlagsInfo;
 
     result = s_Vk.allocateMemory(
         vkDevice->handle,
@@ -7752,7 +7839,9 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->stagingBuffer, &memReq);
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = memReq.size;
-    allocateInfo.memoryTypeIndex = vkDevice->cpuUploadMemoryIndex;
+
+    memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memReq.memoryTypeBits);
+    allocateInfo.memoryTypeIndex = memoryIndex;
 
     result = s_Vk.allocateMemory(
         vkDevice->handle,
@@ -7765,7 +7854,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
         palFree(s_Vk.allocator, sbt);
         return vkResultToPal(result);
     }
-    s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->stagingBufferMemory, 0);
+    s_Vk.bindBufferMemory(vkDevice->handle, sbt->stagingBuffer, sbt->stagingBufferMemory, 0);
 
     // get shader handles
     Uint32 totalGroups = numRaygen + numHit + numMiss + numCallable;
@@ -7793,7 +7882,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     // we need a one time submit command buffer to do this operation
     Uint32 index = 0;
     void* ptr = nullptr;
-    result = s_Vk.mapMemory(vkDevice->handle, sbt->stagingBufferMemory, 0, memReq.size, 0, ptr);
+    result = s_Vk.mapMemory(vkDevice->handle, sbt->stagingBufferMemory, 0, memReq.size, 0, &ptr);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
         palFree(s_Vk.allocator, sbt);
@@ -7839,43 +7928,12 @@ PalResult PAL_CALL createVkRayTracingPipeline(
 
         index++;
     }
-    s_Vk.unmapMemory(vkDevice->handle, sbt->bufferMemory);
+    s_Vk.unmapMemory(vkDevice->handle, sbt->stagingBufferMemory);
 
-    // copy to the GPU buffer
-    VkCommandPoolCreateInfo poolCreateInfo = {0};
-    poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-
-    // technically, every queue type (compute, graphics, etc) will support
-    // buffer copy operation. So we use the first physical queue
-    poolCreateInfo.queueFamilyIndex = vkDevice->phyQueues[0].familyIndex;
-    result = s_Vk.createCommandPool(
-        vkDevice->handle,
-        &poolCreateInfo,
-        &s_Vk.vkAllocator,
-        &sbt->pool);
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-
-    VkCommandBufferAllocateInfo cmdAllocateInfo = {0};
-    cmdAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmdAllocateInfo.commandBufferCount = 1;
-    cmdAllocateInfo.commandPool = sbt->pool;
-    cmdAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    result = s_Vk.allocateCommandBuffer(vkDevice->handle, &cmdAllocateInfo, &sbt->cmdBuffer);
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-
-    // make copy
+    // copy CPU buffer to GPU buffer
     VkCommandBufferBeginInfo cmdBeginInfo = {0};
     cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    result = s_Vk.cmdBegin(sbt->cmdBuffer, &cmdBeginInfo);
+    result = s_Vk.cmdBegin(vkDevice->cmdBuffer, &cmdBeginInfo);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
         palFree(s_Vk.allocator, sbt);
@@ -7884,9 +7942,9 @@ PalResult PAL_CALL createVkRayTracingPipeline(
 
     VkBufferCopy copyRegion = {0};
     copyRegion.size = bufferSize;
-    s_Vk.cmdCopyBuffer(sbt->cmdBuffer, sbt->stagingBuffer, sbt->buffer, 1, &copyRegion);
+    s_Vk.cmdCopyBuffer(vkDevice->cmdBuffer, sbt->stagingBuffer, sbt->buffer, 1, &copyRegion);
 
-    result = s_Vk.cmdEnd(sbt->cmdBuffer);
+    result = s_Vk.cmdEnd(vkDevice->cmdBuffer);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
         palFree(s_Vk.allocator, sbt);
@@ -7912,7 +7970,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     VkSubmitInfo submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &sbt->cmdBuffer;
+    submitInfo.pCommandBuffers = &vkDevice->cmdBuffer;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &sbt->semaphore;
 
@@ -7923,8 +7981,35 @@ PalResult PAL_CALL createVkRayTracingPipeline(
         return vkResultToPal(result);
     }
 
+    // cache SBT fields and offsets address
+    VkBufferDeviceAddressInfo bufferAddressInfo = {0};
+    bufferAddressInfo.buffer = sbt->buffer;
+    bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    sbt->baseAddress = s_Vk.getBufferDeviceAddress(vkDevice->handle, &bufferAddressInfo);
+
+    // raygen
+    sbt->raygenAddress.deviceAddress = sbt->baseAddress + raygenOffset;
+    sbt->raygenAddress.size = raygenRegionSize;
+    sbt->raygenAddress.stride = stride;
+
+    // miss
+    sbt->missAddress.deviceAddress = sbt->baseAddress + missOffset;
+    sbt->missAddress.size = missRegionSize;
+    sbt->missAddress.stride = stride;
+
+    // hit
+    sbt->hitAddress.deviceAddress = sbt->baseAddress + hitOffset;
+    sbt->hitAddress.size = hitRegionSize;
+    sbt->hitAddress.stride = stride;
+
+    // callable
+    sbt->callableAddress.deviceAddress = sbt->baseAddress + callableOffset;
+    sbt->callableAddress.size = callableRegionSize;
+    sbt->callableAddress.stride = stride;
+
     palFree(s_Vk.allocator, handles);
     pipeline->device = vkDevice;
+    pipeline->sbt = sbt;
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -7939,10 +8024,7 @@ void PAL_CALL destroyVkPipeline(PalPipeline* pipeline)
         VkDevice device = vkPipeline->device->handle;
         ShaderBindingTable* sbt = vkPipeline->sbt;
 
-        s_Vk.freeCommandBuffer(device, sbt->pool, 1, &sbt->cmdBuffer);
-        s_Vk.destroyCommandPool(device, sbt->pool, &s_Vk.vkAllocator);
         s_Vk.destroySemaphore(device, sbt->semaphore, &s_Vk.vkAllocator);
-
         s_Vk.destroyBuffer(device, sbt->buffer, &s_Vk.vkAllocator);
         s_Vk.freeMemory(device, sbt->bufferMemory, &s_Vk.vkAllocator);
         s_Vk.destroyBuffer(device, sbt->stagingBuffer, &s_Vk.vkAllocator);

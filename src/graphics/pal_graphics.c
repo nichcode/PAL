@@ -129,6 +129,7 @@ PalResult PAL_CALL waitVkDevice(PalDevice* device);
 PalResult PAL_CALL allocateVkMemory(
     PalDevice* device,
     PalMemoryType type,
+    Uint32 memoryMask,
     Uint64 size,
     PalMemory** outMemory);
 
@@ -452,6 +453,16 @@ PalResult PAL_CALL dispatchIndirectVk(
     PalBuffer* buffer,
     Uint64 offset);
 
+PalResult PAL_CALL traceRaysVk(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 width,
+    Uint32 height,
+    Uint32 depth);
+
+PalResult PAL_CALL traceRaysIndirectVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer);
+
 PalResult PAL_CALL bindVkDescriptorSet(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline,
@@ -647,6 +658,8 @@ static PalGraphicsBackend s_VkBackend = {
     .dispatch = dispatchVk,
     .dispatchBase = dispatchBaseVk,
     .dispatchIndirect = dispatchIndirectVk,
+    .traceRays = traceRaysVk,
+    .traceRaysIndirect = traceRaysIndirectVk,
     .bindDescriptorSet = bindVkDescriptorSet,
     .pushConstants = pushConstantsVk,
     .submitCommandBuffer = submitVkCommandBuffer,
@@ -785,6 +798,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->dispatch                              ||
         !backend->dispatchBase                          ||
         !backend->dispatchIndirect                      ||
+        !backend->traceRays                             ||
+        !backend->traceRaysIndirect                     ||
         !backend->bindDescriptorSet                     ||
         !backend->pushConstants                         ||
         !backend->submitCommandBuffer                   ||
@@ -1026,6 +1041,7 @@ PalResult PAL_CALL palWaitDevice(PalDevice* device)
 PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
+    Uint32 memoryMask,
     Uint64 size,
     PalMemory** outMemory)
 {
@@ -1037,7 +1053,7 @@ PalResult PAL_CALL palAllocateMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->allocateMemory(device, type, size, outMemory);
+    return device->backend->allocateMemory(device, type, memoryMask, size, outMemory);
 }
 
 void PAL_CALL palFreeMemory(
@@ -2227,6 +2243,38 @@ PalResult PAL_CALL palDispatchIndirect(
     }
 
     return cmdBuffer->backend->dispatchIndirect(cmdBuffer, buffer, offset);
+}
+
+PalResult PAL_CALL palTraceRays(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 width,
+    Uint32 height,
+    Uint32 depth)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->traceRays(cmdBuffer, width, height, depth);
+}
+
+PalResult PAL_CALL palTraceRaysIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !buffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->traceRaysIndirect(cmdBuffer, buffer);
 }
 
 PalResult PAL_CALL palBindDescriptorSet(

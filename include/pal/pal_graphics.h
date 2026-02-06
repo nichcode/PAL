@@ -37,6 +37,7 @@ freely, subject to the following restrictions:
 #define PAL_ADAPTER_VERSION_SIZE 16
 #define PAL_MAX_RESOLVE_MODES 8
 #define PAL_MAX_COMBINER_OPS 8
+#define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
 typedef struct PalAdapter PalAdapter;
 typedef struct PalDevice PalDevice;
@@ -731,6 +732,7 @@ typedef struct {
     bool memoryTypes[PAL_MEMORY_TYPE_MAX];
     Uint64 size;
     Uint32 alignment;
+    Uint32 memoryMask;
 } PalMemoryRequirements;
 
 typedef struct {
@@ -1092,6 +1094,7 @@ typedef struct {
     PalResult PAL_CALL (*allocateMemory)(
         PalDevice* device,
         PalMemoryType type,
+        Uint32 memoryMask,
         Uint64 size,
         PalMemory** outMemory);
 
@@ -1426,6 +1429,16 @@ typedef struct {
         PalBuffer* buffer,
         Uint64 offset);
 
+    PalResult PAL_CALL (*traceRays)(
+        PalCommandBuffer* cmdBuffer,
+        Uint32 width,
+        Uint32 height,
+        Uint32 depth);
+
+    PalResult PAL_CALL (*traceRaysIndirect)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer);
+
     PalResult PAL_CALL (*bindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
         PalPipeline* pipeline,
@@ -1560,6 +1573,7 @@ PAL_API PalResult PAL_CALL palWaitDevice(PalDevice* device);
 PAL_API PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
+    Uint32 memoryMask,
     Uint64 size,
     PalMemory** outMemory);
 
@@ -1893,6 +1907,16 @@ PAL_API PalResult PAL_CALL palDispatchIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset);
+
+PAL_API PalResult PAL_CALL palTraceRays(
+    PalCommandBuffer* cmdBuffer,
+    Uint32 width,
+    Uint32 height,
+    Uint32 depth);
+
+PAL_API PalResult PAL_CALL palTraceRaysIndirect(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer);
 
 PAL_API PalResult PAL_CALL palBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,

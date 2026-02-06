@@ -85,7 +85,6 @@ bool triangleTest()
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
@@ -353,7 +352,6 @@ bool triangleTest()
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_TRANSFER_DST; // will recieve
 
     result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create vertex buffer: %s", error);
@@ -372,8 +370,8 @@ bool triangleTest()
     // get buffer memory requirement and allocate memory
     PalMemoryRequirements vertexBufferMemReq = {0};
     PalMemoryRequirements stagingBufferMemReq = {0};
-    result = palGetBufferMemoryRequirements(vertexBuffer, &vertexBufferMemReq);
 
+    result = palGetBufferMemoryRequirements(vertexBuffer, &vertexBufferMemReq);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
@@ -381,7 +379,6 @@ bool triangleTest()
     }
 
     result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
@@ -391,10 +388,10 @@ bool triangleTest()
     // we need to check if the memory type we want are supported
     // but almost every GPU supports a GPU only memory
     // and CPU writable memory
-
     result = palAllocateMemory(
         device,
         PAL_MEMORY_TYPE_GPU_ONLY,
+        vertexBufferMemReq.memoryMask,
         vertexBufferMemReq.size,
         &vertexBufferMemory);
 
@@ -407,6 +404,7 @@ bool triangleTest()
     result = palAllocateMemory(
         device,
         PAL_MEMORY_TYPE_CPU_UPLOAD,
+        stagingBufferMemReq.memoryMask,
         stagingBufferMemReq.size,
         &stagingBufferMemory);
 
