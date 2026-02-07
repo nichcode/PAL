@@ -322,11 +322,8 @@ typedef struct {
 
 typedef struct {
     VkBuffer buffer;
-    VkBuffer stagingBuffer;
     VkDeviceMemory bufferMemory;
-    VkDeviceMemory stagingBufferMemory;
     VkDeviceAddress baseAddress;
-    VkSemaphore semaphore;
 
     VkStridedDeviceAddressRegionKHR raygenAddress;
     VkStridedDeviceAddressRegionKHR missAddress;
@@ -338,11 +335,11 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
-    ShaderBindingTable* sbt;
     VkPipelineStageFlagBits2 dstStage;
     Device* device;
     CommandPool* pool;
     VkCommandBuffer handle;
+    ShaderBindingTable* sbt;
 } CommandBuffer;
 
 typedef struct {
@@ -363,7 +360,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    VkDeviceAddress address;
+    PalBufferUsages usages;
     Device* device;
     VkBuffer handle;
 } Buffer;
@@ -372,6 +369,9 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     VkDeviceAddress address;
+    VkBuffer buffer;
+    VkDeviceMemory bufferMemory;
+    VkDeviceAddress bufferAddress;
     Device* device;
     VkAccelerationStructureKHR handle;
 } AccelerationStructure;
@@ -1325,9 +1325,10 @@ static VkBufferUsageFlags palBufferUsageToVk(PalBufferUsages usages)
         flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     }
 
-    if (usages & PAL_BUFFER_USAGE_RAY_TRACING) {
+    if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
     }
 
     if (usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
@@ -1816,6 +1817,9 @@ static VkDescriptorType descriptortypeToVk(PalDescriptorType type)
 
         case PAL_DESCRIPTOR_TYPE_SAMPLER:
             return VK_DESCRIPTOR_TYPE_SAMPLER;
+
+        case PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE:
+            return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     }
 
     return 0;
@@ -1998,6 +2002,104 @@ static Uint32 findBestMemoryIndex(
 static inline Uint32 align(Uint32 value, Uint32 alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
+}
+
+static void fillVkBuildInfo(
+    PalAccelerationStructureBuildInfo* info,
+    Uint32* maxPrimities,
+    VkAccelerationStructureGeometryKHR* geometries,
+    VkAccelerationStructureKHR as,
+    VkAccelerationStructureBuildRangeInfoKHR* rangeInfos,
+    VkAccelerationStructureBuildGeometryInfoKHR* buildInfo)
+{
+    for (int i = 0; i < info->geometryCount; i++) {
+        if (maxPrimities) {
+            maxPrimities[i] = info->geometries[i].primitiveCount;
+        }
+
+        // fill vulkan geometry struct
+        VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
+        tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+        tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+
+        if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
+            tmp->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+            VkAccelerationStructureGeometryTrianglesDataKHR* data = &tmp->geometry.triangles;
+            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+
+            VkDeviceOrHostAddressConstKHR vertexAddress = {0};
+            VkDeviceOrHostAddressConstKHR indexAddress = {0};
+            PalGeometryDataTriangle* tmpData = info->geometries[i].data;
+
+            vertexAddress.deviceAddress = tmpData->vertexBufferAddress + tmpData->vertexOffset;
+            data->vertexData = vertexAddress;
+            data->maxVertex = tmpData->vertexCount;
+            data->vertexFormat = vertexTypeToVkFormat(tmpData->vertexType);
+            data->vertexStride = tmpData->vertexStride;
+
+            indexAddress.deviceAddress = tmpData->indexBufferAddress + tmpData->indexOffset;
+            data->indexData = indexAddress;
+            if (tmpData->indexType == PAL_INDEX_TYPE_UINT32) {
+                data->indexType = VK_INDEX_TYPE_UINT32;
+            } else {
+                data->indexType = VK_INDEX_TYPE_UINT16;
+            }
+
+            // set to none if there is no index buffer address
+            if (!tmpData->indexBufferAddress) {
+                data->indexType = VK_INDEX_TYPE_NONE_KHR;
+            }
+
+        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
+            tmp->geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+            VkAccelerationStructureGeometryAabbsDataKHR* data = &tmp->geometry.aabbs;
+            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+
+            VkDeviceOrHostAddressConstKHR address = {0};
+            PalGeometryDataAABBS* tmpData = info->geometries[i].data;
+            address.deviceAddress = tmpData->bufferAddress + tmpData->offset;
+            data->data = address;
+            data->stride = tmpData->stride;
+
+        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_INSTANCE) {
+            tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+            VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
+            data = &tmp->geometry.instances;
+            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+            data->arrayOfPointers = false;
+
+            VkDeviceOrHostAddressConstKHR address = {0};
+            PalGeometryDataInstance* tmpData = info->geometries[i].data;
+            address.deviceAddress = tmpData->bufferAddress + tmpData->offset;
+            data->data = address;
+        }
+
+        // range info
+        if (rangeInfos) {
+            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
+            rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
+            rangeInfo->firstVertex = 0;     // PAL does not allow setting this
+            rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
+            rangeInfo->transformOffset = 0; // PAL does not allow setting this
+        }
+    }
+
+    buildInfo->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        buildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    } else {
+        buildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    }
+
+    buildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    buildInfo->geometryCount = info->geometryCount;
+    buildInfo->dstAccelerationStructure = as;
+    buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+    buildInfo->pGeometries = geometries;
+
+    VkDeviceOrHostAddressKHR scratchData = {0};
+    scratchData.deviceAddress = info->scratchBufferAddress + info->scratchBufferOffset;
+    buildInfo->scratchData = scratchData;
 }
 
 // ==================================================
@@ -3537,7 +3639,6 @@ PalResult PAL_CALL createVkDevice(
     createInfo.pNext = next;
 
     result = s_Vk.createDevice(phyDevice, &createInfo, &s_Vk.vkAllocator, &device->handle);
-
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, queueProps);
         palFree(s_Vk.allocator, queueCreateInfos);
@@ -3546,6 +3647,7 @@ PalResult PAL_CALL createVkDevice(
         return vkResultToPal(result);
     }
 
+    device->features = features;
     // get queues
     for (int i = 0; i < queueCount; i++) {
         VkQueueFamilyProperties* data = &queueProps[i];
@@ -3715,6 +3817,19 @@ PalResult PAL_CALL createVkDevice(
                 device->handle,
                 "vkGetRayTracingShaderGroupHandlesKHR");
 
+        device->getBufferrAddress =
+            (PFN_vkGetBufferDeviceAddress)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkGetBufferDeviceAddress");
+
+        if (!device->getBufferrAddress) {
+            device->getBufferrAddress =
+                (PFN_vkGetBufferDeviceAddressKHR)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkGetBufferDeviceAddressKHR");
+        }
+        device->features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
+
         // create a temporary command pool and buffer to be used with ray tracing pipeline
         // copy to the GPU buffer
         VkCommandPoolCreateInfo poolCreateInfo = {0};
@@ -3845,7 +3960,6 @@ PalResult PAL_CALL createVkDevice(
     }
     // clang-format on
 
-    device->features = features;
     palFree(s_Vk.allocator, queueProps);
     palFree(s_Vk.allocator, queueCreateInfos);
 
@@ -3884,35 +3998,44 @@ PalResult PAL_CALL waitVkDevice(PalDevice* device)
 PalResult PAL_CALL allocateVkMemory(
     PalDevice* device,
     PalMemoryType type,
-    Uint32 memoryMask,
+    Uint64 memoryMask,
     Uint64 size,
     PalMemory** outMemory)
 {
     VkResult result;
     VkDeviceMemory memory = nullptr;
-
     Device* vkDevice = (Device*)device;
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = (VkDeviceSize)size;
+    VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
 
-    Uint32 memoryClassMask = vkDevice->memoryClassMask[type] & memoryMask;
+    Uint32 memoryTypeMask = 0;
+    Uint32 usages = 0;
+    palUnpackUint32(memoryMask, &memoryTypeMask, &usages);
+    Uint32 memoryClassMask = vkDevice->memoryClassMask[type] & memoryTypeMask;
     if (memoryClassMask == 0) {
         return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
     }
 
     // pick an index using the scoring system
-    Uint32 memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memoryMask);
+    Uint32 memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memoryClassMask);
     if (memoryIndex == UINT32_MAX) {
         return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
     }
 
     // check if the memory index is valid
-    if (!(memoryMask & (1u << memoryIndex))) {
+    if (!(memoryClassMask & (1u << memoryIndex))) {
         return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
     }
 
     allocateInfo.memoryTypeIndex = memoryIndex;
+    if (usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
+        allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+        allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        allocateInfo.pNext = &allocateFlagsInfo;
+    }
+
     result = s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory);
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
@@ -4526,7 +4649,7 @@ PalResult PAL_CALL getVkImageMemoryRequirements(
     s_Vk.getImageMemoryRequirements(device->handle, vkImage->handle, &memReq);
     requirements->alignment = (Uint64)memReq.alignment;
     requirements->size = (Uint64)memReq.size;
-    requirements->memoryMask = memReq.memoryTypeBits;
+    requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, 0);
 
     requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
     requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
@@ -5119,7 +5242,6 @@ PalResult PAL_CALL waitVkFence(
     }
 
     VkResult result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeout);
-
     if (result != VK_SUCCESS) {
         return vkResultToPal(result);
     }
@@ -5596,7 +5718,7 @@ PalResult PAL_CALL buildVkAccelerationStructure(
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
     AccelerationStructure* as = (AccelerationStructure*)info->dst;
-    Buffer* scratchBuffer = (Buffer*)info->scratchBuffer;
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
     geometries = palAllocate(
         s_Vk.allocator,
@@ -5612,94 +5734,10 @@ PalResult PAL_CALL buildVkAccelerationStructure(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    for (int i = 0; i < info->geometryCount; i++) {
-        // fill vulkan geometry struct
-        VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
-        tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-        tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount);
+    memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->geometryCount);
 
-        if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-
-            VkAccelerationStructureGeometryTrianglesDataKHR* data = &tmp->geometry.triangles;
-            data->pNext = nullptr;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR vertexAddress = {0};
-            VkDeviceOrHostAddressConstKHR indexAddress = {0};
-            PalGeometryDataTriangle* tmpData = info->geometries[i].data;
-            Buffer* vkVertexBuffer = (Buffer*)tmpData->vertexBuffer;
-            Buffer* vkIndexBuffer = (Buffer*)tmpData->indexBuffer;
-
-            vertexAddress.deviceAddress = vkVertexBuffer->address + tmpData->vertexOffset;
-            data->vertexData = vertexAddress;
-            data->maxVertex = tmpData->vertexCount;
-            data->vertexFormat = vertexTypeToVkFormat(tmpData->vertexType);
-            data->vertexStride = tmpData->vertexStride;
-
-            indexAddress.deviceAddress = vkIndexBuffer->address + tmpData->indexOffset;
-            data->indexData = indexAddress;
-            if (tmpData->indexType == PAL_INDEX_TYPE_UINT32) {
-                data->indexType = VK_INDEX_TYPE_UINT32;
-            } else {
-                data->indexType = VK_INDEX_TYPE_UINT16;
-            }
-
-        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
-            VkAccelerationStructureGeometryAabbsDataKHR* data = &tmp->geometry.aabbs;
-            data->pNext = nullptr;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR address = {0};
-            PalGeometryDataAABBS* tmpData = info->geometries[i].data;
-            Buffer* vkBuffer = (Buffer*)tmpData->buffer;
-            address.deviceAddress = vkBuffer->address + tmpData->offset;
-            data->data = address;
-            data->stride = tmpData->stride;
-
-        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_INSTANCE) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-            VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
-            data = &tmp->geometry.instances;
-            data->pNext = nullptr;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR address = {0};
-            PalGeometryDataInstance* tmpData = info->geometries[i].data;
-            Buffer* vkBuffer = (Buffer*)tmpData->buffer;
-            address.deviceAddress = vkBuffer->address + tmpData->offset;
-            data->data = address;
-        }
-
-        // range info
-        VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
-        rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
-        rangeInfo->firstVertex = 0;     // PAL does not allow setting this
-        rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
-        rangeInfo->transformOffset = 0; // PAL does not allow setting this
-    }
-
-    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
-    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    } else {
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    }
-
-    buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    buildInfo.geometryCount = info->geometryCount;
-    buildInfo.dstAccelerationStructure = as->handle;
-
-    VkDeviceOrHostAddressKHR scratchData = {0};
-    scratchData.deviceAddress = scratchBuffer->address + info->scratchBufferOffset;
-    buildInfo.scratchData = scratchData;
-
-    buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
-    buildInfo.pGeometries = geometries;
-
+    fillVkBuildInfo(info, nullptr, geometries, as->handle, rangeInfos, &buildInfo);
     const VkAccelerationStructureBuildRangeInfoKHR* tmp[1];
     tmp[0] = rangeInfos;
     vkCmdBuffer->device->cmdBuildAccelerationStructures(vkCmdBuffer->handle, 1, &buildInfo, tmp);
@@ -6342,11 +6380,9 @@ PalResult PAL_CALL traceRaysVk(
 
 PalResult PAL_CALL traceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer)
+    PalDeviceAddress bufferAddress)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    Buffer* vkBuffer = (Buffer*)buffer;
-
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6356,28 +6392,13 @@ PalResult PAL_CALL traceRaysIndirectVk(
         return PAL_RESULT_INVALID_OPERATION;
     }
 
-    VkStridedDeviceAddressRegionKHR* miss = nullptr;
-    VkStridedDeviceAddressRegionKHR* hit = nullptr;
-    VkStridedDeviceAddressRegionKHR* callable = nullptr;
-    if (sbt->missAddress.size == 0) {
-        miss = &sbt->missAddress;
-    }
-
-    if (sbt->hitAddress.size == 0) {
-        hit = &sbt->hitAddress;
-    }
-
-    if (sbt->callableAddress.size == 0) {
-        callable = &sbt->callableAddress;
-    }
-
     vkCmdBuffer->device->cmdTraceRaysIndirect(
         vkCmdBuffer->handle,
         &sbt->raygenAddress,
-        miss,
-        hit,
-        callable,
-        vkBuffer->address);
+        &sbt->missAddress,
+        &sbt->hitAddress,
+        &sbt->callableAddress,
+        bufferAddress);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6521,15 +6542,10 @@ PalResult PAL_CALL createVkAccelerationstructure(
 {
     VkResult result;
     AccelerationStructure* as = nullptr;
-    Buffer* vkBuffer = (Buffer*)info->buffer;
     Device* vkDevice = (Device*)device;
-
+    Buffer* buffer = (Buffer*)info->buffer;
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!vkBuffer->address) {
-        return PAL_RESULT_INVALID_BUFFER;
     }
 
     as = palAllocate(s_Vk.allocator, sizeof(AccelerationStructure), 0);
@@ -6539,10 +6555,9 @@ PalResult PAL_CALL createVkAccelerationstructure(
 
     VkAccelerationStructureCreateInfoKHR createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-
     createInfo.offset = (VkDeviceSize)info->offset;
     createInfo.size = (VkDeviceSize)info->size;
-    createInfo.buffer = vkBuffer->handle;
+    createInfo.buffer = buffer->handle;
     createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
@@ -6564,7 +6579,6 @@ PalResult PAL_CALL createVkAccelerationstructure(
     VkAccelerationStructureDeviceAddressInfoKHR addressInfo = {0};
     addressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
     addressInfo.accelerationStructure = as->handle;
-
     as->address = vkDevice->getAccelerationDeviceAddress(vkDevice->handle, &addressInfo);
 
     as->device = vkDevice;
@@ -6590,17 +6604,13 @@ PalResult PAL_CALL getVkAccelerationStructureBuildSize(
 {
     Uint32* maxPrimities = nullptr;
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
-
     Device* vkDevice = (Device*)device;
-    AccelerationStructure* vkAs = (AccelerationStructure*)info->dst;
-    Buffer* vkScratchBuffer = (Buffer*)info->scratchBuffer;
-
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     maxPrimities = palAllocate(s_Vk.allocator, sizeof(Uint32) * info->geometryCount, 0);
-
     geometries = palAllocate(
         s_Vk.allocator,
         sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount,
@@ -6610,89 +6620,10 @@ PalResult PAL_CALL getVkAccelerationStructureBuildSize(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    for (int i = 0; i < info->geometryCount; i++) {
-        maxPrimities[i] = info->geometries[i].primitiveCount;
+    memset(maxPrimities, 0, sizeof(Uint32) * info->geometryCount);
+    memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount);
 
-        // fill vulkan geometry struct
-        VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
-        tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-        tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-
-        if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-
-            VkAccelerationStructureGeometryTrianglesDataKHR* data = &tmp->geometry.triangles;
-            data->pNext = nullptr;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR vertexAddress = {0};
-            VkDeviceOrHostAddressConstKHR indexAddress = {0};
-            PalGeometryDataTriangle* tmpData = info->geometries[i].data;
-            Buffer* vkVertexBuffer = (Buffer*)tmpData->vertexBuffer;
-            Buffer* vkIndexBuffer = (Buffer*)tmpData->indexBuffer;
-
-            vertexAddress.deviceAddress = vkVertexBuffer->address + tmpData->vertexOffset;
-            data->vertexData = vertexAddress;
-            data->maxVertex = tmpData->vertexCount;
-            data->vertexFormat = vertexTypeToVkFormat(tmpData->vertexType);
-            data->vertexStride = tmpData->vertexStride;
-
-            indexAddress.deviceAddress = vkIndexBuffer->address + tmpData->indexOffset;
-            data->indexData = indexAddress;
-            if (tmpData->indexType == PAL_INDEX_TYPE_UINT32) {
-                data->indexType = VK_INDEX_TYPE_UINT32;
-            } else {
-                data->indexType = VK_INDEX_TYPE_UINT16;
-            }
-
-        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
-            VkAccelerationStructureGeometryAabbsDataKHR* data = &tmp->geometry.aabbs;
-            data->pNext = nullptr;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR address = {0};
-            PalGeometryDataAABBS* tmpData = info->geometries[i].data;
-            Buffer* vkBuffer = (Buffer*)tmpData->buffer;
-            address.deviceAddress = vkBuffer->address + tmpData->offset;
-            data->data = address;
-            data->stride = tmpData->stride;
-
-        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_INSTANCE) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-            VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
-            data = &tmp->geometry.instances;
-            data->pNext = nullptr;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR address = {0};
-            PalGeometryDataInstance* tmpData = info->geometries[i].data;
-            Buffer* vkBuffer = (Buffer*)tmpData->buffer;
-            address.deviceAddress = vkBuffer->address + tmpData->offset;
-            data->data = address;
-        }
-    }
-
-    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
-    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    } else {
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    }
-
-    buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    buildInfo.geometryCount = info->geometryCount;
-    buildInfo.dstAccelerationStructure = vkAs->handle;
-
-    VkDeviceOrHostAddressKHR scratchData = {0};
-    scratchData.deviceAddress = vkScratchBuffer->address + info->scratchBufferOffset;
-    buildInfo.scratchData = scratchData;
-
-    buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
-    buildInfo.pGeometries = geometries;
-
+    fillVkBuildInfo(info, maxPrimities, geometries, nullptr, nullptr, &buildInfo);
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
@@ -6724,7 +6655,7 @@ PalResult PAL_CALL createVkBuffer(
     VkResult result;
     Buffer* buffer = nullptr;
     Device* vkDevice = (Device*)device;
-    if (info->usages & PAL_BUFFER_USAGE_RAY_TRACING) {
+    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
@@ -6748,19 +6679,14 @@ PalResult PAL_CALL createVkBuffer(
     createInfo.usage = palBufferUsageToVk(info->usages);
 
     result = s_Vk.createBuffer(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &buffer->handle);
-
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, buffer);
         return vkResultToPal(result);
     }
 
-    // get the address if the address usage is set
-    buffer->address = 0;
-    if (createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-        VkBufferDeviceAddressInfoKHR bufferInfo = {0};
-        bufferInfo.buffer = buffer->handle;
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
-        buffer->address = vkDevice->getBufferrAddress(vkDevice->handle, &bufferInfo);
+    buffer->usages = info->usages;
+    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
+        buffer->usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
     }
 
     buffer->device = vkDevice;
@@ -6787,7 +6713,7 @@ PalResult PAL_CALL getVkBufferMemoryRequirements(
 
     requirements->alignment = (Uint64)memReq.alignment;
     requirements->size = (Uint64)memReq.size;
-    requirements->memoryMask = memReq.memoryTypeBits;
+    requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, vkBuffer->usages);
 
     requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
     requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
@@ -6814,6 +6740,19 @@ PalResult PAL_CALL bindVkBufferMemory(
         return vkResultToPal(result);
     }
     return PAL_RESULT_SUCCESS;
+}
+
+PalDeviceAddress PAL_CALL getVkBufferDeviceAddress(PalBuffer* buffer)
+{
+    Buffer* vkBuffer = (Buffer*)buffer;
+    if (!(vkBuffer->device->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
+        return 0;
+    }
+
+    VkBufferDeviceAddressInfoKHR bufferInfo = {0};
+    bufferInfo.buffer = vkBuffer->handle;
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+    return vkBuffer->device->getBufferrAddress(vkBuffer->device->handle, &bufferInfo);
 }
 
 // ==================================================
@@ -7005,13 +6944,19 @@ PalResult PAL_CALL updateVkDescriptorSet(
     VkWriteDescriptorSet* writes = nullptr;
     VkDescriptorBufferInfo* bufferInfos = nullptr;
     VkDescriptorImageInfo* imageInfos = nullptr;
+    VkWriteDescriptorSetAccelerationStructureKHR* tlasInfos = nullptr;
+
     Uint32 bufferCount = 0;
     Uint32 imageCount = 0;
+    Uint32 tlasCount = 0;
 
     for (int i = 0; i < count; i++) {
         if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
             infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             bufferCount++;
+
+        } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
+            tlasCount++;
 
         } else {
             imageCount++;
@@ -7019,14 +6964,32 @@ PalResult PAL_CALL updateVkDescriptorSet(
     }
 
     writes = palAllocate(s_Vk.allocator, sizeof(VkWriteDescriptorSet) * count, 0);
+    if (!writes) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     bufferInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBufferInfo) * bufferCount, 0);
+    if (!bufferInfos && bufferCount) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
     imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * imageCount, 0);
-    if (!writes || !bufferInfos || !imageInfos) {
+    if (!imageInfos && imageCount) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    tlasInfos = palAllocate(
+        s_Vk.allocator,
+        sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasCount,
+        0);
+
+    if (!tlasInfos && tlasCount) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     Uint32 bufferIndex = 0;
     Uint32 imageIndex = 0;
+    Uint32 tlasIndex = 0;
     for (int i = 0; i < count; i++) {
         VkWriteDescriptorSet* write = &writes[i];
         write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -7051,6 +7014,17 @@ PalResult PAL_CALL updateVkDescriptorSet(
             bufferInfo->offset = infos[i].bufferInfo->offset;
             bufferInfo->range = infos[i].bufferInfo->size;
             write->pBufferInfo = bufferInfo;
+
+        } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
+            VkWriteDescriptorSetAccelerationStructureKHR* tlasInfo = &tlasInfos[tlasIndex++];
+            AccelerationStructure* ac = (AccelerationStructure*)infos[i].tlasInfo->tlas;
+
+            tlasInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+            tlasInfo->accelerationStructureCount = 1;
+            tlasInfo->pAccelerationStructures = &ac->handle;
+            tlasInfo->pNext = nullptr;
+            write->pNext = tlasInfo;
+
 
         } else {
             VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
@@ -7080,6 +7054,7 @@ PalResult PAL_CALL updateVkDescriptorSet(
     palFree(s_Vk.allocator, writes);
     palFree(s_Vk.allocator, bufferInfos);
     palFree(s_Vk.allocator, imageInfos);
+    palFree(s_Vk.allocator, tlasInfos);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7789,7 +7764,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
         return vkResultToPal(result);
     }
 
-    // allocate GPU only memory and bind
+    // allocate CPU upload memory and bind
     VkMemoryRequirements memReq = {0};
     s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->buffer, &memReq);
 
@@ -7797,7 +7772,8 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = memReq.size;
 
-    Uint32 memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memReq.memoryTypeBits);
+    Uint32 mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD] & memReq.memoryTypeBits;
+    Uint32 memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, mask);
     allocateInfo.memoryTypeIndex = memoryIndex;
 
     VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
@@ -7817,44 +7793,6 @@ PalResult PAL_CALL createVkRayTracingPipeline(
         return vkResultToPal(result);
     }
     s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->bufferMemory, 0);
-
-    // create staging buffer
-    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufCreateInfo.size = bufferSize;
-    bufCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    result = s_Vk.createBuffer(
-        vkDevice->handle,
-        &bufCreateInfo,
-        &s_Vk.vkAllocator,
-        &sbt->stagingBuffer);
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-
-    s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->stagingBuffer, &memReq);
-    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocateInfo.allocationSize = memReq.size;
-
-    memoryIndex = findBestMemoryIndex(vkDevice->phyDevice, memReq.memoryTypeBits);
-    allocateInfo.memoryTypeIndex = memoryIndex;
-
-    result = s_Vk.allocateMemory(
-        vkDevice->handle,
-        &allocateInfo,
-        &s_Vk.vkAllocator,
-        &sbt->stagingBufferMemory);
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-    s_Vk.bindBufferMemory(vkDevice->handle, sbt->stagingBuffer, sbt->stagingBufferMemory, 0);
 
     // get shader handles
     Uint32 totalGroups = numRaygen + numHit + numMiss + numCallable;
@@ -7878,11 +7816,10 @@ PalResult PAL_CALL createVkRayTracingPipeline(
         return vkResultToPal(result);
     }
 
-    // copy handles into the GPU buffer
-    // we need a one time submit command buffer to do this operation
+    // copy handles into the buffer
     Uint32 index = 0;
     void* ptr = nullptr;
-    result = s_Vk.mapMemory(vkDevice->handle, sbt->stagingBufferMemory, 0, memReq.size, 0, &ptr);
+    result = s_Vk.mapMemory(vkDevice->handle, sbt->bufferMemory, 0, memReq.size, 0, &ptr);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
         palFree(s_Vk.allocator, sbt);
@@ -7928,58 +7865,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
 
         index++;
     }
-    s_Vk.unmapMemory(vkDevice->handle, sbt->stagingBufferMemory);
-
-    // copy CPU buffer to GPU buffer
-    VkCommandBufferBeginInfo cmdBeginInfo = {0};
-    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    result = s_Vk.cmdBegin(vkDevice->cmdBuffer, &cmdBeginInfo);
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-
-    VkBufferCopy copyRegion = {0};
-    copyRegion.size = bufferSize;
-    s_Vk.cmdCopyBuffer(vkDevice->cmdBuffer, sbt->stagingBuffer, sbt->buffer, 1, &copyRegion);
-
-    result = s_Vk.cmdEnd(vkDevice->cmdBuffer);
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-
-    // create a signal semaphore so we dont block until GPU finishes
-    VkSemaphoreCreateInfo semaphoreCreateInfo = {0};
-    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    result = s_Vk.createSemaphore(
-        vkDevice->handle,
-        &semaphoreCreateInfo,
-        &s_Vk.vkAllocator,
-        &sbt->semaphore);
-
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
-
-    VkSubmitInfo submitInfo = {0};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &vkDevice->cmdBuffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &sbt->semaphore;
-
-    result = s_Vk.queueSubmit(vkDevice->phyQueues[0].handle, 1, &submitInfo, VK_NULL_HANDLE);
-    if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, sbt);
-        return vkResultToPal(result);
-    }
+    s_Vk.unmapMemory(vkDevice->handle, sbt->bufferMemory);
 
     // cache SBT fields and offsets address
     VkBufferDeviceAddressInfo bufferAddressInfo = {0};
@@ -8024,11 +7910,8 @@ void PAL_CALL destroyVkPipeline(PalPipeline* pipeline)
         VkDevice device = vkPipeline->device->handle;
         ShaderBindingTable* sbt = vkPipeline->sbt;
 
-        s_Vk.destroySemaphore(device, sbt->semaphore, &s_Vk.vkAllocator);
         s_Vk.destroyBuffer(device, sbt->buffer, &s_Vk.vkAllocator);
         s_Vk.freeMemory(device, sbt->bufferMemory, &s_Vk.vkAllocator);
-        s_Vk.destroyBuffer(device, sbt->stagingBuffer, &s_Vk.vkAllocator);
-        s_Vk.freeMemory(device, sbt->stagingBufferMemory, &s_Vk.vkAllocator);
 
         palFree(s_Vk.allocator, vkPipeline->sbt);
     }

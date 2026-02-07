@@ -55,10 +55,22 @@ bool rayTracingTest()
     PalShader* raygenShader = nullptr;
     PalShader* missShader = nullptr;
     PalShader* closestHitShader = nullptr;
+
     PalBuffer* buffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
+    PalBuffer* vertexBuffer = nullptr;
+    PalBuffer* instanceBuffer = nullptr;
+    PalBuffer* blasBuffer = nullptr;
+    PalBuffer* tlasBuffer = nullptr;
+    PalBuffer* scratchBuffer = nullptr;
+
     PalMemory* bufferMemory = nullptr;
     PalMemory* stagingBufferMemory = nullptr;
+    PalMemory* vertexBufferMemory = nullptr;
+    PalMemory* instanceBufferMemory = nullptr;
+    PalMemory* blasBufferMemory = nullptr;
+    PalMemory* tlasBufferMemory = nullptr;
+    PalMemory* scratchBufferMemory = nullptr;
 
     PalDescriptorSetLayout* descriptorSetLayout = nullptr;
     PalDescriptorPool* descriptorPool = nullptr;
@@ -67,11 +79,14 @@ bool rayTracingTest()
     PalPipeline* pipeline = nullptr;
     PalFence* fence = nullptr;
 
+    PalAccelerationStructure* blas = nullptr;
+    PalAccelerationStructure* tlas = nullptr;
+
     PalGraphicsDebugger debugger;
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -367,19 +382,347 @@ bool rayTracingTest()
         return false;
     }
 
+    // create a vertex buffer to store the vertices in
+    float vertices[] = {
+        0.0f, 0.5f,
+        0.5f, -0.5f,
+       -0.5f, -0.5f};
+
+    bufferCreateInfo.size = sizeof(vertices);
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+
+    result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create vertex buffer: %s", error);
+        return false;
+    }
+
+    // we dont create a staging buffer to copy the vertices
+    // since we just need the buffer to create the acceleration structure
+    // its still recommended to create a staging buffer so the vertex buffer
+    // is GPU memory only
+    result = palGetBufferMemoryRequirements(vertexBuffer, &bufferMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
+        return false;
+    }
+
+    result = palAllocateMemory(
+        device,
+        PAL_MEMORY_TYPE_CPU_UPLOAD,
+        bufferMemReq.memoryMask,
+        bufferMemReq.size,
+        &vertexBufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(vertexBuffer, vertexBufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind memory: %s", error);
+        return false;
+    }
+
+    // copy vertices
+    void* data = nullptr;
+    result = palMapMemory(device, vertexBufferMemory, 0, sizeof(vertices), &data);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to map memory: %s", error);
+        return false;
+    }
+
+    memcpy(data, vertices, sizeof(vertices));
+    palUnmapMemory(device, vertexBufferMemory);
+
+    // fill BLAS and triangle geometry
+    PalDeviceAddress vertexBufferAddress = palGetBufferDeviceAddress(vertexBuffer);
+    PalGeometryDataTriangle triangle = {0};
+    triangle.vertexBufferAddress = vertexBufferAddress;
+    triangle.vertexCount = 3;
+    triangle.vertexOffset = 0;
+    triangle.vertexType = PAL_VERTEX_TYPE_FLOAT2;
+    triangle.vertexStride = sizeof(float) * 2;
+
+    PalGeometry geometry = {0};
+    geometry.data = &triangle;
+    geometry.primitiveCount = 1;
+    geometry.type = PAL_GEOMETRY_TYPE_TRIANGLE;
+
+    PalAccelerationStructureBuildInfo blasBuildInfo = {0};
+    blasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    blasBuildInfo.scratchBufferOffset = 0;
+    blasBuildInfo.geometryCount = 1;
+    blasBuildInfo.geometries = &geometry;
+
+    // get the build sizes for blas
+    PalAccelerationStructureBuildSize buildSizes = {0};
+    result = palGetAccelerationStructureBuildSize(device, &blasBuildInfo, &buildSizes);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get blas build sizes: %s", error);
+        return false;
+    }
+
+    // create the blas buffer and blas
+    bufferCreateInfo.size = buildSizes.accelerationStructureSize;
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+
+    result = palCreateBuffer(device, &bufferCreateInfo, &blasBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create blas buffer: %s", error);
+        return false;
+    }
+
+    result = palGetBufferMemoryRequirements(blasBuffer, &bufferMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
+        return false;
+    }
+
+    result = palAllocateMemory(
+        device,
+        PAL_MEMORY_TYPE_GPU_ONLY,
+        bufferMemReq.memoryMask,
+        bufferMemReq.size,
+        &blasBufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(blasBuffer, blasBufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind memory: %s", error);
+        return false;
+    }
+
+    PalAccelerationStructureCreateInfo asCreateInfo = {0};
+    asCreateInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    asCreateInfo.buffer = blasBuffer;
+    asCreateInfo.size = buildSizes.accelerationStructureSize;
+
+    result = palCreateAccelerationstructure(device, &asCreateInfo, &blas);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create blas: %s", error);
+        return false;
+    }
+
+    // create instance buffer
+    PalAccelerationStructureInstance asInstance = {0};
+    asInstance.blas = blas;
+    asInstance.instanceId = 0;
+    asInstance.mask = 0xFF;
+
+    float transform[12] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f
+    };
+    // memcpy(asInstance.transform, transform, sizeof(float) * 12);
+
+    bufferCreateInfo.size = sizeof(PalAccelerationStructureInstance);
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+
+    result = palCreateBuffer(device, &bufferCreateInfo, &instanceBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create instance buffer: %s", error);
+        return false;
+    }
+
+    result = palGetBufferMemoryRequirements(instanceBuffer, &bufferMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
+        return false;
+    }
+
+    result = palAllocateMemory(
+        device,
+        PAL_MEMORY_TYPE_CPU_UPLOAD,
+        bufferMemReq.memoryMask,
+        bufferMemReq.size,
+        &instanceBufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(instanceBuffer, instanceBufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind memory: %s", error);
+        return false;
+    }
+
+    // copy instance struct to the buffer
+    data = nullptr;
+    result = palMapMemory(
+        device,
+        instanceBufferMemory,
+        0,
+        sizeof(PalAccelerationStructureInstance),
+        &data);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to map memory: %s", error);
+        return false;
+    }
+
+    memcpy(data, &asInstance, sizeof(PalAccelerationStructureInstance));
+    palUnmapMemory(device, instanceBufferMemory);
+
+    // fill TLAS and instance geometry
+    PalDeviceAddress instanceBufferAddress = palGetBufferDeviceAddress(instanceBuffer);
+    PalGeometryDataInstance instance = {0};
+    instance.offset = 0;
+    instance.bufferAddress = instanceBufferAddress;
+
+    PalGeometry instanceGeometry = {0};
+    instanceGeometry.data = &instance;
+    instanceGeometry.primitiveCount = 1;
+    instanceGeometry.type = PAL_GEOMETRY_TYPE_INSTANCE;
+
+    PalAccelerationStructureBuildInfo tlasBuildInfo = {0};
+    tlasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    tlasBuildInfo.scratchBufferOffset = 0;
+    tlasBuildInfo.geometryCount = 1;
+    tlasBuildInfo.geometries = &instanceGeometry;
+
+    // get the build sizes for tlas
+    Uint32 blasScratchSize = buildSizes.scratchBufferSize;
+    result = palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get tlas build sizes: %s", error);
+        return false;
+    }
+
+    // create the tlas buffer and tlas
+    bufferCreateInfo.size = buildSizes.accelerationStructureSize;
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+
+    result = palCreateBuffer(device, &bufferCreateInfo, &tlasBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create tlas buffer: %s", error);
+        return false;
+    }
+
+    result = palGetBufferMemoryRequirements(tlasBuffer, &bufferMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
+        return false;
+    }
+
+    result = palAllocateMemory(
+        device,
+        PAL_MEMORY_TYPE_GPU_ONLY,
+        bufferMemReq.memoryMask,
+        bufferMemReq.size,
+        &tlasBufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(tlasBuffer, tlasBufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind memory: %s", error);
+        return false;
+    }
+
+    asCreateInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    asCreateInfo.buffer = tlasBuffer;
+    asCreateInfo.size = buildSizes.accelerationStructureSize;
+
+    result = palCreateAccelerationstructure(device, &asCreateInfo, &tlas);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create tlas: %s", error);
+        return false;
+    }
+
+    // create scratch buffer
+    bufferCreateInfo.size = buildSizes.scratchBufferSize + blasScratchSize;;
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_STORAGE;
+    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
+
+    result = palCreateBuffer(device, &bufferCreateInfo, &scratchBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create scratch buffer: %s", error);
+        return false;
+    }
+
+    result = palGetBufferMemoryRequirements(scratchBuffer, &bufferMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
+        return false;
+    }
+
+    result = palAllocateMemory(
+        device,
+        PAL_MEMORY_TYPE_GPU_ONLY,
+        bufferMemReq.memoryMask,
+        bufferMemReq.size,
+        &scratchBufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(scratchBuffer, scratchBufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind memory: %s", error);
+        return false;
+    }
+
     // create descriptor set layout
-    PalDescriptorSetLayoutBinding descriptorBinding = {0};
+    PalDescriptorSetLayoutBinding descriptorBindings[2];
     PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_RAYGEN };
 
-    descriptorBinding.binding = 0;
-    descriptorBinding.descriptorCount = 1; // not an array
-    descriptorBinding.descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptorBinding.shaderStageCount = 1;
-    descriptorBinding.shaderStages = shaderStages;
+    // storage buffer to write to
+    descriptorBindings[0].binding = 0;
+    descriptorBindings[0].descriptorCount = 1; // not an array
+    descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptorBindings[0].shaderStageCount = 1;
+    descriptorBindings[0].shaderStages = shaderStages;
+
+    // acceleration buffer
+    descriptorBindings[1].binding = 1;
+    descriptorBindings[1].descriptorCount = 1; // not an array
+    descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
+    descriptorBindings[1].shaderStageCount = 1;
+    descriptorBindings[1].shaderStages = shaderStages;
 
     PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
-    descriptorSetLayoutcreateInfo.bindingCount = 1;
-    descriptorSetLayoutcreateInfo.bindings = &descriptorBinding;
+    descriptorSetLayoutcreateInfo.bindingCount = 2;
+    descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
 
     result = palCreateDescriptorSetLayout(
         device,
@@ -393,14 +736,17 @@ bool rayTracingTest()
     }
 
     // create descriptor pool
-    PalDescriptorPoolBindingSize storageBufferBindingsize = {0};
-    storageBufferBindingsize.bindingCount = 1;
-    storageBufferBindingsize.descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    PalDescriptorPoolBindingSize bindingSizes[2];
+    bindingSizes[0].bindingCount = 1;
+    bindingSizes[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+    bindingSizes[1].bindingCount = 1;
+    bindingSizes[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
 
     PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
-    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 1; // one binding type
-    descriptorPoolCreateInfo.bindingSizes = &storageBufferBindingsize;
+    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 2; // two binding type
+    descriptorPoolCreateInfo.bindingSizes = bindingSizes;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
     if (result != PAL_RESULT_SUCCESS) {
@@ -419,19 +765,28 @@ bool rayTracingTest()
     }
 
     // write the inital data to the descriptor set since its created empty
-    PalDescriptorBufferInfo descriptorBufferInfo = {0};
-    descriptorBufferInfo.buffer = buffer;
-    descriptorBufferInfo.offset = 0;
-    descriptorBufferInfo.size = bufferBytes;
+    PalDescriptorBufferInfo descriptorStorageBufferInfo = {0};
+    descriptorStorageBufferInfo.buffer = buffer;
+    descriptorStorageBufferInfo.offset = 0;
+    descriptorStorageBufferInfo.size = bufferBytes;
 
-    PalDescriptorSetWriteInfo writeInfo = {0};
-    writeInfo.binding = 0;
-    writeInfo.bufferInfo = &descriptorBufferInfo;
-    writeInfo.descriptorSet = descriptorSet;
-    writeInfo.descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    writeInfo.descriptorCount = 1;
+    PalDescriptorTLASInfo descriptorTlasInfo;
+    descriptorTlasInfo.tlas = tlas;
 
-    result = palUpdateDescriptorSet(device, 1, &writeInfo);
+    PalDescriptorSetWriteInfo writeInfos[2];
+    writeInfos[0].binding = 0;
+    writeInfos[0].bufferInfo = &descriptorStorageBufferInfo;
+    writeInfos[0].descriptorSet = descriptorSet;
+    writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    writeInfos[0].descriptorCount = 1;
+
+    writeInfos[1].binding = 1;
+    writeInfos[1].tlasInfo = &descriptorTlasInfo;
+    writeInfos[1].descriptorSet = descriptorSet;
+    writeInfos[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
+    writeInfos[1].descriptorCount = 1;
+
+    result = palUpdateDescriptorSet(device, 2, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to update descriptor set: %s", error);
@@ -537,6 +892,28 @@ bool rayTracingTest()
         return false;
     }
 
+    // build the blas and tlas infos
+    PalDeviceAddress scratchBufferAddress = palGetBufferDeviceAddress(scratchBuffer);
+    blasBuildInfo.dst = blas;
+    blasBuildInfo.scratchBufferAddress = scratchBufferAddress;
+
+    tlasBuildInfo.dst = tlas;
+    tlasBuildInfo.scratchBufferAddress = scratchBufferAddress;
+
+    result = palBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to build blas: %s", error);
+        return false;
+    }
+
+    result = palBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to build tlas: %s", error);
+        return false;
+    }
+
     result = palTraceRays(cmdBuffer, BUFFER_SIZE, BUFFER_SIZE, 1);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -635,6 +1012,9 @@ bool rayTracingTest()
     fclose(file);
     palUnmapMemory(device, stagingBufferMemory);
 
+    palDestroyAccelerationstructure(blas);
+    palDestroyAccelerationstructure(tlas);
+
     palDestroyFence(fence);
     palDestroyPipeline(pipeline);
     palDestroyPipelineLayout(pipelineLayout);
@@ -643,8 +1023,19 @@ bool rayTracingTest()
 
     palDestroyBuffer(buffer);
     palDestroyBuffer(stagingBuffer);
+    palDestroyBuffer(vertexBuffer);
+    palDestroyBuffer(instanceBuffer);
+    palDestroyBuffer(blasBuffer);
+    palDestroyBuffer(tlasBuffer);
+    palDestroyBuffer(scratchBuffer);
+
     palFreeMemory(device, bufferMemory);
     palFreeMemory(device, stagingBufferMemory);
+    palFreeMemory(device, vertexBufferMemory);
+    palFreeMemory(device, instanceBufferMemory);
+    palFreeMemory(device, blasBufferMemory);
+    palFreeMemory(device, tlasBufferMemory);
+    palFreeMemory(device, scratchBufferMemory);
 
     palDestroyShader(raygenShader);
     palDestroyShader(missShader);

@@ -129,7 +129,7 @@ PalResult PAL_CALL waitVkDevice(PalDevice* device);
 PalResult PAL_CALL allocateVkMemory(
     PalDevice* device,
     PalMemoryType type,
-    Uint32 memoryMask,
+    Uint64 memoryMask,
     Uint64 size,
     PalMemory** outMemory);
 
@@ -461,7 +461,7 @@ PalResult PAL_CALL traceRaysVk(
 
 PalResult PAL_CALL traceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer);
+    PalDeviceAddress bufferAddress);
 
 PalResult PAL_CALL bindVkDescriptorSet(
     PalCommandBuffer* cmdBuffer,
@@ -510,6 +510,8 @@ PalResult PAL_CALL bindVkBufferMemory(
     PalBuffer* buffer,
     PalMemory* memory,
     Uint64 offset);
+
+PalDeviceAddress PAL_CALL getVkBufferDeviceAddress(PalBuffer* buffer);
 
 PalResult PAL_CALL mapVkMemory(
     PalDevice* device,
@@ -670,6 +672,7 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyBuffer = destroyVkBuffer,
     .getBufferMemoryRequirements = getVkBufferMemoryRequirements,
     .bindBufferMemory = bindVkBufferMemory,
+    .getBufferDeviceAddress = getVkBufferDeviceAddress,
     .createDescriptorSetLayout = createVkDescriptorSetLayout,
     .destroyDescriptorSetLayout = destroyVkDescriptorSetLayout,
     .createDescriptorPool = createVkDescriptorPool,
@@ -810,6 +813,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyBuffer                         ||
         !backend->getBufferMemoryRequirements           ||
         !backend->bindBufferMemory                      ||
+        !backend->getBufferDeviceAddress                ||
         !backend->mapMemory                             ||
         !backend->unmapMemory                           ||
         !backend->createDescriptorSetLayout             ||
@@ -1041,7 +1045,7 @@ PalResult PAL_CALL palWaitDevice(PalDevice* device)
 PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
-    Uint32 memoryMask,
+    Uint64 memoryMask,
     Uint64 size,
     PalMemory** outMemory)
 {
@@ -1890,7 +1894,7 @@ PalResult PAL_CALL palDrawMeshTasksIndirectCount(
         stride);
 }
 
-PalResult PAL_CALL palBuildAccelerationStructures(
+PalResult PAL_CALL palBuildAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
@@ -1899,6 +1903,10 @@ PalResult PAL_CALL palBuildAccelerationStructures(
     }
 
     if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->dst || info->scratchBufferAddress == 0) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -2264,17 +2272,17 @@ PalResult PAL_CALL palTraceRays(
 
 PalResult PAL_CALL palTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer)
+    PalDeviceAddress bufferAddress)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !buffer) {
+    if (!cmdBuffer) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->traceRaysIndirect(cmdBuffer, buffer);
+    return cmdBuffer->backend->traceRaysIndirect(cmdBuffer, bufferAddress);
 }
 
 PalResult PAL_CALL palBindDescriptorSet(
@@ -2391,10 +2399,6 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    if (!info->scratchBuffer || !info->dst) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
     return device->backend->getAccelerationStructureBuildSize(device, info, size);
 }
 
@@ -2492,6 +2496,14 @@ void PAL_CALL palUnmapMemory(
         return;
     }
     device->backend->unmapMemory(device, memory);
+}
+
+PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer)
+{
+    if (!s_Graphics.initialized || !buffer) {
+        return 0;
+    }
+    return buffer->backend->getBufferDeviceAddress(buffer);
 }
 
 // ==================================================

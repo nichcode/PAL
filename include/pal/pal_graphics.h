@@ -66,6 +66,7 @@ typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 typedef enum PalDebugMessageSeverity PalDebugMessageSeverity;
 typedef enum PalDebugMessageType PalDebugMessageType;
+typedef Uint64 PalDeviceAddress;
 
 typedef void(PAL_CALL* PalDebugCallback)(
     void* userData,
@@ -518,7 +519,7 @@ typedef enum {
     PAL_BUFFER_USAGE_STORAGE = PAL_BIT(3),
     PAL_BUFFER_USAGE_TRANSFER_SRC = PAL_BIT(4),
     PAL_BUFFER_USAGE_TRANSFER_DST = PAL_BIT(5),
-    PAL_BUFFER_USAGE_RAY_TRACING = PAL_BIT(6),
+    PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE = PAL_BIT(6),
     PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(7)
 } PalBufferUsages;
 
@@ -562,7 +563,8 @@ typedef enum {
     PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
     PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
     PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-    PAL_DESCRIPTOR_TYPE_SAMPLER
+    PAL_DESCRIPTOR_TYPE_SAMPLER,
+    PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE
 } PalDescriptorType;
 
 typedef enum {
@@ -730,9 +732,9 @@ typedef struct {
 
 typedef struct {
     bool memoryTypes[PAL_MEMORY_TYPE_MAX];
+    Uint64 memoryMask;
     Uint64 size;
     Uint32 alignment;
-    Uint32 memoryMask;
 } PalMemoryRequirements;
 
 typedef struct {
@@ -890,19 +892,19 @@ typedef struct {
     Uint32 vertexCount;
     Uint64 vertexOffset;
     Uint64 indexOffset;
-    PalBuffer* vertexBuffer;
-    PalBuffer* indexBuffer;
+    PalDeviceAddress vertexBufferAddress;
+    PalDeviceAddress indexBufferAddress;
 } PalGeometryDataTriangle;
 
 typedef struct {
     Uint32 stride;
     Uint64 offset;
-    PalBuffer* buffer;
+    PalDeviceAddress bufferAddress;
 } PalGeometryDataAABBS;
 
 typedef struct {
     Uint64 offset;
-    PalBuffer* buffer;
+    PalDeviceAddress bufferAddress;
 } PalGeometryDataInstance;
 
 typedef struct {
@@ -916,7 +918,7 @@ typedef struct {
     Uint32 geometryCount;
     Uint64 scratchBufferOffset;
     PalAccelerationStructure* dst;
-    PalBuffer* scratchBuffer;
+    PalDeviceAddress scratchBufferAddress;
     PalGeometry* geometries;
 } PalAccelerationStructureBuildInfo;
 
@@ -945,6 +947,10 @@ typedef struct {
 } PalDescriptorImageViewInfo;
 
 typedef struct {
+    PalAccelerationStructure* tlas;
+} PalDescriptorTLASInfo;
+
+typedef struct {
     Uint32 binding;
     Uint32 arrayElement;
     Uint32 descriptorCount;
@@ -952,6 +958,7 @@ typedef struct {
     PalDescriptorSet* descriptorSet;
     PalDescriptorBufferInfo* bufferInfo;
     PalDescriptorImageViewInfo* imageViewInfo;
+    PalDescriptorTLASInfo* tlasInfo;
 } PalDescriptorSetWriteInfo;
 
 typedef struct {
@@ -1094,7 +1101,7 @@ typedef struct {
     PalResult PAL_CALL (*allocateMemory)(
         PalDevice* device,
         PalMemoryType type,
-        Uint32 memoryMask,
+        Uint64 memoryMask,
         Uint64 size,
         PalMemory** outMemory);
 
@@ -1437,7 +1444,7 @@ typedef struct {
 
     PalResult PAL_CALL (*traceRaysIndirect)(
         PalCommandBuffer* cmdBuffer,
-        PalBuffer* buffer);
+        PalDeviceAddress bufferAddress);
 
     PalResult PAL_CALL (*bindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
@@ -1486,6 +1493,8 @@ typedef struct {
         PalBuffer* buffer,
         PalMemory* memory,
         Uint64 offset);
+
+    PalDeviceAddress PAL_CALL (*getBufferDeviceAddress)(PalBuffer* buffer);
 
     PalResult PAL_CALL (*createDescriptorSetLayout)(
         PalDevice* device,
@@ -1573,7 +1582,7 @@ PAL_API PalResult PAL_CALL palWaitDevice(PalDevice* device);
 PAL_API PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
-    Uint32 memoryMask,
+    Uint64 memoryMask,
     Uint64 size,
     PalMemory** outMemory);
 
@@ -1916,7 +1925,7 @@ PAL_API PalResult PAL_CALL palTraceRays(
 
 PAL_API PalResult PAL_CALL palTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer);
+    PalDeviceAddress bufferAddress);
 
 PAL_API PalResult PAL_CALL palBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
@@ -1965,6 +1974,8 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
     PalBuffer* buffer,
     PalMemory* memory,
     Uint64 offset);
+
+PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
 
 PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
     PalDevice* device,
