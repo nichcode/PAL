@@ -556,6 +556,8 @@ typedef enum {
     PAL_USAGE_STATE_STORAGE_WRITE,
     PAL_USAGE_STATE_HOST_READ,
     PAL_USAGE_STATE_HOST_WRITE,
+    PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ,
+    PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE
 } PalUsageState;
 
 typedef enum {
@@ -738,6 +740,11 @@ typedef struct {
 } PalMemoryRequirements;
 
 typedef struct {
+    Uint64 size;
+    Uint32 alignment;
+} PalInstanceBufferRequirements;
+
+typedef struct {
     Uint64 waitValue;
     Uint64 signalValue;
     PalCommandBuffer* cmdBuffer;
@@ -890,20 +897,16 @@ typedef struct {
     Uint32 vertexStride;
     Uint32 indexCount;
     Uint32 vertexCount;
-    Uint64 vertexOffset;
-    Uint64 indexOffset;
     PalDeviceAddress vertexBufferAddress;
     PalDeviceAddress indexBufferAddress;
 } PalGeometryDataTriangle;
 
 typedef struct {
     Uint32 stride;
-    Uint64 offset;
     PalDeviceAddress bufferAddress;
 } PalGeometryDataAABBS;
 
 typedef struct {
-    Uint64 offset;
     PalDeviceAddress bufferAddress;
 } PalGeometryDataInstance;
 
@@ -916,7 +919,6 @@ typedef struct {
 typedef struct {
     PalAccelerationStructureType type;
     Uint32 geometryCount;
-    Uint64 scratchBufferOffset;
     PalAccelerationStructure* dst;
     PalDeviceAddress scratchBufferAddress;
     PalGeometry* geometries;
@@ -1404,6 +1406,11 @@ typedef struct {
         Uint64 countBufferOffset,
         Uint32 count);
 
+    PalResult PAL_CALL (*memoryBarrier)(
+        PalCommandBuffer* cmdBuffer,
+        PalUsageStateInfo* oldUsageStateInfo,
+        PalUsageStateInfo* newUsageStateInfo);
+
     PalResult PAL_CALL (*imageViewBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalImageView* imageView,
@@ -1488,6 +1495,17 @@ typedef struct {
     PalResult PAL_CALL (*getBufferMemoryRequirements)(
         PalBuffer* buffer,
         PalMemoryRequirements* requirements);
+
+    PalResult PAL_CALL (*computeInstanceBufferRequirements)(
+        PalDevice* device,
+        PalInstanceBufferRequirements* requirements,
+        Uint32 instanceCount);
+
+    PalResult PAL_CALL (*writeInstancesToMappedMemory)(
+        PalDevice* device,
+        void* ptr,
+        PalAccelerationStructureInstance* instances,
+        Uint32 instanceCount);
 
     PalResult PAL_CALL (*bindBufferMemory)(
         PalBuffer* buffer,
@@ -1885,6 +1903,11 @@ PAL_API PalResult PAL_CALL palDrawIndexedIndirectCount(
     Uint64 countBufferOffset,
     Uint32 count);
 
+PAL_API PalResult PAL_CALL palMemoryBarrier(
+    PalCommandBuffer* cmdBuffer,
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo);
+
 PAL_API PalResult PAL_CALL palImageViewBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
@@ -1969,6 +1992,17 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
 PAL_API PalResult PAL_CALL palGetBufferMemoryRequirements(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements);
+
+PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
+    PalDevice* device,
+    PalInstanceBufferRequirements* requirements,
+    Uint32 instanceCount);
+
+PAL_API PalResult PAL_CALL palWriteInstancesToMappedMemory(
+    PalDevice* device,
+    void* ptr,
+    PalAccelerationStructureInstance* instances,
+    Uint32 instanceCount);
 
 PAL_API PalResult PAL_CALL palBindBufferMemory(
     PalBuffer* buffer,

@@ -86,7 +86,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -384,9 +384,9 @@ bool rayTracingTest()
 
     // create a vertex buffer to store the vertices in
     float vertices[] = {
-        0.0f, 0.5f,
-        0.5f, -0.5f,
-       -0.5f, -0.5f};
+        0.0f, 1.0f,
+        1.0f, -1.0f,
+       -1.0f, -1.0f};
 
     bufferCreateInfo.size = sizeof(vertices);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
@@ -446,7 +446,6 @@ bool rayTracingTest()
     PalGeometryDataTriangle triangle = {0};
     triangle.vertexBufferAddress = vertexBufferAddress;
     triangle.vertexCount = 3;
-    triangle.vertexOffset = 0;
     triangle.vertexType = PAL_VERTEX_TYPE_FLOAT2;
     triangle.vertexStride = sizeof(float) * 2;
 
@@ -457,7 +456,6 @@ bool rayTracingTest()
 
     PalAccelerationStructureBuildInfo blasBuildInfo = {0};
     blasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    blasBuildInfo.scratchBufferOffset = 0;
     blasBuildInfo.geometryCount = 1;
     blasBuildInfo.geometries = &geometry;
 
@@ -531,9 +529,17 @@ bool rayTracingTest()
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f
     };
-    // memcpy(asInstance.transform, transform, sizeof(float) * 12);
+    memcpy(asInstance.transform, transform, sizeof(float) * 12);
 
-    bufferCreateInfo.size = sizeof(PalAccelerationStructureInstance);
+    PalInstanceBufferRequirements instanceBufferReq = {0};
+    result = palComputeInstanceBufferRequirements(device, &instanceBufferReq, 1);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to compute instance buffer requirement: %s", error);
+        return false;
+    }
+
+    bufferCreateInfo.size = instanceBufferReq.size;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &instanceBuffer);
@@ -576,7 +582,7 @@ bool rayTracingTest()
         device,
         instanceBufferMemory,
         0,
-        sizeof(PalAccelerationStructureInstance),
+        instanceBufferReq.size,
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -585,13 +591,19 @@ bool rayTracingTest()
         return false;
     }
 
-    memcpy(data, &asInstance, sizeof(PalAccelerationStructureInstance));
+    // we can not use a direct memcpy for instance buffers
+    result = palWriteInstancesToMappedMemory(device, data, &asInstance, 1);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to write instances to instance buffer: %s", error);
+        return false;
+    }
+
     palUnmapMemory(device, instanceBufferMemory);
 
     // fill TLAS and instance geometry
     PalDeviceAddress instanceBufferAddress = palGetBufferDeviceAddress(instanceBuffer);
     PalGeometryDataInstance instance = {0};
-    instance.offset = 0;
     instance.bufferAddress = instanceBufferAddress;
 
     PalGeometry instanceGeometry = {0};
@@ -601,7 +613,6 @@ bool rayTracingTest()
 
     PalAccelerationStructureBuildInfo tlasBuildInfo = {0};
     tlasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    tlasBuildInfo.scratchBufferOffset = 0;
     tlasBuildInfo.geometryCount = 1;
     tlasBuildInfo.geometries = &instanceGeometry;
 
@@ -907,10 +918,38 @@ bool rayTracingTest()
         return false;
     }
 
+    // make sure the BLAS builds before the TLAS
+    PalUsageStateInfo oldAsUsageStateInfo = {0};
+    oldAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
+    oldAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
+
+    PalUsageStateInfo newAsUsageStateInfo = {0};
+    newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
+    newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
+
+    result = palMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set memory barrier: %s", error);
+        return false;
+    }
+
     result = palBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to build tlas: %s", error);
+        return false;
+    }
+
+    // make sure the TLAS builds before the tracing
+    oldAsUsageStateInfo = newAsUsageStateInfo;
+    newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
+    newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
+
+    result = palMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set memory barrier: %s", error);
         return false;
     }
 

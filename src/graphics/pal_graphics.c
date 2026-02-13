@@ -421,6 +421,11 @@ PalResult PAL_CALL drawIndexedIndirectCountVk(
     Uint64 countBufferOffset,
     Uint32 count);
 
+PalResult PAL_CALL memoryBarrierVk(
+    PalCommandBuffer* cmdBuffer,
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo);
+
 PalResult PAL_CALL imageViewBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
@@ -505,6 +510,17 @@ void PAL_CALL destroyVkBuffer(PalBuffer* buffer);
 PalResult PAL_CALL getVkBufferMemoryRequirements(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements);
+
+PalResult PAL_CALL computeVkInstanceBufferRequirements(
+    PalDevice* device,
+    PalInstanceBufferRequirements* requirements,
+    Uint32 instanceCount);
+
+PalResult PAL_CALL writeVkInstancesToMappedMemory(
+    PalDevice* device,
+    void* ptr,
+    PalAccelerationStructureInstance* instances,
+    Uint32 instanceCount);
 
 PalResult PAL_CALL bindVkBufferMemory(
     PalBuffer* buffer,
@@ -655,6 +671,7 @@ static PalGraphicsBackend s_VkBackend = {
     .drawIndexed = drawIndexedVk,
     .drawIndexedIndirect = drawIndexedIndirectVk,
     .drawIndexedIndirectCount = drawIndexedIndirectCountVk,
+    .memoryBarrier = memoryBarrierVk,
     .imageViewBarrier = imageViewBarrierVk,
     .bufferBarrier = bufferBarrierVk,
     .dispatch = dispatchVk,
@@ -671,6 +688,8 @@ static PalGraphicsBackend s_VkBackend = {
     .createBuffer = createVkBuffer,
     .destroyBuffer = destroyVkBuffer,
     .getBufferMemoryRequirements = getVkBufferMemoryRequirements,
+    .computeInstanceBufferRequirements = computeVkInstanceBufferRequirements,
+    .writeInstancesToMappedMemory = writeVkInstancesToMappedMemory,
     .bindBufferMemory = bindVkBufferMemory,
     .getBufferDeviceAddress = getVkBufferDeviceAddress,
     .createDescriptorSetLayout = createVkDescriptorSetLayout,
@@ -796,6 +815,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->drawIndexed                           ||
         !backend->drawIndexedIndirect                   ||
         !backend->drawIndexedIndirectCount              ||
+        !backend->memoryBarrier                         ||
         !backend->imageViewBarrier                      ||
         !backend->bufferBarrier                         ||
         !backend->dispatch                              ||
@@ -812,6 +832,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createBuffer                          ||
         !backend->destroyBuffer                         ||
         !backend->getBufferMemoryRequirements           ||
+        !backend->computeInstanceBufferRequirements     ||
+        !backend->writeInstancesToMappedMemory          ||
         !backend->bindBufferMemory                      ||
         !backend->getBufferDeviceAddress                ||
         !backend->mapMemory                             ||
@@ -2151,6 +2173,25 @@ PalResult PAL_CALL palDrawIndexedIndirectCount(
         count);
 }
 
+PalResult PAL_CALL palMemoryBarrier(
+    PalCommandBuffer* cmdBuffer,
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !oldUsageStateInfo || !newUsageStateInfo) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->memoryBarrier(
+        cmdBuffer,
+        oldUsageStateInfo,
+        newUsageStateInfo);
+}
+
 PalResult PAL_CALL palImageViewBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
@@ -2161,7 +2202,7 @@ PalResult PAL_CALL palImageViewBarrier(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !imageView) {
+    if (!cmdBuffer || !imageView || !oldUsageStateInfo || !newUsageStateInfo) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -2182,7 +2223,7 @@ PalResult PAL_CALL palBufferBarrier(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !buffer) {
+    if (!cmdBuffer || !buffer || !oldUsageStateInfo || !newUsageStateInfo) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -2452,6 +2493,44 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
     }
 
     return buffer->backend->getBufferMemoryRequirements(buffer, requirements);
+}
+
+PalResult PAL_CALL palComputeInstanceBufferRequirements(
+    PalDevice* device,
+    PalInstanceBufferRequirements* requirements,
+    Uint32 instanceCount)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->computeInstanceBufferRequirements(device, requirements, instanceCount);
+}
+
+PalResult PAL_CALL palWriteInstancesToMappedMemory(
+    PalDevice* device,
+    void* ptr,
+    PalAccelerationStructureInstance* instances,
+    Uint32 instanceCount)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !ptr || !instances || instanceCount == 0) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    // HACK: since all blas have backend pointer, we use the first one
+    return device->backend->writeInstancesToMappedMemory(
+        device,
+        ptr,
+        instances,
+        instanceCount);
 }
 
 PalResult PAL_CALL palBindBufferMemory(

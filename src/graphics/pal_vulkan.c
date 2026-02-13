@@ -217,8 +217,6 @@ typedef struct {
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
-    VkCommandPool cmdPool;
-    VkCommandBuffer cmdBuffer;
     PFN_vkGetBufferDeviceAddress getBufferrAddress;
     PFN_vkCmdDispatchBase cmdDispatchBase;
 
@@ -1789,6 +1787,24 @@ static Barrier barrierToVk(PalUsageState state,
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
+
+        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+            barrier.dstStages = barrier.stages;
+
+            barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
+            barrier.stages = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+            barrier.dstStages = barrier.stages;
+
+            barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            return barrier;
+        }
     }
 
     barrier.stages = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
@@ -2031,13 +2047,13 @@ static void fillVkBuildInfo(
             VkDeviceOrHostAddressConstKHR indexAddress = {0};
             PalGeometryDataTriangle* tmpData = info->geometries[i].data;
 
-            vertexAddress.deviceAddress = tmpData->vertexBufferAddress + tmpData->vertexOffset;
+            vertexAddress.deviceAddress = tmpData->vertexBufferAddress;
             data->vertexData = vertexAddress;
-            data->maxVertex = tmpData->vertexCount;
+            data->maxVertex = tmpData->vertexCount - 1;
             data->vertexFormat = vertexTypeToVkFormat(tmpData->vertexType);
             data->vertexStride = tmpData->vertexStride;
 
-            indexAddress.deviceAddress = tmpData->indexBufferAddress + tmpData->indexOffset;
+            indexAddress.deviceAddress = tmpData->indexBufferAddress;
             data->indexData = indexAddress;
             if (tmpData->indexType == PAL_INDEX_TYPE_UINT32) {
                 data->indexType = VK_INDEX_TYPE_UINT32;
@@ -2057,7 +2073,7 @@ static void fillVkBuildInfo(
 
             VkDeviceOrHostAddressConstKHR address = {0};
             PalGeometryDataAABBS* tmpData = info->geometries[i].data;
-            address.deviceAddress = tmpData->bufferAddress + tmpData->offset;
+            address.deviceAddress = tmpData->bufferAddress;
             data->data = address;
             data->stride = tmpData->stride;
 
@@ -2070,7 +2086,7 @@ static void fillVkBuildInfo(
 
             VkDeviceOrHostAddressConstKHR address = {0};
             PalGeometryDataInstance* tmpData = info->geometries[i].data;
-            address.deviceAddress = tmpData->bufferAddress + tmpData->offset;
+            address.deviceAddress = tmpData->bufferAddress;
             data->data = address;
         }
 
@@ -2098,7 +2114,7 @@ static void fillVkBuildInfo(
     buildInfo->pGeometries = geometries;
 
     VkDeviceOrHostAddressKHR scratchData = {0};
-    scratchData.deviceAddress = info->scratchBufferAddress + info->scratchBufferOffset;
+    scratchData.deviceAddress = info->scratchBufferAddress;
     buildInfo->scratchData = scratchData;
 }
 
@@ -3829,36 +3845,6 @@ PalResult PAL_CALL createVkDevice(
                     "vkGetBufferDeviceAddressKHR");
         }
         device->features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
-
-        // create a temporary command pool and buffer to be used with ray tracing pipeline
-        // copy to the GPU buffer
-        VkCommandPoolCreateInfo poolCreateInfo = {0};
-        poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-
-        // technically, every queue type (compute, graphics, etc) will support
-        // buffer copy operation. So we use the first physical queue
-        poolCreateInfo.queueFamilyIndex = device->phyQueues[0].familyIndex;
-        result = s_Vk.createCommandPool(
-            device->handle,
-            &poolCreateInfo,
-            &s_Vk.vkAllocator,
-            &device->cmdPool);
-
-        if (result != VK_SUCCESS) {
-            palFree(s_Vk.allocator, device);
-            return vkResultToPal(result);
-        }
-
-        VkCommandBufferAllocateInfo cmdAllocateInfo = {0};
-        cmdAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        cmdAllocateInfo.commandBufferCount = 1;
-        cmdAllocateInfo.commandPool = device->cmdPool;
-        cmdAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        result = s_Vk.allocateCommandBuffer(device->handle, &cmdAllocateInfo, &device->cmdBuffer);
-        if (result != VK_SUCCESS) {
-            palFree(s_Vk.allocator, device);
-            return vkResultToPal(result);
-        }
     }
 
     // buffer address procs
@@ -3970,11 +3956,6 @@ PalResult PAL_CALL createVkDevice(
 void PAL_CALL destroyVkDevice(PalDevice* device)
 {
     Device* vkDevice = (Device*)device;
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        s_Vk.freeCommandBuffer(vkDevice->handle, vkDevice->cmdPool, 1, &vkDevice->cmdBuffer);
-        s_Vk.destroyCommandPool(vkDevice->handle, vkDevice->cmdPool, &s_Vk.vkAllocator);
-    }
-
     s_Vk.destroyDevice(vkDevice->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkDevice->phyQueues);
     palFree(s_Vk.allocator, vkDevice);
@@ -6226,6 +6207,36 @@ PalResult PAL_CALL drawIndexedIndirectCountVk(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL memoryBarrierVk(
+    PalCommandBuffer* cmdBuffer,
+    PalUsageStateInfo* oldUsageStateInfo,
+    PalUsageStateInfo* newUsageStateInfo)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    VkMemoryBarrier2KHR barrier = {0};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
+
+    Barrier old, new;
+    old = barrierToVk(oldUsageStateInfo->usageState, oldUsageStateInfo->shaderStage);
+    new = barrierToVk(newUsageStateInfo->usageState, newUsageStateInfo->shaderStage);
+
+    barrier.srcStageMask = old.stages;
+    barrier.srcAccessMask = old.access;
+
+    barrier.dstStageMask = new.stages;
+    barrier.dstAccessMask = new.access;
+
+    VkDependencyInfo dependencyInfo = {0};
+    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dependencyInfo.memoryBarrierCount = 1;
+    dependencyInfo.pMemoryBarriers = &barrier;
+
+    vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
+    vkCmdBuffer->dstStage = new.stages;
+    return PAL_RESULT_SUCCESS;
+
+}
+
 PalResult PAL_CALL imageViewBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalImageView* imageView,
@@ -6258,7 +6269,6 @@ PalResult PAL_CALL imageViewBarrierVk(
     dependencyInfo.pImageMemoryBarriers = &barrier;
 
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-
     vkCmdBuffer->dstStage = new.stages;
     return PAL_RESULT_SUCCESS;
 }
@@ -6294,7 +6304,6 @@ PalResult PAL_CALL bufferBarrierVk(
     dependencyInfo.pBufferMemoryBarriers = &barrier;
 
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-
     vkCmdBuffer->dstStage = new.stages;
     return PAL_RESULT_SUCCESS;
 }
@@ -6471,6 +6480,10 @@ PalResult PAL_CALL submitVkCommandBuffer(
     Queue* vkQueue = (Queue*)queue;
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)info->cmdBuffer;
 
+    if (vkCmdBuffer->sbt) {
+        vkCmdBuffer->dstStage |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    }
+
     if (info->waitSemaphore) {
         Semaphore* tmp = (Semaphore*)info->waitSemaphore;
         waitSemaphoreHandle = tmp->handle;
@@ -6506,10 +6519,6 @@ PalResult PAL_CALL submitVkCommandBuffer(
     if (vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
         waitSubmitInfo.value = info->waitValue;
         signalSubmitInfo.value = info->signalValue;
-    }
-
-    if (vkCmdBuffer->sbt) {
-        vkCmdBuffer->dstStage |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     }
 
     VkSubmitInfo2KHR submitInfo = {0};
@@ -6723,6 +6732,38 @@ PalResult PAL_CALL getVkBufferMemoryRequirements(
         requirements->memoryTypes[i] = (memReq.memoryTypeBits & device->memoryClassMask[i]) != 0;
     }
 
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL computeVkInstanceBufferRequirements(
+    PalDevice* device,
+    PalInstanceBufferRequirements* requirements,
+    Uint32 instanceCount)
+{
+    requirements->size = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
+    requirements->alignment = 16;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL writeVkInstancesToMappedMemory(
+    PalDevice* device,
+    void* ptr,
+    PalAccelerationStructureInstance* instances,
+    Uint32 instanceCount)
+{
+    VkAccelerationStructureInstanceKHR* data = ptr;
+    for (int i = 0; i < instanceCount; i++) {
+        PalAccelerationStructureInstance* src = &instances[i];
+        VkAccelerationStructureInstanceKHR* dst = &data[i];
+        AccelerationStructure* as = (AccelerationStructure*)src->blas;
+
+        dst->mask = src->mask & 0xFF;
+        dst->instanceCustomIndex = src->instanceId * 0xFFFFFF;
+        dst->accelerationStructureReference = as->address;
+        dst->instanceShaderBindingTableRecordOffset = 0;
+        dst->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        memcpy(dst->transform.matrix, src->transform, sizeof(float) * 12);
+    }
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7694,7 +7735,7 @@ PalResult PAL_CALL createVkRayTracingPipeline(
 
         group->anyHitShader = info->shaderGroups[i].anyHitShaderIndex;
         group->closestHitShader = info->shaderGroups[i].closestHitShaderIndex;
-        group->generalShader= info->shaderGroups[i].generalShaderIndex;
+        group->generalShader = info->shaderGroups[i].generalShaderIndex;
         group->intersectionShader = info->shaderGroups[i].intersectionShaderIndex;
     }
 
@@ -7741,12 +7782,17 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     Uint32 hitRegionSize = stride * numHit;
     Uint32 callableRegionSize = stride * numCallable;
 
+    // get aligned region size
+    Uint32 raygenAlignedRegionSize = align(raygenRegionSize, groupBaseAlignment);
+    Uint32 missAlignedRegionSize = align(missRegionSize, groupBaseAlignment);;
+    Uint32 hitAlignedRegionSize = align(hitRegionSize, groupBaseAlignment);
+    Uint32 callableAligneRegionSize = align(callableRegionSize, groupBaseAlignment);
+
     // get offsets
-    Uint32 raygenOffset = 0; // always 0
-    Uint32 missOffset = align(raygenRegionSize, groupBaseAlignment);
-    Uint32 hitOffset = align(missOffset + missRegionSize, groupBaseAlignment);
-    Uint32 callableOffset = align(hitOffset + hitRegionSize, groupBaseAlignment);
-    Uint32 bufferSize = callableOffset + callableRegionSize;
+    Uint32 missOffset = raygenAlignedRegionSize;
+    Uint32 hitOffset = missOffset + missAlignedRegionSize;
+    Uint32 callableOffset = hitOffset + hitAlignedRegionSize;
+    Uint32 bufferSize = callableOffset + callableAligneRegionSize;
 
     // create gpu buffer
     VkBufferCreateInfo bufCreateInfo = {0};
@@ -7754,7 +7800,6 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     bufCreateInfo.size = bufferSize;
     bufCreateInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
     bufCreateInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
-    bufCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     result = s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->buffer);
@@ -7796,7 +7841,8 @@ PalResult PAL_CALL createVkRayTracingPipeline(
 
     // get shader handles
     Uint32 totalGroups = numRaygen + numHit + numMiss + numCallable;
-    Uint8* handles = palAllocate(s_Vk.allocator, totalGroups * groupHandleSize, 0);
+    Uint32 sbtSize = totalGroups * groupHandleSize;
+    Uint8* handles = palAllocate(s_Vk.allocator, sbtSize, 0);
     if (!handles) {
         palFree(s_Vk.allocator, pipeline);
         palFree(s_Vk.allocator, sbt);
@@ -7806,8 +7852,9 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     result = vkDevice->getRayTracingShaderGroupHandles(
         vkDevice->handle,
         pipeline->handle,
-        0, totalGroups,
-        totalGroups * groupHandleSize,
+        0,
+        totalGroups,
+        sbtSize,
         handles);
 
     if (result != VK_SUCCESS) {
@@ -7817,7 +7864,6 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     }
 
     // copy handles into the buffer
-    Uint32 index = 0;
     void* ptr = nullptr;
     result = s_Vk.mapMemory(vkDevice->handle, sbt->bufferMemory, 0, memReq.size, 0, &ptr);
     if (result != VK_SUCCESS) {
@@ -7826,45 +7872,40 @@ PalResult PAL_CALL createVkRayTracingPipeline(
         return vkResultToPal(result);
     }
 
-    // raygen
-    for (int i = 0; i < numRaygen; i++) {
-        memcpy(
-            ptr + raygenOffset + i * stride,
-            handles + index * groupHandleSize,
-            groupHandleSize);
+    Uint8* dstPtr = ptr;
+    Uint8* srcPtr = handles;
 
-        index++;
-    }
+    // raygen
+    memcpy(dstPtr, handles, groupHandleSize);
+    srcPtr += numRaygen * groupHandleSize;
 
     // miss
     for (int i = 0; i < numMiss; i++) {
         memcpy(
-            ptr + raygenOffset + i * stride,
-            handles + index * groupHandleSize,
+            dstPtr + missOffset + i * stride,
+            srcPtr + i * groupHandleSize,
             groupHandleSize);
-
-        index++;
     }
+    srcPtr += numMiss * groupHandleSize;
 
     // hit
     for (int i = 0; i < numHit; i++) {
         memcpy(
-            ptr + hitOffset + i * stride,
-            handles + index * groupHandleSize,
+            dstPtr + hitOffset + i * stride,
+            srcPtr + i * groupHandleSize,
             groupHandleSize);
-
-        index++;
     }
+    srcPtr += numHit * groupHandleSize;
 
     // callable
     for (int i = 0; i < numCallable; i++) {
         memcpy(
-            ptr + callableOffset + i * stride,
-            handles + index * groupHandleSize,
+            dstPtr + callableOffset + i * stride,
+            srcPtr + i * groupHandleSize,
             groupHandleSize);
-
-        index++;
     }
+    srcPtr += numCallable * groupHandleSize;
+
     s_Vk.unmapMemory(vkDevice->handle, sbt->bufferMemory);
 
     // cache SBT fields and offsets address
@@ -7874,23 +7915,23 @@ PalResult PAL_CALL createVkRayTracingPipeline(
     sbt->baseAddress = s_Vk.getBufferDeviceAddress(vkDevice->handle, &bufferAddressInfo);
 
     // raygen
-    sbt->raygenAddress.deviceAddress = sbt->baseAddress + raygenOffset;
-    sbt->raygenAddress.size = raygenRegionSize;
+    sbt->raygenAddress.deviceAddress = sbt->baseAddress;
+    sbt->raygenAddress.size = raygenAlignedRegionSize;
     sbt->raygenAddress.stride = stride;
 
     // miss
     sbt->missAddress.deviceAddress = sbt->baseAddress + missOffset;
-    sbt->missAddress.size = missRegionSize;
+    sbt->missAddress.size = missAlignedRegionSize;
     sbt->missAddress.stride = stride;
 
     // hit
     sbt->hitAddress.deviceAddress = sbt->baseAddress + hitOffset;
-    sbt->hitAddress.size = hitRegionSize;
+    sbt->hitAddress.size = hitAlignedRegionSize;
     sbt->hitAddress.stride = stride;
 
     // callable
     sbt->callableAddress.deviceAddress = sbt->baseAddress + callableOffset;
-    sbt->callableAddress.size = callableRegionSize;
+    sbt->callableAddress.size = callableAligneRegionSize;
     sbt->callableAddress.stride = stride;
 
     palFree(s_Vk.allocator, handles);
