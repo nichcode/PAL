@@ -86,7 +86,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -790,12 +790,19 @@ bool rayTracingTest()
     writeInfos[0].descriptorSet = descriptorSet;
     writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     writeInfos[0].descriptorCount = 1;
+    writeInfos[0].arrayElement = 0;
+    writeInfos[0].imageViewInfo = nullptr;
+    writeInfos[0].tlasInfo = nullptr;
+
 
     writeInfos[1].binding = 1;
     writeInfos[1].tlasInfo = &descriptorTlasInfo;
     writeInfos[1].descriptorSet = descriptorSet;
     writeInfos[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
     writeInfos[1].descriptorCount = 1;
+    writeInfos[1].arrayElement = 0;
+    writeInfos[1].imageViewInfo = nullptr;
+    writeInfos[1].bufferInfo = nullptr;
 
     result = palUpdateDescriptorSet(device, 2, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
@@ -866,21 +873,21 @@ bool rayTracingTest()
     }
 
     // record commands
-    result = palBeginCommandBuffer(cmdBuffer, nullptr);
+    result = palCmdBegin(cmdBuffer, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to begin command buffer: %s", error);
         return false;
     }
 
-    result = palBindPipeline(cmdBuffer, pipeline);
+    result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
         return false;
     }
 
-    result = palBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);
@@ -896,7 +903,7 @@ bool rayTracingTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_RAYGEN;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
 
-    result = palBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -911,7 +918,7 @@ bool rayTracingTest()
     tlasBuildInfo.dst = tlas;
     tlasBuildInfo.scratchBufferAddress = scratchBufferAddress;
 
-    result = palBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
+    result = palCmdBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to build blas: %s", error);
@@ -927,14 +934,14 @@ bool rayTracingTest()
     newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
 
-    result = palMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
+    result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set memory barrier: %s", error);
         return false;
     }
 
-    result = palBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
+    result = palCmdBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to build tlas: %s", error);
@@ -946,14 +953,14 @@ bool rayTracingTest()
     newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
 
-    result = palMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
+    result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set memory barrier: %s", error);
         return false;
     }
 
-    result = palTraceRays(cmdBuffer, BUFFER_SIZE, BUFFER_SIZE, 1);
+    result = palCmdTraceRays(cmdBuffer, BUFFER_SIZE, BUFFER_SIZE, 1);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to trace rays: %s", error);
@@ -966,7 +973,7 @@ bool rayTracingTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
-    result = palBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -980,7 +987,7 @@ bool rayTracingTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
-    result = palBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -988,14 +995,14 @@ bool rayTracingTest()
     }
 
     // now we copy from the GPU buffer into the staging buffer
-    result = palCopyBuffer(cmdBuffer, stagingBuffer, buffer, 0, 0, bufferBytes);
+    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, 0, 0, bufferBytes);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
         return false;
     }
 
-    result = palEndCommandBuffer(cmdBuffer);
+    result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to end command buffer: %s", error);

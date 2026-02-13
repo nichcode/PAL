@@ -426,7 +426,7 @@ bool computeTest()
     }
 
     // record commands
-    result = palBeginCommandBuffer(cmdBuffer, nullptr);
+    result = palCmdBegin(cmdBuffer, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to begin command buffer: %s", error);
@@ -441,14 +441,14 @@ bool computeTest()
     pushConstant.color[2] = 0.0f;
     pushConstant.color[3] = 1.0f;
 
-    result = palBindPipeline(cmdBuffer, pipeline);
+    result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
         return false;
     }
 
-    result = palPushConstants(
+    result = palCmdPushConstants(
         cmdBuffer,
         pipelineLayout,
         1,
@@ -463,7 +463,7 @@ bool computeTest()
         return false;
     }
 
-    result = palBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);
@@ -512,7 +512,7 @@ bool computeTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_COMPUTE;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
 
-    result = palBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -528,7 +528,7 @@ bool computeTest()
         Uint32 groupCountY = workGroupInfos[i].workGroupCount[1];
         Uint32 groupCountZ = workGroupInfos[i].workGroupCount[2];
 
-        result = palDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
+        result = palCmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to dispatch: %s", error);
@@ -543,7 +543,7 @@ bool computeTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
-    result = palBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -557,7 +557,7 @@ bool computeTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
-    result = palBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -565,7 +565,7 @@ bool computeTest()
     }
 
     // now we copy from the GPU buffer into the staging buffer
-    result = palCopyBuffer(cmdBuffer, stagingBuffer, buffer, 0, 0, bufferBytes);
+    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, 0, 0, bufferBytes);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
@@ -577,7 +577,7 @@ bool computeTest()
     // but we map and copy outside the command buffer since
     // we wait for a fence (the command buffer has been executed).
 
-    result = palEndCommandBuffer(cmdBuffer);
+    result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to end command buffer: %s", error);

@@ -385,7 +385,7 @@ bool clearColorTest()
             return false;
         }
 
-        result = palBeginCommandBuffer(cmdBuffer, nullptr);
+        result = palCmdBegin(cmdBuffer, nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin command buffer: %s", error);
@@ -424,7 +424,7 @@ bool clearColorTest()
             oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
-        result = palImageViewBarrier(
+        result = palCmdImageViewBarrier(
             cmdBuffer,
             imageViews[index],
             &oldUsageStateInfo,
@@ -442,14 +442,14 @@ bool clearColorTest()
             return false;
         }
 
-        result = palBeginRendering(cmdBuffer, &renderingInfo);
+        result = palCmdBeginRendering(cmdBuffer, &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
             return false;
         }
 
-        result = palEndRendering(cmdBuffer);
+        result = palCmdEndRendering(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end rendering: %s", error);
@@ -459,7 +459,7 @@ bool clearColorTest()
         // change the state of the image view to make it presentable
         oldUsageStateInfo = newUsageStateInfo;
         newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
-        result = palImageViewBarrier(
+        result = palCmdImageViewBarrier(
             cmdBuffer,
             imageViews[index],
             &oldUsageStateInfo,
@@ -471,7 +471,7 @@ bool clearColorTest()
             return false;
         }
 
-        result = palEndCommandBuffer(cmdBuffer);
+        result = palCmdEnd(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end command buffer: %s", error);

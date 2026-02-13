@@ -580,7 +580,7 @@ bool meshTest()
             return false;
         }
 
-        result = palBeginCommandBuffer(cmdBuffer, nullptr);
+        result = palCmdBegin(cmdBuffer, nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin command buffer: %s", error);
@@ -598,7 +598,7 @@ bool meshTest()
             oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
-        result = palImageViewBarrier(
+        result = palCmdImageViewBarrier(
             cmdBuffer,
             imageViews[index],
             &oldUsageStateInfo,
@@ -631,7 +631,7 @@ bool meshTest()
         renderingInfo.renderArea.width = WINDOW_WIDTH;
         renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
-        result = palBeginRendering(cmdBuffer, &renderingInfo);
+        result = palCmdBeginRendering(cmdBuffer, &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
@@ -639,7 +639,7 @@ bool meshTest()
         }
 
         // bind pipeline
-        result = palBindPipeline(cmdBuffer, pipeline);
+        result = palCmdBindPipeline(cmdBuffer, pipeline);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
@@ -647,14 +647,14 @@ bool meshTest()
         }
 
         // set viewport and scissors
-        result = palSetViewport(cmdBuffer, 1, &viewport);
+        result = palCmdSetViewport(cmdBuffer, 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set viewport: %s", error);
             return false;
         }
 
-        result = palSetScissors(cmdBuffer, 1, &scissor);
+        result = palCmdSetScissors(cmdBuffer, 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set scissors: %s", error);
@@ -665,14 +665,14 @@ bool meshTest()
         // palBuildWorkGroupInfo() is a helper to build
         // the workgroup count per axis using normal
         // workCount (image size, buffer size)
-        result = palDrawMeshTasks(cmdBuffer, 1, 1, 1);
+        result = palCmdDrawMeshTasks(cmdBuffer, 1, 1, 1);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw command: %s", error);
             return false;
         }
 
-        result = palEndRendering(cmdBuffer);
+        result = palCmdEndRendering(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end rendering: %s", error);
@@ -682,7 +682,7 @@ bool meshTest()
         // change the state of the image view to make it presentable
         oldUsageStateInfo = newUsageStateInfo;
         newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
-        result = palImageViewBarrier(
+        result = palCmdImageViewBarrier(
             cmdBuffer,
             imageViews[index],
             &oldUsageStateInfo,
@@ -694,7 +694,7 @@ bool meshTest()
             return false;
         }
 
-        result = palEndCommandBuffer(cmdBuffer);
+        result = palCmdEnd(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end command buffer: %s", error);

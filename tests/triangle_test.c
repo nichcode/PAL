@@ -454,14 +454,14 @@ bool triangleTest()
     // and reset it when done
     // set a fence and check at the last line before the main loop
     // to see if we have to wait for the copy to be executed
-    result = palBeginCommandBuffer(cmdBuffers[0], nullptr);
+    result = palCmdBegin(cmdBuffers[0], nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to begin command buffer: %s", error);
         return false;
     }
 
-    result = palCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, 0, 0, sizeof(vertices));
+    result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, 0, 0, sizeof(vertices));
 
     PalUsageStateInfo oldUsageStateInfo = {0};
     oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
@@ -471,14 +471,14 @@ bool triangleTest()
     newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_VERTEX;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_VERTEX_READ;
 
-    result = palBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
         return false;
     }
 
-    result = palEndCommandBuffer(cmdBuffers[0]);
+    result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to end command buffer: %s", error);
@@ -765,7 +765,7 @@ bool triangleTest()
             return false;
         }
 
-        result = palBeginCommandBuffer(cmdBuffer, nullptr);
+        result = palCmdBegin(cmdBuffer, nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin command buffer: %s", error);
@@ -783,7 +783,7 @@ bool triangleTest()
             oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
-        result = palImageViewBarrier(
+        result = palCmdImageViewBarrier(
             cmdBuffer,
             imageViews[index],
             &oldUsageStateInfo,
@@ -816,7 +816,7 @@ bool triangleTest()
         renderingInfo.renderArea.width = WINDOW_WIDTH;
         renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
-        result = palBeginRendering(cmdBuffer, &renderingInfo);
+        result = palCmdBeginRendering(cmdBuffer, &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
@@ -824,7 +824,7 @@ bool triangleTest()
         }
 
         // bind pipeline
-        result = palBindPipeline(cmdBuffer, pipeline);
+        result = palCmdBindPipeline(cmdBuffer, pipeline);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
@@ -832,14 +832,14 @@ bool triangleTest()
         }
 
         // set viewport and scissors
-        result = palSetViewport(cmdBuffer, 1, &viewport);
+        result = palCmdSetViewport(cmdBuffer, 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set viewport: %s", error);
             return false;
         }
 
-        result = palSetScissors(cmdBuffer, 1, &scissor);
+        result = palCmdSetScissors(cmdBuffer, 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set scissors: %s", error);
@@ -848,21 +848,21 @@ bool triangleTest()
 
         // bind vertex buffer
         Uint64 offset[] = {0};
-        result = palBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, offset);
+        result = palCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, offset);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind vertex buffer: %s", error);
             return false;
         }
 
-        result = palDraw(cmdBuffer, &drawData);
+        result = palCmdDraw(cmdBuffer, &drawData);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw command: %s", error);
             return false;
         }
 
-        result = palEndRendering(cmdBuffer);
+        result = palCmdEndRendering(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end rendering: %s", error);
@@ -872,7 +872,7 @@ bool triangleTest()
         // change the state of the image view to make it presentable
         oldUsageStateInfo = newUsageStateInfo;
         newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
-        result = palImageViewBarrier(
+        result = palCmdImageViewBarrier(
             cmdBuffer,
             imageViews[index],
             &oldUsageStateInfo,
@@ -884,7 +884,7 @@ bool triangleTest()
             return false;
         }
 
-        result = palEndCommandBuffer(cmdBuffer);
+        result = palCmdEnd(cmdBuffer);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end command buffer: %s", error);
