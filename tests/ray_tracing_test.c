@@ -949,9 +949,10 @@ bool rayTracingTest()
     }
 
     // make sure the TLAS builds before the tracing
-    oldAsUsageStateInfo = newAsUsageStateInfo;
+    oldAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
+    oldAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
-    newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
+    newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
 
     result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {

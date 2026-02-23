@@ -159,10 +159,9 @@ typedef uintptr_t UintPtr;
  * @typedef PalAllocateFn
  * @brief Function pointer type used for memory allocations.
  *
- * @param[in] userData Optional pointer to user data passed from ::PalAllocator.
- * Can be nullptr.
- * @param[in] size Number of bytes to allocate.
- * @param[in] alignment Must be power of two. Set to 0 to use default.
+ * @param[in] userData Optional pointer to user data passed from ::PalAllocator. Can be nullptr.
+ * @param[in] size Number of bytes to allocate. Must not be 0.
+ * @param[in] alignment Must be power of two. Set to 0 to use default (16).
  *
  * @return Pointer to the allocated memory on success or nullptr on failure.
  *
@@ -179,9 +178,8 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @typedef PalFreeFn
  * @brief Function pointer type used for memory deallocations.
  *
- * @param[in] userData Optional pointer to user data passed from ::PalAllocator.
- * Can be nullptr.
- * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn.
+ * @param[in] userData Optional pointer to user data passed from ::PalAllocator. Can be nullptr.
+ * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must return safely if pointer is nullptr.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -195,8 +193,7 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @typedef PalLogCallback
  * @brief Function pointer type used for log callbacks.
  *
- * @param userData Optional pointer to user data passed from ::PalLogger. Can be
- * nullptr.
+ * @param userData Optional pointer to user data passed from ::PalLogger. Can be nullptr.
  * @param msg Null-terminated UTF-8 log message.
  *
  * @since 1.0
@@ -211,8 +208,7 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @enum PalResult
  * @brief Codes returned by most PAL functions. This is not a bitmask.
  *
- * All result codes follow the format `PAL_RESULT_**` for consistency and API
- * use.
+ * All result codes follow the format `PAL_RESULT_**` for consistency and API use.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -364,8 +360,8 @@ PAL_API const char* PAL_CALL palFormatResult(PalResult result);
  *
  * @return Pointer to allocated memory on success, or nullptr on failure.
  *
- * Thread safety: Thread safe only if the provided allocator is thread
- * safe. The default allocator is thread safe.
+ * Thread safety: Thread safe only if the provided allocator is thread safe. The default allocator
+ * is thread safe.
  *
  * @since 1.0
  * @ingroup pal_core

@@ -33,47 +33,268 @@ freely, subject to the following restrictions:
 
 #include "pal_core.h"
 
+/**
+ * @brief The maximum name size of an adapter (GPU).
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 #define PAL_ADAPTER_NAME_SIZE 128
+
+/**
+ * @brief The maximum version string size of an adapter.
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 #define PAL_ADAPTER_VERSION_SIZE 16
+
 #define PAL_MAX_RESOLVE_MODES 8
 #define PAL_MAX_COMBINER_OPS 8
+
+/**
+ * @brief A Unused shader index. Used to make a shader index invalid.
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
+/**
+ * @struct PalAdapter
+ * @brief Opaque handle to an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalAdapter PalAdapter;
+
+/**
+ * @struct PalDevice
+ * @brief Opaque handle to a device. Devices are created from an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalDevice PalDevice;
+
+/**
+ * @struct PalMemory
+ * @brief Opaque handle to a device memory. This is not `CPU` memory.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalMemory PalMemory;
+
+/**
+ * @struct PalQueue
+ * @brief Opaque handle to a queue.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalQueue PalQueue;
+
+/**
+ * @struct PalSwapchain
+ * @brief Opaque handle to a swapchain.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalSwapchain PalSwapchain;
 
+/**
+ * @struct PalImage
+ * @brief Opaque handle to an image.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalImage PalImage;
+
+/**
+ * @struct PalImageView
+ * @brief Opaque handle to an image view.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalImageView PalImageView;
+
+/**
+ * @struct PalShader
+ * @brief Opaque handle to a shader.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalShader PalShader;
 
+/**
+ * @struct PalBuffer
+ * @brief Opaque handle to a buffer.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalBuffer PalBuffer;
+
+/**
+ * @struct PalFence
+ * @brief Opaque handle to a fence.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalFence PalFence;
+
+/**
+ * @struct PalSemaphore
+ * @brief Opaque handle to a semaphore.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalSemaphore PalSemaphore;
+
+/**
+ * @struct PalCommandPool
+ * @brief Opaque handle to a command pool.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalCommandPool PalCommandPool;
+
+/**
+ * @struct PalCommandBuffer
+ * @brief Opaque handle to a command buffer.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalCommandBuffer PalCommandBuffer;
 
+/**
+ * @struct PalDescriptorSetLayout
+ * @brief Opaque handle to a descriptor set layout.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
+
+/**
+ * @struct PalDescriptorPool
+ * @brief Opaque handle to a descriptor pool.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalDescriptorPool PalDescriptorPool;
+
+/**
+ * @struct PalDescriptorSet
+ * @brief Opaque handle to a descriptor set.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalDescriptorSet PalDescriptorSet;
+
+/**
+ * @struct PalSampler
+ * @brief Opaque handle to a sampler.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalSampler PalSampler;
 
+/**
+ * @struct PalPipelineLayout
+ * @brief Opaque handle to a pipeline layout.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalPipelineLayout PalPipelineLayout;
+
+/**
+ * @struct PalPipeline
+ * @brief Opaque handle to a pipeline. This is the same handle used for all pipeline types (Graphics, Compute and Ray tracing).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalPipeline PalPipeline;
+
+/**
+ * @struct PalAccelerationStructure
+ * @brief Opaque handle to an acceleration structure.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
+/**
+ * @enum PalDebugMessageSeverity
+ * @brief Debugger messages severity types used to filter incoming messages.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum PalDebugMessageSeverity PalDebugMessageSeverity;
+
+/**
+ * @enum PalDebugMessageType
+ * @brief Debugger messages types used to filter incoming messages.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum PalDebugMessageType PalDebugMessageType;
+
+/**
+ * @typedef PalDeviceAddress
+ * @brief Adapter address. Used to get adapter (GPU) address of mostly buffers.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef Uint64 PalDeviceAddress;
 
+/**
+ * @typedef PalDebugCallback
+ * @brief Function pointer type used for debug callbacks.
+ *
+ * @param userData Optional pointer to user data passed from ::PalGraphicsDebugger. Can be nullptr.
+ * @param severity Severity of the message. (`PAL_DEBUG_MESSAGE_SEVERITY_INFO`, 
+ * `PAL_DEBUG_MESSAGE_SEVERITY_WARNING` and `PAL_DEBUG_MESSAGE_SEVERITY_ERROR`).
+ * @param type Type of the message. (`PAL_DEBUG_MESSAGE_TYPE_GENERAL`, 
+ * `PAL_DEBUG_MESSAGE_TYPE_VALIDATION` and `PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE`).
+ * @param msg Null-terminated UTF-8 debug message.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palInitGraphics
+ */
 typedef void(PAL_CALL* PalDebugCallback)(
     void* userData,
     PalDebugMessageSeverity severity,
     PalDebugMessageType type,
     const char* msg);
 
+/**
+ * @enum PalAdapterType
+ * @brief Adapter (GPU) types.
+ *
+ * All adapter types follow the format `PAL_ADAPTER_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
     PAL_ADAPTER_TYPE_DISCRETE,
@@ -82,6 +303,20 @@ typedef enum {
     PAL_ADAPTER_TYPE_CPU
 } PalAdapterType;
 
+/**
+ * @enum PalAdapterApiType
+ * @brief Adapter API types.
+ *
+ * All adapter api types follow the format `PAL_ADAPTER_API_TYPE_**` for
+ * consistency and API use.
+ * 
+ * (`PAL_ADAPTER_API_TYPE_OPENGL`, `PAL_ADAPTER_API_TYPE_GLES`, `PAL_ADAPTER_API_TYPE_D3D11`
+ * `PAL_ADAPTER_API_TYPE_D3D9`, `PAL_ADAPTER_API_TYPE_PPM`, etc) will not be supported by the 
+ * core graphics system. These are custom backends that can be use to extend the graphics systems.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_ADAPTER_API_TYPE_VULKAN,
     PAL_ADAPTER_API_TYPE_D3D12,
@@ -93,28 +328,68 @@ typedef enum {
     PAL_ADAPTER_API_TYPE_PPM
 } PalAdapterApiType;
 
+/**
+ * @enum PalQueueType
+ * @brief Queue types.
+ *
+ * All queue types follow the format `PAL_QUEUE_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_QUEUE_TYPE_GRAPHICS,
     PAL_QUEUE_TYPE_COMPUTE,
     PAL_QUEUE_TYPE_COPY
 } PalQueueType;
 
+/**
+ * @enum PalPresentMode
+ * @brief Present modes
+ *
+ * All present modes follow the format `PAL_PRESENT_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
-    PAL_PRESENT_MODE_FIFO,
+    PAL_PRESENT_MODE_FIFO, /**< V-Sync.*/
     PAL_PRESENT_MODE_IMMEDIATE,
     PAL_PRESENT_MODE_MAILBOX,
 
     PAL_PRESENT_MODE_MAX
 } PalPresentMode;
 
+/**
+ * @enum PalCompositeAplha
+ * @brief Composite alphas
+ *
+ * All composite alphas follow the format `PAL_COMPOSITE_ALPHA_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
-    PAL_COMPOSITE_ALPHA_OPAQUE,
+    PAL_COMPOSITE_ALPHA_OPAQUE, /**< Default behavior.*/
     PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED,
     PAL_COMPOSITE_ALPHA_POST_MULTIPLIED,
 
     PAL_COMPOSITE_ALPHA_MAX
 } PalCompositeAplha;
 
+/**
+ * @enum PalFormat
+ * @brief Format types.
+ *
+ * All format types follow the format `PAL_FORMAT_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_FORMAT_UNDEFINED,
 
@@ -202,6 +477,16 @@ typedef enum {
     PAL_FORMAT_MAX
 } PalFormat;
 
+/**
+ * @enum PalImageUsages
+ * @brief Image usages.
+ *
+ * All image usages follow the format `PAL_IMAGE_USAGE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_IMAGE_USAGE_UNDEFINED = 0,
 
@@ -213,9 +498,18 @@ typedef enum {
     PAL_IMAGE_USAGE_SAMPLED = PAL_BIT(5)
 } PalImageUsages;
 
+/**
+ * @enum PalImageViewUsages
+ * @brief Image view usages.
+ *
+ * All image view usages follow the format `PAL_IMAGE_VIEW_USAGE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_IMAGE_VIEW_USAGE_UNDEFINED = 0,
-
 
     PAL_IMAGE_VIEW_USAGE_COLOR = PAL_BIT(0),
     PAL_IMAGE_VIEW_USAGE_DEPTH = PAL_BIT(1),
@@ -223,6 +517,16 @@ typedef enum {
     PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE = PAL_BIT(3)
 } PalImageViewUsages;
 
+/**
+ * @enum PalShaderFormats
+ * @brief Shader formats.
+ *
+ * All shader formats follow the format `PAL_SHADER_FORMAT_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_SHADER_FORMAT_SPIRV = PAL_BIT(0),
     PAL_SHADER_FORMAT_DXIL = PAL_BIT(1),
@@ -232,6 +536,16 @@ typedef enum {
     PAL_SHADER_FORMAT_PPM = PAL_BIT(5)
 } PalShaderFormats;
 
+/**
+ * @enum PalAdapterFeatures
+ * @brief Adapter features.
+ *
+ * All adapter features follow the format `PAL_ADAPTER_FEATURE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(0),
     PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING = PAL_BIT64(1),
@@ -268,17 +582,47 @@ typedef enum {
     PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(32)
 } PalAdapterFeatures;
 
+/**
+ * @enum PalLoadOp
+ * @brief Load operation type.
+ *
+ * All load operation type follow the format `PAL_LOAD_OP_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_LOAD_OP_LOAD,
     PAL_LOAD_OP_CLEAR,
     PAL_LOAD_OP_DONT_CARE,
 } PalLoadOp;
 
+/**
+ * @enum PalStoreOp
+ * @brief Store operation type.
+ *
+ * All store operation type follow the format `PAL_STORE_OP_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_STORE_OP_STORE,
     PAL_STORE_OP_DONT_CARE
 } PalStoreOp;
 
+/**
+ * @enum PalMemoryType
+ * @brief Memory types.
+ *
+ * All memory types follow the format `PAL_MEMORY_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_MEMORY_TYPE_GPU_ONLY,
     PAL_MEMORY_TYPE_CPU_UPLOAD,
@@ -287,12 +631,32 @@ typedef enum {
     PAL_MEMORY_TYPE_MAX
 } PalMemoryType;
 
+/**
+ * @enum PalImageType
+ * @brief Image types.
+ *
+ * All image types follow the format `PAL_IMAGE_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_IMAGE_TYPE_1D,
     PAL_IMAGE_TYPE_2D,
     PAL_IMAGE_TYPE_3D
 } PalImageType;
 
+/**
+ * @enum PalImageViewType
+ * @brief Image view types.
+ *
+ * All image view types follow the format `PAL_IMAGE_VIEW_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_IMAGE_VIEW_TYPE_1D,
     PAL_IMAGE_VIEW_TYPE_1D_ARRAY,
@@ -303,15 +667,35 @@ typedef enum {
     PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY,
 } PalImageViewType;
 
+/**
+ * @enum PalSwapchainFormat
+ * @brief swapchain format types.
+ *
+ * All swapchain format types follow the format `PAL_SWAPCHAIN_FORMAT_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB,
     PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB,
     PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB,
-    PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10,
+    PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10, /**< HDR.*/
 
     PAL_SWAPCHAIN_FORMAT_MAX
 } PalSwapchainFormat;
 
+/**
+ * @enum PalShaderStage
+ * @brief shader stage types.
+ *
+ * All shader stage types follow the format `PAL_SHADER_STAGE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_SHADER_STAGE_UNDEFINED,
 
@@ -331,6 +715,16 @@ typedef enum {
     PAL_SHADER_STAGE_CALLABLE
 } PalShaderStage;
 
+/**
+ * @enum PalSampleCount
+ * @brief sample count.
+ *
+ * All sample count follow the format `PAL_SAMPLE_COUNT_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_SAMPLE_COUNT_1,
     PAL_SAMPLE_COUNT_2,
@@ -341,6 +735,16 @@ typedef enum {
     PAL_SAMPLE_COUNT_64
 } PalSampleCount;
 
+/**
+ * @enum PalPrimitiveTopology
+ * @brief Primitve topology types.
+ *
+ * All primitve topology types follow the format `PAL_PRIMITIVE_TOPOLOGY_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
@@ -350,74 +754,144 @@ typedef enum {
     PAL_PRIMITIVE_TOPOLOGY_PATCH
 } PalPrimitiveTopology;
 
+/**
+ * @enum PalCullMode
+ * @brief Cull modes.
+ *
+ * All cull modes follow the format `PAL_CULL_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_CULL_MODE_NONE,
     PAL_CULL_MODE_FRONT,
     PAL_CULL_MODE_BACK
 } PalCullMode;
 
+/**
+ * @enum PalFrontFace
+ * @brief Front face modes.
+ *
+ * All front face modes follow the format `PAL_FRONT_FACE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_FRONT_FACE_CLOCKWISE,
     PAL_FRONT_FACE_COUNTER_CLOCKWISE
 } PalFrontFace;
 
+/**
+ * @enum PalPolygonMode
+ * @brief Polygon modes.
+ *
+ * All polygon modes follow the format `PAL_POLYGON_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_POLYGON_MODE_FILL,
     PAL_POLYGON_MODE_LINE
 } PalPolygonMode;
 
+/**
+ * @enum PalVertexType
+ * @brief Vertex attribute types.
+ *
+ * All vertex attribute types follow the format `PAL_VERTEX_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_VERTEX_TYPE_UNDEFINED,
 
-    PAL_VERTEX_TYPE_INT32,
-    PAL_VERTEX_TYPE_INT32_2,
-    PAL_VERTEX_TYPE_INT32_3,
-    PAL_VERTEX_TYPE_INT32_4,
+    PAL_VERTEX_TYPE_INT32, /**< Int32.*/
+    PAL_VERTEX_TYPE_INT32_2, /**< Int32 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_INT32_3, /**< Int32 vec3 or array[3].*/
+    PAL_VERTEX_TYPE_INT32_4, /**< Int32 vec4 or array[4].*/
 
-    PAL_VERTEX_TYPE_UINT32,
-    PAL_VERTEX_TYPE_UINT32_2,
-    PAL_VERTEX_TYPE_UINT32_3,
-    PAL_VERTEX_TYPE_UINT32_4,
+    PAL_VERTEX_TYPE_UINT32, /**< Uint32.*/
+    PAL_VERTEX_TYPE_UINT32_2, /**< Uint32 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_UINT32_3, /**< Uint32 vec3 or array[3].*/
+    PAL_VERTEX_TYPE_UINT32_4, /**< Uint32 vec4 or array[4].*/
 
-    PAL_VERTEX_TYPE_INT8_2,
-    PAL_VERTEX_TYPE_INT8_4,
-    PAL_VERTEX_TYPE_UINT8_2,
-    PAL_VERTEX_TYPE_UINT8_4,
+    PAL_VERTEX_TYPE_INT8_2, /**< Int8 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_INT8_4, /**< Int8 vec4 or array[4].*/
+    PAL_VERTEX_TYPE_UINT8_2, /**< Uint8 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_UINT8_4, /**< Uint8 vec4 or array[4].*/
 
-    PAL_VERTEX_TYPE_INT8_2NORM,
-    PAL_VERTEX_TYPE_INT8_4NORM,
-    PAL_VERTEX_TYPE_UINT8_2NORM,
-    PAL_VERTEX_TYPE_UINT8_4NORM,
+    PAL_VERTEX_TYPE_INT8_2NORM, /**< Int8 vec2 or array[2] normalized.*/
+    PAL_VERTEX_TYPE_INT8_4NORM, /**< Int8 vec4 or array[4] normalized.*/
+    PAL_VERTEX_TYPE_UINT8_2NORM, /**< Uint8 vec2 or array[2] normalized.*/
+    PAL_VERTEX_TYPE_UINT8_4NORM, /**< Uint8 vec4 or array[4] normalized.*/
 
-    PAL_VERTEX_TYPE_INT16_2,
-    PAL_VERTEX_TYPE_INT16_4,
-    PAL_VERTEX_TYPE_UINT16_2,
-    PAL_VERTEX_TYPE_UINT16_4,
+    PAL_VERTEX_TYPE_INT16_2, /**< Int16 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_INT16_4, /**< Int16 vec4 or array[4].*/
+    PAL_VERTEX_TYPE_UINT16_2, /**< Uint16 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_UINT16_4, /**< Uint16 vec4 or array[4].*/
 
-    PAL_VERTEX_TYPE_INT16_2NORM,
-    PAL_VERTEX_TYPE_INT16_4NORM,
-    PAL_VERTEX_TYPE_UINT16_2NORM,
-    PAL_VERTEX_TYPE_UINT16_4NORM,
+    PAL_VERTEX_TYPE_INT16_2NORM, /**< Int16 vec2 or array[2] normalized.*/
+    PAL_VERTEX_TYPE_INT16_4NORM, /**< Int16 vec4 or array[4] normalized.*/
+    PAL_VERTEX_TYPE_UINT16_2NORM, /**< Uint16 vec2 or array[2] normalized.*/
+    PAL_VERTEX_TYPE_UINT16_4NORM, /**< Uint16 vec4 or array[4] normalized.*/
 
-    PAL_VERTEX_TYPE_FLOAT,
-    PAL_VERTEX_TYPE_FLOAT2,
-    PAL_VERTEX_TYPE_FLOAT3,
-    PAL_VERTEX_TYPE_FLOAT4,
+    PAL_VERTEX_TYPE_FLOAT, /**< float*/
+    PAL_VERTEX_TYPE_FLOAT2, /**< float vec2 or array[2].*/
+    PAL_VERTEX_TYPE_FLOAT3, /**< float vec3 or array[3].*/
+    PAL_VERTEX_TYPE_FLOAT4, /**< float vec4 or array[4].*/
 
-    PAL_VERTEX_TYPE_HALF_FLOAT16_2,
-    PAL_VERTEX_TYPE_HALF_FLOAT16_4
+    PAL_VERTEX_TYPE_HALF_FLOAT16_2, /**< float16 vec2 or array[2].*/
+    PAL_VERTEX_TYPE_HALF_FLOAT16_4 /**< float16 vec4 or array[4].*/
 } PalVertexType;
 
+/**
+ * @enum PalCommandBufferType
+ * @brief Command buffer types.
+ *
+ * All command buffer types follow the format `PAL_COMMAND_BUFFER_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_COMMAND_BUFFER_TYPE_PRIMARY,
     PAL_COMMAND_BUFFER_TYPE_SECONDARY
 } PalCommandBufferType;
 
+/**
+ * @enum PalVertexLayoutType
+ * @brief Vertex layout types.
+ *
+ * All vertex layout types follow the format `PAL_VERTEX_LAYOUT_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX,
     PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE
 } PalVertexLayoutType;
 
+/**
+ * @enum PalCompareOp
+ * @brief Compare operation modes.
+ *
+ * All compare operation modes follow the format `PAL_COMPARE_OP_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_COMPARE_OP_NEVER,
     PAL_COMPARE_OP_LESS,
@@ -429,6 +903,16 @@ typedef enum {
     PAL_COMPARE_OP_ALWAYS
 } PalCompareOp;
 
+/**
+ * @enum PalStencilOp
+ * @brief Stencil operation modes.
+ *
+ * All stencil operation modes follow the format `PAL_STENCIL_OP_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_STENCIL_OP_KEEP,
     PAL_STENCIL_OP_ZERO,
@@ -440,6 +924,16 @@ typedef enum {
     PAL_STENCIL_OP_DECREMENT_AND_WRAP
 } PalStencilOp;
 
+/**
+ * @enum PalBlendOp
+ * @brief Blend operation modes.
+ *
+ * All blend operation modes follow the format `PAL_BLEND_OP_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_BLEND_OP_ADD,
     PAL_BLEND_OP_SUBTRACT,
@@ -448,6 +942,16 @@ typedef enum {
     PAL_BLEND_OP_MAX
 } PalBlendOp;
 
+/**
+ * @enum PalBlendOp
+ * @brief Blend factor modes.
+ *
+ * All blend factor modes follow the format `PAL_BLEND_FACTOR_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_BLEND_FACTOR_ZERO,
     PAL_BLEND_FACTOR_ONE,
@@ -465,6 +969,19 @@ typedef enum {
     PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA
 } PalBlendFactor;
 
+/**
+ * @enum PalColorMask
+ * @brief Color mask flags. Multiple color mask flags can be OR'ed together using bitwise 
+ * OR operator (`|`).
+ *
+ * `PAL_COLOR_MASK_NONE` is not a bit and must not be combined with other bits.
+ *
+ * All color mask flags follow the format `PAL_BLEND_FACTOR_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_COLOR_MASK_NONE = 0,
 
@@ -474,6 +991,16 @@ typedef enum {
     PAL_COLOR_MASK_ALPHA = PAL_BIT(3),
 } PalColorMask;
 
+/**
+ * @enum PalResolveMode
+ * @brief Resolve modes.
+ *
+ * All resolve modes follow the format `PAL_RESOLVE_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_RESOLVE_MODE_NONE = 0,
 
@@ -483,6 +1010,16 @@ typedef enum {
     PAL_RESOLVE_MODE_MAX
 } PalResolveMode;
 
+/**
+ * @enum PalFragmentShadingRate
+ * @brief Fragment shading rates.
+ *
+ * All fragment shading rates follow the format `PAL_FRAGMENT_SHADING_RATE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_FRAGMENT_SHADING_RATE_1X1,
     PAL_FRAGMENT_SHADING_RATE_1X2,
@@ -495,6 +1032,16 @@ typedef enum {
     PAL_FRAGMENT_SHADING_RATE_MAX
 } PalFragmentShadingRate;
 
+/**
+ * @enum PalFragmentShadingRateCombinerOp
+ * @brief Fragment shading rate combiner operaton modes.
+ *
+ * All fragment shading rate combiner operation modes follow the format 
+ * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP,
     PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE,
@@ -503,22 +1050,60 @@ typedef enum {
     PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL
 } PalFragmentShadingRateCombinerOp;
 
+/**
+ * @enum PalAccelerationStructureType
+ * @brief Acceleration structure types.
+ *
+ * All acceleration structure types follow the format `PAL_ACCELERATION_STRUCTURE_TYPE_**` 
+ * for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL,
     PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL
 } PalAccelerationStructureType;
 
+/**
+ * @enum PalGeometryType
+ * @brief Geometry types.
+ *
+ * All geometry types follow the format `PAL_GEOMETRY_TYPE_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_GEOMETRY_TYPE_TRIANGLE,
     PAL_GEOMETRY_TYPE_AABBS,
     PAL_GEOMETRY_TYPE_INSTANCE
 } PalGeometryType;
 
+/**
+ * @enum PalIndexType
+ * @brief Index types.
+ *
+ * All index types follow the format `PAL_INDEX_TYPE_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_INDEX_TYPE_UINT16,
     PAL_INDEX_TYPE_UINT32
 } PalIndexType;
 
+/**
+ * @enum PalBufferUsages
+ * @brief Buffer usages. Multiple buffer usages can be OR'ed together using bitwise
+ * OR operator (`|`).
+ *
+ * All buffer usages follow the format `PAL_BUFFER_USAGE_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_BUFFER_USAGE_VERTEX = PAL_BIT(0),
     PAL_BUFFER_USAGE_INDEX = PAL_BIT(1),
@@ -542,6 +1127,15 @@ enum PalDebugMessageType {
     PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE
 };
 
+/**
+ * @enum PalUsageState
+ * @brief Usage states.
+ *
+ * All usage states follow the format `PAL_USAGE_STATE_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_USAGE_STATE_UNDEFINED,
 
@@ -568,6 +1162,15 @@ typedef enum {
     PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE
 } PalUsageState;
 
+/**
+ * @enum PalDescriptorType
+ * @brief Descriptor types.
+ *
+ * All descriptor types follow the format `PAL_DESCRIPTOR_TYPE_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -577,6 +1180,16 @@ typedef enum {
     PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE
 } PalDescriptorType;
 
+/**
+ * @enum PalRayTracingShaderGroupType
+ * @brief Ray tracing shader group types.
+ *
+ * All ray tracing shader group types follow the format `PAL_RAY_TRACING_SHADER_GROUP_TYPE_**` 
+ * for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef enum {
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL,
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT,

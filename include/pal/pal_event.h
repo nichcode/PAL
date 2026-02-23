@@ -56,7 +56,7 @@ typedef struct PalEvent PalEvent;
  * @brief Function pointer type used for event callbacks.
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
- * @param[in] event The event.
+ * @param[in] event Pointer to the event.
  *
  * @since 1.0
  * @ingroup pal_event
@@ -71,7 +71,7 @@ typedef void(PAL_CALL* PalEventCallback)(
  * @brief Function pointer type used for pushing events into event queues.
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
- * @param[in] event The event to push.
+ * @param[in] event Pointer to the event to push.
  *
  * @since 1.0
  * @ingroup pal_event
@@ -90,7 +90,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * true.
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
- * @param[out] event Pointer to a PalEvent to recieve the event.
+ * @param[out] event Pointer to the PalEvent to recieve the event.
  *
  * @since 1.0
  * @ingroup pal_event
