@@ -1196,25 +1196,38 @@ typedef enum {
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT
 } PalRayTracingShaderGroupType;
 
+/**
+ * @struct PalAdapterInfo
+ * @brief Information about an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     Uint32 vendorId;
     Uint32 deviceId;
-    PalAdapterType type;
-    PalAdapterApiType apiType;
-    PalShaderFormats shaderFormats;
+    PalAdapterType type; /**< Discrete, Integrated, etc.*/
+    PalAdapterApiType apiType; /**< Vulkan, D3D12, etc.*/
+    PalShaderFormats shaderFormats; /**< Supported shader formats mask (eg. Spirv, DXIL, ect).*/
     Uint64 vram;
     Uint64 sharedMemory;
-    Uint64 version;
-    char versionString[PAL_ADAPTER_VERSION_SIZE];
+    Uint64 version; /**< Adapter version.*/
+    char versionString[PAL_ADAPTER_VERSION_SIZE]; /**< Adapter version in string.*/
     char name[PAL_ADAPTER_NAME_SIZE];
-    char backendName[PAL_ADAPTER_NAME_SIZE];
+    char backendName[PAL_ADAPTER_NAME_SIZE]; /**< Adapter backend name (eg. `PAL`, `Custom`).*/
 } PalAdapterInfo;
 
+/**
+ * @struct PalAdapterCapabilities
+ * @brief Capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    bool debugLayer;
-    Uint32 maxComputeQueues;
-    Uint32 maxGraphicsQueues;
-    Uint32 maxCopyQueues;
+    Uint32 maxComputeQueues; /**< Number of compute queues that can be created.*/
+    Uint32 maxGraphicsQueues; /**< Number of graphics queues that can be created.*/
+    Uint32 maxCopyQueues; /**< Number of copy queues that can be created.*/
     Uint32 maxImageWidth;
     Uint32 maxImageHeight;
     Uint32 maxImageDepth;
@@ -1229,48 +1242,97 @@ typedef struct {
     Uint32 maxUniformBufferSize;
     Uint32 maxStorageBufferSize;
     Uint32 maxPushConstantSize;
-    Uint32 maxComputeWorkGroupInvocations;
-    Uint32 maxComputeWorkGroupCount[3];
-    Uint32 maxComputeWorkGroupSize[3];
+    Uint32 maxComputeWorkGroupInvocations; /**< Max compute threads per workgroup across all axis.*/
+    Uint32 maxComputeWorkGroupCount[3]; /**< Max compute workgroups per axis.*/
+    Uint32 maxComputeWorkGroupSize[3]; /**< Max compute threads per workgroup per axis.*/
 } PalAdapterCapabilities;
 
+/**
+ * @struct PalDepthStencilCapabilities
+ * @brief Depth stencil capabilities of an adapter (GPU).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    bool independentDepthStencilResolve;
-    bool depthResolveModes[PAL_MAX_RESOLVE_MODES];
+    /** If false, depth and stencil resolve modes must be the same.*/
+    bool independentDepthStencilResolve; 
+
+    /** Bool array of supported depth resolve modes. 
+     * (eg. depthResolveModes[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
+    bool depthResolveModes[PAL_MAX_RESOLVE_MODES]; 
+
+    /** Bool array of supported stencil resolve modes.
+     * (eg. stencilResolveModes[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
     bool stencilResolveModes[PAL_MAX_RESOLVE_MODES];
 } PalDepthStencilCapabilities;
 
+/**
+ * @struct PalFragmentShadingRateCapabilities
+ * @brief Fragment shading rate capabilities of an adapter (GPU).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
+    /** Bool array of supported fragment shading rates. 
+     * (eg. shadingRates[`PAL_FRAGMENT_SHADING_RATE_2X1`]).*/
     bool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
     Uint32 minTexelWidth;
     Uint32 minTexelHeight;
     Uint32 maxTexelWidth;
     Uint32 maxTexelHeight;
+
+    /** Bool array of supported fragment shading rate combiner operations.
+     * (eg. combinerOps[`PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP`]).*/
     bool combinerOps[PAL_MAX_COMBINER_OPS];
 } PalFragmentShadingRateCapabilities;
 
+/**
+ * @struct PalMeshShaderCapabilities
+ * @brief Mesh shader capabilities of an adapter (GPU).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    Uint32 maxMeshOutputPrimitives;
-    Uint32 maxMeshOutputVertices;
-    Uint32 maxTaskWorkGroupInvocations;
-    Uint32 maxMeshWorkGroupInvocations;
-    Uint32 maxTaskWorkGroupCount[3];
-    Uint32 maxMeshWorkGroupCount[3];
+    Uint32 maxMeshOutputPrimitives; /**< Max mesh primitives per workgroup.*/
+    Uint32 maxMeshOutputVertices; /**< Max mesh vertices per workgroup.*/
+    Uint32 maxTaskWorkGroupInvocations; /**< Max task threads per workgroup.*/
+    Uint32 maxMeshWorkGroupInvocations; /**< Max mesh threads per workgroup.*/
+    Uint32 maxTaskWorkGroupCount[3]; /**< Max task workgroups per axis.*/
+    Uint32 maxMeshWorkGroupCount[3]; /**< Max mesh workgroups per axis.*/
 } PalMeshShaderCapabilities;
 
+/**
+ * @struct PalRayTracingCapabilities
+ * @brief Ray tracing capabilities of an adapter (GPU).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     Uint32 maxRecursionDepth;
-    Uint32 maxHitAttributeSize;
+    Uint32 maxHitAttributeSize; /**< Max memory per intersection attributes.*/
     Uint32 maxInstanceCount;
     Uint32 maxPrimitiveCount;
     Uint32 maxGeometryCount;
-    Uint32 maxPayloadSize;
-    Uint32 maxDispatchInvocations;
+    Uint32 maxPayloadSize; /**< Max memory per ray.*/
+    Uint32 maxDispatchInvocations; /**< Max ray threads per dispatch.*/
 } PalRayTracingCapabilities;
 
+/**
+ * @struct PalDescriptorIndexingCapabilities
+ * @brief Descriptor indexing capabilities of an adapter (GPU).
+ * 
+ * Bindless images are always supported if Descriptor indexing is supported.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    bool bindlessStorageBuffers;
-    bool bindlessUniformBuffers;
+    bool bindlessStorageBuffers; /**< If true, bindless storage buffers are supported.*/
+    bool bindlessUniformBuffers; /**< If true, bindless uniform buffers are supported.*/
     Uint32 maxImagesPerShaderStage;
     Uint32 maxImagesPerDescriptorSet;
     Uint32 maxStorageBuffersPerShaderStage;
@@ -1280,11 +1342,26 @@ typedef struct {
     Uint32 maxDescriptors;
 } PalDescriptorIndexingCapabilities;
 
+/**
+ * @struct PalSwapchainCapabilities
+ * @brief swapchain capabilities of an adapter (GPU).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
+    /** Bool array of supported present modes.
+     * (eg. presentModes[`PAL_PRESENT_MODE_FIFO`]).*/
     bool presentModes[PAL_PRESENT_MODE_MAX];
+    
+    /** Bool array of supported composite alphas.
+     * (eg. compositeAlphas[`PAL_COMPOSITE_ALPHA_OPAQUE`]).*/
     bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
+
+    /** Bool array of supported swapchain formats.
+     * (eg. formats[`PAL_COMPOSITE_ALPHA_OPAQUE`]).*/
     bool formats[PAL_SWAPCHAIN_FORMAT_MAX];
-    Uint32 minImageCount;
+    Uint32 minImageCount; 
     Uint32 maxImageCount;
     Uint32 minImageWidth;
     Uint32 minImageHeight;
@@ -1293,50 +1370,110 @@ typedef struct {
     Uint32 maxImageArrayLayers;
 } PalSwapchainCapabilities;
 
+/**
+ * @struct PalGraphicsWindow
+ * @brief Information about a graphics window.
+ * 
+ * This can be allocated statically or dynamically since its used for
+ * holding native handles. The handles will not be copied.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    void* display;
-    void* window;
+    void* display; /**< Can be nullptr depending on platform (eg. Windows).*/
+    void* window; /**< Must not be nullptr.*/
 } PalGraphicsWindow;
 
+/**
+ * @struct PalFormatInfo
+ * @brief Information about a format. This includes the supported image and image view usages
+ * from the provided format.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    PalFormat format;
-    PalImageUsages usages;
-    PalImageViewUsages viewUsages;
+    PalFormat format; /**< The format.*/
+    PalImageUsages usages; /**< Supported image usages of the format.*/
+    PalImageViewUsages viewUsages; /**< Supported image view usages of the format.*/
 } PalFormatInfo;
 
+/**
+ * @struct PalImageInfo
+ * @brief Information about an image. This can be a swapchain image.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    Uint32 width;
-    Uint32 height;
-    Uint32 depthOrArraySize;
+    Uint32 width; /**< Width of the image in pixels.*/
+    Uint32 height; /**< Height of the image in pixels.*/
+    Uint32 depthOrArraySize; /**< Depth for 3D image and array size for 2D image.*/
     Uint32 mipLevelCount;
     PalSampleCount sampleCount;
-    PalImageType type;
+    PalImageType type; /**< 1D, 2D, 3D.*/
     PalFormat format;
     PalImageUsages usages;
 } PalImageInfo;
 
+/**
+ * @struct PalClearValue
+ * @brief Clear values used with rendering.
+ * 
+ * If used with a color attachment, the color values will be used and depth and stencil
+ * will be used with depth stencil attachments.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    float color[4];
-    float depth;
-    Uint32 stencil;
+    float color[4]; /**< Color for color attachments.*/
+    float depth; /**< Depth for depth stencil attachments.*/
+    Uint32 stencil; /**< Stencil for depth stencil attachments.*/
 } PalClearValue;
 
+/**
+ * @struct PalAttachmentDesc
+ * @brief An attachment description.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     PalLoadOp loadOp;
     PalStoreOp storeOp;
-    PalResolveMode resolveMode;
-    Uint32 texelWidth;
-    Uint32 texelHeight;
-    PalImageView* imageView;
-    PalImageView* resolveImageView;
+    PalResolveMode resolveMode; /**< Used if resolveImageView is set.*/
+    Uint32 texelWidth; /**< Texel width for fragment shading rate attachment.*/
+    Uint32 texelHeight; /**< Texel height for fragment shading rate attachment.*/
+    PalImageView* imageView; /**< Image view. Must not be nullptr.*/
+    PalImageView* resolveImageView; /**< Optional resolve image view.*/
     PalClearValue clearValue;
 } PalAttachmentDesc;
 
+/**
+ * @struct PalUsageStateInfo
+ * @brief Information about resource usage state. This is used with barrier commands.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     PalUsageState usageState;
     PalShaderStage shaderStage;
 } PalUsageStateInfo;
 
+/**
+ * @struct PalViewport
+ * @brief A viewport in pixels (float).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     float x;
     float y;
@@ -1346,6 +1483,13 @@ typedef struct {
     float maxDepth;
 } PalViewport;
 
+/**
+ * @struct PalRect2D
+ * @brief A 2D rectangle in pixels.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     Int32 x;
     Int32 y;
@@ -1353,40 +1497,93 @@ typedef struct {
     Uint32 height;
 } PalRect2D;
 
+/**
+ * @struct PalMemoryRequirements
+ * @brief Memory requirements for a resource (image, buffer etc).
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
+    /** Bool array of supported memory types.
+     * (eg. memoryTypes[`PAL_MEMORY_TYPE_GPU_ONLY`]).*/
     bool memoryTypes[PAL_MEMORY_TYPE_MAX];
+
     Uint64 memoryMask;
     Uint64 size;
     Uint32 alignment;
 } PalMemoryRequirements;
 
+/**
+ * @struct PalInstanceBufferRequirements
+ * @brief Instance buffer requirements.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     Uint64 size;
     Uint32 alignment;
 } PalInstanceBufferRequirements;
 
+/**
+ * @struct PalCommandBufferSubmitInfo
+ * @brief Submit information of a command buffer.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    Uint64 waitValue;
-    Uint64 signalValue;
+    Uint64 waitValue; /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
+    Uint64 signalValue; /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
     PalCommandBuffer* cmdBuffer;
     PalSemaphore* waitSemaphore;
     PalSemaphore* signalSemaphore;
     PalFence* fence;
 } PalCommandBufferSubmitInfo;
 
+/**
+ * @struct PalSwapchainNextImageInfo
+ * @brief Next image information of a swapchain.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    Uint64 timeout;
-    Uint64 signalValue;
+    Uint64 timeout; /**< Timeout in milliseconds.*/
+    Uint64 signalValue; /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
     PalSemaphore* signalSemaphore;
     PalFence* fence;
 } PalSwapchainNextImageInfo;
 
+/**
+ * @struct PalSwapchainPresentInfo
+ * @brief Present information of a swapchain.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
-    Uint32 imageIndex;
-    Uint64 waitValue;
+    Uint32 imageIndex; /**< Image index to present. Must be 0 and less than max images.*/
+    Uint64 waitValue; /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
     PalSemaphore* waitSemaphore;
 } PalSwapchainPresentInfo;
 
+/**
+ * @struct PalRenderingInfo
+ * @brief Present information of a swapchain.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 typedef struct {
     Uint32 viewCount;
     Uint32 layerCount;

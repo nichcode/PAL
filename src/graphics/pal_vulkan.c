@@ -80,7 +80,6 @@ typedef struct {
 
 typedef struct {
     bool useCache;
-    bool hasDebug;
     void* handle;
     Adapter* adapters;
     VkInstance instance;
@@ -2488,40 +2487,36 @@ PalResult PAL_CALL initGraphicsVk(
     if (debugger) {
         // layers
         result = s_Vk.enumerateInstanceLayerProperties(&layerCount, nullptr);
-
         if (result != VK_SUCCESS) {
-            s_Vk.hasDebug = false;
-        }
-
-        VkLayerProperties* props = nullptr;
-        props = palAllocate(s_Vk.allocator, sizeof(VkLayerProperties) * layerCount, 0);
-
-        if (!props) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
-
-        s_Vk.enumerateInstanceLayerProperties(&layerCount, props);
-        for (int i = 0; i < layerCount; i++) {
-            const char* name = props[i].layerName;
-            if (strcmp(name, "VK_LAYER_KHRONOS_validation") == 0) {
-                hasValidationLayer = true;
-                break;
+            VkLayerProperties* props = nullptr;
+            props = palAllocate(s_Vk.allocator, sizeof(VkLayerProperties) * layerCount, 0);
+            if (!props) {
+                return PAL_RESULT_OUT_OF_MEMORY;
             }
+
+            s_Vk.enumerateInstanceLayerProperties(&layerCount, props);
+            for (int i = 0; i < layerCount; i++) {
+                const char* name = props[i].layerName;
+                if (strcmp(name, "VK_LAYER_KHRONOS_validation") == 0) {
+                    hasValidationLayer = true;
+                    break;
+                }
+            }
+
+            palFree(s_Vk.allocator, props);
+
+            debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+            debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+            debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+            debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+            debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+            debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+            debugCreateInfo.pUserData = debugger->userData;
+            debugCreateInfo.pfnUserCallback = debugCallbackVk;
+            s_Vk.callback = debugger->callback;
         }
-
-        palFree(s_Vk.allocator, props);
-
-        debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-        debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-        debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-
-        debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-        debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-
-        debugCreateInfo.pUserData = debugger->userData;
-        debugCreateInfo.pfnUserCallback = debugCallbackVk;
-        s_Vk.callback = debugger->callback;
     }
 
     // extensions
@@ -2579,7 +2574,6 @@ PalResult PAL_CALL initGraphicsVk(
     const char* layers[2];
     layerCount = 0;
     if (hasValidationLayer && hasExtDebug) {
-        s_Vk.hasDebug = true;
         extensions[extensionCount++] = "VK_EXT_debug_utils";
         layers[layerCount++] = "VK_LAYER_KHRONOS_validation";
     }
@@ -2902,7 +2896,6 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     properties2.pNext = &multiViewProps;
     s_Vk.getPhysicalDeviceProperties2(phyDevice, &properties2);
 
-    caps->debugLayer = s_Vk.hasDebug;
     caps->maxColorAttachments = props.limits.maxColorAttachments;
     caps->maxImageWidth = props.limits.maxImageDimension2D;
     caps->maxImageHeight = props.limits.maxImageDimension2D;
@@ -5039,6 +5032,7 @@ PalResult PAL_CALL getNextSwapchainImageVk(
 {
     VkResult result;
     Uint32 index = 0;
+    Uint64 timeInNanoseconds = 0;
     VkFence fenceHandle = nullptr;
     VkSemaphore semaphoreHandle = nullptr;
     Swapchain* vkSwapchain = (Swapchain*)swapchain;
@@ -5053,10 +5047,17 @@ PalResult PAL_CALL getNextSwapchainImageVk(
         semaphoreHandle = vkSemaphore->handle;
     }
 
+    if (info->timeout) {
+        if (info->timeout == PAL_INFINITE) {
+            timeInNanoseconds = UINT64_MAX;
+        }
+        timeInNanoseconds = info->timeout * 1000000;
+    }
+
     result = vkSwapchain->device->acquireNextImage(
         vkSwapchain->device->handle,
         vkSwapchain->handle,
-        info->timeout,
+        timeInNanoseconds,
         semaphoreHandle,
         fenceHandle,
         &index);

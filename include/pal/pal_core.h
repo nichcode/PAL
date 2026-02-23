@@ -84,6 +84,7 @@ typedef _Bool bool;
 
 #define PAL_BIT(x) 1 << x
 #define PAL_BIT64(x) 1ULL << x
+#define PAL_INFINITE UINT32_MAX
 
 /**
  * @brief A signed 8-bit integer
