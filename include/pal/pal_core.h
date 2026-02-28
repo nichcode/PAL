@@ -180,7 +180,8 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @brief Function pointer type used for memory deallocations.
  *
  * @param[in] userData Optional pointer to user data passed from ::PalAllocator. Can be nullptr.
- * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must return safely if pointer is nullptr.
+ * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must return safely if
+ * pointer is nullptr.
  *
  * @since 1.0
  * @ingroup pal_core
