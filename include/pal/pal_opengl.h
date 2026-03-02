@@ -349,7 +349,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * @param[in] context Pointer to the context to destroy.
  *
- * Thread safety: This function is thread safe if the `context` is thread local.
+ * Thread safety: This function is thread safe if the `context` is per thread.
  *
  * @since 1.0
  * @ingroup pal_opengl

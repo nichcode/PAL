@@ -450,7 +450,7 @@ typedef struct {
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
- * thread safe and `outEventDriver` is thread local. The default allocator is
+ * thread safe and `outEventDriver` is per thread. The default allocator is
  * thread safe.
  *
  * @since 1.0
@@ -470,7 +470,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
  * @param[in] eventDriver Pointer to the event driver to destroy.
  *
  * Thread safety: This function is thread safe if the allocator used to create
- * the event driver is thread safe and `eventDriver` is thread local.
+ * the event driver is thread safe and `eventDriver` is per thread.
  *
  * @since 1.0
  * @ingroup pal_event

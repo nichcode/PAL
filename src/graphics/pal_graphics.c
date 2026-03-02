@@ -31,7 +31,7 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-#define MAX_BACKENDS 32
+#define MAX_BACKENDS 18 // 16 for users
 #define PAL_HANDLE(name)                                                                           \
     struct name {                                                                                  \
         const PalGraphicsBackend* backend;                                                         \

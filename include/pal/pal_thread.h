@@ -165,7 +165,7 @@ typedef struct {
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
- * thread safe and `outThread` is thread local. The default allocator is
+ * thread safe and `outThread` is per thread. The default allocator is
  * thread safe.
  *
  * @since 1.0
@@ -190,7 +190,7 @@ PAL_API PalResult PAL_CALL palCreateThread(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function is thread safe if `retval` is thread local.
+ * Thread safety: This function is thread safe if `retval` is per thread.
  *
  * @since 1.0
  * @ingroup pal_thread
@@ -488,7 +488,7 @@ PAL_API void PAL_CALL palSetTLS(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
- * thread safe and `outMutex` is thread local.
+ * thread safe and `outMutex` is per thread.
  *
  * @since 1.0
  * @ingroup pal_thread
@@ -507,7 +507,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
  * @param[in] mutex Pointer to the mutex.
  *
  * Thread safety: This function is thread safe if the allocator used to create
- * the mutex is thread safe and `mutex` is thread local.
+ * the mutex is thread safe and `mutex` is per thread.
  *
  * @since 1.0
  * @ingroup pal_thread
@@ -555,7 +555,7 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: This function is thread safe if the provided allocator is
- * thread safe and `outCondVar` is thread local.
+ * thread safe and `outCondVar` is per thread.
  *
  * @since 1.0
  * @ingroup pal_thread
@@ -575,7 +575,7 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
  * @param[in] condVar Pointer to the condition to destroy
  *
  * Thread safety: This function is thread safe if the allocator used to create
- * the condition varibale is thread safe and `condVar` is thread local.
+ * the condition varibale is thread safe and `condVar` is per thread.
  *
  * @since 1.0
  * @ingroup pal_thread

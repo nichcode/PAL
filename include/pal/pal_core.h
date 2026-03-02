@@ -396,7 +396,7 @@ PAL_API void PAL_CALL palFree(
 /**
  * Log a formatted message.
  *
- * @param logger Logger instance. Must not be NULL.
+ * @param logger Logger instance. Set to nullptr to use default logger.
  * @param fmt printf-style format string.
  * @param ... Arguments for the format string.
  *

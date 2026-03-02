@@ -2464,56 +2464,121 @@ typedef struct {
      */
     PalResult PAL_CALL (*waitQueue)(PalQueue* queue);
 
+    /**
+     * Backend implementation of ::palEnumerateFormats.
+     *
+     * This function must obey the rules and semantics documented in palEnumerateFormats().
+     */
     PalResult PAL_CALL (*enumerateFormats)(
         PalAdapter* adapter,
         Int32* count,
         PalFormatInfo* outFormats);
 
+    /**
+     * Backend implementation of ::palIsFormatSupported.
+     *
+     * This function must obey the rules and semantics documented in palIsFormatSupported().
+     */
     bool PAL_CALL (*isFormatSupported)(
         PalAdapter* adapter,
         PalFormat format);
 
+    /**
+     * Backend implementation of ::palQueryFormatImageUsages.
+     *
+     * This function must obey the rules and semantics documented in palQueryFormatImageUsages().
+     */
     PalImageUsages PAL_CALL (*queryFormatImageUsages)(
         PalAdapter* adapter,
         PalFormat format);
 
+    /**
+     * Backend implementation of ::palQueryFormatImageViewUsages.
+     *
+     * This function must obey the rules and semantics documented in palQueryFormatImageViewUsages().
+     */
     PalImageViewUsages PAL_CALL (*queryFormatImageViewUsages)(
         PalAdapter* adapter,
         PalFormat format);
 
+    /**
+     * Backend implementation of ::palCreateImage.
+     *
+     * This function must obey the rules and semantics documented in palCreateImage().
+     */
     PalResult PAL_CALL (*createImage)(
         PalDevice* device,
         const PalImageCreateInfo* info,
         PalImage** outImage);
 
+    /**
+     * Backend implementation of ::palDestroyImage.
+     *
+     * This function must obey the rules and semantics documented in palDestroyImage().
+     */
     void PAL_CALL (*destroyImage)(PalImage* image);
 
+    /**
+     * Backend implementation of ::palGetImageInfo.
+     *
+     * This function must obey the rules and semantics documented in palGetImageInfo().
+     */
     PalResult PAL_CALL (*getImageInfo)(
         PalImage* image,
         PalImageInfo* info);
 
+    /**
+     * Backend implementation of ::palGetImageMemoryRequirements.
+     *
+     * This function must obey the rules and semantics documented in palGetImageMemoryRequirements().
+     */
     PalResult PAL_CALL (*getImageMemoryRequirements)(
         PalImage* image,
         PalMemoryRequirements* requirements);
 
+    /**
+     * Backend implementation of ::palBindImageMemory.
+     *
+     * This function must obey the rules and semantics documented in palBindImageMemory().
+     */
     PalResult PAL_CALL (*bindImageMemory)(
         PalImage* image,
         PalMemory* memory,
         Uint64 offset);
 
+    /**
+     * Backend implementation of ::palCreateImageView.
+     *
+     * This function must obey the rules and semantics documented in palCreateImageView().
+     */
     PalResult PAL_CALL (*createImageView)(
         PalDevice* device,
         PalImage* image,
         const PalImageViewCreateInfo* info,
         PalImageView** outImageView);
 
+    /**
+     * Backend implementation of ::palDestroyImageView.
+     *
+     * This function must obey the rules and semantics documented in palDestroyImageView().
+     */
     void PAL_CALL (*destroyImageView)(PalImageView* imageView);
 
+    /**
+     * Backend implementation of ::palQuerySwapchainCapabilities.
+     *
+     * This function must obey the rules and semantics documented in palQuerySwapchainCapabilities().
+     */
     PalResult PAL_CALL (*querySwapchainCapabilities)(
         PalDevice* device,
         PalGraphicsWindow* window,
         PalSwapchainCapabilities* caps);
 
+    /**
+     * Backend implementation of ::palCreateSwapchain.
+     *
+     * This function must obey the rules and semantics documented in palCreateSwapchain().
+     */
     PalResult PAL_CALL (*createSwapchain)(
         PalDevice* device,
         PalQueue* queue,
@@ -2521,103 +2586,243 @@ typedef struct {
         const PalSwapchainCreateInfo* info,
         PalSwapchain** outSwapchain);
 
+    /**
+     * Backend implementation of ::palDestroySwapchain.
+     *
+     * This function must obey the rules and semantics documented in palDestroySwapchain().
+     */
     void PAL_CALL (*destroySwapchain)(PalSwapchain* swapchain);
 
+    /**
+     * Backend implementation of ::palGetSwapchainImage.
+     *
+     * This function must obey the rules and semantics documented in palGetSwapchainImage().
+     */
     PalImage* PAL_CALL (*getSwapchainImage)(
         PalSwapchain* swapchain,
         Int32 index);
 
+    /**
+     * Backend implementation of ::palGetNextSwapchainImage.
+     *
+     * This function must obey the rules and semantics documented in palGetNextSwapchainImage().
+     */
     PalResult PAL_CALL (*getNextSwapchainImage)(
         PalSwapchain* swapchain,
         PalSwapchainNextImageInfo* info,
         Uint32* outIndex);
 
+    /**
+     * Backend implementation of ::palPresentSwapchain.
+     *
+     * This function must obey the rules and semantics documented in palPresentSwapchain().
+     */
     PalResult PAL_CALL (*presentSwapchain)(
         PalSwapchain* swapchain,
         PalSwapchainPresentInfo* info);
 
+    /**
+     * Backend implementation of ::palCreateShader.
+     *
+     * This function must obey the rules and semantics documented in palCreateShader().
+     */
     PalResult PAL_CALL (*createShader)(
         PalDevice* device,
         const PalShaderCreateInfo* info,
         PalShader** outShader);
 
+    /**
+     * Backend implementation of ::palDestroyShader.
+     *
+     * This function must obey the rules and semantics documented in palDestroyShader().
+     */
     void PAL_CALL (*destroyShader)(PalShader* shader);
 
+    /**
+     * Backend implementation of ::palCreateFence.
+     *
+     * This function must obey the rules and semantics documented in palCreateFence().
+     */
     PalResult PAL_CALL (*createFence)(
         PalDevice* device,
         bool signaled,
         PalFence** outFence);
 
+    /**
+     * Backend implementation of ::palDestroyFence.
+     *
+     * This function must obey the rules and semantics documented in palDestroyFence().
+     */
     void PAL_CALL (*destroyFence)(PalFence* fence);
 
+    /**
+     * Backend implementation of ::palWaitFenceTimeout.
+     *
+     * This function must obey the rules and semantics documented in palWaitFenceTimeout().
+     */
     PalResult PAL_CALL (*waitFenceTimeout)(
         PalFence* fence,
         Uint64 timeout);
 
+    /**
+     * Backend implementation of ::palResetFence.
+     *
+     * This function must obey the rules and semantics documented in palResetFence().
+     */
     PalResult PAL_CALL (*resetFence)(PalFence* fence);
 
+    /**
+     * Backend implementation of ::palIsFenceSignaled.
+     *
+     * This function must obey the rules and semantics documented in palIsFenceSignaled().
+     */
     bool PAL_CALL (*isFenceSignaled)(PalFence* fence);
 
+    /**
+     * Backend implementation of ::palCreateSemaphore.
+     *
+     * This function must obey the rules and semantics documented in palCreateSemaphore().
+     */
     PalResult PAL_CALL (*createSemaphore)(
         PalDevice* device,
         PalSemaphore** outSemaphore);
 
+    /**
+     * Backend implementation of ::palDestroySemaphore.
+     *
+     * This function must obey the rules and semantics documented in palDestroySemaphore().
+     */
     void PAL_CALL (*destroySemaphore)(PalSemaphore* semaphore);
 
+    /**
+     * Backend implementation of ::palWaitSemaphore.
+     *
+     * This function must obey the rules and semantics documented in palWaitSemaphore().
+     */
     PalResult PAL_CALL (*waitSemaphore)(
         PalSemaphore* semaphore,
         PalQueue* queue,
         Uint64 value,
         Uint64 timeout);
 
+    /**
+     * Backend implementation of ::palSignalSemaphore.
+     *
+     * This function must obey the rules and semantics documented in palSignalSemaphore().
+     */
     PalResult PAL_CALL (*signalSemaphore)(
         PalSemaphore* semaphore,
         PalQueue* queue,
         Uint64 value);
 
+    /**
+     * Backend implementation of ::palGetSemaphoreValue.
+     *
+     * This function must obey the rules and semantics documented in palGetSemaphoreValue().
+     */
     PalResult PAL_CALL (*getSemaphoreValue)(
         PalSemaphore* semaphore,
         Uint64* value);
 
+    /**
+     * Backend implementation of ::palCreateCommandPool.
+     *
+     * This function must obey the rules and semantics documented in palCreateCommandPool().
+     */
     PalResult PAL_CALL (*createCommandPool)(
         PalDevice* device,
         PalQueue* queue,
         PalCommandPool** outPool);
 
+    /**
+     * Backend implementation of ::palDestroyCommandPool.
+     *
+     * This function must obey the rules and semantics documented in palDestroyCommandPool().
+     */
     void PAL_CALL (*destroyCommandPool)(PalCommandPool* pool);
 
+    /**
+     * Backend implementation of ::palResetCommandPool.
+     *
+     * This function must obey the rules and semantics documented in palResetCommandPool().
+     */
     PalResult PAL_CALL (*resetCommandPool)(PalCommandPool* pool);
 
+    /**
+     * Backend implementation of ::palAllocateCommandBuffer.
+     *
+     * This function must obey the rules and semantics documented in palAllocateCommandBuffer().
+     */
     PalResult PAL_CALL (*allocateCommandBuffer)(
         PalDevice* device,
         PalCommandPool* pool,
         PalCommandBufferType type,
         PalCommandBuffer** outCmdBuffer);
 
+    /**
+     * Backend implementation of ::palFreeCommandBuffer.
+     *
+     * This function must obey the rules and semantics documented in palFreeCommandBuffer().
+     */
     void PAL_CALL (*freeCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
+    /**
+     * Backend implementation of ::palResetCommandBuffer.
+     *
+     * This function must obey the rules and semantics documented in palResetCommandBuffer().
+     */
     PalResult PAL_CALL (*resetCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
+    /**
+     * Backend implementation of ::palCmdBegin.
+     *
+     * This function must obey the rules and semantics documented in palCmdBegin().
+     */
     PalResult PAL_CALL (*cmdBegin)(
         PalCommandBuffer* cmdBuffer,
         PalRenderingLayoutInfo* info);
 
+    /**
+     * Backend implementation of ::palCmdEnd.
+     *
+     * This function must obey the rules and semantics documented in palCmdEnd().
+     */
     PalResult PAL_CALL (*cmdEnd)(PalCommandBuffer* cmdBuffer);
 
+    /**
+     * Backend implementation of ::palCmdExecuteCommandBuffer.
+     *
+     * This function must obey the rules and semantics documented in palCmdExecuteCommandBuffer().
+     */
     PalResult PAL_CALL (*cmdExecuteCommandBuffer)(
         PalCommandBuffer* primaryCmdBuffer,
         PalCommandBuffer* secondaryCmdBuffer);
 
+    /**
+     * Backend implementation of ::palCmdSetFragmentShadingRate.
+     *
+     * This function must obey the rules and semantics documented in palCmdSetFragmentShadingRate().
+     */
     PalResult PAL_CALL (*cmdSetFragmentShadingRate)(
         PalCommandBuffer* cmdBuffer,
         PalFragmentShadingRateState* state);
 
+    /**
+     * Backend implementation of ::palCmdDrawMeshTasks.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawMeshTasks().
+     */
     PalResult PAL_CALL (*cmdDrawMeshTasks)(
         PalCommandBuffer* cmdBuffer,
         Uint32 groupCountX,
         Uint32 groupCountY,
         Uint32 groupCountZ);
 
+    /**
+     * Backend implementation of ::palCmdDrawMeshTasksIndirect.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawMeshTasksIndirect().
+     */
     PalResult PAL_CALL (*cmdDrawMeshTasksIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
@@ -2625,6 +2830,11 @@ typedef struct {
         Uint32 drawCount,
         Uint32 stride);
 
+    /**
+     * Backend implementation of ::palCmdDrawMeshTasksIndirectCount.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawMeshTasksIndirectCount().
+     */
     PalResult PAL_CALL (*cmdDrawMeshTasksIndirectCount)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
@@ -2634,16 +2844,36 @@ typedef struct {
         Uint32 maxDrawCount,
         Uint32 stride);
 
+    /**
+     * Backend implementation of ::palCmdBuildAccelerationStructure.
+     *
+     * This function must obey the rules and semantics documented in palCmdBuildAccelerationStructure().
+     */
     PalResult PAL_CALL (*cmdBuildAccelerationStructure)(
         PalCommandBuffer* cmdBuffer,
         PalAccelerationStructureBuildInfo* info);
 
+    /**
+     * Backend implementation of ::palCmdBeginRendering.
+     *
+     * This function must obey the rules and semantics documented in palCmdBeginRendering().
+     */
     PalResult PAL_CALL (*cmdBeginRendering)(
         PalCommandBuffer* cmdBuffer,
         PalRenderingInfo* info);
 
+    /**
+     * Backend implementation of ::palCmdEndRendering.
+     *
+     * This function must obey the rules and semantics documented in palCmdEndRendering().
+     */
     PalResult PAL_CALL (*cmdEndRendering)(PalCommandBuffer* cmdBuffer);
 
+    /**
+     * Backend implementation of ::palCmdCopyBuffer.
+     *
+     * This function must obey the rules and semantics documented in palCmdCopyBuffer().
+     */
     PalResult PAL_CALL (*cmdCopyBuffer)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* dst,
@@ -2652,20 +2882,40 @@ typedef struct {
         Uint64 srcOffset,
         Uint32 size);
 
+    /**
+     * Backend implementation of ::palCmdBindPipeline.
+     *
+     * This function must obey the rules and semantics documented in palCmdBindPipeline().
+     */
     PalResult PAL_CALL (*cmdBindPipeline)(
         PalCommandBuffer* cmdBuffer,
         PalPipeline* pipeline);
 
+    /**
+     * Backend implementation of ::palCmdSetViewport.
+     *
+     * This function must obey the rules and semantics documented in palCmdSetViewport().
+     */
     PalResult PAL_CALL (*cmdSetViewport)(
         PalCommandBuffer* cmdBuffer,
         Uint32 count,
         PalViewport* viewports);
 
+    /**
+     * Backend implementation of ::palCmdSetScissors.
+     *
+     * This function must obey the rules and semantics documented in palCmdSetScissors().
+     */
     PalResult PAL_CALL (*cmdSetScissors)(
         PalCommandBuffer* cmdBuffer,
         Uint32 count,
         PalRect2D* scissors);
 
+    /**
+     * Backend implementation of ::palCmdBindVertexBuffers.
+     *
+     * This function must obey the rules and semantics documented in palCmdBindVertexBuffers().
+     */
     PalResult PAL_CALL (*cmdBindVertexBuffers)(
         PalCommandBuffer* cmdBuffer,
         Uint32 firstSlot,
@@ -2673,22 +2923,42 @@ typedef struct {
         PalBuffer** buffers,
         Uint64* offsets);
 
+    /**
+     * Backend implementation of ::palCmdBindIndexBuffer.
+     *
+     * This function must obey the rules and semantics documented in palCmdBindIndexBuffer().
+     */
     PalResult PAL_CALL (*cmdBindIndexBuffer)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset,
         PalIndexType type);
 
+    /**
+     * Backend implementation of ::palCmdDraw.
+     *
+     * This function must obey the rules and semantics documented in palCmdDraw().
+     */
     PalResult PAL_CALL (*cmdDraw)(
         PalCommandBuffer* cmdBuffer,
         PalDrawData* data);
 
+    /**
+     * Backend implementation of ::palCmdDrawIndirect.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawIndirect().
+     */
     PalResult PAL_CALL (*cmdDrawIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset,
         Uint32 count);
 
+    /**
+     * Backend implementation of ::palCmdDrawIndirectCount.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawIndirectCount().
+     */
     PalResult PAL_CALL (*cmdDrawIndirectCount)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
@@ -2697,16 +2967,31 @@ typedef struct {
         Uint64 countBufferOffset,
         Uint32 count);
 
+    /**
+     * Backend implementation of ::palCmdDrawIndexed.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawIndexed().
+     */
     PalResult PAL_CALL (*cmdDrawIndexed)(
         PalCommandBuffer* cmdBuffer,
         PalDrawIndexedData* data);
 
+    /**
+     * Backend implementation of ::palCmdDrawIndexedIndirect.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawIndexedIndirect().
+     */
     PalResult PAL_CALL (*cmdDrawIndexedIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset,
         Uint32 count);
 
+    /**
+     * Backend implementation of ::palCmdDrawIndexedIndirectCount.
+     *
+     * This function must obey the rules and semantics documented in palCmdDrawIndexedIndirectCount().
+     */
     PalResult PAL_CALL (*cmdDrawIndexedIndirectCount)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
@@ -2715,29 +3000,54 @@ typedef struct {
         Uint64 countBufferOffset,
         Uint32 count);
 
+    /**
+     * Backend implementation of ::palCmdMemoryBarrier.
+     *
+     * This function must obey the rules and semantics documented in palCmdMemoryBarrier().
+     */
     PalResult PAL_CALL (*cmdMemoryBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalUsageStateInfo* oldUsageStateInfo,
         PalUsageStateInfo* newUsageStateInfo);
 
+    /**
+     * Backend implementation of ::palCmdImageViewBarrier.
+     *
+     * This function must obey the rules and semantics documented in palCmdImageViewBarrier().
+     */
     PalResult PAL_CALL (*cmdImageViewBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalImageView* imageView,
         PalUsageStateInfo* oldUsageStateInfo,
         PalUsageStateInfo* newUsageStateInfo);
 
+    /**
+     * Backend implementation of ::palCmdBufferBarrier.
+     *
+     * This function must obey the rules and semantics documented in palCmdBufferBarrier().
+     */
     PalResult PAL_CALL (*cmdBufferBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         PalUsageStateInfo* oldUsageStateInfo,
         PalUsageStateInfo* newUsageStateInfo);
 
+    /**
+     * Backend implementation of ::palCmdDispatch.
+     *
+     * This function must obey the rules and semantics documented in palCmdDispatch().
+     */
     PalResult PAL_CALL (*cmdDispatch)(
         PalCommandBuffer* cmdBuffer,
         Uint32 groupCountX,
         Uint32 groupCountY,
         Uint32 groupCountZ);
 
+    /**
+     * Backend implementation of ::palCmdDispatchBase.
+     *
+     * This function must obey the rules and semantics documented in palCmdDispatchBase().
+     */
     PalResult PAL_CALL (*cmdDispatchBase)(
         PalCommandBuffer* cmdBuffer,
         Uint32 baseGroupX,
@@ -2747,21 +3057,41 @@ typedef struct {
         Uint32 groupCountY,
         Uint32 groupCountZ);
 
+    /**
+     * Backend implementation of ::palCmdDispatchIndirect.
+     *
+     * This function must obey the rules and semantics documented in palCmdDispatchIndirect().
+     */
     PalResult PAL_CALL (*cmdDispatchIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset);
 
+    /**
+     * Backend implementation of ::palCmdTraceRays.
+     *
+     * This function must obey the rules and semantics documented in palCmdTraceRays().
+     */
     PalResult PAL_CALL (*cmdTraceRays)(
         PalCommandBuffer* cmdBuffer,
         Uint32 width,
         Uint32 height,
         Uint32 depth);
 
+    /**
+     * Backend implementation of ::palCmdTraceRaysIndirect.
+     *
+     * This function must obey the rules and semantics documented in palCmdTraceRaysIndirect().
+     */
     PalResult PAL_CALL (*cmdTraceRaysIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalDeviceAddress bufferAddress);
 
+    /**
+     * Backend implementation of ::palCmdBindDescriptorSet.
+     *
+     * This function must obey the rules and semantics documented in palCmdBindDescriptorSet().
+     */
     PalResult PAL_CALL (*cmdBindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
         PalPipeline* pipeline,
@@ -2769,6 +3099,11 @@ typedef struct {
         Uint32 setIndex,
         PalDescriptorSet* set);
 
+    /**
+     * Backend implementation of ::palCmdPushConstants.
+     *
+     * This function must obey the rules and semantics documented in palCmdPushConstants().
+     */
     PalResult PAL_CALL (*cmdPushConstants)(
         PalCommandBuffer* cmdBuffer,
         PalPipelineLayout* layout,
@@ -2778,132 +3113,453 @@ typedef struct {
         Uint32 size,
         const void* value);
 
+    /**
+     * Backend implementation of ::palSubmitCommandBuffer.
+     *
+     * This function must obey the rules and semantics documented in palSubmitCommandBuffer().
+     */
     PalResult PAL_CALL (*submitCommandBuffer)(
         PalQueue* queue,
         PalCommandBufferSubmitInfo* info);
 
+    /**
+     * Backend implementation of ::palCreateAccelerationstructure.
+     *
+     * This function must obey the rules and semantics documented in palCreateAccelerationstructure().
+     */
     PalResult PAL_CALL (*createAccelerationstructure)(
         PalDevice* device,
         const PalAccelerationStructureCreateInfo* info,
         PalAccelerationStructure** outAs);
 
+    /**
+     * Backend implementation of ::palDestroyAccelerationstructure.
+     *
+     * This function must obey the rules and semantics documented in palDestroyAccelerationstructure().
+     */
     void PAL_CALL (*destroyAccelerationstructure)(PalAccelerationStructure* as);
 
+    /**
+     * Backend implementation of ::palGetAccelerationStructureBuildSize.
+     *
+     * This function must obey the rules and semantics documented in palGetAccelerationStructureBuildSize().
+     */
     PalResult PAL_CALL (*getAccelerationStructureBuildSize)(
         PalDevice* device,
         PalAccelerationStructureBuildInfo* info,
         PalAccelerationStructureBuildSize* size);
 
+    /**
+     * Backend implementation of ::palCreateBuffer.
+     *
+     * This function must obey the rules and semantics documented in palCreateBuffer().
+     */
     PalResult PAL_CALL (*createBuffer)(
         PalDevice* device,
         const PalBufferCreateInfo* info,
         PalBuffer** outBuffer);
 
+    /**
+     * Backend implementation of ::palDestroyBuffer.
+     *
+     * This function must obey the rules and semantics documented in palDestroyBuffer().
+     */
     void PAL_CALL (*destroyBuffer)(PalBuffer* buffer);
 
+    /**
+     * Backend implementation of ::palGetBufferMemoryRequirements.
+     *
+     * This function must obey the rules and semantics documented in palGetBufferMemoryRequirements().
+     */
     PalResult PAL_CALL (*getBufferMemoryRequirements)(
         PalBuffer* buffer,
         PalMemoryRequirements* requirements);
 
+    /**
+     * Backend implementation of ::palComputeInstanceBufferRequirements.
+     *
+     * This function must obey the rules and semantics documented in palComputeInstanceBufferRequirements().
+     */
     PalResult PAL_CALL (*computeInstanceBufferRequirements)(
         PalDevice* device,
         PalInstanceBufferRequirements* requirements,
         Uint32 instanceCount);
 
+    /**
+     * Backend implementation of ::palWriteInstancesToMappedMemory.
+     *
+     * This function must obey the rules and semantics documented in palWriteInstancesToMappedMemory().
+     */
     PalResult PAL_CALL (*writeInstancesToMappedMemory)(
         PalDevice* device,
         void* ptr,
         PalAccelerationStructureInstance* instances,
         Uint32 instanceCount);
 
+    /**
+     * Backend implementation of ::palBindBufferMemory.
+     *
+     * This function must obey the rules and semantics documented in palBindBufferMemory().
+     */
     PalResult PAL_CALL (*bindBufferMemory)(
         PalBuffer* buffer,
         PalMemory* memory,
         Uint64 offset);
 
+    /**
+     * Backend implementation of ::palGetBufferDeviceAddress.
+     *
+     * This function must obey the rules and semantics documented in palGetBufferDeviceAddress().
+     */
     PalDeviceAddress PAL_CALL (*getBufferDeviceAddress)(PalBuffer* buffer);
 
+    /**
+     * Backend implementation of ::palCreateDescriptorSetLayout.
+     *
+     * This function must obey the rules and semantics documented in palCreateDescriptorSetLayout().
+     */
     PalResult PAL_CALL (*createDescriptorSetLayout)(
         PalDevice* device,
         const PalDescriptorSetLayoutCreateInfo* info,
         PalDescriptorSetLayout** outLayout);
 
+    /**
+     * Backend implementation of ::palDestroyDescriptorSetLayout.
+     *
+     * This function must obey the rules and semantics documented in palDestroyDescriptorSetLayout().
+     */
     void PAL_CALL (*destroyDescriptorSetLayout)(PalDescriptorSetLayout* layout);
 
+    /**
+     * Backend implementation of ::palCreateDescriptorPool.
+     *
+     * This function must obey the rules and semantics documented in palCreateDescriptorPool().
+     */
     PalResult PAL_CALL (*createDescriptorPool)(
         PalDevice* device,
         const PalDescriptorPoolCreateInfo* info,
         PalDescriptorPool** outPool);
 
+    /**
+     * Backend implementation of ::palDestroyDescriptorPool.
+     *
+     * This function must obey the rules and semantics documented in palDestroyDescriptorPool().
+     */
     void PAL_CALL (*destroyDescriptorPool)(PalDescriptorPool* pool);
 
+    /**
+     * Backend implementation of ::palResetDescriptorPool.
+     *
+     * This function must obey the rules and semantics documented in palResetDescriptorPool().
+     */
     PalResult PAL_CALL (*resetDescriptorPool)(PalDescriptorPool* pool);
 
+    /**
+     * Backend implementation of ::palAllocateDescriptorSet.
+     *
+     * This function must obey the rules and semantics documented in palAllocateDescriptorSet().
+     */
     PalResult PAL_CALL (*allocateDescriptorSet)(
         PalDevice* device,
         PalDescriptorPool* pool,
         PalDescriptorSetLayout* layout,
         PalDescriptorSet** outSet);
 
+    /**
+     * Backend implementation of ::palUpdateDescriptorSet.
+     *
+     * This function must obey the rules and semantics documented in palUpdateDescriptorSet().
+     */
     PalResult PAL_CALL (*updateDescriptorSet)(
         PalDevice* device,
         Uint32 count,
         PalDescriptorSetWriteInfo* infos);
 
+    /**
+     * Backend implementation of ::palCreatePipelineLayout.
+     *
+     * This function must obey the rules and semantics documented in palCreatePipelineLayout().
+     */
     PalResult PAL_CALL (*createPipelineLayout)(
         PalDevice* device,
         const PalPipelineLayoutCreateInfo* info,
         PalPipelineLayout** outLayout);
 
+    /**
+     * Backend implementation of ::palDestroyPipelineLayout.
+     *
+     * This function must obey the rules and semantics documented in palDestroyPipelineLayout().
+     */
     void PAL_CALL (*destroyPipelineLayout)(PalPipelineLayout* layout);
 
+    /**
+     * Backend implementation of ::palCreateGraphicsPipeline.
+     *
+     * This function must obey the rules and semantics documented in palCreateGraphicsPipeline().
+     */
     PalResult PAL_CALL (*createGraphicsPipeline)(
         PalDevice* device,
         const PalGraphicsPipelineCreateInfo* info,
         PalPipeline** outPipeline);
 
+    /**
+     * Backend implementation of ::palCreateComputePipeline.
+     *
+     * This function must obey the rules and semantics documented in palCreateComputePipeline().
+     */
     PalResult PAL_CALL (*createComputePipeline)(
         PalDevice* device,
         const PalComputePipelineCreateInfo* info,
         PalPipeline** outPipeline);
 
+    /**
+     * Backend implementation of ::palCreateRayTracingPipeline.
+     *
+     * This function must obey the rules and semantics documented in palCreateRayTracingPipeline().
+     */
     PalResult PAL_CALL (*createRayTracingPipeline)(
         PalDevice* device,
         const PalRayTracingPipelineCreateInfo* info,
         PalPipeline** outPipeline);
 
+    /**
+     * Backend implementation of ::palDestroyPipeline.
+     *
+     * This function must obey the rules and semantics documented in palDestroyPipeline().
+     */
     void PAL_CALL (*destroyPipeline)(PalPipeline* pipeline);
 } PalGraphicsBackend;
 
+/**
+ * @brief Add a custom graphics backend to the graphics system.
+ * 
+ * The graphics system must not be initialized before this call. If already initialized, 
+ * the system should be shutdown and re-initialized after this call. 
+ * The graphics system supports 16 custom backends.
+ * 
+ * The `backend` dispatch table must have its function pointers all set even if a 
+ * function will not be used. If a feature is not supported by the backend, 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED` must be returned by the appropriate function.
+ * If any of the function pointers are not set, this function will fail and 
+ * `PAL_RESULT_INVALID_BACKEND` will be returned.
+ * 
+ * The backend will not not copied, therefore the pointer must remain valid
+ * until the graphics system is shutdown.
+ *
+ * @param[in] backend Pointer to the backend dispatch table to add.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palInitGraphics
+ * @sa palShutdownGraphics
+ */
 PAL_API PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend);
 
+/**
+ * @brief Initialize the graphics system.
+ * 
+ * Any custom backends added with palAddGraphicsBackend() will be registered with the 
+ * graphics system. The graphics system must be shutdown with palShutdownGraphics() when no longer needed.
+ * 
+ * The debugger and allocator will not not copied, therefore the pointers must remain valid
+ * until the graphics system is shutdown. Set the debugger or PalGraphicsDebugger::callback to
+ * nullptr to disable debugging and validation layers.
+ *
+ * @param[in] debugger Optional debugger. Set to nullptr to disable debugging and validation 
+ * layers.
+ * @param[in] allocator Optional user-provided allocator. Set to nullptr to use default.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palAddGraphicsBackend
+ * @sa palShutdownGraphics
+ */
 PAL_API PalResult PAL_CALL palInitGraphics(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator);
 
+/**
+ * @brief Shutdown the graphics system.
+ * 
+ * If the graphics system has not been initialized, the function returns silently.
+ * All created devices, queues, images, swapchains etc must be destroyed before this call.
+ * 
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palInitGraphics
+ */
 PAL_API void PAL_CALL palShutdownGraphics();
 
+/**
+ * @brief Return a list of all adapters (GPU) from custom and internal backends.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * If a custom backend which implements an adapter with its API type of Vulkan, and there is an 
+ * adapter from the internal backends with the same specifications, this function will return both
+ * of them in the list. Use PalAdapterInfo::backendName to differentiate between custom and 
+ * internal backend. the backend name for internal backend is `PAL`.
+ * 
+ * Call this function first with PalAdapter array set to nullptr to get the number of adapters. 
+ * Allocate memory for the PalAdapter array and passed in the count and the allocated array. If 
+ * the count of the array is less than the number of adapters, PAL will write upto that limit.
+ * 
+ * If the count is 0 and the PalAdapter array is nullptr, the function fails
+ * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
+ *
+ * The adapter handles must not be freed by the user, they are managed by the
+ * graphics system. Users are required to cache this, and call this function again
+ * if adapters are added or removed which is rare except for virtual ones.
+ *
+ * @param[in] count Capacity of the PalAdapter array.
+ * @param[out] outAdapters User allocated array of PalAdapter.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palEnumerateAdapters(
     Int32* count,
     PalAdapter** outAdapters);
 
+/**
+ * @brief Get information about an adapter (GPU).
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] adapter Adapter to query information on.
+ * @param[out] info Pointer to a PalAdapterInfo to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: This function is thread safe if `info` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palEnumerateAdapters
+ */
 PAL_API PalResult PAL_CALL palGetAdapterInfo(
     PalAdapter* adapter,
     PalAdapterInfo* info);
 
+/**
+ * @brief Get capabilites or limits about an adapter (GPU).
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] adapter Adapter to query capabilities on.
+ * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: This function is thread safe if `caps` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palEnumerateAdapters
+ */
 PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps);
 
+/**
+ * @brief Get the supported features of an adapter (GPU).
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] adapter Adapter to query features on.
+ *
+ * @return adapter features on success or `0` on failure.
+ * 
+ * Thread safety: This function is thread safe.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palEnumerateAdapters
+ */
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
 
+/**
+ * @brief Create a device from an adapter (GPU).
+ * 
+ * The graphics system must be initialized before this call. PAL does not enable any features
+ * implicitly not even common ones like `PAL_ADAPTER_FEATURE_SWAPCHAIN`.
+ * 
+ * Every requested feature must be supported by the adapter. Use palGetAdapterFeatures to check
+ * the supported features of the adapter that can be enabled. Using a feature which is not 
+ * supported will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] adapter Adapter to create the device with.
+ * @param[in] features Adapter features to enable. Must be supported.
+ * @param[out] outDevice Pointer to a PalDevice to recieve the created device. Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroyDevice
+ */
 PAL_API PalResult PAL_CALL palCreateDevice(
     PalAdapter* adapter,
     PalAdapterFeatures features,
     PalDevice** outDevice);
 
+/**
+ * @brief Destroy a device.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided device is invalid or nullptr, this function returns
+ * silently.
+ *
+ * @param[in] device Pointer to the device to destroy.
+ * 
+ * Thread safety: This function must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateDevice
+ */
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
 
+/**
+ * @brief Blocks indefinitely untill the device becomes idle.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * This function blocks indefinitely untill all submitted work on the device has been completetd.
+ * Returns `PAL_RESULT_SUCCESS` to indicate all pending operations has been completetd.
+ *
+ * @param[in] device Pointer to device to wait.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: This function is thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palWaitDevice(PalDevice* device);
 
 PAL_API PalResult PAL_CALL palAllocateMemory(
