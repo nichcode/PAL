@@ -169,7 +169,7 @@ typedef struct {
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function is thread-safe if `info` is per thread.
+ * Thread safety: Thread-safe if `info` is per thread.
  *
  * @since 1.0
  * @ingroup pal_system
@@ -186,7 +186,7 @@ PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function is thread-safe if the proivded allocator is
+ * Thread safety: Thread-safe if the proivded allocator is
  * thread safe and `info` is per thread. The default allocator is thread safe.
  *
  * @since 1.0

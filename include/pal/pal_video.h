@@ -704,7 +704,7 @@ typedef struct {
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -721,7 +721,7 @@ PAL_API PalResult PAL_CALL palInitVideo(
  * If the video system has not been initialized, the function returns silently.
  * All created windows, icons, and cursors must be destroyed before this call.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -736,7 +736,7 @@ PAL_API void PAL_CALL palShutdownVideo();
  * This function pushes generated video events to the event driver set at
  * palInitVideo().
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -751,7 +751,7 @@ PAL_API void PAL_CALL palUpdateVideo();
  *
  * @return video features on success or `0` on failure.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -768,7 +768,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  *
  * @return video features on success or `0` on failure.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.3
  * @ingroup pal_video
@@ -802,7 +802,7 @@ PAL_API PalVideoFeatures64 PAL_CALL palGetVideoFeaturesEx();
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.1
  * @ingroup pal_video
@@ -835,7 +835,7 @@ PAL_API PalResult PAL_CALL palSetFBConfig(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -860,7 +860,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -883,7 +883,7 @@ PAL_API PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -914,7 +914,7 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -937,7 +937,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -967,7 +967,7 @@ PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -989,7 +989,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1012,7 +1012,7 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1034,7 +1034,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @note On Wayland
  *
@@ -1061,7 +1061,7 @@ PAL_API PalResult PAL_CALL palCreateWindow(
  *
  * @param[in] window Pointer to the window to destroy.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1081,7 +1081,7 @@ PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1102,7 +1102,7 @@ PAL_API PalResult PAL_CALL palMinimizeWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1123,7 +1123,7 @@ PAL_API PalResult PAL_CALL palMaximizeWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @note Wayland does not support restoring a minimized windows.
  *
@@ -1147,7 +1147,7 @@ PAL_API PalResult PAL_CALL palRestoreWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1167,7 +1167,7 @@ PAL_API PalResult PAL_CALL palShowWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1192,7 +1192,7 @@ PAL_API PalResult PAL_CALL palHideWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1213,7 +1213,7 @@ PAL_API PalResult PAL_CALL palFlashWindow(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1235,7 +1235,7 @@ PAL_API PalResult PAL_CALL palGetWindowStyle(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1260,7 +1260,7 @@ PAL_API PalResult PAL_CALL palGetWindowMonitor(
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the title.
  * Can be nullptr.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1285,7 +1285,7 @@ PAL_API PalResult PAL_CALL palGetWindowTitle(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1309,7 +1309,7 @@ PAL_API PalResult PAL_CALL palGetWindowPos(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1332,7 +1332,7 @@ PAL_API PalResult PAL_CALL palGetWindowSize(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1353,7 +1353,7 @@ PAL_API PalResult PAL_CALL palGetWindowState(
  *
  * @return A pointer to the keycodes array on success or nullptr on failure.
  *
- * Thread safety: This function is thread-safe.
+ * Thread safety: Thread-safe.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1372,7 +1372,7 @@ PAL_API const bool* PAL_CALL palGetKeycodeState();
  *
  * @return A pointer to the scancodes array on success or nullptr on failure.
  *
- * Thread safety: This function is thread-safe.
+ * Thread safety: Thread-safe.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1390,7 +1390,7 @@ PAL_API const bool* PAL_CALL palGetScancodeState();
  *
  * @return A pointer to the mouse button array on success or nullptr on failure.
  *
- * @Thread safety: This function is thread-safe.
+ * @Thread safety: Thread-safe.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1408,7 +1408,7 @@ PAL_API const bool* PAL_CALL palGetMouseState();
  * @param[in] dy Pointer to recieve the mouse relative movement y. Can be
  * nullptr.
  *
- * Thread safety: This function is thread-safe if `dx` and `dy` are thread
+ * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
  * @since 1.0
@@ -1427,7 +1427,7 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * @param[in] dx Pointer to recieve the mouse wheel delta x. Can be nullptr.
  * @param[in] dy Pointer to recieve the mouse wheel delta y. Can be nullptr.
  *
- * Thread safety: This function is thread-safe if `dx` and `dy` are thread
+ * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
  * @since 1.0
@@ -1448,7 +1448,7 @@ PAL_API void PAL_CALL palGetMouseWheelDelta(
  * @param[in] dy Pointer to recieve the mouse wheel delta y in floats. Can be
  * nullptr.
  *
- * Thread safety: This function is thread-safe if `dx` and `dy` are thread
+ * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
  * @since 1.3
@@ -1468,7 +1468,7 @@ PAL_API void PAL_CALL palGetRawMouseWheelDelta(
  *
  * @return `true` if the window is visible otherwise `false`.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1484,7 +1484,7 @@ PAL_API bool PAL_CALL palIsWindowVisible(PalWindow* window);
  * @return The current input-focused window on success or nullptr on
  * failure.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1500,7 +1500,7 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  *
  * @return The native handle of the window on success or nullptr on failure.
  *
- * Thread safety: This function is thread-safe.
+ * Thread safety: Thread-safe.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1521,7 +1521,7 @@ PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
  *
  * @return The native handles of the window on success or nullptr on failure.
  *
- * Thread safety: This function is thread-safe.
+ * Thread safety: Thread-safe.
  *
  * @since 1.3
  * @ingroup pal_video
@@ -1541,7 +1541,7 @@ PAL_API PalWindowHandleInfoEx PAL_CALL palGetWindowHandleInfoEx(PalWindow* w);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1562,7 +1562,7 @@ PAL_API PalResult PAL_CALL palSetWindowOpacity(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1585,7 +1585,7 @@ PAL_API PalResult PAL_CALL palSetWindowStyle(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1608,7 +1608,7 @@ PAL_API PalResult PAL_CALL palSetWindowTitle(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1634,7 +1634,7 @@ PAL_API PalResult PAL_CALL palSetWindowPos(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1656,7 +1656,7 @@ PAL_API PalResult PAL_CALL palSetWindowSize(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1678,7 +1678,7 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1698,7 +1698,7 @@ PAL_API PalResult PAL_CALL palCreateIcon(
  *
  * @param[in] icon Pointer to the icon to destroy.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1718,7 +1718,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1740,7 +1740,7 @@ PAL_API PalResult PAL_CALL palSetWindowIcon(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1762,7 +1762,7 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.1
  * @ingroup pal_video
@@ -1782,7 +1782,7 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  *
  * @param[in] cursor Pointer to the cursor to destroy.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1801,7 +1801,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  *
  * @param[in] show True to make the cursor visible otherwise false.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1824,7 +1824,7 @@ PAL_API void PAL_CALL palShowCursor(bool show);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1849,7 +1849,7 @@ PAL_API PalResult PAL_CALL palClipCursor(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1873,7 +1873,7 @@ PAL_API PalResult PAL_CALL palGetCursorPos(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1894,7 +1894,7 @@ PAL_API PalResult PAL_CALL palSetCursorPos(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_video
@@ -1917,7 +1917,7 @@ PAL_API PalResult PAL_CALL palSetWindowCursor(
  *
  * @return The instance or display on success or nullptr on failure.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @note The returned instance or display must not be freed.
  *
@@ -1955,7 +1955,7 @@ PAL_API void* PAL_CALL palGetInstance();
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.2
  * @ingroup pal_video
@@ -1992,7 +1992,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @since 1.2
  * @ingroup pal_video
@@ -2005,7 +2005,7 @@ PAL_API PalResult PAL_CALL palDetachWindow(
 /**
  * @brief Set the preferred instance the video system should use.
  *
- * This function must be called before palInitVideo(). This will be ignored
+ * Must be called before palInitVideo(). This will be ignored
  * if the video system is already initialized.
  * If there is no preferred instance set, the video system creates one.
  *
@@ -2013,7 +2013,7 @@ PAL_API PalResult PAL_CALL palDetachWindow(
 
  * On Windows: This is the HINSTANCE of the process.
  *
- * Thread safety: This function must be called from the main thread.
+ * Thread safety: Must be called from the main thread.
  *
  * @note The provided instance will not be freed by the video system.
  *

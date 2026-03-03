@@ -449,7 +449,7 @@ typedef struct {
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function is thread safe if the provided allocator is
+ * Thread safety: Thread safe if the provided allocator is
  * thread safe and `outEventDriver` is per thread. The default allocator is
  * thread safe.
  *
@@ -469,7 +469,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
  *
  * @param[in] eventDriver Pointer to the event driver to destroy.
  *
- * Thread safety: This function is thread safe if the allocator used to create
+ * Thread safety: Thread safe if the allocator used to create
  * the event driver is thread safe and `eventDriver` is per thread.
  *
  * @since 1.0
@@ -495,7 +495,7 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @param[in] type Event type to set dispatch mode for.
  * @param[in] mode Dispatch mode to use.
  *
- * Thread safety: This function is thread if multiple threads are not
+ * Thread safety: Thread if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
@@ -516,7 +516,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @return The dispatch mode on success or `PAL_DISPATCH_NONE` on failure.
  *
- * Thread safety: This function is thread if multiple threads are not
+ * Thread safety: Thread if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
@@ -544,7 +544,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] event Pointer to the event to push.
  *
- * Thread safety: This function is thread if the provided event queue is thread
+ * Thread safety: Thread if the provided event queue is thread
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.
  *
@@ -571,7 +571,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be
  * valid.
  *
- * Thread safety: This function is thread if the provided event queue is thread
+ * Thread safety: Thread if the provided event queue is thread
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.
  *

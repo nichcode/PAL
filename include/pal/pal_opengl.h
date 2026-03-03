@@ -210,7 +210,7 @@ typedef struct {
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -225,7 +225,7 @@ PAL_API PalResult PAL_CALL palInitGL(const PalAllocator* allocator);
  * If the opengl system has not been initialized, the function returns silently.
  * All created contexts must be destroyed before this call.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -241,7 +241,7 @@ PAL_API void PAL_CALL palShutdownGL();
  *
  * @return A pointer to a PalGLInfo on success or nullptr on failure.
  *
- * Thread safety: This function is thread-safe.
+ * Thread safety: Thread-safe.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -269,7 +269,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -298,7 +298,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  *
  * @return The closest PalGLFBConfig on success or nullptr on failure.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -329,7 +329,7 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from the main thread.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -349,7 +349,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * @param[in] context Pointer to the context to destroy.
  *
- * Thread safety: This function is thread safe if the `context` is per thread.
+ * Thread safety: Thread safe if the `context` is per thread.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -377,7 +377,7 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function is thread safe, but only one thread may have the
+ * Thread safety: Thread safe, but only one thread may have the
  * current context at a time.
  *
  * @since 1.0
@@ -396,7 +396,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  *
  * @return the pointer to the function on success or nullptr on failure.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_opengl
@@ -416,7 +416,7 @@ PAL_API void* PAL_CALL palGLGetProcAddress(const char* name);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from a thread that has a
+ * Thread safety: Must only be called from a thread that has a
  * bound context.
  *
  * @since 1.0
@@ -440,7 +440,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: This function must only be called from a thread with a bound
+ * Thread safety: Must only be called from a thread with a bound
  * context.
  *
  * @since 1.0
@@ -460,7 +460,7 @@ PAL_API PalResult PAL_CALL palSetSwapInterval(Int32 interval);
 
  * On Windows: This is the HINSTANCE of the process.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @note The provided instance will not be freed by the opengl system.
  *
@@ -476,7 +476,7 @@ PAL_API void PAL_CALL palGLSetInstance(void* instance);
  * The opengl system must be initialized before this call.
  * Possible values are `wgl`, `glx`, `gles`, `egl`.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.3
  * @ingroup pal_opengl

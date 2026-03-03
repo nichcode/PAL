@@ -318,7 +318,7 @@ typedef struct {
  *
  * @return PAL version (major, minor, build).
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -331,7 +331,7 @@ PAL_API PalVersion PAL_CALL palGetVersion();
  *
  * @return Null-terminated string containing the PAL version.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -346,7 +346,7 @@ PAL_API const char* PAL_CALL palGetVersionString();
  *
  * @return Null-terminated static string describing the result.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -400,7 +400,7 @@ PAL_API void PAL_CALL palFree(
  * @param fmt printf-style format string.
  * @param ... Arguments for the format string.
  *
- * Thread safety: This function is thread safe, but log output and
+ * Thread safety: Thread safe, but log output and
  * callbacks may be invoked concurrently. The user must ensure the callback
  * implementation is thread safe.
  *
@@ -418,7 +418,7 @@ PAL_API void PAL_CALL palLog(
  *
  * @return Current performance counter value.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -431,7 +431,7 @@ PAL_API Uint64 PAL_CALL palGetPerformanceCounter();
  *
  * @return Performance counter frequency, in counts per second.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -445,7 +445,7 @@ PAL_API Uint64 PAL_CALL palGetPerformanceFrequency();
  *
  * @return The combined 64-bit signed integer.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -464,7 +464,7 @@ static inline Int64 PAL_CALL palPackUint32(
  *
  * @return The combined 64-bit signed integer.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -482,7 +482,7 @@ static inline Int64 PAL_CALL palPackInt32(
  *
  * @return The packed 64-bit signed integer.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -498,7 +498,7 @@ static inline Int64 PAL_CALL palPackPointer(void* ptr)
  *
  * @return The combined 64-bit signed integer.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.3
  * @ingroup pal_core
@@ -526,7 +526,7 @@ static inline Int64 PAL_CALL palPackFloat(
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -552,7 +552,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: This function is thread-safe if `outLow` and `outHigh` are
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are
  * thread local.
  *
  * @since 1.0
@@ -578,7 +578,7 @@ static inline void PAL_CALL palUnpackInt32(
  *
  * @return The pointer from the 64-bit signed integer.
  *
- * Thread safety: This function is thread safe.
+ * Thread safety: Thread safe.
  *
  * @since 1.0
  * @ingroup pal_core
@@ -595,7 +595,7 @@ static inline void* PAL_CALL palUnpackPointer(Int64 data)
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: This function is thread-safe if `outLow` and `outHigh` are
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are
  * thread local.
  *
  * @since 1.3
