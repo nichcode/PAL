@@ -3318,7 +3318,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     adapterFeatures |= PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY;
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
-    adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_TIMEOUT;
     adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
 
     palFree(s_Vk.allocator, extensionProps);

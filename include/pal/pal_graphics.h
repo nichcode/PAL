@@ -569,20 +569,19 @@ typedef enum {
     PAL_ADAPTER_FEATURE_MULTI_VIEW = PAL_BIT64(16),
     PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY = PAL_BIT64(17),
     PAL_ADAPTER_FEATURE_FENCE_RESET = PAL_BIT64(18),
-    PAL_ADAPTER_FEATURE_FENCE_TIMEOUT = PAL_BIT64(19),
-    PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE = PAL_BIT64(20),
-    PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE = PAL_BIT64(21),
-    PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE = PAL_BIT64(22),
-    PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY = PAL_BIT64(23),
-    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE = PAL_BIT64(24),
-    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(25),
-    PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(26),
-    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(27),
-    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(28),
-    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(29),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(31),
-    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(32)
+    PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE = PAL_BIT64(19),
+    PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE = PAL_BIT64(20),
+    PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE = PAL_BIT64(21),
+    PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY = PAL_BIT64(22),
+    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE = PAL_BIT64(23),
+    PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE = PAL_BIT64(24),
+    PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP = PAL_BIT64(25),
+    PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE = PAL_BIT64(26),
+    PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(27),
+    PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(28),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(29),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(30),
+    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(31)
 } PalAdapterFeatures;
 
 /**
@@ -4019,8 +4018,8 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
  * The graphics system must be initialized before this call. 
  * This function also supports swapchain images.
  *
- * @param[in] adapter Adapter to query information on.
- * @param[out] info Pointer to a PalAdapterInfo to fill.
+ * @param[in] image Image to query information on.
+ * @param[out] info Pointer to a PalImageInfo to fill.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -4035,28 +4034,151 @@ PAL_API PalResult PAL_CALL palGetImageInfo(
     PalImage* image,
     PalImageInfo* info);
 
+/**
+ * @brief Get memory requirements for the provided image.
+ * 
+ * The graphics system must be initialized before this call. 
+ *
+ * @param[in] image Image to query memory requirements on.
+ * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `requirements` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
     PalImage* image,
     PalMemoryRequirements* requirements);
 
+/**
+ * @brief Bind an allocated GPU memory to an image.
+ * 
+ * The graphics system must be initialized before this call. 
+ * The memory size and alignment should match the requirements of the image.
+ * Get the requirements with palGetImageMemoryRequirements().
+ *
+ * @param[in] image Image to bind memory to.
+ * @param[in] memory Memory to bind. Must not be nullptr.
+ * @param[in] offset Starting point within the memory.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `requirements` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palGetImageMemoryRequirements
+ */
 PAL_API PalResult PAL_CALL palBindImageMemory(
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);
 
+/**
+ * @brief Create an image view.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * PalImageViewCreateInfo::type must be compatible by the type of the base image. Eg. A 2D base 
+ * image must be have an image view of either `PAL_IMAGE_VIEW_TYPE_2D` or 
+ * `PAL_IMAGE_VIEW_TYPE_2D_ARRAY`. 
+ * 
+ * `PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY` must be supported and enabled by the device
+ * used to create the image view if `PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY` will be used.
+ *
+ * @param[in] device Device to create image view on.
+ * @param[in] image Image to create the image view with.
+ * @param[in] info Pointer to a PalImageViewCreateInfo struct that specifies paramters. 
+ * Must not be nullptr.
+ * @param[out] outImageView Pointer to a PalImageView to recieve the created image view.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroyImageView
+ */
 PAL_API PalResult PAL_CALL palCreateImageView(
     PalDevice* device,
     PalImage* image,
     const PalImageViewCreateInfo* info,
     PalImageView** outImageView);
 
+/**
+ * @brief Destroy an image view.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided image view is invalid or nullptr, this function returns
+ * silently.
+ * 
+ * @param[in] imageView Image view to destroy.
+ * 
+ * Thread safety: Thread safe if the device used to create the image view is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateImageView
+ */
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
+/**
+ * @brief Get swapchain feature capabilites or limits about a device against a window.
+ * 
+ * The graphics system must be initialized before this call. 
+ * 
+ * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the 
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device to query swapchain feature capabilities on.
+ * @param[in] window Window to query swapchain feature capabilities against.
+ * @param[out] caps Pointer to a PalSwapchainCapabilities to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `caps` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
     PalDevice* device,
     PalGraphicsWindow* window,
     PalSwapchainCapabilities* caps);
 
+/**
+ * @brief Create a swaphain.
+ * 
+ * The graphics system must be initialized before this call. 
+ * 
+ * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device to create swapchain on.
+ * @param[in] queue Queue to create swapchain with. This must be a graphics queue.
+ * @param[in] window Window to create swapchain with.
+ * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies paramters. 
+ * Must not be nullptr.
+ * @param[out] outSwapchain Pointer to a PalSwapchain to recieve the created swapchain.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroySwapchain
+ */
 PAL_API PalResult PAL_CALL palCreateSwapchain(
     PalDevice* device,
     PalQueue* queue,
@@ -4064,47 +4186,296 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain);
 
+/**
+ * @brief Destroy a swapchain.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided swapchain is invalid or nullptr, this function returns
+ * silently.
+ * 
+ * @param[in] swapchain Swapchain to destroy.
+ * 
+ * Thread safety: Thread safe if the device used to create the swapchain is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateSwapchain
+ */
 PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 
+/**
+ * @brief Get a swapchain image from the list of images with an index.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * @param[in] swapchain Swapchain to get image from.
+ * @param[in] index Index of image in the list. Must not be greater than the image count.
+ * 
+ * @return A pointer to the image on success otherwise nullptr on failure.
+ * 
+ * Thread safety: Thread safe.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palGetNextSwapchainImage
+ */
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     Int32 index);
 
+/**
+ * @brief Get the next available image from the swapchain image list.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * @param[in] swapchain Swapchain to get image index from.
+ * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies paramters. 
+ * Must not be nullptr.
+ * @param[out] outIndex Pointer to a Uint32 to recieve the next image index.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+  * Thread safety: Thread safe if externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palGetSwapchainImage
+ */
 PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
     Uint32* outIndex);
 
+/**
+ * @brief Present the swapchain.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * @param[in] swapchain Swapchain to present.
+ * @param[in] info Pointer to a PalSwapchainPresentInfo struct that specifies paramters. 
+ * Must not be nullptr.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Must only be called from the main thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
     PalSwapchainPresentInfo* info);
 
+/**
+ * @brief Create a shader.
+ * 
+ * The graphics system must be initialized before this call. 
+ * 
+ * `PAL_ADAPTER_FEATURE_COMPUTE_SHADER` must be supported and enabled by the device if 
+ * `PAL_SHADER_STAGE_COMPUTE` will be used.
+ * 
+ * `PAL_ADAPTER_FEATURE_GEOMETRY_SHADER` must be supported and enabled by the device if 
+ * `PAL_SHADER_STAGE_GEOMETRY` will be used.
+ * 
+ * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled by the device if 
+ * `PAL_SHADER_STAGE_MESH` or `PAL_SHADER_STAGE_TASK` will be used.
+ * 
+ * `PAL_ADAPTER_FEATURE_TESSELLATION_SHADER` must be supported and enabled by the device if 
+ * `PAL_SHADER_STAGE_TESSELLATION_CONTROL` or `PAL_SHADER_STAGE_TESSELLATION_EVALUATION` will 
+ * be used.
+ * 
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if 
+ * `PAL_SHADER_STAGE_RAYGEN` or `PAL_SHADER_STAGE_CLOSEST_HIT` or `PAL_SHADER_STAGE_ANY_HIT` or
+ * `PAL_SHADER_STAGE_MISS` or `PAL_SHADER_STAGE_INTERSECTION` or `PAL_SHADER_STAGE_CALLABLE` will 
+ * be used.
+ *
+ * @param[in] device Device to create shader on.
+ * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies paramters. 
+ * Must not be nullptr.
+ * @param[out] outShader Pointer to a PalShader to recieve the created shader.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroyShader
+ */
 PAL_API PalResult PAL_CALL palCreateShader(
     PalDevice* device,
     const PalShaderCreateInfo* info,
     PalShader** outShader);
 
+/**
+ * @brief Destroy a shader.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided shader is invalid or nullptr, this function returns
+ * silently.
+ * 
+ * @param[in] shader Shader to destroy.
+ * 
+ * Thread safety: Thread safe if the device used to create the shader is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateShader
+ */
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
 
+/**
+ * @brief Create a fence.
+ * 
+ * The graphics system must be initialized before this call. 
+ *
+ * @param[in] device Device to create fence on.
+ * @param[in] signaled True if fence should be created signaled. If true, the fence must be reset
+ * before waiting for it to prevent waiting forever.
+ * @param[out] outFence Pointer to a PalFence to recieve the created fence.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroyFence
+ */
 PAL_API PalResult PAL_CALL palCreateFence(
     PalDevice* device,
     bool signaled,
     PalFence** outFence);
 
+/**
+ * @brief Destroy a fence.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided fence is invalid or nullptr, this function returns
+ * silently.
+ * 
+ * @param[in] fence Fence to destroy.
+ * 
+ * Thread safety: Thread safe if the device used to create the fence is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateFence
+ */
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
 
+/**
+ * @brief Wait for a fence.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * This function blocks for `timeout` until the fence is signaled or there is a timeout.
+ * Returns `PAL_RESULT_SUCCESS` or `PAL_RESULT_TIMEOUT` respectively.
+ * 
+ * @param[in] fence Fence to wait for.
+ * @param[in] timeout Time to wait for in milliseconds. Set to `PAL_INFINITE` for indefintely.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `fence` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palIsFenceSignaled
+ */
 PAL_API PalResult PAL_CALL palWaitFence(
     PalFence* fence,
     Uint64 timeout);
 
+/**
+ * @brief Reset a fence to an unsignaled state.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_FENCE_RESET` must be supported and enabled when creating the 
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * @param[in] fence Fence to reset.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `fence` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palIsFenceSignaled
+ */
 PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
 
+/**
+ * @brief Checks if the provided fence is in a signaled state.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * @param[in] fence Fence to check.
+ * 
+ * @return True if signaled otherwise false.
+ * 
+ * Thread safety: Thread safe.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palResetFence
+ * @sa palWaitFence
+ */
 PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
 
+/**
+ * @brief Create a semaphore.
+ * 
+ * The graphics system must be initialized before this call. 
+ * 
+ * A binary semaphore is created by default. To create a timeline
+ * semaphore, enable `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` when creating the device. 
+ * The feature must be supported by the device if not, this function will fail and return 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device to create semaphore on.
+ * @param[out] outSemaphore Pointer to a PalSemaphore to recieve the created semaphore.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroySemaphore
+ */
 PAL_API PalResult PAL_CALL palCreateSemaphore(
     PalDevice* device,
     PalSemaphore** outSemaphore);
 
+/**
+ * @brief Destroy a semaphore.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided semaphore is invalid or nullptr, this function returns
+ * silently.
+ * 
+ * @param[in] semaphore Semaphore to destroy.
+ * 
+ * Thread safety: Thread safe if the device used to create the semaphore is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateSemaphore
+ */
 PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
 
 PAL_API PalResult PAL_CALL palWaitSemaphore(

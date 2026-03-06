@@ -248,10 +248,6 @@ bool graphicsTest()
             palLog(nullptr, "  Resetting fence");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_FENCE_TIMEOUT) {
-            palLog(nullptr, "  Timeout fence");
-        }
-
         if (features & PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE) {
             palLog(nullptr, "  Polygon mode line");
         }
