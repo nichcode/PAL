@@ -5317,7 +5317,6 @@ void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore)
 
 PalResult PAL_CALL waitSemaphoreVk(
     PalSemaphore* semaphore,
-    PalQueue* queue,
     Uint64 value,
     Uint64 timeout)
 {
@@ -5733,6 +5732,10 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     Buffer* vkBuffer = (Buffer*)buffer;
     vkCmdBuffer->device
         ->cmdDrawMeshTaskIndirect(vkCmdBuffer->handle, vkBuffer->handle, offset, drawCount, stride);
@@ -5750,6 +5753,10 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+    
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6172,15 +6179,18 @@ PalResult PAL_CALL cmdBindIndexBufferVk(
 
 PalResult PAL_CALL cmdDrawVk(
     PalCommandBuffer* cmdBuffer,
-    PalDrawData* data)
+    Uint32 vertexCount,
+    Uint32 instanceCount,
+    Uint32 firstVertex,
+    Uint32 firstInstance)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDraw(
         vkCmdBuffer->handle,
-        data->vertexCount,
-        data->instanceCount,
-        data->firstVertex,
-        data->firstInstance);
+        vertexCount,
+        instanceCount,
+        firstVertex,
+        firstInstance);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6189,14 +6199,12 @@ PalResult PAL_CALL cmdDrawIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count)
+    Uint32 count,
+    Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
-    Uint32 stride = sizeof(VkDrawIndirectCommand);
-
     s_Vk.cmdDrawIndirect(vkCmdBuffer->handle, vkBuffer->handle, offset, count, stride);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6206,13 +6214,12 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count)
+    Uint32 maxDrawCount,
+    Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
     Buffer* vkCountBuffer = (Buffer*)countBuffer;
-    Uint32 stride = sizeof(VkDrawIndirectCommand);
-
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6223,7 +6230,7 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
         offset,
         vkCountBuffer->handle,
         countBufferOffset,
-        count,
+        maxDrawCount,
         stride);
 
     return PAL_RESULT_SUCCESS;
@@ -6231,16 +6238,20 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
 
 PalResult PAL_CALL cmdDrawIndexedVk(
     PalCommandBuffer* cmdBuffer,
-    PalDrawIndexedData* data)
+    Uint32 indexCount,
+    Uint32 instanceCount,
+    Uint32 firstIndex,
+    Int32 vertexOffset,
+    Uint32 firstInstance)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDrawIndexed(
         vkCmdBuffer->handle,
-        data->indexCount,
-        data->instanceCount,
-        data->firstIndex,
-        data->vertexOffset,
-        data->firstInstance);
+        indexCount,
+        instanceCount,
+        firstIndex,
+        vertexOffset,
+        firstInstance);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6249,14 +6260,12 @@ PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count)
+    Uint32 count,
+    Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
-    Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
-
     s_Vk.cmdDrawIndexedIndirect(vkCmdBuffer->handle, vkBuffer->handle, offset, count, stride);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6266,13 +6275,12 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count)
+    Uint32 maxDrawCount,
+    Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
     Buffer* vkCountBuffer = (Buffer*)countBuffer;
-    Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
-
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6283,7 +6291,7 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
         offset,
         vkCountBuffer->handle,
         countBufferOffset,
-        count,
+        maxDrawCount,
         stride);
 
     return PAL_RESULT_SUCCESS;

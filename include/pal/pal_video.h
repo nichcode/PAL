@@ -1027,7 +1027,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * The video system must be initialized before this call.
  *
  * @param[in] info Pointer to a PalWindowCreateInfo struct that specifies
- * paramters. Must not be nullptr.
+ * parameters. Must not be nullptr.
  * @param[out] outWindow Pointer to a PalWindow to recieve the created
  * window. Must not be nullptr.
  *
@@ -1187,7 +1187,7 @@ PAL_API PalResult PAL_CALL palHideWindow(PalWindow* window);
  * supported.
  *
  * @param[in] window Pointer to the window.
- * @param[in] info Pointer to a PalFlashInfo struct with flash paramters.
+ * @param[in] info Pointer to a PalFlashInfo struct with flash parameters.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1671,7 +1671,7 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] info Pointer to a PalIconCreateInfo struct that specifies
- * paramters. Must not be nullptr.
+ * parameters. Must not be nullptr.
  * @param[out] outIcon Pointer to a PalIcon to recieve the created
  * icon. Must not be nullptr.
  *
@@ -1733,7 +1733,7 @@ PAL_API PalResult PAL_CALL palSetWindowIcon(
  * The video system must be initialized before this call.
  *
  * @param[in] info Pointer to a PalCursorCreateInfo struct that specifies
- * paramters. Must not be nullptr.
+ * parameters. Must not be nullptr.
  * @param[out] outCursor Pointer to a PalCursor to recieve the created
  * cursor. Must not be nullptr.
  *

@@ -1649,8 +1649,8 @@ typedef struct {
 } PalWorkGroupInfo;
 
 /**
- * @struct PalDrawData
- * @brief Draw data of a single draw call.
+ * @struct PalDrawIndirectData
+ * @brief Draw indirect data of a single draw call.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -1662,11 +1662,11 @@ typedef struct {
     Uint32 instanceCount; /**< Number of instances to draw. Set to 1 if not using instanced draw.*/
     Uint32 firstVertex;   /**< First vertex. Set to 0 for default behavior.*/
     Uint32 firstInstance; /**< First instance. Set to 0 for default behavior.*/
-} PalDrawData;
+} PalDrawIndirectData;
 
 /**
- * @struct PalDrawData
- * @brief Draw indexed data of a single draw call.
+ * @struct PalDrawIndexedIndirectData
+ * @brief Draw indexed indirect data of a single draw call.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -1679,7 +1679,22 @@ typedef struct {
     Uint32 firstIndex;    /**< First index. Set to 0 for default behavior.*/
     Int32 vertexOffset;   /**< Vertex offset. Set to 0 for default behavior.*/
     Uint32 firstInstance; /**< First instance. Set to 0 for default behavior.*/
-} PalDrawIndexedData;
+} PalDrawIndexedIndirectData;
+
+/**
+ * @struct PalDispatchIndirectData
+ * @brief Draw or dispatch indirect data of a single dispatch call.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 groupCountX; /**< Number of groups on the x axis.*/
+    Uint32 groupCountY; /**< Number of groups on the y axis.*/
+    Uint32 groupCountZ; /**< Number of groups on the z axis.*/
+} PalDispatchIndirectData;
 
 /**
  * @struct PalVertexAttribute
@@ -1933,6 +1948,7 @@ typedef struct {
     PalAccelerationStructureType type; /**< (eg. PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL).*/
     Uint32 geometryCount;
     PalAccelerationStructure* dst;
+    PalAccelerationStructure* src;
     PalDeviceAddress scratchBufferAddress;
     PalGeometry* geometries;
 } PalAccelerationStructureBuildInfo;
@@ -2655,11 +2671,11 @@ typedef struct {
     void PAL_CALL (*destroyFence)(PalFence* fence);
 
     /**
-     * Backend implementation of ::palWaitFenceTimeout.
+     * Backend implementation of ::palWaitFence.
      *
-     * Must obey the rules and semantics documented in palWaitFenceTimeout().
+     * Must obey the rules and semantics documented in palWaitFence().
      */
-    PalResult PAL_CALL (*waitFenceTimeout)(
+    PalResult PAL_CALL (*waitFence)(
         PalFence* fence,
         Uint64 timeout);
 
@@ -2700,7 +2716,6 @@ typedef struct {
      */
     PalResult PAL_CALL (*waitSemaphore)(
         PalSemaphore* semaphore,
-        PalQueue* queue,
         Uint64 value,
         Uint64 timeout);
 
@@ -2940,7 +2955,10 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdDraw)(
         PalCommandBuffer* cmdBuffer,
-        PalDrawData* data);
+        Uint32 vertexCount,
+        Uint32 instanceCount,
+        Uint32 firstVertex,
+        Uint32 firstInstance);
 
     /**
      * Backend implementation of ::palCmdDrawIndirect.
@@ -2951,7 +2969,8 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset,
-        Uint32 count);
+        Uint32 count,
+        Uint32 stride);
 
     /**
      * Backend implementation of ::palCmdDrawIndirectCount.
@@ -2964,7 +2983,8 @@ typedef struct {
         PalBuffer* countBuffer,
         Uint64 offset,
         Uint64 countBufferOffset,
-        Uint32 count);
+        Uint32 count,
+        Uint32 stride);
 
     /**
      * Backend implementation of ::palCmdDrawIndexed.
@@ -2973,7 +2993,11 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdDrawIndexed)(
         PalCommandBuffer* cmdBuffer,
-        PalDrawIndexedData* data);
+        Uint32 indexCount,
+        Uint32 instanceCount,
+        Uint32 firstIndex,
+        Int32 vertexOffset,
+        Uint32 firstInstance);
 
     /**
      * Backend implementation of ::palCmdDrawIndexedIndirect.
@@ -2984,7 +3008,8 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         Uint64 offset,
-        Uint32 count);
+        Uint32 count,
+        Uint32 stride);
 
     /**
      * Backend implementation of ::palCmdDrawIndexedIndirectCount.
@@ -2997,7 +3022,8 @@ typedef struct {
         PalBuffer* countBuffer,
         Uint64 offset,
         Uint64 countBufferOffset,
-        Uint32 count);
+        Uint32 count,
+        Uint32 stride);
 
     /**
      * Backend implementation of ::palCmdMemoryBarrier.
@@ -3554,7 +3580,7 @@ PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -3799,7 +3825,7 @@ PAL_API PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -3976,14 +4002,14 @@ PAL_API PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
  * adapter capabilities for the limits.
  *
  * @param[in] device Device to create image on.
- * @param[in] info Pointer to a PalImageCreateInfo struct that specifies paramters. 
+ * @param[in] info Pointer to a PalImageCreateInfo struct that specifies parameters. 
  * Must not be nullptr.
  * @param[out] outImage Pointer to a PalImage to recieve the created image.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4093,14 +4119,14 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  *
  * @param[in] device Device to create image view on.
  * @param[in] image Image to create the image view with.
- * @param[in] info Pointer to a PalImageViewCreateInfo struct that specifies paramters. 
+ * @param[in] info Pointer to a PalImageViewCreateInfo struct that specifies parameters. 
  * Must not be nullptr.
  * @param[out] outImageView Pointer to a PalImageView to recieve the created image view.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4166,14 +4192,14 @@ PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
  * @param[in] device Device to create swapchain on.
  * @param[in] queue Queue to create swapchain with. This must be a graphics queue.
  * @param[in] window Window to create swapchain with.
- * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies paramters. 
+ * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies parameters. 
  * Must not be nullptr.
  * @param[out] outSwapchain Pointer to a PalSwapchain to recieve the created swapchain.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4230,7 +4256,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  * The graphics system must be initialized before this call.
  * 
  * @param[in] swapchain Swapchain to get image index from.
- * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies paramters. 
+ * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies parameters. 
  * Must not be nullptr.
  * @param[out] outIndex Pointer to a Uint32 to recieve the next image index.
  * 
@@ -4254,7 +4280,7 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  * The graphics system must be initialized before this call.
  * 
  * @param[in] swapchain Swapchain to present.
- * @param[in] info Pointer to a PalSwapchainPresentInfo struct that specifies paramters. 
+ * @param[in] info Pointer to a PalSwapchainPresentInfo struct that specifies parameters. 
  * Must not be nullptr.
  * 
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4293,14 +4319,14 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
  * be used.
  *
  * @param[in] device Device to create shader on.
- * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies paramters. 
+ * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies parameters. 
  * Must not be nullptr.
  * @param[out] outShader Pointer to a PalShader to recieve the created shader.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4342,7 +4368,7 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4450,7 +4476,7 @@ PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  * 
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4478,60 +4504,340 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  */
 PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
 
+/**
+ * @brief Waits for a semaphore to reach the provided value.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported and enabled when creating the 
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * @param[in] semaphore Semaphore to wait on.
+ * @param[in] value Value to wait for.
+ * @param[in] timeout Time to wait for in milliseconds. Set to `PAL_INFINITE` for indefintely.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `semaphore` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palSignalSemaphore
+ * @sa palGetSemaphoreValue
+ */
 PAL_API PalResult PAL_CALL palWaitSemaphore(
     PalSemaphore* semaphore,
-    PalQueue* queue,
     Uint64 value,
     Uint64 timeout);
 
+/**
+ * @brief Signals a semaphore from the provided value.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported and enabled when creating the 
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * @param[in] semaphore Semaphore to signal.
+ * @param[in] queue Queue used to signal the semaphore.
+ * @param[in] value Value to signal.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `queue` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palWaitSemaphore
+ * @sa palGetSemaphoreValue
+ */
 PAL_API PalResult PAL_CALL palSignalSemaphore(
     PalSemaphore* semaphore,
     PalQueue* queue,
     Uint64 value);
 
+/**
+ * @brief Get the value of a semaphore.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported and enabled when creating the 
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * @param[in] semaphore Semaphore to get its value.
+ * @param[out] value Pointer to a Uint64 to receive the semaphore value.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `semaphore` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palWaitSemaphore
+ * @sa palSignalSemaphore
+ */
 PAL_API PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore,
     Uint64* value);
 
+/**
+ * @brief Create a command pool from a device.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] device Device to create command pool on.
+ * @param[in] queue Queue the command pool buffers will be submitted to.
+ * @param[out] outPool Pointer to a PalCommandPool to recieve the created command pool.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroyCommandPool
+ */
 PAL_API PalResult PAL_CALL palCreateCommandPool(
     PalDevice* device,
     PalQueue* queue,
     PalCommandPool** outPool);
 
+/**
+ * @brief Destroy a command pool.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided command pool is invalid or nullptr, this function returns
+ * silently. All command buffers allocated from the command pool must be freed before this 
+ * function.
+ * 
+ * @param[in] pool Command pool to destroy.
+ * 
+ * Thread safety: Thread safe if the device used to create the command pool is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateCommandPool
+ */
 PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
 
+/**
+ * @brief Reset all command buffers allocated from the provided command pool.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] pool Command pool to reset its command buffers.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `pool` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
 
+/**
+ * @brief Allocate a command buffer from the provided command pool.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] device Device to allocate command buffer on.
+ * @param[in] pool Command pool to allocate command buffer on.
+ * @param[in] type Type of the command buffer (eg. PAL_COMMAND_BUFFER_TYPE_PRIMARY).
+ * @param[out] outCmdBuffer Pointer to a PalCommandBuffer to recieve the created command buffer.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palFreeCommandBuffer
+ */
 PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
     PalCommandBuffer** outCmdbuffer);
 
+/**
+ * @brief Free an allocated command buffer.
+ * 
+ * The graphics system must be initialized before this call.
+ * If the provided command buffer is invalid or nullptr, this function returns
+ * silently.
+ * 
+ * @param[in] cmdBuffer Command buffer to free.
+ * 
+ * Thread safety: Thread safe if the command pool used to create the command buffer is 
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palAllocateCommandBuffer
+ */
 PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
 
+/**
+ * @brief Reset the provided command buffer.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer to reset.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
 
+/**
+ * @brief Begin recording commands to the provided command buffer.
+ * 
+ * The graphics system must be initialized before this call. This function must be called
+ * before any other `palCmd**` function is used.
+ *
+ * @param[in] cmdBuffer Command buffer to begin recording.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCmdEnd
+ */
 PAL_API PalResult PAL_CALL palCmdBegin(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info);
 
+/**
+ * @brief End recording commands to the provided command buffer.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer to begin recording.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCmdBegin
+ */
 PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
 
+/**
+ * @brief Execute a secondary command buffer within a primary command buffer.
+ * 
+ * The graphics system must be initialized before this call. The `secondaryCmdBuffer` must
+ * be created with the type `PAL_COMMAND_BUFFER_TYPE_SECONDARY`.
+ *
+ * @param[in] primaryCmdBuffer Primary command buffer. Must be in recording state.
+ * @param[in] secondaryCmdBuffer Secondary command buffer.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `primaryCmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer);
 
+/**
+ * @brief Set the fragment shading rate used for draw calls.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] state Pointer to a PalFragmentShadingRateState struct that specifies parameters. 
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdSetFragmentShadingRate(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state);
 
+/**
+ * @brief Dispatch mesh shader workgroups.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] groupCountX Number of mesh shader groups to dispatch on the x axis.
+ * @param[in] groupCountY Number of mesh shader groups to dispatch on the y axis.
+ * @param[in] groupCountZ Number of mesh shader groups to dispatch on the z axis.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
     PalCommandBuffer* cmdBuffer,
     Uint32 groupCountX,
     Uint32 groupCountY,
     Uint32 groupCountZ);
 
+/**
+ * @brief Dispatch mesh shader workgroups using parameters from a buffer.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported 
+ * and enabled by the device if not, this function will fail and return 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs. 
+ * Can be a single struct.
+ * @param[in] offset Starting byte offset into `buffer`.
+ * @param[in] drawCount Number of draws to perform.
+ * @param[in] stride Size in bytes of each parameter struct in `buffer`. 
+ * Must be greater or equal to sizeof(PalDispatchIndirectData).
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
@@ -4539,6 +4845,33 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     Uint32 drawCount,
     Uint32 stride);
 
+/**
+ * @brief Dispatch mesh shader workgroups using parameters from buffers.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be 
+ * supported and enabled by the device if not, this function will fail and return 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs. 
+ * Can be a single struct.
+ * @param[in] countBuffer Buffer containing a single `Uint32` specifying the number of draws.
+ * @param[in] offset Starting byte offset into `buffer`.
+ * @param[in] countBufferOffset Starting byte offset into `countBuffer`.
+ * @param[in] maxDrawCount Maximum Number of draws to perform.
+ * @param[in] stride Size in bytes of each parameter struct in `buffer`. 
+ * Must be greater or equal to sizeof(PalDispatchIndirectData).
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
@@ -4548,16 +4881,88 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     Uint32 maxDrawCount,
     Uint32 stride);
 
+/**
+ * @brief Build or update an acceleration structure.
+ * 
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters. 
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdBuildAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info);
 
+/**
+ * @brief Begin a rendering pass.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] info Pointer to a PalRenderingInfo struct that specifies parameters. 
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdBeginRendering(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info);
 
+/**
+ * @brief End a rendering pass.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
 
+/**
+ * @brief Copy data from one buffer to the other.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] dst Destination buffer.
+ * @param[in] src Source buffer.
+ * @param[in] dstOffset Starting byte offset in the destination buffer.
+ * @param[in] srcOffset Starting byte offset in the source buffer.
+ * @param[in] size Size in bytes to copy from the source buffer.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdCopyBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dst,
@@ -4566,20 +4971,92 @@ PAL_API PalResult PAL_CALL palCmdCopyBuffer(
     Uint64 srcOffset,
     Uint32 size);
 
+/**
+ * @brief Bind a pipeline.
+ * 
+ * The graphics system must be initialized before this call. Every pipeline knows it types which is
+ * set at the respective creation functions. (`palCreate**Graphics/Compute/RayTracing**Pipeline`).
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] pipeline Pipeline to bind.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline);
 
+/**
+ * @brief Set the viewport(s) used in draw commands.
+ * 
+ * The graphics system must be initialized before this call. This always overwrites any previous
+ * viewports that were set since the first viewport index is always 0.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] count Number of viewports in the array.
+ * @param[in] viewports Pointer to an array of viewports.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdSetViewport(
     PalCommandBuffer* cmdBuffer,
     Uint32 count,
     PalViewport* viewports);
 
+/**
+ * @brief Set the scissor(s) used in draw commands.
+ * 
+ * The graphics system must be initialized before this call. This always overwrites any previous
+ * scissors that were set since the first scissor index is always 0.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] count Number of scissors in the array.
+ * @param[in] scissors Pointer to an array of scissors.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdSetScissors(
     PalCommandBuffer* cmdBuffer,
     Uint32 count,
     PalRect2D* scissors);
 
+/**
+ * @brief Bind vertex buffer(s) used in draw commands.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] firstSlot Index of the first vertex buffer binding slot.
+ * @param[in] count Number of vertex buffers to bind.
+ * @param[in] buffers Pointer to an array of vertex buffers.
+ * @param[in] offsets Pointer to an array of offsets in bytes into each vertex buffer.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
@@ -4587,47 +5064,221 @@ PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
     PalBuffer** buffers,
     Uint64* offsets);
 
+/**
+ * @brief Bind index buffer used in draw commands.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Index buffer to bind.
+ * @param[in] offset Offset in bytes into the index buffer.
+ * @param[in] type Type of indices stored in the index buffer. (eg. `PAL_INDEX_TYPE_UINT32`).
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
 PAL_API PalResult PAL_CALL palCmdBindIndexBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
     PalIndexType type);
 
+/**
+ * @brief Issue a non-indexed draw command.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] vertexCount Number of vertices to draw.
+ * @param[in] instanceCount Number of instances to draw.
+ * @param[in] firstVertex Index of the first vertex to draw.
+ * @param[in] firstInstance Index of the first instance to draw.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDrawIndexed
+ */
 PAL_API PalResult PAL_CALL palCmdDraw(
     PalCommandBuffer* cmdBuffer,
-    PalDrawData* data);
+    Uint32 vertexCount,
+    Uint32 instanceCount,
+    Uint32 firstVertex,
+    Uint32 firstInstance);
 
+/**
+ * @brief Issue a non-indexed draw command using buffers.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer containing an array of PalDrawIndirectData structs. 
+ * Can be a single struct.
+ * @param[in] offset Starting byte offset into `buffer`.
+ * @param[in] count Number of draws to perform.
+ * @param[in] stride Size in bytes of each parameter struct in `buffer`. 
+ * Must be greater or equal to sizeof(PalDrawIndirectData).
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDrawIndexedIndirect
+ */
 PAL_API PalResult PAL_CALL palCmdDrawIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count);
+    Uint32 count,
+    Uint32 stride);
 
+/**
+ * @brief Issue a non-indexed draw command using buffers.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer containing an array of PalDrawIndirectData structs. 
+ * Can be a single struct.
+ * @param[in] countBuffer Buffer containing a single `Uint32` specifying the number of draws.
+ * @param[in] offset Starting byte offset into `buffer`.
+ * @param[in] countBufferOffset Starting byte offset into `countBuffer`.
+ * @param[in] maxDrawCount Maximum Number of draws to perform.
+ * @param[in] stride Size in bytes of each parameter struct in `buffer`. 
+ * Must be greater or equal to sizeof(PalDrawIndirectData). 
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCmdDrawIndexedIndirectCount
+ */
 PAL_API PalResult PAL_CALL palCmdDrawIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count);
+    Uint32 maxDrawCount,
+    Uint32 stride);
 
+/**
+ * @brief Issue an indexed draw command.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] indexCount Number of indices to draw.
+ * @param[in] instanceCount Number of instances to draw.
+ * @param[in] firstIndex Index of the first index to draw.
+ * @param[in] vertexOffset Added offset to vertex indices.
+ * @param[in] firstInstance Index of the first instance to draw.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDraw
+ */
 PAL_API PalResult PAL_CALL palCmdDrawIndexed(
     PalCommandBuffer* cmdBuffer,
-    PalDrawIndexedData* data);
+    Uint32 indexCount,
+    Uint32 instanceCount,
+    Uint32 firstIndex,
+    Int32 vertexOffset,
+    Uint32 firstInstance);
 
+/**
+ * @brief Issue an indexed draw command using buffers.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer containing an array of PalDrawIndexedIndirectData structs. 
+ * Can be a single struct.
+ * @param[in] offset Starting byte offset into `buffer`.
+ * @param[in] count Number of draws to perform.
+ * @param[in] stride Size in bytes of each parameter struct in `buffer`. 
+ * Must be greater or equal to sizeof(PalDrawIndexedIndirectData).
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDrawIndirect
+ */
 PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count);
+    Uint32 count,
+    Uint32 stride);
 
+/**
+ * @brief Issue an indexed draw command using buffers.
+ * 
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer containing an array of PalDrawIndexedIndirectData structs. 
+ * Can be a single struct.
+ * @param[in] countBuffer Buffer containing a single `Uint32` specifying the number of draws.
+ * @param[in] offset Starting byte offset into `buffer`.
+ * @param[in] countBufferOffset Starting byte offset into `countBuffer`.
+ * @param[in] maxDrawCount Maximum Number of draws to perform.
+ * @param[in] stride Size in bytes of each parameter struct in `buffer`. 
+ * Must be greater or equal to sizeof(PalDrawIndexedIndirectData). 
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ * 
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCmdDrawIndirectCount
+ */
 PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count);
+    Uint32 maxDrawCount,
+    Uint32 stride);
 
 PAL_API PalResult PAL_CALL palCmdMemoryBarrier(
     PalCommandBuffer* cmdBuffer,

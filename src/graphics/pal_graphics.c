@@ -272,7 +272,6 @@ void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore);
 
 PalResult PAL_CALL waitSemaphoreVk(
     PalSemaphore* semaphore,
-    PalQueue* queue,
     Uint64 value,
     Uint64 timeout);
 
@@ -387,13 +386,17 @@ PalResult PAL_CALL cmdBindIndexBufferVk(
 
 PalResult PAL_CALL cmdDrawVk(
     PalCommandBuffer* cmdBuffer,
-    PalDrawData* data);
+    Uint32 vertexCount,
+    Uint32 instanceCount,
+    Uint32 firstVertex,
+    Uint32 firstInstance);
 
 PalResult PAL_CALL cmdDrawIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count);
+    Uint32 count,
+    Uint32 stride);
 
 PalResult PAL_CALL cmdDrawIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
@@ -401,17 +404,23 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count);
+    Uint32 maxDrawCount,
+    Uint32 stride);
 
 PalResult PAL_CALL cmdDrawIndexedVk(
     PalCommandBuffer* cmdBuffer,
-    PalDrawIndexedData* data);
+    Uint32 indexCount,
+    Uint32 instanceCount,
+    Uint32 firstIndex,
+    Int32 vertexOffset,
+    Uint32 firstInstance);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count);
+    Uint32 count,
+    Uint32 stride);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
@@ -419,7 +428,8 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count);
+    Uint32 maxDrawCount,
+    Uint32 stride);
 
 PalResult PAL_CALL cmdMemoryBarrierVk(
     PalCommandBuffer* cmdBuffer,
@@ -656,7 +666,7 @@ static PalGraphicsBackend s_VkBackend = {
     // fence
     .createFence = createFenceVk,
     .destroyFence = destroyFenceVk,
-    .waitFenceTimeout = waitFenceVk,
+    .waitFence = waitFenceVk,
     .resetFence = resetFenceVk,
     .isFenceSignaled = isFenceSignaledVk,
 
@@ -839,7 +849,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         // fence
         !backend->createFence                           ||
         !backend->destroyFence                          ||
-        !backend->waitFenceTimeout                      ||
+        !backend->waitFence                             ||
         !backend->resetFence                            ||
         !backend->isFenceSignaled                       ||
 
@@ -1670,7 +1680,7 @@ PalResult PAL_CALL palWaitFence(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return fence->backend->waitFenceTimeout(fence, timeout);
+    return fence->backend->waitFence(fence, timeout);
 }
 
 PalResult PAL_CALL palResetFence(PalFence* fence)
@@ -1731,7 +1741,6 @@ void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
 
 PalResult PAL_CALL palWaitSemaphore(
     PalSemaphore* semaphore,
-    PalQueue* queue,
     Uint64 value,
     Uint64 timeout)
 {
@@ -1739,11 +1748,11 @@ PalResult PAL_CALL palWaitSemaphore(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!semaphore || !queue) {
+    if (!semaphore) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return semaphore->backend->waitSemaphore(semaphore, queue, value, timeout);
+    return semaphore->backend->waitSemaphore(semaphore, value, timeout);
 }
 
 PalResult PAL_CALL palSignalSemaphore(
@@ -2170,24 +2179,33 @@ PalResult PAL_CALL palCmdBindIndexBuffer(
 
 PalResult PAL_CALL palCmdDraw(
     PalCommandBuffer* cmdBuffer,
-    PalDrawData* data)
+    Uint32 vertexCount,
+    Uint32 instanceCount,
+    Uint32 firstVertex,
+    Uint32 firstInstance)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !data) {
+    if (!cmdBuffer) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDraw(cmdBuffer, data);
+    return cmdBuffer->backend->cmdDraw(
+        cmdBuffer, 
+        vertexCount, 
+        instanceCount, 
+        firstVertex, 
+        firstInstance);
 }
 
 PalResult PAL_CALL palCmdDrawIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count)
+    Uint32 count,
+    Uint32 stride)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2197,7 +2215,7 @@ PalResult PAL_CALL palCmdDrawIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDrawIndirect(cmdBuffer, buffer, offset, count);
+    return cmdBuffer->backend->cmdDrawIndirect(cmdBuffer, buffer, offset, count, stride);
 }
 
 PalResult PAL_CALL palCmdDrawIndirectCount(
@@ -2206,7 +2224,8 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count)
+    Uint32 maxDrawCount,
+    Uint32 stride)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2222,29 +2241,41 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
         countBuffer,
         offset,
         countBufferOffset,
-        count);
+        maxDrawCount,
+        stride);
 }
 
 PalResult PAL_CALL palCmdDrawIndexed(
     PalCommandBuffer* cmdBuffer,
-    PalDrawIndexedData* data)
+    Uint32 indexCount,
+    Uint32 instanceCount,
+    Uint32 firstIndex,
+    Int32 vertexOffset,
+    Uint32 firstInstance)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !data) {
+    if (!cmdBuffer) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDrawIndexed(cmdBuffer, data);
+    return cmdBuffer->backend->cmdDrawIndexed(
+        cmdBuffer,
+        indexCount,
+        instanceCount,
+        firstIndex,
+        vertexOffset,
+        firstInstance);
 }
 
 PalResult PAL_CALL palCmdDrawIndexedIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     Uint64 offset,
-    Uint32 count)
+    Uint32 count,
+    Uint32 stride)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2254,7 +2285,7 @@ PalResult PAL_CALL palCmdDrawIndexedIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDrawIndexedIndirect(cmdBuffer, buffer, offset, count);
+    return cmdBuffer->backend->cmdDrawIndexedIndirect(cmdBuffer, buffer, offset, count, stride);
 }
 
 PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
@@ -2263,7 +2294,8 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     PalBuffer* countBuffer,
     Uint64 offset,
     Uint64 countBufferOffset,
-    Uint32 count)
+    Uint32 maxDrawCount,
+    Uint32 stride)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2279,7 +2311,8 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
         countBuffer,
         offset,
         countBufferOffset,
-        count);
+        maxDrawCount,
+        stride);
 }
 
 PalResult PAL_CALL palCmdMemoryBarrier(

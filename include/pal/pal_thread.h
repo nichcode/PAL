@@ -157,7 +157,7 @@ typedef struct {
  * until the entry function has finished executing or its detached.
  *
  * @param[in] info Pointer to a PalThreadCreateInfo struct that specifies
- * paramters. Must not be nullptr.
+ * parameters. Must not be nullptr.
  * @param[out] outThread Pointer to a PalThread to recieve the created
  * thread.  Must not be nullptr.
  *

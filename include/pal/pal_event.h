@@ -442,7 +442,7 @@ typedef struct {
  * longer needed.
  *
  * @param[in] info Pointer to a PalEventDriverCreateInfo struct that specifies
- * paramters. Must not be nullptr.
+ * parameters. Must not be nullptr.
  * @param[out] outEventDriver Pointer to a PalEventDriver to recieve the created
  * event driver. Must not be nullptr.
  *

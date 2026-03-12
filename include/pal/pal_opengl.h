@@ -322,7 +322,7 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * not the wl_surface.
  *
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
- * paramters. Must not be nullptr.
+ * parameters. Must not be nullptr.
  * @param[out] outContext Pointer to a PalGLContext to recieve the created
  * context. Must not be nullptr.
  *
