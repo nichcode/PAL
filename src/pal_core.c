@@ -147,7 +147,6 @@ static inline LogTLSData* getLogTlsData()
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);
         memset(data, 0, sizeof(LogTLSData));
-
         // create TLS if it has not been created
 #ifdef _WIN32
         if (s_TlsID == 0) {
@@ -158,7 +157,6 @@ static inline LogTLSData* getLogTlsData()
             } else {
                 // update the TLS using atomic operations to avoid thread race
                 LONG prev = InterlockedCompareExchange((volatile LONG*)&s_TlsID, (LONG)TLSIndex, 0);
-
                 if (prev != 0) {
                     // Another thread has already set this,
                     // destroy the tls index
@@ -236,7 +234,6 @@ void palSetLastPlatformError(Uint32 e)
 {
     LogTLSData* data = getLogTlsData();
     memset(data->platformResultDesc, 0, PAL_LOG_MSG_SIZE);
-
     if (e == 0) {
         return;
     }

@@ -122,7 +122,6 @@ PalResult PAL_CALL palCreateEventDriver(
         // we create a default event queue data
         QueueData* queueData = nullptr;
         queueData = palAllocate(info->allocator, sizeof(QueueData), 0);
-
         if (!queueData) {
             palFree(info->allocator, queue);
             palFree(info->allocator, driver);

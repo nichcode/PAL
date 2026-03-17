@@ -117,7 +117,6 @@ PalResult PAL_CALL palCreateThread(
     data->allocator = info->allocator;
 
     HANDLE thread = CreateThread(nullptr, info->stackSize, threadEntryToWin32, data, 0, nullptr);
-
     if (!thread) {
         // error
         DWORD error = GetLastError();
@@ -549,7 +548,6 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     }
 
     BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, (DWORD)milliseconds);
-
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {

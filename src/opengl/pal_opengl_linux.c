@@ -361,7 +361,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     s_GL.maxContextData = 16; // initial size
     s_GL.contextData = palAllocate(s_GL.allocator, sizeof(ContextData) * s_GL.maxContextData, 0);
-
     if (!s_GL.maxContextData) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -533,7 +532,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     EGLint pBufferAttribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
 
     surface = s_GL.eglCreatePbufferSurface(tmpDisplay, config, pBufferAttribs);
-
     if (surface == EGL_NO_SURFACE) {
         palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -544,12 +542,10 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     if (s_GL.apiType == EGL_OPENGL_API) {
         EGLint contextAttrib[] =
             {EGL_CONTEXT_MAJOR_VERSION, 2, EGL_CONTEXT_MINOR_VERSION, 1, EGL_NONE};
-
         context = s_GL.eglCreateContext(tmpDisplay, config, EGL_NO_CONTEXT, contextAttrib);
 
     } else {
         EGLint contextAttrib[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
-
         context = s_GL.eglCreateContext(tmpDisplay, config, EGL_NO_CONTEXT, contextAttrib);
     }
 
@@ -618,7 +614,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     // part of the core API
     s_GL.info.extensions |= PAL_GL_EXTENSION_MULTISAMPLE;
-
     if (type & EGL_OPENGL_ES_BIT || type & EGL_OPENGL_ES2_BIT) {
         s_GL.info.extensions |= PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2;
     }
@@ -640,7 +635,6 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     }
 
     s_GL.eglMakeCurrent(tmpDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-
     s_GL.eglDestroyContext(tmpDisplay, context);
     s_GL.eglDestroySurface(tmpDisplay, surface);
 
@@ -725,9 +719,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
         EGLConfig config = eglConfigs[i];
         s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_SURFACE_TYPE, &surfaceType);
-
         s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_RENDERABLE_TYPE, &renderable);
-
         s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_COLOR_BUFFER_TYPE, &colorType);
 
         // we need only opengl API configs
@@ -765,19 +757,12 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             EGLint depthBits, stencilBits, samples;
 
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_RED_SIZE, &redBits);
-
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_GREEN_SIZE, &greenBits);
-
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_BLUE_SIZE, &blueBits);
-
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_ALPHA_SIZE, &alphaBits);
-
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_DEPTH_SIZE, &depthBits);
-
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_STENCIL_SIZE, &stencilBits);
-
             s_GL.eglGetConfigAttrib(s_GL.display, config, EGL_SAMPLES, &samples);
-
             if (samples == 0) {
                 samples = 1;
             }
@@ -1045,7 +1030,6 @@ PalResult PAL_CALL palCreateGLContext(
 
     // create context
     EGLContext context = s_GL.eglCreateContext(s_GL.display, config, share, attribs);
-
     if (context == EGL_NO_CONTEXT) {
         EGLint error = s_GL.eglGetError();
         if (error == EGL_BAD_CONFIG) {
@@ -1142,9 +1126,8 @@ PalResult PAL_CALL palMakeContextCurrent(
             return PAL_RESULT_INVALID_GL_CONTEXT;
         }
 
-        EGLint ret =
-            s_GL.eglMakeCurrent(s_GL.display, data->surface, data->surface, (EGLConfig)context);
-
+        EGLint ret;
+        ret = s_GL.eglMakeCurrent(s_GL.display, data->surface, data->surface, (EGLConfig)context);
         if (!ret) {
             EGLint error = s_GL.eglGetError();
             if (error == EGL_BAD_CONTEXT) {

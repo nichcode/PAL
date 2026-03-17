@@ -378,8 +378,8 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
 
     Int32 pixelFormat = s_Gdi.choosePixelFormat(s_Wgl.hdc, &pfd);
     s_Gdi.setPixelFormat(s_Wgl.hdc, pixelFormat, &pfd);
-
     s_Wgl.context = s_Wgl.wglCreateContext(s_Wgl.hdc);
+
     if (!s_Wgl.wglMakeCurrent(s_Wgl.hdc, s_Wgl.context)) {
         DWORD error = GetLastError();
         palSetLastPlatformError(error);

@@ -2980,7 +2980,6 @@ static PalResult glxBackend(const int index)
 
     // get a matching visual
     XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(s_X11.display, fbConfig);
-
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
@@ -3032,7 +3031,6 @@ static PalResult eglXBackend(int index)
 
     // get a matching visual info
     XVisualInfo* visualInfo = s_X11.getVisualInfo(s_X11.display, VisualIDMask, &tmp, &numVisuals);
-
     if (!visualInfo) {
         return PAL_RESULT_INVALID_GL_FBCONFIG;
     }
@@ -3246,7 +3244,6 @@ static PalWindowState xQueryWindowState(Window xWin)
 static void xCacheMonitors()
 {
     resetMonitorData();
-
     XRRScreenResources* resources = nullptr;
     resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
@@ -3760,14 +3757,10 @@ static PalResult xInitVideo()
     // we load GLX
     s_X11.glxHandle = dlopen("libGL.so.1", RTLD_LAZY);
     if (s_X11.glxHandle) {
-
         GLXGetProcAddressFn load = nullptr;
         load = (GLXGetProcAddressFn)dlsym(s_X11.glxHandle, "glXGetProcAddress");
-
         s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)load("glXGetFBConfigs");
-
         s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)load("glXGetFBConfigAttrib");
-
         s_X11.glxGetVisualFromFBConfig =
             (GLXGetVisualFromFBConfigFn)load("glXGetVisualFromFBConfig");
     }
@@ -5045,7 +5038,6 @@ static PalResult xCreateWindow(
     }
 
     s_X11.setWMProtocols(s_X11.display, window, &s_X11Atoms.WM_DELETE_WINDOW, 1);
-
     s_X11.flush(s_X11.display);
 
     // attach the window data to the window
@@ -6841,9 +6833,7 @@ PalResult wlCreateWindow(
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         struct zxdg_toplevel_decoration_v1* decoration = nullptr;
         decoration = zxdgGetToplevelDecoration(s_Wl.decorationManager, xdgToplevel);
-
         zxdgToplevelDecorationV1AddListener(decoration, &decorationListener, surface);
-
         zxdgToplevelDecorationV1SetMode(decoration, 2);
         data->decoration = decoration;
     }
@@ -7186,7 +7176,6 @@ PalResult wlCreateCursor(
     }
 
     cursor->buffer = createShmBuffer(info->width, info->height, info->pixels, true);
-
     if (!cursor->buffer) {
         palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;

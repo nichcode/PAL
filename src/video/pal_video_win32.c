@@ -799,7 +799,6 @@ static inline PalResult setMonitorMode(
     }
 
     ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, settingsFlag, NULL);
-
     if (result == DISP_CHANGE_SUCCESSFUL) {
         return PAL_RESULT_SUCCESS;
     } else {
@@ -1464,7 +1463,6 @@ PalResult PAL_CALL palGetMonitorInfo(
     // check for primary monitor
     HMONITOR primary = nullptr;
     primary = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
-
     if (!primary) {
         info->primary = false;
     }
@@ -1514,7 +1512,6 @@ PalResult PAL_CALL palEnumerateMonitorModes(
         // allocate and store tmp monitor modesand check for the interested
         // fields.
         monitorModes = palAllocate(s_Video.allocator, sizeof(PalMonitorMode) * MAX_MODE_COUNT, 0);
-
         if (!monitorModes) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
@@ -1663,7 +1660,6 @@ PalResult PAL_CALL palSetMonitorOrientation(
     devMode.dmDisplayOrientation = win32Orientation;
 
     ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, CDS_RESET, NULL);
-
     if (result == DISP_CHANGE_SUCCESSFUL) {
         return PAL_RESULT_SUCCESS;
 
@@ -1741,7 +1737,6 @@ PalResult PAL_CALL palCreateWindow(
     } else {
         // get primary monitor
         monitor = (PalMonitor*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
-
         if (!monitor) {
             DWORD error = GetLastError();
             palSetLastPlatformError(error);
@@ -2365,7 +2360,6 @@ PalResult PAL_CALL palSetWindowOpacity(
     }
 
     bool ret = SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);
-
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
@@ -2617,7 +2611,8 @@ PalResult PAL_CALL palCreateIcon(
     void* dibPixels = nullptr;
 
     // create dib section
-    HBITMAP bitmap =
+    HBITMAP bitmap = nullptr;
+    bitmap =
         s_Video
             .createDIBSection(hdc, (BITMAPINFO*)&bitInfo, DIB_RGB_COLORS, &dibPixels, nullptr, 0);
 
@@ -2734,7 +2729,8 @@ PalResult PAL_CALL palCreateCursor(
     void* dibPixels = nullptr;
 
     // create dib section
-    HBITMAP bitmap =
+    HBITMAP bitmap = nullptr;
+    bitmap =
         s_Video
             .createDIBSection(hdc, (BITMAPINFO*)&bitInfo, DIB_RGB_COLORS, &dibPixels, nullptr, 0);
 
@@ -2794,7 +2790,6 @@ PalResult PAL_CALL palCreateCursorFrom(
     PalCursorType type,
     PalCursor** outCursor)
 {
-
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
     }

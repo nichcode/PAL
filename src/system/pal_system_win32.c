@@ -270,7 +270,6 @@ PalResult PAL_CALL palGetCPUInfo(
     }
 
     BOOL ret = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
-
     if (!ret) {
         palFree(allocator, buffer);
         DWORD error = GetLastError();

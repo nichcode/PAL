@@ -1087,11 +1087,7 @@ PalResult PAL_CALL palGetAdapterCapabilities(
 
 PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
 {
-    if (!s_Graphics.initialized) {
-        return 0;
-    }
-
-    if (!adapter) {
+    if (!s_Graphics.initialized || !adapter) {
         return 0;
     }
 
@@ -1118,7 +1114,6 @@ PalResult PAL_CALL palCreateDevice(
     PalDevice* device = nullptr;
     PalResult result;
     result = adapter->backend->createDevice(adapter, features, &device);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1274,7 +1269,6 @@ PalResult PAL_CALL palCreateQueue(
     PalQueue* queue = nullptr;
     PalResult result;
     result = device->backend->createQueue(device, type, &queue);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1391,7 +1385,6 @@ PalResult PAL_CALL palCreateImage(
     PalImage* image = nullptr;
     PalResult result;
     result = device->backend->createImage(device, info, &image);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1475,7 +1468,6 @@ PalResult PAL_CALL palCreateImageView(
     PalImageView* imageView = nullptr;
     PalResult result;
     result = device->backend->createImageView(device, image, info, &imageView);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1530,7 +1522,6 @@ PalResult PAL_CALL palCreateSwapchain(
     PalResult result;
     PalSwapchain* swapchain = nullptr;
     result = device->backend->createSwapchain(device, queue, window, info, &swapchain);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1615,7 +1606,6 @@ PalResult PAL_CALL palCreateShader(
     PalShader* shader = nullptr;
     PalResult result;
     result = device->backend->createShader(device, info, &shader);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1806,7 +1796,6 @@ PalResult PAL_CALL palCreateCommandPool(
     PalCommandPool* pool = nullptr;
     PalResult result;
     result = device->backend->createCommandPool(device, queue, &pool);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1853,7 +1842,6 @@ PalResult PAL_CALL palAllocateCommandBuffer(
     PalCommandBuffer* cmdBuffer = nullptr;
     PalResult result;
     result = device->backend->allocateCommandBuffer(device, pool, type, &cmdBuffer);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1942,9 +1930,7 @@ PalResult PAL_CALL palCmdExecuteCommandBuffer(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return primaryCmdBuffer->backend->cmdExecuteCommandBuffer(
-        primaryCmdBuffer,
-        secondaryCmdBuffer);
+    return primaryCmdBuffer->backend->cmdExecuteCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
 }
 
 PalResult PAL_CALL palCmdSetFragmentShadingRate(
@@ -1994,12 +1980,8 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDrawMeshTasksIndirect(
-        cmdBuffer,
-        buffer,
-        offset,
-        drawCount,
-        stride);
+    return cmdBuffer->backend
+        ->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, offset, drawCount, stride);
 }
 
 PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
@@ -2192,12 +2174,8 @@ PalResult PAL_CALL palCmdDraw(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDraw(
-        cmdBuffer, 
-        vertexCount, 
-        instanceCount, 
-        firstVertex, 
-        firstInstance);
+    return cmdBuffer->backend
+        ->cmdDraw(cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 PalResult PAL_CALL palCmdDrawIndirect(
@@ -2328,10 +2306,7 @@ PalResult PAL_CALL palCmdMemoryBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdMemoryBarrier(
-        cmdBuffer,
-        oldUsageStateInfo,
-        newUsageStateInfo);
+    return cmdBuffer->backend->cmdMemoryBarrier(cmdBuffer, oldUsageStateInfo, newUsageStateInfo);
 }
 
 PalResult PAL_CALL palCmdImageViewBarrier(
@@ -2348,11 +2323,8 @@ PalResult PAL_CALL palCmdImageViewBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdImageViewBarrier(
-        cmdBuffer,
-        imageView,
-        oldUsageStateInfo,
-        newUsageStateInfo);
+    return cmdBuffer->backend
+        ->cmdImageViewBarrier(cmdBuffer, imageView, oldUsageStateInfo, newUsageStateInfo);
 }
 
 PalResult PAL_CALL palCmdBufferBarrier(
@@ -2369,11 +2341,8 @@ PalResult PAL_CALL palCmdBufferBarrier(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdBufferBarrier(
-        cmdBuffer,
-        buffer,
-        oldUsageStateInfo,
-        newUsageStateInfo);
+    return cmdBuffer->backend
+        ->cmdBufferBarrier(cmdBuffer, buffer, oldUsageStateInfo, newUsageStateInfo);
 }
 
 PalResult PAL_CALL palCmdDispatch(
@@ -2503,14 +2472,8 @@ PalResult PAL_CALL palCmdPushConstants(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdPushConstants(
-        cmdBuffer,
-        layout,
-        shaderStageCount,
-        shaderStages,
-        offset,
-        size,
-        value);
+    return cmdBuffer->backend
+        ->cmdPushConstants(cmdBuffer, layout, shaderStageCount, shaderStages, offset, size, value);
 }
 
 // ==================================================
@@ -2537,7 +2500,6 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     PalResult result;
     PalAccelerationStructure* as = nullptr;
     result = device->backend->createAccelerationstructure(device, info, &as);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -2590,7 +2552,6 @@ PalResult PAL_CALL palCreateBuffer(
     PalResult result;
     PalBuffer* buffer = nullptr;
     result = device->backend->createBuffer(device, info, &buffer);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -2652,12 +2613,8 @@ PalResult PAL_CALL palWriteInstancesToMappedMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    // HACK: since all blas have backend pointer, we use the first one
-    return device->backend->writeInstancesToMappedMemory(
-        device,
-        ptr,
-        instances,
-        instanceCount);
+    // since all blas have backend pointer, we use the first one
+    return device->backend->writeInstancesToMappedMemory(device, ptr, instances, instanceCount);
 }
 
 PalResult PAL_CALL palBindBufferMemory(
@@ -2855,7 +2812,6 @@ PalResult PAL_CALL palCreatePipelineLayout(
     PalResult result;
     PalPipelineLayout* layout = nullptr;
     result = device->backend->createPipelineLayout(device, info, &layout);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -2896,7 +2852,6 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     PalResult result;
     PalPipeline* pipeline = nullptr;
     result = device->backend->createGraphicsPipeline(device, info, &pipeline);
-
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
