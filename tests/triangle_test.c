@@ -218,7 +218,6 @@ bool triangleTest()
     // create a swapchain with the graphics queue
     PalSwapchainCapabilities swapchainCaps = {0};
     result = palQuerySwapchainCapabilities(device, &gfxWindow, &swapchainCaps);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to query swapchain capabilities: %s", error);
@@ -248,7 +247,6 @@ bool triangleTest()
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     result = palCreateSwapchain(device, queue, &gfxWindow, &swapchainCreateInfo, &swapchain);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create swapchain: %s", error);
@@ -258,7 +256,6 @@ bool triangleTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
-
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
 
     if (!imageViews || !renderFinishedSemaphores) {
@@ -283,7 +280,6 @@ bool triangleTest()
         }
 
         result = palCreateImageView(device, image, &imageViewCreateInfo, &imageViews[i]);
-
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create image view: %s", error);
@@ -292,7 +288,6 @@ bool triangleTest()
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create command pool: %s", error);
@@ -350,7 +345,6 @@ bool triangleTest()
     bufferCreateInfo.size = sizeof(vertices);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_VERTEX;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_TRANSFER_DST; // will recieve
-
     result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -360,7 +354,6 @@ bool triangleTest()
 
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC; // will send
     result = palCreateBuffer(device, &bufferCreateInfo, &stagingBuffer);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create staging buffer: %s", error);
@@ -432,7 +425,6 @@ bool triangleTest()
     // map the staging buffer and upload the vertices
     void* ptr = nullptr;
     result = palMapMemory(device, stagingBufferMemory, 0, sizeof(vertices), &ptr);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to map memory: %s", error);
@@ -524,7 +516,6 @@ bool triangleTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
 
     result = palCreateShader(device, &shaderCreateInfo, &vertexShader);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create vertex shader: %s", error);
@@ -553,7 +544,6 @@ bool triangleTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
 
     result = palCreateShader(device, &shaderCreateInfo, &fragmentShader);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fragment shader: %s", error);
@@ -565,7 +555,6 @@ bool triangleTest()
     // create a pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline layout: %s", error);
@@ -639,7 +628,6 @@ bool triangleTest()
     pipelineCreateInfo.renderingLayout = &renderingLayoutInfo;
 
     result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create graphics pipeline: %s", error);
@@ -682,10 +670,6 @@ bool triangleTest()
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;
     scissor.width = WINDOW_WIDTH;
-
-    PalDrawData drawData = {0};
-    drawData.vertexCount = 3;
-    drawData.instanceCount = 1;
 
     while (running) {
         // update the video system to push video events
@@ -855,7 +839,7 @@ bool triangleTest()
             return false;
         }
 
-        result = palCmdDraw(cmdBuffer, &drawData);
+        result = palCmdDraw(cmdBuffer, 3, 1, 0, 0);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw command: %s", error);

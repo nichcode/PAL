@@ -50,7 +50,6 @@ bool clearColorTest()
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
@@ -206,7 +205,6 @@ bool clearColorTest()
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     result = palCreateSwapchain(device, queue, &gfxWindow, &swapchainCreateInfo, &swapchain);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create swapchain: %s", error);
@@ -216,7 +214,6 @@ bool clearColorTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
-
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
 
     if (!imageViews || !renderFinishedSemaphores) {
@@ -241,7 +238,6 @@ bool clearColorTest()
         }
 
         result = palCreateImageView(device, image, &imageViewCreateInfo, &imageViews[i]);
-
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create image view: %s", error);
@@ -250,7 +246,6 @@ bool clearColorTest()
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create command pool: %s", error);

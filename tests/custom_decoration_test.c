@@ -867,17 +867,13 @@ bool customDecorationTest()
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_DECORATION_MODE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // we use PAL_DISPATCH_CALLBACK for the mouse button to get
     // real time events which we then use for moving and resizing
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_BUTTONDOWN, PAL_DISPATCH_CALLBACK);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_MOVE, PAL_DISPATCH_CALLBACK);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MONITOR_DPI_CHANGED, PAL_DISPATCH_CALLBACK);
 
     // tell the video system to use out instance rather

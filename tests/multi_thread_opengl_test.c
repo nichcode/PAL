@@ -73,9 +73,7 @@ static void* PAL_CALL eventDriverWorker(void* arg)
 
     // video needs window close and resize
     palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_WINDOW_SIZE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // we are done

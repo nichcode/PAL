@@ -375,7 +375,6 @@ bool nativeInstanceTest()
 
     // we set window close to poll
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     bool running = true;

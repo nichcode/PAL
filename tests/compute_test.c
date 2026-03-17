@@ -259,7 +259,6 @@ bool computeTest()
     }
 
     result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);

@@ -161,7 +161,11 @@ palJoinThread(thread, &retval);
 
 - Added vertex shader/buffer triangle example: see **triangle_test.c**
 
-- Added mesh example: see **mesh_test.c.c**
+- Added mesh example: see **mesh_test.c**
+
+- Added compute example: see **compute_test.c**
+
+- Added ray tracing example: see **ray_tracing_test.c**
 
 ### Notes
 - No API or ABI changes - existing code remains compatible.

@@ -62,9 +62,7 @@ bool charEventTest()
 
     // we only neeed PAL_EVENT_KEYCHAR and PAL_EVENT_WINDOW_CLOSE
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYCHAR, PAL_DISPATCH_POLL);
 
     bool running = true;

@@ -794,7 +794,6 @@ bool rayTracingTest()
     writeInfos[0].imageViewInfo = nullptr;
     writeInfos[0].tlasInfo = nullptr;
 
-
     writeInfos[1].binding = 1;
     writeInfos[1].tlasInfo = &descriptorTlasInfo;
     writeInfos[1].descriptorSet = descriptorSet;

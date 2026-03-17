@@ -80,7 +80,6 @@ bool meshTest()
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     result = palInitVideo(nullptr, eventDriver);
@@ -255,7 +254,6 @@ bool meshTest()
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
     result = palCreateSwapchain(device, queue, &gfxWindow, &swapchainCreateInfo, &swapchain);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create swapchain: %s", error);
@@ -265,7 +263,6 @@ bool meshTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
-
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
 
     if (!imageViews || !renderFinishedSemaphores) {
@@ -290,7 +287,6 @@ bool meshTest()
         }
 
         result = palCreateImageView(device, image, &imageViewCreateInfo, &imageViews[i]);
-
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create image view: %s", error);
@@ -299,7 +295,6 @@ bool meshTest()
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create command pool: %s", error);
@@ -374,7 +369,6 @@ bool meshTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_MESH;
 
     result = palCreateShader(device, &shaderCreateInfo, &meshShader);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create mesh shader: %s", error);
@@ -403,7 +397,6 @@ bool meshTest()
     shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
 
     result = palCreateShader(device, &shaderCreateInfo, &fragmentShader);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fragment shader: %s", error);
@@ -415,7 +408,6 @@ bool meshTest()
     // create a pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline layout: %s", error);
@@ -471,7 +463,6 @@ bool meshTest()
     pipelineCreateInfo.renderingLayout = &renderingLayoutInfo;
 
     result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create graphics pipeline: %s", error);
