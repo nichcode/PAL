@@ -263,7 +263,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  *
  * @param[in] glWindow Set to nullptr.
- * @param[in] count Capacity of the PalGLFBConfig array.
+ * @param[in, out] count Capacity of the PalGLFBConfig array.
  * @param[out] configs User allocated array of PalGLFBConfig.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on

@@ -829,7 +829,7 @@ PAL_API PalResult PAL_CALL palSetFBConfig(
  * platform (OS). Users are required to cache this, and call this function again
  * if monitors are added or removed.
  *
- * @param[in] count Capacity of the PalMonitor array.
+ * @param[in, out] count Capacity of the PalMonitor array.
  * @param[out] monitors User allocated array of PalMonitor.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -908,7 +908,7 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  *
  * @param[in] monitor Monitor to query display modes on.
- * @param[in] count Capacity of the PalMonitorMode array.
+ * @param[in, out] count Capacity of the PalMonitorMode array.
  * @param[out] modes User allocated array of PalMonitorMode.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on

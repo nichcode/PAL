@@ -2970,9 +2970,13 @@ void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
 bool PAL_CALL palBuildWorkGroupInfo(
     const PalWorkGroupBuildData* data,
     Int32* count,
-    PalWorkGroupInfo* info)
+    PalWorkGroupInfo* infos)
 {
     if (!data) {
+        return false;
+    }
+
+    if (*count == 0 && infos) {
         return false;
     }
 
@@ -2984,7 +2988,7 @@ bool PAL_CALL palBuildWorkGroupInfo(
         groupInfoCount[i] = _ceil(tmp, data->workGroupCount[i]);
     }
 
-    if (!info) {
+    if (!infos) {
         // total number of group build info on all axis
         *count = groupInfoCount[0] * groupInfoCount[1] * groupInfoCount[2];
         ;
@@ -2992,7 +2996,7 @@ bool PAL_CALL palBuildWorkGroupInfo(
     }
 
     for (int i = 0; i < *count; i++) {
-        PalWorkGroupInfo* buildInfo = &info[i];
+        PalWorkGroupInfo* buildInfo = &infos[i];
         // find index
         Uint32 index[3];
         index[0] = i % groupInfoCount[0];
