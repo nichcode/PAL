@@ -670,6 +670,72 @@ typedef enum {
 } PalImageViewType;
 
 /**
+ * @enum PalFilterMode
+ * @brief Filter modes.
+ *
+ * All filter modes follow the format `PAL_FILTER_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_FILTER_MODE_NEAREST,
+    PAL_FILTER_MODE_LINEAR
+} PalFilterMode;
+
+/**
+ * @enum PalSamplerMipmapMode
+ * @brief Sampler mipmap modes.
+ *
+ * All sampler mipmap modes follow the format `PAL_SAMPLER_MIPMAP_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_SAMPLER_MIPMAP_MODE_NEAREST,
+    PAL_SAMPLER_MIPMAP_MODE_LINEAR
+} PalSamplerMipmapMode;
+
+/**
+ * @enum PalSamplerAddressMode
+ * @brief Sampler address modes.
+ *
+ * All sampler address modes follow the format `PAL_SAMPLER_ADDRESS_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_SAMPLER_ADDRESS_MODE_REPEAT,
+    PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+    PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+    PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER
+} PalSamplerAddressMode;
+
+/**
+ * @enum PalBorderColor
+ * @brief Border color.
+ *
+ * All border colors follow the format `PAL_BORDER_COLOR_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
+    PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK,
+    PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+    PAL_BORDER_COLOR_INT_OPAQUE_BLACK,
+    PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+    PAL_BORDER_COLOR_INT_OPAQUE_WHITE
+} PalBorderColor;
+
+/**
  * @enum PalSwapchainFormat
  * @brief swapchain format types.
  *
@@ -1083,6 +1149,38 @@ typedef enum {
     PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL,
     PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL
 } PalAccelerationStructureType;
+
+/**
+ * @enum PalAccelerationStructureBuildMode
+ * @brief Acceleration structure build modes.
+ *
+ * All acceleration structure build modes follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD,
+    PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE
+} PalAccelerationStructureBuildMode;
+
+/**
+ * @enum PalAccelerationStructureBuildHints
+ * @brief Acceleration structure build hints. Multiple hints can be OR'ed together using 
+ * bitwise OR operator (`|`). Hints can be ignored by the driver.
+ *
+ * All acceleration structure build hints follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD = PAL_BIT(0),
+    PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE = PAL_BIT(1),
+    PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY = PAL_BIT(2)
+} PalAccelerationStructureBuildHints;
 
 /**
  * @enum PalGeometryType
@@ -1889,6 +1987,7 @@ typedef struct {
 typedef struct {
     Uint32 accelerationStructureSize; /**< Required acceleration structure size.*/
     Uint32 scratchBufferSize;         /**< Required scratch buffer size.*/
+    Uint32 updateScratchBufferSize;   /**< Required scratch buffer size for updates.*/
 } PalAccelerationStructureBuildSize;
 
 /**
@@ -1964,6 +2063,8 @@ typedef struct {
 typedef struct {
     PalAccelerationStructureType type; /**< (eg. PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL).*/
     Uint32 geometryCount;
+    PalAccelerationStructureBuildHints buildHints;
+    PalAccelerationStructureBuildMode buildMode;
     PalAccelerationStructure* dst;
     PalAccelerationStructure* src;
     PalDeviceAddress scratchBufferAddress;
@@ -2128,12 +2229,20 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 startMipLevel;
-    Uint32 mipLevelCount;
-    Uint32 startArrayLayer;
-    Uint32 layerArrayCount;
-    PalImageViewType type;
-    PalImageViewUsages usages;
+    bool enableCompare;
+    bool enableAnisotropy; /**< `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported.*/
+    float mipLodBias;
+    float minLod;
+    float maxLod;
+    float maxAnisotropy;
+    PalFilterMode minFilterMode;
+    PalFilterMode magFilterMode;
+    PalSamplerMipmapMode mipmapMode;
+    PalSamplerAddressMode addressModeU;
+    PalSamplerAddressMode addressModeV;
+    PalSamplerAddressMode addressModeW;
+    PalCompareOp compareOp;
+    PalBorderColor borderColor;
 } PalSamplerCreateInfo;
 
 /**
@@ -2613,6 +2722,23 @@ typedef struct {
      * Must obey the rules and semantics documented in palDestroyImageView().
      */
     void PAL_CALL (*destroyImageView)(PalImageView* imageView);
+
+    /**
+     * Backend implementation of ::palCreateSampler.
+     *
+     * Must obey the rules and semantics documented in palCreateSampler().
+     */
+    PalResult PAL_CALL (*createSampler)(
+        PalDevice* device,
+        const PalSamplerCreateInfo* info,
+        PalSampler** outSampler);
+
+    /**
+     * Backend implementation of ::palDestroySampler.
+     *
+     * Must obey the rules and semantics documented in palDestroySampler().
+     */
+    void PAL_CALL (*destroySampler)(PalSampler* sampler);
 
     /**
      * Backend implementation of ::palQuerySwapchainCapabilities.
@@ -4250,20 +4376,49 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  */
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
-// TODO: docs
-PAL_API PalResult PAL_CALL palCreateImageView(
+/**
+ * @brief Create a sampler.
+ *
+ * The graphics system must be initialized before this call.
+ * Samplers are immutable so any paramter used to create it cannot will be fixed after
+ * creation.
+ *
+ * @param[in] device Device that creates the sampler.
+ * @param[in] info Pointer to a PalSamplerCreateInfo struct that specifies parameters.
+ * Must not be nullptr.
+ * @param[out] outSampler Pointer to a PalSampler to recieve the created sampler.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroySampler
+ */
+PAL_API PalResult PAL_CALL palCreateSampler(
     PalDevice* device,
-    PalImage* image,
-    const PalImageViewCreateInfo* info,
-    PalImageView** outImageView);
+    const PalSamplerCreateInfo* info,
+    PalSampler** outSampler);
 
-// TODO: docs
-PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
-
-// TODO: docs
-PAL_API PalResult PAL_CALL palGetImageInfo(
-    PalImage* image,
-    PalImageInfo* info);
+/**
+ * @brief Destroy a sampler.
+ *
+ * The graphics system must be initialized before this call.
+ * If the provided sampler is invalid or nullptr, this function returns
+ * silently.
+ *
+ * @param[in] sampler Sampler to destroy.
+ *
+ * Thread safety: Thread safe if the device used to create the sampler is
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateSampler
+ */
+PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
 
 /**
  * @brief Get swapchain feature capabilites or limits about a device against a window.

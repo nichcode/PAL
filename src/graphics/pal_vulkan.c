@@ -2033,7 +2033,8 @@ static void fillVkBuildInfoVk(
     PalAccelerationStructureBuildInfo* info,
     Uint32* maxPrimities,
     VkAccelerationStructureGeometryKHR* geometries,
-    VkAccelerationStructureKHR as,
+    VkAccelerationStructureKHR srcAs,
+    VkAccelerationStructureKHR dstAs,
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos,
     VkAccelerationStructureBuildGeometryInfoKHR* buildInfo)
 {
@@ -2045,7 +2046,7 @@ static void fillVkBuildInfoVk(
         // fill vulkan geometry struct
         VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
         tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-        tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR; // always opaque
 
         if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
             tmp->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -2116,10 +2117,30 @@ static void fillVkBuildInfoVk(
         buildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     }
 
-    buildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    // build mode
+    if (info->buildMode == PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD) {
+        buildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    } else {
+        buildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+    }
+
+    // build hints
+    buildInfo->flags = 0;
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD) {
+        buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+    }
+
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE) {
+        buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    }
+
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY) {
+        buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
+    }
+
     buildInfo->geometryCount = info->geometryCount;
-    buildInfo->dstAccelerationStructure = as;
-    buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+    buildInfo->srcAccelerationStructure = srcAs;
+    buildInfo->dstAccelerationStructure = dstAs;
     buildInfo->pGeometries = geometries;
 
     VkDeviceOrHostAddressKHR scratchData = {0};
@@ -4299,6 +4320,7 @@ PalResult PAL_CALL queryRayTracingCapabilitiesVk(
 
     caps->maxPayloadSize = INT32_MAX; // depends on memory
     caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4803,6 +4825,23 @@ void PAL_CALL destroyImageViewVk(PalImageView* imageView)
     s_Vk.destroyImageView(vkImageView->device->handle, vkImageView->handle, &s_Vk.allocateVkator);
 
     palFree(s_Vk.allocator, vkImageView);
+}
+
+// ==================================================
+// Sampler
+// ==================================================
+
+PalResult PAL_CALL createSamplerVk(
+    PalDevice* device,
+    const PalSamplerCreateInfo* info,
+    PalSampler** outSampler)
+{
+    // TODO: sampler
+}
+
+void PAL_CALL destroySamplerVk(PalSampler* sampler)
+{
+    // TODO: sampler
 }
 
 // ==================================================
@@ -5850,8 +5889,14 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
 
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
-    AccelerationStructure* as = (AccelerationStructure*)info->dst;
+    AccelerationStructure* tmpAs = (AccelerationStructure*)info->src;
+    AccelerationStructure* dstAs = (AccelerationStructure*)info->dst;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
+    
+    VkAccelerationStructureKHR srcAs = nullptr;
+    if (tmpAs) {
+        srcAs = tmpAs->handle;
+    }
 
     geometries = palAllocate(
         s_Vk.allocator,
@@ -5870,7 +5915,7 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount);
     memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->geometryCount);
 
-    fillVkBuildInfoVk(info, nullptr, geometries, as->handle, rangeInfos, &buildInfo);
+    fillVkBuildInfoVk(info, nullptr, geometries, srcAs, dstAs->handle, rangeInfos, &buildInfo);
     const VkAccelerationStructureBuildRangeInfoKHR* tmp[1];
     tmp[0] = rangeInfos;
     vkCmdBuffer->device->cmdBuildAccelerationStructures(vkCmdBuffer->handle, 1, &buildInfo, tmp);
@@ -6848,7 +6893,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     memset(maxPrimities, 0, sizeof(Uint32) * info->geometryCount);
     memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount);
 
-    fillVkBuildInfoVk(info, maxPrimities, geometries, nullptr, nullptr, &buildInfo);
+    fillVkBuildInfoVk(info, maxPrimities, geometries, nullptr, nullptr, nullptr, &buildInfo);
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
@@ -6861,6 +6906,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
 
     size->accelerationStructureSize = sizeInfo.accelerationStructureSize;
     size->scratchBufferSize = sizeInfo.buildScratchSize;
+    size->updateScratchBufferSize = sizeInfo.updateScratchSize;
 
     palFree(s_Vk.allocator, maxPrimities);
     palFree(s_Vk.allocator, geometries);

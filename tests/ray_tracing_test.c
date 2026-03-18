@@ -458,6 +458,8 @@ bool rayTracingTest()
     blasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
     blasBuildInfo.geometryCount = 1;
     blasBuildInfo.geometries = &geometry;
+    blasBuildInfo.buildHints = PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD;
+    blasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
 
     // get the build sizes for blas
     PalAccelerationStructureBuildSize buildSizes = {0};
@@ -615,6 +617,8 @@ bool rayTracingTest()
     tlasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
     tlasBuildInfo.geometryCount = 1;
     tlasBuildInfo.geometries = &instanceGeometry;
+    tlasBuildInfo.buildHints = PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD;
+    tlasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
 
     // get the build sizes for tlas
     Uint32 blasScratchSize = buildSizes.scratchBufferSize;

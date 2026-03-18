@@ -215,6 +215,13 @@ PalResult PAL_CALL createImageViewVk(
 
 void PAL_CALL destroyImageViewVk(PalImageView* imageView);
 
+PalResult PAL_CALL createSamplerVk(
+    PalDevice* device,
+    const PalSamplerCreateInfo* info,
+    PalSampler** outSampler);
+
+void PAL_CALL destroySamplerVk(PalSampler* sampler);
+
 PalResult PAL_CALL querySwapchainCapabilitiesVk(
     PalDevice* device,
     PalGraphicsWindow* window,
@@ -679,6 +686,10 @@ static PalGraphicsBackend s_VkBackend = {
     .createImageView = createImageViewVk,
     .destroyImageView = destroyImageViewVk,
 
+    // sampler
+    .createSampler = createSamplerVk,
+    .destroySampler = destroySamplerVk,
+
     // swapchain
     .querySwapchainCapabilities = querySwapchainCapabilitiesVk,
     .createSwapchain = createSwapchainVk,
@@ -747,6 +758,12 @@ static PalGraphicsBackend s_VkBackend = {
     .cmdTraceRaysIndirect = cmdTraceRaysIndirectVk,
     .cmdBindDescriptorSet = cmdBindDescriptorSetVk,
     .cmdPushConstants = cmdPushConstantsVk,
+    .cmdSetCullMode = cmdSetCullModeVk,
+    .cmdSetFrontFace = cmdSetFrontFaceVk,
+    .cmdSetPrimitiveTopology = cmdSetPrimitiveTopologyVk,
+    .cmdSetDepthTestEnable = cmdSetDepthTestEnableVk,
+    .cmdSetDepthWriteEnable = cmdSetDepthWriteEnableVk,
+    .cmdSetStencilOp = cmdSetStencilOpVk,
 
     // acceleration structure
     .createAccelerationstructure = createAccelerationstructureVk,
@@ -861,6 +878,10 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         // image view
         !backend->createImageView                       ||
         !backend->destroyImageView                      ||
+
+        // sampler
+        !backend->createSampler                         ||
+        !backend->destroySampler                        ||
 
         // swapchain
         !backend->querySwapchainCapabilities            ||
@@ -1515,6 +1536,42 @@ void PAL_CALL palDestroyImageView(PalImageView* imageView)
 {
     if (s_Graphics.initialized && imageView) {
         imageView->backend->destroyImageView(imageView);
+    }
+}
+
+// ==================================================
+// Sampler
+// ==================================================
+
+PalResult PAL_CALL palCreateSampler(
+    PalDevice* device,
+    const PalSamplerCreateInfo* info,
+    PalSampler** outSampler)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outSampler) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalSampler* sampler = nullptr;
+    PalResult result;
+    result = device->backend->createSampler(device, info, &sampler);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    sampler->backend = device->backend;
+    *outSampler = sampler;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroySampler(PalSampler* sampler)
+{
+    if (s_Graphics.initialized && sampler) {
+        sampler->backend->destroySampler(sampler);
     }
 }
 
