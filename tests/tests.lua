@@ -75,7 +75,8 @@ project "tests"
         files {
             "clear_color_test.c",
             "triangle_test.c",
-            "mesh_test.c"
+            "mesh_test.c",
+            "texture_test.c"
         }
     end
 

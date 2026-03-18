@@ -59,5 +59,6 @@ bool rayTracingTest();
 bool clearColorTest();
 bool triangleTest();
 bool meshTest();
+bool textureTest();
 
 #endif // _TESTS_H

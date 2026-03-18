@@ -167,6 +167,8 @@ palJoinThread(thread, &retval);
 
 - Added ray tracing example: see **ray_tracing_test.c**
 
+- Added texture rendering example: see **texture_test.c**
+
 ### Notes
 - No API or ABI changes - existing code remains compatible.
 - Safe upgrade from **v1.3.0** - just rebuild your project after updating.

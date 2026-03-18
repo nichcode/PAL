@@ -222,12 +222,12 @@ bool clearColorTest()
     }
 
     PalImageViewCreateInfo imageViewCreateInfo = {0};
-    imageViewCreateInfo.layerArrayCount = 1;
-    imageViewCreateInfo.mipLevelCount = 1;
-    imageViewCreateInfo.startArrayLayer = 0;
-    imageViewCreateInfo.startMipLevel = 0;
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
     imageViewCreateInfo.usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+    imageViewCreateInfo.subresourceRange.layerArrayCount = 1;
+    imageViewCreateInfo.subresourceRange.mipLevelCount = 1;
+    imageViewCreateInfo.subresourceRange.startArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.startMipLevel = 0;
 
     for (int i = 0; i < imageCount; i++) {
         // get swapchain image
@@ -419,9 +419,17 @@ bool clearColorTest()
             oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
-        result = palCmdImageViewBarrier(
+        PalImageSubresourceRange imageRange = {0};
+        imageRange.layerArrayCount = 1;
+        imageRange.mipLevelCount = 1;
+        imageRange.startArrayLayer = 0;
+        imageRange.startMipLevel = 0;
+
+        PalImage* image = palGetSwapchainImage(swapchain, index);
+        result = palCmdImageBarrier(
             cmdBuffer,
-            imageViews[index],
+            image,
+            &imageRange,
             &oldUsageStateInfo,
             &newUsageStateInfo);
 
@@ -454,9 +462,10 @@ bool clearColorTest()
         // change the state of the image view to make it presentable
         oldUsageStateInfo = newUsageStateInfo;
         newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
-        result = palCmdImageViewBarrier(
+        result = palCmdImageBarrier(
             cmdBuffer,
-            imageViews[index],
+            image,
+            &imageRange,
             &oldUsageStateInfo,
             &newUsageStateInfo);
 

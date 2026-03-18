@@ -5,6 +5,10 @@
 
 #include <stdio.h>
 
+#define WINDOW_WIDTH 640
+#define WINDOW_HEIGHT 480
+#define MAX_FRAMES_IN_FLIGHT 2
+
 static bool readFile(
     const char* filename,
     void* buffer,
@@ -27,10 +31,6 @@ static bool readFile(
     *size = tmpSize;
     return true;
 }
-
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
-#define MAX_FRAMES_IN_FLIGHT 2
 
 static void PAL_CALL onGraphicsDebug(
     void* userData,
@@ -271,12 +271,12 @@ bool meshTest()
     }
 
     PalImageViewCreateInfo imageViewCreateInfo = {0};
-    imageViewCreateInfo.layerArrayCount = 1;
-    imageViewCreateInfo.mipLevelCount = 1;
-    imageViewCreateInfo.startArrayLayer = 0;
-    imageViewCreateInfo.startMipLevel = 0;
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
     imageViewCreateInfo.usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+    imageViewCreateInfo.subresourceRange.layerArrayCount = 1;
+    imageViewCreateInfo.subresourceRange.mipLevelCount = 1;
+    imageViewCreateInfo.subresourceRange.startArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.startMipLevel = 0;
 
     for (int i = 0; i < imageCount; i++) {
         // get swapchain image
@@ -589,9 +589,17 @@ bool meshTest()
             oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         }
 
-        result = palCmdImageViewBarrier(
+        PalImageSubresourceRange imageRange = {0};
+        imageRange.layerArrayCount = 1;
+        imageRange.mipLevelCount = 1;
+        imageRange.startArrayLayer = 0;
+        imageRange.startMipLevel = 0;
+
+        PalImage* image = palGetSwapchainImage(swapchain, index);
+        result = palCmdImageBarrier(
             cmdBuffer,
-            imageViews[index],
+            image,
+            &imageRange,
             &oldUsageStateInfo,
             &newUsageStateInfo);
 
@@ -673,9 +681,10 @@ bool meshTest()
         // change the state of the image view to make it presentable
         oldUsageStateInfo = newUsageStateInfo;
         newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
-        result = palCmdImageViewBarrier(
+        result = palCmdImageBarrier(
             cmdBuffer,
-            imageViews[index],
+            image,
+            &imageRange,
             &oldUsageStateInfo,
             &newUsageStateInfo);
 

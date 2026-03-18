@@ -447,9 +447,10 @@ PalResult PAL_CALL cmdMemoryBarrierVk(
     PalUsageStateInfo* oldsUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo);
 
-PalResult PAL_CALL cmdImageViewBarrierVk(
+PalResult PAL_CALL cmdImageBarrierVk(
     PalCommandBuffer* cmdBuffer,
-    PalImageView* imageView,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo);
 
@@ -749,7 +750,7 @@ static PalGraphicsBackend s_VkBackend = {
     .cmdDrawIndexedIndirect = cmdDrawIndexedIndirectVk,
     .cmdDrawIndexedIndirectCount = cmdDrawIndexedIndirectCountVk,
     .cmdMemoryBarrier = cmdMemoryBarrierVk,
-    .cmdImageViewBarrier = cmdImageViewBarrierVk,
+    .cmdImageBarrier = cmdImageBarrierVk,
     .cmdBufferBarrier = cmdBufferBarrierVk,
     .cmdDispatch = cmdDispatchVk,
     .cmdDispatchBase = cmdDispatchBaseVk,
@@ -942,7 +943,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->cmdDrawIndexedIndirect                ||
         !backend->cmdDrawIndexedIndirectCount           ||
         !backend->cmdMemoryBarrier                      ||
-        !backend->cmdImageViewBarrier                   ||
+        !backend->cmdImageBarrier                       ||
         !backend->cmdBufferBarrier                      ||
         !backend->cmdDispatch                           ||
         !backend->cmdDispatchBase                       ||
@@ -2400,9 +2401,10 @@ PalResult PAL_CALL palCmdMemoryBarrier(
     return cmdBuffer->backend->cmdMemoryBarrier(cmdBuffer, oldUsageStateInfo, newUsageStateInfo);
 }
 
-PalResult PAL_CALL palCmdImageViewBarrier(
+PalResult PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
-    PalImageView* imageView,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
@@ -2410,12 +2412,16 @@ PalResult PAL_CALL palCmdImageViewBarrier(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !imageView || !oldUsageStateInfo || !newUsageStateInfo) {
+    if (!cmdBuffer || !image ||!subresourceRange || !oldUsageStateInfo || !newUsageStateInfo) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend
-        ->cmdImageViewBarrier(cmdBuffer, imageView, oldUsageStateInfo, newUsageStateInfo);
+    return cmdBuffer->backend->cmdImageBarrier(
+        cmdBuffer, 
+        image, 
+        subresourceRange, 
+        oldUsageStateInfo, 
+        newUsageStateInfo);
 }
 
 PalResult PAL_CALL palCmdBufferBarrier(

@@ -123,6 +123,8 @@ typedef struct {
     PFN_vkDestroyImage destroyImage;
     PFN_vkCreateShaderModule createShader;
     PFN_vkDestroyShaderModule destroyShader;
+    PFN_vkCreateSampler createSampler;
+    PFN_vkDestroySampler destroySampler;
 
     PFN_vkCreateCommandPool createCommandPool;
     PFN_vkDestroyCommandPool destroyCommandPool;
@@ -283,6 +285,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool belongsToSwapchain;
+    VkImageAspectFlags aspectMask;
     Device* device;
     VkImage handle;
     PalImageInfo info;
@@ -1702,7 +1705,7 @@ static Barrier barrierToVk(
             barrier.dstStages = barrier.stages;
 
             barrier.access = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             return barrier;
         }
 
@@ -1711,7 +1714,7 @@ static Barrier barrierToVk(
             barrier.dstStages = barrier.stages;
 
             barrier.access = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             return barrier;
         }
 
@@ -1747,7 +1750,7 @@ static Barrier barrierToVk(
             barrier.dstStages = barrier.stages;
 
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             return barrier;
         }
 
@@ -1756,7 +1759,7 @@ static Barrier barrierToVk(
             barrier.dstStages = barrier.stages;
 
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
         }
 
@@ -1765,7 +1768,7 @@ static Barrier barrierToVk(
             barrier.dstStages = barrier.stages;
 
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             return barrier;
         }
 
@@ -1774,7 +1777,7 @@ static Barrier barrierToVk(
             barrier.dstStages = barrier.stages;
 
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
         }
 
@@ -2244,6 +2247,14 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.destroyShader = (PFN_vkDestroyShaderModule)dlsym(
         s_Vk.handle,
         "vkDestroyShaderModule");
+
+    s_Vk.createSampler = (PFN_vkCreateSampler)dlsym(
+        s_Vk.handle,
+        "vkCreateSampler");
+
+    s_Vk.destroySampler = (PFN_vkDestroySampler)dlsym(
+        s_Vk.handle,
+        "vkDestroySampler");
 
     s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
         s_Vk.handle,
@@ -4681,6 +4692,16 @@ PalResult PAL_CALL createImageVk(
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
 
+    // get aspect masks
+    image->aspectMask = 0;
+    if (info->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+        image->aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
+    if (info->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+        image->aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
 }
@@ -4778,10 +4799,10 @@ PalResult PAL_CALL createImageViewVk(
     createInfo.format = formatToVk(vkImage->info.format);
     createInfo.image = vkImage->handle;
 
-    createInfo.subresourceRange.baseArrayLayer = info->startArrayLayer;
-    createInfo.subresourceRange.baseMipLevel = info->startMipLevel;
-    createInfo.subresourceRange.levelCount = info->mipLevelCount;
-    createInfo.subresourceRange.layerCount = info->layerArrayCount;
+    createInfo.subresourceRange.baseArrayLayer = info->subresourceRange.startArrayLayer;
+    createInfo.subresourceRange.baseMipLevel = info->subresourceRange.startMipLevel;
+    createInfo.subresourceRange.levelCount = info->subresourceRange.mipLevelCount;
+    createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
     createInfo.viewType = imageViewTypeToVk(info->type);
 
     VkImageAspectFlags aspectFlags = 0;
@@ -4836,12 +4857,141 @@ PalResult PAL_CALL createSamplerVk(
     const PalSamplerCreateInfo* info,
     PalSampler** outSampler)
 {
-    // TODO: sampler
+    VkResult result = VK_SUCCESS;
+    Sampler* sampler = nullptr;
+    Device* vkDevice = (Device*)device;
+
+    sampler = palAllocate(s_Vk.allocator, sizeof(Sampler), 0);
+    if (!sampler) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+    
+    VkSamplerCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    createInfo.anisotropyEnable = info->enableAnisotropy;
+    createInfo.compareEnable = info->enableCompare;
+
+    createInfo.mipLodBias = info->mipLodBias;
+    createInfo.minLod = info->minLod;
+    createInfo.maxLod = info->maxLod;
+    createInfo.maxAnisotropy = info->maxAnisotropy;
+    createInfo.compareOp = compareOpToVk(info->compareOp);
+
+    // min filter mode
+    switch (info->minFilterMode) {
+        case PAL_FILTER_MODE_LINEAR:
+            createInfo.minFilter = VK_FILTER_LINEAR;
+
+        case PAL_FILTER_MODE_NEAREST:
+            createInfo.minFilter = VK_FILTER_NEAREST;
+    }
+
+    // mag filter mode
+    switch (info->magFilterMode) {
+        case PAL_FILTER_MODE_LINEAR:
+            createInfo.magFilter = VK_FILTER_LINEAR;
+
+        case PAL_FILTER_MODE_NEAREST:
+            createInfo.magFilter = VK_FILTER_NEAREST;
+    }
+
+    // sampler mipmap mode
+    switch (info->mipmapMode) {
+        case PAL_SAMPLER_MIPMAP_MODE_LINEAR:
+            createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        case PAL_SAMPLER_MIPMAP_MODE_NEAREST:
+            createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    }
+
+    // sampler address mode u
+    switch (info->addressModeU) {
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT:
+            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    }
+
+    // sampler address mode v
+    switch (info->addressModeV) {
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT:
+            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    }
+
+    // sampler address mode w
+    switch (info->addressModeW) {
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT:
+            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    }
+
+    // border color
+    switch (info->borderColor) {
+        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK:
+            createInfo.addressModeW = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+
+        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
+            createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+
+        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK:
+            createInfo.addressModeW = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
+            createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+
+        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE:
+            createInfo.addressModeW = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
+            createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    }
+
+    result = s_Vk.createSampler(
+        vkDevice->handle,
+        &createInfo,
+        &s_Vk.allocateVkator,
+        &sampler->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, sampler);
+        return resultFromVk(result);
+    }
+
+    sampler->device = vkDevice;
+    *outSampler = (PalSampler*)sampler;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySamplerVk(PalSampler* sampler)
 {
-    // TODO: sampler
+    Sampler* vkSampler = (Sampler*)sampler;
+    s_Vk.destroySampler(vkSampler->device->handle, vkSampler->handle, &s_Vk.allocateVkator);
+
+    palFree(s_Vk.allocator, vkSampler);
 }
 
 // ==================================================
@@ -6427,14 +6577,15 @@ PalResult PAL_CALL cmdMemoryBarrierVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdImageViewBarrierVk(
+PalResult PAL_CALL cmdImageBarrierVk(
     PalCommandBuffer* cmdBuffer,
-    PalImageView* imageView,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    ImageView* vkImageView = (ImageView*)imageView;
+    Image* vkImage = (Image*)image;
     VkImageMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
 
@@ -6450,8 +6601,12 @@ PalResult PAL_CALL cmdImageViewBarrierVk(
     barrier.dstAccessMask = new.access;
     barrier.newLayout = new.layout;
 
-    barrier.image = vkImageView->image->handle;
-    barrier.subresourceRange = vkImageView->range;
+    barrier.image = vkImage->handle;
+    barrier.subresourceRange.aspectMask = vkImage->aspectMask;
+    barrier.subresourceRange.baseArrayLayer = subresourceRange->startArrayLayer;
+    barrier.subresourceRange.baseMipLevel = subresourceRange->startMipLevel;
+    barrier.subresourceRange.layerCount = subresourceRange->layerArrayCount;
+    barrier.subresourceRange.levelCount = subresourceRange->mipLevelCount;
 
     VkDependencyInfo dependencyInfo = {0};
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;

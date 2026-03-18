@@ -2202,8 +2202,8 @@ typedef struct {
 } PalImageCreateInfo;
 
 /**
- * @struct PalImageCreateInfo
- * @brief Creation parameters for an image view.
+ * @struct PalImageSubresourceRange
+ * @brief Subresource range for images and image views.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2215,8 +2215,21 @@ typedef struct {
     Uint32 mipLevelCount;
     Uint32 startArrayLayer;
     Uint32 layerArrayCount;
+} PalImageSubresourceRange;
+
+/**
+ * @struct PalImageCreateInfo
+ * @brief Creation parameters for an image view.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
     PalImageViewType type;     /**< (eg. PAL_IMAGE_VIEW_TYPE_2D).*/
     PalImageViewUsages usages; /**< (eg. PAL_IMAGE_VIEW_USAGE_COLOR).*/
+    PalImageSubresourceRange subresourceRange;
 } PalImageViewCreateInfo;
 
 /**
@@ -3206,13 +3219,14 @@ typedef struct {
         PalUsageStateInfo* newUsageStateInfo);
 
     /**
-     * Backend implementation of ::palCmdImageViewBarrier.
+     * Backend implementation of ::palCmdImageBarrier.
      *
-     * Must obey the rules and semantics documented in palCmdImageViewBarrier().
+     * Must obey the rules and semantics documented in palCmdImageBarrier().
      */
-    PalResult PAL_CALL (*cmdImageViewBarrier)(
+    PalResult PAL_CALL (*cmdImageBarrier)(
         PalCommandBuffer* cmdBuffer,
-        PalImageView* imageView,
+        PalImage* image,
+        PalImageSubresourceRange* subresourceRange,
         PalUsageStateInfo* oldUsageStateInfo,
         PalUsageStateInfo* newUsageStateInfo);
 
@@ -5592,7 +5606,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  *
  * @since 1.4
  * @ingroup pal_graphics
- * @sa palCmdImageViewBarrier
+ * @sa palCmdImageBarrier
  * @sa palCmdBufferBarrier
  */
 PAL_API PalResult PAL_CALL palCmdMemoryBarrier(
@@ -5601,18 +5615,19 @@ PAL_API PalResult PAL_CALL palCmdMemoryBarrier(
     PalUsageStateInfo* newUsageStateInfo);
 
 /**
- * @brief Insert an image view memory barrier into the command buffer.
+ * @brief Insert an image memory barrier into the command buffer.
  *
  * The graphics system must be initialized before this call. This functions makes memory invisible
  * and blocks access until the usage state specified by `oldUsageStateInfo` is completed.
  *
- * Example: To make sure an image view has been rendered to fully and prepared for presenting,
+ * Example: To make sure an image has been rendered to fully and prepared for presenting,
  * `oldUsageStateInfo.usageState` should be `PAL_USAGE_STATE_UNDEFINED` or `PAL_USAGE_STATE_PRESENT`
- * depending on the previous state of the image view. `newUsageStateInfo.usageState` should be
+ * depending on the previous state of the image. `newUsageStateInfo.usageState` should be
  * `PAL_USAGE_STATE_PRESENT` to make sure its in present state.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] imageView Image view to set barrier on.
+ * @param[in] image Image to set barrier on.
+ * @param[in] subresourceRange Pointer to a PalImageSubresourceRange specifying the image.
  * @param[in] oldUsageStateInfo Pointer to a PalUsageStateInfo specifying the old usage state.
  * @param[in] newUsageStateInfo Pointer to a PalUsageStateInfo specifying the new usage state.
  *
@@ -5626,9 +5641,10 @@ PAL_API PalResult PAL_CALL palCmdMemoryBarrier(
  * @sa palCmdMemoryBarrier
  * @sa palCmdBufferBarrier
  */
-PAL_API PalResult PAL_CALL palCmdImageViewBarrier(
+PAL_API PalResult PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
-    PalImageView* imageView,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo);
 
@@ -5657,7 +5673,7 @@ PAL_API PalResult PAL_CALL palCmdImageViewBarrier(
  * @since 1.4
  * @ingroup pal_graphics
  * @sa palCmdMemoryBarrier
- * @sa palCmdImageViewBarrier
+ * @sa palCmdImageBarrier
  */
 PAL_API PalResult PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,

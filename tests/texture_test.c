@@ -8,6 +8,9 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2
+#define TEXTURE_WIDTH 128
+#define TEXTURE_HEIGHT 128
+#define CHECKER_SIZE 8
 
 static bool readFile(
     const char* filename,
@@ -32,6 +35,33 @@ static bool readFile(
     return true;
 }
 
+static void createCheckerboardTexture(
+    Uint32* texture,
+    Uint32 width,
+    Uint32 height,
+    Uint32 checkerSize)
+{
+    Uint8* pixels = (Uint8*)texture;
+    for (Int32 y = 0; y < height; ++y) {
+        for (Int32 x = 0; x < width; ++x) {
+            Int32 i = (y * width + x) * 4;
+            int checker = ((x / checkerSize) ^ (y / checkerSize)) & 1;
+            if (checker) {
+                pixels[i + 0] = 255; // Red bit
+                pixels[i + 1] = 0;   // Green bit
+                pixels[i + 2] = 0;   // Blue bit
+                pixels[i + 3] = 255; // Alpha bit
+
+            } else {
+                pixels[i + 0] = 0;   // Red bit
+                pixels[i + 1] = 255; // Green bit
+                pixels[i + 2] = 0;   // Blue bit
+                pixels[i + 3] = 255; // Alpha bit
+            }
+        }
+    }
+}
+
 static void PAL_CALL onGraphicsDebug(
     void* userData,
     PalDebugMessageSeverity severity,
@@ -41,11 +71,11 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
-bool triangleTest()
+bool textureTest()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Triangle Test");
+    palLog(nullptr, "Texture Test");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
@@ -98,7 +128,7 @@ bool triangleTest()
     windowCreateInfo.height = WINDOW_HEIGHT;
     windowCreateInfo.width = WINDOW_WIDTH;
     windowCreateInfo.show = true;
-    windowCreateInfo.title = "Clear Color Window";
+    windowCreateInfo.title = "Texture Window";
 
     PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
     if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
@@ -336,8 +366,12 @@ bool triangleTest()
     // create vertex and staging buffer
     // clang-format off
     float vertices[] = {
-        0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+
+       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f};
     // clang-format on
 
@@ -442,6 +476,120 @@ bool triangleTest()
         return false;
     }
 
+    // we dont want to load the texture from disk so we will create a 
+    // checkerboard texture and use that rather
+    Uint32 texture[TEXTURE_WIDTH * TEXTURE_HEIGHT * 4];
+    createCheckerboardTexture(texture, TEXTURE_WIDTH, TEXTURE_HEIGHT, CHECKER_SIZE);
+
+    // create image for the texture
+    PalImage* checkerboard = nullptr;
+    PalImageCreateInfo imageCreateInfo = {0};
+    imageCreateInfo.depthOrArraySize = 1;
+    imageCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
+    imageCreateInfo.mipLevelCount = 1; // simple
+    imageCreateInfo.sampleCount = PAL_SAMPLE_COUNT_1; // simple
+    imageCreateInfo.type = PAL_IMAGE_TYPE_2D;
+    imageCreateInfo.usages = PAL_IMAGE_USAGE_TRANSFER_DST | PAL_IMAGE_USAGE_SAMPLED;
+    imageCreateInfo.width = TEXTURE_WIDTH;
+    imageCreateInfo.height = TEXTURE_HEIGHT;
+
+    result = palCreateImage(device, &imageCreateInfo, &checkerboard);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create image: %s", error);
+        return false;
+    }
+
+    // allocate memory for the image
+    PalMemoryRequirements imageMemReq = {0};
+    result = palGetImageMemoryRequirements(checkerboard, &imageMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get image memory requirement: %s", error);
+        return false;
+    }
+
+    PalMemory* checkerboardMemory = nullptr;
+    result = palAllocateMemory(
+        device, 
+        PAL_MEMORY_TYPE_GPU_ONLY, 
+        imageMemReq.memoryMask, 
+        imageMemReq.size, 
+        &checkerboardMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory: %s", error);
+        return false;
+    }
+
+    result = palBindImageMemory(checkerboard, checkerboardMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind image memory: %s", error);
+        return false;
+    }
+
+    // create staging buffer to transfer the data to the image
+    PalBuffer* imageStagingBuffer = nullptr;
+    PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
+    imageStagingBufferCreateInfo.size = TEXTURE_WIDTH * TEXTURE_HEIGHT * 4;
+    imageStagingBufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC;
+
+    result = palCreateBuffer(device, &imageStagingBufferCreateInfo, &imageStagingBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create image staging buffer: %s", error);
+        return false;
+    }
+
+    PalMemoryRequirements imageStagingBufferMemReq = {0};
+    result = palGetBufferMemoryRequirements(imageStagingBuffer, &imageStagingBufferMemReq);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get image staging buffer memory requirement: %s", error);
+        return false;
+    }
+
+    PalMemory* imageStagingBufferMemory = nullptr;
+    result = palAllocateMemory(
+        device, 
+        PAL_MEMORY_TYPE_CPU_UPLOAD, 
+        imageStagingBufferMemReq.memoryMask, 
+        imageStagingBufferMemReq.size, 
+        &imageStagingBufferMemory);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate memory: %s", error);
+        return false;
+    }
+
+    result = palBindBufferMemory(imageStagingBuffer, imageStagingBufferMemory, 0);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind image staging buffer memory: %s", error);
+        return false;
+    }
+
+    // copy data
+    void* data = nullptr;
+    result = palMapMemory(
+        device, 
+        imageStagingBufferMemory, 
+        0, 
+        imageStagingBufferCreateInfo.size, 
+        &data);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to map memory: %s", error);
+        return false;
+    }
+
+    memcpy(data, texture, imageStagingBufferCreateInfo.size);
+    palUnmapMemory(device, imageStagingBufferMemory);
+
     // use the first command buffer to upload the copy
     // and reset it when done
     // set a fence and check at the last line before the main loop
@@ -469,6 +617,11 @@ bool triangleTest()
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
         return false;
     }
+
+    // copy image staing buffer to the checkerboard image
+    // first the image must be in the correct layout
+    PalUsageStateInfo oldImageUsageState = {0};
+    PalUsageStateInfo newImageUsageState = {0};
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
@@ -847,7 +1000,7 @@ bool triangleTest()
             return false;
         }
 
-        result = palCmdDraw(cmdBuffer, 3, 1, 0, 0);
+        result = palCmdDraw(cmdBuffer, 6, 1, 0, 0);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw command: %s", error);
