@@ -260,6 +260,15 @@ typedef struct {
     PFN_vkCmdEndRendering cmdEndRendering;
     PFN_vkCmdPipelineBarrier2 cmdPipelineBarrier;
     PFN_vkQueueSubmit2 queueSubmit;
+
+    // dynamic states
+    PFN_vkCmdSetCullMode cmdSetCullMode;
+    PFN_vkCmdSetFrontFace cmdSetFrontFace;
+    PFN_vkCmdSetPrimitiveTopology cmdSetPrimitiveTopology;
+
+    PFN_vkCmdSetDepthTestEnable cmdSetDepthTestEnable;
+    PFN_vkCmdSetDepthWriteEnable cmdSetDepthWriteEnable;
+    PFN_vkCmdSetStencilOp cmdSetStencilOp;
 } Device;
 
 typedef struct {
@@ -3916,6 +3925,92 @@ PalResult PAL_CALL createDeviceVk(
             device->handle,
             "vkQueueSubmit2KHR");
     }
+
+    // dynamic states
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
+        device->cmdSetCullMode =
+            (PFN_vkCmdSetCullMode)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkCmdSetCullMode");
+
+        if (!device->cmdSetCullMode) {
+            device->cmdSetCullMode =
+                (PFN_vkCmdSetCullModeEXT)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkCmdSetCullModeEXT");
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
+        device->cmdSetFrontFace =
+            (PFN_vkCmdSetFrontFace)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkcmdSetFrontFace");
+
+        if (!device->cmdSetFrontFace) {
+            device->cmdSetFrontFace =
+                (PFN_vkCmdSetFrontFaceEXT)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkcmdSetFrontFaceEXT");
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+        device->cmdSetPrimitiveTopology =
+            (PFN_vkCmdSetPrimitiveTopology)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkcmdSetPrimitiveTopology");
+
+        if (!device->cmdSetPrimitiveTopology) {
+            device->cmdSetPrimitiveTopology =
+                (PFN_vkCmdSetPrimitiveTopologyEXT)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkcmdSetPrimitiveTopologyEXT");
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
+        device->cmdSetDepthTestEnable =
+            (PFN_vkCmdSetDepthTestEnable)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkcmdSetDepthTestEnable");
+
+        if (!device->cmdSetDepthTestEnable) {
+            device->cmdSetDepthTestEnable =
+                (PFN_vkCmdSetDepthTestEnableEXT)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkcmdSetDepthTestEnableEXT");
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
+        device->cmdSetDepthWriteEnable =
+            (PFN_vkCmdSetDepthWriteEnable)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkcmdSetDepthWriteEnable");
+
+        if (!device->cmdSetDepthWriteEnable) {
+            device->cmdSetDepthWriteEnable =
+                (PFN_vkCmdSetDepthWriteEnableEXT)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkcmdSetDepthWriteEnableEXT");
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
+        device->cmdSetStencilOp =
+            (PFN_vkCmdSetStencilOp)s_Vk.getDeviceProcAddr(
+                device->handle,
+                "vkcmdSetStencilOp");
+
+        if (!device->cmdSetStencilOp) {
+            device->cmdSetStencilOp =
+                (PFN_vkCmdSetStencilOpEXT)s_Vk.getDeviceProcAddr(
+                    device->handle,
+                    "vkcmdSetStencilOpEXT");
+        }
+    }
+
     // clang-format on
 
     palFree(s_Vk.allocator, queueProps);
@@ -6505,6 +6600,158 @@ PalResult PAL_CALL cmdPushConstantsVk(
         stages |= bit;
     }
     s_Vk.cmdPushConstants(vkCmdBuffer->handle, vkLayout->handle, stages, offset, size, value);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdSetCullModeVk(
+    PalCommandBuffer* cmdBuffer,
+    PalCullMode cullMode)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkCullModeFlags vkCullMode = 0;
+    switch (cullMode) {
+        case PAL_CULL_MODE_BACK:
+            vkCullMode = VK_CULL_MODE_BACK_BIT;
+
+        case PAL_CULL_MODE_FRONT:
+            vkCullMode = VK_CULL_MODE_FRONT_BIT;
+
+        case PAL_CULL_MODE_NONE:
+            vkCullMode = VK_CULL_MODE_NONE;
+    }
+    vkCmdBuffer->device->cmdSetCullMode(vkCmdBuffer->handle, vkCullMode);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdSetFrontFaceVk(
+    PalCommandBuffer* cmdBuffer,
+    PalFrontFace frontFace)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkFrontFace vkFrontFace = 0;
+    switch (frontFace) {
+        case PAL_FRONT_FACE_CLOCKWISE:
+            vkFrontFace = VK_FRONT_FACE_CLOCKWISE;
+
+        case PAL_FRONT_FACE_COUNTER_CLOCKWISE:
+            vkFrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    }
+    vkCmdBuffer->device->cmdSetFrontFace(vkCmdBuffer->handle, vkFrontFace);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
+    PalCommandBuffer* cmdBuffer,
+    PalPrimitiveTopology topology)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkPrimitiveTopology vkTopology = 0;
+    switch (topology) {
+        case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
+            vkTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: {
+            vkTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_LINE_LIST: {
+            vkTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP: {
+            vkTopology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_POINT_LIST: {
+            vkTopology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            break;
+        }
+    }
+    vkCmdBuffer->device->cmdSetPrimitiveTopology(vkCmdBuffer->handle, vkTopology);
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdSetDepthTestEnableVk(
+    PalCommandBuffer* cmdBuffer,
+    bool enable)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+    
+    vkCmdBuffer->device->cmdSetDepthTestEnable(vkCmdBuffer->handle, enable);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdSetDepthWriteEnableVk(
+    PalCommandBuffer* cmdBuffer,
+    bool enable)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+    
+    vkCmdBuffer->device->cmdSetDepthWriteEnable(vkCmdBuffer->handle, enable);
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdSetStencilOpVk(
+    PalCommandBuffer* cmdBuffer,
+    PalStencilFaceFlags faceMask,
+    PalStencilOp failOp,
+    PalStencilOp passOp,
+    PalStencilOp depthFailOp,
+    PalCompareOp compareOp)
+{
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkStencilFaceFlags faceFlags = 0;
+    if (faceMask & PAL_STENCIL_FACE_BACK) {
+        faceFlags |= VK_STENCIL_FACE_BACK_BIT;
+    }
+
+    if (faceMask & PAL_STENCIL_FACE_FRONT) {
+        faceFlags |= VK_STENCIL_FACE_FRONT_BIT;
+    }
+
+    VkStencilOp vkFailOp = stencilOpToVk(failOp);
+    VkStencilOp vkPassOp = stencilOpToVk(passOp);
+    VkStencilOp vkDepthFailOp = stencilOpToVk(depthFailOp);
+    VkCompareOp vkCompareOp = compareOpToVk(compareOp);
+    
+    vkCmdBuffer->device->cmdSetStencilOp(
+        vkCmdBuffer->handle, 
+        faceFlags, 
+        failOp, 
+        passOp, 
+        depthFailOp, 
+        compareOp);
 
     return PAL_RESULT_SUCCESS;
 }

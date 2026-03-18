@@ -303,6 +303,10 @@ void PAL_CALL freeCommandBufferVk(PalCommandBuffer* buffer);
 
 PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer);
 
+PalResult PAL_CALL submitCommandBufferVk(
+    PalQueue* queue,
+    PalCommandBufferSubmitInfo* info);
+
 PalResult PAL_CALL cmdBeginVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info);
@@ -494,9 +498,33 @@ PalResult PAL_CALL cmdPushConstantsVk(
     Uint32 size,
     const void* value);
 
-PalResult PAL_CALL submitCommandBufferVk(
-    PalQueue* queue,
-    PalCommandBufferSubmitInfo* info);
+PalResult PAL_CALL cmdSetCullModeVk(
+    PalCommandBuffer* cmdBuffer,
+    PalCullMode cullMode);
+
+PalResult PAL_CALL cmdSetFrontFaceVk(
+    PalCommandBuffer* cmdBuffer,
+    PalFrontFace frontFace);
+
+PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
+    PalCommandBuffer* cmdBuffer,
+    PalPrimitiveTopology topology);
+
+PalResult PAL_CALL cmdSetDepthTestEnableVk(
+    PalCommandBuffer* cmdBuffer,
+    bool enable);
+
+PalResult PAL_CALL cmdSetDepthWriteEnableVk(
+    PalCommandBuffer* cmdBuffer,
+    bool enable);
+
+PalResult PAL_CALL cmdSetStencilOpVk(
+    PalCommandBuffer* cmdBuffer,
+    PalStencilFaceFlags faceMask,
+    PalStencilOp failOp,
+    PalStencilOp passOp,
+    PalStencilOp depthFailOp,
+    PalCompareOp compareOp);
 
 PalResult PAL_CALL createAccelerationstructureVk(
     PalDevice* device,
@@ -902,6 +930,12 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->cmdTraceRaysIndirect                  ||
         !backend->cmdBindDescriptorSet                  ||
         !backend->cmdPushConstants                      ||
+        !backend->cmdSetCullMode                        ||
+        !backend->cmdSetFrontFace                       ||
+        !backend->cmdSetPrimitiveTopology               ||
+        !backend->cmdSetDepthTestEnable                 ||
+        !backend->cmdSetDepthWriteEnable                ||
+        !backend->cmdSetStencilOp                       ||
 
         // acceleration structure
         !backend->createAccelerationstructure           ||
@@ -2474,6 +2508,106 @@ PalResult PAL_CALL palCmdPushConstants(
 
     return cmdBuffer->backend
         ->cmdPushConstants(cmdBuffer, layout, shaderStageCount, shaderStages, offset, size, value);
+}
+
+PalResult PAL_CALL palCmdSetCullMode(
+    PalCommandBuffer* cmdBuffer,
+    PalCullMode cullMode)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdSetCullMode(cmdBuffer, cullMode);
+}
+
+PalResult PAL_CALL palCmdSetFrontFace(
+    PalCommandBuffer* cmdBuffer,
+    PalFrontFace frontFace)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdSetFrontFace(cmdBuffer, frontFace);
+}
+
+PalResult PAL_CALL palCmdSetPrimitiveTopology(
+    PalCommandBuffer* cmdBuffer,
+    PalPrimitiveTopology topology)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdSetPrimitiveTopology(cmdBuffer, topology);
+}
+
+PalResult PAL_CALL palCmdSetDepthTestEnable(
+    PalCommandBuffer* cmdBuffer,
+    bool enable)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdSetDepthTestEnable(cmdBuffer, enable);
+}
+
+PalResult PAL_CALL palCmdSetDepthWriteEnable(
+    PalCommandBuffer* cmdBuffer,
+    bool enable)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdSetDepthWriteEnable(cmdBuffer, enable);
+}
+
+PalResult PAL_CALL palCmdSetStencilOp(
+    PalCommandBuffer* cmdBuffer,
+    PalStencilFaceFlags faceMask,
+    PalStencilOp failOp,
+    PalStencilOp passOp,
+    PalStencilOp depthFailOp,
+    PalCompareOp compareOp)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdSetStencilOp(
+        cmdBuffer, 
+        faceMask, 
+        failOp, 
+        passOp, 
+        depthFailOp, 
+        compareOp);
 }
 
 // ==================================================

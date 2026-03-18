@@ -803,6 +803,23 @@ typedef enum {
 } PalPolygonMode;
 
 /**
+ * @enum PalStencilFaceFlags
+ * @brief Stencil face flags. Multiple stencil face flags can be OR'ed together using bitwise
+ * OR operator (`|`).
+ *
+ * All tencil face flags follow the format `PAL_STENCIL_FACE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_STENCIL_FACE_FRONT = PAL_BIT(0),
+    PAL_STENCIL_FACE_BACK = PAL_BIT(1),
+    PAL_STENCIL_FACE_BOTH = PAL_STENCIL_FACE_FRONT | PAL_STENCIL_FACE_BACK
+} PalStencilFaceFlags;
+
+/**
  * @enum PalVertexType
  * @brief Vertex attribute types.
  *
@@ -2102,6 +2119,24 @@ typedef struct {
 } PalImageViewCreateInfo;
 
 /**
+ * @struct PalSamplerCreateInfo
+ * @brief Creation parameters for a sampler.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 startMipLevel;
+    Uint32 mipLevelCount;
+    Uint32 startArrayLayer;
+    Uint32 layerArrayCount;
+    PalImageViewType type;
+    PalImageViewUsages usages;
+} PalSamplerCreateInfo;
+
+/**
  * @struct PalSwapchainCreateInfo
  * @brief Creation parameters for a swapchain.
  *
@@ -2788,6 +2823,15 @@ typedef struct {
     PalResult PAL_CALL (*resetCommandBuffer)(PalCommandBuffer* cmdBuffer);
 
     /**
+     * Backend implementation of ::palSubmitCommandBuffer.
+     *
+     * Must obey the rules and semantics documented in palSubmitCommandBuffer().
+     */
+    PalResult PAL_CALL (*submitCommandBuffer)(
+        PalQueue* queue,
+        PalCommandBufferSubmitInfo* info);
+
+    /**
      * Backend implementation of ::palCmdBegin.
      *
      * Must obey the rules and semantics documented in palCmdBegin().
@@ -3139,13 +3183,62 @@ typedef struct {
         const void* value);
 
     /**
-     * Backend implementation of ::palSubmitCommandBuffer.
+     * Backend implementation of ::palCmdSetCullMode.
      *
-     * Must obey the rules and semantics documented in palSubmitCommandBuffer().
+     * Must obey the rules and semantics documented in palCmdSetCullMode().
      */
-    PalResult PAL_CALL (*submitCommandBuffer)(
-        PalQueue* queue,
-        PalCommandBufferSubmitInfo* info);
+    PalResult PAL_CALL (*cmdSetCullMode)(
+        PalCommandBuffer* cmdBuffer,
+        PalCullMode cullMode);
+
+    /**
+     * Backend implementation of ::palCmdSetFrontFace.
+     *
+     * Must obey the rules and semantics documented in palCmdSetFrontFace().
+     */
+    PalResult PAL_CALL (*cmdSetFrontFace)(
+        PalCommandBuffer* cmdBuffer,
+        PalFrontFace frontFace);
+
+    /**
+     * Backend implementation of ::palCmdSetPrimitiveTopology.
+     *
+     * Must obey the rules and semantics documented in palCmdSetPrimitiveTopology().
+     */
+    PalResult PAL_CALL (*cmdSetPrimitiveTopology)(
+        PalCommandBuffer* cmdBuffer,
+        PalPrimitiveTopology topology);
+
+    /**
+     * Backend implementation of ::palCmdSetDepthTestEnable.
+     *
+     * Must obey the rules and semantics documented in palCmdSetDepthTestEnable().
+     */
+    PalResult PAL_CALL (*cmdSetDepthTestEnable)(
+        PalCommandBuffer* cmdBuffer,
+        bool enable);
+
+    /**
+     * Backend implementation of ::palCmdSetDepthWriteEnable.
+     *
+     * Must obey the rules and semantics documented in palCmdSetDepthWriteEnable().
+     */
+    PalResult PAL_CALL (*cmdSetDepthWriteEnable)(
+        PalCommandBuffer* cmdBuffer,
+        bool enable);
+
+    /**
+     * Backend implementation of ::palCmdSetStencilOp.
+     *
+     * Must obey the rules and semantics documented in palCmdSetStencilOp().
+     */
+    PalResult PAL_CALL (*cmdSetStencilOp)(
+        PalCommandBuffer* cmdBuffer,
+        PalStencilFaceFlags faceMask,
+        PalStencilOp failOp,
+        PalStencilOp passOp,
+        PalStencilOp depthFailOp,
+        PalCompareOp compareOp);
 
     /**
      * Backend implementation of ::palCreateAccelerationstructure.
@@ -4157,6 +4250,21 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  */
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
+// TODO: docs
+PAL_API PalResult PAL_CALL palCreateImageView(
+    PalDevice* device,
+    PalImage* image,
+    const PalImageViewCreateInfo* info,
+    PalImageView** outImageView);
+
+// TODO: docs
+PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
+
+// TODO: docs
+PAL_API PalResult PAL_CALL palGetImageInfo(
+    PalImage* image,
+    PalImageInfo* info);
+
 /**
  * @brief Get swapchain feature capabilites or limits about a device against a window.
  *
@@ -4702,6 +4810,28 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
  * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
+
+/**
+ * @brief Submit a command buffer to the provided queue for execution.
+ *
+ * The graphics system must be initialized before this call. The command buffer must not
+ * be in a recording state.
+ *
+ * @param[in] queue Queue to execute the command buffer.
+ * @param[in] info Pointer to a PalCommandBufferSubmitInfo struct that specifies parameters.
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `queue` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
+    PalQueue* queue,
+    PalCommandBufferSubmitInfo* info);
 
 /**
  * @brief Begin recording commands to the provided command buffer.
@@ -5580,26 +5710,150 @@ PAL_API PalResult PAL_CALL palCmdPushConstants(
     const void* value);
 
 /**
- * @brief Submit a command buffer to the provided queue for execution.
+ * @brief Set the cull mode for the provided command buffer.
  *
- * The graphics system must be initialized before this call. The command buffer must not
- * be in a recording state.
+ * The graphics system must be initialized before this call.
  *
- * @param[in] queue Queue to execute the command buffer.
- * @param[in] info Pointer to a PalCommandBufferSubmitInfo struct that specifies parameters.
- * Must not be nullptr.
+ * `PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE` must be supported and enabled by the device if not,
+ * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] cullMode Cull mode to set.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `queue` is externally synchronized.
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
-PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
-    PalQueue* queue,
-    PalCommandBufferSubmitInfo* info);
+PAL_API PalResult PAL_CALL palCmdSetCullMode(
+    PalCommandBuffer* cmdBuffer,
+    PalCullMode cullMode);
+
+/**
+ * @brief Set the front face for the provided command buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE` must be supported and enabled by the device if not,
+ * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] frontFace Front face to set.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdSetFrontFace(
+    PalCommandBuffer* cmdBuffer,
+    PalFrontFace frontFace);
+
+/**
+ * @brief Set the primitive topology for the provided command buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY` must be supported and enabled by the device 
+ * if not, this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] topology Topology to set.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdSetPrimitiveTopology(
+    PalCommandBuffer* cmdBuffer,
+    PalPrimitiveTopology topology);
+
+/**
+ * @brief Set depth test enable for the provided command buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE` must be supported and enabled by the device 
+ * if not, this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] enable True to enable.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdSetDepthTestEnable(
+    PalCommandBuffer* cmdBuffer,
+    bool enable);
+
+/**
+ * @brief Set depth write enable for the provided command buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE` must be supported and enabled by the device
+ * if not, this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] enable True to enable.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdSetDepthWriteEnable(
+    PalCommandBuffer* cmdBuffer,
+    bool enable);
+
+/**
+ * @brief Set depth stencil operation for the provided command buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP` must be supported and enabled by the device
+ * if not, this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] faceMask Bitmask specifying faces to apply the stencil to.
+ * @param[in] failOp Stencil operation to perform when stencil fails.
+ * @param[in] passOp Stencil operation to perform when stencil and depth passes.
+ * @param[in] depthFailOp Stencil operation to perform when stencil passes but depth fails.
+ * @param[in] compareOp Compare operation for stencil tests.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdSetStencilOp(
+    PalCommandBuffer* cmdBuffer,
+    PalStencilFaceFlags faceMask,
+    PalStencilOp failOp,
+    PalStencilOp passOp,
+    PalStencilOp depthFailOp,
+    PalCompareOp compareOp);
 
 /**
  * @brief Create an acceleration structure.
