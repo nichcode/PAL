@@ -3882,7 +3882,7 @@ PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `adapter` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -3902,7 +3902,8 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  *
  * @param[in] device Pointer to the device to destroy.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if the adapter used to create the device is
+ * externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
