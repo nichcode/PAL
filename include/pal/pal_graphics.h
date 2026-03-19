@@ -2182,6 +2182,111 @@ typedef struct {
 } PalPushConstantRange;
 
 /**
+ * @struct PalImageSubresourceRange
+ * @brief Subresource range for images and image views.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 startMipLevel;
+    Uint32 mipLevelCount;
+    Uint32 startArrayLayer;
+    Uint32 layerArrayCount;
+} PalImageSubresourceRange;
+
+/**
+ * @struct PalBufferCopyInfo
+ * @brief Copy information for buffer to buffer.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 size;
+    Uint64 dstOffset;
+    Uint64 srcOffset;
+} PalBufferCopyInfo;
+
+/**
+ * @struct PalBufferImageCopyInfo
+ * @brief Copy information for buffer to image.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint64 bufferOffset;
+    Uint32 bufferRowLength;
+    Uint32 bufferImageHeight;
+    Uint32 ImageMipLevel;
+    Uint32 ImageStartArrayLayer;
+    Uint32 ImageArrayLayerCount;
+    Int32 imageOffsetX;
+    Int32 imageOffsetY;
+    Int32 imageOffsetZ;
+    Uint32 imageWidth;
+    Uint32 imageHeight;
+    Uint32 imageDepth;
+} PalBufferImageCopyInfo;
+
+/**
+ * @struct PalImageCopyInfo
+ * @brief Copy information for image to image.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 dstMipLevel;
+    Uint32 srcMipLevel;
+    Uint32 dstStartArrayLayer;
+    Uint32 srcStartArrayLayer;
+    Uint32 arrayLayerCount;
+    Int32 dstOffsetX;
+    Int32 srcOffsetX;
+    Int32 dstOffsetY;
+    Int32 srcOffsetY;
+    Int32 dstOffsetZ;
+    Int32 srcOffsetZ;
+    Uint32 width;
+    Uint32 height;
+    Uint32 depth;
+} PalImageCopyInfo;
+
+/**
+ * @struct PalImageBufferCopyInfo
+ * @brief Copy information for image to buffer.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint64 bufferOffset;
+    Uint32 bufferRowLength;
+    Uint32 bufferImageHeight;
+    Uint32 ImageMipLevel;
+    Uint32 ImageStartArrayLayer;
+    Uint32 ImageArrayLayerCount;
+    Int32 imageOffsetX;
+    Int32 imageOffsetY;
+    Int32 imageOffsetZ;
+    Uint32 imageWidth;
+    Uint32 imageHeight;
+    Uint32 imageDepth;
+} PalImageBufferCopyInfo;
+
+/**
  * @struct PalImageCreateInfo
  * @brief Creation parameters for an image.
  *
@@ -2200,22 +2305,6 @@ typedef struct {
     PalFormat format;      /**< Format of the image.*/
     PalImageUsages usages; /**< (eg. PAL_IMAGE_USAGE_COLOR_ATTACHEMENT).*/
 } PalImageCreateInfo;
-
-/**
- * @struct PalImageSubresourceRange
- * @brief Subresource range for images and image views.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef struct {
-    Uint32 startMipLevel;
-    Uint32 mipLevelCount;
-    Uint32 startArrayLayer;
-    Uint32 layerArrayCount;
-} PalImageSubresourceRange;
 
 /**
  * @struct PalImageCreateInfo
@@ -3075,9 +3164,40 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* dst,
         PalBuffer* src,
-        Uint64 dstOffset,
-        Uint64 srcOffset,
-        Uint32 size);
+        PalBufferCopyInfo* copyInfo);
+
+    /**
+     * Backend implementation of ::palCmdCopyBufferToImage.
+     *
+     * Must obey the rules and semantics documented in palCmdCopyBufferToImage().
+     */
+    PalResult PAL_CALL (*cmdCopyBufferToImage)(
+        PalCommandBuffer* cmdBuffer,
+        PalImage* dstImage,
+        PalBuffer* srcBuffer,
+        PalBufferImageCopyInfo* copyInfo);
+
+    /**
+     * Backend implementation of ::cmdCopyImage.
+     *
+     * Must obey the rules and semantics documented in cmdCopyImage().
+     */
+    PalResult PAL_CALL (*cmdCopyImage)(
+        PalCommandBuffer* cmdBuffer,
+        PalImage* dst,
+        PalImage* src,
+        PalImageCopyInfo* copyInfo);
+
+    /**
+     * Backend implementation of ::palCmdCopyImageToBuffer.
+     *
+     * Must obey the rules and semantics documented in palCmdCopyImageToBuffer().
+     */
+    PalResult PAL_CALL (*cmdCopyImageToBuffer)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* dstBuffer,
+        PalImage* srcImage,
+        PalImageBufferCopyInfo* copyInfo);
 
     /**
      * Backend implementation of ::palCmdBindPipeline.
@@ -5254,9 +5374,11 @@ PAL_API PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] dst Destination buffer.
  * @param[in] src Source buffer.
- * @param[in] dstOffset Starting byte offset in the destination buffer.
- * @param[in] srcOffset Starting byte offset in the source buffer.
- * @param[in] size Size in bytes to copy from the source buffer.
+ * @param[in] copyInfo Pointer to a PalBufferCopyInfo struct that specifies parameters.
+ * Must not be nullptr.
+ * 
+ * Pointer to a PalImageCreateInfo struct that specifies parameters.
+ * Must not be nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5270,9 +5392,82 @@ PAL_API PalResult PAL_CALL palCmdCopyBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dst,
     PalBuffer* src,
-    Uint64 dstOffset,
-    Uint64 srcOffset,
-    Uint32 size);
+    PalBufferCopyInfo* copyInfo);
+
+/**
+ * @brief Copy data from a buffer to an image.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] dstImage Destination image.
+ * @param[in] srcBuffer Source buffer.
+ * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdCopyBufferToImage(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dstImage,
+    PalBuffer* srcBuffer,
+    PalBufferImageCopyInfo* copyInfo);
+
+/**
+ * @brief Copy data from one image to the other.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] dst Destination image.
+ * @param[in] src Source image.
+ * @param[in] copyInfo Pointer to a PalImageCopyInfo struct that specifies parameters.
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdCopyImage(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dst,
+    PalImage* src,
+    PalImageCopyInfo* copyInfo);
+
+/**
+ * @brief Copy data from an image to a buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] dstBuffer Destination buffer.
+ * @param[in] srcImage Source image.
+ * @param[in] copyInfo Pointer to a PalImageBufferCopyInfo struct that specifies parameters.
+ * Must not be nullptr.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dstBuffer,
+    PalImage* srcImage,
+    PalImageBufferCopyInfo* copyInfo);
 
 /**
  * @brief Bind a pipeline.

@@ -6279,21 +6279,46 @@ PalResult PAL_CALL cmdCopyBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dst,
     PalBuffer* src,
-    Uint64 dstOffset,
-    Uint64 srcOffset,
-    Uint32 size)
+    PalBufferCopyInfo* copyInfo)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* dstbuffer = (Buffer*)dst;
     Buffer* srcBuffer = (Buffer*)src;
 
     VkBufferCopy copyRegion = {0};
-    copyRegion.size = size;
-    copyRegion.dstOffset = dstOffset;
-    copyRegion.srcOffset = srcOffset;
+    copyRegion.size = copyInfo->size;
+    copyRegion.dstOffset = copyInfo->dstOffset;
+    copyRegion.srcOffset = copyInfo->srcOffset;
     s_Vk.cmdCopyBuffer(vkCmdBuffer->handle, srcBuffer->handle, dstbuffer->handle, 1, &copyRegion);
 
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL cmdCopyBufferToImageVk(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dstImage,
+    PalBuffer* srcBuffer,
+    PalBufferImageCopyInfo* copyInfo)
+{
+    // TODO: buffer to image copy
+}
+
+PalResult PAL_CALL cmdCopyImageVk(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dst,
+    PalImage* src,
+    PalImageCopyInfo* copyInfo)
+{
+    // TODO: image to image copy
+}
+   
+PalResult PAL_CALL cmdCopyImageToBufferVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dstBuffer,
+    PalImage* srcImage,
+    PalImageBufferCopyInfo* copyInfo)
+{
+    // TODO: image to buffer copy
 }
 
 PalResult PAL_CALL cmdBindPipelineVk(

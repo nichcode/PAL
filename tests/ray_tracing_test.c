@@ -999,7 +999,10 @@ bool rayTracingTest()
     }
 
     // now we copy from the GPU buffer into the staging buffer
-    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, 0, 0, bufferBytes);
+    PalBufferCopyInfo copyInfo = {0};
+    copyInfo.size = bufferBytes;
+
+    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);

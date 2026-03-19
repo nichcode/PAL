@@ -364,9 +364,25 @@ PalResult PAL_CALL cmdCopyBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dst,
     PalBuffer* src,
-    Uint64 dstOffset,
-    Uint64 srcOffset,
-    Uint32 size);
+    PalBufferCopyInfo* copyInfo);
+
+PalResult PAL_CALL cmdCopyBufferToImageVk(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dstImage,
+    PalBuffer* srcBuffer,
+    PalBufferImageCopyInfo* copyInfo);
+
+PalResult PAL_CALL cmdCopyImageVk(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dst,
+    PalImage* src,
+    PalImageCopyInfo* copyInfo);
+
+PalResult PAL_CALL cmdCopyImageToBufferVk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dstBuffer,
+    PalImage* srcImage,
+    PalImageBufferCopyInfo* copyInfo);
 
 PalResult PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
@@ -738,6 +754,9 @@ static PalGraphicsBackend s_VkBackend = {
     .cmdBeginRendering = cmdBeginRenderingVk,
     .cmdEndRendering = cmdEndRenderingVk,
     .cmdCopyBuffer = cmdCopyBufferVk,
+    .cmdCopyBufferToImage = cmdCopyBufferToImageVk,
+    .cmdCopyImage = cmdCopyImageVk,
+    .cmdCopyImageToBuffer = cmdCopyImageToBufferVk,
     .cmdBindPipeline = cmdBindPipelineVk,
     .cmdSetViewport = cmdSetViewportVk,
     .cmdSetScissors = cmdSetScissorsVk,
@@ -931,6 +950,9 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->cmdBeginRendering                     ||
         !backend->cmdEndRendering                       ||
         !backend->cmdCopyBuffer                         ||
+        !backend->cmdCopyBufferToImage                  ||
+        !backend->cmdCopyImage                          ||
+        !backend->cmdCopyImageToBuffer                  ||
         !backend->cmdBindPipeline                       ||
         !backend->cmdSetViewport                        ||
         !backend->cmdSetScissors                        ||
@@ -2154,19 +2176,80 @@ PalResult PAL_CALL palCmdCopyBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dst,
     PalBuffer* src,
-    Uint64 dstOffset,
-    Uint64 srcOffset,
-    Uint32 size)
+    PalBufferCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !dst || !src) {
+    if (!cmdBuffer || !dst || !src || !copyInfo) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdCopyBuffer(cmdBuffer, dst, src, dstOffset, srcOffset, size);
+    return cmdBuffer->backend->cmdCopyBuffer(cmdBuffer, dst, src, copyInfo);
+}
+
+PalResult PAL_CALL palCmdCopyBufferToImage(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dstImage,
+    PalBuffer* srcBuffer,
+    PalBufferImageCopyInfo* copyInfo)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !dstImage || !srcBuffer || !copyInfo) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdCopyBufferToImage(
+        cmdBuffer, 
+        dstImage, 
+        srcBuffer,
+        copyInfo);
+}
+
+PalResult PAL_CALL palCmdCopyImage(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* dst,
+    PalImage* src,
+    PalImageCopyInfo* copyInfo)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !dst || !src || !copyInfo) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdCopyImage(
+        cmdBuffer, 
+        dst, 
+        src,
+        copyInfo);
+}
+   
+PalResult PAL_CALL palCmdCopyImageToBuffer(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* dstBuffer,
+    PalImage* srcImage,
+    PalImageBufferCopyInfo* copyInfo)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!cmdBuffer || !dstBuffer || !srcImage || !copyInfo) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return cmdBuffer->backend->cmdCopyImageToBuffer(
+        cmdBuffer, 
+        dstBuffer, 
+        srcImage,
+        copyInfo);
 }
 
 PalResult PAL_CALL palCmdBindPipeline(

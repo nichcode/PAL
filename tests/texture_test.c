@@ -601,7 +601,15 @@ bool textureTest()
         return false;
     }
 
-    result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, 0, 0, sizeof(vertices));
+    PalBufferCopyInfo copyInfo = {0};
+    copyInfo.size = sizeof(vertices);
+
+    result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &copyInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to copy buffer: %s", error);
+        return false;
+    }
 
     PalUsageStateInfo oldUsageStateInfo = {0};
     oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
