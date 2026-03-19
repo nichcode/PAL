@@ -626,10 +626,13 @@ bool textureTest()
         return false;
     }
 
-    // copy image staing buffer to the checkerboard image
+    // copy image staging buffer to the checkerboard image
     // first the image must be in the correct layout
     PalUsageStateInfo oldImageUsageState = {0};
     PalUsageStateInfo newImageUsageState = {0};
+
+    // TODO: finish copying
+    PalBufferImageCopyInfo bufferImageCopyInfo = {0};
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {

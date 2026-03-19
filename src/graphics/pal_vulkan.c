@@ -144,6 +144,9 @@ typedef struct {
     PFN_vkResetCommandBuffer resetCommandBuffer;
     PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
     PFN_vkCmdCopyBuffer cmdCopyBuffer;
+    PFN_vkCmdCopyBufferToImage cmdCopyBufferToImage;
+    PFN_vkCmdCopyImage cmdCopyImage;
+    PFN_vkCmdCopyImageToBuffer cmdCopyImageToBuffer;
     PFN_vkCmdBindPipeline cmdBindPipeline;
     PFN_vkCmdSetViewport cmdSetViewports;
     PFN_vkCmdSetScissor cmdSetScissors;
@@ -2367,6 +2370,18 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.cmdCopyBuffer = (PFN_vkCmdCopyBuffer)dlsym(
         s_Vk.handle,
         "vkCmdCopyBuffer");
+
+    s_Vk.cmdCopyBufferToImage = (PFN_vkCmdCopyBufferToImage)dlsym(
+        s_Vk.handle,
+        "vkCmdCopyBufferToImage");
+
+    s_Vk.cmdCopyImage = (PFN_vkCmdCopyImage)dlsym(
+        s_Vk.handle,
+        "vkCmdCopyImage");
+
+    s_Vk.cmdCopyImageToBuffer = (PFN_vkCmdCopyImageToBuffer)dlsym(
+        s_Vk.handle,
+        "vkCmdCopyImageToBuffer");
 
     s_Vk.cmdBindPipeline = (PFN_vkCmdBindPipeline)dlsym(
         s_Vk.handle,
@@ -6300,7 +6315,37 @@ PalResult PAL_CALL cmdCopyBufferToImageVk(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-    // TODO: buffer to image copy
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Image* dst = (Image*)dstImage;
+    Buffer* src = (Buffer*)srcBuffer;
+
+    VkBufferImageCopy copyRegion = {0};
+    copyRegion.bufferImageHeight = copyInfo->bufferImageHeight;
+    copyRegion.bufferOffset = copyInfo->bufferOffset;
+    copyRegion.bufferRowLength = copyInfo->bufferRowLength;
+
+    copyRegion.imageOffset.x = copyInfo->imageOffsetX;
+    copyRegion.imageOffset.y = copyInfo->imageOffsetY;
+    copyRegion.imageOffset.z = copyInfo->imageOffsetZ;
+
+    copyRegion.imageExtent.x = copyInfo->imageWidth;
+    copyRegion.imageExtent.y = copyInfo->imageHeight;
+    copyRegion.imageExtent.z = copyInfo->imageDepth;
+
+    copyRegion.imageSubresource.aspectMask = dst->aspectMask;
+    copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
+    copyRegion.imageSubresource.layerCount = copyInfo->ImageArrayLayerCount;
+    copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
+    
+    s_Vk.cmdCopyBufferToImage(
+        vkCmdBuffer->handle, 
+        src->handle, 
+        dst->handle,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &copyRegion);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdCopyImageVk(
@@ -6309,16 +6354,82 @@ PalResult PAL_CALL cmdCopyImageVk(
     PalImage* src,
     PalImageCopyInfo* copyInfo)
 {
-    // TODO: image to image copy
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Image* dstImage = (Image*)dst;
+    Image* srcImage = (Image*)src;
+
+    VkImageCopy copyRegion = {0};
+    copyRegion.dstOffset.x = copyInfo->dstOffsetX;
+    copyRegion.dstOffset.y = copyInfo->dstOffsetY;
+    copyRegion.dstOffset.z = copyInfo->dstOffsetZ;
+
+    copyRegion.srcOffset.x = copyInfo->srcOffsetX;
+    copyRegion.srcOffset.y = copyInfo->srcOffsetY;
+    copyRegion.srcOffset.z = copyInfo->srcOffsetZ;
+
+    copyRegion.extent.x = copyInfo->width;
+    copyRegion.extent.y = copyInfo->height;
+    copyRegion.extent.z = copyInfo->depth;
+
+    copyRegion.dstSubresource.aspectMask = dstImage->aspectMask;
+    copyRegion.dstSubresource.baseArrayLayer = copyInfo->dstStartArrayLayer;
+    copyRegion.dstSubresource.layerCount = copyInfo->arrayLayerCount;
+    copyRegion.dstSubresource.mipLevel = copyInfo->dstMipLevel;
+
+    copyRegion.srcSubresource.aspectMask = srcImage->aspectMask;
+    copyRegion.srcSubresource.baseArrayLayer = copyInfo->srcStartArrayLayer;
+    copyRegion.srcSubresource.layerCount = copyInfo->arrayLayerCount;
+    copyRegion.srcSubresource.mipLevel = copyInfo->srcMipLevel;
+    
+    s_Vk.cmdCopyImage(
+        vkCmdBuffer->handle, 
+        srcImage->handle, 
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        dstImage->handle,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &copyRegion);
+
+    return PAL_RESULT_SUCCESS;
 }
    
 PalResult PAL_CALL cmdCopyImageToBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
     PalImage* srcImage,
-    PalImageBufferCopyInfo* copyInfo)
+    PalBufferImageCopyInfo* copyInfo)
 {
-    // TODO: image to buffer copy
+    CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* dst = (Buffer*)dstBuffer;
+    Image* src = (Image*)srcImage;
+
+    VkBufferImageCopy copyRegion = {0};
+    copyRegion.bufferImageHeight = copyInfo->bufferImageHeight;
+    copyRegion.bufferOffset = copyInfo->bufferOffset;
+    copyRegion.bufferRowLength = copyInfo->bufferRowLength;
+
+    copyRegion.imageOffset.x = copyInfo->imageOffsetX;
+    copyRegion.imageOffset.y = copyInfo->imageOffsetY;
+    copyRegion.imageOffset.z = copyInfo->imageOffsetZ;
+
+    copyRegion.imageExtent.x = copyInfo->imageWidth;
+    copyRegion.imageExtent.y = copyInfo->imageHeight;
+    copyRegion.imageExtent.z = copyInfo->imageDepth;
+
+    copyRegion.imageSubresource.aspectMask = src->aspectMask;
+    copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
+    copyRegion.imageSubresource.layerCount = copyInfo->ImageArrayLayerCount;
+    copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
+    
+    s_Vk.cmdCopyImageToBuffer(
+        vkCmdBuffer->handle, 
+        src->handle,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+        dst->handle,
+        1,
+        &copyRegion);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdBindPipelineVk(

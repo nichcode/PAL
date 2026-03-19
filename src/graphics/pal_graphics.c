@@ -382,7 +382,7 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
     PalImage* srcImage,
-    PalImageBufferCopyInfo* copyInfo);
+    PalBufferImageCopyInfo* copyInfo);
 
 PalResult PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
@@ -2235,7 +2235,7 @@ PalResult PAL_CALL palCmdCopyImageToBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
     PalImage* srcImage,
-    PalImageBufferCopyInfo* copyInfo)
+    PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;

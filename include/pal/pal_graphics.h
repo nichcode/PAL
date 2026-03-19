@@ -2199,7 +2199,7 @@ typedef struct {
 
 /**
  * @struct PalBufferCopyInfo
- * @brief Copy information for buffer to buffer.
+ * @brief Information for buffer to buffer copies.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2214,7 +2214,7 @@ typedef struct {
 
 /**
  * @struct PalBufferImageCopyInfo
- * @brief Copy information for buffer to image.
+ * @brief Information for image to buffer and vice versa copies.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2238,7 +2238,7 @@ typedef struct {
 
 /**
  * @struct PalImageCopyInfo
- * @brief Copy information for image to image.
+ * @brief Information for image to image copies.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2261,30 +2261,6 @@ typedef struct {
     Uint32 height;
     Uint32 depth;
 } PalImageCopyInfo;
-
-/**
- * @struct PalImageBufferCopyInfo
- * @brief Copy information for image to buffer.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef struct {
-    Uint64 bufferOffset;
-    Uint32 bufferRowLength;
-    Uint32 bufferImageHeight;
-    Uint32 ImageMipLevel;
-    Uint32 ImageStartArrayLayer;
-    Uint32 ImageArrayLayerCount;
-    Int32 imageOffsetX;
-    Int32 imageOffsetY;
-    Int32 imageOffsetZ;
-    Uint32 imageWidth;
-    Uint32 imageHeight;
-    Uint32 imageDepth;
-} PalImageBufferCopyInfo;
 
 /**
  * @struct PalImageCreateInfo
@@ -3197,7 +3173,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* dstBuffer,
         PalImage* srcImage,
-        PalImageBufferCopyInfo* copyInfo);
+        PalBufferImageCopyInfo* copyInfo);
 
     /**
      * Backend implementation of ::palCmdBindPipeline.
@@ -5452,7 +5428,7 @@ PAL_API PalResult PAL_CALL palCmdCopyImage(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] dstBuffer Destination buffer.
  * @param[in] srcImage Source image.
- * @param[in] copyInfo Pointer to a PalImageBufferCopyInfo struct that specifies parameters.
+ * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * Must not be nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -5467,7 +5443,7 @@ PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
     PalImage* srcImage,
-    PalImageBufferCopyInfo* copyInfo);
+    PalBufferImageCopyInfo* copyInfo);
 
 /**
  * @brief Bind a pipeline.
