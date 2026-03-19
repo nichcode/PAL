@@ -2544,7 +2544,7 @@ PalResult PAL_CALL initGraphicsVk(
     if (debugger) {
         // layers
         result = s_Vk.enumerateInstanceLayerProperties(&layerCount, nullptr);
-        if (result != VK_SUCCESS) {
+        if (result == VK_SUCCESS) {
             VkLayerProperties* props = nullptr;
             props = palAllocate(s_Vk.allocator, sizeof(VkLayerProperties) * layerCount, 0);
             if (!props) {
@@ -4707,14 +4707,21 @@ PalResult PAL_CALL createImageVk(
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
 
-    // get aspect masks
-    image->aspectMask = 0;
-    if (info->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
-        image->aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
+    // get aspect masks from image format
+    image->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (info->format == PAL_FORMAT_S8_UINT) {
+        image->aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 
-    if (info->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
-        image->aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    if (info->format == PAL_FORMAT_D16_UNORM || info->format == PAL_FORMAT_D32_SFLOAT) {
+        image->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
+    if (info->format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
+        info->format == PAL_FORMAT_D16_UNORM_S8_UINT  ||
+        info->format == PAL_FORMAT_D24_UNORM_S8_UINT) {
+        image->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        image->aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 
     *outImage = (PalImage*)image;
@@ -4894,95 +4901,143 @@ PalResult PAL_CALL createSamplerVk(
 
     // min filter mode
     switch (info->minFilterMode) {
-        case PAL_FILTER_MODE_LINEAR:
+        case PAL_FILTER_MODE_LINEAR: {
             createInfo.minFilter = VK_FILTER_LINEAR;
-
-        case PAL_FILTER_MODE_NEAREST:
+            break;
+        }
+            
+        case PAL_FILTER_MODE_NEAREST: {
             createInfo.minFilter = VK_FILTER_NEAREST;
+            break;
+        }
     }
 
     // mag filter mode
     switch (info->magFilterMode) {
-        case PAL_FILTER_MODE_LINEAR:
+        case PAL_FILTER_MODE_LINEAR: {
             createInfo.magFilter = VK_FILTER_LINEAR;
-
-        case PAL_FILTER_MODE_NEAREST:
+            break;
+        }
+            
+        case PAL_FILTER_MODE_NEAREST: {
             createInfo.magFilter = VK_FILTER_NEAREST;
+            break;
+        }
     }
 
     // sampler mipmap mode
     switch (info->mipmapMode) {
-        case PAL_SAMPLER_MIPMAP_MODE_LINEAR:
+        case PAL_SAMPLER_MIPMAP_MODE_LINEAR: {
             createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-        case PAL_SAMPLER_MIPMAP_MODE_NEAREST:
+            break;
+        }
+            
+        case PAL_SAMPLER_MIPMAP_MODE_NEAREST: {
             createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            break;
+        }
     }
 
     // sampler address mode u
     switch (info->addressModeU) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT:
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
             createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            break;
+        }
+            
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
             createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            break;
+        }
 
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
             createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            break;
+        }
 
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
             createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            break;
+        }
     }
 
     // sampler address mode v
     switch (info->addressModeV) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT:
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
             createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            break;
+        }
+            
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
             createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            break;
+        }
 
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
             createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            break;
+        }
 
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
             createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            break;
+        }
     }
 
     // sampler address mode w
     switch (info->addressModeW) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT:
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
             createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            break;
+        }
+            
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
             createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            break;
+        }
 
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
             createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            break;
+        }
 
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
             createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            break;
+        }
     }
 
     // border color
     switch (info->borderColor) {
-        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK:
+        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK: {
             createInfo.addressModeW = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
-
-        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
+            break;
+        }
+            
+        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK: {
             createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-
-        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK:
+            break;
+        }
+            
+        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK: {
             createInfo.addressModeW = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-
-        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
+            break;
+        }
+            
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK: {
             createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-
-        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE:
+            break;
+        }
+            
+        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE: {
             createInfo.addressModeW = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
-
-        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
+            break;
+        }
+            
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE: {
             createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+            break;
+        }
     }
 
     result = s_Vk.createSampler(
@@ -5261,6 +5316,7 @@ PalResult PAL_CALL createSwapchainVk(
         image->info.mipLevelCount = 1;
         image->info.sampleCount = PAL_SAMPLE_COUNT_1; // swapchain images are not multisampled
         image->info.type = PAL_IMAGE_TYPE_2D;
+        image->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
     swapchain->device = vkDevice;
@@ -6328,9 +6384,9 @@ PalResult PAL_CALL cmdCopyBufferToImageVk(
     copyRegion.imageOffset.y = copyInfo->imageOffsetY;
     copyRegion.imageOffset.z = copyInfo->imageOffsetZ;
 
-    copyRegion.imageExtent.x = copyInfo->imageWidth;
-    copyRegion.imageExtent.y = copyInfo->imageHeight;
-    copyRegion.imageExtent.z = copyInfo->imageDepth;
+    copyRegion.imageExtent.width = copyInfo->imageWidth;
+    copyRegion.imageExtent.height = copyInfo->imageHeight;
+    copyRegion.imageExtent.depth = copyInfo->imageDepth;
 
     copyRegion.imageSubresource.aspectMask = dst->aspectMask;
     copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
@@ -6367,9 +6423,9 @@ PalResult PAL_CALL cmdCopyImageVk(
     copyRegion.srcOffset.y = copyInfo->srcOffsetY;
     copyRegion.srcOffset.z = copyInfo->srcOffsetZ;
 
-    copyRegion.extent.x = copyInfo->width;
-    copyRegion.extent.y = copyInfo->height;
-    copyRegion.extent.z = copyInfo->depth;
+    copyRegion.extent.width = copyInfo->width;
+    copyRegion.extent.height = copyInfo->height;
+    copyRegion.extent.depth = copyInfo->depth;
 
     copyRegion.dstSubresource.aspectMask = dstImage->aspectMask;
     copyRegion.dstSubresource.baseArrayLayer = copyInfo->dstStartArrayLayer;
@@ -6412,9 +6468,9 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
     copyRegion.imageOffset.y = copyInfo->imageOffsetY;
     copyRegion.imageOffset.z = copyInfo->imageOffsetZ;
 
-    copyRegion.imageExtent.x = copyInfo->imageWidth;
-    copyRegion.imageExtent.y = copyInfo->imageHeight;
-    copyRegion.imageExtent.z = copyInfo->imageDepth;
+    copyRegion.imageExtent.width = copyInfo->imageWidth;
+    copyRegion.imageExtent.height = copyInfo->imageHeight;
+    copyRegion.imageExtent.depth = copyInfo->imageDepth;
 
     copyRegion.imageSubresource.aspectMask = src->aspectMask;
     copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
@@ -7625,22 +7681,26 @@ PalResult PAL_CALL updateDescriptorSetVk(
 
         } else {
             VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
-            ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
-            Sampler* vkSampler = (Sampler*)infos[i].imageViewInfo->sampler;
-
+            
             if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
+                Sampler* vkSampler = (Sampler*)infos[i].samplerInfo->sampler;
+
                 imageInfo->sampler = vkSampler->handle;
                 imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 imageInfo->imageView = nullptr;
 
             } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
-                imageInfo->sampler = vkSampler->handle;
+                ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+
+                imageInfo->sampler = nullptr;
                 imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                 imageInfo->imageView = vkImageView->handle;
 
             } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
-                imageInfo->sampler = vkSampler->handle;
-                imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+
+                imageInfo->sampler = nullptr;
+                imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                 imageInfo->imageView = vkImageView->handle;
             }
             write->pImageInfo = imageInfo;

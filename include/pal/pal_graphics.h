@@ -2128,9 +2128,21 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalSampler* sampler;
     PalImageView* imageView;
 } PalDescriptorImageViewInfo;
+
+/**
+ * @struct PalDescriptorSamplerInfo
+ * @brief Information about a sampler descriptor.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    PalSampler* sampler;
+} PalDescriptorSamplerInfo;
 
 /**
  * @struct PalDescriptorTLASInfo
@@ -2161,7 +2173,8 @@ typedef struct {
     PalDescriptorType descriptorType;
     PalDescriptorSet* descriptorSet;
     PalDescriptorBufferInfo* bufferInfo; /**< If PAL_DESCRIPTOR_TYPE* uniform or storage buffer.*/
-    PalDescriptorImageViewInfo* imageViewInfo; /**< If PAL_DESCRIPTOR_TYPE* sampler or image.*/
+    PalDescriptorImageViewInfo* imageViewInfo; /**< If PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE*/
+    PalDescriptorSamplerInfo* samplerInfo; /**< If PAL_DESCRIPTOR_TYPE_SAMPLER.*/
     PalDescriptorTLASInfo* tlasInfo;           /**< If PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE.*/
 } PalDescriptorSetWriteInfo;
 

@@ -10,7 +10,7 @@
 #define MAX_FRAMES_IN_FLIGHT 2
 #define TEXTURE_WIDTH 128
 #define TEXTURE_HEIGHT 128
-#define CHECKER_SIZE 8
+#define CHECKER_SIZE 16
 
 static bool readFile(
     const char* filename,
@@ -105,6 +105,10 @@ bool textureTest()
     PalBuffer* stagingBuffer = nullptr;
     PalMemory* vertexBufferMemory = nullptr;
     PalMemory* stagingBufferMemory = nullptr;
+
+    PalDescriptorSetLayout* descriptorSetLayout = nullptr;
+    PalDescriptorPool* descriptorPool = nullptr;
+    PalDescriptorSet* descriptorSet = nullptr;
 
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
@@ -366,13 +370,13 @@ bool textureTest()
     // create vertex and staging buffer
     // clang-format off
     float vertices[] = {
-       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+       -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f, -0.5f, 1.0f, 1.0f,
 
-       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-       -0.5f, -0.5f, 0.0f, 0.0f, 1.0f};
+       -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f, -0.5f, 1.0f, 1.0f,
+       -0.5f, -0.5f, 0.0f, 1.0f};
     // clang-format on
 
     PalBufferCreateInfo bufferCreateInfo = {0};
@@ -478,7 +482,8 @@ bool textureTest()
 
     // we dont want to load the texture from disk so we will create a 
     // checkerboard texture and use that rather
-    Uint32 texture[TEXTURE_WIDTH * TEXTURE_HEIGHT * 4];
+    Uint32 texture[TEXTURE_WIDTH * TEXTURE_HEIGHT];
+    memset(texture, 0, TEXTURE_WIDTH * TEXTURE_HEIGHT);
     createCheckerboardTexture(texture, TEXTURE_WIDTH, TEXTURE_HEIGHT, CHECKER_SIZE);
 
     // create image for the texture
@@ -629,10 +634,69 @@ bool textureTest()
     // copy image staging buffer to the checkerboard image
     // first the image must be in the correct layout
     PalUsageStateInfo oldImageUsageState = {0};
-    PalUsageStateInfo newImageUsageState = {0};
+    oldImageUsageState.usageState = PAL_USAGE_STATE_UNDEFINED;
+    oldImageUsageState.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
 
-    // TODO: finish copying
+    PalUsageStateInfo newImageUsageState = {0};
+    newImageUsageState.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    newImageUsageState.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
+
+    // set a barrier on the image to transition it into transfer dst state
+    PalImageSubresourceRange checkerboardRange = {0};
+    checkerboardRange.startMipLevel = 0;
+    checkerboardRange.startArrayLayer = 0;
+    checkerboardRange.mipLevelCount = 1;
+    checkerboardRange.layerArrayCount = 1;
+
+    result = palCmdImageBarrier(
+        cmdBuffers[0], 
+        checkerboard, 
+        &checkerboardRange, 
+        &oldImageUsageState, 
+        &newImageUsageState);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set image barrier: %s", error);
+        return false;
+    }
+
     PalBufferImageCopyInfo bufferImageCopyInfo = {0};
+    bufferImageCopyInfo.ImageArrayLayerCount = 1;
+    bufferImageCopyInfo.imageWidth = TEXTURE_WIDTH;
+    bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
+    bufferImageCopyInfo.imageDepth = 1; // 2D image
+
+    result = palCmdCopyBufferToImage(
+        cmdBuffers[0], 
+        checkerboard, 
+        imageStagingBuffer, 
+        &bufferImageCopyInfo);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to copy buffer to image: %s", error);
+        return false;
+    }
+
+    // we should transition the image into a shader read state so we dont do that
+    // in the main loop
+    oldImageUsageState = newImageUsageState;
+    newImageUsageState.usageState = PAL_USAGE_STATE_SHADER_READ;
+    newImageUsageState.shaderStage = PAL_SHADER_STAGE_FRAGMENT; // fragment shader will read
+
+    result = palCmdImageBarrier(
+        cmdBuffers[0], 
+        checkerboard, 
+        &checkerboardRange, 
+        &oldImageUsageState, 
+        &newImageUsageState);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set image barrier: %s", error);
+        return false;
+    }
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
@@ -651,6 +715,51 @@ bool textureTest()
         return false;
     }
 
+    // now we have the checkerboard texture data in the image
+    // we need an image view and a sampler
+    PalImageView* checkerboardImageView = nullptr;
+    PalImageViewCreateInfo checkerboardImageViewCreateInfo = {0};
+    checkerboardImageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
+    checkerboardImageViewCreateInfo.usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+    checkerboardImageViewCreateInfo.subresourceRange = checkerboardRange;
+
+    result = palCreateImageView(
+        device, 
+        checkerboard, 
+        &checkerboardImageViewCreateInfo, 
+        &checkerboardImageView);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create checkerboard image view: %s", error);
+        return false;
+    }
+
+    PalSampler* sampler = nullptr;
+    PalSamplerCreateInfo samplerCreateInfo = {0};
+    samplerCreateInfo.addressModeU = PAL_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeV = PAL_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeW = PAL_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.borderColor = PAL_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerCreateInfo.compareOp = PAL_COMPARE_OP_NEVER; // will not be used if its not enabled
+
+    samplerCreateInfo.enableAnisotropy = false;
+    samplerCreateInfo.enableCompare = false;
+    samplerCreateInfo.magFilterMode = PAL_FILTER_MODE_LINEAR;
+    samplerCreateInfo.minFilterMode = PAL_FILTER_MODE_LINEAR;
+    samplerCreateInfo.maxAnisotropy = 1.0f;
+
+    result = palCreateSampler(
+        device, 
+        &samplerCreateInfo,
+        &sampler);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create sampler: %s", error);
+        return false;
+    }
+
     // create shaders
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
@@ -659,8 +768,8 @@ bool textureTest()
     const char* vertexShaderPath = nullptr;
     const char* fragShaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        vertexShaderPath = "shaders/triangle_vert.spv";
-        fragShaderPath = "shaders/triangle_frag.spv";
+        vertexShaderPath = "shaders/texture_vert.spv";
+        fragShaderPath = "shaders/texture_frag.spv";
     }
 
     if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
@@ -716,8 +825,108 @@ bool textureTest()
 
     palFree(nullptr, bytecode);
 
-    // create a pipeline layout
+    // create descriptor set layout
+    PalDescriptorSetLayoutBinding descriptorBindings[2];
+    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
+
+    descriptorBindings[0].binding = 0;
+    descriptorBindings[0].descriptorCount = 1; // not an array
+    descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptorBindings[0].shaderStageCount = 1;
+    descriptorBindings[0].shaderStages = shaderStages;
+
+    descriptorBindings[1].binding = 1;
+    descriptorBindings[1].descriptorCount = 1; // not an array
+    descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+    descriptorBindings[1].shaderStageCount = 1;
+    descriptorBindings[1].shaderStages = shaderStages;
+
+    PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
+    descriptorSetLayoutcreateInfo.bindingCount = 2;
+    descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
+
+    result = palCreateDescriptorSetLayout(
+        device,
+        &descriptorSetLayoutcreateInfo,
+        &descriptorSetLayout);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create descriptor set layout: %s", error);
+        return false;
+    }
+
+    // create descriptor pool
+    PalDescriptorPoolBindingSize storageBufferBindingsizes[2];
+    storageBufferBindingsizes[0].bindingCount = 1;
+    storageBufferBindingsizes[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+    storageBufferBindingsizes[1].bindingCount = 1;
+    storageBufferBindingsizes[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+
+    PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
+    descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
+    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 2;
+    descriptorPoolCreateInfo.bindingSizes = storageBufferBindingsizes;
+
+    result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create descriptor pool: %s", error);
+        return false;
+    }
+
+    // allocate a single descriptor set from the descriptor pool
+    // using the layout we created above
+    result = palAllocateDescriptorSet(device, descriptorPool, descriptorSetLayout, &descriptorSet);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate descriptor set: %s", error);
+        return false;
+    }
+
+    // write the inital data to the descriptor set since its created empty
+    PalDescriptorImageViewInfo descriptorImageInfo = {0};
+    descriptorImageInfo.imageView = checkerboardImageView;
+
+    PalDescriptorSamplerInfo descriptorSamplerInfo = {0};
+    descriptorSamplerInfo.sampler = sampler;
+
+    PalDescriptorSetWriteInfo writeInfos[2];
+    writeInfos[0].binding = 0;
+    writeInfos[0].imageViewInfo = &descriptorImageInfo;
+    writeInfos[0].descriptorSet = descriptorSet;
+    writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    writeInfos[0].descriptorCount = 1;
+
+    writeInfos[0].arrayElement = 0;
+    writeInfos[0].bufferInfo = nullptr;
+    writeInfos[0].samplerInfo = nullptr;
+    writeInfos[0].tlasInfo =  nullptr;
+
+    writeInfos[1].binding = 1;
+    writeInfos[1].samplerInfo = &descriptorSamplerInfo;
+    writeInfos[1].descriptorSet = descriptorSet;
+    writeInfos[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+    writeInfos[1].descriptorCount = 1;
+
+    writeInfos[1].arrayElement = 0;
+    writeInfos[1].imageViewInfo = nullptr;
+    writeInfos[1].tlasInfo =  nullptr;
+    writeInfos[1].bufferInfo = nullptr;
+
+    result = palUpdateDescriptorSet(device, 2, writeInfos);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to update descriptor set: %s", error);
+        return false;
+    }
+
+    // create pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
+    pipelineLayoutCreateInfo.descriptorSetLayoutCount = 1;
+    pipelineLayoutCreateInfo.descriptorSetLayouts = &descriptorSetLayout;
+
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -753,9 +962,9 @@ bool textureTest()
     vertexAttributes[0].location = 0;
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
-    // color
+    // texture coordinates
     vertexAttributes[1].location = 1;
-    vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT3;
+    vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT2;
 
     vertexLayout.attributeCount = 2;
     vertexLayout.attributes = vertexAttributes;
@@ -813,6 +1022,10 @@ bool textureTest()
     palDestroyFence(fence);
     palDestroyBuffer(stagingBuffer);
     palFreeMemory(device, stagingBufferMemory);
+
+    // we can destroy the image staging buffer
+    palDestroyBuffer(imageStagingBuffer);
+    palFreeMemory(device, imageStagingBufferMemory);
 
     // main loop
     Uint32 currentFrame = 0;
@@ -987,6 +1200,13 @@ bool textureTest()
             return false;
         }
 
+        result = palCmdBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind descriptor set: %s", error);
+            return false;
+        }
+
         // set viewport and scissors
         result = palCmdSetViewport(cmdBuffer, 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
@@ -1096,6 +1316,14 @@ bool textureTest()
         palDestroyImageView(imageViews[i]);
         palDestroySemaphore(renderFinishedSemaphores[i]);
     }
+
+    palDestroyDescriptorPool(descriptorPool);
+    palDestroyDescriptorSetLayout(descriptorSetLayout);
+
+    palDestroySampler(sampler);
+    palDestroyImageView(checkerboardImageView);
+    palDestroyImage(checkerboard);
+    palFreeMemory(device, checkerboardMemory);
 
     palDestroyBuffer(vertexBuffer);
     palFreeMemory(device, vertexBufferMemory);
