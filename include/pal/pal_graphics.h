@@ -755,6 +755,22 @@ typedef enum {
 } PalSwapchainFormat;
 
 /**
+ * @enum PalGraphicsWindowDisplayType
+ * @brief Display types for a graphics window.
+ *
+ * All graphics window display types follow the format `PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND,
+    PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11,
+    PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB
+} PalGraphicsWindowDisplayType;
+
+/**
  * @enum PalShaderStage
  * @brief shader stage types.
  *
@@ -1498,6 +1514,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    PalGraphicsWindowDisplayType displayType; /**< Will be used only on linux platform.*/
     void* display; /**< Can be nullptr depending on platform (eg. Windows).*/
     void* window;  /**< Must not be nullptr.*/
 } PalGraphicsWindow;

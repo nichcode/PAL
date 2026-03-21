@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 #endif
 
 #if PAL_HAS_GRAPHICS
-    // registerTest(graphicsTest);
+    registerTest(graphicsTest);
     // registerTest(computeTest);
     // registerTest(rayTracingTest);
 #endif // PAL_HAS_GRAPHICS
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     // registerTest(clearColorTest);
     // registerTest(triangleTest);
     // registerTest(meshTest);
-    registerTest(textureTest);
+    // registerTest(textureTest);
 #endif //
 
     runTests();

@@ -171,12 +171,16 @@ project "PAL"
         files { "src/graphics/pal_graphics.c" }
 
         filter {"system:windows", "configurations:*"}
-            -- files { "src/graphics/pal_graphics_win32.c" }
+            -- files { "src/graphics/pal_d3d12.c" }
+            if (hasVulkan) then
+                files { "src/graphics/pal_vulkan.c" }
+            end
 
         filter {"system:linux", "configurations:*"}
             if (hasVulkan) then
                 files { "src/graphics/pal_vulkan.c" }
             end
+            
         filter {}
     end
 

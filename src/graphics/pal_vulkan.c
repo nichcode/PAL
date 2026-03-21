@@ -25,49 +25,57 @@ freely, subject to the following restrictions:
 // Includes
 // ==================================================
 
-#include "pal/pal_graphics.h"
-
-#if PAL_HAS_VULKAN
-#include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "pal/pal_graphics.h"
+
+#if PAL_HAS_VULKAN
 #include <vulkan/vulkan_core.h>
 
 // HACK: Needed to determine display type if on linux
 #ifdef _WIN32
-#define VK_LIB_NAME ""
-
+#include <libloaderapi.h>
+#include <windef.h>
+#define VK_LIB_NAME "vulkan-1.dll"
 #elif defined(__linux__)
-struct wl_display;
-struct wl_surface;
-typedef struct _XDisplay Display;
-typedef unsigned long Window;
-typedef unsigned long VisualID;
-typedef int (*wl_display_get_fd_fn)(struct wl_display*);
-
-#include <vulkan/vulkan_wayland.h>
-#include <vulkan/vulkan_xlib.h>
-
+#include <dlfcn.h>
 #define VK_LIB_NAME "libvulkan.so"
-
 #else
 // Android
 #define VK_LIB_NAME ""
-
 #endif // _WIN32
 
 // ==================================================
 // Typedefs, enums and structs
 // ==================================================
 
-#define VK_WIN32_PLATFORM 1
-#define VK_XLIB_PLATFORM 2
-#define VK_WAYLAND_PLATFORM 3
 #define MAX_ATTACHMENTS 32
 #define GRAPHICS_PIPELINE 125
 #define RAY_TRACING_PIPELINE 126
 #define COMPUTE_PIPELINE 127
+
+struct wl_display;
+struct wl_surface;
+typedef struct _XDisplay Display;
+typedef unsigned long Window;
+typedef unsigned long VisualID;
+
+typedef struct xcb_connection_t xcb_connection_t;
+typedef uint32_t xcb_window_t;
+typedef uint32_t xcb_visualid_t;
+
+typedef unsigned long DWORD;
+typedef int WINBOOL;
+typedef void *LPVOID;
+typedef const wchar_t *LPCWSTR,*PCWSTR;
+typedef void *HANDLE;
+
+#include <vulkan/vulkan_wayland.h>
+#include <vulkan/vulkan_xlib.h>
+#include <vulkan/vulkan_xcb.h>
+#include <vulkan/vulkan_win32.h>
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -85,12 +93,6 @@ typedef struct {
     VkInstance instance;
     VkDebugUtilsMessengerEXT messenger;
     PalDebugCallback callback;
-
-#ifdef __linux__
-    // HACK: for display testing
-    void* libWayland;
-    wl_display_get_fd_fn getDisplayFd;
-#endif // __linux__
 
     PFN_vkEnumerateInstanceVersion enumerateInstanceVersion;
     PFN_vkEnumerateInstanceExtensionProperties enumerateInstanceExtensionProperties;
@@ -165,6 +167,10 @@ typedef struct {
     PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
     PFN_vkCreateXlibSurfaceKHR createXlibSurface;
     PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR checkXlibPresentSupport;
+    PFN_vkCreateXcbSurfaceKHR createXcbSurface;
+    PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR checkXcbPresentSupport;
+    PFN_vkCreateWin32SurfaceKHR createWin32Surface;
+    PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR checkWin32PresentSupport;
 
     PFN_vkDestroySurfaceKHR destroySurface;
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getSurfaceCapabilities;
@@ -446,22 +452,31 @@ static Vulkan s_Vk = {0};
 // Helper Functions
 // ==================================================
 
-static Uint32 checkPlatformVk(struct wl_display* display)
+static void* loadLibrary(const char* name)
 {
-#ifdef _WIN32
-#elif defined(__linux__)
-    if (!s_Vk.libWayland) {
-        return VK_XLIB_PLATFORM;
-    }
+#ifdef __WIN32
+    return LoadLibraryA(name);
+#elif defined (__linux__)
+    return dlopen(name, RTLD_LAZY);
+#endif
+}
 
-    int fd = s_Vk.getDisplayFd(display);
-    if (fd <= 0 || fd > 1024) { // fds are usaually 0-30 but this is fine
-        return VK_XLIB_PLATFORM;
-    }
-    return VK_WAYLAND_PLATFORM;
-#else
-    // Android
-#endif // _WIN32
+static void freeLibrary(void* lib)
+{
+#ifdef __WIN32
+    FreeLibrary((HMODULE)lib);
+#elif defined (__linux__)
+    dlclose(lib);
+#endif
+}
+
+static void* loadProc(void* lib, const char* name)
+{
+#ifdef __WIN32
+    return GetProcAddress((HMODULE)lib, name);
+#elif defined (__linux__)
+    return loadProc(lib, name);
+#endif
 }
 
 static bool createSurfaceVk(
@@ -470,10 +485,26 @@ static bool createSurfaceVk(
 {
     VkResult result;
     VkSurfaceKHR surface = nullptr;
-    Uint32 platform = checkPlatformVk(window->display);
-    if (platform == VK_WIN32_PLATFORM) {
 
-    } else if (platform == VK_WAYLAND_PLATFORM) {
+#ifdef __WIN32
+    if (!s_Vk.createWin32Surface) {
+        return false;
+    }
+
+    VkWin32SurfaceCreateInfoKHR cInfo = {0};
+    cInfo.hinstance = GetModuleHandle(nullptr);
+    cInfo.hwnd = window->window;
+    cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+
+    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+    if (result != VK_SUCCESS) {
+        return false;
+    }
+
+    *outSurface = surface;
+    return true;
+#else
+    if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND) {
         if (!s_Vk.createWaylandSurface) {
             return false;
         }
@@ -493,8 +524,43 @@ static bool createSurfaceVk(
         *outSurface = surface;
         return true;
 
-    } else if (platform == VK_XLIB_PLATFORM) {
+    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11) {
+        if (!s_Vk.createXlibSurface) {
+            return false;
+        }
+
+        VkXlibSurfaceCreateInfoKHR cInfo = {0};
+        cInfo.dpy = window->display;
+        cInfo.window = window->window;
+        cInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+
+        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+        if (result != VK_SUCCESS) {
+            return false;
+        }
+
+        *outSurface = surface;
+        return true;
+
+    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB) {
+        if (!s_Vk.createXcbSurface) {
+            return false;
+        }
+
+        VkXcbSurfaceCreateInfoKHR cInfo = {0};
+        cInfo.connection = window->display;
+        cInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+
+        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+        if (result != VK_SUCCESS) {
+            return false;
+        }
+
+        *outSurface = surface;
+        return true;
     }
+
+#endif // __WIN32
 }
 
 static PalResult resultFromVk(VkResult result)
@@ -2162,364 +2228,358 @@ PalResult PAL_CALL initGraphicsVk(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
 {
-    s_Vk.libWayland = nullptr;
-    s_Vk.libWayland = dlopen("libwayland-client.so.0", RTLD_LAZY);
-    if (s_Vk.libWayland) {
-        s_Vk.getDisplayFd = (wl_display_get_fd_fn)dlsym(s_Vk.libWayland, "wl_display_get_fd");
-    }
-
     // load vulkan
-    s_Vk.handle = dlopen(VK_LIB_NAME, RTLD_LAZY);
+    s_Vk.handle = loadLibrary(VK_LIB_NAME);
     if (!s_Vk.handle) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     // clang-format off
-    s_Vk.enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)dlsym(
+    s_Vk.enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)loadProc(
         s_Vk.handle,
         "vkEnumerateInstanceVersion");
 
-    s_Vk.enumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)dlsym(
+    s_Vk.enumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)loadProc(
         s_Vk.handle,
         "vkEnumerateInstanceExtensionProperties");
 
-    s_Vk.createInstance = (PFN_vkCreateInstance)dlsym(
+    s_Vk.createInstance = (PFN_vkCreateInstance)loadProc(
         s_Vk.handle,
         "vkCreateInstance");
 
-    s_Vk.destroyInstance = (PFN_vkDestroyInstance)dlsym(
+    s_Vk.destroyInstance = (PFN_vkDestroyInstance)loadProc(
         s_Vk.handle,
         "vkDestroyInstance");
 
-    s_Vk.enumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)dlsym(
+    s_Vk.enumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)loadProc(
         s_Vk.handle,
         "vkEnumeratePhysicalDevices");
 
-    s_Vk.getPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)dlsym(
+    s_Vk.getPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceProperties");
 
-    s_Vk.getPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)dlsym(
+    s_Vk.getPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceMemoryProperties");
 
-    s_Vk.enumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)dlsym(
+    s_Vk.enumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)loadProc(
         s_Vk.handle,
         "vkEnumerateInstanceLayerProperties");
 
-    s_Vk.getPhysicalDeviceQueueFamilyProperties = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)dlsym(
+    s_Vk.getPhysicalDeviceQueueFamilyProperties = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceQueueFamilyProperties");
 
-    s_Vk.enumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)dlsym(
+    s_Vk.enumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)loadProc(
         s_Vk.handle,
         "vkEnumerateDeviceExtensionProperties");
 
-    s_Vk.getPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures)dlsym(
+    s_Vk.getPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceFeatures");
 
-    s_Vk.getPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)dlsym(
+    s_Vk.getPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceFeatures2");
 
-    s_Vk.getInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(
+    s_Vk.getInstanceProcAddr = (PFN_vkGetInstanceProcAddr)loadProc(
         s_Vk.handle,
         "vkGetInstanceProcAddr");
 
-    s_Vk.createImage = (PFN_vkCreateImage)dlsym(
+    s_Vk.createImage = (PFN_vkCreateImage)loadProc(
         s_Vk.handle,
         "vkCreateImage");
 
-    s_Vk.destroyImage = (PFN_vkDestroyImage)dlsym(
+    s_Vk.destroyImage = (PFN_vkDestroyImage)loadProc(
         s_Vk.handle,
         "vkDestroyImage");
 
-    s_Vk.createImageView = (PFN_vkCreateImageView)dlsym(
+    s_Vk.createImageView = (PFN_vkCreateImageView)loadProc(
         s_Vk.handle,
         "vkCreateImageView");
 
-    s_Vk.destroyImageView = (PFN_vkDestroyImageView)dlsym(
+    s_Vk.destroyImageView = (PFN_vkDestroyImageView)loadProc(
         s_Vk.handle,
         "vkDestroyImageView");
 
-    s_Vk.createShader = (PFN_vkCreateShaderModule)dlsym(
+    s_Vk.createShader = (PFN_vkCreateShaderModule)loadProc(
         s_Vk.handle,
         "vkCreateShaderModule");
 
-    s_Vk.destroyShader = (PFN_vkDestroyShaderModule)dlsym(
+    s_Vk.destroyShader = (PFN_vkDestroyShaderModule)loadProc(
         s_Vk.handle,
         "vkDestroyShaderModule");
 
-    s_Vk.createSampler = (PFN_vkCreateSampler)dlsym(
+    s_Vk.createSampler = (PFN_vkCreateSampler)loadProc(
         s_Vk.handle,
         "vkCreateSampler");
 
-    s_Vk.destroySampler = (PFN_vkDestroySampler)dlsym(
+    s_Vk.destroySampler = (PFN_vkDestroySampler)loadProc(
         s_Vk.handle,
         "vkDestroySampler");
 
-    s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)dlsym(
+    s_Vk.getPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceProperties2");
 
-    s_Vk.getPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties)dlsym(
+    s_Vk.getPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceFormatProperties");
 
-    s_Vk.createDevice = (PFN_vkCreateDevice)dlsym(
+    s_Vk.createDevice = (PFN_vkCreateDevice)loadProc(
         s_Vk.handle,
         "vkCreateDevice");
 
-    s_Vk.destroyDevice = (PFN_vkDestroyDevice)dlsym(
+    s_Vk.destroyDevice = (PFN_vkDestroyDevice)loadProc(
         s_Vk.handle,
         "vkDestroyDevice");
 
-    s_Vk.getDeviceQueue = (PFN_vkGetDeviceQueue)dlsym(
+    s_Vk.getDeviceQueue = (PFN_vkGetDeviceQueue)loadProc(
         s_Vk.handle,
         "vkGetDeviceQueue");
 
-    s_Vk.queueSubmit = (PFN_vkQueueSubmit)dlsym(
+    s_Vk.queueSubmit = (PFN_vkQueueSubmit)loadProc(
         s_Vk.handle,
         "vkQueueSubmit");
 
-    s_Vk.getDeviceProcAddr = (PFN_vkGetDeviceProcAddr)dlsym(
+    s_Vk.getDeviceProcAddr = (PFN_vkGetDeviceProcAddr)loadProc(
         s_Vk.handle,
         "vkGetDeviceProcAddr");
 
-    s_Vk.getImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)dlsym(
+    s_Vk.getImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)loadProc(
         s_Vk.handle,
         "vkGetImageMemoryRequirements");
 
-    s_Vk.allocateMemory = (PFN_vkAllocateMemory)dlsym(
+    s_Vk.allocateMemory = (PFN_vkAllocateMemory)loadProc(
         s_Vk.handle,
         "vkAllocateMemory");
 
-    s_Vk.freeMemory = (PFN_vkFreeMemory)dlsym(
+    s_Vk.freeMemory = (PFN_vkFreeMemory)loadProc(
         s_Vk.handle,
         "vkFreeMemory");
 
-    s_Vk.bindImageMemory = (PFN_vkBindImageMemory)dlsym(
+    s_Vk.bindImageMemory = (PFN_vkBindImageMemory)loadProc(
         s_Vk.handle,
         "vkBindImageMemory");
 
-    s_Vk.createCommandPool = (PFN_vkCreateCommandPool)dlsym(
+    s_Vk.createCommandPool = (PFN_vkCreateCommandPool)loadProc(
         s_Vk.handle,
         "vkCreateCommandPool");
 
-    s_Vk.destroyCommandPool = (PFN_vkDestroyCommandPool)dlsym(
+    s_Vk.destroyCommandPool = (PFN_vkDestroyCommandPool)loadProc(
         s_Vk.handle,
         "vkDestroyCommandPool");
 
-    s_Vk.allocateCommandBuffer = (PFN_vkAllocateCommandBuffers)dlsym(
+    s_Vk.allocateCommandBuffer = (PFN_vkAllocateCommandBuffers)loadProc(
         s_Vk.handle,
         "vkAllocateCommandBuffers");
 
-    s_Vk.freeCommandBuffer = (PFN_vkFreeCommandBuffers)dlsym(
+    s_Vk.freeCommandBuffer = (PFN_vkFreeCommandBuffers)loadProc(
         s_Vk.handle,
         "vkFreeCommandBuffers");
 
-    s_Vk.createFence = (PFN_vkCreateFence)dlsym(
+    s_Vk.createFence = (PFN_vkCreateFence)loadProc(
         s_Vk.handle,
         "vkCreateFence");
 
-    s_Vk.destroyFence = (PFN_vkDestroyFence)dlsym(
+    s_Vk.destroyFence = (PFN_vkDestroyFence)loadProc(
         s_Vk.handle,
         "vkDestroyFence");
 
-    s_Vk.resetFence = (PFN_vkResetFences)dlsym(
+    s_Vk.resetFence = (PFN_vkResetFences)loadProc(
         s_Vk.handle,
         "vkResetFences");
 
-    s_Vk.waitFence = (PFN_vkWaitForFences)dlsym(
+    s_Vk.waitFence = (PFN_vkWaitForFences)loadProc(
         s_Vk.handle,
         "vkWaitForFences");
 
-    s_Vk.isFenceSignaled = (PFN_vkGetFenceStatus)dlsym(
+    s_Vk.isFenceSignaled = (PFN_vkGetFenceStatus)loadProc(
         s_Vk.handle,
         "vkGetFenceStatus");
 
-    s_Vk.createSemaphore = (PFN_vkCreateSemaphore)dlsym(
+    s_Vk.createSemaphore = (PFN_vkCreateSemaphore)loadProc(
         s_Vk.handle,
         "vkCreateSemaphore");
 
-    s_Vk.destroySemaphore = (PFN_vkDestroySemaphore)dlsym(
+    s_Vk.destroySemaphore = (PFN_vkDestroySemaphore)loadProc(
         s_Vk.handle,
         "vkDestroySemaphore");
 
-    s_Vk.cmdBegin = (PFN_vkBeginCommandBuffer)dlsym(
+    s_Vk.cmdBegin = (PFN_vkBeginCommandBuffer)loadProc(
         s_Vk.handle,
         "vkBeginCommandBuffer");
 
-    s_Vk.cmdEnd = (PFN_vkEndCommandBuffer)dlsym(
+    s_Vk.cmdEnd = (PFN_vkEndCommandBuffer)loadProc(
         s_Vk.handle,
         "vkEndCommandBuffer");
 
-    s_Vk.resetCommandPool = (PFN_vkResetCommandPool)dlsym(
+    s_Vk.resetCommandPool = (PFN_vkResetCommandPool)loadProc(
         s_Vk.handle,
         "vkResetCommandPool");
 
-    s_Vk.resetCommandBuffer = (PFN_vkResetCommandBuffer)dlsym(
+    s_Vk.resetCommandBuffer = (PFN_vkResetCommandBuffer)loadProc(
         s_Vk.handle,
         "vkResetCommandBuffer");
 
-    s_Vk.cmdExecuteCommandBuffer = (PFN_vkCmdExecuteCommands)dlsym(
+    s_Vk.cmdExecuteCommandBuffer = (PFN_vkCmdExecuteCommands)loadProc(
         s_Vk.handle,
         "vkCmdExecuteCommands");
 
-    s_Vk.cmdCopyBuffer = (PFN_vkCmdCopyBuffer)dlsym(
+    s_Vk.cmdCopyBuffer = (PFN_vkCmdCopyBuffer)loadProc(
         s_Vk.handle,
         "vkCmdCopyBuffer");
 
-    s_Vk.cmdCopyBufferToImage = (PFN_vkCmdCopyBufferToImage)dlsym(
+    s_Vk.cmdCopyBufferToImage = (PFN_vkCmdCopyBufferToImage)loadProc(
         s_Vk.handle,
         "vkCmdCopyBufferToImage");
 
-    s_Vk.cmdCopyImage = (PFN_vkCmdCopyImage)dlsym(
+    s_Vk.cmdCopyImage = (PFN_vkCmdCopyImage)loadProc(
         s_Vk.handle,
         "vkCmdCopyImage");
 
-    s_Vk.cmdCopyImageToBuffer = (PFN_vkCmdCopyImageToBuffer)dlsym(
+    s_Vk.cmdCopyImageToBuffer = (PFN_vkCmdCopyImageToBuffer)loadProc(
         s_Vk.handle,
         "vkCmdCopyImageToBuffer");
 
-    s_Vk.cmdBindPipeline = (PFN_vkCmdBindPipeline)dlsym(
+    s_Vk.cmdBindPipeline = (PFN_vkCmdBindPipeline)loadProc(
         s_Vk.handle,
         "vkCmdBindPipeline");
 
-    s_Vk.cmdSetViewports = (PFN_vkCmdSetViewport)dlsym(
+    s_Vk.cmdSetViewports = (PFN_vkCmdSetViewport)loadProc(
         s_Vk.handle,
         "vkCmdSetViewport");
 
-    s_Vk.cmdSetScissors = (PFN_vkCmdSetScissor)dlsym(
+    s_Vk.cmdSetScissors = (PFN_vkCmdSetScissor)loadProc(
         s_Vk.handle,
         "vkCmdSetScissor");
 
-    s_Vk.cmdBindVertexBuffers = (PFN_vkCmdBindVertexBuffers)dlsym(
+    s_Vk.cmdBindVertexBuffers = (PFN_vkCmdBindVertexBuffers)loadProc(
         s_Vk.handle,
         "vkCmdBindVertexBuffers");
 
-    s_Vk.cmdBindIndexBuffer = (PFN_vkCmdBindIndexBuffer)dlsym(
+    s_Vk.cmdBindIndexBuffer = (PFN_vkCmdBindIndexBuffer)loadProc(
         s_Vk.handle,
         "vkCmdBindIndexBuffer");
 
-    s_Vk.cmdDraw = (PFN_vkCmdDraw)dlsym(
+    s_Vk.cmdDraw = (PFN_vkCmdDraw)loadProc(
         s_Vk.handle,
         "vkCmdDraw");
 
-    s_Vk.cmdDrawIndirect = (PFN_vkCmdDrawIndirect)dlsym(
+    s_Vk.cmdDrawIndirect = (PFN_vkCmdDrawIndirect)loadProc(
         s_Vk.handle,
         "vkCmdDrawIndirect");
 
-    s_Vk.cmdDrawIndexed = (PFN_vkCmdDrawIndexed)dlsym(
+    s_Vk.cmdDrawIndexed = (PFN_vkCmdDrawIndexed)loadProc(
         s_Vk.handle,
         "vkCmdDrawIndexed");
 
-    s_Vk.cmdDrawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect)dlsym(
+    s_Vk.cmdDrawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect)loadProc(
         s_Vk.handle,
         "vkCmdDrawIndexedIndirect");
 
-    s_Vk.cmdDispatch = (PFN_vkCmdDispatch)dlsym(
+    s_Vk.cmdDispatch = (PFN_vkCmdDispatch)loadProc(
         s_Vk.handle,
         "vkCmdDispatch");
 
-    s_Vk.cmdDispatchIndirect = (PFN_vkCmdDispatchIndirect)dlsym(
+    s_Vk.cmdDispatchIndirect = (PFN_vkCmdDispatchIndirect)loadProc(
         s_Vk.handle,
         "vkCmdDispatchIndirect");
 
-    s_Vk.cmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets)dlsym(
+    s_Vk.cmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets)loadProc(
         s_Vk.handle,
         "vkCmdBindDescriptorSets");
 
-    s_Vk.cmdPushConstants = (PFN_vkCmdPushConstants)dlsym(
+    s_Vk.cmdPushConstants = (PFN_vkCmdPushConstants)loadProc(
         s_Vk.handle,
         "vkCmdPushConstants");
 
-    s_Vk.createBuffer = (PFN_vkCreateBuffer)dlsym(
+    s_Vk.createBuffer = (PFN_vkCreateBuffer)loadProc(
         s_Vk.handle,
         "vkCreateBuffer");
 
-    s_Vk.destroyBuffer = (PFN_vkDestroyBuffer)dlsym(
+    s_Vk.destroyBuffer = (PFN_vkDestroyBuffer)loadProc(
         s_Vk.handle,
         "vkDestroyBuffer");
 
-    s_Vk.mapMemory = (PFN_vkMapMemory)dlsym(
+    s_Vk.mapMemory = (PFN_vkMapMemory)loadProc(
         s_Vk.handle,
         "vkMapMemory");
 
-    s_Vk.unmapMemory = (PFN_vkUnmapMemory)dlsym(
+    s_Vk.unmapMemory = (PFN_vkUnmapMemory)loadProc(
         s_Vk.handle,
         "vkUnmapMemory");
 
-    s_Vk.getBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)dlsym(
+    s_Vk.getBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)loadProc(
         s_Vk.handle,
         "vkGetBufferDeviceAddress");
 
-    s_Vk.getBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)dlsym(
+    s_Vk.getBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)loadProc(
         s_Vk.handle,
         "vkGetBufferMemoryRequirements");
 
-    s_Vk.bindBufferMemory = (PFN_vkBindBufferMemory)dlsym(
+    s_Vk.bindBufferMemory = (PFN_vkBindBufferMemory)loadProc(
         s_Vk.handle,
         "vkBindBufferMemory");
 
-    s_Vk.createDescriptorSetLayout = (PFN_vkCreateDescriptorSetLayout)dlsym(
+    s_Vk.createDescriptorSetLayout = (PFN_vkCreateDescriptorSetLayout)loadProc(
         s_Vk.handle,
         "vkCreateDescriptorSetLayout");
 
-    s_Vk.destroyDescriptorSetLayout = (PFN_vkDestroyDescriptorSetLayout)dlsym(
+    s_Vk.destroyDescriptorSetLayout = (PFN_vkDestroyDescriptorSetLayout)loadProc(
         s_Vk.handle,
         "vkDestroyDescriptorSetLayout");
 
-    s_Vk.createDescriptorPool = (PFN_vkCreateDescriptorPool)dlsym(
+    s_Vk.createDescriptorPool = (PFN_vkCreateDescriptorPool)loadProc(
         s_Vk.handle,
         "vkCreateDescriptorPool");
 
-    s_Vk.destroyDescriptorPool = (PFN_vkDestroyDescriptorPool)dlsym(
+    s_Vk.destroyDescriptorPool = (PFN_vkDestroyDescriptorPool)loadProc(
         s_Vk.handle,
         "vkDestroyDescriptorPool");
 
-    s_Vk.resetDescriptorPool = (PFN_vkResetDescriptorPool)dlsym(
+    s_Vk.resetDescriptorPool = (PFN_vkResetDescriptorPool)loadProc(
         s_Vk.handle,
         "vkResetDescriptorPool");
 
-    s_Vk.allocateDescriptorSet = (PFN_vkAllocateDescriptorSets)dlsym(
+    s_Vk.allocateDescriptorSet = (PFN_vkAllocateDescriptorSets)loadProc(
         s_Vk.handle,
         "vkAllocateDescriptorSets");
 
-    s_Vk.freeDescriptorSet = (PFN_vkFreeDescriptorSets)dlsym(
+    s_Vk.freeDescriptorSet = (PFN_vkFreeDescriptorSets)loadProc(
         s_Vk.handle,
         "vkFreeDescriptorSets");
 
-    s_Vk.updateDescriptorSet = (PFN_vkUpdateDescriptorSets)dlsym(
+    s_Vk.updateDescriptorSet = (PFN_vkUpdateDescriptorSets)loadProc(
         s_Vk.handle,
         "vkUpdateDescriptorSets");
 
-    s_Vk.createPipelineLayout = (PFN_vkCreatePipelineLayout)dlsym(
+    s_Vk.createPipelineLayout = (PFN_vkCreatePipelineLayout)loadProc(
         s_Vk.handle,
         "vkCreatePipelineLayout");
 
-    s_Vk.destroyPipelineLayout = (PFN_vkDestroyPipelineLayout)dlsym(
+    s_Vk.destroyPipelineLayout = (PFN_vkDestroyPipelineLayout)loadProc(
         s_Vk.handle,
         "vkDestroyPipelineLayout");
 
-    s_Vk.createGraphicsPipeline = (PFN_vkCreateGraphicsPipelines)dlsym(
+    s_Vk.createGraphicsPipeline = (PFN_vkCreateGraphicsPipelines)loadProc(
         s_Vk.handle,
         "vkCreateGraphicsPipelines");
 
-    s_Vk.createComputePipeline = (PFN_vkCreateComputePipelines)dlsym(
+    s_Vk.createComputePipeline = (PFN_vkCreateComputePipelines)loadProc(
         s_Vk.handle,
         "vkCreateComputePipelines");
 
-    s_Vk.destroyPipeline = (PFN_vkDestroyPipeline)dlsym(
+    s_Vk.destroyPipeline = (PFN_vkDestroyPipeline)loadProc(
         s_Vk.handle,
         "vkDestroyPipeline");
 
-    s_Vk.waitDevice = (PFN_vkDeviceWaitIdle)dlsym(
+    s_Vk.waitDevice = (PFN_vkDeviceWaitIdle)loadProc(
         s_Vk.handle,
         "vkDeviceWaitIdle");
 
-    s_Vk.waitQueue = (PFN_vkQueueWaitIdle)dlsym(
+    s_Vk.waitQueue = (PFN_vkQueueWaitIdle)loadProc(
         s_Vk.handle,
         "vkQueueWaitIdle");
     // clang-format on
@@ -2590,7 +2650,9 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     bool hasXlib = false;
+    bool hasXcb = false;
     bool hasWayland = false;
+    bool hasWin32 = false;
     bool hasSurface = false;
     bool hasExtDebug = false;
     s_Vk.enumerateInstanceExtensionProperties(nullptr, &extCount, extensionProps);
@@ -2600,8 +2662,14 @@ PalResult PAL_CALL initGraphicsVk(
         if (strcmp(prop->extensionName, "VK_KHR_xlib_surface") == 0) {
             hasXlib = true;
 
+        } else if (strcmp(prop->extensionName, "VK_KHR_xcb_surface") == 0) {
+            hasXcb = true;
+
         } else if (strcmp(prop->extensionName, "VK_KHR_wayland_surface") == 0) {
             hasWayland = true;
+
+        } else if (strcmp(prop->extensionName, "VK_KHR_win32_surface") == 0) {
+            hasWin32 = true;
 
         } else if (strcmp(prop->extensionName, "VK_KHR_surface") == 0) {
             hasSurface = true;
@@ -2702,6 +2770,28 @@ PalResult PAL_CALL initGraphicsVk(
                 "vkGetPhysicalDeviceXlibPresentationSupportKHR");
     }
 
+    if (hasXcb) {
+        s_Vk.createXcbSurface = (PFN_vkCreateXcbSurfaceKHR)s_Vk.getInstanceProcAddr(
+            instance,
+            "vkCreateXcbSurfaceKHR");
+
+        s_Vk.checkXcbPresentSupport =
+            (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)s_Vk.getInstanceProcAddr(
+                instance,
+                "vkGetPhysicalDeviceXcbPresentationSupportKHR");
+    }
+
+    if (hasWin32) {
+        s_Vk.createWin32Surface = (PFN_vkCreateWin32SurfaceKHR)s_Vk.getInstanceProcAddr(
+            instance,
+            "vkCreateWin32SurfaceKHR");
+
+        s_Vk.checkWin32PresentSupport =
+            (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)s_Vk.getInstanceProcAddr(
+                instance,
+                "vkGetPhysicalDeviceWin32PresentationSupportKHR");
+    }
+
     // remaining function procs
     s_Vk.destroySurface = (PFN_vkDestroySurfaceKHR)s_Vk.getInstanceProcAddr(
         instance,
@@ -2748,10 +2838,7 @@ PalResult PAL_CALL shutdownGraphicsVk()
     }
 
     s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocateVkator);
-    dlclose(s_Vk.handle);
-    if (s_Vk.libWayland) {
-        dlclose(s_Vk.libWayland);
-    }
+    freeLibrary(s_Vk.handle);
 
     if (s_Vk.adapters) {
         palFree(s_Vk.allocator, s_Vk.adapters);
@@ -4489,11 +4576,15 @@ bool PAL_CALL canQueuePresentVk(
         return false;
     }
 
-    Uint32 platform = checkPlatformVk(window->display);
     PhysicalQueue* phyQueue = vkQueue->phyQueue;
-    if (platform == VK_WIN32_PLATFORM) {
-
-    } else if (platform == VK_WAYLAND_PLATFORM) {
+#ifdef __WIN32
+    if (s_Vk.checkWin32PresentSupport(
+            phyQueue->phyDevice,
+            phyQueue->familyIndex)) {
+        return true;
+    }
+#else
+    if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND) {
         if (s_Vk.checkWaylandPresentSupport(
                 phyQueue->phyDevice,
                 phyQueue->familyIndex,
@@ -4501,8 +4592,27 @@ bool PAL_CALL canQueuePresentVk(
             return true;
         }
 
-    } else if (platform == VK_XLIB_PLATFORM) {
+    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11) {
+        // TODO: get visual ID
+
+        // if (s_Vk.checkXlibPresentSupport(
+        //         phyQueue->phyDevice,
+        //         phyQueue->familyIndex,
+        //         window->display)) {
+        //     return true;
+        // }
+
+    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB) {
+        // TODO: get visual ID
+
+        // if (s_Vk.checkXcbPresentSupport(
+        //         phyQueue->phyDevice,
+        //         phyQueue->familyIndex,
+        //         window->display)) {
+        //     return true;
+        // }
     }
+#endif // __WIN32
     return false;
 }
 
