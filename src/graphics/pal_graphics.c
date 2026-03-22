@@ -1038,7 +1038,12 @@ PalResult PAL_CALL palInitGraphics(
     }
 
 #ifdef _WIN32
-    // vulkan and d3d12
+    // vulkan
+    initGraphicsVk(debugger, allocator);
+    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
+    attached->base = &s_VkBackend;
+    attached->startIndex = 0;
+    attached->count = 0;
 #elif defined(__linux__)
     // vulkan
 #if PAL_HAS_VULKAN
@@ -1064,7 +1069,8 @@ void PAL_CALL palShutdownGraphics()
     }
 
 #ifdef _WIN32
-// vulkan and d3d12
+    // vulkan
+    shutdownGraphicsVk();
 #elif defined(__linux__)
     // vulkan
     shutdownGraphicsVk();

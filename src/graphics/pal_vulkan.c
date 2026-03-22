@@ -202,11 +202,14 @@ typedef struct HINSTANCE__ *HINSTANCE;
 typedef struct HWND__ *HWND;
 typedef struct HMONITOR__ *HMONITOR;
 
+// only define the struct if not on windows
+#ifndef _MINWINBASE_
 typedef struct _SECURITY_ATTRIBUTES {
     DWORD nLength;
     LPVOID ipSecurityDescriptor;
     WINBOOL bInheritHandle;
 } SECURITY_ATTRIBUTES;
+#endif // _MINWINBASE_
 
 #include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
@@ -2116,6 +2119,27 @@ static VkShaderStageFlags shaderStageToVK(PalShaderStage stage)
     return 0;
 }
 
+static inline void* alignedRealloc(
+    void* memory,
+    Uint64 size,
+    Uint64 alignment)
+{
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    _aligned_realloc(memory, size, alignment);
+#else
+    realloc(memory, size);
+#endif // _MSC_VER
+}
+
+static inline void alignedFree(void* ptr)
+{
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif // _MSC_VER
+}
+
 static void* VKAPI_CALL allocateVk(
     void* pUserData,
     size_t size,
@@ -2142,16 +2166,16 @@ static void* VKAPI_CALL reallocVk(
     // Note: This is a hack which could cost performance but
     // realloc is not really called that much so it should be fine
     // this is because we dont know the old size
-    void* block = realloc(pOriginal, size);
+    void* block = alignedRealloc(pOriginal, size, alignment);
     if (block) {
         void* memory = palAllocate(s_Vk.allocator, size, alignment);
         if (!memory) {
-            free(block);
+            alignedFree(block);
             return nullptr;
         }
 
         memcpy(memory, block, size);
-        free(block);
+        alignedFree(block);
         return memory;
     }
     return nullptr;
@@ -2835,6 +2859,14 @@ PalResult PAL_CALL initGraphicsVk(
 
         if (hasXlib) {
             extensions[extensionCount++] = "VK_KHR_xlib_surface";
+        }
+
+        if (hasXcb) {
+            extensions[extensionCount++] = "VK_KHR_xcb_surface";
+        }
+
+        if (hasWin32) {
+            extensions[extensionCount++] = "VK_KHR_win32_surface";
         }
     }
 
