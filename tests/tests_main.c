@@ -59,11 +59,11 @@ int main(int argc, char** argv)
 #if PAL_HAS_GRAPHICS
     // registerTest(graphicsTest);
     // registerTest(computeTest);
-    registerTest(rayTracingTest);
+    // registerTest(rayTracingTest);
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
-    // registerTest(clearColorTest);
+    registerTest(clearColorTest);
     // registerTest(triangleTest);
     // registerTest(meshTest);
     // registerTest(textureTest);

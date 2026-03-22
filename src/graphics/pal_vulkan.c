@@ -643,7 +643,7 @@ static bool createSurfaceVk(
     VkWin32SurfaceCreateInfoKHR cInfo = {0};
     cInfo.hinstance = GetModuleHandle(nullptr);
     cInfo.hwnd = window->window;
-    cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+    cInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 
     result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
     if (result != VK_SUCCESS) {
