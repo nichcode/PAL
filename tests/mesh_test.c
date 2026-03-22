@@ -24,7 +24,11 @@ static bool readFile(
     fseek(file, 0, SEEK_SET);
 
     if (buffer) {
-        fread(buffer, 1, (size_t)size, file);
+        tmpSize = *size;
+        size_t read = fread(buffer, 1, tmpSize, file);
+        if (read != tmpSize) {
+            return false;
+        }
     }
 
     fclose(file);
