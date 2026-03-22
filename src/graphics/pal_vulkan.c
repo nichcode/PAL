@@ -37,7 +37,6 @@ freely, subject to the following restrictions:
 // HACK: Needed to determine display type if on linux
 #ifdef _WIN32
 #include <libloaderapi.h>
-#include <windef.h>
 #define VK_LIB_NAME "vulkan-1.dll"
 #elif defined(__linux__)
 #include <dlfcn.h>
@@ -56,26 +55,165 @@ freely, subject to the following restrictions:
 #define RAY_TRACING_PIPELINE 126
 #define COMPUTE_PIPELINE 127
 
+#pragma region Video
+
 struct wl_display;
 struct wl_surface;
 typedef struct _XDisplay Display;
 typedef unsigned long Window;
 typedef unsigned long VisualID;
+typedef unsigned long Colormap;
+typedef char *XPointer;
+typedef struct _XGC *GC;
+
+typedef struct _XExtData {
+	int number;
+	struct _XExtData *next;
+	int (*free_private)(
+	struct _XExtData *extension
+	);
+	XPointer private_data;
+} XExtData;
+
+typedef struct {
+	XExtData *ext_data;
+	VisualID visualid;
+	int class;
+	unsigned long red_mask, green_mask, blue_mask;
+	int bits_per_rgb;
+	int map_entries;
+} Visual;
+
+typedef struct {
+	int depth;
+	int nvisuals;
+	Visual *visuals;
+} Depth;
+
+typedef struct {
+	XExtData *ext_data;
+	struct _XDisplay *display;
+	Window root;
+	int width, height;
+	int mwidth, mheight;
+	int ndepths;
+	Depth *depths;
+	int root_depth;
+	Visual *root_visual;
+	GC default_gc;
+	Colormap cmap;
+	unsigned long white_pixel;
+	unsigned long black_pixel;
+	int max_maps, min_maps;
+	int backing_store;
+	int save_unders;
+	long root_input_mask;
+} Screen;
+
+typedef struct {
+    int x, y;
+    int width, height;
+    int border_width;
+    int depth;
+    Visual *visual;
+    Window root;
+    int class;
+    int bit_gravity;
+    int win_gravity;
+    int backing_store;
+    unsigned long backing_planes;
+    unsigned long backing_pixel;
+    int save_under;
+    Colormap colormap;
+    int map_installed;
+    int map_state;
+    long all_event_masks;
+    long your_event_mask;
+    long do_not_propagate_mask;
+    int override_redirect;
+    Screen *screen;
+} XWindowAttributes;
+
+typedef int (*XGetWindowAttributesFn)(
+    Display*,
+    Window,
+    XWindowAttributes*);
+
+typedef VisualID (*XVisualIDFromVisualFn)(Visual*);
 
 typedef struct xcb_connection_t xcb_connection_t;
 typedef uint32_t xcb_window_t;
 typedef uint32_t xcb_visualid_t;
+typedef uint32_t xcb_colormap_t;
+
+typedef struct xcb_get_window_attributes_cookie_t {
+    unsigned int sequence;
+} xcb_get_window_attributes_cookie_t;
+
+typedef struct xcb_get_window_attributes_reply_t {
+    uint8_t        response_type;
+    uint8_t        backing_store;
+    uint16_t       sequence;
+    uint32_t       length;
+    xcb_visualid_t visual;
+    uint16_t       _class;
+    uint8_t        bit_gravity;
+    uint8_t        win_gravity;
+    uint32_t       backing_planes;
+    uint32_t       backing_pixel;
+    uint8_t        save_under;
+    uint8_t        map_is_installed;
+    uint8_t        map_state;
+    uint8_t        override_redirect;
+    xcb_colormap_t colormap;
+    uint32_t       all_event_masks;
+    uint32_t       your_event_mask;
+    uint16_t       do_not_propagate_mask;
+    uint8_t        pad0[2];
+} xcb_get_window_attributes_reply_t;
+
+typedef struct {
+    uint8_t   response_type;
+    uint8_t   error_code;
+    uint16_t sequence;
+    uint32_t resource_id;
+    uint16_t minor_code;
+    uint8_t major_code;
+    uint8_t pad0;
+    uint32_t pad[5];
+    uint32_t full_sequence;
+} xcb_generic_error_t;
+
+typedef xcb_get_window_attributes_cookie_t (*xcb_get_window_attributes_fn)(
+    xcb_connection_t*,
+    xcb_window_t);
+
+typedef xcb_get_window_attributes_reply_t* (*xcb_get_window_attributes_reply_fn)(
+    xcb_connection_t*,
+    xcb_get_window_attributes_cookie_t,
+    xcb_generic_error_t**);
 
 typedef unsigned long DWORD;
 typedef int WINBOOL;
 typedef void *LPVOID;
 typedef const wchar_t *LPCWSTR,*PCWSTR;
 typedef void *HANDLE;
+typedef struct HINSTANCE__ *HINSTANCE;
+typedef struct HWND__ *HWND;
+typedef struct HMONITOR__ *HMONITOR;
+
+typedef struct _SECURITY_ATTRIBUTES {
+    DWORD nLength;
+    LPVOID ipSecurityDescriptor;
+    WINBOOL bInheritHandle;
+} SECURITY_ATTRIBUTES;
 
 #include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
 #include <vulkan/vulkan_xcb.h>
 #include <vulkan/vulkan_win32.h>
+
+#pragma endregion
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -93,6 +231,14 @@ typedef struct {
     VkInstance instance;
     VkDebugUtilsMessengerEXT messenger;
     PalDebugCallback callback;
+
+    void* libX;
+    XGetWindowAttributesFn XGetWindowAttributes;
+    XVisualIDFromVisualFn XVisualIDFromVisual;
+
+    void* libXcb;
+    xcb_get_window_attributes_fn xcbGetWindowAttributes;
+    xcb_get_window_attributes_reply_fn xcbGetWindowAttributesReply;
 
     PFN_vkEnumerateInstanceVersion enumerateInstanceVersion;
     PFN_vkEnumerateInstanceExtensionProperties enumerateInstanceExtensionProperties;
@@ -204,7 +350,7 @@ typedef struct {
     PFN_vkDeviceWaitIdle waitDevice;
     PFN_vkQueueWaitIdle waitQueue;
 
-    VkAllocationCallbacks allocateVkator;
+    VkAllocationCallbacks vkAllocator;
     const PalAllocator* allocator;
 } Vulkan;
 
@@ -475,7 +621,7 @@ static void* loadProc(void* lib, const char* name)
 #ifdef __WIN32
     return GetProcAddress((HMODULE)lib, name);
 #elif defined (__linux__)
-    return loadProc(lib, name);
+    return dlsym(lib, name);
 #endif
 }
 
@@ -496,7 +642,7 @@ static bool createSurfaceVk(
     cInfo.hwnd = window->window;
     cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
 
-    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
     if (result != VK_SUCCESS) {
         return false;
     }
@@ -516,7 +662,7 @@ static bool createSurfaceVk(
         cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
         cInfo.surface = window->window;
 
-        result = s_Vk.createWaylandSurface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+        result = s_Vk.createWaylandSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
         if (result != VK_SUCCESS) {
             return false;
         }
@@ -531,10 +677,10 @@ static bool createSurfaceVk(
 
         VkXlibSurfaceCreateInfoKHR cInfo = {0};
         cInfo.dpy = window->display;
-        cInfo.window = window->window;
+        cInfo.window = (Window)(UintPtr)(window->window);
         cInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
 
-        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
         if (result != VK_SUCCESS) {
             return false;
         }
@@ -551,7 +697,7 @@ static bool createSurfaceVk(
         cInfo.connection = window->display;
         cInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
 
-        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.allocateVkator, &surface);
+        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
         if (result != VK_SUCCESS) {
             return false;
         }
@@ -1970,27 +2116,27 @@ static VkShaderStageFlags shaderStageToVK(PalShaderStage stage)
     return 0;
 }
 
-static void* allocateVk(
+static void* VKAPI_CALL allocateVk(
     void* pUserData,
     size_t size,
-    size_t alignVkment,
+    size_t alignment,
     VkSystemAllocationScope allocationScope)
 {
-    return palAllocate(s_Vk.allocator, size, alignVkment);
+    return palAllocate(s_Vk.allocator, size, alignment);
 }
 
-static void freeVk(
+static void VKAPI_CALL freeVk(
     void* pUserData,
     void* ptr)
 {
     palFree(s_Vk.allocator, ptr);
 }
 
-static void* reallocVk(
+static void* VKAPI_CALL reallocVk(
     void* pUserData,
     void* pOriginal,
     size_t size,
-    size_t alignVkment,
+    size_t alignment,
     VkSystemAllocationScope allocationScope)
 {
     // Note: This is a hack which could cost performance but
@@ -1998,7 +2144,7 @@ static void* reallocVk(
     // this is because we dont know the old size
     void* block = realloc(pOriginal, size);
     if (block) {
-        void* memory = palAllocate(s_Vk.allocator, size, alignVkment);
+        void* memory = palAllocate(s_Vk.allocator, size, alignment);
         if (!memory) {
             free(block);
             return nullptr;
@@ -2011,7 +2157,7 @@ static void* reallocVk(
     return nullptr;
 }
 
-VkBool32 debugCallbackVk(
+VkBool32 VKAPI_CALL debugCallbackVk(
     VkDebugUtilsMessageSeverityFlagBitsEXT severity,
     VkDebugUtilsMessageTypeFlagBitsEXT type,
     const VkDebugUtilsMessengerCallbackDataEXT* data,
@@ -2096,9 +2242,9 @@ static Uint32 findBestMemoryIndexVk(
 
 static inline Uint32 alignVk(
     Uint32 value,
-    Uint32 alignVkment)
+    Uint32 alignment)
 {
-    return (value + alignVkment - 1) & ~(alignVkment - 1);
+    return (value + alignment - 1) & ~(alignment - 1);
 }
 
 static void fillVkBuildInfoVk(
@@ -2725,12 +2871,12 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     // vk allocator
-    s_Vk.allocateVkator.pfnAllocation = allocateVk;
-    s_Vk.allocateVkator.pfnFree = freeVk;
-    s_Vk.allocateVkator.pfnReallocation = reallocVk;
+    s_Vk.vkAllocator.pfnAllocation = allocateVk;
+    s_Vk.vkAllocator.pfnFree = freeVk;
+    s_Vk.vkAllocator.pfnReallocation = reallocVk;
 
     VkInstance instance = nullptr;
-    result = s_Vk.createInstance(&instanceCreateInfo, &s_Vk.allocateVkator, &instance);
+    result = s_Vk.createInstance(&instanceCreateInfo, &s_Vk.vkAllocator, &instance);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -2760,6 +2906,17 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     if (hasXlib) {
+        s_Vk.libX = loadLibrary("libX11.so");
+        if (s_Vk.libX) {
+            s_Vk.XGetWindowAttributes = (XGetWindowAttributesFn)loadProc(
+                s_Vk.libX, 
+                "XGetWindowAttributes");
+
+            s_Vk.XVisualIDFromVisual = (XVisualIDFromVisualFn)loadProc(
+                s_Vk.libX, 
+                "XVisualIDFromVisual");
+        }
+
         s_Vk.createXlibSurface = (PFN_vkCreateXlibSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkCreateXlibSurfaceKHR");
@@ -2771,6 +2928,17 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     if (hasXcb) {
+        s_Vk.libXcb = loadLibrary("libxcb.so.1");
+        if (s_Vk.libXcb) {
+            s_Vk.xcbGetWindowAttributes = (xcb_get_window_attributes_fn)loadProc(
+                s_Vk.libXcb, 
+                "xcb_get_window_attributes");
+
+            s_Vk.xcbGetWindowAttributesReply = (xcb_get_window_attributes_reply_fn)loadProc(
+                s_Vk.libXcb, 
+                "xcb_get_window_attributes_reply");
+        }
+
         s_Vk.createXcbSurface = (PFN_vkCreateXcbSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkCreateXcbSurfaceKHR");
@@ -2822,7 +2990,7 @@ PalResult PAL_CALL initGraphicsVk(
                 instance,
                 "vkDestroyDebugUtilsMessengerEXT");
 
-        s_Vk.createMessenger(instance, &debugCreateInfo, &s_Vk.allocateVkator, &s_Vk.messenger);
+        s_Vk.createMessenger(instance, &debugCreateInfo, &s_Vk.vkAllocator, &s_Vk.messenger);
     }
     // clang-format on
 
@@ -2834,11 +3002,19 @@ PalResult PAL_CALL initGraphicsVk(
 PalResult PAL_CALL shutdownGraphicsVk()
 {
     if (s_Vk.messenger) {
-        s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.allocateVkator);
+        s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.vkAllocator);
     }
 
-    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocateVkator);
+    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.vkAllocator);
     freeLibrary(s_Vk.handle);
+
+    if (s_Vk.libX) {
+        freeLibrary(s_Vk.libX);
+    }
+
+    if (s_Vk.libXcb) {
+        freeLibrary(s_Vk.libXcb);
+    }
 
     if (s_Vk.adapters) {
         palFree(s_Vk.allocator, s_Vk.adapters);
@@ -3769,7 +3945,7 @@ PalResult PAL_CALL createDeviceVk(
     createInfo.queueCreateInfoCount = queueCount;
     createInfo.pNext = next;
 
-    result = s_Vk.createDevice(phyDevice, &createInfo, &s_Vk.allocateVkator, &device->handle);
+    result = s_Vk.createDevice(phyDevice, &createInfo, &s_Vk.vkAllocator, &device->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, queueProps);
         palFree(s_Vk.allocator, queueCreateInfos);
@@ -4157,7 +4333,7 @@ PalResult PAL_CALL createDeviceVk(
 void PAL_CALL destroyDeviceVk(PalDevice* device)
 {
     Device* vkDevice = (Device*)device;
-    s_Vk.destroyDevice(vkDevice->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyDevice(vkDevice->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkDevice->phyQueues);
     palFree(s_Vk.allocator, vkDevice);
 }
@@ -4218,7 +4394,7 @@ PalResult PAL_CALL allocateMemoryVk(
         allocateInfo.pNext = &allocateFlagsInfo;
     }
 
-    result = s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.allocateVkator, &memory);
+    result = s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -4233,7 +4409,7 @@ void PAL_CALL freeMemoryVk(
 {
     Device* vkDevice = (Device*)device;
     VkDeviceMemory mem = (VkDeviceMemory)memory;
-    s_Vk.freeMemory(vkDevice->handle, mem, &s_Vk.allocateVkator);
+    s_Vk.freeMemory(vkDevice->handle, mem, &s_Vk.vkAllocator);
 }
 
 PalResult PAL_CALL mapMemoryVk(
@@ -4593,24 +4769,41 @@ bool PAL_CALL canQueuePresentVk(
         }
 
     } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11) {
-        // TODO: get visual ID
+        XWindowAttributes attrs = {0};
+        Window xWin = (Window)(UintPtr)(window->window);
+        VisualID visualID = 0;
 
-        // if (s_Vk.checkXlibPresentSupport(
-        //         phyQueue->phyDevice,
-        //         phyQueue->familyIndex,
-        //         window->display)) {
-        //     return true;
-        // }
+        if (s_Vk.XGetWindowAttributes(window->display, xWin, &attrs)) {
+            visualID = s_Vk.XVisualIDFromVisual(attrs.visual);
+        }
+
+        if (s_Vk.checkXlibPresentSupport(
+                phyQueue->phyDevice,
+                phyQueue->familyIndex,
+                window->display,
+                visualID)) {
+            return true;
+        }
 
     } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB) {
-        // TODO: get visual ID
+        xcb_get_window_attributes_cookie_t cookie = {0};
+        xcb_get_window_attributes_reply_t* reply = nullptr;
+        xcb_window_t xcbWin = (xcb_window_t)(UintPtr)(window->window);
 
-        // if (s_Vk.checkXcbPresentSupport(
-        //         phyQueue->phyDevice,
-        //         phyQueue->familyIndex,
-        //         window->display)) {
-        //     return true;
-        // }
+        cookie = s_Vk.xcbGetWindowAttributes(window->display, xcbWin);
+        reply = s_Vk.xcbGetWindowAttributesReply(window->display, cookie, nullptr);
+        if (!reply) {
+            return false;
+        }
+
+        if (s_Vk.checkXcbPresentSupport(
+                phyQueue->phyDevice,
+                phyQueue->familyIndex,
+                window->display, 
+                reply->visual)) {
+            free(reply);
+            return true;
+        }
     }
 #endif // __WIN32
     return false;
@@ -4800,7 +4993,7 @@ PalResult PAL_CALL createImageVk(
         createInfo.extent.depth = info->depthOrArraySize;
     }
 
-    result = s_Vk.createImage(vkDevice->handle, &createInfo, &s_Vk.allocateVkator, &image->handle);
+    result = s_Vk.createImage(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &image->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, image);
         return resultFromVk(result);
@@ -4845,7 +5038,7 @@ void PAL_CALL destroyImageVk(PalImage* image)
         return;
     }
 
-    s_Vk.destroyImage(vkImage->device->handle, vkImage->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyImage(vkImage->device->handle, vkImage->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkImage);
 }
 
@@ -4954,7 +5147,7 @@ PalResult PAL_CALL createImageViewVk(
     result = s_Vk.createImageView(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &imageView->handle);
 
     if (result != VK_SUCCESS) {
@@ -4975,7 +5168,7 @@ PalResult PAL_CALL createImageViewVk(
 void PAL_CALL destroyImageViewVk(PalImageView* imageView)
 {
     ImageView* vkImageView = (ImageView*)imageView;
-    s_Vk.destroyImageView(vkImageView->device->handle, vkImageView->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyImageView(vkImageView->device->handle, vkImageView->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkImageView);
 }
@@ -5153,7 +5346,7 @@ PalResult PAL_CALL createSamplerVk(
     result = s_Vk.createSampler(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &sampler->handle);
 
     if (result != VK_SUCCESS) {
@@ -5169,7 +5362,7 @@ PalResult PAL_CALL createSamplerVk(
 void PAL_CALL destroySamplerVk(PalSampler* sampler)
 {
     Sampler* vkSampler = (Sampler*)sampler;
-    s_Vk.destroySampler(vkSampler->device->handle, vkSampler->handle, &s_Vk.allocateVkator);
+    s_Vk.destroySampler(vkSampler->device->handle, vkSampler->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkSampler);
 }
@@ -5207,7 +5400,7 @@ PalResult PAL_CALL querySwapchainCapabilitiesVk(
     modes = palAllocate(s_Vk.allocator, sizeof(VkPresentModeKHR) * modeCount, 0);
     formats = palAllocate(s_Vk.allocator, sizeof(VkSurfaceFormatKHR) * formatCount, 0);
     if (!modes || !formats) {
-        s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocateVkator);
+        s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.vkAllocator);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
@@ -5294,7 +5487,7 @@ PalResult PAL_CALL querySwapchainCapabilitiesVk(
 
     palFree(s_Vk.allocator, formats);
     palFree(s_Vk.allocator, modes);
-    s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.allocateVkator);
+    s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.vkAllocator);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5387,11 +5580,11 @@ PalResult PAL_CALL createSwapchainVk(
     VkResult result = vkDevice->createSwapchain(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &swapchain->handle);
 
     if (result != VK_SUCCESS) {
-        s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.allocateVkator);
+        s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.vkAllocator);
 
         palFree(s_Vk.allocator, swapchain);
         return resultFromVk(result);
@@ -5404,8 +5597,8 @@ PalResult PAL_CALL createSwapchainVk(
     swapchain->images = palAllocate(s_Vk.allocator, sizeof(Image) * count, 0);
     images = palAllocate(s_Vk.allocator, sizeof(VkImage) * count, 0);
     if (!swapchain->images || !images) {
-        vkDevice->destroySwapchain(vkDevice->handle, swapchain->handle, &s_Vk.allocateVkator);
-        s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.allocateVkator);
+        vkDevice->destroySwapchain(vkDevice->handle, swapchain->handle, &s_Vk.vkAllocator);
+        s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.vkAllocator);
         palFree(s_Vk.allocator, swapchain);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -5443,9 +5636,9 @@ void PAL_CALL destroySwapchainVk(PalSwapchain* swapchain)
     vkSwapchain->device->destroySwapchain(
         vkSwapchain->device->handle,
         vkSwapchain->handle,
-        &s_Vk.allocateVkator);
+        &s_Vk.vkAllocator);
 
-    s_Vk.destroySurface(s_Vk.instance, vkSwapchain->surface, &s_Vk.allocateVkator);
+    s_Vk.destroySurface(s_Vk.instance, vkSwapchain->surface, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkSwapchain->images);
     palFree(s_Vk.allocator, vkSwapchain);
@@ -5583,7 +5776,7 @@ PalResult PAL_CALL createShaderVk(
     createInfo.pCode = (const Uint32*)info->bytecode;
 
     result =
-        s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.allocateVkator, &shader->handle);
+        s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, shader);
@@ -5604,7 +5797,7 @@ PalResult PAL_CALL createShaderVk(
 void PAL_CALL destroyShaderVk(PalShader* shader)
 {
     Shader* vkShader = (Shader*)shader;
-    s_Vk.destroyShader(vkShader->device->handle, vkShader->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyShader(vkShader->device->handle, vkShader->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkShader);
 }
@@ -5633,7 +5826,7 @@ PalResult PAL_CALL createFenceVk(
         createInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     }
 
-    result = s_Vk.createFence(vkDevice->handle, &createInfo, &s_Vk.allocateVkator, &fence->handle);
+    result = s_Vk.createFence(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &fence->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, fence);
         return resultFromVk(result);
@@ -5647,7 +5840,7 @@ PalResult PAL_CALL createFenceVk(
 void PAL_CALL destroyFenceVk(PalFence* fence)
 {
     Fence* vkFence = (Fence*)fence;
-    s_Vk.destroyFence(vkFence->device->handle, vkFence->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyFence(vkFence->device->handle, vkFence->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkFence);
 }
@@ -5733,7 +5926,7 @@ PalResult PAL_CALL createSemaphoreVk(
     result = s_Vk.createSemaphore(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &semaphore->handle);
 
     if (result != VK_SUCCESS) {
@@ -5749,7 +5942,7 @@ PalResult PAL_CALL createSemaphoreVk(
 void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore)
 {
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
-    s_Vk.destroySemaphore(vkSemaphore->device->handle, vkSemaphore->handle, &s_Vk.allocateVkator);
+    s_Vk.destroySemaphore(vkSemaphore->device->handle, vkSemaphore->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkSemaphore);
 }
@@ -5850,7 +6043,7 @@ PalResult PAL_CALL createCommandPoolVk(
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     result =
-        s_Vk.createCommandPool(vkDevice->handle, &createInfo, &s_Vk.allocateVkator, &pool->handle);
+        s_Vk.createCommandPool(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &pool->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pool);
@@ -5865,7 +6058,7 @@ PalResult PAL_CALL createCommandPoolVk(
 void PAL_CALL destroyCommandPoolVk(PalCommandPool* pool)
 {
     CommandPool* vkPool = (CommandPool*)pool;
-    s_Vk.destroyCommandPool(vkPool->device->handle, vkPool->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyCommandPool(vkPool->device->handle, vkPool->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkPool);
 }
@@ -7294,7 +7487,7 @@ PalResult PAL_CALL createAccelerationstructureVk(
     result = vkDevice->createAccelerationStructure(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &as->handle);
 
     if (result != VK_SUCCESS) {
@@ -7319,7 +7512,7 @@ void PAL_CALL destroyAccelerationstructureVk(PalAccelerationStructure* as)
     vkAs->device->destroyAccelerationStructure(
         vkAs->device->handle,
         vkAs->handle,
-        &s_Vk.allocateVkator);
+        &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkAs);
 }
@@ -7407,7 +7600,7 @@ PalResult PAL_CALL createBufferVk(
     createInfo.usage = bufferUsageToVk(info->usages);
 
     result =
-        s_Vk.createBuffer(vkDevice->handle, &createInfo, &s_Vk.allocateVkator, &buffer->handle);
+        s_Vk.createBuffer(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &buffer->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, buffer);
@@ -7427,7 +7620,7 @@ PalResult PAL_CALL createBufferVk(
 void PAL_CALL destroyBufferVk(PalBuffer* buffer)
 {
     Buffer* vkBuffer = (Buffer*)buffer;
-    s_Vk.destroyBuffer(vkBuffer->device->handle, vkBuffer->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyBuffer(vkBuffer->device->handle, vkBuffer->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, buffer);
 }
@@ -7573,7 +7766,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     result = s_Vk.createDescriptorSetLayout(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &layout->handle);
 
     if (result != VK_SUCCESS) {
@@ -7594,7 +7787,7 @@ void PAL_CALL destroyDescriptorSetLayoutVk(PalDescriptorSetLayout* layout)
     s_Vk.destroyDescriptorSetLayout(
         vkLayout->device->handle,
         vkLayout->handle,
-        &s_Vk.allocateVkator);
+        &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, layout);
 }
 
@@ -7634,7 +7827,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
     result = s_Vk.createDescriptorPool(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &pool->handle);
 
     if (result != VK_SUCCESS) {
@@ -7652,7 +7845,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
 void PAL_CALL destroyDescriptorPoolVk(PalDescriptorPool* pool)
 {
     DescriptorPool* vkPool = (DescriptorPool*)pool;
-    s_Vk.destroyDescriptorPool(vkPool->device->handle, vkPool->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyDescriptorPool(vkPool->device->handle, vkPool->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, pool);
 }
 
@@ -7881,7 +8074,7 @@ PalResult PAL_CALL createPipelineLayoutVk(
     result = s_Vk.createPipelineLayout(
         vkDevice->handle,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &layout->handle);
 
     if (result != VK_SUCCESS) {
@@ -7905,7 +8098,7 @@ void PAL_CALL destroyPipelineLayoutVk(PalPipelineLayout* layout)
     s_Vk.destroyPipelineLayout(
         pipelineLayout->device->handle,
         pipelineLayout->handle,
-        &s_Vk.allocateVkator);
+        &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, layout);
 }
@@ -8328,7 +8521,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         0,
         1,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &pipeline->handle);
 
     if (result != VK_SUCCESS) {
@@ -8372,7 +8565,7 @@ PalResult PAL_CALL createComputePipelineVk(
         nullptr,
         1,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &pipeline->handle);
 
     if (result != VK_SUCCESS) {
@@ -8479,7 +8672,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         nullptr,
         1,
         &createInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &pipeline->handle);
 
     if (result != VK_SUCCESS) {
@@ -8531,7 +8724,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     result =
-        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.allocateVkator, &sbt->buffer);
+        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->buffer);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
@@ -8559,7 +8752,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     result = s_Vk.allocateMemory(
         vkDevice->handle,
         &allocateInfo,
-        &s_Vk.allocateVkator,
+        &s_Vk.vkAllocator,
         &sbt->bufferMemory);
 
     if (result != VK_SUCCESS) {
@@ -8666,14 +8859,14 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 void PAL_CALL destroyPipelineVk(PalPipeline* pipeline)
 {
     Pipeline* vkPipeline = (Pipeline*)pipeline;
-    s_Vk.destroyPipeline(vkPipeline->device->handle, vkPipeline->handle, &s_Vk.allocateVkator);
+    s_Vk.destroyPipeline(vkPipeline->device->handle, vkPipeline->handle, &s_Vk.vkAllocator);
 
     if (vkPipeline->sbt) {
         VkDevice device = vkPipeline->device->handle;
         ShaderBindingTable* sbt = vkPipeline->sbt;
 
-        s_Vk.destroyBuffer(device, sbt->buffer, &s_Vk.allocateVkator);
-        s_Vk.freeMemory(device, sbt->bufferMemory, &s_Vk.allocateVkator);
+        s_Vk.destroyBuffer(device, sbt->buffer, &s_Vk.vkAllocator);
+        s_Vk.freeMemory(device, sbt->bufferMemory, &s_Vk.vkAllocator);
 
         palFree(s_Vk.allocator, vkPipeline->sbt);
     }
