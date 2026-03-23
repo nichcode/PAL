@@ -1,6 +1,7 @@
 
 #include "pal/pal_graphics.h"
 #include "pal/pal_video.h"
+#include "pal/pal_system.h"
 #include "tests.h"
 
 #include <stdio.h>
@@ -119,6 +120,28 @@ bool triangleTest()
     PalWindowHandleInfo winHandle = palGetWindowHandleInfo(window);
     gfxWindow.display = winHandle.nativeDisplay;
     gfxWindow.window = winHandle.nativeWindow;
+    
+    // using pal_system.h will be easy to know the underlying windowing API
+    // or use typedefs. We will use the pal_system module. This is needed
+    // for systems which multiple windowing APIs (linux).
+    PalPlatformInfo platformInfo = {0};
+    result = palGetPlatformInfo(&platformInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get platform information: %s", error);
+        return false;
+    }
+
+    if (platformInfo.apiType == PAL_PLATFORM_API_WAYLAND) {
+        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND;
+
+    } else if (platformInfo.apiType == PAL_PLATFORM_API_X11) {
+        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11;
+
+    } else {
+        // automatically this is xcb
+        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB;
+    }
 
     PalGraphicsDebugger debugger;
     debugger.callback = onGraphicsDebug;

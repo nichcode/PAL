@@ -2125,9 +2125,9 @@ static inline void* alignedRealloc(
     Uint64 alignment)
 {
 #if defined(_MSC_VER) || defined(__MINGW32__)
-    _aligned_realloc(memory, size, alignment);
+    return _aligned_realloc(memory, size, alignment);
 #else
-    realloc(memory, size);
+    return realloc(memory, size);
 #endif // _MSC_VER
 }
 
