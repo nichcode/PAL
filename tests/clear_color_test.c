@@ -190,9 +190,6 @@ bool clearColorTest()
     swapchainCreateInfo.imageArrayLayerCount = 1;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
 
-    // TODO: windows natively supports BGRA so we need to swizzle the component
-    // so we dont change the shader
-    // we dont use shaders in this example but there is no harm in doing it anyway
     swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
     if (!swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB]) {
         // the format is not supported. we default to BGRA

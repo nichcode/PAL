@@ -265,10 +265,18 @@ bool textureTest()
     PalSwapchainCreateInfo swapchainCreateInfo = {0};
     swapchainCreateInfo.clipped = true;
     swapchainCreateInfo.compositeAlpha = PAL_COMPOSITE_ALPHA_OPAQUE;
-    swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
     swapchainCreateInfo.height = WINDOW_HEIGHT;
     swapchainCreateInfo.width = WINDOW_WIDTH;
     swapchainCreateInfo.imageArrayLayerCount = 1;
+    swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
+
+    swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
+    if (!swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB]) {
+        // the format is not supported. we default to BGRA
+        // if component mapping is not supported, we have to remap the component
+        // from the shader rather instead of mapping when creating the image views
+        swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB;
+    }
 
     // rare but possible on andriod
     if (WINDOW_WIDTH > swapchainCaps.maxImageWidth) {
@@ -282,7 +290,13 @@ bool textureTest()
     // check if the minimal image count is not good for you
     // and increase it but not pass the max count
     swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
-    swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
+    if (swapchainCreateInfo.imageCount == 1) {
+        swapchainCreateInfo.imageCount = 2;
+        if (swapchainCaps.maxImageCount < 2) {
+            palLog(nullptr, "Swapchain does not support double buffers");
+            return false;
+        }
+    }
 
     result = palCreateSwapchain(device, queue, &gfxWindow, &swapchainCreateInfo, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
@@ -308,6 +322,16 @@ bool textureTest()
     imageViewCreateInfo.subresourceRange.mipLevelCount = 1;
     imageViewCreateInfo.subresourceRange.startArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.startMipLevel = 0;
+
+    // check multiple BGRA formats
+    if (swapchainCreateInfo.format == PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB) {
+        if (adapterFeatures & PAL_ADAPTER_FEATURE_COMPONENT_MAPPING) {
+            imageViewCreateInfo.mapping.r = PAL_COMPONENT_SWIZZLE_B;
+            imageViewCreateInfo.mapping.g = PAL_COMPONENT_SWIZZLE_G;
+            imageViewCreateInfo.mapping.b = PAL_COMPONENT_SWIZZLE_R;
+            imageViewCreateInfo.mapping.a = PAL_COMPONENT_SWIZZLE_A;
+        }
+    }
 
     for (int i = 0; i < imageCount; i++) {
         // get swapchain image
