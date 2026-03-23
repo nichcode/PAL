@@ -521,6 +521,24 @@ typedef enum {
 } PalImageViewUsages;
 
 /**
+ * @enum PalComponentSwizzle
+ * @brief Component swizzle channels.
+ *
+ * All component swizzle channels follow the format `PAL_COMPONENT_SWIZZLE**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_COMPONENT_SWIZZLE_IDENTITY,
+    PAL_COMPONENT_SWIZZLE_R,
+    PAL_COMPONENT_SWIZZLE_G,
+    PAL_COMPONENT_SWIZZLE_B,
+    PAL_COMPONENT_SWIZZLE_A
+} PalComponentSwizzle;
+
+/**
  * @enum PalShaderFormats
  * @brief Shader formats. This is a bitmask.
  *
@@ -581,7 +599,8 @@ typedef enum {
     PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(28),
     PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(29),
     PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(31)
+    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(31),
+    PAL_ADAPTER_FEATURE_COMPONENT_MAPPING = PAL_BIT64(32)
 } PalAdapterFeatures;
 
 /**
@@ -2228,6 +2247,22 @@ typedef struct {
 } PalImageSubresourceRange;
 
 /**
+ * @struct PalComponentMapping
+ * @brief Component mapping for images views.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    PalComponentSwizzle r;
+    PalComponentSwizzle g;
+    PalComponentSwizzle b;
+    PalComponentSwizzle a;
+} PalComponentMapping;
+
+/**
  * @struct PalBufferCopyInfo
  * @brief Information for buffer to buffer copies.
  *
@@ -2324,6 +2359,7 @@ typedef struct {
 typedef struct {
     PalImageViewType type;     /**< (eg. PAL_IMAGE_VIEW_TYPE_2D).*/
     PalImageViewUsages usages; /**< (eg. PAL_IMAGE_VIEW_USAGE_COLOR).*/
+    PalComponentMapping mapping; /**< (eg. PAL_IMAGE_VIEW_USAGE_COLOR).*/
     PalImageSubresourceRange subresourceRange;
 } PalImageViewCreateInfo;
 

@@ -2390,6 +2390,28 @@ static void fillVkBuildInfoVk(
     buildInfo->scratchData = scratchData;
 }
 
+static VkComponentSwizzle componentSwizzleToVk(PalComponentSwizzle swizzle)
+{
+    switch (swizzle) {
+        case PAL_COMPONENT_SWIZZLE_IDENTITY:
+            return VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        case PAL_COMPONENT_SWIZZLE_R:
+            return VK_COMPONENT_SWIZZLE_R;
+
+        case PAL_COMPONENT_SWIZZLE_G:
+            return VK_COMPONENT_SWIZZLE_G;
+
+        case PAL_COMPONENT_SWIZZLE_B:
+            return VK_COMPONENT_SWIZZLE_B;
+
+        case PAL_COMPONENT_SWIZZLE_A:
+            return VK_COMPONENT_SWIZZLE_A;
+    }
+
+    return VK_COMPONENT_SWIZZLE_IDENTITY;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -3651,6 +3673,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_COMPONENT_MAPPING;
 
     palFree(s_Vk.allocator, extensionProps);
     return adapterFeatures;
@@ -5161,6 +5184,13 @@ PalResult PAL_CALL createImageViewVk(
     createInfo.subresourceRange.levelCount = info->subresourceRange.mipLevelCount;
     createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
     createInfo.viewType = imageViewTypeToVk(info->type);
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_COMPONENT_MAPPING) {
+        createInfo.components.r = componentSwizzleToVk(info->mapping.r);
+        createInfo.components.g = componentSwizzleToVk(info->mapping.g);
+        createInfo.components.b = componentSwizzleToVk(info->mapping.b);
+        createInfo.components.a = componentSwizzleToVk(info->mapping.a);
+    }
 
     VkImageAspectFlags aspectFlags = 0;
     if (info->usages & PAL_IMAGE_VIEW_USAGE_DEPTH) {
