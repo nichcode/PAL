@@ -319,16 +319,6 @@ bool meshTest()
     imageViewCreateInfo.subresourceRange.startArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.startMipLevel = 0;
 
-    // check multiple BGRA formats
-    if (swapchainCreateInfo.format == PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB) {
-        if (adapterFeatures & PAL_ADAPTER_FEATURE_COMPONENT_MAPPING) {
-            imageViewCreateInfo.mapping.r = PAL_COMPONENT_SWIZZLE_B;
-            imageViewCreateInfo.mapping.g = PAL_COMPONENT_SWIZZLE_G;
-            imageViewCreateInfo.mapping.b = PAL_COMPONENT_SWIZZLE_R;
-            imageViewCreateInfo.mapping.a = PAL_COMPONENT_SWIZZLE_A;
-        }
-    }
-
     for (int i = 0; i < imageCount; i++) {
         // get swapchain image
         // this is fast since the images are cache by PAL

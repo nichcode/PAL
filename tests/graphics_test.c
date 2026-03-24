@@ -300,10 +300,6 @@ bool graphicsTest()
             palLog(nullptr, "  Dispatch base");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_COMPONENT_MAPPING) {
-            palLog(nullptr, "  Component mapping");
-        }
-
         palLog(nullptr, "");
     }
 

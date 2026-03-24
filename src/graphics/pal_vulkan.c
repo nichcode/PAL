@@ -2390,28 +2390,6 @@ static void fillVkBuildInfoVk(
     buildInfo->scratchData = scratchData;
 }
 
-static VkComponentSwizzle componentSwizzleToVk(PalComponentSwizzle swizzle)
-{
-    switch (swizzle) {
-        case PAL_COMPONENT_SWIZZLE_IDENTITY:
-            return VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        case PAL_COMPONENT_SWIZZLE_R:
-            return VK_COMPONENT_SWIZZLE_R;
-
-        case PAL_COMPONENT_SWIZZLE_G:
-            return VK_COMPONENT_SWIZZLE_G;
-
-        case PAL_COMPONENT_SWIZZLE_B:
-            return VK_COMPONENT_SWIZZLE_B;
-
-        case PAL_COMPONENT_SWIZZLE_A:
-            return VK_COMPONENT_SWIZZLE_A;
-    }
-
-    return VK_COMPONENT_SWIZZLE_IDENTITY;
-}
-
 // ==================================================
 // Adapter
 // ==================================================
@@ -3673,7 +3651,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     adapterFeatures |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
-    adapterFeatures |= PAL_ADAPTER_FEATURE_COMPONENT_MAPPING;
 
     palFree(s_Vk.allocator, extensionProps);
     return adapterFeatures;
@@ -5185,13 +5162,6 @@ PalResult PAL_CALL createImageViewVk(
     createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
     createInfo.viewType = imageViewTypeToVk(info->type);
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_COMPONENT_MAPPING) {
-        createInfo.components.r = componentSwizzleToVk(info->mapping.r);
-        createInfo.components.g = componentSwizzleToVk(info->mapping.g);
-        createInfo.components.b = componentSwizzleToVk(info->mapping.b);
-        createInfo.components.a = componentSwizzleToVk(info->mapping.a);
-    }
-
     VkImageAspectFlags aspectFlags = 0;
     if (info->usages & PAL_IMAGE_VIEW_USAGE_DEPTH) {
         aspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -5583,6 +5553,7 @@ PalResult PAL_CALL createSwapchainVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    memset(swapchain, 0, sizeof(Swapchain));
     if (!createSurfaceVk(window, &swapchain->surface)) {
         return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
     }
@@ -5594,7 +5565,7 @@ PalResult PAL_CALL createSwapchainVk(
     createInfo.imageExtent.width = info->width;
     createInfo.imageExtent.height = info->height;
     createInfo.minImageCount = info->imageCount;
-    createInfo.clipped = (VkBool32)info->clipped;
+    createInfo.clipped = VK_FALSE;
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -5912,13 +5883,17 @@ PalResult PAL_CALL waitFenceVk(
     Uint64 timeout)
 {
     Fence* vkFence = (Fence*)fence;
-    if (timeout != UINT64_MAX) {
-        if (!(vkFence->device->features & PAL_ADAPTER_FEATURE_FENCE_RESET)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    VkResult result;
+    Uint64 timeInNanoseconds = 0;
+
+    if (timeout) {
+        if (timeout == PAL_INFINITE) {
+            timeInNanoseconds = UINT64_MAX;
         }
+        timeInNanoseconds = timeout * 1000000;
     }
 
-    VkResult result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeout);
+    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeout);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -6015,9 +5990,17 @@ PalResult PAL_CALL waitSemaphoreVk(
     Uint64 timeout)
 {
     VkResult result;
+    Uint64 timeInNanoseconds = 0;
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
     if (!(vkSemaphore->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (timeout) {
+        if (timeout == PAL_INFINITE) {
+            timeInNanoseconds = UINT64_MAX;
+        }
+        timeInNanoseconds = timeout * 1000000;
     }
 
     VkSemaphoreWaitInfo waitInfo = {0};
@@ -6026,7 +6009,11 @@ PalResult PAL_CALL waitSemaphoreVk(
     waitInfo.pSemaphores = &vkSemaphore->handle;
     waitInfo.pValues = &value;
 
-    result = vkSemaphore->device->waitSemaphore(vkSemaphore->device->handle, &waitInfo, timeout);
+    result = vkSemaphore->device->waitSemaphore(
+        vkSemaphore->device->handle, 
+        &waitInfo, 
+        timeInNanoseconds);
+
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -6191,6 +6178,7 @@ PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer)
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.resetCommandBuffer(vkCmdBuffer->handle, 0);
     vkCmdBuffer->sbt = nullptr;
+    vkCmdBuffer->dstStage = 0;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6684,7 +6672,6 @@ PalResult PAL_CALL cmdBeginRenderingVk(
             info->fragmentShadingRateAttachment->texelHeight;
 
         fsrInfo.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-
         rendering.pNext = &fsrInfo;
     }
 

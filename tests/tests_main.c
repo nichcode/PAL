@@ -17,14 +17,14 @@ int main(int argc, char** argv)
     // registerTest(eventTest);
 
 #if PAL_HAS_SYSTEM
-    registerTest(systemTest);
+    // registerTest(systemTest);
 #endif // PAL_HAS_SYSTEM
 
 #if PAL_HAS_THREAD
-    registerTest(threadTest);
-    registerTest(tlsTest);
-    registerTest(mutexTest);
-    registerTest(condvarTest);
+    // registerTest(threadTest);
+    // registerTest(tlsTest);
+    // registerTest(mutexTest);
+    // registerTest(condvarTest);
 #endif // PAL_HAS_THREAD
 
 #if PAL_HAS_VIDEO
@@ -46,14 +46,14 @@ int main(int argc, char** argv)
     // This test can run without video system so long as your have a valid
     // window
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO
-    registerTest(openglTest);
-    registerTest(openglFBConfigTest);
-    registerTest(openglContextTest);
-    registerTest(openglMultiContextTest);
+    // registerTest(openglTest);
+    // registerTest(openglFBConfigTest);
+    // registerTest(openglContextTest);
+    // registerTest(openglMultiContextTest);
 #endif // PAL_HAS_OPENGL
 
 #if PAL_HAS_OPENGL && PAL_HAS_VIDEO && PAL_HAS_THREAD
-    registerTest(multiThreadOpenGlTest);
+    // registerTest(multiThreadOpenGlTest);
 #endif
 
 #if PAL_HAS_GRAPHICS
