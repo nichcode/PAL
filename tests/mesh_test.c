@@ -68,9 +68,10 @@ bool meshTest()
     PalImageView** imageViews = nullptr;
 
     PalCommandBuffer* cmdBuffers[MAX_FRAMES_IN_FLIGHT];
-    PalSemaphore* presentCompleteSemaphores[MAX_FRAMES_IN_FLIGHT];
-    PalSemaphore** renderFinishedSemaphores; // count of swapchain images
+    PalSemaphore* imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
+    PalSemaphore* renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
+    PalFence** inFlightImages; // count of swapchain images
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
@@ -99,7 +100,7 @@ bool meshTest()
     windowCreateInfo.height = WINDOW_HEIGHT;
     windowCreateInfo.width = WINDOW_WIDTH;
     windowCreateInfo.show = true;
-    windowCreateInfo.title = "Clear Color Window";
+    windowCreateInfo.title = "Mesh Window";
 
     PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
     if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
@@ -306,9 +307,8 @@ bool meshTest()
     // get all swapchain images and create image views for them
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
-    renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
-
-    if (!imageViews || !renderFinishedSemaphores) {
+    inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
+    if (!imageViews || !inFlightImages) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
     }
@@ -335,6 +335,8 @@ bool meshTest()
             palLog(nullptr, "Failed to create image view: %s", error);
             return false;
         }
+
+        inFlightImages[i] = nullptr;
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
@@ -346,7 +348,14 @@ bool meshTest()
 
     // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        result = palCreateSemaphore(device, &presentCompleteSemaphores[i]);
+        result = palCreateSemaphore(device, &imageAvailableSemaphores[i]);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create semaphore: %s", error);
+            return false;
+        }
+
+        result = palCreateSemaphore(device, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
@@ -369,16 +378,6 @@ bool meshTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to allocate command buffer: %s", error);
-            return false;
-        }
-    }
-
-    // create synchronization objects
-    for (int i = 0; i < imageCount; i++) {
-        result = palCreateSemaphore(device, &renderFinishedSemaphores[i]);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create semaphore: %s", error);
             return false;
         }
     }
@@ -489,11 +488,6 @@ bool meshTest()
     pipelineCreateInfo.colorBlendAttachments = &blendAttachment;
     pipelineCreateInfo.colorBlendAttachmentCount = 1;
 
-    // multisample state
-    PalMultisampleState multisampleState = {0};
-    multisampleState.sampleCount = PAL_SAMPLE_COUNT_1;
-    pipelineCreateInfo.multisampleState = &multisampleState;
-
     // shaders
     PalShader* shaders[2];
     shaders[0] = meshShader;
@@ -518,13 +512,6 @@ bool meshTest()
     // main loop
     Uint32 currentFrame = 0;
     bool running = true;
-    PalSemaphore* presentCompleteSemaphore = nullptr;
-    PalSemaphore* renderFinishedSemaphore = nullptr;
-    PalFence* fence = nullptr;
-    PalCommandBuffer* cmdBuffer = nullptr;
-
-    bool firstImageViewUse[8];
-    memset(firstImageViewUse, 1, sizeof(bool) * 8);
 
     // we are not resizing for the viewport and scissor will not change
     PalViewport viewport = {0};
@@ -559,19 +546,39 @@ bool meshTest()
             }
         }
 
-        fence = inFlightFences[currentFrame];
-        presentCompleteSemaphore = presentCompleteSemaphores[currentFrame];
-        cmdBuffer = cmdBuffers[currentFrame];
-
-        result = palWaitFence(fence, UINT64_MAX);
+        result = palWaitFence(inFlightFences[currentFrame], PAL_INFINITE);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to wait fence: %s", error);
             return false;
         }
 
+        // get next swapchain image
+        PalSwapchainNextImageInfo nextImageInfo = {0};
+        nextImageInfo.fence = nullptr;
+        nextImageInfo.signalSemaphore = imageAvailableSemaphores[currentFrame];
+        nextImageInfo.timeout = PAL_INFINITE;
+
+        Uint32 imageIndex = 0;
+        result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get next swapchain image: %s", error);
+            return false;
+        }
+
+        if (inFlightImages[imageIndex] != nullptr) {
+            result = palWaitFence(inFlightImages[imageIndex], PAL_INFINITE);
+            if (result != PAL_RESULT_SUCCESS) {
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to wait fence: %s", error);
+                return false;
+            }
+        }
+
+        inFlightImages[imageIndex] = inFlightFences[currentFrame];
         if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
-            result = palResetFence(fence);
+            result = palResetFence(inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
@@ -580,9 +587,9 @@ bool meshTest()
 
         } else {
             // recreate since we dont support fence resetting
-            palDestroyFence(fence);
+            palDestroyFence(inFlightFences[currentFrame]);
 
-            result = palCreateFence(device, false, &fence);
+            result = palCreateFence(device, false, &inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
@@ -590,31 +597,15 @@ bool meshTest()
             }
         }
 
-        // get next swapchain image
-        PalSwapchainNextImageInfo nextImageInfo = {0};
-        nextImageInfo.fence = nullptr;
-        nextImageInfo.signalSemaphore = presentCompleteSemaphore;
-        nextImageInfo.timeout = UINT64_MAX;
-
-        Uint32 index = 0;
-        result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &index);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get next swapchain image: %s", error);
-            return false;
-        }
-
-        renderFinishedSemaphore = renderFinishedSemaphores[index];
-
         // reset the command buffer
-        result = palResetCommandBuffer(cmdBuffer);
+        result = palResetCommandBuffer(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to reset command buffer: %s", error);
             return false;
         }
 
-        result = palCmdBegin(cmdBuffer, nullptr);
+        result = palCmdBegin(cmdBuffers[currentFrame], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin command buffer: %s", error);
@@ -626,21 +617,15 @@ bool meshTest()
         PalUsageStateInfo newUsageStateInfo = {0};
         newUsageStateInfo.usageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
 
-        if (firstImageViewUse[index]) {
-            oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
-        } else {
-            oldUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
-        }
-
         PalImageSubresourceRange imageRange = {0};
         imageRange.layerArrayCount = 1;
         imageRange.mipLevelCount = 1;
         imageRange.startArrayLayer = 0;
         imageRange.startMipLevel = 0;
 
-        PalImage* image = palGetSwapchainImage(swapchain, index);
+        PalImage* image = palGetSwapchainImage(swapchain, imageIndex);
         result = palCmdImageBarrier(
-            cmdBuffer,
+            cmdBuffers[currentFrame],
             image,
             &imageRange,
             &oldUsageStateInfo,
@@ -662,7 +647,7 @@ bool meshTest()
         colorAttachment.loadOp = PAL_LOAD_OP_CLEAR;
         colorAttachment.storeOp = PAL_STORE_OP_STORE;
         colorAttachment.clearValue = clearValue;
-        colorAttachment.imageView = imageViews[index];
+        colorAttachment.imageView = imageViews[imageIndex];
 
         PalRenderingInfo renderingInfo = {0};
         renderingInfo.viewCount = 1;
@@ -673,7 +658,7 @@ bool meshTest()
         renderingInfo.renderArea.width = WINDOW_WIDTH;
         renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
-        result = palCmdBeginRendering(cmdBuffer, &renderingInfo);
+        result = palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
@@ -681,7 +666,7 @@ bool meshTest()
         }
 
         // bind pipeline
-        result = palCmdBindPipeline(cmdBuffer, pipeline);
+        result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
@@ -689,14 +674,14 @@ bool meshTest()
         }
 
         // set viewport and scissors
-        result = palCmdSetViewport(cmdBuffer, 1, &viewport);
+        result = palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set viewport: %s", error);
             return false;
         }
 
-        result = palCmdSetScissors(cmdBuffer, 1, &scissor);
+        result = palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set scissors: %s", error);
@@ -707,14 +692,14 @@ bool meshTest()
         // palBuildWorkGroupInfo() is a helper to build
         // the workgroup count per axis using normal
         // workCount (image size, buffer size)
-        result = palCmdDrawMeshTasks(cmdBuffer, 1, 1, 1);
+        result = palCmdDrawMeshTasks(cmdBuffers[currentFrame], 1, 1, 1);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw command: %s", error);
             return false;
         }
 
-        result = palCmdEndRendering(cmdBuffer);
+        result = palCmdEndRendering(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end rendering: %s", error);
@@ -725,7 +710,7 @@ bool meshTest()
         oldUsageStateInfo = newUsageStateInfo;
         newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
         result = palCmdImageBarrier(
-            cmdBuffer,
+            cmdBuffers[currentFrame],
             image,
             &imageRange,
             &oldUsageStateInfo,
@@ -737,7 +722,7 @@ bool meshTest()
             return false;
         }
 
-        result = palCmdEnd(cmdBuffer);
+        result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end command buffer: %s", error);
@@ -746,10 +731,10 @@ bool meshTest()
 
         // submit command buffer
         PalCommandBufferSubmitInfo submitInfo = {0};
-        submitInfo.cmdBuffer = cmdBuffer;
-        submitInfo.fence = fence;
-        submitInfo.waitSemaphore = presentCompleteSemaphore;
-        submitInfo.signalSemaphore = renderFinishedSemaphore;
+        submitInfo.cmdBuffer = cmdBuffers[currentFrame];
+        submitInfo.fence = inFlightFences[currentFrame];
+        submitInfo.waitSemaphore = imageAvailableSemaphores[currentFrame];
+        submitInfo.signalSemaphore = renderFinishedSemaphores[currentFrame];
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {
@@ -760,8 +745,8 @@ bool meshTest()
 
         // present
         PalSwapchainPresentInfo presentInfo = {0};
-        presentInfo.imageIndex = index;
-        presentInfo.waitSemaphore = renderFinishedSemaphore;
+        presentInfo.imageIndex = imageIndex;
+        presentInfo.waitSemaphore = renderFinishedSemaphores[currentFrame];
         result = palPresentSwapchain(swapchain, &presentInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -783,14 +768,14 @@ bool meshTest()
     palDestroyPipelineLayout(pipelineLayout);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        palDestroySemaphore(presentCompleteSemaphores[i]);
+        palDestroySemaphore(imageAvailableSemaphores[i]);
+        palDestroySemaphore(renderFinishedSemaphores[i]);
         palDestroyFence(inFlightFences[i]);
         palFreeCommandBuffer(cmdBuffers[i]);
     }
 
     for (int i = 0; i < imageCount; i++) {
         palDestroyImageView(imageViews[i]);
-        palDestroySemaphore(renderFinishedSemaphores[i]);
     }
 
     palDestroyCommandPool(cmdPool);
