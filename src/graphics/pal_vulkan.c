@@ -368,7 +368,9 @@ typedef struct {
     bool bindlessStorageBuffers;
     bool bindlessUniformBuffers;
     PalAdapterFeatures features;
-    Int32 queueCount;
+    Int32 phyQueueCount;
+    Int32 phyQueueIndex;
+    Int32 queueFamilyCount;
     Uint32 memoryClassMask[3];
     VkPhysicalDevice phyDevice;
     VkDevice handle;
@@ -3571,7 +3573,8 @@ PalResult PAL_CALL createDeviceVk(
     PalDevice** outDevice)
 {
     float priority = 1.0f;
-    Uint32 queueCount = 0;
+    Uint32 phyQueueCount = 0;
+    Uint32 queueFamilyCount = 0;
     VkResult result = VK_SUCCESS;
     Device* device = nullptr;
     VkPhysicalDeviceProperties props = {0};
@@ -3580,34 +3583,38 @@ PalResult PAL_CALL createDeviceVk(
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
 
-    VkQueueFamilyProperties* queueProps = nullptr;
+    VkQueueFamilyProperties* queueFamilyProps = nullptr;
     VkDeviceQueueCreateInfo* queueCreateInfos = nullptr;
-    s_Vk.getPhysicalDeviceQueueFamilyProperties(phyDevice, &queueCount, nullptr);
+    s_Vk.getPhysicalDeviceQueueFamilyProperties(phyDevice, &queueFamilyCount, nullptr);
 
-    queueProps = palAllocate(s_Vk.allocator, sizeof(VkQueueFamilyProperties) * queueCount, 0);
-    queueCreateInfos = palAllocate(s_Vk.allocator, sizeof(VkDeviceQueueCreateInfo) * queueCount, 0);
+    Uint32 queueFamilySize = sizeof(VkQueueFamilyProperties) * queueFamilyCount;
+    Uint32 queueCreateInfosSize = sizeof(VkDeviceQueueCreateInfo) * queueFamilyCount;
+
+    queueFamilyProps = palAllocate(s_Vk.allocator, queueFamilySize, 0);
+    queueCreateInfos = palAllocate(s_Vk.allocator, queueCreateInfosSize, 0);
     device = palAllocate(s_Vk.allocator, sizeof(Device), 0);
-    if (!queueProps || !queueCreateInfos || !device) {
+    if (!queueFamilyProps || !queueCreateInfos || !device) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     memset(device, 0, sizeof(Device));
-    device->queueCount = queueCount;
     device->phyDevice = phyDevice;
-
-    device->phyQueues = palAllocate(s_Vk.allocator, sizeof(PhysicalQueue) * queueCount, 0);
-    if (!device->phyQueues) {
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    s_Vk.getPhysicalDeviceQueueFamilyProperties(phyDevice, &queueCount, queueProps);
-    for (int i = 0; i < queueCount; i++) {
+    s_Vk.getPhysicalDeviceQueueFamilyProperties(phyDevice, &queueFamilyCount, queueFamilyProps);
+    for (int i = 0; i < queueFamilyCount; i++) {
         queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfos[i].pNext = nullptr;
         queueCreateInfos[i].pQueuePriorities = &priority;
         queueCreateInfos[i].queueFamilyIndex = i;
-        queueCreateInfos[i].queueCount = queueProps[i].queueCount;
+        queueCreateInfos[i].queueCount = queueFamilyProps[i].queueCount;
         queueCreateInfos[i].flags = 0;
+
+        // we need the total number of physical queues
+        phyQueueCount += queueFamilyProps[i].queueCount;
+    }
+
+    device->phyQueues = palAllocate(s_Vk.allocator, sizeof(PhysicalQueue) * phyQueueCount, 0);
+    if (!device->phyQueues) {
+        return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     // build features and extensions capabilities
@@ -3879,22 +3886,26 @@ PalResult PAL_CALL createDeviceVk(
     createInfo.enabledExtensionCount = extCount;
     createInfo.ppEnabledExtensionNames = extensions;
     createInfo.pQueueCreateInfos = queueCreateInfos;
-    createInfo.queueCreateInfoCount = queueCount;
+    createInfo.queueCreateInfoCount = queueFamilyCount;
     createInfo.pNext = next;
 
     result = s_Vk.createDevice(phyDevice, &createInfo, &s_Vk.vkAllocator, &device->handle);
     if (result != VK_SUCCESS) {
-        palFree(s_Vk.allocator, queueProps);
+        palFree(s_Vk.allocator, queueFamilyProps);
         palFree(s_Vk.allocator, queueCreateInfos);
         palFree(s_Vk.allocator, device->phyQueues);
         palFree(s_Vk.allocator, device);
         return resultFromVk(result);
     }
 
+    device->phyQueueIndex = 0;
+    device->queueFamilyCount = queueFamilyCount;
+    device->phyQueueCount = phyQueueCount;
     device->features = features;
+
     // get queues
-    for (int i = 0; i < queueCount; i++) {
-        VkQueueFamilyProperties* data = &queueProps[i];
+    for (int i = 0; i < queueFamilyCount; i++) {
+        VkQueueFamilyProperties* data = &queueFamilyProps[i];
         for (int j = 0; j < data->queueCount; j++) {
             PhysicalQueue* queue = &device->phyQueues[i];
             s_Vk.getDeviceQueue(device->handle, i, j, &queue->handle);
@@ -4260,7 +4271,7 @@ PalResult PAL_CALL createDeviceVk(
 
     // clang-format on
 
-    palFree(s_Vk.allocator, queueProps);
+    palFree(s_Vk.allocator, queueFamilyProps);
     palFree(s_Vk.allocator, queueCreateInfos);
 
     *outDevice = (PalDevice*)device;
@@ -4609,7 +4620,7 @@ PalResult PAL_CALL createQueueVk(
         return PAL_RESULT_INVALID_DEVICE;
     }
 
-    if (vkDevice->queueCount == 0) {
+    if (vkDevice->phyQueueCount == 0) {
         return PAL_RESULT_OUT_OF_QUEUE;
     }
 
@@ -4630,8 +4641,10 @@ PalResult PAL_CALL createQueueVk(
         }
     }
 
+    // we index the for loop so we dont always start at the beginning, this way
+    // we cycle through all queue families each time we create a queue
     PhysicalQueue* phyQueue = nullptr;
-    for (int i = 0; i < vkDevice->queueCount; i++) {
+    for (int i = vkDevice->phyQueueIndex; i < vkDevice->phyQueueCount; i++) {
         PhysicalQueue* pq = &vkDevice->phyQueues[i];
         // check if the physical queue supports the requested operation
         // and if its not already used
@@ -4643,7 +4656,27 @@ PalResult PAL_CALL createQueueVk(
     }
 
     if (!phyQueue) {
-        return PAL_RESULT_OUT_OF_QUEUE;
+        // we didnt get any queue, we check if we started the loop at the beginning or mid way
+        if (vkDevice->phyQueueIndex == 0) {
+            // we searched all queue families
+            return PAL_RESULT_OUT_OF_QUEUE;
+
+        } else {
+            // we start at the beginning and go through the queue families again
+            vkDevice->phyQueueIndex = 0;
+            for (int i = vkDevice->phyQueueIndex; i < vkDevice->phyQueueCount; i++) {
+                PhysicalQueue* pq = &vkDevice->phyQueues[i];
+                if (pq->usages & queueFlag && pq->usedUsages != queueFlag) {
+                    pq->usedUsages |= queueFlag;
+                    phyQueue = pq;
+                    break;
+                }
+            }
+
+            if (!phyQueue) {
+                return PAL_RESULT_OUT_OF_QUEUE;
+            }
+        }
     }
 
     queue = palAllocate(s_Vk.allocator, sizeof(Queue), 0);
@@ -4651,6 +4684,7 @@ PalResult PAL_CALL createQueueVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    vkDevice->phyQueueIndex = (vkDevice->phyQueueIndex + 1) % vkDevice->phyQueueCount;
     queue->phyQueue = phyQueue;
     queue->usage = queueFlag;
     queue->device = vkDevice;

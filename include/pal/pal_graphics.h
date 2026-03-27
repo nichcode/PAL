@@ -4202,8 +4202,10 @@ PAL_API PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
  * PalAdapterCapabilities::maxComputeQueues, PalAdapterCapabilities::maxGraphicsQueues and
  * PalAdapterCapabilities::maxCopyQueues respectively for the limit for each queue type.
  * Creating more queues than the supported will fail and return `PAL_RESULT_OUT_OF_QUEUE`.
- *
- * On most adapters, compute and graphics queues can also do copy operations.
+ * 
+ * Not all graphics queues support presentation. Create a graphics queue and then check if
+ * its support presentation for the provided surface. see palCanQueuePresent(). Any graphics
+ * queue supports offscreen rendering.
  *
  * @param[in] device Device that creates the queue.
  * @param[in] type Queue type. (eg. PAL_QUEUE_TYPE_GRAPHICS).
