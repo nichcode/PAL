@@ -101,7 +101,7 @@ PalResult PAL_CALL initGraphicsVk(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator);
 
-PalResult PAL_CALL shutdownGraphicsVk();
+void PAL_CALL shutdownGraphicsVk();
 
 PalResult PAL_CALL enumerateAdaptersVk(
     Int32* count,
@@ -1039,7 +1039,11 @@ PalResult PAL_CALL palInitGraphics(
 
 #ifdef _WIN32
     // vulkan
-    initGraphicsVk(debugger, allocator);
+    PalResult result = initGraphicsVk(debugger, allocator);
+    if (result != PAL_RESULT_SUCCESS) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
     attached->base = &s_VkBackend;
     attached->startIndex = 0;
@@ -1047,7 +1051,11 @@ PalResult PAL_CALL palInitGraphics(
 #elif defined(__linux__)
     // vulkan
 #if PAL_HAS_VULKAN
-    initGraphicsVk(debugger, allocator);
+    PalResult result = initGraphicsVk(debugger, allocator);
+    if (result != PAL_RESULT_SUCCESS) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
     attached->base = &s_VkBackend;
     attached->startIndex = 0;

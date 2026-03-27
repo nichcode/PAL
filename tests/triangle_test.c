@@ -298,7 +298,6 @@ bool triangleTest()
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
-
     if (!imageViews || !inFlightImages) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
@@ -659,11 +658,6 @@ bool triangleTest()
     pipelineCreateInfo.colorBlendAttachments = &blendAttachment;
     pipelineCreateInfo.colorBlendAttachmentCount = 1;
 
-    // multisample state
-    PalMultisampleState multisampleState = {0};
-    multisampleState.sampleCount = PAL_SAMPLE_COUNT_1;
-    pipelineCreateInfo.multisampleState = &multisampleState;
-
     // shaders
     PalShader* shaders[2];
     shaders[0] = vertexShader;
@@ -785,9 +779,6 @@ bool triangleTest()
                 return false;
             }
         }
-
-        // TODO: remove
-        palLog(nullptr, "Image index %d", imageIndex);
 
         // reset the command buffer
         result = palResetCommandBuffer(cmdBuffers[currentFrame]);

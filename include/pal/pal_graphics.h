@@ -2481,10 +2481,10 @@ typedef struct {
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
     PalVertexLayout* vertexLayouts;
-    PalColorBlendAttachment* colorBlendAttachments;        /**< Must not be nullptr.*/
+    PalColorBlendAttachment* colorBlendAttachments;        /**< Depth only: Can be nullptr.*/
     PalRasterizerState* rasterizerState;                   /**< Set to nullptr for default.*/
     PalMultisampleState* multisampleState;                 /**< Set to nullptr for default.*/
-    PalDepthStencilState* depthStencilState;               /**< Set to nullptr for default.*/
+    PalDepthStencilState* depthStencilState;               /**< Color only: Can be nullptr.*/
     PalFragmentShadingRateState* fragmentShadingRateState; /**< Set to nullptr for default.*/
     PalRenderingLayoutInfo* renderingLayout;
 } PalGraphicsPipelineCreateInfo;

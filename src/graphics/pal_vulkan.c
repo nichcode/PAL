@@ -2925,6 +2925,8 @@ PalResult PAL_CALL initGraphicsVk(
     // load surface creation function pointers
     s_Vk.createWaylandSurface = nullptr;
     s_Vk.createXlibSurface = nullptr;
+    s_Vk.createXcbSurface = nullptr;
+    s_Vk.createWin32Surface = nullptr;
 
     if (hasWayland) {
         s_Vk.createWaylandSurface = (PFN_vkCreateWaylandSurfaceKHR)s_Vk.getInstanceProcAddr(
@@ -3031,7 +3033,7 @@ PalResult PAL_CALL initGraphicsVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL shutdownGraphicsVk()
+void PAL_CALL shutdownGraphicsVk()
 {
     if (s_Vk.messenger) {
         s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.vkAllocator);
@@ -5655,6 +5657,8 @@ PalResult PAL_CALL createSwapchainVk(
         image->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
+    palFree(s_Vk.allocator, images);
+
     swapchain->device = vkDevice;
     swapchain->queue = vkQueue;
     swapchain->imageCount = count;
@@ -5713,8 +5717,9 @@ PalResult PAL_CALL getNextSwapchainImageVk(
     if (info->timeout) {
         if (info->timeout == PAL_INFINITE) {
             timeInNanoseconds = UINT64_MAX;
+        } else {
+            timeInNanoseconds = info->timeout * 1000000;
         }
-        timeInNanoseconds = info->timeout * 1000000;
     }
 
     result = vkSwapchain->device->acquireNextImage(
@@ -5784,7 +5789,7 @@ PalResult PAL_CALL createShaderVk(
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
 
-        // clang-format off
+    // clang-format off
     } else if (info->stage == PAL_SHADER_STAGE_RAYGEN ||
                info->stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
                info->stage == PAL_SHADER_STAGE_ANY_HIT ||
@@ -5808,9 +5813,7 @@ PalResult PAL_CALL createShaderVk(
     createInfo.codeSize = info->bytecodeSize;
     createInfo.pCode = (const Uint32*)info->bytecode;
 
-    result =
-        s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
-
+    result = s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, shader);
         return resultFromVk(result);
@@ -5889,8 +5892,9 @@ PalResult PAL_CALL waitFenceVk(
     if (timeout) {
         if (timeout == PAL_INFINITE) {
             timeInNanoseconds = UINT64_MAX;
+        } else {
+            timeInNanoseconds = timeout * 1000000;
         }
-        timeInNanoseconds = timeout * 1000000;
     }
 
     result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeout);
@@ -5920,7 +5924,6 @@ bool PAL_CALL isFenceSignaledVk(PalFence* fence)
 {
     Fence* vkFence = (Fence*)fence;
     VkResult result = s_Vk.isFenceSignaled(vkFence->device->handle, vkFence->handle);
-
     if (result == VK_SUCCESS) {
         return true;
     } else {
@@ -5999,8 +6002,9 @@ PalResult PAL_CALL waitSemaphoreVk(
     if (timeout) {
         if (timeout == PAL_INFINITE) {
             timeInNanoseconds = UINT64_MAX;
+        } else {
+            timeInNanoseconds = timeout * 1000000;
         }
-        timeInNanoseconds = timeout * 1000000;
     }
 
     VkSemaphoreWaitInfo waitInfo = {0};
@@ -6086,14 +6090,12 @@ PalResult PAL_CALL createCommandPoolVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    VkCommandPoolCreateInfo createInfo = {0};
-    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    createInfo.queueFamilyIndex = phyQueue->familyIndex;
-    createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VkCommandPoolCreateInfo cInfo = {0};
+    cInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    cInfo.queueFamilyIndex = phyQueue->familyIndex;
+    cInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    result =
-        s_Vk.createCommandPool(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &pool->handle);
-
+    result = s_Vk.createCommandPool(vkDevice->handle, &cInfo, &s_Vk.vkAllocator, &pool->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pool);
         return resultFromVk(result);
@@ -6195,6 +6197,7 @@ PalResult PAL_CALL submitCommandBufferVk(
     VkPipelineStageFlagBits2 dstStage = 0;
     Queue* vkQueue = (Queue*)queue;
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)info->cmdBuffer;
+    PhysicalQueue* phyQueue = vkQueue->phyQueue;
 
     if (vkCmdBuffer->sbt) {
         vkCmdBuffer->dstStage |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
@@ -6246,9 +6249,7 @@ PalResult PAL_CALL submitCommandBufferVk(
     submitInfo.waitSemaphoreInfoCount = waitSemaphoreCount;
     submitInfo.signalSemaphoreInfoCount = signalSemaphoreCount;
 
-    result =
-        vkCmdBuffer->device->queueSubmit(vkQueue->phyQueue->handle, 1, &submitInfo, fenceHandle);
-
+    result = vkCmdBuffer->device->queueSubmit(phyQueue->handle, 1, &submitInfo, fenceHandle);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -6329,8 +6330,8 @@ PalResult PAL_CALL cmdExecuteCommandBufferVk(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)primaryCmdBuffer;
     CommandBuffer* vkCmdBuffer2 = (CommandBuffer*)secondaryCmdBuffer;
-    s_Vk.cmdExecuteCommandBuffer(vkCmdBuffer->handle, 1, &vkCmdBuffer2->handle);
 
+    s_Vk.cmdExecuteCommandBuffer(vkCmdBuffer->handle, 1, &vkCmdBuffer2->handle);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6339,7 +6340,9 @@ PalResult PAL_CALL cmdSetFragmentShadingRateVk(
     PalFragmentShadingRateState* state)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -6374,8 +6377,8 @@ PalResult PAL_CALL cmdSetFragmentShadingRateVk(
             }
         }
     }
-    vkCmdBuffer->device->cmdSetFragmentShadingRate(vkCmdBuffer->handle, &size, combinerOps);
 
+    device->cmdSetFragmentShadingRate(vkCmdBuffer->handle, &size, combinerOps);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6386,13 +6389,13 @@ PalResult PAL_CALL cmdDrawMeshTasksVk(
     Uint32 groupCountZ)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    vkCmdBuffer->device
-        ->cmdDrawMeshTask(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
-
+    device->cmdDrawMeshTask(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6404,17 +6407,23 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
     Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
+    Device* device = vkCmdBuffer->device;
     Buffer* vkBuffer = (Buffer*)buffer;
-    vkCmdBuffer->device
-        ->cmdDrawMeshTaskIndirect(vkCmdBuffer->handle, vkBuffer->handle, offset, drawCount, stride);
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    device->cmdDrawMeshTaskIndirect(
+        vkCmdBuffer->handle, 
+        vkBuffer->handle, 
+        offset, 
+        drawCount, 
+        stride);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6429,18 +6438,19 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     Uint32 stride)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
+    Device* device = vkCmdBuffer->device;
     Buffer* vkBuffer = (Buffer*)buffer;
     Buffer* vkCountBuffer = (Buffer*)countBuffer;
 
-    vkCmdBuffer->device->cmdDrawMeshTaskIndirectCount(
+    if (!(device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    device->cmdDrawMeshTaskIndirectCount(
         vkCmdBuffer->handle,
         vkBuffer->handle,
         offset,
@@ -6457,17 +6467,18 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     PalAccelerationStructureBuildInfo* info)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
+    Device* device = vkCmdBuffer->device;
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
     AccelerationStructure* tmpAs = (AccelerationStructure*)info->src;
     AccelerationStructure* dstAs = (AccelerationStructure*)info->dst;
-    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
-    
     VkAccelerationStructureKHR srcAs = nullptr;
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     if (tmpAs) {
         srcAs = tmpAs->handle;
     }
@@ -6496,7 +6507,6 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
 
     palFree(s_Vk.allocator, geometries);
     palFree(s_Vk.allocator, rangeInfos);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6861,18 +6871,17 @@ PalResult PAL_CALL cmdSetViewportVk(
     PalViewport* viewports)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    VkViewport cacheViewport;
+    VkViewport cachedViewport;
     VkViewport* vkViewports = nullptr;
 
     if (count > 1) {
         vkViewports = palAllocate(s_Vk.allocator, sizeof(VkViewport) * count, 0);
-
         if (!vkViewports) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
     } else {
-        vkViewports = &cacheViewport;
+        vkViewports = &cachedViewport;
     }
 
     for (int i = 0; i < count; i++) {
@@ -6898,18 +6907,17 @@ PalResult PAL_CALL cmdSetScissorsVk(
     PalRect2D* scissors)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    VkRect2D cacheScissor;
+    VkRect2D cachedScissor;
     VkRect2D* vkScissors = nullptr;
 
     if (count > 1) {
         vkScissors = palAllocate(s_Vk.allocator, sizeof(VkRect2D) * count, 0);
-
         if (!vkScissors) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
     } else {
-        vkScissors = &cacheScissor;
+        vkScissors = &cachedScissor;
     }
 
     for (int i = 0; i < count; i++) {
@@ -6935,7 +6943,7 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
     Uint64* offsets)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    VkBuffer cachebuffer = nullptr;
+    VkBuffer cachedbuffer = nullptr;
     VkBuffer* vkBuffers = nullptr;
 
     if (count > 1) {
@@ -6945,7 +6953,7 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
         }
 
     } else {
-        vkBuffers = &cachebuffer;
+        vkBuffers = &cachedbuffer;
     }
 
     for (int i = 0; i < count; i++) {
@@ -6972,8 +6980,8 @@ PalResult PAL_CALL cmdBindIndexBufferVk(
     if (type == PAL_INDEX_TYPE_UINT16) {
         bufferType = VK_INDEX_TYPE_UINT16;
     }
-    s_Vk.cmdBindIndexBuffer(vkCmdBuffer->handle, vkBuffer->handle, offset, bufferType);
 
+    s_Vk.cmdBindIndexBuffer(vkCmdBuffer->handle, vkBuffer->handle, offset, bufferType);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6986,7 +6994,6 @@ PalResult PAL_CALL cmdDrawVk(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDraw(vkCmdBuffer->handle, vertexCount, instanceCount, firstVertex, firstInstance);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7015,11 +7022,13 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
     Buffer* vkCountBuffer = (Buffer*)countBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    vkCmdBuffer->device->cmdDrawIndirectCount(
+    device->cmdDrawIndirectCount(
         vkCmdBuffer->handle,
         vkBuffer->handle,
         offset,
@@ -7076,11 +7085,13 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
     Buffer* vkCountBuffer = (Buffer*)countBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    vkCmdBuffer->device->cmdDrawIndexedIndirectCount(
+    device->cmdDrawIndexedIndirectCount(
         vkCmdBuffer->handle,
         vkBuffer->handle,
         offset,
@@ -7117,7 +7128,6 @@ PalResult PAL_CALL cmdMemoryBarrierVk(
     dependencyInfo.pMemoryBarriers = &barrier;
 
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-    vkCmdBuffer->dstStage = new.stages;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7158,7 +7168,6 @@ PalResult PAL_CALL cmdImageBarrierVk(
     dependencyInfo.pImageMemoryBarriers = &barrier;
 
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-    vkCmdBuffer->dstStage = new.stages;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7193,7 +7202,6 @@ PalResult PAL_CALL cmdBufferBarrierVk(
     dependencyInfo.pBufferMemoryBarriers = &barrier;
 
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-    vkCmdBuffer->dstStage = new.stages;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7205,7 +7213,6 @@ PalResult PAL_CALL cmdDispatchVk(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDispatch(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7219,11 +7226,13 @@ PalResult PAL_CALL cmdDispatchBaseVk(
     Uint32 groupCountZ)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DISPATCH_BASE)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DISPATCH_BASE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    vkCmdBuffer->device->cmdDispatchBase(
+    device->cmdDispatchBase(
         vkCmdBuffer->handle,
         baseGroupX,
         baseGroupY,
@@ -7242,7 +7251,6 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
-
     s_Vk.cmdDispatchIndirect(vkCmdBuffer->handle, vkBuffer->handle, offset);
     return PAL_RESULT_SUCCESS;
 }
@@ -7254,7 +7262,9 @@ PalResult PAL_CALL cmdTraceRaysVk(
     Uint32 depth)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -7343,8 +7353,8 @@ PalResult PAL_CALL cmdPushConstantsVk(
         VkShaderStageFlagBits bit = shaderStageToVK(shaderStages[i]);
         stages |= bit;
     }
-    s_Vk.cmdPushConstants(vkCmdBuffer->handle, vkLayout->handle, stages, offset, size, value);
 
+    s_Vk.cmdPushConstants(vkCmdBuffer->handle, vkLayout->handle, stages, offset, size, value);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7353,7 +7363,9 @@ PalResult PAL_CALL cmdSetCullModeVk(
     PalCullMode cullMode)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -7368,8 +7380,8 @@ PalResult PAL_CALL cmdSetCullModeVk(
         case PAL_CULL_MODE_NONE:
             vkCullMode = VK_CULL_MODE_NONE;
     }
-    vkCmdBuffer->device->cmdSetCullMode(vkCmdBuffer->handle, vkCullMode);
-
+    
+    device->cmdSetCullMode(vkCmdBuffer->handle, vkCullMode);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7378,7 +7390,9 @@ PalResult PAL_CALL cmdSetFrontFaceVk(
     PalFrontFace frontFace)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -7390,8 +7404,8 @@ PalResult PAL_CALL cmdSetFrontFaceVk(
         case PAL_FRONT_FACE_COUNTER_CLOCKWISE:
             vkFrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     }
-    vkCmdBuffer->device->cmdSetFrontFace(vkCmdBuffer->handle, vkFrontFace);
 
+    device->cmdSetFrontFace(vkCmdBuffer->handle, vkFrontFace);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7400,7 +7414,9 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
     PalPrimitiveTopology topology)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -7431,8 +7447,8 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
             break;
         }
     }
-    vkCmdBuffer->device->cmdSetPrimitiveTopology(vkCmdBuffer->handle, vkTopology);
 
+    device->cmdSetPrimitiveTopology(vkCmdBuffer->handle, vkTopology);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7441,11 +7457,13 @@ PalResult PAL_CALL cmdSetDepthTestEnableVk(
     bool enable)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
     
-    vkCmdBuffer->device->cmdSetDepthTestEnable(vkCmdBuffer->handle, enable);
+    device->cmdSetDepthTestEnable(vkCmdBuffer->handle, enable);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7454,11 +7472,13 @@ PalResult PAL_CALL cmdSetDepthWriteEnableVk(
     bool enable)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
     
-    vkCmdBuffer->device->cmdSetDepthWriteEnable(vkCmdBuffer->handle, enable);
+    device->cmdSetDepthWriteEnable(vkCmdBuffer->handle, enable);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7471,7 +7491,9 @@ PalResult PAL_CALL cmdSetStencilOpVk(
     PalCompareOp compareOp)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP)) {
+    Device* device = vkCmdBuffer->device;
+
+    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -7489,7 +7511,7 @@ PalResult PAL_CALL cmdSetStencilOpVk(
     VkStencilOp vkDepthFailOp = stencilOpToVk(depthFailOp);
     VkCompareOp vkCompareOp = compareOpToVk(compareOp);
     
-    vkCmdBuffer->device->cmdSetStencilOp(
+    device->cmdSetStencilOp(
         vkCmdBuffer->handle, 
         faceFlags, 
         failOp, 
@@ -7513,6 +7535,7 @@ PalResult PAL_CALL createAccelerationstructureVk(
     AccelerationStructure* as = nullptr;
     Device* vkDevice = (Device*)device;
     Buffer* buffer = (Buffer*)info->buffer;
+    
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -7575,6 +7598,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     Device* vkDevice = (Device*)device;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
+
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -7609,7 +7633,6 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
 
     palFree(s_Vk.allocator, maxPrimities);
     palFree(s_Vk.allocator, geometries);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7625,6 +7648,7 @@ PalResult PAL_CALL createBufferVk(
     VkResult result;
     Buffer* buffer = nullptr;
     Device* vkDevice = (Device*)device;
+
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -7648,9 +7672,7 @@ PalResult PAL_CALL createBufferVk(
     createInfo.size = info->size;
     createInfo.usage = bufferUsageToVk(info->usages);
 
-    result =
-        s_Vk.createBuffer(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &buffer->handle);
-
+    result = s_Vk.createBuffer(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &buffer->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, buffer);
         return resultFromVk(result);
@@ -7670,7 +7692,6 @@ void PAL_CALL destroyBufferVk(PalBuffer* buffer)
 {
     Buffer* vkBuffer = (Buffer*)buffer;
     s_Vk.destroyBuffer(vkBuffer->device->handle, vkBuffer->handle, &s_Vk.vkAllocator);
-
     palFree(s_Vk.allocator, buffer);
 }
 
@@ -7694,7 +7715,6 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
     for (int i = 0; i < PAL_MEMORY_TYPE_MAX; i++) {
         requirements->memoryTypes[i] = (memReq.memoryTypeBits & device->memoryClassMask[i]) != 0;
     }
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7743,7 +7763,6 @@ PalResult PAL_CALL bindBufferMemoryVk(
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7774,21 +7793,20 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     VkDescriptorSetLayoutBinding* bindings = nullptr;
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlags = {0};
     DescriptorSetLayout* layout = nullptr;
+    Uint32 count = info->bindingCount;
 
     layout = palAllocate(s_Vk.allocator, sizeof(DescriptorSetLayout), 0);
-    bindings =
-        palAllocate(s_Vk.allocator, sizeof(VkDescriptorSetLayoutBinding) * info->bindingCount, 0);
-
+    bindings = palAllocate(s_Vk.allocator, sizeof(VkDescriptorSetLayoutBinding) * count, 0);
     if (!layout || !bindings) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     VkDescriptorSetLayoutCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    createInfo.bindingCount = info->bindingCount;
+    createInfo.bindingCount = count;
     createInfo.pBindings = bindings;
 
-    for (int i = 0; i < info->bindingCount; i++) {
+    for (int i = 0; i < count; i++) {
         VkDescriptorSetLayoutBinding* binding = &bindings[i];
         binding->binding = info->bindings[i].binding;
         binding->descriptorCount = info->bindings[i].descriptorCount;
@@ -7804,7 +7822,8 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
 
     if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
         bindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-        bindingFlags.bindingCount = info->bindingCount;
+        bindingFlags.bindingCount = count;
+
         VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
         flags |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
         flags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
@@ -7837,6 +7856,7 @@ void PAL_CALL destroyDescriptorSetLayoutVk(PalDescriptorSetLayout* layout)
         vkLayout->device->handle,
         vkLayout->handle,
         &s_Vk.vkAllocator);
+
     palFree(s_Vk.allocator, layout);
 }
 
@@ -7849,18 +7869,15 @@ PalResult PAL_CALL createDescriptorPoolVk(
     Device* vkDevice = (Device*)device;
     DescriptorPool* pool = nullptr;
     VkDescriptorPoolSize* poolSizes = nullptr;
+    Uint32 maxBindings = info->maxDescriptorBindingSizes;
 
     pool = palAllocate(s_Vk.allocator, sizeof(DescriptorPool), 0);
-    poolSizes = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkDescriptorPoolSize) * info->maxDescriptorBindingSizes,
-        0);
-
+    poolSizes = palAllocate(s_Vk.allocator, sizeof(VkDescriptorPoolSize) * maxBindings, 0);
     if (!pool || !poolSizes) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    for (int i = 0; i < info->maxDescriptorBindingSizes; i++) {
+    for (int i = 0; i < maxBindings; i++) {
         VkDescriptorPoolSize* poolSize = &poolSizes[i];
         poolSize->descriptorCount = info->bindingSizes[i].bindingCount;
         poolSize->type = descriptortypeToVk(info->bindingSizes[i].descriptorType);
@@ -7869,7 +7886,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
     VkDescriptorPoolCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     createInfo.maxSets = info->maxDescriptorSets;
-    createInfo.poolSizeCount = info->maxDescriptorBindingSizes;
+    createInfo.poolSizeCount = maxBindings;
     createInfo.pPoolSizes = poolSizes;
     createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
@@ -7955,6 +7972,9 @@ PalResult PAL_CALL updateDescriptorSetVk(
     Uint32 bufferCount = 0;
     Uint32 imageCount = 0;
     Uint32 tlasCount = 0;
+    Uint32 bufferIndex = 0;
+    Uint32 imageIndex = 0;
+    Uint32 tlasIndex = 0;
 
     for (int i = 0; i < count; i++) {
         if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
@@ -7984,18 +8004,12 @@ PalResult PAL_CALL updateDescriptorSetVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    tlasInfos = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasCount,
-        0);
-
+    Uint32 tlasInfoSize = sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasCount;
+    tlasInfos = palAllocate(s_Vk.allocator, tlasInfoSize, 0);
     if (!tlasInfos && tlasCount) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    Uint32 bufferIndex = 0;
-    Uint32 imageIndex = 0;
-    Uint32 tlasIndex = 0;
     for (int i = 0; i < count; i++) {
         VkWriteDescriptorSet* write = &writes[i];
         write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -8033,7 +8047,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
 
         } else {
             VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
-            
             if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
                 Sampler* vkSampler = (Sampler*)infos[i].samplerInfo->sampler;
 
@@ -8058,8 +8071,8 @@ PalResult PAL_CALL updateDescriptorSetVk(
             write->pImageInfo = imageInfo;
         }
     }
-    s_Vk.updateDescriptorSet(vkDevice->handle, count, writes, 0, nullptr);
 
+    s_Vk.updateDescriptorSet(vkDevice->handle, count, writes, 0, nullptr);
     palFree(s_Vk.allocator, writes);
     palFree(s_Vk.allocator, bufferInfos);
     palFree(s_Vk.allocator, imageInfos);
@@ -8081,16 +8094,12 @@ PalResult PAL_CALL createPipelineLayoutVk(
     PipelineLayout* layout = nullptr;
     VkPushConstantRange* pushConstants = nullptr;
     VkDescriptorSetLayout* descriptorLayouts = nullptr;
+    Uint32 pushConstantSize = sizeof(VkPushConstantRange) * info->pushConstantRangeCount;
+    Uint32 setLayoutSize = sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount;
 
     layout = palAllocate(s_Vk.allocator, sizeof(PipelineLayout), 0);
-    pushConstants =
-        palAllocate(s_Vk.allocator, sizeof(VkPushConstantRange) * info->pushConstantRangeCount, 0);
-
-    descriptorLayouts = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount,
-        0);
-
+    pushConstants = palAllocate(s_Vk.allocator, pushConstantSize, 0);
+    descriptorLayouts = palAllocate(s_Vk.allocator, setLayoutSize, 0);
     if (!layout || !pushConstants || !descriptorLayouts) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -8135,7 +8144,6 @@ PalResult PAL_CALL createPipelineLayoutVk(
 
     palFree(s_Vk.allocator, descriptorLayouts);
     palFree(s_Vk.allocator, pushConstants);
-
     layout->device = vkDevice;
     *outLayout = (PalPipelineLayout*)layout;
     return PAL_RESULT_SUCCESS;
@@ -8200,15 +8208,16 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     VkPipelineViewportStateCreateInfo viewportState = {0};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 
-    VkPipelineFragmentShadingRateStateCreateInfoKHR fragmentShadingRateState = {0};
-    fragmentShadingRateState.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
+    VkPipelineFragmentShadingRateStateCreateInfoKHR fsrState = {0};
+    fsrState.sType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR;
 
     VkPipelineRenderingCreateInfoKHR dynRendering = {0};
     dynRendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 
     VkGraphicsPipelineCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    createInfo.renderPass = VK_NULL_HANDLE;
+    createInfo.layout = layout->handle;
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
     if (!pipeline) {
@@ -8216,7 +8225,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     }
 
     // shaders
-    memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo));
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
         shaderStages[i] = tmp->info;
@@ -8231,7 +8239,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
             }
         }
     }
-
     createInfo.stageCount = info->shaderCount;
     createInfo.pStages = shaderStages;
 
@@ -8243,57 +8250,55 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         vertexCount += layout->attributeCount;
     }
 
-    bindingDescs = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkVertexInputBindingDescription) * info->vertexLayoutCount,
-        0);
-
-    attribDescs =
-        palAllocate(s_Vk.allocator, sizeof(VkVertexInputAttributeDescription) * vertexCount, 0);
-
-    if (!bindingDescs || !attribDescs) {
-        palFree(s_Vk.allocator, pipeline);
-        return PAL_RESULT_OUT_OF_MEMORY;
-    }
-
-    for (int i = 0; i < info->vertexLayoutCount; i++) {
-        PalVertexLayout* layout = &info->vertexLayouts[i];
-        VkVertexInputBindingDescription* bindingDesc = &bindingDescs[i];
-
-        bindingDesc->binding = layout->binding;
-        if (layout->type == PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE) {
-            bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-        } else {
-            bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    if (vertexCount) {
+        Uint32 tmpBindingSize = sizeof(VkVertexInputBindingDescription) * info->vertexLayoutCount;
+        Uint32 tmpAttribSize = sizeof(VkVertexInputAttributeDescription) * vertexCount;
+        bindingDescs = palAllocate(s_Vk.allocator, tmpBindingSize, 0);
+        attribDescs = palAllocate(s_Vk.allocator, tmpAttribSize, 0);
+        if (!bindingDescs || !attribDescs) {
+            palFree(s_Vk.allocator, pipeline);
+            return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        // find the stride and offset of the layout
-        bindingDesc->stride = 0;
-        Uint32 offset = 0;
-        for (int j = 0; j < layout->attributeCount; j++) {
-            PalVertexAttribute* vertexAttrib = &layout->attributes[j];
-            VkVertexInputAttributeDescription* attribDesc = &attribDescs[j];
+        for (int i = 0; i < info->vertexLayoutCount; i++) {
+            PalVertexLayout* layout = &info->vertexLayouts[i];
+            VkVertexInputBindingDescription* bindingDesc = &bindingDescs[i];
 
-            attribDesc->format = vertexTypeToVk(vertexAttrib->type);
-            attribDesc->binding = bindingDesc->binding;
-            attribDesc->location = vertexAttrib->location;
+            bindingDesc->binding = layout->binding;
+            if (layout->type == PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE) {
+                bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+            } else {
+                bindingDesc->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            }
 
-            // build offsets and stride
-            Uint32 size = getVertexTypeSizeVk(vertexAttrib->type);
-            attribDesc->offset = offset;
-            offset += size;
-            bindingDesc->stride += size;
+            // find the stride and offset of the layout
+            bindingDesc->stride = 0;
+            Uint32 offset = 0;
+            for (int j = 0; j < layout->attributeCount; j++) {
+                PalVertexAttribute* vertexAttrib = &layout->attributes[j];
+                VkVertexInputAttributeDescription* attribDesc = &attribDescs[j];
+
+                attribDesc->format = vertexTypeToVk(vertexAttrib->type);
+                attribDesc->binding = bindingDesc->binding;
+                attribDesc->location = vertexAttrib->location;
+
+                // build offsets and stride
+                Uint32 size = getVertexTypeSizeVk(vertexAttrib->type);
+                attribDesc->offset = offset;
+                offset += size;
+                bindingDesc->stride += size;
+            }
         }
-    }
 
-    vertexInputState.pVertexAttributeDescriptions = attribDescs;
-    vertexInputState.vertexAttributeDescriptionCount = vertexCount;
-    vertexInputState.pVertexBindingDescriptions = bindingDescs;
-    vertexInputState.vertexBindingDescriptionCount = info->vertexLayoutCount;
+        vertexInputState.pVertexAttributeDescriptions = attribDescs;
+        vertexInputState.vertexAttributeDescriptionCount = vertexCount;
+        vertexInputState.pVertexBindingDescriptions = bindingDescs;
+        vertexInputState.vertexBindingDescriptionCount = info->vertexLayoutCount;
+    }
     createInfo.pVertexInputState = &vertexInputState;
 
     // Input assembly
-    VkPrimitiveTopology topology;
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     switch (info->topology) {
         case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
             topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -8320,9 +8325,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
             break;
         }
     }
-
     inputAssemblyState.topology = topology;
-    inputAssemblyState.primitiveRestartEnable = VK_FALSE;
     createInfo.pInputAssemblyState = &inputAssemblyState;
 
     // Dynamic states
@@ -8367,6 +8370,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.pDynamicState = &dynamicState;
 
     // Rasterizer state
+    rasterizerState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     if (info->rasterizerState) {
         PalRasterizerState* state = info->rasterizerState;
         if (state->cullMode == PAL_CULL_MODE_NONE) {
@@ -8395,20 +8399,14 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
         rasterizerState.depthBiasEnable = state->enableDepthBias;
         rasterizerState.depthClampEnable = state->enableDepthClamp;
-
-    } else {
-        rasterizerState.cullMode = VK_CULL_MODE_NONE;
-        rasterizerState.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizerState.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        rasterizerState.depthBiasEnable = VK_FALSE;
-        rasterizerState.depthClampEnable = VK_FALSE;
-        rasterizerState.rasterizerDiscardEnable = VK_FALSE;
     }
-    rasterizerState.rasterizerDiscardEnable = VK_FALSE;
     rasterizerState.lineWidth = 1.0f;
     createInfo.pRasterizationState = &rasterizerState;
 
     // Multisample state
+    Uint32 sampleMask[2] = {0}; // PAL supports upto 64 samples
+    multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampleState.pSampleMask = nullptr;
     if (info->multisampleState) {
         PalMultisampleState* state = info->multisampleState;
         multisampleState.alphaToCoverageEnable = state->enableAlphaToCoverage;
@@ -8416,20 +8414,26 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         multisampleState.sampleShadingEnable = state->enableSampleShading;
         multisampleState.rasterizationSamples = samplesToVk(state->sampleCount);
 
-        VkSampleMask sampleMasks[2];
-        Uint32 mask1 = 0;
-        Uint32 mask2 = 0;
-        palUnpackUint32(state->sampleMask, &mask1, &mask2);
-        sampleMasks[0] = mask1;
-        sampleMasks[1] = mask2;
-        multisampleState.pSampleMask = sampleMasks;
+        // clang-format off
+        if (state->sampleMask) {
+            if (info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_1  || 
+                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_2  ||
+                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_4  ||
+                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_8  ||
+                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_16 ||
+                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_32) {
+                sampleMask[0] = (Uint32)(info->multisampleState->sampleMask & 0xFFFFFFFFULL);
 
-    } else {
-        multisampleState.alphaToCoverageEnable = VK_FALSE;
-        multisampleState.minSampleShading = VK_FALSE;
-        multisampleState.sampleShadingEnable = VK_FALSE;
-        multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        multisampleState.pSampleMask = nullptr;
+            } else {
+                sampleMask[0] = (Uint32)(info->multisampleState->sampleMask & 0xFFFFFFFFULL);
+                sampleMask[1] = (Uint32)((info->multisampleState->sampleMask >> 32) & 0xFFFFFFFFULL);
+            }
+            multisampleState.pSampleMask = sampleMask;
+
+        } else {
+            multisampleState.pSampleMask = nullptr;
+        }
+        // clang-format on
     }
     createInfo.pMultisampleState = &multisampleState;
 
@@ -8456,25 +8460,15 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         depthStencilState.depthTestEnable = state->enableDepthTest;
         depthStencilState.depthWriteEnable = state->enableDepthWrite;
         depthStencilState.stencilTestEnable = state->enableStencilTest;
-
-    } else {
-        depthStencilState.depthCompareOp = VK_COMPARE_OP_NEVER;
-        depthStencilState.depthTestEnable = VK_FALSE;
-        depthStencilState.depthWriteEnable = VK_FALSE;
-        depthStencilState.stencilTestEnable = VK_FALSE;
     }
     createInfo.pDepthStencilState = &depthStencilState;
 
     // Color blend state
     if (info->colorBlendAttachmentCount) {
         Uint32 count = info->colorBlendAttachmentCount;
-        blendattachments =
-            palAllocate(s_Vk.allocator, sizeof(VkPipelineColorBlendAttachmentState) * count, 0);
-
+        Uint32 size = sizeof(VkPipelineColorBlendAttachmentState) * count;
+        blendattachments = palAllocate(s_Vk.allocator, size, 0);
         if (!blendattachments) {
-            palFree(s_Vk.allocator, pipeline);
-            palFree(s_Vk.allocator, bindingDescs);
-            palFree(s_Vk.allocator, attribDescs);
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
@@ -8513,58 +8507,58 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
         colorBlendState.attachmentCount = count;
         colorBlendState.pAttachments = blendattachments;
-        createInfo.pColorBlendState = &colorBlendState;
     }
+    createInfo.pColorBlendState = &colorBlendState;
 
     // viewport state
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
     createInfo.pViewportState = &viewportState;
 
-    createInfo.renderPass = VK_NULL_HANDLE;
-    createInfo.layout = layout->handle;
-
     if (info->fragmentShadingRateState) {
         PalFragmentShadingRateState* state = info->fragmentShadingRateState;
         for (int i = 0; i < 2; i++) {
             VkFragmentShadingRateCombinerOpKHR combinerOp;
             combinerOp = combinerOpsToVk(state->combinerOps[i]);
-            fragmentShadingRateState.combinerOps[i] = combinerOp;
+            fsrState.combinerOps[i] = combinerOp;
         }
 
         VkExtent2D size = getShadingRateSizeVk(state->rate);
-        fragmentShadingRateState.fragmentSize = size;
-        createInfo.pNext = &fragmentShadingRateState;
+        fsrState.fragmentSize = size;
+        createInfo.pNext = &fsrState;
     }
 
     // layout info
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    VkFormat colorAttachments[MAX_ATTACHMENTS];
-    PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
+    if (info->renderingLayout) {
+        VkFormat format = VK_FORMAT_UNDEFINED;
+        VkFormat colorAttachments[MAX_ATTACHMENTS];
+        PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
 
-    // color attachments
-    for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
-        format = formatToVk(renderingLayout->colorAttachmentsFormat[i]);
-        colorAttachments[i] = format;
+        // color attachments
+        for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
+            format = formatToVk(renderingLayout->colorAttachmentsFormat[i]);
+            colorAttachments[i] = format;
+        }
+        dynRendering.colorAttachmentCount = renderingLayout->colorAttachentCount;
+        dynRendering.pColorAttachmentFormats = colorAttachments;
+
+        // depth attachment
+        format = formatToVk(renderingLayout->depthAttachmentFormat);
+        dynRendering.depthAttachmentFormat = format;
+
+        // stencil attachment
+        format = formatToVk(renderingLayout->stencilAttachmentFormat);
+        dynRendering.stencilAttachmentFormat = format;
+
+        if (renderingLayout->viewCount == 1) {
+            dynRendering.viewMask = 0;
+        } else {
+            dynRendering.viewMask = (1 << renderingLayout->viewCount) - 1;
+        }
+
+        createInfo.pNext = &dynRendering;
     }
-    dynRendering.colorAttachmentCount = renderingLayout->colorAttachentCount;
-    dynRendering.pColorAttachmentFormats = colorAttachments;
 
-    // depth attachment
-    format = formatToVk(renderingLayout->depthAttachmentFormat);
-    dynRendering.depthAttachmentFormat = format;
-
-    // stencil attachment
-    format = formatToVk(renderingLayout->stencilAttachmentFormat);
-    dynRendering.stencilAttachmentFormat = format;
-
-    if (renderingLayout->viewCount == 1) {
-        dynRendering.viewMask = 0;
-    } else {
-        dynRendering.viewMask = (1 << renderingLayout->viewCount) - 1;
-    }
-
-    createInfo.pNext = &dynRendering;
     result = s_Vk.createGraphicsPipeline(
         vkDevice->handle,
         0,
@@ -8578,9 +8572,14 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         return resultFromVk(result);
     }
 
-    palFree(s_Vk.allocator, bindingDescs);
-    palFree(s_Vk.allocator, attribDescs);
-    palFree(s_Vk.allocator, blendattachments);
+    if (info->vertexLayoutCount) {
+        palFree(s_Vk.allocator, bindingDescs);
+        palFree(s_Vk.allocator, attribDescs);
+    }
+
+    if (info->colorBlendAttachmentCount) {
+        palFree(s_Vk.allocator, blendattachments);
+    }
 
     pipeline->device = vkDevice;
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -8641,6 +8640,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     VkPipelineShaderStageCreateInfo shaderStages[6]; // 6 shader types for ray tracing pipeline
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
     ShaderBindingTable* sbt = nullptr;
+    Uint32 groupSize = sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -8651,16 +8651,11 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
     sbt = palAllocate(s_Vk.allocator, sizeof(ShaderBindingTable), 0);
-    groups = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount,
-        0);
-
+    groups = palAllocate(s_Vk.allocator, groupSize, 0);
     if (!pipeline || !groups || !sbt) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount);
     memset(groups, 0, sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount);
     memset(sbt, 0, sizeof(ShaderBindingTable));
 
@@ -8772,9 +8767,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     bufCreateInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    result =
-        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->buffer);
-
+    result = s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->buffer);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
         palFree(s_Vk.allocator, sbt);
@@ -8919,7 +8912,6 @@ void PAL_CALL destroyPipelineVk(PalPipeline* pipeline)
 
         palFree(s_Vk.allocator, vkPipeline->sbt);
     }
-
     palFree(s_Vk.allocator, pipeline);
 }
 

@@ -459,7 +459,7 @@ void* PAL_CALL palAllocate(
         align = PAL_DEFAULT_ALIGNMENT;
     }
 
-    if (allocator && allocator->allocate) {
+    if (allocator && allocator->allocate && size != 0) {
         return allocator->allocate(allocator->userData, size, align);
     }
     return alignedAlloc(size, align);
