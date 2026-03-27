@@ -313,18 +313,15 @@ typedef struct {
     PFN_vkCmdPushConstants cmdPushConstants;
 
     PFN_vkCreateWaylandSurfaceKHR createWaylandSurface;
-    PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR checkWaylandPresentSupport;
     PFN_vkCreateXlibSurfaceKHR createXlibSurface;
-    PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR checkXlibPresentSupport;
     PFN_vkCreateXcbSurfaceKHR createXcbSurface;
-    PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR checkXcbPresentSupport;
     PFN_vkCreateWin32SurfaceKHR createWin32Surface;
-    PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR checkWin32PresentSupport;
 
     PFN_vkDestroySurfaceKHR destroySurface;
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getSurfaceCapabilities;
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getSurfaceFormats;
     PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getSurfacePresentModes;
+    PFN_vkGetPhysicalDeviceSurfaceSupportKHR checkSurfaceSupport;
 
     PFN_vkCreateBuffer createBuffer;
     PFN_vkDestroyBuffer destroyBuffer;
@@ -463,10 +460,16 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    Device* device;
+    VkSurfaceKHR handle;
+} Surface;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
     Uint32 imageCount;
     Device* device;
     Queue* queue;
-    VkSurfaceKHR surface;
     VkSwapchainKHR handle;
     Image* images;
 } Swapchain;
@@ -626,90 +629,6 @@ static void* loadProc(void* lib, const char* name)
 #elif defined (__linux__)
     return dlsym(lib, name);
 #endif
-}
-
-static bool createSurfaceVk(
-    PalGraphicsWindow* window,
-    VkSurfaceKHR* outSurface)
-{
-    VkResult result;
-    VkSurfaceKHR surface = nullptr;
-
-#ifdef __WIN32
-    if (!s_Vk.createWin32Surface) {
-        return false;
-    }
-
-    VkWin32SurfaceCreateInfoKHR cInfo = {0};
-    cInfo.hinstance = GetModuleHandle(nullptr);
-    cInfo.hwnd = window->window;
-    cInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-
-    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
-    if (result != VK_SUCCESS) {
-        return false;
-    }
-
-    *outSurface = surface;
-    return true;
-#else
-    if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND) {
-        if (!s_Vk.createWaylandSurface) {
-            return false;
-        }
-
-        VkWaylandSurfaceCreateInfoKHR cInfo = {0};
-        cInfo.display = window->display;
-        cInfo.pNext = nullptr;
-        cInfo.flags = 0;
-        cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-        cInfo.surface = window->window;
-
-        result = s_Vk.createWaylandSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
-        if (result != VK_SUCCESS) {
-            return false;
-        }
-
-        *outSurface = surface;
-        return true;
-
-    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11) {
-        if (!s_Vk.createXlibSurface) {
-            return false;
-        }
-
-        VkXlibSurfaceCreateInfoKHR cInfo = {0};
-        cInfo.dpy = window->display;
-        cInfo.window = (Window)(UintPtr)(window->window);
-        cInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-
-        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
-        if (result != VK_SUCCESS) {
-            return false;
-        }
-
-        *outSurface = surface;
-        return true;
-
-    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB) {
-        if (!s_Vk.createXcbSurface) {
-            return false;
-        }
-
-        VkXcbSurfaceCreateInfoKHR cInfo = {0};
-        cInfo.connection = window->display;
-        cInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-
-        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &surface);
-        if (result != VK_SUCCESS) {
-            return false;
-        }
-
-        *outSurface = surface;
-        return true;
-    }
-
-#endif // __WIN32
 }
 
 static PalResult resultFromVk(VkResult result)
@@ -2932,11 +2851,6 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.createWaylandSurface = (PFN_vkCreateWaylandSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkCreateWaylandSurfaceKHR");
-
-        s_Vk.checkWaylandPresentSupport =
-            (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)s_Vk.getInstanceProcAddr(
-                instance,
-                "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
     }
 
     if (hasXlib) {
@@ -2954,11 +2868,6 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.createXlibSurface = (PFN_vkCreateXlibSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkCreateXlibSurfaceKHR");
-
-        s_Vk.checkXlibPresentSupport =
-            (PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR)s_Vk.getInstanceProcAddr(
-                instance,
-                "vkGetPhysicalDeviceXlibPresentationSupportKHR");
     }
 
     if (hasXcb) {
@@ -2976,22 +2885,12 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.createXcbSurface = (PFN_vkCreateXcbSurfaceKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkCreateXcbSurfaceKHR");
-
-        s_Vk.checkXcbPresentSupport =
-            (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)s_Vk.getInstanceProcAddr(
-                instance,
-                "vkGetPhysicalDeviceXcbPresentationSupportKHR");
     }
 
     if (hasWin32) {
         s_Vk.createWin32Surface = (PFN_vkCreateWin32SurfaceKHR)s_Vk.getInstanceProcAddr(
             instance,
             "vkCreateWin32SurfaceKHR");
-
-        s_Vk.checkWin32PresentSupport =
-            (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)s_Vk.getInstanceProcAddr(
-                instance,
-                "vkGetPhysicalDeviceWin32PresentationSupportKHR");
     }
 
     // remaining function procs
@@ -3012,6 +2911,10 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.getSurfaceFormats = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)s_Vk.getInstanceProcAddr(
         instance,
         "vkGetPhysicalDeviceSurfaceFormatsKHR");
+
+    s_Vk.checkSurfaceSupport = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)s_Vk.getInstanceProcAddr(
+        instance,
+        "vkGetPhysicalDeviceSurfaceSupportKHR");
 
     if (debugger) {
         s_Vk.createMessenger =
@@ -4777,69 +4680,30 @@ PalResult PAL_CALL waitQueueVk(PalQueue* queue)
 
 bool PAL_CALL canQueuePresentVk(
     PalQueue* queue,
-    PalGraphicsWindow* window)
+    PalSurface* surface)
 {
+    VkResult result;
     Queue* vkQueue = (Queue*)queue;
+    PhysicalQueue* phyQueue = vkQueue->phyQueue;
+    Surface* vkSurface = (Surface*)surface;
+
     // check if the queue is a graphics queue before we check its family
     // index for presentation support.
     if (vkQueue->usage != VK_QUEUE_GRAPHICS_BIT) {
         return false;
     }
 
-    PhysicalQueue* phyQueue = vkQueue->phyQueue;
-#ifdef __WIN32
-    if (s_Vk.checkWin32PresentSupport(
-            phyQueue->phyDevice,
-            phyQueue->familyIndex)) {
+    VkBool32 supported = false;
+    result = s_Vk.checkSurfaceSupport(
+        phyQueue->phyDevice, 
+        phyQueue->familyIndex, 
+        vkSurface->handle, 
+        &supported);
+
+    if (result == VK_SUCCESS && supported) {
         return true;
     }
-#else
-    if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND) {
-        if (s_Vk.checkWaylandPresentSupport(
-                phyQueue->phyDevice,
-                phyQueue->familyIndex,
-                window->display)) {
-            return true;
-        }
 
-    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11) {
-        XWindowAttributes attrs = {0};
-        Window xWin = (Window)(UintPtr)(window->window);
-        VisualID visualID = 0;
-
-        if (s_Vk.XGetWindowAttributes(window->display, xWin, &attrs)) {
-            visualID = s_Vk.XVisualIDFromVisual(attrs.visual);
-        }
-
-        if (s_Vk.checkXlibPresentSupport(
-                phyQueue->phyDevice,
-                phyQueue->familyIndex,
-                window->display,
-                visualID)) {
-            return true;
-        }
-
-    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB) {
-        xcb_get_window_attributes_cookie_t cookie = {0};
-        xcb_get_window_attributes_reply_t* reply = nullptr;
-        xcb_window_t xcbWin = (xcb_window_t)(UintPtr)(window->window);
-
-        cookie = s_Vk.xcbGetWindowAttributes(window->display, xcbWin);
-        reply = s_Vk.xcbGetWindowAttributesReply(window->display, cookie, nullptr);
-        if (!reply) {
-            return false;
-        }
-
-        if (s_Vk.checkXcbPresentSupport(
-                phyQueue->phyDevice,
-                phyQueue->familyIndex,
-                window->display, 
-                reply->visual)) {
-            free(reply);
-            return true;
-        }
-    }
-#endif // __WIN32
     return false;
 }
 
@@ -5402,17 +5266,129 @@ void PAL_CALL destroySamplerVk(PalSampler* sampler)
 }
 
 // ==================================================
-// Swapchain
+// Surface
 // ==================================================
 
-PalResult PAL_CALL querySwapchainCapabilitiesVk(
+PalResult PAL_CALL createSurfaceVk(
     PalDevice* device,
     PalGraphicsWindow* window,
-    PalSwapchainCapabilities* caps)
+    PalSurface** outSurface)
+{
+    VkResult result;
+    Surface* surface = nullptr;
+    Device* vkDevice = (Device*)device;
+
+    surface = palAllocate(s_Vk.allocator, sizeof(Surface), 0);
+    if (!surface) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+#ifdef __WIN32
+    if (!s_Vk.createWin32Surface) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkWin32SurfaceCreateInfoKHR cInfo = {0};
+    cInfo.hinstance = GetModuleHandle(nullptr);
+    cInfo.hwnd = window->window;
+    cInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+
+    VkSurfaceKHR tmp = nullptr;
+    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+    if (result != VK_SUCCESS) {
+        return resultFromVk(result);
+    }
+
+    surface->device = vkDevice;
+    surface->handle = tmp;
+    *outSurface = (PalSurface*)surface;
+    return PAL_RESULT_SUCCESS;
+
+#else
+    if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND) {
+        if (!s_Vk.createWaylandSurface) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+        VkWaylandSurfaceCreateInfoKHR cInfo = {0};
+        cInfo.display = window->display;
+        cInfo.pNext = nullptr;
+        cInfo.flags = 0;
+        cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+        cInfo.surface = window->window;
+
+        VkSurfaceKHR tmp = nullptr;
+        result = s_Vk.createWaylandSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+        if (result != VK_SUCCESS) {
+            return resultFromVk(result);
+        }
+
+        surface->device = vkDevice;
+        surface->handle = tmp;
+        *outSurface = (PalSurface*)surface;
+        return PAL_RESULT_SUCCESS;
+
+    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11) {
+        if (!s_Vk.createXlibSurface) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+        VkXlibSurfaceCreateInfoKHR cInfo = {0};
+        cInfo.dpy = window->display;
+        cInfo.window = (Window)(UintPtr)(window->window);
+        cInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+
+        VkSurfaceKHR tmp = nullptr;
+        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+        if (result != VK_SUCCESS) {
+            return resultFromVk(result);
+        }
+
+        surface->device = vkDevice;
+        surface->handle = tmp;
+        *outSurface = (PalSurface*)surface;
+        return PAL_RESULT_SUCCESS;
+
+    } else if (window->displayType == PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB) {
+        if (!s_Vk.createXcbSurface) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+        VkXcbSurfaceCreateInfoKHR cInfo = {0};
+        cInfo.connection = window->display;
+        cInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+
+        VkSurfaceKHR tmp = nullptr;
+        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+        if (result != VK_SUCCESS) {
+            return resultFromVk(result);
+        }
+
+        surface->device = vkDevice;
+        surface->handle = tmp;
+        *outSurface = (PalSurface*)surface;
+        return PAL_RESULT_SUCCESS;
+    }
+
+#endif // __WIN32
+}
+
+void PAL_CALL destroySurfaceVk(PalSurface* surface)
+{
+    Surface* vkSurface = (Surface*)surface;
+    s_Vk.destroySurface(s_Vk.instance, vkSurface->handle, &s_Vk.vkAllocator);
+
+    palFree(s_Vk.allocator, vkSurface);
+}
+
+PalResult PAL_CALL getSurfaceCapabilitiesVk(
+    PalDevice* device,
+    PalSurface* surface,
+    PalSurfaceCapabilities* caps)
 {
     Int32 formatCount = 0;
     Int32 modeCount = 0;
-    VkSurfaceKHR surface = nullptr;
+    Surface* vkSurface = (Surface*)surface;
     VkSurfaceFormatKHR* formats = nullptr;
     VkPresentModeKHR* modes = nullptr;
 
@@ -5423,26 +5399,21 @@ PalResult PAL_CALL querySwapchainCapabilitiesVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    bool result = createSurfaceVk(window, &surface);
-    if (!result) {
-        return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
-    }
-
-    s_Vk.getSurfacePresentModes(phyDevice, surface, &modeCount, nullptr);
-    s_Vk.getSurfaceFormats(phyDevice, surface, &formatCount, nullptr);
+    s_Vk.getSurfacePresentModes(phyDevice, vkSurface->handle, &modeCount, nullptr);
+    s_Vk.getSurfaceFormats(phyDevice, vkSurface->handle, &formatCount, nullptr);
 
     modes = palAllocate(s_Vk.allocator, sizeof(VkPresentModeKHR) * modeCount, 0);
     formats = palAllocate(s_Vk.allocator, sizeof(VkSurfaceFormatKHR) * formatCount, 0);
     if (!modes || !formats) {
-        s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.vkAllocator);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    s_Vk.getSurfacePresentModes(phyDevice, surface, &modeCount, modes);
-    s_Vk.getSurfaceFormats(phyDevice, surface, &formatCount, formats);
+    s_Vk.getSurfacePresentModes(phyDevice, vkSurface->handle, &modeCount, modes);
+    s_Vk.getSurfaceFormats(phyDevice, vkSurface->handle, &formatCount, formats);
 
     VkSurfaceCapabilitiesKHR surfaceCaps;
-    s_Vk.getSurfaceCapabilities(phyDevice, surface, &surfaceCaps);
+    s_Vk.getSurfaceCapabilities(phyDevice, vkSurface->handle, &surfaceCaps);
+
     caps->minImageWidth = surfaceCaps.minImageExtent.width;
     caps->minImageHeight = surfaceCaps.minImageExtent.height;
     caps->maxImageWidth = surfaceCaps.maxImageExtent.width;
@@ -5486,49 +5457,52 @@ PalResult PAL_CALL querySwapchainCapabilitiesVk(
     }
 
     // get format and colorspace
-    caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10] = false;
-    caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB] = false;
-    caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB] = false;
-    caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB] = false;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = false;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB] = false;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB] = false;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB] = false;
 
     for (int i = 0; i < formatCount; i++) {
         VkSurfaceFormatKHR* fmt = &formats[i];
         if (fmt->format == VK_FORMAT_B8G8R8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_B8G8R8A8_SRGB) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_R8G8B8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB] = true;
+                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_R16G16B16A16_SFLOAT) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT) {
-                caps->formats[PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10] = true;
+                caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = true;
             }
         }
     }
 
     palFree(s_Vk.allocator, formats);
     palFree(s_Vk.allocator, modes);
-    s_Vk.destroySurface(s_Vk.instance, surface, &s_Vk.vkAllocator);
     return PAL_RESULT_SUCCESS;
 }
+
+// ==================================================
+// Swapchain
+// ==================================================
 
 PalResult PAL_CALL createSwapchainVk(
     PalDevice* device,
     PalQueue* queue,
-    PalGraphicsWindow* window,
+    PalSurface* surface,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain)
 {
@@ -5539,6 +5513,7 @@ PalResult PAL_CALL createSwapchainVk(
     Device* vkDevice = (Device*)device;
     Queue* vkQueue = (Queue*)queue;
     PhysicalQueue* phyQueue = vkQueue->phyQueue;
+    Surface* vkSurface = (Surface*)surface;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -5554,20 +5529,16 @@ PalResult PAL_CALL createSwapchainVk(
     if (!swapchain) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
-
     memset(swapchain, 0, sizeof(Swapchain));
-    if (!createSurfaceVk(window, &swapchain->surface)) {
-        return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
-    }
 
     VkSwapchainCreateInfoKHR createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = swapchain->surface;
+    createInfo.surface = vkSurface->handle;
     createInfo.imageArrayLayers = info->imageArrayLayerCount;
     createInfo.imageExtent.width = info->width;
     createInfo.imageExtent.height = info->height;
     createInfo.minImageCount = info->imageCount;
-    createInfo.clipped = VK_FALSE;
+    createInfo.clipped = info->clipped;
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -5595,17 +5566,17 @@ PalResult PAL_CALL createSwapchainVk(
     createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     imageFormat = PAL_FORMAT_B8G8R8A8_UNORM;
 
-    if (info->format == PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB) {
+    if (info->format == PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB) {
         createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
         createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         imageFormat = PAL_FORMAT_B8G8R8A8_SRGB;
 
-    } else if (info->format == PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB) {
+    } else if (info->format == PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB) {
         createInfo.imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
         createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         imageFormat = PAL_FORMAT_R8G8B8A8_UNORM;
 
-    } else if (info->format == PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10) {
+    } else if (info->format == PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10) {
         createInfo.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
         createInfo.imageColorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT;
         imageFormat = PAL_FORMAT_R16G16B16A16_SFLOAT;
@@ -5619,8 +5590,6 @@ PalResult PAL_CALL createSwapchainVk(
         &swapchain->handle);
 
     if (result != VK_SUCCESS) {
-        s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.vkAllocator);
-
         palFree(s_Vk.allocator, swapchain);
         return resultFromVk(result);
     }
@@ -5633,7 +5602,6 @@ PalResult PAL_CALL createSwapchainVk(
     images = palAllocate(s_Vk.allocator, sizeof(VkImage) * count, 0);
     if (!swapchain->images || !images) {
         vkDevice->destroySwapchain(vkDevice->handle, swapchain->handle, &s_Vk.vkAllocator);
-        s_Vk.destroySurface(s_Vk.instance, swapchain->surface, &s_Vk.vkAllocator);
         palFree(s_Vk.allocator, swapchain);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -5658,7 +5626,6 @@ PalResult PAL_CALL createSwapchainVk(
     }
 
     palFree(s_Vk.allocator, images);
-
     swapchain->device = vkDevice;
     swapchain->queue = vkQueue;
     swapchain->imageCount = count;
@@ -5674,8 +5641,6 @@ void PAL_CALL destroySwapchainVk(PalSwapchain* swapchain)
         vkSwapchain->device->handle,
         vkSwapchain->handle,
         &s_Vk.vkAllocator);
-
-    s_Vk.destroySurface(s_Vk.instance, vkSwapchain->surface, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, vkSwapchain->images);
     palFree(s_Vk.allocator, vkSwapchain);

@@ -91,6 +91,7 @@ bool textureTest()
 
     PalAdapter* adapter = nullptr;
     PalDevice* device = nullptr;
+    PalSurface* surface = nullptr;
     PalQueue* queue = nullptr;
     PalSwapchain* swapchain = nullptr;
     PalCommandPool* cmdPool = nullptr;
@@ -271,17 +272,25 @@ bool textureTest()
         return false;
     }
 
-    if (!palCanQueuePresent(queue, &gfxWindow)) {
-        palLog(nullptr, "Queue cannot present to window");
+    // create surface
+    result = palCreateSurface(device, &gfxWindow, &surface);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create surface: %s", error);
+        return false;
+    }
+
+    if (!palCanQueuePresent(queue, surface)) {
+        palLog(nullptr, "Queue cannot present to surface");
         return false;
     }
 
     // create a swapchain with the graphics queue
-    PalSwapchainCapabilities swapchainCaps = {0};
-    result = palQuerySwapchainCapabilities(device, &gfxWindow, &swapchainCaps);
+    PalSurfaceCapabilities surfaceCaps = {0};
+    result = palGetSurfaceCapabilities(device, surface, &surfaceCaps);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query swapchain capabilities: %s", error);
+        palLog(nullptr, "Failed to get surface capabilities: %s", error);
         return false;
     }
 
@@ -292,36 +301,29 @@ bool textureTest()
     swapchainCreateInfo.width = WINDOW_WIDTH;
     swapchainCreateInfo.imageArrayLayerCount = 1;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
-
-    swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB;
-    if (!swapchainCaps.formats[PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB]) {
-        // the format is not supported. we default to BGRA
-        // if component mapping is not supported, we have to remap the component
-        // from the shader rather instead of mapping when creating the image views
-        swapchainCreateInfo.format = PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB;
-    }
+    swapchainCreateInfo.format = PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB;
 
     // rare but possible on andriod
-    if (WINDOW_WIDTH > swapchainCaps.maxImageWidth) {
-        swapchainCreateInfo.width = swapchainCaps.maxImageWidth / 2;
+    if (WINDOW_WIDTH > surfaceCaps.maxImageWidth) {
+        swapchainCreateInfo.width = surfaceCaps.maxImageWidth / 2;
     }
 
-    if (WINDOW_HEIGHT > swapchainCaps.maxImageHeight) {
-        swapchainCreateInfo.height = swapchainCaps.maxImageHeight / 2;
+    if (WINDOW_HEIGHT > surfaceCaps.maxImageHeight) {
+        swapchainCreateInfo.height = surfaceCaps.maxImageHeight / 2;
     }
 
     // check if the minimal image count is not good for you
     // and increase it but not pass the max count
-    swapchainCreateInfo.imageCount = swapchainCaps.minImageCount;
+    swapchainCreateInfo.imageCount = surfaceCaps.minImageCount;
     if (swapchainCreateInfo.imageCount == 1) {
-        swapchainCreateInfo.imageCount = 2;
-        if (swapchainCaps.maxImageCount < 2) {
-            palLog(nullptr, "Swapchain does not support double buffers");
+        swapchainCreateInfo.imageCount++;
+        if (surfaceCaps.maxImageCount < 2) {
+            palLog(nullptr, "Surface does not support double buffers");
             return false;
         }
     }
 
-    result = palCreateSwapchain(device, queue, &gfxWindow, &swapchainCreateInfo, &swapchain);
+    result = palCreateSwapchain(device, queue, surface, &swapchainCreateInfo, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create swapchain: %s", error);
@@ -1370,6 +1372,7 @@ bool textureTest()
     palFreeMemory(device, vertexBufferMemory);
 
     palDestroyCommandPool(cmdPool);
+    palDestroySurface(surface);
     palDestroySwapchain(swapchain);
     palDestroyQueue(queue);
     palDestroyDevice(device);

@@ -6134,7 +6134,6 @@ static struct wl_buffer* createShmBuffer(
     }
 
     buffer = wlShmPoolCreateBuffer(pool, 0, width, height, stride, format);
-
     if (!buffer) {
         return nullptr;
     }

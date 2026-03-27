@@ -57,6 +57,7 @@ PAL_HANDLE(PalDescriptorSetLayout)
 PAL_HANDLE(PalDescriptorPool)
 PAL_HANDLE(PalDescriptorSet)
 PAL_HANDLE(PalSampler)
+PAL_HANDLE(PalSurface)
 
 typedef struct {
     Int32 count;
@@ -168,7 +169,7 @@ PalResult PAL_CALL waitQueueVk(PalQueue* queue);
 
 bool PAL_CALL canQueuePresentVk(
     PalQueue* queue,
-    PalGraphicsWindow* window);
+    PalSurface* surface);
 
 PalResult PAL_CALL enumerateFormatsVk(
     PalAdapter* adapter,
@@ -222,15 +223,22 @@ PalResult PAL_CALL createSamplerVk(
 
 void PAL_CALL destroySamplerVk(PalSampler* sampler);
 
-PalResult PAL_CALL querySwapchainCapabilitiesVk(
+PalResult PAL_CALL createSurfaceVk(
     PalDevice* device,
     PalGraphicsWindow* window,
-    PalSwapchainCapabilities* caps);
+    PalSurface** outSurface);
+
+void PAL_CALL destroySurfaceVk(PalSurface* surface);
+
+PalResult PAL_CALL getSurfaceCapabilitiesVk(
+    PalDevice* device,
+    PalSurface* surface,
+    PalSurfaceCapabilities* caps);
 
 PalResult PAL_CALL createSwapchainVk(
     PalDevice* device,
     PalQueue* queue,
-    PalGraphicsWindow* window,
+    PalSurface* surface,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain);
 
@@ -707,8 +715,12 @@ static PalGraphicsBackend s_VkBackend = {
     .createSampler = createSamplerVk,
     .destroySampler = destroySamplerVk,
 
+    // surface
+    .createSurface = createSurfaceVk,
+    .destroySurface = destroySurfaceVk,
+    .getSurfaceCapabilities = getSurfaceCapabilitiesVk,
+
     // swapchain
-    .querySwapchainCapabilities = querySwapchainCapabilitiesVk,
     .createSwapchain = createSwapchainVk,
     .destroySwapchain = destroySwapchainVk,
     .getSwapchainImage = getSwapchainImageVk,
@@ -903,8 +915,12 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createSampler                         ||
         !backend->destroySampler                        ||
 
+        // surface
+        !backend->createSurface                         ||
+        !backend->destroySurface                        ||
+        !backend->getSurfaceCapabilities                ||
+
         // swapchain
-        !backend->querySwapchainCapabilities            ||
         !backend->createSwapchain                       ||
         !backend->destroySwapchain                      ||
         !backend->getSwapchainImage                     ||
@@ -1379,10 +1395,10 @@ void PAL_CALL palDestroyQueue(PalQueue* queue)
 
 bool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
-    PalGraphicsWindow* window)
+    PalSurface* surface)
 {
     if (s_Graphics.initialized && queue) {
-        return queue->backend->canQueuePresent(queue, window);
+        return queue->backend->canQueuePresent(queue, surface);
     }
     return false;
 }
@@ -1613,29 +1629,65 @@ void PAL_CALL palDestroySampler(PalSampler* sampler)
 }
 
 // ==================================================
-// Swapchain
+// Surface
 // ==================================================
 
-PalResult PAL_CALL palQuerySwapchainCapabilities(
+PalResult PAL_CALL palCreateSurface(
     PalDevice* device,
     PalGraphicsWindow* window,
-    PalSwapchainCapabilities* caps)
+    PalSurface** outSurface)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !window || !caps) {
+    if (!device || !window || !outSurface) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->querySwapchainCapabilities(device, window, caps);
+    PalSurface* surface = nullptr;
+    PalResult result;
+    result = device->backend->createSurface(device, window, &surface);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    surface->backend = device->backend;
+    *outSurface = surface;
+    return PAL_RESULT_SUCCESS;
 }
+
+void PAL_CALL palDestroySurface(PalSurface* surface)
+{
+    if (s_Graphics.initialized && surface) {
+        surface->backend->destroySurface(surface);
+    }
+}
+
+PalResult PAL_CALL palGetSurfaceCapabilities(
+    PalDevice* device,
+    PalSurface* surface,
+    PalSurfaceCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !surface || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->getSurfaceCapabilities(device, surface, caps);
+}
+
+// ==================================================
+// Swapchain
+// ==================================================
 
 PalResult PAL_CALL palCreateSwapchain(
     PalDevice* device,
     PalQueue* queue,
-    PalGraphicsWindow* window,
+    PalSurface* surface,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain)
 {
@@ -1643,13 +1695,13 @@ PalResult PAL_CALL palCreateSwapchain(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !queue || !window || !info || !outSwapchain) {
+    if (!device || !queue || !surface || !info || !outSwapchain) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     PalResult result;
     PalSwapchain* swapchain = nullptr;
-    result = device->backend->createSwapchain(device, queue, window, info, &swapchain);
+    result = device->backend->createSwapchain(device, queue, surface, info, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }

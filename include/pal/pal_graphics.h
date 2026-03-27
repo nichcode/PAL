@@ -94,6 +94,15 @@ typedef struct PalMemory PalMemory;
 typedef struct PalQueue PalQueue;
 
 /**
+ * @struct PalSurface
+ * @brief Opaque handle to a surface.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct PalSurface PalSurface;
+
+/**
  * @struct PalSwapchain
  * @brief Opaque handle to a swapchain.
  *
@@ -736,23 +745,23 @@ typedef enum {
 } PalBorderColor;
 
 /**
- * @enum PalSwapchainFormat
- * @brief swapchain format types.
+ * @enum PalSurfaceFormat
+ * @brief Surface format types.
  *
- * All swapchain format types follow the format `PAL_SWAPCHAIN_FORMAT_**` for
+ * All surface format types follow the format `PAL_SURFACE_FORMAT_**` for
  * consistency and API use.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef enum {
-    PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB,
-    PAL_SWAPCHAIN_FORMAT_BGRA8_SRGB_SRGB,
-    PAL_SWAPCHAIN_FORMAT_RGBA8_UNORM_SRGB,
-    PAL_SWAPCHAIN_FORMAT_RGBA16_FLOAT_HDR10, /**< HDR.*/
+    PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB,
+    PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB,
+    PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB,
+    PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10, /**< HDR.*/
 
-    PAL_SWAPCHAIN_FORMAT_MAX
-} PalSwapchainFormat;
+    PAL_SURFACE_FORMAT_MAX
+} PalSurfaceFormat;
 
 /**
  * @enum PalGraphicsWindowDisplayType
@@ -1476,8 +1485,8 @@ typedef struct {
 } PalDescriptorIndexingCapabilities;
 
 /**
- * @struct PalSwapchainCapabilities
- * @brief swapchain capabilities of an adapter (GPU).
+ * @struct PalSurfaceCapabilities
+ * @brief surface capabilities of an adapter (GPU).
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1493,7 +1502,7 @@ typedef struct {
 
     /** Bool array of supported swapchain formats.
      * (eg. formats[`PAL_COMPOSITE_ALPHA_OPAQUE`]).*/
-    bool formats[PAL_SWAPCHAIN_FORMAT_MAX];
+    bool formats[PAL_SURFACE_FORMAT_MAX];
     Uint32 minImageCount;
     Uint32 maxImageCount;
     Uint32 minImageWidth;
@@ -1501,7 +1510,7 @@ typedef struct {
     Uint32 maxImageWidth;
     Uint32 maxImageHeight;
     Uint32 maxImageArrayLayers;
-} PalSwapchainCapabilities;
+} PalSurfaceCapabilities;
 
 /**
  * @struct PalGraphicsWindow
@@ -2370,7 +2379,7 @@ typedef struct {
     Uint32 imageArrayLayerCount;      /**< Set to 1 for default.*/
     PalPresentMode presentMode;       /**< (eg. PAL_PRESENT_MODE_FIFO).*/
     PalCompositeAplha compositeAlpha; /**< (eg. PAL_COMPOSITE_ALPHA_OPAQUE).*/
-    PalSwapchainFormat format;        /**< (eg. PAL_SWAPCHAIN_FORMAT_BGRA8_UNORM_SRGB).*/
+    PalSurfaceFormat format;          /**< (eg. PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB).*/
 } PalSwapchainCreateInfo;
 
 /**
@@ -2722,7 +2731,7 @@ typedef struct {
      */
     bool PAL_CALL (*canQueuePresent)(
         PalQueue* queue,
-        PalGraphicsWindow* window);
+        PalSurface* surface);
 
     /**
      * Backend implementation of ::palWaitQueue.
@@ -2849,14 +2858,31 @@ typedef struct {
     void PAL_CALL (*destroySampler)(PalSampler* sampler);
 
     /**
-     * Backend implementation of ::palQuerySwapchainCapabilities.
+     * Backend implementation of ::palCreateSurface.
      *
-     * Must obey the rules and semantics documented in palQuerySwapchainCapabilities().
+     * Must obey the rules and semantics documented in palCreateSurface().
      */
-    PalResult PAL_CALL (*querySwapchainCapabilities)(
+    PalResult PAL_CALL (*createSurface)(
         PalDevice* device,
         PalGraphicsWindow* window,
-        PalSwapchainCapabilities* caps);
+        PalSurface** outSurface);
+
+    /**
+     * Backend implementation of ::palDestroySurface.
+     *
+     * Must obey the rules and semantics documented in palDestroySurface().
+     */
+    void PAL_CALL (*destroySurface)(PalSurface* surface);
+
+    /**
+     * Backend implementation of ::palGetSurfaceCapabilities.
+     *
+     * Must obey the rules and semantics documented in palGetSurfaceCapabilities().
+     */
+    PalResult PAL_CALL (*getSurfaceCapabilities)(
+        PalDevice* device,
+        PalSurface* surface,
+        PalSurfaceCapabilities* caps);
 
     /**
      * Backend implementation of ::palCreateSwapchain.
@@ -2866,7 +2892,7 @@ typedef struct {
     PalResult PAL_CALL (*createSwapchain)(
         PalDevice* device,
         PalQueue* queue,
-        PalGraphicsWindow* window,
+        PalSurface* surface,
         const PalSwapchainCreateInfo* info,
         PalSwapchain** outSwapchain);
 
@@ -4221,7 +4247,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  * The graphics system must be initialized before this call.
  *
  * @param[in] queue Queue to query.
- * @param[in] window Window to check presentation support for.
+ * @param[in] surface Surface to check presentation support for.
  *
  * @return True if queue can present otherwise false if queue can not present.
  *
@@ -4233,7 +4259,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  */
 PAL_API bool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
-    PalGraphicsWindow* window);
+    PalSurface* surface);
 
 /**
  * @brief Blocks indefinitely until the queue becomes idle.
@@ -4562,16 +4588,60 @@ PAL_API PalResult PAL_CALL palCreateSampler(
 PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
 
 /**
- * @brief Get swapchain feature capabilites or limits about a device against a window.
+ * @brief Create a surface for a window.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled by the device if not, this
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device that creates the surface.
+ * @param[in] window Window to create the surface for.
+ * @param[out] outSurface Pointer to a PalSurface to recieve the created surface.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroySurface
+ */
+PAL_API PalResult PAL_CALL palCreateSurface(
+    PalDevice* device,
+    PalGraphicsWindow* window,
+    PalSurface** outSurface);
+
+/**
+ * @brief Destroy a surface.
+ *
+ * The graphics system must be initialized before this call.
+ * If the provided surface is invalid or nullptr, this function returns
+ * silently.
+ *
+ * @param[in] surface Surface to destroy.
+ *
+ * Thread safety: Thread safe if the device used to create the surface is
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateSurface
+ */
+PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
+
+/**
+ * @brief Get surface capabilites about a device.
  *
  * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
- * @param[in] device Device to query swapchain feature capabilities on.
- * @param[in] window Window to query swapchain feature capabilities against.
- * @param[out] caps Pointer to a PalSwapchainCapabilities to fill.
+ * @param[in] device Device to query surface feature capabilities on.
+ * @param[in] surface Surface to query capabilities.
+ * @param[out] caps Pointer to a PalSurfaceCapabilities to fill.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -4581,10 +4651,10 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  * @since 1.4
  * @ingroup pal_graphics
  */
-PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
+PAL_API PalResult PAL_CALL palGetSurfaceCapabilities(
     PalDevice* device,
-    PalGraphicsWindow* window,
-    PalSwapchainCapabilities* caps);
+    PalSurface* surface,
+    PalSurfaceCapabilities* caps);
 
 /**
  * @brief Create a swaphain.
@@ -4596,7 +4666,7 @@ PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
  *
  * @param[in] device Device that creates the swapchain.
  * @param[in] queue Queue to create swapchain with. This must be a graphics queue.
- * @param[in] window Window to create swapchain with.
+ * @param[in] surface Surface to create swapchain with.
  * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies parameters.
  * Must not be nullptr.
  * @param[out] outSwapchain Pointer to a PalSwapchain to recieve the created swapchain.
@@ -4613,7 +4683,7 @@ PAL_API PalResult PAL_CALL palQuerySwapchainCapabilities(
 PAL_API PalResult PAL_CALL palCreateSwapchain(
     PalDevice* device,
     PalQueue* queue,
-    PalGraphicsWindow* window,
+    PalSurface* surface,
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain);
 
