@@ -505,12 +505,13 @@ bool triangleTest()
         return false;
     }
 
+    PalShaderStage vertexShaderStage[] = { PAL_SHADER_STAGE_VERTEX };
     PalUsageStateInfo oldUsageStateInfo = {0};
-    oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
     PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_VERTEX;
+    newUsageStateInfo.shaderStageCount = 1;
+    newUsageStateInfo.shaderStages = vertexShaderStage;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_VERTEX_READ;
 
     result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);

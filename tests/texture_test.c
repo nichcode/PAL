@@ -658,12 +658,13 @@ bool textureTest()
         return false;
     }
 
+    PalShaderStage vertexShaderStage[] = { PAL_SHADER_STAGE_VERTEX };
     PalUsageStateInfo oldUsageStateInfo = {0};
-    oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
     PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_VERTEX;
+    newUsageStateInfo.shaderStageCount = 1;
+    newUsageStateInfo.shaderStages = vertexShaderStage;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_VERTEX_READ;
 
     result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);
@@ -676,12 +677,8 @@ bool textureTest()
     // copy image staging buffer to the checkerboard image
     // first the image must be in the correct layout
     PalUsageStateInfo oldImageUsageState = {0};
-    oldImageUsageState.usageState = PAL_USAGE_STATE_UNDEFINED;
-    oldImageUsageState.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
-
     PalUsageStateInfo newImageUsageState = {0};
     newImageUsageState.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-    newImageUsageState.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
 
     // set a barrier on the image to transition it into transfer dst state
     PalImageSubresourceRange checkerboardRange = {0};
@@ -723,9 +720,11 @@ bool textureTest()
 
     // we should transition the image into a shader read state so we dont do that
     // in the main loop
+    PalShaderStage fragmentShaderStage[] = { PAL_SHADER_STAGE_FRAGMENT };
     oldImageUsageState = newImageUsageState;
     newImageUsageState.usageState = PAL_USAGE_STATE_SHADER_READ;
-    newImageUsageState.shaderStage = PAL_SHADER_STAGE_FRAGMENT; // fragment shader will read
+    newImageUsageState.shaderStageCount = 1;
+    newImageUsageState.shaderStages = fragmentShaderStage; // fragment shader will read
 
     result = palCmdImageBarrier(
         cmdBuffers[0], 

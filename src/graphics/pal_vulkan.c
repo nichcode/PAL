@@ -1751,24 +1751,21 @@ static VkPipelineStageFlags2 pipelineStageToVk(PalShaderStage stage)
 }
 
 static Barrier barrierToVk(
+    Uint32 stageCount,
     PalUsageState state,
-    PalShaderStage shaderStage)
+    PalShaderStage* shaderStages)
 {
     Barrier barrier = {0};
     switch (state) {
         case PAL_USAGE_STATE_UNDEFINED: {
             barrier.stages = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = 0;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_PRESENT: {
-            barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
-            barrier.dstStages = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR;
-
+            barrier.stages = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR;
             barrier.access = 0;
             barrier.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             return barrier;
@@ -1776,8 +1773,6 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_COLOR_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1785,8 +1780,6 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             return barrier;
@@ -1794,72 +1787,59 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
+            barrier.stages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE: {
-            barrier.stages = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
+            barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
+            barrier.stages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
+            barrier.stages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE: {
-            barrier.stages = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
+            barrier.stages = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
+            barrier.stages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
-            VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-            return barrier;
-        }
-
-        case PAL_USAGE_STATE_TRANSFER_WRITE: {
-            barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
-            barrier.access = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_TRANSFER_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             return barrier;
         }
 
+        case PAL_USAGE_STATE_TRANSFER_WRITE: {
+            barrier.stages = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
+            barrier.access = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            return barrier;
+        }
+
         case PAL_USAGE_STATE_VERTEX_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1867,25 +1847,25 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_INDEX_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_INDEX_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_UNIFORM_READ: {
-            barrier.stages = pipelineStageToVk(shaderStage);
-            barrier.dstStages = barrier.stages;
-
+            for (int i = 0; i < stageCount; i++) {
+                barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
+            
             barrier.access = VK_ACCESS_2_UNIFORM_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_SHADER_READ: {
-            barrier.stages = pipelineStageToVk(shaderStage);
-            barrier.dstStages = barrier.stages;
+            for (int i = 0; i < stageCount; i++) {
+                barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
 
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1893,26 +1873,29 @@ static Barrier barrierToVk(
         }
 
         case PAL_USAGE_STATE_SHADER_WRITE: {
-            barrier.stages = pipelineStageToVk(shaderStage);
-            barrier.dstStages = barrier.stages;
+            for (int i = 0; i < stageCount; i++) {
+                barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
+
+            barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_STORAGE_READ: {
+            for (int i = 0; i < stageCount; i++) {
+                barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
 
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
         }
 
-        case PAL_USAGE_STATE_STORAGE_READ: {
-            barrier.stages = pipelineStageToVk(shaderStage);
-            barrier.dstStages = barrier.stages;
-
-            barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            return barrier;
-        }
-
         case PAL_USAGE_STATE_STORAGE_WRITE: {
-            barrier.stages = pipelineStageToVk(shaderStage);
-            barrier.dstStages = barrier.stages;
+            for (int i = 0; i < stageCount; i++) {
+                barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
 
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1921,8 +1904,6 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_HOST_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_HOST_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_HOST_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1930,17 +1911,17 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_HOST_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_HOST_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_HOST_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ: {
-            barrier.stages = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-            barrier.dstStages = barrier.stages;
+            for (int i = 0; i < stageCount; i++) {
+                barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
 
+            barrier.stages |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
             barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1948,8 +1929,6 @@ static Barrier barrierToVk(
 
         case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-            barrier.dstStages = barrier.stages;
-
             barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
@@ -1957,11 +1936,8 @@ static Barrier barrierToVk(
     }
 
     barrier.stages = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
-    barrier.dstStages = barrier.stages;
-
     barrier.access = 0;
     barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-
     return barrier;
 }
 
@@ -7107,8 +7083,15 @@ PalResult PAL_CALL cmdMemoryBarrierVk(
     barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
 
     Barrier old, new;
-    old = barrierToVk(oldUsageStateInfo->usageState, oldUsageStateInfo->shaderStage);
-    new = barrierToVk(newUsageStateInfo->usageState, newUsageStateInfo->shaderStage);
+    old = barrierToVk(
+        oldUsageStateInfo->shaderStageCount,
+        oldUsageStateInfo->usageState, 
+        oldUsageStateInfo->shaderStages);
+
+    new = barrierToVk(
+        newUsageStateInfo->shaderStageCount,
+        newUsageStateInfo->usageState, 
+        newUsageStateInfo->shaderStages);
 
     barrier.srcStageMask = old.stages;
     barrier.srcAccessMask = old.access;
@@ -7138,8 +7121,15 @@ PalResult PAL_CALL cmdImageBarrierVk(
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
 
     Barrier old, new;
-    old = barrierToVk(oldUsageStateInfo->usageState, oldUsageStateInfo->shaderStage);
-    new = barrierToVk(newUsageStateInfo->usageState, newUsageStateInfo->shaderStage);
+    old = barrierToVk(
+        oldUsageStateInfo->shaderStageCount,
+        oldUsageStateInfo->usageState, 
+        oldUsageStateInfo->shaderStages);
+
+    new = barrierToVk(
+        newUsageStateInfo->shaderStageCount,
+        newUsageStateInfo->usageState, 
+        newUsageStateInfo->shaderStages);
 
     barrier.srcStageMask = old.stages;
     barrier.srcAccessMask = old.access;
@@ -7177,8 +7167,15 @@ PalResult PAL_CALL cmdBufferBarrierVk(
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
 
     Barrier old, new;
-    old = barrierToVk(oldUsageStateInfo->usageState, oldUsageStateInfo->shaderStage);
-    new = barrierToVk(newUsageStateInfo->usageState, newUsageStateInfo->shaderStage);
+    old = barrierToVk(
+        oldUsageStateInfo->shaderStageCount,
+        oldUsageStateInfo->usageState, 
+        oldUsageStateInfo->shaderStages);
+
+    new = barrierToVk(
+        newUsageStateInfo->shaderStageCount,
+        newUsageStateInfo->usageState, 
+        newUsageStateInfo->shaderStages);
 
     barrier.srcStageMask = old.stages;
     barrier.srcAccessMask = old.access;

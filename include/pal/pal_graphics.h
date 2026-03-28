@@ -1631,8 +1631,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    Uint32 shaderStageCount;
     PalUsageState usageState;
-    PalShaderStage shaderStage;
+    PalShaderStage* shaderStages;
 } PalUsageStateInfo;
 
 /**

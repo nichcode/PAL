@@ -919,11 +919,9 @@ bool rayTracingTest()
 
     // set a barrier on the buffer
     PalUsageStateInfo oldUsageStateInfo = {0};
-    oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
-
     PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_RAYGEN;
+    newUsageStateInfo.shaderStageCount = 1;
+    newUsageStateInfo.shaderStages = shaderStages;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
 
     result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
@@ -950,11 +948,9 @@ bool rayTracingTest()
 
     // make sure the BLAS builds before the TLAS
     PalUsageStateInfo oldAsUsageStateInfo = {0};
-    oldAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     oldAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
 
     PalUsageStateInfo newAsUsageStateInfo = {0};
-    newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
 
     result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
@@ -972,11 +968,6 @@ bool rayTracingTest()
     }
 
     // make sure the TLAS builds before the tracing
-    oldAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
-    oldAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
-    newAsUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
-    newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
-
     result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -994,7 +985,8 @@ bool rayTracingTest()
     // set a barrier so we only read from the buffer after the shader has
     // written to it
     oldUsageStateInfo = newUsageStateInfo;
-    newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
+    newUsageStateInfo.shaderStageCount = 0;
+    newUsageStateInfo.shaderStages = nullptr;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
     result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
@@ -1005,10 +997,9 @@ bool rayTracingTest()
     }
 
     // set a barrier on the staging buffer
+    oldUsageStateInfo.shaderStageCount = 0;
+    oldUsageStateInfo.shaderStages = nullptr;
     oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
-    oldUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
-
-    newUsageStateInfo.shaderStage = PAL_SHADER_STAGE_UNDEFINED;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
     result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
