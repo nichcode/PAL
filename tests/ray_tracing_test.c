@@ -83,6 +83,7 @@ bool rayTracingTest()
     PalPipeline* pipeline = nullptr;
     PalFence* fence = nullptr;
 
+    PalShaderBindingTable* sbt = nullptr;
     PalAccelerationStructure* blas = nullptr;
     PalAccelerationStructure* tlas = nullptr;
 
@@ -871,6 +872,20 @@ bool rayTracingTest()
         return false;
     }
 
+    // create shader binding table
+    PalShaderBindingTableCreateInfo sbtCreateInfo = {0};
+    sbtCreateInfo.rayTracingPipeline = pipeline;
+    sbtCreateInfo.raygenGroupCount = 1;
+    sbtCreateInfo.missGroupCount = 1;
+    sbtCreateInfo.hitGroupCount = 1;
+
+    result = palCreateShaderBindingTable(device, &sbtCreateInfo, &sbt);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create shader binding table: %s", error);
+        return false;
+    }
+
     // create fence
     result = palCreateFence(device, false, &fence);
     if (result != PAL_RESULT_SUCCESS) {
@@ -887,14 +902,15 @@ bool rayTracingTest()
         return false;
     }
 
-    result = palCmdBindPipeline(cmdBuffer, pipeline);
+    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_RAY_TRACING;
+    result = palCmdBindPipeline(cmdBuffer, bindPoint, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
         return false;
     }
 
-    result = palCmdBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, bindPoint, pipelineLayout, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);
@@ -968,7 +984,7 @@ bool rayTracingTest()
         return false;
     }
 
-    result = palCmdTraceRays(cmdBuffer, BUFFER_SIZE, BUFFER_SIZE, 1);
+    result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to trace rays: %s", error);
@@ -1074,6 +1090,7 @@ bool rayTracingTest()
 
     palDestroyFence(fence);
     palDestroyPipeline(pipeline);
+    palDestroyShaderBindingTable(sbt);
     palDestroyPipelineLayout(pipelineLayout);
     palDestroyDescriptorPool(descriptorPool);
     palDestroyDescriptorSetLayout(descriptorSetLayout);

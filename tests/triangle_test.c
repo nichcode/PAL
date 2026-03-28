@@ -852,7 +852,8 @@ bool triangleTest()
         }
 
         // bind pipeline
-        result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
+        PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_GRAPHICS;
+        result = palCmdBindPipeline(cmdBuffers[currentFrame], bindPoint, pipeline);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
@@ -973,8 +974,8 @@ bool triangleTest()
     palFreeMemory(device, vertexBufferMemory);
 
     palDestroyCommandPool(cmdPool);
-    palDestroySurface(surface);
     palDestroySwapchain(swapchain);
+    palDestroySurface(surface);
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();

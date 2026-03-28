@@ -239,6 +239,15 @@ typedef struct PalPipelineLayout PalPipelineLayout;
 typedef struct PalPipeline PalPipeline;
 
 /**
+ * @struct PalShaderBindingTable
+ * @brief Opaque handle to a shader binding table.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct PalShaderBindingTable PalShaderBindingTable;
+
+/**
  * @struct PalAccelerationStructure
  * @brief Opaque handle to an acceleration structure.
  *
@@ -1337,6 +1346,22 @@ typedef enum {
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT,
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT
 } PalRayTracingShaderGroupType;
+
+/**
+ * @enum PalPipelineBindPoint
+ * @brief Binding point for pipeline and pipeline layouts.
+ *
+ * All pipeline bind points follow the format `PAL_PIPELINE_BIND_POINT_**`
+ * for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_PIPELINE_BIND_POINT_GRAPHICS,
+    PAL_PIPELINE_BIND_POINT_COMPUTE,
+    PAL_PIPELINE_BIND_POINT_RAY_TRACING
+} PalPipelineBindPoint;
 
 /**
  * @struct PalAdapterInfo
@@ -2548,6 +2573,23 @@ typedef struct {
 } PalRayTracingPipelineCreateInfo;
 
 /**
+ * @struct PalShaderBindingTableCreateInfo
+ * @brief Creation parameters for a shader binding table.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 raygenGroupCount;
+    Uint32 missGroupCount;
+    Uint32 hitGroupCount;
+    Uint32 callableGroupCount;
+    PalPipeline* rayTracingPipeline;
+} PalShaderBindingTableCreateInfo;
+
+/**
  * @struct PalGraphicsBackend
  * @brief Dispatch table for PAL graphics system backends.
  *
@@ -3238,6 +3280,7 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdBindPipeline)(
         PalCommandBuffer* cmdBuffer,
+        PalPipelineBindPoint bindPoint,
         PalPipeline* pipeline);
 
     /**
@@ -3435,6 +3478,8 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdTraceRays)(
         PalCommandBuffer* cmdBuffer,
+        PalShaderBindingTable* sbt,
+        Uint32 raygenIndex,
         Uint32 width,
         Uint32 height,
         Uint32 depth);
@@ -3446,6 +3491,8 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdTraceRaysIndirect)(
         PalCommandBuffer* cmdBuffer,
+        Uint32 raygenIndex,
+        PalShaderBindingTable* sbt,
         PalDeviceAddress bufferAddress);
 
     /**
@@ -3455,7 +3502,7 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdBindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
-        PalPipeline* pipeline,
+        PalPipelineBindPoint bindPoint,
         PalPipelineLayout* layout,
         Uint32 setIndex,
         PalDescriptorSet* set);
@@ -3738,6 +3785,23 @@ typedef struct {
      * Must obey the rules and semantics documented in palDestroyPipeline().
      */
     void PAL_CALL (*destroyPipeline)(PalPipeline* pipeline);
+
+    /**
+     * Backend implementation of ::palCreateShaderBindingTable.
+     *
+     * Must obey the rules and semantics documented in palCreateShaderBindingTable().
+     */
+    PalResult PAL_CALL (*createShaderBindingTable)(
+        PalDevice* device,
+        const PalShaderBindingTableCreateInfo* info,
+        PalShaderBindingTable** outSbt);
+
+    /**
+     * Backend implementation of ::palDestroyShaderBindingTable.
+     *
+     * Must obey the rules and semantics documented in palDestroyShaderBindingTable().
+     */
+    void PAL_CALL (*destroyShaderBindingTable)(PalShaderBindingTable* sbt);
 } PalGraphicsBackend;
 
 /**
@@ -5555,6 +5619,7 @@ PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
  * set at the respective creation functions. (`palCreate**Graphics/Compute/RayTracing**Pipeline`).
  *
  * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] bindPoint The Binding point. Must match pipeline type.
  * @param[in] pipeline Pipeline to bind.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -5567,6 +5632,7 @@ PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
  */
 PAL_API PalResult PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
+    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline);
 
 /**
@@ -6055,6 +6121,8 @@ PAL_API PalResult PAL_CALL palCmdDispatchIndirect(
  * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] sbt The shader binding table to use.
+ * @param[in] raygenIndex Index of the raygen shader to execute.
  * @param[in] width Number of rays to trace on the x axis.
  * @param[in] height Number of rays to trace on the y axis.
  * @param[in] depth Number of rays to trace on the z axis.
@@ -6069,6 +6137,8 @@ PAL_API PalResult PAL_CALL palCmdDispatchIndirect(
  */
 PAL_API PalResult PAL_CALL palCmdTraceRays(
     PalCommandBuffer* cmdBuffer,
+    PalShaderBindingTable* sbt,
+    Uint32 raygenIndex,
     Uint32 width,
     Uint32 height,
     Uint32 depth);
@@ -6083,6 +6153,8 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] raygenIndex Index of the raygen shader to execute.
+ * @param[in] sbt The shader binding table to use.
  * @param[in] bufferAddress Buffer address of buffer containing an array of
  * PalDispatchIndirectData structs. Can be a single struct.
  *
@@ -6096,6 +6168,8 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  */
 PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
+    Uint32 raygenIndex,
+    PalShaderBindingTable* sbt,
     PalDeviceAddress bufferAddress);
 
 /**
@@ -6104,7 +6178,7 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  * The graphics system must be initialized before this call.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] pipeline Pipeline to associate the descriptor set to.
+ * @param[in] bindPoint The Binding point.
  * @param[in] layout The pipeline layout that defines the descriptor interface.
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
@@ -6119,7 +6193,7 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  */
 PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    PalPipeline* pipeline,
+    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set);
@@ -6839,6 +6913,52 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  * @sa palCreateRayTracingPipeline
  */
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
+
+/**
+ * @brief Create a shader binding table.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not, this
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device that creates the shader binding table.
+ * @param[in] info Pointer to a PalShaderBindingTableCreateInfo struct that specifies parameters.
+ * Must not be nullptr.
+ * @param[out] outSbt Pointer to a PalShaderBindingTable to recieve the created shader binding 
+ * table.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palDestroyShaderBindingTable
+ */
+PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
+    PalDevice* device,
+    const PalShaderBindingTableCreateInfo* info,
+    PalShaderBindingTable** outSbt);
+
+/**
+ * @brief Destroy a shader binding table.
+ *
+ * The graphics system must be initialized before this call.
+ * If the provided shader binding table is invalid or nullptr, this function returns
+ * silently.
+ *
+ * @param[in] sbt Shader binding table to destroy.
+ *
+ * Thread safety: Thread safe if the device used to create the shader binding table is
+ * externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palCreateShaderBindingTable
+ */
+PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
 
 /**
  * @brief Build work group info(s) from work inputs specified in pixels, vertices etc.

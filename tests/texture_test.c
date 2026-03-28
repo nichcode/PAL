@@ -1221,7 +1221,8 @@ bool textureTest()
         }
 
         // bind pipeline
-        result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
+        PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_GRAPHICS;
+        result = palCmdBindPipeline(cmdBuffers[currentFrame], bindPoint, pipeline);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
@@ -1230,7 +1231,7 @@ bool textureTest()
 
         result = palCmdBindDescriptorSet(
             cmdBuffers[currentFrame], 
-            pipeline, 
+            bindPoint, 
             pipelineLayout, 
             0, 
             descriptorSet);
@@ -1363,8 +1364,8 @@ bool textureTest()
     palFreeMemory(device, vertexBufferMemory);
 
     palDestroyCommandPool(cmdPool);
-    palDestroySurface(surface);
     palDestroySwapchain(swapchain);
+    palDestroySurface(surface);
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();

@@ -444,7 +444,8 @@ bool computeTest()
     pushConstant.color[2] = 0.0f;
     pushConstant.color[3] = 1.0f;
 
-    result = palCmdBindPipeline(cmdBuffer, pipeline);
+    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_COMPUTE;
+    result = palCmdBindPipeline(cmdBuffer, bindPoint, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
@@ -466,7 +467,7 @@ bool computeTest()
         return false;
     }
 
-    result = palCmdBindDescriptorSet(cmdBuffer, pipeline, pipelineLayout, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, bindPoint, pipelineLayout, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);

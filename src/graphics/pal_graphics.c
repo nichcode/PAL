@@ -58,6 +58,7 @@ PAL_HANDLE(PalDescriptorPool)
 PAL_HANDLE(PalDescriptorSet)
 PAL_HANDLE(PalSampler)
 PAL_HANDLE(PalSurface)
+PAL_HANDLE(PalShaderBindingTable)
 
 typedef struct {
     Int32 count;
@@ -394,6 +395,7 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
 
 PalResult PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
+    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline);
 
 PalResult PAL_CALL cmdSetViewportVk(
@@ -506,17 +508,21 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
 
 PalResult PAL_CALL cmdTraceRaysVk(
     PalCommandBuffer* cmdBuffer,
+    PalShaderBindingTable* sbt,
+    Uint32 raygenIndex,
     Uint32 width,
     Uint32 height,
     Uint32 depth);
 
 PalResult PAL_CALL cmdTraceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
+    Uint32 raygenIndex,
+    PalShaderBindingTable* sbt,
     PalDeviceAddress bufferAddress);
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipeline* pipeline,
+    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set);
@@ -662,6 +668,13 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     PalPipeline** outPipeline);
 
 void PAL_CALL destroyPipelineVk(PalPipeline* pipeline);
+
+PalResult PAL_CALL createShaderBindingTableVk(
+    PalDevice* device,
+    const PalShaderBindingTableCreateInfo* info,
+    PalShaderBindingTable** outSbt);
+
+void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt);
 
 static PalGraphicsBackend s_VkBackend = {
     // adapter
@@ -828,7 +841,11 @@ static PalGraphicsBackend s_VkBackend = {
     .createGraphicsPipeline = createGraphicsPipelineVk,
     .createComputePipeline = createComputePipelineVk,
     .createRayTracingPipeline = createRayTracingPipelineVk,
-    .destroyPipeline = destroyPipelineVk};
+    .destroyPipeline = destroyPipelineVk,
+
+    // shader binding table
+    .createShaderBindingTable = createShaderBindingTableVk,
+    .destroyShaderBindingTable = destroyShaderBindingTableVk};
 
 #endif // PAL_HAS_VULKAN
 
@@ -1028,7 +1045,11 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->createGraphicsPipeline                ||
         !backend->createComputePipeline                 ||
         !backend->createRayTracingPipeline              ||
-        !backend->destroyPipeline) {
+        !backend->destroyPipeline                       ||
+
+        // shader binding table
+        !backend->createShaderBindingTable              ||
+        !backend->destroyShaderBindingTable) {
         return PAL_RESULT_INVALID_BACKEND;
     }
     // clang-format on
@@ -2320,6 +2341,7 @@ PalResult PAL_CALL palCmdCopyImageToBuffer(
 
 PalResult PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
+    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline)
 {
     if (!s_Graphics.initialized) {
@@ -2330,7 +2352,7 @@ PalResult PAL_CALL palCmdBindPipeline(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdBindPipeline(cmdBuffer, pipeline);
+    return cmdBuffer->backend->cmdBindPipeline(cmdBuffer, bindPoint, pipeline);
 }
 
 PalResult PAL_CALL palCmdSetViewport(
@@ -2653,6 +2675,8 @@ PalResult PAL_CALL palCmdDispatchIndirect(
 
 PalResult PAL_CALL palCmdTraceRays(
     PalCommandBuffer* cmdBuffer,
+    PalShaderBindingTable* sbt,
+    Uint32 raygenIndex,
     Uint32 width,
     Uint32 height,
     Uint32 depth)
@@ -2661,31 +2685,33 @@ PalResult PAL_CALL palCmdTraceRays(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer) {
+    if (!cmdBuffer || !sbt) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdTraceRays(cmdBuffer, width, height, depth);
+    return cmdBuffer->backend->cmdTraceRays(cmdBuffer, sbt, raygenIndex, width, height, depth);
 }
 
 PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
+    Uint32 raygenIndex,
+    PalShaderBindingTable* sbt,
     PalDeviceAddress bufferAddress)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer) {
+    if (!cmdBuffer || !sbt) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdTraceRaysIndirect(cmdBuffer, bufferAddress);
+    return cmdBuffer->backend->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, bufferAddress);
 }
 
 PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    PalPipeline* pipeline,
+    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set)
@@ -2694,11 +2720,16 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !pipeline || !layout || !set) {
+    if (!cmdBuffer || !layout || !set) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdBindDescriptorSet(cmdBuffer, pipeline, layout, setIndex, set);
+    return cmdBuffer->backend->cmdBindDescriptorSet(
+        cmdBuffer, 
+        bindPoint, 
+        layout, 
+        setIndex, 
+        set);
 }
 
 PalResult PAL_CALL palCmdPushConstants(
@@ -3261,6 +3292,46 @@ void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
 {
     if (s_Graphics.initialized && pipeline) {
         pipeline->backend->destroyPipeline(pipeline);
+    }
+}
+
+// ==================================================
+// Shader Binding Table
+// ==================================================
+
+PalResult PAL_CALL palCreateShaderBindingTable(
+    PalDevice* device,
+    const PalShaderBindingTableCreateInfo* info,
+    PalShaderBindingTable** outSbt)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !info || !outSbt) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->rayTracingPipeline) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    PalResult result;
+    PalShaderBindingTable* sbt = nullptr;
+    result = device->backend->createShaderBindingTable(device, info, &sbt);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    sbt->backend = device->backend;
+    *outSbt = sbt;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt)
+{
+    if (s_Graphics.initialized && sbt) {
+        sbt->backend->destroyShaderBindingTable(sbt);
     }
 }
 
