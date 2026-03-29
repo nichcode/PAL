@@ -3,8 +3,7 @@ dofile("pal_config.lua")
 
 target_dir = "%{wks.location}/bin/%{cfg.buildcfg}"
 obj_dir = "%{wks.location}/build"
-
-local ucrt = os.getenv("UCRT64") or "C:/msys64/ucrt64"
+ucrt = os.getenv("UCRT64") or "C:/msys64/ucrt64"
 
 newoption {
     trigger = "compiler",

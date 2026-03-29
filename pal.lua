@@ -149,8 +149,8 @@ project "PAL"
 
     if (PAL_BUILD_GRAPHICS) then
         -- check for vulkan support. This is cross compiler
-        vulkan_sdk = os.getenv("VULKAN_SDK")
-        hasVulkan = false
+        local vulkan_sdk = os.getenv("VULKAN_SDK")
+        local hasVulkan = false
         if (vulkan_sdk) then
             hasVulkan = true
             -- add to include path if compiler does not see it
@@ -158,22 +158,54 @@ project "PAL"
                 path.join(vulkan_sdk, "include")
             }
 
-            libdirs {
-                path.join(vulkan_sdk, "Lib")
-            }
-
             defines { "PAL_HAS_VULKAN=1" }
         else
             defines { "PAL_HAS_VULKAN=0" }
+        end
+
+        -- check for d3d12 support. This is cross compiler
+        local hasD3D12 = false
+        local d3d12_include = os.getenv("D3D12_INCLUDE")
+        if (os.isfile(path.join(d3d12_include, "d3d12.h"))) then
+            hasD3D12 = true
+
+        else
+            if (_ACTION == "vs2022") then
+                local sdkDir = os.getenv("WindowsSdkDir")
+                local sdkVer = os.getenv("WindowsSDKVersion")
+                if (sdkDir and sdkVer) then
+                    d3d12_include = path.join(sdkDir, "Include", sdkVer, "um")
+                end
+            else
+                d3d12_include = path.join(ucrt, "include")
+            end
+
+            if (os.isfile(path.join(d3d12_include, "d3d12.h"))) then
+                hasD3D12 = true
+            end
+        end
+
+        if (hasD3D12) then
+            -- add to include path if compiler does not see it
+            includedirs {
+                d3d12_include
+            }
+
+            defines { "PAL_HAS_D3D12=1" }
+        else
+            defines { "PAL_HAS_D3D12=0" }
         end
 
         -- base graphics file
         files { "src/graphics/pal_graphics.c" }
 
         filter {"system:windows", "configurations:*"}
-            -- files { "src/graphics/pal_d3d12.c" }
             if (hasVulkan) then
                 files { "src/graphics/pal_vulkan.c" }
+            end
+
+            if (hasD3D12) then
+                files { "src/graphics/pal_d3d12.c" }
             end
 
         filter {"system:linux", "configurations:*"}
