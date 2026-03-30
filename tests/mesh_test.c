@@ -758,10 +758,10 @@ bool meshTest()
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    result = palWaitDevice(device);
+    result = palWaitQueue(queue);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for device: %s", error);
+        palLog(nullptr, "Failed to wait for queue: %s", error);
         return false;
     }
 

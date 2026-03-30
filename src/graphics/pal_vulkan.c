@@ -347,7 +347,6 @@ typedef struct {
     PFN_vkDestroyPipeline destroyPipeline;
     PFN_vkCreateDebugUtilsMessengerEXT createMessenger;
     PFN_vkDestroyDebugUtilsMessengerEXT destroyMessenger;
-    PFN_vkDeviceWaitIdle waitDevice;
     PFN_vkQueueWaitIdle waitQueue;
 
     VkAllocationCallbacks vkAllocator;
@@ -2641,10 +2640,6 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkDestroyPipeline");
 
-    s_Vk.waitDevice = (PFN_vkDeviceWaitIdle)loadProc(
-        s_Vk.handle,
-        "vkDeviceWaitIdle");
-
     s_Vk.waitQueue = (PFN_vkQueueWaitIdle)loadProc(
         s_Vk.handle,
         "vkQueueWaitIdle");
@@ -2664,10 +2659,11 @@ PalResult PAL_CALL initGraphicsVk(
     Uint32 layerCount = 0;
     bool hasValidationLayer = false;
     s_Vk.messenger = nullptr;
+    s_Vk.allocator = allocator;
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {0};
     debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 
-    if (debugger) {
+    if (debugger && debugger->callback) {
         // layers
         result = s_Vk.enumerateInstanceLayerProperties(&layerCount, nullptr);
         if (result == VK_SUCCESS) {
@@ -2794,7 +2790,7 @@ PalResult PAL_CALL initGraphicsVk(
     instanceCreateInfo.ppEnabledExtensionNames = extensions;
     instanceCreateInfo.ppEnabledLayerNames = layers;
 
-    if (debugger) {
+    if (debugger && debugger->callback) {
         instanceCreateInfo.pNext = &debugCreateInfo;
     }
 
@@ -4259,17 +4255,6 @@ void PAL_CALL destroyDeviceVk(PalDevice* device)
     s_Vk.destroyDevice(vkDevice->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkDevice->phyQueues);
     palFree(s_Vk.allocator, vkDevice);
-}
-
-PalResult PAL_CALL waitDeviceVk(PalDevice* device)
-{
-    Device* vkDevice = (Device*)device;
-    VkResult result = s_Vk.waitDevice(vkDevice->handle);
-    if (result != VK_SUCCESS) {
-        return resultFromVk(result);
-    }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================

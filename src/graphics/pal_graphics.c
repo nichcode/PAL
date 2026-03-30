@@ -774,7 +774,6 @@ static PalGraphicsBackend s_VkBackend = {
     // device
     .createDevice = createDeviceVk,
     .destroyDevice = destroyDeviceVk,
-    .waitDevice = waitDeviceVk,
 
     // memory
     .allocateMemory = allocateMemoryVk,
@@ -1618,7 +1617,6 @@ static PalGraphicsBackend s_D3D12Backend = {
     // device
     .createDevice = createDeviceD3D12,
     .destroyDevice = destroyDeviceD3D12,
-    .waitDevice = waitDeviceD3D12,
 
     // memory
     .allocateMemory = allocateMemoryD3D12,
@@ -1818,7 +1816,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         // device
         !backend->createDevice                          ||
         !backend->destroyDevice                         ||
-        !backend->waitDevice                            ||
 
         // memory
         !backend->allocateMemory                        ||
@@ -2220,19 +2217,6 @@ void PAL_CALL palDestroyDevice(PalDevice* device)
     if (s_Graphics.initialized && device) {
         device->backend->destroyDevice(device);
     }
-}
-
-PalResult PAL_CALL palWaitDevice(PalDevice* device)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
-    }
-
-    if (!device) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    return device->backend->waitDevice(device);
 }
 
 PalResult PAL_CALL palAllocateMemory(

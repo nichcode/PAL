@@ -2652,13 +2652,6 @@ typedef struct {
     void PAL_CALL (*destroyDevice)(PalDevice* device);
 
     /**
-     * Backend implementation of ::palWaitDevice.
-     *
-     * Must obey the rules and semantics documented in palWaitDevice().
-     */
-    PalResult PAL_CALL (*waitDevice)(PalDevice* device);
-
-    /**
      * Backend implementation of ::palAllocateMemory.
      *
      * Must obey the rules and semantics documented in palAllocateMemory().
@@ -3845,6 +3838,9 @@ PAL_API PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backe
  * The debugger and allocator will not not copied, therefore the pointers must remain valid
  * until the graphics system is shutdown. Set the debugger or PalGraphicsDebugger::callback to
  * nullptr to disable debugging and validation layers.
+ * 
+ * If `debugger` is not nullptr and there is no debug layers, this function will not fail but 
+ * debugging will be disabled.
  *
  * @param[in] debugger Optional debugger. Set to nullptr to disable debugging and validation
  * layers.
@@ -4018,26 +4014,6 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  * @sa palCreateDevice
  */
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
-
-/**
- * @brief Blocks indefinitely until the device becomes idle.
- *
- * The graphics system must be initialized before this call.
- *
- * This function blocks indefinitely until all submitted work on the device has been completetd.
- * Returns `PAL_RESULT_SUCCESS` to indicate all pending operations has been completetd.
- *
- * @param[in] device Pointer to device to wait.
- *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if `device` is externally synchronized.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-PAL_API PalResult PAL_CALL palWaitDevice(PalDevice* device);
 
 /**
  * @brief Allocates GPU memory for the specified device.

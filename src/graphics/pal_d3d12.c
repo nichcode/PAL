@@ -33,15 +33,24 @@ freely, subject to the following restrictions:
 #include <windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <d3d12sdklayers.h>
 
 // ==================================================
 // Typedefs, enums and structs
 // ==================================================
 
+// on older SDKs, D3D_FEATURE_LEVEL_12_2 is not defined
+#ifndef D3D_FEATURE_LEVEL_12_2
+#define D3D_FEATURE_LEVEL_12_2 0xc200
+#endif // D3D_FEATURE_LEVEL_12_2
+
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
 const IID IID_Adapter = {0x3c8d99d1, 0x4fbf, 0x4181, 0xa8,0x2c, 0xaf,0x66,0xbf,0x7b,0xd2,0x4e};
 const IID IID_Factory = {0xc1b6694f, 0xff09, 0x44a9, 0xb0,0x3c, 0x77,0x90,0x0a,0x0a,0x1d,0x17};
+const IID IID_Debug = {0x344488b7, 0x6846, 0x474b, 0xb9,0x89, 0xf0,0x27,0x44,0x82,0x45,0xe0};
+const IID IID_Debug1 = {0xaffaa4ca, 0x63fe, 0x4d8e, 0xb8,0xad, 0x15,0x90,0x00,0xaf,0x43,0x04};
+const IID IID_InfoQueue = {0x0742a90b, 0xc387, 0x483f, 0xb9,0x46, 0x30,0xa7,0xe4,0xe6,0x14,0x58};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -55,16 +64,29 @@ typedef struct {
 } Adapter;
 
 typedef struct {
+    bool debugLayer;
     HMODULE handle;
     HMODULE dxgi;
     Adapter* adapters;
     IDXGIFactory6* factory;
+    ID3D12Debug* debugController;
+    ID3D12Debug1* debugController1;
 
     PFN_D3D12_CREATE_DEVICE createDevice;
     PFN_CreateDXGIFactory2 createDXGIFactory;
+    PFN_D3D12_GET_DEBUG_INTERFACE getDebugInterface;
   
     const PalAllocator* allocator;
 } D3D12;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    PalAdapterFeatures features;
+    IDXGIAdapter4* adapter;
+    ID3D12InfoQueue* infoQueue;
+    ID3D12Device* handle;
+} Device;
 
 static D3D12 s_D3D12 = {0};
 
@@ -96,6 +118,29 @@ PalResult PAL_CALL initGraphicsD3D12(
         s_D3D12.dxgi,
         "CreateDXGIFactory2");
 
+    if (debugger && debugger->callback) {
+        s_D3D12.getDebugInterface = (PFN_D3D12_GET_DEBUG_INTERFACE)GetProcAddress(
+            s_D3D12.handle,
+            "D3D12GetDebugInterface");
+
+        if (s_D3D12.getDebugInterface) {
+            HRESULT hr;
+            hr = s_D3D12.getDebugInterface(&IID_Debug, (void**)&s_D3D12.debugController);
+            if (SUCCEEDED(hr)) {
+                s_D3D12.debugController->lpVtbl->EnableDebugLayer(s_D3D12.debugController);
+            }
+
+            hr = s_D3D12.getDebugInterface(&IID_Debug1, (void**)&s_D3D12.debugController1);
+            if (SUCCEEDED(hr)) {
+                s_D3D12.debugController1->lpVtbl->SetEnableGPUBasedValidation(
+                    s_D3D12.debugController1, 
+                    TRUE);
+            }
+
+            s_D3D12.debugLayer = true;
+        }
+    }
+
     // clang-format on
 
     s_D3D12.factory = nullptr;
@@ -105,11 +150,20 @@ PalResult PAL_CALL initGraphicsD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    s_D3D12.allocator = allocator;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL shutdownGraphicsD3D12()
 {
+    if (s_D3D12.debugController) {
+        s_D3D12.debugController->lpVtbl->Release(s_D3D12.debugController);
+    }
+
+    if (s_D3D12.debugController1) {
+        s_D3D12.debugController1->lpVtbl->Release(s_D3D12.debugController1);
+    }
+
     s_D3D12.factory->lpVtbl->Release(s_D3D12.factory);
     FreeLibrary(s_D3D12.handle);
     FreeLibrary(s_D3D12.dxgi);
@@ -216,7 +270,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
 
     // create a temporary device to check the supported version
     Uint32 levelIndex = 0;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         result = s_D3D12.createDevice(
             (IUnknown*)adapterHandle, 
             levels[i], 
@@ -338,7 +392,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
         D3D_FEATURE_LEVEL_11_0
     };
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         result = s_D3D12.createDevice(
             (IUnknown*)adapterHandle, 
             levels[i], 
@@ -466,17 +520,76 @@ PalResult PAL_CALL createDeviceD3D12(
     PalAdapterFeatures features,
     PalDevice** outDevice)
 {
+    HRESULT result;
+    Device* device = nullptr;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
 
+    device = palAllocate(s_D3D12.allocator, sizeof(Device), 0);
+    if (!device) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(device, 0, sizeof(Device));
+    D3D_FEATURE_LEVEL levels[] = {
+        D3D_FEATURE_LEVEL_12_2,
+        D3D_FEATURE_LEVEL_12_1,
+        D3D_FEATURE_LEVEL_12_0,
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0
+    };
+
+    for (int i = 0; i < 5; i++) {
+        result = s_D3D12.createDevice(
+            (IUnknown*)d3d12Adapter->handle, 
+            levels[i], 
+            &IID_Device, 
+            (void**)&device->handle);
+            
+        if (SUCCEEDED(result)) {
+            break;
+        }
+    }
+
+    if (s_D3D12.debugLayer) {
+        result = device->handle->lpVtbl->QueryInterface(
+            device->handle, 
+            &IID_InfoQueue, 
+            (void**)&device->infoQueue);
+
+        if (SUCCEEDED(result)) {
+            D3D12_MESSAGE_SEVERITY severities[] = {
+                D3D12_MESSAGE_SEVERITY_WARNING,
+                D3D12_MESSAGE_SEVERITY_ERROR,
+                D3D12_MESSAGE_SEVERITY_CORRUPTION
+            };
+
+            D3D12_MESSAGE_ID denyIDs[] = { D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE };
+
+            D3D12_INFO_QUEUE_FILTER filter = {0};
+            filter.AllowList.NumSeverities = 3;
+            filter.AllowList.pSeverityList = severities;
+            filter.DenyList.NumIDs = 1;
+            filter.DenyList.pIDList = denyIDs;
+
+            device->infoQueue->lpVtbl->PushStorageFilter(device->infoQueue, &filter);
+        }
+    }
+
+    device->adapter = d3d12Adapter->handle;
+    device->features = features;
+    *outDevice = (PalDevice*)device;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 {
+    Device* d3d12Device = (Device*)device;
+    d3d12Device->handle->lpVtbl->Release(d3d12Device->handle);
+    if (d3d12Device->infoQueue) {
+        d3d12Device->infoQueue->lpVtbl->Release(d3d12Device->infoQueue);
+    }
 
-}
-
-PalResult PAL_CALL waitDeviceD3D12(PalDevice* device)
-{
-
+    palFree(s_D3D12.allocator, d3d12Device);
 }
 
 // ==================================================

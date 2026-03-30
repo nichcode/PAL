@@ -120,7 +120,7 @@ bool computeTest()
     PalAdapterFeatures adapterFeatures = 0;
     bool hasComputeQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
-        adapter = adapters[i];
+        adapter = adapters[1]; // TODO: remove
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
