@@ -2002,45 +2002,47 @@ PalResult PAL_CALL palInitGraphics(
         return PAL_RESULT_INVALID_ALLOCATOR;
     }
 
+    PalResult result;
+    BackendData* attachedBackend = nullptr;
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN
-    PalResult result = initGraphicsVk(debugger, allocator);
+    result = initGraphicsVk(debugger, allocator);
     if (result != PAL_RESULT_SUCCESS) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return result;
     }
 
-    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
-    attached->base = &s_VkBackend;
-    attached->startIndex = 0;
-    attached->count = 0;
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base = &s_VkBackend;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN
 
     // D3D12
 #if PAL_HAS_D3D12
-    PalResult result = initGraphicsD3D12(debugger, allocator);
+    result = initGraphicsD3D12(debugger, allocator);
     if (result != PAL_RESULT_SUCCESS) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return result;
     }
 
-    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
-    attached->base = &s_D3D12Backend;
-    attached->startIndex = 0;
-    attached->count = 0;
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base = &s_D3D12Backend;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
 #endif // PAL_HAS_D3D12
 
 #elif defined(__linux__)
     // vulkan
 #if PAL_HAS_VULKAN
-    PalResult result = initGraphicsVk(debugger, allocator);
+    result = initGraphicsVk(debugger, allocator);
     if (result != PAL_RESULT_SUCCESS) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return result;
     }
 
-    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
-    attached->base = &s_VkBackend;
-    attached->startIndex = 0;
-    attached->count = 0;
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base = &s_VkBackend;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN
 #else
     // metal or andriod
@@ -2106,30 +2108,36 @@ PalResult PAL_CALL palEnumerateAdapters(
     PalResult result;
     int totalCount = 0;
     int index = 0;
-    int _count = outAdapters ? *count : 0;
+    int _count = 0;
 
     for (int i = 0; i < s_Graphics.backendCount; i++) {
         BackendData* backend = &s_Graphics.backends[i];
         if (outAdapters) {
             // offset into the array so all backends write at the correct index
             PalAdapter** adapters = &outAdapters[backend->startIndex];
+            _count = backend->count;
             result = backend->base->enumerateAdapters(&_count, adapters);
+            // break if a backend fails
+            if (result != PAL_RESULT_SUCCESS) {
+                return result;
+            }
 
             for (int j = 0; j < _count; j++) {
+                PalAdapter* tmp = adapters[j];
                 adapters[j]->backend = backend->base;
             }
 
         } else {
             result = backend->base->enumerateAdapters(&_count, nullptr);
+            // break if a backend fails
+            if (result != PAL_RESULT_SUCCESS) {
+                return result;
+            }
+
             backend->startIndex = totalCount;
             backend->count = _count;
             totalCount += _count;
             _count = 0;
-        }
-
-        // break if a backend fails
-        if (result != PAL_RESULT_SUCCESS) {
-            return result;
         }
     }
 

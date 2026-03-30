@@ -1400,8 +1400,8 @@ typedef struct {
     Uint32 maxImageDepth;
     Uint32 maxImageArrayLayers;
     Uint32 maxImageMipLevels;
-    PalSampleCount maxColorSampleCount;
-    PalSampleCount maxDepthSampleCount;
+    PalSampleCount maxColorSampleCount; // TODO: Remove
+    PalSampleCount maxDepthSampleCount; // TODO: Remove
     Uint32 maxColorAttachments;
     Uint32 maxMultiViews;
     Uint32 maxViewports;

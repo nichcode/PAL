@@ -63,15 +63,15 @@ bool graphicsTest()
         }
 
         features = palGetAdapterFeatures(adapter);
-        Uint32 vramGb = info.vram / (1024.0 * 1024.0 * 1024.0);
-        Uint32 sharedMemGb = info.sharedMemory / (1024.0 * 1024.0 * 1024.0);
+        Uint32 vramMb = info.vram / (1024.0 * 1024.0);
+        Uint32 sharedMemMb = info.sharedMemory / (1024.0 * 1024.0);
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);
         palLog(nullptr, " Vendor Id: %d", info.vendorId);
         palLog(nullptr, " Device Id: %d", info.deviceId);
-        palLog(nullptr, " Vram %dGB", vramGb);
-        palLog(nullptr, " Shared Memory %dGB", sharedMemGb);
+        palLog(nullptr, " Vram %dMB", vramMb);
+        palLog(nullptr, " Shared Memory %dMB", sharedMemMb);
         palLog(nullptr, " API Version: %s", info.versionString);
 
         const char* typeString;
@@ -225,7 +225,7 @@ bool graphicsTest()
         }
 
         if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) {
-            palLog(nullptr, "  Fragment rendering rate");
+            palLog(nullptr, "  Fragment shading rate");
         }
 
         if (features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
