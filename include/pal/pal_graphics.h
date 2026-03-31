@@ -496,8 +496,8 @@ typedef enum {
     PAL_FORMAT_S8_UINT,
     PAL_FORMAT_D16_UNORM,
     PAL_FORMAT_D32_SFLOAT,
-    PAL_FORMAT_D32_SFLOAT_S8_UINT,
     PAL_FORMAT_D16_UNORM_S8_UINT,
+    PAL_FORMAT_D32_SFLOAT_S8_UINT,
     PAL_FORMAT_D24_UNORM_S8_UINT,
 
     PAL_FORMAT_MAX
@@ -1410,8 +1410,6 @@ typedef struct {
     Uint32 maxImageDepth;
     Uint32 maxImageArrayLayers;
     Uint32 maxImageMipLevels;
-    PalSampleCount maxColorSampleCount; // TODO: Remove
-    PalSampleCount maxDepthSampleCount; // TODO: Remove
     Uint32 maxColorAttachments;
     Uint32 maxMultiViews;
     Uint32 maxViewports;
@@ -1598,8 +1596,8 @@ typedef struct {
 
 /**
  * @struct PalFormatInfo
- * @brief Information about a format. This includes the supported image and image view usages
- * from the provided format.
+ * @brief Information about a format. This includes the supported image, image view usages and
+ * sample count from the provided format.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1608,6 +1606,7 @@ typedef struct {
     PalFormat format;              /**< The format.*/
     PalImageUsages usages;         /**< Supported image usages of the format.*/
     PalImageViewUsages viewUsages; /**< Supported image view usages of the format.*/
+    PalSampleCount maxSampleCount; /**< Supported multisample count.*/
 } PalFormatInfo;
 
 /**
@@ -2842,6 +2841,15 @@ typedef struct {
      * Must obey the rules and semantics documented in palQueryFormatImageViewUsages().
      */
     PalImageViewUsages PAL_CALL (*queryFormatImageViewUsages)(
+        PalAdapter* adapter,
+        PalFormat format);
+
+    /**
+     * Backend implementation of ::palQueryFormatSampleCount.
+     *
+     * Must obey the rules and semantics documented in palQueryFormatSampleCount().
+     */
+    PalSampleCount PAL_CALL (*queryFormatSampleCount)(
         PalAdapter* adapter,
         PalFormat format);
 
@@ -4406,7 +4414,7 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `outFormats` is per thread.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4432,7 +4440,7 @@ PAL_API PalResult PAL_CALL palEnumerateFormats(
  *
  * @return True if format is supported otherwise false if not supported.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4453,7 +4461,7 @@ PAL_API bool PAL_CALL palIsFormatSupported(
  *
  * @return Supported image usages on success otherwise `0` on failure.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4472,12 +4480,31 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
  *
  * @return Supported image view usages on success otherwise `0` on failure.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 PAL_API PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
+    PalAdapter* adapter,
+    PalFormat format);
+
+/**
+ * @brief Checks supported sample count associated with a format.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] adapter Adapter to query format on.
+ * @param[in] format Format to query sample count for.
+ *
+ * @return Supported sample count on success otherwise `0` on failure.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
     PalAdapter* adapter,
     PalFormat format);
 

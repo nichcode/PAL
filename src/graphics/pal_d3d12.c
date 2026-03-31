@@ -63,11 +63,14 @@ typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    D3D_FEATURE_LEVEL level;
+    ID3D12Device* tmpDevice;
     IDXGIAdapter4* handle;
 } Adapter;
 
 typedef struct {
     bool debugLayer;
+    Uint32 adapterCount;
     HMODULE handle;
     HMODULE dxgi;
     Adapter* adapters;
@@ -111,6 +114,273 @@ static D3D12 s_D3D12 = {0};
 // ==================================================
 // Helper Functions
 // ==================================================
+
+static DXGI_FORMAT formatToD3D12(PalFormat format)
+{
+    switch (format) {
+        case PAL_FORMAT_R8_UNORM:
+            return DXGI_FORMAT_R8_UNORM;
+
+        case PAL_FORMAT_R8_SNORM:
+            return DXGI_FORMAT_R8_SNORM;
+
+        case PAL_FORMAT_R8_UINT:
+            return DXGI_FORMAT_R8_UINT;
+
+        case PAL_FORMAT_R8_SINT:
+            return DXGI_FORMAT_R8_SINT;
+
+        case PAL_FORMAT_R8_SRGB:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16_UNORM:
+            return DXGI_FORMAT_R16_UNORM;
+
+        case PAL_FORMAT_R16_SNORM:
+            return DXGI_FORMAT_R16_SNORM;
+
+        case PAL_FORMAT_R16_UINT:
+            return DXGI_FORMAT_R16_UINT;
+
+        case PAL_FORMAT_R16_SINT:
+            return DXGI_FORMAT_R16_SINT;
+
+        case PAL_FORMAT_R16_SFLOAT:
+            return DXGI_FORMAT_R16_FLOAT;
+
+        case PAL_FORMAT_R32_UINT:
+            return DXGI_FORMAT_R32_UINT;
+
+        case PAL_FORMAT_R32_SINT:
+            return DXGI_FORMAT_R32_SINT;
+
+        case PAL_FORMAT_R32_SFLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+
+        case PAL_FORMAT_R64_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64_SFLOAT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8_UNORM:
+            return DXGI_FORMAT_R8G8_UNORM;
+
+        case PAL_FORMAT_R8G8_SNORM:
+            return DXGI_FORMAT_R8G8_SNORM;
+
+        case PAL_FORMAT_R8G8_UINT:
+            return DXGI_FORMAT_R8G8_UINT;
+
+        case PAL_FORMAT_R8G8_SINT:
+            return DXGI_FORMAT_R8G8_SINT;
+
+        case PAL_FORMAT_R8G8_SRGB:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16G16_UNORM:
+            return DXGI_FORMAT_R16G16_UNORM;
+
+        case PAL_FORMAT_R16G16_SNORM:
+            return DXGI_FORMAT_R16G16_SNORM;
+
+        case PAL_FORMAT_R16G16_UINT:
+            return DXGI_FORMAT_R16G16_UINT;
+
+        case PAL_FORMAT_R16G16_SINT:
+            return DXGI_FORMAT_R16G16_SINT;
+
+        case PAL_FORMAT_R16G16_SFLOAT:
+            return DXGI_FORMAT_R16G16_FLOAT;
+
+        case PAL_FORMAT_R32G32_UINT:
+            return DXGI_FORMAT_R32G32_UINT;
+
+        case PAL_FORMAT_R32G32_SINT:
+            return DXGI_FORMAT_R32G32_SINT;
+
+        case PAL_FORMAT_R32G32_SFLOAT:
+            return DXGI_FORMAT_R32G32_FLOAT;
+
+        case PAL_FORMAT_R64G64_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64G64_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64G64_SFLOAT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8B8_UNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8B8_SNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8B8_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8B8_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8B8_SRGB:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16G16B16_UNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16G16B16_SNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16G16B16_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16G16B16_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R16G16B16_SFLOAT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R32G32B32_UINT:
+            return DXGI_FORMAT_R32G32B32_UINT;
+
+        case PAL_FORMAT_R32G32B32_SINT:
+            return DXGI_FORMAT_R32G32B32_SINT;
+
+        case PAL_FORMAT_R32G32B32_SFLOAT:
+            return DXGI_FORMAT_R32G32B32_FLOAT;
+
+        case PAL_FORMAT_R64G64B64_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64G64B64_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64G64B64_SFLOAT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8_UNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8_SNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8_SRGB:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R8G8B8A8_UNORM:
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        case PAL_FORMAT_R8G8B8A8_SNORM:
+            return DXGI_FORMAT_R8G8B8A8_SNORM;
+
+        case PAL_FORMAT_R8G8B8A8_UINT:
+            return DXGI_FORMAT_R8G8B8A8_UINT;
+
+        case PAL_FORMAT_R8G8B8A8_SINT:
+            return DXGI_FORMAT_R8G8B8A8_SINT;
+
+        case PAL_FORMAT_R8G8B8A8_SRGB:
+            return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+
+        case PAL_FORMAT_R16G16B16A16_UNORM:
+            return DXGI_FORMAT_R16G16B16A16_UNORM;
+
+        case PAL_FORMAT_R16G16B16A16_SNORM:
+            return DXGI_FORMAT_R16G16B16A16_SNORM;
+
+        case PAL_FORMAT_R16G16B16A16_UINT:
+            return DXGI_FORMAT_R16G16B16A16_UINT;
+
+        case PAL_FORMAT_R16G16B16A16_SINT:
+            return DXGI_FORMAT_R16G16B16A16_SINT;
+
+        case PAL_FORMAT_R16G16B16A16_SFLOAT:
+            return DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+        case PAL_FORMAT_R32G32B32A32_UINT:
+            return DXGI_FORMAT_R32G32B32A32_UINT;
+
+        case PAL_FORMAT_R32G32B32A32_SINT:
+            return DXGI_FORMAT_R32G32B32A32_SINT;
+
+        case PAL_FORMAT_R32G32B32A32_SFLOAT:
+            return DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+        case PAL_FORMAT_R64G64B64A64_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64G64B64A64_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_R64G64B64A64_SFLOAT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8A8_UNORM:
+            return DXGI_FORMAT_B8G8R8A8_UNORM;
+
+        case PAL_FORMAT_B8G8R8A8_SNORM:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8A8_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8A8_SINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_B8G8R8A8_SRGB:
+            return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+
+        case PAL_FORMAT_S8_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_D16_UNORM:
+            return DXGI_FORMAT_D16_UNORM;
+
+        case PAL_FORMAT_D32_SFLOAT:
+            return DXGI_FORMAT_D32_FLOAT;
+
+        case PAL_FORMAT_D32_SFLOAT_S8_UINT:
+            return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+
+        case PAL_FORMAT_D16_UNORM_S8_UINT:
+            return DXGI_FORMAT_UNKNOWN;
+
+        case PAL_FORMAT_D24_UNORM_S8_UINT:
+            return DXGI_FORMAT_D24_UNORM_S8_UINT;
+    }
+
+    return DXGI_FORMAT_UNKNOWN;
+}
+
+static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
+{
+    PalImageUsages usages = 0;
+    if (flags & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) {
+        usages |= PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
+    }
+
+    if (flags & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL) {
+        usages |= PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT;
+    }
+
+    if (flags & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+        usages |= PAL_IMAGE_USAGE_SAMPLED;
+    }
+
+    usages |= PAL_IMAGE_USAGE_TRANSFER_DST;
+    usages |= PAL_IMAGE_USAGE_TRANSFER_SRC;
+    return usages;
+}
 
 // ==================================================
 // Adapter
@@ -163,6 +433,7 @@ PalResult PAL_CALL initGraphicsD3D12(
 
     s_D3D12.factory = nullptr;
     s_D3D12.adapters = nullptr;
+    s_D3D12.adapterCount = 0;
     HRESULT result = s_D3D12.createDXGIFactory(0, &IID_Factory, (void**)&s_D3D12.factory);
     if (FAILED(result)) {
         return PAL_RESULT_PLATFORM_FAILURE;
@@ -182,9 +453,14 @@ void PAL_CALL shutdownGraphicsD3D12()
         s_D3D12.debugController1->lpVtbl->Release(s_D3D12.debugController1);
     }
 
+    for (int i = 0; i < s_D3D12.adapterCount; i++) {
+        s_D3D12.adapters[i].handle->lpVtbl->Release(s_D3D12.adapters[i].handle);
+    }
+
     s_D3D12.factory->lpVtbl->Release(s_D3D12.factory);
     FreeLibrary(s_D3D12.handle);
     FreeLibrary(s_D3D12.dxgi);
+
     if (s_D3D12.adapters) {
         palFree(s_D3D12.allocator, s_D3D12.adapters);
     }
@@ -198,6 +474,16 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
     Uint32 adapterCount = 0;
     IDXGIAdapter* adapter = nullptr;
     IDXGIAdapter4* dxAdapters[32]; // should be more than enough
+    ID3D12Device* devices[32]; // should be more than enough
+    D3D_FEATURE_LEVEL deviceLevels[32]; // should be more than enough
+
+    D3D_FEATURE_LEVEL levels[] = {
+        D3D_FEATURE_LEVEL_12_2,
+        D3D_FEATURE_LEVEL_12_1,
+        D3D_FEATURE_LEVEL_12_0,
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0
+    };
 
     if (s_D3D12.adapters) {
         palFree(s_D3D12.allocator, s_D3D12.adapters);
@@ -211,6 +497,23 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
             IDXGIAdapter4* tmp = nullptr;
             if SUCCEEDED((adapter->lpVtbl->QueryInterface(adapter, &IID_Adapter, (void**)&tmp))) {
                 dxAdapters[adapterCount] = tmp;
+            }
+
+            // create a temp device for every adapter to use as an instance to check features, 
+            // capabilities etc.
+            ID3D12Device* device = nullptr;
+            for (int i = 0; i < 5; i++) {
+                HRESULT result = s_D3D12.createDevice(
+                    (IUnknown*)tmp,
+                    levels[i], 
+                    &IID_Device, 
+                    (void**)&device);
+                    
+                if (SUCCEEDED(result)) {
+                    deviceLevels[adapterCount] = levels[i];
+                    devices[adapterCount] = device;
+                    break;
+                }
             }
         }
         adapter->lpVtbl->Release(adapter);
@@ -227,8 +530,11 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         for (int i = 0; i < *count; i++) {
             Adapter* tmp = &s_D3D12.adapters[i];
             tmp->handle = dxAdapters[i];
+            tmp->tmpDevice = devices[i];
+            tmp->level = levels[i];
             outAdapters[i] = (PalAdapter*)tmp;
         }
+        s_D3D12.adapterCount = *count;
 
     } else {
         *count = adapterCount;
@@ -241,33 +547,16 @@ PalResult PAL_CALL getAdapterInfoD3D12(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
-    Adapter* d3dAdapter = (Adapter*)adapter;
-    IDXGIAdapter4* adapterHandle = d3dAdapter->handle;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    IDXGIAdapter4* adapterHandle = d3d12Adapter->handle;
     DXGI_ADAPTER_DESC3 desc;
     D3D12_FEATURE_DATA_ARCHITECTURE1 arch = {0};
-    ID3D12Device* device = nullptr;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
 
     HRESULT result = adapterHandle->lpVtbl->GetDesc3(adapterHandle, &desc);
     if (FAILED(result)) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
-
-    D3D_FEATURE_LEVEL supportedLevel = D3D_FEATURE_LEVEL_11_0;
-    D3D_FEATURE_LEVEL levels[] = {
-        D3D_FEATURE_LEVEL_12_2,
-        D3D_FEATURE_LEVEL_12_1,
-        D3D_FEATURE_LEVEL_12_0,
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0
-    };
-
-    const char* levelStrings[] = {
-        "12_2",
-        "12_1",
-        "12_0",
-        "11_1",
-        "11_0"
-    };
 
     info->vendorId = desc.VendorId;
     info->deviceId= desc.DeviceId;
@@ -285,22 +574,6 @@ PalResult PAL_CALL getAdapterInfoD3D12(
         PAL_ADAPTER_NAME_SIZE, 
         nullptr, 
         nullptr);
-
-    // create a temporary device to check the supported version
-    Uint32 levelIndex = 0;
-    for (int i = 0; i < 5; i++) {
-        result = s_D3D12.createDevice(
-            (IUnknown*)adapterHandle, 
-            levels[i], 
-            &IID_Device, 
-            (void**)&device);
-            
-        if (SUCCEEDED(result)) {
-            supportedLevel = levels[i];
-            levelIndex = i;
-            break;
-        }
-    }
 
     device->lpVtbl->CheckFeatureSupport(
         device, 
@@ -326,10 +599,23 @@ PalResult PAL_CALL getAdapterInfoD3D12(
         info->vram = desc.DedicatedSystemMemory;
     }
 
-    info->version = supportedLevel;
-    strcpy(info->versionString, levelStrings[levelIndex]);
+    info->version = d3d12Adapter->level;
+    if (d3d12Adapter->level == D3D_FEATURE_LEVEL_12_2) {
+        strcpy(info->versionString, "12_2");
 
-    device->lpVtbl->Release(device);
+    } else if (d3d12Adapter->level == D3D_FEATURE_LEVEL_12_1) {
+        strcpy(info->versionString, "12_1");
+
+    } else if (d3d12Adapter->level == D3D_FEATURE_LEVEL_12_0) {
+        strcpy(info->versionString, "12_0");
+
+    } else if (d3d12Adapter->level == D3D_FEATURE_LEVEL_11_1) {
+        strcpy(info->versionString, "11_1");
+
+    } else if (d3d12Adapter->level == D3D_FEATURE_LEVEL_11_0) {
+        strcpy(info->versionString, "11_0");
+    }
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -389,10 +675,10 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
 {
     HRESULT result;
-    ID3D12Device* device = nullptr;
-    Adapter* d3dAdapter = (Adapter*)adapter;
-    IDXGIAdapter4* adapterHandle = d3dAdapter->handle;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    IDXGIAdapter4* adapterHandle = d3d12Adapter->handle;
     PalAdapterFeatures features = 0;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS options = {0};
     D3D12_FEATURE_DATA_D3D12_OPTIONS3 options3 = {0};
@@ -400,29 +686,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 options6 = {0};
     D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {0};
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
-
-    D3D_FEATURE_LEVEL levels[] = {
-        D3D_FEATURE_LEVEL_12_2,
-        D3D_FEATURE_LEVEL_12_1,
-        D3D_FEATURE_LEVEL_12_0,
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0
-    };
-
-    for (int i = 0; i < 5; i++) {
-        result = s_D3D12.createDevice(
-            (IUnknown*)adapterHandle, 
-            levels[i], 
-            &IID_Device, 
-            (void**)&device);
-            
-        if (SUCCEEDED(result)) {
-            if (levels[i] >= D3D_FEATURE_LEVEL_12_0) {
-                features |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
-            }
-            break;
-        }
-    }
 
     device->lpVtbl->CheckFeatureSupport(
         device, 
@@ -524,7 +787,9 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
     features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
 
-    device->lpVtbl->Release(device);
+    if (d3d12Adapter->level >= D3D_FEATURE_LEVEL_12_0) {
+        features |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
+    }
     return features;
 }
 
@@ -547,27 +812,13 @@ PalResult PAL_CALL createDeviceD3D12(
     }
 
     memset(device, 0, sizeof(Device));
-    D3D_FEATURE_LEVEL levels[] = {
-        D3D_FEATURE_LEVEL_12_2,
-        D3D_FEATURE_LEVEL_12_1,
-        D3D_FEATURE_LEVEL_12_0,
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0
-    };
-
-    for (int i = 0; i < 5; i++) {
-        result = s_D3D12.createDevice(
-            (IUnknown*)d3d12Adapter->handle, 
-            levels[i], 
-            &IID_Device, 
-            (void**)&device->handle);
-            
-        if (SUCCEEDED(result)) {
-            break;
-        }
-    }
-
-    if (!device->handle) {
+    result = s_D3D12.createDevice(
+        (IUnknown*)d3d12Adapter->handle, 
+        d3d12Adapter->level, 
+        &IID_Device, 
+        (void**)&device->handle);
+        
+    if (FAILED(result)) {
         palFree(s_D3D12.allocator, device);
         return PAL_RESULT_INVALID_DRIVER;
     }
@@ -869,7 +1120,6 @@ PalResult PAL_CALL createQueueD3D12(
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, queue);
-
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
         } else {
@@ -887,7 +1137,6 @@ PalResult PAL_CALL createQueueD3D12(
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, queue);
-
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
         } else {
@@ -903,7 +1152,7 @@ PalResult PAL_CALL createQueueD3D12(
 
 void PAL_CALL destroyQueueD3D12(PalQueue* queue)
 {
-    Queue* d3d12Queue = (Device*)queue;
+    Queue* d3d12Queue = (Queue*)queue;
     d3d12Queue->fence->lpVtbl->Release(d3d12Queue->fence);
     d3d12Queue->handle->lpVtbl->Release(d3d12Queue->handle);
     palFree(s_D3D12.allocator, d3d12Queue);
@@ -911,7 +1160,7 @@ void PAL_CALL destroyQueueD3D12(PalQueue* queue)
 
 PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
 {
-    Queue* d3d12Queue = (Device*)queue;
+    Queue* d3d12Queue = (Queue*)queue;
     ID3D12Fence* fence = d3d12Queue->fence;
     fence->lpVtbl->Signal(fence, d3d12Queue->fenceValue);
 
@@ -931,7 +1180,7 @@ bool PAL_CALL canQueuePresentD3D12(
     PalQueue* queue,
     PalSurface* surface)
 {
-    Queue* d3d12Queue = (Device*)queue;
+    Queue* d3d12Queue = (Queue*)queue;
     if (d3d12Queue->type == PAL_QUEUE_TYPE_GRAPHICS) {
         return true; // all graphics queues support presentation
     }
@@ -947,28 +1196,268 @@ PalResult PAL_CALL enumerateFormatsD3D12(
     Int32* count,
     PalFormatInfo* outFormats)
 {
+    Int32 fmtCount = 0;
+    HRESULT result;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
+    for (int i = 0; i < PAL_FORMAT_MAX; i++) {
+        DXGI_FORMAT fmt = formatToD3D12((PalFormat)i);
+        if (fmt == DXGI_FORMAT_UNKNOWN) {
+            continue;
+        }
+
+        support.Format = fmt;
+        result = device->lpVtbl->CheckFeatureSupport(
+            device, 
+            D3D12_FEATURE_FORMAT_SUPPORT, 
+            &support, 
+            sizeof(support));
+
+        if (SUCCEEDED(result)) {
+            if (support.Support1 == 0 && support.Support2 == 0) {
+                // format not supported
+                continue;
+            }
+
+            if (outFormats) {
+                if (fmtCount < *count) {
+                    PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
+                    fmtInfo->format = (PalFormat)i;
+                    fmtInfo->usages = ImageUsageFromD3D12(support.Support1);
+
+                    if (support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE ||
+                        support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
+                        fmtInfo->usages |= PAL_IMAGE_USAGE_STORAGE;
+                    }
+
+                    fmtInfo->viewUsages = 0;
+                    if (fmtInfo->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+                        fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_COLOR;
+                        if (i == PAL_FORMAT_R8_UINT) {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+                        }
+                    }
+
+                    if (fmtInfo->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+                        if (i == PAL_FORMAT_S8_UINT) {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+
+                        } else if (i == PAL_FORMAT_D16_UNORM || i == PAL_FORMAT_D32_SFLOAT) {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+
+                        } else {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+                        }
+                    }
+                }
+
+            } else {
+                fmtCount++;
+            }
+        }
+    }
+    if (!outFormats) {
+        *count = fmtCount;
+    }
+    return PAL_RESULT_SUCCESS;
 }
 
 bool PAL_CALL isFormatSupportedD3D12(
     PalAdapter* adapter,
     PalFormat format)
 {
+    HRESULT result;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
+    DXGI_FORMAT fmt = formatToD3D12(format);
+    if (fmt == DXGI_FORMAT_UNKNOWN) {
+        return false;
+    }
+
+    support.Format = fmt;
+    result = device->lpVtbl->CheckFeatureSupport(
+        device, 
+        D3D12_FEATURE_FORMAT_SUPPORT, 
+        &support, 
+        sizeof(support));
+
+    if (FAILED(result)) {
+        return false;
+    }
+
+    if (support.Support1 == 0 && support.Support2 == 0) {
+        // format not supported
+        return false;
+    }
+
+    return true;
 }
 
 PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
     PalAdapter* adapter,
     PalFormat format)
 {
+    HRESULT result;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
+    DXGI_FORMAT fmt = formatToD3D12(format);
+    if (fmt == DXGI_FORMAT_UNKNOWN) {
+        return 0;
+    }
+
+    support.Format = fmt;
+    result = device->lpVtbl->CheckFeatureSupport(
+        device, 
+        D3D12_FEATURE_FORMAT_SUPPORT, 
+        &support, 
+        sizeof(support));
+
+    if (FAILED(result)) {
+        return 0;
+    }
+
+    if (support.Support1 == 0 && support.Support2 == 0) {
+        // format not supported
+        return 0;
+    }
+
+    PalImageUsages usages = ImageUsageFromD3D12(support.Support1);
+    if (support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE ||
+        support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
+        usages |= PAL_IMAGE_USAGE_STORAGE;
+    }
+
+    return usages;
 }
 
 PalImageViewUsages PAL_CALL queryFormatImageViewUsagesD3D12(
     PalAdapter* adapter,
     PalFormat format)
 {
+    HRESULT result;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
+    DXGI_FORMAT fmt = formatToD3D12(format);
+    if (fmt == DXGI_FORMAT_UNKNOWN) {
+        return 0;
+    }
+
+    support.Format = fmt;
+    result = device->lpVtbl->CheckFeatureSupport(
+        device, 
+        D3D12_FEATURE_FORMAT_SUPPORT, 
+        &support, 
+        sizeof(support));
+
+    if (FAILED(result)) {
+        return 0;
+    }
+
+    if (support.Support1 == 0 && support.Support2 == 0) {
+        // format not supported
+        return 0;
+    }
+
+    PalImageUsages imageUsages = ImageUsageFromD3D12(support.Support1);
+    if (support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE ||
+        support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
+        imageUsages |= PAL_IMAGE_USAGE_STORAGE;
+    }
+
+    PalImageViewUsages usages = 0;
+    if (imageUsages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+        usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
+        if (format == PAL_FORMAT_R8_UINT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+        }
+    }
+
+    if (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+        if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+
+        } else {
+            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+        }
+    }
+    return usages;
+}
+
+PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    HRESULT result;
+    Adapter* d3d12Adapter = (Adapter*)adapter;
+    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
+
+    DXGI_FORMAT fmt = formatToD3D12(format);
+    if (fmt == DXGI_FORMAT_UNKNOWN) {
+        return false;
+    }
+
+    support.Format = fmt;
+    result = device->lpVtbl->CheckFeatureSupport(
+        device, 
+        D3D12_FEATURE_FORMAT_SUPPORT, 
+        &support, 
+        sizeof(support));
+
+    if (FAILED(result)) {
+        return false;
+    }
+
+    if (support.Support1 == 0 && support.Support2 == 0) {
+        // format not supported
+        return false;
+    }
+
+    // check sample count
+    UINT sampleCounts[] = {64, 32, 16, 8, 4, 2};
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS samples = {0};
+    samples.Format = fmt;
+
+    Uint32 tmp = 0;
+    for (int i = 0; i < 6; i++) {
+        samples.SampleCount = sampleCounts[i];
+        result = device->lpVtbl->CheckFeatureSupport(
+            device, 
+            D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, 
+            &samples, 
+            sizeof(samples));
+
+        if (SUCCEEDED(result) && samples.NumQualityLevels > 0) {
+            tmp = samples.SampleCount;
+            break;
+        }
+    }
+
+    if (tmp == 64) {
+        return PAL_SAMPLE_COUNT_64;
+    } else if (tmp == 32) {
+        return PAL_SAMPLE_COUNT_32;
+    } else if (tmp == 16) {
+        return PAL_SAMPLE_COUNT_16;
+    } else if (tmp == 8) {
+        return PAL_SAMPLE_COUNT_8;
+    } else if (tmp == 4) {
+        return PAL_SAMPLE_COUNT_4;
+    } else if (tmp == 2) {
+        return PAL_SAMPLE_COUNT_2;
+    } else {
+        return PAL_SAMPLE_COUNT_1;
+    }
 }
 
 // ==================================================

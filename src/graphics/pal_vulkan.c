@@ -3109,12 +3109,6 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     caps->maxImageDepth = props.limits.maxImageDimension3D;
     caps->maxImageArrayLayers = props.limits.maxImageArrayLayers;
 
-    PalSampleCount tmp = PAL_SAMPLE_COUNT_1;
-    tmp = samplesFromVk(props.limits.framebufferColorSampleCounts);
-    caps->maxColorSampleCount = tmp;
-    tmp = samplesFromVk(props.limits.framebufferDepthSampleCounts);
-    caps->maxDepthSampleCount = tmp;
-
     caps->maxViewports = props.limits.maxViewports;
     caps->maxSamplers = props.limits.maxSamplerAllocationCount;
     caps->maxUniformBufferSize = props.limits.maxUniformBufferRange;
@@ -3131,7 +3125,7 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     Uint32 b = caps->maxImageHeight;
     Uint32 c = caps->maxImageDepth;
 
-    tmp = a > b ? a : b;
+    Uint32 tmp = a > b ? a : b;
     Uint32 size = tmp > c ? tmp : c;
     Uint32 levels = 0;
     while (size > 0) {
@@ -4718,32 +4712,26 @@ PalResult PAL_CALL enumerateFormatsVk(
                     fmtInfo->format = (PalFormat)i;
                     fmtInfo->usages = ImageUsageFromVk(props.optimalTilingFeatures);
 
-                    PalImageViewUsages usages = 0;
-                    if (i == PAL_FORMAT_S8_UINT) {
-                        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+                    fmtInfo->viewUsages = 0;
+                    if (fmtInfo->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+                        fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_COLOR;
+                        if (i == PAL_FORMAT_R8_UINT) {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+                        }
                     }
 
-                    if (i == PAL_FORMAT_D16_UNORM || i == PAL_FORMAT_D32_SFLOAT) {
-                        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-                    }
+                    if (fmtInfo->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+                        if (i == PAL_FORMAT_S8_UINT) {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
 
-                    if (i == PAL_FORMAT_D32_SFLOAT_S8_UINT || i == PAL_FORMAT_D16_UNORM_S8_UINT ||
-                        i == PAL_FORMAT_D24_UNORM_S8_UINT) {
-                        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-                        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-                    }
+                        } else if (i == PAL_FORMAT_D16_UNORM || i == PAL_FORMAT_D32_SFLOAT) {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
 
-                    // fragment shading rate
-                    if (i == PAL_FORMAT_R8_UINT) {
-                        usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
-                        usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
+                        } else {
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+                        }
                     }
-
-                    if (usages == 0) {
-                        usages = PAL_IMAGE_VIEW_USAGE_COLOR;
-                    }
-
-                    fmtInfo->viewUsages = usages;
                 }
 
             } else {
@@ -4804,33 +4792,61 @@ PalImageViewUsages PAL_CALL queryFormatImageViewUsagesVk(
         return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
     }
 
-    // format supported. check if we have any depth or stencil component
-    // Note: this is a hack
     PalImageViewUsages usages = 0;
-    if (format == PAL_FORMAT_S8_UINT) {
-        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-    }
-
-    if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
-        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-    }
-
-    if (format == PAL_FORMAT_D32_SFLOAT_S8_UINT || format == PAL_FORMAT_D16_UNORM_S8_UINT ||
-        format == PAL_FORMAT_D24_UNORM_S8_UINT) {
-        usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-        usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-    }
-
-    // fragment shading rate
-    if (format == PAL_FORMAT_R8_UINT) {
-        usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+    PalImageUsages imageUsages = ImageUsageFromVk(props.optimalTilingFeatures);
+    if (imageUsages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
         usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
+        if (format == PAL_FORMAT_R8_UINT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
+        }
     }
 
-    if (usages == 0) {
-        usages = PAL_IMAGE_VIEW_USAGE_COLOR;
+    if (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+        if (format == PAL_FORMAT_S8_UINT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+
+        } else if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
+            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+
+        } else {
+            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
+            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
+        }
     }
     return usages;
+}
+
+PalSampleCount PAL_CALL queryFormatSampleCountVk(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    // TODO: query for each format
+    PalSampleCount tmp = PAL_SAMPLE_COUNT_1;
+    Adapter* vkAdapter = (Adapter*)adapter;
+    VkPhysicalDeviceProperties deviceProps = {0};
+    VkFormatProperties props = {0};
+
+    VkFormat fmt = formatToVk(format);
+    s_Vk.getPhysicalDeviceFormatProperties(vkAdapter->handle, fmt, &props);
+    s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &deviceProps);
+    if (props.optimalTilingFeatures == 0) {
+        return PAL_SAMPLE_COUNT_1;
+    }
+
+    // clang-format off
+    if (format == PAL_FORMAT_S8_UINT            || 
+        format == PAL_FORMAT_D16_UNORM          ||
+        format == PAL_FORMAT_D32_SFLOAT         ||
+        format == PAL_FORMAT_D16_UNORM_S8_UINT  ||
+        format == PAL_FORMAT_D32_SFLOAT_S8_UINT ||
+        format == PAL_FORMAT_D24_UNORM_S8_UINT) {
+        // depth/stencil format
+        return samplesFromVk(deviceProps.limits.framebufferDepthSampleCounts);
+    } else {
+        // color format
+        return samplesFromVk(deviceProps.limits.framebufferColorSampleCounts);
+    }
+    // clang-format on
 }
 
 // ==================================================

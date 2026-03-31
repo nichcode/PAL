@@ -217,6 +217,10 @@ PalImageViewUsages PAL_CALL queryFormatImageViewUsagesVk(
     PalAdapter* adapter,
     PalFormat format);
 
+PalSampleCount PAL_CALL queryFormatSampleCountVk(
+    PalAdapter* adapter,
+    PalFormat format);
+
 // ==================================================
 // Image
 // ==================================================
@@ -807,6 +811,7 @@ static PalGraphicsBackend s_VkBackend = {
     .isFormatSupported = isFormatSupportedVk,
     .queryFormatImageUsages = queryFormatImageUsagesVk,
     .queryFormatImageViewUsages = queryFormatImageViewUsagesVk,
+    .queryFormatSampleCount = queryFormatSampleCountVk,
 
     // image
     .createImage = createImageVk,
@@ -1069,6 +1074,10 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
     PalFormat format);
 
 PalImageViewUsages PAL_CALL queryFormatImageViewUsagesD3D12(
+    PalAdapter* adapter,
+    PalFormat format);
+
+PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
     PalAdapter* adapter,
     PalFormat format);
 
@@ -1662,6 +1671,7 @@ static PalGraphicsBackend s_D3D12Backend = {
     .isFormatSupported = isFormatSupportedD3D12,
     .queryFormatImageUsages = queryFormatImageUsagesD3D12,
     .queryFormatImageViewUsages = queryFormatImageViewUsagesD3D12,
+    .queryFormatSampleCount = queryFormatSampleCountD3D12,
 
     // image
     .createImage = createImageD3D12,
@@ -1864,6 +1874,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->isFormatSupported                     ||
         !backend->queryFormatImageUsages                ||
         !backend->queryFormatImageViewUsages            ||
+        !backend->queryFormatSampleCount                ||
 
         // image
         !backend->createImage                           ||
@@ -2481,6 +2492,17 @@ PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
     }
 
     return adapter->backend->queryFormatImageViewUsages(adapter, format);
+}
+
+PalSampleCount PAL_CALL palQueryFormatSampleCount(
+    PalAdapter* adapter,
+    PalFormat format)
+{
+    if (!s_Graphics.initialized || !adapter) {
+        return PAL_SAMPLE_COUNT_1;
+    }
+
+    return adapter->backend->queryFormatSampleCount(adapter, format);
 }
 
 // ==================================================
