@@ -52,6 +52,8 @@ const IID IID_Debug = {0x344488b7, 0x6846, 0x474b, 0xb9,0x89, 0xf0,0x27,0x44,0x8
 const IID IID_Debug1 = {0xaffaa4ca, 0x63fe, 0x4d8e, 0xb8,0xad, 0x15,0x90,0x00,0xaf,0x43,0x04};
 const IID IID_InfoQueue = {0x0742a90b, 0xc387, 0x483f, 0xb9,0x46, 0x30,0xa7,0xe4,0xe6,0x14,0x58};
 const IID IID_Heap = {0x6b3b2502, 0x6e51, 0x45b3, 0x90,0xee, 0x98,0x84,0x26,0x5e,0x8d,0xf3};
+const IID IID_Queue = {0x0ec870a6, 0x5d7e, 0x4c22, 0x8c,0xfc, 0x5b,0xaa,0xe0,0x76,0x16,0xed};
+const IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -89,12 +91,26 @@ typedef struct {
     ID3D12Device* handle;
 } Device;
 
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    UINT64 fenceValue;
+    PalQueueType type;
+    ID3D12Fence* fence;
+    ID3D12CommandQueue* handle;
+} Queue;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    HWND handle;
+} Surface;
+
 static D3D12 s_D3D12 = {0};
 
 // ==================================================
 // Helper Functions
 // ==================================================
-
 
 // ==================================================
 // Adapter
@@ -551,6 +567,11 @@ PalResult PAL_CALL createDeviceD3D12(
         }
     }
 
+    if (!device->handle) {
+        palFree(s_D3D12.allocator, device);
+        return PAL_RESULT_INVALID_DRIVER;
+    }
+
     if (s_D3D12.debugLayer) {
         result = device->handle->lpVtbl->QueryInterface(
             device->handle, 
@@ -813,24 +834,108 @@ PalResult PAL_CALL createQueueD3D12(
     PalQueueType type,
     PalQueue** outQueue)
 {
+    HRESULT result;
+    Device* d3d12Device = (Device*)device;
+    Queue* queue = nullptr;
+    D3D12_COMMAND_QUEUE_DESC desc = {0};
 
+    switch (type) {
+        case PAL_QUEUE_TYPE_COMPUTE: {
+            desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+            break;
+        }
+
+        case PAL_QUEUE_TYPE_GRAPHICS: {
+            desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+            break;
+        }
+
+        case PAL_QUEUE_TYPE_COPY: {
+            desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
+            break;
+        }
+    }
+
+    queue = palAllocate(s_D3D12.allocator, sizeof(Queue), 0);
+    if (!queue) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    result = d3d12Device->handle->lpVtbl->CreateCommandQueue(
+        d3d12Device->handle, 
+        &desc,
+        &IID_Queue, 
+        (void**)&queue->handle);
+
+    if (FAILED(result)) {
+        palFree(s_D3D12.allocator, queue);
+
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    // create fence used for queue wait
+    result = d3d12Device->handle->lpVtbl->CreateFence(
+        d3d12Device->handle, 
+        0, 
+        0, 
+        &IID_Fence,
+        (void**)&queue->fence);
+
+    if (FAILED(result)) {
+        palFree(s_D3D12.allocator, queue);
+
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    queue->fenceValue = 1;
+    queue->type = type;
+    *outQueue = (PalQueue*)queue;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyQueueD3D12(PalQueue* queue)
 {
-
+    Queue* d3d12Queue = (Device*)queue;
+    d3d12Queue->fence->lpVtbl->Release(d3d12Queue->fence);
+    d3d12Queue->handle->lpVtbl->Release(d3d12Queue->handle);
+    palFree(s_D3D12.allocator, d3d12Queue);
 }
 
 PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
 {
+    Queue* d3d12Queue = (Device*)queue;
+    ID3D12Fence* fence = d3d12Queue->fence;
+    fence->lpVtbl->Signal(fence, d3d12Queue->fenceValue);
 
+    // wait on the fence if the submited work is not done
+    if (fence->lpVtbl->GetCompletedValue(fence) < d3d12Queue->fenceValue) {
+        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        fence->lpVtbl->SetEventOnCompletion(fence, d3d12Queue->fenceValue, event);
+        WaitForSingleObject(event, INFINITE);
+        CloseHandle(event);
+    }
+
+    d3d12Queue->fenceValue++;
+    return PAL_RESULT_SUCCESS;
 }
 
 bool PAL_CALL canQueuePresentD3D12(
     PalQueue* queue,
     PalSurface* surface)
 {
-
+    Queue* d3d12Queue = (Device*)queue;
+    if (d3d12Queue->type == PAL_QUEUE_TYPE_GRAPHICS) {
+        return true; // all graphics queues support presentation
+    }
+    return false;
 }
 
 // ==================================================

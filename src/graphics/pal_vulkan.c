@@ -4572,10 +4572,6 @@ PalResult PAL_CALL createQueueVk(
     VkQueueFlags queueFlag = 0;
     Queue* queue = nullptr;
 
-    if (!vkDevice->handle) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
     if (vkDevice->phyQueueCount == 0) {
         return PAL_RESULT_OUT_OF_QUEUE;
     }
