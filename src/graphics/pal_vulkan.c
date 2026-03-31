@@ -257,6 +257,7 @@ typedef struct {
     PFN_vkDestroyImageView destroyImageView;
     PFN_vkGetPhysicalDeviceProperties2 getPhysicalDeviceProperties2;
     PFN_vkGetPhysicalDeviceFormatProperties getPhysicalDeviceFormatProperties;
+    PFN_vkGetPhysicalDeviceImageFormatProperties getPhysicalDeviceImageFormatProperties;
     PFN_vkGetImageMemoryRequirements getImageMemoryRequirements;
     PFN_vkAllocateMemory allocateMemory;
     PFN_vkFreeMemory freeMemory;
@@ -2388,6 +2389,10 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.getPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties)loadProc(
         s_Vk.handle,
         "vkGetPhysicalDeviceFormatProperties");
+
+    s_Vk.getPhysicalDeviceImageFormatProperties = (PFN_vkGetPhysicalDeviceImageFormatProperties)loadProc(
+        s_Vk.handle,
+        "vkGetPhysicalDeviceImageFormatProperties");
 
     s_Vk.createDevice = (PFN_vkCreateDevice)loadProc(
         s_Vk.handle,
@@ -4820,33 +4825,40 @@ PalSampleCount PAL_CALL queryFormatSampleCountVk(
     PalAdapter* adapter,
     PalFormat format)
 {
-    // TODO: query for each format
-    PalSampleCount tmp = PAL_SAMPLE_COUNT_1;
+    VkResult result;
     Adapter* vkAdapter = (Adapter*)adapter;
-    VkPhysicalDeviceProperties deviceProps = {0};
     VkFormatProperties props = {0};
+    VkImageFormatProperties formatProps = {0};
 
     VkFormat fmt = formatToVk(format);
     s_Vk.getPhysicalDeviceFormatProperties(vkAdapter->handle, fmt, &props);
-    s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &deviceProps);
     if (props.optimalTilingFeatures == 0) {
         return PAL_SAMPLE_COUNT_1;
     }
 
-    // clang-format off
-    if (format == PAL_FORMAT_S8_UINT            || 
-        format == PAL_FORMAT_D16_UNORM          ||
-        format == PAL_FORMAT_D32_SFLOAT         ||
-        format == PAL_FORMAT_D16_UNORM_S8_UINT  ||
-        format == PAL_FORMAT_D32_SFLOAT_S8_UINT ||
-        format == PAL_FORMAT_D24_UNORM_S8_UINT) {
-        // depth/stencil format
-        return samplesFromVk(deviceProps.limits.framebufferDepthSampleCounts);
+    VkImageUsageFlags vkImageUsage = 0;
+    PalImageUsages imageUsages = ImageUsageFromVk(props.optimalTilingFeatures);
+    bool isDepth = (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) != 0;
+    if (isDepth) {
+        vkImageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     } else {
-        // color format
-        return samplesFromVk(deviceProps.limits.framebufferColorSampleCounts);
+        vkImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    // clang-format on
+
+    result = s_Vk.getPhysicalDeviceImageFormatProperties(
+        vkAdapter->handle,
+        fmt, 
+        VK_IMAGE_TYPE_2D, 
+        VK_IMAGE_TILING_OPTIMAL,
+        vkImageUsage,
+        0,
+        &formatProps);
+
+    if (result != VK_SUCCESS) {
+        return PAL_SAMPLE_COUNT_1;
+    }
+
+    return samplesFromVk(formatProps.sampleCounts);
 }
 
 // ==================================================
