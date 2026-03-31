@@ -151,17 +151,6 @@ void PAL_CALL freeMemoryVk(
     PalDevice* device,
     PalMemory* memory);
 
-PalResult PAL_CALL mapMemoryVk(
-    PalDevice* device,
-    PalMemory* memory,
-    Uint64 offset,
-    Uint64 size,
-    void** outPtr);
-
-void PAL_CALL unmapMemoryVk(
-    PalDevice* device,
-    PalMemory* memory);
-
 // ==================================================
 // Extended Adapter Features
 // ==================================================
@@ -247,6 +236,14 @@ PalResult PAL_CALL bindImageMemoryVk(
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);
+
+PalResult PAL_CALL mapImageMemoryVk(
+    PalImage* image,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr);
+
+void PAL_CALL unmapImageMemoryVk(PalImage* image);
 
 // ==================================================
 // Image View
@@ -686,6 +683,14 @@ PalResult PAL_CALL bindBufferMemoryVk(
     PalMemory* memory,
     Uint64 offset);
 
+PalResult PAL_CALL mapBufferMemoryVk(
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr);
+
+void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer);
+
 PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer* buffer);
 
 // ==================================================
@@ -778,8 +783,6 @@ static PalGraphicsBackend s_VkBackend = {
     // memory
     .allocateMemory = allocateMemoryVk,
     .freeMemory = freeMemoryVk,
-    .mapMemory = mapMemoryVk,
-    .unmapMemory = unmapMemoryVk,
 
     // extended adapter features
     .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesVk,
@@ -806,6 +809,8 @@ static PalGraphicsBackend s_VkBackend = {
     .getImageInfo = getImageInfoVk,
     .getImageMemoryRequirements = getImageMemoryRequirementsVk,
     .bindImageMemory = bindImageMemoryVk,
+    .mapImageMemory = mapImageMemoryVk,
+    .unmapImageMemory = unmapImageMemoryVk,
 
     // image view
     .createImageView = createImageViewVk,
@@ -910,6 +915,8 @@ static PalGraphicsBackend s_VkBackend = {
     .writeInstancesToMappedMemory = writeInstancesToMappedMemoryVk,
     .bindBufferMemory = bindBufferMemoryVk,
     .getBufferDeviceAddress = getBufferDeviceAddressVk,
+    .mapBufferMemory = mapBufferMemoryVk,
+    .unmapBufferMemory = unmapBufferMemoryVk,
 
     // descriptor set layout, descriptor pool and descriptor set
     .createDescriptorSetLayout = createDescriptorSetLayoutVk,
@@ -991,17 +998,6 @@ PalResult PAL_CALL allocateMemoryD3D12(
     PalMemory** outMemory);
 
 void PAL_CALL freeMemoryD3D12(
-    PalDevice* device,
-    PalMemory* memory);
-
-PalResult PAL_CALL mapMemoryD3D12(
-    PalDevice* device,
-    PalMemory* memory,
-    Uint64 offset,
-    Uint64 size,
-    void** outPtr);
-
-void PAL_CALL unmapMemoryD3D12(
     PalDevice* device,
     PalMemory* memory);
 
@@ -1090,6 +1086,14 @@ PalResult PAL_CALL bindImageMemoryD3D12(
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);
+
+PalResult PAL_CALL mapImageMemoryD3D12(
+    PalImage* image,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr);
+
+void PAL_CALL unmapImageMemoryD3D12(PalImage* image);
 
 // ==================================================
 // Image View
@@ -1529,6 +1533,14 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     PalMemory* memory,
     Uint64 offset);
 
+PalResult PAL_CALL mapBufferMemoryD3D12(
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr);
+
+void PAL_CALL unmapBufferMemoryD3D12(PalBuffer* buffer);
+
 PalDeviceAddress PAL_CALL getBufferDeviceAddressD3D12(PalBuffer* buffer);
 
 // ==================================================
@@ -1621,8 +1633,6 @@ static PalGraphicsBackend s_D3D12Backend = {
     // memory
     .allocateMemory = allocateMemoryD3D12,
     .freeMemory = freeMemoryD3D12,
-    .mapMemory = mapMemoryD3D12,
-    .unmapMemory = unmapMemoryD3D12,
 
     // extended adapter features
     .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesD3D12,
@@ -1649,6 +1659,8 @@ static PalGraphicsBackend s_D3D12Backend = {
     .getImageInfo = getImageInfoD3D12,
     .getImageMemoryRequirements = getImageMemoryRequirementsD3D12,
     .bindImageMemory = bindImageMemoryD3D12,
+    .mapImageMemory = mapImageMemoryD3D12,
+    .unmapImageMemory = unmapImageMemoryD3D12,
 
     // image view
     .createImageView = createImageViewD3D12,
@@ -1753,6 +1765,8 @@ static PalGraphicsBackend s_D3D12Backend = {
     .writeInstancesToMappedMemory = writeInstancesToMappedMemoryD3D12,
     .bindBufferMemory = bindBufferMemoryD3D12,
     .getBufferDeviceAddress = getBufferDeviceAddressD3D12,
+    .mapBufferMemory = mapBufferMemoryD3D12,
+    .unmapBufferMemory = unmapBufferMemoryD3D12,
 
     // descriptor set layout, descriptor pool and descriptor set
     .createDescriptorSetLayout = createDescriptorSetLayoutD3D12,
@@ -1820,8 +1834,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         // memory
         !backend->allocateMemory                        ||
         !backend->freeMemory                            ||
-        !backend->mapMemory                             ||
-        !backend->unmapMemory                           ||
 
         // extended adapter features
         !backend->queryDepthStencilCapabilities         ||
@@ -1848,6 +1860,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getImageInfo                          ||
         !backend->getImageMemoryRequirements            ||
         !backend->bindImageMemory                       ||
+        !backend->mapImageMemory                        ||
+        !backend->unmapImageMemory                      ||
 
         // image view
         !backend->createImageView                       ||
@@ -1952,6 +1966,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->writeInstancesToMappedMemory          ||
         !backend->bindBufferMemory                      ||
         !backend->getBufferDeviceAddress                ||
+        !backend->mapBufferMemory                       ||
+        !backend->unmapBufferMemory                     ||
 
         // descriptor set layout, descriptor pool and descriptor set
         !backend->createDescriptorSetLayout             ||
@@ -2521,6 +2537,30 @@ PalResult PAL_CALL palBindImageMemory(
     }
 
     return image->backend->bindImageMemory(image, memory, offset);
+}
+
+PalResult PAL_CALL palMapImageMemory(
+    PalImage* image,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!image) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return image->backend->mapImageMemory(image, offset, size, outPtr);
+}
+
+void PAL_CALL palUnmapImageMemory(PalImage* image)
+{
+    if (s_Graphics.initialized && image) {
+        image->backend->unmapImageMemory(image);
+    }
 }
 
 // ==================================================
@@ -3957,9 +3997,8 @@ PalResult PAL_CALL palBindBufferMemory(
     return buffer->backend->bindBufferMemory(buffer, memory, offset);
 }
 
-PalResult PAL_CALL palMapMemory(
-    PalDevice* device,
-    PalMemory* memory,
+PalResult PAL_CALL palMapBufferMemory(
+    PalBuffer* buffer,
     Uint64 offset,
     Uint64 size,
     void** outPtr)
@@ -3968,21 +4007,18 @@ PalResult PAL_CALL palMapMemory(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!device || !memory || !outPtr) {
+    if (!buffer) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->mapMemory(device, memory, offset, size, outPtr);
+    return buffer->backend->mapBufferMemory(buffer, offset, size, outPtr);
 }
 
-void PAL_CALL palUnmapMemory(
-    PalDevice* device,
-    PalMemory* memory)
+void PAL_CALL palUnmapBufferMemory(PalBuffer* buffer)
 {
-    if (!s_Graphics.initialized || !device || !memory) {
-        return;
+    if (s_Graphics.initialized && buffer) {
+        buffer->backend->unmapBufferMemory(buffer);
     }
-    device->backend->unmapMemory(device, memory);
 }
 
 PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer)

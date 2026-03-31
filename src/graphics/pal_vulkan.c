@@ -443,6 +443,7 @@ typedef struct {
     bool belongsToSwapchain;
     VkImageAspectFlags aspectMask;
     Device* device;
+    VkDeviceMemory memory;
     VkImage handle;
     PalImageInfo info;
 } Image;
@@ -533,6 +534,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     PalBufferUsages usages;
+    VkDeviceMemory memory;
     Device* device;
     VkBuffer handle;
 } Buffer;
@@ -4320,33 +4322,6 @@ void PAL_CALL freeMemoryVk(
     s_Vk.freeMemory(vkDevice->handle, mem, &s_Vk.vkAllocator);
 }
 
-PalResult PAL_CALL mapMemoryVk(
-    PalDevice* device,
-    PalMemory* memory,
-    Uint64 offset,
-    Uint64 size,
-    void** outPtr)
-{
-    VkResult result;
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    Device* vkDevice = (Device*)device;
-
-    result = s_Vk.mapMemory(vkDevice->handle, mem, offset, size, 0, outPtr);
-    if (result != VK_SUCCESS) {
-        return resultFromVk(result);
-    }
-    return PAL_RESULT_SUCCESS;
-}
-
-void PAL_CALL unmapMemoryVk(
-    PalDevice* device,
-    PalMemory* memory)
-{
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    Device* vkDevice = (Device*)device;
-    s_Vk.unmapMemory(vkDevice->handle, mem);
-}
-
 // ==================================================
 // Extended Adapter Features
 // ==================================================
@@ -4919,6 +4894,7 @@ PalResult PAL_CALL createImageVk(
         image->aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 
+    image->memory = nullptr;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
 }
@@ -4980,9 +4956,37 @@ PalResult PAL_CALL bindImageMemoryVk(
         return PAL_RESULT_INVALID_OPERATION;
     }
 
+    if (vkImage->memory) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     s_Vk.bindImageMemory(vkImage->device->handle, vkImage->handle, mem, offset);
+    vkImage->memory = mem;
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL mapImageMemoryVk(
+    PalImage* image,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+    VkResult result;
+    Image* vkImage = (Image*)image;
+    Device* device = vkImage->device;
+
+    result = s_Vk.mapMemory(device->handle, vkImage->memory, offset, size, 0, outPtr);
+    if (result != VK_SUCCESS) {
+        return resultFromVk(result);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL unmapImageMemoryVk(PalImage* image)
+{
+    Image* vkImage = (Image*)image;
+    s_Vk.unmapMemory(vkImage->device->handle, vkImage->memory);
 }
 
 // ==================================================
@@ -7670,6 +7674,7 @@ PalResult PAL_CALL createBufferVk(
     }
 
     buffer->device = vkDevice;
+    buffer->memory = nullptr;
     *outBuffer = (PalBuffer*)buffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -7745,11 +7750,40 @@ PalResult PAL_CALL bindBufferMemoryVk(
     VkDeviceMemory mem = (VkDeviceMemory)memory;
     Buffer* vkBuffer = (Buffer*)buffer;
 
+    if (vkBuffer->memory) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
+
     result = s_Vk.bindBufferMemory(vkBuffer->device->handle, vkBuffer->handle, mem, offset);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
+
+    vkBuffer->memory = mem;
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL mapBufferMemoryVk(
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+    VkResult result;
+    Buffer* vkBuffer = (Buffer*)buffer;
+    Device* device = vkBuffer->device;
+
+    result = s_Vk.mapMemory(device->handle, vkBuffer->memory, offset, size, 0, outPtr);
+    if (result != VK_SUCCESS) {
+        return resultFromVk(result);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer)
+{
+    Buffer* vkBuffer = (Buffer*)buffer;
+    s_Vk.unmapMemory(vkBuffer->device->handle, vkBuffer->memory);
 }
 
 PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer* buffer)

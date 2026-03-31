@@ -2673,27 +2673,6 @@ typedef struct {
         PalMemory* memory);
 
     /**
-     * Backend implementation of ::palMapMemory.
-     *
-     * Must obey the rules and semantics documented in palMapMemory().
-     */
-    PalResult PAL_CALL (*mapMemory)(
-        PalDevice* device,
-        PalMemory* memory,
-        Uint64 offset,
-        Uint64 size,
-        void** outPtr);
-
-    /**
-     * Backend implementation of ::palUnmapMemory.
-     *
-     * Must obey the rules and semantics documented in palUnmapMemory().
-     */
-    void PAL_CALL (*unmapMemory)(
-        PalDevice* device,
-        PalMemory* memory);
-
-    /**
      * Backend implementation of ::palQueryDepthStencilCapabilities.
      *
      * Must obey the rules and semantics documented in
@@ -2857,6 +2836,24 @@ typedef struct {
         PalImage* image,
         PalMemory* memory,
         Uint64 offset);
+
+    /**
+     * Backend implementation of ::palMapImageMemory.
+     *
+     * Must obey the rules and semantics documented in palMapImageMemory().
+     */
+    PalResult PAL_CALL (*mapImageMemory)(
+        PalImage* image,
+        Uint64 offset,
+        Uint64 size,
+        void** outPtr);
+
+    /**
+     * Backend implementation of ::palUnmapImageMemory.
+     *
+     * Must obey the rules and semantics documented in palUnmapImageMemory().
+     */
+    void PAL_CALL (*unmapImageMemory)(PalImage* image);
 
     /**
      * Backend implementation of ::palCreateImageView.
@@ -3658,6 +3655,24 @@ typedef struct {
         Uint64 offset);
 
     /**
+     * Backend implementation of ::palMapBufferMemory.
+     *
+     * Must obey the rules and semantics documented in palMapBufferMemory().
+     */
+    PalResult PAL_CALL (*mapBufferMemory)(
+        PalBuffer* buffer,
+        Uint64 offset,
+        Uint64 size,
+        void** outPtr);
+
+    /**
+     * Backend implementation of ::palUnmapBufferMemory.
+     *
+     * Must obey the rules and semantics documented in palUnmapBufferMemory().
+     */
+    void PAL_CALL (*unmapBufferMemory)(PalBuffer* buffer);
+
+    /**
      * Backend implementation of ::palGetBufferDeviceAddress.
      *
      * Must obey the rules and semantics documented in palGetBufferDeviceAddress().
@@ -4063,59 +4078,6 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  * @sa palAllocateMemory
  */
 PAL_API void PAL_CALL palFreeMemory(
-    PalDevice* device,
-    PalMemory* memory);
-
-/**
- * @brief Maps GPU memory to CPU visible address space.
- *
- * The graphics system must be initialized before this call.
- *
- * Only `PAL_MEMORY_TYPE_CPU_UPLOAD` and `PAL_MEMORY_TYPE_CPU_READBACK` can be mapped to
- * CPU visible space. MApping `PAL_MEMORY_TYPE_GPU_ONLY` will fail and return
- * `PAL_RESULT_MEMORY_MAP_FAILED`.
- *
- * @param[in] device Pointer to device memory belongs to.
- * @param[in] memory Pointer to memory to map.
- * @param[in] offset Starting point within the memory.
- * @param[in] size Number of bytes to map from the offset. `offset + size` must not be
- * greater than memory size.
- * @param[out] outPtr Pointer to a void* to recieved the mapped memory.
- *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if `device` and `memory` is externally synchronized.
- * Mapping with different offsets into the same memory is thread safe as long as `device`
- * is externally synchronized.
- *
- * @since 1.4
- * @ingroup pal_graphics
- * @sa palUnmapMemory
- */
-PAL_API PalResult PAL_CALL palMapMemory(
-    PalDevice* device,
-    PalMemory* memory,
-    Uint64 offset,
-    Uint64 size,
-    void** outPtr);
-
-/**
- * @brief Unmap GPU memory from CPU visible address space.
- *
- * The graphics system must be initialized before this call. The memory must be mapped
- * before this call. After this call, the CPU pointer must not be used anymore.
- *
- * @param[in] device Pointer to device memory belongs to.
- * @param[in] memory Pointer to memory to unmap.
- *
- * Thread safety: Thread safe if `device` and `memory` is externally synchronized.
- *
- * @since 1.4
- * @ingroup pal_graphics
- * @sa palMapMemory
- */
-PAL_API void PAL_CALL palUnmapMemory(
     PalDevice* device,
     PalMemory* memory);
 
@@ -4534,6 +4496,55 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
     PalImage* image,
     PalMemory* memory,
     Uint64 offset);
+
+/**
+ * @brief Maps image to CPU visible address space.
+ *
+ * The graphics system must be initialized before this call. The image must have a valid
+ * memory bound to it before this call.
+ *
+ * Only `PAL_MEMORY_TYPE_CPU_UPLOAD` and `PAL_MEMORY_TYPE_CPU_READBACK` can be mapped to
+ * CPU visible space. Mapping `PAL_MEMORY_TYPE_GPU_ONLY` will fail and return
+ * `PAL_RESULT_MEMORY_MAP_FAILED`.
+ *
+ * @param[in] image Pointer to image to map. Memory must be bound.
+ * @param[in] offset Starting point within the image.
+ * @param[in] size Number of bytes to map from the offset. `offset + size` must not be
+ * greater than image size.
+ * @param[out] outPtr Pointer to a void* to recieved the mapped memory.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `image` is externally synchronized.
+ * Mapping with different offsets into the same image is thread safe as long as `image`
+ * is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palUnmapImageMemory
+ */
+PAL_API PalResult PAL_CALL palMapImageMemory(
+    PalImage* image,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr);
+
+/**
+ * @brief Unmap image from CPU visible address space.
+ *
+ * The graphics system must be initialized before this call. The image must be mapped
+ * before this call. After this call, the CPU pointer must not be used anymore.
+ *
+ * @param[in] image Pointer to image to unmap.
+ *
+ * Thread safety: Thread safe if `image` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palMapImageMemory
+ */
+PAL_API void PAL_CALL palUnmapImageMemory(PalImage* image);
 
 /**
  * @brief Create an image view.
@@ -6572,6 +6583,55 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
     PalBuffer* buffer,
     PalMemory* memory,
     Uint64 offset);
+
+/**
+ * @brief Maps buffer to CPU visible address space.
+ *
+ * The graphics system must be initialized before this call. The buffer must have a valid
+ * memory bound to it before this call.
+ *
+ * Only `PAL_MEMORY_TYPE_CPU_UPLOAD` and `PAL_MEMORY_TYPE_CPU_READBACK` can be mapped to
+ * CPU visible space. Mapping `PAL_MEMORY_TYPE_GPU_ONLY` will fail and return
+ * `PAL_RESULT_MEMORY_MAP_FAILED`.
+ *
+ * @param[in] buffer Pointer to buffer to map. Memory must be bound.
+ * @param[in] offset Starting point within the buffer.
+ * @param[in] size Number of bytes to map from the offset. `offset + size` must not be
+ * greater than buffer size.
+ * @param[out] outPtr Pointer to a void* to recieved the mapped memory.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `buffer` is externally synchronized.
+ * Mapping with different offsets into the same buffer is thread safe as long as `buffer`
+ * is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palUnmapBufferMemory
+ */
+PAL_API PalResult PAL_CALL palMapBufferMemory(
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr);
+
+/**
+ * @brief Unmap buffer from CPU visible address space.
+ *
+ * The graphics system must be initialized before this call. The buffer must be mapped
+ * before this call. After this call, the CPU pointer must not be used anymore.
+ *
+ * @param[in] buffer Pointer to buffer to unmap.
+ *
+ * Thread safety: Thread safe if `buffer` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palMapBufferMemory
+ */
+PAL_API void PAL_CALL palUnmapBufferMemory(PalBuffer* buffer);
 
 /**
  * @brief Get the device address of the provided buffer.

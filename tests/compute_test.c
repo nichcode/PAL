@@ -120,7 +120,7 @@ bool computeTest()
     PalAdapterFeatures adapterFeatures = 0;
     bool hasComputeQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
-        adapter = adapters[1]; // TODO: remove
+        adapter = adapters[1]; // TODO: use the correct i index
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -611,10 +611,10 @@ bool computeTest()
     // now our staging buffer has the contents of the GPU buffer
     // we map it and copy the contents to a ppm buffer and save it
     void* ptr = nullptr;
-    result = palMapMemory(device, stagingBufferMemory, 0, bufferBytes, &ptr);
+    result = palMapBufferMemory(stagingBuffer, 0, bufferBytes, &ptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
@@ -636,7 +636,7 @@ bool computeTest()
     }
 
     fclose(file);
-    palUnmapMemory(device, stagingBufferMemory);
+    palUnmapBufferMemory(stagingBuffer);
 
     palDestroyPipeline(pipeline);
     palDestroyPipelineLayout(pipelineLayout);

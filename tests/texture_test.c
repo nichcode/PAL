@@ -504,15 +504,15 @@ bool textureTest()
 
     // map the staging buffer and upload the vertices
     void* ptr = nullptr;
-    result = palMapMemory(device, stagingBufferMemory, 0, sizeof(vertices), &ptr);
+    result = palMapBufferMemory(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
     memcpy(ptr, vertices, sizeof(vertices));
-    palUnmapMemory(device, stagingBufferMemory);
+    palUnmapBufferMemory(stagingBuffer);
 
     PalFence* fence = nullptr;
     result = palCreateFence(device, false, &fence);
@@ -621,21 +621,20 @@ bool textureTest()
 
     // copy data
     void* data = nullptr;
-    result = palMapMemory(
-        device, 
-        imageStagingBufferMemory, 
+    result = palMapBufferMemory(
+        imageStagingBuffer,
         0, 
         imageStagingBufferCreateInfo.size, 
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
     memcpy(data, texture, imageStagingBufferCreateInfo.size);
-    palUnmapMemory(device, imageStagingBufferMemory);
+    palUnmapBufferMemory(imageStagingBuffer);
 
     // use the first command buffer to upload the copy
     // and reset it when done

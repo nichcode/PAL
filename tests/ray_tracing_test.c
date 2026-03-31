@@ -436,15 +436,15 @@ bool rayTracingTest()
 
     // copy vertices
     void* data = nullptr;
-    result = palMapMemory(device, vertexBufferMemory, 0, sizeof(vertices), &data);
+    result = palMapBufferMemory(vertexBuffer, 0, sizeof(vertices), &data);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
     memcpy(data, vertices, sizeof(vertices));
-    palUnmapMemory(device, vertexBufferMemory);
+    palUnmapBufferMemory(vertexBuffer);
 
     // fill BLAS and triangle geometry
     PalDeviceAddress vertexBufferAddress = palGetBufferDeviceAddress(vertexBuffer);
@@ -585,16 +585,15 @@ bool rayTracingTest()
 
     // copy instance struct to the buffer
     data = nullptr;
-    result = palMapMemory(
-        device,
-        instanceBufferMemory,
+    result = palMapBufferMemory(
+        instanceBuffer,
         0,
         instanceBufferReq.size,
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
@@ -606,7 +605,7 @@ bool rayTracingTest()
         return false;
     }
 
-    palUnmapMemory(device, instanceBufferMemory);
+    palUnmapBufferMemory(instanceBuffer);
 
     // fill TLAS and instance geometry
     PalDeviceAddress instanceBufferAddress = palGetBufferDeviceAddress(instanceBuffer);
@@ -1049,10 +1048,10 @@ bool rayTracingTest()
     // now our staging buffer has the contents of the GPU buffer
     // we map it and copy the contents to a ppm buffer and save it
     void* ptr = nullptr;
-    result = palMapMemory(device, stagingBufferMemory, 0, bufferBytes, &ptr);
+    result = palMapBufferMemory(stagingBuffer, 0, bufferBytes, &ptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
@@ -1074,7 +1073,7 @@ bool rayTracingTest()
     }
 
     fclose(file);
-    palUnmapMemory(device, stagingBufferMemory);
+    palUnmapBufferMemory(stagingBuffer);
 
     palDestroyAccelerationstructure(blas);
     palDestroyAccelerationstructure(tlas);

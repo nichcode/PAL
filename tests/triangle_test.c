@@ -466,15 +466,15 @@ bool triangleTest()
 
     // map the staging buffer and upload the vertices
     void* ptr = nullptr;
-    result = palMapMemory(device, stagingBufferMemory, 0, sizeof(vertices), &ptr);
+    result = palMapBufferMemory(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map memory: %s", error);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
     memcpy(ptr, vertices, sizeof(vertices));
-    palUnmapMemory(device, stagingBufferMemory);
+    palUnmapBufferMemory(stagingBuffer);
 
     PalFence* tmpFence = nullptr;
     result = palCreateFence(device, false, &tmpFence);

@@ -51,6 +51,7 @@ const IID IID_Factory = {0xc1b6694f, 0xff09, 0x44a9, 0xb0,0x3c, 0x77,0x90,0x0a,0
 const IID IID_Debug = {0x344488b7, 0x6846, 0x474b, 0xb9,0x89, 0xf0,0x27,0x44,0x82,0x45,0xe0};
 const IID IID_Debug1 = {0xaffaa4ca, 0x63fe, 0x4d8e, 0xb8,0xad, 0x15,0x90,0x00,0xaf,0x43,0x04};
 const IID IID_InfoQueue = {0x0742a90b, 0xc387, 0x483f, 0xb9,0x46, 0x30,0xa7,0xe4,0xe6,0x14,0x58};
+const IID IID_Heap = {0x6b3b2502, 0x6e51, 0x45b3, 0x90,0xee, 0x98,0x84,0x26,0x5e,0x8d,0xf3};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -93,6 +94,7 @@ static D3D12 s_D3D12 = {0};
 // ==================================================
 // Helper Functions
 // ==================================================
+
 
 // ==================================================
 // Adapter
@@ -603,31 +605,41 @@ PalResult PAL_CALL allocateMemoryD3D12(
     Uint64 size,
     PalMemory** outMemory)
 {
+    HRESULT result;
+    Device* d3d12Device = (Device*)device;
+    ID3D12Heap* memory = nullptr;
 
+    D3D12_HEAP_DESC desc = {0};
+    desc.SizeInBytes = size;
+    
+    desc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+    if (type == PAL_MEMORY_TYPE_CPU_READBACK) {
+        desc.Properties.Type = D3D12_HEAP_TYPE_READBACK;
+
+    } else if (type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
+        desc.Properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+    }
+
+    result = d3d12Device->handle->lpVtbl->CreateHeap(
+        d3d12Device->handle, 
+        &desc, 
+        &IID_Heap, 
+        (void**)&memory);
+
+    if (FAILED(result)) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    *outMemory = (PalMemory*)memory;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL freeMemoryD3D12(
     PalDevice* device,
     PalMemory* memory)
 {
-
-}
-
-PalResult PAL_CALL mapMemoryD3D12(
-    PalDevice* device,
-    PalMemory* memory,
-    Uint64 offset,
-    Uint64 size,
-    void** outPtr)
-{
-
-}
-
-void PAL_CALL unmapMemoryD3D12(
-    PalDevice* device,
-    PalMemory* memory)
-{
-
+    ID3D12Heap* mem = (ID3D12Heap*)memory;
+    mem->lpVtbl->Release(mem);
 }
 
 // ==================================================
@@ -638,6 +650,7 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
+    // TODO:
 
 }
 
@@ -766,6 +779,20 @@ PalResult PAL_CALL bindImageMemoryD3D12(
     PalImage* image,
     PalMemory* memory,
     Uint64 offset)
+{
+
+}
+
+PalResult PAL_CALL mapImageMemoryD3D12(
+    PalImage* image,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+
+}
+
+void PAL_CALL unmapImageMemoryD3D12(PalImage* image)
 {
 
 }
@@ -1447,6 +1474,20 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     PalBuffer* buffer,
     PalMemory* memory,
     Uint64 offset)
+{
+
+}
+
+PalResult PAL_CALL mapBufferMemoryD3D12(
+    PalBuffer* buffer,
+    Uint64 offset,
+    Uint64 size,
+    void** outPtr)
+{
+    
+}
+
+void PAL_CALL unmapBufferMemoryD3D12(PalBuffer* buffer)
 {
 
 }
