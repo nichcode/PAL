@@ -383,7 +383,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {0};
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 options6 = {0};
     D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {0};
-    D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {0};
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
 
     D3D_FEATURE_LEVEL levels[] = {
@@ -663,35 +662,146 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
+    Device* d3d12Device = (Device*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    caps->depthResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+    caps->depthResolveModes[PAL_RESOLVE_MODE_AVERAGE] = true;
+    caps->depthResolveModes[PAL_RESOLVE_MODE_MIN] = true;
+    caps->depthResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+
+    caps->stencilResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+    caps->stencilResolveModes[PAL_RESOLVE_MODE_AVERAGE] = false;
+    caps->stencilResolveModes[PAL_RESOLVE_MODE_MIN] = true;
+    caps->stencilResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+
+    caps->independentDepthStencilResolve = true;
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps)
 {
+    Device* d3d12Device = (Device*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    // these are supported if fragment shading rate feature is
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_1X1] = true;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_1X2] = true;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X1] = true;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X2] = true;
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS6 options = {0};
+    d3d12Device->handle->lpVtbl->CheckFeatureSupport(
+        d3d12Device->handle, 
+        D3D12_FEATURE_D3D12_OPTIONS6, 
+        &options, 
+        sizeof(options));
+
+    if (options.AdditionalShadingRatesSupported) {
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4] = true;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2] = true;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4] = true;
+
+    } else {
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4] = false;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2] = false;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4] = false;
+    }
+
+    // there are supported if fragment shading rate feature is
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = true;
+
+    caps->minTexelWidth = 1; // safe default
+    caps->minTexelHeight = 1; // safe default
+    caps->maxTexelWidth = options.ShadingRateImageTileSize;
+    caps->maxTexelHeight = options.ShadingRateImageTileSize;
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL queryMeshShaderCapabilitiesD3D12(
     PalDevice* device,
     PalMeshShaderCapabilities* caps)
 {
+    Device* d3d12Device = (Device*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    // these are not exposed by d3d12. We use the offical mesh shader spec
+    caps->maxMeshOutputPrimitives = 256; 
+    caps->maxMeshOutputVertices = 256;
+    caps->maxTaskWorkGroupInvocations = 128;
+    caps->maxMeshWorkGroupInvocations = 128;
+
+    caps->maxTaskWorkGroupCount[0] = 65535;
+    caps->maxTaskWorkGroupCount[1] = 65535;
+    caps->maxTaskWorkGroupCount[2] = 65535;
+
+    caps->maxMeshWorkGroupCount[0] = 65535;
+    caps->maxMeshWorkGroupCount[1] = 65535;
+    caps->maxMeshWorkGroupCount[2] = 65535;
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
     PalDevice* device,
     PalRayTracingCapabilities* caps)
 {
+    Device* d3d12Device = (Device*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    // these are only limited by memory. D3d12 does not expose them
+    caps->maxRecursionDepth = 32; // 32 - 1;
+    caps->maxHitAttributeSize = PAL_INFINITE;
+    caps->maxInstanceCount = PAL_INFINITE;
+    caps->maxPrimitiveCount = PAL_INFINITE;
+    caps->maxGeometryCount = PAL_INFINITE;
+    caps->maxPayloadSize = PAL_INFINITE;
+    caps->maxDispatchInvocations = PAL_INFINITE;
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     PalDevice* device,
     PalDescriptorIndexingCapabilities* caps)
 {
+    Device* d3d12Device = (Device*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    // these are supported if descriptor indexing is
+    caps->bindlessStorageBuffers = true;
+    caps->bindlessUniformBuffers = true;
+    caps->bindlessSamplers = true;
+
+    // these are not exposed by d3d12. We use the offical resource binding spec
+    caps->maxImagesPerShaderStage = PAL_INFINITE;
+    caps->maxImagesPerDescriptorSet = PAL_INFINITE;
+    caps->maxSamplersPerShaderStage = 2048;
+    caps->maxSamplersPerDescriptorSet = PAL_INFINITE;
+    caps->maxStorageBuffersPerShaderStage = PAL_INFINITE;
+    caps->maxUniformBuffersPerShaderStage = PAL_INFINITE;
+    caps->maxStorageBuffersPerDescriptorSet = PAL_INFINITE;
+    caps->maxUniformBuffersPerDescriptorSet = PAL_INFINITE;
+    caps->maxDescriptors = PAL_INFINITE;
+
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================

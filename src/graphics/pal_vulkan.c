@@ -221,9 +221,6 @@ typedef struct _SECURITY_ATTRIBUTES {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    // For descriptor Indexing
-    bool bindlessStorageBuffers;
-    bool bindlessUniformBuffers;
     VkPhysicalDevice handle;
 } Adapter;
 
@@ -364,8 +361,6 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool bindlessStorageBuffers;
-    bool bindlessUniformBuffers;
     PalAdapterFeatures features;
     Int32 phyQueueCount;
     Int32 phyQueueIndex;
@@ -3006,8 +3001,6 @@ PalResult PAL_CALL enumerateAdaptersVk(
             if (adapterCount < *count) {
                 Adapter* tmp = &s_Vk.adapters[adapterCount];
                 tmp->handle = devices[i];
-                tmp->bindlessStorageBuffers = false;
-                tmp->bindlessUniformBuffers = false;
                 outAdapters[adapterCount] = (PalAdapter*)tmp;
             }
         }
@@ -3358,18 +3351,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
             desc.shaderSampledImageArrayNonUniformIndexing &&
             desc.descriptorBindingSampledImageUpdateAfterBind) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-        }
-
-        // check for bindless storage buffers
-        if (desc.shaderStorageBufferArrayNonUniformIndexing &&
-            desc.descriptorBindingStorageBufferUpdateAfterBind) {
-            vkAdapter->bindlessStorageBuffers = true;
-        }
-
-        // check for bindless uniform buffers
-        if (desc.shaderUniformBufferArrayNonUniformIndexing &&
-            desc.descriptorBindingUniformBufferUpdateAfterBind) {
-            vkAdapter->bindlessUniformBuffers = true;
         }
     }
 
@@ -3784,16 +3765,25 @@ PalResult PAL_CALL createDeviceVk(
         descIndex.descriptorBindingVariableDescriptorCount = true;
         features12.descriptorIndexing = true;
 
-        if (vkAdapter->bindlessStorageBuffers) {
+        // check support for bindless storage and uniform buffers
+        VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
+        desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &desc;
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+
+        if (desc.shaderStorageBufferArrayNonUniformIndexing &&
+            desc.descriptorBindingStorageBufferUpdateAfterBind) {
             descIndex.shaderStorageBufferArrayNonUniformIndexing = true;
             descIndex.descriptorBindingStorageBufferUpdateAfterBind = true;
-            device->bindlessStorageBuffers = true;
         }
 
-        if (vkAdapter->bindlessUniformBuffers) {
+        if (desc.shaderUniformBufferArrayNonUniformIndexing &&
+            desc.descriptorBindingUniformBufferUpdateAfterBind) {
             descIndex.shaderUniformBufferArrayNonUniformIndexing = true;
             descIndex.descriptorBindingUniformBufferUpdateAfterBind = true;
-            device->bindlessUniformBuffers = true;
         }
 
         descIndex.pNext = next;
@@ -4521,26 +4511,41 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    caps->bindlessSamplers = true;
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
+    desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 
     VkPhysicalDeviceDescriptorIndexingPropertiesEXT props = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT;
+
+    VkPhysicalDeviceFeatures2 features;
+    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    
+    features.pNext = &desc;
     properties2.pNext = &props;
+    s_Vk.getPhysicalDeviceFeatures2(vkDevice->phyDevice, &features);
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
 
-    caps->bindlessStorageBuffers = false;
-    caps->bindlessUniformBuffers = false;
-    if (vkDevice->bindlessStorageBuffers) {
+    // check for bindless storage buffers
+    if (desc.shaderStorageBufferArrayNonUniformIndexing &&
+        desc.descriptorBindingStorageBufferUpdateAfterBind) {
         caps->bindlessStorageBuffers = true;
     }
 
-    if (vkDevice->bindlessUniformBuffers) {
+    // check for bindless uniform buffers
+    if (desc.shaderUniformBufferArrayNonUniformIndexing &&
+        desc.descriptorBindingUniformBufferUpdateAfterBind) {
         caps->bindlessUniformBuffers = true;
     }
 
     caps->maxImagesPerShaderStage = props.maxPerStageDescriptorUpdateAfterBindSampledImages;
     caps->maxImagesPerDescriptorSet = props.maxDescriptorSetUpdateAfterBindSampledImages;
+
+    caps->maxSamplersPerShaderStage = props.maxPerStageDescriptorUpdateAfterBindSamplers;
+    caps->maxSamplersPerDescriptorSet = props.maxDescriptorSetUpdateAfterBindSamplers;
 
     caps->maxStorageBuffersPerShaderStage =
         props.maxPerStageDescriptorUpdateAfterBindStorageBuffers;

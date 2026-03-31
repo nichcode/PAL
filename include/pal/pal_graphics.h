@@ -1509,10 +1509,13 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool bindlessSamplers; /**< If true, bindless samplers are supported.*/
     bool bindlessStorageBuffers; /**< If true, bindless storage buffers are supported.*/
     bool bindlessUniformBuffers; /**< If true, bindless uniform buffers are supported.*/
     Uint32 maxImagesPerShaderStage;
     Uint32 maxImagesPerDescriptorSet;
+    Uint32 maxSamplersPerShaderStage;
+    Uint32 maxSamplersPerDescriptorSet;
     Uint32 maxStorageBuffersPerShaderStage;
     Uint32 maxStorageBuffersPerDescriptorSet;
     Uint32 maxUniformBuffersPerShaderStage;
