@@ -1415,6 +1415,17 @@ typedef struct {
 } PalAdapterCapabilities;
 
 /**
+ * @struct PalSamplerAnisotropyCapabilities
+ * @brief Sampler anisotropy capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxAnisotropy;
+} PalSamplerAnisotropyCapabilities;
+
+/**
  * @struct PalDepthStencilCapabilities
  * @brief Depth stencil capabilities of an adapter (GPU).
  *
@@ -2671,6 +2682,16 @@ typedef struct {
     void PAL_CALL (*freeMemory)(
         PalDevice* device,
         PalMemory* memory);
+
+    /**
+     * Backend implementation of ::palQuerySamplerAnisotropyCapabilities.
+     *
+     * Must obey the rules and semantics documented in
+     * palQuerySamplerAnisotropyCapabilities().
+     */
+    PalResult PAL_CALL (*querySamplerAnisotropyCapabilities)(
+        PalDevice* device,
+        PalSamplerAnisotropyCapabilities* caps);
 
     /**
      * Backend implementation of ::palQueryDepthStencilCapabilities.
@@ -4080,6 +4101,29 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
 PAL_API void PAL_CALL palFreeMemory(
     PalDevice* device,
     PalMemory* memory);
+
+/**
+ * @brief Get sampler anisotropy feature capabilites or limits about a device.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported and enabled when creating the
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device to query sampler anisotropy feature capabilities on.
+ * @param[out] caps Pointer to a PalSamplerAnisotropyCapabilities to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `caps` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps); 
 
 /**
  * @brief Get depth stencil feature capabilites or limits about a device.

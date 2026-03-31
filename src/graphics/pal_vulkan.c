@@ -4326,6 +4326,22 @@ void PAL_CALL freeMemoryVk(
 // Extended Adapter Features
 // ==================================================
 
+PalResult PAL_CALL querySamplerAnisotropyCapabilitiesVk(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps)
+{
+    Device* vkDevice = (Device*)device;
+    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    VkPhysicalDeviceProperties props = {0};
+    s_Vk.getPhysicalDeviceProperties(vkDevice->phyDevice, &props);
+
+    caps->maxAnisotropy = props.limits.maxSamplerAnisotropy;
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)

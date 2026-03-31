@@ -155,6 +155,10 @@ void PAL_CALL freeMemoryVk(
 // Extended Adapter Features
 // ==================================================
 
+PalResult PAL_CALL querySamplerAnisotropyCapabilitiesVk(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps);
+
 PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
     PalDevice* device,
     PalDepthStencilCapabilities* caps);
@@ -785,6 +789,7 @@ static PalGraphicsBackend s_VkBackend = {
     .freeMemory = freeMemoryVk,
 
     // extended adapter features
+    .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesVk,
     .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesVk,
     .queryFragmentShadingRateCapabilities = queryFragmentShadingRateCapabilitiesVk,
     .queryMeshShaderCapabilities = queryMeshShaderCapabilitiesVk,
@@ -1004,6 +1009,10 @@ void PAL_CALL freeMemoryD3D12(
 // ==================================================
 // Extended Adapter Features
 // ==================================================
+
+PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps);
 
 PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
@@ -1635,6 +1644,7 @@ static PalGraphicsBackend s_D3D12Backend = {
     .freeMemory = freeMemoryD3D12,
 
     // extended adapter features
+    .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesD3D12,
     .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesD3D12,
     .queryFragmentShadingRateCapabilities = queryFragmentShadingRateCapabilitiesD3D12,
     .queryMeshShaderCapabilities = queryMeshShaderCapabilitiesD3D12,
@@ -1836,6 +1846,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->freeMemory                            ||
 
         // extended adapter features
+        !backend->querySamplerAnisotropyCapabilities    ||
         !backend->queryDepthStencilCapabilities         ||
         !backend->queryFragmentShadingRateCapabilities  ||
         !backend->queryMeshShaderCapabilities           ||
@@ -2265,6 +2276,21 @@ void PAL_CALL palFreeMemory(
 // ==================================================
 // Extended Adapter Features
 // ==================================================
+
+PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->querySamplerAnisotropyCapabilities(device, caps);
+}
 
 PalResult PAL_CALL palQueryDepthStencilCapabilities(
     PalDevice* device,

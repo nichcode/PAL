@@ -646,11 +646,23 @@ void PAL_CALL freeMemoryD3D12(
 // Extended Adapter Features
 // ==================================================
 
+PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps)
+{
+    Device* d3d12Device = (Device*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    caps->maxAnisotropy = 16; // default on most d3d12 hardwares
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
-    // TODO:
 
 }
 
