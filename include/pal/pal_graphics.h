@@ -528,7 +528,7 @@ typedef enum {
 /**
  * @enum PalImageViewUsages
  * @brief Image view usages. Multiple image view usages can be OR'ed together using bitwise
- * OR operator (`|`).
+ * OR operator (`|`). Not all combination are valid.
  *
  * All image view usages follow the format `PAL_IMAGE_VIEW_USAGE_**` for
  * consistency and API use.

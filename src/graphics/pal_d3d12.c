@@ -120,6 +120,16 @@ typedef struct {
     D3D12_RESOURCE_DESC desc;
 } Image;
 
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    PalImageViewType type;
+    PalImageViewUsages usages;
+    Image* image;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+} ImageView;
+
 static D3D12 s_D3D12 = {0};
 
 // ==================================================
@@ -1669,12 +1679,35 @@ PalResult PAL_CALL createImageViewD3D12(
     const PalImageViewCreateInfo* info,
     PalImageView** outImageView)
 {
+    HRESULT result;
+    ImageView* imageView = nullptr;
+    Device* d3d12Device = (Device*)device;
+    Image* d3d12Image = (Image*)image;
 
+    if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+        if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+    }
+
+    imageView = palAllocate(s_D3D12.allocator, sizeof(ImageView), 0);
+    if (!imageView) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(imageView, 0, sizeof(ImageView));
+    imageView->type = info->type;
+    imageView->usages = info->usages;
+    imageView->image = d3d12Image;
+
+    *outImageView = (ImageView*)imageView;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyImageViewD3D12(PalImageView* imageView)
 {
-
+    ImageView* d3d12ImageView = (ImageView*)imageView;
+    palFree(s_D3D12.allocator, d3d12ImageView);
 }
 
 // ==================================================
