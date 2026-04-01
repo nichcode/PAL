@@ -54,6 +54,7 @@ const IID IID_InfoQueue = {0x0742a90b, 0xc387, 0x483f, 0xb9,0x46, 0x30,0xa7,0xe4
 const IID IID_Heap = {0x6b3b2502, 0x6e51, 0x45b3, 0x90,0xee, 0x98,0x84,0x26,0x5e,0x8d,0xf3};
 const IID IID_Queue = {0x0ec870a6, 0x5d7e, 0x4c22, 0x8c,0xfc, 0x5b,0xaa,0xe0,0x76,0x16,0xed};
 const IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
+const IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,0x04,0x0f,0xad};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -108,6 +109,16 @@ typedef struct {
 
     HWND handle;
 } Surface;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    bool belongsToSwapchain;
+    ID3D12Device* device;
+    ID3D12Resource* handle;
+    PalImageInfo info;
+    D3D12_RESOURCE_DESC desc;
+} Image;
 
 static D3D12 s_D3D12 = {0};
 
@@ -382,6 +393,31 @@ static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
     return usages;
 }
 
+static Uint32 samplesToD3D12(PalSampleCount count)
+{
+    switch (count) {
+        case PAL_SAMPLE_COUNT_2:
+            return 2;
+
+        case PAL_SAMPLE_COUNT_4:
+            return 4;
+
+        case PAL_SAMPLE_COUNT_8:
+            return 8;
+
+        case PAL_SAMPLE_COUNT_16:
+            return 16;
+
+        case PAL_SAMPLE_COUNT_32:
+            return 32;
+
+        case PAL_SAMPLE_COUNT_64:
+            return 64;
+    }
+
+    return 1;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -623,9 +659,9 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    caps->maxComputeQueues = PAL_INFINITE;
-    caps->maxGraphicsQueues = PAL_INFINITE;
-    caps->maxCopyQueues = PAL_INFINITE;
+    caps->maxComputeQueues = PAL_LIMIT_UNKNOWN;
+    caps->maxGraphicsQueues = PAL_LIMIT_UNKNOWN;
+    caps->maxCopyQueues = PAL_LIMIT_UNKNOWN;
 
     caps->maxImageWidth = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
     caps->maxImageHeight = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
@@ -657,7 +693,7 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     }
 
     caps->maxUniformBufferSize = D3D12_REQ_IMMEDIATE_CONSTANT_BUFFER_ELEMENT_COUNT * 16;
-    caps->maxStorageBufferSize = PAL_INFINITE;
+    caps->maxStorageBufferSize = PAL_LIMIT_UNKNOWN;
     caps->maxPushConstantSize = D3D12_MAX_ROOT_COST * 4;
 
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
@@ -820,6 +856,9 @@ PalResult PAL_CALL createDeviceD3D12(
         
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, device);
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
         return PAL_RESULT_INVALID_DRIVER;
     }
 
@@ -1038,12 +1077,12 @@ PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
 
     // these are only limited by memory. D3d12 does not expose them
     caps->maxRecursionDepth = 32; // 32 - 1;
-    caps->maxHitAttributeSize = PAL_INFINITE;
-    caps->maxInstanceCount = PAL_INFINITE;
-    caps->maxPrimitiveCount = PAL_INFINITE;
-    caps->maxGeometryCount = PAL_INFINITE;
-    caps->maxPayloadSize = PAL_INFINITE;
-    caps->maxDispatchInvocations = PAL_INFINITE;
+    caps->maxHitAttributeSize = PAL_LIMIT_UNKNOWN;
+    caps->maxInstanceCount = PAL_LIMIT_UNKNOWN;
+    caps->maxPrimitiveCount = PAL_LIMIT_UNKNOWN;
+    caps->maxGeometryCount = PAL_LIMIT_UNKNOWN;
+    caps->maxPayloadSize = PAL_LIMIT_UNKNOWN;
+    caps->maxDispatchInvocations = PAL_LIMIT_UNKNOWN;
 
     return PAL_RESULT_SUCCESS;
 }
@@ -1063,15 +1102,15 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     caps->bindlessSamplers = true;
 
     // these are not exposed by d3d12. We use the offical resource binding spec
-    caps->maxImagesPerShaderStage = PAL_INFINITE;
-    caps->maxImagesPerDescriptorSet = PAL_INFINITE;
+    caps->maxImagesPerShaderStage = PAL_LIMIT_UNKNOWN;
+    caps->maxImagesPerDescriptorSet = PAL_LIMIT_UNKNOWN;
     caps->maxSamplersPerShaderStage = 2048;
-    caps->maxSamplersPerDescriptorSet = PAL_INFINITE;
-    caps->maxStorageBuffersPerShaderStage = PAL_INFINITE;
-    caps->maxUniformBuffersPerShaderStage = PAL_INFINITE;
-    caps->maxStorageBuffersPerDescriptorSet = PAL_INFINITE;
-    caps->maxUniformBuffersPerDescriptorSet = PAL_INFINITE;
-    caps->maxDescriptors = PAL_INFINITE;
+    caps->maxSamplersPerDescriptorSet = PAL_LIMIT_UNKNOWN;
+    caps->maxStorageBuffersPerShaderStage = PAL_LIMIT_UNKNOWN;
+    caps->maxUniformBuffersPerShaderStage = PAL_LIMIT_UNKNOWN;
+    caps->maxStorageBuffersPerDescriptorSet = PAL_LIMIT_UNKNOWN;
+    caps->maxUniformBuffersPerDescriptorSet = PAL_LIMIT_UNKNOWN;
+    caps->maxDescriptors = PAL_LIMIT_UNKNOWN;
 
     return PAL_RESULT_SUCCESS;
 }
@@ -1469,26 +1508,104 @@ PalResult PAL_CALL createImageD3D12(
     const PalImageCreateInfo* info,
     PalImage** outImage)
 {
+    HRESULT result;
+    Image* image = nullptr;
+    Device* d3d12Device = (Device*)device;
 
+    image = palAllocate(s_D3D12.allocator, sizeof(Image), 0);
+    if (!image) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    memset(image, 0, sizeof(Image));
+    image->desc.Width = (UINT64)info->width;
+    image->desc.Height = (UINT64)info->height;
+    image->desc.DepthOrArraySize = (UINT16)info->depthOrArraySize;
+    image->desc.MipLevels = (UINT16)info->mipLevelCount;
+    image->desc.Format = formatToD3D12(info->format);
+    image->desc.SampleDesc.Count = samplesToD3D12(info->sampleCount);
+    image->desc.SampleDesc.Quality = 0;
+
+    image->desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    if (info->type == PAL_IMAGE_TYPE_3D) {
+        image->desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+    } else if (info->type == PAL_IMAGE_TYPE_1D) {
+        image->desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+    }
+
+    if (info->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+        image->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    }
+
+    if (info->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+        image->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    }
+
+    if (info->usages & PAL_IMAGE_USAGE_STORAGE) {
+        image->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    image->belongsToSwapchain = false;
+    image->info.depthOrArraySize = info->depthOrArraySize;
+    image->info.type = info->type;
+    image->info.format = info->format;
+    image->info.usages = info->usages;
+    image->info.height = info->height;
+    image->info.mipLevelCount = info->mipLevelCount;
+    image->info.sampleCount = info->sampleCount;
+    image->info.width = info->width;
+
+    image->device = d3d12Device->handle;
+    *outImage = (PalImage*)image;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyImageD3D12(PalImage* image)
 {
-
+    Image* d3d12Image = (Image*)image;
+    // check if memory has been attached to the image
+    if (d3d12Image->handle) {
+        d3d12Image->handle->lpVtbl->Release(d3d12Image->handle);
+    }
+    palFree(s_D3D12.allocator, d3d12Image);
 }
 
 PalResult PAL_CALL getImageInfoD3D12(
     PalImage* image,
     PalImageInfo* info)
 {
-
+    Image* d3d12Image = (Image*)image;
+    *info = d3d12Image->info;
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL getImageMemoryRequirementsD3D12(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
+    Image* d3d12Image = (Image*)image;
+    if (d3d12Image->belongsToSwapchain) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
 
+    D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
+    D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
+    allocationInfo = *d3d12Image->device->lpVtbl->GetResourceAllocationInfo(
+        d3d12Image->device,
+        &__ret,
+        0,
+        1,
+        &d3d12Image->desc);
+
+    // d3d12 allows images to be used with only GPU only heap
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+
+    requirements->alignment = allocationInfo.Alignment;
+    requirements->size = allocationInfo.SizeInBytes;
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL bindImageMemoryD3D12(
@@ -1496,7 +1613,36 @@ PalResult PAL_CALL bindImageMemoryD3D12(
     PalMemory* memory,
     Uint64 offset)
 {
+    HRESULT result;
+    Image* d3d12Image = (Image*)image;
+    if (d3d12Image->belongsToSwapchain) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
 
+    ID3D12Heap* mem = (ID3D12Heap*)memory;
+    result = d3d12Image->device->lpVtbl->CreatePlacedResource(
+        d3d12Image->device, 
+        mem, 
+        offset, 
+        &d3d12Image->desc, 
+        0,
+        nullptr, 
+        &IID_Resource, 
+        (void**)d3d12Image->handle);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+
+        } else if (result == E_INVALIDARG) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL mapImageMemoryD3D12(
@@ -1505,12 +1651,12 @@ PalResult PAL_CALL mapImageMemoryD3D12(
     Uint64 size,
     void** outPtr)
 {
-
+    return PAL_RESULT_MEMORY_MAP_FAILED;
 }
 
 void PAL_CALL unmapImageMemoryD3D12(PalImage* image)
 {
-
+    // do nothing.
 }
 
 // ==================================================

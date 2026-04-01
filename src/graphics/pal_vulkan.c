@@ -1272,22 +1272,6 @@ static PalImageUsages ImageUsageFromVk(VkFormatFeatureFlags flags)
     return usages;
 }
 
-static VkImageType imageTypeToVk(PalImageType type)
-{
-    switch (type) {
-        case PAL_IMAGE_TYPE_1D:
-            return VK_IMAGE_TYPE_1D;
-
-        case PAL_IMAGE_TYPE_2D:
-            return VK_IMAGE_TYPE_2D;
-
-        case PAL_IMAGE_TYPE_3D:
-            return VK_IMAGE_TYPE_3D;
-    }
-
-    return VK_IMAGE_TYPE_2D;
-}
-
 static VkImageViewType imageViewTypeToVk(PalImageViewType type)
 {
     switch (type) {
@@ -4874,10 +4858,6 @@ PalResult PAL_CALL createImageVk(
     Image* image = nullptr;
     Device* vkDevice = (Device*)device;
 
-    if (!vkDevice->handle) {
-        return PAL_RESULT_INVALID_DEVICE;
-    }
-
     image = palAllocate(s_Vk.allocator, sizeof(Image), 0);
     if (!image) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -4895,14 +4875,17 @@ PalResult PAL_CALL createImageVk(
     createInfo.format = formatToVk(info->format);
     createInfo.samples = samplesToVk(info->sampleCount);
     createInfo.usage = imageUsageToVk(info->usages);
-
     createInfo.arrayLayers = info->depthOrArraySize;
     createInfo.extent.depth = 1;
-    createInfo.imageType = imageTypeToVk(info->type);
 
+    createInfo.imageType = VK_IMAGE_TYPE_2D;
     if (info->type == PAL_IMAGE_TYPE_3D) {
         createInfo.arrayLayers = 1;
         createInfo.extent.depth = info->depthOrArraySize;
+        createInfo.imageType = VK_IMAGE_TYPE_3D;
+
+    } else if (info->type == PAL_IMAGE_TYPE_1D) {
+        createInfo.imageType = VK_IMAGE_TYPE_1D;
     }
 
     result = s_Vk.createImage(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &image->handle);
