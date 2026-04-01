@@ -130,6 +130,14 @@ typedef struct {
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
 } ImageView;
 
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+    D3D12_SAMPLER_DESC desc;
+} Sampler;
+
 static D3D12 s_D3D12 = {0};
 
 // ==================================================
@@ -426,6 +434,151 @@ static Uint32 samplesToD3D12(PalSampleCount count)
     }
 
     return 1;
+}
+
+static D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op)
+{
+    switch (op) {
+        case PAL_COMPARE_OP_NEVER:
+            return D3D12_COMPARISON_FUNC_NEVER;
+
+        case PAL_COMPARE_OP_LESS:
+            return D3D12_COMPARISON_FUNC_LESS;
+
+        case PAL_COMPARE_OP_EQUAL:
+            return D3D12_COMPARISON_FUNC_EQUAL;
+
+        case PAL_COMPARE_OP_LESS_OR_EQUAL:
+            return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+        case PAL_COMPARE_OP_GREATER:
+            return D3D12_COMPARISON_FUNC_GREATER;
+
+        case PAL_COMPARE_OP_NOT_EQUAL:
+            return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+
+        case PAL_COMPARE_OP_GREATER_OR_EQUAL:
+            return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+
+        case PAL_COMPARE_OP_ALWAYS:
+            return D3D12_COMPARISON_FUNC_ALWAYS;
+    }
+
+    return D3D12_COMPARISON_FUNC_NEVER;
+}
+ 
+static D3D12_FILTER filterToD3D12(
+    PalFilterMode minFilter, 
+    PalFilterMode magFilter, 
+    PalSamplerMipmapMode mode)
+{
+    // all the enums start with min so we start with min filter
+    switch (minFilter) {
+        case PAL_FILTER_MODE_NEAREST: {
+            switch (magFilter) {
+                case PAL_FILTER_MODE_NEAREST: {
+                    // min and mag are nearest. Check sampler mipmap mode
+                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
+                        return D3D12_FILTER_MIN_MAG_MIP_POINT; // sampler mode nearest
+                    } else {
+                        return D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR; // sampler mode linear
+                    }
+                }
+
+                case PAL_FILTER_MODE_LINEAR: {
+                    // min is nearest, mag is linear . Check sampler mipmap mode
+                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
+                        return D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT; // sampler mode nearest
+                    } else {
+                        return D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR; // sampler mode linear
+                    }
+                }
+            }
+        }
+
+        case PAL_FILTER_MODE_LINEAR: {
+            switch (magFilter) {
+                case PAL_FILTER_MODE_NEAREST: {
+                    // min is linear, mag is nearest. Check sampler mipmap mode
+                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
+                        return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT; // sampler mode nearest
+                    } else {
+                        return D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR; // sampler mode linear
+                    }
+                }
+
+                case PAL_FILTER_MODE_LINEAR: {
+                    // min and mag are linear. Check sampler mipmap mode
+                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
+                        return D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT; // sampler mode nearest
+                    } else {
+                        return D3D12_FILTER_MIN_MAG_MIP_LINEAR; // sampler mode linear
+                    }
+                }
+            }
+        }
+    }
+
+    return D3D12_FILTER_MIN_MAG_MIP_POINT;
+}
+
+static D3D12_TEXTURE_ADDRESS_MODE addressModeToD3D12(PalSamplerAddressMode mode)
+{
+    switch (mode) {
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
+            return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        }
+
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
+            return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+
+        }
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
+            return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+
+        }
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
+            return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        }
+    }
+    return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+}
+
+static void borderColorToD3D12(PalBorderColor color, float outColor[4])
+{
+    switch (color) {
+        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
+        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK: {
+            outColor[0] = 0.0f;
+            outColor[1] = 0.0f;
+            outColor[2] = 0.0f;
+            outColor[3] = 0.0f;
+            break;
+        }
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
+        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK: {
+            outColor[0] = 0.0f;
+            outColor[1] = 0.0f;
+            outColor[2] = 0.0f;
+            outColor[3] = 1.0f;
+            break;
+        }
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
+        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE: {
+            outColor[0] = 1.0f;
+            outColor[1] = 1.0f;
+            outColor[2] = 1.0f;
+            outColor[3] = 1.0f;
+            break;
+        }
+    }
+
+    outColor[0] = 0.0f;
+    outColor[1] = 0.0f;
+    outColor[2] = 0.0f;
+    outColor[3] = 0.0f;
 }
 
 // ==================================================
@@ -1700,7 +1853,7 @@ PalResult PAL_CALL createImageViewD3D12(
     imageView->usages = info->usages;
     imageView->image = d3d12Image;
 
-    *outImageView = (ImageView*)imageView;
+    *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1719,12 +1872,45 @@ PalResult PAL_CALL createSamplerD3D12(
     const PalSamplerCreateInfo* info,
     PalSampler** outSampler)
 {
+    Sampler* sampler = nullptr;
+    sampler = palAllocate(s_D3D12.allocator, sizeof(Sampler), 0);
+    if (!sampler) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
 
+    memset(sampler, 0, sizeof(Sampler));
+    sampler->desc.MaxLOD = info->maxLod;
+    sampler->desc.MinLOD = info->minLod;
+    sampler->desc.MipLODBias = info->mipLodBias;
+
+    sampler->desc.MaxAnisotropy = 1;
+    if (info->enableAnisotropy) {
+        sampler->desc.MaxAnisotropy = info->maxAnisotropy;
+    }
+
+    sampler->desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    if (info->enableCompare) {
+        sampler->desc.ComparisonFunc = compareOpToD3D12(info->compareOp);
+    }
+
+    borderColorToD3D12(info->borderColor, sampler->desc.BorderColor);
+    sampler->desc.AddressU = addressModeToD3D12(info->addressModeU);
+    sampler->desc.AddressV = addressModeToD3D12(info->addressModeV);
+    sampler->desc.AddressW = addressModeToD3D12(info->addressModeW);
+
+    sampler->desc.Filter = filterToD3D12(
+        info->minFilterMode, 
+        info->magFilterMode, 
+        info->mipmapMode);
+
+    *outSampler = (PalSampler*)sampler;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySamplerD3D12(PalSampler* sampler)
 {
-
+    Sampler* d3d12Sampler = (Sampler*)sampler;
+    palFree(s_D3D12.allocator, d3d12Sampler);
 }
 
 // ==================================================

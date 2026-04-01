@@ -1730,6 +1730,86 @@ static VkPipelineStageFlags2 pipelineStageToVk(PalShaderStage stage)
     }
     return 0;
 }
+     
+static VkFilter filterToVk(PalFilterMode mode)
+{
+    switch (mode) {
+        case PAL_FILTER_MODE_NEAREST: {
+            return VK_FILTER_NEAREST;
+        }
+
+        case PAL_FILTER_MODE_LINEAR: {
+            return VK_FILTER_LINEAR;
+        }
+    }
+    return VK_FILTER_NEAREST;
+}
+
+static VkSamplerMipmapMode mipmapModeToVk(PalSamplerMipmapMode mode)
+{
+    switch (mode) {
+        case PAL_SAMPLER_MIPMAP_MODE_NEAREST: {
+            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        }
+
+        case PAL_SAMPLER_MIPMAP_MODE_LINEAR: {
+            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        }
+    }
+    return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+}
+
+static VkSamplerAddressMode addressModeToVk(PalSamplerAddressMode mode)
+{
+    switch (mode) {
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        }
+
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+
+        }
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+        }
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        }
+    }
+    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+static VkBorderColor borderColorToVk(PalBorderColor color)
+{
+    switch (color) {
+        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK: {
+            return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK: {
+            return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK: {
+            return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK: {
+            return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE: {
+            return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        }
+
+        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE: {
+            return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+        }
+    }
+    return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+}
 
 static Barrier barrierToVk(
     Uint32 stageCount,
@@ -5126,146 +5206,14 @@ PalResult PAL_CALL createSamplerVk(
     createInfo.maxAnisotropy = info->maxAnisotropy;
     createInfo.compareOp = compareOpToVk(info->compareOp);
 
-    // min filter mode
-    switch (info->minFilterMode) {
-        case PAL_FILTER_MODE_LINEAR: {
-            createInfo.minFilter = VK_FILTER_LINEAR;
-            break;
-        }
-            
-        case PAL_FILTER_MODE_NEAREST: {
-            createInfo.minFilter = VK_FILTER_NEAREST;
-            break;
-        }
-    }
+    createInfo.minFilter = filterToVk(info->minFilterMode);
+    createInfo.magFilter = filterToVk(info->magFilterMode);
+    createInfo.mipmapMode = mipmapModeToVk(info->mipmapMode);
 
-    // mag filter mode
-    switch (info->magFilterMode) {
-        case PAL_FILTER_MODE_LINEAR: {
-            createInfo.magFilter = VK_FILTER_LINEAR;
-            break;
-        }
-            
-        case PAL_FILTER_MODE_NEAREST: {
-            createInfo.magFilter = VK_FILTER_NEAREST;
-            break;
-        }
-    }
-
-    // sampler mipmap mode
-    switch (info->mipmapMode) {
-        case PAL_SAMPLER_MIPMAP_MODE_LINEAR: {
-            createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            break;
-        }
-            
-        case PAL_SAMPLER_MIPMAP_MODE_NEAREST: {
-            createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            break;
-        }
-    }
-
-    // sampler address mode u
-    switch (info->addressModeU) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            break;
-        }
-            
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            break;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            break;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            break;
-        }
-    }
-
-    // sampler address mode v
-    switch (info->addressModeV) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            break;
-        }
-            
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            break;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            break;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            break;
-        }
-    }
-
-    // sampler address mode w
-    switch (info->addressModeW) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            break;
-        }
-            
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            break;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            break;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            break;
-        }
-    }
-
-    // border color
-    switch (info->borderColor) {
-        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK: {
-            createInfo.addressModeW = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
-            break;
-        }
-            
-        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK: {
-            createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-            break;
-        }
-            
-        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK: {
-            createInfo.addressModeW = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-            break;
-        }
-            
-        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK: {
-            createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-            break;
-        }
-            
-        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE: {
-            createInfo.addressModeW = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
-            break;
-        }
-            
-        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE: {
-            createInfo.addressModeW = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-            break;
-        }
-    }
+    createInfo.addressModeU = addressModeToVk(info->addressModeU);
+    createInfo.addressModeV = addressModeToVk(info->addressModeV);
+    createInfo.addressModeW = addressModeToVk(info->addressModeW);
+    createInfo.borderColor = borderColorToVk(info->borderColor);
 
     result = s_Vk.createSampler(
         vkDevice->handle,
