@@ -5432,28 +5432,28 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
 
     // get format and colorspace
     caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = false;
-    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB] = false;
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB] = false;
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB] = false;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = false;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = false;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = false;
 
     for (int i = 0; i < formatCount; i++) {
         VkSurfaceFormatKHR* fmt = &formats[i];
         if (fmt->format == VK_FORMAT_B8G8R8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_B8G8R8A8_SRGB) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_R8G8B8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB] = true;
+                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = true;
             }
 
         } else if (fmt->format == VK_FORMAT_R16G16B16A16_SFLOAT) {
@@ -5540,12 +5540,12 @@ PalResult PAL_CALL createSwapchainVk(
     createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     imageFormat = PAL_FORMAT_B8G8R8A8_UNORM;
 
-    if (info->format == PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB) {
+    if (info->format == PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR) {
         createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
         createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         imageFormat = PAL_FORMAT_B8G8R8A8_SRGB;
 
-    } else if (info->format == PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB) {
+    } else if (info->format == PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR) {
         createInfo.imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
         createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         imageFormat = PAL_FORMAT_R8G8B8A8_UNORM;

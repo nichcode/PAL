@@ -771,9 +771,9 @@ typedef enum {
  * @ingroup pal_graphics
  */
 typedef enum {
-    PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB,
-    PAL_SURFACE_FORMAT_BGRA8_SRGB_SRGB,
-    PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB,
+    PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR,
+    PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR,
+    PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR,
     PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10, /**< HDR.*/
 
     PAL_SURFACE_FORMAT_MAX
@@ -2447,7 +2447,7 @@ typedef struct {
     Uint32 imageArrayLayerCount;      /**< Set to 1 for default.*/
     PalPresentMode presentMode;       /**< (eg. PAL_PRESENT_MODE_FIFO).*/
     PalCompositeAplha compositeAlpha; /**< (eg. PAL_COMPOSITE_ALPHA_OPAQUE).*/
-    PalSurfaceFormat format;          /**< (eg. PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB).*/
+    PalSurfaceFormat format;          /**< (eg. PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR).*/
 } PalSwapchainCreateInfo;
 
 /**

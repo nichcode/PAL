@@ -268,7 +268,7 @@ bool triangleTest()
     swapchainCreateInfo.width = WINDOW_WIDTH;
     swapchainCreateInfo.imageArrayLayerCount = 1;
     swapchainCreateInfo.presentMode = PAL_PRESENT_MODE_FIFO;
-    swapchainCreateInfo.format = PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB;
+    swapchainCreateInfo.format = PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR;
 
     // rare but possible on andriod
     if (WINDOW_WIDTH > surfaceCaps.maxImageWidth) {

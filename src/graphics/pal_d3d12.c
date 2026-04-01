@@ -55,6 +55,7 @@ const IID IID_Heap = {0x6b3b2502, 0x6e51, 0x45b3, 0x90,0xee, 0x98,0x84,0x26,0x5e
 const IID IID_Queue = {0x0ec870a6, 0x5d7e, 0x4c22, 0x8c,0xfc, 0x5b,0xaa,0xe0,0x76,0x16,0xed};
 const IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
 const IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,0x04,0x0f,0xad};
+const IID IID_Swapchain = {0x94d99bdb, 0xf1f8, 0x4ab0, 0xb2,0x36, 0x7d,0xa0,0x17,0x0e,0xda,0xb1};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -92,6 +93,7 @@ typedef struct {
     PalAdapterFeatures features;
     IDXGIAdapter4* adapter;
     ID3D12InfoQueue* infoQueue;
+    ID3D12CommandQueue* queue;
     ID3D12Device* handle;
 } Device;
 
@@ -137,6 +139,16 @@ typedef struct {
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
     D3D12_SAMPLER_DESC desc;
 } Sampler;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    DXGI_SWAP_EFFECT swapEffect;
+    Uint32 syncInterval;
+    DXGI_FEATURE presentFlags;
+    Surface* surface;
+    IDXGISwapChain3* handle;
+} Swapchain;
 
 static D3D12 s_D3D12 = {0};
 
@@ -688,10 +700,10 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         palFree(s_D3D12.allocator, s_D3D12.adapters);
     }
 
-    while (s_D3D12.factory->lpVtbl->EnumAdapters(
+    while (SUCCEEDED(s_D3D12.factory->lpVtbl->EnumAdapters(
         s_D3D12.factory, 
         adapterCount, 
-        &adapter) != DXGI_ERROR_NOT_FOUND) {
+        &adapter))) {
         if (outAdapters) {
             IDXGIAdapter4* tmp = nullptr;
             if SUCCEEDED((adapter->lpVtbl->QueryInterface(adapter, &IID_Adapter, (void**)&tmp))) {
@@ -1050,6 +1062,24 @@ PalResult PAL_CALL createDeviceD3D12(
         }
     }
 
+    // create a temporary graphics queue
+    D3D12_COMMAND_QUEUE_DESC desc = {0};
+    desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+    result = device->handle->lpVtbl->CreateCommandQueue(
+        device->handle,
+        &desc,
+        &IID_Queue, 
+        (void**)&device->queue);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        } else {
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
     device->adapter = d3d12Adapter->handle;
     device->features = features;
     *outDevice = (PalDevice*)device;
@@ -1059,6 +1089,7 @@ PalResult PAL_CALL createDeviceD3D12(
 void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 {
     Device* d3d12Device = (Device*)device;
+    d3d12Device->queue->lpVtbl->Release(d3d12Device->queue);
     d3d12Device->handle->lpVtbl->Release(d3d12Device->handle);
     if (d3d12Device->infoQueue) {
         d3d12Device->infoQueue->lpVtbl->Release(d3d12Device->infoQueue);
@@ -1488,12 +1519,7 @@ bool PAL_CALL isFormatSupportedD3D12(
         &support, 
         sizeof(support));
 
-    if (FAILED(result)) {
-        return false;
-    }
-
-    if (support.Support1 == 0 && support.Support2 == 0) {
-        // format not supported
+    if (FAILED(result) || (support.Support1 == 0 && support.Support2 == 0)) {
         return false;
     }
 
@@ -1922,12 +1948,26 @@ PalResult PAL_CALL createSurfaceD3D12(
     PalGraphicsWindow* window,
     PalSurface** outSurface)
 {
+    Surface* surface = nullptr;
+    surface = palAllocate(s_D3D12.allocator, sizeof(Surface), 0);
+    if (!surface) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
 
+    // validate if the window is valid
+    if (!IsWindow((HWND)window->window)) {
+        return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
+    }
+
+    surface->handle = window->window;
+    *outSurface = (PalSurface*)surface;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySurfaceD3D12(PalSurface* surface)
 {
-
+    Surface* d3d12Surface = (Surface*)surface;
+    palFree(s_D3D12.allocator, d3d12Surface);
 }
 
 PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
@@ -1935,7 +1975,126 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     PalSurface* surface,
     PalSurfaceCapabilities* caps)
 {
+    HRESULT result;
+    Surface* d3d12Surface = (Surface*)surface;
+    Device* d3d12Device = (Device*)device;
+    bool supportHDR10 = false;
+    IDXGISwapChain1* swapchain1 = nullptr;
+    IDXGISwapChain3* swapchain3 = nullptr;
 
+    DXGI_SWAP_CHAIN_DESC1 desc = {0};
+    desc.Width = 1;
+    desc.Height = 1;
+    desc.SampleDesc.Count = 1;
+    desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    desc.BufferCount = 1;
+    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+    result = s_D3D12.factory->lpVtbl->CreateSwapChainForHwnd(
+        s_D3D12.factory,
+        (IUnknown*)d3d12Device->queue,
+        d3d12Surface->handle,
+        &desc,
+        nullptr,
+        nullptr,
+        &swapchain1);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    swapchain1->lpVtbl->QueryInterface(swapchain1, &IID_Swapchain, (void**)&swapchain3);
+    swapchain1->lpVtbl->Release(swapchain1);
+
+    // check for HDR10 color space support
+    UINT flags = 0;
+    result = swapchain3->lpVtbl->CheckColorSpaceSupport(
+        swapchain3, 
+        DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020, 
+        &flags);
+
+    if (SUCCEEDED(result) && (flags & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)) {
+        supportHDR10 = true;
+    }
+
+    BOOL allowTearing = FALSE;
+    s_D3D12.factory->lpVtbl->CheckFeatureSupport(
+        s_D3D12.factory, 
+        DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+        &allowTearing,
+        sizeof(allowTearing));
+
+    caps->presentModes[PAL_PRESENT_MODE_FIFO] = true;
+    if (allowTearing) {
+        caps->minImageCount = 3;
+        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = true;
+        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = true;
+
+    } else {
+        caps->minImageCount = 2;
+        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = false;
+        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = false;
+    }
+
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = true;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
+
+    caps->maxImageCount = PAL_LIMIT_UNKNOWN;
+    caps->minImageWidth = 1;
+    caps->minImageHeight = 1;
+    caps->maxImageWidth = PAL_LIMIT_UNKNOWN;
+    caps->maxImageHeight = PAL_LIMIT_UNKNOWN;
+    caps->maxImageArrayLayers = 1;
+
+    // check support for the base format
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = {0};
+    DXGI_FORMAT baseFormats[PAL_SURFACE_FORMAT_MAX];
+    baseFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
+    baseFormats[1] = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    baseFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    baseFormats[3] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = false;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = false;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = false;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = false;
+
+    for (int i = 0; i < PAL_SURFACE_FORMAT_MAX; i++) {
+        formatSupport.Format = baseFormats[i];
+        result = d3d12Device->handle->lpVtbl->CheckFeatureSupport(
+            d3d12Device->handle, 
+            D3D12_FEATURE_FORMAT_SUPPORT, 
+            &formatSupport, 
+            sizeof(formatSupport));
+
+        if (SUCCEEDED(result) && (formatSupport.Support1 != 0 || formatSupport.Support2 != 0)) {
+            if (baseFormats[i] == DXGI_FORMAT_B8G8R8A8_UNORM) {
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = true;
+            }
+
+            if (baseFormats[i] == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = true;
+            }
+
+            if (baseFormats[i] == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = true;
+            }
+
+            if (baseFormats[i] == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+                // check HDR10 color space
+                if (supportHDR10) {
+                    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = true;
+                }
+            }
+        }
+    }
+
+    swapchain3->lpVtbl->Release(swapchain3);
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
