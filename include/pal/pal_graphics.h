@@ -3026,6 +3026,16 @@ typedef struct {
         PalSwapchainPresentInfo* info);
 
     /**
+     * Backend implementation of ::palResizeSwapchain.
+     *
+     * Must obey the rules and semantics documented in palResizeSwapchain().
+     */
+    PalResult PAL_CALL (*resizeSwapchain)(
+        PalSwapchain* swapchain,
+        Uint32 newWidth,
+        Uint32 newHeight);
+
+    /**
      * Backend implementation of ::palCreateShader.
      *
      * Must obey the rules and semantics documented in palCreateShader().
@@ -4919,7 +4929,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if externally synchronized.
+ * Thread safety: Thread safe if `swapchain` externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -4950,6 +4960,31 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
     PalSwapchainPresentInfo* info);
+
+/**
+ * @brief Resize the provided swapchain.
+ *
+ * The graphics system must be initialized before this call. 
+ * 
+ * The swapchain images must not be in use before this call. All resources (image views) that 
+ * reference the swapchain images must be destroyed and recreated.
+ *
+ * @param[in] swapchain Swapchain to resize.
+ * @param[in] newWidth The new width of the swapchain.
+ * @param[in] newHeight The new height of the swapchain.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `swapchain` externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palResizeSwapchain(
+    PalSwapchain* swapchain,
+    Uint32 newWidth,
+    Uint32 newHeight);
 
 /**
  * @brief Create a shader.

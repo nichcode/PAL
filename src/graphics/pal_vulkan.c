@@ -649,8 +649,7 @@ static PalResult resultFromVk(VkResult result)
         case VK_ERROR_INCOMPATIBLE_DRIVER:
             return PAL_RESULT_INVALID_DRIVER;
 
-        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-        case VK_ERROR_SURFACE_LOST_KHR: {
+        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR: {
             return PAL_RESULT_INVALID_WINDOW;
         }
 
@@ -662,6 +661,12 @@ static PalResult resultFromVk(VkResult result)
 
         case VK_ERROR_DEVICE_LOST:
             return PAL_RESULT_DEVICE_LOST;
+
+        case VK_ERROR_SURFACE_LOST_KHR:
+            return PAL_RESULT_SURFACE_LOST;
+
+        case VK_ERROR_OUT_OF_DATE_KHR:
+            return PAL_RESULT_SWAPCHAIN_OUT_OF_DATE;
 
         default:
             return PAL_RESULT_PLATFORM_FAILURE;
@@ -5496,7 +5501,7 @@ PalResult PAL_CALL createSwapchainVk(
     // check if the queue is a graphics queue before we check its family
     // index for presentation support.
     if (vkQueue->usage != VK_QUEUE_GRAPHICS_BIT) {
-        PAL_RESULT_INVALID_QUEUE;
+        return PAL_RESULT_INVALID_QUEUE;
     }
 
     swapchain = palAllocate(s_Vk.allocator, sizeof(Swapchain), 0);
@@ -5704,6 +5709,54 @@ PalResult PAL_CALL presentSwapchainVk(
         return resultFromVk(result);
     }
 
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL resizeSwapchainVk(
+    PalSwapchain* swapchain,
+    Uint32 newWidth,
+    Uint32 newHeight)
+{
+    VkResult result;
+    Swapchain* vkSwapchain = (Swapchain*)swapchain;
+    VkSwapchainKHR oldSwapchain = vkSwapchain->handle;
+    Device* device = vkSwapchain->device;
+    VkImage* images = nullptr;
+
+    VkSwapchainCreateInfoKHR createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.oldSwapchain = oldSwapchain;
+    createInfo.imageExtent.width = newWidth;
+    createInfo.imageExtent.height = newHeight;
+
+    result = device->createSwapchain(
+        device->handle,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &vkSwapchain->handle);
+
+    if (result != VK_SUCCESS) {
+        return resultFromVk(result);
+    }
+
+    Uint32 count = vkSwapchain->imageCount;
+    images = palAllocate(s_Vk.allocator, sizeof(VkImage) * count, 0);
+    if (!images) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    device->destroySwapchain(device->handle, oldSwapchain, &s_Vk.vkAllocator);
+    device->getSwapchainImages(device->handle, vkSwapchain->handle, &count, images);
+
+    // fill all images with the creatio info
+    for (int i = 0; i < count; i++) {
+        Image* image = &vkSwapchain->images[i];
+        image->handle = images[i];
+        image->info.height = createInfo.imageExtent.height;
+        image->info.width = createInfo.imageExtent.width;
+    }
+
+    palFree(s_Vk.allocator, images);
     return PAL_RESULT_SUCCESS;
 }
 

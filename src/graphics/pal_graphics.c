@@ -318,6 +318,11 @@ PalResult PAL_CALL presentSwapchainVk(
     PalSwapchain* swapchain,
     PalSwapchainPresentInfo* info);
 
+PalResult PAL_CALL resizeSwapchainVk(
+    PalSwapchain* swapchain,
+    Uint32 newWidth,
+    Uint32 newHeight);
+
 // ==================================================
 // Shader
 // ==================================================
@@ -841,6 +846,7 @@ static PalGraphicsBackend s_VkBackend = {
     .getSwapchainImage = getSwapchainImageVk,
     .getNextSwapchainImage = getNextSwapchainImageVk,
     .presentSwapchain = presentSwapchainVk,
+    .resizeSwapchain = resizeSwapchainVk,
 
     // shader
     .createShader = createShaderVk,
@@ -1177,6 +1183,11 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
 PalResult PAL_CALL presentSwapchainD3D12(
     PalSwapchain* swapchain,
     PalSwapchainPresentInfo* info);
+
+PalResult PAL_CALL resizeSwapchainD3D12(
+    PalSwapchain* swapchain,
+    Uint32 newWidth,
+    Uint32 newHeight);
 
 // ==================================================
 // Shader
@@ -1701,6 +1712,7 @@ static PalGraphicsBackend s_D3D12Backend = {
     .getSwapchainImage = getSwapchainImageD3D12,
     .getNextSwapchainImage = getNextSwapchainImageD3D12,
     .presentSwapchain = presentSwapchainD3D12,
+    .resizeSwapchain = resizeSwapchainD3D12,
 
     // shader
     .createShader = createShaderD3D12,
@@ -1904,6 +1916,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getSwapchainImage                     ||
         !backend->getNextSwapchainImage                 ||
         !backend->presentSwapchain                      ||
+        !backend->resizeSwapchain                       ||
 
         // shader
         !backend->createShader                          ||
@@ -2820,6 +2833,22 @@ PalResult PAL_CALL palPresentSwapchain(
     }
 
     return swapchain->backend->presentSwapchain(swapchain, info);
+}
+
+PalResult PAL_CALL palResizeSwapchain(
+    PalSwapchain* swapchain,
+    Uint32 newWidth,
+    Uint32 newHeight)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!swapchain) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return swapchain->backend->resizeSwapchain(swapchain, newWidth, newHeight);
 }
 
 // ==================================================

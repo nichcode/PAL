@@ -445,6 +445,12 @@ const char* PAL_CALL palFormatResult(PalResult result)
 
         case PAL_RESULT_DEVICE_LOST:
             return "Device lost";
+
+        case PAL_RESULT_SURFACE_LOST:
+            return "Surface lost";
+
+        case PAL_RESULT_SWAPCHAIN_OUT_OF_DATE:
+            return "Swapchain out of date";
     }
     return "Unknown";
 }
