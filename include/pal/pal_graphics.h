@@ -3135,7 +3135,7 @@ typedef struct {
      */
     PalResult PAL_CALL (*getSemaphoreValue)(
         PalSemaphore* semaphore,
-        Uint64* value);
+        Uint64* outValue);
 
     /**
      * Backend implementation of ::palCreateCommandPool.
@@ -5258,7 +5258,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] semaphore Semaphore to get its value.
- * @param[out] value Pointer to a Uint64 to receive the semaphore value.
+ * @param[out] outValue Pointer to a Uint64 to receive the semaphore value.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5272,7 +5272,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  */
 PAL_API PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore,
-    Uint64* value);
+    Uint64* outValue);
 
 /**
  * @brief Create a command pool from a device.

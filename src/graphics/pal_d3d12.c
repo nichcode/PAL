@@ -100,6 +100,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    Uint32 fenceValue;
     PalQueueType type;
     ID3D12Fence* fence;
     ID3D12CommandQueue* handle;
@@ -159,9 +160,8 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool isTimeline;
-    bool signaled;
     bool canReset;
-    UINT64 value; // for timeline semaphores
+    UINT64 value;
     ID3D12Fence* handle;
 } Fence, Semaphore;
 
@@ -1097,9 +1097,8 @@ PalResult PAL_CALL createDeviceD3D12(
     if (FAILED(result)) {
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
         }
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     device->adapter = d3d12Adapter->handle;
@@ -1377,9 +1376,8 @@ PalResult PAL_CALL createQueueD3D12(
         palFree(s_D3D12.allocator, queue);
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
         }
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     // create fence used for queue wait
@@ -1394,11 +1392,11 @@ PalResult PAL_CALL createQueueD3D12(
         palFree(s_D3D12.allocator, queue);
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
         }
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    queue->fenceValue = 0;
     queue->type = type;
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
@@ -1416,16 +1414,16 @@ PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
 {
     Queue* d3d12Queue = (Queue*)queue;
     ID3D12Fence* fence = d3d12Queue->fence;
-    fence->lpVtbl->Signal(fence, 1);
+    d3d12Queue->fenceValue++;
+    fence->lpVtbl->Signal(fence, d3d12Queue->fenceValue);
 
     // wait on the fence if the submited work is not done
-    if (fence->lpVtbl->GetCompletedValue(fence) != 1) {
+    if (fence->lpVtbl->GetCompletedValue(fence) < d3d12Queue->fenceValue) {
         HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        fence->lpVtbl->SetEventOnCompletion(fence, 1, event);
+        fence->lpVtbl->SetEventOnCompletion(fence, d3d12Queue->fenceValue, event);
         WaitForSingleObject(event, INFINITE);
         CloseHandle(event);
     }
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1842,13 +1840,10 @@ PalResult PAL_CALL bindImageMemoryD3D12(
     if (FAILED(result)) {
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
-
         } else if (result == E_INVALIDARG) {
             return PAL_RESULT_INVALID_ARGUMENT;
-
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
         }
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -2229,9 +2224,8 @@ PalResult PAL_CALL createSwapchainD3D12(
             return PAL_RESULT_OUT_OF_MEMORY;
         } else if (result == E_INVALIDARG) {
             return PAL_RESULT_INVALID_ARGUMENT;
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
         }
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     swapchain1->lpVtbl->QueryInterface(swapchain1, &IID_Swapchain, (void**)&swapchain->handle);
@@ -2316,10 +2310,8 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
     index = d3d12Swapchain->handle->lpVtbl->GetCurrentBackBufferIndex(d3d12Swapchain->handle);
     if (info->fence) {
         Fence* fence = (Fence*)info->fence;
-        if (!fence->signaled) {
-            queue->lpVtbl->Signal(queue, fence->handle, 1);
-            fence->signaled = true;
-        }
+        fence->value++;
+        queue->lpVtbl->Signal(queue, fence->handle, fence->value++);
     }
 
     if (info->signalSemaphore) {
@@ -2327,8 +2319,8 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
         if (semaphore->isTimeline) {
             queue->lpVtbl->Signal(queue, semaphore->handle, info->signalValue);
         } else {
-            queue->lpVtbl->Signal(queue, semaphore->handle, 1);
-            semaphore->signaled = true;
+            semaphore->value = 1;
+            queue->lpVtbl->Signal(queue, semaphore->handle, semaphore->value);
         }
     }
 
@@ -2349,8 +2341,9 @@ PalResult PAL_CALL presentSwapchainD3D12(
         if (semaphore->isTimeline) {
             queue->lpVtbl->Wait(queue, semaphore->handle, info->waitValue);
         } else {
-            queue->lpVtbl->Signal(queue, semaphore->handle, 1);
-            semaphore->signaled = false;
+            queue->lpVtbl->Wait(queue, semaphore->handle, semaphore->value);
+            semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
+            semaphore->value = 0;
         }
     }
 
@@ -2471,7 +2464,7 @@ PalResult PAL_CALL createShaderD3D12(
     shader->byteCode.pShaderBytecode = info->bytecode;
     shader->byteCode.BytecodeLength = info->bytecodeSize;
     shader->stage = info->stage;
-    *outShader = (Shader*)shader;
+    *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2493,8 +2486,8 @@ PalResult PAL_CALL createFenceD3D12(
     HRESULT result;
     Device* d3d12Device = (Device*)device;
     Fence* fence = nullptr;
+
     fence = palAllocate(s_D3D12.allocator, sizeof(Fence), 0);
-    
     if (!fence) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
@@ -2510,14 +2503,8 @@ PalResult PAL_CALL createFenceD3D12(
         palFree(s_D3D12.allocator, fence);
         if (result == E_OUTOFMEMORY) {
             return PAL_RESULT_OUT_OF_MEMORY;
-        } else {
-            return PAL_RESULT_PLATFORM_FAILURE;
         }
-    }
-
-    fence->signaled = false;
-    if (signaled) {
-        fence->signaled = true;
+        return PAL_RESULT_PLATFORM_FAILURE;
     }
 
     fence->canReset = false;
@@ -2527,6 +2514,7 @@ PalResult PAL_CALL createFenceD3D12(
 
     fence->isTimeline = false; // for sempaphores
     fence->value = 0;
+    *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2541,16 +2529,27 @@ PalResult PAL_CALL waitFenceD3D12(
     PalFence* fence,
     Uint64 timeout)
 {
+    HRESULT result;
     Fence* d3d12Fence = (Fence*)fence;
     DWORD ret = 0;
+    Uint64 value = d3d12Fence->value;
 
-    if (d3d12Fence->handle->lpVtbl->GetCompletedValue(d3d12Fence->handle) != 1) {
+    if (d3d12Fence->handle->lpVtbl->GetCompletedValue(d3d12Fence->handle) < value) {
         HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        d3d12Fence->handle->lpVtbl->SetEventOnCompletion(d3d12Fence->handle, 1, event);
-        
+        result = d3d12Fence->handle->lpVtbl->SetEventOnCompletion(
+            d3d12Fence->handle, 
+            value, 
+            event);
+
+        if (FAILED(result)) {
+            if (result == E_INVALIDARG) {
+                return PAL_RESULT_INVALID_FENCE;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
         if (timeout == PAL_INFINITE) {
             ret = WaitForSingleObject(event, INFINITE);
-
         } else {
             ret = WaitForSingleObject(event, timeout);
         }
@@ -2559,8 +2558,6 @@ PalResult PAL_CALL waitFenceD3D12(
 
     if (ret == WAIT_TIMEOUT) {
         return PAL_RESULT_TIMEOUT;
-    } else if (ret == WAIT_FAILED) {
-        return PAL_RESULT_INVALID_FENCE;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -2573,14 +2570,18 @@ PalResult PAL_CALL resetFenceD3D12(PalFence* fence)
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    d3d12Fence->signaled = false;
+    d3d12Fence->handle->lpVtbl->Signal(d3d12Fence->handle, 0);
+    d3d12Fence->value = 0;
     return PAL_RESULT_SUCCESS;
 }
 
 bool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
 {
     Fence* d3d12Fence = (Fence*)fence;
-    return d3d12Fence->signaled;
+    if (d3d12Fence->handle->lpVtbl->GetCompletedValue(d3d12Fence->handle) == 0) {
+        return false;
+    }
+    return true;
 }
 
 // ==================================================
@@ -2591,12 +2592,46 @@ PalResult PAL_CALL createSemaphoreD3D12(
     PalDevice* device,
     PalSemaphore** outSemaphore)
 {
+    HRESULT result;
+    Device* d3d12Device = (Device*)device;
+    Semaphore* semaphore = nullptr;
 
+    semaphore = palAllocate(s_D3D12.allocator, sizeof(Semaphore), 0);
+    if (!semaphore) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    result = d3d12Device->handle->lpVtbl->CreateFence(
+        d3d12Device->handle, 
+        0, 
+        0, 
+        &IID_Fence,
+        (void**)&semaphore->handle);
+
+    if (FAILED(result)) {
+        palFree(s_D3D12.allocator, semaphore);
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    
+    semaphore->isTimeline = false;
+    if (d3d12Device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        semaphore->isTimeline = true;
+    }
+
+    semaphore->canReset = false;
+    semaphore->value = 0;
+    *outSemaphore = (PalSemaphore*)semaphore;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore)
 {
-
+    Semaphore* d3d12Semaphore = (Semaphore*)semaphore;
+    d3d12Semaphore->handle->lpVtbl->Release(d3d12Semaphore->handle);
+    palFree(s_D3D12.allocator, d3d12Semaphore);
 }
 
 PalResult PAL_CALL waitSemaphoreD3D12(
@@ -2604,7 +2639,39 @@ PalResult PAL_CALL waitSemaphoreD3D12(
     Uint64 value,
     Uint64 timeout)
 {
+    HRESULT result;
+    DWORD ret = 0;
+    Semaphore* d3d12Semaphore = (Semaphore*)semaphore;
+    if (!d3d12Semaphore->isTimeline) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    if (d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle) < value) {
+        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        result = d3d12Semaphore->handle->lpVtbl->SetEventOnCompletion(
+            d3d12Semaphore->handle, 
+            value, 
+            event);
+
+        if (FAILED(result)) {
+            if (result == E_INVALIDARG) {
+                return PAL_RESULT_INVALID_SEMAPHORE;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        if (timeout == PAL_INFINITE) {
+            ret = WaitForSingleObject(event, INFINITE);
+        } else {
+            ret = WaitForSingleObject(event, timeout);
+        }
+        CloseHandle(event);
+    }
+
+    if (ret == WAIT_TIMEOUT) {
+        return PAL_RESULT_TIMEOUT;
+    }
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL signalSemaphoreD3D12(
@@ -2612,14 +2679,33 @@ PalResult PAL_CALL signalSemaphoreD3D12(
     PalQueue* queue,
     Uint64 value)
 {
+    Semaphore* d3d12Semaphore = (Semaphore*)semaphore;
+    if (!d3d12Semaphore->isTimeline) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    HRESULT result = d3d12Semaphore->handle->lpVtbl->Signal(d3d12Semaphore->handle, value);
+    if (FAILED(result)) {
+        if (result == E_INVALIDARG) {
+            return PAL_RESULT_INVALID_SEMAPHORE;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL getSemaphoreValueD3D12(
     PalSemaphore* semaphore,
-    Uint64* value)
+    Uint64* outValue)
 {
+    Semaphore* d3d12Semaphore = (Semaphore*)semaphore;
+    if (!d3d12Semaphore->isTimeline) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    UINT64 tmp = d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle);
+    *outValue = tmp;
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================

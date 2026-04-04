@@ -375,7 +375,7 @@ PalResult PAL_CALL signalSemaphoreVk(
 
 PalResult PAL_CALL getSemaphoreValueVk(
     PalSemaphore* semaphore,
-    Uint64* value);
+    Uint64* outValue);
 
 // ==================================================
 // Command Pool And Buffer
@@ -1241,7 +1241,7 @@ PalResult PAL_CALL signalSemaphoreD3D12(
 
 PalResult PAL_CALL getSemaphoreValueD3D12(
     PalSemaphore* semaphore,
-    Uint64* value);
+    Uint64* outValue);
 
 // ==================================================
 // Command Pool And Buffer
@@ -3028,17 +3028,17 @@ PalResult PAL_CALL palSignalSemaphore(
 
 PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore,
-    Uint64* value)
+    Uint64* outValue)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!semaphore || !value) {
+    if (!semaphore || !outValue) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return semaphore->backend->getSemaphoreValue(semaphore, value);
+    return semaphore->backend->getSemaphoreValue(semaphore, outValue);
 }
 
 // ==================================================

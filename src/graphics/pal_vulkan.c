@@ -6043,7 +6043,7 @@ PalResult PAL_CALL signalSemaphoreVk(
 
 PalResult PAL_CALL getSemaphoreValueVk(
     PalSemaphore* semaphore,
-    Uint64* value)
+    Uint64* outValue)
 {
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
     if (!(vkSemaphore->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE)) {
@@ -6053,7 +6053,7 @@ PalResult PAL_CALL getSemaphoreValueVk(
     VkResult result = vkSemaphore->device->getSemaphoreValue(
         vkSemaphore->device->handle,
         vkSemaphore->handle,
-        value);
+        outValue);
 
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
