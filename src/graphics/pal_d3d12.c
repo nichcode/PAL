@@ -164,6 +164,13 @@ typedef struct {
     ID3D12Fence* handle;
 } Fence, Semaphore;
 
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    PalShaderStage stage;
+    D3D12_SHADER_BYTECODE byteCode;
+} Shader;
+
 static D3D12 s_D3D12 = {0};
 
 // ==================================================
@@ -2432,12 +2439,43 @@ PalResult PAL_CALL createShaderD3D12(
     const PalShaderCreateInfo* info,
     PalShader** outShader)
 {
+    Device* d3d12Device = (Device*)device;
+    Shader* shader = nullptr;
 
+    if (info->stage == PAL_SHADER_STAGE_MESH || info->stage == PAL_SHADER_STAGE_TASK) {
+        if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    // clang-format off
+    } else if (info->stage == PAL_SHADER_STAGE_RAYGEN ||
+               info->stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
+               info->stage == PAL_SHADER_STAGE_ANY_HIT ||
+               info->stage == PAL_SHADER_STAGE_MISS ||
+               info->stage == PAL_SHADER_STAGE_INTERSECTION ||
+               info->stage == PAL_SHADER_STAGE_CALLABLE) {
+        if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+    }
+    // clang-format on
+
+    shader = palAllocate(s_D3D12.allocator, sizeof(Shader), 0);
+    if (!shader) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    shader->byteCode.pShaderBytecode = info->bytecode;
+    shader->byteCode.BytecodeLength = info->bytecodeSize;
+    shader->stage = info->stage;
+    *outShader = (Shader*)shader;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyShaderD3D12(PalShader* shader)
 {
-
+    Shader* d3d12Shader = (Shader*)shader;
+    palFree(s_D3D12.allocator, d3d12Shader);
 }
 
 // ==================================================
