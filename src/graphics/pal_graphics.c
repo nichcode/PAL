@@ -394,9 +394,9 @@ PalResult PAL_CALL allocateCommandBufferVk(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
-    PalCommandBuffer** outBuffer);
+    PalCommandBuffer** outCmdBuffer);
 
-void PAL_CALL freeCommandBufferVk(PalCommandBuffer* buffer);
+void PAL_CALL freeCommandBufferVk(PalCommandBuffer* cmdBuffer);
 
 PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer);
 
@@ -1260,9 +1260,9 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
-    PalCommandBuffer** outBuffer);
+    PalCommandBuffer** outCmdBuffer);
 
-void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* buffer);
+void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer);
 
 PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer);
 

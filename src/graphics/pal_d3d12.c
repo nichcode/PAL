@@ -56,6 +56,8 @@ const IID IID_Queue = {0x0ec870a6, 0x5d7e, 0x4c22, 0x8c,0xfc, 0x5b,0xaa,0xe0,0x7
 const IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
 const IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,0x04,0x0f,0xad};
 const IID IID_Swapchain = {0x94d99bdb, 0xf1f8, 0x4ab0, 0xb2,0x36, 0x7d,0xa0,0x17,0x0e,0xda,0xb1};
+const IID IID_CmdAlloc = {0x6102dee4, 0xaf59, 0x4b09, 0xb9,0x99, 0xb4,0x4d,0x73,0xf0,0x9b,0x24};
+const IID IID_CmdList = {0x7116d91c, 0xe7e4, 0x47ce, 0xb8,0xc6, 0xec,0x81,0x68,0xf4,0x37,0xe5};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -171,6 +173,27 @@ typedef struct {
     PalShaderStage stage;
     D3D12_SHADER_BYTECODE byteCode;
 } Shader;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    bool primary;
+    void* pool; // CommandPool
+    ID3D12CommandAllocator* allocator;
+    ID3D12GraphicsCommandList* handle;
+} CommandBuffer;
+
+typedef struct {
+    bool used;
+    CommandBuffer* cmdBuffer;
+} CommandBufferData;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Uint32 size;
+    CommandBufferData* cmdBuffersData;
+} CommandPool;
 
 static D3D12 s_D3D12 = {0};
 
@@ -613,6 +636,46 @@ static void borderColorToD3D12(PalBorderColor color, float outColor[4])
     outColor[1] = 0.0f;
     outColor[2] = 0.0f;
     outColor[3] = 0.0f;
+}
+
+static CommandBufferData* getFreeCmdBufferData(CommandPool* pool)
+{
+    for (int i = 0; i < pool->size; ++i) {
+        if (!pool->cmdBuffersData[i].used) {
+            pool->cmdBuffersData[i].used = true;
+            return &pool->cmdBuffersData[i];
+        }
+    }
+
+    // resize the data array
+    CommandBufferData* data = nullptr;
+    int count = pool->size * 2; // double the size
+    int freeIndex = pool->size + 1;
+
+    data = palAllocate(s_D3D12.allocator, sizeof(CommandBufferData) * count, 0);
+    if (data) {
+        memcpy(data, pool->cmdBuffersData, pool->size * sizeof(CommandBufferData));
+
+        palFree(s_D3D12.allocator, pool->cmdBuffersData);
+        pool->cmdBuffersData = data;
+        pool->size = count;
+
+        pool->cmdBuffersData[freeIndex].used = true;
+        return &pool->cmdBuffersData[freeIndex];
+    }
+    return nullptr;
+}
+
+static CommandBufferData* findCmdBufferData(
+    CommandPool* pool,
+    CommandBuffer* cmdBuffer)
+{
+    for (int i = 0; i < pool->size; ++i) {
+        if (pool->cmdBuffersData[i].used && pool->cmdBuffersData[i].cmdBuffer == cmdBuffer) {
+            return &pool->cmdBuffersData[i];
+        }
+    }
+    return nullptr;
 }
 
 // ==================================================
@@ -2311,7 +2374,7 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
     if (info->fence) {
         Fence* fence = (Fence*)info->fence;
         fence->value++;
-        queue->lpVtbl->Signal(queue, fence->handle, fence->value++);
+        queue->lpVtbl->Signal(queue, fence->handle, fence->value);
     }
 
     if (info->signalSemaphore) {
@@ -2717,43 +2780,192 @@ PalResult PAL_CALL createCommandPoolD3D12(
     PalQueue* queue,
     PalCommandPool** outPool)
 {
+    HRESULT result;
+    CommandPool* pool = nullptr;
 
+    pool = palAllocate(s_D3D12.allocator, sizeof(CommandPool), 0);
+    if (!pool) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    pool->size = 8;
+    pool->cmdBuffersData = nullptr;
+    Uint32 size =  sizeof(CommandBufferData) * pool->size;
+    pool->cmdBuffersData = palAllocate(s_D3D12.allocator,  size, 0);
+    if (!pool->cmdBuffersData) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    *outPool = (PalCommandPool*)pool;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyCommandPoolD3D12(PalCommandPool* pool)
 {
+    CommandPool* cmdPool = (CommandPool*)pool;
+    for (int i = 0; i < cmdPool->size; i++) {
+        if (!cmdPool->cmdBuffersData[i].used) {
+            continue;
+        }
 
+        CommandBuffer* cmdBuffer = cmdPool->cmdBuffersData[i].cmdBuffer;
+        cmdBuffer->handle->lpVtbl->Release(cmdBuffer->handle);
+        cmdBuffer->allocator->lpVtbl->Release(cmdBuffer->allocator);
+        palFree(s_D3D12.allocator, cmdBuffer);
+    }
+
+    palFree(s_D3D12.allocator, cmdPool->cmdBuffersData);
+    palFree(s_D3D12.allocator, cmdPool);
 }
 
 PalResult PAL_CALL resetCommandPoolD3D12(PalCommandPool* pool)
 {
+    CommandPool* cmdPool = (CommandPool*)pool;
+    for (int i = 0; i < cmdPool->size; i++) {
+        if (!cmdPool->cmdBuffersData[i].used) {
+            continue;
+        }
 
+        CommandBuffer* cmdBuffer = cmdPool->cmdBuffersData[i].cmdBuffer;
+        cmdBuffer->handle->lpVtbl->Reset(cmdBuffer->handle, cmdBuffer->allocator, nullptr);
+    }
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL allocateCommandBufferD3D12(
     PalDevice* device,
     PalCommandPool* pool,
     PalCommandBufferType type,
-    PalCommandBuffer** outBuffer)
+    PalCommandBuffer** outCmdBuffer)
 {
+    HRESULT result;
+    Device* d3d12Device = (Device*)device;
+    CommandBuffer* cmdBuffer = nullptr;
+    CommandPool* cmdPool = (CommandPool*)pool;
 
+    cmdBuffer = palAllocate(s_D3D12.allocator, sizeof(CommandBuffer), 0);
+    if (!cmdBuffer) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    D3D12_COMMAND_LIST_TYPE cmdBufferType = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    cmdBuffer->primary = true;
+    if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
+        cmdBufferType = D3D12_COMMAND_LIST_TYPE_BUNDLE;
+        cmdBuffer->primary = false;
+    }
+
+    // create an allocator
+    result = d3d12Device->handle->lpVtbl->CreateCommandAllocator(
+        d3d12Device->handle, 
+        cmdBufferType, 
+        &IID_CmdAlloc, 
+        (void**)&cmdBuffer->allocator);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    // create the command list
+    result = d3d12Device->handle->lpVtbl->CreateCommandList(
+        d3d12Device->handle,
+        0,
+        cmdBufferType,
+        cmdBuffer->allocator,
+        nullptr,
+        &IID_CmdList,
+        (void**)&cmdBuffer->handle);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    cmdBuffer->pool = cmdPool;
+    *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
+    return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* buffer)
+void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    CommandPool* pool = d3d12CmdBuffer->pool;
+    CommandBufferData* data = findCmdBufferData(pool, d3d12CmdBuffer);
+    if (data) {
+        d3d12CmdBuffer->handle->lpVtbl->Release(d3d12CmdBuffer->handle);
+        d3d12CmdBuffer->allocator->lpVtbl->Release(d3d12CmdBuffer->allocator);
+        palFree(s_D3D12.allocator, cmdBuffer);
 
+        data->cmdBuffer = nullptr;
+        data->used = false;
+    }
 }
 
 PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
 {
+    HRESULT result;
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    result = d3d12CmdBuffer->allocator->lpVtbl->Reset(d3d12CmdBuffer->allocator);
+    if (FAILED(result)) {
+        if (result == E_INVALIDARG) {
+            return PAL_RESULT_INVALID_COMMAND_BUFFER;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
 
+    d3d12CmdBuffer->handle->lpVtbl->Reset(
+        d3d12CmdBuffer->handle, 
+        d3d12CmdBuffer->allocator, 
+        nullptr);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL submitCommandBufferD3D12(
     PalQueue* queue,
     PalCommandBufferSubmitInfo* info)
 {
+    HRESULT result;
+    Queue* d3d12Queue = (Queue*)queue;
+    ID3D12CommandQueue* queueHandle = d3d12Queue->handle;
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)info->cmdBuffer;
+    
+    // wait semaphore
+    if (info->waitSemaphore) {
+        Semaphore* semaphore = (Semaphore*)info->waitSemaphore;
+        if (semaphore->isTimeline) {
+            queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, info->waitValue);
+        } else {
+            queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, semaphore->value);
+            semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
+            semaphore->value = 0;
+        }
+    }
 
+    ID3D12CommandList* tmp = (ID3D12CommandList*)d3d12CmdBuffer->handle;
+    queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, &tmp);
+    if (info->fence) {
+        Fence* fence = (Fence*)info->fence;
+        fence->value++;
+        queueHandle->lpVtbl->Signal(queueHandle, fence->handle, fence->value);
+    }
+
+    if (info->signalSemaphore) {
+        Semaphore* semaphore = (Semaphore*)info->signalSemaphore;
+        if (semaphore->isTimeline) {
+            queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, info->signalValue);
+        } else {
+            semaphore->value = 1;
+            queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, semaphore->value);
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 // ==================================================
