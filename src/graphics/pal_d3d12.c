@@ -3608,7 +3608,19 @@ PalResult PAL_CALL cmdCopyBufferD3D12(
     PalBuffer* src,
     PalBufferCopyInfo* copyInfo)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* dstbuffer = (Buffer*)dst;
+    Buffer* srcBuffer = (Buffer*)src;
 
+    d3d12CmdBuffer->handle6->lpVtbl->CopyBufferRegion(
+        d3d12CmdBuffer->handle6, 
+        dstbuffer->handle,
+        copyInfo->dstOffset,
+        srcBuffer->handle,
+        copyInfo->srcOffset,
+        copyInfo->size);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdCopyBufferToImageD3D12(
@@ -3617,7 +3629,7 @@ PalResult PAL_CALL cmdCopyBufferToImageD3D12(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-
+    // TODO: 
 }
 
 PalResult PAL_CALL cmdCopyImageD3D12(
@@ -3930,17 +3942,37 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
     PalDevice* device,
-    PalInstanceBufferRequirements* requirements,
+    Uint32 instanceCount,
+    Uint32* outAlignment,
+    Uint64* outSize)
+{
+
+}
+
+PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
+    PalDevice* device,
+    PalImage* image,
+    PalBufferImageCopyInfo* copyInfo,
+    Uint32* outAlignment,
+    Uint64* outSize)
+{
+
+}
+
+PalResult PAL_CALL writeToInstanceBufferD3D12(
+    PalDevice* device,
+    void* ptr,
+    PalAccelerationStructureInstance* instances,
     Uint32 instanceCount)
 {
 
 }
 
-PalResult PAL_CALL writeInstancesToMappedMemoryD3D12(
+PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
     PalDevice* device,
     void* ptr,
-    PalAccelerationStructureInstance* instances,
-    Uint32 instanceCount)
+    PalBufferImageCopyInfo* copyInfo,
+    PalFormat imageFormat)
 {
 
 }

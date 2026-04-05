@@ -666,14 +666,28 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsVk(
     PalDevice* device,
-    PalInstanceBufferRequirements* requirements,
-    Uint32 instanceCount);
+    Uint32 instanceCount,
+    Uint32* outAlignment,
+    Uint64* outSize);
 
-PalResult PAL_CALL writeInstancesToMappedMemoryVk(
+PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
+    PalDevice* device,
+    PalImage* image,
+    PalBufferImageCopyInfo* copyInfo,
+    Uint32* outAlignment,
+    Uint64* outSize);
+
+PalResult PAL_CALL writeToInstanceBufferVk(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
     Uint32 instanceCount);
+
+PalResult PAL_CALL writeToImageCopyStagingBufferVk(
+    PalDevice* device,
+    void* ptr,
+    PalBufferImageCopyInfo* copyInfo,
+    PalFormat imageFormat);
 
 PalResult PAL_CALL bindBufferMemoryVk(
     PalBuffer* buffer,
@@ -912,7 +926,9 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyBuffer = destroyBufferVk,
     .getBufferMemoryRequirements = getBufferMemoryRequirementsVk,
     .computeInstanceBufferRequirements = computeInstanceBufferRequirementsVk,
-    .writeInstancesToMappedMemory = writeInstancesToMappedMemoryVk,
+    .computeImageCopyStagingBufferRequirements = computeImageCopyStagingBufferRequirementsVk,
+    .writeToInstanceBuffer = writeToInstanceBufferVk,
+    .writeToImageCopyStagingBuffer = writeToImageCopyStagingBufferVk,
     .bindBufferMemory = bindBufferMemoryVk,
     .getBufferDeviceAddress = getBufferDeviceAddressVk,
     .mapBufferMemory = mapBufferMemoryVk,
@@ -1516,14 +1532,28 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
     PalDevice* device,
-    PalInstanceBufferRequirements* requirements,
-    Uint32 instanceCount);
+    Uint32 instanceCount,
+    Uint32* outAlignment,
+    Uint64* outSize);
 
-PalResult PAL_CALL writeInstancesToMappedMemoryD3D12(
+PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
+    PalDevice* device,
+    PalImage* image,
+    PalBufferImageCopyInfo* copyInfo,
+    Uint32* outAlignment,
+    Uint64* outSize);
+
+PalResult PAL_CALL writeToInstanceBufferD3D12(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
     Uint32 instanceCount);
+
+PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
+    PalDevice* device,
+    void* ptr,
+    PalBufferImageCopyInfo* copyInfo,
+    PalFormat imageFormat);
 
 PalResult PAL_CALL bindBufferMemoryD3D12(
     PalBuffer* buffer,
@@ -1762,7 +1792,9 @@ static PalGraphicsBackend s_D3D12Backend = {
     .destroyBuffer = destroyBufferD3D12,
     .getBufferMemoryRequirements = getBufferMemoryRequirementsD3D12,
     .computeInstanceBufferRequirements = computeInstanceBufferRequirementsD3D12,
-    .writeInstancesToMappedMemory = writeInstancesToMappedMemoryD3D12,
+    .computeImageCopyStagingBufferRequirements = computeImageCopyStagingBufferRequirementsD3D12,
+    .writeToInstanceBuffer = writeToInstanceBufferD3D12,
+    .writeToImageCopyStagingBuffer = writeToImageCopyStagingBufferD3D12,
     .bindBufferMemory = bindBufferMemoryD3D12,
     .getBufferDeviceAddress = getBufferDeviceAddressD3D12,
     .mapBufferMemory = mapBufferMemoryD3D12,
@@ -1966,7 +1998,9 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->destroyBuffer                         ||
         !backend->getBufferMemoryRequirements           ||
         !backend->computeInstanceBufferRequirements     ||
-        !backend->writeInstancesToMappedMemory          ||
+        !backend->computeImageCopyStagingBufferRequirements     ||
+        !backend->writeToInstanceBuffer                 ||
+        !backend->writeToImageCopyStagingBuffer         ||
         !backend->bindBufferMemory                      ||
         !backend->getBufferDeviceAddress                ||
         !backend->mapBufferMemory                       ||
@@ -3968,8 +4002,9 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
 
 PalResult PAL_CALL palComputeInstanceBufferRequirements(
     PalDevice* device,
-    PalInstanceBufferRequirements* requirements,
-    Uint32 instanceCount)
+    Uint32 instanceCount,
+    Uint32* outAlignment,
+    Uint64* outSize)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3979,10 +4014,37 @@ PalResult PAL_CALL palComputeInstanceBufferRequirements(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return device->backend->computeInstanceBufferRequirements(device, requirements, instanceCount);
+    return device->backend->computeInstanceBufferRequirements(
+        device, 
+        instanceCount, 
+        outAlignment, 
+        outSize);
 }
 
-PalResult PAL_CALL palWriteInstancesToMappedMemory(
+PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
+    PalDevice* device,
+    PalImage* image,
+    PalBufferImageCopyInfo* copyInfo,
+    Uint32* outAlignment,
+    Uint64* outSize)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->computeImageCopyStagingBufferRequirements(
+        device, 
+        image,
+        copyInfo, 
+        outAlignment, 
+        outSize);
+}
+
+PalResult PAL_CALL palWriteToInstanceBuffer(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
@@ -3996,8 +4058,25 @@ PalResult PAL_CALL palWriteInstancesToMappedMemory(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    // since all blas have backend pointer, we use the first one
-    return device->backend->writeInstancesToMappedMemory(device, ptr, instances, instanceCount);
+    // since all tlas have backend pointer, we use the first one
+    return device->backend->writeToInstanceBuffer(device, ptr, instances, instanceCount);
+}
+
+PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
+    PalDevice* device,
+    void* ptr,
+    PalBufferImageCopyInfo* copyInfo,
+    PalFormat imageFormat)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !ptr || !copyInfo) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->writeToImageCopyStagingBuffer(device, ptr, copyInfo, imageFormat);
 }
 
 PalResult PAL_CALL palBindBufferMemory(

@@ -1729,18 +1729,6 @@ typedef struct {
 } PalMemoryRequirements;
 
 /**
- * @struct PalInstanceBufferRequirements
- * @brief Instance buffer requirements.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef struct {
-    Uint64 size;
-    Uint32 alignment;
-} PalInstanceBufferRequirements;
-
-/**
  * @struct PalCommandBufferSubmitInfo
  * @brief Submit information of a command buffer.
  *
@@ -3673,19 +3661,43 @@ typedef struct {
      */
     PalResult PAL_CALL (*computeInstanceBufferRequirements)(
         PalDevice* device,
-        PalInstanceBufferRequirements* requirements,
-        Uint32 instanceCount);
+        Uint32 instanceCount,
+        Uint32* outAlignment,
+        Uint64* outSize);
 
     /**
-     * Backend implementation of ::palWriteInstancesToMappedMemory.
+     * Backend implementation of ::palComputeImageCopyStagingBufferRequirements.
      *
-     * Must obey the rules and semantics documented in palWriteInstancesToMappedMemory().
+     * Must obey the rules and semantics documented in palComputeImageCopyStagingBufferRequirements().
      */
-    PalResult PAL_CALL (*writeInstancesToMappedMemory)(
+    PalResult PAL_CALL (*computeImageCopyStagingBufferRequirements)(
+        PalDevice* device,
+        PalImage* image,
+        PalBufferImageCopyInfo* copyInfo,
+        Uint32* outAlignment,
+        Uint64* outSize);
+
+    /**
+     * Backend implementation of ::palWriteToInstanceBuffer.
+     *
+     * Must obey the rules and semantics documented in palWriteToInstanceBuffer().
+     */
+    PalResult PAL_CALL (*writeToInstanceBuffer)(
         PalDevice* device,
         void* ptr,
         PalAccelerationStructureInstance* instances,
         Uint32 instanceCount);
+
+    /**
+     * Backend implementation of ::palWriteToImageCopyStagingBuffer.
+     *
+     * Must obey the rules and semantics documented in palWriteToImageCopyStagingBuffer().
+     */
+    PalResult PAL_CALL (*writeToImageCopyStagingBuffer)(
+        PalDevice* device,
+        void* ptr,
+        PalBufferImageCopyInfo* copyInfo,
+        PalFormat imageFormat);
 
     /**
      * Backend implementation of ::palBindBufferMemory.
@@ -6606,34 +6618,69 @@ PAL_API PalResult PAL_CALL palGetBufferMemoryRequirements(
  * The graphics system must be initialized before this call. This does not allocate memory
  * for the buffer.
  *
- * PalInstanceBufferRequirements::size and PalInstanceBufferRequirements::alignment are the
- * size and alignment which must be used to create the instance buffer. This will be computed
- * with regards to the provided `instanceCount`. This function must be used and required for all
- * instance buffers. This is used with acceleration structure (`TLAS`).
+ * `outSize` and `outAlignment` are the size and alignment which must be used to create the 
+ * instance buffer. This will be computed with regards to the provided `instanceCount`. This 
+ * function must be used and required for all instance buffers. This is used with acceleration 
+ * structure (`TLAS`).
  *
  * @param[in] device Device to compute instance buffer requirements with.
- * @param[out] requirements Pointer to a PalInstanceBufferRequirements to fill.
  * @param[in] instanceCount Number of instances the instance buffer will hold.
+ * @param[out] outAlignment Pointer to a Uint32 to recieve the required alignment.
+ * @param[out] outSize Pointer to a Uint64 to recieve the required size.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized and `requirements` is per
- * thread.
+ * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
     PalDevice* device,
-    PalInstanceBufferRequirements* requirements,
-    Uint32 instanceCount);
+    Uint32 instanceCount,
+    Uint32* outAlignment,
+    Uint64* outSize);
 
 /**
- * @brief Update or write instances to the mapped memory of an instance buffer.
+ * @brief Compute size and alignment requirements for an image copy staging buffer.
  *
- * The graphics system must be initialized before this call. Instance buffers must not be updated
- * or written to with `memcpy`.
+ * The graphics system must be initialized before this call. This does not allocate memory
+ * for the buffer.
+ *
+ * `outSize` and `outAlignment` are the size and alignment which must be used to create the 
+ * image copy staging buffer. This will be computed with regards to the provided `image` 
+ * and `copyInfo`. This function must be used and required for all image copy staging buffers.
+ * 
+ * PalBufferImageCopyInfo::bufferRowLength and PalBufferImageCopyInfo::bufferImageHeight are hints.
+ * The driver might used it defaults if the requested is not supported.
+ *
+ * @param[in] device Device to compute image copy staging buffer requirements with.
+ * @param[in] image Destination image.
+ * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
+ * Must not be nullptr.
+ * @param[out] outAlignment Pointer to a Uint32 to recieve the required alignment.
+ * @param[out] outSize Pointer to a Uint64 to recieve the required size.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
+    PalDevice* device,
+    PalImage* image,
+    PalBufferImageCopyInfo* copyInfo,
+    Uint32* outAlignment,
+    Uint64* outSize);
+
+/**
+ * @brief Update or write data to an instance buffer.
+ *
+ * The graphics system must be initialized before this call.
  *
  * @param[in] device The device. Must match the one used to create the instance buffer.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
@@ -6649,11 +6696,36 @@ PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
  * @since 1.4
  * @ingroup pal_graphics
  */
-PAL_API PalResult PAL_CALL palWriteInstancesToMappedMemory(
+PAL_API PalResult PAL_CALL palWriteToInstanceBuffer(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
     Uint32 instanceCount);
+
+/**
+ * @brief Update or write data to an image copy staging buffer.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] device The device. Must match the one used to create the image copy staging buffer.
+ * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
+ * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
+ * Must not be nullptr.
+ * @param[in] imageFormat Destination image format.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
+    PalDevice* device,
+    void* ptr,
+    PalBufferImageCopyInfo* copyInfo,
+    PalFormat imageFormat);
 
 /**
  * @brief Bind an allocated memory to a buffer.

@@ -7775,15 +7775,26 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsVk(
     PalDevice* device,
-    PalInstanceBufferRequirements* requirements,
-    Uint32 instanceCount)
+    Uint32 instanceCount,
+    Uint32* outAlignment,
+    Uint64* outSize)
 {
-    requirements->size = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
-    requirements->alignment = 16;
+    *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
+    *outAlignment = 16;
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL writeInstancesToMappedMemoryVk(
+PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
+    PalDevice* device,
+    PalImage* image,
+    PalBufferImageCopyInfo* copyInfo,
+    Uint32* outAlignment,
+    Uint64* outSize)
+{
+    // TODO:
+}
+
+PalResult PAL_CALL writeToInstanceBufferVk(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
@@ -7803,6 +7814,15 @@ PalResult PAL_CALL writeInstancesToMappedMemoryVk(
         memcpy(dst->transform.matrix, src->transform, sizeof(float) * 12);
     }
     return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL writeToImageCopyStagingBufferVk(
+    PalDevice* device,
+    void* ptr,
+    PalBufferImageCopyInfo* copyInfo,
+    PalFormat imageFormat)
+{
+    // TODO: 
 }
 
 PalResult PAL_CALL bindBufferMemoryVk(
