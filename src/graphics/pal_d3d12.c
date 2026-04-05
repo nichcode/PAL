@@ -58,6 +58,8 @@ const IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,
 const IID IID_Swapchain = {0x94d99bdb, 0xf1f8, 0x4ab0, 0xb2,0x36, 0x7d,0xa0,0x17,0x0e,0xda,0xb1};
 const IID IID_CmdAlloc = {0x6102dee4, 0xaf59, 0x4b09, 0xb9,0x99, 0xb4,0x4d,0x73,0xf0,0x9b,0x24};
 const IID IID_CmdList = {0x7116d91c, 0xe7e4, 0x47ce, 0xb8,0xc6, 0xec,0x81,0x68,0xf4,0x37,0xe5};
+const IID IID_CmdList6 = {0xc3827890, 0xe548, 0x4cfa, 0x96,0xcf, 0x56,0x89,0xa9,0x37,0x0f,0x80};
+const IID IID_Signature = {0xc36a797c, 0xec80, 0x4f0a, 0x89,0x85, 0xa7,0xb2,0x47,0x50,0x82,0xd1};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -94,6 +96,10 @@ typedef struct {
 
     PalAdapterFeatures features;
     IDXGIAdapter4* adapter;
+    ID3D12CommandSignature* meshSignature;
+    ID3D12CommandSignature* drawIndexedSignature;
+    ID3D12CommandSignature* drawSignature;
+    ID3D12CommandSignature* dispatchSignature;
     ID3D12InfoQueue* infoQueue;
     ID3D12CommandQueue* queue;
     ID3D12Device* handle;
@@ -179,8 +185,10 @@ typedef struct {
 
     bool primary;
     void* pool; // CommandPool
+    Device* device;
     ID3D12CommandAllocator* allocator;
     ID3D12GraphicsCommandList* handle;
+    ID3D12GraphicsCommandList6* handle6;
 } CommandBuffer;
 
 typedef struct {
@@ -194,6 +202,12 @@ typedef struct {
     Uint32 size;
     CommandBufferData* cmdBuffersData;
 } CommandPool;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    ID3D12Resource* handle;
+} Buffer;
 
 static D3D12 s_D3D12 = {0};
 
@@ -678,6 +692,56 @@ static CommandBufferData* findCmdBufferData(
     return nullptr;
 }
 
+static D3D12_SHADING_RATE_COMBINER combinerOpsToD3D12(PalFragmentShadingRateCombinerOp op)
+{
+    switch (op) {
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP:
+            return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE:
+            return D3D12_SHADING_RATE_COMBINER_OVERRIDE;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN:
+            return D3D12_SHADING_RATE_COMBINER_MIN;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX:
+            return D3D12_SHADING_RATE_COMBINER_MAX;
+
+        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL:
+            return D3D12_SHADING_RATE_COMBINER_SUM;
+    }
+
+    return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
+}
+
+static D3D12_SHADING_RATE shadingRateToD3D12(PalFragmentShadingRate rate)
+{
+    switch (rate) {
+        case PAL_FRAGMENT_SHADING_RATE_1X1:
+            return D3D12_SHADING_RATE_1X1;
+
+        case PAL_FRAGMENT_SHADING_RATE_1X2:
+            return D3D12_SHADING_RATE_1X2;
+
+        case PAL_FRAGMENT_SHADING_RATE_2X1:
+            return D3D12_SHADING_RATE_2X1;
+
+        case PAL_FRAGMENT_SHADING_RATE_2X2:
+            return D3D12_SHADING_RATE_2X2;
+
+        case PAL_FRAGMENT_SHADING_RATE_2X4:
+            return D3D12_SHADING_RATE_2X4;
+
+        case PAL_FRAGMENT_SHADING_RATE_4X2:
+            return D3D12_SHADING_RATE_4X2;
+
+        case PAL_FRAGMENT_SHADING_RATE_4X4:
+            return D3D12_SHADING_RATE_4X4;
+    }
+
+    return D3D12_SHADING_RATE_1X1;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -1064,6 +1128,8 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
 
     if (options7.MeshShaderTier != D3D12_MESH_SHADER_TIER_NOT_SUPPORTED) {
         features |= PAL_ADAPTER_FEATURE_MESH_SHADER;
+        features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH;
+        features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT;
     }
 
     if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_3) {
@@ -1082,6 +1148,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     features |= PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY;
     features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
     features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
+    features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT;
 
     if (d3d12Adapter->level >= D3D_FEATURE_LEVEL_12_0) {
         features |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
@@ -1164,6 +1231,87 @@ PalResult PAL_CALL createDeviceD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // create command signatures
+    D3D12_INDIRECT_ARGUMENT_DESC argumentDesc = {0};
+    D3D12_COMMAND_SIGNATURE_DESC signatureDesc = {0};
+    signatureDesc.NumArgumentDescs = 1;
+    signatureDesc.pArgumentDescs = &argumentDesc;
+
+    if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH) {
+        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
+        signatureDesc.ByteStride = sizeof(D3D12_DISPATCH_MESH_ARGUMENTS);
+
+        result = device->handle->lpVtbl->CreateCommandSignature(
+            device->handle,
+            &signatureDesc,
+            nullptr,
+            &IID_Signature, 
+            (void**)&device->meshSignature);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW) {
+        // disptach indexed
+        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
+        signatureDesc.ByteStride = sizeof(D3D12_DISPATCH_ARGUMENTS);
+
+        result = device->handle->lpVtbl->CreateCommandSignature(
+            device->handle, 
+            &signatureDesc, 
+            nullptr, 
+            &IID_Signature, 
+            (void**)&device->dispatchSignature);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // draw indexed
+        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+        signatureDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+
+        result = device->handle->lpVtbl->CreateCommandSignature(
+            device->handle, 
+            &signatureDesc, 
+            nullptr, 
+            &IID_Signature, 
+            (void**)&device->drawIndexedSignature);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // draw
+        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+        signatureDesc.ByteStride = sizeof(D3D12_DRAW_ARGUMENTS);
+
+        result = device->handle->lpVtbl->CreateCommandSignature(
+            device->handle, 
+            &signatureDesc, 
+            nullptr, 
+            &IID_Signature, 
+            (void**)&device->drawSignature);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
     device->adapter = d3d12Adapter->handle;
     device->features = features;
     *outDevice = (PalDevice*)device;
@@ -1173,6 +1321,23 @@ PalResult PAL_CALL createDeviceD3D12(
 void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 {
     Device* d3d12Device = (Device*)device;
+
+    if (d3d12Device->meshSignature) {
+        d3d12Device->meshSignature->lpVtbl->Release(d3d12Device->meshSignature);
+    }
+
+    if (d3d12Device->dispatchSignature) {
+        d3d12Device->dispatchSignature->lpVtbl->Release(d3d12Device->dispatchSignature);
+    }
+
+    if (d3d12Device->drawIndexedSignature) {
+        d3d12Device->drawIndexedSignature->lpVtbl->Release(d3d12Device->drawIndexedSignature);
+    }
+
+    if (d3d12Device->drawSignature) {
+        d3d12Device->drawSignature->lpVtbl->Release(d3d12Device->drawSignature);
+    }
+
     d3d12Device->queue->lpVtbl->Release(d3d12Device->queue);
     d3d12Device->handle->lpVtbl->Release(d3d12Device->handle);
     if (d3d12Device->infoQueue) {
@@ -2809,6 +2974,7 @@ void PAL_CALL destroyCommandPoolD3D12(PalCommandPool* pool)
         }
 
         CommandBuffer* cmdBuffer = cmdPool->cmdBuffersData[i].cmdBuffer;
+        cmdBuffer->handle6->lpVtbl->Release(cmdBuffer->handle6);
         cmdBuffer->handle->lpVtbl->Release(cmdBuffer->handle);
         cmdBuffer->allocator->lpVtbl->Release(cmdBuffer->allocator);
         palFree(s_D3D12.allocator, cmdBuffer);
@@ -2886,7 +3052,13 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    cmdBuffer->handle->lpVtbl->QueryInterface(
+        cmdBuffer->handle, 
+        &IID_CmdList6, 
+        (void**)&cmdBuffer->handle6);
+
     cmdBuffer->pool = cmdPool;
+    cmdBuffer->device = d3d12Device;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -2897,6 +3069,7 @@ void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
     CommandPool* pool = d3d12CmdBuffer->pool;
     CommandBufferData* data = findCmdBufferData(pool, d3d12CmdBuffer);
     if (data) {
+        d3d12CmdBuffer->handle6->lpVtbl->Release(d3d12CmdBuffer->handle6);
         d3d12CmdBuffer->handle->lpVtbl->Release(d3d12CmdBuffer->handle);
         d3d12CmdBuffer->allocator->lpVtbl->Release(d3d12CmdBuffer->allocator);
         palFree(s_D3D12.allocator, cmdBuffer);
@@ -2976,26 +3149,53 @@ PalResult PAL_CALL cmdBeginD3D12(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
 {
-
+    return resetCommandBufferD3D12(cmdBuffer);
 }
 
 PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer* cmdBuffer)
 {
-
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    d3d12CmdBuffer->handle->lpVtbl->Close(d3d12CmdBuffer->handle);
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdExecuteCommandBufferD3D12(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
+    CommandBuffer* d3d12PrimaryCmdBuffer = (CommandBuffer*)primaryCmdBuffer;
+    CommandBuffer* d3d12SecondaryCmdBuffer = (CommandBuffer*)secondaryCmdBuffer;
 
+    d3d12PrimaryCmdBuffer->handle->lpVtbl->ExecuteBundle(
+        d3d12PrimaryCmdBuffer->handle, 
+        d3d12SecondaryCmdBuffer->handle);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdSetFragmentShadingRateD3D12(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state)
 {
+    HRESULT result;
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Device* device = d3d12CmdBuffer->device;
+    if (!(device->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    D3D12_SHADING_RATE shadingRate = shadingRateToD3D12(state->rate);
+    D3D12_SHADING_RATE_COMBINER combinerOps[2];
+    for (int i = 0; i < 2; i++) {
+        combinerOps[i] = combinerOpsToD3D12(state->combinerOps[i]);
+    }
+
+    d3d12CmdBuffer->handle6->lpVtbl->RSSetShadingRate(
+        d3d12CmdBuffer->handle6, 
+        shadingRate, 
+        combinerOps);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdDrawMeshTasksD3D12(
@@ -3004,29 +3204,69 @@ PalResult PAL_CALL cmdDrawMeshTasksD3D12(
     Uint32 groupCountY,
     Uint32 groupCountZ)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Device* device = d3d12CmdBuffer->device;
+    if (!(device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    d3d12CmdBuffer->handle6->lpVtbl->DispatchMesh(
+        d3d12CmdBuffer->handle6, 
+        groupCountX, 
+        groupCountY, 
+        groupCountZ);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 drawCount,
-    Uint32 stride)
+    Uint32 drawCount)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Device* device = d3d12CmdBuffer->device;
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    Buffer* d3d12Buffer = (Buffer*)buffer;
+    d3d12CmdBuffer->handle6->lpVtbl->ExecuteIndirect(
+        d3d12CmdBuffer->handle6, 
+        device->meshSignature, 
+        drawCount, 
+        d3d12Buffer->handle,
+        0, 
+        nullptr, 
+        0);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride)
+    Uint32 maxDrawCount)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Device* device = d3d12CmdBuffer->device;
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    Buffer* d3d12Buffer = (Buffer*)buffer;
+    Buffer* d3d12CountBuffer = (Buffer*)countBuffer;
+    d3d12CmdBuffer->handle6->lpVtbl->ExecuteIndirect(
+        d3d12CmdBuffer->handle6, 
+        device->meshSignature, 
+        maxDrawCount, 
+        d3d12Buffer->handle,
+        0, 
+        d3d12CountBuffer->handle, 
+        0);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
@@ -3140,9 +3380,7 @@ PalResult PAL_CALL cmdDrawD3D12(
 PalResult PAL_CALL cmdDrawIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride)
+    Uint32 count)
 {
 
 }
@@ -3151,10 +3389,7 @@ PalResult PAL_CALL cmdDrawIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride)
+    Uint32 maxDrawCount)
 {
 
 }
@@ -3173,9 +3408,7 @@ PalResult PAL_CALL cmdDrawIndexedD3D12(
 PalResult PAL_CALL cmdDrawIndexedIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride)
+    Uint32 count)
 {
 
 }
@@ -3184,10 +3417,7 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride)
+    Uint32 maxDrawCount)
 {
 
 }
@@ -3242,8 +3472,7 @@ PalResult PAL_CALL cmdDispatchBaseD3D12(
 
 PalResult PAL_CALL cmdDispatchIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    Uint64 offset)
+    PalBuffer* buffer)
 {
 
 }

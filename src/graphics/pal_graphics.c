@@ -431,18 +431,13 @@ PalResult PAL_CALL cmdDrawMeshTasksVk(
 PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 drawCount,
-    Uint32 stride);
+    Uint32 drawCount);
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     PalCommandBuffer* cmdBuffer,
@@ -516,18 +511,13 @@ PalResult PAL_CALL cmdDrawVk(
 PalResult PAL_CALL cmdDrawIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride);
+    Uint32 count);
 
 PalResult PAL_CALL cmdDrawIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 PalResult PAL_CALL cmdDrawIndexedVk(
     PalCommandBuffer* cmdBuffer,
@@ -540,18 +530,13 @@ PalResult PAL_CALL cmdDrawIndexedVk(
 PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride);
+    Uint32 count);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 PalResult PAL_CALL cmdMemoryBarrierVk(
     PalCommandBuffer* cmdBuffer,
@@ -588,8 +573,7 @@ PalResult PAL_CALL cmdDispatchBaseVk(
 
 PalResult PAL_CALL cmdDispatchIndirectVk(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    Uint64 offset);
+    PalBuffer* buffer);
 
 PalResult PAL_CALL cmdTraceRaysVk(
     PalCommandBuffer* cmdBuffer,
@@ -1297,18 +1281,13 @@ PalResult PAL_CALL cmdDrawMeshTasksD3D12(
 PalResult PAL_CALL cmdDrawMeshTasksIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 drawCount,
-    Uint32 stride);
+    Uint32 drawCount);
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1382,18 +1361,13 @@ PalResult PAL_CALL cmdDrawD3D12(
 PalResult PAL_CALL cmdDrawIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride);
+    Uint32 count);
 
 PalResult PAL_CALL cmdDrawIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 PalResult PAL_CALL cmdDrawIndexedD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1406,18 +1380,13 @@ PalResult PAL_CALL cmdDrawIndexedD3D12(
 PalResult PAL_CALL cmdDrawIndexedIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride);
+    Uint32 count);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 PalResult PAL_CALL cmdMemoryBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1454,8 +1423,7 @@ PalResult PAL_CALL cmdDispatchBaseD3D12(
 
 PalResult PAL_CALL cmdDispatchIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    Uint64 offset);
+    PalBuffer* buffer);
 
 PalResult PAL_CALL cmdTraceRaysD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -3233,9 +3201,7 @@ PalResult PAL_CALL palCmdDrawMeshTasks(
 PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 drawCount,
-    Uint32 stride)
+    Uint32 drawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3245,18 +3211,14 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend
-        ->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, offset, drawCount, stride);
+    return cmdBuffer->backend->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, drawCount);
 }
 
 PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride)
+    Uint32 maxDrawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3270,10 +3232,7 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
         cmdBuffer,
         buffer,
         countBuffer,
-        offset,
-        countBufferOffset,
-        maxDrawCount,
-        stride);
+        maxDrawCount);
 }
 
 PalResult PAL_CALL palCmdBuildAccelerationStructure(
@@ -3508,9 +3467,7 @@ PalResult PAL_CALL palCmdDraw(
 PalResult PAL_CALL palCmdDrawIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride)
+    Uint32 count)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3520,17 +3477,14 @@ PalResult PAL_CALL palCmdDrawIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDrawIndirect(cmdBuffer, buffer, offset, count, stride);
+    return cmdBuffer->backend->cmdDrawIndirect(cmdBuffer, buffer, count);
 }
 
 PalResult PAL_CALL palCmdDrawIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride)
+    Uint32 maxDrawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3544,10 +3498,7 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
         cmdBuffer,
         buffer,
         countBuffer,
-        offset,
-        countBufferOffset,
-        maxDrawCount,
-        stride);
+        maxDrawCount);
 }
 
 PalResult PAL_CALL palCmdDrawIndexed(
@@ -3578,9 +3529,7 @@ PalResult PAL_CALL palCmdDrawIndexed(
 PalResult PAL_CALL palCmdDrawIndexedIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride)
+    Uint32 count)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3590,17 +3539,14 @@ PalResult PAL_CALL palCmdDrawIndexedIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDrawIndexedIndirect(cmdBuffer, buffer, offset, count, stride);
+    return cmdBuffer->backend->cmdDrawIndexedIndirect(cmdBuffer, buffer, count);
 }
 
 PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride)
+    Uint32 maxDrawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3614,10 +3560,7 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
         cmdBuffer,
         buffer,
         countBuffer,
-        offset,
-        countBufferOffset,
-        maxDrawCount,
-        stride);
+        maxDrawCount);
 }
 
 PalResult PAL_CALL palCmdMemoryBarrier(
@@ -3723,8 +3666,7 @@ PalResult PAL_CALL palCmdDispatchBase(
 
 PalResult PAL_CALL palCmdDispatchIndirect(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    Uint64 offset)
+    PalBuffer* buffer)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3734,7 +3676,7 @@ PalResult PAL_CALL palCmdDispatchIndirect(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdDispatchIndirect(cmdBuffer, buffer, offset);
+    return cmdBuffer->backend->cmdDispatchIndirect(cmdBuffer, buffer);
 }
 
 PalResult PAL_CALL palCmdTraceRays(

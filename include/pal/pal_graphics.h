@@ -606,7 +606,9 @@ typedef enum {
     PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(28),
     PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(29),
     PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(31)
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH = PAL_BIT64(31),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT = PAL_BIT64(32),
+    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(33)
 } PalAdapterFeatures;
 
 /**
@@ -3248,9 +3250,7 @@ typedef struct {
     PalResult PAL_CALL (*cmdDrawMeshTasksIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
-        Uint64 offset,
-        Uint32 drawCount,
-        Uint32 stride);
+        Uint32 drawCount);
 
     /**
      * Backend implementation of ::palCmdDrawMeshTasksIndirectCount.
@@ -3261,10 +3261,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         PalBuffer* countBuffer,
-        Uint64 offset,
-        Uint64 countBufferOffset,
-        Uint32 maxDrawCount,
-        Uint32 stride);
+        Uint32 maxDrawCount);
 
     /**
      * Backend implementation of ::palCmdBuildAccelerationStructure.
@@ -3408,9 +3405,7 @@ typedef struct {
     PalResult PAL_CALL (*cmdDrawIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
-        Uint64 offset,
-        Uint32 count,
-        Uint32 stride);
+        Uint32 count);
 
     /**
      * Backend implementation of ::palCmdDrawIndirectCount.
@@ -3421,10 +3416,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         PalBuffer* countBuffer,
-        Uint64 offset,
-        Uint64 countBufferOffset,
-        Uint32 count,
-        Uint32 stride);
+        Uint32 count);
 
     /**
      * Backend implementation of ::palCmdDrawIndexed.
@@ -3447,9 +3439,7 @@ typedef struct {
     PalResult PAL_CALL (*cmdDrawIndexedIndirect)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
-        Uint64 offset,
-        Uint32 count,
-        Uint32 stride);
+        Uint32 count);
 
     /**
      * Backend implementation of ::palCmdDrawIndexedIndirectCount.
@@ -3460,10 +3450,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         PalBuffer* countBuffer,
-        Uint64 offset,
-        Uint64 countBufferOffset,
-        Uint32 count,
-        Uint32 stride);
+        Uint32 count);
 
     /**
      * Backend implementation of ::palCmdMemoryBarrier.
@@ -3530,8 +3517,7 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdDispatchIndirect)(
         PalCommandBuffer* cmdBuffer,
-        PalBuffer* buffer,
-        Uint64 offset);
+        PalBuffer* buffer);
 
     /**
      * Backend implementation of ::palCmdTraceRays.
@@ -5532,17 +5518,14 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported
+ * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH` must be supported
  * and enabled by the device if not, this function will fail and return
  * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs.
  * Can be a single struct.
- * @param[in] offset Starting byte offset into `buffer`.
  * @param[in] drawCount Number of draws to perform.
- * @param[in] stride Size in bytes of each parameter struct in `buffer`.
- * Must be greater or equal to sizeof(PalDispatchIndirectData).
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5556,16 +5539,14 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 drawCount,
-    Uint32 stride);
+    Uint32 drawCount);
 
 /**
  * @brief Dispatch mesh shader workgroups using parameters from buffers.
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be
+ * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT` must be
  * supported and enabled by the device if not, this function will fail and return
  * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
@@ -5573,11 +5554,7 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
  * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs.
  * Can be a single struct.
  * @param[in] countBuffer Buffer containing a single `Uint32` specifying the number of draws.
- * @param[in] offset Starting byte offset into `buffer`.
- * @param[in] countBufferOffset Starting byte offset into `countBuffer`.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
- * @param[in] stride Size in bytes of each parameter struct in `buffer`.
- * Must be greater or equal to sizeof(PalDispatchIndirectData).
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5592,10 +5569,7 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 /**
  * @brief Build or update an acceleration structure.
@@ -5919,10 +5893,7 @@ PAL_API PalResult PAL_CALL palCmdDraw(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing an array of PalDrawIndirectData structs.
  * Can be a single struct.
- * @param[in] offset Starting byte offset into `buffer`.
  * @param[in] count Number of draws to perform.
- * @param[in] stride Size in bytes of each parameter struct in `buffer`.
- * Must be greater or equal to sizeof(PalDrawIndirectData).
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5936,9 +5907,7 @@ PAL_API PalResult PAL_CALL palCmdDraw(
 PAL_API PalResult PAL_CALL palCmdDrawIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride);
+    Uint32 count);
 
 /**
  * @brief Issue a non-indexed draw command using buffers.
@@ -5952,11 +5921,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirect(
  * @param[in] buffer Buffer containing an array of PalDrawIndirectData structs.
  * Can be a single struct.
  * @param[in] countBuffer Buffer containing a single `Uint32` specifying the number of draws.
- * @param[in] offset Starting byte offset into `buffer`.
- * @param[in] countBufferOffset Starting byte offset into `countBuffer`.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
- * @param[in] stride Size in bytes of each parameter struct in `buffer`.
- * Must be greater or equal to sizeof(PalDrawIndirectData).
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5971,10 +5936,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 /**
  * @brief Issue an indexed draw command.
@@ -6016,10 +5978,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexed(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing an array of PalDrawIndexedIndirectData structs.
  * Can be a single struct.
- * @param[in] offset Starting byte offset into `buffer`.
  * @param[in] count Number of draws to perform.
- * @param[in] stride Size in bytes of each parameter struct in `buffer`.
- * Must be greater or equal to sizeof(PalDrawIndexedIndirectData).
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6033,9 +5992,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexed(
 PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint32 count,
-    Uint32 stride);
+    Uint32 count);
 
 /**
  * @brief Issue an indexed draw command using buffers.
@@ -6049,11 +6006,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
  * @param[in] buffer Buffer containing an array of PalDrawIndexedIndirectData structs.
  * Can be a single struct.
  * @param[in] countBuffer Buffer containing a single `Uint32` specifying the number of draws.
- * @param[in] offset Starting byte offset into `buffer`.
- * @param[in] countBufferOffset Starting byte offset into `countBuffer`.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
- * @param[in] stride Size in bytes of each parameter struct in `buffer`.
- * Must be greater or equal to sizeof(PalDrawIndexedIndirectData).
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6068,10 +6021,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint64 offset,
-    Uint64 countBufferOffset,
-    Uint32 maxDrawCount,
-    Uint32 stride);
+    Uint32 maxDrawCount);
 
 /**
  * @brief Insert a memory barrier into the command buffer.
@@ -6246,7 +6196,6 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs.
  * Can be a single struct.
- * @param[in] offset Starting byte offset into `buffer`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6259,8 +6208,7 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  */
 PAL_API PalResult PAL_CALL palCmdDispatchIndirect(
     PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    Uint64 offset);
+    PalBuffer* buffer);
 
 /**
  * @brief Dispatch rays.

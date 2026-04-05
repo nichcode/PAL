@@ -284,16 +284,24 @@ bool graphicsTest()
             palLog(nullptr, "  Fragment shading rate attachment");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT) {
-            palLog(nullptr, "  Indirect draw count");
-        }
-
         if (features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS) {
             palLog(nullptr, "  Buffer device address");
         }
 
         if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW) {
             palLog(nullptr, "  Indirect draw");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT) {
+            palLog(nullptr, "  Indirect draw count");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH) {
+            palLog(nullptr, "  Indirect mesh draw");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT) {
+            palLog(nullptr, "  Indirect mesh draw count");
         }
 
         if (features & PAL_ADAPTER_FEATURE_DISPATCH_BASE) {
