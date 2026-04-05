@@ -840,10 +840,6 @@ bool triangleTest()
         renderingInfo.viewCount = 1;
         renderingInfo.colorAttachentCount = 1;
         renderingInfo.colorAttachments = &colorAttachment;
-        renderingInfo.layerCount = 1;
-        renderingInfo.multisampleCount = PAL_SAMPLE_COUNT_1;
-        renderingInfo.renderArea.width = WINDOW_WIDTH;
-        renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
         result = palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {

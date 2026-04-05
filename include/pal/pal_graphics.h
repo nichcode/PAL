@@ -1236,8 +1236,7 @@ typedef enum {
  */
 typedef enum {
     PAL_GEOMETRY_TYPE_TRIANGLE,
-    PAL_GEOMETRY_TYPE_AABBS,
-    PAL_GEOMETRY_TYPE_INSTANCE
+    PAL_GEOMETRY_TYPE_AABBS
 } PalGeometryType;
 
 /**
@@ -1657,6 +1656,8 @@ typedef struct {
 typedef struct {
     PalLoadOp loadOp;
     PalStoreOp storeOp;
+    PalLoadOp stencilLoadOp;
+    PalStoreOp stencilStoreOp;
     PalResolveMode resolveMode;     /**< Used if resolveImageView is set.*/
     Uint32 texelWidth;              /**< Texel width for fragment shading rate attachment.*/
     Uint32 texelHeight;             /**< Texel height for fragment shading rate attachment.*/
@@ -1799,20 +1800,16 @@ typedef struct {
  */
 typedef struct {
     Uint32 viewCount; /**< If > 1 `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported.*/
-    Uint32 layerCount;
     Uint32 colorAttachentCount;
-    PalSampleCount multisampleCount;
     PalAttachmentDesc* colorAttachments;
-    PalAttachmentDesc* depthAttachment;
-    PalAttachmentDesc* stencilAttachment;
+    PalAttachmentDesc* depthStencilAttachment;
     PalAttachmentDesc* fragmentShadingRateAttachment;
-    PalRect2D renderArea;
 } PalRenderingInfo;
 
 /**
  * @struct PalRenderingLayoutInfo
  * @brief Information about a pre-existing PalRenderingInfo.
- * This is used to reference the already existing PalRenderingInfo.
+ * This is used to reference an already existing PalRenderingInfo.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2120,20 +2117,7 @@ typedef struct {
 } PalGeometryDataAABBS;
 
 /**
- * @struct PalGeometryDataInstance
- * @brief Acceleration structure instance geometry data.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef struct {
-    PalDeviceAddress bufferAddress;
-} PalGeometryDataInstance;
-
-/**
- * @struct PalGeometryDataInstance
+ * @struct PalGeometry
  * @brief Acceleration structure geometry.
  *
  * Uninitialized fields may result in undefined behavior.
@@ -2159,11 +2143,13 @@ typedef struct {
 typedef struct {
     PalAccelerationStructureType type; /**< (eg. PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL).*/
     Uint32 geometryCount;
+    Uint32 instanceCount;
     PalAccelerationStructureBuildHints buildHints;
     PalAccelerationStructureBuildMode buildMode;
+    PalDeviceAddress scratchBufferAddress;
+    PalDeviceAddress instanceBufferAddress;
     PalAccelerationStructure* dst;
     PalAccelerationStructure* src;
-    PalDeviceAddress scratchBufferAddress;
     PalGeometry* geometries;
 } PalAccelerationStructureBuildInfo;
 
@@ -6651,7 +6637,7 @@ PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
  *
  * @param[in] device The device. Must match the one used to create the instance buffer.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
- * @param[in] instances Array of PalAccelerationStructureInstances struct to write.
+ * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
  * Can be a single struct.
  * @param[in] instanceCount Number of instances in `instances`.
  *

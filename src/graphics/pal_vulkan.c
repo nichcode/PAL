@@ -2234,6 +2234,7 @@ static inline Uint32 alignVk(
 }
 
 static void fillVkBuildInfoVk(
+    Uint32 count,
     PalAccelerationStructureBuildInfo* info,
     Uint32* maxPrimities,
     VkAccelerationStructureGeometryKHR* geometries,
@@ -2242,7 +2243,7 @@ static void fillVkBuildInfoVk(
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos,
     VkAccelerationStructureBuildGeometryInfoKHR* buildInfo)
 {
-    for (int i = 0; i < info->geometryCount; i++) {
+    for (int i = 0; i < count; i++) {
         if (maxPrimities) {
             maxPrimities[i] = info->geometries[i].primitiveCount;
         }
@@ -2251,6 +2252,31 @@ static void fillVkBuildInfoVk(
         VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
         tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR; // always opaque
+
+        // range info
+        if (rangeInfos) {
+            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
+            rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
+            rangeInfo->firstVertex = 0;     // PAL does not allow setting this
+            rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
+            rangeInfo->transformOffset = 0; // PAL does not allow setting this
+        }
+
+        if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
+            tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+            VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
+            data = &tmp->geometry.instances;
+            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+            data->arrayOfPointers = false;
+
+            VkDeviceOrHostAddressConstKHR address = {0};
+            address.deviceAddress = info->instanceBufferAddress;
+            data->data = address;
+
+            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
+            rangeInfo->primitiveCount = info->instanceCount;
+            break;
+        }
 
         if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
             tmp->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -2290,27 +2316,6 @@ static void fillVkBuildInfoVk(
             address.deviceAddress = tmpData->bufferAddress;
             data->data = address;
             data->stride = tmpData->stride;
-
-        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_INSTANCE) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-            VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
-            data = &tmp->geometry.instances;
-            data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-            data->arrayOfPointers = false;
-
-            VkDeviceOrHostAddressConstKHR address = {0};
-            PalGeometryDataInstance* tmpData = info->geometries[i].data;
-            address.deviceAddress = tmpData->bufferAddress;
-            data->data = address;
-        }
-
-        // range info
-        if (rangeInfos) {
-            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
-            rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
-            rangeInfo->firstVertex = 0;     // PAL does not allow setting this
-            rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
-            rangeInfo->transformOffset = 0; // PAL does not allow setting this
         }
     }
 
@@ -2342,7 +2347,7 @@ static void fillVkBuildInfoVk(
         buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
     }
 
-    buildInfo->geometryCount = info->geometryCount;
+    buildInfo->geometryCount = count;
     buildInfo->srcAccelerationStructure = srcAs;
     buildInfo->dstAccelerationStructure = dstAs;
     buildInfo->pGeometries = geometries;
@@ -6430,6 +6435,16 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     VkAccelerationStructureKHR srcAs = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
+    // cache these for top level as
+    VkAccelerationStructureBuildRangeInfoKHR cachedRangeInfo = {0};
+    VkAccelerationStructureGeometryKHR cachedGeometries = {0};
+    Uint32 geometryCount = info->geometryCount;
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
+        geometryCount = 1;
+        rangeInfos = &cachedRangeInfo;
+        geometries = &cachedGeometries;
+    }
+
     if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6438,30 +6453,43 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
         srcAs = tmpAs->handle;
     }
 
-    geometries = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount,
-        0);
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        geometries = palAllocate(
+            s_Vk.allocator,
+            sizeof(VkAccelerationStructureGeometryKHR) * geometryCount,
+            0);
 
-    rangeInfos = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->geometryCount,
-        0);
+        rangeInfos = palAllocate(
+            s_Vk.allocator,
+            sizeof(VkAccelerationStructureBuildRangeInfoKHR) * geometryCount,
+            0);
 
-    if (!rangeInfos || !geometries) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        if (!rangeInfos || !geometries) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * geometryCount);
+        memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * geometryCount);
     }
 
-    memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount);
-    memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->geometryCount);
+    fillVkBuildInfoVk(
+        geometryCount, 
+        info, 
+        nullptr, 
+        geometries, 
+        srcAs, 
+        dstAs->handle, 
+        rangeInfos, 
+        &buildInfo);
 
-    fillVkBuildInfoVk(info, nullptr, geometries, srcAs, dstAs->handle, rangeInfos, &buildInfo);
     const VkAccelerationStructureBuildRangeInfoKHR* tmp[1];
     tmp[0] = rangeInfos;
     vkCmdBuffer->device->cmdBuildAccelerationStructures(vkCmdBuffer->handle, 1, &buildInfo, tmp);
 
-    palFree(s_Vk.allocator, geometries);
-    palFree(s_Vk.allocator, rangeInfos);
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        palFree(s_Vk.allocator, geometries);
+        palFree(s_Vk.allocator, rangeInfos);
+    }
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6486,6 +6514,9 @@ PalResult PAL_CALL cmdBeginRenderingVk(
     VkRenderingFragmentShadingRateAttachmentInfoKHR fsrInfo = {0};
     fsrInfo.sType = VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
 
+    Uint32 layerCount = UINT32_MAX;
+    Uint32 renderWidth = UINT32_MAX;
+    Uint32 renderHeight = UINT32_MAX;
     for (int i = 0; i < info->colorAttachentCount; i++) {
         attachment = &colorAttachments[i];
         desc = &info->colorAttachments[i];
@@ -6530,15 +6561,26 @@ PalResult PAL_CALL cmdBeginRenderingVk(
 
         attachment->resolveMode = resolveModeToVk(desc->resolveMode);
         attachment->imageLayout = layout;
+
+        // compute layer count and render area
+        layerCount = min(layerCount, imageView->range.layerCount);
+        renderWidth = min(renderWidth, imageView->image->info.width);
+        renderHeight = min(renderHeight, imageView->image->info.height);
+
+        if (resolveImageView) {
+            layerCount = min(layerCount, resolveImageView->range.layerCount);
+            renderWidth = min(renderWidth, resolveImageView->image->info.width);
+            renderHeight = min(renderHeight, resolveImageView->image->info.height);
+        }
     }
 
     rendering.colorAttachmentCount = info->colorAttachentCount;
     rendering.pColorAttachments = colorAttachments;
 
     // depth attachment
-    if (info->depthAttachment) {
+    if (info->depthStencilAttachment) {
         attachment = &depthAttachment;
-        desc = info->depthAttachment;
+        desc = info->depthStencilAttachment;
         imageView = (ImageView*)desc->imageView;
         resolveImageView = (ImageView*)desc->resolveImageView;
 
@@ -6546,14 +6588,23 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         attachment->pNext = nullptr;
         attachment->resolveImageView = nullptr;
         attachment->resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        stencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        stencilAttachment.pNext = nullptr;
+        stencilAttachment.resolveImageView = nullptr;
+        stencilAttachment.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         attachment->clearValue.depthStencil.depth = desc->clearValue.depth;
-        layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-
+        stencilAttachment.clearValue.depthStencil.stencil = desc->clearValue.stencil;
+        
         attachment->imageView = imageView->handle;
+        stencilAttachment.imageView = imageView->handle;
         if (resolveImageView) {
             attachment->resolveImageView = resolveImageView->handle;
             attachment->resolveImageLayout = layout;
+
+            stencilAttachment.resolveImageView = resolveImageView->handle;
+            stencilAttachment.resolveImageLayout = layout;
         }
 
         // load op
@@ -6575,54 +6626,43 @@ PalResult PAL_CALL cmdBeginRenderingVk(
             attachment->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         }
 
-        attachment->resolveMode = resolveModeToVk(desc->resolveMode);
-        attachment->imageLayout = layout;
-        rendering.pStencilAttachment = &depthAttachment;
-    }
+        // stencil load op
+        if (desc->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
+            stencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
-    // stencil attachment
-    if (info->stencilAttachment) {
-        attachment = &stencilAttachment;
-        desc = info->stencilAttachment;
-        imageView = (ImageView*)desc->imageView;
-        resolveImageView = (ImageView*)desc->resolveImageView;
+        } else if (desc->stencilLoadOp == PAL_LOAD_OP_LOAD) {
+            stencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 
-        attachment->sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-        attachment->pNext = nullptr;
-        attachment->resolveImageView = nullptr;
-        attachment->resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        attachment->clearValue.depthStencil.stencil = desc->clearValue.stencil;
-        layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-
-        attachment->imageView = imageView->handle;
-        if (resolveImageView) {
-            attachment->resolveImageView = resolveImageView->handle;
-            attachment->resolveImageLayout = layout;
+        } else if (desc->stencilLoadOp == PAL_LOAD_OP_DONT_CARE) {
+            stencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         }
 
-        // load op
-        if (desc->loadOp == PAL_LOAD_OP_CLEAR) {
-            attachment->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        // stencil store op
+        if (desc->stencilStoreOp == PAL_STORE_OP_STORE) {
+            stencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
-        } else if (desc->loadOp == PAL_LOAD_OP_LOAD) {
-            attachment->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-        } else if (desc->loadOp == PAL_LOAD_OP_DONT_CARE) {
-            attachment->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        }
-
-        // store op
-        if (desc->storeOp == PAL_STORE_OP_STORE) {
-            attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-        } else if (desc->storeOp == PAL_STORE_OP_DONT_CARE) {
-            attachment->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        } else if (desc->stencilStoreOp == PAL_STORE_OP_DONT_CARE) {
+            stencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         }
 
         attachment->resolveMode = resolveModeToVk(desc->resolveMode);
-        attachment->imageLayout = layout;
+        attachment->imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        stencilAttachment.resolveMode = resolveModeToVk(desc->resolveMode);
+        stencilAttachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+
+        rendering.pDepthAttachment = &depthAttachment;
         rendering.pStencilAttachment = &stencilAttachment;
+
+        // compute layer count and render area
+        layerCount = min(layerCount, imageView->range.layerCount);
+        renderWidth = min(renderWidth, imageView->image->info.width);
+        renderHeight = min(renderHeight, imageView->image->info.height);
+
+        if (resolveImageView) {
+            layerCount = min(layerCount, resolveImageView->range.layerCount);
+            renderWidth = min(renderWidth, resolveImageView->image->info.width);
+            renderHeight = min(renderHeight, resolveImageView->image->info.height);
+        }
     }
 
     // fragment shading rate attachment
@@ -6638,13 +6678,18 @@ PalResult PAL_CALL cmdBeginRenderingVk(
 
         fsrInfo.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
         rendering.pNext = &fsrInfo;
+
+        // compute layer count and render area
+        layerCount = min(layerCount, imageView->range.layerCount);
+        renderWidth = min(renderWidth, imageView->image->info.width);
+        renderHeight = min(renderHeight, imageView->image->info.height);
     }
 
-    rendering.layerCount = info->layerCount;
-    rendering.renderArea.offset.x = info->renderArea.x;
-    rendering.renderArea.offset.y = info->renderArea.y;
-    rendering.renderArea.extent.width = info->renderArea.width;
-    rendering.renderArea.extent.height = info->renderArea.height;
+    rendering.layerCount = layerCount;
+    rendering.renderArea.offset.x = 0;
+    rendering.renderArea.offset.y = 0;
+    rendering.renderArea.extent.width = renderWidth;
+    rendering.renderArea.extent.height = renderHeight;
 
     if (info->viewCount == 1) {
         rendering.viewMask = 0;
@@ -7585,24 +7630,45 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     Device* vkDevice = (Device*)device;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
+    // cache these for top level as
+    VkAccelerationStructureGeometryKHR cachedGeometries = {0};
+    Uint32 cachedPrimitives[1];
+    Uint32 geometryCount = info->geometryCount;
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
+        geometryCount = 1;
+        geometries = &cachedGeometries;
+        maxPrimities = cachedPrimitives;
+    }
+
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    maxPrimities = palAllocate(s_Vk.allocator, sizeof(Uint32) * info->geometryCount, 0);
-    geometries = palAllocate(
-        s_Vk.allocator,
-        sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount,
-        0);
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        geometries = palAllocate(
+            s_Vk.allocator,
+            sizeof(VkAccelerationStructureGeometryKHR) * geometryCount,
+            0);
 
-    if (!maxPrimities || !geometries) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        maxPrimities = palAllocate(s_Vk.allocator, sizeof(Uint32) * geometryCount, 0);
+        if (!maxPrimities || !geometries) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * geometryCount);
+        memset(maxPrimities, 0, sizeof(Uint32) * geometryCount);
     }
 
-    memset(maxPrimities, 0, sizeof(Uint32) * info->geometryCount);
-    memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->geometryCount);
+    fillVkBuildInfoVk(
+        geometryCount, 
+        info, 
+        maxPrimities, 
+        geometries, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        &buildInfo);
 
-    fillVkBuildInfoVk(info, maxPrimities, geometries, nullptr, nullptr, nullptr, &buildInfo);
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
@@ -7617,8 +7683,10 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     size->scratchBufferSize = sizeInfo.buildScratchSize;
     size->updateScratchBufferSize = sizeInfo.updateScratchSize;
 
-    palFree(s_Vk.allocator, maxPrimities);
-    palFree(s_Vk.allocator, geometries);
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        palFree(s_Vk.allocator, geometries);
+        palFree(s_Vk.allocator, maxPrimities);
+    }
     return PAL_RESULT_SUCCESS;
 }
 

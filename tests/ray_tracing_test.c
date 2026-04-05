@@ -609,18 +609,10 @@ bool rayTracingTest()
 
     // fill TLAS and instance geometry
     PalDeviceAddress instanceBufferAddress = palGetBufferDeviceAddress(instanceBuffer);
-    PalGeometryDataInstance instance = {0};
-    instance.bufferAddress = instanceBufferAddress;
-
-    PalGeometry instanceGeometry = {0};
-    instanceGeometry.data = &instance;
-    instanceGeometry.primitiveCount = 1;
-    instanceGeometry.type = PAL_GEOMETRY_TYPE_INSTANCE;
-
     PalAccelerationStructureBuildInfo tlasBuildInfo = {0};
     tlasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    tlasBuildInfo.geometryCount = 1;
-    tlasBuildInfo.geometries = &instanceGeometry;
+    tlasBuildInfo.instanceCount = 1;
+    tlasBuildInfo.instanceBufferAddress = instanceBufferAddress;
     tlasBuildInfo.buildHints = PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD;
     tlasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
 

@@ -44,6 +44,8 @@ freely, subject to the following restrictions:
 #define D3D_FEATURE_LEVEL_12_2 0xc200
 #endif // D3D_FEATURE_LEVEL_12_2
 
+#define MAX_ATTACHMENTS 32
+
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
 const IID IID_Adapter = {0x3c8d99d1, 0x4fbf, 0x4181, 0xa8,0x2c, 0xaf,0x66,0xbf,0x7b,0xd2,0x4e};
@@ -208,6 +210,16 @@ typedef struct {
 
     ID3D12Resource* handle;
 } Buffer;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    D3D12_GPU_VIRTUAL_ADDRESS address;
+    ID3D12Resource* buffer;
+    ID3D12Heap* bufferMemory;
+    D3D12_GPU_VIRTUAL_ADDRESS bufferAddress;
+    ID3D12Resource* handle;
+} AccelerationStructure;
 
 static D3D12 s_D3D12 = {0};
 
@@ -740,6 +752,180 @@ static D3D12_SHADING_RATE shadingRateToD3D12(PalFragmentShadingRate rate)
     }
 
     return D3D12_SHADING_RATE_1X1;
+}
+
+static DXGI_FORMAT vertexTypeToD3D12(PalVertexType type)
+{
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT32:
+            return DXGI_FORMAT_R32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_2:
+            return DXGI_FORMAT_R32G32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_3:
+            return DXGI_FORMAT_R32G32B32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_4:
+            return DXGI_FORMAT_R32G32B32A32_SINT;
+
+        case PAL_VERTEX_TYPE_UINT32:
+            return DXGI_FORMAT_R32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_2:
+            return DXGI_FORMAT_R32G32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_3:
+            return DXGI_FORMAT_R32G32B32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_4:
+            return DXGI_FORMAT_R32G32B32A32_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2:
+            return DXGI_FORMAT_R8G8_SINT;
+
+        case PAL_VERTEX_TYPE_INT8_4:
+            return DXGI_FORMAT_R8G8B8A8_SINT;
+
+        case PAL_VERTEX_TYPE_UINT8_2:
+            return DXGI_FORMAT_R8G8_UINT;
+
+        case PAL_VERTEX_TYPE_UINT8_4:
+            return DXGI_FORMAT_R8G8B8A8_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+            return DXGI_FORMAT_R8G8_SNORM;
+
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+            return DXGI_FORMAT_R8G8B8A8_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_2NORM:
+            return DXGI_FORMAT_R8G8_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        case PAL_VERTEX_TYPE_INT16_2:
+            return DXGI_FORMAT_R16G16_SINT;
+
+        case PAL_VERTEX_TYPE_INT16_4:
+            return DXGI_FORMAT_R16G16B16A16_SINT;
+
+        case PAL_VERTEX_TYPE_UINT16_2:
+            return DXGI_FORMAT_R16G16_UINT;
+
+        case PAL_VERTEX_TYPE_UINT16_4:
+            return DXGI_FORMAT_R16G16B16A16_UINT;
+
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+            return DXGI_FORMAT_R16G16_SNORM;
+
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+            return DXGI_FORMAT_R16G16B16A16_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+            return DXGI_FORMAT_R16G16_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+            return DXGI_FORMAT_R16G16B16A16_UNORM;
+
+        case PAL_VERTEX_TYPE_FLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT2:
+            return DXGI_FORMAT_R32G32_FLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT3:
+            return DXGI_FORMAT_R32G32B32_FLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT4:
+            return DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2:
+            return DXGI_FORMAT_R16G16_FLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4:
+            return DXGI_FORMAT_R16G16B16A16_FLOAT;
+    }
+
+    return DXGI_FORMAT_UNKNOWN;
+}
+
+static void fillVkBuildInfoD3D12(
+    PalAccelerationStructureBuildInfo* info,
+    D3D12_RAYTRACING_GEOMETRY_DESC* geometries,
+    D3D12_GPU_VIRTUAL_ADDRESS srcAs,
+    D3D12_GPU_VIRTUAL_ADDRESS dstAs,
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* buildInfo)
+{
+    for (int i = 0; i < info->geometryCount; i++) {
+        D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
+        tmp->Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+
+        if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
+            tmp->Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+            PalGeometryDataTriangle* tmpData = info->geometries[i].data;
+
+            tmp->Triangles.VertexBuffer.StartAddress = tmpData->vertexBufferAddress;
+            tmp->Triangles.VertexBuffer.StrideInBytes = tmpData->vertexStride;
+            tmp->Triangles.VertexCount = tmpData->vertexCount;
+            tmp->Triangles.VertexFormat = vertexTypeToD3D12(tmpData->vertexType);
+            
+            tmp->Triangles.IndexBuffer = tmpData->indexBufferAddress;
+            tmp->Triangles.IndexCount = tmpData->indexCount;
+            if (tmpData->indexType == PAL_INDEX_TYPE_UINT16) {
+                tmp->Triangles.IndexFormat = DXGI_FORMAT_R16_FLOAT;
+            } else {
+                tmp->Triangles.IndexFormat = DXGI_FORMAT_R32_FLOAT;
+            }
+
+        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
+            tmp->Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
+            PalGeometryDataAABBS* tmpData = info->geometries[i].data;
+            
+            tmp->AABBs.AABBCount = info->geometries[i].primitiveCount;
+            tmp->AABBs.AABBs.StartAddress = tmpData->bufferAddress;
+            tmp->AABBs.AABBs.StrideInBytes = tmpData->stride;
+        }
+    }
+
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
+        buildInfo->Inputs.NumDescs = info->instanceCount;
+        buildInfo->Inputs.InstanceDescs = info->instanceBufferAddress;
+    } else {
+        buildInfo->Inputs.NumDescs = info->geometryCount;
+        buildInfo->Inputs.pGeometryDescs = geometries;
+    }
+
+    buildInfo->Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        buildInfo->Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    } else {
+        buildInfo->Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    }
+
+    // build mode
+    buildInfo->Inputs.Flags = 0;
+    if (info->buildMode == PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE) {
+        buildInfo->Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+    }
+
+    // build hints
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD) {
+        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+    }
+
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE) {
+        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    }
+
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY) {
+        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+    }
+
+    buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
+    buildInfo->SourceAccelerationStructureData = srcAs;
+    buildInfo->DestAccelerationStructureData = dstAs;
 }
 
 // ==================================================
@@ -3273,19 +3459,147 @@ PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Device* device = d3d12CmdBuffer->device;
+    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    D3D12_RAYTRACING_GEOMETRY_DESC* geometries = nullptr;
+    AccelerationStructure* tmpAs = (AccelerationStructure*)info->src;
+    AccelerationStructure* dstAs = (AccelerationStructure*)info->dst;
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
+    D3D12_GPU_VIRTUAL_ADDRESS srcAsAddress = 0;
+
+    if (tmpAs) {
+        srcAsAddress = tmpAs->address;
+    }
+
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        geometries = palAllocate(
+            s_D3D12.allocator,
+            sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->geometryCount,
+            0);
+
+        if (!geometries) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->geometryCount);
+        fillVkBuildInfoD3D12(
+            info, 
+            geometries,
+            srcAsAddress, 
+            dstAs->address,
+            &buildInfo);
+
+        palFree(s_D3D12.allocator, geometries);
+        d3d12CmdBuffer->handle6->lpVtbl->BuildRaytracingAccelerationStructure(
+            d3d12CmdBuffer->handle6,
+            &buildInfo, 
+            0, 
+            nullptr);
+
+    } else {
+        fillVkBuildInfoD3D12(
+            info, 
+            geometries,
+            srcAsAddress, 
+            dstAs->address,
+            &buildInfo);
+
+        d3d12CmdBuffer->handle6->lpVtbl->BuildRaytracingAccelerationStructure(
+            d3d12CmdBuffer->handle6,
+            &buildInfo, 
+            0, 
+            nullptr);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdBeginRenderingD3D12(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info)
 {
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    D3D12_CPU_DESCRIPTOR_HANDLE colorAttachments[MAX_ATTACHMENTS];
+    D3D12_CPU_DESCRIPTOR_HANDLE depthStencilAttachment;
+    D3D12_CPU_DESCRIPTOR_HANDLE fsrAttachment;
+    for (int i = 0; i < info->colorAttachentCount; i++) {
+        ImageView* tmp = (ImageView*)info->colorAttachments[i].imageView;
+        colorAttachments[i] = tmp->cpuHandle;
+    }
 
+    ImageView* tmpDepth = (ImageView*)info->depthStencilAttachment->imageView;
+    if (tmpDepth) {
+        d3d12CmdBuffer->handle6->lpVtbl->OMSetRenderTargets(
+            d3d12CmdBuffer->handle6, 
+            info->colorAttachentCount, 
+            colorAttachments, 
+            FALSE, 
+            &tmpDepth->cpuHandle);
+
+    } else {
+        d3d12CmdBuffer->handle6->lpVtbl->OMSetRenderTargets(
+            d3d12CmdBuffer->handle6, 
+            info->colorAttachentCount, 
+            colorAttachments, 
+            FALSE, 
+            nullptr);
+    }
+
+    for (int i = 0; i < info->colorAttachentCount; i++) {
+        ImageView* tmp = (ImageView*)info->colorAttachments[i].imageView;
+        float color[4];
+        color[0] = info->colorAttachments[i].clearValue.color[0];
+        color[1] = info->colorAttachments[i].clearValue.color[1];
+        color[2] = info->colorAttachments[i].clearValue.color[2];
+        color[3] = info->colorAttachments[i].clearValue.color[3];
+
+        d3d12CmdBuffer->handle6->lpVtbl->ClearRenderTargetView(
+            d3d12CmdBuffer->handle6, 
+            colorAttachments[i], color, 0, nullptr);
+    }
+
+    if (tmpDepth) {
+        D3D12_CLEAR_FLAGS clearFlags = 0;
+        UINT8 stencil = 0;
+        float depth = 0;
+
+        if (info->depthStencilAttachment->loadOp == PAL_LOAD_OP_CLEAR) {
+            depth = info->depthStencilAttachment->clearValue.depth;
+            clearFlags |= D3D12_CLEAR_FLAG_DEPTH;
+        }
+
+        if (info->depthStencilAttachment->stencilLoadOp == PAL_LOAD_OP_CLEAR) {
+            stencil = (UINT8)info->depthStencilAttachment->clearValue.stencil;
+            clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
+        }
+
+        d3d12CmdBuffer->handle6->lpVtbl->ClearDepthStencilView(
+            d3d12CmdBuffer->handle6,
+            depthStencilAttachment, 
+            clearFlags, 
+            depth, 
+            stencil, 
+            0, 
+            nullptr);
+    }
+
+    if (info->fragmentShadingRateAttachment) {
+        ImageView* tmp = (ImageView*)info->fragmentShadingRateAttachment->imageView;
+        d3d12CmdBuffer->handle6->lpVtbl->RSSetShadingRateImage(
+            d3d12CmdBuffer->handle6,
+            tmp->image->handle);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdEndRenderingD3D12(PalCommandBuffer* cmdBuffer)
 {
-
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdCopyBufferD3D12(
