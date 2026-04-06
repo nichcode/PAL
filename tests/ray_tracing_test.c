@@ -91,7 +91,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -541,8 +541,7 @@ bool rayTracingTest()
     Uint64 instanceBufferSize = 0;
     result = palComputeInstanceBufferRequirements(
         device, 
-        1, 
-        nullptr, // we dont need the alignment. We are not doing suballocations
+        1,
         &instanceBufferSize);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -974,12 +973,12 @@ bool rayTracingTest()
         return false;
     }
 
-    // result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
-    // if (result != PAL_RESULT_SUCCESS) {
-    //     const char* error = palFormatResult(result);
-    //     palLog(nullptr, "Failed to trace rays: %s", error);
-    //     return false;
-    // }
+    result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to trace rays: %s", error);
+        return false;
+    }
 
     // set a barrier so we only read from the buffer after the shader has
     // written to it

@@ -2243,6 +2243,13 @@ static inline Uint32 alignVk(
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
+static inline Uint32 minVk(
+    Uint32 a,
+    Uint32 b)
+{
+    return (a < b) ? a : b;
+}
+
 static void fillVkBuildInfoVk(
     Uint32 count,
     PalAccelerationStructureBuildInfo* info,
@@ -6584,14 +6591,14 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         attachment->imageLayout = layout;
 
         // compute layer count and render area
-        layerCount = min(layerCount, imageView->range.layerCount);
-        renderWidth = min(renderWidth, imageView->image->info.width);
-        renderHeight = min(renderHeight, imageView->image->info.height);
+        layerCount = minVk(layerCount, imageView->range.layerCount);
+        renderWidth = minVk(renderWidth, imageView->image->info.width);
+        renderHeight = minVk(renderHeight, imageView->image->info.height);
 
         if (resolveImageView) {
-            layerCount = min(layerCount, resolveImageView->range.layerCount);
-            renderWidth = min(renderWidth, resolveImageView->image->info.width);
-            renderHeight = min(renderHeight, resolveImageView->image->info.height);
+            layerCount = minVk(layerCount, resolveImageView->range.layerCount);
+            renderWidth = minVk(renderWidth, resolveImageView->image->info.width);
+            renderHeight = minVk(renderHeight, resolveImageView->image->info.height);
         }
     }
 
@@ -6675,14 +6682,14 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         rendering.pStencilAttachment = &stencilAttachment;
 
         // compute layer count and render area
-        layerCount = min(layerCount, imageView->range.layerCount);
-        renderWidth = min(renderWidth, imageView->image->info.width);
-        renderHeight = min(renderHeight, imageView->image->info.height);
+        layerCount = minVk(layerCount, imageView->range.layerCount);
+        renderWidth = minVk(renderWidth, imageView->image->info.width);
+        renderHeight = minVk(renderHeight, imageView->image->info.height);
 
         if (resolveImageView) {
-            layerCount = min(layerCount, resolveImageView->range.layerCount);
-            renderWidth = min(renderWidth, resolveImageView->image->info.width);
-            renderHeight = min(renderHeight, resolveImageView->image->info.height);
+            layerCount = minVk(layerCount, resolveImageView->range.layerCount);
+            renderWidth = minVk(renderWidth, resolveImageView->image->info.width);
+            renderHeight = minVk(renderHeight, resolveImageView->image->info.height);
         }
     }
 
@@ -6701,9 +6708,9 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         rendering.pNext = &fsrInfo;
 
         // compute layer count and render area
-        layerCount = min(layerCount, imageView->range.layerCount);
-        renderWidth = min(renderWidth, imageView->image->info.width);
-        renderHeight = min(renderHeight, imageView->image->info.height);
+        layerCount = minVk(layerCount, imageView->range.layerCount);
+        renderWidth = minVk(renderWidth, imageView->image->info.width);
+        renderHeight = minVk(renderHeight, imageView->image->info.height);
     }
 
     rendering.layerCount = layerCount;
@@ -7313,12 +7320,14 @@ PalResult PAL_CALL cmdTraceRaysVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    // PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
-    // vkSbt->raygenAddress.deviceAddress = address;
+    VkStridedDeviceAddressRegionKHR raygenAddress = {0};
+    raygenAddress.size = vkSbt->raygenAddress.size;
+    raygenAddress.stride = vkSbt->raygenAddress.stride;
+    raygenAddress.deviceAddress = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
 
     vkCmdBuffer->device->cmdTraceRays(
         vkCmdBuffer->handle,
-        &vkSbt->raygenAddress,
+        &raygenAddress,
         &vkSbt->missAddress,
         &vkSbt->hitAddress,
         &vkSbt->callableAddress,
@@ -7797,29 +7806,30 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
 PalResult PAL_CALL computeInstanceBufferRequirementsVk(
     PalDevice* device,
     Uint32 instanceCount,
-    Uint32* outAlignment,
     Uint64* outSize)
 {
-    if (outSize) {
-        *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
-    }
-
-    if (outAlignment) {
-        *outAlignment = 16;
-    }
+    *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
     return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     PalDevice* device,
-    PalImage* image,
+    Uint32 imageFormatSize,
     PalBufferImageCopyInfo* copyInfo,
     Uint32* outBufferRowLength,
     Uint32* outBufferImageHeight,
-    Uint32* outAlignment,
     Uint64* outSize)
 {
-    // TODO: 
+    Uint32 length, height;
+    length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
+    height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
+    Uint32 rowPitch = length * imageFormatSize;
+    Uint32 slicePitch = rowPitch * height;
+
+    *outBufferRowLength = copyInfo->bufferRowLength;
+    *outBufferImageHeight = copyInfo->bufferImageHeight;
+    *outSize = slicePitch * copyInfo->imageDepth;
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL writeToInstanceBufferVk(
@@ -7847,10 +7857,40 @@ PalResult PAL_CALL writeToInstanceBufferVk(
 PalResult PAL_CALL writeToImageCopyStagingBufferVk(
     PalDevice* device,
     void* ptr,
+    void* srcData,
     PalBufferImageCopyInfo* copyInfo,
-    PalFormat imageFormat)
+    Uint32 imageFormatSize)
 {
-    // TODO: 
+    if (copyInfo->bufferRowLength == 0 && copyInfo->bufferImageHeight == 0) {
+        Uint64 size = copyInfo->imageWidth * copyInfo->imageHeight * copyInfo->imageDepth;
+        // normal path. Simple memcpy works
+        memcpy(ptr, srcData, size * imageFormatSize);
+        return PAL_RESULT_SUCCESS;
+    }
+
+    Uint32 length, height;
+    length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
+    height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
+    Uint32 rowPitch = length * imageFormatSize;
+    Uint32 slicePitch = rowPitch * height;
+
+    // manually offset the buffer with the provided offset
+    Uint8* dst = (Uint8*)ptr + copyInfo->bufferOffset;
+    const Uint8* src = (const Uint8*)srcData;
+    Uint64 tmpSizeDest = length * height * imageFormatSize;
+    Uint64 tmpSizeSrc = copyInfo->imageWidth * copyInfo->imageHeight * imageFormatSize;
+
+    // write to destination pointer
+    for (Uint32 z = 0; z < copyInfo->imageDepth; z++) {
+        for (Uint32 y = 0; y < copyInfo->imageWidth; y++) {
+            memcpy(
+                dst + z * tmpSizeDest + y * (length * imageFormatSize), 
+                src + z * tmpSizeSrc + y * (copyInfo->imageWidth * imageFormatSize), 
+                copyInfo->imageWidth * imageFormatSize);
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL bindBufferMemoryVk(

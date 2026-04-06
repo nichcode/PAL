@@ -3942,7 +3942,6 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
 PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
     PalDevice* device,
     Uint32 instanceCount,
-    Uint32* outAlignment,
     Uint64* outSize)
 {
 
@@ -3950,11 +3949,10 @@ PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
 
 PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
     PalDevice* device,
-    PalImage* image,
+    Uint32 imageFormatSize,
     PalBufferImageCopyInfo* copyInfo,
     Uint32* outBufferRowLength,
     Uint32* outBufferImageHeight,
-    Uint32* outAlignment,
     Uint64* outSize)
 {
     
@@ -3972,8 +3970,9 @@ PalResult PAL_CALL writeToInstanceBufferD3D12(
 PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
     PalDevice* device,
     void* ptr,
+    void* srcData,
     PalBufferImageCopyInfo* copyInfo,
-    PalFormat imageFormat)
+    Uint32 imageFormatSize)
 {
 
 }

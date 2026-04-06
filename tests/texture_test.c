@@ -578,9 +578,34 @@ bool textureTest()
     }
 
     // create staging buffer to transfer the data to the image
+    PalBufferImageCopyInfo bufferImageCopyInfo = {0};
+    bufferImageCopyInfo.ImageArrayLayerCount = 1;
+    bufferImageCopyInfo.imageWidth = TEXTURE_WIDTH;
+    bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
+    bufferImageCopyInfo.imageDepth = 1; // 2D image
+
+    Uint64 imageCopyStagingBufferSize = 0;
+    Uint32 bufferRowLength = 0;
+    Uint32 bufferImageHeight = 0;
+
+    result = palComputeImageCopyStagingBufferRequirements(
+        device, 
+        imageCreateInfo.format, 
+        &bufferImageCopyInfo, 
+        &bufferRowLength, 
+        &bufferImageHeight,
+        &imageCopyStagingBufferSize);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to compute image copy staging buffer info: %s", error);
+        return false;
+    }
+
+    // create staging buffer to transfer the data to the image
     PalBuffer* imageStagingBuffer = nullptr;
     PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
-    imageStagingBufferCreateInfo.size = TEXTURE_WIDTH * TEXTURE_HEIGHT * 4;
+    imageStagingBufferCreateInfo.size = imageCopyStagingBufferSize;
     imageStagingBufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC;
 
     result = palCreateBuffer(device, &imageStagingBufferCreateInfo, &imageStagingBuffer);
@@ -633,7 +658,20 @@ bool textureTest()
         return false;
     }
 
-    memcpy(data, texture, imageStagingBufferCreateInfo.size);
+    // write data to the mapped image copy staging buffer
+    result = palWriteToImageCopyStagingBuffer(
+        device, 
+        data, 
+        texture,
+        &bufferImageCopyInfo, 
+        imageCreateInfo.format);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to write to image copy staging buffer: %s", error);
+        return false;
+    }
+
     palUnmapBufferMemory(imageStagingBuffer);
 
     // use the first command buffer to upload the copy
@@ -698,12 +736,6 @@ bool textureTest()
         palLog(nullptr, "Failed to set image barrier: %s", error);
         return false;
     }
-
-    PalBufferImageCopyInfo bufferImageCopyInfo = {0};
-    bufferImageCopyInfo.ImageArrayLayerCount = 1;
-    bufferImageCopyInfo.imageWidth = TEXTURE_WIDTH;
-    bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
-    bufferImageCopyInfo.imageDepth = 1; // 2D image
 
     result = palCmdCopyBufferToImage(
         cmdBuffers[0], 
