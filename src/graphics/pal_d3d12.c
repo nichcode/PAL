@@ -923,9 +923,9 @@ static void fillVkBuildInfoD3D12(
         buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
     }
 
-    buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
     buildInfo->SourceAccelerationStructureData = srcAs;
     buildInfo->DestAccelerationStructureData = dstAs;
+    buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
 }
 
 // ==================================================
@@ -1077,7 +1077,7 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
             Adapter* tmp = &s_D3D12.adapters[i];
             tmp->handle = dxAdapters[i];
             tmp->tmpDevice = devices[i];
-            tmp->level = levels[i];
+            tmp->level = deviceLevels[i];
             outAdapters[i] = (PalAdapter*)tmp;
         }
         s_D3D12.adapterCount = *count;
@@ -3163,7 +3163,6 @@ void PAL_CALL destroyCommandPoolD3D12(PalCommandPool* pool)
         cmdBuffer->handle6->lpVtbl->Release(cmdBuffer->handle6);
         cmdBuffer->handle->lpVtbl->Release(cmdBuffer->handle);
         cmdBuffer->allocator->lpVtbl->Release(cmdBuffer->allocator);
-        palFree(s_D3D12.allocator, cmdBuffer);
     }
 
     palFree(s_D3D12.allocator, cmdPool->cmdBuffersData);
@@ -3953,10 +3952,12 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
     PalDevice* device,
     PalImage* image,
     PalBufferImageCopyInfo* copyInfo,
+    Uint32* outBufferRowLength,
+    Uint32* outBufferImageHeight,
     Uint32* outAlignment,
     Uint64* outSize)
 {
-
+    
 }
 
 PalResult PAL_CALL writeToInstanceBufferD3D12(

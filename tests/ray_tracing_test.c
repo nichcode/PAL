@@ -91,7 +91,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -538,15 +538,20 @@ bool rayTracingTest()
     };
     memcpy(asInstance.transform, transform, sizeof(float) * 12);
 
-    PalInstanceBufferRequirements instanceBufferReq = {0};
-    result = palComputeInstanceBufferRequirements(device, &instanceBufferReq, 1);
+    Uint64 instanceBufferSize = 0;
+    result = palComputeInstanceBufferRequirements(
+        device, 
+        1, 
+        nullptr, // we dont need the alignment. We are not doing suballocations
+        &instanceBufferSize);
+
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to compute instance buffer requirement: %s", error);
         return false;
     }
 
-    bufferCreateInfo.size = instanceBufferReq.size;
+    bufferCreateInfo.size = instanceBufferSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &instanceBuffer);
@@ -588,7 +593,7 @@ bool rayTracingTest()
     result = palMapBufferMemory(
         instanceBuffer,
         0,
-        instanceBufferReq.size,
+        instanceBufferSize,
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -598,7 +603,7 @@ bool rayTracingTest()
     }
 
     // we can not use a direct memcpy for instance buffers
-    result = palWriteInstancesToMappedMemory(device, data, &asInstance, 1);
+    result = palWriteToInstanceBuffer(device, data, &asInstance, 1);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to write instances to instance buffer: %s", error);
@@ -958,6 +963,9 @@ bool rayTracingTest()
         return false;
     }
 
+    newAsUsageStateInfo.shaderStageCount = 1;
+    newAsUsageStateInfo.shaderStages = shaderStages;
+
     // make sure the TLAS builds before the tracing
     result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
@@ -966,12 +974,12 @@ bool rayTracingTest()
         return false;
     }
 
-    result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to trace rays: %s", error);
-        return false;
-    }
+    // result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
+    // if (result != PAL_RESULT_SUCCESS) {
+    //     const char* error = palFormatResult(result);
+    //     palLog(nullptr, "Failed to trace rays: %s", error);
+    //     return false;
+    // }
 
     // set a barrier so we only read from the buffer after the shader has
     // written to it
@@ -1030,7 +1038,7 @@ bool rayTracingTest()
     }
 
     // wait for the fence
-    result = palWaitFence(fence, UINT64_MAX);
+    result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);

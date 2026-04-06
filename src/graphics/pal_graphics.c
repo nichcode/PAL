@@ -674,6 +674,8 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     PalDevice* device,
     PalImage* image,
     PalBufferImageCopyInfo* copyInfo,
+    Uint32* outBufferRowLength,
+    Uint32* outBufferImageHeight,
     Uint32* outAlignment,
     Uint64* outSize);
 
@@ -1540,6 +1542,8 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
     PalDevice* device,
     PalImage* image,
     PalBufferImageCopyInfo* copyInfo,
+    Uint32* outBufferRowLength,
+    Uint32* outBufferImageHeight,
     Uint32* outAlignment,
     Uint64* outSize);
 
@@ -4025,6 +4029,8 @@ PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     PalDevice* device,
     PalImage* image,
     PalBufferImageCopyInfo* copyInfo,
+    Uint32* outBufferRowLength,
+    Uint32* outBufferImageHeight,
     Uint32* outAlignment,
     Uint64* outSize)
 {
@@ -4040,6 +4046,8 @@ PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
         device, 
         image,
         copyInfo, 
+        outBufferRowLength,
+        outBufferImageHeight,
         outAlignment, 
         outSize);
 }

@@ -1046,7 +1046,7 @@ bool textureTest()
     palDestroyShader(fragmentShader);
 
     // wait for the vertices copy to be done
-    result = palWaitFence(fence, UINT64_MAX);
+    result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);

@@ -1983,12 +1983,22 @@ static Barrier barrierToVk(
         }
 
         case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+            barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+            // HACK: small performance lost for the case of a single scratch buffer used for
+            // BLAS and TLAS builds.
+            barrier.access |= VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+
             for (int i = 0; i < stageCount; i++) {
+                if (i == 0) {
+                    barrier.stages = 0;
+                }
+
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
+                barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
             }
 
-            barrier.stages |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-            barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
@@ -2244,23 +2254,10 @@ static void fillVkBuildInfoVk(
     VkAccelerationStructureBuildGeometryInfoKHR* buildInfo)
 {
     for (int i = 0; i < count; i++) {
-        if (maxPrimities) {
-            maxPrimities[i] = info->geometries[i].primitiveCount;
-        }
-
         // fill vulkan geometry struct
         VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
         tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR; // always opaque
-
-        // range info
-        if (rangeInfos) {
-            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
-            rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
-            rangeInfo->firstVertex = 0;     // PAL does not allow setting this
-            rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
-            rangeInfo->transformOffset = 0; // PAL does not allow setting this
-        }
 
         if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
             tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
@@ -2273,9 +2270,33 @@ static void fillVkBuildInfoVk(
             address.deviceAddress = info->instanceBufferAddress;
             data->data = address;
 
-            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
-            rangeInfo->primitiveCount = info->instanceCount;
+            if (maxPrimities) {
+                maxPrimities[i] = info->instanceCount;
+            }
+
+            // range info
+            if (rangeInfos) {
+                VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
+                rangeInfo->primitiveCount = info->instanceCount;
+                rangeInfo->firstVertex = 0;     // PAL does not allow setting this
+                rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
+                rangeInfo->transformOffset = 0; // PAL does not allow setting this
+            }
             break;
+
+        } else {
+            if (maxPrimities) {
+                maxPrimities[i] = info->geometries[i].primitiveCount;
+            }
+
+            // range info
+            if (rangeInfos) {
+                VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
+                rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
+                rangeInfo->firstVertex = 0;     // PAL does not allow setting this
+                rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
+                rangeInfo->transformOffset = 0; // PAL does not allow setting this
+            }
         }
 
         if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
@@ -2336,15 +2357,15 @@ static void fillVkBuildInfoVk(
     // build hints
     buildInfo->flags = 0;
     if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD) {
-        buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+        buildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
     }
 
     if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE) {
-        buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        buildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     }
 
     if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY) {
-        buildInfo->flags = VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
+        buildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
     }
 
     buildInfo->geometryCount = count;
@@ -5903,7 +5924,7 @@ PalResult PAL_CALL waitFenceVk(
         }
     }
 
-    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeout);
+    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeInNanoseconds);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -6435,6 +6456,10 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     VkAccelerationStructureKHR srcAs = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
+    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     // cache these for top level as
     VkAccelerationStructureBuildRangeInfoKHR cachedRangeInfo = {0};
     VkAccelerationStructureGeometryKHR cachedGeometries = {0};
@@ -6443,10 +6468,6 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
         geometryCount = 1;
         rangeInfos = &cachedRangeInfo;
         geometries = &cachedGeometries;
-    }
-
-    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     if (tmpAs) {
@@ -7292,8 +7313,8 @@ PalResult PAL_CALL cmdTraceRaysVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
-    vkSbt->raygenAddress.deviceAddress = address;
+    // PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
+    // vkSbt->raygenAddress.deviceAddress = address;
 
     vkCmdBuffer->device->cmdTraceRays(
         vkCmdBuffer->handle,
@@ -7630,18 +7651,18 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     Device* vkDevice = (Device*)device;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
+    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     // cache these for top level as
     VkAccelerationStructureGeometryKHR cachedGeometries = {0};
-    Uint32 cachedPrimitives[1];
+    Uint32 cachedPrimitives = 0;
     Uint32 geometryCount = info->geometryCount;
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
         geometryCount = 1;
         geometries = &cachedGeometries;
-        maxPrimities = cachedPrimitives;
-    }
-
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        maxPrimities = &cachedPrimitives;
     }
 
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
@@ -7779,8 +7800,13 @@ PalResult PAL_CALL computeInstanceBufferRequirementsVk(
     Uint32* outAlignment,
     Uint64* outSize)
 {
-    *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
-    *outAlignment = 16;
+    if (outSize) {
+        *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
+    }
+
+    if (outAlignment) {
+        *outAlignment = 16;
+    }
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7788,10 +7814,12 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     PalDevice* device,
     PalImage* image,
     PalBufferImageCopyInfo* copyInfo,
+    Uint32* outBufferRowLength,
+    Uint32* outBufferImageHeight,
     Uint32* outAlignment,
     Uint64* outSize)
 {
-    // TODO:
+    // TODO: 
 }
 
 PalResult PAL_CALL writeToInstanceBufferVk(
@@ -8762,35 +8790,17 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     }
 
     // shader groups
-    Uint32 numRaygen = 0;
-    Uint32 numMiss = 0;
-    Uint32 numHit = 0;
-    Uint32 numCallable = 0;
     for (int i = 0; i < info->shaderGroupCount; i++) {
         VkRayTracingShaderGroupCreateInfoKHR* group = &groups[i];
         group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
         if (info->shaderGroups[i].type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
 
-            // check which general shader it is
-            Shader* tmp = (Shader*)info->shaders[info->shaderGroups[i].generalShaderIndex];
-            if (tmp->info.stage == VK_SHADER_STAGE_CALLABLE_BIT_KHR) {
-                numCallable++;
-
-            } else if (tmp->info.stage == VK_SHADER_STAGE_MISS_BIT_KHR) {
-                numMiss++;
-
-            } else {
-                numRaygen++;
-            }
-
         } else if (info->shaderGroups[i].type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-            numHit++;
 
         } else {
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-            numHit++;
         }
 
         group->anyHitShader = info->shaderGroups[i].anyHitShaderIndex;
@@ -8815,13 +8825,12 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         &s_Vk.vkAllocator,
         &pipeline->handle);
 
+    palFree(s_Vk.allocator, groups);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
-        palFree(s_Vk.allocator, groups);
         return resultFromVk(result);
     }
 
-    palFree(s_Vk.allocator, groups);
     pipeline->device = vkDevice;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;

@@ -3674,6 +3674,8 @@ typedef struct {
         PalDevice* device,
         PalImage* image,
         PalBufferImageCopyInfo* copyInfo,
+        Uint32* outBufferRowLength,
+        Uint32* outBufferImageHeight,
         Uint32* outAlignment,
         Uint64* outSize);
 
@@ -6651,14 +6653,19 @@ PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
  * `outSize` and `outAlignment` are the size and alignment which must be used to create the 
  * image copy staging buffer. This will be computed with regards to the provided `image` 
  * and `copyInfo`. This function must be used and required for all image copy staging buffers.
+ * This is used with image copy commands.
  * 
  * PalBufferImageCopyInfo::bufferRowLength and PalBufferImageCopyInfo::bufferImageHeight are hints.
- * The driver might used it defaults if the requested is not supported.
+ * The driver might used it defaults if the requested is not supported. Check `outBufferRowLength`
+ * and `outBufferImageHeight` to see the values the driver used. Set the new values to the 
+ * `copyInfo` before writing to the buffer with `palWriteToImageCopyStagingBuffer()`.
  *
  * @param[in] device Device to compute image copy staging buffer requirements with.
  * @param[in] image Destination image.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * Must not be nullptr.
+ * @param[out] outBufferRowLength Pointer to a Uint32 to recieve the required buffer row length.
+ * @param[out] outBufferImageHeight Pointer to a Uint32 to recieve the required buffer imag height.
  * @param[out] outAlignment Pointer to a Uint32 to recieve the required alignment.
  * @param[out] outSize Pointer to a Uint64 to recieve the required size.
  *
@@ -6674,6 +6681,8 @@ PAL_API PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     PalDevice* device,
     PalImage* image,
     PalBufferImageCopyInfo* copyInfo,
+    Uint32* outBufferRowLength,
+    Uint32* outBufferImageHeight,
     Uint32* outAlignment,
     Uint64* outSize);
 

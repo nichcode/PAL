@@ -120,7 +120,7 @@ bool computeTest()
     PalAdapterFeatures adapterFeatures = 0;
     bool hasComputeQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
-        adapter = adapters[1]; // TODO: use the correct i index
+        adapter = adapters[i]; // TODO: use the correct i index
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -601,7 +601,7 @@ bool computeTest()
     }
 
     // wait for the fence
-    result = palWaitFence(fence, UINT64_MAX);
+    result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);
