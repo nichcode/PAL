@@ -3671,7 +3671,7 @@ typedef struct {
      */
     PalResult PAL_CALL (*computeImageCopyStagingBufferRequirements)(
         PalDevice* device,
-        Uint32 imageFormatSize,
+        PalFormat imageFormat,
         PalBufferImageCopyInfo* copyInfo,
         Uint32* outBufferRowLength,
         Uint32* outBufferImageHeight,
@@ -3697,8 +3697,8 @@ typedef struct {
         PalDevice* device,
         void* ptr,
         void* srcData,
-        PalBufferImageCopyInfo* copyInfo,
-        Uint32 imageFormatSize);
+        PalFormat imageFormat,
+        PalBufferImageCopyInfo* copyInfo);
 
     /**
      * Backend implementation of ::palBindBufferMemory.
@@ -6713,9 +6713,9 @@ PAL_API PalResult PAL_CALL palWriteToInstanceBuffer(
  * @param[in] device The device. Must match the one used to create the image copy staging buffer.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
  * @param[out] srcData Pointer to the CPU visible memory with the data.
+ * @param[in] imageFormat Destination image format.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * Must not be nullptr.
- * @param[in] imageFormat Destination image format.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6729,8 +6729,8 @@ PAL_API PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
     PalDevice* device,
     void* ptr,
     void* srcData,
-    PalBufferImageCopyInfo* copyInfo,
-    PalFormat imageFormat);
+    PalFormat imageFormat,
+    PalBufferImageCopyInfo* copyInfo);
 
 /**
  * @brief Bind an allocated memory to a buffer.

@@ -2385,6 +2385,115 @@ static void fillVkBuildInfoVk(
     buildInfo->scratchData = scratchData;
 }
 
+static Uint32 getFormatSizeVk(PalFormat format)
+{
+    switch (format) {
+        case PAL_FORMAT_R8_UNORM:
+        case PAL_FORMAT_R8_SNORM:
+        case PAL_FORMAT_R8_UINT:
+        case PAL_FORMAT_R8_SINT:
+        case PAL_FORMAT_R8_SRGB:
+        case PAL_FORMAT_S8_UINT:
+            return 1;
+
+        case PAL_FORMAT_R16_UNORM:
+        case PAL_FORMAT_R16_SNORM:
+        case PAL_FORMAT_R16_UINT:
+        case PAL_FORMAT_R16_SINT:
+        case PAL_FORMAT_R16_SFLOAT:
+        case PAL_FORMAT_R8G8_UNORM:
+        case PAL_FORMAT_R8G8_SNORM:
+        case PAL_FORMAT_R8G8_UINT:
+        case PAL_FORMAT_R8G8_SINT:
+        case PAL_FORMAT_R8G8_SRGB:
+        case PAL_FORMAT_D16_UNORM:
+            return 2;
+
+        case PAL_FORMAT_R8G8B8_UNORM:
+        case PAL_FORMAT_R8G8B8_SNORM:
+        case PAL_FORMAT_R8G8B8_UINT:
+        case PAL_FORMAT_R8G8B8_SINT:
+        case PAL_FORMAT_R8G8B8_SRGB:
+        case PAL_FORMAT_B8G8R8_UNORM:
+        case PAL_FORMAT_B8G8R8_SNORM:
+        case PAL_FORMAT_B8G8R8_UINT:
+        case PAL_FORMAT_B8G8R8_SINT:
+        case PAL_FORMAT_B8G8R8_SRGB:
+        case PAL_FORMAT_D16_UNORM_S8_UINT:
+            return 3;
+
+        case PAL_FORMAT_R32_UINT:
+        case PAL_FORMAT_R32_SINT:
+        case PAL_FORMAT_R32_SFLOAT:
+        case PAL_FORMAT_R16G16_UNORM:
+        case PAL_FORMAT_R16G16_SNORM:
+        case PAL_FORMAT_R16G16_UINT:
+        case PAL_FORMAT_R16G16_SINT:
+        case PAL_FORMAT_R16G16_SFLOAT:
+        case PAL_FORMAT_R8G8B8A8_UNORM:
+        case PAL_FORMAT_R8G8B8A8_SNORM:
+        case PAL_FORMAT_R8G8B8A8_UINT:
+        case PAL_FORMAT_R8G8B8A8_SINT:
+        case PAL_FORMAT_R8G8B8A8_SRGB:
+        case PAL_FORMAT_B8G8R8A8_UNORM:
+        case PAL_FORMAT_B8G8R8A8_SNORM:
+        case PAL_FORMAT_B8G8R8A8_UINT:
+        case PAL_FORMAT_B8G8R8A8_SINT:
+        case PAL_FORMAT_B8G8R8A8_SRGB:
+        case PAL_FORMAT_D32_SFLOAT:
+        case PAL_FORMAT_D24_UNORM_S8_UINT:
+            return 4;
+
+        case PAL_FORMAT_D32_SFLOAT_S8_UINT:
+            return 5;
+
+        case PAL_FORMAT_R16G16B16_UNORM:
+        case PAL_FORMAT_R16G16B16_SNORM:
+        case PAL_FORMAT_R16G16B16_UINT:
+        case PAL_FORMAT_R16G16B16_SINT:
+        case PAL_FORMAT_R16G16B16_SFLOAT:
+            return 6;
+
+        case PAL_FORMAT_R64_UINT:
+        case PAL_FORMAT_R64_SINT:
+        case PAL_FORMAT_R64_SFLOAT:
+        case PAL_FORMAT_R32G32_UINT:
+        case PAL_FORMAT_R32G32_SINT:
+        case PAL_FORMAT_R32G32_SFLOAT:
+        case PAL_FORMAT_R16G16B16A16_UNORM:
+        case PAL_FORMAT_R16G16B16A16_SNORM:
+        case PAL_FORMAT_R16G16B16A16_UINT:
+        case PAL_FORMAT_R16G16B16A16_SINT:
+        case PAL_FORMAT_R16G16B16A16_SFLOAT:
+            return 8;
+
+        case PAL_FORMAT_R32G32B32_UINT:
+        case PAL_FORMAT_R32G32B32_SINT:
+        case PAL_FORMAT_R32G32B32_SFLOAT:
+            return 12;
+
+        case PAL_FORMAT_R64G64_UINT:
+        case PAL_FORMAT_R64G64_SINT:
+        case PAL_FORMAT_R64G64_SFLOAT:
+        case PAL_FORMAT_R32G32B32A32_UINT:
+        case PAL_FORMAT_R32G32B32A32_SINT:
+        case PAL_FORMAT_R32G32B32A32_SFLOAT:
+            return 16;
+
+        case PAL_FORMAT_R64G64B64_UINT:
+        case PAL_FORMAT_R64G64B64_SINT:
+        case PAL_FORMAT_R64G64B64_SFLOAT:
+            return 24;
+
+        case PAL_FORMAT_R64G64B64A64_UINT:
+        case PAL_FORMAT_R64G64B64A64_SINT:
+        case PAL_FORMAT_R64G64B64A64_SFLOAT:
+            return 32;
+    }
+
+    return 0;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -7814,7 +7923,7 @@ PalResult PAL_CALL computeInstanceBufferRequirementsVk(
 
 PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     PalDevice* device,
-    Uint32 imageFormatSize,
+    PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
     Uint32* outBufferRowLength,
     Uint32* outBufferImageHeight,
@@ -7823,7 +7932,7 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     Uint32 length, height;
     length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
     height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
-    Uint32 rowPitch = length * imageFormatSize;
+    Uint32 rowPitch = length * getFormatSizeVk(imageFormat);
     Uint32 slicePitch = rowPitch * height;
 
     *outBufferRowLength = copyInfo->bufferRowLength;
@@ -7858,9 +7967,10 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
     PalDevice* device,
     void* ptr,
     void* srcData,
-    PalBufferImageCopyInfo* copyInfo,
-    Uint32 imageFormatSize)
+    PalFormat imageFormat,
+    PalBufferImageCopyInfo* copyInfo)
 {
+    Uint32 imageFormatSize = getFormatSizeVk(imageFormat);
     if (copyInfo->bufferRowLength == 0 && copyInfo->bufferImageHeight == 0) {
         Uint64 size = copyInfo->imageWidth * copyInfo->imageHeight * copyInfo->imageDepth;
         // normal path. Simple memcpy works

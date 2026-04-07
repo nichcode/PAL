@@ -45,6 +45,7 @@ freely, subject to the following restrictions:
 #endif // D3D_FEATURE_LEVEL_12_2
 
 #define MAX_ATTACHMENTS 32
+#define TEXTURE_PITCH 256
 
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
@@ -926,6 +927,122 @@ static void fillVkBuildInfoD3D12(
     buildInfo->SourceAccelerationStructureData = srcAs;
     buildInfo->DestAccelerationStructureData = dstAs;
     buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
+}
+
+static Uint32 getFormatSizeD3D12(PalFormat format)
+{
+    switch (format) {
+        case PAL_FORMAT_R8_UNORM:
+        case PAL_FORMAT_R8_SNORM:
+        case PAL_FORMAT_R8_UINT:
+        case PAL_FORMAT_R8_SINT:
+        case PAL_FORMAT_R8_SRGB:
+        case PAL_FORMAT_S8_UINT:
+            return 1;
+
+        case PAL_FORMAT_R16_UNORM:
+        case PAL_FORMAT_R16_SNORM:
+        case PAL_FORMAT_R16_UINT:
+        case PAL_FORMAT_R16_SINT:
+        case PAL_FORMAT_R16_SFLOAT:
+        case PAL_FORMAT_R8G8_UNORM:
+        case PAL_FORMAT_R8G8_SNORM:
+        case PAL_FORMAT_R8G8_UINT:
+        case PAL_FORMAT_R8G8_SINT:
+        case PAL_FORMAT_R8G8_SRGB:
+        case PAL_FORMAT_D16_UNORM:
+            return 2;
+
+        case PAL_FORMAT_R8G8B8_UNORM:
+        case PAL_FORMAT_R8G8B8_SNORM:
+        case PAL_FORMAT_R8G8B8_UINT:
+        case PAL_FORMAT_R8G8B8_SINT:
+        case PAL_FORMAT_R8G8B8_SRGB:
+        case PAL_FORMAT_B8G8R8_UNORM:
+        case PAL_FORMAT_B8G8R8_SNORM:
+        case PAL_FORMAT_B8G8R8_UINT:
+        case PAL_FORMAT_B8G8R8_SINT:
+        case PAL_FORMAT_B8G8R8_SRGB:
+        case PAL_FORMAT_D16_UNORM_S8_UINT:
+            return 3;
+
+        case PAL_FORMAT_R32_UINT:
+        case PAL_FORMAT_R32_SINT:
+        case PAL_FORMAT_R32_SFLOAT:
+        case PAL_FORMAT_R16G16_UNORM:
+        case PAL_FORMAT_R16G16_SNORM:
+        case PAL_FORMAT_R16G16_UINT:
+        case PAL_FORMAT_R16G16_SINT:
+        case PAL_FORMAT_R16G16_SFLOAT:
+        case PAL_FORMAT_R8G8B8A8_UNORM:
+        case PAL_FORMAT_R8G8B8A8_SNORM:
+        case PAL_FORMAT_R8G8B8A8_UINT:
+        case PAL_FORMAT_R8G8B8A8_SINT:
+        case PAL_FORMAT_R8G8B8A8_SRGB:
+        case PAL_FORMAT_B8G8R8A8_UNORM:
+        case PAL_FORMAT_B8G8R8A8_SNORM:
+        case PAL_FORMAT_B8G8R8A8_UINT:
+        case PAL_FORMAT_B8G8R8A8_SINT:
+        case PAL_FORMAT_B8G8R8A8_SRGB:
+        case PAL_FORMAT_D32_SFLOAT:
+        case PAL_FORMAT_D24_UNORM_S8_UINT:
+            return 4;
+
+        case PAL_FORMAT_D32_SFLOAT_S8_UINT:
+            return 5;
+
+        case PAL_FORMAT_R16G16B16_UNORM:
+        case PAL_FORMAT_R16G16B16_SNORM:
+        case PAL_FORMAT_R16G16B16_UINT:
+        case PAL_FORMAT_R16G16B16_SINT:
+        case PAL_FORMAT_R16G16B16_SFLOAT:
+            return 6;
+
+        case PAL_FORMAT_R64_UINT:
+        case PAL_FORMAT_R64_SINT:
+        case PAL_FORMAT_R64_SFLOAT:
+        case PAL_FORMAT_R32G32_UINT:
+        case PAL_FORMAT_R32G32_SINT:
+        case PAL_FORMAT_R32G32_SFLOAT:
+        case PAL_FORMAT_R16G16B16A16_UNORM:
+        case PAL_FORMAT_R16G16B16A16_SNORM:
+        case PAL_FORMAT_R16G16B16A16_UINT:
+        case PAL_FORMAT_R16G16B16A16_SINT:
+        case PAL_FORMAT_R16G16B16A16_SFLOAT:
+            return 8;
+
+        case PAL_FORMAT_R32G32B32_UINT:
+        case PAL_FORMAT_R32G32B32_SINT:
+        case PAL_FORMAT_R32G32B32_SFLOAT:
+            return 12;
+
+        case PAL_FORMAT_R64G64_UINT:
+        case PAL_FORMAT_R64G64_SINT:
+        case PAL_FORMAT_R64G64_SFLOAT:
+        case PAL_FORMAT_R32G32B32A32_UINT:
+        case PAL_FORMAT_R32G32B32A32_SINT:
+        case PAL_FORMAT_R32G32B32A32_SFLOAT:
+            return 16;
+
+        case PAL_FORMAT_R64G64B64_UINT:
+        case PAL_FORMAT_R64G64B64_SINT:
+        case PAL_FORMAT_R64G64B64_SFLOAT:
+            return 24;
+
+        case PAL_FORMAT_R64G64B64A64_UINT:
+        case PAL_FORMAT_R64G64B64A64_SINT:
+        case PAL_FORMAT_R64G64B64A64_SFLOAT:
+            return 32;
+    }
+
+    return 0;
+}
+
+static inline Uint32 alignD3D12(
+    Uint32 value,
+    Uint32 alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
 }
 
 // ==================================================
@@ -3628,7 +3745,44 @@ PalResult PAL_CALL cmdCopyBufferToImageD3D12(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-    // TODO: 
+    CommandBuffer* d3d12CmdBuffer = (CommandBuffer*)cmdBuffer;
+    Image* dst = (Image*)dstImage;
+    Buffer* src = (Buffer*)srcBuffer;
+
+    D3D12_TEXTURE_COPY_LOCATION dstLocation = {0};
+    dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dstLocation.pResource = dst->handle;
+
+    D3D12_TEXTURE_COPY_LOCATION srcLocation = {0};
+    srcLocation.pResource = src->handle;
+    srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrint = &srcLocation.PlacedFootprint;
+
+    footPrint->Offset = copyInfo->bufferOffset;
+    footPrint->Footprint.Width = copyInfo->imageWidth;
+    footPrint->Footprint.Height = copyInfo->imageHeight;
+    footPrint->Footprint.Depth = copyInfo->imageDepth;
+    footPrint->Footprint.Format = formatToD3D12(dst->info.format);
+
+    Uint32 imageFormatSize = getFormatSizeVk(dst->info.format);
+    Uint64 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    footPrint->Footprint.RowPitch = (UINT)rowPitch;
+
+    D3D12_BOX box = {0};
+    box.right = copyInfo->imageWidth;
+    box.bottom= copyInfo->imageHeight;
+    box.back = copyInfo->imageDepth;
+
+    d3d12CmdBuffer->handle6->lpVtbl->CopyTextureRegion(
+        d3d12CmdBuffer->handle6, 
+        &dstLocation, 
+        copyInfo->imageOffsetX, 
+        copyInfo->imageOffsetY, 
+        copyInfo->imageOffsetZ, 
+        &srcLocation, 
+        &box);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdCopyImageD3D12(

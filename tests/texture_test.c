@@ -663,8 +663,8 @@ bool textureTest()
         device, 
         data, 
         texture,
-        &bufferImageCopyInfo, 
-        imageCreateInfo.format);
+        imageCreateInfo.format,
+        &bufferImageCopyInfo);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
