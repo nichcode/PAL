@@ -492,6 +492,7 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
+    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets);
 
@@ -1359,6 +1360,7 @@ PalResult PAL_CALL cmdBindVertexBuffersD3D12(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
+    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets);
 
@@ -3450,6 +3452,7 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
+    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets)
 {
@@ -3457,11 +3460,17 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !buffers || !offsets) {
+    if (!cmdBuffer || !buffers || !strides || !offsets) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdBindVertexBuffers(cmdBuffer, firstSlot, count, buffers, offsets);
+    return cmdBuffer->backend->cmdBindVertexBuffers(
+        cmdBuffer, 
+        firstSlot, 
+        count, 
+        strides, 
+        buffers, 
+        offsets);
 }
 
 PalResult PAL_CALL palCmdBindIndexBuffer(

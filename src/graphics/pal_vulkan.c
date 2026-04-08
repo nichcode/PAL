@@ -1837,13 +1837,6 @@ static Barrier barrierToVk(
             return barrier;
         }
 
-        case PAL_USAGE_STATE_COLOR_ATTACHMENT_READ: {
-            barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
-            barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR;
-            barrier.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            return barrier;
-        }
-
         case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE: {
             barrier.stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR;
@@ -7081,6 +7074,7 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
+    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets)
 {

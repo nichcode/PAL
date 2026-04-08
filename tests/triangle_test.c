@@ -873,8 +873,16 @@ bool triangleTest()
         }
 
         // bind vertex buffer
+        Uint32 strides[] = { 20 };
         Uint64 offset[] = {0};
-        result = palCmdBindVertexBuffers(cmdBuffers[currentFrame], 0, 1, &vertexBuffer, offset);
+        result = palCmdBindVertexBuffers(
+            cmdBuffers[currentFrame], 
+            0, 
+            1, 
+            strides, 
+            &vertexBuffer, 
+            offset);
+            
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind vertex buffer: %s", error);

@@ -1299,7 +1299,6 @@ typedef enum {
     PAL_USAGE_STATE_UNDEFINED,
 
     PAL_USAGE_STATE_PRESENT,
-    PAL_USAGE_STATE_COLOR_ATTACHMENT_READ,
     PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE,
     PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ,
     PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE,
@@ -3345,6 +3344,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         Uint32 firstSlot,
         Uint32 count,
+        Uint32* strides,
         PalBuffer** buffers,
         Uint64* offsets);
 
@@ -5812,6 +5812,7 @@ PAL_API PalResult PAL_CALL palCmdSetScissors(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] firstSlot Index of the first vertex buffer binding slot.
  * @param[in] count Number of vertex buffers to bind.
+ * @param[in] strides Pointer to an array of strides for each vertex buffer.
  * @param[in] buffers Pointer to an array of vertex buffers.
  * @param[in] offsets Pointer to an array of offsets in bytes into each vertex buffer.
  *
@@ -5827,6 +5828,7 @@ PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
+    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets);
 
