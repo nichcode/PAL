@@ -1088,7 +1088,8 @@ static D3D12_RESOURCE_STATES barrierToD3D12(
             return D3D12_RESOURCE_STATE_COPY_SOURCE;
         }
 
-        case PAL_USAGE_STATE_TRANSFER_WRITE: {
+        case PAL_USAGE_STATE_TRANSFER_WRITE:
+        case PAL_USAGE_STATE_HOST_READ: {
             return D3D12_RESOURCE_STATE_COPY_DEST;
         }
 
@@ -1105,43 +1106,30 @@ static D3D12_RESOURCE_STATES barrierToD3D12(
         }
 
         case PAL_USAGE_STATE_SHADER_READ: {
-            // TODO: continue
-            return 0;
+            if (stageCount == 1) {
+                if (shaderStages[0] == PAL_SHADER_STAGE_FRAGMENT) {
+                    return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+                } else {
+                    return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+                }
+            } else {
+                return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+            }
         }
 
-        case PAL_USAGE_STATE_SHADER_WRITE: {
-            // TODO: continue
-            return 0;
-        }
-
-        case PAL_USAGE_STATE_STORAGE_READ: {
-            // TODO: continue
-            return 0;
-        }
-
+        case PAL_USAGE_STATE_STORAGE_READ:
+        case PAL_USAGE_STATE_SHADER_WRITE:
         case PAL_USAGE_STATE_STORAGE_WRITE: {
-            // TODO: continue
-            return 0;
-        }
-
-        case PAL_USAGE_STATE_HOST_READ: {
-            // TODO: continue
-            return 0;
+            return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         }
 
         case PAL_USAGE_STATE_HOST_WRITE: {
-            // TODO: continue
-            return 0;
+            return D3D12_RESOURCE_STATE_GENERIC_READ;
         }
 
-        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ: {
-            // TODO: continue
-            return 0;
-        }
-
+        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ:
         case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
-            // TODO: continue
-            return 0;
+            return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
         }
     }
 
@@ -4288,19 +4276,35 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdMemoryBarrierD3D12(
+PalResult PAL_CALL cmdAccelerationStructureBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalUsageStateInfo* oldsUsageStateInfo,
+    PalAccelerationStructure* as,
+    PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
-    // TODO:
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(d3dCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    AccelerationStructure* d3dAS = (AccelerationStructure*)as;
+    D3D12_RESOURCE_STATES old, new;
+
+    old = barrierToD3D12(
+        oldUsageStateInfo->shaderStageCount, 
+        oldUsageStateInfo->usageState, 
+        oldUsageStateInfo->shaderStages);
+
+    new = barrierToD3D12(
+        newUsageStateInfo->shaderStageCount, 
+        newUsageStateInfo->usageState, 
+        newUsageStateInfo->shaderStages);
+
     D3D12_RESOURCE_BARRIER barrier = {0};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    // barrier.Transition.pResource
-    // barrier.Transition.
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = d3dAS->handle;
 
-
+    d3dCmdBuffer->handle6->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle6, 1, &barrier);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4311,7 +4315,8 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
-
+    // TODO: 
+    
 }
 
 PalResult PAL_CALL cmdBufferBarrierD3D12(

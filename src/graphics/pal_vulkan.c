@@ -7235,12 +7235,17 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdMemoryBarrierVk(
+PalResult PAL_CALL cmdAccelerationStructureBarrierVk(
     PalCommandBuffer* cmdBuffer,
+    PalAccelerationStructure* as,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     VkMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
 

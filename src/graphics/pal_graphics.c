@@ -539,9 +539,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalBuffer* countBuffer,
     Uint32 maxDrawCount);
 
-PalResult PAL_CALL cmdMemoryBarrierVk(
+PalResult PAL_CALL cmdAccelerationStructureBarrierVk(
     PalCommandBuffer* cmdBuffer,
-    PalUsageStateInfo* oldsUsageStateInfo,
+    PalAccelerationStructure* as,
+    PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo);
 
 PalResult PAL_CALL cmdImageBarrierVk(
@@ -901,7 +902,7 @@ static PalGraphicsBackend s_VkBackend = {
     .cmdDrawIndexed = cmdDrawIndexedVk,
     .cmdDrawIndexedIndirect = cmdDrawIndexedIndirectVk,
     .cmdDrawIndexedIndirectCount = cmdDrawIndexedIndirectCountVk,
-    .cmdMemoryBarrier = cmdMemoryBarrierVk,
+    .cmdAccelerationStructureBarrier = cmdAccelerationStructureBarrierVk,
     .cmdImageBarrier = cmdImageBarrierVk,
     .cmdBufferBarrier = cmdBufferBarrierVk,
     .cmdDispatch = cmdDispatchVk,
@@ -1407,9 +1408,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     PalBuffer* countBuffer,
     Uint32 maxDrawCount);
 
-PalResult PAL_CALL cmdMemoryBarrierD3D12(
+PalResult PAL_CALL cmdAccelerationStructureBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalUsageStateInfo* oldsUsageStateInfo,
+    PalAccelerationStructure* as,
+    PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo);
 
 PalResult PAL_CALL cmdImageBarrierD3D12(
@@ -1769,7 +1771,7 @@ static PalGraphicsBackend s_D3D12Backend = {
     .cmdDrawIndexed = cmdDrawIndexedD3D12,
     .cmdDrawIndexedIndirect = cmdDrawIndexedIndirectD3D12,
     .cmdDrawIndexedIndirectCount = cmdDrawIndexedIndirectCountD3D12,
-    .cmdMemoryBarrier = cmdMemoryBarrierD3D12,
+    .cmdAccelerationStructureBarrier = cmdAccelerationStructureBarrierD3D12,
     .cmdImageBarrier = cmdImageBarrierD3D12,
     .cmdBufferBarrier = cmdBufferBarrierD3D12,
     .cmdDispatch = cmdDispatchD3D12,
@@ -1975,7 +1977,7 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->cmdDrawIndexed                        ||
         !backend->cmdDrawIndexedIndirect                ||
         !backend->cmdDrawIndexedIndirectCount           ||
-        !backend->cmdMemoryBarrier                      ||
+        !backend->cmdAccelerationStructureBarrier       ||
         !backend->cmdImageBarrier                       ||
         !backend->cmdBufferBarrier                      ||
         !backend->cmdDispatch                           ||
@@ -3608,8 +3610,9 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
         maxDrawCount);
 }
 
-PalResult PAL_CALL palCmdMemoryBarrier(
+PalResult PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
+    PalAccelerationStructure* as,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
@@ -3617,11 +3620,15 @@ PalResult PAL_CALL palCmdMemoryBarrier(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !oldUsageStateInfo || !newUsageStateInfo) {
+    if (!cmdBuffer || !as || !oldUsageStateInfo || !newUsageStateInfo) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdMemoryBarrier(cmdBuffer, oldUsageStateInfo, newUsageStateInfo);
+    return cmdBuffer->backend->cmdAccelerationStructureBarrier(
+        cmdBuffer, 
+        as,
+        oldUsageStateInfo, 
+        newUsageStateInfo);
 }
 
 PalResult PAL_CALL palCmdImageBarrier(

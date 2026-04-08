@@ -3427,12 +3427,13 @@ typedef struct {
         Uint32 count);
 
     /**
-     * Backend implementation of ::palCmdMemoryBarrier.
+     * Backend implementation of ::palCmdAccelerationStructureBarrier.
      *
-     * Must obey the rules and semantics documented in palCmdMemoryBarrier().
+     * Must obey the rules and semantics documented in palCmdAccelerationStructureBarrier().
      */
-    PalResult PAL_CALL (*cmdMemoryBarrier)(
+    PalResult PAL_CALL (*cmdAccelerationStructureBarrier)(
         PalCommandBuffer* cmdBuffer,
+        PalAccelerationStructure* as,
         PalUsageStateInfo* oldUsageStateInfo,
         PalUsageStateInfo* newUsageStateInfo);
 
@@ -6025,7 +6026,10 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     Uint32 maxDrawCount);
 
 /**
- * @brief Insert a memory barrier into the command buffer.
+ * @brief Insert an acceleration structure memory barrier into the command buffer.
+ * 
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not,
+ * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * The graphics system must be initialized before this call. This functions makes memory invisible
  * and blocks access until the usage state specified by `oldUsageStateInfo` is completed.
@@ -6037,6 +6041,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  * sure its in read state before its visible to the raygen shader.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] as Acceleration structure to set barrier on.
  * @param[in] oldUsageStateInfo Pointer to a PalUsageStateInfo specifying the old usage state.
  * @param[in] newUsageStateInfo Pointer to a PalUsageStateInfo specifying the new usage state.
  *
@@ -6050,8 +6055,9 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  * @sa palCmdImageBarrier
  * @sa palCmdBufferBarrier
  */
-PAL_API PalResult PAL_CALL palCmdMemoryBarrier(
+PAL_API PalResult PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
+    PalAccelerationStructure* as,
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo);
 
