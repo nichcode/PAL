@@ -948,7 +948,12 @@ bool rayTracingTest()
     PalUsageStateInfo newAsUsageStateInfo = {0};
     newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
 
-    result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
+    result = palCmdAccelerationStructureBarrier(
+        cmdBuffer, 
+        blas, 
+        &oldAsUsageStateInfo, 
+        &newAsUsageStateInfo);
+        
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set memory barrier: %s", error);
@@ -966,7 +971,12 @@ bool rayTracingTest()
     newAsUsageStateInfo.shaderStages = shaderStages;
 
     // make sure the TLAS builds before the tracing
-    result = palCmdMemoryBarrier(cmdBuffer, &oldAsUsageStateInfo, &newAsUsageStateInfo);
+    result = palCmdAccelerationStructureBarrier(
+        cmdBuffer, 
+        tlas, 
+        &oldAsUsageStateInfo, 
+        &newAsUsageStateInfo);
+
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set memory barrier: %s", error);

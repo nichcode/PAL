@@ -103,6 +103,7 @@ typedef struct {
     ID3D12CommandSignature* drawIndexedSignature;
     ID3D12CommandSignature* drawSignature;
     ID3D12CommandSignature* dispatchSignature;
+    ID3D12CommandSignature* raySignature;
     ID3D12InfoQueue* infoQueue;
     ID3D12CommandQueue* queue;
     ID3D12Device* handle;
@@ -127,6 +128,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool belongsToSwapchain;
+    Uint32 planeCount;
     ID3D12Device* device;
     ID3D12Resource* handle;
     PalImageInfo info;
@@ -189,6 +191,7 @@ typedef struct {
     bool primary;
     void* pool; // CommandPool
     Device* device;
+    ID3D12Resource* tmpBuffer;
     ID3D12CommandAllocator* allocator;
     ID3D12GraphicsCommandList* handle;
     ID3D12GraphicsCommandList6* handle6;
@@ -228,6 +231,20 @@ typedef struct {
 
     void* handle;
 } Pipeline;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Uint64 raygenStride;
+    ID3D12Resource* buffer;
+    ID3D12Heap* bufferMemory;
+    D3D12_GPU_VIRTUAL_ADDRESS baseAddress;
+
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress;
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE missAddress;
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE hitAddress;
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE callableAddress;
+} ShaderBindingTable;
 
 static D3D12 s_D3D = {0};
 
@@ -1650,6 +1667,25 @@ PalResult PAL_CALL createDeviceD3D12(
         }
     }
 
+    if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_RAYS;
+        signatureDesc.ByteStride = sizeof(D3D12_DISPATCH_RAYS_DESC);
+
+        result = device->handle->lpVtbl->CreateCommandSignature(
+            device->handle,
+            &signatureDesc,
+            nullptr,
+            &IID_Signature, 
+            (void**)&device->raySignature);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
     if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW) {
         // disptach indexed
         argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
@@ -1718,6 +1754,10 @@ void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 
     if (d3dDevice->meshSignature) {
         d3dDevice->meshSignature->lpVtbl->Release(d3dDevice->meshSignature);
+    }
+
+    if (d3dDevice->raySignature) {
+        d3dDevice->raySignature->lpVtbl->Release(d3dDevice->raySignature);
     }
 
     if (d3dDevice->dispatchSignature) {
@@ -2384,6 +2424,14 @@ PalResult PAL_CALL createImageD3D12(
     image->info.mipLevelCount = info->mipLevelCount;
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
+
+    // get plane count from image format
+    image->planeCount = 1; // for color or depth
+    if (info->format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
+        info->format == PAL_FORMAT_D16_UNORM_S8_UINT  ||
+        info->format == PAL_FORMAT_D24_UNORM_S8_UINT) {
+        image->planeCount = 2;
+    }
 
     image->device = d3dDevice->handle;
     *outImage = (PalImage*)image;
@@ -3445,6 +3493,37 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    // we need a tmp upload buffer if ray tracing is enabled
+    D3D12_HEAP_PROPERTIES heapProps = {0};
+    heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+    heapProps.VisibleNodeMask = 1;
+    heapProps.CreationNodeMask = 1;
+
+    D3D12_RESOURCE_DESC bufferDesc = {0};
+    bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufferDesc.Width = sizeof(D3D12_DISPATCH_RAYS_DESC);
+    bufferDesc.Height = 1;
+    bufferDesc.DepthOrArraySize = 1;
+    bufferDesc.MipLevels = 1;
+    bufferDesc.SampleDesc.Count = 1;
+    bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+    result = d3dDevice->handle->lpVtbl->CreateCommittedResource(
+        d3dDevice->handle, 
+        &heapProps, 
+        0, 
+        &bufferDesc, 
+        D3D12_RESOURCE_STATE_GENERIC_READ, 
+        nullptr, 
+        &IID_Resource, (void**)&cmdBuffer->tmpBuffer);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
     cmdBuffer->handle->lpVtbl->QueryInterface(
         cmdBuffer->handle, 
         &IID_CmdList6, 
@@ -3465,6 +3544,7 @@ void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
         d3dCmdBuffer->handle6->lpVtbl->Release(d3dCmdBuffer->handle6);
         d3dCmdBuffer->handle->lpVtbl->Release(d3dCmdBuffer->handle);
         d3dCmdBuffer->allocator->lpVtbl->Release(d3dCmdBuffer->allocator);
+        d3dCmdBuffer->tmpBuffer->lpVtbl->Release(d3dCmdBuffer->tmpBuffer);
         palFree(s_D3D.allocator, cmdBuffer);
 
         data->cmdBuffer = nullptr;
@@ -4315,8 +4395,88 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
-    // TODO: 
-    
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Image* d3dImage = (Image*)image;
+    D3D12_RESOURCE_STATES old, new;
+    D3D12_RESOURCE_BARRIER barrier = {0};
+
+    old = barrierToD3D12(
+        oldUsageStateInfo->shaderStageCount, 
+        oldUsageStateInfo->usageState, 
+        oldUsageStateInfo->shaderStages);
+
+    new = barrierToD3D12(
+        newUsageStateInfo->shaderStageCount, 
+        newUsageStateInfo->usageState, 
+        newUsageStateInfo->shaderStages);
+
+    // read/write barrier without transition
+    if (old == new && old == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = d3dImage->handle;
+        d3dCmdBuffer->handle6->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle6, 1, &barrier);
+        return PAL_RESULT_SUCCESS;
+    }
+
+    D3D12_RESOURCE_BARRIER* barriers = nullptr;
+    Uint32 levelCount = subresourceRange->mipLevelCount;
+    Uint32 layerCount = subresourceRange->layerArrayCount;
+    Uint32 planeCount = d3dImage->planeCount;
+
+    Uint32 startLevel = subresourceRange->startMipLevel;
+    Uint32 startLayer = subresourceRange->startArrayLayer;
+    Uint32 maxLevels = d3dImage->info.mipLevelCount;
+    Uint32 maxLayers = d3dImage->info.depthOrArraySize;
+    Uint32 barrierCount = layerCount * levelCount * d3dImage->planeCount;
+
+    if (startLevel == 0 && levelCount == maxLevels && startLayer == 0 && layerCount == maxLayers) {
+        // full resource
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = d3dImage->handle;
+        barrier.Transition.StateBefore = old;
+        barrier.Transition.StateAfter = new;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+        d3dCmdBuffer->handle6->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle6, 1, &barrier);
+        return PAL_RESULT_SUCCESS;
+    }
+
+    if (layerCount == 1 && layerCount == 1 && planeCount == 1) {
+        // single plane
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = d3dImage->handle;
+        barrier.Transition.StateBefore = old;
+        barrier.Transition.StateAfter = new;
+        barrier.Transition.Subresource = startLevel + startLayer * maxLevels;
+
+        d3dCmdBuffer->handle6->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle6, 1, &barrier);
+        return PAL_RESULT_SUCCESS;
+    }
+
+    barriers = palAllocate(s_D3D.allocator, sizeof(D3D12_RESOURCE_BARRIER) * barrierCount, 0);
+    if (!barriers) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    Uint32 count = 0;
+    for (Uint32 plane = 0; plane < d3dImage->planeCount; plane++) {
+        for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
+            for (Uint32 level = startLevel; level < startLevel + levelCount; level++) {
+                Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+
+                D3D12_RESOURCE_BARRIER* tmp = &barriers[count++];
+                tmp->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                tmp->Transition.pResource = d3dImage->handle;
+                tmp->Transition.StateBefore = old;
+                tmp->Transition.StateAfter = new;
+                tmp->Transition.Subresource = index;
+            }
+        }
+    }
+
+    d3dCmdBuffer->handle6->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle6, barrierCount, barriers);
+    palFree(s_D3D.allocator, barriers);
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdBufferBarrierD3D12(
@@ -4325,7 +4485,33 @@ PalResult PAL_CALL cmdBufferBarrierD3D12(
     PalUsageStateInfo* oldUsageStateInfo,
     PalUsageStateInfo* newUsageStateInfo)
 {
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* d3dBuffer = (Buffer*)buffer;
+    D3D12_RESOURCE_STATES old, new;
 
+    old = barrierToD3D12(
+        oldUsageStateInfo->shaderStageCount, 
+        oldUsageStateInfo->usageState, 
+        oldUsageStateInfo->shaderStages);
+
+    new = barrierToD3D12(
+        newUsageStateInfo->shaderStageCount, 
+        newUsageStateInfo->usageState, 
+        newUsageStateInfo->shaderStages);
+
+    D3D12_RESOURCE_BARRIER barrier = {0};
+    if (old == new && D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = d3dBuffer->handle;
+    } else {
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = d3dBuffer->handle;
+        barrier.Transition.StateBefore = old;
+        barrier.Transition.StateAfter = new;
+    }
+    
+    d3dCmdBuffer->handle6->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle6, 1, &barrier);
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdDispatchD3D12(
@@ -4334,6 +4520,14 @@ PalResult PAL_CALL cmdDispatchD3D12(
     Uint32 groupCountY,
     Uint32 groupCountZ)
 {
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    d3dCmdBuffer->handle6->lpVtbl->Dispatch(
+        d3dCmdBuffer->handle6, 
+        groupCountX, 
+        groupCountY, 
+        groupCountZ);
+
+    return PAL_RESULT_SUCCESS;
 
 }
 
@@ -4346,14 +4540,34 @@ PalResult PAL_CALL cmdDispatchBaseD3D12(
     Uint32 groupCountY,
     Uint32 groupCountZ)
 {
-
+    return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult PAL_CALL cmdDispatchIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer)
 {
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Device* device = d3dCmdBuffer->device;
+    if (!(device->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    Buffer* d3dBuffer = (Buffer*)buffer;
+    d3dCmdBuffer->handle6->lpVtbl->ExecuteIndirect(
+        d3dCmdBuffer->handle6, 
+        device->dispatchSignature,
+        1, // one dispatch
+        d3dBuffer->handle,
+        0, 
+        nullptr, 
+        0);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdTraceRaysD3D12(
@@ -4364,16 +4578,85 @@ PalResult PAL_CALL cmdTraceRaysD3D12(
     Uint32 height,
     Uint32 depth)
 {
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    ShaderBindingTable* d3dSbt = (ShaderBindingTable*)sbt;
+    if (!(d3dCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
+    raygenAddress.SizeInBytes = d3dSbt->raygenAddress.SizeInBytes;
+    raygenAddress.StartAddress = d3dSbt->baseAddress + raygenIndex * d3dSbt->raygenStride;
+
+    D3D12_DISPATCH_RAYS_DESC desc = {0};
+    desc.Width = width;
+    desc.Height = height;
+    desc.Depth = depth;
+    desc.RayGenerationShaderRecord = raygenAddress;
+    desc.HitGroupTable = d3dSbt->hitAddress;
+    desc.MissShaderTable = d3dSbt->missAddress;
+    desc.CallableShaderTable = d3dSbt->callableAddress;
+
+    d3dCmdBuffer->handle6->lpVtbl->DispatchRays(d3dCmdBuffer->handle6, &desc);
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     Uint32 raygenIndex,
     PalShaderBindingTable* sbt,
-    PalDeviceAddress bufferAddress)
+    PalBuffer* buffer)
 {
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    ShaderBindingTable* d3dSbt = (ShaderBindingTable*)sbt;
+    Buffer* d3dBuffer = (Buffer*)buffer;
+    Device* device = (Device*)d3dCmdBuffer->device;
+    D3D12_DISPATCH_RAYS_DESC desc = {0};
 
+    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    // get width, height and depth from provided buffer
+    void* ptr = nullptr;
+    HRESULT result = d3dBuffer->handle->lpVtbl->Map(d3dBuffer->handle, 0, nullptr, &ptr);
+    if (FAILED(result)) {
+        return PAL_RESULT_MEMORY_MAP_FAILED;
+    }
+
+    PalDispatchIndirectData data = {0};
+    memcpy(&data, ptr, sizeof(PalDispatchIndirectData));
+    d3dBuffer->handle->lpVtbl->Unmap(d3dBuffer->handle, 0, nullptr);
+
+    desc.Width = data.groupCountXOrWidth;
+    desc.Height = data.groupCountXOrHeight;
+    desc.Depth = data.groupCountXOrDepth;
+
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
+    raygenAddress.SizeInBytes = d3dSbt->raygenAddress.SizeInBytes;
+    raygenAddress.StartAddress = d3dSbt->baseAddress + raygenIndex * d3dSbt->raygenStride;
+
+    desc.RayGenerationShaderRecord = raygenAddress;
+    desc.HitGroupTable = d3dSbt->hitAddress;
+    desc.MissShaderTable = d3dSbt->missAddress;
+    desc.CallableShaderTable = d3dSbt->callableAddress;
+
+    // fill the data into the tmp upload buffer of the command buffer
+    ptr = nullptr;
+    d3dCmdBuffer->tmpBuffer->lpVtbl->Map(d3dCmdBuffer->tmpBuffer, 0, nullptr, &ptr);
+    memcpy(ptr, &desc, sizeof(D3D12_DISPATCH_RAYS_DESC));
+    d3dCmdBuffer->tmpBuffer->lpVtbl->Unmap(d3dCmdBuffer->tmpBuffer, 0, nullptr);
+
+    d3dCmdBuffer->handle6->lpVtbl->ExecuteIndirect(
+        d3dCmdBuffer->handle6, 
+        device->raySignature, 
+        1, 
+        d3dCmdBuffer->tmpBuffer, 
+        0, 
+        nullptr, 
+        0);
+    
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
@@ -4383,6 +4666,7 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
+    // TODO:
 
 }
 

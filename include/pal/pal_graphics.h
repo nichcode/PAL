@@ -3516,7 +3516,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         Uint32 raygenIndex,
         PalShaderBindingTable* sbt,
-        PalDeviceAddress bufferAddress);
+        PalBuffer* buffer);
 
     /**
      * Backend implementation of ::palCmdBindDescriptorSet.
@@ -6201,8 +6201,7 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs.
- * Can be a single struct.
+ * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6256,17 +6255,21 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported
  * and enabled by the device if not, this function will fail and return
  * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * If buffer memory type is not `PAL_MEMORY_TYPE_CPU_UPLOAD`, this function will fail and return 
+ * `PAL_RESULT_MEMORY_MAP_FAILED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] raygenIndex Index of the raygen shader to execute.
  * @param[in] sbt The shader binding table to use.
- * @param[in] bufferAddress Buffer address of buffer containing an array of
- * PalDispatchIndirectData structs. Can be a single struct.
+ * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note The memory associated with the buffer must be `PAL_MEMORY_TYPE_CPU_UPLOAD`.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6275,7 +6278,7 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
     Uint32 raygenIndex,
     PalShaderBindingTable* sbt,
-    PalDeviceAddress bufferAddress);
+    PalBuffer* buffer);
 
 /**
  * @brief Bind a descriptor set to the provided command buffer.

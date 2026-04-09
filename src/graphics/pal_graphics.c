@@ -589,7 +589,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
     Uint32 raygenIndex,
     PalShaderBindingTable* sbt,
-    PalDeviceAddress bufferAddress);
+    PalBuffer* buffer);
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
@@ -1458,7 +1458,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     Uint32 raygenIndex,
     PalShaderBindingTable* sbt,
-    PalDeviceAddress bufferAddress);
+    PalBuffer* buffer);
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -3754,17 +3754,17 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
     Uint32 raygenIndex,
     PalShaderBindingTable* sbt,
-    PalDeviceAddress bufferAddress)
+    PalBuffer* buffer)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !sbt) {
+    if (!cmdBuffer || !sbt || !buffer) {
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, bufferAddress);
+    return cmdBuffer->backend->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, buffer);
 }
 
 PalResult PAL_CALL palCmdBindDescriptorSet(

@@ -434,12 +434,17 @@ typedef struct {
 } Queue;
 
 typedef struct {
+    PalMemoryType type;
+    VkDeviceMemory handle;
+} Memory;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     bool belongsToSwapchain;
     VkImageAspectFlags aspectMask;
     Device* device;
-    VkDeviceMemory memory;
+    Memory* memory;
     VkImage handle;
     PalImageInfo info;
 } Image;
@@ -530,7 +535,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     PalBufferUsages usages;
-    VkDeviceMemory memory;
+    Memory* memory;
     Device* device;
     VkBuffer handle;
 } Buffer;
@@ -4473,12 +4478,17 @@ PalResult PAL_CALL allocateMemoryVk(
     PalMemory** outMemory)
 {
     VkResult result;
-    VkDeviceMemory memory = nullptr;
+    Memory* memory = nullptr;
     Device* vkDevice = (Device*)device;
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = (VkDeviceSize)size;
     VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
+
+    memory = palAllocate(s_Vk.allocator, sizeof(Memory), 0);
+    if (!memory) {
+        return PAL_RESULT_NULL_POINTER;
+    }
 
     Uint32 memoryTypeMask = 0;
     Uint32 usages = 0;
@@ -4506,11 +4516,17 @@ PalResult PAL_CALL allocateMemoryVk(
         allocateInfo.pNext = &allocateFlagsInfo;
     }
 
-    result = s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory);
+    result = s_Vk.allocateMemory(
+        vkDevice->handle, 
+        &allocateInfo, 
+        &s_Vk.vkAllocator, 
+        &memory->handle);
+
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
 
+    memory->type = type;
     *outMemory = (PalMemory*)memory;
     return PAL_RESULT_SUCCESS;
 }
@@ -4520,8 +4536,9 @@ void PAL_CALL freeMemoryVk(
     PalMemory* memory)
 {
     Device* vkDevice = (Device*)device;
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    s_Vk.freeMemory(vkDevice->handle, mem, &s_Vk.vkAllocator);
+    Memory* vkMemory = (Memory*)memory;
+    s_Vk.freeMemory(vkDevice->handle, vkMemory->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, vkMemory);
 }
 
 // ==================================================
@@ -5217,9 +5234,9 @@ PalResult PAL_CALL bindImageMemoryVk(
         return PAL_RESULT_INVALID_OPERATION;
     }
 
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
-    s_Vk.bindImageMemory(vkImage->device->handle, vkImage->handle, mem, offset);
-    vkImage->memory = mem;
+    Memory* vkMemory = (Memory*)memory;
+    s_Vk.bindImageMemory(vkImage->device->handle, vkImage->handle, vkMemory->handle, offset);
+    vkImage->memory = vkMemory;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5233,7 +5250,11 @@ PalResult PAL_CALL mapImageMemoryVk(
     Image* vkImage = (Image*)image;
     Device* device = vkImage->device;
 
-    result = s_Vk.mapMemory(device->handle, vkImage->memory, offset, size, 0, outPtr);
+    if (vkImage->memory->type == PAL_MEMORY_TYPE_GPU_ONLY) {
+        return PAL_RESULT_MEMORY_MAP_FAILED;
+    }
+
+    result = s_Vk.mapMemory(device->handle, vkImage->memory->handle, offset, size, 0, outPtr);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -5243,7 +5264,7 @@ PalResult PAL_CALL mapImageMemoryVk(
 void PAL_CALL unmapImageMemoryVk(PalImage* image)
 {
     Image* vkImage = (Image*)image;
-    s_Vk.unmapMemory(vkImage->device->handle, vkImage->memory);
+    s_Vk.unmapMemory(vkImage->device->handle, vkImage->memory->handle);
 }
 
 // ==================================================
@@ -7407,6 +7428,14 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
     PalBuffer* buffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     Buffer* vkBuffer = (Buffer*)buffer;
     s_Vk.cmdDispatchIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0);
     return PAL_RESULT_SUCCESS;
@@ -7450,17 +7479,28 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
     Uint32 raygenIndex,
     PalShaderBindingTable* sbt,
-    PalDeviceAddress bufferAddress)
+    PalBuffer* buffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     ShaderBindingTable* vkSbt = (ShaderBindingTable*)sbt;
+    Buffer* vkBuffer = (Buffer*)buffer;
 
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    if (vkBuffer->memory->type != PAL_MEMORY_TYPE_CPU_UPLOAD) {
+        return PAL_RESULT_MEMORY_MAP_FAILED;
+    }
+
     PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
     vkSbt->raygenAddress.deviceAddress = address;
+    
+    VkDeviceAddress bufferAddress = 0;
+    VkBufferDeviceAddressInfoKHR bufferInfo = {0};
+    bufferInfo.buffer = vkBuffer->handle;
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+    bufferAddress = vkBuffer->device->getBufferrAddress(vkBuffer->device->handle, &bufferInfo);
 
     vkCmdBuffer->device->cmdTraceRaysIndirect(
         vkCmdBuffer->handle,
@@ -8008,19 +8048,24 @@ PalResult PAL_CALL bindBufferMemoryVk(
     Uint64 offset)
 {
     VkResult result;
-    VkDeviceMemory mem = (VkDeviceMemory)memory;
+    Memory* vkMemory = (Memory*)memory;
     Buffer* vkBuffer = (Buffer*)buffer;
 
     if (vkBuffer->memory) {
         return PAL_RESULT_INVALID_OPERATION;
     }
 
-    result = s_Vk.bindBufferMemory(vkBuffer->device->handle, vkBuffer->handle, mem, offset);
+    result = s_Vk.bindBufferMemory(
+        vkBuffer->device->handle, 
+        vkBuffer->handle, 
+        vkMemory->handle, 
+        offset);
+
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
 
-    vkBuffer->memory = mem;
+    vkBuffer->memory = vkMemory;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -8034,7 +8079,11 @@ PalResult PAL_CALL mapBufferMemoryVk(
     Buffer* vkBuffer = (Buffer*)buffer;
     Device* device = vkBuffer->device;
 
-    result = s_Vk.mapMemory(device->handle, vkBuffer->memory, offset, size, 0, outPtr);
+    if (vkBuffer->memory->type == PAL_MEMORY_TYPE_GPU_ONLY) {
+        return PAL_RESULT_MEMORY_MAP_FAILED;
+    }
+
+    result = s_Vk.mapMemory(device->handle, vkBuffer->memory->handle, offset, size, 0, outPtr);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -8044,7 +8093,7 @@ PalResult PAL_CALL mapBufferMemoryVk(
 void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer)
 {
     Buffer* vkBuffer = (Buffer*)buffer;
-    s_Vk.unmapMemory(vkBuffer->device->handle, vkBuffer->memory);
+    s_Vk.unmapMemory(vkBuffer->device->handle, vkBuffer->memory->handle);
 }
 
 PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer* buffer)
