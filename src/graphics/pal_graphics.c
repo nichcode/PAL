@@ -733,8 +733,6 @@ PalResult PAL_CALL allocateDescriptorSetVk(
     PalDescriptorSetLayout* layout,
     PalDescriptorSet** outSet);
 
-void PAL_CALL freeDescriptorSetVk(PalDescriptorSet* set);
-
 PalResult PAL_CALL updateDescriptorSetVk(
     PalDevice* device,
     Uint32 count,
@@ -1601,8 +1599,6 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     PalDescriptorPool* pool,
     PalDescriptorSetLayout* layout,
     PalDescriptorSet** outSet);
-
-void PAL_CALL freeDescriptorSetD3D12(PalDescriptorSet* set);
 
 PalResult PAL_CALL updateDescriptorSetD3D12(
     PalDevice* device,

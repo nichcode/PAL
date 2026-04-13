@@ -335,7 +335,6 @@ typedef struct {
     PFN_vkDestroyDescriptorPool destroyDescriptorPool;
     PFN_vkResetDescriptorPool resetDescriptorPool;
     PFN_vkAllocateDescriptorSets allocateDescriptorSet;
-    PFN_vkFreeDescriptorSets freeDescriptorSet;
     PFN_vkUpdateDescriptorSets updateDescriptorSet;
 
     PFN_vkCreatePipelineLayout createPipelineLayout;
@@ -2822,10 +2821,6 @@ PalResult PAL_CALL initGraphicsVk(
     s_Vk.allocateDescriptorSet = (PFN_vkAllocateDescriptorSets)loadProc(
         s_Vk.handle,
         "vkAllocateDescriptorSets");
-
-    s_Vk.freeDescriptorSet = (PFN_vkFreeDescriptorSets)loadProc(
-        s_Vk.handle,
-        "vkFreeDescriptorSets");
 
     s_Vk.updateDescriptorSet = (PFN_vkUpdateDescriptorSets)loadProc(
         s_Vk.handle,
