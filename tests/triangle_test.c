@@ -231,14 +231,6 @@ bool triangleTest()
         return false;
     }
 
-    // create a graphics command queue
-    result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create queue: %s", error);
-        return false;
-    }
-
     // create surface
     result = palCreateSurface(device, &gfxWindow, &surface);
     if (result != PAL_RESULT_SUCCESS) {
@@ -247,8 +239,28 @@ bool triangleTest()
         return false;
     }
 
-    if (!palCanQueuePresent(queue, surface)) {
-        palLog(nullptr, "Queue cannot present to surface");
+    // create a graphics command queue and check if its supports presenting to the surface
+    bool foundQueue = false;
+    for (int i = 0; i < caps.maxGraphicsQueues; i++) {
+        result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create queue: %s", error);
+            return false;
+        }
+
+        if (!palCanQueuePresent(queue, surface)) {
+            palDestroyQueue(queue);
+            queue = nullptr;
+        }  else {
+            // found a queue
+            foundQueue = true;
+            break;
+        }
+    }
+
+    if (!foundQueue) {
+        palLog(nullptr, "Failed to find a queue that can present to the surface");
         return false;
     }
 

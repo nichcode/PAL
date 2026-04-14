@@ -66,11 +66,17 @@ const IID IID_CmdList = {0x7116d91c, 0xe7e4, 0x47ce, 0xb8,0xc6, 0xec,0x81,0x68,0
 const IID IID_CmdList6 = {0xc3827890, 0xe548, 0x4cfa, 0x96,0xcf, 0x56,0x89,0xa9,0x37,0x0f,0x80};
 const IID IID_Signature = {0xc36a797c, 0xec80, 0x4f0a, 0x89,0x85, 0xa7,0xb2,0x47,0x50,0x82,0xd1};
 const IID IID_DescHeap = {0x8efb471d, 0x616c, 0x4f49, 0x90,0xf7, 0x12,0x7b,0xb7,0x63,0xfa,0x51};
+const IID IID_RootSig = {0xc54a6b66, 0x72df, 0x4ee8, 0x8b,0xe5, 0xa9,0x46,0xa1,0x42,0x92,0x14};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
     REFIID, 
     void**);
+
+typedef HRESULT (__stdcall *PFN_D3D12SerializeVersionedRootSignature)(
+    const D3D12_VERSIONED_ROOT_SIGNATURE_DESC*,
+    ID3DBlob**,
+    ID3DBlob**);
 
 typedef struct {
     const PalGraphicsBackend* backend;
@@ -93,6 +99,7 @@ typedef struct {
     PFN_D3D12_CREATE_DEVICE createDevice;
     PFN_CreateDXGIFactory2 createDXGIFactory;
     PFN_D3D12_GET_DEBUG_INTERFACE getDebugInterface;
+    PFN_D3D12SerializeVersionedRootSignature serializeVersionedRootSignature;
   
     const PalAllocator* allocator;
 } D3D12;
@@ -266,16 +273,15 @@ typedef struct {
 typedef struct {
     Uint32 offset;
     PalDescriptorType type;
-    D3D12_DESCRIPTOR_RANGE range;
+    D3D12_DESCRIPTOR_RANGE1 range;
 } DescriptorSetLayoutBinding;
 
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 tableIndex;
     Uint32 bindingCount;
+    Uint32 samplerCount;
     DescriptorSetLayoutBinding* bindings;
-    D3D12_ROOT_PARAMETER param;
 } DescriptorSetLayout;
 
 typedef struct {
@@ -1236,6 +1242,19 @@ static D3D12_CPU_DESCRIPTOR_HANDLE getCPUDescriptorHandle(
     return handle;
 }
 
+static D3D12_GPU_DESCRIPTOR_HANDLE getGPUDescriptorHandle(
+    ID3D12DescriptorHeap* heap, 
+    Uint32 index, 
+    Uint32 size) 
+{
+    D3D12_GPU_DESCRIPTOR_HANDLE handle;
+    D3D12_GPU_DESCRIPTOR_HANDLE __ret;
+    handle = *heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(heap, &__ret);
+
+    handle.ptr += index * size;
+    return handle;
+}
+
 static void fillSubresourceD3D12(
     PalImageViewType type, 
     const PalImageSubresourceRange* range, 
@@ -1400,6 +1419,10 @@ PalResult PAL_CALL initGraphicsD3D12(
     s_D3D.createDXGIFactory = (PFN_CreateDXGIFactory2)GetProcAddress(
         s_D3D.dxgi,
         "CreateDXGIFactory2");
+
+    s_D3D.serializeVersionedRootSignature = (PFN_D3D12SerializeVersionedRootSignature)GetProcAddress(
+        s_D3D.handle,
+        "D3D12SerializeVersionedRootSignature");
 
     if (debugger && debugger->callback) {
         s_D3D.getDebugInterface = (PFN_D3D12_GET_DEBUG_INTERFACE)GetProcAddress(
@@ -2964,7 +2987,6 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
         caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = false;
     }
 
-    // FIXME: Add support for pre and post multplied composite alpha
     caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = true;
     caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
     caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
@@ -3049,7 +3071,6 @@ PalResult PAL_CALL createSwapchainD3D12(
         return PAL_RESULT_INVALID_QUEUE;
     }
 
-    // FIXME: Add support for pre and post multplied composite alpha
     if (info->compositeAlpha != PAL_COMPOSITE_ALPHA_OPAQUE) {
         return PAL_RESULT_INVALID_ARGUMENT;
     }
@@ -4952,8 +4973,25 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
-    // TODO: finish descriptor set binding
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    DescriptorSet* d3dSet = (DescriptorSet*)set;
+    DescriptorSetLayout* d3dLayout = (DescriptorSetLayout*)layout;
+    DescriptorPool* pool = d3dSet->pool;
 
+    ID3D12DescriptorHeap* heaps[] = { pool->heap, pool->sampleHeap };
+    d3dCmdBuffer->handle6->lpVtbl->SetDescriptorHeaps(d3dCmdBuffer->handle6, 2, heaps);
+
+    Uint32 indexes[] = { d3dSet->offset, d3dSet->samplerOffset };
+    Uint32 sizes[] = { pool->size, pool->samplerSize };
+    for (int i = 0; i < 2; i++) {
+        D3D12_GPU_DESCRIPTOR_HANDLE base = getGPUDescriptorHandle(heaps[i], indexes[i], sizes[i]);
+        d3dCmdBuffer->handle6->lpVtbl->SetGraphicsRootDescriptorTable(
+            d3dCmdBuffer->handle6, 
+            i, 
+            base);
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdPushConstantsD3D12(
@@ -5137,7 +5175,6 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     const PalDescriptorSetLayoutCreateInfo* info,
     PalDescriptorSetLayout** outLayout)
 {
-    // TODO: finish descriptor set layout
     HRESULT result;
     Device* d3dDevice = (Device*)device;
     DescriptorSetLayout* layout = nullptr;
@@ -5151,39 +5188,66 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     }
 
     Uint32 offset = 0;
+    Uint32 samplerCount = 0;
     for (int i = 0; i < count; i++) {
         DescriptorSetLayoutBinding* binding = &bindings[i];
         binding->offset = offset;
         binding->range.NumDescriptors = info->bindings[i].descriptorCount;
         binding->range.BaseShaderRegister = info->bindings[i].binding;
+        binding->type = info->bindings[i].descriptorType;
+        binding->range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+
         binding->range.RegisterSpace = 0;
-        
-        binding->range.OffsetInDescriptorsFromTableStart = 0;
-        binding->range.RangeType = 1;
+        binding->range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        binding->offset = offset;
+        offset += info->bindings[i].descriptorCount;
 
+        switch (binding->type) {
+            case PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE:
+            case PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
+                binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                break;
+            }
 
+            case PAL_DESCRIPTOR_TYPE_SAMPLER: {
+                binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+                samplerCount++;
+                break;
+            }
 
+            case PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
+                if (info->bindings[i].readOnly) {
+                    binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                } else {
+                    binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                }
+                break;
+            }
 
+            case PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+                binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                break;
+            }
 
-        // VkDescriptorSetLayoutBinding* binding = &bindings[i];
-        // binding->binding = info->bindings[i].binding;
-        // binding->descriptorCount = info->bindings[i].descriptorCount;
-        // binding->descriptorType = descriptortypeToVk(info->bindings[i].descriptorType);
-
-        // binding->pImmutableSamplers = nullptr;
-        // binding->stageFlags = 0;
-        // for (int j = 0; j < info->bindings[i].shaderStageCount; j++) {
-        //     VkShaderStageFlagBits bit = shaderStageToVK(info->bindings[i].shaderStages[j]);
-        //     binding->stageFlags |= bit;
-        // }
+            case PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
+                binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                break;
+            }
+        }
     }
 
+    layout->bindingCount = info->bindingCount;
+    layout->samplerCount = samplerCount;
+    layout->bindings = bindings;
+    *outLayout = (PalDescriptorSetLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyDescriptorSetLayoutD3D12(PalDescriptorSetLayout* layout)
 {
-
+    DescriptorSetLayout* d3dLayout = (DescriptorSetLayout*)layout;
+    palFree(s_D3D.allocator, d3dLayout->bindings);
+    palFree(s_D3D.allocator, d3dLayout);
 }
 
 PalResult PAL_CALL createDescriptorPoolD3D12(
@@ -5380,6 +5444,12 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     d3dPool->offset += reqAs + reqStorageBuffers + reqUniformBuffers;
     d3dPool->offset += reqSampledImages + reqStorageImages;
     d3dPool->samplerOffset += reqSamplers;
+
+    d3dPool->usedAs += reqAs;
+    d3dPool->usedSampledImages += reqSampledImages;
+    d3dPool->usedSamplers += reqSamplers;
+    d3dPool->usedStorageBuffers += reqStorageBuffers;
+    d3dPool->usedUniformBuffers += reqUniformBuffers;
     d3dPool->usedSets++;
 
     *outSet = (PalDescriptorSet*)set;

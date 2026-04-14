@@ -2146,6 +2146,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool readOnly; /**< For PAL_DESCRIPTOR_TYPE_STORAGE.*/
     Uint32 binding;
     Uint32 descriptorCount;
     Uint32 shaderStageCount;
