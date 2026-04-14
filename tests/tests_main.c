@@ -63,6 +63,8 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
+    // TODO: correctly loop and create graphics queues till we find one
+    // that be present for the tests below
     // registerTest(clearColorTest);
     // registerTest(triangleTest);
     // registerTest(meshTest);

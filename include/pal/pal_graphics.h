@@ -2178,6 +2178,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool readOnly; /**< For PAL_DESCRIPTOR_TYPE_STORAGE.*/
     Uint32 size;
     Uint64 offset;
     PalBuffer* buffer;

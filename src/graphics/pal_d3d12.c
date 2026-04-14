@@ -46,6 +46,8 @@ freely, subject to the following restrictions:
 
 #define MAX_ATTACHMENTS 32
 #define TEXTURE_PITCH 256
+#define MAX_RTV 1024
+#define MAX_DSV 512
 
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
@@ -96,6 +98,20 @@ typedef struct {
 } D3D12;
 
 typedef struct {
+    Uint32 incrementSize;
+    Uint32 freeTop;
+    ID3D12DescriptorHeap* heap;
+    Uint32 freeList[MAX_RTV];
+} RTVHeapAllocator;
+
+typedef struct {
+    Uint32 incrementSize;
+    Uint32 freeTop;
+    ID3D12DescriptorHeap* heap;
+    Uint32 freeList[MAX_DSV];
+} DSVHeapAllocator;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     PalAdapterFeatures features;
@@ -108,6 +124,8 @@ typedef struct {
     ID3D12InfoQueue* infoQueue;
     ID3D12CommandQueue* queue;
     ID3D12Device* handle;
+    RTVHeapAllocator rtvAllocator;
+    DSVHeapAllocator dsvAllocator;
 } Device;
 
 typedef struct {
@@ -138,9 +156,12 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+    Uint32 heapIndex;
+    PalImageViewType type;
+    DXGI_FORMAT format;
     Image* image;
-    D3D12_SHADER_RESOURCE_VIEW_DESC desc;
+    Device* device;
+    PalImageSubresourceRange range;
 } ImageView;
 
 typedef struct {
@@ -1215,6 +1236,147 @@ static D3D12_CPU_DESCRIPTOR_HANDLE getCPUDescriptorHandle(
     return handle;
 }
 
+static void fillSubresourceD3D12(
+    PalImageViewType type, 
+    const PalImageSubresourceRange* range, 
+    D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc, 
+    D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc,
+    D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc,
+    D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc)
+{
+    if (rtvDesc) {
+        if (type == PAL_IMAGE_VIEW_TYPE_1D) {
+            rtvDesc->Texture1D.MipSlice = range->startMipLevel;
+            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
+            rtvDesc->Texture1DArray.MipSlice = range->startMipLevel;
+            rtvDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
+            rtvDesc->Texture1DArray.ArraySize = range->layerArrayCount;
+            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
+            rtvDesc->Texture2D.MipSlice = range->startMipLevel;
+            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            rtvDesc->Texture2DArray.MipSlice = range->startMipLevel;
+            rtvDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
+            rtvDesc->Texture2DArray.ArraySize = range->layerArrayCount;
+            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_3D) {
+            rtvDesc->Texture3D.MipSlice = range->startMipLevel;
+            rtvDesc->Texture3D.FirstWSlice = range->startArrayLayer;
+            rtvDesc->Texture3D.WSize = range->layerArrayCount;
+            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+        }
+        return;
+
+    } else if (dsvDesc) {
+        if (range->aspect == PAL_IMAGE_ASPECT_DEPTH) {
+            dsvDesc->Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+        } else if (range->aspect == PAL_IMAGE_ASPECT_STENCIL) {
+            dsvDesc->Flags = D3D12_DSV_FLAG_READ_ONLY_STENCIL;
+        }
+
+        if (type == PAL_IMAGE_VIEW_TYPE_1D) {
+            dsvDesc->Texture1D.MipSlice = range->startMipLevel;
+            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
+            dsvDesc->Texture1DArray.MipSlice = range->startMipLevel;
+            dsvDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
+            dsvDesc->Texture1DArray.ArraySize = range->layerArrayCount;
+            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
+            dsvDesc->Texture2D.MipSlice = range->startMipLevel;
+            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            dsvDesc->Texture2DArray.MipSlice = range->startMipLevel;
+            dsvDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
+            dsvDesc->Texture2DArray.ArraySize = range->layerArrayCount;
+            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+        }
+        return;
+
+    } else if (srvDesc) {
+        if (type == PAL_IMAGE_VIEW_TYPE_1D) {
+            srvDesc->Texture1D.MipLevels = range->mipLevelCount;
+            srvDesc->Texture1D.MostDetailedMip = range->startMipLevel;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
+            srvDesc->Texture1DArray.MipLevels = range->mipLevelCount;
+            srvDesc->Texture1DArray.MostDetailedMip = range->startMipLevel;
+            srvDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
+            srvDesc->Texture1DArray.ArraySize = range->layerArrayCount;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
+            srvDesc->Texture2D.MipLevels = range->mipLevelCount;
+            srvDesc->Texture2D.MostDetailedMip = range->startMipLevel;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            srvDesc->Texture2DArray.MipLevels = range->mipLevelCount;
+            srvDesc->Texture2DArray.MostDetailedMip = range->startMipLevel;
+            srvDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
+            srvDesc->Texture2DArray.ArraySize = range->layerArrayCount;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_3D) {
+            srvDesc->Texture3D.MipLevels = range->mipLevelCount;
+            srvDesc->Texture3D.MostDetailedMip = range->startMipLevel;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_CUBE) {
+            srvDesc->TextureCube.MipLevels = range->mipLevelCount;
+            srvDesc->TextureCube.MostDetailedMip = range->startMipLevel;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            srvDesc->TextureCubeArray.MipLevels = range->mipLevelCount;
+            srvDesc->TextureCubeArray.MostDetailedMip = range->startMipLevel;
+            srvDesc->TextureCubeArray.First2DArrayFace = range->startArrayLayer;
+            srvDesc->TextureCubeArray.NumCubes = range->layerArrayCount;
+            srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+        }
+        return;
+
+    } else if (uavDesc) {
+        if (type == PAL_IMAGE_VIEW_TYPE_1D) {
+            uavDesc->Texture1D.MipSlice = range->startMipLevel;
+            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
+            uavDesc->Texture1DArray.MipSlice = range->startMipLevel;
+            uavDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
+            uavDesc->Texture1DArray.ArraySize = range->layerArrayCount;
+            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
+            uavDesc->Texture2D.MipSlice = range->startMipLevel;
+            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            uavDesc->Texture2DArray.MipSlice = range->startMipLevel;
+            uavDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
+            uavDesc->Texture2DArray.ArraySize = range->layerArrayCount;
+            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+
+        } else if (type == PAL_IMAGE_VIEW_TYPE_3D) {
+            uavDesc->Texture3D.MipSlice = range->startMipLevel;
+            uavDesc->Texture3D.FirstWSlice = range->startArrayLayer;
+            uavDesc->Texture3D.WSize = range->layerArrayCount;
+            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+        }
+        return;
+    }
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -1805,6 +1967,57 @@ PalResult PAL_CALL createDeviceD3D12(
         }
     }
 
+    // create an internal heap for RTV and DSV
+    D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {0};
+    heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    heapDesc.NumDescriptors = MAX_RTV;
+
+    result = device->handle->lpVtbl->CreateDescriptorHeap(
+        device->handle, 
+        &heapDesc, 
+        &IID_DescHeap, 
+        (void**)&device->rtvAllocator.heap);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    heapDesc.NumDescriptors = MAX_DSV;
+    result = device->handle->lpVtbl->CreateDescriptorHeap(
+        device->handle, 
+        &heapDesc, 
+        &IID_DescHeap, 
+        (void**)&device->dsvAllocator.heap);
+
+    if (FAILED(result)) {
+        if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    for (int i = 0; i < MAX_RTV; i++) {
+        device->rtvAllocator.freeList[i] = i;
+    }
+
+    for (int i = 0; i < MAX_DSV; i++) {
+        device->dsvAllocator.freeList[i] = i;
+    }
+
+    device->rtvAllocator.freeTop = MAX_RTV;
+    device->rtvAllocator.incrementSize = device->handle->lpVtbl->GetDescriptorHandleIncrementSize(
+        device->handle, 
+        D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+    device->dsvAllocator.freeTop = MAX_DSV;
+    device->dsvAllocator.incrementSize = device->handle->lpVtbl->GetDescriptorHandleIncrementSize(
+        device->handle, 
+        D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
     device->adapter = d3dAdapter->handle;
     device->features = features;
     *outDevice = (PalDevice*)device;
@@ -1834,6 +2047,9 @@ void PAL_CALL destroyDeviceD3D12(PalDevice* device)
     if (d3dDevice->drawSignature) {
         d3dDevice->drawSignature->lpVtbl->Release(d3dDevice->drawSignature);
     }
+
+    d3dDevice->rtvAllocator.heap->lpVtbl->Release(d3dDevice->rtvAllocator.heap);
+    d3dDevice->dsvAllocator.heap->lpVtbl->Release(d3dDevice->dsvAllocator.heap);
 
     d3dDevice->queue->lpVtbl->Release(d3dDevice->queue);
     d3dDevice->handle->lpVtbl->Release(d3dDevice->handle);
@@ -2532,62 +2748,45 @@ PalResult PAL_CALL createImageViewD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    imageView->desc.Format = formatToD3D12(d3dImage->info.format);
-    if (info->type == PAL_IMAGE_VIEW_TYPE_1D) {
-        imageView->desc.Texture1D.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.Texture1D.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.Texture1D.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+    imageView->format = formatToD3D12(info->format);
+    if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR) {
+        RTVHeapAllocator* allocator = &d3dDevice->rtvAllocator;
+        Uint32 index = allocator->freeList[--allocator->freeTop];
+        Uint32 size = allocator->incrementSize;
+        D3D12_CPU_DESCRIPTOR_HANDLE dst = getCPUDescriptorHandle(allocator->heap, index, size);
 
-    } else if (info->type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
-        imageView->desc.Texture1DArray.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.Texture1DArray.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.Texture1DArray.FirstArraySlice = info->subresourceRange.startArrayLayer;
-        imageView->desc.Texture1DArray.ArraySize = info->subresourceRange.layerArrayCount;
-        imageView->desc.Texture1DArray.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+        D3D12_RENDER_TARGET_VIEW_DESC desc = {0};
+        desc.Format = imageView->format;
+        fillSubresourceD3D12(info->type, &info->subresourceRange, &desc, nullptr, nullptr, nullptr);
+        imageView->heapIndex = index;
 
-    } else if (info->type == PAL_IMAGE_VIEW_TYPE_2D) {
-        imageView->desc.Texture2D.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.Texture2D.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.Texture2D.PlaneSlice = 0;
-        imageView->desc.Texture2D.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        d3dDevice->handle->lpVtbl->CreateRenderTargetView(
+            d3dDevice->handle, 
+            d3dImage->handle, 
+            &desc, 
+            dst);
 
-    } else if (info->type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
-        imageView->desc.Texture2DArray.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.Texture2DArray.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.Texture2DArray.FirstArraySlice = info->subresourceRange.startArrayLayer;
-        imageView->desc.Texture2DArray.ArraySize = info->subresourceRange.layerArrayCount;
-        imageView->desc.Texture2DArray.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+    } else {
+        DSVHeapAllocator* allocator = &d3dDevice->dsvAllocator;
+        Uint32 index = allocator->freeList[--allocator->freeTop];
+        Uint32 size = allocator->incrementSize;
+        D3D12_CPU_DESCRIPTOR_HANDLE dst = getCPUDescriptorHandle(allocator->heap, index, size);
 
-    } else if (info->type == PAL_IMAGE_VIEW_TYPE_3D) {
-        imageView->desc.Texture3D.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.Texture3D.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.Texture3D.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+        D3D12_DEPTH_STENCIL_VIEW_DESC desc = {0};
+        desc.Format = imageView->format;
+        fillSubresourceD3D12(info->type, &info->subresourceRange, nullptr, &desc, nullptr, nullptr);
+        imageView->heapIndex = index;
 
-    } else if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE) {
-        imageView->desc.TextureCube.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.TextureCube.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.TextureCube.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-
-    } else if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-        imageView->desc.TextureCubeArray.MipLevels = info->subresourceRange.mipLevelCount;
-        imageView->desc.TextureCubeArray.MostDetailedMip = info->subresourceRange.startMipLevel;
-        imageView->desc.TextureCubeArray.First2DArrayFace = info->subresourceRange.startArrayLayer;
-        imageView->desc.TextureCubeArray.NumCubes = info->subresourceRange.layerArrayCount;
-        imageView->desc.TextureCubeArray.ResourceMinLODClamp = 0;
-        imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+        d3dDevice->handle->lpVtbl->CreateDepthStencilView(
+            d3dDevice->handle, 
+            d3dImage->handle, 
+            &desc, 
+            dst);
     }
 
-    memset(imageView, 0, sizeof(ImageView));
+    imageView->range = info->subresourceRange;
+    imageView->type = info->type;
     imageView->image = d3dImage;
-
-    // TODO: create a temporary RTV/DTV heap and create the image view on it
-
     *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
 }
@@ -2595,6 +2794,14 @@ PalResult PAL_CALL createImageViewD3D12(
 void PAL_CALL destroyImageViewD3D12(PalImageView* imageView)
 {
     ImageView* d3dImageView = (ImageView*)imageView;
+    Device* device = d3dImageView->device;
+    if (d3dImageView->range.aspect == PAL_IMAGE_ASPECT_COLOR) {
+        device->rtvAllocator.freeList[device->rtvAllocator.freeTop++] = d3dImageView->heapIndex;
+
+    } else {
+        device->dsvAllocator.freeList[device->dsvAllocator.freeTop++] = d3dImageView->heapIndex;
+    }
+
     palFree(s_D3D.allocator, d3dImageView);
 }
 
@@ -3839,17 +4046,24 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
     D3D12_CPU_DESCRIPTOR_HANDLE fsrAttachment;
     for (int i = 0; i < info->colorAttachentCount; i++) {
         ImageView* tmp = (ImageView*)info->colorAttachments[i].imageView;
-        colorAttachments[i] = tmp->cpuHandle;
+
+        RTVHeapAllocator* allocator = &tmp->device->rtvAllocator;
+        Uint32 size = allocator->incrementSize;
+        colorAttachments[i] = getCPUDescriptorHandle(allocator->heap, tmp->heapIndex, size);
     }
 
-    ImageView* tmpDepth = (ImageView*)info->depthStencilAttachment->imageView;
-    if (tmpDepth) {
+    ImageView* tmp = (ImageView*)info->depthStencilAttachment->imageView;
+    if (tmp) {
+        DSVHeapAllocator* allocator = &tmp->device->dsvAllocator;
+        Uint32 size = allocator->incrementSize;
+        depthStencilAttachment = getCPUDescriptorHandle(allocator->heap, tmp->heapIndex, size);
+
         d3dCmdBuffer->handle6->lpVtbl->OMSetRenderTargets(
             d3dCmdBuffer->handle6, 
             info->colorAttachentCount, 
             colorAttachments, 
             FALSE, 
-            &tmpDepth->cpuHandle);
+            &depthStencilAttachment);
 
     } else {
         d3dCmdBuffer->handle6->lpVtbl->OMSetRenderTargets(
@@ -3873,7 +4087,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
             colorAttachments[i], color, 0, nullptr);
     }
 
-    if (tmpDepth) {
+    if (tmp) {
         D3D12_CLEAR_FLAGS clearFlags = 0;
         UINT8 stencil = 0;
         float depth = 0;
@@ -4738,7 +4952,7 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
-    // TODO:
+    // TODO: finish descriptor set binding
 
 }
 
@@ -4923,6 +5137,7 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     const PalDescriptorSetLayoutCreateInfo* info,
     PalDescriptorSetLayout** outLayout)
 {
+    // TODO: finish descriptor set layout
     HRESULT result;
     Device* d3dDevice = (Device*)device;
     DescriptorSetLayout* layout = nullptr;
@@ -5216,21 +5431,96 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
                 AccelerationStructure* tlas = (AccelerationStructure*)info->tlasInfo->tlas;
+                D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
+                desc.RaytracingAccelerationStructure.Location = tlas->address;
+                desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+
+                d3dDevice->handle->lpVtbl->CreateShaderResourceView(
+                    d3dDevice->handle, 
+                    nullptr, 
+                    &desc, 
+                    dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                 ImageView* imageView = (ImageView*)info->imageViewInfo->imageView;
+                D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
+                desc.Format = imageView->format;
+                fillSubresourceD3D12(
+                    imageView->type, 
+                    &imageView->range, 
+                    nullptr, 
+                    nullptr, 
+                    &desc, 
+                    nullptr);
+
                 d3dDevice->handle->lpVtbl->CreateShaderResourceView(
                     d3dDevice->handle, 
                     imageView->image->handle, 
-                    &imageView->desc, 
+                    &desc, 
                     dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 ImageView* imageView = (ImageView*)info->imageViewInfo->imageView;
+                D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
+                desc.Format = imageView->format;
+                fillSubresourceD3D12(
+                    imageView->type, 
+                    &imageView->range, 
+                    nullptr, 
+                    nullptr, 
+                    nullptr,
+                    &desc);
+
+                d3dDevice->handle->lpVtbl->CreateUnorderedAccessView(
+                    d3dDevice->handle,
+                    imageView->image->handle, 
+                    nullptr,
+                    &desc, 
+                    dst);
+
+            } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                Buffer* buffer = (Buffer*)info->bufferInfo->buffer;
+                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {0};
+                desc.SizeInBytes = info->bufferInfo->size;
+
+                D3D12_GPU_VIRTUAL_ADDRESS address = 0;
+                address = buffer->handle->lpVtbl->GetGPUVirtualAddress(buffer->handle);
+                desc.BufferLocation = address + offset;
+
+                d3dDevice->handle->lpVtbl->CreateConstantBufferView(
+                    d3dDevice->handle,
+                    &desc, 
+                    dst);
 
             } else {
-                // storage and uniform buffers
+                // storage buffer
                 Buffer* buffer = (Buffer*)info->bufferInfo->buffer;
+                if (info->bufferInfo->readOnly) {
+                    D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
+                    desc.Buffer.FirstElement = info->bufferInfo->offset;
+                    desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+                    desc.Buffer.NumElements = info->bufferInfo->size;
+
+                    d3dDevice->handle->lpVtbl->CreateShaderResourceView(
+                        d3dDevice->handle, 
+                        buffer->handle,
+                        &desc, 
+                        dst);
+
+                } else {
+                    D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
+                    desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+                    desc.Buffer.FirstElement = info->bufferInfo->offset;
+                    desc.Buffer.NumElements = info->bufferInfo->size;
+                    desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+
+                    d3dDevice->handle->lpVtbl->CreateUnorderedAccessView(
+                        d3dDevice->handle,
+                        buffer->handle,
+                        nullptr,
+                        &desc, 
+                        dst);
+                }
             }
         }
     }
