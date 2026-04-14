@@ -526,26 +526,6 @@ typedef enum {
 } PalImageUsages;
 
 /**
- * @enum PalImageViewUsages
- * @brief Image view usages. Multiple image view usages can be OR'ed together using bitwise
- * OR operator (`|`). Not all combination are valid.
- *
- * All image view usages follow the format `PAL_IMAGE_VIEW_USAGE_**` for
- * consistency and API use.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef enum {
-    PAL_IMAGE_VIEW_USAGE_UNDEFINED = 0,
-
-    PAL_IMAGE_VIEW_USAGE_COLOR = PAL_BIT(0),
-    PAL_IMAGE_VIEW_USAGE_DEPTH = PAL_BIT(1),
-    PAL_IMAGE_VIEW_USAGE_STENCIL = PAL_BIT(2),
-    PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE = PAL_BIT(3)
-} PalImageViewUsages;
-
-/**
  * @enum PalShaderFormats
  * @brief Shader formats. This is a bitmask.
  *
@@ -675,6 +655,23 @@ typedef enum {
     PAL_IMAGE_TYPE_2D,
     PAL_IMAGE_TYPE_3D
 } PalImageType;
+
+/**
+ * @enum PalImageAspect
+ * @brief Image aspects.
+ *
+ * All image aspect follow the format `PAL_IMAGE_ASPECT_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_IMAGE_ASPECT_COLOR,
+    PAL_IMAGE_ASPECT_DEPTH,
+    PAL_IMAGE_ASPECT_STENCIL,
+    PAL_IMAGE_ASPECT_DEPTH_STENCIL
+} PalImageAspect;
 
 /**
  * @enum PalImageViewType
@@ -1605,7 +1602,6 @@ typedef struct {
 typedef struct {
     PalFormat format;              /**< The format.*/
     PalImageUsages usages;         /**< Supported image usages of the format.*/
-    PalImageViewUsages viewUsages; /**< Supported image view usages of the format.*/
     PalSampleCount maxSampleCount; /**< Supported multisample count.*/
 } PalFormatInfo;
 
@@ -2277,6 +2273,7 @@ typedef struct {
     Uint32 mipLevelCount;
     Uint32 startArrayLayer;
     Uint32 layerArrayCount;
+    PalImageAspect aspect; /**< Must be compatible with the image format.*/
 } PalImageSubresourceRange;
 
 /**
@@ -2316,6 +2313,7 @@ typedef struct {
     Uint32 imageWidth;
     Uint32 imageHeight;
     Uint32 imageDepth;
+    PalImageAspect imageAspect;
 } PalBufferImageCopyInfo;
 
 /**
@@ -2342,6 +2340,7 @@ typedef struct {
     Uint32 width;
     Uint32 height;
     Uint32 depth;
+    PalImageAspect aspect;
 } PalImageCopyInfo;
 
 /**
@@ -2374,8 +2373,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    PalFormat format; /**< Must be compatible with the image format.*/
     PalImageViewType type;     /**< (eg. PAL_IMAGE_VIEW_TYPE_2D).*/
-    PalImageViewUsages usages; /**< (eg. PAL_IMAGE_VIEW_USAGE_COLOR).*/
     PalImageSubresourceRange subresourceRange;
 } PalImageViewCreateInfo;
 
@@ -2807,15 +2806,6 @@ typedef struct {
      * Must obey the rules and semantics documented in palQueryFormatImageUsages().
      */
     PalImageUsages PAL_CALL (*queryFormatImageUsages)(
-        PalAdapter* adapter,
-        PalFormat format);
-
-    /**
-     * Backend implementation of ::palQueryFormatImageViewUsages.
-     *
-     * Must obey the rules and semantics documented in palQueryFormatImageViewUsages().
-     */
-    PalImageViewUsages PAL_CALL (*queryFormatImageViewUsages)(
         PalAdapter* adapter,
         PalFormat format);
 
@@ -4463,25 +4453,6 @@ PAL_API bool PAL_CALL palIsFormatSupported(
  * @ingroup pal_graphics
  */
 PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
-    PalAdapter* adapter,
-    PalFormat format);
-
-/**
- * @brief Checks supported image view usages associated with a format.
- *
- * The graphics system must be initialized before this call.
- *
- * @param[in] adapter Adapter to query format on.
- * @param[in] format Format to query image view usages for.
- *
- * @return Supported image view usages on success otherwise `0` on failure.
- *
- * Thread safety: Thread safe.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-PAL_API PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
     PalAdapter* adapter,
     PalFormat format);
 

@@ -441,7 +441,6 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool belongsToSwapchain;
-    VkImageAspectFlags aspectMask;
     Device* device;
     Memory* memory;
     VkImage handle;
@@ -451,12 +450,10 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    VkImageViewType type;
-    PalImageViewUsages usages;
+    Uint32 layerCount;
     Device* device;
     Image* image;
     VkImageView handle;
-    VkImageSubresourceRange range;
 } ImageView;
 
 typedef struct {
@@ -2489,6 +2486,25 @@ static Uint32 getFormatSizeVk(PalFormat format)
     }
 
     return 0;
+}
+
+static VkImageAspectFlags imageAspectToVk(PalImageAspect aspect)
+{
+    switch (aspect) {
+        case PAL_IMAGE_ASPECT_COLOR:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+
+        case PAL_IMAGE_ASPECT_DEPTH:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        case PAL_IMAGE_ASPECT_STENCIL:
+            return VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        case PAL_IMAGE_ASPECT_DEPTH_STENCIL:
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
 // ==================================================
@@ -4941,27 +4957,6 @@ PalResult PAL_CALL enumerateFormatsVk(
                     PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
                     fmtInfo->format = (PalFormat)i;
                     fmtInfo->usages = ImageUsageFromVk(props.optimalTilingFeatures);
-
-                    fmtInfo->viewUsages = 0;
-                    if (fmtInfo->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
-                        fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_COLOR;
-                        if (i == PAL_FORMAT_R8_UINT) {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
-                        }
-                    }
-
-                    if (fmtInfo->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
-                        if (i == PAL_FORMAT_S8_UINT) {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-
-                        } else if (i == PAL_FORMAT_D16_UNORM || i == PAL_FORMAT_D32_SFLOAT) {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-
-                        } else {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-                        }
-                    }
                 }
 
             } else {
@@ -5006,44 +5001,6 @@ PalImageUsages PAL_CALL queryFormatImageUsagesVk(
     }
 
     return ImageUsageFromVk(props.optimalTilingFeatures);
-}
-
-PalImageViewUsages PAL_CALL queryFormatImageViewUsagesVk(
-    PalAdapter* adapter,
-    PalFormat format)
-{
-    Adapter* vkAdapter = (Adapter*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
-    VkFormatProperties props = {0};
-
-    VkFormat fmt = formatToVk(format);
-    s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
-    if (props.optimalTilingFeatures == 0) {
-        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
-    }
-
-    PalImageViewUsages usages = 0;
-    PalImageUsages imageUsages = ImageUsageFromVk(props.optimalTilingFeatures);
-    if (imageUsages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
-        usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
-        if (format == PAL_FORMAT_R8_UINT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
-        }
-    }
-
-    if (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
-        if (format == PAL_FORMAT_S8_UINT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-
-        } else if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-
-        } else {
-            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-        }
-    }
-    return usages;
 }
 
 PalSampleCount PAL_CALL queryFormatSampleCountVk(
@@ -5145,23 +5102,6 @@ PalResult PAL_CALL createImageVk(
     image->info.mipLevelCount = info->mipLevelCount;
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
-
-    // get aspect masks from image format
-    image->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (info->format == PAL_FORMAT_S8_UINT) {
-        image->aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
-
-    if (info->format == PAL_FORMAT_D16_UNORM || info->format == PAL_FORMAT_D32_SFLOAT) {
-        image->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-
-    if (info->format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
-        info->format == PAL_FORMAT_D16_UNORM_S8_UINT  ||
-        info->format == PAL_FORMAT_D24_UNORM_S8_UINT) {
-        image->aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        image->aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
 
     image->memory = nullptr;
     *outImage = (PalImage*)image;
@@ -5290,29 +5230,16 @@ PalResult PAL_CALL createImageViewVk(
 
     VkImageViewCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.format = formatToVk(vkImage->info.format);
+    createInfo.format = formatToVk(info->format);
     createInfo.image = vkImage->handle;
+    createInfo.viewType = imageViewTypeToVk(info->type);
 
+    createInfo.subresourceRange.aspectMask = imageAspectToVk(info->subresourceRange.aspect);
     createInfo.subresourceRange.baseArrayLayer = info->subresourceRange.startArrayLayer;
     createInfo.subresourceRange.baseMipLevel = info->subresourceRange.startMipLevel;
     createInfo.subresourceRange.levelCount = info->subresourceRange.mipLevelCount;
     createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
-    createInfo.viewType = imageViewTypeToVk(info->type);
 
-    VkImageAspectFlags aspectFlags = 0;
-    if (info->usages & PAL_IMAGE_VIEW_USAGE_DEPTH) {
-        aspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-
-    if (info->usages & PAL_IMAGE_VIEW_USAGE_STENCIL) {
-        aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
-
-    if (info->usages & PAL_IMAGE_VIEW_USAGE_COLOR) {
-        aspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
-    }
-
-    createInfo.subresourceRange.aspectMask = aspectFlags;
     result = s_Vk.createImageView(
         vkDevice->handle,
         &createInfo,
@@ -5326,9 +5253,7 @@ PalResult PAL_CALL createImageViewVk(
 
     imageView->device = vkDevice;
     imageView->image = vkImage;
-    imageView->type = createInfo.viewType;
-    imageView->usages = info->usages;
-    imageView->range = createInfo.subresourceRange;
+    imageView->layerCount = createInfo.subresourceRange.layerCount;
 
     *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
@@ -5761,7 +5686,6 @@ PalResult PAL_CALL createSwapchainVk(
         image->info.mipLevelCount = 1;
         image->info.sampleCount = PAL_SAMPLE_COUNT_1; // swapchain images are not multisampled
         image->info.type = PAL_IMAGE_TYPE_2D;
-        image->aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
     palFree(s_Vk.allocator, images);
@@ -6709,12 +6633,12 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         attachment->imageLayout = layout;
 
         // compute layer count and render area
-        layerCount = minVk(layerCount, imageView->range.layerCount);
+        layerCount = minVk(layerCount, imageView->layerCount);
         renderWidth = minVk(renderWidth, imageView->image->info.width);
         renderHeight = minVk(renderHeight, imageView->image->info.height);
 
         if (resolveImageView) {
-            layerCount = minVk(layerCount, resolveImageView->range.layerCount);
+            layerCount = minVk(layerCount, resolveImageView->layerCount);
             renderWidth = minVk(renderWidth, resolveImageView->image->info.width);
             renderHeight = minVk(renderHeight, resolveImageView->image->info.height);
         }
@@ -6800,12 +6724,12 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         rendering.pStencilAttachment = &stencilAttachment;
 
         // compute layer count and render area
-        layerCount = minVk(layerCount, imageView->range.layerCount);
+        layerCount = minVk(layerCount, imageView->layerCount);
         renderWidth = minVk(renderWidth, imageView->image->info.width);
         renderHeight = minVk(renderHeight, imageView->image->info.height);
 
         if (resolveImageView) {
-            layerCount = minVk(layerCount, resolveImageView->range.layerCount);
+            layerCount = minVk(layerCount, resolveImageView->layerCount);
             renderWidth = minVk(renderWidth, resolveImageView->image->info.width);
             renderHeight = minVk(renderHeight, resolveImageView->image->info.height);
         }
@@ -6826,7 +6750,7 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         rendering.pNext = &fsrInfo;
 
         // compute layer count and render area
-        layerCount = minVk(layerCount, imageView->range.layerCount);
+        layerCount = minVk(layerCount, imageView->layerCount);
         renderWidth = minVk(renderWidth, imageView->image->info.width);
         renderHeight = minVk(renderHeight, imageView->image->info.height);
     }
@@ -6896,7 +6820,7 @@ PalResult PAL_CALL cmdCopyBufferToImageVk(
     copyRegion.imageExtent.height = copyInfo->imageHeight;
     copyRegion.imageExtent.depth = copyInfo->imageDepth;
 
-    copyRegion.imageSubresource.aspectMask = dst->aspectMask;
+    copyRegion.imageSubresource.aspectMask = imageAspectToVk(copyInfo->imageAspect);
     copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
     copyRegion.imageSubresource.layerCount = copyInfo->ImageArrayLayerCount;
     copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
@@ -6935,12 +6859,12 @@ PalResult PAL_CALL cmdCopyImageVk(
     copyRegion.extent.height = copyInfo->height;
     copyRegion.extent.depth = copyInfo->depth;
 
-    copyRegion.dstSubresource.aspectMask = dstImage->aspectMask;
+    copyRegion.dstSubresource.aspectMask = imageAspectToVk(copyInfo->aspect);
     copyRegion.dstSubresource.baseArrayLayer = copyInfo->dstStartArrayLayer;
     copyRegion.dstSubresource.layerCount = copyInfo->arrayLayerCount;
     copyRegion.dstSubresource.mipLevel = copyInfo->dstMipLevel;
 
-    copyRegion.srcSubresource.aspectMask = srcImage->aspectMask;
+    copyRegion.srcSubresource.aspectMask = imageAspectToVk(copyInfo->aspect);
     copyRegion.srcSubresource.baseArrayLayer = copyInfo->srcStartArrayLayer;
     copyRegion.srcSubresource.layerCount = copyInfo->arrayLayerCount;
     copyRegion.srcSubresource.mipLevel = copyInfo->srcMipLevel;
@@ -6980,7 +6904,7 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
     copyRegion.imageExtent.height = copyInfo->imageHeight;
     copyRegion.imageExtent.depth = copyInfo->imageDepth;
 
-    copyRegion.imageSubresource.aspectMask = src->aspectMask;
+    copyRegion.imageSubresource.aspectMask = imageAspectToVk(copyInfo->imageAspect);
     copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
     copyRegion.imageSubresource.layerCount = copyInfo->ImageArrayLayerCount;
     copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
@@ -7323,7 +7247,7 @@ PalResult PAL_CALL cmdImageBarrierVk(
     barrier.newLayout = new.layout;
 
     barrier.image = vkImage->handle;
-    barrier.subresourceRange.aspectMask = vkImage->aspectMask;
+    barrier.subresourceRange.aspectMask = imageAspectToVk(subresourceRange->aspect);
     barrier.subresourceRange.baseArrayLayer = subresourceRange->startArrayLayer;
     barrier.subresourceRange.baseMipLevel = subresourceRange->startMipLevel;
     barrier.subresourceRange.layerCount = subresourceRange->layerArrayCount;

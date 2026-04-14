@@ -260,13 +260,21 @@ bool clearColorTest()
         return false;
     }
 
+    PalImageInfo imageInfo;
+    result = palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get image info: %s", error);
+        return false;
+    }
+
     PalImageViewCreateInfo imageViewCreateInfo = {0};
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
-    imageViewCreateInfo.usages = PAL_IMAGE_VIEW_USAGE_COLOR;
     imageViewCreateInfo.subresourceRange.layerArrayCount = 1;
     imageViewCreateInfo.subresourceRange.mipLevelCount = 1;
     imageViewCreateInfo.subresourceRange.startArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.startMipLevel = 0;
+    imageViewCreateInfo.format = imageInfo.format;
 
     for (int i = 0; i < imageCount; i++) {
         // get swapchain image

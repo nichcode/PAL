@@ -129,7 +129,6 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool belongsToSwapchain;
-    Uint32 planeCount;
     ID3D12Device* device;
     ID3D12Resource* handle;
     PalImageInfo info;
@@ -139,8 +138,6 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    PalImageViewType type;
-    PalImageViewUsages usages;
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
     Image* image;
     D3D12_SHADER_RESOURCE_VIEW_DESC desc;
@@ -2205,32 +2202,6 @@ PalResult PAL_CALL enumerateFormatsD3D12(
                     PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
                     fmtInfo->format = (PalFormat)i;
                     fmtInfo->usages = ImageUsageFromD3D12(support.Support1);
-
-                    if (support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE ||
-                        support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
-                        fmtInfo->usages |= PAL_IMAGE_USAGE_STORAGE;
-                    }
-
-                    fmtInfo->viewUsages = 0;
-                    if (fmtInfo->usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
-                        fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_COLOR;
-                        if (i == PAL_FORMAT_R8_UINT) {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
-                        }
-                    }
-
-                    if (fmtInfo->usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
-                        if (i == PAL_FORMAT_S8_UINT) {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-
-                        } else if (i == PAL_FORMAT_D16_UNORM || i == PAL_FORMAT_D32_SFLOAT) {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-
-                        } else {
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-                            fmtInfo->viewUsages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-                        }
-                    }
                 }
 
             } else {
@@ -2308,62 +2279,6 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
         usages |= PAL_IMAGE_USAGE_STORAGE;
     }
 
-    return usages;
-}
-
-PalImageViewUsages PAL_CALL queryFormatImageViewUsagesD3D12(
-    PalAdapter* adapter,
-    PalFormat format)
-{
-    HRESULT result;
-    Adapter* d3dAdapter = (Adapter*)adapter;
-    ID3D12Device* device = d3dAdapter->tmpDevice;
-    D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
-
-    DXGI_FORMAT fmt = formatToD3D12(format);
-    if (fmt == DXGI_FORMAT_UNKNOWN) {
-        return 0;
-    }
-
-    support.Format = fmt;
-    result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_FORMAT_SUPPORT, 
-        &support, 
-        sizeof(support));
-
-    if (FAILED(result)) {
-        return 0;
-    }
-
-    if (support.Support1 == 0 && support.Support2 == 0) {
-        // format not supported
-        return 0;
-    }
-
-    PalImageUsages imageUsages = ImageUsageFromD3D12(support.Support1);
-    if (support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE ||
-        support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
-        imageUsages |= PAL_IMAGE_USAGE_STORAGE;
-    }
-
-    PalImageViewUsages usages = 0;
-    if (imageUsages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
-        usages |= PAL_IMAGE_VIEW_USAGE_COLOR;
-        if (format == PAL_FORMAT_R8_UINT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_FRAGMENT_SHADING_RATE;
-        }
-    }
-
-    if (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
-        if (format == PAL_FORMAT_D16_UNORM || format == PAL_FORMAT_D32_SFLOAT) {
-            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-
-        } else {
-            usages |= PAL_IMAGE_VIEW_USAGE_DEPTH;
-            usages |= PAL_IMAGE_VIEW_USAGE_STENCIL;
-        }
-    }
     return usages;
 }
 
@@ -2490,14 +2405,6 @@ PalResult PAL_CALL createImageD3D12(
     image->info.mipLevelCount = info->mipLevelCount;
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
-
-    // get plane count from image format
-    image->planeCount = 1; // for color or depth
-    if (info->format == PAL_FORMAT_D32_SFLOAT_S8_UINT || 
-        info->format == PAL_FORMAT_D16_UNORM_S8_UINT  ||
-        info->format == PAL_FORMAT_D24_UNORM_S8_UINT) {
-        image->planeCount = 2;
-    }
 
     image->device = d3dDevice->handle;
     *outImage = (PalImage*)image;
@@ -2676,22 +2583,7 @@ PalResult PAL_CALL createImageViewD3D12(
         imageView->desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
     }
 
-    // VkImageAspectFlags aspectFlags = 0;
-    // if (info->usages & PAL_IMAGE_VIEW_USAGE_DEPTH) {s
-    //     aspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    // }
-
-    // if (info->usages & PAL_IMAGE_VIEW_USAGE_STENCIL) {
-    //     aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    // }
-
-    // if (info->usages & PAL_IMAGE_VIEW_USAGE_COLOR) {
-    //     aspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
-    // }
-
     memset(imageView, 0, sizeof(ImageView));
-    imageView->type = info->type;
-    imageView->usages = info->usages;
     imageView->image = d3dImage;
 
     // TODO: create a temporary RTV/DTV heap and create the image view on it
@@ -4071,24 +3963,36 @@ PalResult PAL_CALL cmdCopyBufferToImageD3D12(
     Uint64 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     footPrint->Footprint.RowPitch = (UINT)rowPitch;
 
+    Uint32 planeCount = 1;
+    if (copyInfo->imageAspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
+        planeCount = 2;
+    }
+
     D3D12_BOX box = {0};
     box.right = copyInfo->imageWidth;
     box.bottom = copyInfo->imageHeight;
     box.back = copyInfo->imageDepth;
 
-    // copy the array layers manually
-    for (Uint32 layer = 0; layer < copyInfo->ImageArrayLayerCount; layer++) {
-        Uint32 tmp = (copyInfo->ImageStartArrayLayer + layer) * dst->info.mipLevelCount;
-        dstLocation.SubresourceIndex = copyInfo->ImageMipLevel + tmp;
+    Uint32 level = copyInfo->ImageMipLevel;
+    Uint32 startLayer = copyInfo->ImageStartArrayLayer;
+    Uint32 layerCount = copyInfo->ImageArrayLayerCount;
+    Uint32 maxLayers = dst->info.depthOrArraySize;
+    Uint32 maxLevels = dst->info.mipLevelCount;
 
-        d3dCmdBuffer->handle6->lpVtbl->CopyTextureRegion(
-            d3dCmdBuffer->handle6, 
-            &dstLocation,
-            copyInfo->imageOffsetX,
-            copyInfo->imageOffsetY,
-            copyInfo->imageOffsetZ,
-            &srcLocation,
-            &box);
+    for (Uint32 plane = 0; plane < planeCount; plane++) {
+        for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
+            Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+
+            dstLocation.SubresourceIndex = index;
+            d3dCmdBuffer->handle6->lpVtbl->CopyTextureRegion(
+                d3dCmdBuffer->handle6, 
+                &dstLocation,
+                copyInfo->imageOffsetX,
+                copyInfo->imageOffsetY,
+                copyInfo->imageOffsetZ,
+                &srcLocation,
+                &box);
+        }
     }
 
     return PAL_RESULT_SUCCESS;
@@ -4120,21 +4024,41 @@ PalResult PAL_CALL cmdCopyImageD3D12(
     box.bottom = copyInfo->srcOffsetY + copyInfo->height;
     box.back = copyInfo->srcOffsetZ + copyInfo->depth;
 
-    // copy the array layers manually
-    for (Uint32 layer = 0; layer < copyInfo->arrayLayerCount; layer++) {
-        Uint32 dstTmp = (copyInfo->dstStartArrayLayer + layer) * dstImage->info.mipLevelCount;
-        Uint32 srcTmp = (copyInfo->srcStartArrayLayer + layer) * srcImage->info.mipLevelCount;
-        dstLocation.SubresourceIndex = copyInfo->dstMipLevel + dstTmp;
-        srcLocation.SubresourceIndex = copyInfo->srcMipLevel + srcTmp;
+    Uint32 planeCount = 1;
+    Uint32 layerCount = copyInfo->arrayLayerCount;
+    if (copyInfo->aspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
+        planeCount = 2;
+    }
 
-        d3dCmdBuffer->handle6->lpVtbl->CopyTextureRegion(
-            d3dCmdBuffer->handle6, 
-            &dstLocation, 
-            copyInfo->dstOffsetX, 
-            copyInfo->dstOffsetY, 
-            copyInfo->dstOffsetZ, 
-            &srcLocation,
-            &box);
+    Uint32 dstLevel = copyInfo->dstMipLevel;
+    Uint32 dstStartLayer = copyInfo->dstStartArrayLayer;
+    Uint32 dstMaxLayers = dstImage->info.depthOrArraySize;
+    Uint32 dstMaxLevels = dstImage->info.mipLevelCount;
+
+    Uint32 srcLevel = copyInfo->srcMipLevel;
+    Uint32 srcStartLayer = copyInfo->srcStartArrayLayer;
+    Uint32 srcMaxLayers = srcImage->info.depthOrArraySize;
+    Uint32 srcMaxLevels = srcImage->info.mipLevelCount;
+
+    for (Uint32 plane = 0; plane < planeCount; plane++) {
+        for (Uint32 layer = 0; layer + layerCount; layer++) {
+            // clang-format off
+            Uint32 dstIndex = dstLevel + (dstStartLayer + layer * dstMaxLevels) + (plane * dstMaxLevels * dstMaxLayers);
+            Uint32 srcIndex = srcLevel + (srcStartLayer + layer * srcMaxLevels) + (plane * srcMaxLevels * srcMaxLayers);
+            // clang-format on
+
+            dstLocation.SubresourceIndex = dstIndex;
+            srcLocation.SubresourceIndex = srcIndex;
+
+            d3dCmdBuffer->handle6->lpVtbl->CopyTextureRegion(
+                d3dCmdBuffer->handle6, 
+                &dstLocation, 
+                copyInfo->dstOffsetX, 
+                copyInfo->dstOffsetY, 
+                copyInfo->dstOffsetZ, 
+                &srcLocation,
+                &box);
+        }
     }
 
     return PAL_RESULT_SUCCESS;
@@ -4176,19 +4100,31 @@ PalResult PAL_CALL cmdCopyImageToBufferD3D12(
     box.bottom = copyInfo->imageOffsetY + copyInfo->imageHeight;
     box.back = copyInfo->imageOffsetX + copyInfo->imageDepth;
 
-    // copy the array layers manually
-    for (Uint32 layer = 0; layer < copyInfo->ImageArrayLayerCount; layer++) {
-        Uint32 tmp = (copyInfo->ImageStartArrayLayer + layer) * src->info.mipLevelCount;
-        srcLocation.SubresourceIndex = copyInfo->ImageMipLevel + tmp;
+    Uint32 planeCount = 1;
+    if (copyInfo->imageAspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
+        planeCount = 2;
+    }
 
-        d3dCmdBuffer->handle6->lpVtbl->CopyTextureRegion(
-            d3dCmdBuffer->handle6, 
-            &dstLocation,
-            0,
-            0,
-            0,
-            &srcLocation,
-            &box);
+    Uint32 level = copyInfo->ImageMipLevel;
+    Uint32 startLayer = copyInfo->ImageStartArrayLayer;
+    Uint32 layerCount = copyInfo->ImageArrayLayerCount;
+    Uint32 maxLayers = src->info.depthOrArraySize;
+    Uint32 maxLevels = src->info.mipLevelCount;
+
+    for (Uint32 plane = 0; plane < planeCount; plane++) {
+        for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
+            Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+
+            srcLocation.SubresourceIndex = index;
+            d3dCmdBuffer->handle6->lpVtbl->CopyTextureRegion(
+                d3dCmdBuffer->handle6, 
+                &dstLocation,
+                0,
+                0,
+                0,
+                &srcLocation,
+                &box);
+        }
     }
 
     return PAL_RESULT_SUCCESS;
@@ -4550,16 +4486,20 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
         return PAL_RESULT_SUCCESS;
     }
 
+    Uint32 planeCount = 1; // for color or depth
+    if (subresourceRange->aspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
+        planeCount = 2;
+    }
+
     D3D12_RESOURCE_BARRIER* barriers = nullptr;
     Uint32 levelCount = subresourceRange->mipLevelCount;
     Uint32 layerCount = subresourceRange->layerArrayCount;
-    Uint32 planeCount = d3dImage->planeCount;
 
     Uint32 startLevel = subresourceRange->startMipLevel;
     Uint32 startLayer = subresourceRange->startArrayLayer;
     Uint32 maxLevels = d3dImage->info.mipLevelCount;
     Uint32 maxLayers = d3dImage->info.depthOrArraySize;
-    Uint32 barrierCount = layerCount * levelCount * d3dImage->planeCount;
+    Uint32 barrierCount = layerCount * levelCount * planeCount;
 
     if (startLevel == 0 && levelCount == maxLevels && startLayer == 0 && layerCount == maxLayers) {
         // full resource
@@ -4591,7 +4531,7 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
     }
 
     Uint32 count = 0;
-    for (Uint32 plane = 0; plane < d3dImage->planeCount; plane++) {
+    for (Uint32 plane = 0; plane < planeCount; plane++) {
         for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
             for (Uint32 level = startLevel; level < startLevel + levelCount; level++) {
                 Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
@@ -5227,7 +5167,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     d3dPool->samplerOffset += reqSamplers;
     d3dPool->usedSets++;
 
-    *outSet = (DescriptorSet*)set;
+    *outSet = (PalDescriptorSet*)set;
     return PAL_RESULT_SUCCESS;
 }
 

@@ -313,13 +313,21 @@ bool meshTest()
         return false;
     }
 
+    PalImageInfo imageInfo;
+    result = palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to get image info: %s", error);
+        return false;
+    }
+
     PalImageViewCreateInfo imageViewCreateInfo = {0};
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
-    imageViewCreateInfo.usages = PAL_IMAGE_VIEW_USAGE_COLOR;
     imageViewCreateInfo.subresourceRange.layerArrayCount = 1;
     imageViewCreateInfo.subresourceRange.mipLevelCount = 1;
     imageViewCreateInfo.subresourceRange.startArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.startMipLevel = 0;
+    imageViewCreateInfo.format = imageInfo.format;
 
     for (int i = 0; i < imageCount; i++) {
         // get swapchain image
@@ -453,19 +461,6 @@ bool meshTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline layout: %s", error);
-        return false;
-    }
-
-    // the graphics pipeline needs the layout of the rendering
-    // info it will be used with
-    // we get the any image from the swapchain and get the format
-    // on the image since our color attachment takes a swapchain image
-    PalImage* image = palGetSwapchainImage(swapchain, 0);
-    PalImageInfo imageInfo = {0};
-    result = palGetImageInfo(image, &imageInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get image info: %s", error);
         return false;
     }
 

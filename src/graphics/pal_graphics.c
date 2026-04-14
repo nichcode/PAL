@@ -213,10 +213,6 @@ PalImageUsages PAL_CALL queryFormatImageUsagesVk(
     PalAdapter* adapter,
     PalFormat format);
 
-PalImageViewUsages PAL_CALL queryFormatImageViewUsagesVk(
-    PalAdapter* adapter,
-    PalFormat format);
-
 PalSampleCount PAL_CALL queryFormatSampleCountVk(
     PalAdapter* adapter,
     PalFormat format);
@@ -814,7 +810,6 @@ static PalGraphicsBackend s_VkBackend = {
     .enumerateFormats = enumerateFormatsVk,
     .isFormatSupported = isFormatSupportedVk,
     .queryFormatImageUsages = queryFormatImageUsagesVk,
-    .queryFormatImageViewUsages = queryFormatImageViewUsagesVk,
     .queryFormatSampleCount = queryFormatSampleCountVk,
 
     // image
@@ -1077,10 +1072,6 @@ bool PAL_CALL isFormatSupportedD3D12(
     PalFormat format);
 
 PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
-    PalAdapter* adapter,
-    PalFormat format);
-
-PalImageViewUsages PAL_CALL queryFormatImageViewUsagesD3D12(
     PalAdapter* adapter,
     PalFormat format);
 
@@ -1681,7 +1672,6 @@ static PalGraphicsBackend s_D3D12Backend = {
     .enumerateFormats = enumerateFormatsD3D12,
     .isFormatSupported = isFormatSupportedD3D12,
     .queryFormatImageUsages = queryFormatImageUsagesD3D12,
-    .queryFormatImageViewUsages = queryFormatImageViewUsagesD3D12,
     .queryFormatSampleCount = queryFormatSampleCountD3D12,
 
     // image
@@ -1887,7 +1877,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->enumerateFormats                      ||
         !backend->isFormatSupported                     ||
         !backend->queryFormatImageUsages                ||
-        !backend->queryFormatImageViewUsages            ||
         !backend->queryFormatSampleCount                ||
 
         // image
@@ -2498,17 +2487,6 @@ PalImageUsages PAL_CALL palQueryFormatImageUsages(
     }
 
     return adapter->backend->queryFormatImageUsages(adapter, format);
-}
-
-PalImageViewUsages PAL_CALL palQueryFormatImageViewUsages(
-    PalAdapter* adapter,
-    PalFormat format)
-{
-    if (!s_Graphics.initialized || !adapter) {
-        return PAL_IMAGE_VIEW_USAGE_UNDEFINED;
-    }
-
-    return adapter->backend->queryFormatImageViewUsages(adapter, format);
 }
 
 PalSampleCount PAL_CALL palQueryFormatSampleCount(
