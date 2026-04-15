@@ -6,11 +6,9 @@
 
 #define BUFFER_SIZE 400
 
-// the storage buffer needs alignment of 16
 typedef struct {
     Uint32 width;
     Uint32 height;
-    Uint32 _padding[2];
     float color[4];
 } PushConstant;
 
