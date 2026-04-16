@@ -48,6 +48,9 @@ freely, subject to the following restrictions:
 #define TEXTURE_PITCH 256
 #define MAX_RTV 1024
 #define MAX_DSV 512
+#define CONSTANT_INDEX 0
+#define DESCRIPTOR_TABLE_INDEX 1
+#define SAMPLER_DESCRIPTOR_TABLE_INDEX 2
 
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
@@ -312,7 +315,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 offset;
+    Uint32 resourceOffset;
     Uint32 samplerOffset;
     DescriptorSetLayout* layout;
     void* pool; // DescriptorPool
@@ -321,19 +324,22 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    bool hasResourceHeap;
+    bool hasSamplerHeap;
     Uint32 maxSets;
     Uint32 usedSets;
     DescriptorHeapLimits limits;
-    DescriptorHeap heap;
+    DescriptorHeap resourceHeap;
     DescriptorHeap samplerHeap;
     DescriptorSet* sets;
 } DescriptorPool;
 
 typedef struct {
-    Uint32 rootIndex; // CBV SRV UAV
-    Uint32 samplerRootIndex; 
+    Uint32 constantIndex;
+    Uint32 resourceIndex;
+    Uint32 samplerIndex;
     ID3D12RootSignature* handle;
-    D3D12_ROOT_PARAMETER1 params[2];
+    D3D12_ROOT_PARAMETER1 params[3];
 } PipelineLayout;
 
 static D3D12 s_D3D = {0};
@@ -4980,8 +4986,8 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -4990,29 +4996,68 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PipelineLayout* pipelineLayout = (PipelineLayout*)layout;
     DescriptorPool* pool = d3dSet->pool;
 
-    D3D12_GPU_DESCRIPTOR_HANDLE base, samplerBase;
-    base.ptr = getDescriptorHandleD3D12(
-        d3dSet->offset, 
-        pool->heap.incrementSize, 
-        pool->heap.gpuBase);
+    // bind heaps
+    Uint32 heapCount = 0;
+    ID3D12DescriptorHeap* heaps[2];
+    if (pool->hasResourceHeap) {
+        heaps[heapCount++] = pool->resourceHeap.handle;
+    }
 
-    samplerBase.ptr = getDescriptorHandleD3D12(
-        d3dSet->offset, 
-        pool->heap.incrementSize, 
-        pool->heap.gpuBase);
+    if (pool->hasSamplerHeap) {
+        heaps[heapCount++] = pool->samplerHeap.handle;
+    }
+    d3dCmdBuffer->handle6->lpVtbl->SetDescriptorHeaps(d3dCmdBuffer->handle6, heapCount, heaps);
 
-    ID3D12DescriptorHeap* heaps[] = { pool->heap.handle, pool->samplerHeap.handle };
-    d3dCmdBuffer->handle6->lpVtbl->SetDescriptorHeaps(d3dCmdBuffer->handle6, 2, heaps);
+    // bind descriptor tables
+    if (pipelineLayout->resourceIndex != UINT32_MAX) {
+        // a valid index
+        D3D12_GPU_DESCRIPTOR_HANDLE base;
+        base.ptr = getDescriptorHandleD3D12(
+            d3dSet->resourceOffset,
+            pool->resourceHeap.incrementSize, 
+            pool->resourceHeap.gpuBase);
 
-    d3dCmdBuffer->handle6->lpVtbl->SetGraphicsRootDescriptorTable(
-        d3dCmdBuffer->handle6, 
-        pipelineLayout->rootIndex, 
-        base);
+        if (bindPoint == PAL_PIPELINE_BIND_POINT_GRAPHICS) {
+            d3dCmdBuffer->handle6->lpVtbl->SetGraphicsRootDescriptorTable(
+                d3dCmdBuffer->handle6, 
+                pipelineLayout->resourceIndex,
+            base);
 
-    d3dCmdBuffer->handle6->lpVtbl->SetGraphicsRootDescriptorTable(
-        d3dCmdBuffer->handle6, 
-        pipelineLayout->samplerRootIndex,
-        samplerBase);
+        } else if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
+            d3dCmdBuffer->handle6->lpVtbl->SetComputeRootDescriptorTable(
+            d3dCmdBuffer->handle6,
+            pipelineLayout->resourceIndex,
+            base);
+
+        } else {
+            // TODO: ray tracing bind point
+        }
+    }
+
+    if (pipelineLayout->samplerIndex != UINT32_MAX) {
+        // a valid index
+        D3D12_GPU_DESCRIPTOR_HANDLE base;
+        base.ptr = getDescriptorHandleD3D12(
+            d3dSet->samplerOffset,
+            pool->samplerHeap.incrementSize, 
+            pool->samplerHeap.gpuBase);
+
+        if (bindPoint == PAL_PIPELINE_BIND_POINT_GRAPHICS) {
+            d3dCmdBuffer->handle6->lpVtbl->SetGraphicsRootDescriptorTable(
+                d3dCmdBuffer->handle6, 
+                pipelineLayout->samplerIndex,
+            base);
+
+        } else if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
+            d3dCmdBuffer->handle6->lpVtbl->SetComputeRootDescriptorTable(
+            d3dCmdBuffer->handle6,
+            pipelineLayout->samplerIndex,
+            base);
+
+        } else {
+            // TODO: ray tracing bind point
+        }
+    }
 
     return PAL_RESULT_SUCCESS;
 }
@@ -5020,14 +5065,39 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
     Uint32 size,
     const void* value)
 {
-    // TODO:
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    PipelineLayout* pipelineLayout = (PipelineLayout*)layout;
+    if (pipelineLayout->constantIndex != UINT32_MAX) {
 
+        if (bindPoint == PAL_PIPELINE_BIND_POINT_GRAPHICS) {
+            d3dCmdBuffer->handle6->lpVtbl->SetGraphicsRoot32BitConstants(
+                d3dCmdBuffer->handle6, 
+                pipelineLayout->constantIndex, 
+                size / 4, 
+                value, 
+                offset / 4);
+
+        } else if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
+            d3dCmdBuffer->handle6->lpVtbl->SetComputeRoot32BitConstants(
+                d3dCmdBuffer->handle6, 
+                pipelineLayout->constantIndex, 
+                size / 4, 
+                value, 
+                offset / 4);
+
+        } else {
+            // TODO: ray tracing bind point
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdSetCullModeD3D12(
@@ -5292,7 +5362,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    Uint32 count = 0;
+    Uint32 resourceCount = 0;
     DescriptorHeapLimits* limits = &pool->limits;
     for (int i = 0; i < info->maxDescriptorBindingSizes; i++) {
         PalDescriptorPoolBindingSize* bindingSize = &info->bindingSizes[i];
@@ -5301,96 +5371,111 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
 
         } else if (bindingSize->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             limits->maxUniformBuffers += bindingSize->bindingCount;
-            count += bindingSize->bindingCount;
+            resourceCount += bindingSize->bindingCount;
 
         } else if (bindingSize->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
             limits->maxStorageBuffers += bindingSize->bindingCount;
-            count += bindingSize->bindingCount;
+            resourceCount += bindingSize->bindingCount;
 
         } else if (bindingSize->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
             limits->maxSampledImages += bindingSize->bindingCount;
-            count += bindingSize->bindingCount;
+            resourceCount += bindingSize->bindingCount;
 
         } else if (bindingSize->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
             limits->maxStorageImages += bindingSize->bindingCount;
-            count += bindingSize->bindingCount;
+            resourceCount += bindingSize->bindingCount;
 
         } else if (bindingSize->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
             limits->maxAs += bindingSize->bindingCount;
-            count += bindingSize->bindingCount;
+            resourceCount += bindingSize->bindingCount;
         }
     }
 
-    D3D12_DESCRIPTOR_HEAP_DESC desc = {0};
-    desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    desc.NumDescriptors = count * info->maxDescriptorSets;
+    // resource heap
+    if (resourceCount) {
+        DescriptorHeap* heap = &pool->resourceHeap;
+        D3D12_CPU_DESCRIPTOR_HANDLE __ret, handle;
+        D3D12_GPU_DESCRIPTOR_HANDLE __gpuRet, gpuHandle;
 
-    D3D12_DESCRIPTOR_HEAP_DESC samplerDesc = {0};
-    samplerDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    samplerDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-    samplerDesc.NumDescriptors = limits->maxSamplers * info->maxDescriptorSets;
+        D3D12_DESCRIPTOR_HEAP_DESC desc = {0};
+        desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        desc.NumDescriptors = resourceCount * info->maxDescriptorSets;
 
-    result = d3dDevice->handle->lpVtbl->CreateDescriptorHeap(
-        d3dDevice->handle, 
-        &desc, 
-        &IID_DescHeap, 
-        (void**)&pool->heap.handle);
+        result = d3dDevice->handle->lpVtbl->CreateDescriptorHeap(
+            d3dDevice->handle, 
+            &desc, 
+            &IID_DescHeap, 
+            (void**)&heap->handle);
 
-    if (FAILED(result)) {
-        if (result == E_OUTOFMEMORY) {
-            return PAL_RESULT_OUT_OF_MEMORY;
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
         }
-        return PAL_RESULT_PLATFORM_FAILURE;
+
+        // get increment size
+        heap->incrementSize = d3dDevice->handle->lpVtbl->GetDescriptorHandleIncrementSize(
+            d3dDevice->handle, 
+            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+        // get base CPU and GPU base pointer
+        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__ret);
+        heap->cpuBase = handle.ptr;
+
+        gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__gpuRet);
+        heap->gpuBase = gpuHandle.ptr;
+
+        pool->hasResourceHeap = true;
     }
-
-    result = d3dDevice->handle->lpVtbl->CreateDescriptorHeap(
-        d3dDevice->handle, 
-        &samplerDesc, 
-        &IID_DescHeap, 
-        (void**)&pool->samplerHeap.handle);
-
-    if (FAILED(result)) {
-        if (result == E_OUTOFMEMORY) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    DescriptorHeap* heap = &pool->heap;
-    DescriptorHeap* samplerHeap = &pool->samplerHeap;
-    heap->incrementSize = d3dDevice->handle->lpVtbl->GetDescriptorHandleIncrementSize(
-        d3dDevice->handle, 
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-    samplerHeap->incrementSize = d3dDevice->handle->lpVtbl->GetDescriptorHandleIncrementSize(
-        d3dDevice->handle, 
-        D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-
-    // get base CPU and GPU base pointer
-    D3D12_CPU_DESCRIPTOR_HANDLE __ret, handle;
-    D3D12_GPU_DESCRIPTOR_HANDLE __gpuRet, gpuHandle;
-
-    handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
-        heap->handle, 
-        &__ret);
-    heap->cpuBase = handle.ptr;
-
-    gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
-        heap->handle, 
-        &__gpuRet);
-    heap->gpuBase = gpuHandle.ptr;
 
     // sampler heap
-    handle = *samplerHeap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
-        samplerHeap->handle, 
-        &__ret);
-    samplerHeap->cpuBase = handle.ptr;
+    if (limits->maxSamplers) {
+        DescriptorHeap* heap = &pool->samplerHeap;
+        D3D12_CPU_DESCRIPTOR_HANDLE __ret, handle;
+        D3D12_GPU_DESCRIPTOR_HANDLE __gpuRet, gpuHandle;
 
-    gpuHandle = *samplerHeap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
-        samplerHeap->handle, 
-        &__gpuRet);
-    samplerHeap->gpuBase = gpuHandle.ptr;
+        D3D12_DESCRIPTOR_HEAP_DESC desc = {0};
+        desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+        desc.NumDescriptors = limits->maxSamplers * info->maxDescriptorSets;
+
+        result = d3dDevice->handle->lpVtbl->CreateDescriptorHeap(
+            d3dDevice->handle, 
+            &desc, 
+            &IID_DescHeap, 
+            (void**)&heap->handle);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        // get increment size
+        heap->incrementSize = d3dDevice->handle->lpVtbl->GetDescriptorHandleIncrementSize(
+            d3dDevice->handle, 
+            D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+        // get base CPU and GPU base pointer
+        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__ret);
+        heap->cpuBase = handle.ptr;
+
+        gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__gpuRet);
+        heap->gpuBase = gpuHandle.ptr;
+
+        pool->hasSamplerHeap = true;
+    }
 
     pool->maxSets = info->maxDescriptorSets;
     *outPool = (PalDescriptorPool*)pool;
@@ -5400,8 +5485,9 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
 void PAL_CALL destroyDescriptorPoolD3D12(PalDescriptorPool* pool)
 {
     DescriptorPool* d3dPool = (DescriptorPool*)pool;
-    d3dPool->heap.handle->lpVtbl->Release(d3dPool->heap.handle);
+    d3dPool->resourceHeap.handle->lpVtbl->Release(d3dPool->resourceHeap.handle);
     d3dPool->samplerHeap.handle->lpVtbl->Release(d3dPool->samplerHeap.handle);
+
     palFree(s_D3D.allocator, d3dPool->sets);
     palFree(s_D3D.allocator, d3dPool);
 }
@@ -5409,7 +5495,7 @@ void PAL_CALL destroyDescriptorPoolD3D12(PalDescriptorPool* pool)
 PalResult PAL_CALL resetDescriptorPoolD3D12(PalDescriptorPool* pool)
 {
     DescriptorPool* d3dPool = (DescriptorPool*)pool;
-    d3dPool->heap.nextOffset = 0;
+    d3dPool->resourceHeap.nextOffset = 0;
     d3dPool->samplerHeap.nextOffset = 0;
     d3dPool->usedSets = 0;
     
@@ -5497,14 +5583,14 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
 
     // assign offset base to the set so we know where to start and end for each set.
     set = &d3dPool->sets[d3dPool->usedSets++];
-    set->offset = d3dPool->heap.nextOffset; // CSV, UAV, SRV
+    set->resourceOffset = d3dPool->resourceHeap.nextOffset;
     set->samplerOffset = d3dPool->samplerHeap.nextOffset;
     set->layout = d3dLayout;
     set->pool = d3dPool;
 
     Uint32 totalDescriptors = asCount + storageBufferCount + uniformBufferCount;
     totalDescriptors += sampledImageCount + storageImageCount;
-    d3dPool->heap.nextOffset += totalDescriptors;
+    d3dPool->resourceHeap.nextOffset += totalDescriptors;
     d3dPool->samplerHeap.nextOffset += totalDescriptors;
 
     limits->usedAs += asCount;
@@ -5535,7 +5621,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
         if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
             heap = &pool->samplerHeap;
         } else {
-            heap = &pool->heap;
+            heap = &pool->resourceHeap;
         }
 
         // compute the heap index and copy all the descriptors

@@ -1264,8 +1264,8 @@ bool textureTest()
 
         result = palCmdBindDescriptorSet(
             cmdBuffers[currentFrame], 
-            bindPoint, 
             pipelineLayout, 
+            bindPoint, 
             0, 
             descriptorSet);
 

@@ -905,7 +905,7 @@ bool rayTracingTest()
         return false;
     }
 
-    result = palCmdBindDescriptorSet(cmdBuffer, bindPoint, pipelineLayout, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, pipelineLayout, bindPoint, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);

@@ -7434,8 +7434,8 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -7467,6 +7467,7 @@ PalResult PAL_CALL cmdBindDescriptorSetVk(
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint64 offset,

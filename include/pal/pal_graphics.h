@@ -3517,8 +3517,8 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdBindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
-        PalPipelineBindPoint bindPoint,
         PalPipelineLayout* layout,
+        PalPipelineBindPoint bindPoint,
         Uint32 setIndex,
         PalDescriptorSet* set);
 
@@ -3530,6 +3530,7 @@ typedef struct {
     PalResult PAL_CALL (*cmdPushConstants)(
         PalCommandBuffer* cmdBuffer,
         PalPipelineLayout* layout,
+        PalPipelineBindPoint bindPoint,
         Uint32 shaderStageCount,
         PalShaderStage* shaderStages,
         Uint32 offset,
@@ -6259,8 +6260,8 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  * The graphics system must be initialized before this call.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] bindPoint The Binding point.
  * @param[in] layout The pipeline layout that defines the descriptor interface.
+ * @param[in] bindPoint The Binding point.
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
  *
@@ -6274,8 +6275,8 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  */
 PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
@@ -6286,6 +6287,7 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] layout The pipeline layout that defines the push constant range.
+ * @param[in] bindPoint The Binding point.
  * @param[in] shaderStageCount Capacity of the PalShaderStage array.
  * @param[in] shaderStages Array of shader stages that can access the push constant.
  * @param[in] offset Offset in bytes into the push constant range.
@@ -6303,6 +6305,7 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
 PAL_API PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,

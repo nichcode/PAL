@@ -589,14 +589,15 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -1451,14 +1452,15 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -3743,8 +3745,8 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
 
 PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -3758,8 +3760,8 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
 
     return cmdBuffer->backend->cmdBindDescriptorSet(
         cmdBuffer, 
-        bindPoint, 
         layout, 
+        bindPoint, 
         setIndex, 
         set);
 }
@@ -3767,6 +3769,7 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
 PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
+    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -3781,8 +3784,17 @@ PalResult PAL_CALL palCmdPushConstants(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend
-        ->cmdPushConstants(cmdBuffer, layout, shaderStageCount, shaderStages, offset, size, value);
+    // clang-format off
+    return cmdBuffer->backend->cmdPushConstants(
+        cmdBuffer, 
+        layout, 
+        bindPoint, 
+        shaderStageCount, 
+        shaderStages, 
+        offset, 
+        size, 
+        value);
+    // clang-format on
 }
 
 PalResult PAL_CALL palCmdSetCullMode(
@@ -4188,6 +4200,10 @@ PalResult PAL_CALL palCreateDescriptorPool(
 
     if (!device || !info || !outPool) {
         return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (!info->maxDescriptorSets) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     PalResult result;
