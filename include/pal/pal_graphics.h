@@ -1223,6 +1223,24 @@ typedef enum {
 } PalAccelerationStructureBuildHints;
 
 /**
+ * @enum PalAccelerationStructureInstanceFlags
+ * @brief Acceleration structure instance flags. Multiple flags can be OR'ed together using 
+ * bitwise OR operator (`|`). Not all combinations are valid.
+ *
+ * All acceleration structure instance flags follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE = PAL_BIT(0),
+    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE = PAL_BIT(1),
+    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE = PAL_BIT(2),
+    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE = PAL_BIT(3)
+} PalAccelerationStructureInstanceFlags;
+
+/**
  * @enum PalGeometryType
  * @brief Geometry types.
  *
@@ -1235,6 +1253,21 @@ typedef enum {
     PAL_GEOMETRY_TYPE_TRIANGLE,
     PAL_GEOMETRY_TYPE_AABBS
 } PalGeometryType;
+
+/**
+ * @enum PalGeometryFlags
+ * @brief Geometry flags. Multiple flags can be OR'ed together using 
+ * bitwise OR operator (`|`). Not all combinations are valid.
+ *
+ * All geometry flags follow the format `PAL_GEOMETRY_FLAG_**` for consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_GEOMETRY_FLAG_OPAQUE = PAL_BIT(0),
+    PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT = PAL_BIT(1)
+} PalGeometryFlags;
 
 /**
  * @enum PalIndexType
@@ -2049,6 +2082,8 @@ typedef struct {
 typedef struct {
     Uint32 instanceId; /**< User defined id.*/
     Uint32 mask;
+    Uint32 hitGroupOffset;
+    PalAccelerationStructureInstanceFlags flags;
     PalAccelerationStructure* blas; /**< BLAS to use.*/
     float transform[12];            /**< row major (3x4).*/
 } PalAccelerationStructureInstance;
@@ -2109,6 +2144,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    PalGeometryFlags flags;
     Uint32 primitiveCount;
     PalGeometryType type; /**< (eg. PAL_GEOMETRY_TYPE_TRIANGLE).*/
     void* data; /**< Pointer to geometry data. This will be casted based on the geometry type.*/

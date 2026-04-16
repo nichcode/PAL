@@ -2256,7 +2256,15 @@ static void fillVkBuildInfoVk(
         // fill vulkan geometry struct
         VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
         tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-        tmp->flags = VK_GEOMETRY_OPAQUE_BIT_KHR; // always opaque
+
+        tmp->flags = 0;
+        if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
+            tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
+        }
+
+        if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
+            tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
+        }
 
         if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
             tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
@@ -2503,6 +2511,28 @@ static VkImageAspectFlags imageAspectToVk(PalImageAspect aspect)
     }
 
     return VK_IMAGE_ASPECT_COLOR_BIT;
+}
+
+static VkGeometryInstanceFlagsKHR instanceFlagsToVk(PalAccelerationStructureInstanceFlags flags)
+{
+    VkGeometryInstanceFlagsKHR instanceFlags = 0;
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE) {
+        instanceFlags |= VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR;
+    }
+
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE) {
+        instanceFlags |= VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR;
+    }
+
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE) {
+        instanceFlags |= VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+    }
+
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE) {
+        instanceFlags |= VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR;
+    }
+
+    return instanceFlags;
 }
 
 // ==================================================
@@ -7880,11 +7910,20 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
     height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
     Uint32 rowPitch = length * getFormatSizeVk(imageFormat);
-    Uint32 slicePitch = rowPitch * height;
 
-    *outBufferRowLength = copyInfo->bufferRowLength;
-    *outBufferImageHeight = copyInfo->bufferImageHeight;
-    *outSize = slicePitch * copyInfo->imageDepth;
+    if (length == copyInfo->imageWidth) {
+        *outBufferRowLength = 0;
+    } else {
+        *outBufferRowLength = length;
+    }
+
+    if (height == copyInfo->imageHeight) {
+        *outBufferImageHeight = 0;
+    } else {
+        *outBufferImageHeight = height;
+    }
+
+    *outSize = rowPitch * height * copyInfo->imageDepth;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7901,10 +7940,10 @@ PalResult PAL_CALL writeToInstanceBufferVk(
         AccelerationStructure* as = (AccelerationStructure*)src->blas;
 
         dst->mask = src->mask & 0xFF;
-        dst->instanceCustomIndex = src->instanceId * 0xFFFFFF;
+        dst->instanceCustomIndex = src->instanceId & 0xFFFFFF;
         dst->accelerationStructureReference = as->address;
-        dst->instanceShaderBindingTableRecordOffset = 0;
-        dst->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        dst->instanceShaderBindingTableRecordOffset = src->hitGroupOffset & 0xFFFFFF;
+        dst->flags = instanceFlagsToVk(src->flags);
         memcpy(dst->transform.matrix, src->transform, sizeof(float) * 12);
     }
     return PAL_RESULT_SUCCESS;
@@ -7928,8 +7967,6 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
     Uint32 length, height;
     length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
     height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
-    Uint32 rowPitch = length * imageFormatSize;
-    Uint32 slicePitch = rowPitch * height;
 
     // manually offset the buffer with the provided offset
     Uint8* dst = (Uint8*)ptr + copyInfo->bufferOffset;
@@ -7939,7 +7976,7 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
 
     // write to destination pointer
     for (Uint32 z = 0; z < copyInfo->imageDepth; z++) {
-        for (Uint32 y = 0; y < copyInfo->imageWidth; y++) {
+        for (Uint32 y = 0; y < copyInfo->imageHeight; y++) {
             memcpy(
                 dst + z * tmpSizeDest + y * (length * imageFormatSize), 
                 src + z * tmpSizeSrc + y * (copyInfo->imageWidth * imageFormatSize), 
