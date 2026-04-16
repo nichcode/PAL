@@ -471,7 +471,6 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
 
 PalResult PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline);
 
 PalResult PAL_CALL cmdSetViewportVk(
@@ -1334,7 +1333,6 @@ PalResult PAL_CALL cmdCopyImageToBufferD3D12(
 
 PalResult PAL_CALL cmdBindPipelineD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline);
 
 PalResult PAL_CALL cmdSetViewportD3D12(
@@ -3380,7 +3378,6 @@ PalResult PAL_CALL palCmdCopyImageToBuffer(
 
 PalResult PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline)
 {
     if (!s_Graphics.initialized) {
@@ -3391,7 +3388,7 @@ PalResult PAL_CALL palCmdBindPipeline(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    return cmdBuffer->backend->cmdBindPipeline(cmdBuffer, bindPoint, pipeline);
+    return cmdBuffer->backend->cmdBindPipeline(cmdBuffer, pipeline);
 }
 
 PalResult PAL_CALL palCmdSetViewport(

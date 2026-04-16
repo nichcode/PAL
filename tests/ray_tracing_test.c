@@ -897,14 +897,14 @@ bool rayTracingTest()
         return false;
     }
 
-    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_RAY_TRACING;
-    result = palCmdBindPipeline(cmdBuffer, bindPoint, pipeline);
+    result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
         return false;
     }
 
+    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_RAY_TRACING;
     result = palCmdBindDescriptorSet(cmdBuffer, pipelineLayout, bindPoint, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);

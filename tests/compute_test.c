@@ -444,14 +444,14 @@ bool computeTest()
     pushConstant.color[2] = 0.0f;
     pushConstant.color[3] = 1.0f;
 
-    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_COMPUTE;
-    result = palCmdBindPipeline(cmdBuffer, bindPoint, pipeline);
+    result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
         return false;
     }
 
+    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_COMPUTE;
     result = palCmdPushConstants(
         cmdBuffer,
         pipelineLayout,

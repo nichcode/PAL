@@ -669,8 +669,7 @@ bool meshTest()
         }
 
         // bind pipeline
-        PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_GRAPHICS;
-        result = palCmdBindPipeline(cmdBuffers[currentFrame], bindPoint, pipeline);
+        result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);

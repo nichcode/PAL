@@ -51,9 +51,6 @@ freely, subject to the following restrictions:
 // ==================================================
 
 #define MAX_ATTACHMENTS 32
-#define GRAPHICS_PIPELINE 125
-#define RAY_TRACING_PIPELINE 126
-#define COMPUTE_PIPELINE 127
 
 #pragma region Video
 
@@ -586,6 +583,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    VkPipelineBindPoint bindPoint;
     Device* device;
     VkPipeline handle;
 } Pipeline;
@@ -6922,21 +6920,11 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
 
 PalResult PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* vkPipeline = (Pipeline*)pipeline;
-
-    VkPipelineBindPoint point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
-        point = VK_PIPELINE_BIND_POINT_COMPUTE;
-
-    } else if (bindPoint == PAL_PIPELINE_BIND_POINT_RAY_TRACING) {
-        point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-    }
-
-    s_Vk.cmdBindPipeline(vkCmdBuffer->handle, point, vkPipeline->handle);
+    s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -8831,6 +8819,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         palFree(s_Vk.allocator, blendattachments);
     }
 
+    pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     pipeline->device = vkDevice;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -8869,6 +8858,7 @@ PalResult PAL_CALL createComputePipelineVk(
         return resultFromVk(result);
     }
 
+    pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     pipeline->device = vkDevice;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -8949,6 +8939,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         return resultFromVk(result);
     }
 
+    pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     pipeline->device = vkDevice;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;

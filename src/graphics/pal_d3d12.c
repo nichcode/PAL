@@ -48,9 +48,7 @@ freely, subject to the following restrictions:
 #define TEXTURE_PITCH 256
 #define MAX_RTV 1024
 #define MAX_DSV 512
-#define CONSTANT_INDEX 0
-#define DESCRIPTOR_TABLE_INDEX 1
-#define SAMPLER_DESCRIPTOR_TABLE_INDEX 2
+#define RAY_TRACING_PIPELINE 1220
 
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
@@ -258,6 +256,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    Uint32 type;
     void* handle;
 } Pipeline;
 
@@ -1678,7 +1677,7 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
 
     caps->maxUniformBufferSize = D3D12_REQ_IMMEDIATE_CONSTANT_BUFFER_ELEMENT_COUNT * 16;
     caps->maxStorageBufferSize = PAL_LIMIT_UNKNOWN;
-    caps->maxPushConstantSize = D3D12_MAX_ROOT_COST * 4;
+    caps->maxPushConstantSize = (D3D12_MAX_ROOT_COST - 2) * 4;
 
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
     caps->maxComputeWorkGroupCount[0] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
@@ -4385,12 +4384,11 @@ PalResult PAL_CALL cmdCopyImageToBufferD3D12(
 
 PalResult PAL_CALL cmdBindPipelineD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* d3dPipeline = (Pipeline*)pipeline;
-    if (bindPoint == PAL_PIPELINE_BIND_POINT_RAY_TRACING) {
+    if (d3dPipeline->type == RAY_TRACING_PIPELINE) {
         d3dCmdBuffer->handle6->lpVtbl->SetPipelineState1(
             d3dCmdBuffer->handle6, 
             d3dPipeline->handle);

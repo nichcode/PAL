@@ -3304,7 +3304,6 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdBindPipeline)(
         PalCommandBuffer* cmdBuffer,
-        PalPipelineBindPoint bindPoint,
         PalPipeline* pipeline);
 
     /**
@@ -5717,7 +5716,6 @@ PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
  * set at the respective creation functions. (`palCreate**Graphics/Compute/RayTracing**Pipeline`).
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] bindPoint The Binding point. Must match pipeline type.
  * @param[in] pipeline Pipeline to bind.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -5730,7 +5728,6 @@ PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
  */
 PAL_API PalResult PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineBindPoint bindPoint,
     PalPipeline* pipeline);
 
 /**
