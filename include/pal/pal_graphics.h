@@ -6473,6 +6473,9 @@ PAL_API PalResult PAL_CALL palCmdSetStencilOp(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
+ * 
+ * @note The memory associated with PalAccelerationStructureCreateInfo::buffer must be 
+ * `PAL_MEMORY_TYPE_GPU_ONLY`.
  *
  * @since 1.4
  * @ingroup pal_graphics
