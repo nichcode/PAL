@@ -6960,7 +6960,43 @@ PalResult PAL_CALL createComputePipelineD3D12(
     const PalComputePipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    Device* d3dDevice = (Device*)device;
+    PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
+    Shader* shader = (Shader*)info->computeShader;
+    Pipeline* pipeline = nullptr;
 
+    pipeline = palAllocate(s_D3D.allocator, sizeof(Pipeline), 0);
+    if (!pipeline) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {0};
+    desc.CS = shader->byteCode;
+    desc.pRootSignature = layout->handle;
+    if (s_D3D.debugLayer) {
+        desc.Flags = D3D12_PIPELINE_STATE_FLAG_DEBUG;
+    }
+
+    HRESULT result = d3dDevice->handle->lpVtbl->CreateComputePipelineState(
+        d3dDevice->handle,
+        &desc,
+        &IID_Pipeline,
+        &pipeline->handle);
+
+    if (FAILED(result)) {
+        if (result == E_INVALIDARG) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        } else if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    pipeline->type = COMPUTE_PIPELINE;
+    pipeline->strides = nullptr;
+    pipeline->hasFsr = false;
+    *outPipeline = (PalPipeline*)pipeline;
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL createRayTracingPipelineD3D12(
