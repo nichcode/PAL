@@ -978,6 +978,24 @@ typedef enum {
 } PalVertexType;
 
 /**
+ * @enum PalVertexSemanticID
+ * @brief Vertex semantic id types.
+ *
+ * All vertex semantic id types follow the format `PAL_VERTEX_SEMANTIC_ID_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_VERTEX_SEMANTIC_ID_POSITION,
+    PAL_VERTEX_SEMANTIC_ID_COLOR,
+    PAL_VERTEX_SEMANTIC_ID_UV,
+    PAL_VERTEX_SEMANTIC_ID_NORMAL,
+    PAL_VERTEX_SEMANTIC_ID_TANGENT   
+} PalVertexSemanticID;
+
+/**
  * @enum PalCommandBufferType
  * @brief Command buffer types.
  *
@@ -1383,22 +1401,6 @@ typedef enum {
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT,
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT
 } PalRayTracingShaderGroupType;
-
-/**
- * @enum PalPipelineBindPoint
- * @brief Binding point for pipeline and pipeline layouts.
- *
- * All pipeline bind points follow the format `PAL_PIPELINE_BIND_POINT_**`
- * for consistency and API use.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef enum {
-    PAL_PIPELINE_BIND_POINT_GRAPHICS,
-    PAL_PIPELINE_BIND_POINT_COMPUTE,
-    PAL_PIPELINE_BIND_POINT_RAY_TRACING
-} PalPipelineBindPoint;
 
 /**
  * @struct PalAdapterInfo
@@ -1932,14 +1934,18 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    PalVertexSemanticID semanticID; /**< (eg. PAL_VERTEX_SEMANTIC_ID_POSITION).*/
     PalVertexType type; /**< (eg. PAL_VERTEX_TYPE_FLOAT).*/
-    Uint32 location;
 } PalVertexAttribute;
 
 /**
  * @struct PalVertexLayout
  * @brief Vertex layout.
- * This defines the layout and the number of vertex attributes the layout uses.
+ * This defines the layout, ordering and the number of vertex attributes the layout uses.
+ * 
+ * This layouts should reflect the exact layout of the shaders. Eg. attributes[0] = position 
+ * attribute and attributes[1] = color attribute is not the same as attributes[0] = color attribute
+ * and attributes[1] = position attribute. The ordering must be correct.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2574,6 +2580,7 @@ typedef struct {
     Uint32 vertexLayoutCount;
     Uint32 colorBlendAttachmentCount;
     Uint32 shaderCount;
+    Uint32 primitiveRestartEnable; /**< 0 to disable.*/
     PalPrimitiveTopology topology;
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
@@ -3379,7 +3386,6 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         Uint32 firstSlot,
         Uint32 count,
-        Uint32* strides,
         PalBuffer** buffers,
         Uint64* offsets);
 
@@ -3561,7 +3567,6 @@ typedef struct {
     PalResult PAL_CALL (*cmdBindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
         PalPipelineLayout* layout,
-        PalPipelineBindPoint bindPoint,
         Uint32 setIndex,
         PalDescriptorSet* set);
 
@@ -3573,7 +3578,6 @@ typedef struct {
     PalResult PAL_CALL (*cmdPushConstants)(
         PalCommandBuffer* cmdBuffer,
         PalPipelineLayout* layout,
-        PalPipelineBindPoint bindPoint,
         Uint32 shaderStageCount,
         PalShaderStage* shaderStages,
         Uint32 offset,
@@ -5519,6 +5523,8 @@ PAL_API PalResult PAL_CALL palCmdSetFragmentShadingRate(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5548,6 +5554,8 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5577,6 +5585,8 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5836,6 +5846,8 @@ PAL_API PalResult PAL_CALL palCmdSetScissors(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5844,7 +5856,6 @@ PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
-    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets);
 
@@ -5862,6 +5873,8 @@ PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5887,6 +5900,8 @@ PAL_API PalResult PAL_CALL palCmdBindIndexBuffer(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5916,6 +5931,8 @@ PAL_API PalResult PAL_CALL palCmdDraw(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5944,6 +5961,8 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirect(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5971,6 +5990,8 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirectCount(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6001,6 +6022,8 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexed(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6029,6 +6052,8 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6064,6 +6089,8 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6160,6 +6187,8 @@ PAL_API PalResult PAL_CALL palCmdBufferBarrier(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6192,6 +6221,8 @@ PAL_API PalResult PAL_CALL palCmdDispatch(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6222,6 +6253,8 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6250,6 +6283,8 @@ PAL_API PalResult PAL_CALL palCmdDispatchIndirect(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6285,6 +6320,7 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note The memory associated with the buffer must be `PAL_MEMORY_TYPE_CPU_UPLOAD`.
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6302,7 +6338,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] layout The pipeline layout that defines the descriptor interface.
- * @param[in] bindPoint The Binding point.
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
  *
@@ -6310,6 +6345,8 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6317,7 +6354,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
 PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
@@ -6328,7 +6364,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] layout The pipeline layout that defines the push constant range.
- * @param[in] bindPoint The Binding point.
  * @param[in] shaderStageCount Capacity of the PalShaderStage array.
  * @param[in] shaderStages Array of shader stages that can access the push constant.
  * @param[in] offset Offset in bytes into the push constant range.
@@ -6339,6 +6374,8 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note A pipeline must be bound before this call.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6346,7 +6383,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
 PAL_API PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,

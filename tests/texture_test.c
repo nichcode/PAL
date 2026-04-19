@@ -1038,11 +1038,11 @@ bool textureTest()
     PalVertexAttribute vertexAttributes[2];
 
     // position
-    vertexAttributes[0].location = 0;
+    vertexAttributes[0].semanticID = PAL_VERTEX_SEMANTIC_ID_POSITION;
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
     // texture coordinates
-    vertexAttributes[1].location = 1;
+    vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_UV;
     vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT2;
 
     vertexLayout.attributeCount = 2;
@@ -1261,11 +1261,9 @@ bool textureTest()
             return false;
         }
 
-        PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_GRAPHICS;
         result = palCmdBindDescriptorSet(
             cmdBuffers[currentFrame], 
-            pipelineLayout, 
-            bindPoint, 
+            pipelineLayout,
             0, 
             descriptorSet);
 
@@ -1291,13 +1289,11 @@ bool textureTest()
         }
 
         // bind vertex buffer
-        Uint32 strides[] = { 16 };
         Uint64 offset[] = {0};
         result = palCmdBindVertexBuffers(
             cmdBuffers[currentFrame], 
             0, 
             1, 
-            strides, 
             &vertexBuffer, 
             offset);
             

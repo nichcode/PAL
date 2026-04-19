@@ -644,11 +644,11 @@ bool triangleTest()
     PalVertexAttribute vertexAttributes[2];
 
     // position
-    vertexAttributes[0].location = 0;
+    vertexAttributes[0].semanticID = PAL_VERTEX_SEMANTIC_ID_POSITION;
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
     // color
-    vertexAttributes[1].location = 1;
+    vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_COLOR;
     vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT3;
 
     vertexLayout.attributeCount = 2;
@@ -879,14 +879,12 @@ bool triangleTest()
         }
 
         // bind vertex buffer
-        Uint32 strides[] = { 20 };
         Uint64 offset[] = {0};
         result = palCmdBindVertexBuffers(
             cmdBuffers[currentFrame], 
             0, 
-            1, 
-            strides, 
-            &vertexBuffer, 
+            1,
+            &vertexBuffer,
             offset);
             
         if (result != PAL_RESULT_SUCCESS) {

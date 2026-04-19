@@ -487,7 +487,6 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
-    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets);
 
@@ -589,14 +588,12 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -1349,7 +1346,6 @@ PalResult PAL_CALL cmdBindVertexBuffersD3D12(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
-    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets);
 
@@ -1451,14 +1447,12 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -3427,7 +3421,6 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
-    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets)
 {
@@ -3435,7 +3428,7 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !buffers || !strides || !offsets) {
+    if (!cmdBuffer || !buffers || !offsets) {
         return PAL_RESULT_NULL_POINTER;
     }
 
@@ -3443,7 +3436,6 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
         cmdBuffer, 
         firstSlot, 
         count, 
-        strides, 
         buffers, 
         offsets);
 }
@@ -3743,7 +3735,6 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
 PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -3757,8 +3748,7 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
 
     return cmdBuffer->backend->cmdBindDescriptorSet(
         cmdBuffer, 
-        layout, 
-        bindPoint, 
+        layout,
         setIndex, 
         set);
 }
@@ -3766,7 +3756,6 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
 PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -3785,7 +3774,6 @@ PalResult PAL_CALL palCmdPushConstants(
     return cmdBuffer->backend->cmdPushConstants(
         cmdBuffer, 
         layout, 
-        bindPoint, 
         shaderStageCount, 
         shaderStages, 
         offset, 

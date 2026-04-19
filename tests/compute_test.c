@@ -451,11 +451,9 @@ bool computeTest()
         return false;
     }
 
-    PalPipelineBindPoint bindPoint = PAL_PIPELINE_BIND_POINT_COMPUTE;
     result = palCmdPushConstants(
         cmdBuffer,
         pipelineLayout,
-        bindPoint,
         1,
         shaderStages,
         0,
@@ -468,7 +466,7 @@ bool computeTest()
         return false;
     }
 
-    result = palCmdBindDescriptorSet(cmdBuffer, pipelineLayout, bindPoint, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, pipelineLayout, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);

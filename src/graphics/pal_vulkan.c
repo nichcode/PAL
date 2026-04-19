@@ -504,6 +504,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
+    VkPipelineBindPoint bindPoint;
     Device* device;
     CommandPool* pool;
     VkCommandBuffer handle;
@@ -6976,6 +6977,8 @@ PalResult PAL_CALL cmdBindPipelineVk(
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* vkPipeline = (Pipeline*)pipeline;
     s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
+
+    vkCmdBuffer->bindPoint = vkPipeline->bindPoint;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7053,7 +7056,6 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
-    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets)
 {
@@ -7474,7 +7476,6 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -7482,17 +7483,9 @@ PalResult PAL_CALL cmdBindDescriptorSetVk(
     PipelineLayout* vkLayout = (PipelineLayout*)layout;
     DescriptorSet* vkSet = (DescriptorSet*)set;
 
-    VkPipelineBindPoint point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
-        point = VK_PIPELINE_BIND_POINT_COMPUTE;
-
-    } else if (bindPoint == PAL_PIPELINE_BIND_POINT_RAY_TRACING) {
-        point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-    }
-
     s_Vk.cmdBindDescriptorSets(
         vkCmdBuffer->handle,
-        point,
+        vkCmdBuffer->bindPoint,
         vkLayout->handle,
         setIndex,
         1,
@@ -7506,7 +7499,6 @@ PalResult PAL_CALL cmdBindDescriptorSetVk(
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint64 offset,
@@ -8556,6 +8548,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
+        Uint32 location = 0;
         for (int i = 0; i < info->vertexLayoutCount; i++) {
             PalVertexLayout* layout = &info->vertexLayouts[i];
             VkVertexInputBindingDescription* bindingDesc = &bindingDescs[i];
@@ -8576,7 +8569,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
                 attribDesc->format = vertexTypeToVk(vertexAttrib->type);
                 attribDesc->binding = bindingDesc->binding;
-                attribDesc->location = vertexAttrib->location;
+                attribDesc->location = location++;
 
                 // build offsets and stride
                 Uint32 size = getVertexTypeSizeVk(vertexAttrib->type);
@@ -8622,6 +8615,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         }
     }
     inputAssemblyState.topology = topology;
+    inputAssemblyState.primitiveRestartEnable = info->primitiveRestartEnable;
     createInfo.pInputAssemblyState = &inputAssemblyState;
 
     // Dynamic states
@@ -8851,7 +8845,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         } else {
             dynRendering.viewMask = (1 << renderingLayout->viewCount) - 1;
         }
-
         createInfo.pNext = &dynRendering;
     }
 

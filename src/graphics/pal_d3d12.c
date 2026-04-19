@@ -224,6 +224,8 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
+    Uint32 pipelineType;
+    Uint32* strides;
     void* pool; // CommandPool
     Device* device;
     ID3D12Resource* tmpBuffer;
@@ -266,6 +268,7 @@ typedef struct {
 
     Uint32 type;
     D3D_PRIMITIVE_TOPOLOGY topology;
+    Uint32* strides;
     void* handle;
 } Pipeline;
 
@@ -3871,6 +3874,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->handle);
 
     cmdList->lpVtbl->Release(cmdList);
+    cmdBuffer->strides = nullptr;
     cmdBuffer->pool = cmdPool;
     cmdBuffer->device = d3dDevice;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
@@ -3910,6 +3914,7 @@ PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
         d3dCmdBuffer->allocator, 
         nullptr);
 
+    d3dCmdBuffer->strides = nullptr;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4480,6 +4485,8 @@ PalResult PAL_CALL cmdBindPipelineD3D12(
         }
     }
 
+    d3dCmdBuffer->pipelineType = d3dPipeline->type;
+    d3dCmdBuffer->strides = d3dPipeline->strides;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4557,13 +4564,16 @@ PalResult PAL_CALL cmdBindVertexBuffersD3D12(
     PalCommandBuffer* cmdBuffer,
     Uint32 firstSlot,
     Uint32 count,
-    Uint32* strides,
     PalBuffer** buffers,
     Uint64* offsets)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     D3D12_VERTEX_BUFFER_VIEW cachedView = {0};
     D3D12_VERTEX_BUFFER_VIEW* views = nullptr;
+
+    if (!d3dCmdBuffer->strides) {
+        return PAL_RESULT_INVALID_OPERATION;
+    }
 
     if (count > 1) {
         views = palAllocate(s_D3D.allocator, sizeof(D3D12_VERTEX_BUFFER_VIEW) * count, 0);
@@ -4580,7 +4590,7 @@ PalResult PAL_CALL cmdBindVertexBuffersD3D12(
         views[i].BufferLocation = tmp->handle->lpVtbl->GetGPUVirtualAddress(tmp->handle);
         views[i].BufferLocation = views[i].BufferLocation + offsets[i];
         views[i].SizeInBytes = tmp->size;
-        views[i].StrideInBytes = strides[i];
+        views[i].StrideInBytes = d3dCmdBuffer->strides[i];
     }
 
     d3dCmdBuffer->handle->lpVtbl->IASetVertexBuffers(
@@ -5065,7 +5075,6 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -5095,13 +5104,13 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
             pool->resourceHeap.incrementSize, 
             pool->resourceHeap.gpuBase);
 
-        if (bindPoint == PAL_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (d3dCmdBuffer->pipelineType == GRAPHICS_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetGraphicsRootDescriptorTable(
                 d3dCmdBuffer->handle, 
                 pipelineLayout->resourceIndex,
             base);
 
-        } else if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
+        } else if (d3dCmdBuffer->pipelineType == COMPUTE_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetComputeRootDescriptorTable(
             d3dCmdBuffer->handle,
             pipelineLayout->resourceIndex,
@@ -5120,13 +5129,13 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
             pool->samplerHeap.incrementSize, 
             pool->samplerHeap.gpuBase);
 
-        if (bindPoint == PAL_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (d3dCmdBuffer->pipelineType == GRAPHICS_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetGraphicsRootDescriptorTable(
                 d3dCmdBuffer->handle, 
                 pipelineLayout->samplerIndex,
             base);
 
-        } else if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
+        } else if (d3dCmdBuffer->pipelineType == COMPUTE_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetComputeRootDescriptorTable(
             d3dCmdBuffer->handle,
             pipelineLayout->samplerIndex,
@@ -5143,7 +5152,6 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipelineLayout* layout,
-    PalPipelineBindPoint bindPoint,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -5153,7 +5161,7 @@ PalResult PAL_CALL cmdPushConstantsD3D12(
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     PipelineLayout* pipelineLayout = (PipelineLayout*)layout;
     if (pipelineLayout->constantIndex != UINT32_MAX) {
-        if (bindPoint == PAL_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (d3dCmdBuffer->pipelineType == GRAPHICS_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetGraphicsRoot32BitConstants(
                 d3dCmdBuffer->handle, 
                 pipelineLayout->constantIndex, 
@@ -5161,7 +5169,7 @@ PalResult PAL_CALL cmdPushConstantsD3D12(
                 value, 
                 offset / 4);
 
-        } else if (bindPoint == PAL_PIPELINE_BIND_POINT_COMPUTE) {
+        } else if (d3dCmdBuffer->pipelineType == COMPUTE_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetComputeRoot32BitConstants(
                 d3dCmdBuffer->handle, 
                 pipelineLayout->constantIndex, 
