@@ -1447,6 +1447,8 @@ typedef struct {
     Uint32 maxUniformBufferSize;
     Uint32 maxStorageBufferSize;
     Uint32 maxPushConstantSize;
+    Uint32 maxVertexLayouts;
+    Uint32 maxVertexAttributes;
     Uint32 maxComputeWorkGroupInvocations; /**< Max compute threads per workgroup across all axis.*/
     Uint32 maxComputeWorkGroupCount[3];    /**< Max compute workgroups per axis.*/
     Uint32 maxComputeWorkGroupSize[3];     /**< Max compute threads per workgroup per axis.*/
@@ -1961,6 +1963,12 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool denyGeneral; /**< Disable general messages.*/
+    bool denyValidation; /**< Disable validation messages.*/
+    bool denyPerformance;  /**< Disable performance messages.*/
+    bool denyInfoSeverity;
+    bool denyWarningSeverity;
+    bool denyErrorSeverity;
     void* userData;
     PalDebugCallback callback;
 } PalGraphicsDebugger;

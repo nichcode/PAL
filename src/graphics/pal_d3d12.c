@@ -94,6 +94,8 @@ typedef struct {
 typedef struct {
     bool debugLayer;
     Uint32 adapterCount;
+    Uint32 severityCount;
+    Uint32 categoryCount;
     HMODULE handle;
     HMODULE dxgi;
     Adapter* adapters;
@@ -107,6 +109,8 @@ typedef struct {
     PFN_D3D12SerializeVersionedRootSignature serializeVersionedRootSignature;
   
     const PalAllocator* allocator;
+    D3D12_MESSAGE_SEVERITY severities[3];
+    D3D12_MESSAGE_CATEGORY categories[3];
 } D3D12;
 
 typedef struct {
@@ -1477,12 +1481,43 @@ PalResult PAL_CALL initGraphicsD3D12(
                 s_D3D.debugController1->lpVtbl->SetEnableGPUBasedValidation(
                     s_D3D.debugController1, 
                     TRUE);
-            }
 
+                // message types
+                if (!debugger->denyGeneral) {
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_INITIALIZATION;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_CLEANUP;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_COMPILATION;
+                }
+
+                if (!debugger->denyPerformance) {
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_EXECUTION;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_SHADER;
+                }
+
+                if (!debugger->denyValidation) {
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_CREATION;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_GETTING;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
+                }
+
+                // message severities
+                if (!debugger->denyInfoSeverity) {
+                    s_D3D.severities[s_D3D.severityCount++] = D3D12_MESSAGE_SEVERITY_INFO;
+                }
+
+                if (!debugger->denyWarningSeverity) {
+                    s_D3D.severities[s_D3D.severityCount++] = D3D12_MESSAGE_SEVERITY_WARNING;
+                }
+
+                if (!debugger->denyErrorSeverity) {
+                    s_D3D.severities[s_D3D.severityCount++] = D3D12_MESSAGE_SEVERITY_ERROR;
+                    s_D3D.severities[s_D3D.severityCount++] = D3D12_MESSAGE_SEVERITY_CORRUPTION;
+                }
+            }
             s_D3D.debugLayer = true;
         }
     }
-
     // clang-format on
 
     s_D3D.factory = nullptr;
@@ -1713,6 +1748,8 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     caps->maxUniformBufferSize = D3D12_REQ_IMMEDIATE_CONSTANT_BUFFER_ELEMENT_COUNT * 16;
     caps->maxStorageBufferSize = PAL_LIMIT_UNKNOWN;
     caps->maxPushConstantSize = (D3D12_MAX_ROOT_COST - 2) * 4;
+    caps->maxVertexLayouts = PAL_LIMIT_UNKNOWN;
+    caps->maxVertexAttributes = PAL_LIMIT_UNKNOWN;
 
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
     caps->maxComputeWorkGroupCount[0] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
@@ -1898,17 +1935,12 @@ PalResult PAL_CALL createDeviceD3D12(
             (void**)&device->infoQueue);
 
         if (SUCCEEDED(result)) {
-            D3D12_MESSAGE_SEVERITY severities[] = {
-                D3D12_MESSAGE_SEVERITY_WARNING,
-                D3D12_MESSAGE_SEVERITY_ERROR,
-                D3D12_MESSAGE_SEVERITY_CORRUPTION
-            };
-
             D3D12_MESSAGE_ID denyIDs[] = { D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE };
-
             D3D12_INFO_QUEUE_FILTER filter = {0};
-            filter.AllowList.NumSeverities = 3;
-            filter.AllowList.pSeverityList = severities;
+            filter.AllowList.NumSeverities = s_D3D.severityCount;
+            filter.AllowList.pSeverityList = s_D3D.severities;
+            filter.AllowList.NumCategories = s_D3D.categoryCount;
+            filter.AllowList.pCategoryList = s_D3D.categories;
             filter.DenyList.NumIDs = 1;
             filter.DenyList.pIDList = denyIDs;
 
@@ -5762,6 +5794,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     PalDescriptorSetLayout* layout,
     PalDescriptorSet** outSet)
 {
+    Device* d3dDevice = (Device*)device;
     DescriptorPool* d3dPool = (DescriptorPool*)pool;
     DescriptorSetLayout* d3dLayout = (DescriptorSetLayout*)layout;
     DescriptorSet* set = nullptr;
@@ -5794,6 +5827,13 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
 
         } else if (binding->type == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
             asCount += binding->range.NumDescriptors;
+        }
+
+        // check if descriptor indexing is supported and enabled
+        if (binding->range.NumDescriptors > 1) {
+            if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
+                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            }
         }
     }
 

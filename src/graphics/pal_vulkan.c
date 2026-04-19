@@ -2933,13 +2933,31 @@ PalResult PAL_CALL initGraphicsVk(
             }
             palFree(s_Vk.allocator, props);
 
-            debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-            debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-            debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+            // message types
+            if (!debugger->denyGeneral) {
+                debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+            }
 
-            debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-            debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-            debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            if (!debugger->denyPerformance) {
+                debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+            }
+
+            if (!debugger->denyValidation) {
+                debugCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+            }
+
+            // message severities
+            if (!debugger->denyInfoSeverity) {
+                debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+            }
+
+            if (!debugger->denyWarningSeverity) {
+                debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+            }
+
+            if (!debugger->denyErrorSeverity) {
+                debugCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            }
 
             debugCreateInfo.pUserData = debugger->userData;
             debugCreateInfo.pfnUserCallback = debugCallbackVk;
@@ -3413,6 +3431,9 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
             caps->maxCopyQueues += queueProps->queueCount;
         }
     }
+
+    caps->maxVertexLayouts = props.limits.maxVertexInputBindings;
+    caps->maxVertexAttributes = props.limits.maxVertexInputAttributes;
 
     caps->maxComputeWorkGroupInvocations = props.limits.maxComputeWorkGroupInvocations;
     caps->maxComputeWorkGroupCount[0] = props.limits.maxComputeWorkGroupCount[0];
