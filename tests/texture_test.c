@@ -1042,7 +1042,7 @@ bool textureTest()
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
     // texture coordinates
-    vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_UV;
+    vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_TEXCOORD;
     vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT2;
 
     vertexLayout.attributeCount = 2;

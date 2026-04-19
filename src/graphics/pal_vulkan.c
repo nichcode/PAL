@@ -3435,6 +3435,7 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
 
     caps->maxVertexLayouts = props.limits.maxVertexInputBindings;
     caps->maxVertexAttributes = props.limits.maxVertexInputAttributes;
+    caps->maxTessellationPatchPoint = props.limits.maxTessellationPatchSize;
 
     caps->maxComputeWorkGroupInvocations = props.limits.maxComputeWorkGroupInvocations;
     caps->maxComputeWorkGroupCount[0] = props.limits.maxComputeWorkGroupCount[0];
@@ -5906,7 +5907,6 @@ PalResult PAL_CALL createShaderVk(
     VkResult result;
     Shader* shader = nullptr;
     VkShaderStageFlags stage = 0;
-    Uint32 patchControlPoints = 0;
     Device* vkDevice = (Device*)device;
 
     stage = shaderStageToVK(info->stage);
@@ -5946,7 +5946,7 @@ PalResult PAL_CALL createShaderVk(
     }
 
     shader->device = vkDevice;
-    shader->patchControlPoints = patchControlPoints;
+    shader->patchControlPoints = info->patchControlPoints;
     shader->info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shader->info.module = shader->handle;
     shader->info.pName = "main";
@@ -6403,12 +6403,9 @@ PalResult PAL_CALL cmdBeginVk(
         layout.colorAttachmentCount = info->colorAttachentCount;
         layout.pColorAttachmentFormats = colorAttachments;
 
-        // depth attachment
-        format = formatToVk(info->depthAttachmentFormat);
+        // depth stencil attachment
+        format = formatToVk(info->depthStencilAttachmentFormat);
         layout.depthAttachmentFormat = format;
-
-        // stencil attachment
-        format = formatToVk(info->stencilAttachmentFormat);
         layout.stencilAttachmentFormat = format;
 
         layout.rasterizationSamples = samplesToVk(info->multisampleCount);
@@ -8458,7 +8455,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     PalPipeline** outPipeline)
 {
     VkResult result;
-    Uint32 patchControlPoints = 0;
     Pipeline* pipeline = nullptr;
     Device* vkDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
@@ -8689,7 +8685,11 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
         rasterizerState.depthBiasEnable = state->enableDepthBias;
         rasterizerState.depthClampEnable = state->enableDepthClamp;
+        rasterizerState.depthBiasConstantFactor = state->depthBiasConstant;
+        rasterizerState.depthBiasSlopeFactor = state->depthBiasSlope;
+        rasterizerState.depthBiasClamp = state->depthBiasClamp;
     }
+
     rasterizerState.lineWidth = 1.0f;
     createInfo.pRasterizationState = &rasterizerState;
 
@@ -8734,7 +8734,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         PalStencilOpState* front = &state->frontStencilOpState;
 
         VkStencilOpState* vkBack = &depthStencilState.back;
-        VkStencilOpState* vkFront = &depthStencilState.back;
+        VkStencilOpState* vkFront = &depthStencilState.front;
 
         vkBack->compareOp = compareOpToVk(back->compareOp);
         vkBack->depthFailOp = stencilOpToVk(back->depthFailOp);
@@ -8805,6 +8805,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     viewportState.scissorCount = 1;
     createInfo.pViewportState = &viewportState;
 
+    // Fragment shading rate
     if (info->fragmentShadingRateState) {
         PalFragmentShadingRateState* state = info->fragmentShadingRateState;
         for (int i = 0; i < 2; i++) {
@@ -8819,34 +8820,29 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     }
 
     // layout info
-    if (info->renderingLayout) {
-        VkFormat format = VK_FORMAT_UNDEFINED;
-        VkFormat colorAttachments[MAX_ATTACHMENTS];
-        PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    VkFormat colorAttachments[MAX_ATTACHMENTS];
+    PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
 
-        // color attachments
-        for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
-            format = formatToVk(renderingLayout->colorAttachmentsFormat[i]);
-            colorAttachments[i] = format;
-        }
-        dynRendering.colorAttachmentCount = renderingLayout->colorAttachentCount;
-        dynRendering.pColorAttachmentFormats = colorAttachments;
-
-        // depth attachment
-        format = formatToVk(renderingLayout->depthAttachmentFormat);
-        dynRendering.depthAttachmentFormat = format;
-
-        // stencil attachment
-        format = formatToVk(renderingLayout->stencilAttachmentFormat);
-        dynRendering.stencilAttachmentFormat = format;
-
-        if (renderingLayout->viewCount == 1) {
-            dynRendering.viewMask = 0;
-        } else {
-            dynRendering.viewMask = (1 << renderingLayout->viewCount) - 1;
-        }
-        createInfo.pNext = &dynRendering;
+    // color attachments
+    for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
+        format = formatToVk(renderingLayout->colorAttachmentsFormat[i]);
+        colorAttachments[i] = format;
     }
+    dynRendering.colorAttachmentCount = renderingLayout->colorAttachentCount;
+    dynRendering.pColorAttachmentFormats = colorAttachments;
+
+    // depth stencil attachment
+    format = formatToVk(renderingLayout->depthStencilAttachmentFormat);
+    dynRendering.depthAttachmentFormat = format;
+    dynRendering.stencilAttachmentFormat = format;
+
+    if (renderingLayout->viewCount == 1) {
+        dynRendering.viewMask = 0;
+    } else {
+        dynRendering.viewMask = (1 << renderingLayout->viewCount) - 1;
+    }
+    createInfo.pNext = &dynRendering;
 
     result = s_Vk.createGraphicsPipeline(
         vkDevice->handle,

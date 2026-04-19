@@ -72,6 +72,7 @@ const IID IID_Signature = {0xc36a797c, 0xec80, 0x4f0a, 0x89,0x85, 0xa7,0xb2,0x47
 const IID IID_DescHeap = {0x8efb471d, 0x616c, 0x4f49, 0x90,0xf7, 0x12,0x7b,0xb7,0x63,0xfa,0x51};
 const IID IID_RootSig = {0xc54a6b66, 0x72df, 0x4ee8, 0x8b,0xe5, 0xa9,0x46,0xa1,0x42,0x92,0x14};
 const IID IID_Device5 = {0x8b4f173b, 0x2fea, 0x4b80, 0x8f,0x58, 0x43,0x07,0x19,0x1a,0xb9,0x5d};
+const IID IID_Pipeline = {0x765a30f3, 0xf624, 0x4c6f, 0xa8,0x28, 0xac,0xe9,0x48,0x62,0x24,0x45};
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -216,6 +217,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    Uint32 patchControlPoints;
     PalShaderStage stage;
     D3D12_SHADER_BYTECODE byteCode;
 } Shader;
@@ -266,10 +268,13 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
+    bool hasFsr;
     Uint32 type;
+    D3D12_SHADING_RATE shadingRate;
     D3D_PRIMITIVE_TOPOLOGY topology;
     Uint32* strides;
     void* handle;
+    D3D12_SHADING_RATE_COMBINER combinerOps[2];
 } Pipeline;
 
 typedef struct {
@@ -352,6 +357,86 @@ typedef struct {
     ID3D12RootSignature* handle;
     D3D12_ROOT_PARAMETER1 params[3];
 } PipelineLayout;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    ID3D12RootSignature* root;
+} RootSignatureStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_INPUT_LAYOUT_DESC desc;
+} InputLayoutStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE ibType;
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology;
+    D3D12_INDEX_BUFFER_STRIP_CUT_VALUE IBStripCutValue;
+} InputAssemblyStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_RASTERIZER_DESC desc;
+} RasterizerStream;
+
+typedef struct {
+    UINT sampleMask;
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE maskType;
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    DXGI_SAMPLE_DESC desc;
+} MultisampleStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_DEPTH_STENCIL_DESC desc;
+} DepthStencilStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_BLEND_DESC desc;
+} ColorBlendStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE dsvType;
+    UINT NumRenderTargets;
+    DXGI_FORMAT DSVFormat;
+    DXGI_FORMAT RTVFormats[8];
+} RenderingLayoutStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_PIPELINE_STATE_FLAGS flags;
+} PipelineFlagsStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_SHADER_BYTECODE desc;
+} ShaderStream;
+
+typedef struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_VIEW_INSTANCING_DESC desc;
+} ViewInstancingStream;
+
+typedef struct {
+    RootSignatureStream layout;
+    InputLayoutStream inputLayout;
+    InputAssemblyStream inputAssembly;
+    RasterizerStream rasterizer;
+    MultisampleStream multisample;
+    DepthStencilStream depthStencil;
+    ColorBlendStream colorBlend;
+    RenderingLayoutStream renderingLayout;
+    ViewInstancingStream viewInstancing;
+    PipelineFlagsStream flags;
+} FixedPipelineHeader;
+
+typedef struct  {
+    FixedPipelineHeader header;
+    ShaderStream shaders[7]; // 7 shader types for graphics pipeline
+} GraphicsPipelineeStreamDesc;
 
 static D3D12 s_D3D = {0};
 
@@ -680,6 +765,104 @@ static D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op)
     }
 
     return D3D12_COMPARISON_FUNC_NEVER;
+}
+
+static D3D12_STENCIL_OP stencilOpToD3D12(PalStencilOp op)
+{
+    switch (op) {
+        case PAL_STENCIL_OP_KEEP:
+            return D3D12_STENCIL_OP_KEEP;
+
+        case PAL_STENCIL_OP_ZERO:
+            return D3D12_STENCIL_OP_ZERO;
+
+        case PAL_STENCIL_OP_REPLACE:
+            return D3D12_STENCIL_OP_REPLACE;
+
+        case PAL_STENCIL_OP_INCREMENT_AND_CLAMP:
+            return D3D12_STENCIL_OP_INCR_SAT;
+
+        case PAL_STENCIL_OP_DECREMENT_AND_CLAMP:
+            return D3D12_STENCIL_OP_DECR_SAT;
+
+        case PAL_STENCIL_OP_INVERT:
+            return D3D12_STENCIL_OP_INVERT;
+
+        case PAL_STENCIL_OP_INCREMENT_AND_WRAP:
+            return D3D12_STENCIL_OP_INCR;
+
+        case PAL_STENCIL_OP_DECREMENT_AND_WRAP:
+            return D3D12_STENCIL_OP_DECR;
+    }
+
+    return D3D12_STENCIL_OP_KEEP;
+}
+
+static D3D12_BLEND_OP blendOpToD3D12(PalBlendOp op)
+{
+    switch (op) {
+        case PAL_BLEND_OP_ADD:
+            return D3D12_BLEND_OP_ADD;
+
+        case PAL_BLEND_OP_SUBTRACT:
+            return D3D12_BLEND_OP_SUBTRACT;
+
+        case PAL_BLEND_OP_REVERSE_SUBTRACT:
+            return D3D12_BLEND_OP_REV_SUBTRACT;
+
+        case PAL_BLEND_OP_MIN:
+            return D3D12_BLEND_OP_MIN;
+
+        case PAL_BLEND_OP_MAX:
+            return D3D12_BLEND_OP_MAX;
+    }
+
+    return D3D12_BLEND_OP_ADD;
+}
+
+static D3D12_BLEND blendFactorToD3D12(PalBlendFactor op)
+{
+    switch (op) {
+        case PAL_BLEND_FACTOR_ZERO:
+            return D3D12_BLEND_ZERO;
+
+        case PAL_BLEND_FACTOR_ONE:
+            return D3D12_BLEND_ONE;
+
+        case PAL_BLEND_FACTOR_SRC_COLOR:
+            return D3D12_BLEND_SRC_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_COLOR:
+            return D3D12_BLEND_INV_SRC_COLOR;
+
+        case PAL_BLEND_FACTOR_DST_COLOR:
+            return D3D12_BLEND_DEST_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUX_DST_COLOR:
+            return D3D12_BLEND_INV_DEST_COLOR;
+
+        case PAL_BLEND_FACTOR_SRC_ALPHA:
+            return D3D12_BLEND_SRC_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA:
+            return D3D12_BLEND_INV_SRC_ALPHA;
+
+        case PAL_BLEND_FACTOR_DST_ALPHA:
+            return D3D12_BLEND_DEST_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:
+            return D3D12_BLEND_INV_DEST_ALPHA;
+
+        case PAL_BLEND_FACTOR_CONSTANT_COLOR:
+        case PAL_BLEND_FACTOR_CONSTANT_ALPHA:
+            return D3D12_BLEND_BLEND_FACTOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR:
+        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
+            return D3D12_BLEND_INV_BLEND_FACTOR;
+    }
+
+    return D3D12_BLEND_ZERO;
 }
  
 static D3D12_FILTER filterToD3D12(
@@ -1439,6 +1622,156 @@ static D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlagsToD3D12(
     return instanceFlags;
 }
 
+static D3D_PRIMITIVE_TOPOLOGY getPatchTopology(Uint32 patch) 
+{
+    switch (patch) {
+        case 1:
+            return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+        
+        case 2:
+            return D3D_PRIMITIVE_TOPOLOGY_2_CONTROL_POINT_PATCHLIST;
+
+        case 3:
+            return D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
+
+        case 4:
+            return D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST;
+
+        case 5:
+            return D3D_PRIMITIVE_TOPOLOGY_5_CONTROL_POINT_PATCHLIST;
+
+        case 6:
+            return D3D_PRIMITIVE_TOPOLOGY_6_CONTROL_POINT_PATCHLIST;
+
+        case 7:
+            return D3D_PRIMITIVE_TOPOLOGY_7_CONTROL_POINT_PATCHLIST;
+
+        case 8:
+            return D3D_PRIMITIVE_TOPOLOGY_8_CONTROL_POINT_PATCHLIST;
+
+        case 9:
+            return D3D_PRIMITIVE_TOPOLOGY_9_CONTROL_POINT_PATCHLIST;
+
+        case 10:
+            return D3D_PRIMITIVE_TOPOLOGY_10_CONTROL_POINT_PATCHLIST;
+
+        case 11:
+            return D3D_PRIMITIVE_TOPOLOGY_11_CONTROL_POINT_PATCHLIST;
+
+        case 12:
+            return D3D_PRIMITIVE_TOPOLOGY_12_CONTROL_POINT_PATCHLIST;
+
+        case 13:
+            return D3D_PRIMITIVE_TOPOLOGY_13_CONTROL_POINT_PATCHLIST;
+
+        case 14:
+            return D3D_PRIMITIVE_TOPOLOGY_14_CONTROL_POINT_PATCHLIST;
+
+        case 15:
+            return D3D_PRIMITIVE_TOPOLOGY_15_CONTROL_POINT_PATCHLIST;
+
+        case 16:
+            return D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST;
+
+        case 17:
+            return D3D_PRIMITIVE_TOPOLOGY_17_CONTROL_POINT_PATCHLIST;
+
+        case 18:
+            return D3D_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST;
+
+        case 19:
+            return D3D_PRIMITIVE_TOPOLOGY_19_CONTROL_POINT_PATCHLIST;
+
+        case 20:
+            return D3D_PRIMITIVE_TOPOLOGY_20_CONTROL_POINT_PATCHLIST;
+
+        case 21:
+            return D3D_PRIMITIVE_TOPOLOGY_21_CONTROL_POINT_PATCHLIST;
+
+        case 22:
+            return D3D_PRIMITIVE_TOPOLOGY_22_CONTROL_POINT_PATCHLIST;
+
+        case 23:
+            return D3D_PRIMITIVE_TOPOLOGY_23_CONTROL_POINT_PATCHLIST;
+
+        case 24:
+            return D3D_PRIMITIVE_TOPOLOGY_24_CONTROL_POINT_PATCHLIST;
+
+        case 25:
+            return D3D_PRIMITIVE_TOPOLOGY_25_CONTROL_POINT_PATCHLIST;
+
+        case 26:
+            return D3D_PRIMITIVE_TOPOLOGY_26_CONTROL_POINT_PATCHLIST;
+
+        case 27:
+            return D3D_PRIMITIVE_TOPOLOGY_27_CONTROL_POINT_PATCHLIST;
+
+        case 28:
+            return D3D_PRIMITIVE_TOPOLOGY_28_CONTROL_POINT_PATCHLIST;
+
+        case 29:
+            return D3D_PRIMITIVE_TOPOLOGY_29_CONTROL_POINT_PATCHLIST;
+
+        case 30:
+            return D3D_PRIMITIVE_TOPOLOGY_30_CONTROL_POINT_PATCHLIST;
+    }
+
+    return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+}
+
+static Uint32 getVertexTypeSizeD3D12(PalVertexType type)
+{
+    // count x sizeof type returned as size
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT8_2:
+        case PAL_VERTEX_TYPE_UINT8_2:
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+        case PAL_VERTEX_TYPE_UINT8_2NORM: {
+            return 2;
+        }
+
+        case PAL_VERTEX_TYPE_INT32:
+        case PAL_VERTEX_TYPE_UINT32:
+        case PAL_VERTEX_TYPE_INT8_4:
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+        case PAL_VERTEX_TYPE_UINT8_4:
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+        case PAL_VERTEX_TYPE_INT16_2:
+        case PAL_VERTEX_TYPE_UINT16_2:
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+        case PAL_VERTEX_TYPE_FLOAT:
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2: {
+            return 4;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_2:
+        case PAL_VERTEX_TYPE_UINT32_2:
+        case PAL_VERTEX_TYPE_INT16_4:
+        case PAL_VERTEX_TYPE_UINT16_4:
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+        case PAL_VERTEX_TYPE_FLOAT2:
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4: {
+            return 8;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_3:
+        case PAL_VERTEX_TYPE_UINT32_3:
+        case PAL_VERTEX_TYPE_FLOAT3: {
+            return 12;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_4:
+        case PAL_VERTEX_TYPE_UINT32_4:
+        case PAL_VERTEX_TYPE_FLOAT4: {
+            return 16;
+        }
+    }
+
+    return 0;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -1753,6 +2086,7 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     caps->maxPushConstantSize = (D3D12_MAX_ROOT_COST - 2) * 4;
     caps->maxVertexLayouts = PAL_LIMIT_UNKNOWN;
     caps->maxVertexAttributes = PAL_LIMIT_UNKNOWN;
+    caps->maxTessellationPatchPoint = 32;
 
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
     caps->maxComputeWorkGroupCount[0] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
@@ -3478,6 +3812,7 @@ PalResult PAL_CALL createShaderD3D12(
     shader->byteCode.pShaderBytecode = info->bytecode;
     shader->byteCode.BytecodeLength = info->bytecodeSize;
     shader->stage = info->stage;
+    shader->patchControlPoints = info->patchControlPoints;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }
@@ -4482,6 +4817,13 @@ PalResult PAL_CALL cmdBindPipelineD3D12(
             d3dCmdBuffer->handle->lpVtbl->IASetPrimitiveTopology(
                 d3dCmdBuffer->handle, 
                 d3dPipeline->topology);
+
+            if (d3dPipeline->hasFsr) {
+                d3dCmdBuffer->handle->lpVtbl->RSSetShadingRate(
+                    d3dCmdBuffer->handle, 
+                    d3dPipeline->shadingRate, 
+                    d3dPipeline->combinerOps);
+            }
         }
     }
 
@@ -6182,7 +6524,435 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     const PalGraphicsPipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    HRESULT result;
+    Uint32 patchControlPoints = 0;
+    Uint32 totalSize = 0;
+    bool alphaToCoverageEnable = false;
+    Pipeline* pipeline = nullptr;
+    Device* d3dDevice = (Device*)device;
+    PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
 
+    GraphicsPipelineeStreamDesc desc = {0};
+    memset(&desc, 0, sizeof(GraphicsPipelineeStreamDesc));
+
+    desc.header.layout.root = layout->handle;
+    desc.header.layout.type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE;
+
+    ShaderStream shaderStreams[7]; // 7 shader types for graphics pipeline
+    D3D12_INPUT_ELEMENT_DESC* elementDescs = nullptr;
+    D3D12_VIEW_INSTANCE_LOCATION* viewLocations = nullptr;
+    D3D12_VIEW_INSTANCE_LOCATION cachedViewLocation = {0};
+
+    InputLayoutStream* inputLayoutDesc = &desc.header.inputLayout;
+    InputAssemblyStream* inputAssemblyDesc = &desc.header.inputAssembly;
+    RasterizerStream* rasterizerDesc = &desc.header.rasterizer;
+    MultisampleStream* multisampleDesc = &desc.header.multisample;
+    DepthStencilStream* depthStencilDesc = &desc.header.depthStencil;
+    ColorBlendStream* colorBlendDesc = &desc.header.colorBlend;
+    RenderingLayoutStream* renderingLayoutDesc = &desc.header.renderingLayout;
+    PipelineFlagsStream* flagsDesc = &desc.header.flags;
+    ViewInstancingStream* viewInstancingDesc = &desc.header.viewInstancing;
+
+    pipeline = palAllocate(s_D3D.allocator, sizeof(Pipeline), 0);
+    if (!pipeline) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    if (info->renderingLayout->viewCount > 1) {
+        viewLocations = palAllocate(
+            s_D3D.allocator, 
+            sizeof(D3D12_VIEW_INSTANCE_LOCATION) * info->renderingLayout->viewCount, 
+            0);
+
+        if (!viewLocations) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+    } else {
+        viewLocations = &cachedViewLocation;
+    }
+
+    totalSize = sizeof(FixedPipelineHeader) + (sizeof(ShaderStream) * info->shaderCount);
+    // shaders
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+         if (tmp->patchControlPoints) {
+            patchControlPoints = tmp->patchControlPoints;
+            if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
+                palFree(s_D3D.allocator, pipeline);
+                return PAL_RESULT_INVALID_OPERATION;
+            }
+        }
+
+        if (tmp->stage == PAL_SHADER_STAGE_VERTEX) {
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS;
+
+        } else if (tmp->stage == PAL_SHADER_STAGE_FRAGMENT) {
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS;
+
+        } else if (tmp->stage == PAL_SHADER_STAGE_GEOMETRY) {
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS;
+
+        } else if (tmp->stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL) {
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS;
+
+        } else if (tmp->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS;
+
+        } else if (tmp->stage == PAL_SHADER_STAGE_TASK) {
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS;
+
+        } else {
+            // mesh shader
+            shaderStreams[i].desc = tmp->byteCode;
+            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS;
+        }
+    }
+
+    // Vertex input state
+    // get the max size of vertex attributes in all layouts
+    Uint32 vertexCount = 0;
+    Uint32 vertexLayoutCount = info->vertexLayoutCount;
+    for (int i = 0; i < vertexLayoutCount; i++) {
+        PalVertexLayout* layout = &info->vertexLayouts[i];
+        vertexCount += layout->attributeCount;
+    }
+
+    inputLayoutDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_INPUT_LAYOUT;
+    pipeline->strides = nullptr;
+    if (vertexCount) {
+        pipeline->strides = palAllocate(s_D3D.allocator, sizeof(Uint32) * vertexLayoutCount, 0);
+        if (!pipeline->strides) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        elementDescs = palAllocate(
+            s_D3D.allocator, 
+            sizeof(D3D12_INPUT_ELEMENT_DESC) * vertexCount, 
+            0);
+
+        if (!elementDescs) {
+            palFree(s_D3D.allocator, elementDescs);
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        Uint32 positionIndex = 0;
+        Uint32 colorIndex = 0;
+        Uint32 texCoordIndex = 0;
+        Uint32 normalIndex = 0;
+        Uint32 tangentIndex = 0;
+
+        for (int i = 0; i < info->vertexLayoutCount; i++) {
+            PalVertexLayout* layout = &info->vertexLayouts[i];
+            Uint32 stride = 0;
+            Uint32 offset = 0;
+
+            for (int j = 0; j < layout->attributeCount; j++) {
+                PalVertexAttribute* vertexAttrib = &layout->attributes[j];
+                D3D12_INPUT_ELEMENT_DESC* elementDesc = &elementDescs[j];
+
+                elementDesc->Format = vertexTypeToD3D12(vertexAttrib->type);
+                elementDesc->InputSlot = layout->binding;
+                if (vertexAttrib->semanticName) {
+                    elementDesc->SemanticName = vertexAttrib->semanticName;
+                }
+
+                if (vertexAttrib->semanticID == PAL_VERTEX_SEMANTIC_ID_POSITION) {
+                    elementDesc->SemanticIndex = positionIndex++;
+
+                } else if (vertexAttrib->semanticID == PAL_VERTEX_SEMANTIC_ID_COLOR) {
+                    elementDesc->SemanticIndex = colorIndex++;
+
+                } else if (vertexAttrib->semanticID == PAL_VERTEX_SEMANTIC_ID_TEXCOORD) {
+                    elementDesc->SemanticIndex = texCoordIndex++;
+
+                } else if (vertexAttrib->semanticID == PAL_VERTEX_SEMANTIC_ID_NORMAL) {
+                    elementDesc->SemanticIndex = normalIndex++;
+
+                } else {
+                    // tangent
+                    elementDesc->SemanticIndex = tangentIndex++;
+                }
+
+                if (layout->type == PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE) {
+                    elementDesc->InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+                    elementDesc->InstanceDataStepRate = 1;
+                } else {
+                    elementDesc->InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+                    elementDesc->InstanceDataStepRate = 0;
+                }
+
+                // build offsets and stride
+                Uint32 size = getVertexTypeSizeD3D12(vertexAttrib->type);
+                elementDesc->AlignedByteOffset = offset;
+                offset += size;
+                stride += size;
+            }
+
+            // cache the computed stride to be used later by the vertex buffer
+            pipeline->strides[i] = stride;
+        }
+
+        inputLayoutDesc->desc.NumElements = vertexCount;
+        inputLayoutDesc->desc.pInputElementDescs = elementDescs;
+    }
+
+    // Input assembly
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType = 0;
+    D3D_PRIMITIVE_TOPOLOGY topology = 0;
+    switch (info->topology) {
+        case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
+            topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: {
+            topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_LINE_LIST: {
+            topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+            topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP: {
+            topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+            topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_POINT_LIST: {
+            topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+            topology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+            break;
+        }
+
+        case PAL_PRIMITIVE_TOPOLOGY_PATCH: {
+            topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+            topology = getPatchTopology(patchControlPoints);
+            break;
+        }
+    }
+
+    inputAssemblyDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PRIMITIVE_TOPOLOGY;
+    inputAssemblyDesc->ibType = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_IB_STRIP_CUT_VALUE;
+    inputAssemblyDesc->topology = topologyType;
+    if (info->primitiveRestartEnable == false) {
+        inputAssemblyDesc->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+
+    } else {
+        if (info->indexType == PAL_INDEX_TYPE_UINT16) {
+            inputAssemblyDesc->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFF;
+        } else {
+            inputAssemblyDesc->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFFFFFF;
+        }
+    }
+
+    // Rasterizer
+    rasterizerDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER;
+    rasterizerDesc->desc.FrontCounterClockwise = TRUE;
+    if (info->rasterizerState) {
+        PalRasterizerState* state = info->rasterizerState;
+        if (state->cullMode == PAL_CULL_MODE_NONE) {
+            rasterizerDesc->desc.CullMode = D3D12_CULL_MODE_NONE;
+
+        } else if (state->cullMode == PAL_CULL_MODE_BACK) {
+            rasterizerDesc->desc.CullMode = D3D12_CULL_MODE_BACK;
+
+        } else if (state->cullMode == PAL_CULL_MODE_FRONT) {
+            rasterizerDesc->desc.CullMode = D3D12_CULL_MODE_FRONT;
+        }
+
+        if (state->polygonMode == PAL_POLYGON_MODE_FILL) {
+            rasterizerDesc->desc.FillMode = D3D12_FILL_MODE_SOLID;
+
+        } else {
+            rasterizerDesc->desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+        }
+
+        if (state->frontFace == PAL_FRONT_FACE_CLOCKWISE) {
+            rasterizerDesc->desc.FrontCounterClockwise = FALSE;
+
+        } else {
+            rasterizerDesc->desc.FrontCounterClockwise = TRUE;
+        }
+
+        rasterizerDesc->desc.DepthClipEnable = !state->enableDepthClamp;
+        rasterizerDesc->desc.DepthBias = (INT)state->depthBiasConstant;
+        rasterizerDesc->desc.SlopeScaledDepthBias = state->depthBiasSlope;
+        rasterizerDesc->desc.DepthBiasClamp = state->depthBiasClamp;
+    }
+
+    // Multisample
+    multisampleDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_DESC;
+    multisampleDesc->maskType = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_MASK;
+    multisampleDesc->desc.Quality = 0;
+    multisampleDesc->desc.Count = 1;
+    if (info->multisampleState) {
+        PalMultisampleState* state = info->multisampleState;
+        if (state->sampleMask) {
+            multisampleDesc->sampleMask = (UINT)state->sampleMask;
+        } else {
+            multisampleDesc->sampleMask = UINT32_MAX;
+        }
+
+        multisampleDesc->desc.Count = samplesToD3D12(state->sampleCount);
+        alphaToCoverageEnable = state->enableAlphaToCoverage;
+    }
+
+    // Depth stencil
+    depthStencilDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL;
+    if (info->depthStencilState) {
+        PalDepthStencilState* state = info->depthStencilState;
+        PalStencilOpState* back = &state->backStencilOpState;
+        PalStencilOpState* front = &state->frontStencilOpState;
+
+        D3D12_DEPTH_STENCILOP_DESC* d3dBack = &depthStencilDesc->desc.BackFace;
+        D3D12_DEPTH_STENCILOP_DESC* d3dFront = &depthStencilDesc->desc.FrontFace;
+
+        d3dBack->StencilFunc = compareOpToD3D12(back->compareOp);
+        d3dBack->StencilDepthFailOp = stencilOpToD3D12(back->depthFailOp);
+        d3dBack->StencilFailOp = stencilOpToD3D12(back->failOp);
+        d3dBack->StencilPassOp = stencilOpToD3D12(back->passOp);
+
+        d3dFront->StencilFunc = compareOpToD3D12(front->compareOp);
+        d3dFront->StencilDepthFailOp = stencilOpToD3D12(front->depthFailOp);
+        d3dFront->StencilFailOp = stencilOpToD3D12(front->failOp);
+        d3dFront->StencilPassOp = stencilOpToD3D12(front->passOp);
+
+        depthStencilDesc->desc.DepthFunc = compareOpToD3D12(state->compareOp);
+        depthStencilDesc->desc.DepthEnable = state->enableDepthTest;
+        depthStencilDesc->desc.StencilEnable = state->enableStencilTest;
+        if (state->enableDepthWrite) {
+            depthStencilDesc->desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+        } else {
+            depthStencilDesc->desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+        }
+    }
+
+    // Color blend
+    colorBlendDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_BLEND;
+    colorBlendDesc->desc.IndependentBlendEnable = TRUE;
+    colorBlendDesc->desc.AlphaToCoverageEnable = alphaToCoverageEnable;
+    if (info->colorBlendAttachmentCount) {
+        for (int i = 0; i < info->colorBlendAttachmentCount; i++) {
+            D3D12_RENDER_TARGET_BLEND_DESC* tmp = colorBlendDesc[i].desc.RenderTarget;
+            PalColorBlendAttachment* desc = &info->colorBlendAttachments[i];
+
+            tmp->BlendEnable = desc->enableBlend;
+            tmp->BlendOpAlpha = blendOpToD3D12(desc->alphaBlendOp);
+            tmp->BlendOp = blendOpToD3D12(desc->colorBlendOp);
+
+            tmp->SrcBlendAlpha = blendFactorToD3D12(desc->srcAlphaBlendFactor);
+            tmp->SrcBlend = blendFactorToD3D12(desc->srcColorBlendFactor);
+
+            tmp->DestBlendAlpha = blendFactorToD3D12(desc->dstAlphaBlendFactor);
+            tmp->DestBlend = blendFactorToD3D12(desc->dstColorBlendFactor);
+
+            // blend color write mask
+            tmp->RenderTargetWriteMask = 0;
+            if (desc->colorWriteMask & PAL_COLOR_MASK_RED) {
+                tmp->RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_RED;
+            }
+
+            if (desc->colorWriteMask & PAL_COLOR_MASK_GREEN) {
+                tmp->RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+            }
+
+            if (desc->colorWriteMask & PAL_COLOR_MASK_BLUE) {
+                tmp->RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+            }
+
+            if (desc->colorWriteMask & PAL_COLOR_MASK_ALPHA) {
+                tmp->RenderTargetWriteMask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+            }
+        }
+    }
+
+    // Fragment shading rate
+    pipeline->hasFsr = false;
+    if (info->fragmentShadingRateState) {
+        PalFragmentShadingRateState* state = info->fragmentShadingRateState;
+        pipeline->shadingRate = shadingRateToD3D12(state->rate);
+        for (int i = 0; i < 2; i++) {
+            pipeline->combinerOps[i]  = combinerOpsToD3D12(state->combinerOps[i]);
+        }
+    }
+
+    // Rendering Layout
+    renderingLayoutDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RENDER_TARGET_FORMATS;
+    renderingLayoutDesc->dsvType = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL_FORMAT;
+    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+    PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
+
+    // color attachments
+    renderingLayoutDesc->NumRenderTargets = renderingLayout->colorAttachentCount;
+    for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
+        format = formatToD3D12(renderingLayout->colorAttachmentsFormat[i]);
+        renderingLayoutDesc->RTVFormats[i] = format;
+    }
+
+    // depth stencil attachment
+    format = formatToD3D12(renderingLayout->depthStencilAttachmentFormat);
+    renderingLayoutDesc->DSVFormat = format;
+
+    // View Instancing
+    viewInstancingDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VIEW_INSTANCING;
+    viewInstancingDesc->desc.ViewInstanceCount = info->renderingLayout->viewCount;
+    viewInstancingDesc->desc.pViewInstanceLocations = viewLocations;
+    for (int i = 0; i < info->renderingLayout->viewCount; i++) {
+        viewLocations[i].RenderTargetArrayIndex = i;
+        viewLocations[i].RenderTargetArrayIndex = i;
+    }
+
+    // Flags
+    flagsDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_FLAGS;
+    flagsDesc->flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+    if (s_D3D.debugLayer) {
+        flagsDesc->flags = D3D12_PIPELINE_STATE_FLAG_DEBUG;
+    }
+
+    D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = {0};
+    streamDesc.pPipelineStateSubobjectStream = &desc;
+    streamDesc.SizeInBytes = totalSize;
+
+    result = d3dDevice->handle->lpVtbl->CreatePipelineState(
+        d3dDevice->handle, 
+        &streamDesc,
+        &IID_Pipeline, 
+        &pipeline->handle);
+
+    if (FAILED(result)) {
+        if (result == E_INVALIDARG) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        } else if (result == E_OUTOFMEMORY) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    if (info->vertexLayoutCount) {
+        palFree(s_D3D.allocator, elementDescs);
+    }
+
+    if (info->renderingLayout->viewCount > 1) {
+        palFree(s_D3D.allocator, viewLocations);
+    }
+
+    pipeline->topology = topology;
+    pipeline->type = GRAPHICS_PIPELINE;
+    *outPipeline = (PalPipeline*)pipeline;
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL createComputePipelineD3D12(
@@ -6203,7 +6973,18 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
 void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
 {
+    Pipeline* d3dPipeline = (Pipeline*)pipeline;
+    if (d3dPipeline->type == RAY_TRACING_PIPELINE) {
+        // TODO: ray tracing pipeline
+    } else {
+        ID3D12PipelineState* handle = d3dPipeline->handle;
+        handle->lpVtbl->Release(handle);
+    }
 
+    if (d3dPipeline->strides) {
+        palFree(s_D3D.allocator, d3dPipeline->strides);
+    }
+    palFree(s_D3D.allocator, d3dPipeline);
 }
 
 // ==================================================

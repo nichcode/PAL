@@ -990,7 +990,7 @@ typedef enum {
 typedef enum {
     PAL_VERTEX_SEMANTIC_ID_POSITION,
     PAL_VERTEX_SEMANTIC_ID_COLOR,
-    PAL_VERTEX_SEMANTIC_ID_UV,
+    PAL_VERTEX_SEMANTIC_ID_TEXCOORD,
     PAL_VERTEX_SEMANTIC_ID_NORMAL,
     PAL_VERTEX_SEMANTIC_ID_TANGENT   
 } PalVertexSemanticID;
@@ -1451,6 +1451,7 @@ typedef struct {
     Uint32 maxPushConstantSize;
     Uint32 maxVertexLayouts;
     Uint32 maxVertexAttributes;
+    Uint32 maxTessellationPatchPoint;
     Uint32 maxComputeWorkGroupInvocations; /**< Max compute threads per workgroup across all axis.*/
     Uint32 maxComputeWorkGroupCount[3];    /**< Max compute workgroups per axis.*/
     Uint32 maxComputeWorkGroupSize[3];     /**< Max compute threads per workgroup per axis.*/
@@ -1840,8 +1841,7 @@ typedef struct {
     Uint32 viewCount; /**< If > 1 `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported.*/
     Uint32 colorAttachentCount;
     PalSampleCount multisampleCount;
-    PalFormat depthAttachmentFormat;
-    PalFormat stencilAttachmentFormat;
+    PalFormat depthStencilAttachmentFormat;
     PalFormat fragmentShadingRateAttachmentFormat;
     PalFormat* colorAttachmentsFormat;
 } PalRenderingLayoutInfo;
@@ -1936,6 +1936,10 @@ typedef struct {
 typedef struct {
     PalVertexSemanticID semanticID; /**< (eg. PAL_VERTEX_SEMANTIC_ID_POSITION).*/
     PalVertexType type; /**< (eg. PAL_VERTEX_TYPE_FLOAT).*/
+
+    /** Must not include the index (eg. "position" or "myown"). Set to nullptr to use the default 
+     * that will be derived from `semanticID`.*/
+    const char* semanticName;
 } PalVertexAttribute;
 
 /**
@@ -1991,6 +1995,9 @@ typedef struct {
 typedef struct {
     bool enableDepthClamp;
     bool enableDepthBias;
+    float depthBiasConstant;
+    float depthBiasSlope;
+    float depthBiasClamp;
     PalPolygonMode polygonMode; /**< (eg. PAL_POLYGON_MODE_FILL).*/
     PalCullMode cullMode;       /**< (eg. PAL_CULL_MODE_BACK).*/
     PalFrontFace frontFace;     /**< (eg. PAL_FRONT_FACE_CLOCKWISE).*/
@@ -2577,10 +2584,11 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool primitiveRestartEnable; /**< False to disable.*/
     Uint32 vertexLayoutCount;
     Uint32 colorBlendAttachmentCount;
     Uint32 shaderCount;
-    Uint32 primitiveRestartEnable; /**< 0 to disable.*/
+    PalIndexType indexType;  /**< Will be used if `primitiveRestartEnable` is true.*/
     PalPrimitiveTopology topology;
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
