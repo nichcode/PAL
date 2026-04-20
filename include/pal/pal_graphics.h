@@ -1548,6 +1548,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool RequiresShaderExportName;
+    bool RequiresShaderGroupExportName;
     Uint32 maxRecursionDepth;
     Uint32 maxHitAttributeSize; /**< Max memory per intersection attributes.*/
     Uint32 maxInstanceCount;
@@ -2497,6 +2499,7 @@ typedef struct {
     PalShaderStage stage;
     void* bytecode;
     Uint64 bytecodeSize;
+    const char* exportName; /**< Check PalRayTracingCapabilities::RequiresShaderExportName.*/
 } PalShaderCreateInfo;
 
 /**
@@ -2630,6 +2633,7 @@ typedef struct {
     Uint32 closestHitShaderIndex;      /**< Index of closest hit shader from shader array.*/
     Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
     Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
+    const char* exportName; /**< Check PalRayTracingCapabilities::RequiresShaderGroupExportName.*/
 } PalRayTracingShaderGroupCreateInfo;
 
 /**

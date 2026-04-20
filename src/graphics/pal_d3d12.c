@@ -219,6 +219,7 @@ typedef struct {
 
     Uint32 patchControlPoints;
     PalShaderStage stage;
+    const char* exportName;
     D3D12_SHADER_BYTECODE byteCode;
 } Shader;
 
@@ -1772,6 +1773,25 @@ static Uint32 getVertexTypeSizeD3D12(PalVertexType type)
     return 0;
 }
 
+static const wchar_t* convertToWcharD3D12(
+    wchar_t* buffer, 
+    Uint32* offset,
+    const char* name)
+{
+    Uint32 size = 65536;
+    wchar_t* dst = buffer[*offset];
+    int written = MultiByteToWideChar(
+        CP_UTF8,
+        0,
+        name,
+        -1,
+        dst,
+        size - *offset);
+
+    *offset += written;
+    return dst;
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -2689,6 +2709,8 @@ PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
     caps->maxPayloadSize = PAL_LIMIT_UNKNOWN;
     caps->maxDispatchInvocations = PAL_LIMIT_UNKNOWN;
 
+    caps->RequiresShaderExportName = true;
+    caps->RequiresShaderGroupExportName = true;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3801,6 +3823,10 @@ PalResult PAL_CALL createShaderD3D12(
         if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
+
+        if (!info->exportName) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
     }
     // clang-format on
 
@@ -3813,6 +3839,7 @@ PalResult PAL_CALL createShaderD3D12(
     shader->byteCode.BytecodeLength = info->bytecodeSize;
     shader->stage = info->stage;
     shader->patchControlPoints = info->patchControlPoints;
+    shader->exportName = info->exportName;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }
@@ -7004,7 +7031,39 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     const PalRayTracingPipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    HRESULT result;
+    Device* d3dDevice = (Device*)device;
+    PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
+    Pipeline* pipeline = nullptr;
+    D3D12_EXPORT_DESC shaderExports[6]; // 6 shader types for ray tracing pipeline
+    D3D12_HIT_GROUP_DESC* groups = nullptr;
+    Uint32 groupSize = sizeof(D3D12_HIT_GROUP_DESC) * info->shaderGroupCount;
+    wchar_t* scratchBuffer = nullptr;
+    Uint32 offset = 0;
 
+    if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    D3D12_STATE_OBJECT_DESC desc = {0};
+    pipeline = palAllocate(s_D3D.allocator, sizeof(Pipeline), 0);
+    groups = palAllocate(s_D3D.allocator, groupSize, 0);
+    scratchBuffer = palAllocate(s_D3D.allocator, 65536 * sizeof(wchar_t), 0);
+    if (!pipeline || !groups || !scratchBuffer) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    // shaders
+    memset(groups, 0, sizeof(D3D12_HIT_GROUP_DESC) * info->shaderGroupCount);
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+        shaderExports[i].Name = convertToWcharD3D12(scratchBuffer, &offset, tmp->exportName);
+    }
+
+    palFree(s_D3D.allocator, groups);
+    palFree(s_D3D.allocator, scratchBuffer);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
