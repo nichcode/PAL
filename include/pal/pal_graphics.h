@@ -2649,6 +2649,8 @@ typedef struct {
     Uint32 shaderCount;
     Uint32 shaderGroupCount;
     Uint32 maxRecursionDepth;
+    Uint32 maxAttributeSize;
+    Uint32 maxPayloadSize;
     PalPipelineLayout* pipelineLayout;
     PalRayTracingShaderGroupCreateInfo* shaderGroups; /**< Array of shader group create info.*/
     PalShader** shaders; /**< Array of shader stage. This is used by `shaderGroups`.*/

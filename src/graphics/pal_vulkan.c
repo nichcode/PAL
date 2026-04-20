@@ -8922,9 +8922,10 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     Device* vkDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
     Pipeline* pipeline = nullptr;
-    VkPipelineShaderStageCreateInfo shaderStages[6]; // 6 shader types for ray tracing pipeline
+    VkPipelineShaderStageCreateInfo* shaderStages = nullptr; 
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
     Uint32 groupSize = sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount;
+    Uint32 shaderSize = sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -8935,7 +8936,8 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
     groups = palAllocate(s_Vk.allocator, groupSize, 0);
-    if (!pipeline || !groups) {
+    shaderStages = palAllocate(s_Vk.allocator, shaderSize, 0);
+    if (!pipeline || !groups || !shaderStages) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
@@ -8983,6 +8985,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         &pipeline->handle);
 
     palFree(s_Vk.allocator, groups);
+    palFree(s_Vk.allocator, shaderStages);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pipeline);
         return resultFromVk(result);
