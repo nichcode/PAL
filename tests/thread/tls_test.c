@@ -1,0 +1,94 @@
+
+#include "pal/pal_core.h"
+#include "pal/pal_thread.h"
+
+// data every thread will have its own copy of
+typedef struct {
+    const char* name;
+    Uint32 number;
+} TlsData;
+
+// thread data
+typedef struct {
+    PalTLSId tlsId;
+} ThreadData;
+
+// the tls destructor
+static void PAL_CALL TlsDestructor(void* userData)
+{
+    palLog(nullptr, "Tls destructor started");
+
+    TlsData* tlsData = userData;
+    if (tlsData) {
+        palFree(nullptr, tlsData);
+    }
+
+    palLog(nullptr, "Tls destructor finished");
+}
+
+static void* PAL_CALL worker(void* arg)
+{
+    ThreadData* threadData = (ThreadData*)arg;
+    palLog(nullptr, "Thread 0: started");
+
+    // allocate and buffer and store it with the tls
+    TlsData* data = palAllocate(nullptr, sizeof(TlsData), 0);
+    if (!data) {
+        palLog(nullptr, "Failed to allocate memory");
+        return nullptr;
+    }
+
+    data->number = 10;
+    data->name = "TLS Data";
+
+    // for the tls destructor to be called, the tls must have a non null value
+    palSetTLS(threadData->tlsId, data);
+    palLog(nullptr, "TLS %d: Data string: %s", threadData->tlsId, data->name);
+
+    palLog(nullptr, "Thread 0: finished");
+    return nullptr;
+}
+
+bool tlsTest()
+{
+    PalThread* thread = nullptr;
+
+    // create tls
+    PalTLSId tlsID = palCreateTLS(TlsDestructor);
+    if (tlsID == 0) {
+        palLog(nullptr, "Failed to create TLS");
+        return false;
+    }
+
+    // allocate thread data
+    ThreadData* threadData = palAllocate(nullptr, sizeof(ThreadData), 0);
+    if (!threadData) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+    threadData->tlsId = tlsID;
+
+    // create a thread
+    PalThreadCreateInfo info = {0};
+    info.arg = threadData;
+    info.entry = worker;
+    info.stackSize = 0;       // for default
+    info.allocator = nullptr; // default
+
+    PalResult result = palCreateThread(&info, &thread);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create thread: %s", error);
+        return false;
+    }
+
+    // join thread
+    // joint threads does not need to be detached
+    palJoinThread(thread, nullptr); // wait for thread to finish
+
+    // destroy the tls
+    palDestroyTLS(tlsID);
+
+    palFree(nullptr, threadData);
+    return true;
+}

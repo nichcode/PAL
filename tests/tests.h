@@ -6,7 +6,7 @@
 
 typedef bool (*TestFn)();
 
-void registerTest(TestFn func);
+void registerTest(TestFn func, const char* name);
 void runTests();
 
 // core tests

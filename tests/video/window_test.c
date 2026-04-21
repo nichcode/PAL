@@ -1,0 +1,355 @@
+
+#include "pal/pal_video.h"
+#include "tests.h"
+
+// make the window borderless if supported
+#define MAKE_BORDERLESS 0
+
+// make the window transparent if supported
+#define MAKE_TRANSPARENT 0
+#define OPACITY 0.8f // if transparent window is supported
+
+// make the window a tool window if supported
+#define MAKE_TOOL 0
+
+// remove the minimize box if supported
+#define NO_MINIMIZEBOX 0
+
+// remove the maximize box if supported
+#define NO_MAXIMIZEBOX 0
+
+#define UNICODE_NAME 1
+#define DISPATCH_MODE_POLL 1 // use polling dispatch mode
+
+#if DISPATCH_MODE_POLL
+static const char* dispatchString = "Poll Mode";
+#else
+static const char* dispatchString = "Callback Mode";
+#endif // DISPATCH_MODE_POLL
+
+// inline helpers
+static inline void onWindowResize(const PalEvent* event)
+{
+    Uint32 width, height; // width == low, height == high
+    palUnpackUint32(event->data, &width, &height);
+    PalWindow* window = palUnpackPointer(event->data2);
+    palLog(nullptr, "%s: Window Resized: (%d, %d)", dispatchString, width, height);
+}
+
+static inline void onWindowMove(const PalEvent* event)
+{
+    Int32 x, y; // x == low, y == high
+    palUnpackInt32(event->data, &x, &y);
+    PalWindow* window = palUnpackPointer(event->data2);
+    palLog(nullptr, "%s: Window Moved: (%d, %d)", dispatchString, x, y);
+}
+
+static inline void onWindowVisibility(const PalEvent* event)
+{
+    PalWindow* window = palUnpackPointer(event->data2);
+    if (event->data) {
+        palLog(nullptr, "%s: Window is shown", dispatchString);
+
+    } else {
+        palLog(nullptr, "%s: Window is hidden", dispatchString);
+    }
+}
+
+static inline void onWindowFocus(const PalEvent* event)
+{
+    PalWindow* window = palUnpackPointer(event->data2);
+    if (event->data) {
+        palLog(nullptr, "%s: Window has gained focus", dispatchString);
+
+    } else {
+        palLog(nullptr, "%s: Window has lost focus", dispatchString);
+    }
+}
+
+static inline void onWindowState(const PalEvent* event)
+{
+    PalWindow* window = palUnpackPointer(event->data2);
+    if (event->data == PAL_WINDOW_STATE_MAXIMIZED) {
+        palLog(nullptr, "%s: Window maximized", dispatchString);
+
+    } else if (event->data == PAL_WINDOW_STATE_MINIMIZED) {
+        palLog(nullptr, "%s: Window minimized", dispatchString);
+
+    } else {
+        palLog(nullptr, "%s: Window restored", dispatchString);
+    }
+}
+
+static inline void onWindowModalBegin(const PalEvent* event)
+{
+    // window has entered modal mode (is being resize). only for windows
+    PalWindow* window = palUnpackPointer(event->data2);
+    palLog(nullptr, "%s: Window has entered modal mode", dispatchString);
+}
+
+static inline void onWindowModalEnd(const PalEvent* event)
+{
+    // window has left modal mode. only for windows
+    PalWindow* window = palUnpackPointer(event->data2);
+    palLog(nullptr, "%s: Window has exited modal mode", dispatchString);
+}
+
+static inline void onMonitorDPI(const PalEvent* event)
+{
+    PalWindow* window = palUnpackPointer(event->data2);
+    palLog(nullptr, "%s: Monitor DPI: %d", dispatchString, event->data);
+}
+
+static inline void onMonitorList(const PalEvent* event)
+{
+    PalWindow* window = palUnpackPointer(event->data2);
+    palLog(nullptr, "%s: Monitor List has been changed", dispatchString);
+}
+
+static void PAL_CALL onEvent(
+    void* userData,
+    const PalEvent* event)
+{
+    if (event->type == PAL_EVENT_WINDOW_SIZE) {
+        onWindowResize(event);
+
+    } else if (event->type == PAL_EVENT_WINDOW_MOVE) {
+        onWindowMove(event);
+
+    } else if (event->type == PAL_EVENT_WINDOW_VISIBILITY) {
+        onWindowVisibility(event);
+
+    } else if (event->type == PAL_EVENT_WINDOW_FOCUS) {
+        onWindowFocus(event);
+
+    } else if (event->type == PAL_EVENT_WINDOW_STATE) {
+        onWindowState(event);
+
+    } else if (event->type == PAL_EVENT_WINDOW_MODAL_BEGIN) {
+        onWindowModalBegin(event);
+
+    } else if (event->type == PAL_EVENT_WINDOW_MODAL_END) {
+        onWindowModalEnd(event);
+
+    } else if (event->type == PAL_EVENT_MONITOR_DPI_CHANGED) {
+        onMonitorDPI(event);
+
+    } else if (event->type == PAL_EVENT_MONITOR_LIST_CHANGED) {
+        onMonitorList(event);
+
+    } else {
+        return;
+    }
+}
+
+bool windowTest()
+{
+    palLog(nullptr, "Press Escape or click close button to close Test");
+    
+    PalResult result;
+    PalWindow* window = nullptr;
+    PalWindowCreateInfo createInfo = {0};
+    bool running = false;
+
+    // event driver
+    PalEventDriver* eventDriver = nullptr;
+    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
+
+    // fill the event driver create info
+    eventDriverCreateInfo.allocator = nullptr; // default allocator
+    eventDriverCreateInfo.callback = onEvent;  // for callback dispatch
+    eventDriverCreateInfo.queue = nullptr;     // default queue
+    eventDriverCreateInfo.userData = nullptr;  // null
+
+    // create the event driver
+    result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create event driver: %s", error);
+        return false;
+    }
+
+    PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
+#if DISPATCH_MODE_POLL
+    dispatchMode = PAL_DISPATCH_POLL;
+#else
+    dispatchMode = PAL_DISPATCH_CALLBACK;
+#endif // DISPATCH_MODE_POLL
+
+    // set dispatch mode for all events.
+    for (Uint32 e = 0; e < PAL_EVENT_KEYDOWN; e++) {
+        palSetEventDispatchMode(eventDriver, e, dispatchMode);
+    }
+
+    // we set window close to poll
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+
+    // we set callback mode for modal begin and end. Since we want to capture
+    // that instantly
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_BEGIN, PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_END, PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_DECORATION_MODE, PAL_DISPATCH_POLL);
+
+    // initialize the video system. We pass the event driver to recieve video
+    // related events the video system does not copy the event driver, it must
+    // be valid till the video system is shutdown
+    result = palInitVideo(nullptr, eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to initialize video: %s", error);
+        return false;
+    }
+
+    // fill the create info struct
+    createInfo.monitor = nullptr; // use default monitor
+    createInfo.height = 480;
+    createInfo.width = 640;
+    createInfo.show = true;
+    createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
+
+    // check if we support decorated windows (title bar, close etc)
+    PalVideoFeatures64 features = palGetVideoFeaturesEx();
+    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+        // if we dont support, we need to create a borderless window
+        // and create the decorations ourselves
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
+
+#if UNICODE_NAME
+    createInfo.title = "Test Window Unicode - àà";
+#else
+    createInfo.title = "Test Window";
+#endif // UNICODE_NAME
+
+#if MAKE_BORDERLESS
+    if (features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW) {
+        createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
+    }
+#endif // MAKE_BORDERLESS
+
+#if MAKE_TRANSPARENT
+    if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
+        createInfo.style |= PAL_WINDOW_STYLE_TRANSPARENT;
+    }
+#endif // MAKE_TRANSPARENT
+
+#if MAKE_TOOL
+    if (features & PAL_VIDEO_FEATURE_TOOL_WINDOW) {
+        createInfo.style |= PAL_WINDOW_STYLE_TOOL;
+    }
+#endif // MAKE_TOOL
+
+#if NO_MINIMIZEBOX
+    if (features & PAL_VIDEO_FEATURE_NO_MINIMIZEBOX) {
+        createInfo.style |= PAL_WINDOW_STYLE_NO_MINIMIZEBOX;
+    }
+#endif // NO_MINIMIZEBOX
+
+#if NO_MAXIMIZEBOX
+    if (features & PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX) {
+        createInfo.style |= PAL_WINDOW_STYLE_NO_MAXIMIZEBOX;
+    }
+#endif // NO_MAXIMIZEBOX
+
+    // create the window with the create info struct
+    result = palCreateWindow(&createInfo, &window);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create window: %s", error);
+        return false;
+    }
+
+#if MAKE_TRANSPARENT
+    if (features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW) {
+        result = palSetWindowOpacity(window, OPACITY);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set window opacity: %s", error);
+            return false;
+        }
+    }
+#endif // MAKE_TRANSPARENT
+
+    running = true;
+    while (running) {
+        // update the video system to push video events
+        palUpdateVideo();
+
+        PalEvent event;
+        while (palPollEvent(eventDriver, &event)) {
+            switch (event.type) {
+                case PAL_EVENT_WINDOW_CLOSE: {
+                    running = false;
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_SIZE: {
+                    onWindowResize(&event);
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_MOVE: {
+                    onWindowMove(&event);
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_VISIBILITY: {
+                    onWindowVisibility(&event);
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_STATE: {
+                    onWindowState(&event);
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_FOCUS: {
+                    onWindowFocus(&event);
+                    break;
+                }
+
+                case PAL_EVENT_MONITOR_DPI_CHANGED: {
+                    onMonitorDPI(&event);
+                    break;
+                }
+
+                case PAL_EVENT_MONITOR_LIST_CHANGED: {
+                    onMonitorList(&event);
+                    break;
+                }
+
+                case PAL_EVENT_KEYDOWN: {
+                    PalKeycode keycode = 0;
+                    palUnpackUint32(event.data, &keycode, nullptr);
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = false;
+                    }
+                    break;
+                }
+
+                case PAL_EVENT_WINDOW_DECORATION_MODE: {
+                    if (event.data == PAL_DECORATION_MODE_CLIENT_SIDE) {
+                        palLog(nullptr, "Window Decoration Mode: Client Side");
+                    } else {
+                        palLog(nullptr, "Window Decoration Mode: Server Side");
+                    }
+                    break;
+                }
+            }
+        }
+
+        // update
+    }
+
+    // destroy the window
+    palDestroyWindow(window);
+
+    // shutdown the video system
+    palShutdownVideo();
+
+    // destroy the event driver
+    palDestroyEventDriver(eventDriver);
+
+    return true;
+}

@@ -9,76 +9,83 @@ project "tests"
     files {
         "tests_main.c",
         "tests.c",
-        "logger_test.c",
-        "time_test.c",
-        "user_event_test.c",
-        "event_test.c"
+
+        -- core
+        "core/logger_test.c",
+        "core/time_test.c",
+
+        -- event
+        "event/user_event_test.c",
+        "event/event_test.c"
     }
 
     if (PAL_BUILD_SYSTEM) then
         files {
-            "system_test.c"
+            "system/system_test.c"
         }
     end
 
     if (PAL_BUILD_THREAD) then
         files {
-            "thread_test.c",
-            "tls_test.c",
-            "mutex_test.c",
-            "condvar_test.c"
+            "thread/thread_test.c",
+            "thread/tls_test.c",
+            "thread/mutex_test.c",
+            "thread/condvar_test.c"
         }
     end
 
     if (PAL_BUILD_VIDEO) then
         files {
-            "video_test.c",
-            "monitor_test.c",
-            "monitor_mode_test.c",
-            "window_test.c",
-            "icon_test.c",
-            "cursor_test.c",
-            "input_window_test.c",
-            "system_cursor_test.c",
-            "attach_window_test.c",
-            "char_event_test.c",
-            "native_integration_test.c",
-            "native_instance_test.c",
-            "custom_decoration_test.c"
+            "video/video_test.c",
+            "video/monitor_test.c",
+            "video/monitor_mode_test.c",
+            "video/window_test.c",
+            "video/icon_test.c",
+            "video/cursor_test.c",
+            "video/input_window_test.c",
+            "video/system_cursor_test.c",
+            "video/attach_window_test.c",
+            "video/char_event_test.c",
+            "video/native_integration_test.c",
+            "video/native_instance_test.c",
+            "video/custom_decoration_test.c"
         }
     end
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
         files {
-            "opengl_test.c",
-            "opengl_fbconfig_test.c",
-            "opengl_context_test.c",
-            "opengl_multi_context_test.c"
+            "opengl/opengl_test.c",
+            "opengl/opengl_fbconfig_test.c",
+            "opengl/opengl_context_test.c",
+            "opengl/opengl_multi_context_test.c"
         }
     end
 
     if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO and PAL_BUILD_THREAD) then
         files {
-            "multi_thread_opengl_test.c"
+            "opengl/multi_thread_opengl_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS) then
         files {
-            "graphics_test.c",
-            "compute_test.c",
-            "ray_tracing_test.c"
+            "graphics/graphics_test.c",
+            "graphics/compute_test.c",
+            "graphics/ray_tracing_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
         files {
-            "clear_color_test.c",
-            "triangle_test.c",
-            "mesh_test.c",
-            "texture_test.c"
+            "graphics/clear_color_test.c",
+            "graphics/triangle_test.c",
+            "graphics/mesh_test.c",
+            "graphics/texture_test.c"
         }
     end
 
-    includedirs { "%{wks.location}/include" }
+    includedirs { 
+        "%{wks.location}/include",
+        "%{wks.location}/tests" 
+    }
     links { "PAL" }
