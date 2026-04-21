@@ -9048,10 +9048,9 @@ PalResult PAL_CALL createShaderBindingTableVk(
     Uint32 hitRegionSize = stride * info->hitGroupCount;
     Uint32 callableRegionSize = stride * info->callableGroupCount;
 
-    // get alignVked region size
+    // get aligned region size
     Uint32 raygenAlignedRegionSize = alignVk(raygenRegionSize, groupBaseAlignment);
     Uint32 missAlignedRegionSize = alignVk(missRegionSize, groupBaseAlignment);
-    ;
     Uint32 hitAlignedRegionSize = alignVk(hitRegionSize, groupBaseAlignment);
     Uint32 callableAligneRegionSize = alignVk(callableRegionSize, groupBaseAlignment);
 
@@ -9104,7 +9103,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     }
     s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->bufferMemory, 0);
 
-    // get shader handles
+    // get shader group handles
     Uint32 totalGroups = info->raygenGroupCount + info->hitGroupCount;
     totalGroups += info->missGroupCount + info->callableGroupCount;
     Uint32 sbtSize = totalGroups * groupHandleSize;
@@ -9142,25 +9141,25 @@ PalResult PAL_CALL createShaderBindingTableVk(
     for (int i = 0; i < info->raygenGroupCount; i++) {
         memcpy(dstPtr + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
     }
-    srcPtr += info->raygenGroupCount * groupHandleSize;
+    srcPtr += raygenRegionSize;
 
     // miss
     for (int i = 0; i < info->missGroupCount; i++) {
         memcpy(dstPtr + missOffset + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
     }
-    srcPtr += info->missGroupCount * groupHandleSize;
+    srcPtr += missRegionSize;
 
     // hit
     for (int i = 0; i < info->hitGroupCount; i++) {
         memcpy(dstPtr + hitOffset + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
     }
-    srcPtr += info->hitGroupCount * groupHandleSize;
+    srcPtr += hitRegionSize;
 
     // callable
     for (int i = 0; i < info->callableGroupCount; i++) {
         memcpy(dstPtr + callableOffset + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
     }
-    srcPtr += info->callableGroupCount * groupHandleSize;
+    srcPtr += callableRegionSize;
 
     s_Vk.unmapMemory(vkDevice->handle, sbt->bufferMemory);
 

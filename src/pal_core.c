@@ -434,8 +434,11 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_SEMAPHORE:
             return "Invalid semaphore";
 
-        case PAL_RESULT_INVALID_RENDER_PASS:
-            return "Invalid render pass";
+        case PAL_RESULT_INVALID_BUFFER:
+            return "Invalid buffer";
+
+        case PAL_RESULT_INVALID_PIPELINE:
+            return "Invalid pipeline";
 
         case PAL_RESULT_INVALID_ACCELERATION_STRUCTURE:
             return "Invalid acceleration structure";
