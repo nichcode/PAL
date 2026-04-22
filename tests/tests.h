@@ -3,11 +3,40 @@
 #define _TESTS_H
 
 #include "pal/pal_core.h"
+#include <stdio.h>
+
 
 typedef bool (*TestFn)();
 
 void registerTest(TestFn func, const char* name);
 void runTests();
+
+static bool readFile(
+    const char* filename,
+    void* buffer,
+    Uint64* size)
+{
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        return false;
+    }
+
+    fseek(file, 0, SEEK_END);
+    Uint64 tmpSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    if (buffer) {
+        tmpSize = *size;
+        size_t read = fread(buffer, 1, tmpSize, file);
+        if (read != tmpSize) {
+            return false;
+        }
+    }
+
+    fclose(file);
+    *size = tmpSize;
+    return true;
+}
 
 // core tests
 bool loggerTest();

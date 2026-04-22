@@ -4,38 +4,9 @@
 #include "pal/pal_system.h"
 #include "tests.h"
 
-#include <stdio.h>
-
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2
-
-static bool readFile(
-    const char* filename,
-    void* buffer,
-    Uint64* size)
-{
-    FILE* file = fopen(filename, "rb");
-    if (!file) {
-        return false;
-    }
-
-    fseek(file, 0, SEEK_END);
-    Uint64 tmpSize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    if (buffer) {
-        tmpSize = *size;
-        size_t read = fread(buffer, 1, tmpSize, file);
-        if (read != tmpSize) {
-            return false;
-        }
-    }
-
-    fclose(file);
-    *size = tmpSize;
-    return true;
-}
 
 static void PAL_CALL onGraphicsDebug(
     void* userData,

@@ -2,8 +2,6 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
-#include <stdio.h>
-
 #define BUFFER_SIZE 400
 
 // layout must match shader
@@ -13,33 +11,6 @@ typedef struct {
     Uint32 _padding[2];
     float color[4];
 } PushConstant;
-
-static bool readFile(
-    const char* filename,
-    void* buffer,
-    Uint64* size)
-{
-    FILE* file = fopen(filename, "rb");
-    if (!file) {
-        return false;
-    }
-
-    fseek(file, 0, SEEK_END);
-    Uint64 tmpSize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    if (buffer) {
-        tmpSize = *size;
-        size_t read = fread(buffer, 1, tmpSize, file);
-        if (read != tmpSize) {
-            return false;
-        }
-    }
-
-    fclose(file);
-    *size = tmpSize;
-    return true;
-}
 
 static void PAL_CALL onGraphicsDebug(
     void* userData,
@@ -114,7 +85,7 @@ bool computeTest()
     PalAdapterFeatures adapterFeatures = 0;
     bool hasComputeQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
-        adapter = adapters[i]; // TODO: use the correct i index
+        adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -196,7 +167,7 @@ bool computeTest()
     PalShaderCreateInfo shaderCreateInfo = {0};
     const char* shaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        shaderPath = "shaders/compute.spv";
+        shaderPath = "graphics/shaders/compute_shader.spv";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -612,7 +583,7 @@ bool computeTest()
     }
 
     // write to a ppm output file
-    FILE* file = fopen("compute_output.ppm", "wb");
+    FILE* file = fopen("graphics/compute_output.ppm", "wb");
     fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
     float* pixels = (float*)ptr;
     for (int y = 0; y < BUFFER_SIZE; y++) {
