@@ -2257,15 +2257,7 @@ static void fillVkBuildInfoVk(
         // fill vulkan geometry struct
         VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
         tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-
         tmp->flags = 0;
-        if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
-            tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
-        }
-
-        if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
-            tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
-        }
 
         if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
             tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
@@ -2293,6 +2285,14 @@ static void fillVkBuildInfoVk(
             break;
 
         } else {
+            if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
+                tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
+            }
+
+            if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
+                tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
+            }
+
             if (maxPrimities) {
                 maxPrimities[i] = info->geometries[i].primitiveCount;
             }

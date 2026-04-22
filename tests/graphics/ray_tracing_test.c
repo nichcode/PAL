@@ -179,7 +179,7 @@ bool rayTracingTest()
     PalShaderCreateInfo shaderCreateInfo = {0};
     const char* shaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        shaderPath = "shaders/raygen.spv";
+        shaderPath = "graphics/shaders/raygen_shader.spv";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -210,7 +210,7 @@ bool rayTracingTest()
     bytecodeSize = 0;
     bytecode = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        shaderPath = "shaders/miss.spv";
+        shaderPath = "graphics/shaders/miss_shader.spv";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -241,7 +241,7 @@ bool rayTracingTest()
     bytecodeSize = 0;
     bytecode = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        shaderPath = "shaders/closest_hit.spv";
+        shaderPath = "graphics/shaders/closest_hit_shader.spv";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -1029,7 +1029,7 @@ bool rayTracingTest()
     }
 
     // write to a ppm output file
-    FILE* file = fopen("ray_tracing_output.ppm", "wb");
+    FILE* file = fopen("graphics/ray_tracing_output.ppm", "wb");
     fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
     float* pixels = (float*)ptr;
     for (int y = 0; y < BUFFER_SIZE; y++) {
