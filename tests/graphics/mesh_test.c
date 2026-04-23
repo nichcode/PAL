@@ -375,8 +375,8 @@ bool meshTest()
     const char* meshShaderPath = nullptr;
     const char* fragShaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        meshShaderPath = "shaders/mesh.spv";
-        fragShaderPath = "shaders/triangle_frag.spv";
+        meshShaderPath = "graphics/shaders/mesh_shader.spv";
+        fragShaderPath = "graphics/shaders/triangle_frag_shader.spv";
     }
 
     if (!readFile(meshShaderPath, nullptr, &bytecodeSize)) {
