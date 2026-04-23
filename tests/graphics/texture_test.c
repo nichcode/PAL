@@ -825,8 +825,8 @@ bool textureTest()
     const char* vertexShaderPath = nullptr;
     const char* fragShaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        vertexShaderPath = "shaders/texture_vert.spv";
-        fragShaderPath = "shaders/texture_frag.spv";
+        vertexShaderPath = "graphics/shaders/texture_vert_shader.spv";
+        fragShaderPath = "graphics/shaders/texture_frag_shader.spv";
     }
 
     if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
