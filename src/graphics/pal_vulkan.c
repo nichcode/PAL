@@ -8658,7 +8658,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.pDynamicState = &dynamicState;
 
     // Rasterizer state
-    rasterizerState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizerState.frontFace = VK_FRONT_FACE_CLOCKWISE;
     if (info->rasterizerState) {
         PalRasterizerState* state = info->rasterizerState;
         if (state->cullMode == PAL_CULL_MODE_NONE) {

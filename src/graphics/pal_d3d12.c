@@ -6817,7 +6817,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
 
     // Rasterizer
     rasterizerDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER;
-    rasterizerDesc->desc.FrontCounterClockwise = TRUE;
+    rasterizerDesc->desc.FrontCounterClockwise = FALSE;
     if (info->rasterizerState) {
         PalRasterizerState* state = info->rasterizerState;
         if (state->cullMode == PAL_CULL_MODE_NONE) {

@@ -531,8 +531,8 @@ bool triangleTest()
     const char* vertexShaderPath = nullptr;
     const char* fragShaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        vertexShaderPath = "shaders/triangle_vert.spv";
-        fragShaderPath = "shaders/triangle_frag.spv";
+        vertexShaderPath = "graphics/shaders/triangle_vert_shader.spv";
+        fragShaderPath = "graphics/shaders/triangle_frag_shader.spv";
     }
 
     if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
