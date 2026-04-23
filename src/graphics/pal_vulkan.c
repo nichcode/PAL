@@ -4790,8 +4790,6 @@ PalResult PAL_CALL queryRayTracingCapabilitiesVk(
     caps->maxPayloadSize = INT32_MAX; // depends on memory
     caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
 
-    caps->RequiresShaderExportName = false;
-    caps->RequiresShaderGroupExportName = false;
     return PAL_RESULT_SUCCESS;
 }
 

@@ -1548,8 +1548,6 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool RequiresShaderExportName;
-    bool RequiresShaderGroupExportName;
     Uint32 maxRecursionDepth;
     Uint32 maxHitAttributeSize; /**< Max memory per intersection attributes.*/
     Uint32 maxInstanceCount;
@@ -2499,7 +2497,7 @@ typedef struct {
     PalShaderStage stage;
     void* bytecode;
     Uint64 bytecodeSize;
-    const char* exportName; /**< Check PalRayTracingCapabilities::RequiresShaderExportName.*/
+    const char* exportName; /**< Set to nullptr if shader does not have an export name.*/
 } PalShaderCreateInfo;
 
 /**
@@ -2633,7 +2631,7 @@ typedef struct {
     Uint32 closestHitShaderIndex;      /**< Index of closest hit shader from shader array.*/
     Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
     Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
-    const char* exportName; /**< Check PalRayTracingCapabilities::RequiresShaderGroupExportName.*/
+    const char* exportName; /**< Set to nullptr if shader group does not have an export name.*/
 } PalRayTracingShaderGroupCreateInfo;
 
 /**
@@ -5039,6 +5037,9 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
+ * 
+ * @note All shader stages must use `main` as the entry point. Pal does not support custom
+ * entry points.
  *
  * @since 1.4
  * @ingroup pal_graphics

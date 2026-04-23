@@ -41,11 +41,11 @@ bool computeTest()
     PalPipeline* pipeline = nullptr;
     PalFence* fence = nullptr;
 
-    PalGraphicsDebugger debugger;
+    PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -168,6 +168,9 @@ bool computeTest()
     const char* shaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         shaderPath = "graphics/shaders/compute_shader.spv";
+
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        shaderPath = "graphics/shaders/compute_shader.dxil";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -220,7 +223,6 @@ bool computeTest()
     PalMemoryRequirements bufferMemReq = {0};
     PalMemoryRequirements stagingBufferMemReq = {0};
     result = palGetBufferMemoryRequirements(buffer, &bufferMemReq);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
