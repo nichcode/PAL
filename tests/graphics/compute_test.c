@@ -81,7 +81,7 @@ bool computeTest()
         return false;
     }
 
-    PalAdapterCapabilities caps;
+    PalAdapterCapabilities caps = {0};
     PalAdapterFeatures adapterFeatures = 0;
     PalAdapterInfo adapterInfo = {0};
     bool hasComputeQueue = false;
@@ -129,6 +129,7 @@ bool computeTest()
                 }
             }
         }
+        adapter = nullptr;
     }
 
     palFree(nullptr, adapters);

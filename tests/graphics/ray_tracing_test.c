@@ -52,11 +52,11 @@ bool rayTracingTest()
     PalAccelerationStructure* blas = nullptr;
     PalAccelerationStructure* tlas = nullptr;
 
-    PalGraphicsDebugger debugger;
+    PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -92,9 +92,11 @@ bool rayTracingTest()
         return false;
     }
 
-    PalAdapterCapabilities caps;
+    PalAdapterCapabilities caps = {0};
+    PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures = 0;
     bool hasGraphicsQueue = false;
+    bool hasTracing = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -113,27 +115,46 @@ bool rayTracingTest()
             hasGraphicsQueue = true;
             adapterFeatures = palGetAdapterFeatures(adapter);
             if (adapterFeatures & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-                break;
+                hasTracing = true;
             }
         }
+
+        if (hasTracing) {
+            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            result = palGetAdapterInfo(adapter, &adapterInfo);
+            if (result != PAL_RESULT_SUCCESS) {
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to get adapter info: %s", error);
+                return false;
+            }
+
+            // we prefer spirv first if an adapter supports multiple shader formats
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                    break;
+                }
+            }
+
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                    break;
+                }
+            }
+        }
+        adapter = nullptr;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        if (hasGraphicsQueue) {
+        if (!hasGraphicsQueue) {
             palLog(nullptr, "Failed to find an adapter that supports graphics queue");
 
-        } else {
+        } else if (!hasTracing) {
             palLog(nullptr, "Failed to find an adapter that supports ray tracing");
-        }
-        return false;
-    }
 
-    PalAdapterInfo adapterInfo = {0};
-    result = palGetAdapterInfo(adapter, &adapterInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get adapter info: %s", error);
+        } else {
+            palLog(nullptr, "Failed to find an adapter that supports required shader target");
+        }
         return false;
     }
 
@@ -180,6 +201,9 @@ bool rayTracingTest()
     const char* shaderPath = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         shaderPath = "graphics/shaders/raygen_shader.spv";
+
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        shaderPath = "graphics/shaders/raygen_shader.dxil";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -211,6 +235,9 @@ bool rayTracingTest()
     bytecode = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         shaderPath = "graphics/shaders/miss_shader.spv";
+
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        shaderPath = "graphics/shaders/miss_shader.dxil";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -242,6 +269,9 @@ bool rayTracingTest()
     bytecode = nullptr;
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         shaderPath = "graphics/shaders/closest_hit_shader.spv";
+
+    }  else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        shaderPath = "graphics/shaders/closest_hit_shader.dxil";
     }
 
     if (!readFile(shaderPath, nullptr, &bytecodeSize)) {
@@ -1029,7 +1059,7 @@ bool rayTracingTest()
     }
 
     // write to a ppm output file
-    FILE* file = fopen("graphics/ray_tracing_output.ppm", "wb");
+    FILE* file = fopen("ray_tracing_output.ppm", "wb");
     fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
     float* pixels = (float*)ptr;
     for (int y = 0; y < BUFFER_SIZE; y++) {
