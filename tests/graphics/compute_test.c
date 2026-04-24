@@ -97,6 +97,7 @@ bool computeTest()
         }
 
         if (caps.maxComputeQueues == 0) {
+            hasComputeQueue = false;
             continue;
 
         } else {
@@ -104,6 +105,8 @@ bool computeTest()
             adapterFeatures = palGetAdapterFeatures(adapter);
             if (adapterFeatures & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
                 hasComputeShader = true;
+            } else {
+                hasComputeShader = false;
             }
         }
 

@@ -2244,7 +2244,7 @@ static inline Uint32 minVk(
     return (a < b) ? a : b;
 }
 
-static void fillVkBuildInfoVk(
+static void fillBuildInfoVk(
     Uint32 count,
     PalAccelerationStructureBuildInfo* info,
     Uint32* maxPrimities,
@@ -6646,7 +6646,7 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
         memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * geometryCount);
     }
 
-    fillVkBuildInfoVk(
+    fillBuildInfoVk(
         geometryCount, 
         info, 
         nullptr, 
@@ -7847,7 +7847,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
         memset(maxPrimities, 0, sizeof(Uint32) * geometryCount);
     }
 
-    fillVkBuildInfoVk(
+    fillBuildInfoVk(
         geometryCount, 
         info, 
         maxPrimities, 

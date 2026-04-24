@@ -109,6 +109,7 @@ bool rayTracingTest()
 
         // Ray tracing is generally implemented on the graphics queue
         if (caps.maxGraphicsQueues == 0) {
+            hasGraphicsQueue = false;
             continue;
 
         } else {
@@ -116,6 +117,8 @@ bool rayTracingTest()
             adapterFeatures = palGetAdapterFeatures(adapter);
             if (adapterFeatures & PAL_ADAPTER_FEATURE_RAY_TRACING) {
                 hasTracing = true;
+            } else {
+                hasTracing = false;
             }
         }
 
@@ -130,7 +133,7 @@ bool rayTracingTest()
 
             // we prefer spirv first if an adapter supports multiple shader formats
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_3)) {
                     break;
                 }
             }

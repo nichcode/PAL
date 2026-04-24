@@ -100,11 +100,11 @@ bool clearColorTest()
         gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB;
     }
 
-    PalGraphicsDebugger debugger;
+    PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    result = palInitGraphics(nullptr, nullptr);
+    result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -140,7 +140,9 @@ bool clearColorTest()
         return false;
     }
 
-    PalAdapterCapabilities caps;
+    PalAdapterCapabilities caps = {0};
+    PalAdapterInfo adapterInfo = {0};
+    bool hasGraphicsQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -152,15 +154,46 @@ bool clearColorTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
+            hasGraphicsQueue = false;
             continue;
+
         } else {
-            break;
+            hasGraphicsQueue = true;
         }
+
+        if (hasGraphicsQueue) {
+            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            result = palGetAdapterInfo(adapter, &adapterInfo);
+            if (result != PAL_RESULT_SUCCESS) {
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to get adapter info: %s", error);
+                return false;
+            }
+
+            // we prefer spirv first if an adapter supports multiple shader formats
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                    break;
+                }
+            }
+
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                    break;
+                }
+            }
+        }
+        adapter = nullptr;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, "Failed to find an adapter that supports graphics queue");
+        if (!hasGraphicsQueue) {
+            palLog(nullptr, "Failed to find an adapter that supports graphics queue");
+
+        } else {
+            palLog(nullptr, "Failed to find an adapter that supports required shader target");
+        }
         return false;
     }
 
@@ -214,7 +247,6 @@ bool clearColorTest()
     // create a swapchain with the graphics queue
     PalSurfaceCapabilities surfaceCaps = {0};
     result = palGetSurfaceCapabilities(device, surface, &surfaceCaps);
-
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get surface capabilities: %s", error);

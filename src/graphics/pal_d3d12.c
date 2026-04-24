@@ -2705,19 +2705,19 @@ PalResult PAL_CALL createDeviceD3D12(
     }
 
     for (int i = 0; i < MAX_RTV; i++) {
-        device->rtvAllocator.freeList[i] = i;
+        device->rtvAllocator.freeList[i] = i + 1;
     }
 
     for (int i = 0; i < MAX_DSV; i++) {
-        device->dsvAllocator.freeList[i] = i;
+        device->dsvAllocator.freeList[i] = i + 1;
     }
 
-    device->rtvAllocator.freeTop = MAX_RTV;
+    device->rtvAllocator.freeTop = 0;
     device->rtvAllocator.incrementSize = device->handle->lpVtbl->GetDescriptorHandleIncrementSize(
         device->handle,
         D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-    device->dsvAllocator.freeTop = MAX_DSV;
+    device->dsvAllocator.freeTop = 0;
     device->dsvAllocator.incrementSize = device->handle->lpVtbl->GetDescriptorHandleIncrementSize(
         device->handle,
         D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
@@ -3486,7 +3486,9 @@ PalResult PAL_CALL createImageViewD3D12(
     imageView->format = formatToD3D12(info->format);
     if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR) {
         RTVHeapAllocator* allocator = &d3dDevice->rtvAllocator;
-        Uint32 index = allocator->freeList[--allocator->freeTop];
+        Uint32 index = allocator->freeTop;
+        allocator->freeTop = allocator->freeList[index];
+
         D3D12_CPU_DESCRIPTOR_HANDLE dst;
         dst.ptr = getDescriptorHandleD3D12(index, allocator->incrementSize, allocator->baseOffset);
 
@@ -3503,7 +3505,9 @@ PalResult PAL_CALL createImageViewD3D12(
 
     } else {
         DSVHeapAllocator* allocator = &d3dDevice->dsvAllocator;
-        Uint32 index = allocator->freeList[--allocator->freeTop];
+        Uint32 index = allocator->freeTop;
+        allocator->freeTop = allocator->freeList[index];
+
         D3D12_CPU_DESCRIPTOR_HANDLE dst;
         dst.ptr = getDescriptorHandleD3D12(index, allocator->incrementSize, allocator->baseOffset);
 
@@ -3522,6 +3526,8 @@ PalResult PAL_CALL createImageViewD3D12(
     imageView->range = info->subresourceRange;
     imageView->type = info->type;
     imageView->image = d3dImage;
+
+    imageView->device = d3dDevice;
     *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
 }
@@ -3530,13 +3536,18 @@ void PAL_CALL destroyImageViewD3D12(PalImageView* imageView)
 {
     ImageView* d3dImageView = (ImageView*)imageView;
     Device* device = d3dImageView->device;
+    RTVHeapAllocator* allocator = nullptr;
+
     if (d3dImageView->range.aspect == PAL_IMAGE_ASPECT_COLOR) {
-        device->rtvAllocator.freeList[device->rtvAllocator.freeTop++] = d3dImageView->heapIndex;
+        RTVHeapAllocator* allocator = &device->rtvAllocator;
+        allocator->freeList[d3dImageView->heapIndex] = allocator->freeTop;
+        allocator->freeTop = d3dImageView->heapIndex;
 
     } else {
-        device->dsvAllocator.freeList[device->dsvAllocator.freeTop++] = d3dImageView->heapIndex;
+        DSVHeapAllocator* allocator = &device->dsvAllocator;
+        allocator->freeList[d3dImageView->heapIndex] = allocator->freeTop;
+        allocator->freeTop = d3dImageView->heapIndex;
     }
-
     palFree(s_D3D.allocator, d3dImageView);
 }
 
@@ -3643,12 +3654,14 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     }
 
     DXGI_SWAP_CHAIN_DESC1 desc = {0};
-    desc.Width = 1;
-    desc.Height = 1;
+    desc.Width = 8;
+    desc.Height = 8;
     desc.SampleDesc.Count = 1;
     desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    desc.BufferCount = 1;
+    desc.BufferCount = 2;
     desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
     result = s_D3D.factory->lpVtbl->CreateSwapChainForHwnd(
         s_D3D.factory,
@@ -4388,14 +4401,17 @@ PalResult PAL_CALL createCommandPoolD3D12(
     switch (d3dQueue->type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             pool->type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+            break;
         }
 
         case PAL_QUEUE_TYPE_GRAPHICS: {
             pool->type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+            break;
         }
 
         case PAL_QUEUE_TYPE_COPY: {
             pool->type = D3D12_COMMAND_LIST_TYPE_COPY;
+            break;
         }
     }
 
@@ -4570,6 +4586,7 @@ PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
         d3dCmdBuffer->allocator,
         nullptr);
 
+    d3dCmdBuffer->handle->lpVtbl->Close(d3dCmdBuffer->handle);
     d3dCmdBuffer->pipeline = nullptr;
     return PAL_RESULT_SUCCESS;
 }
@@ -4624,7 +4641,23 @@ PalResult PAL_CALL cmdBeginD3D12(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
 {
-    return resetCommandBufferD3D12(cmdBuffer);
+    HRESULT result;
+    CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
+    result = d3dCmdBuffer->allocator->lpVtbl->Reset(d3dCmdBuffer->allocator);
+    if (FAILED(result)) {
+        pollMessagesD3D12(d3dCmdBuffer->device);
+        if (result == E_INVALIDARG) {
+            return PAL_RESULT_INVALID_COMMAND_BUFFER;
+        }
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
+
+    d3dCmdBuffer->handle->lpVtbl->Reset(
+        d3dCmdBuffer->handle,
+        d3dCmdBuffer->allocator,
+        nullptr);
+
+    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer* cmdBuffer)
@@ -4815,41 +4848,35 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     D3D12_CPU_DESCRIPTOR_HANDLE colorAttachments[MAX_ATTACHMENTS];
     D3D12_CPU_DESCRIPTOR_HANDLE depthStencilAttachment;
+    D3D12_CPU_DESCRIPTOR_HANDLE* depthStencil = nullptr;
     D3D12_CPU_DESCRIPTOR_HANDLE fsrAttachment;
+
     for (int i = 0; i < info->colorAttachentCount; i++) {
         ImageView* tmp = (ImageView*)info->colorAttachments[i].imageView;
 
         RTVHeapAllocator* allocator = &tmp->device->rtvAllocator;
         Uint32 size = allocator->incrementSize;
-        Uint32 base = allocator->baseOffset;
+        Uint64 base = allocator->baseOffset;
         colorAttachments[i].ptr = getDescriptorHandleD3D12(tmp->heapIndex, size, base);
     }
 
-    ImageView* tmp = (ImageView*)info->depthStencilAttachment->imageView;
-    if (tmp) {
+    if (info->depthStencilAttachment) {
+        ImageView* tmp = (ImageView*)info->depthStencilAttachment->imageView;
         DSVHeapAllocator* allocator = &tmp->device->dsvAllocator;
         Uint32 size = allocator->incrementSize;
-        Uint32 base = allocator->baseOffset;
+        Uint64 base = allocator->baseOffset;
         depthStencilAttachment.ptr = getDescriptorHandleD3D12(tmp->heapIndex, size, base);
-
-        d3dCmdBuffer->handle->lpVtbl->OMSetRenderTargets(
-            d3dCmdBuffer->handle,
-            info->colorAttachentCount,
-            colorAttachments,
-            FALSE,
-            &depthStencilAttachment);
-
-    } else {
-        d3dCmdBuffer->handle->lpVtbl->OMSetRenderTargets(
-            d3dCmdBuffer->handle,
-            info->colorAttachentCount,
-            colorAttachments,
-            FALSE,
-            nullptr);
+        depthStencil = &depthStencilAttachment;
     }
 
+    d3dCmdBuffer->handle->lpVtbl->OMSetRenderTargets(
+        d3dCmdBuffer->handle,
+        info->colorAttachentCount,
+        colorAttachments,
+        FALSE,
+        depthStencil);
+
     for (int i = 0; i < info->colorAttachentCount; i++) {
-        ImageView* tmp = (ImageView*)info->colorAttachments[i].imageView;
         float color[4];
         color[0] = info->colorAttachments[i].clearValue.color[0];
         color[1] = info->colorAttachments[i].clearValue.color[1];
@@ -4861,7 +4888,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
             colorAttachments[i], color, 0, nullptr);
     }
 
-    if (tmp) {
+    if (info->depthStencilAttachment) {
         D3D12_CLEAR_FLAGS clearFlags = 0;
         UINT8 stencil = 0;
         float depth = 0;
