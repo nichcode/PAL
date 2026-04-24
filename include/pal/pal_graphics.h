@@ -47,13 +47,6 @@ freely, subject to the following restrictions:
  */
 #define PAL_ADAPTER_NAME_SIZE 128
 
-/**
- * @brief The maximum version string size of an adapter.
- * @since 1.4
- * @ingroup pal_graphics
- */
-#define PAL_ADAPTER_VERSION_SIZE 16
-
 #define PAL_MAX_RESOLVE_MODES 8
 #define PAL_MAX_COMBINER_OPS 8
 
@@ -543,6 +536,36 @@ typedef enum {
     PAL_SHADER_FORMAT_MSL = PAL_BIT(4),
     PAL_SHADER_FORMAT_PPM = PAL_BIT(5)
 } PalShaderFormats;
+
+/**
+ * @enum PalShaderTarget
+ * @brief Shader targets.
+ *
+ * All shader targets follow the format `PAL_SHADER_TARGET_**` for
+ * consistency and API use.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef enum {
+    PAL_SHADER_TARGET_UNKNOWN,
+    PAL_SHADER_TARGET_SPIRV_1_0,
+    PAL_SHADER_TARGET_SPIRV_1_1,
+    PAL_SHADER_TARGET_SPIRV_1_2,
+    PAL_SHADER_TARGET_SPIRV_1_3,
+    PAL_SHADER_TARGET_SPIRV_1_4,
+    PAL_SHADER_TARGET_SPIRV_1_5,
+    PAL_SHADER_TARGET_SPIRV_1_6,
+    PAL_SHADER_TARGET_DXIL_5_1,
+    PAL_SHADER_TARGET_DXIL_6_0,
+    PAL_SHADER_TARGET_DXIL_6_1,
+    PAL_SHADER_TARGET_DXIL_6_2,
+    PAL_SHADER_TARGET_DXIL_6_3,
+    PAL_SHADER_TARGET_DXIL_6_4,
+    PAL_SHADER_TARGET_DXIL_6_5,
+    PAL_SHADER_TARGET_DXIL_6_6,
+    PAL_SHADER_TARGET_DXIL_6_7
+} PalShaderTarget;
 
 /**
  * @enum PalAdapterFeatures
@@ -1417,8 +1440,6 @@ typedef struct {
     PalShaderFormats shaderFormats; /**< Supported shader formats mask (eg. Spirv, DXIL, ect).*/
     Uint64 vram;
     Uint64 sharedMemory;
-    Uint64 version;                               /**< Adapter version.*/
-    char versionString[PAL_ADAPTER_VERSION_SIZE]; /**< Adapter version in string.*/
     char name[PAL_ADAPTER_NAME_SIZE];
     char backendName[PAL_ADAPTER_NAME_SIZE]; /**< Adapter backend name (eg. `PAL`, `Custom`).*/
 } PalAdapterInfo;
@@ -2237,8 +2258,9 @@ typedef struct {
  */
 typedef struct {
     bool readOnly; /**< For PAL_DESCRIPTOR_TYPE_STORAGE.*/
-    Uint32 size;
-    Uint64 offset;
+    Uint32 size; 
+    Uint32 stride; /**< For structured buffers. Will be ignored if not supported. 0 for default.*/
+    Uint64 offset; /**< Offset in bytes. If structured, will be divided by `stride`.*/
     PalBuffer* buffer;
 } PalDescriptorBufferInfo;
 
@@ -2714,6 +2736,24 @@ typedef struct {
      * Must obey the rules and semantics documented in palGetAdapterFeatures().
      */
     PalAdapterFeatures PAL_CALL (*getAdapterFeatures)(PalAdapter* adapter);
+
+    /**
+     * Backend implementation of ::palIsShaderTargetSupported.
+     *
+     * Must obey the rules and semantics documented in palIsShaderTargetSupported().
+     */
+    bool PAL_CALL (*isShaderTargetSupported)(
+        PalAdapter* adapter, 
+        PalShaderTarget target);
+
+    /**
+     * Backend implementation of ::palGetHighestSupportedShaderTarget.
+     *
+     * Must obey the rules and semantics documented in palGetHighestSupportedShaderTarget().
+     */
+    PalShaderTarget PAL_CALL (*getHighestSupportedShaderTarget)(
+        PalAdapter* adapter, 
+        PalShaderFormats shaderFormat);
 
     /**
      * Backend implementation of ::palCreateDevice.
@@ -3578,7 +3618,6 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdBindDescriptorSet)(
         PalCommandBuffer* cmdBuffer,
-        PalPipelineLayout* layout,
         Uint32 setIndex,
         PalDescriptorSet* set);
 
@@ -3589,7 +3628,6 @@ typedef struct {
      */
     PalResult PAL_CALL (*cmdPushConstants)(
         PalCommandBuffer* cmdBuffer,
-        PalPipelineLayout* layout,
         Uint32 shaderStageCount,
         PalShaderStage* shaderStages,
         Uint32 offset,
@@ -4095,6 +4133,46 @@ PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
  * @sa palEnumerateAdapters
  */
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
+
+/**
+ * @brief Check if the provided shader target is supported by an adapter (GPU).
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] adapter Adapter to query.
+ *
+ * @return True if target is supported otherwise false.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palEnumerateAdapters
+ */
+PAL_API bool PAL_CALL palIsShaderTargetSupported(
+    PalAdapter* adapter, 
+    PalShaderTarget target);
+
+/**
+ * @brief Get the highest supported shader target of an adapter (GPU).
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * @param[in] adapter Adapter to query.
+ * @param[in] shaderFormat The shader format. Must have only a single bit set.
+ *
+ * @return The highest supported shader target on success or `PAL_SHADER_TARGET_UNKNOWN` 
+ * on failure.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ * @sa palEnumerateAdapters
+ */
+PAL_API PalShaderTarget PAL_CALL palGetHighestSupportedShaderTarget(
+    PalAdapter* adapter, 
+    PalShaderFormats shaderFormat);
 
 /**
  * @brief Create a device from an adapter (GPU).
@@ -6352,7 +6430,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  * The graphics system must be initialized before this call.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] layout The pipeline layout that defines the descriptor interface.
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
  *
@@ -6368,7 +6445,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  */
 PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
@@ -6378,7 +6454,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  * The graphics system must be initialized before this call.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] layout The pipeline layout that defines the push constant range.
  * @param[in] shaderStageCount Capacity of the PalShaderStage array.
  * @param[in] shaderStages Array of shader stages that can access the push constant.
  * @param[in] offset Offset in bytes into the push constant range.
@@ -6397,7 +6472,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  */
 PAL_API PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,

@@ -83,7 +83,9 @@ bool computeTest()
 
     PalAdapterCapabilities caps;
     PalAdapterFeatures adapterFeatures = 0;
+    PalAdapterInfo adapterInfo = {0};
     bool hasComputeQueue = false;
+    bool hasComputeShader = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -101,27 +103,45 @@ bool computeTest()
             hasComputeQueue = true;
             adapterFeatures = palGetAdapterFeatures(adapter);
             if (adapterFeatures & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
-                break;
+                hasComputeShader = true;
+            }
+        }
+
+        if (hasComputeShader) {
+            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            result = palGetAdapterInfo(adapter, &adapterInfo);
+            if (result != PAL_RESULT_SUCCESS) {
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to get adapter info: %s", error);
+                return false;
+            }
+
+            // we prefer spirv first if an adapter supports multiple shader formats
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                    break;
+                }
+            }
+
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                    break;
+                }
             }
         }
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        if (hasComputeQueue) {
+        if (!hasComputeQueue) {
             palLog(nullptr, "Failed to find an adapter that supports compute queue");
 
-        } else {
+        } else if (!hasComputeShader) {
             palLog(nullptr, "Failed to find an adapter that supports compute shader");
-        }
-        return false;
-    }
 
-    PalAdapterInfo adapterInfo = {0};
-    result = palGetAdapterInfo(adapter, &adapterInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get adapter info: %s", error);
+        } else {
+            palLog(nullptr, "Failed to find an adapter that supports required shader target");
+        }
         return false;
     }
 
@@ -420,7 +440,6 @@ bool computeTest()
 
     result = palCmdPushConstants(
         cmdBuffer,
-        pipelineLayout,
         1,
         shaderStages,
         0,
@@ -433,7 +452,7 @@ bool computeTest()
         return false;
     }
 
-    result = palCmdBindDescriptorSet(cmdBuffer, pipelineLayout, 0, descriptorSet);
+    result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);
@@ -585,7 +604,7 @@ bool computeTest()
     }
 
     // write to a ppm output file
-    FILE* file = fopen("graphics/compute_output.ppm", "wb");
+    FILE* file = fopen("compute_output.ppm", "wb");
     fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
     float* pixels = (float*)ptr;
     for (int y = 0; y < BUFFER_SIZE; y++) {

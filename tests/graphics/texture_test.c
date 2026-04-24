@@ -1226,12 +1226,7 @@ bool textureTest()
             return false;
         }
 
-        result = palCmdBindDescriptorSet(
-            cmdBuffers[currentFrame], 
-            pipelineLayout,
-            0, 
-            descriptorSet);
-
+        result = palCmdBindDescriptorSet(cmdBuffers[currentFrame], 0, descriptorSet);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind descriptor set: %s", error);

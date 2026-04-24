@@ -504,9 +504,9 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
-    VkPipelineBindPoint bindPoint;
     Device* device;
     CommandPool* pool;
+    void* pipeline;
     VkCommandBuffer handle;
 } CommandBuffer;
 
@@ -587,6 +587,7 @@ typedef struct {
     VkPipelineBindPoint bindPoint;
     Device* device;
     VkPipeline handle;
+    PipelineLayout* layout;
 } Pipeline;
 
 typedef struct {
@@ -3301,7 +3302,6 @@ PalResult PAL_CALL getAdapterInfoVk(
 
     info->apiType = PAL_ADAPTER_API_TYPE_VULKAN;
     info->shaderFormats = PAL_SHADER_FORMAT_SPIRV;
-    info->version = props.driverVersion;
     info->deviceId = props.deviceID;
     info->vendorId = props.vendorID;
     strcpy(info->name, props.deviceName);
@@ -3344,15 +3344,6 @@ PalResult PAL_CALL getAdapterInfoVk(
             break;
         }
     }
-
-    // version string
-    snprintf(
-        info->versionString,
-        PAL_ADAPTER_VERSION_SIZE,
-        "%d.%d.%d",
-        VK_VERSION_MAJOR(props.apiVersion),
-        VK_VERSION_MINOR(props.apiVersion),
-        VK_VERSION_PATCH(props.apiVersion));
 
     return PAL_RESULT_SUCCESS;
 }
@@ -3789,6 +3780,72 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
 
     palFree(s_Vk.allocator, extensionProps);
     return adapterFeatures;
+}
+
+bool PAL_CALL isShaderTargetSupportedVk(
+    PalAdapter* adapter, 
+    PalShaderTarget target)
+{
+    Adapter* vkAdapter = (Adapter*)adapter;
+    VkPhysicalDeviceProperties props = {0};
+    s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &props);
+
+    switch (target) {
+        case PAL_SHADER_TARGET_SPIRV_1_0:
+        case PAL_SHADER_TARGET_SPIRV_1_1:
+        case PAL_SHADER_TARGET_SPIRV_1_2: {
+            return true;
+        }
+
+        case PAL_SHADER_TARGET_SPIRV_1_3:
+        case PAL_SHADER_TARGET_SPIRV_1_4: {
+            if (props.apiVersion >= VK_API_VERSION_1_1) {
+                return true;
+            }
+        }
+
+        case PAL_SHADER_TARGET_SPIRV_1_5: {
+            if (props.apiVersion >= VK_API_VERSION_1_2) {
+                return true;
+            }
+        }
+
+        case PAL_SHADER_TARGET_SPIRV_1_6: {
+            if (props.apiVersion >= VK_API_VERSION_1_3) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+PalShaderTarget PAL_CALL getHighestSupportedShaderTargetVk(
+    PalAdapter* adapter, 
+    PalShaderFormats shaderFormat)
+{
+    if (shaderFormat != PAL_SHADER_FORMAT_SPIRV) {
+        return PAL_SHADER_TARGET_UNKNOWN;
+    }
+
+    Adapter* vkAdapter = (Adapter*)adapter;
+    VkPhysicalDeviceProperties props = {0};
+    s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &props);
+
+     if (props.apiVersion >= VK_API_VERSION_1_3) {
+        return PAL_SHADER_TARGET_SPIRV_1_6;
+
+    } else if (props.apiVersion >= VK_API_VERSION_1_2) {
+        return PAL_SHADER_TARGET_SPIRV_1_5;
+
+    } else if (props.apiVersion >= VK_API_VERSION_1_1) {
+        return PAL_SHADER_TARGET_SPIRV_1_4;
+        
+    } else if (props.apiVersion >= VK_API_VERSION_1_0) {
+        return PAL_SHADER_TARGET_SPIRV_1_2;
+    }
+
+    return PAL_SHADER_TARGET_UNKNOWN;
 }
 
 // ==================================================
@@ -6975,7 +7032,7 @@ PalResult PAL_CALL cmdBindPipelineVk(
     Pipeline* vkPipeline = (Pipeline*)pipeline;
     s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
 
-    vkCmdBuffer->bindPoint = vkPipeline->bindPoint;
+    vkCmdBuffer->pipeline = vkPipeline;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7472,18 +7529,17 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    PipelineLayout* vkLayout = (PipelineLayout*)layout;
+    Pipeline* pipeline = vkCmdBuffer->pipeline;
     DescriptorSet* vkSet = (DescriptorSet*)set;
 
     s_Vk.cmdBindDescriptorSets(
         vkCmdBuffer->handle,
-        vkCmdBuffer->bindPoint,
-        vkLayout->handle,
+        pipeline->bindPoint,
+        pipeline->layout->handle,
         setIndex,
         1,
         &vkSet->handle,
@@ -7495,7 +7551,6 @@ PalResult PAL_CALL cmdBindDescriptorSetVk(
 
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint64 offset,
@@ -7503,7 +7558,7 @@ PalResult PAL_CALL cmdPushConstantsVk(
     const void* value)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
-    PipelineLayout* vkLayout = (PipelineLayout*)layout;
+    Pipeline* pipeline = vkCmdBuffer->pipeline;
     VkShaderStageFlags stages = 0;
 
     for (int i = 0; i < shaderStageCount; i++) {
@@ -7511,7 +7566,14 @@ PalResult PAL_CALL cmdPushConstantsVk(
         stages |= bit;
     }
 
-    s_Vk.cmdPushConstants(vkCmdBuffer->handle, vkLayout->handle, stages, offset, size, value);
+    s_Vk.cmdPushConstants(
+        vkCmdBuffer->handle, 
+        pipeline->layout->handle, 
+        stages, 
+        offset, 
+        size, 
+        value);
+
     return PAL_RESULT_SUCCESS;
 }
 

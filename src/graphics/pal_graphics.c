@@ -123,6 +123,14 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter);
 
+bool PAL_CALL isShaderTargetSupportedVk(
+    PalAdapter* adapter, 
+    PalShaderTarget target);
+
+PalShaderTarget PAL_CALL getHighestSupportedShaderTargetVk(
+    PalAdapter* adapter, 
+    PalShaderFormats shaderFormat);
+
 // ==================================================
 // Device
 // ==================================================
@@ -587,13 +595,11 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -780,6 +786,8 @@ static PalGraphicsBackend s_VkBackend = {
     .getAdapterInfo = getAdapterInfoVk,
     .getAdapterCapabilities = getAdapterCapabilitiesVk,
     .getAdapterFeatures = getAdapterFeaturesVk,
+    .isShaderTargetSupported = isShaderTargetSupportedVk,
+    .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetVk,
 
     // device
     .createDevice = createDeviceVk,
@@ -981,6 +989,14 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapterCapabilities* caps);
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter);
+
+bool PAL_CALL isShaderTargetSupportedD3D12(
+    PalAdapter* adapter, 
+    PalShaderTarget target);
+
+PalShaderTarget PAL_CALL getHighestSupportedShaderTargetD3D12(
+    PalAdapter* adapter, 
+    PalShaderFormats shaderFormat);
 
 // ==================================================
 // Device
@@ -1446,13 +1462,11 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -1639,6 +1653,8 @@ static PalGraphicsBackend s_D3D12Backend = {
     .getAdapterInfo = getAdapterInfoD3D12,
     .getAdapterCapabilities = getAdapterCapabilitiesD3D12,
     .getAdapterFeatures = getAdapterFeaturesD3D12,
+    .isShaderTargetSupported = isShaderTargetSupportedD3D12,
+    .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetD3D12,
 
     // device
     .createDevice = createDeviceD3D12,
@@ -1844,6 +1860,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getAdapterInfo                        ||
         !backend->getAdapterCapabilities                ||
         !backend->getAdapterFeatures                    ||
+        !backend->isShaderTargetSupported               ||
+        !backend->getHighestSupportedShaderTarget       ||
 
         // device
         !backend->createDevice                          ||
@@ -2042,6 +2060,7 @@ PalResult PAL_CALL palInitGraphics(
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN
+    // TODO: uncomment
     // result = initGraphicsVk(debugger, allocator);
     // if (result != PAL_RESULT_SUCCESS) {
     //     return result;
@@ -2050,7 +2069,7 @@ PalResult PAL_CALL palInitGraphics(
     // attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
     // attachedBackend->base = &s_VkBackend;
     // attachedBackend->startIndex = 0;
-    // attachedBackend->count = 0; // TODO: uncomment
+    // attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN
 
     // D3D12
@@ -2097,7 +2116,8 @@ void PAL_CALL palShutdownGraphics()
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN
-    shutdownGraphicsVk();
+    // TODO: uncomment block
+    // shutdownGraphicsVk();
 #endif // PAL_HAS_VULKAN
 
     // D3D12
@@ -2219,6 +2239,26 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
     }
 
     return adapter->backend->getAdapterFeatures(adapter);
+}
+
+bool PAL_CALL palIsShaderTargetSupported(
+    PalAdapter* adapter, 
+    PalShaderTarget target)
+{
+    if (!s_Graphics.initialized || !adapter) {
+        return false;
+    }
+    return adapter->backend->isShaderTargetSupported(adapter, target);
+}
+
+PalShaderTarget PAL_CALL palGetHighestSupportedShaderTarget(
+    PalAdapter* adapter, 
+    PalShaderFormats shaderFormat)
+{
+    if (!s_Graphics.initialized || !adapter) {
+        return PAL_SHADER_TARGET_UNKNOWN;
+    }
+    return adapter->backend->getHighestSupportedShaderTarget(adapter, shaderFormat);
 }
 
 // ==================================================
@@ -3734,7 +3774,6 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
 
 PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
@@ -3742,20 +3781,18 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !layout || !set) {
+    if (!cmdBuffer || !set) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     return cmdBuffer->backend->cmdBindDescriptorSet(
         cmdBuffer, 
-        layout,
         setIndex, 
         set);
 }
 
 PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
-    PalPipelineLayout* layout,
     Uint32 shaderStageCount,
     PalShaderStage* shaderStages,
     Uint32 offset,
@@ -3766,14 +3803,13 @@ PalResult PAL_CALL palCmdPushConstants(
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !layout || !shaderStages || !value) {
+    if (!cmdBuffer || !shaderStages || !value) {
         return PAL_RESULT_NULL_POINTER;
     }
 
     // clang-format off
     return cmdBuffer->backend->cmdPushConstants(
         cmdBuffer, 
-        layout, 
         shaderStageCount, 
         shaderStages, 
         offset, 
