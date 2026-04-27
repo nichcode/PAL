@@ -110,7 +110,7 @@ bool triangleTest()
         gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB;
     }
 
-    PalGraphicsDebugger debugger;
+    PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
@@ -150,7 +150,9 @@ bool triangleTest()
         return false;
     }
 
-    PalAdapterCapabilities caps;
+    PalAdapterCapabilities caps = {0};
+    PalAdapterInfo adapterInfo = {0};
+    bool hasGraphicsQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -162,23 +164,46 @@ bool triangleTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
+            hasGraphicsQueue = false;
             continue;
+
         } else {
-            break;
+            hasGraphicsQueue = true;
         }
+
+        if (hasGraphicsQueue) {
+            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            result = palGetAdapterInfo(adapter, &adapterInfo);
+            if (result != PAL_RESULT_SUCCESS) {
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to get adapter info: %s", error);
+                return false;
+            }
+
+            // we prefer spirv first if an adapter supports multiple shader formats
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                    break;
+                }
+            }
+
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                    break;
+                }
+            }
+        }
+        adapter = nullptr;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, "Failed to find an adapter that supports graphics queue");
-        return false;
-    }
+        if (!hasGraphicsQueue) {
+            palLog(nullptr, "Failed to find an adapter that supports graphics queue");
 
-    PalAdapterInfo adapterInfo = {0};
-    result = palGetAdapterInfo(adapter, &adapterInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get adapter info: %s", error);
+        } else {
+            palLog(nullptr, "Failed to find an adapter that supports required shader target");
+        }
         return false;
     }
 
@@ -533,6 +558,10 @@ bool triangleTest()
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         vertexShaderPath = "graphics/shaders/triangle_vert_shader.spv";
         fragShaderPath = "graphics/shaders/triangle_frag_shader.spv";
+
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        vertexShaderPath = "graphics/shaders/triangle_vert_shader.dxil";
+        fragShaderPath = "graphics/shaders/triangle_frag_shader.dxil";
     }
 
     if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
@@ -610,10 +639,12 @@ bool triangleTest()
 
     // position
     vertexAttributes[0].semanticID = PAL_VERTEX_SEMANTIC_ID_POSITION;
+    vertexAttributes[0].semanticName = nullptr; // use default
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
     // color
     vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_COLOR;
+    vertexAttributes[1].semanticName = nullptr; // use default
     vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT3;
 
     vertexLayout.attributeCount = 2;

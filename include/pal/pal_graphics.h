@@ -1959,7 +1959,8 @@ typedef struct {
     PalVertexType type; /**< (eg. PAL_VERTEX_TYPE_FLOAT).*/
 
     /** Must not include the index (eg. "position" or "myown"). Set to nullptr to use the default 
-     * that will be derived from `semanticID`.*/
+     * that will be derived from `semanticID` which are 
+     * (`POSITION`, `COLOR`, `TEXCOORD`, `NORMAL` and `TANGENT`).*/
     const char* semanticName;
 } PalVertexAttribute;
 

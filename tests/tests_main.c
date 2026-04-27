@@ -63,8 +63,8 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
-    registerTest(clearColorTest, "Clear Color Test");
-    // registerTest(triangleTest, "Triangle Test");
+    // registerTest(clearColorTest, "Clear Color Test");
+    registerTest(triangleTest, "Triangle Test");
     // registerTest(meshTest, "Mesh Test");
     // registerTest(textureTest, "Texture Test");
 #endif //

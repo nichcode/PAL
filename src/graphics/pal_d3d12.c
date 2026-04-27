@@ -55,6 +55,14 @@ freely, subject to the following restrictions:
 #define COMPUTE_PIPELINE 1221
 #define RAY_TRACING_PIPELINE 1222
 
+#if defined(_MSC_VER)
+ #define ALIGN_STREAM __declspec(align(sizeof(void*)))
+#elif defined(__GNUC__) || defined(__clang__)
+ #define ALIGN_STREAM __attribute__((aligned(sizeof(void*))))
+#else
+ #define ALIGN_STREAM
+#endif // _MSC_VER
+
 // clang-format off
 // IIDS
 const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
@@ -375,79 +383,86 @@ typedef struct {
     DescriptorSet* sets;
 } DescriptorPool;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     ID3D12RootSignature* root;
 } RootSignatureStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     D3D12_INPUT_LAYOUT_DESC desc;
 } InputLayoutStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE ibType;
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology;
-    D3D12_INDEX_BUFFER_STRIP_CUT_VALUE IBStripCutValue;
-} InputAssemblyStream;
+} TopologyStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    D3D12_INDEX_BUFFER_STRIP_CUT_VALUE value;
+} IBStripCutStream;
+
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     D3D12_RASTERIZER_DESC desc;
 } RasterizerStream;
 
-typedef struct {
-    UINT sampleMask;
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE maskType;
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     DXGI_SAMPLE_DESC desc;
-} MultisampleStream;
+} SampleDescStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    UINT mask;
+} SampleMaskStream;
+
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     D3D12_DEPTH_STENCIL_DESC desc;
 } DepthStencilStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     D3D12_BLEND_DESC desc;
-} ColorBlendStream;
+} BlendStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE dsvType;
-    UINT NumRenderTargets;
-    DXGI_FORMAT DSVFormat;
-    DXGI_FORMAT RTVFormats[8];
-} RenderingLayoutStream;
+    struct D3D12_RT_FORMAT_ARRAY data;
+} RTVStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+    DXGI_FORMAT format;
+} DSVStream;
+
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     D3D12_SHADER_BYTECODE desc;
 } ShaderStream;
 
-typedef struct {
+typedef ALIGN_STREAM struct {
     D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
     D3D12_VIEW_INSTANCING_DESC desc;
 } ViewInstancingStream;
 
-typedef struct {
+typedef struct  {
     RootSignatureStream layout;
     InputLayoutStream inputLayout;
-    InputAssemblyStream inputAssembly;
+    TopologyStream topology;
+    IBStripCutStream ibStripCut;
     RasterizerStream rasterizer;
-    MultisampleStream multisample;
+    SampleDescStream sampleDesc;
+    SampleMaskStream sampleMask;
     DepthStencilStream depthStencil;
-    ColorBlendStream colorBlend;
-    RenderingLayoutStream renderingLayout;
+    BlendStream blend;
+    RTVStream RTV;
+    DSVStream DSV;
     ViewInstancingStream viewInstancing;
-} FixedPipelineHeader;
-
-typedef struct  {
-    FixedPipelineHeader header;
     ShaderStream shaders[7]; // 7 shader types for graphics pipeline
-} GraphicsPipelineeStreamDesc;
+} GraphicsPipelineStreamDesc;
 
 static D3D12 s_D3D = {0};
 
@@ -1893,6 +1908,27 @@ static void pollMessagesD3D12(Device* device)
         s_D3D.debugCallback(s_D3D.debugUserData, msgSeverity, msgType, message);
     }
     queue->lpVtbl->ClearStoredMessages(queue);
+}
+
+static const char* semanticIDToStringD3D12(PalVertexSemanticID id)
+{
+    switch (id) {
+        case PAL_VERTEX_SEMANTIC_ID_POSITION:
+            return "POSITION";
+        
+        case PAL_VERTEX_SEMANTIC_ID_COLOR:
+            return "COLOR";
+
+        case PAL_VERTEX_SEMANTIC_ID_TEXCOORD:
+            return "TEXCOORD";
+
+        case PAL_VERTEX_SEMANTIC_ID_NORMAL:
+            return "NORMAL";
+
+        case PAL_VERTEX_SEMANTIC_ID_TANGENT:
+            return "TANGENT";
+    }
+    return nullptr;
 }
 
 // ==================================================
@@ -4025,6 +4061,7 @@ PalResult PAL_CALL presentSwapchainD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    pollMessagesD3D12(d3dSwapchain->device);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4877,15 +4914,17 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
         depthStencil);
 
     for (int i = 0; i < info->colorAttachentCount; i++) {
-        float color[4];
-        color[0] = info->colorAttachments[i].clearValue.color[0];
-        color[1] = info->colorAttachments[i].clearValue.color[1];
-        color[2] = info->colorAttachments[i].clearValue.color[2];
-        color[3] = info->colorAttachments[i].clearValue.color[3];
+        if (info->colorAttachments[i].loadOp == PAL_LOAD_OP_CLEAR) {
+            float color[4];
+            color[0] = info->colorAttachments[i].clearValue.color[0];
+            color[1] = info->colorAttachments[i].clearValue.color[1];
+            color[2] = info->colorAttachments[i].clearValue.color[2];
+            color[3] = info->colorAttachments[i].clearValue.color[3];
 
-        d3dCmdBuffer->handle->lpVtbl->ClearRenderTargetView(
-            d3dCmdBuffer->handle,
-            colorAttachments[i], color, 0, nullptr);
+            d3dCmdBuffer->handle->lpVtbl->ClearRenderTargetView(
+                d3dCmdBuffer->handle,
+                colorAttachments[i], color, 0, nullptr);
+        }
     }
 
     if (info->depthStencilAttachment) {
@@ -6045,7 +6084,7 @@ PalResult PAL_CALL createBufferD3D12(
     }
 
     memset(buffer, 0, sizeof(Buffer));
-    buffer->desc.Width = (UINT64)info->size;
+    buffer->desc.Width = info->size;
     buffer->desc.Height = 1;
     buffer->desc.DepthOrArraySize = 1;
     buffer->desc.MipLevels = 1;
@@ -6070,6 +6109,7 @@ PalResult PAL_CALL createBufferD3D12(
     } 
 
     buffer->device = d3dDevice;
+    buffer->size = info->size;
     *outBuffer = (PalBuffer*)buffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -6949,30 +6989,17 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     Device* d3dDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
 
-    GraphicsPipelineeStreamDesc desc = {0};
-    memset(&desc, 0, sizeof(GraphicsPipelineeStreamDesc));
-
-    desc.header.layout.root = layout->handle;
-    desc.header.layout.type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE;
-
-    ShaderStream shaderStreams[7]; // 7 shader types for graphics pipeline
     D3D12_INPUT_ELEMENT_DESC* elementDescs = nullptr;
     D3D12_VIEW_INSTANCE_LOCATION* viewLocations = nullptr;
-    D3D12_VIEW_INSTANCE_LOCATION cachedViewLocation = {0};
 
-    InputLayoutStream* inputLayoutDesc = &desc.header.inputLayout;
-    InputAssemblyStream* inputAssemblyDesc = &desc.header.inputAssembly;
-    RasterizerStream* rasterizerDesc = &desc.header.rasterizer;
-    MultisampleStream* multisampleDesc = &desc.header.multisample;
-    DepthStencilStream* depthStencilDesc = &desc.header.depthStencil;
-    ColorBlendStream* colorBlendDesc = &desc.header.colorBlend;
-    RenderingLayoutStream* renderingLayoutDesc = &desc.header.renderingLayout;
-    ViewInstancingStream* viewInstancingDesc = &desc.header.viewInstancing;
+    GraphicsPipelineStreamDesc graphicsStreamDesc = {0};
+    memset(&graphicsStreamDesc, 0, sizeof(GraphicsPipelineStreamDesc));
 
     pipeline = palAllocate(s_D3D.allocator, sizeof(Pipeline), 0);
     if (!pipeline) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
+    memset(pipeline, 0, sizeof(Pipeline));
 
     if (info->renderingLayout->viewCount > 1) {
         viewLocations = palAllocate(
@@ -6983,16 +7010,22 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         if (!viewLocations) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
-
-    } else {
-        viewLocations = &cachedViewLocation;
     }
 
-    totalSize = sizeof(FixedPipelineHeader) + (sizeof(ShaderStream) * info->shaderCount);
+    // Root signature
+    RootSignatureStream* rootSignatureStream = &graphicsStreamDesc.layout;
+    totalSize += sizeof(RootSignatureStream);
+    rootSignatureStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE;
+    rootSignatureStream->root = layout->handle;
+    
     // shaders
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
-         if (tmp->patchControlPoints) {
+        ShaderStream* shaderStream = &graphicsStreamDesc.shaders[i];
+        totalSize += sizeof(ShaderStream);
+        D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
+
+        if (tmp->patchControlPoints) {
             patchControlPoints = tmp->patchControlPoints;
             if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
                 palFree(s_D3D.allocator, pipeline);
@@ -7001,34 +7034,30 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         }
 
         if (tmp->stage == PAL_SHADER_STAGE_VERTEX) {
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS;
 
         } else if (tmp->stage == PAL_SHADER_STAGE_FRAGMENT) {
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS;
 
         } else if (tmp->stage == PAL_SHADER_STAGE_GEOMETRY) {
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS;
 
         } else if (tmp->stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL) {
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS;
 
         } else if (tmp->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS;
 
         } else if (tmp->stage == PAL_SHADER_STAGE_TASK) {
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS;
 
         } else {
             // mesh shader
-            shaderStreams[i].desc = tmp->byteCode;
-            shaderStreams[i].type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS;
+            type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS;
         }
+
+        shaderStream->type = type;
+        shaderStream->desc = tmp->byteCode;
     }
 
     // Vertex input state
@@ -7040,10 +7069,13 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         vertexCount += layout->attributeCount;
     }
 
-    inputLayoutDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_INPUT_LAYOUT;
+    InputLayoutStream* inputLayoutStream = &graphicsStreamDesc.inputLayout;
+    totalSize += sizeof(InputLayoutStream);
+    inputLayoutStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_INPUT_LAYOUT;
+
     pipeline->strides = nullptr;
     if (vertexCount) {
-        pipeline->strides = palAllocate(s_D3D.allocator, sizeof(Uint32) * vertexLayoutCount, 0);
+        pipeline->strides = palAllocate(s_D3D.allocator, sizeof(Uint32) * 8, 0);
         if (!pipeline->strides) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
@@ -7077,6 +7109,8 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
                 elementDesc->InputSlot = layout->binding;
                 if (vertexAttrib->semanticName) {
                     elementDesc->SemanticName = vertexAttrib->semanticName;
+                } else {
+                    elementDesc->SemanticName = semanticIDToStringD3D12(vertexAttrib->semanticID);
                 }
 
                 if (vertexAttrib->semanticID == PAL_VERTEX_SEMANTIC_ID_POSITION) {
@@ -7115,11 +7149,11 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
             pipeline->strides[i] = stride;
         }
 
-        inputLayoutDesc->desc.NumElements = vertexCount;
-        inputLayoutDesc->desc.pInputElementDescs = elementDescs;
+        inputLayoutStream->desc.NumElements = vertexCount;
+        inputLayoutStream->desc.pInputElementDescs = elementDescs;
     }
 
-    // Input assembly
+    // Primitive Topology
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType = 0;
     D3D_PRIMITIVE_TOPOLOGY topology = 0;
     switch (info->topology) {
@@ -7160,81 +7194,105 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         }
     }
 
-    inputAssemblyDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PRIMITIVE_TOPOLOGY;
-    inputAssemblyDesc->ibType = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_IB_STRIP_CUT_VALUE;
-    inputAssemblyDesc->topology = topologyType;
+    TopologyStream* topologyStream = &graphicsStreamDesc.topology;
+    totalSize += sizeof(TopologyStream);
+    topologyStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PRIMITIVE_TOPOLOGY;
+    topologyStream->topology = topologyType;
+
+    // IB Strip Cut
+    IBStripCutStream* inStripCutStream = &graphicsStreamDesc.ibStripCut;
+    totalSize += sizeof(IBStripCutStream);
+    inStripCutStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_IB_STRIP_CUT_VALUE;
     if (info->primitiveRestartEnable == false) {
-        inputAssemblyDesc->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+        inStripCutStream->value = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
     } else {
         if (info->indexType == PAL_INDEX_TYPE_UINT16) {
-            inputAssemblyDesc->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFF;
+            inStripCutStream->value = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFF;
         } else {
-            inputAssemblyDesc->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFFFFFF;
+            inStripCutStream->value = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFFFFFF;
         }
     }
 
     // Rasterizer
-    rasterizerDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER;
-    rasterizerDesc->desc.FrontCounterClockwise = FALSE;
+    RasterizerStream* rasterizerStream = &graphicsStreamDesc.rasterizer;
+    totalSize += sizeof(RasterizerStream);
+    rasterizerStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER;
+
+    rasterizerStream->desc.CullMode = D3D12_CULL_MODE_NONE;
+    rasterizerStream->desc.FillMode = D3D12_FILL_MODE_SOLID;
+    rasterizerStream->desc.FrontCounterClockwise = FALSE;
+    rasterizerStream->desc.DepthClipEnable = TRUE;
+
     if (info->rasterizerState) {
         PalRasterizerState* state = info->rasterizerState;
         if (state->cullMode == PAL_CULL_MODE_NONE) {
-            rasterizerDesc->desc.CullMode = D3D12_CULL_MODE_NONE;
+            rasterizerStream->desc.CullMode = D3D12_CULL_MODE_NONE;
 
         } else if (state->cullMode == PAL_CULL_MODE_BACK) {
-            rasterizerDesc->desc.CullMode = D3D12_CULL_MODE_BACK;
+            rasterizerStream->desc.CullMode = D3D12_CULL_MODE_BACK;
 
         } else if (state->cullMode == PAL_CULL_MODE_FRONT) {
-            rasterizerDesc->desc.CullMode = D3D12_CULL_MODE_FRONT;
+            rasterizerStream->desc.CullMode = D3D12_CULL_MODE_FRONT;
         }
 
         if (state->polygonMode == PAL_POLYGON_MODE_FILL) {
-            rasterizerDesc->desc.FillMode = D3D12_FILL_MODE_SOLID;
+            rasterizerStream->desc.FillMode = D3D12_FILL_MODE_SOLID;
 
         } else {
-            rasterizerDesc->desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+            rasterizerStream->desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
         }
 
         if (state->frontFace == PAL_FRONT_FACE_CLOCKWISE) {
-            rasterizerDesc->desc.FrontCounterClockwise = FALSE;
+            rasterizerStream->desc.FrontCounterClockwise = FALSE;
 
         } else {
-            rasterizerDesc->desc.FrontCounterClockwise = TRUE;
+            rasterizerStream->desc.FrontCounterClockwise = TRUE;
         }
 
-        rasterizerDesc->desc.DepthClipEnable = !state->enableDepthClamp;
-        rasterizerDesc->desc.DepthBias = (INT)state->depthBiasConstant;
-        rasterizerDesc->desc.SlopeScaledDepthBias = state->depthBiasSlope;
-        rasterizerDesc->desc.DepthBiasClamp = state->depthBiasClamp;
+        rasterizerStream->desc.DepthClipEnable = !state->enableDepthClamp;
+        rasterizerStream->desc.DepthBias = (INT)state->depthBiasConstant;
+        rasterizerStream->desc.SlopeScaledDepthBias = state->depthBiasSlope;
+        rasterizerStream->desc.DepthBiasClamp = state->depthBiasClamp;
     }
 
-    // Multisample
-    multisampleDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_DESC;
-    multisampleDesc->maskType = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_MASK;
-    multisampleDesc->desc.Quality = 0;
-    multisampleDesc->desc.Count = 1;
+    // Sample Desc
+    SampleDescStream* sampleDescStream = &graphicsStreamDesc.sampleDesc;
+    totalSize += sizeof(SampleDescStream);
+    sampleDescStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_DESC;
+    sampleDescStream->desc.Quality = 0;
+    sampleDescStream->desc.Count = 1;
+
+    // Sample Mask
+    SampleMaskStream* sampleMaskStream = &graphicsStreamDesc.sampleMask;
+    totalSize += sizeof(SampleMaskStream);
+    sampleMaskStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_MASK;
+    sampleMaskStream->mask = UINT_MAX;
+
     if (info->multisampleState) {
         PalMultisampleState* state = info->multisampleState;
         if (state->sampleMask) {
-            multisampleDesc->sampleMask = (UINT)state->sampleMask;
-        } else {
-            multisampleDesc->sampleMask = UINT32_MAX;
+            sampleMaskStream->mask = (UINT)state->sampleMask;
         }
 
-        multisampleDesc->desc.Count = samplesToD3D12(state->sampleCount);
+        sampleDescStream->desc.Count = samplesToD3D12(state->sampleCount);
         alphaToCoverageEnable = state->enableAlphaToCoverage;
     }
 
     // Depth stencil
-    depthStencilDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL;
+    DepthStencilStream* depthStencilStream = &graphicsStreamDesc.depthStencil;
+    totalSize += sizeof(DepthStencilStream);
+    depthStencilStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL;
+    depthStencilStream->desc.DepthEnable = FALSE;
+    depthStencilStream->desc.StencilEnable = FALSE;
+
     if (info->depthStencilState) {
         PalDepthStencilState* state = info->depthStencilState;
         PalStencilOpState* back = &state->backStencilOpState;
         PalStencilOpState* front = &state->frontStencilOpState;
 
-        D3D12_DEPTH_STENCILOP_DESC* d3dBack = &depthStencilDesc->desc.BackFace;
-        D3D12_DEPTH_STENCILOP_DESC* d3dFront = &depthStencilDesc->desc.FrontFace;
+        D3D12_DEPTH_STENCILOP_DESC* d3dBack = &depthStencilStream->desc.BackFace;
+        D3D12_DEPTH_STENCILOP_DESC* d3dFront = &depthStencilStream->desc.FrontFace;
 
         d3dBack->StencilFunc = compareOpToD3D12(back->compareOp);
         d3dBack->StencilDepthFailOp = stencilOpToD3D12(back->depthFailOp);
@@ -7246,23 +7304,26 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         d3dFront->StencilFailOp = stencilOpToD3D12(front->failOp);
         d3dFront->StencilPassOp = stencilOpToD3D12(front->passOp);
 
-        depthStencilDesc->desc.DepthFunc = compareOpToD3D12(state->compareOp);
-        depthStencilDesc->desc.DepthEnable = state->enableDepthTest;
-        depthStencilDesc->desc.StencilEnable = state->enableStencilTest;
+        depthStencilStream->desc.DepthFunc = compareOpToD3D12(state->compareOp);
+        depthStencilStream->desc.DepthEnable = state->enableDepthTest;
+        depthStencilStream->desc.StencilEnable = state->enableStencilTest;
         if (state->enableDepthWrite) {
-            depthStencilDesc->desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+            depthStencilStream->desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         } else {
-            depthStencilDesc->desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+            depthStencilStream->desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
         }
     }
 
-    // Color blend
-    colorBlendDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_BLEND;
-    colorBlendDesc->desc.IndependentBlendEnable = TRUE;
-    colorBlendDesc->desc.AlphaToCoverageEnable = alphaToCoverageEnable;
+    // Blend
+    BlendStream* blendStream = &graphicsStreamDesc.blend;
+    totalSize += sizeof(BlendStream);
+    blendStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_BLEND;
+    blendStream->desc.IndependentBlendEnable = TRUE;
+    blendStream->desc.AlphaToCoverageEnable = alphaToCoverageEnable;
+
     if (info->colorBlendAttachmentCount) {
         for (int i = 0; i < info->colorBlendAttachmentCount; i++) {
-            D3D12_RENDER_TARGET_BLEND_DESC* tmp = colorBlendDesc[i].desc.RenderTarget;
+            D3D12_RENDER_TARGET_BLEND_DESC* tmp = &blendStream->desc.RenderTarget[i];
             PalColorBlendAttachment* desc = &info->colorBlendAttachments[i];
 
             tmp->BlendEnable = desc->enableBlend;
@@ -7305,34 +7366,43 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         }
     }
 
-    // Rendering Layout
-    renderingLayoutDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RENDER_TARGET_FORMATS;
-    renderingLayoutDesc->dsvType = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL_FORMAT;
-    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
-    PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
+    // RTV Formats
+    RTVStream* rtvStream = &graphicsStreamDesc.RTV;
+    totalSize += sizeof(RTVStream);
+    rtvStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RENDER_TARGET_FORMATS;
 
-    // color attachments
-    renderingLayoutDesc->NumRenderTargets = renderingLayout->colorAttachentCount;
-    for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
-        format = formatToD3D12(renderingLayout->colorAttachmentsFormat[i]);
-        renderingLayoutDesc->RTVFormats[i] = format;
+    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+    rtvStream->data.NumRenderTargets = info->renderingLayout->colorAttachentCount;
+    for (int i = 0; i < info->renderingLayout->colorAttachentCount; i++) {
+        format = formatToD3D12(info->renderingLayout->colorAttachmentsFormat[i]);
+        rtvStream->data.RTFormats[i] = format;
     }
 
-    // depth stencil attachment
-    format = formatToD3D12(renderingLayout->depthStencilAttachmentFormat);
-    renderingLayoutDesc->DSVFormat = format;
+    // DSV Format
+    DSVStream* dsvStream = &graphicsStreamDesc.DSV;
+    totalSize += sizeof(DSVStream);
+    dsvStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL_FORMAT;
+    dsvStream->format = formatToD3D12(info->renderingLayout->depthStencilAttachmentFormat);
 
     // View Instancing
-    viewInstancingDesc->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VIEW_INSTANCING;
-    viewInstancingDesc->desc.ViewInstanceCount = info->renderingLayout->viewCount;
-    viewInstancingDesc->desc.pViewInstanceLocations = viewLocations;
-    for (int i = 0; i < info->renderingLayout->viewCount; i++) {
-        viewLocations[i].RenderTargetArrayIndex = i;
-        viewLocations[i].RenderTargetArrayIndex = i;
+    ViewInstancingStream* viewInstacingStream = &graphicsStreamDesc.viewInstancing;
+    totalSize += sizeof(ViewInstancingStream);
+    viewInstacingStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VIEW_INSTANCING;
+
+    viewInstacingStream->desc.ViewInstanceCount = 0;
+    viewInstacingStream->desc.pViewInstanceLocations = nullptr;
+    if (info->renderingLayout->viewCount > 1) {
+        for (int i = 0; i < info->renderingLayout->viewCount; i++) {
+            viewLocations[i].RenderTargetArrayIndex = i;
+            viewLocations[i].ViewportArrayIndex = i;
+        }
+
+        viewInstacingStream->desc.ViewInstanceCount = info->renderingLayout->viewCount;
+        viewInstacingStream->desc.pViewInstanceLocations = viewLocations;
     }
 
     D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = {0};
-    streamDesc.pPipelineStateSubobjectStream = &desc;
+    streamDesc.pPipelineStateSubobjectStream = &graphicsStreamDesc;
     streamDesc.SizeInBytes = totalSize;
 
     result = d3dDevice->handle->lpVtbl->CreatePipelineState(
@@ -7569,6 +7639,7 @@ void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
     if (d3dPipeline->type == RAY_TRACING_PIPELINE) {
         ID3D12StateObject* handle = d3dPipeline->handle;
         handle->lpVtbl->Release(handle);
+
     } else {
         ID3D12PipelineState* handle = d3dPipeline->handle;
         handle->lpVtbl->Release(handle);
@@ -7585,6 +7656,7 @@ void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
     if (d3dPipeline->scratchBuffer) {
         palFree(s_D3D.allocator, d3dPipeline->scratchBuffer);
     }
+
     palFree(s_D3D.allocator, d3dPipeline);
 }
 

@@ -45,7 +45,7 @@ bool computeTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -219,6 +219,8 @@ bool computeTest()
         palLog(nullptr, "Failed to create compute shader: %s", error);
         return false;
     }
+
+    palFree(nullptr, bytecode);
 
     // create a storage buffer
     Uint32 bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader

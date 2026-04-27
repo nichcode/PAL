@@ -1004,10 +1004,12 @@ bool textureTest()
 
     // position
     vertexAttributes[0].semanticID = PAL_VERTEX_SEMANTIC_ID_POSITION;
+    vertexAttributes[0].semanticName = nullptr; // use default
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
     // texture coordinates
     vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_TEXCOORD;
+    vertexAttributes[1].semanticName = nullptr; // use default
     vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT2;
 
     vertexLayout.attributeCount = 2;
