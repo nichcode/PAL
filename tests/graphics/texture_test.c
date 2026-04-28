@@ -148,7 +148,7 @@ bool textureTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    result = palInitGraphics(&debugger, nullptr);
+    result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
