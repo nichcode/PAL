@@ -3111,8 +3111,6 @@ PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
 {
     Queue* d3dQueue = (Queue*)queue;
     ID3D12Fence* fence = d3dQueue->fence;
-    d3dQueue->fenceValue++;
-    fence->lpVtbl->Signal(fence, d3dQueue->fenceValue);
 
     // wait on the fence if the submited work is not done
     if (fence->lpVtbl->GetCompletedValue(fence) < d3dQueue->fenceValue) {
@@ -4061,7 +4059,6 @@ PalResult PAL_CALL presentSwapchainD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    pollMessagesD3D12(d3dSwapchain->device);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4651,6 +4648,9 @@ PalResult PAL_CALL submitCommandBufferD3D12(
 
     ID3D12CommandList* tmp = (ID3D12CommandList*)d3dCmdBuffer->handle;
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, &tmp);
+    d3dQueue->fenceValue++;
+    queueHandle->lpVtbl->Signal(queueHandle, d3dQueue->fence, d3dQueue->fenceValue);
+
     if (info->fence) {
         Fence* fence = (Fence*)info->fence;
         fence->value++;
