@@ -720,14 +720,12 @@ bool rayTracingTest()
     PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_RAYGEN };
 
     // storage buffer to write to
-    descriptorBindings[0].binding = 0;
     descriptorBindings[0].descriptorCount = 1; // not an array
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptorBindings[0].shaderStageCount = 1;
     descriptorBindings[0].shaderStages = shaderStages;
 
     // acceleration buffer
-    descriptorBindings[1].binding = 1;
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
     descriptorBindings[1].shaderStageCount = 1;

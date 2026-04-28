@@ -144,11 +144,11 @@ bool textureTest()
         gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB;
     }
 
-    PalGraphicsDebugger debugger;
+    PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    result = palInitGraphics(nullptr, nullptr);
+    result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -184,7 +184,9 @@ bool textureTest()
         return false;
     }
 
-    PalAdapterCapabilities caps;
+    PalAdapterCapabilities caps = {0};
+    PalAdapterInfo adapterInfo = {0};
+    bool hasGraphicsQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -196,23 +198,46 @@ bool textureTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
+            hasGraphicsQueue = false;
             continue;
+
         } else {
-            break;
+            hasGraphicsQueue = true;
         }
+
+        if (hasGraphicsQueue) {
+            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            result = palGetAdapterInfo(adapter, &adapterInfo);
+            if (result != PAL_RESULT_SUCCESS) {
+                const char* error = palFormatResult(result);
+                palLog(nullptr, "Failed to get adapter info: %s", error);
+                return false;
+            }
+
+            // we prefer spirv first if an adapter supports multiple shader formats
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                    break;
+                }
+            }
+
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                    break;
+                }
+            }
+        }
+        adapter = nullptr;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, "Failed to find an adapter that supports graphics queue");
-        return false;
-    }
+        if (!hasGraphicsQueue) {
+            palLog(nullptr, "Failed to find an adapter that supports graphics queue");
 
-    PalAdapterInfo adapterInfo = {0};
-    result = palGetAdapterInfo(adapter, &adapterInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get adapter info: %s", error);
+        } else {
+            palLog(nullptr, "Failed to find an adapter that supports required shader target");
+        }
         return false;
     }
 
@@ -587,6 +612,10 @@ bool textureTest()
         return false;
     }
 
+    // update our copy with the required buffer row length and buffer image height
+    bufferImageCopyInfo.bufferRowLength = bufferRowLength;
+    bufferImageCopyInfo.bufferImageHeight = bufferImageHeight;
+
     // create staging buffer to transfer the data to the image
     PalBuffer* imageStagingBuffer = nullptr;
     PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
@@ -827,6 +856,10 @@ bool textureTest()
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         vertexShaderPath = "graphics/shaders/texture_vert_shader.spv";
         fragShaderPath = "graphics/shaders/texture_frag_shader.spv";
+
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        vertexShaderPath = "graphics/shaders/texture_vert_shader.dxil";
+        fragShaderPath = "graphics/shaders/texture_frag_shader.dxil";
     }
 
     if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
@@ -886,13 +919,11 @@ bool textureTest()
     PalDescriptorSetLayoutBinding descriptorBindings[2];
     PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
 
-    descriptorBindings[0].binding = 0;
     descriptorBindings[0].descriptorCount = 1; // not an array
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptorBindings[0].shaderStageCount = 1;
     descriptorBindings[0].shaderStages = shaderStages;
 
-    descriptorBindings[1].binding = 1;
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
     descriptorBindings[1].shaderStageCount = 1;

@@ -7978,24 +7978,25 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     Uint32* outBufferImageHeight,
     Uint64* outSize)
 {
-    Uint32 length, height;
-    length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
-    height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
-    Uint32 rowPitch = length * getFormatSizeVk(imageFormat);
+    Uint32 imageFormatSize = getFormatSizeVk(imageFormat);
+    Uint32 rowPitch = 0;
+    Uint32 bufferImageHeight = 0;
 
-    if (length == copyInfo->imageWidth) {
-        *outBufferRowLength = 0;
+    if (copyInfo->bufferRowLength) {
+        rowPitch = copyInfo->bufferRowLength;
     } else {
-        *outBufferRowLength = length;
+        rowPitch = copyInfo->imageWidth * imageFormatSize;
     }
 
-    if (height == copyInfo->imageHeight) {
-        *outBufferImageHeight = 0;
+    if (copyInfo->bufferImageHeight) {
+        bufferImageHeight = copyInfo->bufferImageHeight;
     } else {
-        *outBufferImageHeight = height;
+        bufferImageHeight = copyInfo->imageHeight;
     }
 
-    *outSize = rowPitch * height * copyInfo->imageDepth;
+    *outBufferRowLength = rowPitch;
+    *outBufferImageHeight = bufferImageHeight;
+    *outSize = (Uint64)rowPitch * bufferImageHeight * copyInfo->imageDepth;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -8029,30 +8030,21 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
     PalBufferImageCopyInfo* copyInfo)
 {
     Uint32 imageFormatSize = getFormatSizeVk(imageFormat);
-    if (copyInfo->bufferRowLength == 0 && copyInfo->bufferImageHeight == 0) {
-        Uint64 size = copyInfo->imageWidth * copyInfo->imageHeight * copyInfo->imageDepth;
-        // normal path. Simple memcpy works
-        memcpy(ptr, srcData, size * imageFormatSize);
-        return PAL_RESULT_SUCCESS;
-    }
-
-    Uint32 length, height;
-    length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
-    height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
+    Uint32 srcRowPitch = copyInfo->imageWidth * imageFormatSize;
+    const Uint32 dstSlicePitch = copyInfo->bufferRowLength * copyInfo->bufferImageHeight;
+    const Uint32 srcSlicePitch = srcRowPitch * copyInfo->imageHeight;
 
     // manually offset the buffer with the provided offset
     Uint8* dst = (Uint8*)ptr + copyInfo->bufferOffset;
     const Uint8* src = (const Uint8*)srcData;
-    Uint64 tmpSizeDest = length * height * imageFormatSize;
-    Uint64 tmpSizeSrc = copyInfo->imageWidth * copyInfo->imageHeight * imageFormatSize;
 
     // write to destination pointer
     for (Uint32 z = 0; z < copyInfo->imageDepth; z++) {
         for (Uint32 y = 0; y < copyInfo->imageHeight; y++) {
             memcpy(
-                dst + z * tmpSizeDest + y * (length * imageFormatSize), 
-                src + z * tmpSizeSrc + y * (copyInfo->imageWidth * imageFormatSize), 
-                copyInfo->imageWidth * imageFormatSize);
+                dst + z * dstSlicePitch + y * copyInfo->bufferRowLength,
+                src + z * srcSlicePitch + y * srcRowPitch,
+                srcRowPitch);
         }
     }
 
@@ -8153,9 +8145,10 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     createInfo.bindingCount = count;
     createInfo.pBindings = bindings;
 
+    Uint32 bindingIndex = 0;
     for (int i = 0; i < count; i++) {
         VkDescriptorSetLayoutBinding* binding = &bindings[i];
-        binding->binding = info->bindings[i].binding;
+        binding->binding = bindingIndex++;
         binding->descriptorCount = info->bindings[i].descriptorCount;
         binding->descriptorType = descriptortypeToVk(info->bindings[i].descriptorType);
 

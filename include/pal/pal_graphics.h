@@ -186,6 +186,12 @@ typedef struct PalCommandBuffer PalCommandBuffer;
 /**
  * @struct PalDescriptorSetLayout
  * @brief Opaque handle to a descriptor set layout.
+ * 
+ * This defines the layout, ordering and the number of descriptors a descriptor set uses.
+ * 
+ * The layouts should reflect the exact layout of the shaders. Eg. 
+ * descriptorBindings[2] = { sampler, sampled image } is different from 
+ * descriptorBindings[2] = { sampled image, sampler }. The ordering must be correct.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1967,11 +1973,12 @@ typedef struct {
 /**
  * @struct PalVertexLayout
  * @brief Vertex layout.
+ * 
  * This defines the layout, ordering and the number of vertex attributes the layout uses.
  * 
- * This layouts should reflect the exact layout of the shaders. Eg. attributes[0] = position 
- * attribute and attributes[1] = color attribute is not the same as attributes[0] = color attribute
- * and attributes[1] = position attribute. The ordering must be correct.
+ * The layouts should reflect the exact layout of the shaders. Eg. 
+ * attributes[2] = { position, color } is different from 
+ * attributes[2] = { color, position }. The ordering must be correct.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2226,7 +2233,6 @@ typedef struct {
  */
 typedef struct {
     bool readOnly; /**< For PAL_DESCRIPTOR_TYPE_STORAGE.*/
-    Uint32 binding;
     Uint32 descriptorCount;
     Uint32 shaderStageCount;
     PalShaderStage* shaderStages;     /**< Array of shader stages that can access the descriptor.*/
@@ -6988,6 +6994,12 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * Enable `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` when creating the device for descriptor
  * indexing (bindless resources). The feature must be supported by the device if not,
  * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * This defines the layout, ordering and the number of descriptors a descriptor set uses.
+ * 
+ * The layouts should reflect the exact layout of the shaders. Eg. 
+ * descriptorBindings[2] = { sampler, sampled image } is different from 
+ * descriptorBindings[2] = { sampled image, sampler }. The ordering must be correct.
  *
  * @param[in] device Device that creates the descriptor set layout.
  * @param[in] info Pointer to a PalDescriptorSetLayoutCreateInfo struct that specifies parameters.

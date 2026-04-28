@@ -310,7 +310,6 @@ bool computeTest()
     PalDescriptorSetLayoutBinding descriptorBinding = {0};
     PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_COMPUTE };
 
-    descriptorBinding.binding = 0;
     descriptorBinding.descriptorCount = 1; // not an array
     descriptorBinding.descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptorBinding.shaderStageCount = 1;

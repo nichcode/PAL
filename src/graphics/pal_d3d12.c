@@ -3441,28 +3441,16 @@ PalResult PAL_CALL bindImageMemoryD3D12(
         return PAL_RESULT_INVALID_OPERATION;
     }
 
-    D3D12_RESOURCE_STATES state = 0;
     ID3D12Heap* mem = (ID3D12Heap*)memory;
-    D3D12_HEAP_DESC __ret = {0};
-    D3D12_HEAP_DESC heapProps = {0};
-    heapProps = *mem->lpVtbl->GetDesc(mem, &__ret);
-
-    if (heapProps.Properties.Type == D3D12_HEAP_TYPE_UPLOAD) {
-        state = D3D12_RESOURCE_STATE_GENERIC_READ;
-
-    } else if (heapProps.Properties.Type == D3D12_HEAP_TYPE_READBACK) {
-        state = D3D12_RESOURCE_STATE_COPY_DEST;
-    }
-
     result = device->lpVtbl->CreatePlacedResource(
         device,
         mem,
         offset,
         &d3dImage->desc,
-        state,
+        0,
         nullptr,
         &IID_Resource,
-        (void**)d3dImage->handle);
+        (void**)&d3dImage->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3dImage->device);
@@ -3517,8 +3505,12 @@ PalResult PAL_CALL createImageViewD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    imageView->heapIndex = UINT32_MAX;
+    bool hasRTV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+    bool hasDSV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
     imageView->format = formatToD3D12(info->format);
-    if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR) {
+    if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR && hasRTV) {
         RTVHeapAllocator* allocator = &d3dDevice->rtvAllocator;
         Uint32 index = allocator->freeTop;
         allocator->freeTop = allocator->freeList[index];
@@ -3528,16 +3520,22 @@ PalResult PAL_CALL createImageViewD3D12(
 
         D3D12_RENDER_TARGET_VIEW_DESC desc = {0};
         desc.Format = imageView->format;
-        fillSubresourceD3D12(info->type, &info->subresourceRange, &desc, nullptr, nullptr, nullptr);
-        imageView->heapIndex = index;
+        fillSubresourceD3D12(
+            info->type, 
+            &info->subresourceRange, 
+            &desc, 
+            nullptr, 
+            nullptr, 
+            nullptr);
 
+        imageView->heapIndex = index;
         d3dDevice->handle->lpVtbl->CreateRenderTargetView(
             d3dDevice->handle,
             d3dImage->handle,
             &desc,
             dst);
 
-    } else {
+    } else if (info->subresourceRange.aspect != PAL_IMAGE_ASPECT_COLOR && hasDSV) {
         DSVHeapAllocator* allocator = &d3dDevice->dsvAllocator;
         Uint32 index = allocator->freeTop;
         allocator->freeTop = allocator->freeList[index];
@@ -3547,9 +3545,15 @@ PalResult PAL_CALL createImageViewD3D12(
 
         D3D12_DEPTH_STENCIL_VIEW_DESC desc = {0};
         desc.Format = imageView->format;
-        fillSubresourceD3D12(info->type, &info->subresourceRange, nullptr, &desc, nullptr, nullptr);
-        imageView->heapIndex = index;
+        fillSubresourceD3D12(
+            info->type, 
+            &info->subresourceRange, 
+            nullptr, 
+            &desc, 
+            nullptr, 
+            nullptr);
 
+        imageView->heapIndex = index;
         d3dDevice->handle->lpVtbl->CreateDepthStencilView(
             d3dDevice->handle,
             d3dImage->handle,
@@ -3572,15 +3576,17 @@ void PAL_CALL destroyImageViewD3D12(PalImageView* imageView)
     Device* device = d3dImageView->device;
     RTVHeapAllocator* allocator = nullptr;
 
-    if (d3dImageView->range.aspect == PAL_IMAGE_ASPECT_COLOR) {
-        RTVHeapAllocator* allocator = &device->rtvAllocator;
-        allocator->freeList[d3dImageView->heapIndex] = allocator->freeTop;
-        allocator->freeTop = d3dImageView->heapIndex;
+    if (d3dImageView->heapIndex != UINT32_MAX) {
+        if (d3dImageView->range.aspect == PAL_IMAGE_ASPECT_COLOR) {
+            RTVHeapAllocator* allocator = &device->rtvAllocator;
+            allocator->freeList[d3dImageView->heapIndex] = allocator->freeTop;
+            allocator->freeTop = d3dImageView->heapIndex;
 
-    } else {
-        DSVHeapAllocator* allocator = &device->dsvAllocator;
-        allocator->freeList[d3dImageView->heapIndex] = allocator->freeTop;
-        allocator->freeTop = d3dImageView->heapIndex;
+        } else {
+            DSVHeapAllocator* allocator = &device->dsvAllocator;
+            allocator->freeList[d3dImageView->heapIndex] = allocator->freeTop;
+            allocator->freeTop = d3dImageView->heapIndex;
+        }
     }
     palFree(s_D3D.allocator, d3dImageView);
 }
@@ -6168,18 +6174,18 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
     Uint64* outSize)
 {
     Uint32 imageFormatSize = getFormatSizeD3D12(imageFormat);
-    Uint32 height = 0;
-    Uint64 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
-    height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
+    Uint32 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    Uint32 bufferImageHeight = 0;
 
-    *outBufferRowLength = rowPitch;
-    if (height == copyInfo->imageHeight) {
-        *outBufferImageHeight = 0;
+    if (copyInfo->bufferImageHeight) {
+        bufferImageHeight = copyInfo->bufferImageHeight;
     } else {
-        *outBufferImageHeight = height;
+        bufferImageHeight = copyInfo->imageHeight;
     }
 
-    *outSize = rowPitch * height * copyInfo->imageDepth;
+    *outBufferRowLength = rowPitch;
+    *outBufferImageHeight = bufferImageHeight;
+    *outSize = (Uint64)rowPitch * bufferImageHeight * copyInfo->imageDepth;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6213,23 +6219,21 @@ PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
     PalBufferImageCopyInfo* copyInfo)
 {
     Uint32 imageFormatSize = getFormatSizeD3D12(imageFormat);
-    Uint32 length, height;
-    length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
-    height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
+    Uint32 srcRowPitch = copyInfo->imageWidth * imageFormatSize;
+    const Uint32 dstSlicePitch = copyInfo->bufferRowLength * copyInfo->bufferImageHeight;
+    const Uint32 srcSlicePitch = srcRowPitch * copyInfo->imageHeight;
 
     // manually offset the buffer with the provided offset
     Uint8* dst = (Uint8*)ptr + copyInfo->bufferOffset;
     const Uint8* src = (const Uint8*)srcData;
-    Uint64 tmpSizeDest = length * height * imageFormatSize;
-    Uint64 tmpSizeSrc = copyInfo->imageWidth * copyInfo->imageHeight * imageFormatSize;
 
     // write to destination pointer
     for (Uint32 z = 0; z < copyInfo->imageDepth; z++) {
         for (Uint32 y = 0; y < copyInfo->imageHeight; y++) {
             memcpy(
-                dst + z * tmpSizeDest + y * (length * imageFormatSize),
-                src + z * tmpSizeSrc + y * (copyInfo->imageWidth * imageFormatSize),
-                copyInfo->imageWidth * imageFormatSize);
+                dst + z * dstSlicePitch + y * copyInfo->bufferRowLength,
+                src + z * srcSlicePitch + y * srcRowPitch,
+                srcRowPitch);
         }
     }
 
@@ -6339,49 +6343,71 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    Uint32 offset = 0;
+    Uint32 resourceOffset = 0;
+    Uint32 samplerOffset = 0;
     Uint32 samplerCount = 0;
+
+    Uint32 sampledASIndex = 0;
+    Uint32 uniformIndex = 0;
+    Uint32 storageIndex = 0;
+
     for (int i = 0; i < count; i++) {
         DescriptorSetBinding* binding = &bindings[i];
         binding->type = info->bindings[i].descriptorType;
 
         binding->range.NumDescriptors = info->bindings[i].descriptorCount;
-        binding->range.BaseShaderRegister = info->bindings[i].binding;
         binding->range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
         binding->range.RegisterSpace = 0;
-        binding->range.OffsetInDescriptorsFromTableStart = offset;
-        offset += info->bindings[i].descriptorCount;
 
         switch (info->bindings[i].descriptorType) {
             case PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE:
             case PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                binding->range.BaseShaderRegister = sampledASIndex++;
+
+                binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
+                resourceOffset += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_SAMPLER: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-                samplerCount++;
+                binding->range.BaseShaderRegister = samplerCount++;
+
+                binding->range.OffsetInDescriptorsFromTableStart = samplerOffset;
+                samplerOffset += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
                 if (info->bindings[i].readOnly) {
                     binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                    binding->range.BaseShaderRegister = sampledASIndex++;
                 } else {
                     binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                    binding->range.BaseShaderRegister = storageIndex++;
                 }
+
+                binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
+                resourceOffset += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                binding->range.BaseShaderRegister = storageIndex++;
+
+                binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
+                resourceOffset += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                binding->range.BaseShaderRegister = uniformIndex++;
+
+                binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
+                resourceOffset += info->bindings[i].descriptorCount;
                 break;
             }
         }
@@ -6664,14 +6690,13 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     Uint32 totalDescriptors = asCount + storageBufferCount + uniformBufferCount;
     totalDescriptors += sampledImageCount + storageImageCount;
     d3dPool->resourceHeap.nextOffset += totalDescriptors;
-    d3dPool->samplerHeap.nextOffset += totalDescriptors;
+    d3dPool->samplerHeap.nextOffset += samplerCount;
 
     limits->usedAs += asCount;
     limits->usedSampledImages += sampledImageCount;
     limits->usedSamplers += samplerCount;
     limits->usedStorageBuffers += storageBufferCount;
     limits->usedUniformBuffers += uniformBufferCount;
-    d3dPool->usedSets++;
 
     *outSet = (PalDescriptorSet*)set;
     return PAL_RESULT_SUCCESS;
@@ -6692,18 +6717,18 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
 
         DescriptorHeap* heap = nullptr;
         Uint32 index = 0;
-        Uint32 bindingOffsetffset = binding->range.OffsetInDescriptorsFromTableStart;
+        Uint32 bindingOffset = binding->range.OffsetInDescriptorsFromTableStart;
         if (info->arrayElement + binding->range.NumDescriptors > layout->bindingCount) {
             return PAL_RESULT_INVALID_ARGUMENT;
         }
 
         if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
             heap = &pool->samplerHeap;
-            index = set->samplerOffset + bindingOffsetffset + info->arrayElement;
+            index = set->samplerOffset + bindingOffset + info->arrayElement;
 
         } else {
             heap = &pool->resourceHeap;
-            index = set->resourceOffset + bindingOffsetffset + info->arrayElement;
+            index = set->resourceOffset + bindingOffset + info->arrayElement;
         }
 
         for (int y = 0; y < binding->range.NumDescriptors; y++) {
@@ -6717,6 +6742,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
                 AccelerationStructure* tlas = (AccelerationStructure*)info->tlasInfo->tlas;
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
+                desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 desc.RaytracingAccelerationStructure.Location = tlas->address;
                 desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
 
@@ -6729,7 +6755,9 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                 ImageView* imageView = (ImageView*)info->imageViewInfo->imageView;
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
+                desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 desc.Format = imageView->format;
+
                 fillSubresourceD3D12(
                     imageView->type,
                     &imageView->range,
@@ -6748,6 +6776,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 ImageView* imageView = (ImageView*)info->imageViewInfo->imageView;
                 D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
                 desc.Format = imageView->format;
+
                 fillSubresourceD3D12(
                     imageView->type,
                     &imageView->range,
@@ -6782,6 +6811,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 Buffer* buffer = (Buffer*)info->bufferInfo->buffer;
                 if (info->bufferInfo->readOnly) {
                     D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
+                    desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
                     Uint32 stride = 4;
                     if (info->bufferInfo->stride) {
                         stride = info->bufferInfo->stride;
@@ -6843,6 +6874,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     Uint32 resourceCount = 0;
     Uint32 samplerCount = 0;
     Uint32 pushConstantSize = 0;
+    Uint32 sizeInBytes = sizeof(D3D12_DESCRIPTOR_RANGE1);
     D3D12_DESCRIPTOR_RANGE1* ranges = nullptr;
     D3D12_DESCRIPTOR_RANGE1* samplerRanges = nullptr;
 
@@ -6861,24 +6893,37 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         }
     }
 
-    Uint32 sizeInBytes = sizeof(D3D12_DESCRIPTOR_RANGE1);
     layout = palAllocate(s_D3D.allocator, sizeof(PipelineLayout), 0);
-    ranges = palAllocate(s_D3D.allocator, sizeInBytes * resourceCount, 0);
-    samplerRanges = palAllocate(s_D3D.allocator, sizeInBytes * samplerCount, 0);
-    if (!layout || !ranges || !samplerRanges) {
+    if (!layout) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     memset(layout, 0, sizeof(PipelineLayout));
+    if (resourceCount) {
+        ranges = palAllocate(s_D3D.allocator, sizeInBytes * resourceCount, 0);
+        if (!ranges) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+    }
+
+    if (samplerCount) {
+        samplerRanges = palAllocate(s_D3D.allocator, sizeInBytes * samplerCount, 0);
+        if (!samplerRanges) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+    }
+
+    Uint32 tmpResourceIndex = 0;
+    Uint32 tmpSamplerIndex = 0;
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
         DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
         // seperate the samplers from the remaining descriptors
         for (int i = 0; i < tmp->bindingCount; i++) {
             DescriptorSetBinding* binding = &tmp->bindings[i];
             if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
-                samplerRanges[i] = binding->range;
+                samplerRanges[tmpResourceIndex++] = binding->range;
             } else {
-                ranges[i] = binding->range;
+                ranges[tmpSamplerIndex++] = binding->range;
             }
         }
     }
@@ -6931,7 +6976,8 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     rootDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     ID3DBlob* blob = nullptr;
-    HRESULT result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
+    ID3DBlob* errBlob = nullptr;
+    HRESULT result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, &errBlob);
     if (FAILED(result)) {
         pollMessagesD3D12(d3dDevice);
         if (result == E_INVALIDARG) {
@@ -6958,9 +7004,15 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
+    if (resourceCount) {
+        palFree(s_D3D.allocator, ranges);
+    }
+
+    if (samplerCount) {
+        palFree(s_D3D.allocator, samplerRanges);
+    }
+
     blob->lpVtbl->Release(blob);
-    palFree(s_D3D.allocator, ranges);
-    palFree(s_D3D.allocator, samplerRanges);
     *outLayout = (PalPipelineLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
