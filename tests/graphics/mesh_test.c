@@ -3,6 +3,7 @@
 #include "pal/pal_video.h"
 #include "pal/pal_system.h"
 #include "tests.h"
+#include "shaders.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -393,69 +394,47 @@ bool meshTest()
     }
 
     // create shaders
-    Uint64 bytecodeSize = 0;
-    void* bytecode = nullptr;
-    PalShaderCreateInfo shaderCreateInfo = {0};
+    Uint64 meshBytecodeSize = 0;
+    Uint64 fragBytecodeSize = 0;
+    void* meshBytecode = nullptr;
+    void* fragBytecode = nullptr;
 
-    const char* meshShaderPath = nullptr;
-    const char* fragShaderPath = nullptr;
+    PalShaderCreateInfo meshShaderCreateInfo = {0};
+    PalShaderCreateInfo fragShaderCreateInfo = {0};
+
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        meshShaderPath = "graphics/shaders/mesh_shader.spv";
-        fragShaderPath = "graphics/shaders/triangle_frag_shader.spv";
-    }
+        meshBytecodeSize = sizeof(s_MeshShaderSpv);
+        fragBytecodeSize = sizeof(s_TriangleFragShaderSpv);
 
-    if (!readFile(meshShaderPath, nullptr, &bytecodeSize)) {
-        palLog(nullptr, "Failed to find shader file");
+        meshBytecode = (void*)s_MeshShaderSpv;
+        fragBytecode = (void*)s_TriangleFragShaderSpv;
+
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        palLog(nullptr, "Dxil not tested yet");
         return false;
     }
 
-    bytecode = palAllocate(nullptr, bytecodeSize, 0);
-    if (!bytecode) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
+    meshShaderCreateInfo.bytecode = meshBytecode;
+    meshShaderCreateInfo.bytecodeSize = meshBytecodeSize;
+    meshShaderCreateInfo.stage = PAL_SHADER_STAGE_MESH;
 
-    readFile(meshShaderPath, bytecode, &bytecodeSize);
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.stage = PAL_SHADER_STAGE_MESH;
+    fragShaderCreateInfo.bytecode = fragBytecode;
+    fragShaderCreateInfo.bytecodeSize = fragBytecodeSize;
+    fragShaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
 
-    result = palCreateShader(device, &shaderCreateInfo, &meshShader);
+    result = palCreateShader(device, &meshShaderCreateInfo, &meshShader);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create mesh shader: %s", error);
         return false;
     }
 
-    // fragment shader
-    bytecodeSize = 0;
-    palFree(nullptr, bytecode);
-    bytecode = nullptr;
-
-    if (!readFile(fragShaderPath, nullptr, &bytecodeSize)) {
-        palLog(nullptr, "Failed to find shader file");
-        return false;
-    }
-
-    bytecode = palAllocate(nullptr, bytecodeSize, 0);
-    if (!bytecode) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
-
-    readFile(fragShaderPath, bytecode, &bytecodeSize);
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
-
-    result = palCreateShader(device, &shaderCreateInfo, &fragmentShader);
+    result = palCreateShader(device, &fragShaderCreateInfo, &fragmentShader);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fragment shader: %s", error);
         return false;
     }
-
-    palFree(nullptr, bytecode);
 
     // create a pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
