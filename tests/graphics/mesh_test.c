@@ -192,7 +192,7 @@ bool meshTest()
             }
 
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_5)) {
                     break;
                 }
             }
@@ -410,8 +410,11 @@ bool meshTest()
         fragBytecode = (void*)s_TriangleFragShaderSpv;
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        palLog(nullptr, "Dxil not tested yet");
-        return false;
+        meshBytecodeSize = sizeof(s_MeshShaderDxil);
+        fragBytecodeSize = sizeof(s_TriangleFragShaderDxil);
+
+        meshBytecode = (void*)s_MeshShaderDxil;
+        fragBytecode = (void*)s_TriangleFragShaderDxil;
     }
 
     meshShaderCreateInfo.bytecode = meshBytecode;
