@@ -65,8 +65,8 @@ int main(int argc, char** argv)
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
     // registerTest(clearColorTest, "Clear Color Test");
     // registerTest(triangleTest, "Triangle Test");
-    registerTest(meshTest, "Mesh Test"); // TODO: add dxil shaders
-    // registerTest(textureTest, "Texture Test");
+    // registerTest(meshTest, "Mesh Test"); // TODO: add dxil shaders
+    registerTest(textureTest, "Texture Test");
 #endif //
 
     runTests();

@@ -3,6 +3,7 @@
 #include "pal/pal_video.h"
 #include "pal/pal_system.h"
 #include "tests.h"
+#include "shaders.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -847,73 +848,48 @@ bool textureTest()
     }
 
     // create shaders
-    Uint64 bytecodeSize = 0;
-    void* bytecode = nullptr;
-    PalShaderCreateInfo shaderCreateInfo = {0};
+    Uint64 vertBytecodeSize = 0;
+    Uint64 fragBytecodeSize = 0;
+    void* vertBytecode = nullptr;
+    void* fragBytecode = nullptr;
 
-    const char* vertexShaderPath = nullptr;
-    const char* fragShaderPath = nullptr;
+    PalShaderCreateInfo vertShaderCreateInfo = {0};
+    PalShaderCreateInfo fragShaderCreateInfo = {0};
+
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        vertexShaderPath = "graphics/shaders/texture_vert_shader.spv";
-        fragShaderPath = "graphics/shaders/texture_frag_shader.spv";
+        vertBytecodeSize = sizeof(s_TextureVertShaderSpv);
+        fragBytecodeSize = sizeof(s_TextureFragShaderSpv);
+        vertBytecode = (void*)s_TextureVertShaderSpv;
+        fragBytecode = (void*)s_TextureFragShaderSpv;
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        vertexShaderPath = "graphics/shaders/texture_vert_shader.dxil";
-        fragShaderPath = "graphics/shaders/texture_frag_shader.dxil";
+        vertBytecodeSize = sizeof(s_TextureVertShaderDxil);
+        fragBytecodeSize = sizeof(s_TextureFragShaderDxil);
+        vertBytecode = (void*)s_TextureVertShaderDxil;
+        fragBytecode = (void*)s_TextureFragShaderDxil;
     }
 
-    if (!readFile(vertexShaderPath, nullptr, &bytecodeSize)) {
-        palLog(nullptr, "Failed to find shader file");
-        return false;
-    }
+    vertShaderCreateInfo.bytecode = vertBytecode;
+    vertShaderCreateInfo.bytecodeSize = vertBytecodeSize;
+    vertShaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
 
-    bytecode = palAllocate(nullptr, bytecodeSize, 0);
-    if (!bytecode) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
+    fragShaderCreateInfo.bytecode = fragBytecode;
+    fragShaderCreateInfo.bytecodeSize = fragBytecodeSize;
+    fragShaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
 
-    readFile(vertexShaderPath, bytecode, &bytecodeSize);
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
-
-    result = palCreateShader(device, &shaderCreateInfo, &vertexShader);
+    result = palCreateShader(device, &vertShaderCreateInfo, &vertexShader);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create vertex shader: %s", error);
         return false;
     }
 
-    // fragment shader
-    bytecodeSize = 0;
-    palFree(nullptr, bytecode);
-    bytecode = nullptr;
-
-    if (!readFile(fragShaderPath, nullptr, &bytecodeSize)) {
-        palLog(nullptr, "Failed to find shader file");
-        return false;
-    }
-
-    bytecode = palAllocate(nullptr, bytecodeSize, 0);
-    if (!bytecode) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
-
-    readFile(fragShaderPath, bytecode, &bytecodeSize);
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
-
-    result = palCreateShader(device, &shaderCreateInfo, &fragmentShader);
+    result = palCreateShader(device, &fragShaderCreateInfo, &fragmentShader);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fragment shader: %s", error);
         return false;
     }
-
-    palFree(nullptr, bytecode);
 
     // create descriptor set layout
     PalDescriptorSetLayoutBinding descriptorBindings[2];
