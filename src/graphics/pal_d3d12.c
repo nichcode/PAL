@@ -230,11 +230,17 @@ typedef struct {
 } Fence, Semaphore;
 
 typedef struct {
-    const PalGraphicsBackend* backend;
-
+    Uint32 tmpIndex;
     Uint32 patchControlPoints;
     PalShaderStage stage;
-    const char* exportName;
+    wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
+} ShaderEntry;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    Uint32 entryCount;
+    ShaderEntry* entries;
     D3D12_SHADER_BYTECODE byteCode;
 } Shader;
 
@@ -283,12 +289,6 @@ typedef struct {
 } AccelerationStructure;
 
 typedef struct {
-    PalShaderStage stage;
-    D3D12_EXPORT_DESC exports;
-    D3D12_DXIL_LIBRARY_DESC dxil;
-} RayTracingShader;
-
-typedef struct {
     const PalGraphicsBackend* backend;
 
     Uint32 constantIndex;
@@ -299,6 +299,16 @@ typedef struct {
 } PipelineLayout;
 
 typedef struct {
+    PalShaderStage stage;
+    wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
+} ShaderExport;
+
+typedef struct {
+    wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
+    D3D12_HIT_GROUP_DESC desc;
+} RayHitGroup;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     bool hasFsr;
@@ -307,8 +317,7 @@ typedef struct {
     D3D_PRIMITIVE_TOPOLOGY topology;
     Uint32* strides;
     void* handle;
-    wchar_t* scratchBuffer;
-    RayTracingShader* shaders;
+    ShaderExport* shaderExports;
     PipelineLayout* layout;
     D3D12_SHADING_RATE_COMBINER combinerOps[2];
 } Pipeline;
@@ -1798,47 +1807,15 @@ static Uint32 getVertexTypeSizeD3D12(PalVertexType type)
     return 0;
 }
 
-static wchar_t* convertToWcharD3D12(
-    wchar_t* buffer,
-    Uint32* offset,
-    const char* name)
+static void convertToWcharD3D12(
+    const char* src,
+    wchar_t dst[PAL_SHADER_ENTRY_NAME_SIZE])
 {
-    if (!name) {
-        return nullptr;
+    int i = 0;
+    for (; i < PAL_SHADER_ENTRY_NAME_SIZE - 1 && src[i]; i++) {
+        dst[i] = (wchar_t)src[i];
     }
-    size_t srcLen = strlen(name);
-    int dstLen = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        name,
-        srcLen,
-        nullptr,
-        0);
-
-    if (!dstLen) {
-        return nullptr;
-    }
-
-    if (*offset + dstLen + 1 > MAX_SCRATCH_BUFFER_SIZE) {
-        return nullptr;
-    }
-
-    wchar_t* dst = buffer + *offset;
-    int written = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        name,
-        srcLen,
-        dst,
-        dstLen);
-
-    if (!written) {
-        return nullptr;
-    }
-
-    dst[written] = L'\0';
-    *offset += written;
-    return dst;
+    dst[i] = L'\0';
 }
 
 static void pollMessagesD3D12(Device* device)
@@ -4127,31 +4104,9 @@ PalResult PAL_CALL createShaderD3D12(
     const PalShaderCreateInfo* info,
     PalShader** outShader)
 {
-    Device* d3dDevice = (Device*)device;
     Shader* shader = nullptr;
+    Device* d3dDevice = (Device*)device;
     void* bytecode = nullptr;
-
-    if (info->stage == PAL_SHADER_STAGE_MESH || info->stage == PAL_SHADER_STAGE_TASK) {
-        if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-    // clang-format off
-    } else if (info->stage == PAL_SHADER_STAGE_RAYGEN ||
-               info->stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
-               info->stage == PAL_SHADER_STAGE_ANY_HIT ||
-               info->stage == PAL_SHADER_STAGE_MISS ||
-               info->stage == PAL_SHADER_STAGE_INTERSECTION ||
-               info->stage == PAL_SHADER_STAGE_CALLABLE) {
-        if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-        if (!info->exportName) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-    }
-    // clang-format on
 
     shader = palAllocate(s_D3D.allocator, sizeof(Shader), 0);
     bytecode = palAllocate(s_D3D.allocator, info->bytecodeSize, 0);
@@ -4159,12 +4114,42 @@ PalResult PAL_CALL createShaderD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    shader->entries = palAllocate(s_D3D.allocator, sizeof(ShaderEntry) * info->entryCount, 0);
+    if (!shader->entries) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < info->entryCount; i++) {
+        ShaderEntry* entry = &shader->entries[i];
+        convertToWcharD3D12(info->entries[i].entryName, entry->entryName);
+        entry->patchControlPoints = info->entries[i].patchControlPoints;
+        entry->stage = info->entries[i].stage;
+
+        if (info->entries[i].stage == PAL_SHADER_STAGE_MESH || 
+            info->entries[i].stage == PAL_SHADER_STAGE_TASK) {
+            if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            }
+
+        // clang-format off
+        } else if (info->entries[i].stage == PAL_SHADER_STAGE_RAYGEN ||
+                info->entries[i].stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
+                info->entries[i].stage == PAL_SHADER_STAGE_ANY_HIT ||
+                info->entries[i].stage == PAL_SHADER_STAGE_MISS ||
+                info->entries[i].stage == PAL_SHADER_STAGE_INTERSECTION ||
+                info->entries[i].stage == PAL_SHADER_STAGE_CALLABLE) {
+            if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            }
+        }
+        // clang-format on
+    }
+
     memcpy(bytecode, info->bytecode, info->bytecodeSize);
     shader->byteCode.pShaderBytecode = bytecode;
     shader->byteCode.BytecodeLength = info->bytecodeSize;
-    shader->stage = info->stage;
-    shader->patchControlPoints = info->patchControlPoints;
-    shader->exportName = info->exportName;
+    
+    shader->entryCount = info->entryCount;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }
@@ -4173,6 +4158,7 @@ void PAL_CALL destroyShaderD3D12(PalShader* shader)
 {
     Shader* d3dShader = (Shader*)shader;
     palFree(s_D3D.allocator, (void*)d3dShader->byteCode.pShaderBytecode);
+    palFree(s_D3D.allocator, d3dShader->entries);
     palFree(s_D3D.allocator, d3dShader);
 }
 
@@ -7077,30 +7063,36 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         totalSize += sizeof(ShaderStream);
         D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
 
-        if (tmp->patchControlPoints) {
-            patchControlPoints = tmp->patchControlPoints;
+        // D3D12 only supports a single entry for graphics pipeline shaders
+        if (tmp->entryCount != 1) {
+            return PAL_RESULT_INVALID_SHADER;
+        }
+
+        ShaderEntry* entry = &tmp->entries[0];
+        if (entry->patchControlPoints) {
+            patchControlPoints = entry->patchControlPoints;
             if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
                 palFree(s_D3D.allocator, pipeline);
                 return PAL_RESULT_INVALID_OPERATION;
             }
         }
 
-        if (tmp->stage == PAL_SHADER_STAGE_VERTEX) {
+        if (entry->stage == PAL_SHADER_STAGE_VERTEX) {
             type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS;
 
-        } else if (tmp->stage == PAL_SHADER_STAGE_FRAGMENT) {
+        } else if (entry->stage == PAL_SHADER_STAGE_FRAGMENT) {
             type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS;
 
-        } else if (tmp->stage == PAL_SHADER_STAGE_GEOMETRY) {
+        } else if (entry->stage == PAL_SHADER_STAGE_GEOMETRY) {
             type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS;
 
-        } else if (tmp->stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL) {
+        } else if (entry->stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL) {
             type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS;
 
-        } else if (tmp->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
+        } else if (entry->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
             type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS;
 
-        } else if (tmp->stage == PAL_SHADER_STAGE_TASK) {
+        } else if (entry->stage == PAL_SHADER_STAGE_TASK) {
             type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS;
 
         } else {
@@ -7483,8 +7475,6 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
 
     pipeline->topology = topology;
     pipeline->type = GRAPHICS_PIPELINE;
-    pipeline->shaders = nullptr;
-    pipeline->scratchBuffer = nullptr;
     pipeline->layout = layout;
 
     *outPipeline = (PalPipeline*)pipeline;
@@ -7528,8 +7518,6 @@ PalResult PAL_CALL createComputePipelineD3D12(
 
     pipeline->type = COMPUTE_PIPELINE;
     pipeline->strides = nullptr;
-    pipeline->shaders = nullptr;
-    pipeline->scratchBuffer = nullptr;
     pipeline->hasFsr = false;
     pipeline->layout = layout;
 
@@ -7543,62 +7531,86 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     PalPipeline** outPipeline)
 {
     HRESULT result;
+    Uint32 exportOffset = 0;
+    Uint32 exportCount = 0;
     Device* d3dDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
     Pipeline* pipeline = nullptr;
 
-    Uint32 offset = 0;
-    D3D12_HIT_GROUP_DESC* groups = nullptr;
+    D3D12_DXIL_LIBRARY_DESC* libraries = nullptr;
+    D3D12_EXPORT_DESC* exports = nullptr;
+    RayHitGroup* groups = nullptr;
     D3D12_STATE_SUBOBJECT* subObjects = nullptr;
-    RayTracingShader* shaders = nullptr;
-    wchar_t* scratchBuffer = nullptr;
 
-    Uint32 groupSize = sizeof(D3D12_HIT_GROUP_DESC) * info->shaderGroupCount;
-    Uint32 shaderSize = sizeof(RayTracingShader) * info->shaderCount;
-    Uint32 subObjectCount = info->shaderCount + info->shaderGroupCount + 3;
     Uint32 subObjectIndex = 0;
+    Uint32 subObjectCount = info->shaderCount + info->shaderGroupCount + 2;
 
     if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    // Every entry is a shader export
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+        exportCount += tmp->entryCount;
+    }
+
     pipeline = palAllocate(s_D3D.allocator, sizeof(Pipeline), 0);
-    groups = palAllocate(s_D3D.allocator, groupSize, 0);
-    shaders = palAllocate(s_D3D.allocator, shaderSize, 0);
+    if (!pipeline) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    pipeline->shaderExports = palAllocate(s_D3D.allocator, sizeof(ShaderExport) * exportCount, 0);
     subObjects = palAllocate(s_D3D.allocator, sizeof(D3D12_STATE_SUBOBJECT) * subObjectCount, 0);
-    scratchBuffer = palAllocate(s_D3D.allocator, MAX_SCRATCH_BUFFER_SIZE, 0);
-    if (!pipeline || !groups || !shaders || !subObjects || !scratchBuffer) {
+    exports = palAllocate(s_D3D.allocator, sizeof(D3D12_EXPORT_DESC) * exportCount, 0);
+    groups = palAllocate(s_D3D.allocator, sizeof(RayHitGroup) * info->shaderGroupCount, 0);
+
+    libraries = palAllocate(
+        s_D3D.allocator, 
+        sizeof(D3D12_DXIL_LIBRARY_DESC) * info->shaderCount, 
+        0);
+
+    if (!pipeline->shaderExports|| !groups || !exports || !subObjects || !libraries) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     // shaders
-    memset(groups, 0, sizeof(D3D12_HIT_GROUP_DESC) * info->shaderGroupCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
-        shaders[i].stage = tmp->stage;
-        shaders[i].exports.Name = convertToWcharD3D12(scratchBuffer, &offset, tmp->exportName);
+        D3D12_DXIL_LIBRARY_DESC* library = &libraries[i];
 
-        shaders[i].exports.ExportToRename = nullptr;
-        shaders[i].exports.Flags = D3D12_EXPORT_FLAG_NONE;
+        for (int j = 0; j < tmp->entryCount; i++) {
+            ShaderEntry* entry = &tmp->entries[j];
+            ShaderExport* shaderExport = &pipeline->shaderExports[exportOffset + j];
+            shaderExport->stage = entry->stage;
+            wcscpy(shaderExport->entryName, entry->entryName);
 
-        shaders[i].dxil.pExports = &shaders[i].exports;
-        shaders[i].dxil.NumExports = 1;
-        shaders[i].dxil.DXILLibrary = tmp->byteCode;
+            D3D12_EXPORT_DESC* export = &exports[exportOffset + j];
+            export->Flags = D3D12_EXPORT_FLAG_NONE;
+            export->ExportToRename = nullptr;
+            export->Name = shaderExport->entryName; // reference
+        }
+
+        library->DXILLibrary = tmp->byteCode;
+        library->NumExports = tmp->entryCount;
+        libraries->pExports = &exports[exportOffset];
+        exportOffset += tmp->entryCount;
 
         subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-        subObjects[subObjectIndex].pDesc = &shaders[i].dxil;
+        subObjects[subObjectIndex].pDesc = library;
         subObjectIndex++;
     }
 
     // hit groups
     for (int i = 0; i < info->shaderGroupCount; i++) {
         PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
-        D3D12_HIT_GROUP_DESC* group = &groups[i];
+        D3D12_HIT_GROUP_DESC* group = &groups[i].desc;
+        convertToWcharD3D12(tmp->exportName, groups[i].entryName);
 
         group->AnyHitShaderImport = nullptr;
         group->ClosestHitShaderImport = nullptr;
         group->IntersectionShaderImport = nullptr;
-        group->HitGroupExport = convertToWcharD3D12(scratchBuffer, &offset, tmp->exportName);
+        group->HitGroupExport = groups[i].entryName;
 
         if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
             group->Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
@@ -7607,28 +7619,31 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
             group->Type = D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE;
         }
 
-        // any hit shader
+        // Any hit shader
         if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-            RayTracingShader* shader = &shaders[tmp->anyHitShaderIndex];
-            if (shader) {
-                group->AnyHitShaderImport = shader->exports.Name;
-            }
+            Shader* shader = (Shader*)info->shaders[tmp->anyHitShaderIndex];
+            group->AnyHitShaderImport = shader->entries[tmp->anyHitEntryIndex].entryName;
+
+        } else {
+            group->AnyHitShaderImport = nullptr;
         }
 
-        // closest hit shader
+        // Closest hit shader
         if (tmp->closestHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-            RayTracingShader* shader = &shaders[tmp->closestHitShaderIndex];
-            if (shader) {
-                group->ClosestHitShaderImport = shader->exports.Name;
-            }
+            Shader* shader = (Shader*)info->shaders[tmp->closestHitShaderIndex];
+            group->ClosestHitShaderImport = shader->entries[tmp->closestHitEntryIndex].entryName;
+
+        } else {
+            group->ClosestHitShaderImport = nullptr;
         }
 
-        // intersection shader
+        // IntersectionShader shader
         if (tmp->intersectionShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-            RayTracingShader* shader = &shaders[tmp->intersectionShaderIndex];
-            if (shader) {
-                group->IntersectionShaderImport = shader->exports.Name;
-            }
+            Shader* shader = (Shader*)info->shaders[tmp->intersectionShaderIndex];
+            group->IntersectionShaderImport = shader->entries[tmp->intersectionEntryIndex].entryName;
+
+        } else {
+            group->IntersectionShaderImport = nullptr;
         }
 
         subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
@@ -7673,12 +7688,12 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
     palFree(s_D3D.allocator, groups);
     palFree(s_D3D.allocator, subObjects);
+    palFree(s_D3D.allocator, libraries);
+    palFree(s_D3D.allocator, exports);
 
     pipeline->type = RAY_TRACING_PIPELINE;
     pipeline->strides = nullptr;
     pipeline->hasFsr = false;
-    pipeline->shaders = shaders;
-    pipeline->scratchBuffer = scratchBuffer;
     pipeline->layout = layout;
 
     *outPipeline = (PalPipeline*)pipeline;
@@ -7701,12 +7716,8 @@ void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
         palFree(s_D3D.allocator, d3dPipeline->strides);
     }
 
-    if (d3dPipeline->shaders) {
-        palFree(s_D3D.allocator, d3dPipeline->shaders);
-    }
-
-    if (d3dPipeline->scratchBuffer) {
-        palFree(s_D3D.allocator, d3dPipeline->scratchBuffer);
+    if (d3dPipeline->shaderExports) {
+        palFree(s_D3D.allocator, d3dPipeline->shaderExports);
     }
 
     palFree(s_D3D.allocator, d3dPipeline);
@@ -7815,25 +7826,27 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     }
 
     // get shader group handles
+    Uint32 index = 0;
     Uint32 totalGroups = info->raygenGroupCount + info->hitGroupCount;
     totalGroups += info->missGroupCount + info->callableGroupCount;
+
     for (int i = 0; i < totalGroups; i++) {
-        RayTracingShader* tmp = &pipeline->shaders[i];
+        ShaderExport* tmp = &pipeline->shaderExports[i];
         PalShaderStage stage = tmp->stage;
 
         if (stage == PAL_SHADER_STAGE_RAYGEN) {
-            raygenHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->exports.Name);
+            raygenHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->entryName);
 
         } else if (stage == PAL_SHADER_STAGE_MISS) {
-            missHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->exports.Name);
+            missHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->entryName);
 
         } else if (stage == PAL_SHADER_STAGE_ANY_HIT ||
                    stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
                    stage == PAL_SHADER_STAGE_INTERSECTION) {
-            hitHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->exports.Name);
+            hitHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->entryName);
 
         } else if (stage == PAL_SHADER_STAGE_CALLABLE) {
-            callableHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->exports.Name);
+            callableHandles[i] = props->lpVtbl->GetShaderIdentifier(props, tmp->entryName);
         }
     }
 

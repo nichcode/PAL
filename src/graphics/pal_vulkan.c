@@ -471,12 +471,19 @@ typedef struct {
 } Swapchain;
 
 typedef struct {
+    Uint32 tmpIndex;
+    Uint32 patchControlPoints;
+    VkShaderStageFlags stage;
+    char entryName[PAL_SHADER_ENTRY_NAME_SIZE];
+} ShaderEntry;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 patchControlPoints;
+    Uint32 entryCount;
+    ShaderEntry* entries;
     Device* device;
     VkShaderModule handle;
-    VkPipelineShaderStageCreateInfo info;
 } Shader;
 
 typedef struct {
@@ -5963,33 +5970,44 @@ PalResult PAL_CALL createShaderVk(
 {
     VkResult result;
     Shader* shader = nullptr;
-    VkShaderStageFlags stage = 0;
     Device* vkDevice = (Device*)device;
-
-    stage = shaderStageToVK(info->stage);
-    if (info->stage == PAL_SHADER_STAGE_MESH || info->stage == PAL_SHADER_STAGE_TASK) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-
-    // clang-format off
-    } else if (info->stage == PAL_SHADER_STAGE_RAYGEN ||
-               info->stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
-               info->stage == PAL_SHADER_STAGE_ANY_HIT ||
-               info->stage == PAL_SHADER_STAGE_MISS ||
-               info->stage == PAL_SHADER_STAGE_INTERSECTION ||
-               info->stage == PAL_SHADER_STAGE_CALLABLE) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
-    }
-    // clang-format on
 
     shader = palAllocate(s_Vk.allocator, sizeof(Shader), 0);
     if (!shader) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
-    memset(shader, 0, sizeof(Shader));
+
+    shader->entries = palAllocate(s_Vk.allocator, sizeof(ShaderEntry) * info->entryCount, 0);
+    if (!shader->entries) {
+        return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    for (int i = 0; i < info->entryCount; i++) {
+        ShaderEntry* entry = &shader->entries[i];
+        strncpy(entry->entryName, info->entries[i].entryName, PAL_SHADER_ENTRY_NAME_SIZE);
+        entry->entryName[PAL_SHADER_ENTRY_NAME_SIZE - 1] = '\0';
+        entry->patchControlPoints = info->entries[i].patchControlPoints;
+        entry->stage = shaderStageToVK(info->entries[i].stage);
+
+        if (info->entries[i].stage == PAL_SHADER_STAGE_MESH || 
+            info->entries[i].stage == PAL_SHADER_STAGE_TASK) {
+            if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
+                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            }
+
+        // clang-format off
+        } else if (info->entries[i].stage == PAL_SHADER_STAGE_RAYGEN ||
+                info->entries[i].stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
+                info->entries[i].stage == PAL_SHADER_STAGE_ANY_HIT ||
+                info->entries[i].stage == PAL_SHADER_STAGE_MISS ||
+                info->entries[i].stage == PAL_SHADER_STAGE_INTERSECTION ||
+                info->entries[i].stage == PAL_SHADER_STAGE_CALLABLE) {
+            if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            }
+        }
+        // clang-format on
+    }
 
     VkShaderModuleCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -5998,17 +6016,13 @@ PalResult PAL_CALL createShaderVk(
 
     result = s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
     if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, shader->entries);
         palFree(s_Vk.allocator, shader);
         return resultFromVk(result);
     }
 
     shader->device = vkDevice;
-    shader->patchControlPoints = info->patchControlPoints;
-    shader->info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shader->info.module = shader->handle;
-    shader->info.pName = "main";
-    shader->info.stage = stage;
-
+    shader->entryCount = info->entryCount;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }
@@ -6018,6 +6032,7 @@ void PAL_CALL destroyShaderVk(PalShader* shader)
     Shader* vkShader = (Shader*)shader;
     s_Vk.destroyShader(vkShader->device->handle, vkShader->handle, &s_Vk.vkAllocator);
 
+    palFree(s_Vk.allocator, vkShader->entries);
     palFree(s_Vk.allocator, vkShader);
 }
 
@@ -8506,7 +8521,8 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     Device* vkDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
 
-    VkPipelineShaderStageCreateInfo shaderStages[7]; // 7 shader types for graphics pipeline
+    Uint32 stagesCount = 0;
+    VkPipelineShaderStageCreateInfo* shaderStages = nullptr;
     VkDynamicState dynamicStates[16];
     VkVertexInputBindingDescription* bindingDescs = nullptr;
     VkVertexInputAttributeDescription* attribDescs = nullptr;
@@ -8550,27 +8566,50 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.renderPass = VK_NULL_HANDLE;
     createInfo.layout = layout->handle;
 
+    // Every entry is a shader stage
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+        stagesCount += tmp->entryCount;
+    }
+
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
+    shaderStages = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkPipelineShaderStageCreateInfo) * stagesCount, 
+        0);
+
     if (!pipeline) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     // shaders
+    Uint32 stageIndex = 0;
+    memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stagesCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
-        shaderStages[i] = tmp->info;
+        for (int j = 0; j < tmp->entryCount; j++) {
+            ShaderEntry* entry = &tmp->entries[j];
+            VkPipelineShaderStageCreateInfo* stageInfo = &shaderStages[stageIndex];
 
-        if (tmp->patchControlPoints) {
-            tessellationState.patchControlPoints = tmp->patchControlPoints;
-            createInfo.pTessellationState = &tessellationState;
+            stageInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stageInfo->module = tmp->handle;
+            stageInfo->pName = entry->entryName;
+            stageInfo->stage = entry->stage;
+            stageIndex++;
 
-            if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
-                palFree(s_Vk.allocator, pipeline);
-                return PAL_RESULT_INVALID_OPERATION;
+            if (entry->patchControlPoints) {
+                tessellationState.patchControlPoints = entry->patchControlPoints;
+                createInfo.pTessellationState = &tessellationState;
+
+                if (info->topology != PAL_PRIMITIVE_TOPOLOGY_PATCH) {
+                    palFree(s_Vk.allocator, pipeline);
+                    return PAL_RESULT_INVALID_OPERATION;
+                }
             }
         }
     }
-    createInfo.stageCount = info->shaderCount;
+
+    createInfo.stageCount = stagesCount;
     createInfo.pStages = shaderStages;
 
     // Vertex input state
@@ -8904,6 +8943,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         return resultFromVk(result);
     }
 
+    palFree(s_Vk.allocator, shaderStages);
     if (info->vertexLayoutCount) {
         palFree(s_Vk.allocator, bindingDescs);
         palFree(s_Vk.allocator, attribDescs);
@@ -8938,7 +8978,11 @@ PalResult PAL_CALL createComputePipelineVk(
     VkComputePipelineCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     createInfo.layout = layout->handle;
-    createInfo.stage = shader->info;
+
+    createInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    createInfo.stage.module = shader->handle;
+    createInfo.stage.stage = shader->entries[0].stage;
+    createInfo.stage.pName = shader->entries[1].entryName;
 
     VkResult result = s_Vk.createComputePipeline(
         vkDevice->handle,
@@ -8969,50 +9013,110 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     Device* vkDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
     Pipeline* pipeline = nullptr;
+    Uint32 stagesCount = 0;
     VkPipelineShaderStageCreateInfo* shaderStages = nullptr; 
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
-    Uint32 groupSize = sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount;
-    Uint32 shaderSize = sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    // Every entry is a shader stage
+    for (int i = 0; i < info->shaderCount; i++) {
+        Shader* tmp = (Shader*)info->shaders[i];
+        stagesCount += tmp->entryCount;
     }
 
     VkRayTracingPipelineCreateInfoKHR createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
-    groups = palAllocate(s_Vk.allocator, groupSize, 0);
-    shaderStages = palAllocate(s_Vk.allocator, shaderSize, 0);
+    groups = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount, 
+        0);
+
+    shaderStages = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkPipelineShaderStageCreateInfo) * stagesCount, 
+        0);
+
+
     if (!pipeline || !groups || !shaderStages) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
     // shaders
-    memset(groups, 0, sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount);
+    Uint32 stageIndex = 0;
+    memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stagesCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
-        shaderStages[i] = tmp->info;
+        for (int j = 0; j < tmp->entryCount; i++) {
+            ShaderEntry* entry = &tmp->entries[j];
+            VkPipelineShaderStageCreateInfo* stageInfo = &shaderStages[stageIndex];
+
+            stageInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stageInfo->module = tmp->handle;
+            stageInfo->pName = entry->entryName;
+            stageInfo->stage = entry->stage;
+            entry->tmpIndex = stageIndex++;
+        }
     }
+
+    createInfo.stageCount = stagesCount;
+    createInfo.pStages = shaderStages;
 
     // shader groups
     for (int i = 0; i < info->shaderGroupCount; i++) {
         VkRayTracingShaderGroupCreateInfoKHR* group = &groups[i];
+        PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
+
         group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        if (info->shaderGroups[i].type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
+        if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
 
-        } else if (info->shaderGroups[i].type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
+        } else if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
 
         } else {
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
         }
 
-        group->anyHitShader = info->shaderGroups[i].anyHitShaderIndex;
-        group->closestHitShader = info->shaderGroups[i].closestHitShaderIndex;
-        group->generalShader = info->shaderGroups[i].generalShaderIndex;
-        group->intersectionShader = info->shaderGroups[i].intersectionShaderIndex;
+        // Any hit shader
+        if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+            Shader* shader = (Shader*)info->shaders[tmp->anyHitShaderIndex];
+            group->anyHitShader = shader->entries[tmp->anyHitEntryIndex].tmpIndex;
+
+        } else {
+            group->anyHitShader = VK_SHADER_UNUSED_KHR;
+        }
+
+        // Closest hit shader
+        if (tmp->closestHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+            Shader* shader = (Shader*)info->shaders[tmp->closestHitShaderIndex];
+            group->closestHitShader = shader->entries[tmp->closestHitEntryIndex].tmpIndex;
+
+        } else {
+            group->closestHitShader = VK_SHADER_UNUSED_KHR;
+        }
+
+        // General shader
+        if (tmp->generalShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+            Shader* shader = (Shader*)info->shaders[tmp->generalShaderIndex];
+            group->generalShader = shader->entries[tmp->generalEntryIndex].tmpIndex;
+
+        } else {
+            group->generalShader = VK_SHADER_UNUSED_KHR;
+        }
+
+        // IntersectionShader shader
+        if (tmp->intersectionShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+            Shader* shader = (Shader*)info->shaders[tmp->intersectionShaderIndex];
+            group->intersectionShader = shader->entries[tmp->intersectionEntryIndex].tmpIndex;
+
+        } else {
+            group->intersectionShader = VK_SHADER_UNUSED_KHR;
+        }
     }
 
     createInfo.stageCount = info->shaderCount;

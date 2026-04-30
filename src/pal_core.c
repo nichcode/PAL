@@ -419,6 +419,9 @@ const char* PAL_CALL palFormatResult(PalResult result)
         case PAL_RESULT_INVALID_OPERATION:
             return "Invalid operation";
 
+        case PAL_RESULT_INVALID_SHADER:
+            return "Invalid shader";
+
         case PAL_RESULT_INVALID_SHADER_TYPE:
             return "Invalid shader type";
 

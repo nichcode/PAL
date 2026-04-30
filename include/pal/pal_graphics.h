@@ -47,6 +47,13 @@ freely, subject to the following restrictions:
  */
 #define PAL_ADAPTER_NAME_SIZE 128
 
+/**
+ * @brief The maximum name size of a shader entry.
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+#define PAL_SHADER_ENTRY_NAME_SIZE 32
+
 #define PAL_MAX_RESOLVE_MODES 8
 #define PAL_MAX_COMBINER_OPS 8
 
@@ -2432,6 +2439,21 @@ typedef struct {
 } PalImageCopyInfo;
 
 /**
+ * @struct PalShaderEntry
+ * @brief Information for a single shader entry point in a shader bytecode.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
+    PalShaderStage stage;
+    const char* entryName;
+} PalShaderEntry;
+
+/**
  * @struct PalImageCreateInfo
  * @brief Creation parameters for an image.
  *
@@ -2522,11 +2544,10 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
-    PalShaderStage stage;
+    Uint32 entryCount;
     void* bytecode;
     Uint64 bytecodeSize;
-    const char* exportName; /**< Set to nullptr if shader does not have an export name.*/
+    PalShaderEntry* entries;
 } PalShaderCreateInfo;
 
 /**
@@ -2660,7 +2681,11 @@ typedef struct {
     Uint32 closestHitShaderIndex;      /**< Index of closest hit shader from shader array.*/
     Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
     Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
-    const char* exportName; /**< Set to nullptr if shader group does not have an export name.*/
+    Uint32 anyHitEntryIndex;          /**< Index of any hit Entry from `anyHitShaderIndex`.*/
+    Uint32 closestHitEntryIndex;      /**< Index of any hit Entry from `anyHitShaderIndex`.*/
+    Uint32 generalEntryIndex;         /**< Index of any hit Entry from `anyHitShaderIndex`.*/
+    Uint32 intersectionEntryIndex;    /**< Index of any hit Entry from `anyHitShaderIndex`.*/
+    const char* exportName;
 } PalRayTracingShaderGroupCreateInfo;
 
 /**
@@ -5123,8 +5148,7 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  * 
- * @note All shader stages must use `main` as the entry point. Pal does not support custom
- * entry points.
+ * @note Each shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
  * @since 1.4
  * @ingroup pal_graphics
