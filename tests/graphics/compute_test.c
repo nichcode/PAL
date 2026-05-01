@@ -199,9 +199,16 @@ bool computeTest()
         bytecodeSize = sizeof(s_ComputeShaderDxil);
     }
 
+    // describe how many entries are in the shader bytecode
+    // We only have one entry for the compute shader.
+    PalShaderEntry computeEntry = {0};
+    computeEntry.entryName = "main";
+    computeEntry.stage = PAL_SHADER_STAGE_COMPUTE;
+
     shaderCreateInfo.bytecode = bytecode;
     shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.stage = PAL_SHADER_STAGE_COMPUTE;
+    shaderCreateInfo.entryCount = 1;
+    shaderCreateInfo.entries = &computeEntry;
 
     result = palCreateShader(device, &shaderCreateInfo, &shader);
     if (result != PAL_RESULT_SUCCESS) {

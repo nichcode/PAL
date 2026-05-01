@@ -869,13 +869,25 @@ bool textureTest()
         fragBytecode = (void*)s_TextureFragShaderDxil;
     }
 
+    // describe how many entries are in the shader bytecode
+    // For simplicity, we dont use one shader bytecode for all the shaders
+    PalShaderEntry vertEntry = {0};
+    vertEntry.entryName = "main";
+    vertEntry.stage = PAL_SHADER_STAGE_VERTEX;
+
+    PalShaderEntry fragmentEntry = {0};
+    fragmentEntry.entryName = "main";
+    fragmentEntry.stage = PAL_SHADER_STAGE_FRAGMENT;
+
     vertShaderCreateInfo.bytecode = vertBytecode;
     vertShaderCreateInfo.bytecodeSize = vertBytecodeSize;
-    vertShaderCreateInfo.stage = PAL_SHADER_STAGE_VERTEX;
+    vertShaderCreateInfo.entries = &vertEntry;
+    vertShaderCreateInfo.entryCount = 1;
 
     fragShaderCreateInfo.bytecode = fragBytecode;
     fragShaderCreateInfo.bytecodeSize = fragBytecodeSize;
-    fragShaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
+    fragShaderCreateInfo.entries = &fragmentEntry;
+    fragShaderCreateInfo.entryCount = 1;
 
     result = palCreateShader(device, &vertShaderCreateInfo, &vertexShader);
     if (result != PAL_RESULT_SUCCESS) {

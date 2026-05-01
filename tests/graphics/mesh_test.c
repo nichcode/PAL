@@ -417,13 +417,25 @@ bool meshTest()
         fragBytecode = (void*)s_TriangleFragShaderDxil;
     }
 
+    // describe how many entries are in the shader bytecode
+    // For simplicity, we dont use one shader bytecode for all the shaders
+    PalShaderEntry meshEntry = {0};
+    meshEntry.entryName = "main";
+    meshEntry.stage = PAL_SHADER_STAGE_MESH;
+
+    PalShaderEntry fragmentEntry = {0};
+    fragmentEntry.entryName = "main";
+    fragmentEntry.stage = PAL_SHADER_STAGE_FRAGMENT;
+
     meshShaderCreateInfo.bytecode = meshBytecode;
     meshShaderCreateInfo.bytecodeSize = meshBytecodeSize;
-    meshShaderCreateInfo.stage = PAL_SHADER_STAGE_MESH;
+    meshShaderCreateInfo.entries = &meshEntry;
+    meshShaderCreateInfo.entryCount = 1;
 
     fragShaderCreateInfo.bytecode = fragBytecode;
     fragShaderCreateInfo.bytecodeSize = fragBytecodeSize;
-    fragShaderCreateInfo.stage = PAL_SHADER_STAGE_FRAGMENT;
+    fragShaderCreateInfo.entries = &fragmentEntry;
+    fragShaderCreateInfo.entryCount = 1;
 
     result = palCreateShader(device, &meshShaderCreateInfo, &meshShader);
     if (result != PAL_RESULT_SUCCESS) {

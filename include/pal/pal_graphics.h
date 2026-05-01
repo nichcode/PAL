@@ -5137,6 +5137,9 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * `PAL_SHADER_STAGE_RAYGEN` or `PAL_SHADER_STAGE_CLOSEST_HIT` or `PAL_SHADER_STAGE_ANY_HIT` or
  * `PAL_SHADER_STAGE_MISS` or `PAL_SHADER_STAGE_INTERSECTION` or `PAL_SHADER_STAGE_CALLABLE` will
  * be used.
+ * 
+ * If the pipeline only takes a single shader (eg. Compute Pipeline), only the first entry in
+ * the entries array will be used.
  *
  * @param[in] device Device that creates the shader.
  * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies parameters.

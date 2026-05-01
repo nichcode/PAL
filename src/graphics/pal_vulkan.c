@@ -8587,6 +8587,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stagesCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
+
         for (int j = 0; j < tmp->entryCount; j++) {
             ShaderEntry* entry = &tmp->entries[j];
             VkPipelineShaderStageCreateInfo* stageInfo = &shaderStages[stageIndex];
@@ -8792,17 +8793,17 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
         // clang-format off
         if (state->sampleMask) {
-            if (info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_1  || 
-                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_2  ||
-                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_4  ||
-                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_8  ||
-                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_16 ||
-                info->multisampleState->sampleCount == PAL_SAMPLE_COUNT_32) {
-                sampleMask[0] = (Uint32)(info->multisampleState->sampleMask & 0xFFFFFFFFULL);
+            if (state->sampleCount == PAL_SAMPLE_COUNT_1  || 
+                state->sampleCount == PAL_SAMPLE_COUNT_2  ||
+                state->sampleCount == PAL_SAMPLE_COUNT_4  ||
+                state->sampleCount == PAL_SAMPLE_COUNT_8  ||
+                state->sampleCount == PAL_SAMPLE_COUNT_16 ||
+                state->sampleCount == PAL_SAMPLE_COUNT_32) {
+                sampleMask[0] = (Uint32)(state->sampleMask & 0xFFFFFFFFULL);
 
             } else {
-                sampleMask[0] = (Uint32)(info->multisampleState->sampleMask & 0xFFFFFFFFULL);
-                sampleMask[1] = (Uint32)((info->multisampleState->sampleMask >> 32) & 0xFFFFFFFFULL);
+                sampleMask[0] = (Uint32)(state->sampleMask & 0xFFFFFFFFULL);
+                sampleMask[1] = (Uint32)((state->sampleMask >> 32) & 0xFFFFFFFFULL);
             }
             multisampleState.pSampleMask = sampleMask;
 
@@ -8982,7 +8983,7 @@ PalResult PAL_CALL createComputePipelineVk(
     createInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     createInfo.stage.module = shader->handle;
     createInfo.stage.stage = shader->entries[0].stage;
-    createInfo.stage.pName = shader->entries[1].entryName;
+    createInfo.stage.pName = shader->entries[0].entryName;
 
     VkResult result = s_Vk.createComputePipeline(
         vkDevice->handle,
@@ -9051,7 +9052,8 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stagesCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
-        for (int j = 0; j < tmp->entryCount; i++) {
+
+        for (int j = 0; j < tmp->entryCount; j++) {
             ShaderEntry* entry = &tmp->entries[j];
             VkPipelineShaderStageCreateInfo* stageInfo = &shaderStages[stageIndex];
 

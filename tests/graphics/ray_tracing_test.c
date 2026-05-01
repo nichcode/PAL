@@ -224,17 +224,34 @@ bool rayTracingTest()
         return false;
     }
 
+    // describe how many entries are in the shader bytecode
+    // For simplicity, we dont use one shader bytecode for all the shaders
+    PalShaderEntry raygenEntry = {0};
+    raygenEntry.entryName = "main";
+    raygenEntry.stage = PAL_SHADER_STAGE_RAYGEN;
+
+    PalShaderEntry closestHitEntry = {0};
+    closestHitEntry.entryName = "main";
+    closestHitEntry.stage = PAL_SHADER_STAGE_CLOSEST_HIT;
+
+    PalShaderEntry missEntry = {0};
+    missEntry.entryName = "main";
+    missEntry.stage = PAL_SHADER_STAGE_MISS;
+
     raygenShaderCreateInfo.bytecode = raygenBytecode;
     raygenShaderCreateInfo.bytecodeSize = raygenBytecodeSize;
-    raygenShaderCreateInfo.stage = PAL_SHADER_STAGE_RAYGEN;
+    raygenShaderCreateInfo.entries = &raygenEntry;
+    raygenShaderCreateInfo.entryCount = 1;
 
     closestHitShaderCreateInfo.bytecode = closestHitBytecode;
     closestHitShaderCreateInfo.bytecodeSize = closestHitBytecodeSize;
-    closestHitShaderCreateInfo.stage = PAL_SHADER_STAGE_CLOSEST_HIT;
+    closestHitShaderCreateInfo.entries = &closestHitEntry;
+    closestHitShaderCreateInfo.entryCount = 1;
 
     missShaderCreateInfo.bytecode = missBytecode;
     missShaderCreateInfo.bytecodeSize = missBytecodeSize;
-    missShaderCreateInfo.stage = PAL_SHADER_STAGE_MISS;
+    missShaderCreateInfo.entries = &missEntry;
+    missShaderCreateInfo.entryCount = 1;
 
     result = palCreateShader(device, &raygenShaderCreateInfo, &raygenShader);
     if (result != PAL_RESULT_SUCCESS) {

@@ -70,17 +70,17 @@ project "tests"
     if (PAL_BUILD_GRAPHICS) then
         files {
             "graphics/graphics_test.c",
-            -- "graphics/compute_test.c",
-            -- "graphics/ray_tracing_test.c"
+            "graphics/compute_test.c",
+            "graphics/ray_tracing_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
         files {
-            -- "graphics/clear_color_test.c",
-            -- "graphics/triangle_test.c",
-            -- "graphics/mesh_test.c",
-            -- "graphics/texture_test.c"
+            "graphics/clear_color_test.c",
+            "graphics/triangle_test.c",
+            "graphics/mesh_test.c",
+            "graphics/texture_test.c"
         }
     end
 
