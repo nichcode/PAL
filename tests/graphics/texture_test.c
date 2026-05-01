@@ -859,12 +859,14 @@ bool textureTest()
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         vertBytecodeSize = sizeof(s_TextureVertShaderSpv);
         fragBytecodeSize = sizeof(s_TextureFragShaderSpv);
+
         vertBytecode = (void*)s_TextureVertShaderSpv;
         fragBytecode = (void*)s_TextureFragShaderSpv;
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
         vertBytecodeSize = sizeof(s_TextureVertShaderDxil);
         fragBytecodeSize = sizeof(s_TextureFragShaderDxil);
+        
         vertBytecode = (void*)s_TextureVertShaderDxil;
         fragBytecode = (void*)s_TextureFragShaderDxil;
     }

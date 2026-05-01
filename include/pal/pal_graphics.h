@@ -2682,10 +2682,9 @@ typedef struct {
     Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
     Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
     Uint32 anyHitEntryIndex;          /**< Index of any hit Entry from `anyHitShaderIndex`.*/
-    Uint32 closestHitEntryIndex;      /**< Index of any hit Entry from `anyHitShaderIndex`.*/
-    Uint32 generalEntryIndex;         /**< Index of any hit Entry from `anyHitShaderIndex`.*/
-    Uint32 intersectionEntryIndex;    /**< Index of any hit Entry from `anyHitShaderIndex`.*/
-    const char* exportName;
+    Uint32 closestHitEntryIndex;      /**< Index of any hit Entry from `closestHitShaderIndex`.*/
+    Uint32 generalEntryIndex;         /**< Index of any hit Entry from `generalShaderIndex`.*/
+    Uint32 intersectionEntryIndex;    /**< Index of any hit Entry from `intersectionShaderIndex`.*/
 } PalRayTracingShaderGroupCreateInfo;
 
 /**
@@ -7290,6 +7289,9 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
+ * 
+ * @note The shader group index will be based on the order of 
+ * PalRayTracingPipelineCreateInfo::shaderGroups.
  *
  * @since 1.4
  * @ingroup pal_graphics

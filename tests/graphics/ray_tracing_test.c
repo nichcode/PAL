@@ -124,7 +124,7 @@ bool rayTracingTest()
         }
 
         if (hasTracing) {
-            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            // We want an adapter that supports spirv 1.4 or dxil 6.3
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -134,13 +134,13 @@ bool rayTracingTest()
 
             // we prefer spirv first if an adapter supports multiple shader formats
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_3)) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_4)) {
                     break;
                 }
             }
 
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_3)) {
                     break;
                 }
             }
@@ -220,8 +220,13 @@ bool rayTracingTest()
         missBytecode = (void*)s_MissShaderSpv;
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        palLog(nullptr, "Dxil not tested yet");
-        return false;
+        raygenBytecodeSize = sizeof(s_RaygenShaderDxil);
+        closestHitBytecodeSize = sizeof(s_ClosestHitShaderDxil);
+        missBytecodeSize = sizeof(s_MissShaderDxil);
+
+        raygenBytecode = (void*)s_RaygenShaderDxil;
+        closestHitBytecode = (void*)s_ClosestHitShaderDxil;
+        missBytecode = (void*)s_MissShaderDxil;
     }
 
     // describe how many entries are in the shader bytecode
@@ -807,18 +812,21 @@ bool rayTracingTest()
     shaderGroupCreateInfos[0].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
+    shaderGroupCreateInfos[0].generalEntryIndex = 0; // First shader entry
 
     shaderGroupCreateInfos[1].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
     shaderGroupCreateInfos[1].generalShaderIndex = 1; // must match miss index
     shaderGroupCreateInfos[1].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
+    shaderGroupCreateInfos[1].generalEntryIndex = 0; // First shader entry
 
     shaderGroupCreateInfos[2].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT;
     shaderGroupCreateInfos[2].closestHitShaderIndex = 2; // must match closest hit index
     shaderGroupCreateInfos[2].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].generalShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
+    shaderGroupCreateInfos[2].closestHitEntryIndex = 0; // First shader entry
 
     // create a ray tracing pipeline
     PalRayTracingPipelineCreateInfo pipelineCreateInfo = {0};

@@ -176,7 +176,7 @@ bool meshTest()
         }
 
         if (hasMeshShader) {
-            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            // We want an adapter that supports spirv 1.5 or dxil 6.0
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -186,7 +186,7 @@ bool meshTest()
 
             // we prefer spirv first if an adapter supports multiple shader formats
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_5)) {
                     break;
                 }
             }
