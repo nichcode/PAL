@@ -8316,23 +8316,29 @@ PalResult PAL_CALL updateDescriptorSetVk(
     VkDescriptorImageInfo* imageInfos = nullptr;
     VkWriteDescriptorSetAccelerationStructureKHR* tlasInfos = nullptr;
 
+    // TODO: loop over descriptor count
     Uint32 bufferCount = 0;
-    Uint32 imageCount = 0;
-    Uint32 tlasCount = 0;
     Uint32 bufferIndex = 0;
+    Uint32 bufferOffset = 0;
+
+    Uint32 imageCount = 0;
     Uint32 imageIndex = 0;
+    Uint32 imageOffset = 0;
+
+    Uint32 tlasCount = 0;
     Uint32 tlasIndex = 0;
+    Uint32 tlasOffset = 0;
 
     for (int i = 0; i < count; i++) {
         if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
             infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-            bufferCount++;
+            bufferCount += infos[i].descriptorCount;
 
         } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
-            tlasCount++;
+            tlasCount += infos[i].descriptorCount;
 
         } else {
-            imageCount++;
+            imageCount += infos[i].descriptorCount;
         }
     }
 
@@ -8372,50 +8378,52 @@ PalResult PAL_CALL updateDescriptorSetVk(
 
         DescriptorSet* set = (DescriptorSet*)infos[i].descriptorSet;
         write->dstSet = set->handle;
+        for (int j = 0; j < write->descriptorCount; j++) {
+            if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+                infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferIndex++];
+                Buffer* vkBuffer = (Buffer*)infos[j].bufferInfo->buffer;
 
-        if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-            infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-            VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferIndex++];
-            Buffer* vkBuffer = (Buffer*)infos[i].bufferInfo->buffer;
-            bufferInfo->buffer = vkBuffer->handle;
-            bufferInfo->offset = infos[i].bufferInfo->offset;
-            bufferInfo->range = infos[i].bufferInfo->size;
-            write->pBufferInfo = bufferInfo;
+                bufferInfo->buffer = vkBuffer->handle;
+                bufferInfo->offset = infos[i].bufferInfo->offset;
+                bufferInfo->range = infos[i].bufferInfo->size;
+                write->pBufferInfo = bufferInfo;
 
-        } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
-            VkWriteDescriptorSetAccelerationStructureKHR* tlasInfo = &tlasInfos[tlasIndex++];
-            AccelerationStructure* ac = (AccelerationStructure*)infos[i].tlasInfo->tlas;
+            } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
+                VkWriteDescriptorSetAccelerationStructureKHR* tlasInfo = &tlasInfos[tlasIndex++];
+                AccelerationStructure* ac = (AccelerationStructure*)infos[i].tlasInfo->tlas;
 
-            tlasInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-            tlasInfo->accelerationStructureCount = 1;
-            tlasInfo->pAccelerationStructures = &ac->handle;
-            tlasInfo->pNext = nullptr;
-            write->pNext = tlasInfo;
+                tlasInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                tlasInfo->accelerationStructureCount = 1;
+                tlasInfo->pAccelerationStructures = &ac->handle;
+                tlasInfo->pNext = nullptr;
+                write->pNext = tlasInfo;
 
-        } else {
-            VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
-            if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
-                Sampler* vkSampler = (Sampler*)infos[i].samplerInfo->sampler;
+            } else {
+                VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
+                if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
+                    Sampler* vkSampler = (Sampler*)infos[i].samplerInfo->sampler;
 
-                imageInfo->sampler = vkSampler->handle;
-                imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                imageInfo->imageView = nullptr;
+                    imageInfo->sampler = vkSampler->handle;
+                    imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    imageInfo->imageView = nullptr;
 
-            } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
-                ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+                } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                    ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
 
-                imageInfo->sampler = nullptr;
-                imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                imageInfo->imageView = vkImageView->handle;
+                    imageInfo->sampler = nullptr;
+                    imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    imageInfo->imageView = vkImageView->handle;
 
-            } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
-                ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+                } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                    ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
 
-                imageInfo->sampler = nullptr;
-                imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                imageInfo->imageView = vkImageView->handle;
+                    imageInfo->sampler = nullptr;
+                    imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    imageInfo->imageView = vkImageView->handle;
+                }
+                write->pImageInfo = imageInfo;
             }
-            write->pImageInfo = imageInfo;
         }
     }
 

@@ -66,7 +66,8 @@ int main(int argc, char** argv)
     // registerTest(clearColorTest, "Clear Color Test");
     // registerTest(triangleTest, "Triangle Test");
     // registerTest(meshTest, "Mesh Test");
-    registerTest(textureTest, "Texture Test");
+    // registerTest(textureTest, "Texture Test");
+    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
 #endif //
 
     runTests();

@@ -80,7 +80,8 @@ project "tests"
             "graphics/clear_color_test.c",
             "graphics/triangle_test.c",
             "graphics/mesh_test.c",
-            "graphics/texture_test.c"
+            "graphics/texture_test.c",
+            "graphics/descriptor_indexing_test.c"
         }
     end
 
