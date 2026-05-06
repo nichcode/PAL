@@ -591,13 +591,13 @@ typedef enum {
  * @ingroup pal_graphics
  */
 typedef enum {
-    PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(0),
-    PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING = PAL_BIT64(1),
-    PAL_ADAPTER_FEATURE_MULTI_VIEWPORT = PAL_BIT64(2),
-    PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE = PAL_BIT64(3),
-    PAL_ADAPTER_FEATURE_TESSELLATION_SHADER = PAL_BIT64(4),
-    PAL_ADAPTER_FEATURE_GEOMETRY_SHADER = PAL_BIT64(5),
-    PAL_ADAPTER_FEATURE_COMPUTE_SHADER = PAL_BIT64(6),
+    PAL_ADAPTER_FEATURE_NONE = 0,
+    PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY = PAL_BIT64(1),
+    PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING = PAL_BIT64(2),
+    PAL_ADAPTER_FEATURE_MULTI_VIEWPORT = PAL_BIT64(3),
+    PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE = PAL_BIT64(4),
+    PAL_ADAPTER_FEATURE_TESSELLATION_SHADER = PAL_BIT64(5),
+    PAL_ADAPTER_FEATURE_GEOMETRY_SHADER = PAL_BIT64(6),
     PAL_ADAPTER_FEATURE_SHADER_FLOAT16 = PAL_BIT64(7),
     PAL_ADAPTER_FEATURE_SHADER_FLOAT64 = PAL_BIT64(8),
     PAL_ADAPTER_FEATURE_SHADER_INT16 = PAL_BIT64(9),
@@ -1477,15 +1477,23 @@ typedef struct {
     Uint32 maxImageArrayLayers;
     Uint32 maxImageMipLevels;
     Uint32 maxColorAttachments;
-    Uint32 maxMultiViews;
-    Uint32 maxViewports;
-    Uint32 maxSamplers;
     Uint32 maxUniformBufferSize;
     Uint32 maxStorageBufferSize;
     Uint32 maxPushConstantSize;
     Uint32 maxVertexLayouts;
     Uint32 maxVertexAttributes;
     Uint32 maxTessellationPatchPoint;
+    Uint32 maxPerStageDescriptorSampledImages;
+    Uint32 maxDescriptorSetSampledImages;
+    Uint32 maxPerStageDescriptorStorageImages;
+    Uint32 maxDescriptorSetStorageImages;
+    Uint32 maxPerStageDescriptorSamplers;
+    Uint32 maxDescriptorSetSamplers;
+    Uint32 maxPerStageDescriptorStorageBuffers;
+    Uint32 maxDescriptorSetStorageBuffers;
+    Uint32 maxPerStageDescriptorUniformBuffers;
+    Uint32 maxDescriptorSetUniformBuffers;
+    Uint32 maxBoundDescriptorSets;
     Uint32 maxComputeWorkGroupInvocations; /**< Max compute threads per workgroup across all axis.*/
     Uint32 maxComputeWorkGroupCount[3];    /**< Max compute workgroups per axis.*/
     Uint32 maxComputeWorkGroupSize[3];     /**< Max compute threads per workgroup per axis.*/
@@ -1504,6 +1512,28 @@ typedef struct {
 typedef struct {
     Uint32 maxAnisotropy;
 } PalSamplerAnisotropyCapabilities;
+
+/**
+ * @struct PalMultiViewCapabilities
+ * @brief Multi view capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxMultiViews;
+} PalMultiViewCapabilities;
+
+/**
+ * @struct PalMultiViewportCapabilities
+ * @brief Multi viewport capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxViewports;
+} PalMultiViewportCapabilities;
 
 /**
  * @struct PalDepthStencilCapabilities
@@ -1588,7 +1618,7 @@ typedef struct {
     Uint32 maxPrimitiveCount;
     Uint32 maxGeometryCount;
     Uint32 maxPayloadSize;         /**< Max memory per ray.*/
-    Uint32 maxDispatchInvocations; /**< Max ray threads per dispatch.*/
+    Uint32 maxDispatchInvocations;
 } PalRayTracingCapabilities;
 
 /**
@@ -1602,18 +1632,21 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool bindlessSampledImages; /**< If true, bindless sampled images are supported.*/
+    bool bindlessStorageImages; /**< If true, bindless storage images are supported.*/
     bool bindlessSamplers; /**< If true, bindless samplers are supported.*/
     bool bindlessStorageBuffers; /**< If true, bindless storage buffers are supported.*/
     bool bindlessUniformBuffers; /**< If true, bindless uniform buffers are supported.*/
-    Uint32 maxImagesPerShaderStage;
-    Uint32 maxImagesPerDescriptorSet;
-    Uint32 maxSamplersPerShaderStage;
-    Uint32 maxSamplersPerDescriptorSet;
-    Uint32 maxStorageBuffersPerShaderStage;
-    Uint32 maxStorageBuffersPerDescriptorSet;
-    Uint32 maxUniformBuffersPerShaderStage;
-    Uint32 maxUniformBuffersPerDescriptorSet;
-    Uint32 maxDescriptors;
+    Uint32 maxPerStageBindlessDescriptorSampledImages;
+    Uint32 maxDescriptorSetBindlessSampledImages;
+    Uint32 maxPerStageBindlessDescriptorStorageImages;
+    Uint32 maxDescriptorSetBindlessStorageImages;
+    Uint32 maxPerStageBindlessDescriptorSamplers;
+    Uint32 maxDescriptorSetBindlessSamplers;
+    Uint32 maxPerStageBindlessDescriptorStorageBuffers;
+    Uint32 maxDescriptorSetBindlessStorageBuffers;
+    Uint32 maxPerStageBindlessDescriptorUniformBuffers;
+    Uint32 maxDescriptorSetBindlessUniformBuffers;
 } PalDescriptorIndexingCapabilities;
 
 /**
@@ -2833,6 +2866,26 @@ typedef struct {
     PalResult PAL_CALL (*querySamplerAnisotropyCapabilities)(
         PalDevice* device,
         PalSamplerAnisotropyCapabilities* caps);
+
+    /**
+     * Backend implementation of ::palQueryMultiViewCapabilities.
+     *
+     * Must obey the rules and semantics documented in
+     * palQueryMultiViewCapabilities().
+     */
+    PalResult PAL_CALL (*queryMultiViewCapabilities)(
+        PalDevice* device,
+        PalMultiViewCapabilities* caps);
+
+    /**
+     * Backend implementation of ::palQueryMultiViewportCapabilities.
+     *
+     * Must obey the rules and semantics documented in
+     * palQueryMultiViewportCapabilities().
+     */
+    PalResult PAL_CALL (*queryMultiViewportCapabilities)(
+        PalDevice* device,
+        PalMultiViewportCapabilities* caps);
 
     /**
      * Backend implementation of ::palQueryDepthStencilCapabilities.
@@ -4327,6 +4380,52 @@ PAL_API void PAL_CALL palFreeMemory(
 PAL_API PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps); 
+
+/**
+ * @brief Get multi view feature capabilites or limits about a device.
+ *
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported and enabled when creating the
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device to query multi view feature capabilities on.
+ * @param[out] caps Pointer to a PalMultiViewCapabilities to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `caps` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palQueryMultiViewCapabilities(
+    PalDevice* device,
+    PalMultiViewCapabilities* caps);
+
+/**
+ * @brief Get multi viewport feature capabilites or limits about a device.
+ *
+ * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_MULTI_VIEWPORT` must be supported and enabled when creating the
+ * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * @param[in] device Device to query multi viewport feature capabilities on.
+ * @param[out] caps Pointer to a PalMultiViewportCapabilities to fill.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `caps` is per thread.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palQueryMultiViewportCapabilities(
+    PalDevice* device,
+    PalMultiViewportCapabilities* caps);
 
 /**
  * @brief Get depth stencil feature capabilites or limits about a device.

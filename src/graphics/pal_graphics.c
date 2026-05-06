@@ -167,6 +167,14 @@ PalResult PAL_CALL querySamplerAnisotropyCapabilitiesVk(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps);
 
+PalResult PAL_CALL queryMultiViewCapabilitiesVk(
+    PalDevice* device,
+    PalMultiViewCapabilities* caps);
+
+PalResult PAL_CALL queryMultiViewportCapabilitiesVk(
+    PalDevice* device,
+    PalMultiViewportCapabilities* caps);
+
 PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
     PalDevice* device,
     PalDepthStencilCapabilities* caps);
@@ -799,6 +807,8 @@ static PalGraphicsBackend s_VkBackend = {
 
     // extended adapter features
     .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesVk,
+    .queryMultiViewCapabilities = queryMultiViewCapabilitiesVk,
+    .queryMultiViewportCapabilities = queryMultiViewportCapabilitiesVk,
     .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesVk,
     .queryFragmentShadingRateCapabilities = queryFragmentShadingRateCapabilitiesVk,
     .queryMeshShaderCapabilities = queryMeshShaderCapabilitiesVk,
@@ -1033,6 +1043,15 @@ void PAL_CALL freeMemoryD3D12(
 PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps);
+
+// TODO:
+PalResult PAL_CALL queryMultiViewCapabilitiesD3D12(
+    PalDevice* device,
+    PalMultiViewCapabilities* caps);
+
+PalResult PAL_CALL queryMultiViewportCapabilitiesD3D12(
+    PalDevice* device,
+    PalMultiViewportCapabilities* caps);
 
 PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
@@ -1873,6 +1892,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 
         // extended adapter features
         !backend->querySamplerAnisotropyCapabilities    ||
+        !backend->queryMultiViewCapabilities            ||
+        !backend->queryMultiViewportCapabilities        ||
         !backend->queryDepthStencilCapabilities         ||
         !backend->queryFragmentShadingRateCapabilities  ||
         !backend->queryMeshShaderCapabilities           ||
@@ -2341,6 +2362,36 @@ PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
     }
 
     return device->backend->querySamplerAnisotropyCapabilities(device, caps);
+}
+
+PalResult PAL_CALL palQueryMultiViewCapabilities(
+    PalDevice* device,
+    PalMultiViewCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->queryMultiViewCapabilities(device, caps);
+}
+
+PalResult PAL_CALL palQueryMultiViewportCapabilities(
+    PalDevice* device,
+    PalMultiViewportCapabilities* caps)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!device || !caps) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    return device->backend->queryMultiViewportCapabilities(device, caps);
 }
 
 PalResult PAL_CALL palQueryDepthStencilCapabilities(

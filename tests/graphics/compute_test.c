@@ -86,7 +86,6 @@ bool computeTest()
     PalAdapterFeatures adapterFeatures = 0;
     PalAdapterInfo adapterInfo = {0};
     bool hasComputeQueue = false;
-    bool hasComputeShader = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -103,15 +102,9 @@ bool computeTest()
 
         } else {
             hasComputeQueue = true;
-            adapterFeatures = palGetAdapterFeatures(adapter);
-            if (adapterFeatures & PAL_ADAPTER_FEATURE_COMPUTE_SHADER) {
-                hasComputeShader = true;
-            } else {
-                hasComputeShader = false;
-            }
         }
 
-        if (hasComputeShader) {
+        if (hasComputeQueue) {
             // We want an adapter that supports spirv 1.0 or dxil 6.0
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
@@ -141,9 +134,6 @@ bool computeTest()
         if (!hasComputeQueue) {
             palLog(nullptr, "Failed to find an adapter that supports compute queue");
 
-        } else if (!hasComputeShader) {
-            palLog(nullptr, "Failed to find an adapter that supports compute shader");
-
         } else {
             palLog(nullptr, "Failed to find an adapter that supports required shader target");
         }
@@ -151,8 +141,7 @@ bool computeTest()
     }
 
     // create a device
-    PalAdapterFeatures features = PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
-    result = palCreateDevice(adapter, features, &device);
+    result = palCreateDevice(adapter, 0, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);
