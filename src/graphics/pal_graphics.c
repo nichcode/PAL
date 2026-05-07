@@ -1044,7 +1044,6 @@ PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps);
 
-// TODO:
 PalResult PAL_CALL queryMultiViewCapabilitiesD3D12(
     PalDevice* device,
     PalMultiViewCapabilities* caps);
@@ -1685,6 +1684,8 @@ static PalGraphicsBackend s_D3D12Backend = {
 
     // extended adapter features
     .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesD3D12,
+    .queryMultiViewCapabilities = queryMultiViewCapabilitiesD3D12,
+    .queryMultiViewportCapabilities = queryMultiViewportCapabilitiesD3D12,
     .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesD3D12,
     .queryFragmentShadingRateCapabilities = queryFragmentShadingRateCapabilitiesD3D12,
     .queryMeshShaderCapabilities = queryMeshShaderCapabilitiesD3D12,
@@ -2081,16 +2082,15 @@ PalResult PAL_CALL palInitGraphics(
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN
-    // TODO: uncomment
-    // result = initGraphicsVk(debugger, allocator);
-    // if (result != PAL_RESULT_SUCCESS) {
-    //     return result;
-    // }
+    result = initGraphicsVk(debugger, allocator);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
 
-    // attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    // attachedBackend->base = &s_VkBackend;
-    // attachedBackend->startIndex = 0;
-    // attachedBackend->count = 0;
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base = &s_VkBackend;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN
 
     // D3D12
@@ -2137,8 +2137,7 @@ void PAL_CALL palShutdownGraphics()
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN
-    // TODO: uncomment block
-    // shutdownGraphicsVk();
+    shutdownGraphicsVk();
 #endif // PAL_HAS_VULKAN
 
     // D3D12

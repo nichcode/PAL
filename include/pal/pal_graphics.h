@@ -34,13 +34,6 @@ freely, subject to the following restrictions:
 #include "pal_core.h"
 
 /**
- * @brief Value for indicating an unknown limit.
- * @since 1.4
- * @ingroup pal_graphics
- */
-#define PAL_LIMIT_UNKNOWN UINT32_MAX
-
-/**
  * @brief The maximum name size of an adapter (GPU).
  * @since 1.4
  * @ingroup pal_graphics
@@ -1460,9 +1453,6 @@ typedef struct {
 /**
  * @struct PalAdapterCapabilities
  * @brief Capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1502,9 +1492,6 @@ typedef struct {
 /**
  * @struct PalSamplerAnisotropyCapabilities
  * @brief Sampler anisotropy capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value. 
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1539,9 +1526,6 @@ typedef struct {
  * @struct PalDepthStencilCapabilities
  * @brief Depth stencil capabilities of an adapter (GPU).
  * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
- *
  * @since 1.4
  * @ingroup pal_graphics
  */
@@ -1561,9 +1545,6 @@ typedef struct {
 /**
  * @struct PalFragmentShadingRateCapabilities
  * @brief Fragment shading rate capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1585,9 +1566,6 @@ typedef struct {
 /**
  * @struct PalMeshShaderCapabilities
  * @brief Mesh shader capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1604,9 +1582,6 @@ typedef struct {
 /**
  * @struct PalRayTracingCapabilities
  * @brief Ray tracing capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1619,14 +1594,13 @@ typedef struct {
     Uint32 maxGeometryCount;
     Uint32 maxPayloadSize;         /**< Max memory per ray.*/
     Uint32 maxDispatchInvocations;
+    Uint32 maxDescriptorSetAccelerationStructures;
+    Uint32 maxDescriptorSetBindlessAccelerationStructures;
 } PalRayTracingCapabilities;
 
 /**
  * @struct PalDescriptorIndexingCapabilities
  * @brief Descriptor indexing capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value. Bindless images are always supported if Descriptor indexing is supported.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1652,9 +1626,6 @@ typedef struct {
 /**
  * @struct PalSurfaceCapabilities
  * @brief surface capabilities of an adapter (GPU).
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -2304,7 +2275,6 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool readOnly; /**< For PAL_DESCRIPTOR_TYPE_STORAGE.*/
     Uint32 size; 
     Uint32 stride; /**< For structured buffers. Will be ignored if not supported. 0 for default.*/
     Uint64 offset; /**< Offset in bytes. If structured, will be divided by `stride`.*/
@@ -4181,9 +4151,6 @@ PAL_API PalResult PAL_CALL palGetAdapterInfo(
  * @brief Get capabilites or limits about an adapter (GPU).
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * @param[in] adapter Adapter to query capabilities on.
  * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
@@ -4359,9 +4326,6 @@ PAL_API void PAL_CALL palFreeMemory(
  * @brief Get sampler anisotropy feature capabilites or limits about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
@@ -4431,9 +4395,6 @@ PAL_API PalResult PAL_CALL palQueryMultiViewportCapabilities(
  * @brief Get depth stencil feature capabilites or limits about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
@@ -4457,9 +4418,6 @@ PAL_API PalResult PAL_CALL palQueryDepthStencilCapabilities(
  * @brief Get fragment shading rate feature capabilites or limits about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
@@ -4483,9 +4441,6 @@ PAL_API PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
  * @brief Get mesh shader feature capabilites or limits about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
@@ -4509,9 +4464,6 @@ PAL_API PalResult PAL_CALL palQueryMeshShaderCapabilities(
  * @brief Get ray tracing feature capabilites or limits about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
@@ -4535,9 +4487,6 @@ PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
  * @brief Get descriptor indexing feature capabilites or limits about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
@@ -5050,9 +4999,6 @@ PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
  * @brief Get surface capabilites about a device.
  *
  * The graphics system must be initialized before this call.
- * 
- * If a limit is not defined or exposed by a backend, `PAL_LIMIT_UNKNOWN` value will be set as the
- * value.
  *
  * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the
  * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.

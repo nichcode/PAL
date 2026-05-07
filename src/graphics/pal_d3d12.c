@@ -2174,9 +2174,21 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    caps->maxComputeQueues = PAL_LIMIT_UNKNOWN;
-    caps->maxGraphicsQueues = PAL_LIMIT_UNKNOWN;
-    caps->maxCopyQueues = PAL_LIMIT_UNKNOWN;
+    Adapter* d3dAdapter = (Adapter*)adapter;
+    IDXGIAdapter4* adapterHandle = d3dAdapter->handle;
+    ID3D12Device* device = d3dAdapter->tmpDevice;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS options = {0};
+    options.ResourceBindingTier = D3D12_RESOURCE_BINDING_TIER_1; // If call fails
+
+    device->lpVtbl->CheckFeatureSupport(
+        device,
+        D3D12_FEATURE_D3D12_OPTIONS,
+        &options,
+        sizeof(options));
+
+    caps->maxComputeQueues = 2; // safe default
+    caps->maxGraphicsQueues = 2; // safe default
+    caps->maxCopyQueues = 2; // safe default
 
     caps->maxImageWidth = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
     caps->maxImageHeight = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
@@ -2199,20 +2211,48 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
 
     caps->maxImageMipLevels = levels;
     caps->maxColorAttachments = D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT;
-    caps->maxViewports = D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
-    caps->maxSamplers = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
-
-    caps->maxMultiViews = D3D12_MAX_VIEW_INSTANCE_COUNT;
-    if (caps->maxMultiViews == 0) {
-        caps->maxMultiViews = 1;
-    }
-
     caps->maxUniformBufferSize = D3D12_REQ_IMMEDIATE_CONSTANT_BUFFER_ELEMENT_COUNT * 16;
-    caps->maxStorageBufferSize = PAL_LIMIT_UNKNOWN;
-    caps->maxPushConstantSize = (D3D12_MAX_ROOT_COST - 2) * 4;
-    caps->maxVertexLayouts = PAL_LIMIT_UNKNOWN;
-    caps->maxVertexAttributes = PAL_LIMIT_UNKNOWN;
+    caps->maxStorageBufferSize = 2147483648; // 2 GIB
+    caps->maxPushConstantSize = 256;
+
+    caps->maxVertexLayouts = 32; // safe
+    caps->maxVertexAttributes = 32; // safe
     caps->maxTessellationPatchPoint = 32;
+
+    caps->maxBoundDescriptorSets = 4;
+    if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1) {
+        // safe defaults
+        // Reserve 4 slots per set for TLAS from SRV
+        caps->maxPerStageDescriptorSampledImages = 112;
+        caps->maxDescriptorSetSampledImages = 28;
+        caps->maxPerStageDescriptorStorageImages = 4;
+        caps->maxDescriptorSetStorageImages = 1;
+
+        caps->maxPerStageDescriptorSamplers = 16;
+        caps->maxDescriptorSetSamplers = 4;
+        caps->maxPerStageDescriptorStorageBuffers = 4;
+        caps->maxDescriptorSetStorageBuffers = 1;
+
+        caps->maxPerStageDescriptorUniformBuffers = 12;
+        caps->maxDescriptorSetUniformBuffers = 3;
+        caps->maxBoundDescriptorSets = 4;
+
+    } else {
+        // safe defaults
+        // Reserve 16 slots per set for TLAS from SRV
+        caps->maxPerStageDescriptorSampledImages = 960;
+        caps->maxDescriptorSetSampledImages = 240;
+        caps->maxPerStageDescriptorStorageImages = 32;
+        caps->maxDescriptorSetStorageImages = 8;
+
+        caps->maxPerStageDescriptorSamplers = 2048;
+        caps->maxDescriptorSetSamplers = 512;
+        caps->maxPerStageDescriptorStorageBuffers = 32;
+        caps->maxDescriptorSetStorageBuffers = 8;
+
+        caps->maxPerStageDescriptorUniformBuffers = 12;
+        caps->maxDescriptorSetUniformBuffers = 3;
+    }
 
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
     caps->maxComputeWorkGroupCount[0] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
@@ -2332,7 +2372,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
 
     // this features are supported on d3d12
     features |= PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY;
-    features |= PAL_ADAPTER_FEATURE_COMPUTE_SHADER;
     features |= PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
     features |= PAL_ADAPTER_FEATURE_MULTI_VIEWPORT;
     features |= PAL_ADAPTER_FEATURE_GEOMETRY_SHADER;
@@ -2864,6 +2903,32 @@ PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL queryMultiViewCapabilitiesD3D12(
+    PalDevice* device,
+    PalMultiViewCapabilities* caps)
+{
+    Device* d3dDevice = (Device*)device;
+    if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    caps->maxMultiViews = D3D12_MAX_VIEW_INSTANCE_COUNT;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL queryMultiViewportCapabilitiesD3D12(
+    PalDevice* device,
+    PalMultiViewportCapabilities* caps)
+{
+    Device* d3dDevice = (Device*)device;
+    if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    caps->maxViewports = D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    return PAL_RESULT_SUCCESS;
+}
+
 PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
@@ -2970,15 +3035,17 @@ PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    // these are only limited by memory. D3d12 does not expose them
-    caps->maxRecursionDepth = 32; // 32 - 1;
-    caps->maxHitAttributeSize = PAL_LIMIT_UNKNOWN;
-    caps->maxInstanceCount = PAL_LIMIT_UNKNOWN;
-    caps->maxPrimitiveCount = PAL_LIMIT_UNKNOWN;
-    caps->maxGeometryCount = PAL_LIMIT_UNKNOWN;
-    caps->maxPayloadSize = PAL_LIMIT_UNKNOWN;
-    caps->maxDispatchInvocations = PAL_LIMIT_UNKNOWN;
+    // these are safe defaults. D3d12 does not expose them.
+    caps->maxRecursionDepth = 31;
+    caps->maxHitAttributeSize = 32;
+    caps->maxInstanceCount = 1000000;
+    caps->maxPrimitiveCount = 10000000;
+    caps->maxGeometryCount = 100000;
+    caps->maxPayloadSize = 64;
+    caps->maxDispatchInvocations = 16000000;
 
+    caps->maxDescriptorSetAccelerationStructures = 4;
+    caps->maxDescriptorSetBindlessAccelerationStructures = 16;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2992,20 +3059,26 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     }
 
     // these are supported if descriptor indexing is
+    caps->bindlessSampledImages = true;
+    caps->bindlessStorageImages = true;
+    caps->bindlessSamplers = true;
     caps->bindlessStorageBuffers = true;
     caps->bindlessUniformBuffers = true;
-    caps->bindlessSamplers = true;
 
-    // these are not exposed by d3d12. We use the offical resource binding spec
-    caps->maxImagesPerShaderStage = PAL_LIMIT_UNKNOWN;
-    caps->maxImagesPerDescriptorSet = PAL_LIMIT_UNKNOWN;
-    caps->maxSamplersPerShaderStage = 2048;
-    caps->maxSamplersPerDescriptorSet = PAL_LIMIT_UNKNOWN;
-    caps->maxStorageBuffersPerShaderStage = PAL_LIMIT_UNKNOWN;
-    caps->maxUniformBuffersPerShaderStage = PAL_LIMIT_UNKNOWN;
-    caps->maxStorageBuffersPerDescriptorSet = PAL_LIMIT_UNKNOWN;
-    caps->maxUniformBuffersPerDescriptorSet = PAL_LIMIT_UNKNOWN;
-    caps->maxDescriptors = PAL_LIMIT_UNKNOWN;
+    // safe defaults
+    // Reserve 16 slots per set for TLAS from SRV
+    caps->maxPerStageBindlessDescriptorSampledImages = 960;
+    caps->maxDescriptorSetBindlessSampledImages = 240;
+    caps->maxPerStageBindlessDescriptorStorageImages = 32;
+    caps->maxDescriptorSetBindlessStorageImages = 8;
+
+    caps->maxPerStageBindlessDescriptorSamplers = 2048;
+    caps->maxDescriptorSetBindlessSamplers = 512;
+    caps->maxPerStageBindlessDescriptorStorageBuffers = 32;
+    caps->maxDescriptorSetBindlessStorageBuffers = 8;
+
+    caps->maxPerStageBindlessDescriptorUniformBuffers = 12;
+    caps->maxDescriptorSetBindlessUniformBuffers = 3;
 
     return PAL_RESULT_SUCCESS;
 }
@@ -3742,11 +3815,11 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
     caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
 
-    caps->maxImageCount = PAL_LIMIT_UNKNOWN;
+    caps->maxImageCount = 8; // safe default
     caps->minImageWidth = 1;
     caps->minImageHeight = 1;
-    caps->maxImageWidth = PAL_LIMIT_UNKNOWN;
-    caps->maxImageHeight = PAL_LIMIT_UNKNOWN;
+    caps->maxImageWidth = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+    caps->maxImageHeight = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
     caps->maxImageArrayLayers = 1;
 
     // check support for the base format
@@ -5704,10 +5777,6 @@ PalResult PAL_CALL cmdDispatchIndirectD3D12(
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_COMPUTE_SHADER)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-    }
-
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6803,51 +6872,27 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             } else {
                 // storage buffer
                 Buffer* buffer = (Buffer*)info->bufferInfo->buffer;
-                if (info->bufferInfo->readOnly) {
-                    D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
-                    desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-                    Uint32 stride = 4;
-                    if (info->bufferInfo->stride) {
-                        stride = info->bufferInfo->stride;
-                        desc.Buffer.StructureByteStride = info->bufferInfo->stride;
-                    } else {
-                        desc.Format = DXGI_FORMAT_R32_TYPELESS;
-                        desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
-                    }
-
-                    desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-                    desc.Buffer.FirstElement = info->bufferInfo->offset / stride;
-                    desc.Buffer.NumElements = info->bufferInfo->size / stride;
-
-                    d3dDevice->handle->lpVtbl->CreateShaderResourceView(
-                        d3dDevice->handle,
-                        buffer->handle,
-                        &desc,
-                        dst);
-
+                
+                D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
+                Uint32 stride = 4;
+                if (info->bufferInfo->stride) {
+                    stride = info->bufferInfo->stride;
+                    desc.Buffer.StructureByteStride = info->bufferInfo->stride;
                 } else {
-                    D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
-                    Uint32 stride = 4;
-                    if (info->bufferInfo->stride) {
-                        stride = info->bufferInfo->stride;
-                        desc.Buffer.StructureByteStride = info->bufferInfo->stride;
-                    } else {
-                        desc.Format = DXGI_FORMAT_R32_TYPELESS;
-                        desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
-                    }
-
-                    desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-                    desc.Buffer.FirstElement = info->bufferInfo->offset / stride;
-                    desc.Buffer.NumElements = info->bufferInfo->size / stride;
-
-                    d3dDevice->handle->lpVtbl->CreateUnorderedAccessView(
-                        d3dDevice->handle,
-                        buffer->handle,
-                        nullptr,
-                        &desc,
-                        dst);
+                    desc.Format = DXGI_FORMAT_R32_TYPELESS;
+                    desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
                 }
+
+                desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+                desc.Buffer.FirstElement = info->bufferInfo->offset / stride;
+                desc.Buffer.NumElements = info->bufferInfo->size / stride;
+
+                d3dDevice->handle->lpVtbl->CreateUnorderedAccessView(
+                    d3dDevice->handle,
+                    buffer->handle,
+                    nullptr,
+                    &desc,
+                    dst);
             }
         }
     }

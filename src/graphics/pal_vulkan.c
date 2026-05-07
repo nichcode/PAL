@@ -4895,6 +4895,10 @@ PalResult PAL_CALL queryRayTracingCapabilitiesVk(
     caps->maxPayloadSize = 64; // safe
     caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
 
+    caps->maxDescriptorSetAccelerationStructures = accProps.maxDescriptorSetAccelerationStructures;
+    caps->maxDescriptorSetBindlessAccelerationStructures = 
+      accProps.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4947,13 +4951,11 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     // clang-format off
     caps->maxPerStageBindlessDescriptorSampledImages = props.maxPerStageDescriptorUpdateAfterBindSampledImages;
     caps->maxDescriptorSetBindlessSampledImages = props.maxDescriptorSetUpdateAfterBindSampledImages;
-
     caps->maxPerStageBindlessDescriptorStorageImages = props.maxPerStageDescriptorUpdateAfterBindStorageImages;
     caps->maxDescriptorSetBindlessStorageImages = props.maxDescriptorSetUpdateAfterBindStorageImages;
 
     caps->maxPerStageBindlessDescriptorSamplers = props.maxPerStageDescriptorUpdateAfterBindSamplers;
     caps->maxDescriptorSetBindlessSamplers = props.maxDescriptorSetUpdateAfterBindSamplers;
-
     caps->maxPerStageBindlessDescriptorStorageBuffers = props.maxPerStageDescriptorUpdateAfterBindStorageBuffers;
     caps->maxDescriptorSetBindlessStorageBuffers = props.maxDescriptorSetUpdateAfterBindStorageBuffers;
 
@@ -5653,7 +5655,7 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
     caps->maxImageArrayLayers = surfaceCaps.maxImageArrayLayers;
 
     if (caps->maxImageCount == 0) {
-        caps->maxImageCount = INT32_MAX;
+        caps->maxImageCount = 8; // safe
     }
 
     // get supported composite alphas
