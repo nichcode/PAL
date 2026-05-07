@@ -2174,18 +2174,6 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    Adapter* d3dAdapter = (Adapter*)adapter;
-    IDXGIAdapter4* adapterHandle = d3dAdapter->handle;
-    ID3D12Device* device = d3dAdapter->tmpDevice;
-    D3D12_FEATURE_DATA_D3D12_OPTIONS options = {0};
-    options.ResourceBindingTier = D3D12_RESOURCE_BINDING_TIER_1; // If call fails
-
-    device->lpVtbl->CheckFeatureSupport(
-        device,
-        D3D12_FEATURE_D3D12_OPTIONS,
-        &options,
-        sizeof(options));
-
     caps->maxComputeQueues = 2; // safe default
     caps->maxGraphicsQueues = 2; // safe default
     caps->maxCopyQueues = 2; // safe default
@@ -2219,40 +2207,20 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     caps->maxVertexAttributes = 32; // safe
     caps->maxTessellationPatchPoint = 32;
 
-    caps->maxBoundDescriptorSets = 4;
-    if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1) {
-        // safe defaults
-        // Reserve 4 slots per set for TLAS from SRV
-        caps->maxPerStageDescriptorSampledImages = 112;
-        caps->maxDescriptorSetSampledImages = 28;
-        caps->maxPerStageDescriptorStorageImages = 4;
-        caps->maxDescriptorSetStorageImages = 1;
+    // safe defaults
+    caps->maxPerStageDescriptorSampledImages = 1024;
+    caps->maxDescriptorSetSampledImages = 1024;
+    caps->maxPerStageDescriptorStorageImages = 512;
+    caps->maxDescriptorSetStorageImages = 512;
 
-        caps->maxPerStageDescriptorSamplers = 16;
-        caps->maxDescriptorSetSamplers = 4;
-        caps->maxPerStageDescriptorStorageBuffers = 4;
-        caps->maxDescriptorSetStorageBuffers = 1;
+    caps->maxPerStageDescriptorSamplers = 256;
+    caps->maxDescriptorSetSamplers = 256;
+    caps->maxPerStageDescriptorStorageBuffers = 512;
+    caps->maxDescriptorSetStorageBuffers = 512;
 
-        caps->maxPerStageDescriptorUniformBuffers = 12;
-        caps->maxDescriptorSetUniformBuffers = 3;
-        caps->maxBoundDescriptorSets = 4;
-
-    } else {
-        // safe defaults
-        // Reserve 16 slots per set for TLAS from SRV
-        caps->maxPerStageDescriptorSampledImages = 960;
-        caps->maxDescriptorSetSampledImages = 240;
-        caps->maxPerStageDescriptorStorageImages = 32;
-        caps->maxDescriptorSetStorageImages = 8;
-
-        caps->maxPerStageDescriptorSamplers = 2048;
-        caps->maxDescriptorSetSamplers = 512;
-        caps->maxPerStageDescriptorStorageBuffers = 32;
-        caps->maxDescriptorSetStorageBuffers = 8;
-
-        caps->maxPerStageDescriptorUniformBuffers = 12;
-        caps->maxDescriptorSetUniformBuffers = 3;
-    }
+    caps->maxPerStageDescriptorUniformBuffers = 256;
+    caps->maxDescriptorSetUniformBuffers = 256;
+    caps->maxBoundDescriptorSets = 30;
 
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
     caps->maxComputeWorkGroupCount[0] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
@@ -3045,7 +3013,7 @@ PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
     caps->maxDispatchInvocations = 16000000;
 
     caps->maxDescriptorSetAccelerationStructures = 4;
-    caps->maxDescriptorSetBindlessAccelerationStructures = 16;
+    caps->maxDescriptorSetBindlessAccelerationStructures = 4;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3066,19 +3034,18 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     caps->bindlessUniformBuffers = true;
 
     // safe defaults
-    // Reserve 16 slots per set for TLAS from SRV
-    caps->maxPerStageBindlessDescriptorSampledImages = 960;
-    caps->maxDescriptorSetBindlessSampledImages = 240;
-    caps->maxPerStageBindlessDescriptorStorageImages = 32;
-    caps->maxDescriptorSetBindlessStorageImages = 8;
+    caps->maxPerStageBindlessDescriptorSampledImages = 4096;
+    caps->maxDescriptorSetBindlessSampledImages = 4096;
+    caps->maxPerStageBindlessDescriptorStorageImages = 1024;
+    caps->maxDescriptorSetBindlessStorageImages = 1024;
 
-    caps->maxPerStageBindlessDescriptorSamplers = 2048;
+    caps->maxPerStageBindlessDescriptorSamplers = 512;
     caps->maxDescriptorSetBindlessSamplers = 512;
-    caps->maxPerStageBindlessDescriptorStorageBuffers = 32;
-    caps->maxDescriptorSetBindlessStorageBuffers = 8;
+    caps->maxPerStageBindlessDescriptorStorageBuffers = 2048;
+    caps->maxDescriptorSetBindlessStorageBuffers = 2048;
 
-    caps->maxPerStageBindlessDescriptorUniformBuffers = 12;
-    caps->maxDescriptorSetBindlessUniformBuffers = 3;
+    caps->maxPerStageBindlessDescriptorUniformBuffers = 256;
+    caps->maxDescriptorSetBindlessUniformBuffers = 256;
 
     return PAL_RESULT_SUCCESS;
 }
@@ -6443,13 +6410,8 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
             }
 
             case PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
-                if (info->bindings[i].readOnly) {
-                    binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                    binding->range.BaseShaderRegister = sampledASIndex++;
-                } else {
-                    binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                    binding->range.BaseShaderRegister = storageIndex++;
-                }
+                binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                binding->range.BaseShaderRegister = storageIndex++;
 
                 binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
                 resourceOffset += info->bindings[i].descriptorCount;
@@ -6776,7 +6738,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
         DescriptorSet* set = (DescriptorSet*)info->descriptorSet;
         DescriptorPool* pool = set->pool;
         DescriptorSetLayout* layout = set->layout;
-        DescriptorSetBinding* binding = &layout->bindings[info->binding];
+        DescriptorSetBinding* binding = &layout->bindings[info->layoutBindingIndex];
 
         DescriptorHeap* heap = nullptr;
         Uint32 index = 0;
@@ -6799,11 +6761,11 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             dst.ptr = getDescriptorHandleD3D12(index + j, heap->incrementSize, heap->cpuBase);
 
             if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
-                Sampler* sampler = (Sampler*)info->samplerInfo->sampler;
+                Sampler* sampler = (Sampler*)info->samplerInfos[j].sampler;
                 d3dDevice->handle->lpVtbl->CreateSampler(d3dDevice->handle, &sampler->desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
-                AccelerationStructure* tlas = (AccelerationStructure*)info->tlasInfo->tlas;
+                AccelerationStructure* tlas = (AccelerationStructure*)info->tlasInfos[j].tlas;
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
                 desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 desc.RaytracingAccelerationStructure.Location = tlas->address;
@@ -6816,7 +6778,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
-                ImageView* imageView = (ImageView*)info->imageViewInfo->imageView;
+                ImageView* imageView = (ImageView*)info->imageViewInfos[j].imageView;
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
                 desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 desc.Format = imageView->format;
@@ -6836,7 +6798,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
-                ImageView* imageView = (ImageView*)info->imageViewInfo->imageView;
+                ImageView* imageView = (ImageView*)info->imageViewInfos[j].imageView;
                 D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
                 desc.Format = imageView->format;
 
@@ -6856,13 +6818,15 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                Buffer* buffer = (Buffer*)info->bufferInfo->buffer;
+                PalDescriptorBufferInfo* bufferInfo = &info->bufferInfos[j];
+                Buffer* buffer = (Buffer*)bufferInfo->buffer;
+
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {0};
-                desc.SizeInBytes = info->bufferInfo->size;
+                desc.SizeInBytes = bufferInfo->size;
 
                 D3D12_GPU_VIRTUAL_ADDRESS address = 0;
                 address = buffer->handle->lpVtbl->GetGPUVirtualAddress(buffer->handle);
-                desc.BufferLocation = address + info->bufferInfo->offset;
+                desc.BufferLocation = address + bufferInfo->offset;
 
                 d3dDevice->handle->lpVtbl->CreateConstantBufferView(
                     d3dDevice->handle,
@@ -6871,21 +6835,22 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
 
             } else {
                 // storage buffer
-                Buffer* buffer = (Buffer*)info->bufferInfo->buffer;
+                PalDescriptorBufferInfo* bufferInfo = &info->bufferInfos[j];
+                Buffer* buffer = (Buffer*)bufferInfo->buffer;
                 
                 D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
                 Uint32 stride = 4;
-                if (info->bufferInfo->stride) {
-                    stride = info->bufferInfo->stride;
-                    desc.Buffer.StructureByteStride = info->bufferInfo->stride;
+                if (bufferInfo->stride) {
+                    stride = bufferInfo->stride;
+                    desc.Buffer.StructureByteStride = bufferInfo->stride;
                 } else {
                     desc.Format = DXGI_FORMAT_R32_TYPELESS;
                     desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
                 }
 
                 desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-                desc.Buffer.FirstElement = info->bufferInfo->offset / stride;
-                desc.Buffer.NumElements = info->bufferInfo->size / stride;
+                desc.Buffer.FirstElement = bufferInfo->offset / stride;
+                desc.Buffer.NumElements = bufferInfo->size / stride;
 
                 d3dDevice->handle->lpVtbl->CreateUnorderedAccessView(
                     d3dDevice->handle,
