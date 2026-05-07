@@ -2243,7 +2243,6 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool readOnly; /**< For PAL_DESCRIPTOR_TYPE_STORAGE.*/
     Uint32 descriptorCount;
     Uint32 shaderStageCount;
     PalShaderStage* shaderStages;     /**< Array of shader stages that can access the descriptor.*/
@@ -2330,15 +2329,15 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 binding;
-    Uint32 arrayElement;    /**< 0 If not using PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING.*/
-    Uint32 descriptorCount; /**< 1 If not using PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING.*/
+    Uint32 layoutBindingIndex; /**< Index into the descriptor set layout bindings.*/
+    Uint32 arrayElement;
+    Uint32 descriptorCount; 
     PalDescriptorType descriptorType;
     PalDescriptorSet* descriptorSet;
-    PalDescriptorBufferInfo* bufferInfo; /**< If PAL_DESCRIPTOR_TYPE* uniform or storage buffer.*/
-    PalDescriptorImageViewInfo* imageViewInfo; /**< If PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE*/
-    PalDescriptorSamplerInfo* samplerInfo; /**< If PAL_DESCRIPTOR_TYPE_SAMPLER.*/
-    PalDescriptorTLASInfo* tlasInfo;           /**< If PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE.*/
+    PalDescriptorBufferInfo* bufferInfos; /**< If PAL_DESCRIPTOR_TYPE* uniform or storage buffer.*/
+    PalDescriptorImageViewInfo* imageViewInfos; /**< If PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE*/
+    PalDescriptorSamplerInfo* samplerInfos; /**< If PAL_DESCRIPTOR_TYPE_SAMPLER.*/
+    PalDescriptorTLASInfo* tlasInfos;           /**< If PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE.*/
 } PalDescriptorSetWriteInfo;
 
 /**
@@ -7202,9 +7201,6 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  * @brief Update a descriptor set with descriptors (resources).
  *
  * The graphics system must be initialized before this call.
- *
- * PalDescriptorSetWriteInfo::descriptorCount must be `1` if not using
- * `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` feature for all descriptors.
  *
  * @param[in] device The Device. Must match the one used to allocate descriptor set.
  * @param[in] count Capacity of the PalDescriptorSetWriteInfo array.

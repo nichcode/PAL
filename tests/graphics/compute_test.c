@@ -347,8 +347,8 @@ bool computeTest()
     descriptorBufferInfo.size = bufferBytes;
 
     PalDescriptorSetWriteInfo writeInfo = {0};
-    writeInfo.binding = 0;
-    writeInfo.bufferInfo = &descriptorBufferInfo;
+    writeInfo.layoutBindingIndex = 0;
+    writeInfo.bufferInfos = &descriptorBufferInfo;
     writeInfo.descriptorSet = descriptorSet;
     writeInfo.descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     writeInfo.descriptorCount = 1;

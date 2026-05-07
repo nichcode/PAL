@@ -8364,17 +8364,11 @@ PalResult PAL_CALL updateDescriptorSetVk(
     VkDescriptorImageInfo* imageInfos = nullptr;
     VkWriteDescriptorSetAccelerationStructureKHR* tlasInfos = nullptr;
 
-    // TODO: loop over descriptor count
     Uint32 bufferCount = 0;
-    Uint32 bufferIndex = 0;
     Uint32 bufferOffset = 0;
-
     Uint32 imageCount = 0;
-    Uint32 imageIndex = 0;
     Uint32 imageOffset = 0;
-
     Uint32 tlasCount = 0;
-    Uint32 tlasIndex = 0;
     Uint32 tlasOffset = 0;
 
     for (int i = 0; i < count; i++) {
@@ -8413,65 +8407,91 @@ PalResult PAL_CALL updateDescriptorSetVk(
 
     for (int i = 0; i < count; i++) {
         VkWriteDescriptorSet* write = &writes[i];
+        PalDescriptorSetWriteInfo* info = &info[i];
+
         write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write->pBufferInfo = nullptr;
         write->pImageInfo = nullptr;
         write->pTexelBufferView = nullptr;
         write->pNext = nullptr;
 
-        write->dstArrayElement = infos[i].arrayElement;
-        write->dstBinding = infos[i].binding;
-        write->descriptorCount = infos[i].descriptorCount;
-        write->descriptorType = descriptortypeToVk(infos[i].descriptorType);
+        write->dstArrayElement = info->arrayElement;
+        write->dstBinding = info->layoutBindingIndex;
+        write->descriptorCount = info->descriptorCount;
+        write->descriptorType = descriptortypeToVk(info->descriptorType);
 
-        DescriptorSet* set = (DescriptorSet*)infos[i].descriptorSet;
+        DescriptorSet* set = (DescriptorSet*)info->descriptorSet;
         write->dstSet = set->handle;
+        bool isImage = false;
+        bool isTlas = false;
+        bool isBuffer = false;
+
         for (int j = 0; j < write->descriptorCount; j++) {
-            if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferIndex++];
-                Buffer* vkBuffer = (Buffer*)infos[j].bufferInfo->buffer;
+            if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+                info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferOffset + j];
+                PalDescriptorBufferInfo* tmp = &info->bufferInfos[j];
+                Buffer* vkBuffer = (Buffer*)tmp->buffer;
 
                 bufferInfo->buffer = vkBuffer->handle;
-                bufferInfo->offset = infos[i].bufferInfo->offset;
-                bufferInfo->range = infos[i].bufferInfo->size;
-                write->pBufferInfo = bufferInfo;
+                bufferInfo->offset = tmp->offset;
+                bufferInfo->range = tmp->size;
+                isBuffer = true;
 
             } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
-                VkWriteDescriptorSetAccelerationStructureKHR* tlasInfo = &tlasInfos[tlasIndex++];
-                AccelerationStructure* ac = (AccelerationStructure*)infos[i].tlasInfo->tlas;
+                VkWriteDescriptorSetAccelerationStructureKHR* tlasInfo = nullptr;
+                tlasInfo = &tlasInfos[tlasOffset + j];
+                PalDescriptorTLASInfo* tmp = &info->tlasInfos[j];
+                AccelerationStructure* as = (AccelerationStructure*)tmp->tlas;
 
                 tlasInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
                 tlasInfo->accelerationStructureCount = 1;
-                tlasInfo->pAccelerationStructures = &ac->handle;
+                tlasInfo->pAccelerationStructures = &as->handle;
                 tlasInfo->pNext = nullptr;
-                write->pNext = tlasInfo;
+                isTlas = true;
 
             } else {
-                VkDescriptorImageInfo* imageInfo = &imageInfos[imageIndex++];
+                VkDescriptorImageInfo* imageInfo = &imageInfos[imageOffset + j];
+                isImage = true;
+
                 if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
-                    Sampler* vkSampler = (Sampler*)infos[i].samplerInfo->sampler;
+                    PalDescriptorSamplerInfo* tmp = &info->samplerInfos[j];
+                    Sampler* vkSampler = (Sampler*)tmp->sampler;
 
                     imageInfo->sampler = vkSampler->handle;
                     imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     imageInfo->imageView = nullptr;
 
                 } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
-                    ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+                    PalDescriptorImageViewInfo* tmp = &info->imageViewInfos[j];
+                    ImageView* vkImageView = (ImageView*)tmp->imageView;
 
                     imageInfo->sampler = nullptr;
                     imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                     imageInfo->imageView = vkImageView->handle;
 
                 } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
-                    ImageView* vkImageView = (ImageView*)infos[i].imageViewInfo->imageView;
+                    PalDescriptorImageViewInfo* tmp = &info->imageViewInfos[j];
+                    ImageView* vkImageView = (ImageView*)tmp->imageView;
 
                     imageInfo->sampler = nullptr;
-                    imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     imageInfo->imageView = vkImageView->handle;
                 }
-                write->pImageInfo = imageInfo;
             }
+        }
+
+        if (isImage) {
+            write->pImageInfo = &imageInfos[imageOffset];
+            imageOffset += write->descriptorCount;
+
+        } else if (isTlas) {
+            write->pNext = &tlasInfos[tlasOffset];
+            tlasOffset += write->descriptorCount;
+
+        } else if (isBuffer) {
+            write->pBufferInfo = &bufferInfos[bufferOffset];
+            bufferOffset += write->descriptorCount;
         }
     }
 

@@ -763,23 +763,23 @@ bool rayTracingTest()
     descriptorTlasInfo.tlas = tlas;
 
     PalDescriptorSetWriteInfo writeInfos[2];
-    writeInfos[0].binding = 0;
-    writeInfos[0].bufferInfo = &descriptorStorageBufferInfo;
+    writeInfos[0].layoutBindingIndex = 0;
+    writeInfos[0].bufferInfos = &descriptorStorageBufferInfo;
     writeInfos[0].descriptorSet = descriptorSet;
     writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     writeInfos[0].descriptorCount = 1;
     writeInfos[0].arrayElement = 0;
-    writeInfos[0].imageViewInfo = nullptr;
-    writeInfos[0].tlasInfo = nullptr;
+    writeInfos[0].imageViewInfos = nullptr;
+    writeInfos[0].tlasInfos = nullptr;
 
-    writeInfos[1].binding = 1;
-    writeInfos[1].tlasInfo = &descriptorTlasInfo;
+    writeInfos[1].layoutBindingIndex = 1;
+    writeInfos[1].tlasInfos = &descriptorTlasInfo;
     writeInfos[1].descriptorSet = descriptorSet;
     writeInfos[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
     writeInfos[1].descriptorCount = 1;
     writeInfos[1].arrayElement = 0;
-    writeInfos[1].imageViewInfo = nullptr;
-    writeInfos[1].bufferInfo = nullptr;
+    writeInfos[1].imageViewInfos = nullptr;
+    writeInfos[1].bufferInfos = nullptr;
 
     result = palUpdateDescriptorSet(device, 2, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
