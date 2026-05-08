@@ -145,6 +145,31 @@ typedef struct {
 } DSVHeapAllocator;
 
 typedef struct {
+    Uint32 freeComputeQueues;
+    Uint32 freeGraphicsQueues;
+    Uint32 freeCopyQueues;
+    Uint32 maxVertexLayouts;
+    Uint32 maxVertexAttributes;
+
+    Uint32 maxAnisotropy;
+    Uint32 maxPushConstantSize;
+    Uint32 maxTessellationPatchPoint;
+
+    Uint32 maxDescriptorSampledImages;
+    Uint32 maxDescriptorStorageImages;
+    Uint32 maxDescriptorSamplers;
+    Uint32 maxDescriptorStorageBuffers;
+    Uint32 maxDescriptorUniformBuffers;
+    Uint32 maxBoundDescriptorSets;
+
+    Uint32 maxRecursionDepth;
+    Uint32 maxHitAttributeSize;
+    Uint32 maxPayloadSize;
+    Uint32 maxDispatchInvocations;
+    Uint32 maxDescriptorAccelerationStructures;
+} DeviceLimits;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     PalAdapterFeatures features;
@@ -159,6 +184,7 @@ typedef struct {
     ID3D12Device5* handle;
     RTVHeapAllocator rtvAllocator;
     DSVHeapAllocator dsvAllocator;
+    DeviceLimits limits;
 } Device;
 
 typedef struct {
@@ -1201,14 +1227,30 @@ static DXGI_FORMAT vertexTypeToD3D12(PalVertexType type)
     return DXGI_FORMAT_UNKNOWN;
 }
 
-static void fillBuildInfoD3D12(
+static bool fillBuildInfoD3D12(
     PalAccelerationStructureBuildInfo* info,
     D3D12_RAYTRACING_GEOMETRY_DESC* geometries,
     D3D12_GPU_VIRTUAL_ADDRESS srcAs,
     D3D12_GPU_VIRTUAL_ADDRESS dstAs,
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* buildInfo)
 {
+    static Uint32 maxInstanceCount = 1000000;
+    static Uint32 maxPrimitiveCount = 10000000;
+    static Uint32 maxGeometryCount = 100000;
+
+    if (info->geometryCount > maxGeometryCount) {
+        return;
+    }
+
+    if (info->instanceCount > maxInstanceCount) {
+        return;
+    }
+
     for (int i = 0; i < info->geometryCount; i++) {
+        if (info->geometries[i].primitiveCount > maxPrimitiveCount) {
+            return;
+        }
+
         D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
         tmp->Flags = 0;
         if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
@@ -2534,6 +2576,13 @@ PalResult PAL_CALL createDeviceD3D12(
     Device* device = nullptr;
     Adapter* d3dAdapter = (Adapter*)adapter;
 
+    // check if any of the features are not supported
+    PalAdapterFeatures adapterFeatures = getAdapterFeaturesD3D12(adapter);
+    bool valid = (adapterFeatures & features) == features;
+    if (!valid) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     device = palAllocate(s_D3D.allocator, sizeof(Device), 0);
     if (!device) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -2541,6 +2590,7 @@ PalResult PAL_CALL createDeviceD3D12(
 
     ID3D12Device* tmpDevice = nullptr;
     memset(device, 0, sizeof(Device));
+    DeviceLimits* limits = &device->limits;
 
     result = s_D3D.createDevice(
         (IUnknown*)d3dAdapter->handle,
@@ -2763,6 +2813,42 @@ PalResult PAL_CALL createDeviceD3D12(
         &__ret
     );
     device->dsvAllocator.baseOffset = dst.ptr;
+
+    // API enforced limits
+    limits->freeComputeQueues = 2;
+    limits->freeGraphicsQueues = 2;
+    limits->freeCopyQueues = 2;
+    limits->maxVertexLayouts = 30;
+    limits->maxVertexAttributes = 30;
+
+    limits->maxAnisotropy = 16;
+    limits->maxPushConstantSize = 256;
+    limits->maxTessellationPatchPoint = 32;
+    limits->maxBoundDescriptorSets = 30;
+
+    if (features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        limits->maxDescriptorSampledImages = 4096;
+        limits->maxDescriptorStorageImages = 1024;
+        limits->maxDescriptorSamplers = 512;
+        limits->maxDescriptorStorageBuffers = 2048;
+        limits->maxDescriptorUniformBuffers = 256;
+
+    } else {
+        limits->maxDescriptorSampledImages = 1024;
+        limits->maxDescriptorStorageImages = 512;
+        limits->maxDescriptorSamplers = 256;
+        limits->maxDescriptorStorageBuffers = 512;
+        limits->maxDescriptorUniformBuffers = 256;
+        limits->maxBoundDescriptorSets = 30;
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        limits->maxRecursionDepth = 31;
+        limits->maxHitAttributeSize = 32;
+        limits->maxPayloadSize = 64;
+        limits->maxDispatchInvocations = 16000000;
+        limits->maxDescriptorAccelerationStructures = 4;
+    }
 
     device->adapter = d3dAdapter->handle;
     device->features = features;
@@ -3067,16 +3153,31 @@ PalResult PAL_CALL createQueueD3D12(
     switch (type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+
+            if (!d3dDevice->limits.freeComputeQueues) {
+                return PAL_RESULT_OUT_OF_QUEUE;
+            }
+            d3dDevice->limits.freeComputeQueues--;
             break;
         }
 
         case PAL_QUEUE_TYPE_GRAPHICS: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+            if (!d3dDevice->limits.freeGraphicsQueues) {
+                return PAL_RESULT_OUT_OF_QUEUE;
+            }
+            d3dDevice->limits.freeGraphicsQueues--;
             break;
         }
 
         case PAL_QUEUE_TYPE_COPY: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
+
+            if (!d3dDevice->limits.freeCopyQueues) {
+                return PAL_RESULT_OUT_OF_QUEUE;
+            }
+            d3dDevice->limits.freeCopyQueues--;
             break;
         }
     }
@@ -3625,6 +3726,11 @@ PalResult PAL_CALL createSamplerD3D12(
     const PalSamplerCreateInfo* info,
     PalSampler** outSampler)
 {
+    Device* d3dDevice = (Device*)device;
+    if (info->maxAnisotropy > d3dDevice->limits.maxAnisotropy) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
     Sampler* sampler = nullptr;
     sampler = palAllocate(s_D3D.allocator, sizeof(Sampler), 0);
     if (!sampler) {
@@ -3867,6 +3973,10 @@ PalResult PAL_CALL createSwapchainD3D12(
     }
 
     if (info->presentMode == PAL_PRESENT_MODE_MAILBOX && info->imageCount < 3) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (info->imageCount > 8) {
         return PAL_RESULT_INVALID_ARGUMENT;
     }
 
@@ -4885,12 +4995,16 @@ PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
         }
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->geometryCount);
-        fillBuildInfoD3D12(
+        bool success = fillBuildInfoD3D12(
             info,
             geometries,
             srcAsAddress,
             dstAs->address,
             &buildInfo);
+
+        if (!success) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
 
         d3dCmdBuffer->handle->lpVtbl->BuildRaytracingAccelerationStructure(
             d3dCmdBuffer->handle,
@@ -4901,12 +5015,16 @@ PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
         palFree(s_D3D.allocator, geometries);
 
     } else {
-        fillBuildInfoD3D12(
+        bool success = fillBuildInfoD3D12(
             info,
             nullptr,
             srcAsAddress,
             dstAs->address,
             &buildInfo);
+
+        if (!success) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
 
         d3dCmdBuffer->handle->lpVtbl->BuildRaytracingAccelerationStructure(
             d3dCmdBuffer->handle,
@@ -5857,6 +5975,7 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
+    // TODO:
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* pipeline = d3dCmdBuffer->pipeline;
     DescriptorSet* d3dSet = (DescriptorSet*)set;
@@ -5932,6 +6051,7 @@ PalResult PAL_CALL cmdPushConstantsD3D12(
     Uint32 size,
     const void* value)
 {
+    // TODO:
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* pipeline = d3dCmdBuffer->pipeline;
 
@@ -6067,12 +6187,16 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
         }
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->geometryCount);
-        fillBuildInfoD3D12(
+        bool success = fillBuildInfoD3D12(
             info,
             geometries,
             0,
             0,
             &buildInfo);
+
+        if (!success) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
 
         d3dDevice->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
             d3dDevice->handle,
@@ -6082,12 +6206,16 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
         palFree(s_D3D.allocator, geometries);
 
     } else {
-        fillBuildInfoD3D12(
+        bool success = fillBuildInfoD3D12(
             info,
             nullptr,
             0,
             0,
             &buildInfo);
+
+        if (!success) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
 
         d3dDevice->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
             d3dDevice->handle,
@@ -6375,11 +6503,16 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
 
     Uint32 resourceOffset = 0;
     Uint32 samplerOffset = 0;
-    Uint32 samplerCount = 0;
+    Uint32 SRVRegister = 0;
+    Uint32 UAVRegister = 0;
+    Uint32 CBVRegister = 0;
 
-    Uint32 sampledASIndex = 0;
-    Uint32 uniformIndex = 0;
-    Uint32 storageIndex = 0;
+    Uint32 sampledImageCount = 0;
+    Uint32 storageImageCount = 0;
+    Uint32 storageBufferCount = 0;
+    Uint32 uniformBufferCount = 0;
+    Uint32 tlasCount = 0;
+    Uint32 samplerCount = 0;
 
     for (int i = 0; i < count; i++) {
         DescriptorSetBinding* binding = &bindings[i];
@@ -6390,52 +6523,97 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
         binding->range.RegisterSpace = 0;
 
         switch (info->bindings[i].descriptorType) {
-            case PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE:
-            case PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
+            case PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                binding->range.BaseShaderRegister = sampledASIndex++;
+                binding->range.BaseShaderRegister = SRVRegister;
 
                 binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
                 resourceOffset += info->bindings[i].descriptorCount;
+                tlasCount += info->bindings[i].descriptorCount;
+                SRVRegister += info->bindings[i].descriptorCount;
+
+                break;
+            }
+
+            case PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
+                binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                binding->range.BaseShaderRegister = SRVRegister;
+
+                binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
+                resourceOffset += info->bindings[i].descriptorCount;
+                sampledImageCount += info->bindings[i].descriptorCount;
+                SRVRegister += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_SAMPLER: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-                binding->range.BaseShaderRegister = samplerCount++;
+                binding->range.BaseShaderRegister = samplerCount;
 
                 binding->range.OffsetInDescriptorsFromTableStart = samplerOffset;
                 samplerOffset += info->bindings[i].descriptorCount;
+                samplerCount += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                binding->range.BaseShaderRegister = storageIndex++;
+                binding->range.BaseShaderRegister = UAVRegister;
 
                 binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
                 resourceOffset += info->bindings[i].descriptorCount;
+                storageBufferCount += info->bindings[i].descriptorCount;
+                UAVRegister += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                binding->range.BaseShaderRegister = storageIndex++;
+                binding->range.BaseShaderRegister = UAVRegister;
 
                 binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
                 resourceOffset += info->bindings[i].descriptorCount;
+                storageImageCount += info->bindings[i].descriptorCount;
+                UAVRegister += info->bindings[i].descriptorCount;
                 break;
             }
 
             case PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
                 binding->range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                binding->range.BaseShaderRegister = uniformIndex++;
+                binding->range.BaseShaderRegister = CBVRegister;
 
                 binding->range.OffsetInDescriptorsFromTableStart = resourceOffset;
                 resourceOffset += info->bindings[i].descriptorCount;
+                uniformBufferCount += info->bindings[i].descriptorCount;
+                CBVRegister += info->bindings[i].descriptorCount;
                 break;
             }
         }
+    }
+
+    // check limits
+    if (sampledImageCount > d3dDevice->limits.maxDescriptorSampledImages) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (storageImageCount > d3dDevice->limits.maxDescriptorStorageImages) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (storageBufferCount > d3dDevice->limits.maxDescriptorStorageBuffers) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (uniformBufferCount > d3dDevice->limits.maxDescriptorUniformBuffers) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (tlasCount > d3dDevice->limits.maxDescriptorAccelerationStructures) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (samplerCount > d3dDevice->limits.maxDescriptorSamplers) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     layout->bindingCount = info->bindingCount;
@@ -6640,7 +6818,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     Uint32 storageBufferCount = 0;
     Uint32 uniformBufferCount = 0;
     Uint32 sampledImageCount = 0;
-    Uint32 asCount = 0;
+    Uint32 tlasCount = 0;
 
     // get requirements for the sets using the provided layout
     for (int i = 0; i < d3dLayout->bindingCount; i++) {
@@ -6662,14 +6840,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
             sampledImageCount += binding->range.NumDescriptors;
 
         } else if (binding->type == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
-            asCount += binding->range.NumDescriptors;
-        }
-
-        // check if descriptor indexing is supported and enabled
-        if (binding->range.NumDescriptors > 1) {
-            if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
-                return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-            }
+            tlasCount += binding->range.NumDescriptors;
         }
     }
 
@@ -6681,7 +6852,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
 
     // check descriptor limits
     DescriptorHeapLimits* limits = &d3dPool->limits;
-    if (limits->usedAs + asCount > limits->maxAs) {
+    if (limits->usedAs + tlasCount > limits->maxAs) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
@@ -6712,12 +6883,12 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     set->layout = d3dLayout;
     set->pool = d3dPool;
 
-    Uint32 totalDescriptors = asCount + storageBufferCount + uniformBufferCount;
+    Uint32 totalDescriptors = tlasCount + storageBufferCount + uniformBufferCount;
     totalDescriptors += sampledImageCount + storageImageCount;
     d3dPool->resourceHeap.nextOffset += totalDescriptors;
     d3dPool->samplerHeap.nextOffset += samplerCount;
 
-    limits->usedAs += asCount;
+    limits->usedAs += tlasCount;
     limits->usedSampledImages += sampledImageCount;
     limits->usedSamplers += samplerCount;
     limits->usedStorageBuffers += storageBufferCount;
@@ -6738,8 +6909,12 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
         DescriptorSet* set = (DescriptorSet*)info->descriptorSet;
         DescriptorPool* pool = set->pool;
         DescriptorSetLayout* layout = set->layout;
-        DescriptorSetBinding* binding = &layout->bindings[info->layoutBindingIndex];
 
+        if (info->layoutBindingIndex > layout->bindingCount) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
+
+        DescriptorSetBinding* binding = &layout->bindings[info->layoutBindingIndex];
         DescriptorHeap* heap = nullptr;
         Uint32 index = 0;
         Uint32 bindingOffset = binding->range.OffsetInDescriptorsFromTableStart;
@@ -6882,6 +7057,8 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     D3D12_DESCRIPTOR_RANGE1* ranges = nullptr;
     D3D12_DESCRIPTOR_RANGE1* samplerRanges = nullptr;
 
+    // TODO:
+
     // get the total resource and sampler ranges for all provided descriptor set layouts
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
         DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
@@ -6895,6 +7072,10 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         if (tmp->offset + tmp->size > pushConstantSize) {
             pushConstantSize = tmp->offset + tmp->size;
         }
+    }
+
+    if (pushConstantSize > d3dDevice->limits.maxPushConstantSize) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     layout = palAllocate(s_D3D.allocator, sizeof(PipelineLayout), 0);
@@ -7124,6 +7305,14 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     for (int i = 0; i < vertexLayoutCount; i++) {
         PalVertexLayout* layout = &info->vertexLayouts[i];
         vertexCount += layout->attributeCount;
+    }
+
+    if (info->vertexLayoutCount > d3dDevice->limits.maxVertexLayouts) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (vertexCount > d3dDevice->limits.maxVertexAttributes) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     InputLayoutStream* inputLayoutStream = &graphicsStreamDesc.inputLayout;
@@ -7567,6 +7756,18 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
     if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (info->maxAttributeSize > d3dDevice->limits.maxHitAttributeSize) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (info->maxPayloadSize > d3dDevice->limits.maxPayloadSize) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
+
+    if (info->maxRecursionDepth> d3dDevice->limits.maxRecursionDepth) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     // Every entry is a shader export
