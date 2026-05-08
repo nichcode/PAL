@@ -5995,6 +5995,11 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     // bind resource descriptor table
     Uint32 resourceCount = d3dSet->layout->bindingCount - d3dSet->layout->samplerCount;
     Uint32 baseIndex = setIndex;
+    if (pipeline->layout->constantIndex != UINT32_MAX) {
+        // If push constant was used to create the pipeline layout
+        // slot 0 will be reserve for it
+        baseIndex++;
+    }
 
     if (resourceCount) {
         D3D12_GPU_DESCRIPTOR_HANDLE base;
@@ -6942,7 +6947,9 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 d3dDevice->handle->lpVtbl->CreateSampler(d3dDevice->handle, &sampler->desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
-                AccelerationStructure* tlas = (AccelerationStructure*)info->tlasInfos[j].tlas;
+                AccelerationStructure* tlas = nullptr;
+                tlas = (AccelerationStructure*)info->tlasInfos[j].tlas;
+
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
                 desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 desc.RaytracingAccelerationStructure.Location = tlas->address;
@@ -7100,7 +7107,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     if (parameterCount) {
         Uint32 paramtersSize = sizeof(D3D12_ROOT_PARAMETER1) * parameterCount;
         parameters = palAllocate(s_D3D.allocator, paramtersSize, 0);
-        if (!ranges) {
+        if (!parameters) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
@@ -7137,11 +7144,14 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     Uint32 registerSpace = 0;
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
         DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
-        D3D12_ROOT_PARAMETER1* parameter = &parameters[parameterCount];
+        D3D12_ROOT_PARAMETER1* parameter = nullptr;
 
         // reset and reuse same variable
         resourceCount = tmp->bindingCount - tmp->samplerCount;
         samplerCount = tmp->samplerCount;
+
+        Uint32 samplerIndex = samplerRangesOffset;
+        Uint32 rangeIndex = rangesOffset;
 
         // seperate the samplers from the remaining descriptors
         for (int j = 0; j < tmp->bindingCount; j++) {
@@ -7149,15 +7159,18 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
             D3D12_DESCRIPTOR_RANGE1* tmpRange = nullptr;
 
             if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
-                tmpRange = &samplerRanges[samplerRangesOffset + j];
+                tmpRange = &samplerRanges[samplerIndex++];
             } else {
-                tmpRange = &ranges[rangesOffset + j];
+                tmpRange = &ranges[rangeIndex++];
             }
+
+            *tmpRange = binding->range;
             tmpRange->RegisterSpace = registerSpace;
         }
 
         // resource ranges
         if (resourceCount) {
+            parameter = &parameters[parameterCount];
             parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
             parameter->DescriptorTable.NumDescriptorRanges = resourceCount;
             parameter->DescriptorTable.pDescriptorRanges = &ranges[rangesOffset];
@@ -7168,7 +7181,8 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         }
 
         // sampler ranges
-        if (resourceCount) {
+        if (samplerCount) {
+            parameter = &parameters[parameterCount];
             parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
             parameter->DescriptorTable.NumDescriptorRanges = samplerCount;
             parameter->DescriptorTable.pDescriptorRanges = &samplerRanges[samplerRangesOffset];

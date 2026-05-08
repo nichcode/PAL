@@ -57,8 +57,8 @@ int main(int argc, char** argv)
 #endif
 
 #if PAL_HAS_GRAPHICS
-    registerTest(graphicsTest, "Graphics Test");
-    // registerTest(computeTest, "Compute Test");
+    // registerTest(graphicsTest, "Graphics Test");
+    registerTest(computeTest, "Compute Test");
     // registerTest(rayTracingTest, "Ray Tracing Test");
 #endif // PAL_HAS_GRAPHICS
 

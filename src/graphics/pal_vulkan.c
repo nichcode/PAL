@@ -8399,25 +8399,32 @@ PalResult PAL_CALL updateDescriptorSetVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    bufferInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBufferInfo) * bufferCount, 0);
-    if (!bufferInfos && bufferCount) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+    if (bufferCount) {
+        bufferInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBufferInfo) * bufferCount, 0);
+        if (!bufferInfos) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
     }
 
-    imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * imageCount, 0);
-    if (!imageInfos && imageCount) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+    
+    if (imageCount) {
+        imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * imageCount, 0);
+        if (!imageInfos) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
     }
 
     Uint32 tlasInfoSize = sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasCount;
-    tlasInfos = palAllocate(s_Vk.allocator, tlasInfoSize, 0);
-    if (!tlasInfos && tlasCount) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+    if (tlasCount) {
+        tlasInfos = palAllocate(s_Vk.allocator, tlasInfoSize, 0);
+        if (!tlasInfos) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
     }
 
     for (int i = 0; i < count; i++) {
         VkWriteDescriptorSet* write = &writes[i];
-        PalDescriptorSetWriteInfo* info = &info[i];
+        PalDescriptorSetWriteInfo* info = &infos[i];
 
         write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write->pBufferInfo = nullptr;
@@ -8432,6 +8439,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
 
         DescriptorSet* set = (DescriptorSet*)info->descriptorSet;
         write->dstSet = set->handle;
+
         bool isImage = false;
         bool isTlas = false;
         bool isBuffer = false;
