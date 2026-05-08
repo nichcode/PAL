@@ -2171,7 +2171,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
     info->vendorId = desc.VendorId;
     info->deviceId= desc.DeviceId;
     info->apiType = PAL_ADAPTER_API_TYPE_D3D12;
-    info->shaderFormats = PAL_SHADER_FORMAT_DXIL | PAL_SHADER_FORMAT_DXBC;
+    info->shaderFormats = PAL_SHADER_FORMAT_DXIL;
     info->sharedMemory = desc.SharedSystemMemory;
     strcpy(info->backendName, "PAL");
 
@@ -2403,8 +2403,7 @@ Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
-    bool isDxil = shaderFormat == PAL_SHADER_FORMAT_DXIL;
-    if (!isDxil && shaderFormat != PAL_SHADER_FORMAT_DXBC) {
+    if (shaderFormat != PAL_SHADER_FORMAT_DXIL) {
         return 0;
     }
 
@@ -2420,7 +2419,6 @@ Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
     models[5] = D3D_SHADER_MODEL_6_2;
     models[6] = D3D_SHADER_MODEL_6_1;
     models[7] = D3D_SHADER_MODEL_6_0;
-    models[8] = D3D_SHADER_MODEL_5_1;
 
     // find the highest supported shader model
     HRESULT result = 0;
@@ -2439,12 +2437,8 @@ Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
         }
     }
 
-    if (shaderFormat == PAL_SHADER_FORMAT_DXBC) {
-        if (highestModel >= D3D_SHADER_MODEL_5_1) {
-            return PAL_MAKE_SHADER_TARGET(5, 1);
-        } else {
-            return 0;
-        }
+    if (highestModel == D3D_SHADER_MODEL_5_1) {
+        return 0;
     }
 
     if (highestModel >= D3D_SHADER_MODEL_6_7) {
@@ -6981,7 +6975,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     D3D12_DESCRIPTOR_RANGE1* ranges = nullptr;
     D3D12_DESCRIPTOR_RANGE1* samplerRanges = nullptr;
 
-    Uint32 parameterCount = info->descriptorSetLayoutCount;
+    Uint32 parameterCount = 0;
     D3D12_ROOT_PARAMETER1* parameters = nullptr;
 
     if (info->descriptorSetLayoutCount > d3dDevice->limits.maxBoundDescriptorSets) {
@@ -6993,6 +6987,14 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
         resourceCount += tmp->bindingCount - tmp->samplerCount;
         samplerCount += tmp->samplerCount;
+
+        if (tmp->bindingCount - tmp->samplerCount >= 1) {
+            parameterCount++;
+        }
+
+        if (tmp->samplerCount >= 1) {
+            parameterCount++;
+        }
     }
 
     // get the total size needed for all provided push constant range

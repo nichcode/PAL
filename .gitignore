@@ -6,8 +6,8 @@
 **.vs
 
 # Binaries
-**bin
-**build
+/bin/
+/build/
 
 # MakeFiles
 Makefile

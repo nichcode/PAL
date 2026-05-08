@@ -401,33 +401,54 @@ bool meshTest()
     Uint64 fragBytecodeSize = 0;
     void* meshBytecode = nullptr;
     void* fragBytecode = nullptr;
+    const char* meshSource = nullptr;
+    const char* fragSource = nullptr;
 
     PalShaderCreateInfo meshShaderCreateInfo = {0};
     PalShaderCreateInfo fragShaderCreateInfo = {0};
-
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        meshBytecodeSize = sizeof(s_MeshShaderSpv);
-        fragBytecodeSize = sizeof(s_TriangleFragShaderSpv);
-
-        meshBytecode = (void*)s_MeshShaderSpv;
-        fragBytecode = (void*)s_TriangleFragShaderSpv;
+        meshSource = "graphics/shaders/bin/triangle_vert.spv";
+        fragSource = "graphics/shaders/bin/triangle_frag.spv";
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        meshBytecodeSize = sizeof(s_MeshShaderDxil);
-        fragBytecodeSize = sizeof(s_TriangleFragShaderDxil);
-
-        meshBytecode = (void*)s_MeshShaderDxil;
-        fragBytecode = (void*)s_TriangleFragShaderDxil;
+        meshSource = "graphics/shaders/bin/triangle_vert.dxil";
+        fragSource = "graphics/shaders/bin/triangle_frag.dxil";
     }
+
+    // read file
+    if (!readFile(meshSource, nullptr, &meshBytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
+
+    if (!readFile(fragSource, nullptr, &fragBytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
+
+    meshBytecode = palAllocate(nullptr, meshBytecodeSize, 0);
+    if (!meshBytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    fragBytecode = palAllocate(nullptr, fragBytecodeSize, 0);
+    if (!fragBytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(meshSource, meshBytecode, &meshBytecodeSize);
+    readFile(fragSource, fragBytecode, &fragBytecodeSize);
 
     // describe how many entries are in the shader bytecode
     // For simplicity, we dont use one shader bytecode for all the shaders
     PalShaderEntry meshEntry = {0};
-    meshEntry.entryName = "main";
+    meshEntry.entryName = "meshMain";
     meshEntry.stage = PAL_SHADER_STAGE_MESH;
 
     PalShaderEntry fragmentEntry = {0};
-    fragmentEntry.entryName = "main";
+    fragmentEntry.entryName = "fragMain";
     fragmentEntry.stage = PAL_SHADER_STAGE_FRAGMENT;
 
     meshShaderCreateInfo.bytecode = meshBytecode;
@@ -453,6 +474,9 @@ bool meshTest()
         palLog(nullptr, "Failed to create fragment shader: %s", error);
         return false;
     }
+
+    palFree(nullptr, meshBytecode);
+    palFree(nullptr, fragBytecode);
 
     // create a pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};

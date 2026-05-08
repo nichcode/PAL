@@ -226,16 +226,6 @@ bool graphicsTest()
             palLog(nullptr, "");
         }
 
-        if (info.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-            palLog(nullptr, "  DXBC");
-            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-            targetMajor = PAL_SHADER_TARGET_MAJOR(target);
-            targetMinor = PAL_SHADER_TARGET_MINOR(target);
-
-            palLog(nullptr, "   Highest Dxbc Target: %u.%u", targetMajor, targetMinor);
-            palLog(nullptr, "");
-        }
-
         // features
         palLog(nullptr, "");
         palLog(nullptr, " Supported Features:");

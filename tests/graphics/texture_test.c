@@ -855,38 +855,69 @@ bool textureTest()
     Uint64 fragBytecodeSize = 0;
     void* vertBytecode = nullptr;
     void* fragBytecode = nullptr;
+    const char* vertSource = nullptr;
+    const char* fragSource = nullptr;
+
+    // we are not resizing for the viewport and scissor will not change
+    PalViewport viewport = {0};
+    viewport.height = (float)WINDOW_HEIGHT;
+    viewport.width = (float)WINDOW_WIDTH;
+    viewport.maxDepth = 1.0f;
 
     PalShaderCreateInfo vertShaderCreateInfo = {0};
     PalShaderCreateInfo fragShaderCreateInfo = {0};
-
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        vertBytecodeSize = sizeof(s_TextureVertShaderSpv);
-        fragBytecodeSize = sizeof(s_TextureFragShaderSpv);
+        vertSource = "graphics/shaders/bin/texture_vert.spv";
+        fragSource = "graphics/shaders/bin/texture_frag.spv";
 
-        vertBytecode = (void*)s_TextureVertShaderSpv;
-        fragBytecode = (void*)s_TextureFragShaderSpv;
+        // flip for spirv since we use a single shader source
+        viewport.y = (float)WINDOW_HEIGHT;
+        viewport.height = -(float)WINDOW_HEIGHT;
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        vertBytecodeSize = sizeof(s_TextureVertShaderDxil);
-        fragBytecodeSize = sizeof(s_TextureFragShaderDxil);
-        
-        vertBytecode = (void*)s_TextureVertShaderDxil;
-        fragBytecode = (void*)s_TextureFragShaderDxil;
+        vertSource = "graphics/shaders/bin/texture_vert.dxil";
+        fragSource = "graphics/shaders/bin/texture_frag.dxil";
     }
+
+    // read file
+    if (!readFile(vertSource, nullptr, &vertBytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
+
+    if (!readFile(fragSource, nullptr, &fragBytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
+
+    vertBytecode = palAllocate(nullptr, vertBytecodeSize, 0);
+    if (!vertBytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    fragBytecode = palAllocate(nullptr, fragBytecodeSize, 0);
+    if (!fragBytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(vertSource, vertBytecode, &vertBytecodeSize);
+    readFile(fragSource, fragBytecode, &fragBytecodeSize);
 
     // describe how many entries are in the shader bytecode
     // For simplicity, we dont use one shader bytecode for all the shaders
-    PalShaderEntry vertEntry = {0};
-    vertEntry.entryName = "main";
-    vertEntry.stage = PAL_SHADER_STAGE_VERTEX;
+    PalShaderEntry vertexEntry = {0};
+    vertexEntry.entryName = "vertexMain";
+    vertexEntry.stage = PAL_SHADER_STAGE_VERTEX;
 
     PalShaderEntry fragmentEntry = {0};
-    fragmentEntry.entryName = "main";
+    fragmentEntry.entryName = "fragMain";
     fragmentEntry.stage = PAL_SHADER_STAGE_FRAGMENT;
 
     vertShaderCreateInfo.bytecode = vertBytecode;
     vertShaderCreateInfo.bytecodeSize = vertBytecodeSize;
-    vertShaderCreateInfo.entries = &vertEntry;
+    vertShaderCreateInfo.entries = &vertexEntry;
     vertShaderCreateInfo.entryCount = 1;
 
     fragShaderCreateInfo.bytecode = fragBytecode;
@@ -907,6 +938,9 @@ bool textureTest()
         palLog(nullptr, "Failed to create fragment shader: %s", error);
         return false;
     }
+
+    palFree(nullptr, vertBytecode);
+    palFree(nullptr, fragBytecode);
 
     // create descriptor set layout
     PalDescriptorSetLayoutBinding descriptorBindings[2];
@@ -1095,12 +1129,6 @@ bool textureTest()
     // main loop
     Uint32 currentFrame = 0;
     bool running = true;
-
-    // we are not resizing for the viewport and scissor will not change
-    PalViewport viewport = {0};
-    viewport.height = (float)WINDOW_HEIGHT;
-    viewport.width = (float)WINDOW_WIDTH;
-    viewport.maxDepth = 1.0f;
 
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;

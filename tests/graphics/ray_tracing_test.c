@@ -21,10 +21,7 @@ bool rayTracingTest()
     PalQueue* queue = nullptr;
     PalCommandPool* cmdPool = nullptr;
     PalCommandBuffer* cmdBuffer;
-
-    PalShader* raygenShader = nullptr;
-    PalShader* missShader = nullptr;
-    PalShader* closestHitShader = nullptr;
+    PalShader* rayTracingShader = nullptr;
 
     PalBuffer* buffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
@@ -201,86 +198,58 @@ bool rayTracingTest()
         return false;
     }
 
-    // create ray tracing shaders
-    Uint64 raygenBytecodeSize = 0;
-    Uint64 closestHitBytecodeSize = 0;
-    Uint64 missBytecodeSize = 0;
-    void* raygenBytecode = 0;
-    void* closestHitBytecode = 0;
-    void* missBytecode = 0;
+    // create ray tracing shader
+    Uint64 bytecodeSize = 0;
+    void* bytecode = 0;
+    const char* source = nullptr;
 
-    PalShaderCreateInfo raygenShaderCreateInfo = {0};
-    PalShaderCreateInfo closestHitShaderCreateInfo = {0};
-    PalShaderCreateInfo missShaderCreateInfo = {0};
-
+    PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        raygenBytecodeSize = sizeof(s_RaygenShaderSpv);
-        closestHitBytecodeSize = sizeof(s_ClosestHitShaderSpv);
-        missBytecodeSize = sizeof(s_MissShaderSpv);
-
-        raygenBytecode = (void*)s_RaygenShaderSpv;
-        closestHitBytecode = (void*)s_ClosestHitShaderSpv;
-        missBytecode = (void*)s_MissShaderSpv;
+        source = "graphics/shaders/bin/ray_tracing.spv";
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        raygenBytecodeSize = sizeof(s_RaygenShaderDxil);
-        closestHitBytecodeSize = sizeof(s_ClosestHitShaderDxil);
-        missBytecodeSize = sizeof(s_MissShaderDxil);
-
-        raygenBytecode = (void*)s_RaygenShaderDxil;
-        closestHitBytecode = (void*)s_ClosestHitShaderDxil;
-        missBytecode = (void*)s_MissShaderDxil;
+        source = "graphics/shaders/bin/ray_tracing.dxil";
     }
+
+    // read file
+    if (!readFile(source, nullptr, &bytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
+
+    bytecode = palAllocate(nullptr, bytecodeSize, 0);
+    if (!bytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(source, bytecode, &bytecodeSize);
 
     // describe how many entries are in the shader bytecode
     // For simplicity, we dont use one shader bytecode for all the shaders
-    PalShaderEntry raygenEntry = {0};
-    raygenEntry.entryName = "main";
-    raygenEntry.stage = PAL_SHADER_STAGE_RAYGEN;
+    PalShaderEntry shaderEntries[3];
+    shaderEntries[0].entryName = "raygenMain";
+    shaderEntries[0].stage = PAL_SHADER_STAGE_RAYGEN;
 
-    PalShaderEntry closestHitEntry = {0};
-    closestHitEntry.entryName = "main";
-    closestHitEntry.stage = PAL_SHADER_STAGE_CLOSEST_HIT;
+    shaderEntries[1].entryName = "closestHitMain";
+    shaderEntries[1].stage = PAL_SHADER_STAGE_CLOSEST_HIT;
 
-    PalShaderEntry missEntry = {0};
-    missEntry.entryName = "main";
-    missEntry.stage = PAL_SHADER_STAGE_MISS;
+    shaderEntries[2].entryName = "missMain";
+    shaderEntries[2].stage = PAL_SHADER_STAGE_MISS;
 
-    raygenShaderCreateInfo.bytecode = raygenBytecode;
-    raygenShaderCreateInfo.bytecodeSize = raygenBytecodeSize;
-    raygenShaderCreateInfo.entries = &raygenEntry;
-    raygenShaderCreateInfo.entryCount = 1;
+    shaderCreateInfo.bytecode = bytecode;
+    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.entries = shaderEntries;
+    shaderCreateInfo.entryCount = 3;
 
-    closestHitShaderCreateInfo.bytecode = closestHitBytecode;
-    closestHitShaderCreateInfo.bytecodeSize = closestHitBytecodeSize;
-    closestHitShaderCreateInfo.entries = &closestHitEntry;
-    closestHitShaderCreateInfo.entryCount = 1;
-
-    missShaderCreateInfo.bytecode = missBytecode;
-    missShaderCreateInfo.bytecodeSize = missBytecodeSize;
-    missShaderCreateInfo.entries = &missEntry;
-    missShaderCreateInfo.entryCount = 1;
-
-    result = palCreateShader(device, &raygenShaderCreateInfo, &raygenShader);
+    result = palCreateShader(device, &shaderCreateInfo, &rayTracingShader);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create raygen shader: %s", error);
+        palLog(nullptr, "Failed to create ray tracing shader: %s", error);
         return false;
     }
 
-    result = palCreateShader(device, &closestHitShaderCreateInfo, &closestHitShader);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create closest hit shader: %s", error);
-        return false;
-    }
-
-    result = palCreateShader(device, &missShaderCreateInfo, &missShader);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create miss shader: %s", error);
-        return false;
-    }
+    palFree(nullptr, bytecode);
 
     Uint32 bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
     PalBufferCreateInfo bufferCreateInfo = {0};
@@ -803,42 +772,36 @@ bool rayTracingTest()
         return false;
     }
 
-    // shader and shader groups
-    PalShader* shaders[3];
-    shaders[0] = raygenShader;
-    shaders[1] = missShader;
-    shaders[2] = closestHitShader;
-
     PalRayTracingShaderGroupCreateInfo shaderGroupCreateInfos[3] = {0};
     shaderGroupCreateInfos[0].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
-    shaderGroupCreateInfos[0].generalShaderIndex = 0; // must match raygen index
+    shaderGroupCreateInfos[0].generalShaderIndex = 0; // must match ray tracing shader index
     shaderGroupCreateInfos[0].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].generalEntryIndex = 0; // First shader entry
 
     shaderGroupCreateInfos[1].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
-    shaderGroupCreateInfos[1].generalShaderIndex = 1; // must match miss index
+    shaderGroupCreateInfos[1].generalShaderIndex = 0; // must match ray tracing shader index
     shaderGroupCreateInfos[1].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
-    shaderGroupCreateInfos[1].generalEntryIndex = 0; // First shader entry
+    shaderGroupCreateInfos[1].generalEntryIndex = 1; // Second shader entry
 
     shaderGroupCreateInfos[2].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT;
-    shaderGroupCreateInfos[2].closestHitShaderIndex = 2; // must match closest hit index
+    shaderGroupCreateInfos[2].closestHitShaderIndex = 0; // must match ray tracing shader index
     shaderGroupCreateInfos[2].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].generalShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
-    shaderGroupCreateInfos[2].closestHitEntryIndex = 0; // First shader entry
+    shaderGroupCreateInfos[2].closestHitEntryIndex = 2; // Third shader entry
 
     // create a ray tracing pipeline
     PalRayTracingPipelineCreateInfo pipelineCreateInfo = {0};
     pipelineCreateInfo.maxRecursionDepth = 1;
     pipelineCreateInfo.pipelineLayout = pipelineLayout;
-    pipelineCreateInfo.shaderCount = 3;
+    pipelineCreateInfo.shaderCount = 1;
     pipelineCreateInfo.shaderGroupCount = 3;
     pipelineCreateInfo.shaderGroups = shaderGroupCreateInfos;
-    pipelineCreateInfo.shaders = shaders;
+    pipelineCreateInfo.shaders = &rayTracingShader;
 
     result = palCreateRayTracingPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
@@ -1089,10 +1052,7 @@ bool rayTracingTest()
     palFreeMemory(device, tlasBufferMemory);
     palFreeMemory(device, scratchBufferMemory);
 
-    palDestroyShader(raygenShader);
-    palDestroyShader(missShader);
-    palDestroyShader(closestHitShader);
-
+    palDestroyShader(rayTracingShader);
     palFreeCommandBuffer(cmdBuffer);
     palDestroyCommandPool(cmdPool);
     palDestroyQueue(queue);

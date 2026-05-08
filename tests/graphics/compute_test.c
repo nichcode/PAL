@@ -105,7 +105,7 @@ bool computeTest()
         }
 
         if (hasComputeQueue) {
-            // We want an adapter that supports spirv 1.0 or dxbc 5.1
+            // We want an adapter that supports spirv 1.0 or dxil 6.0
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -122,9 +122,9 @@ bool computeTest()
                 }
             }
 
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
+                if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
                     break;
                 }
             }
@@ -185,10 +185,10 @@ bool computeTest()
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        source = "graphics/shaders/spirv/compute.spv";
+        source = "graphics/shaders/bin/compute.spv";
 
-    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-        source = "graphics/shaders/dxbc/compute.cso";
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        source = "graphics/shaders/bin/compute.dxil";
     }
 
     // read file
@@ -203,12 +203,12 @@ bool computeTest()
         return false;
     }
 
-    readFile(source, nullptr, &bytecodeSize);
+    readFile(source, bytecode, &bytecodeSize);
 
     // describe how many entries are in the shader bytecode
     // We only have one entry for the compute shader.
     PalShaderEntry computeEntry = {0};
-    computeEntry.entryName = "main";
+    computeEntry.entryName = "computeMain";
     computeEntry.stage = PAL_SHADER_STAGE_COMPUTE;
 
     shaderCreateInfo.bytecode = bytecode;
