@@ -144,6 +144,7 @@ typedef struct {
     Uint32 freeList[MAX_DSV];
 } DSVHeapAllocator;
 
+// Limits we must enforce ourselves
 typedef struct {
     Uint32 freeComputeQueues;
     Uint32 freeGraphicsQueues;
@@ -318,10 +319,7 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     Uint32 constantIndex;
-    Uint32 resourceIndex;
-    Uint32 samplerIndex;
     ID3D12RootSignature* handle;
-    D3D12_ROOT_PARAMETER1 params[3];
 } PipelineLayout;
 
 typedef struct {
@@ -1239,16 +1237,16 @@ static bool fillBuildInfoD3D12(
     static Uint32 maxGeometryCount = 100000;
 
     if (info->geometryCount > maxGeometryCount) {
-        return;
+        return false;
     }
 
     if (info->instanceCount > maxInstanceCount) {
-        return;
+        return false;
     }
 
     for (int i = 0; i < info->geometryCount; i++) {
         if (info->geometries[i].primitiveCount > maxPrimitiveCount) {
-            return;
+            return false;
         }
 
         D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
@@ -1325,6 +1323,8 @@ static bool fillBuildInfoD3D12(
     buildInfo->SourceAccelerationStructureData = srcAs;
     buildInfo->DestAccelerationStructureData = dstAs;
     buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
+    
+    return true;
 }
 
 static Uint32 getFormatSizeD3D12(PalFormat format)
@@ -5975,7 +5975,6 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     Uint32 setIndex,
     PalDescriptorSet* set)
 {
-    // TODO:
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* pipeline = d3dCmdBuffer->pipeline;
     DescriptorSet* d3dSet = (DescriptorSet*)set;
@@ -5993,9 +5992,11 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     }
     d3dCmdBuffer->handle->lpVtbl->SetDescriptorHeaps(d3dCmdBuffer->handle, heapCount, heaps);
 
-    // bind descriptor tables
-    if (pipeline->layout->resourceIndex != UINT32_MAX) {
-        // a valid index
+    // bind resource descriptor table
+    Uint32 resourceCount = d3dSet->layout->bindingCount - d3dSet->layout->samplerCount;
+    Uint32 baseIndex = setIndex;
+
+    if (resourceCount) {
         D3D12_GPU_DESCRIPTOR_HANDLE base;
         base.ptr = getDescriptorHandleD3D12(
             d3dSet->resourceOffset,
@@ -6005,20 +6006,22 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
         if (pipeline->type == GRAPHICS_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetGraphicsRootDescriptorTable(
                 d3dCmdBuffer->handle,
-                pipeline->layout->resourceIndex,
+                baseIndex, // base set index is resource first before sampler
                 base);
 
         } else {
             // ray tracing uses the compute path
             d3dCmdBuffer->handle->lpVtbl->SetComputeRootDescriptorTable(
                 d3dCmdBuffer->handle,
-                pipeline->layout->resourceIndex,
+                baseIndex, // base set index is resource first before sampler
                 base);
         }
+
+        baseIndex++;
     }
 
-    if (pipeline->layout->samplerIndex != UINT32_MAX) {
-        // a valid index
+    // bind sampler descriptor table
+    if (d3dSet->layout->samplerCount) {
         D3D12_GPU_DESCRIPTOR_HANDLE base;
         base.ptr = getDescriptorHandleD3D12(
             d3dSet->samplerOffset,
@@ -6028,14 +6031,14 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
         if (pipeline->type == GRAPHICS_PIPELINE) {
             d3dCmdBuffer->handle->lpVtbl->SetGraphicsRootDescriptorTable(
                 d3dCmdBuffer->handle,
-                pipeline->layout->samplerIndex,
+                baseIndex,
                 base);
 
         } else {
             // ray tracing uses the compute path
             d3dCmdBuffer->handle->lpVtbl->SetComputeRootDescriptorTable(
                 d3dCmdBuffer->handle,
-                pipeline->layout->samplerIndex,
+                baseIndex,
                 base);
         }
     }
@@ -6051,7 +6054,6 @@ PalResult PAL_CALL cmdPushConstantsD3D12(
     Uint32 size,
     const void* value)
 {
-    // TODO:
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* pipeline = d3dCmdBuffer->pipeline;
 
@@ -7054,10 +7056,18 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     Uint32 samplerCount = 0;
     Uint32 pushConstantSize = 0;
     Uint32 sizeInBytes = sizeof(D3D12_DESCRIPTOR_RANGE1);
+
+    Uint32 rangesOffset = 0;
+    Uint32 samplerRangesOffset = 0;
     D3D12_DESCRIPTOR_RANGE1* ranges = nullptr;
     D3D12_DESCRIPTOR_RANGE1* samplerRanges = nullptr;
 
-    // TODO:
+    Uint32 parameterCount = info->descriptorSetLayoutCount;
+    D3D12_ROOT_PARAMETER1* parameters = nullptr;
+
+    if (info->descriptorSetLayoutCount > d3dDevice->limits.maxBoundDescriptorSets) {
+        return PAL_RESULT_INVALID_ARGUMENT;
+    }
 
     // get the total resource and sampler ranges for all provided descriptor set layouts
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
@@ -7083,7 +7093,20 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    memset(layout, 0, sizeof(PipelineLayout));
+    if (pushConstantSize) {
+        parameterCount++;
+    }
+
+    if (parameterCount) {
+        Uint32 paramtersSize = sizeof(D3D12_ROOT_PARAMETER1) * parameterCount;
+        parameters = palAllocate(s_D3D.allocator, paramtersSize, 0);
+        if (!ranges) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
+
+        memset(parameters, 0, paramtersSize);
+    }
+
     if (resourceCount) {
         ranges = palAllocate(s_D3D.allocator, sizeInBytes * resourceCount, 0);
         if (!ranges) {
@@ -7098,71 +7121,75 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         }
     }
 
-    Uint32 tmpResourceIndex = 0;
-    Uint32 tmpSamplerIndex = 0;
+    // write root constant first if its provided
+    parameterCount = 0; // reset and reuse the same variable
+    layout->constantIndex = UINT32_MAX;
+    if (pushConstantSize) {
+        D3D12_ROOT_PARAMETER1* parameter = &parameters[parameterCount];
+        parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        parameter->Constants.Num32BitValues = pushConstantSize / 4;
+        parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+        layout->constantIndex = parameterCount;
+        parameterCount++;
+    }
+
+    Uint32 registerSpace = 0;
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
         DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
+        D3D12_ROOT_PARAMETER1* parameter = &parameters[parameterCount];
+
+        // reset and reuse same variable
+        resourceCount = tmp->bindingCount - tmp->samplerCount;
+        samplerCount = tmp->samplerCount;
+
         // seperate the samplers from the remaining descriptors
-        for (int i = 0; i < tmp->bindingCount; i++) {
-            DescriptorSetBinding* binding = &tmp->bindings[i];
+        for (int j = 0; j < tmp->bindingCount; j++) {
+            DescriptorSetBinding* binding = &tmp->bindings[j];
+            D3D12_DESCRIPTOR_RANGE1* tmpRange = nullptr;
+
             if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
-                samplerRanges[tmpResourceIndex++] = binding->range;
+                tmpRange = &samplerRanges[samplerRangesOffset + j];
             } else {
-                ranges[tmpSamplerIndex++] = binding->range;
+                tmpRange = &ranges[rangesOffset + j];
             }
+            tmpRange->RegisterSpace = registerSpace;
         }
-    }
 
-    Uint32 paramCount = 0;
-    layout->constantIndex = UINT32_MAX;
-    layout->resourceIndex = UINT32_MAX;
-    layout->samplerIndex = UINT32_MAX;
+        // resource ranges
+        if (resourceCount) {
+            parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            parameter->DescriptorTable.NumDescriptorRanges = resourceCount;
+            parameter->DescriptorTable.pDescriptorRanges = &ranges[rangesOffset];
+            parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-    // push constant parameter
-    if (pushConstantSize) {
-        D3D12_ROOT_PARAMETER1* tmp = &layout->params[paramCount];
-        tmp->ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        tmp->Constants.Num32BitValues = pushConstantSize / 4;
-        tmp->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            rangesOffset += resourceCount;
+            parameterCount++;
+        }
 
-        layout->constantIndex = paramCount;
-        paramCount++;
-    }
+        // sampler ranges
+        if (resourceCount) {
+            parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            parameter->DescriptorTable.NumDescriptorRanges = samplerCount;
+            parameter->DescriptorTable.pDescriptorRanges = &samplerRanges[samplerRangesOffset];
+            parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-    // resource parameter
-    if (resourceCount) {
-        D3D12_ROOT_PARAMETER1* tmp = &layout->params[paramCount];
-        tmp->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        tmp->DescriptorTable.NumDescriptorRanges = resourceCount;
-        tmp->DescriptorTable.pDescriptorRanges = ranges;
-        tmp->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            samplerRangesOffset += samplerCount;
+            parameterCount++;
+        }
 
-        layout->resourceIndex = paramCount;
-        paramCount++;
-    }
-
-    // sampler parameter
-    if (samplerCount) {
-        D3D12_ROOT_PARAMETER1* tmp = &layout->params[paramCount];
-        tmp->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        tmp->DescriptorTable.NumDescriptorRanges = samplerCount;
-        tmp->DescriptorTable.pDescriptorRanges = samplerRanges;
-        tmp->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-        layout->samplerIndex = paramCount;
-        paramCount++;
+        registerSpace++;
     }
 
     // create root signature
     D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc = {0};
     rootDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
-    rootDesc.Desc_1_1.NumParameters = paramCount;
-    rootDesc.Desc_1_1.pParameters = layout->params;
+    rootDesc.Desc_1_1.NumParameters = parameterCount;
+    rootDesc.Desc_1_1.pParameters = parameters;
     rootDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     ID3DBlob* blob = nullptr;
-    ID3DBlob* errBlob = nullptr;
-    HRESULT result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, &errBlob);
+    HRESULT result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
     if (FAILED(result)) {
         pollMessagesD3D12(d3dDevice);
         if (result == E_INVALIDARG) {
@@ -7195,6 +7222,10 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
 
     if (samplerCount) {
         palFree(s_D3D.allocator, samplerRanges);
+    }
+
+    if (parameterCount) {
+        palFree(s_D3D.allocator, parameters);
     }
 
     blob->lpVtbl->Release(blob);

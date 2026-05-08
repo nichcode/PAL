@@ -261,14 +261,14 @@ bool graphicsTest()
             palLog(nullptr, "  SPIRV");
 
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
-            palLog(nullptr, "  Highest Spirv Target %s:", shaderTargetToString(target));
+            palLog(nullptr, "   Highest Spirv Target %s:", shaderTargetToString(target));
         }
 
         if (info.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
             palLog(nullptr, "  DXIL");
 
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
-            palLog(nullptr, "  Highest Dxil Target %s:", shaderTargetToString(target));
+            palLog(nullptr, "   Highest Dxil Target %s:", shaderTargetToString(target));
         }
 
         // features

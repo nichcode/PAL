@@ -355,6 +355,11 @@ typedef struct {
     VkQueueFlags usedUsages;
 } PhysicalQueue;
 
+// Limits we must enforce ourselves
+typedef struct {
+    Uint32 maxPayloadSize;
+} DeviceLimits;
+
 typedef struct {
     const PalGraphicsBackend* backend;
 
@@ -419,6 +424,8 @@ typedef struct {
     PFN_vkCmdSetDepthTestEnable cmdSetDepthTestEnable;
     PFN_vkCmdSetDepthWriteEnable cmdSetDepthWriteEnable;
     PFN_vkCmdSetStencilOp cmdSetStencilOp;
+
+    DeviceLimits limits;
 } Device;
 
 typedef struct {
@@ -4332,7 +4339,10 @@ PalResult PAL_CALL createDeviceVk(
     }
 
     // ray tracing procs
+    device->limits.maxPayloadSize = 0;
     if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        device->limits.maxPayloadSize = 64;
+
         device->createAccelerationStructure =
             (PFN_vkCreateAccelerationStructureKHR)s_Vk.getDeviceProcAddr(
                 device->handle,
@@ -9096,6 +9106,10 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (info->maxPayloadSize > vkDevice->limits.maxPayloadSize) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     // Every entry is a shader stage
