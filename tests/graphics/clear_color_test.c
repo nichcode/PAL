@@ -142,7 +142,6 @@ bool clearColorTest()
 
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
-    bool hasGraphicsQueue = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -154,46 +153,18 @@ bool clearColorTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
-            hasGraphicsQueue = false;
             continue;
 
         } else {
-            hasGraphicsQueue = true;
+            break;
         }
 
-        if (hasGraphicsQueue) {
-            // We want an adapter that supports spirv 1.0 or dxil 6.0
-            result = palGetAdapterInfo(adapter, &adapterInfo);
-            if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get adapter info: %s", error);
-                return false;
-            }
-
-            // we prefer spirv first if an adapter supports multiple shader formats
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
-                    break;
-                }
-            }
-
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
-                    break;
-                }
-            }
-        }
         adapter = nullptr;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        if (!hasGraphicsQueue) {
-            palLog(nullptr, "Failed to find an adapter that supports graphics queue");
-
-        } else {
-            palLog(nullptr, "Failed to find an adapter that supports required shader target");
-        }
+        palLog(nullptr, "Failed to find an adapter that supports graphics queue");
         return false;
     }
 

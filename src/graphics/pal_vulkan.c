@@ -3796,50 +3796,12 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     return adapterFeatures;
 }
 
-bool PAL_CALL isShaderTargetSupportedVk(
-    PalAdapter* adapter, 
-    PalShaderTarget target)
-{
-    Adapter* vkAdapter = (Adapter*)adapter;
-    VkPhysicalDeviceProperties props = {0};
-    s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &props);
-
-    switch (target) {
-        case PAL_SHADER_TARGET_SPIRV_1_0:
-        case PAL_SHADER_TARGET_SPIRV_1_1:
-        case PAL_SHADER_TARGET_SPIRV_1_2: {
-            return true;
-        }
-
-        case PAL_SHADER_TARGET_SPIRV_1_3:
-        case PAL_SHADER_TARGET_SPIRV_1_4: {
-            if (props.apiVersion >= VK_API_VERSION_1_1) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_SPIRV_1_5: {
-            if (props.apiVersion >= VK_API_VERSION_1_2) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_SPIRV_1_6: {
-            if (props.apiVersion >= VK_API_VERSION_1_3) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-PalShaderTarget PAL_CALL getHighestSupportedShaderTargetVk(
+Uint32 PAL_CALL getHighestSupportedShaderTargetVk(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
     if (shaderFormat != PAL_SHADER_FORMAT_SPIRV) {
-        return PAL_SHADER_TARGET_UNKNOWN;
+        return 0;
     }
 
     Adapter* vkAdapter = (Adapter*)adapter;
@@ -3847,19 +3809,19 @@ PalShaderTarget PAL_CALL getHighestSupportedShaderTargetVk(
     s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &props);
 
      if (props.apiVersion >= VK_API_VERSION_1_3) {
-        return PAL_SHADER_TARGET_SPIRV_1_6;
+        return PAL_MAKE_SHADER_TARGET(1, 6);
 
     } else if (props.apiVersion >= VK_API_VERSION_1_2) {
-        return PAL_SHADER_TARGET_SPIRV_1_5;
+        return PAL_MAKE_SHADER_TARGET(1, 5);
 
     } else if (props.apiVersion >= VK_API_VERSION_1_1) {
-        return PAL_SHADER_TARGET_SPIRV_1_4;
+        return PAL_MAKE_SHADER_TARGET(1, 4);
         
     } else if (props.apiVersion >= VK_API_VERSION_1_0) {
-        return PAL_SHADER_TARGET_SPIRV_1_2;
+        return PAL_MAKE_SHADER_TARGET(1, 2);
     }
 
-    return PAL_SHADER_TARGET_UNKNOWN;
+    return 0;
 }
 
 // ==================================================

@@ -2171,7 +2171,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
     info->vendorId = desc.VendorId;
     info->deviceId= desc.DeviceId;
     info->apiType = PAL_ADAPTER_API_TYPE_D3D12;
-    info->shaderFormats = PAL_SHADER_FORMAT_DXIL;
+    info->shaderFormats = PAL_SHADER_FORMAT_DXIL | PAL_SHADER_FORMAT_DXBC;
     info->sharedMemory = desc.SharedSystemMemory;
     strcpy(info->backendName, "PAL");
 
@@ -2399,10 +2399,15 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     return features;
 }
 
-bool PAL_CALL isShaderTargetSupportedD3D12(
+Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
     PalAdapter* adapter, 
-    PalShaderTarget target)
+    PalShaderFormats shaderFormat)
 {
+    bool isDxil = shaderFormat == PAL_SHADER_FORMAT_DXIL;
+    if (!isDxil && shaderFormat != PAL_SHADER_FORMAT_DXBC) {
+        return 0;
+    }
+
     Adapter* d3dAdapter = (Adapter*)adapter;
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
 
@@ -2434,133 +2439,40 @@ bool PAL_CALL isShaderTargetSupportedD3D12(
         }
     }
 
-    switch (target) {
-        case PAL_SHADER_TARGET_DXIL_5_1: {
-            if (highestModel >= D3D_SHADER_MODEL_5_1) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_DXIL_6_0: {
-            if (highestModel >= D3D_SHADER_MODEL_6_0) {
-                return true;
-            }
-        }
-
-
-        case PAL_SHADER_TARGET_DXIL_6_1: {
-            if (highestModel >= D3D_SHADER_MODEL_6_1) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_DXIL_6_2: {
-            if (highestModel >= D3D_SHADER_MODEL_6_2) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_DXIL_6_3: {
-            if (highestModel >= D3D_SHADER_MODEL_6_3) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_DXIL_6_4: {
-            if (highestModel >= D3D_SHADER_MODEL_6_4) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_DXIL_6_5: {
-            if (highestModel >= D3D_SHADER_MODEL_6_5) {
-                return true;
-            }
-        } 
-        case PAL_SHADER_TARGET_DXIL_6_6: {
-            if (highestModel >= D3D_SHADER_MODEL_6_6) {
-                return true;
-            }
-        }
-
-        case PAL_SHADER_TARGET_DXIL_6_7: {
-            if (highestModel >= D3D_SHADER_MODEL_6_7) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-PalShaderTarget PAL_CALL getHighestSupportedShaderTargetD3D12(
-    PalAdapter* adapter, 
-    PalShaderTarget shaderFormat)
-{
-    if (shaderFormat != PAL_SHADER_FORMAT_DXIL) {
-        return PAL_SHADER_TARGET_UNKNOWN;
-    }
-
-    Adapter* d3dAdapter = (Adapter*)adapter;
-    D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
-
-    D3D_SHADER_MODEL models[8];
-    models[0] = D3D_SHADER_MODEL_6_7;
-    models[1] = D3D_SHADER_MODEL_6_6;
-    models[2] = D3D_SHADER_MODEL_6_5;
-    models[3] = D3D_SHADER_MODEL_6_4;
-    models[4] = D3D_SHADER_MODEL_6_3;
-    models[5] = D3D_SHADER_MODEL_6_2;
-    models[6] = D3D_SHADER_MODEL_6_1;
-    models[7] = D3D_SHADER_MODEL_6_0;
-    models[8] = D3D_SHADER_MODEL_5_1;
-
-    // find the highest supported shader model
-    HRESULT result = 0;
-    D3D_SHADER_MODEL highestModel = D3D_SHADER_MODEL_5_1;
-    for (int i = 0; i < 8; i++) {
-        shaderModel.HighestShaderModel = models[i];
-        result = d3dAdapter->tmpDevice->lpVtbl->CheckFeatureSupport(
-            d3dAdapter->tmpDevice,
-            D3D12_FEATURE_SHADER_MODEL,
-            &shaderModel,
-            sizeof(shaderModel));
-
-        if (shaderModel.HighestShaderModel >= models[i] && result == S_OK) {
-            highestModel = models[i];
-            break;
+    if (shaderFormat == PAL_SHADER_FORMAT_DXBC) {
+        if (highestModel >= D3D_SHADER_MODEL_5_1) {
+            return PAL_MAKE_SHADER_TARGET(5, 1);
+        } else {
+            return 0;
         }
     }
 
     if (highestModel >= D3D_SHADER_MODEL_6_7) {
-        return PAL_SHADER_TARGET_DXIL_6_7;
+        return PAL_MAKE_SHADER_TARGET(6, 7);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_6) {
-        return PAL_SHADER_TARGET_DXIL_6_6;
+        return PAL_MAKE_SHADER_TARGET(6, 6);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_5) {
-        return PAL_SHADER_TARGET_DXIL_6_5;
+        return PAL_MAKE_SHADER_TARGET(6, 5);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_4) {
-        return PAL_SHADER_TARGET_DXIL_6_4;
+        return PAL_MAKE_SHADER_TARGET(6, 4);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_3) {
-        return PAL_SHADER_TARGET_DXIL_6_3;
+        return PAL_MAKE_SHADER_TARGET(6, 3);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_2) {
-        return PAL_SHADER_TARGET_DXIL_6_2;
+        return PAL_MAKE_SHADER_TARGET(6, 2);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_1) {
-        return PAL_SHADER_TARGET_DXIL_6_1;
+        return PAL_MAKE_SHADER_TARGET(6, 1);
 
     } else if (highestModel >= D3D_SHADER_MODEL_6_0) {
-        return PAL_SHADER_TARGET_DXIL_6_0;
-
-    } else if (highestModel >= D3D_SHADER_MODEL_5_1) {
-        return PAL_SHADER_TARGET_DXIL_5_1;
+        return PAL_MAKE_SHADER_TARGET(6, 0);
     }
 
-    return PAL_SHADER_TARGET_UNKNOWN;
+    return 0;
 }
 
 // ==================================================

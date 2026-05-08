@@ -2,60 +2,6 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
-const char* shaderTargetToString(PalShaderTarget target) 
-{
-    switch (target) {
-        case PAL_SHADER_TARGET_SPIRV_1_0:
-            return "1.0";
-
-        case PAL_SHADER_TARGET_SPIRV_1_1:
-            return "1.1";
-            
-        case PAL_SHADER_TARGET_SPIRV_1_2:
-            return "1.2";
-
-        case PAL_SHADER_TARGET_SPIRV_1_3:
-            return "1.3";
-
-        case PAL_SHADER_TARGET_SPIRV_1_4:
-            return "1.4";
-
-        case PAL_SHADER_TARGET_SPIRV_1_5:
-            return "1.5";
-
-        case PAL_SHADER_TARGET_SPIRV_1_6:
-            return "1.6";
-
-        case PAL_SHADER_TARGET_DXIL_5_1:
-            return "5.1";
-
-        case PAL_SHADER_TARGET_DXIL_6_0:
-            return "6.0";
-
-        case PAL_SHADER_TARGET_DXIL_6_1:
-            return "6.1";
-
-        case PAL_SHADER_TARGET_DXIL_6_2:
-           return "6.2";
-
-        case PAL_SHADER_TARGET_DXIL_6_3:
-            return "6.3";
-
-        case PAL_SHADER_TARGET_DXIL_6_4:
-            return "6.4";
-
-        case PAL_SHADER_TARGET_DXIL_6_5:
-            return "6.5";
-
-        case PAL_SHADER_TARGET_DXIL_6_6:
-            return "6.6";
-
-        case PAL_SHADER_TARGET_DXIL_6_7:
-            return "6.7";
-    }
-    return nullptr;
-}
-
 bool graphicsTest()
 {
     // initialize the graphics system
@@ -254,21 +200,40 @@ bool graphicsTest()
         palLog(nullptr, "  Max compute work group size[2]: %u", caps.maxComputeWorkGroupSize[2]);
 
         // shader formats
-        PalShaderTarget target;
+        Uint32 target;
+        Uint32 targetMajor = 0;
+        Uint32 targetMinor = 0;
+
         palLog(nullptr, "");
         palLog(nullptr, " Supported Shader Formats:");
         if (info.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             palLog(nullptr, "  SPIRV");
-
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
-            palLog(nullptr, "   Highest Spirv Target %s:", shaderTargetToString(target));
+            targetMajor = PAL_SHADER_TARGET_MAJOR(target);
+            targetMinor = PAL_SHADER_TARGET_MINOR(target);
+
+            palLog(nullptr, "   Highest Spirv Target: %u.%u", targetMajor, targetMinor);
+            palLog(nullptr, "");
         }
 
         if (info.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
             palLog(nullptr, "  DXIL");
-
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
-            palLog(nullptr, "   Highest Dxil Target %s:", shaderTargetToString(target));
+            targetMajor = PAL_SHADER_TARGET_MAJOR(target);
+            targetMinor = PAL_SHADER_TARGET_MINOR(target);
+
+            palLog(nullptr, "   Highest Dxil Target: %u.%u", targetMajor, targetMinor);
+            palLog(nullptr, "");
+        }
+
+        if (info.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+            palLog(nullptr, "  DXBC");
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+            targetMajor = PAL_SHADER_TARGET_MAJOR(target);
+            targetMinor = PAL_SHADER_TARGET_MINOR(target);
+
+            palLog(nullptr, "   Highest Dxbc Target: %u.%u", targetMajor, targetMinor);
+            palLog(nullptr, "");
         }
 
         // features

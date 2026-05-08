@@ -123,11 +123,7 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter);
 
-bool PAL_CALL isShaderTargetSupportedVk(
-    PalAdapter* adapter, 
-    PalShaderTarget target);
-
-PalShaderTarget PAL_CALL getHighestSupportedShaderTargetVk(
+Uint32 PAL_CALL getHighestSupportedShaderTargetVk(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat);
 
@@ -794,7 +790,6 @@ static PalGraphicsBackend s_VkBackend = {
     .getAdapterInfo = getAdapterInfoVk,
     .getAdapterCapabilities = getAdapterCapabilitiesVk,
     .getAdapterFeatures = getAdapterFeaturesVk,
-    .isShaderTargetSupported = isShaderTargetSupportedVk,
     .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetVk,
 
     // device
@@ -1000,11 +995,7 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter);
 
-bool PAL_CALL isShaderTargetSupportedD3D12(
-    PalAdapter* adapter, 
-    PalShaderTarget target);
-
-PalShaderTarget PAL_CALL getHighestSupportedShaderTargetD3D12(
+Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat);
 
@@ -1671,7 +1662,6 @@ static PalGraphicsBackend s_D3D12Backend = {
     .getAdapterInfo = getAdapterInfoD3D12,
     .getAdapterCapabilities = getAdapterCapabilitiesD3D12,
     .getAdapterFeatures = getAdapterFeaturesD3D12,
-    .isShaderTargetSupported = isShaderTargetSupportedD3D12,
     .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetD3D12,
 
     // device
@@ -1880,7 +1870,6 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
         !backend->getAdapterInfo                        ||
         !backend->getAdapterCapabilities                ||
         !backend->getAdapterFeatures                    ||
-        !backend->isShaderTargetSupported               ||
         !backend->getHighestSupportedShaderTarget       ||
 
         // device
@@ -2261,22 +2250,12 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
     return adapter->backend->getAdapterFeatures(adapter);
 }
 
-bool PAL_CALL palIsShaderTargetSupported(
-    PalAdapter* adapter, 
-    PalShaderTarget target)
-{
-    if (!s_Graphics.initialized || !adapter) {
-        return false;
-    }
-    return adapter->backend->isShaderTargetSupported(adapter, target);
-}
-
-PalShaderTarget PAL_CALL palGetHighestSupportedShaderTarget(
+Uint32 PAL_CALL palGetHighestSupportedShaderTarget(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
     if (!s_Graphics.initialized || !adapter) {
-        return PAL_SHADER_TARGET_UNKNOWN;
+        return 0;
     }
     return adapter->backend->getHighestSupportedShaderTarget(adapter, shaderFormat);
 }

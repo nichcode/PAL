@@ -182,14 +182,17 @@ bool triangleTest()
             }
 
             // we prefer spirv first if an adapter supports multiple shader formats
+            Uint32 target = 0;
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_SPIRV_1_0)) {
+                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
+                if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
                     break;
                 }
             }
 
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                if (palIsShaderTargetSupported(adapter, PAL_SHADER_TARGET_DXIL_6_0)) {
+                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
+                if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
                     break;
                 }
             }

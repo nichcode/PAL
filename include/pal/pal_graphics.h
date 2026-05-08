@@ -58,6 +58,27 @@ freely, subject to the following restrictions:
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
 /**
+ * @brief An encoding scheme for shader format target versions.
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+#define PAL_MAKE_SHADER_TARGET(major, minor) ((Uint32)((major) << 8) | (minor))
+
+/**
+ * @brief Get the major of an encoded shader target.
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+#define PAL_SHADER_TARGET_MAJOR(target) ((Uint32)(target) >> 8);
+
+/**
+ * @brief Get the minor of an encoded shader target.
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+#define PAL_SHADER_TARGET_MINOR(target) ((Uint32)(target) & 0xFF);
+
+/**
  * @struct PalAdapter
  * @brief Opaque handle to an adapter (GPU).
  *
@@ -542,36 +563,6 @@ typedef enum {
     PAL_SHADER_FORMAT_MSL = PAL_BIT(4),
     PAL_SHADER_FORMAT_PPM = PAL_BIT(5)
 } PalShaderFormats;
-
-/**
- * @enum PalShaderTarget
- * @brief Shader targets.
- *
- * All shader targets follow the format `PAL_SHADER_TARGET_**` for
- * consistency and API use.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef enum {
-    PAL_SHADER_TARGET_UNKNOWN,
-    PAL_SHADER_TARGET_SPIRV_1_0,
-    PAL_SHADER_TARGET_SPIRV_1_1,
-    PAL_SHADER_TARGET_SPIRV_1_2,
-    PAL_SHADER_TARGET_SPIRV_1_3,
-    PAL_SHADER_TARGET_SPIRV_1_4,
-    PAL_SHADER_TARGET_SPIRV_1_5,
-    PAL_SHADER_TARGET_SPIRV_1_6,
-    PAL_SHADER_TARGET_DXIL_5_1,
-    PAL_SHADER_TARGET_DXIL_6_0,
-    PAL_SHADER_TARGET_DXIL_6_1,
-    PAL_SHADER_TARGET_DXIL_6_2,
-    PAL_SHADER_TARGET_DXIL_6_3,
-    PAL_SHADER_TARGET_DXIL_6_4,
-    PAL_SHADER_TARGET_DXIL_6_5,
-    PAL_SHADER_TARGET_DXIL_6_6,
-    PAL_SHADER_TARGET_DXIL_6_7
-} PalShaderTarget;
 
 /**
  * @enum PalAdapterFeatures
@@ -2771,20 +2762,11 @@ typedef struct {
     PalAdapterFeatures PAL_CALL (*getAdapterFeatures)(PalAdapter* adapter);
 
     /**
-     * Backend implementation of ::palIsShaderTargetSupported.
-     *
-     * Must obey the rules and semantics documented in palIsShaderTargetSupported().
-     */
-    bool PAL_CALL (*isShaderTargetSupported)(
-        PalAdapter* adapter, 
-        PalShaderTarget target);
-
-    /**
      * Backend implementation of ::palGetHighestSupportedShaderTarget.
      *
      * Must obey the rules and semantics documented in palGetHighestSupportedShaderTarget().
      */
-    PalShaderTarget PAL_CALL (*getHighestSupportedShaderTarget)(
+    Uint32 PAL_CALL (*getHighestSupportedShaderTarget)(
         PalAdapter* adapter, 
         PalShaderFormats shaderFormat);
 
@@ -4185,25 +4167,6 @@ PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
 
 /**
- * @brief Check if the provided shader target is supported by an adapter (GPU).
- *
- * The graphics system must be initialized before this call.
- *
- * @param[in] adapter Adapter to query.
- *
- * @return True if target is supported otherwise false.
- *
- * Thread safety: Thread safe.
- *
- * @since 1.4
- * @ingroup pal_graphics
- * @sa palEnumerateAdapters
- */
-PAL_API bool PAL_CALL palIsShaderTargetSupported(
-    PalAdapter* adapter, 
-    PalShaderTarget target);
-
-/**
  * @brief Get the highest supported shader target of an adapter (GPU).
  *
  * The graphics system must be initialized before this call.
@@ -4211,8 +4174,8 @@ PAL_API bool PAL_CALL palIsShaderTargetSupported(
  * @param[in] adapter Adapter to query.
  * @param[in] shaderFormat The shader format. Must have only a single bit set.
  *
- * @return The highest supported shader target on success or `PAL_SHADER_TARGET_UNKNOWN` 
- * on failure.
+ * @return The highest supported shader target encoded with `PAL_MAKE_SHADER_TARGET` macro 
+ * on success otherwise `0` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -4220,7 +4183,7 @@ PAL_API bool PAL_CALL palIsShaderTargetSupported(
  * @ingroup pal_graphics
  * @sa palEnumerateAdapters
  */
-PAL_API PalShaderTarget PAL_CALL palGetHighestSupportedShaderTarget(
+PAL_API Uint32 PAL_CALL palGetHighestSupportedShaderTarget(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat);
 
