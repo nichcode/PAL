@@ -105,7 +105,7 @@ bool computeTest()
         }
 
         if (hasComputeQueue) {
-            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            // We want an adapter that supports spirv 1.0 or dxbc 5.1
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -122,9 +122,9 @@ bool computeTest()
                 }
             }
 
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
-                if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
                     break;
                 }
             }
@@ -181,15 +181,29 @@ bool computeTest()
     // create a compute shader
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
+    const char* source = nullptr;
+
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        bytecode = (void*)s_ComputeShaderSpv;
-        bytecodeSize = sizeof(s_ComputeShaderSpv);
+        source = "graphics/shaders/spirv/compute.spv";
 
-    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        bytecode = (void*)s_ComputeShaderDxil;
-        bytecodeSize = sizeof(s_ComputeShaderDxil);
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+        source = "graphics/shaders/dxbc/compute.cso";
     }
+
+    // read file
+    if (!readFile(source, nullptr, &bytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
+
+    bytecode = palAllocate(nullptr, bytecodeSize, 0);
+    if (!bytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
+
+    readFile(source, nullptr, &bytecodeSize);
 
     // describe how many entries are in the shader bytecode
     // We only have one entry for the compute shader.
@@ -208,6 +222,8 @@ bool computeTest()
         palLog(nullptr, "Failed to create compute shader: %s", error);
         return false;
     }
+
+    palFree(nullptr, bytecode);
 
     // create a storage buffer
     Uint32 bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
