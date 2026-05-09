@@ -2432,21 +2432,6 @@ typedef struct {
 } PalImageCopyInfo;
 
 /**
- * @struct PalShaderEntry
- * @brief Information for a single shader entry point in a shader bytecode.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since 1.4
- * @ingroup pal_graphics
- */
-typedef struct {
-    Uint32 patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
-    PalShaderStage stage;
-    const char* entryName;
-} PalShaderEntry;
-
-/**
  * @struct PalImageCreateInfo
  * @brief Creation parameters for an image.
  *
@@ -2537,10 +2522,11 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 entryCount;
-    void* bytecode;
+    Uint32 patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
+    PalShaderStage stage;
     Uint64 bytecodeSize;
-    PalShaderEntry* entries;
+    void* bytecode;
+    const char* entryName;
 } PalShaderCreateInfo;
 
 /**
@@ -2674,10 +2660,6 @@ typedef struct {
     Uint32 closestHitShaderIndex;      /**< Index of closest hit shader from shader array.*/
     Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
     Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
-    Uint32 anyHitEntryIndex;          /**< Index of any hit Entry from `anyHitShaderIndex`.*/
-    Uint32 closestHitEntryIndex;      /**< Index of any hit Entry from `closestHitShaderIndex`.*/
-    Uint32 generalEntryIndex;         /**< Index of any hit Entry from `generalShaderIndex`.*/
-    Uint32 intersectionEntryIndex;    /**< Index of any hit Entry from `intersectionShaderIndex`.*/
 } PalRayTracingShaderGroupCreateInfo;
 
 /**
@@ -5143,9 +5125,6 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * `PAL_SHADER_STAGE_RAYGEN` or `PAL_SHADER_STAGE_CLOSEST_HIT` or `PAL_SHADER_STAGE_ANY_HIT` or
  * `PAL_SHADER_STAGE_MISS` or `PAL_SHADER_STAGE_INTERSECTION` or `PAL_SHADER_STAGE_CALLABLE` will
  * be used.
- * 
- * If the pipeline only takes a single shader (eg. Compute Pipeline), only the first entry in
- * the entries array will be used.
  *
  * @param[in] device Device that creates the shader.
  * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies parameters.
@@ -5157,7 +5136,7 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  * 
- * @note Each shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
+ * @note The shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
  * @since 1.4
  * @ingroup pal_graphics

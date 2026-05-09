@@ -58,14 +58,14 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_GRAPHICS
     // registerTest(graphicsTest, "Graphics Test");
-    // registerTest(computeTest, "Compute Test"); // TODO: test
-    // registerTest(rayTracingTest, "Ray Tracing Test"); // TODO: test
+    // registerTest(computeTest, "Compute Test");
+    registerTest(rayTracingTest, "Ray Tracing Test");
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
-    registerTest(clearColorTest, "Clear Color Test");
+    // registerTest(clearColorTest, "Clear Color Test");
     // registerTest(triangleTest, "Triangle Test");
-    // registerTest(meshTest, "Mesh Test"); // TODO: test
+    // registerTest(meshTest, "Mesh Test");
     // registerTest(textureTest, "Texture Test");
 #endif //
 

@@ -1,7 +1,6 @@
 
 #include "pal/pal_graphics.h"
 #include "tests.h"
-#include "shaders.h"
 
 #define BUFFER_SIZE 400
 
@@ -185,10 +184,10 @@ bool computeTest()
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        source = "graphics/shaders/bin/compute.spv";
+        source = "graphics/shaders/bin/spirv/compute.spv";
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        source = "graphics/shaders/bin/compute.dxil";
+        source = "graphics/shaders/bin/dxil/compute.dxil";
     }
 
     // read file
@@ -205,16 +204,10 @@ bool computeTest()
 
     readFile(source, bytecode, &bytecodeSize);
 
-    // describe how many entries are in the shader bytecode
-    // We only have one entry for the compute shader.
-    PalShaderEntry computeEntry = {0};
-    computeEntry.entryName = "computeMain";
-    computeEntry.stage = PAL_SHADER_STAGE_COMPUTE;
-
     shaderCreateInfo.bytecode = bytecode;
     shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.entryCount = 1;
-    shaderCreateInfo.entries = &computeEntry;
+    shaderCreateInfo.entryName = "main";
+    shaderCreateInfo.stage = PAL_SHADER_STAGE_COMPUTE;
 
     result = palCreateShader(device, &shaderCreateInfo, &shader);
     if (result != PAL_RESULT_SUCCESS) {

@@ -3,7 +3,6 @@
 #include "pal/pal_video.h"
 #include "pal/pal_system.h"
 #include "tests.h"
-#include "shaders.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -71,8 +70,7 @@ bool textureTest()
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
-    PalShader* vertexShader = nullptr;
-    PalShader* fragmentShader = nullptr;
+    PalShader* shaders[2];
 
     PalBuffer* vertexBuffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
@@ -851,96 +849,53 @@ bool textureTest()
     }
 
     // create shaders
-    Uint64 vertBytecodeSize = 0;
-    Uint64 fragBytecodeSize = 0;
-    void* vertBytecode = nullptr;
-    void* fragBytecode = nullptr;
-    const char* vertSource = nullptr;
-    const char* fragSource = nullptr;
+    Uint64 bytecodeSize = 0;
+    void* bytecode = nullptr;
+    const char* sources[2];
+    PalShaderStage tmpShaderStages[2];
 
-    // we are not resizing for the viewport and scissor will not change
-    PalViewport viewport = {0};
-    viewport.height = (float)WINDOW_HEIGHT;
-    viewport.width = (float)WINDOW_WIDTH;
-    viewport.maxDepth = 1.0f;
-
-    PalShaderCreateInfo vertShaderCreateInfo = {0};
-    PalShaderCreateInfo fragShaderCreateInfo = {0};
+    PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        vertSource = "graphics/shaders/bin/texture_vert.spv";
-        fragSource = "graphics/shaders/bin/texture_frag.spv";
-
-        // flip for spirv since we use a single shader source
-        viewport.y = (float)WINDOW_HEIGHT;
-        viewport.height = -(float)WINDOW_HEIGHT;
+        sources[0] = "graphics/shaders/bin/spirv/texture_vert.spv";
+        sources[1] = "graphics/shaders/bin/spirv/texture_frag.spv";
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        vertSource = "graphics/shaders/bin/texture_vert.dxil";
-        fragSource = "graphics/shaders/bin/texture_frag.dxil";
+        sources[0] = "graphics/shaders/bin/dxil/texture_vert.dxil";
+        sources[1] = "graphics/shaders/bin/dxil/texture_frag.dxil";
     }
 
-    // read file
-    if (!readFile(vertSource, nullptr, &vertBytecodeSize)) {
-        palLog(nullptr, "Failed to read shader file");
-        return false;
+    tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;
+    tmpShaderStages[1] = PAL_SHADER_STAGE_FRAGMENT;
+
+    for (int i = 0; i < 2; i++) {
+        // read file
+        if (!readFile(sources[i], nullptr, &bytecodeSize)) {
+            palLog(nullptr, "Failed to read shader file");
+            return false;
+        }
+
+        bytecode = palAllocate(nullptr, bytecodeSize, 0);
+        if (!bytecode) {
+            palLog(nullptr, "Failed to allocate memory");
+            return false;
+        }
+
+        readFile(sources[i], bytecode, &bytecodeSize);
+
+        shaderCreateInfo.bytecode = bytecode;
+        shaderCreateInfo.bytecodeSize = bytecodeSize;
+        shaderCreateInfo.entryName = "main";
+        shaderCreateInfo.stage = tmpShaderStages[i];
+
+        result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create shader: %s", error);
+            return false;
+        }
+
+        palFree(nullptr, bytecode);
     }
-
-    if (!readFile(fragSource, nullptr, &fragBytecodeSize)) {
-        palLog(nullptr, "Failed to read shader file");
-        return false;
-    }
-
-    vertBytecode = palAllocate(nullptr, vertBytecodeSize, 0);
-    if (!vertBytecode) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
-
-    fragBytecode = palAllocate(nullptr, fragBytecodeSize, 0);
-    if (!fragBytecode) {
-        palLog(nullptr, "Failed to allocate memory");
-        return false;
-    }
-
-    readFile(vertSource, vertBytecode, &vertBytecodeSize);
-    readFile(fragSource, fragBytecode, &fragBytecodeSize);
-
-    // describe how many entries are in the shader bytecode
-    // For simplicity, we dont use one shader bytecode for all the shaders
-    PalShaderEntry vertexEntry = {0};
-    vertexEntry.entryName = "vertexMain";
-    vertexEntry.stage = PAL_SHADER_STAGE_VERTEX;
-
-    PalShaderEntry fragmentEntry = {0};
-    fragmentEntry.entryName = "fragMain";
-    fragmentEntry.stage = PAL_SHADER_STAGE_FRAGMENT;
-
-    vertShaderCreateInfo.bytecode = vertBytecode;
-    vertShaderCreateInfo.bytecodeSize = vertBytecodeSize;
-    vertShaderCreateInfo.entries = &vertexEntry;
-    vertShaderCreateInfo.entryCount = 1;
-
-    fragShaderCreateInfo.bytecode = fragBytecode;
-    fragShaderCreateInfo.bytecodeSize = fragBytecodeSize;
-    fragShaderCreateInfo.entries = &fragmentEntry;
-    fragShaderCreateInfo.entryCount = 1;
-
-    result = palCreateShader(device, &vertShaderCreateInfo, &vertexShader);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create vertex shader: %s", error);
-        return false;
-    }
-
-    result = palCreateShader(device, &fragShaderCreateInfo, &fragmentShader);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create fragment shader: %s", error);
-        return false;
-    }
-
-    palFree(nullptr, vertBytecode);
-    palFree(nullptr, fragBytecode);
 
     // create descriptor set layout
     PalDescriptorSetLayoutBinding descriptorBindings[2];
@@ -1089,9 +1044,6 @@ bool textureTest()
     pipelineCreateInfo.colorBlendAttachmentCount = 1;
 
     // shaders
-    PalShader* shaders[2];
-    shaders[0] = vertexShader;
-    shaders[1] = fragmentShader;
     pipelineCreateInfo.shaderCount = 2;
     pipelineCreateInfo.shaders = shaders;
 
@@ -1106,8 +1058,9 @@ bool textureTest()
         return false;
     }
 
-    palDestroyShader(vertexShader);
-    palDestroyShader(fragmentShader);
+    for (int i = 0; i < 2; i++) {
+        palDestroyShader(shaders[i]);
+    }
 
     // wait for the vertices copy to be done
     result = palWaitFence(fence, PAL_INFINITE);
@@ -1129,6 +1082,12 @@ bool textureTest()
     // main loop
     Uint32 currentFrame = 0;
     bool running = true;
+
+    // we are not resizing for the viewport and scissor will not change
+    PalViewport viewport = {0};
+    viewport.height = (float)WINDOW_HEIGHT;
+    viewport.width = (float)WINDOW_WIDTH;
+    viewport.maxDepth = 1.0f;
 
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;
