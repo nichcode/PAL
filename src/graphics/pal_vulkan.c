@@ -590,12 +590,26 @@ typedef struct {
 } PipelineLayout;
 
 typedef struct {
+    Uint32 raygenCount;
+    Uint32 missCount;
+    Uint32 hitCount;
+    Uint32 callableCount;
+} ShaderBindingTableInfo;
+
+typedef struct {
+    PalShaderStage stage; // used to identify each group
+    Uint32 index;
+} ShaderGroupMap;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
     VkPipelineBindPoint bindPoint;
     Device* device;
     VkPipeline handle;
     VkPipelineLayout layout;
+    ShaderGroupMap* groupMaps;
+    ShaderBindingTableInfo sbtInfo;
 } Pipeline;
 
 typedef struct {
@@ -2243,6 +2257,13 @@ static inline Uint32 alignVk(
     Uint32 alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
+}
+
+static inline Uint32 maxVk(
+    Uint32 a,
+    Uint32 b)
+{
+    return (a > b) ? a : b;
 }
 
 static inline Uint32 minVk(
@@ -8983,6 +9004,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
+    pipeline->groupMaps = nullptr;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -9027,6 +9049,7 @@ PalResult PAL_CALL createComputePipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
+    pipeline->groupMaps = nullptr;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -9042,6 +9065,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     Pipeline* pipeline = nullptr;
     VkPipelineShaderStageCreateInfo* shaderStages = nullptr; 
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
+    ShaderGroupMap* groupMaps = nullptr;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -9055,6 +9079,8 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     createInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
+    groupMaps = palAllocate(s_Vk.allocator, sizeof(ShaderGroupMap) * info->shaderGroupCount, 0);
+
     groups = palAllocate(
         s_Vk.allocator, 
         sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount, 
@@ -9065,8 +9091,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount, 
         0);
 
-
-    if (!pipeline || !groups || !shaderStages) {
+    if (!pipeline || !groupMaps || !groups || !shaderStages) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
@@ -9085,53 +9110,115 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     createInfo.stageCount = info->shaderCount;
     createInfo.pStages = shaderStages;
 
-    // shader groups
+    // we always arrange the groups in a specific order so sbt creation becomes simple and layout
+    // aware already.
+    // raygen
+    // miss
+    // hit
+    // callable
+
+    ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
     for (int i = 0; i < info->shaderGroupCount; i++) {
-        VkRayTracingShaderGroupCreateInfoKHR* group = &groups[i];
+        PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
+        if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
+            // check if its raygen, miss or callable
+            Shader* shader = (Shader*)info->shaders[tmp->generalShaderIndex];
+            switch (shader->stage) {
+                case VK_SHADER_STAGE_RAYGEN_BIT_KHR: {
+                    sbtInfo->raygenCount++;
+                    break;
+                }
+
+                case VK_SHADER_STAGE_MISS_BIT_KHR: {
+                    sbtInfo->missCount++;
+                    break;
+                }
+
+                case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
+                    sbtInfo->callableCount++;
+                    break;
+                }
+            }
+
+        } else {
+            sbtInfo->hitCount++;
+        }
+    }
+
+    // we compute offsets
+    Uint32 raygenOffset = 0; // always first
+    Uint32 missOffset = sbtInfo->raygenCount;
+    Uint32 hitOffset = missOffset + sbtInfo->missCount;
+    Uint32 callableOffset = hitOffset + sbtInfo->hitCount;
+
+    // write into backend array with the correct offsets
+    for (int i = 0; i < info->shaderGroupCount; i++) {
+        VkRayTracingShaderGroupCreateInfoKHR* group = nullptr;
         PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
 
-        group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
         if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
+            // check if its raygen, miss or callable
+            Shader* shader = (Shader*)info->shaders[tmp->generalShaderIndex];
+            switch (shader->stage) {
+                case VK_SHADER_STAGE_RAYGEN_BIT_KHR: {
+                    groupMaps[i].index = raygenOffset;
+                    groupMaps[i].stage = PAL_SHADER_STAGE_RAYGEN;
+                    group = &groups[raygenOffset++];
+                    break;
+                }
+
+                case VK_SHADER_STAGE_MISS_BIT_KHR: {
+                    groupMaps[i].index = missOffset;
+                    groupMaps[i].stage = PAL_SHADER_STAGE_MISS;
+                    group = &groups[missOffset++];
+                    break;
+                }
+
+                case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
+                    groupMaps[i].index = callableOffset;
+                    groupMaps[i].stage = PAL_SHADER_STAGE_CALLABLE;
+                    group = &groups[callableOffset++];
+                    break;
+                }
+            }
+
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-
-        } else if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
-            group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-
-        } else {
-            group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-        }
-
-        // Any hit shader
-        if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-            group->anyHitShader = tmp->anyHitShaderIndex;
-
-        } else {
-            group->anyHitShader = VK_SHADER_UNUSED_KHR;
-        }
-
-        // Closest hit shader
-        if (tmp->closestHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-            group->closestHitShader = tmp->closestHitShaderIndex;
-
-        } else {
-            group->closestHitShader = VK_SHADER_UNUSED_KHR;
-        }
-
-        // General shader
-        if (tmp->generalShaderIndex != PAL_UNUSED_SHADER_INDEX) {
             group->generalShader = tmp->generalShaderIndex;
-
-        } else {
-            group->generalShader = VK_SHADER_UNUSED_KHR;
-        }
-
-        // IntersectionShader shader
-        if (tmp->intersectionShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-            group->intersectionShader = tmp->intersectionShaderIndex;
-
-        } else {
+            group->anyHitShader = VK_SHADER_UNUSED_KHR;
+            group->closestHitShader = VK_SHADER_UNUSED_KHR;
             group->intersectionShader = VK_SHADER_UNUSED_KHR;
+
+        } else {
+            groupMaps[i].index = hitOffset;
+            groupMaps[i].stage = PAL_SHADER_STAGE_CLOSEST_HIT; // just for identification
+            group = &groups[hitOffset++];
+
+            group->generalShader = VK_SHADER_UNUSED_KHR;
+            if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+                group->anyHitShader = tmp->anyHitShaderIndex;
+
+            } else {
+                group->anyHitShader = VK_SHADER_UNUSED_KHR;
+            }
+
+            if (tmp->closestHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+                group->closestHitShader = tmp->closestHitShaderIndex;
+
+            } else {
+                group->closestHitShader = VK_SHADER_UNUSED_KHR;
+            }
+
+            if (tmp->intersectionShaderIndex != PAL_UNUSED_SHADER_INDEX) {
+                group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+                group->intersectionShader = tmp->intersectionShaderIndex;
+
+            } else {
+                group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+                group->intersectionShader = VK_SHADER_UNUSED_KHR;
+            }
         }
+
+        group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
     }
 
     createInfo.pGroups = groups;
@@ -9158,6 +9245,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
+    pipeline->groupMaps = groupMaps;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -9167,6 +9255,9 @@ void PAL_CALL destroyPipelineVk(PalPipeline* pipeline)
     Pipeline* vkPipeline = (Pipeline*)pipeline;
     s_Vk.destroyPipeline(vkPipeline->device->handle, vkPipeline->handle, &s_Vk.vkAllocator);
 
+    if (vkPipeline->groupMaps) {
+        palFree(s_Vk.allocator, vkPipeline->groupMaps);
+    }
     palFree(s_Vk.allocator, pipeline);
 }
 
@@ -9183,6 +9274,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     Device* vkDevice = (Device*)device;
     ShaderBindingTable* sbt = nullptr;
     Pipeline* pipeline = (Pipeline*)info->rayTracingPipeline;
+    ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -9205,27 +9297,78 @@ PalResult PAL_CALL createShaderBindingTableVk(
     Uint32 groupHandleSize = rayProps.shaderGroupHandleSize;
     Uint32 groupHandleAlignment = rayProps.shaderGroupHandleAlignment;
     Uint32 groupBaseAlignment = rayProps.shaderGroupBaseAlignment;
-    Uint32 stride = alignVk(groupHandleSize, groupHandleAlignment);
+
+    Uint32 raygenDataSize = 0;
+    Uint32 missDataSize = 0;
+    Uint32 hitDataSize = 0;
+    Uint32 callableDataSize = 0;
+
+    // get the max local data size
+    for (int i = 0; i < info->recordCount; i++) {
+        PalShaderBindingTableRecordInfo* record = &info->records[i];
+        ShaderGroupMap* map = &pipeline->groupMaps[record->groupIndex];
+        if (!map) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
+
+        switch (map->stage) {
+            case PAL_SHADER_STAGE_RAYGEN: {
+                raygenDataSize = maxVk(raygenDataSize, record->localDataSize);
+                break;
+            }
+
+            case PAL_SHADER_STAGE_MISS: {
+                missDataSize = maxVk(missDataSize, record->localDataSize);
+                break;
+            }
+
+            case PAL_SHADER_STAGE_CALLABLE: {
+                callableDataSize = maxVk(callableDataSize, record->localDataSize);
+                break;
+            }
+
+            case PAL_SHADER_STAGE_CLOSEST_HIT: {
+                hitDataSize = maxVk(hitDataSize, record->localDataSize);
+                break;
+            }
+        }
+    }
+
+    // get strides
+    Uint32 raygenStride = alignVk(groupHandleSize + raygenDataSize, groupHandleAlignment);
+    Uint32 missStride = alignVk(groupHandleSize + missDataSize, groupHandleAlignment);
+    Uint32 hitStride = alignVk(groupHandleSize + hitDataSize, groupHandleAlignment);
+    Uint32 callableStride = alignVk(groupHandleSize + callableDataSize, groupHandleAlignment);
 
     // get region size
-    Uint32 raygenRegionSize = stride * info->raygenGroupCount;
-    Uint32 missRegionSize = stride * info->missGroupCount;
-    Uint32 hitRegionSize = stride * info->hitGroupCount;
-    Uint32 callableRegionSize = stride * info->callableGroupCount;
-
-    // get aligned region size
-    Uint32 raygenAlignedRegionSize = alignVk(raygenRegionSize, groupBaseAlignment);
-    Uint32 missAlignedRegionSize = alignVk(missRegionSize, groupBaseAlignment);
-    Uint32 hitAlignedRegionSize = alignVk(hitRegionSize, groupBaseAlignment);
-    Uint32 callableAligneRegionSize = alignVk(callableRegionSize, groupBaseAlignment);
+    Uint32 raygenRegionSize = raygenStride * sbtInfo->raygenCount;
+    Uint32 missRegionSize = missStride * sbtInfo->missCount;
+    Uint32 hitRegionSize = hitStride * sbtInfo->hitCount;
+    Uint32 callableRegionSize = callableStride * sbtInfo->callableCount;
 
     // get offsets
-    Uint32 missOffset = raygenAlignedRegionSize;
-    Uint32 hitOffset = missOffset + missAlignedRegionSize;
-    Uint32 callableOffset = hitOffset + hitAlignedRegionSize;
-    Uint32 bufferSize = callableOffset + callableAligneRegionSize;
+    Uint32 offset = 0;
+    Uint32 raygenOffset = 0;
+    Uint32 missOffset = 0;
+    Uint32 hitOffset = 0;
+    Uint32 callableOffset = 0;
+
+    raygenOffset = alignVk(offset, groupBaseAlignment);
+    offset = raygenOffset + raygenRegionSize;
+
+    missOffset = alignVk(offset, groupBaseAlignment);
+    offset = missOffset + missRegionSize;
+
+    hitOffset = alignVk(offset, groupBaseAlignment);
+    offset = hitOffset + hitRegionSize;
+
+    callableOffset = alignVk(offset, groupBaseAlignment);
+    offset = callableOffset + callableRegionSize;
+
+    Uint32 bufferSize = alignVk(offset, groupBaseAlignment);
 
     // create gpu buffer
+    // TODO: create both a GPU only and UPLOAD buffers
     VkBufferCreateInfo bufCreateInfo = {0};
     bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufCreateInfo.size = bufferSize;
@@ -9269,21 +9412,22 @@ PalResult PAL_CALL createShaderBindingTableVk(
     s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->bufferMemory, 0);
 
     // get shader group handles
-    Uint32 totalGroups = info->raygenGroupCount + info->hitGroupCount;
-    totalGroups += info->missGroupCount + info->callableGroupCount;
-    Uint32 sbtSize = totalGroups * groupHandleSize;
-    Uint8* handles = palAllocate(s_Vk.allocator, sbtSize, 0);
+    Uint32 totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
+    totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
+    Uint32 handlesSize = totalGroups * groupHandleSize;
+    Uint8* handles = palAllocate(s_Vk.allocator, handlesSize, 0);
     if (!handles) {
         palFree(s_Vk.allocator, sbt);
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    // handles already in our prefered format
     result = vkDevice->getRayTracingShaderGroupHandles(
         vkDevice->handle,
         pipeline->handle,
         0,
         totalGroups,
-        sbtSize,
+        handlesSize,
         handles);
 
     if (result != VK_SUCCESS) {
@@ -9299,12 +9443,15 @@ PalResult PAL_CALL createShaderBindingTableVk(
         return resultFromVk(result);
     }
 
-    Uint8* dstPtr = ptr;
-    Uint8* srcPtr = handles;
+    // TODO: finish implementation
 
     // raygen
-    for (int i = 0; i < info->raygenGroupCount; i++) {
-        memcpy(dstPtr + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
+    for (int i = 0; i < sbtInfo->raygenCount; i++) {
+        Uint8* dstPtr = (Uint8*)ptr + (i * raygenStride);
+        Uint8* srcPtr = (Uint8*)handles + (i * groupHandleSize);
+
+        memcpy(dstPtr, srcPtr, groupHandleSize);
+        memcpy(dstPtr + groupHandleSize, info->records[i].localData, info->records[i].localDataSize);
     }
     srcPtr += raygenRegionSize;
 

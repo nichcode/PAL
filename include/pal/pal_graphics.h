@@ -2432,6 +2432,21 @@ typedef struct {
 } PalImageCopyInfo;
 
 /**
+ * @struct PalImageCopyInfo
+ * @brief Information for image to image copies.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 groupIndex; /**< Index into the shader groups used to create the ray tracing pipeline.*/
+    Uint32 localDataSize;
+    void* localData;
+} PalShaderBindingTableRecordInfo;
+
+/**
  * @struct PalImageCreateInfo
  * @brief Creation parameters for an image.
  *
@@ -2692,10 +2707,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 raygenGroupCount;
-    Uint32 missGroupCount;
-    Uint32 hitGroupCount;
-    Uint32 callableGroupCount;
+    Uint32 recordCount;
+    PalShaderBindingTableRecordInfo* records;
     PalPipeline* rayTracingPipeline;
 } PalShaderBindingTableCreateInfo;
 

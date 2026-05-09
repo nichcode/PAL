@@ -4,6 +4,10 @@
 
 #define BUFFER_SIZE 400
 
+typedef struct {
+    float color[3]; // closest hit color
+} LocalData;
+
 static void PAL_CALL onGraphicsDebug(
     void* userData,
     PalDebugMessageSeverity severity,
@@ -811,11 +815,34 @@ bool rayTracingTest()
     }
 
     // create shader binding table
+    // we need 3 records, only closest hit (git group) only uses the local data
+    LocalData missLocalData; // black color for miss
+    missLocalData.color[0] = 0.0f;
+    missLocalData.color[1] = 0.0f;
+    missLocalData.color[2] = 0.0f;
+    
+    LocalData closestLocalData = {0}; // green color for miss
+    closestLocalData.color[0] = 0.0f;
+    closestLocalData.color[1] = 1.0f;
+    closestLocalData.color[2] = 0.0f;
+
+    PalShaderBindingTableRecordInfo records[3];
+    records[0].groupIndex = 0; // raygen group index
+    records[0].localDataSize = 0;
+    records[0].localData = nullptr;
+
+    records[1].groupIndex = 1; // miss group index
+    records[1].localDataSize = sizeof(LocalData);
+    records[1].localData = &missLocalData;
+
+    records[2].groupIndex = 2; // closest hit group index
+    records[2].localDataSize = sizeof(LocalData);
+    records[2].localData = &closestLocalData;
+
     PalShaderBindingTableCreateInfo sbtCreateInfo = {0};
     sbtCreateInfo.rayTracingPipeline = pipeline;
-    sbtCreateInfo.raygenGroupCount = 1;
-    sbtCreateInfo.missGroupCount = 1;
-    sbtCreateInfo.hitGroupCount = 1;
+    sbtCreateInfo.records = records;
+    sbtCreateInfo.recordCount = 3;
 
     result = palCreateShaderBindingTable(device, &sbtCreateInfo, &sbt);
     if (result != PAL_RESULT_SUCCESS) {
