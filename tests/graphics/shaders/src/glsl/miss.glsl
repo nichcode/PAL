@@ -4,7 +4,12 @@
 
 layout(location = 0) rayPayloadInEXT vec3 payloadColor;
 
+layout(shaderRecordEXT) buffer MissRecord
+{
+    vec3 color;
+} missRecord;
+
 void main()
 {
-    payloadColor = vec3(0.0);
+    payloadColor = missRecord.color;
 }

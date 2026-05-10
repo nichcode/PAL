@@ -495,17 +495,25 @@ typedef struct {
 } CommandPool;
 
 typedef struct {
+    Uint32 startIndex;
+    Uint32 offset;
+    VkStridedDeviceAddressRegionKHR region;
+} AddressRegion;
+
+typedef struct {
     const PalGraphicsBackend* backend;
 
+    Uint32 handleSize;
     Device* device;
     VkBuffer buffer;
     VkDeviceMemory bufferMemory;
     VkDeviceAddress baseAddress;
+    void* pipeline;
 
-    VkStridedDeviceAddressRegionKHR raygenAddress;
-    VkStridedDeviceAddressRegionKHR missAddress;
-    VkStridedDeviceAddressRegionKHR hitAddress;
-    VkStridedDeviceAddressRegionKHR callableAddress;
+    AddressRegion raygen;
+    AddressRegion miss;
+    AddressRegion hit;
+    AddressRegion callable;
 } ShaderBindingTable;
 
 typedef struct {
@@ -597,18 +605,12 @@ typedef struct {
 } ShaderBindingTableInfo;
 
 typedef struct {
-    PalShaderStage stage; // used to identify each group
-    Uint32 index;
-} ShaderGroupMap;
-
-typedef struct {
     const PalGraphicsBackend* backend;
 
     VkPipelineBindPoint bindPoint;
     Device* device;
     VkPipeline handle;
     VkPipelineLayout layout;
-    ShaderGroupMap* groupMaps;
     ShaderBindingTableInfo sbtInfo;
 } Pipeline;
 
@@ -7511,16 +7513,16 @@ PalResult PAL_CALL cmdTraceRaysVk(
     }
 
     VkStridedDeviceAddressRegionKHR raygenAddress = {0};
-    raygenAddress.size = vkSbt->raygenAddress.size;
-    raygenAddress.stride = vkSbt->raygenAddress.stride;
-    raygenAddress.deviceAddress = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
+    raygenAddress.size = vkSbt->raygen.region.size;
+    raygenAddress.stride = vkSbt->raygen.region.stride;
+    raygenAddress.deviceAddress = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
 
     vkCmdBuffer->device->cmdTraceRays(
         vkCmdBuffer->handle,
         &raygenAddress,
-        &vkSbt->missAddress,
-        &vkSbt->hitAddress,
-        &vkSbt->callableAddress,
+        &vkSbt->miss.region,
+        &vkSbt->hit.region,
+        &vkSbt->callable.region,
         width,
         height,
         depth);
@@ -7546,8 +7548,8 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
         return PAL_RESULT_MEMORY_MAP_FAILED;
     }
 
-    PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygenAddress.stride;
-    vkSbt->raygenAddress.deviceAddress = address;
+    PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
+    vkSbt->raygen.region.deviceAddress = address;
     
     VkDeviceAddress bufferAddress = 0;
     VkBufferDeviceAddressInfoKHR bufferInfo = {0};
@@ -7557,10 +7559,10 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
     vkCmdBuffer->device->cmdTraceRaysIndirect(
         vkCmdBuffer->handle,
-        &vkSbt->raygenAddress,
-        &vkSbt->missAddress,
-        &vkSbt->hitAddress,
-        &vkSbt->callableAddress,
+        &vkSbt->raygen.region,
+        &vkSbt->miss.region,
+        &vkSbt->hit.region,
+        &vkSbt->callable.region,
         bufferAddress);
 
     return PAL_RESULT_SUCCESS;
@@ -9004,7 +9006,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
-    pipeline->groupMaps = nullptr;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -9049,7 +9050,6 @@ PalResult PAL_CALL createComputePipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
-    pipeline->groupMaps = nullptr;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -9065,7 +9065,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     Pipeline* pipeline = nullptr;
     VkPipelineShaderStageCreateInfo* shaderStages = nullptr; 
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
-    ShaderGroupMap* groupMaps = nullptr;
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -9079,8 +9078,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     createInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(Pipeline), 0);
-    groupMaps = palAllocate(s_Vk.allocator, sizeof(ShaderGroupMap) * info->shaderGroupCount, 0);
-
     groups = palAllocate(
         s_Vk.allocator, 
         sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount, 
@@ -9091,10 +9088,11 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount, 
         0);
 
-    if (!pipeline || !groupMaps || !groups || !shaderStages) {
+    if (!pipeline || !groups || !shaderStages) {
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    memset(pipeline, 0, sizeof(Pipeline));
     // shaders
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * info->shaderCount);
     for (int i = 0; i < info->shaderCount; i++) {
@@ -9110,16 +9108,12 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     createInfo.stageCount = info->shaderCount;
     createInfo.pStages = shaderStages;
 
-    // we always arrange the groups in a specific order so sbt creation becomes simple and layout
-    // aware already.
-    // raygen
-    // miss
-    // hit
-    // callable
-
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
     for (int i = 0; i < info->shaderGroupCount; i++) {
+        VkRayTracingShaderGroupCreateInfoKHR* group = &groups[i];
         PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
+
+        group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
         if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
             // check if its raygen, miss or callable
             Shader* shader = (Shader*)info->shaders[tmp->generalShaderIndex];
@@ -9140,48 +9134,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
                 }
             }
 
-        } else {
-            sbtInfo->hitCount++;
-        }
-    }
-
-    // we compute offsets
-    Uint32 raygenOffset = 0; // always first
-    Uint32 missOffset = sbtInfo->raygenCount;
-    Uint32 hitOffset = missOffset + sbtInfo->missCount;
-    Uint32 callableOffset = hitOffset + sbtInfo->hitCount;
-
-    // write into backend array with the correct offsets
-    for (int i = 0; i < info->shaderGroupCount; i++) {
-        VkRayTracingShaderGroupCreateInfoKHR* group = nullptr;
-        PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
-
-        if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
-            // check if its raygen, miss or callable
-            Shader* shader = (Shader*)info->shaders[tmp->generalShaderIndex];
-            switch (shader->stage) {
-                case VK_SHADER_STAGE_RAYGEN_BIT_KHR: {
-                    groupMaps[i].index = raygenOffset;
-                    groupMaps[i].stage = PAL_SHADER_STAGE_RAYGEN;
-                    group = &groups[raygenOffset++];
-                    break;
-                }
-
-                case VK_SHADER_STAGE_MISS_BIT_KHR: {
-                    groupMaps[i].index = missOffset;
-                    groupMaps[i].stage = PAL_SHADER_STAGE_MISS;
-                    group = &groups[missOffset++];
-                    break;
-                }
-
-                case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
-                    groupMaps[i].index = callableOffset;
-                    groupMaps[i].stage = PAL_SHADER_STAGE_CALLABLE;
-                    group = &groups[callableOffset++];
-                    break;
-                }
-            }
-
             group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
             group->generalShader = tmp->generalShaderIndex;
             group->anyHitShader = VK_SHADER_UNUSED_KHR;
@@ -9189,9 +9141,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
             group->intersectionShader = VK_SHADER_UNUSED_KHR;
 
         } else {
-            groupMaps[i].index = hitOffset;
-            groupMaps[i].stage = PAL_SHADER_STAGE_CLOSEST_HIT; // just for identification
-            group = &groups[hitOffset++];
+            sbtInfo->hitCount++;
 
             group->generalShader = VK_SHADER_UNUSED_KHR;
             if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
@@ -9217,8 +9167,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
                 group->intersectionShader = VK_SHADER_UNUSED_KHR;
             }
         }
-
-        group->sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
     }
 
     createInfo.pGroups = groups;
@@ -9245,7 +9193,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
-    pipeline->groupMaps = groupMaps;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -9255,9 +9202,6 @@ void PAL_CALL destroyPipelineVk(PalPipeline* pipeline)
     Pipeline* vkPipeline = (Pipeline*)pipeline;
     s_Vk.destroyPipeline(vkPipeline->device->handle, vkPipeline->handle, &s_Vk.vkAllocator);
 
-    if (vkPipeline->groupMaps) {
-        palFree(s_Vk.allocator, vkPipeline->groupMaps);
-    }
     palFree(s_Vk.allocator, pipeline);
 }
 
@@ -9278,6 +9222,12 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    Uint32 totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
+    totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
+    if (info->recordCount != totalGroups) {
+        return PAL_RESULT_INVALID_ARGUMENT;
     }
 
     sbt = palAllocate(s_Vk.allocator, sizeof(ShaderBindingTable), 0);
@@ -9306,31 +9256,23 @@ PalResult PAL_CALL createShaderBindingTableVk(
     // get the max local data size
     for (int i = 0; i < info->recordCount; i++) {
         PalShaderBindingTableRecordInfo* record = &info->records[i];
-        ShaderGroupMap* map = &pipeline->groupMaps[record->groupIndex];
-        if (!map) {
-            return PAL_RESULT_INVALID_ARGUMENT;
-        }
+        Uint32 index = record->groupIndex;
 
-        switch (map->stage) {
-            case PAL_SHADER_STAGE_RAYGEN: {
-                raygenDataSize = maxVk(raygenDataSize, record->localDataSize);
-                break;
-            }
+        if (index < sbtInfo->raygenCount) {
+            // raygen group
+            raygenDataSize = maxVk(raygenDataSize, record->localDataSize);
 
-            case PAL_SHADER_STAGE_MISS: {
-                missDataSize = maxVk(missDataSize, record->localDataSize);
-                break;
-            }
+        } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
+            // miss group
+            missDataSize = maxVk(missDataSize, record->localDataSize);
 
-            case PAL_SHADER_STAGE_CALLABLE: {
-                callableDataSize = maxVk(callableDataSize, record->localDataSize);
-                break;
-            }
+        } else if (index < sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount) {
+            // hit group
+            hitDataSize = maxVk(hitDataSize, record->localDataSize);
 
-            case PAL_SHADER_STAGE_CLOSEST_HIT: {
-                hitDataSize = maxVk(hitDataSize, record->localDataSize);
-                break;
-            }
+        } else {
+            // callable group
+            callableDataSize = maxVk(callableDataSize, record->localDataSize);
         }
     }
 
@@ -9412,8 +9354,6 @@ PalResult PAL_CALL createShaderBindingTableVk(
     s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->bufferMemory, 0);
 
     // get shader group handles
-    Uint32 totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
-    totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
     Uint32 handlesSize = totalGroups * groupHandleSize;
     Uint8* handles = palAllocate(s_Vk.allocator, handlesSize, 0);
     if (!handles) {
@@ -9421,7 +9361,6 @@ PalResult PAL_CALL createShaderBindingTableVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    // handles already in our prefered format
     result = vkDevice->getRayTracingShaderGroupHandles(
         vkDevice->handle,
         pipeline->handle,
@@ -9443,66 +9382,107 @@ PalResult PAL_CALL createShaderBindingTableVk(
         return resultFromVk(result);
     }
 
-    // TODO: finish implementation
+    offset = 0; // reuse variable
+    Uint8* srcPtr = (Uint8*)handles;
 
     // raygen
     for (int i = 0; i < sbtInfo->raygenCount; i++) {
         Uint8* dstPtr = (Uint8*)ptr + (i * raygenStride);
-        Uint8* srcPtr = (Uint8*)handles + (i * groupHandleSize);
+        PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
-        memcpy(dstPtr, srcPtr, groupHandleSize);
-        memcpy(dstPtr + groupHandleSize, info->records[i].localData, info->records[i].localDataSize);
+        memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
+        if (record->localDataSize) {
+            // this record has local data
+            memcpy(dstPtr + groupHandleSize, record->localData, record->localDataSize);
+        }
     }
-    srcPtr += raygenRegionSize;
+
+    offset += sbtInfo->raygenCount;
+    srcPtr += (groupHandleSize * sbtInfo->raygenCount);
 
     // miss
-    for (int i = 0; i < info->missGroupCount; i++) {
-        memcpy(dstPtr + missOffset + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
+    for (int i = 0; i < sbtInfo->missCount; i++) {
+        Uint8* dstPtr = (Uint8*)ptr + missOffset + (i * missStride);
+        PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
+
+        memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
+        if (record->localDataSize) {
+            // this record has local data
+            memcpy(dstPtr + groupHandleSize, record->localData, record->localDataSize);
+        }
     }
-    srcPtr += missRegionSize;
+    
+    offset += sbtInfo->missCount;
+    srcPtr += (groupHandleSize * sbtInfo->missCount);
 
     // hit
-    for (int i = 0; i < info->hitGroupCount; i++) {
-        memcpy(dstPtr + hitOffset + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
+    for (int i = 0; i < sbtInfo->hitCount; i++) {
+        Uint8* dstPtr = (Uint8*)ptr + hitOffset + (i * hitStride);
+        PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
+
+        memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
+        if (record->localDataSize) {
+            // this record has local data
+            memcpy(dstPtr + groupHandleSize, record->localData, record->localDataSize);
+        }
     }
-    srcPtr += hitRegionSize;
+    
+    offset += sbtInfo->hitCount;
+    srcPtr += (groupHandleSize * sbtInfo->hitCount);
 
     // callable
-    for (int i = 0; i < info->callableGroupCount; i++) {
-        memcpy(dstPtr + callableOffset + i * stride, srcPtr + i * groupHandleSize, groupHandleSize);
+    for (int i = 0; i < sbtInfo->callableCount; i++) {
+        Uint8* dstPtr = (Uint8*)ptr + callableOffset + (i * callableStride);
+        PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
+
+        memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
+        if (record->localDataSize) {
+            // this record has local data
+            memcpy(dstPtr + groupHandleSize, record->localData, record->localDataSize);
+        }
     }
-    srcPtr += callableRegionSize;
 
     s_Vk.unmapMemory(vkDevice->handle, sbt->bufferMemory);
 
-    // cache SBT fields and offsets address
+    //cache SBT fields and offsets address
     VkBufferDeviceAddressInfo bufferAddressInfo = {0};
     bufferAddressInfo.buffer = sbt->buffer;
     bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     sbt->baseAddress = s_Vk.getBufferDeviceAddress(vkDevice->handle, &bufferAddressInfo);
 
     // raygen
-    sbt->raygenAddress.deviceAddress = sbt->baseAddress;
-    sbt->raygenAddress.size = raygenAlignedRegionSize;
-    sbt->raygenAddress.stride = stride;
+    sbt->raygen.region.deviceAddress = sbt->baseAddress;
+    sbt->raygen.offset = 0; // always
+    sbt->raygen.startIndex = 0; // always
+    sbt->raygen.region.size = raygenRegionSize;
+    sbt->raygen.region.stride = raygenStride;
 
     // miss
-    sbt->missAddress.deviceAddress = sbt->baseAddress + missOffset;
-    sbt->missAddress.size = missAlignedRegionSize;
-    sbt->missAddress.stride = stride;
+    sbt->miss.offset = missOffset;
+    sbt->miss.startIndex = sbtInfo->raygenCount;
+    sbt->miss.region.deviceAddress = sbt->baseAddress + missOffset;
+    sbt->miss.region.size = missRegionSize;
+    sbt->miss.region.stride = missStride;
 
     // hit
-    sbt->hitAddress.deviceAddress = sbt->baseAddress + hitOffset;
-    sbt->hitAddress.size = hitAlignedRegionSize;
-    sbt->hitAddress.stride = stride;
+    sbt->hit.offset = hitOffset;
+    sbt->hit.startIndex = sbtInfo->raygenCount + sbtInfo->missCount;
+    sbt->hit.region.deviceAddress = sbt->baseAddress + hitOffset;
+    sbt->hit.region.size = hitRegionSize;
+    sbt->hit.region.stride = hitStride;
 
     // callable
-    sbt->callableAddress.deviceAddress = sbt->baseAddress + callableOffset;
-    sbt->callableAddress.size = callableAligneRegionSize;
-    sbt->callableAddress.stride = stride;
+    sbt->callable.offset = callableOffset;
+    sbt->callable.startIndex = sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount;
+    sbt->callable.region.deviceAddress = sbt->baseAddress + callableOffset;
+    sbt->callable.region.size = callableRegionSize;
+    sbt->callable.region.stride = callableStride;
 
     palFree(s_Vk.allocator, handles);
     sbt->device = vkDevice;
+    sbt->handleSize = groupHandleSize;
+    sbt->pipeline = pipeline;
+
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;
 }
@@ -9515,6 +9495,70 @@ void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt)
     s_Vk.destroyBuffer(device->handle, vkSbt->buffer, &s_Vk.vkAllocator);
     s_Vk.freeMemory(device->handle, vkSbt->bufferMemory, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkSbt);
+}
+
+PalResult PAL_CALL updateShaderBindingTableVk(
+    PalShaderBindingTable* sbt, 
+    Uint32 count,
+    PalShaderBindingTableRecordInfo* infos)
+{
+    VkResult result;
+    ShaderBindingTable* vkSbt = (ShaderBindingTable*)sbt;
+    Device* vkDevice = vkSbt->device;
+    Pipeline* pipeline = vkSbt->pipeline;
+    ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
+
+    void* data = nullptr;
+    result = s_Vk.mapMemory(vkDevice->handle, vkSbt->bufferMemory, 0, VK_WHOLE_SIZE, 0, &data);
+    if (result != VK_SUCCESS) {
+        return resultFromVk(result);
+    }
+
+    Uint32 stride = 0;
+    Uint32 offset = 0;
+    Uint32 startIndex = 0;
+
+    for (int i = 0; i < count; i++) {
+        PalShaderBindingTableRecordInfo* info = &infos[i];
+        if (!info->localDataSize) {
+            return PAL_RESULT_INVALID_ARGUMENT;
+        }
+
+        // find the group the record belongs to
+        Uint32 index = info->groupIndex;
+        if (index < sbtInfo->raygenCount) {
+            // raygen group
+            offset = 0;
+            stride = vkSbt->raygen.region.stride;
+            startIndex = vkSbt->raygen.startIndex;
+
+        } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
+            // miss group
+            offset = vkSbt->miss.offset;
+            stride = vkSbt->miss.region.stride;
+            startIndex = vkSbt->miss.startIndex;
+
+        } else if (index < sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount) {
+            // hit group
+            offset = vkSbt->hit.offset;
+            stride = vkSbt->hit.region.stride;
+            startIndex = vkSbt->hit.startIndex;
+
+        } else {
+            // callable group
+            offset = vkSbt->callable.offset;
+            stride = vkSbt->callable.region.stride;
+            startIndex = vkSbt->callable.startIndex;
+        }
+
+        // write payload
+        Uint32 localIndex = index - startIndex;
+        Uint8* dst = (Uint8*)data + offset + (localIndex * stride);
+        memcpy(dst + vkSbt->handleSize, info->localData, info->localDataSize);
+    }
+
+    s_Vk.unmapMemory(vkDevice->handle, vkSbt->bufferMemory);
+    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_VULKAN

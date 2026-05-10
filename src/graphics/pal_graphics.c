@@ -784,6 +784,11 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
 void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt);
 
+PalResult PAL_CALL updateShaderBindingTableVk(
+    PalShaderBindingTable* sbt, 
+    Uint32 count,
+    PalShaderBindingTableRecordInfo* infos);
+
 static PalGraphicsBackend s_VkBackend = {
     // adapter
     .enumerateAdapters = enumerateAdaptersVk,
@@ -961,7 +966,8 @@ static PalGraphicsBackend s_VkBackend = {
 
     // shader binding table
     .createShaderBindingTable = createShaderBindingTableVk,
-    .destroyShaderBindingTable = destroyShaderBindingTableVk};
+    .destroyShaderBindingTable = destroyShaderBindingTableVk,
+    .updateShaderBindingTable = updateShaderBindingTableVk};
 
 #endif // PAL_HAS_VULKAN
 
@@ -1656,6 +1662,12 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
 void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt);
 
+// TODO: implement
+PalResult PAL_CALL updateShaderBindingTableD3D12(
+    PalShaderBindingTable* sbt, 
+    Uint32 count,
+    PalShaderBindingTableRecordInfo* infos);
+
 static PalGraphicsBackend s_D3D12Backend = {
     // adapter
     .enumerateAdapters = enumerateAdaptersD3D12,
@@ -1831,9 +1843,10 @@ static PalGraphicsBackend s_D3D12Backend = {
     .createRayTracingPipeline = createRayTracingPipelineD3D12,
     .destroyPipeline = destroyPipelineD3D12,
 
-    // shader binding table
+    // shader binding tables
     .createShaderBindingTable = createShaderBindingTableD3D12,
-    .destroyShaderBindingTable = destroyShaderBindingTableD3D12};
+    .destroyShaderBindingTable = destroyShaderBindingTableD3D12;
+    .updateShaderBindingTable = updateShaderBindingTableD3D12};
 
 #endif // PAL_HAS_D3D12
 
@@ -2041,7 +2054,8 @@ PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
 
         // shader binding table
         !backend->createShaderBindingTable              ||
-        !backend->destroyShaderBindingTable) {
+        !backend->destroyShaderBindingTable             ||
+        !backend->updateShaderBindingTable) {
         return PAL_RESULT_INVALID_BACKEND;
     }
     // clang-format on
@@ -4327,6 +4341,10 @@ PalResult PAL_CALL palUpdateDescriptorSet(
         return PAL_RESULT_NULL_POINTER;
     }
 
+    if (count == 0 && infos) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
     return device->backend->updateDescriptorSet(device, count, infos);
 }
 
@@ -4494,6 +4512,26 @@ void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt)
     if (s_Graphics.initialized && sbt) {
         sbt->backend->destroyShaderBindingTable(sbt);
     }
+}
+
+PalResult PAL_CALL palUpdateShaderBindingTable(
+    PalShaderBindingTable* sbt, 
+    Uint32 count,
+    PalShaderBindingTableRecordInfo* infos)
+{
+    if (!s_Graphics.initialized) {
+        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+    }
+
+    if (!sbt || !infos) {
+        return PAL_RESULT_NULL_POINTER;
+    }
+
+    if (count == 0 && infos) {
+        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    }
+
+    return sbt->backend->updateShaderBindingTable(sbt, count, infos);
 }
 
 // ==================================================

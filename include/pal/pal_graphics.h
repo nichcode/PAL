@@ -2436,6 +2436,8 @@ typedef struct {
  * @brief Information for image to image copies.
  *
  * Uninitialized fields may result in undefined behavior.
+ * 
+ * The records array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -2665,6 +2667,8 @@ typedef struct {
  * @brief Creation parameters for a ray tracing pipeline shader group.
  *
  * Uninitialized fields may result in undefined behavior.
+ * 
+ * The shader group array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -3988,6 +3992,16 @@ typedef struct {
      * Must obey the rules and semantics documented in palDestroyShaderBindingTable().
      */
     void PAL_CALL (*destroyShaderBindingTable)(PalShaderBindingTable* sbt);
+
+    /**
+     * Backend implementation of ::palUpdateShaderBindingTable.
+     *
+     * Must obey the rules and semantics documented in palUpdateShaderBindingTable().
+     */
+    PalResult PAL_CALL (*updateShaderBindingTable)(
+        PalShaderBindingTable* sbt, 
+        Uint32 count,
+        PalShaderBindingTableRecordInfo* infos);
 } PalGraphicsBackend;
 
 /**
@@ -7286,8 +7300,7 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  * 
- * @note The shader group index will be based on the order of 
- * PalRayTracingPipelineCreateInfo::shaderGroups.
+ * @note The shader group array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -7325,6 +7338,9 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not, this
  * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * PalShaderBindingTableCreateInfo::recordCount must match the shader group count of 
+ * PalShaderBindingTableCreateInfo::rayTracingPipeline.
  *
  * @param[in] device Device that creates the shader binding table.
  * @param[in] info Pointer to a PalShaderBindingTableCreateInfo struct that specifies parameters.
@@ -7336,6 +7352,8 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
+ * 
+ * @note The records array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -7363,6 +7381,32 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  * @sa palCreateShaderBindingTable
  */
 PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
+
+/**
+ * @brief Update a shader binding table record payloads.
+ *
+ * The graphics system must be initialized before this call.
+ * 
+ * This call does not update shader handles. It only updates the payload associated
+ * with the record. PalShaderBindingTableRecordInfo::groupIndex is the index into
+ * the shader groups used to create the ray tracing pipeline.
+ *
+ * @param[in] sbt The shader binding table to update.
+ * @param[in] count Capacity of the PalShaderBindingTableRecordInfo array.
+ * @param[in] infos Array of PalShaderBindingTableRecordInfo to update.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `sbt` is externally synchronized.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
+    PalShaderBindingTable* sbt, 
+    Uint32 count,
+    PalShaderBindingTableRecordInfo* infos);
 
 /**
  * @brief Build work group info(s) from work inputs specified in pixels, vertices etc.

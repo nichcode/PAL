@@ -58,7 +58,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -481,6 +481,7 @@ bool rayTracingTest()
     asInstance.blas = blas;
     asInstance.instanceId = 0;
     asInstance.mask = 0xFF;
+    asInstance.hitGroupOffset = 0; // we only have 1 hitGroup
 
     float transform[12] = {
         1.0f, 0.0f, 0.0f, 0.0f,
@@ -775,19 +776,27 @@ bool rayTracingTest()
         return false;
     }
 
+    // the shader group array must respect the corect layout
+    // [raygen][miss][hitGroup][callable]
+    // [raygen][raygen][miss][hitGroup][hitGroup][callable]
+
     PalRayTracingShaderGroupCreateInfo shaderGroupCreateInfos[3] = {0};
+
+    // raygen must be packed first always
     shaderGroupCreateInfos[0].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
     shaderGroupCreateInfos[0].generalShaderIndex = 0;
     shaderGroupCreateInfos[0].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
 
+    // miss must be packed second always
     shaderGroupCreateInfos[1].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
     shaderGroupCreateInfos[1].generalShaderIndex = 1;
     shaderGroupCreateInfos[1].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
 
+    // hitGroup must be packed third always
     shaderGroupCreateInfos[2].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT;
     shaderGroupCreateInfos[2].closestHitShaderIndex = 2;
     shaderGroupCreateInfos[2].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
@@ -797,6 +806,8 @@ bool rayTracingTest()
     // create a ray tracing pipeline
     PalRayTracingPipelineCreateInfo pipelineCreateInfo = {0};
     pipelineCreateInfo.maxRecursionDepth = 1;
+    pipelineCreateInfo.maxPayloadSize = 16;
+    pipelineCreateInfo.maxAttributeSize = 8;
     pipelineCreateInfo.pipelineLayout = pipelineLayout;
     pipelineCreateInfo.shaderCount = 3;
     pipelineCreateInfo.shaderGroupCount = 3;
@@ -821,10 +832,14 @@ bool rayTracingTest()
     missLocalData.color[1] = 0.0f;
     missLocalData.color[2] = 0.0f;
     
-    LocalData closestLocalData = {0}; // green color for miss
+    LocalData closestLocalData; // green color for miss
     closestLocalData.color[0] = 0.0f;
     closestLocalData.color[1] = 1.0f;
     closestLocalData.color[2] = 0.0f;
+
+    // the record array must respect the corect layout
+    // [raygen][miss][hitGroup][callable]
+    // [raygen][raygen][miss][hitGroup][hitGroup][callable]
 
     PalShaderBindingTableRecordInfo records[3];
     records[0].groupIndex = 0; // raygen group index
@@ -835,7 +850,7 @@ bool rayTracingTest()
     records[1].localDataSize = sizeof(LocalData);
     records[1].localData = &missLocalData;
 
-    records[2].groupIndex = 2; // closest hit group index
+    records[2].groupIndex = 2; // hit group index
     records[2].localDataSize = sizeof(LocalData);
     records[2].localData = &closestLocalData;
 
@@ -1037,6 +1052,173 @@ bool rayTracingTest()
     FILE* file = fopen("ray_tracing_output.ppm", "wb");
     fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
     float* pixels = (float*)ptr;
+    for (int y = 0; y < BUFFER_SIZE; y++) {
+        int row = BUFFER_SIZE - 1 - y; // flip y
+        for (int x = 0; x < BUFFER_SIZE; x++) {
+            int index = row * BUFFER_SIZE + x;
+            Uint8 rgb[3];
+
+            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
+            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;
+            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255: 0;
+            fwrite(rgb, 1, 3, file);
+        }
+    }
+
+    // update sbt and trace again
+    // since we still have the record array we used to create the pipeline
+    // we just change the underlying data and update the record
+    
+    // change miss from black to white
+    missLocalData.color[0] = 1.0f;
+    missLocalData.color[1] = 1.0f;
+    missLocalData.color[2] = 1.0f;
+
+    // change closest hit from green to red
+    closestLocalData.color[0] = 1.0f;
+    closestLocalData.color[1] = 0.0f;
+    closestLocalData.color[2] = 0.0f;
+
+    PalShaderBindingTableRecordInfo updateRecords[2];
+    updateRecords[0] = records[1]; // miss
+    updateRecords[1] = records[2]; // closest hit
+
+    // update records
+    result = palUpdateShaderBindingTable(sbt, 2, updateRecords);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to update shader binding table: %s", error);
+        return false;
+    }
+
+    // we dont need to rebuild the blas or tlas
+    // we just delete and create the fence again for simplicity
+    palDestroyFence(fence);
+    fence = nullptr;
+
+    result = palCreateFence(device, false, &fence);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create fence: %s", error);
+        return false;
+    }
+
+    // record commands
+    result = palCmdBegin(cmdBuffer, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to begin command buffer: %s", error);
+        return false;
+    }
+
+    result = palCmdBindPipeline(cmdBuffer, pipeline);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind pipeline: %s", error);
+        return false;
+    }
+    
+    result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to bind descriptor set: %s", error);
+        return false;
+    }
+
+    // set a barrier on the buffer
+    newUsageStateInfo.shaderStageCount = 1;
+    newUsageStateInfo.shaderStages = shaderStages;
+    newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
+
+    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        return false;
+    }
+
+    result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to trace rays: %s", error);
+        return false;
+    }
+
+    // set a barrier so we only read from the buffer after the shader has
+    // written to it
+    oldUsageStateInfo = newUsageStateInfo;
+    newUsageStateInfo.shaderStageCount = 0;
+    newUsageStateInfo.shaderStages = nullptr;
+    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
+
+    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        return false;
+    }
+
+    // set a barrier on the staging buffer
+    oldUsageStateInfo.shaderStageCount = 0;
+    oldUsageStateInfo.shaderStages = nullptr;
+    oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
+    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+
+    result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        return false;
+    }
+
+    // now we copy from the GPU buffer into the staging buffer
+    copyInfo.size = bufferBytes;
+    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to copy buffer: %s", error);
+        return false;
+    }
+
+    result = palCmdEnd(cmdBuffer);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to end command buffer: %s", error);
+        return false;
+    }
+
+    // submit the command buffer to the GPU
+    submitInfo.cmdBuffer = cmdBuffer;
+    submitInfo.fence = fence;
+    result = palSubmitCommandBuffer(queue, &submitInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to submit command buffer: %s", error);
+        return false;
+    }
+
+    // wait for the fence
+    result = palWaitFence(fence, PAL_INFINITE);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to wait for fence: %s", error);
+        return false;
+    }
+
+    // now our staging buffer has the contents of the GPU buffer
+    // we map it and copy the contents to a ppm buffer and save it
+    ptr = nullptr;
+    result = palMapBufferMemory(stagingBuffer, 0, bufferBytes, &ptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to map buffer memory: %s", error);
+        return false;
+    }
+
+    // write to a ppm output file
+    file = fopen("ray_tracing_output2.ppm", "wb");
+    fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
+    pixels = (float*)ptr;
     for (int y = 0; y < BUFFER_SIZE; y++) {
         int row = BUFFER_SIZE - 1 - y; // flip y
         for (int x = 0; x < BUFFER_SIZE; x++) {
