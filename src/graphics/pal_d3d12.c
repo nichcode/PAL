@@ -5833,6 +5833,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    // TODO: remove upload memory requirement, check and copy according to buffer memory type
     // get width, height and depth from provided buffer
     void* ptr = nullptr;
     HRESULT result = d3dBuffer->handle->lpVtbl->Map(d3dBuffer->handle, 0, nullptr, &ptr);
@@ -7937,6 +7938,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    // TODO: create both a GPU only and UPLOAD buffers
     void** raygenHandles = nullptr;
     void** missHandles = nullptr;
     void** hitHandles = nullptr;

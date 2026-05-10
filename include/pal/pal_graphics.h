@@ -6205,19 +6205,32 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     Uint32 maxDrawCount);
 
 /**
- * @brief Insert an acceleration structure memory barrier into the command buffer.
+ * @brief Transition an acceleration structure from one usage state to another.
  * 
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not,
  * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
- *
- * The graphics system must be initialized before this call. This functions makes memory invisible
- * and blocks access until the usage state specified by `oldUsageStateInfo` is completed.
- *
- * Example: To make sure an acceleration structure build is completed and memory is visible to the
- * raygen shader before it executes, `oldUsageStateInfo.usageState` should be
- * `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE` after the build function is called and
- * `newUsageStateInfo.usageState` should be `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ` to make
- * sure its in read state before its visible to the raygen shader.
+ * 
+ * The graphics system must be initialized before this call. This function defines a
+ * dependency between `oldUsageStateInfo` and `newUsageStateInfo`. It ensures that all
+ * operations performed under `oldUsageStateInfo` are completed and visible before the acceleration
+ * structure is accessed under `newUsageStateInfo`.
+ * 
+ * This function does not modify the acceleration structure, it only exforces execution ordering 
+ * and acceleration structure memory visibility.
+ * 
+ * A barrier is not needed between BLAS and TLAS if there dont shared any resource. If both
+ * builds use a different scratch buffer, no barrier is needed.
+ * 
+ * Example: 
+ * 
+ * To make sure BLAS builds before TLAS access it and TLAS does not use scratch buffer
+ * whilst BLAS is buidling,
+ * we put a barrier to transition the BLAS to ensure it has finished building and the scratch
+ * buffer is not being used. This is expressed with oldUsageStateInfo.usageState being 
+ * `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE`.
+ * 
+ * newUsageStateInfo.usageState should be the new usage state we want after the BLAS 
+ * has finished wbuilding which is `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] as Acceleration structure to set barrier on.
@@ -6243,19 +6256,30 @@ PAL_API PalResult PAL_CALL palCmdAccelerationStructureBarrier(
     PalUsageStateInfo* newUsageStateInfo);
 
 /**
- * @brief Insert an image memory barrier into the command buffer.
+ * @brief Transition an image from one usage state to another.
  *
- * The graphics system must be initialized before this call. This functions makes memory invisible
- * and blocks access until the usage state specified by `oldUsageStateInfo` is completed.
- *
- * Example: To make sure an image has been rendered to fully and prepared for presenting,
- * `oldUsageStateInfo.usageState` should be `PAL_USAGE_STATE_UNDEFINED` or `PAL_USAGE_STATE_PRESENT`
- * depending on the previous state of the image. `newUsageStateInfo.usageState` should be
- * `PAL_USAGE_STATE_PRESENT` to make sure its in present state.
+ * The graphics system must be initialized before this call. This function defines a
+ * dependency between `oldUsageStateInfo` and `newUsageStateInfo`. It ensures that all
+ * operations performed under `oldUsageStateInfo` are completed and visible before the image 
+ * is accessed under `newUsageStateInfo`.
+ * 
+ * This function does not modify the image, it only exforces execution ordering and image memory 
+ * visibility.
+ * 
+ * Example: 
+ * 
+ * To make sure the an image is ready for presenting after a render pass,
+ * we put a barrier to transition the image to ensure the render pass has finished writing
+ * to the image. This is expressed with oldUsageStateInfo.usageState being 
+ * `PAL_USAGE_STATE_COLOR_ATTACHMENT` or `PAL_USAGE_STATE_COLOR_ATTACHMENT` or both set 
+ * after each other.
+ * 
+ * newUsageStateInfo.usageState should be the new usage state we want after the render pass 
+ * has finished which is `PAL_USAGE_STATE_PRESENT`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] image Image to set barrier on.
- * @param[in] subresourceRange Pointer to a PalImageSubresourceRange specifying the image.
+ * @param[in] subresourceRange Subresource range of the image.
  * @param[in] oldUsageStateInfo Pointer to a PalUsageStateInfo specifying the old usage state.
  * @param[in] newUsageStateInfo Pointer to a PalUsageStateInfo specifying the new usage state.
  *
@@ -6266,7 +6290,7 @@ PAL_API PalResult PAL_CALL palCmdAccelerationStructureBarrier(
  *
  * @since 1.4
  * @ingroup pal_graphics
- * @sa palCmdMemoryBarrier
+ * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdBufferBarrier
  */
 PAL_API PalResult PAL_CALL palCmdImageBarrier(
@@ -6277,16 +6301,26 @@ PAL_API PalResult PAL_CALL palCmdImageBarrier(
     PalUsageStateInfo* newUsageStateInfo);
 
 /**
- * @brief Insert a buffer memory barrier into the command buffer.
+ * @brief Transition a buffer from one usage state to another.
  *
- * The graphics system must be initialized before this call. This functions makes memory invisible
- * and blocks access until the usage state specified by `oldUsageStateInfo` is completed.
- *
- * Example: To make sure a GPU memory buffer has been written to by the shader and ready to be
- * copied to a CPU memory buffer, `oldUsageStateInfo.usageState` should be
- * `PAL_USAGE_STATE_SHADER_WRITE` and optional `oldUsageStateInfo.shaderStage` set to indicate
- * which shader stage will write to the buffer. `newUsageStateInfo.usageState` should be
- * `PAL_USAGE_STATE_TRANSFER_READ` to make sure its in read state.
+ * The graphics system must be initialized before this call. This function defines a
+ * dependency between `oldUsageStateInfo` and `newUsageStateInfo`. It ensures that all
+ * operations performed under `oldUsageStateInfo` are completed and visible before the buffer 
+ * is accessed under `newUsageStateInfo`.
+ * 
+ * This function does not modify the buffer, it only exforces execution ordering and buffer memory 
+ * visibility.
+ * 
+ * Example: 
+ * 
+ * To read back data from a buffer that will be written to by a shader,
+ * we put a barrier to transition the buffer to ensurethe shader has finished writing to the 
+ * buffer. This is expressed with oldUsageStateInfo.usageState being `PAL_USAGE_STATE_SHADER_WRITE`
+ * and optional oldUsageStateInfo.shaderStage set to the shader stage that we will be doing the 
+ * writing.
+ * 
+ * newUsageStateInfo.usageState should be the new usage state we want after the write 
+ * has finished which is`PAL_USAGE_STATE_TRANSFER_READ`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer to set barrier on.
@@ -6300,7 +6334,7 @@ PAL_API PalResult PAL_CALL palCmdImageBarrier(
  *
  * @since 1.4
  * @ingroup pal_graphics
- * @sa palCmdMemoryBarrier
+ * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdImageBarrier
  */
 PAL_API PalResult PAL_CALL palCmdBufferBarrier(
@@ -6444,9 +6478,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported
  * and enabled by the device if not, this function will fail and return
  * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
- * 
- * If buffer memory type is not `PAL_MEMORY_TYPE_CPU_UPLOAD`, this function will fail and return 
- * `PAL_RESULT_MEMORY_MAP_FAILED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] raygenIndex Index of the raygen shader to execute.
@@ -6458,7 +6489,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
- * @note The memory associated with the buffer must be `PAL_MEMORY_TYPE_CPU_UPLOAD`.
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4

@@ -58,7 +58,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -896,20 +896,6 @@ bool rayTracingTest()
         return false;
     }
 
-    // set a barrier on the buffer
-    PalUsageStateInfo oldUsageStateInfo = {0};
-    PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStageCount = 1;
-    newUsageStateInfo.shaderStages = shaderStages;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
-
-    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
-    }
-
     // build the blas and tlas infos
     PalDeviceAddress scratchBufferAddress = palGetBufferDeviceAddress(scratchBuffer);
     blasBuildInfo.dst = blas;
@@ -925,7 +911,8 @@ bool rayTracingTest()
         return false;
     }
 
-    // make sure the BLAS builds before the TLAS
+    // make sure the BLAS builds before the TLAS. We need this barrier because
+    // BLAS and TLAS share the same scratch buffer
     PalUsageStateInfo oldAsUsageStateInfo = {0};
     oldAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
 
@@ -974,27 +961,17 @@ bool rayTracingTest()
         return false;
     }
 
-    // set a barrier so we only read from the buffer after the shader has
-    // written to it
-    oldUsageStateInfo = newUsageStateInfo;
+    // set a barrier so we only read from the buffer after the shader has written to it
+    PalUsageStateInfo oldUsageStateInfo = {0};
+    oldUsageStateInfo.shaderStageCount = 0;
+    oldUsageStateInfo.shaderStages = nullptr;
+
+    PalUsageStateInfo newUsageStateInfo = {0};
     newUsageStateInfo.shaderStageCount = 0;
     newUsageStateInfo.shaderStages = nullptr;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
     result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
-    }
-
-    // set a barrier on the staging buffer
-    oldUsageStateInfo.shaderStageCount = 0;
-    oldUsageStateInfo.shaderStages = nullptr;
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-
-    result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -1125,7 +1102,12 @@ bool rayTracingTest()
         return false;
     }
 
-    // set a barrier on the buffer
+    // the previous trace transitioned the buffer to transfer read
+    // we need it back to shader write before transfer read
+    oldUsageStateInfo.shaderStageCount = 0;
+    oldUsageStateInfo.shaderStages = nullptr;
+    oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
+
     newUsageStateInfo.shaderStageCount = 1;
     newUsageStateInfo.shaderStages = shaderStages;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
@@ -1144,7 +1126,7 @@ bool rayTracingTest()
         return false;
     }
 
-    // set a barrier so we only read from the buffer after the shader has
+    // set a barrier to transition to transfer read so we can read from it after shader has 
     // written to it
     oldUsageStateInfo = newUsageStateInfo;
     newUsageStateInfo.shaderStageCount = 0;
@@ -1152,19 +1134,6 @@ bool rayTracingTest()
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
     result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
-    }
-
-    // set a barrier on the staging buffer
-    oldUsageStateInfo.shaderStageCount = 0;
-    oldUsageStateInfo.shaderStages = nullptr;
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-
-    result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -1202,16 +1171,6 @@ bool rayTracingTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);
-        return false;
-    }
-
-    // now our staging buffer has the contents of the GPU buffer
-    // we map it and copy the contents to a ppm buffer and save it
-    ptr = nullptr;
-    result = palMapBufferMemory(stagingBuffer, 0, bufferBytes, &ptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 

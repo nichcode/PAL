@@ -493,20 +493,6 @@ bool computeTest()
 
     palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, workGroupInfos);
 
-    // set a barrier on the buffer
-    PalUsageStateInfo oldUsageStateInfo = {0};
-    PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStageCount = 1;
-    newUsageStateInfo.shaderStages = shaderStages;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
-
-    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
-    }
-
     // dispatch with the work group info
     for (int i = 0; i < workGroupInfoCount; i++) {
         // palDispatchBase is not supported on all platforms so we dont use it for this example
@@ -525,27 +511,18 @@ bool computeTest()
     }
     palFree(nullptr, workGroupInfos);
 
-    // set a barrier so we only read from the buffer after the shader has
-    // written to it
-    oldUsageStateInfo = newUsageStateInfo;
+    // set a barrier so we only read from the buffer after the shader has written to it
+    PalUsageStateInfo oldUsageStateInfo = {0};
+    oldUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
+    oldUsageStateInfo.shaderStageCount = 0;
+    oldUsageStateInfo.shaderStages = nullptr;
+
+    PalUsageStateInfo newUsageStateInfo = {0};
     newUsageStateInfo.shaderStageCount = 0;
     newUsageStateInfo.shaderStages = nullptr;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
     result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
-    }
-
-    // set a barrier on the staging buffer
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_UNDEFINED;
-    oldUsageStateInfo.shaderStageCount = 0;
-    oldUsageStateInfo.shaderStages = nullptr;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-
-    result = palCmdBufferBarrier(cmdBuffer, stagingBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
@@ -562,11 +539,6 @@ bool computeTest()
         palLog(nullptr, "Failed to copy buffer: %s", error);
         return false;
     }
-
-    // if we want to copy to the ppm buffer in the command buffer
-    // we need a barrier to with the state PAL_USAGE_STATE_HOST_READ
-    // but we map and copy outside the command buffer since
-    // we wait for a fence (the command buffer has been executed).
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
