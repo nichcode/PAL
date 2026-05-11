@@ -9,10 +9,15 @@ struct HitAttributes
     float2 unused;
 };
 
+cbuffer HitRecord : register(b0)
+{
+    float3 hitColor;
+};
+
 [shader("closesthit")]
 void main(
     inout RayPayload payload, 
     in HitAttributes attr)
 {
-    payload.color = float3(0.0, 1.0, 0.0);
+    payload.color = hitColor;
 }

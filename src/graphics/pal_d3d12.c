@@ -319,6 +319,7 @@ typedef struct {
 
 typedef struct {
     PalShaderStage stage;
+    ID3D12RootSignature* localRoot;
     wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
 } ShaderExport;
 
@@ -334,9 +335,13 @@ typedef struct {
 
 typedef struct {
     Uint32 raygenCount;
+    Uint32 raygenDataSize;
     Uint32 missCount;
+    Uint32 missDataSize;
     Uint32 hitCount;
+    Uint32 hitDataSize;
     Uint32 callableCount;
+    Uint32 callableDataSize;
 } ShaderBindingTableInfo;
 
 typedef struct {
@@ -350,6 +355,7 @@ typedef struct {
     void* handle;
     ShaderExport* shaderExports;
     PipelineLayout* layout;
+    ID3D12RootSignature* localRootSignature;
     D3D12_SHADING_RATE_COMBINER combinerOps[2];
     ShaderBindingTableInfo sbtInfo;
 } Pipeline;
@@ -7728,6 +7734,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     pipeline->type = GRAPHICS_PIPELINE;
     pipeline->layout = layout;
     pipeline->shaderExports = nullptr;
+    pipeline->localRootSignature = nullptr;
 
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -7773,6 +7780,7 @@ PalResult PAL_CALL createComputePipelineD3D12(
     pipeline->hasFsr = false;
     pipeline->layout = layout;
     pipeline->shaderExports = nullptr;
+    pipeline->localRootSignature = nullptr;
 
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -7786,6 +7794,8 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     HRESULT result;
     Uint32 hitGroupIndex = 0;
     Uint32 subObjectIndex = 0;
+    Uint32 localExportCount = 0;
+    Uint32 localExportIndex = 0;
 
     // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG 
     // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG
@@ -7799,7 +7809,8 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     RayHitGroup* groups = nullptr;
     D3D12_STATE_SUBOBJECT* subObjects = nullptr;
     ShaderExport* exports = nullptr;
-
+    const wchar_t** localExports = nullptr;
+    
     if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -7816,6 +7827,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         return PAL_RESULT_INVALID_ARGUMENT;
     }
 
+    Uint32 localRootSize = 0;
     ShaderBindingTableInfo sbtInfo = {0};
     for (int i = 0; i < info->shaderGroupCount; i++) {
         PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
@@ -7825,23 +7837,43 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
             switch (shader->stage) {
                 case PAL_SHADER_STAGE_RAYGEN: {
                     sbtInfo.raygenCount++;
+                    sbtInfo.raygenDataSize = max(sbtInfo.raygenDataSize, tmp->maxDataSize);
                     break;
                 }
 
                 case PAL_SHADER_STAGE_MISS: {
                     sbtInfo.missCount++;
+                    sbtInfo.missDataSize = max(sbtInfo.missDataSize, tmp->maxDataSize);
                     break;
                 }
 
                 case PAL_SHADER_STAGE_CALLABLE: {
                     sbtInfo.callableCount++;
+                    sbtInfo.callableDataSize = max(sbtInfo.callableDataSize, tmp->maxDataSize);
                     break;
                 }
             }
         }
 
+        sbtInfo.hitDataSize = max(sbtInfo.hitDataSize, tmp->maxDataSize);
+        if (tmp->maxDataSize) {
+            localExportCount++;
+        }
+
+        // find the max data size across all shader groups
+        localRootSize = max(localRootSize, sbtInfo.raygenDataSize);
+        localRootSize = max(localRootSize, sbtInfo.missDataSize);
+        localRootSize = max(localRootSize, sbtInfo.hitDataSize);
+        localRootSize = max(localRootSize, sbtInfo.callableDataSize);
+
         sbtInfo.hitCount++;
         subObjectCount++;
+    }
+
+    if (localRootSize) {
+        // D3D12_LOCAL_ROOT_SIGNATURE
+        // D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION
+        subObjectCount += 2;
     }
 
     pipeline = palAllocate(s_D3D.allocator, sizeof(Pipeline), 0);
@@ -7853,9 +7885,66 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     groups = palAllocate(s_D3D.allocator, sizeof(RayHitGroup) * sbtInfo.hitCount, 0);
     libraries = palAllocate(s_D3D.allocator, sizeof(RayShaderLibary) * info->shaderCount, 0);
     exports = palAllocate(s_D3D.allocator, sizeof(ShaderExport) * info->shaderCount, 0);
+    localExports = palAllocate(s_D3D.allocator, sizeof(wchar_t*) * localExportCount, 0);
 
-    if (!exports || !groups || !subObjects || !libraries) {
+    if (!exports || !groups || !subObjects || !libraries || !localExports) {
         return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    // check if we need a local root signature
+    D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION localExportAssociation = {0};
+    if (localRootSize) {
+        D3D12_ROOT_PARAMETER1 parameter = {0};
+        parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        parameter.Constants.Num32BitValues = alignD3D12(localRootSize, 4) / 4;
+        parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc = {0};
+        rootDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+        rootDesc.Desc_1_1.NumParameters = 1;
+        rootDesc.Desc_1_1.pParameters = &parameter;
+        rootDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+
+        ID3DBlob* blob = nullptr;
+        result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dDevice);
+            if (result == E_INVALIDARG) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        result = d3dDevice->handle->lpVtbl->CreateRootSignature(
+            d3dDevice->handle,
+            0,
+            blob->lpVtbl->GetBufferPointer(blob),
+            blob->lpVtbl->GetBufferSize(blob),
+            &IID_RootSignature,
+            (void**)&pipeline->localRootSignature);
+
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dDevice);
+            if (result == E_INVALIDARG) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            } else if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+        subObjects[subObjectIndex].pDesc = pipeline->localRootSignature;
+
+        localExportAssociation.pSubobjectToAssociate = &subObjects[subObjectIndex];
+        localExportAssociation.pExports = localExports;
+        localExportAssociation.NumExports = localExportCount;
+        subObjectIndex++;
+
+        D3D12_STATE_SUBOBJECT_TYPE t = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+        subObjects[subObjectIndex].Type = t;
+        subObjects[subObjectIndex].pDesc = &localExportAssociation;
+        subObjectIndex++;
     }
 
     // shaders
@@ -7882,8 +7971,14 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
     // hit groups
     for (int i = 0; i < info->shaderGroupCount; i++) {
+        const wchar_t* exportName = nullptr;
         PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
         if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL) {
+            if (tmp->maxDataSize) {
+                Shader* shader = (Shader*)info->shaders[tmp->generalShaderIndex];
+                localExports[localExportIndex++] = shader->entryName;
+            }
+
             continue;
         }
 
@@ -7929,10 +8024,15 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
             group->IntersectionShaderImport = nullptr;
         }
 
+        if (tmp->maxDataSize) {
+            localExports[localExportIndex] = group->HitGroupExport;
+        }
+
         subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
         subObjects[subObjectIndex].pDesc = group;
         subObjectIndex++;
         hitGroupIndex++;
+        localExportIndex++;
     }
 
     // ray tracing config
@@ -7973,6 +8073,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     palFree(s_D3D.allocator, groups);
     palFree(s_D3D.allocator, subObjects);
     palFree(s_D3D.allocator, libraries);
+    palFree(s_D3D.allocator, localExports);
 
     pipeline->type = RAY_TRACING_PIPELINE;
     pipeline->strides = nullptr;
@@ -7995,6 +8096,10 @@ void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
     } else {
         ID3D12PipelineState* handle = d3dPipeline->handle;
         handle->lpVtbl->Release(handle);
+    }
+
+    if (d3dPipeline->localRootSignature) {
+        d3dPipeline->localRootSignature->lpVtbl->Release(d3dPipeline->localRootSignature);
     }
 
     if (d3dPipeline->strides) {
@@ -8068,11 +8173,6 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     Uint32 groupHandleAlignment = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
     Uint32 groupBaseAlignment = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
-    Uint32 raygenDataSize = 0;
-    Uint32 missDataSize = 0;
-    Uint32 hitDataSize = 0;
-    Uint32 callableDataSize = 0;
-
     // get the max local data size
     for (int i = 0; i < info->recordCount; i++) {
         PalShaderBindingTableRecordInfo* record = &info->records[i];
@@ -8080,27 +8180,40 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
         if (index < sbtInfo->raygenCount) {
             // raygen group
-            raygenDataSize = max(raygenDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->raygenDataSize)  {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
             // miss group
-            missDataSize = max(missDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->missDataSize)  {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount) {
             // hit group
-            hitDataSize = max(hitDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->hitDataSize) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
 
         } else {
             // callable group
-            callableDataSize = max(callableDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->callableDataSize) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
         }
     }
 
     // get strides
-    Uint32 raygenStride = alignD3D12(groupHandleSize + raygenDataSize, groupHandleAlignment);
-    Uint32 missStride = alignD3D12(groupHandleSize + missDataSize, groupHandleAlignment);
-    Uint32 hitStride = alignD3D12(groupHandleSize + hitDataSize, groupHandleAlignment);
-    Uint32 callableStride = alignD3D12(groupHandleSize + callableDataSize, groupHandleAlignment);
+    Uint32 raygenStride = 0;
+    Uint32 missStride = 0;
+    Uint32 hitStride = 0;
+    Uint32 callableStride = 0;
+
+    raygenStride = alignD3D12(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
+    missStride = alignD3D12(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
+    hitStride = alignD3D12(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
+    callableStride = alignD3D12(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
 
     // get region size
     Uint32 raygenRegionSize = raygenStride * sbtInfo->raygenCount;
