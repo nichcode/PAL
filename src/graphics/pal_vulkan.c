@@ -495,38 +495,14 @@ typedef struct {
 } CommandPool;
 
 typedef struct {
-    Uint32 startIndex;
-    Uint32 offset;
-    VkStridedDeviceAddressRegionKHR region;
-} AddressRegion;
-
-typedef struct {
-    const PalGraphicsBackend* backend;
-
-    bool isDirty;
-    Uint32 stagingBufferSize;
-    Uint32 handleSize;
-    Device* device;
-    VkBuffer buffer;
-    VkBuffer stagingBuffer;
-    VkDeviceMemory bufferMemory;
-    VkDeviceMemory stagingBufferMemory;
-    VkDeviceAddress baseAddress;
-    void* pipeline;
-
-    AddressRegion raygen;
-    AddressRegion miss;
-    AddressRegion hit;
-    AddressRegion callable;
-} ShaderBindingTable;
-
-typedef struct {
     const PalGraphicsBackend* backend;
 
     bool primary;
     Device* device;
     CommandPool* pool;
     void* pipeline;
+    VkBuffer buffer;
+    VkDeviceMemory bufferMemory;
     VkCommandBuffer handle;
 } CommandBuffer;
 
@@ -617,6 +593,32 @@ typedef struct {
     VkPipelineLayout layout;
     ShaderBindingTableInfo sbtInfo;
 } Pipeline;
+
+typedef struct {
+    Uint32 startIndex;
+    Uint32 offset;
+    VkStridedDeviceAddressRegionKHR region;
+} AddressRegion;
+
+typedef struct {
+    const PalGraphicsBackend* backend;
+
+    bool isDirty;
+    Uint32 stagingBufferSize;
+    Uint32 handleSize;
+    Device* device;
+    VkBuffer buffer;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory bufferMemory;
+    VkDeviceMemory stagingBufferMemory;
+    VkDeviceAddress baseAddress;
+    Pipeline* pipeline;
+
+    AddressRegion raygen;
+    AddressRegion miss;
+    AddressRegion hit;
+    AddressRegion callable;
+} ShaderBindingTable;
 
 typedef struct {
     VkPipelineStageFlags2 stages;
@@ -2572,7 +2574,7 @@ static VkGeometryInstanceFlagsKHR instanceFlagsToVk(PalAccelerationStructureInst
     return instanceFlags;
 }
 
-static void commitShaderbindingTableUpdate(
+static void commitShaderbindingTableUpdateVk(
     CommandBuffer* cmdBuffer, 
     ShaderBindingTable* sbt)
 {
@@ -6423,9 +6425,51 @@ PalResult PAL_CALL allocateCommandBufferVk(
         return resultFromVk(result);
     }
 
+    // create a gpu buffer if ray tracing is enabled
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        VkBufferCreateInfo bufCreateInfo = {0};
+        bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufCreateInfo.size = sizeof(VkTraceRaysIndirectCommandKHR);
+        bufCreateInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+        bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        result = s_Vk.createBuffer(
+            vkDevice->handle, 
+            &bufCreateInfo, 
+            &s_Vk.vkAllocator, 
+            &cmdBuffer->buffer);
+
+        if (result != VK_SUCCESS) {
+            return resultFromVk(result);
+        }
+
+        // allocate CPU upload memory and bind
+        VkMemoryRequirements memReq = {0};
+        s_Vk.getBufferMemoryRequirements(vkDevice->handle, cmdBuffer->buffer, &memReq);
+
+        VkMemoryAllocateInfo allocateInfo = {0};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.allocationSize = memReq.size;
+
+        Uint32 mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
+        Uint32 memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+        allocateInfo.memoryTypeIndex = memoryIndex;
+
+        result = s_Vk.allocateMemory(
+            vkDevice->handle,
+            &allocateInfo,
+            &s_Vk.vkAllocator,
+            &cmdBuffer->bufferMemory);
+
+        if (result != VK_SUCCESS) {
+            return resultFromVk(result);
+        }
+
+        s_Vk.bindBufferMemory(vkDevice->handle, cmdBuffer->buffer, cmdBuffer->bufferMemory, 0);
+    }
+
     cmdBuffer->device = vkDevice;
     cmdBuffer->pool = vkPool;
-
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -6438,6 +6482,11 @@ void PAL_CALL freeCommandBufferVk(PalCommandBuffer* cmdBuffer)
         vkCmdBuffer->pool->handle,
         1,
         &vkCmdBuffer->handle);
+
+    if (vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
+        s_Vk.destroyBuffer(vkCmdBuffer->device->handle, vkCmdBuffer->buffer, &s_Vk.vkAllocator);
+        s_Vk.freeMemory(vkCmdBuffer->device->handle, vkCmdBuffer->bufferMemory, &s_Vk.vkAllocator);
+    }
 
     palFree(s_Vk.allocator, vkCmdBuffer);
 }
@@ -7558,7 +7607,7 @@ PalResult PAL_CALL cmdTraceRaysVk(
     raygenAddress.deviceAddress = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
 
     // we need to make sure the SBT is up to date
-    commitShaderbindingTableUpdate(vkCmdBuffer, vkSbt);
+    commitShaderbindingTableUpdateVk(vkCmdBuffer, vkSbt);
 
     vkCmdBuffer->device->cmdTraceRays(
         vkCmdBuffer->handle,
@@ -7589,15 +7638,38 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
     PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
     vkSbt->raygen.region.deviceAddress = address;
-    
-    VkDeviceAddress bufferAddress = 0;
-    VkBufferDeviceAddressInfoKHR bufferInfo = {0};
-    bufferInfo.buffer = vkBuffer->handle;
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
-    bufferAddress = vkBuffer->device->getBufferrAddress(vkBuffer->device->handle, &bufferInfo);
 
     // we need to make sure the SBT is up to date
-    commitShaderbindingTableUpdate(vkCmdBuffer, vkSbt);
+    commitShaderbindingTableUpdateVk(vkCmdBuffer, vkSbt);
+
+    // copy users buffer data into a tmp gpu buffer abd execute with it
+    VkBufferCopy copyRegion = {0};
+    copyRegion.size = sizeof(VkTraceRaysIndirectCommandKHR);
+    s_Vk.cmdCopyBuffer(vkCmdBuffer->handle, vkBuffer->handle, vkCmdBuffer->buffer, 1, &copyRegion);
+
+    // put a memory barrier
+    VkBufferMemoryBarrier2KHR barrier = {0};
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR;
+
+    barrier.buffer = vkCmdBuffer->buffer;
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
+    
+    VkDependencyInfo dependencyInfo = {0};
+    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dependencyInfo.bufferMemoryBarrierCount = 1;
+    dependencyInfo.pBufferMemoryBarriers = &barrier;
+    vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
+
+    VkDeviceAddress bufAddress = 0;
+    VkBufferDeviceAddressInfoKHR bufferInfo = {0};
+    bufferInfo.buffer = vkCmdBuffer->buffer;
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+    bufAddress = vkCmdBuffer->device->getBufferrAddress(vkCmdBuffer->device->handle, &bufferInfo);
 
     vkCmdBuffer->device->cmdTraceRaysIndirect(
         vkCmdBuffer->handle,
@@ -7605,7 +7677,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
         &vkSbt->miss.region,
         &vkSbt->hit.region,
         &vkSbt->callable.region,
-        bufferAddress);
+        bufAddress);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -9200,13 +9272,18 @@ PalResult PAL_CALL createRayTracingPipelineVk(
                 group->closestHitShader = VK_SHADER_UNUSED_KHR;
             }
 
-            if (tmp->intersectionShaderIndex != PAL_UNUSED_SHADER_INDEX) {
-                group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+            if (tmp->intersectionShaderIndex!= PAL_UNUSED_SHADER_INDEX) {
                 group->intersectionShader = tmp->intersectionShaderIndex;
 
             } else {
-                group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
                 group->intersectionShader = VK_SHADER_UNUSED_KHR;
+            }
+
+            if (tmp->type == PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT) {
+                group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+
+            } else {
+                group->type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
             }
         }
     }

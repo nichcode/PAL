@@ -1662,7 +1662,6 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
 void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt);
 
-// TODO: implement
 PalResult PAL_CALL updateShaderBindingTableD3D12(
     PalShaderBindingTable* sbt, 
     Uint32 count,
@@ -1845,7 +1844,7 @@ static PalGraphicsBackend s_D3D12Backend = {
 
     // shader binding tables
     .createShaderBindingTable = createShaderBindingTableD3D12,
-    .destroyShaderBindingTable = destroyShaderBindingTableD3D12;
+    .destroyShaderBindingTable = destroyShaderBindingTableD3D12,
     .updateShaderBindingTable = updateShaderBindingTableD3D12};
 
 #endif // PAL_HAS_D3D12

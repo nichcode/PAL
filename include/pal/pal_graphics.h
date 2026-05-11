@@ -6475,9 +6475,8 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported
- * and enabled by the device if not, this function will fail and return
- * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not, 
+ * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] raygenIndex Index of the raygen shader to execute.
@@ -6488,6 +6487,9 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * 
+ * @note The argument buffer memory must not be `PAL_MEMORY_TYPE_GPU_ONLY`. The implementation
+ * internally copies the data into a GPU buffer for execution.
  * 
  * @note A pipeline must be bound before this call.
  *
