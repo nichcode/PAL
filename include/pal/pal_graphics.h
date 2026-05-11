@@ -2444,7 +2444,7 @@ typedef struct {
  */
 typedef struct {
     Uint32 groupIndex; /**< Index into the shader groups used to create the ray tracing pipeline.*/
-    Uint32 localDataSize;
+    Uint32 localDataSize; /**< Must not be greater than the data size of the group.*/
     void* localData;
 } PalShaderBindingTableRecordInfo;
 
@@ -2679,6 +2679,7 @@ typedef struct {
     Uint32 closestHitShaderIndex;      /**< Index of closest hit shader from shader array.*/
     Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
     Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
+    Uint32 maxDataSize;    /**< Size of extra data associated with the shader group.*/
 } PalRayTracingShaderGroupCreateInfo;
 
 /**

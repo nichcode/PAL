@@ -789,6 +789,7 @@ bool rayTracingTest()
     shaderGroupCreateInfos[0].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
+    shaderGroupCreateInfos[0].maxDataSize = 0; // no extra data
 
     // miss must be packed second always
     shaderGroupCreateInfos[1].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
@@ -796,6 +797,7 @@ bool rayTracingTest()
     shaderGroupCreateInfos[1].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
+    shaderGroupCreateInfos[1].maxDataSize = sizeof(LocalData);
 
     // hitGroup must be packed third always
     shaderGroupCreateInfos[2].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT;
@@ -803,6 +805,7 @@ bool rayTracingTest()
     shaderGroupCreateInfos[2].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].generalShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
+    shaderGroupCreateInfos[2].maxDataSize = sizeof(LocalData);
 
     // create a ray tracing pipeline
     PalRayTracingPipelineCreateInfo pipelineCreateInfo = {0};

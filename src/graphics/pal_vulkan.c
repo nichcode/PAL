@@ -579,9 +579,13 @@ typedef struct {
 
 typedef struct {
     Uint32 raygenCount;
+    Uint32 raygenDataSize;
     Uint32 missCount;
+    Uint32 missDataSize;
     Uint32 hitCount;
+    Uint32 hitDataSize;
     Uint32 callableCount;
+    Uint32 callableDataSize;
 } ShaderBindingTableInfo;
 
 typedef struct {
@@ -9234,16 +9238,19 @@ PalResult PAL_CALL createRayTracingPipelineVk(
             switch (shader->stage) {
                 case VK_SHADER_STAGE_RAYGEN_BIT_KHR: {
                     sbtInfo->raygenCount++;
+                    sbtInfo->raygenDataSize = maxVk(sbtInfo->raygenDataSize, tmp->maxDataSize);
                     break;
                 }
 
                 case VK_SHADER_STAGE_MISS_BIT_KHR: {
                     sbtInfo->missCount++;
+                    sbtInfo->missDataSize = maxVk(sbtInfo->missDataSize, tmp->maxDataSize);
                     break;
                 }
 
                 case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
                     sbtInfo->callableCount++;
+                    sbtInfo->callableDataSize = maxVk(sbtInfo->callableDataSize, tmp->maxDataSize);
                     break;
                 }
             }
@@ -9256,6 +9263,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
         } else {
             sbtInfo->hitCount++;
+            sbtInfo->hitDataSize = maxVk(sbtInfo->hitDataSize, tmp->maxDataSize);
 
             group->generalShader = VK_SHADER_UNUSED_KHR;
             if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {
@@ -9367,11 +9375,6 @@ PalResult PAL_CALL createShaderBindingTableVk(
     Uint32 groupHandleAlignment = rayProps.shaderGroupHandleAlignment;
     Uint32 groupBaseAlignment = rayProps.shaderGroupBaseAlignment;
 
-    Uint32 raygenDataSize = 0;
-    Uint32 missDataSize = 0;
-    Uint32 hitDataSize = 0;
-    Uint32 callableDataSize = 0;
-
     // get the max local data size
     for (int i = 0; i < info->recordCount; i++) {
         PalShaderBindingTableRecordInfo* record = &info->records[i];
@@ -9379,27 +9382,36 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
         if (index < sbtInfo->raygenCount) {
             // raygen group
-            raygenDataSize = maxVk(raygenDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->raygenDataSize) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
             // miss group
-            missDataSize = maxVk(missDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->missDataSize) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount) {
             // hit group
-            hitDataSize = maxVk(hitDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->hitDataSize) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
 
         } else {
             // callable group
-            callableDataSize = maxVk(callableDataSize, record->localDataSize);
+            if (record->localDataSize > sbtInfo->callableDataSize) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
         }
     }
 
     // get strides
-    Uint32 raygenStride = alignVk(groupHandleSize + raygenDataSize, groupHandleAlignment);
-    Uint32 missStride = alignVk(groupHandleSize + missDataSize, groupHandleAlignment);
-    Uint32 hitStride = alignVk(groupHandleSize + hitDataSize, groupHandleAlignment);
-    Uint32 callableStride = alignVk(groupHandleSize + callableDataSize, groupHandleAlignment);
+    Uint32 callableStride = 0;
+    Uint32 raygenStride = alignVk(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
+    Uint32 missStride = alignVk(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
+    Uint32 hitStride = alignVk(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
+    callableStride = alignVk(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
 
     // get region size
     Uint32 raygenRegionSize = raygenStride * sbtInfo->raygenCount;
