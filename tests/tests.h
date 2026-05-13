@@ -82,6 +82,7 @@ bool multiThreadOpenGlTest();
 bool graphicsTest();
 bool computeTest();
 bool rayTracingTest();
+bool multiDescriptorSetTest();
 
 // graphics and video
 bool clearColorTest();

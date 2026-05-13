@@ -6697,7 +6697,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         D3D12_DESCRIPTOR_HEAP_DESC desc = {0};
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        desc.NumDescriptors = resourceCount * info->maxDescriptorSets;
+        desc.NumDescriptors = resourceCount;
 
         result = d3dDevice->handle->lpVtbl->CreateDescriptorHeap(
             d3dDevice->handle,
@@ -6741,7 +6741,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         D3D12_DESCRIPTOR_HEAP_DESC desc = {0};
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-        desc.NumDescriptors = limits->maxSamplers * info->maxDescriptorSets;
+        desc.NumDescriptors = limits->maxSamplers;
 
         result = d3dDevice->handle->lpVtbl->CreateDescriptorHeap(
             d3dDevice->handle,
@@ -6928,9 +6928,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
         DescriptorHeap* heap = nullptr;
         Uint32 index = 0;
         Uint32 bindingOffset = binding->range.OffsetInDescriptorsFromTableStart;
-        if (info->arrayElement + binding->range.NumDescriptors > layout->bindingCount) {
-            return PAL_RESULT_INVALID_ARGUMENT;
-        }
 
         if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
             heap = &pool->samplerHeap;

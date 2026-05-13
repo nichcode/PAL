@@ -71,7 +71,8 @@ project "tests"
         files {
             "graphics/graphics_test.c",
             "graphics/compute_test.c",
-            "graphics/ray_tracing_test.c"
+            "graphics/ray_tracing_test.c",
+            "graphics/multi_descriptor_set_test.c"
         }
     end
 

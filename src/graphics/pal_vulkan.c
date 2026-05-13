@@ -1950,6 +1950,10 @@ static Barrier barrierToVk(
             for (int i = 0; i < stageCount; i++) {
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
             }
+
+            if (barrier.stages == 0) {
+                barrier.stages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
+            }
             
             barrier.access = VK_ACCESS_2_UNIFORM_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1959,6 +1963,10 @@ static Barrier barrierToVk(
         case PAL_USAGE_STATE_SHADER_READ: {
             for (int i = 0; i < stageCount; i++) {
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
+
+            if (barrier.stages == 0) {
+                barrier.stages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
             }
 
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
@@ -1971,6 +1979,10 @@ static Barrier barrierToVk(
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
             }
 
+            if (barrier.stages == 0) {
+                barrier.stages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
+            }
+
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
@@ -1981,6 +1993,10 @@ static Barrier barrierToVk(
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
             }
 
+            if (barrier.stages == 0) {
+                barrier.stages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
+            }
+
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
@@ -1989,6 +2005,10 @@ static Barrier barrierToVk(
         case PAL_USAGE_STATE_STORAGE_WRITE: {
             for (int i = 0; i < stageCount; i++) {
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
+            }
+
+            if (barrier.stages == 0) {
+                barrier.stages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
             }
 
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
@@ -2025,6 +2045,10 @@ static Barrier barrierToVk(
 
                 barrier.stages |= pipelineStageToVk(shaderStages[i]);
                 barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+            }
+
+            if (barrier.stages == 0) {
+                barrier.stages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
             }
 
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
