@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     // registerTest(graphicsTest, "Graphics Test");
     //registerTest(computeTest, "Compute Test");
     // registerTest(rayTracingTest, "Ray Tracing Test");
-    registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
+    // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
 #endif // PAL_HAS_GRAPHICS
 
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
@@ -68,6 +68,7 @@ int main(int argc, char** argv)
     // registerTest(triangleTest, "Triangle Test");
     // registerTest(meshTest, "Mesh Test");
     // registerTest(textureTest, "Texture Test");
+    registerTest(geometryTest, "Geometry Test");
 #endif //
 
     runTests();

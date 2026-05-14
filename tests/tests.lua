@@ -81,7 +81,8 @@ project "tests"
             "graphics/clear_color_test.c",
             "graphics/triangle_test.c",
             "graphics/mesh_test.c",
-            "graphics/texture_test.c"
+            "graphics/texture_test.c",
+            "graphics/geometry_test.c"
         }
     end
 

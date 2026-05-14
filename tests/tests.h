@@ -89,5 +89,6 @@ bool clearColorTest();
 bool triangleTest();
 bool meshTest();
 bool textureTest();
+bool geometryTest();
 
 #endif // _TESTS_H

@@ -6088,13 +6088,24 @@ PalResult PAL_CALL createShaderVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    // clang-format off
     if (info->stage == PAL_SHADER_STAGE_MESH || 
         info->stage == PAL_SHADER_STAGE_TASK) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
 
-    // clang-format off
+    } else if (info->stage == PAL_SHADER_STAGE_GEOMETRY) {
+        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else if (info->stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL || 
+               info->stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
+        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
     } else if (info->stage == PAL_SHADER_STAGE_RAYGEN ||
             info->stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
             info->stage == PAL_SHADER_STAGE_ANY_HIT ||
