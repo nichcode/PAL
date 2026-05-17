@@ -83,7 +83,8 @@ project "tests"
             "graphics/mesh_test.c",
             "graphics/texture_test.c",
             "graphics/geometry_test.c",
-            "graphics/indirect_draw_test.c"
+            "graphics/indirect_draw_test.c",
+            "graphics/descriptor_indexing_test.c"
         }
     end
 

@@ -91,5 +91,6 @@ bool meshTest();
 bool textureTest();
 bool geometryTest();
 bool indirectDrawTest();
+bool descriptorIndexingTest();
 
 #endif // _TESTS_H

@@ -156,6 +156,34 @@ bool graphicsTest()
 
         palLog(nullptr, "");
         palLog(nullptr, " Capabilities:");
+        if (caps.sampledImageDynamicArrayIndexing) {
+            palLog(nullptr, "  Sampled image dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "  Sampled image dynamic array indexing: False");
+        }
+
+        if (caps.storageImageDynamicArrayIndexing) {
+            palLog(nullptr, "  Storage image dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "  Storage image dynamic array indexing: False");
+        }
+
+        if (caps.storageBufferDynamicArrayIndexing) {
+            palLog(nullptr, "  Storage buffer dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "  Storage buffer dynamic array indexing: False");
+        }
+
+        if (caps.uniformBufferDynamicArrayIndexing) {
+            palLog(nullptr, "  Uniform buffer dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "  Uniform buffer dynamic array indexing: False");
+        }
+
         palLog(nullptr, "  Max compute queue: %u", caps.maxComputeQueues);
         palLog(nullptr, "  Max graphics queue: %u", caps.maxGraphicsQueues);
         palLog(nullptr, "  Max copy queue: %u", caps.maxCopyQueues);
@@ -424,34 +452,60 @@ bool graphicsTest()
                 return false;
             }
 
-            if (tmp.bindlessSampledImages) {
-                palLog(nullptr, "   Bindless sampled images: True");
+            if (tmp.sampledImageNonUniformIndexing) {
+                palLog(nullptr, "   Sampled image non uniform indexing: True");
+
             } else {
-                palLog(nullptr, "   Bindless sampled images: False");
+                palLog(nullptr, "   Sampled image non uniform indexing: False");
             }
 
-            if (tmp.bindlessStorageImages) {
-                palLog(nullptr, "   Bindless storage images: True");
+            if (tmp.sampledImageUpdateAfterBind) {
+                palLog(nullptr, "   Sampled image update after bind: True");
+                
             } else {
-                palLog(nullptr, "   Bindless storage images: False");
+                palLog(nullptr, "   Sampled image update after bind: False");
             }
 
-            if (tmp.bindlessSamplers) {
-                palLog(nullptr, "   Bindless samplers: True");
+            if (tmp.storageImageNonUniformIndexing) {
+                palLog(nullptr, "   Storage image non uniform indexing: True");
+
             } else {
-                palLog(nullptr, "   Bindless samplers: False");
+                palLog(nullptr, "   Storage image non uniform indexing: False");
             }
 
-            if (tmp.bindlessStorageBuffers) {
-                palLog(nullptr, "   Bindless storage buffers: True");
+            if (tmp.storageImageUpdateAfterBind) {
+                palLog(nullptr, "   Storage image update after bind: True");
+                
             } else {
-                palLog(nullptr, "   Bindless storage buffers: False");
+                palLog(nullptr, "   Storage image update after bind: False");
             }
 
-            if (tmp.bindlessUniformBuffers) {
-                palLog(nullptr, "   Bindless uniform buffers: True");
+            if (tmp.storageBufferNonUniformIndexing) {
+                palLog(nullptr, "   Storage buffer non uniform indexing: True");
+
             } else {
-                palLog(nullptr, "   Bindless uniform buffers: False");
+                palLog(nullptr, "   Storage buffer non uniform indexing: False");
+            }
+
+            if (tmp.storageBufferUpdateAfterBind) {
+                palLog(nullptr, "   Storage buffer update after bind: True");
+                
+            } else {
+                palLog(nullptr, "   Storage buffer update after bind: False");
+            }
+
+            if (tmp.uniformBufferNonUniformIndexing) {
+                palLog(nullptr, "   Uniform buffer non uniform indexing: True");
+
+            } else {
+                palLog(nullptr, "   Uniform buffer non uniform indexing: False");
+            }
+
+            if (tmp.uniformBufferUpdateAfterBind) {
+                palLog(nullptr, "   Uniform buffer update after bind: True");
+                
+            } else {
+                palLog(nullptr, "   Uniform buffer update after bind: False");
             }
 
             // clang-format off

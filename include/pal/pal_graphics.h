@@ -1451,6 +1451,10 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    bool sampledImageDynamicArrayIndexing;
+    bool storageImageDynamicArrayIndexing;
+    bool storageBufferDynamicArrayIndexing;
+    bool uniformBufferDynamicArrayIndexing;
     Uint32 maxComputeQueues;  /**< Number of compute queues that can be created.*/
     Uint32 maxGraphicsQueues; /**< Number of graphics queues that can be created.*/
     Uint32 maxCopyQueues;     /**< Number of copy queues that can be created.*/
@@ -1594,16 +1598,21 @@ typedef struct {
 /**
  * @struct PalDescriptorIndexingCapabilities
  * @brief Descriptor indexing capabilities of an adapter (GPU).
+ * 
+ * PAL does not support partially bound descriptors or variable descriptor count.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool bindlessSampledImages; /**< If true, bindless sampled images are supported.*/
-    bool bindlessStorageImages; /**< If true, bindless storage images are supported.*/
-    bool bindlessSamplers; /**< If true, bindless samplers are supported.*/
-    bool bindlessStorageBuffers; /**< If true, bindless storage buffers are supported.*/
-    bool bindlessUniformBuffers; /**< If true, bindless uniform buffers are supported.*/
+    bool sampledImageNonUniformIndexing;
+    bool sampledImageUpdateAfterBind;
+    bool storageImageNonUniformIndexing;
+    bool storageImageUpdateAfterBind;
+    bool storageBufferNonUniformIndexing;
+    bool storageBufferUpdateAfterBind;
+    bool uniformBufferNonUniformIndexing;
+    bool uniformBufferUpdateAfterBind;
     Uint32 maxPerStageBindlessDescriptorSampledImages;
     Uint32 maxDescriptorSetBindlessSampledImages;
     Uint32 maxPerStageBindlessDescriptorStorageImages;
@@ -4472,6 +4481,8 @@ PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `caps` is per thread.
+ * 
+ * @note PAL does not support partially bound descriptors or variable descriptor counts.
  *
  * @since 1.4
  * @ingroup pal_graphics

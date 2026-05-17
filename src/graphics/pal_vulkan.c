@@ -3472,6 +3472,9 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
     VkPhysicalDeviceLimits* limits = &props.limits;
 
+    VkPhysicalDeviceFeatures features = {0};
+    s_Vk.getPhysicalDeviceFeatures(phyDevice, &features);
+
     caps->maxColorAttachments = limits->maxColorAttachments;
     caps->maxImageWidth = limits->maxImageDimension2D;
     caps->maxImageHeight = limits->maxImageDimension2D;
@@ -3548,6 +3551,11 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     caps->maxComputeWorkGroupSize[0] = limits->maxComputeWorkGroupSize[0];
     caps->maxComputeWorkGroupSize[1] = limits->maxComputeWorkGroupSize[1];
     caps->maxComputeWorkGroupSize[2] = limits->maxComputeWorkGroupSize[2];
+
+    caps->sampledImageDynamicArrayIndexing = features.shaderSampledImageArrayDynamicIndexing;
+    caps->storageImageDynamicArrayIndexing = features.shaderStorageImageArrayDynamicIndexing;
+    caps->storageBufferDynamicArrayIndexing = features.shaderStorageBufferArrayDynamicIndexing;
+    caps->uniformBufferDynamicArrayIndexing = features.shaderUniformBufferArrayDynamicIndexing;
 
     palFree(s_Vk.allocator, queueProps);
     return PAL_RESULT_SUCCESS;
@@ -3723,11 +3731,10 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         features.pNext = &desc;
 
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-        if (desc.runtimeDescriptorArray &&
-            desc.descriptorBindingPartiallyBound &&
-            desc.descriptorBindingVariableDescriptorCount &&
-            desc.shaderSampledImageArrayNonUniformIndexing &&
-            desc.descriptorBindingSampledImageUpdateAfterBind) {
+        if (desc.shaderSampledImageArrayNonUniformIndexing || 
+            desc.shaderStorageImageArrayNonUniformIndexing ||
+            desc.shaderStorageBufferArrayNonUniformIndexing ||
+            desc.shaderUniformBufferArrayNonUniformIndexing) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
         }
     }
@@ -3977,6 +3984,9 @@ PalResult PAL_CALL createDeviceVk(
     }
 
     // build features and extensions capabilities
+    VkPhysicalDeviceFeatures phyDeviceFeatures = {0};
+    s_Vk.getPhysicalDeviceFeatures(phyDevice, &phyDeviceFeatures);
+
     VkPhysicalDeviceFeatures coreFeatures = {0};
     if (features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
         coreFeatures.samplerAnisotropy = true;
@@ -4008,6 +4018,22 @@ PalResult PAL_CALL createDeviceVk(
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
         coreFeatures.shaderFloat64 = true;
+    }
+
+    if (phyDeviceFeatures.shaderSampledImageArrayDynamicIndexing) {
+        coreFeatures.shaderSampledImageArrayDynamicIndexing = true;
+    }
+
+    if (phyDeviceFeatures.shaderStorageImageArrayDynamicIndexing) {
+        coreFeatures.shaderStorageImageArrayDynamicIndexing = true;
+    }
+
+    if (phyDeviceFeatures.shaderStorageBufferArrayDynamicIndexing) {
+        coreFeatures.shaderStorageBufferArrayDynamicIndexing = true;
+    }
+
+    if (phyDeviceFeatures.shaderUniformBufferArrayDynamicIndexing) {
+        coreFeatures.shaderUniformBufferArrayDynamicIndexing = true;
     }
 
     // extensions and features2
@@ -4168,14 +4194,9 @@ PalResult PAL_CALL createDeviceVk(
             extensions[extCount++] = "VK_EXT_descriptor_indexing";
         }
 
-        descIndex.runtimeDescriptorArray = true;
-        descIndex.descriptorBindingPartiallyBound = true;
-        descIndex.shaderSampledImageArrayNonUniformIndexing = true;
-        descIndex.descriptorBindingSampledImageUpdateAfterBind = true;
-        descIndex.descriptorBindingVariableDescriptorCount = true;
         features12.descriptorIndexing = true;
 
-        // check support for bindless storage and uniform buffers
+        // check support for sub features
         VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
         desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
 
@@ -4184,15 +4205,39 @@ PalResult PAL_CALL createDeviceVk(
         features.pNext = &desc;
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
 
-        if (desc.shaderStorageBufferArrayNonUniformIndexing &&
-            desc.descriptorBindingStorageBufferUpdateAfterBind) {
+        // check sub feature for sampled image
+        if (desc.shaderSampledImageArrayNonUniformIndexing) {
+            descIndex.shaderSampledImageArrayNonUniformIndexing = true;
+        }
+
+        if (desc.descriptorBindingSampledImageUpdateAfterBind) {
+            descIndex.descriptorBindingSampledImageUpdateAfterBind = true;
+        }
+
+        // check sub feature for storage image
+        if (desc.shaderStorageImageArrayNonUniformIndexing) {
+            descIndex.shaderStorageImageArrayNonUniformIndexing = true;
+        }
+
+        if (desc.descriptorBindingStorageImageUpdateAfterBind) {
+            descIndex.descriptorBindingStorageImageUpdateAfterBind = true;
+        }
+
+        // check sub feature for storage buffer
+        if (desc.shaderStorageBufferArrayNonUniformIndexing) {
             descIndex.shaderStorageBufferArrayNonUniformIndexing = true;
+        }
+
+        if (desc.descriptorBindingStorageBufferUpdateAfterBind) {
             descIndex.descriptorBindingStorageBufferUpdateAfterBind = true;
         }
 
-        if (desc.shaderUniformBufferArrayNonUniformIndexing &&
-            desc.descriptorBindingUniformBufferUpdateAfterBind) {
+        // check sub feature for uniform buffer
+        if (desc.shaderUniformBufferArrayNonUniformIndexing) {
             descIndex.shaderUniformBufferArrayNonUniformIndexing = true;
+        }
+
+        if (desc.descriptorBindingUniformBufferUpdateAfterBind) {
             descIndex.descriptorBindingUniformBufferUpdateAfterBind = true;
         }
 
@@ -4981,8 +5026,6 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    caps->bindlessSampledImages = true;
-    caps->bindlessSamplers = true;
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
     desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
 
@@ -5000,22 +5043,40 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     s_Vk.getPhysicalDeviceFeatures2(vkDevice->phyDevice, &features);
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
 
-    // check for bindless storage buffers
-    if (desc.shaderStorageBufferArrayNonUniformIndexing &&
-        desc.descriptorBindingStorageBufferUpdateAfterBind) {
-        caps->bindlessStorageBuffers = true;
+    // check sub feature for sampled image
+    if (desc.shaderSampledImageArrayNonUniformIndexing) {
+        caps->sampledImageNonUniformIndexing = true;
     }
 
-    // check for bindless uniform buffers
-    if (desc.shaderUniformBufferArrayNonUniformIndexing &&
-        desc.descriptorBindingUniformBufferUpdateAfterBind) {
-        caps->bindlessUniformBuffers = true;
+    if (desc.descriptorBindingSampledImageUpdateAfterBind) {
+        caps->sampledImageUpdateAfterBind = true;
     }
 
-    // check for bindless storage images
-    if (desc.shaderStorageImageArrayNonUniformIndexing &&
-        desc.descriptorBindingStorageImageUpdateAfterBind) {
-        caps->bindlessStorageImages = true;
+    // check sub feature for storage image
+    if (desc.shaderStorageImageArrayNonUniformIndexing) {
+        caps->storageImageNonUniformIndexing = true;
+    }
+
+    if (desc.descriptorBindingStorageImageUpdateAfterBind) {
+        caps->storageImageUpdateAfterBind = true;
+    }
+
+    // check sub feature for storage buffer
+    if (desc.shaderStorageBufferArrayNonUniformIndexing) {
+        caps->storageBufferNonUniformIndexing = true;
+    }
+
+    if (desc.descriptorBindingStorageBufferUpdateAfterBind) {
+        caps->storageBufferUpdateAfterBind = true;
+    }
+
+    // check sub feature for uniform buffer
+    if (desc.shaderUniformBufferArrayNonUniformIndexing) {
+        caps->uniformBufferNonUniformIndexing = true;
+    }
+
+    if (desc.descriptorBindingUniformBufferUpdateAfterBind) {
+        caps->uniformBufferUpdateAfterBind = true;
     }
 
     // clang-format off

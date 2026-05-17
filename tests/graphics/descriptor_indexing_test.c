@@ -7,12 +7,27 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2
+#define TEXTURE_WIDTH 128
+#define TEXTURE_HEIGHT 128
 
-static inline Uint32 align(
-    Uint32 value,
-    Uint32 alignment)
+static void createFlatTexture(
+    Uint32* texture,
+    Uint32 width,
+    Uint32 height,
+    Uint8 r,
+    Uint8 g,
+    Uint8 b)
 {
-    return (value + alignment - 1) & ~(alignment - 1);
+    Uint8* pixels = (Uint8*)texture;
+    for (Int32 y = 0; y < height; ++y) {
+        for (Int32 x = 0; x < width; ++x) {
+            Int32 i = (y * width + x) * 4;
+            pixels[i + 0] = r;
+            pixels[i + 1] = g;
+            pixels[i + 2] = b;
+            pixels[i + 3] = 255;
+        }
+    }
 }
 
 static void PAL_CALL onGraphicsDebug(
@@ -24,7 +39,7 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
-bool indirectDrawTest()
+bool descriptorIndexingTest()
 {
     PalResult result;
     PalWindow* window = nullptr;
@@ -50,14 +65,18 @@ bool indirectDrawTest()
     PalShader* shaders[2];
 
     PalBuffer* vertexBuffer = nullptr;
-    PalBuffer* indexBuffer = nullptr;
-    PalBuffer* indirectBuffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
-    
     PalMemory* vertexBufferMemory = nullptr;
-    PalMemory* indexBufferMemory = nullptr;
-    PalMemory* indirectBufferMemory = nullptr;
     PalMemory* stagingBufferMemory = nullptr;
+
+    PalSampler* sampler = nullptr;
+    PalImage* textures[4];
+    PalMemory* textureMemories[4];
+    PalImageView* textureViews[4];
+
+    PalDescriptorSetLayout* descriptorSetLayout = nullptr;
+    PalDescriptorPool* descriptorPool = nullptr;
+    PalDescriptorSet* descriptorSet = nullptr;
 
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
@@ -81,7 +100,7 @@ bool indirectDrawTest()
     windowCreateInfo.height = WINDOW_HEIGHT;
     windowCreateInfo.width = WINDOW_WIDTH;
     windowCreateInfo.show = true;
-    windowCreateInfo.title = "Indirect Draw Window";
+    windowCreateInfo.title = "Texture Window";
 
     PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
     if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
@@ -165,7 +184,7 @@ bool indirectDrawTest()
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures;
     bool hasGraphicsQueue = false;
-    bool hasIndirect = false;
+    bool hasDescriptorIndexing = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -186,16 +205,16 @@ bool indirectDrawTest()
 
         if (hasGraphicsQueue) {
             adapterFeatures = palGetAdapterFeatures(adapter);
-            if (adapterFeatures & PAL_ADAPTER_FEATURE_INDIRECT_DRAW) {
-                hasIndirect = true;
-                
+            if (adapterFeatures & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+                hasDescriptorIndexing = true;
+
             } else {
-                hasIndirect = false;
+                hasDescriptorIndexing = false;
             }
         }
 
-        if (hasIndirect) {
-            // We want an adapter that supports spirv 1.0 or dxil 6.0
+        if (hasDescriptorIndexing) {
+            // We want an adapter that supports spirv 1.4 or dxil 6.6
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -207,14 +226,14 @@ bool indirectDrawTest()
             Uint32 target = 0;
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
                 target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
-                if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
+                if (target >= PAL_MAKE_SHADER_TARGET(1, 4)) {
                     break;
                 }
             }
 
             if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
                 target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
-                if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
+                if (target >= PAL_MAKE_SHADER_TARGET(6, 6)) {
                     break;
                 }
             }
@@ -227,8 +246,8 @@ bool indirectDrawTest()
         if (!hasGraphicsQueue) {
             palLog(nullptr, "Failed to find an adapter that supports graphics queue");
 
-        } else if (!hasIndirect) {
-            palLog(nullptr, "Failed to find an adapter that supports indirect draw");
+        } else if (!hasDescriptorIndexing) {
+            palLog(nullptr, "Failed to find an adapter that supports descriptor indexing");
 
         } else {
             palLog(nullptr, "Failed to find an adapter that supports required shader target");
@@ -238,6 +257,7 @@ bool indirectDrawTest()
 
     // create a device
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_SWAPCHAIN;
+    features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
         features |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     }
@@ -415,19 +435,18 @@ bool indirectDrawTest()
         }
     }
 
-    // create vertex, index, indirect and staging buffer
+    // create vertex and staging buffer
     // clang-format off
     float vertices[] = {
-        -0.5, 0.5, 1.0f, 1.0f, 0.0f,
-         0.5, 0.5, 1.0f, 1.0f, 0.0f,
-         0.5,-0.5, 1.0f, 1.0f, 0.0f,
-        -0.5,-0.5, 1.0f, 1.0f, 0.0f
-    };
+       -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f, -0.5f, 1.0f, 1.0f,
+
+       -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f, -0.5f, 1.0f, 1.0f,
+       -0.5f, -0.5f, 0.0f, 1.0f};
     // clang-format on
 
-    Uint32 indices[6] = { 0, 1, 2, 2, 3, 0 };
-
-    // vertex buffer
     PalBufferCreateInfo bufferCreateInfo = {0};
     bufferCreateInfo.size = sizeof(vertices);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_VERTEX;
@@ -435,63 +454,22 @@ bool indirectDrawTest()
     result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create buffer: %s", error);
+        palLog(nullptr, "Failed to create vertex buffer: %s", error);
         return false;
     }
 
-    // index buffer
-    bufferCreateInfo.size = sizeof(indices);
-    bufferCreateInfo.usages = PAL_BUFFER_USAGE_INDEX;
-    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_TRANSFER_DST; // will recieve
-    result = palCreateBuffer(device, &bufferCreateInfo, &indexBuffer);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
-    }
-
-    // indirect buffer
-    bufferCreateInfo.size = sizeof(PalDrawIndexedIndirectData);
-    bufferCreateInfo.usages = PAL_BUFFER_USAGE_INDIRECT;
-    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_TRANSFER_DST; // will recieve
-    result = palCreateBuffer(device, &bufferCreateInfo, &indirectBuffer);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
-    }
-
-    // staging buffer for vertex, index and indirect buffer
-    Uint32 offset = 0;
-    Uint32 indirectOffset = offset;
-    offset += sizeof(PalDrawIndexedIndirectData);
-    offset = align(offset, 16);
-
-    Uint32 indexOffset = offset;
-    offset += sizeof(indices);
-    offset = align(offset, 16);
-
-    Uint32 vertexOffset = offset;
-    offset += sizeof(vertices);
-    offset = align(offset, 16);
-
-    Uint32 stagingBufferSize = offset;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC; // will send
-    bufferCreateInfo.size = offset;
     result = palCreateBuffer(device, &bufferCreateInfo, &stagingBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create buffer: %s", error);
+        palLog(nullptr, "Failed to create staging buffer: %s", error);
         return false;
     }
 
     // get buffer memory requirement and allocate memory
     PalMemoryRequirements vertexBufferMemReq = {0};
-    PalMemoryRequirements indexBufferMemReq = {0};
-    PalMemoryRequirements indirectBufferMemReq = {0};
     PalMemoryRequirements stagingBufferMemReq = {0};
 
-    // get vertex buffer memory requirement
     result = palGetBufferMemoryRequirements(vertexBuffer, &vertexBufferMemReq);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -499,23 +477,6 @@ bool indirectDrawTest()
         return false;
     }
 
-    // get index buffer memory requirement
-    result = palGetBufferMemoryRequirements(indexBuffer, &indexBufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
-    }
-
-    // get indirect buffer memory requirement
-    result = palGetBufferMemoryRequirements(indirectBuffer, &indirectBufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
-    }
-
-    // get staging buffer memory requirement
     result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -523,41 +484,15 @@ bool indirectDrawTest()
         return false;
     }
 
-    // allocate memory for vertex buffer
+    // we need to check if the memory type we want are supported
+    // but almost every GPU supports a GPU only memory
+    // and CPU writable memory
     result = palAllocateMemory(
         device,
         PAL_MEMORY_TYPE_GPU_ONLY,
         vertexBufferMemReq.memoryMask,
         vertexBufferMemReq.size,
         &vertexBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
-    }
-
-    // allocate memory for index buffer
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        indexBufferMemReq.memoryMask,
-        indexBufferMemReq.size,
-        &indexBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
-    }
-
-    // allocate memory for indirect buffer
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        indirectBufferMemReq.memoryMask,
-        indirectBufferMemReq.size,
-        &indirectBufferMemory);
 
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -578,7 +513,7 @@ bool indirectDrawTest()
         return false;
     }
 
-    // bind memory for vertex buffer
+    // bind memory
     result = palBindBufferMemory(vertexBuffer, vertexBufferMemory, 0);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -586,23 +521,6 @@ bool indirectDrawTest()
         return false;
     }
 
-    // bind memory for index buffer
-    result = palBindBufferMemory(indexBuffer, indexBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
-    }
-
-    // bind memory for indirect buffer
-    result = palBindBufferMemory(indirectBuffer, indirectBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
-    }
-
-    // bind memory for staging buffer
     result = palBindBufferMemory(stagingBuffer, stagingBufferMemory, 0);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -610,32 +528,16 @@ bool indirectDrawTest()
         return false;
     }
 
-    // map the staging buffer and upload the data
+    // map the staging buffer and upload the vertices
     void* ptr = nullptr;
-    result = palMapBufferMemory(stagingBuffer, 0, stagingBufferSize, &ptr);
+    result = palMapBufferMemory(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to map buffer memory: %s", error);
         return false;
     }
 
-    // copy indirect data
-    PalDrawIndexedIndirectData indirectData = {0};
-    indirectData.firstIndex = 0;
-    indirectData.firstInstance = 0;
-    indirectData.indexCount = 6;
-    indirectData.instanceCount = 1;
-    indirectData.vertexOffset = 0;
-
-    Uint8* dst = (Uint8*)ptr;
-    memcpy(dst + indirectOffset, &indirectData, sizeof(PalDrawIndexedIndirectData));
-
-    // copy vertices
-    memcpy(dst + vertexOffset, vertices, sizeof(vertices));
-
-    // copy indices
-    memcpy(dst + indexOffset, indices, sizeof(indices));
-
+    memcpy(ptr, vertices, sizeof(vertices));
     palUnmapBufferMemory(stagingBuffer);
 
     PalFence* fence = nullptr;
@@ -644,6 +546,165 @@ bool indirectDrawTest()
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fence: %s", error);
         return false;
+    }
+
+    // create image for the textures
+    PalImageCreateInfo imageCreateInfo = {0};
+    imageCreateInfo.depthOrArraySize = 1;
+    imageCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
+    imageCreateInfo.mipLevelCount = 1; // simple
+    imageCreateInfo.sampleCount = PAL_SAMPLE_COUNT_1; // simple
+    imageCreateInfo.type = PAL_IMAGE_TYPE_2D;
+    imageCreateInfo.usages = PAL_IMAGE_USAGE_TRANSFER_DST | PAL_IMAGE_USAGE_SAMPLED;
+    imageCreateInfo.width = TEXTURE_WIDTH;
+    imageCreateInfo.height = TEXTURE_HEIGHT;
+
+    for (int i = 0; i < 4; i++) {
+        result = palCreateImage(device, &imageCreateInfo, &textures[i]);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create image: %s", error);
+            return false;
+        }
+
+        // allocate memory for the image
+        PalMemoryRequirements imageMemReq = {0};
+        result = palGetImageMemoryRequirements(textures[i], &imageMemReq);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get image memory requirement: %s", error);
+            return false;
+        }
+
+        result = palAllocateMemory(
+            device, 
+            PAL_MEMORY_TYPE_GPU_ONLY, 
+            imageMemReq.memoryMask, 
+            imageMemReq.size, 
+            &textureMemories[i]);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to allocate memory: %s", error);
+            return false;
+        }
+
+        result = palBindImageMemory(textures[i], textureMemories[i], 0);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind image memory: %s", error);
+            return false;
+        }
+    }
+
+    // create staging buffers to transfer the data to the images
+    PalBufferImageCopyInfo bufferImageCopyInfo = {0};
+    bufferImageCopyInfo.ImageArrayLayerCount = 1;
+    bufferImageCopyInfo.imageWidth = TEXTURE_WIDTH;
+    bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
+    bufferImageCopyInfo.imageDepth = 1; // 2D image
+
+    Uint64 imageCopyStagingBufferSize = 0;
+    Uint32 bufferRowLength = 0;
+    Uint32 bufferImageHeight = 0;
+
+    result = palComputeImageCopyStagingBufferRequirements(
+        device, 
+        imageCreateInfo.format, 
+        &bufferImageCopyInfo, 
+        &bufferRowLength, 
+        &bufferImageHeight,
+        &imageCopyStagingBufferSize);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to compute image copy staging buffer info: %s", error);
+        return false;
+    }
+
+    // update our copy with the required buffer row length and buffer image height
+    bufferImageCopyInfo.bufferRowLength = bufferRowLength;
+    bufferImageCopyInfo.bufferImageHeight = bufferImageHeight;
+
+    // create staging buffers to transfer the data to the image
+    PalBuffer* imageStagingBuffers[4];
+    PalMemory* imageStagingBufferMemories[4];
+
+    Uint32 textureDatas[4][TEXTURE_WIDTH * TEXTURE_HEIGHT];
+    createFlatTexture(textureDatas[0], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 0, 0);
+    createFlatTexture(textureDatas[1], TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, 255, 0);
+    createFlatTexture(textureDatas[2], TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, 0, 255);
+    createFlatTexture(textureDatas[3], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 255, 0);    
+
+    PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
+    imageStagingBufferCreateInfo.size = imageCopyStagingBufferSize;
+    imageStagingBufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC;
+
+    for (int i = 0; i < 4; i++) {
+        result = palCreateBuffer(device, &imageStagingBufferCreateInfo, &imageStagingBuffers[i]);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create image staging buffer: %s", error);
+            return false;
+        }
+
+        PalMemoryRequirements imageStagingBufferMemReq = {0};
+        result = palGetBufferMemoryRequirements(imageStagingBuffers[i], &imageStagingBufferMemReq);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get image staging buffer memory requirement: %s", error);
+            return false;
+        }
+
+        result = palAllocateMemory(
+            device, 
+            PAL_MEMORY_TYPE_CPU_UPLOAD, 
+            imageStagingBufferMemReq.memoryMask, 
+            imageStagingBufferMemReq.size, 
+            &imageStagingBufferMemories);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to allocate memory: %s", error);
+            return false;
+        }
+
+        result = palBindBufferMemory(imageStagingBuffers[i], imageStagingBufferMemories[i], 0);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind image staging buffer memory: %s", error);
+            return false;
+        }
+
+        // copy data
+        void* data = nullptr;
+        result = palMapBufferMemory(
+            imageStagingBuffers[i],
+            0, 
+            imageCopyStagingBufferSize, 
+            &data);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to map buffer memory: %s", error);
+            return false;
+        }
+
+        // write data to the mapped image copy staging buffer
+        result = palWriteToImageCopyStagingBuffer(
+            device, 
+            data, 
+            textureDatas[i],
+            imageCreateInfo.format,
+            &bufferImageCopyInfo);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to write to image copy staging buffer: %s", error);
+            return false;
+        }
+
+        palUnmapBufferMemory(imageStagingBuffers[i]);
     }
 
     // use the first command buffer to upload the copy
@@ -657,97 +718,91 @@ bool indirectDrawTest()
         return false;
     }
 
+    PalBufferCopyInfo copyInfo = {0};
+    copyInfo.size = sizeof(vertices);
+
+    result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &copyInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to copy buffer: %s", error);
+        return false;
+    }
+
+    PalShaderStage vertexShaderStage[] = { PAL_SHADER_STAGE_VERTEX };
     PalUsageStateInfo oldUsageStateInfo = {0};
     oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
     PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStageCount = 0;
-    newUsageStateInfo.shaderStages = nullptr;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_INDIRECT_READ;
-
-    // copy to indirect buffer
-    PalBufferCopyInfo indirectCopyInfo = {0};
-    indirectCopyInfo.dstOffset = 0;
-    indirectCopyInfo.size = sizeof(PalDrawIndexedIndirectData);
-    indirectCopyInfo.srcOffset = indirectOffset;
-
-    result = palCmdCopyBuffer(cmdBuffers[0], indirectBuffer, stagingBuffer, &indirectCopyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
-    }
-
-    result = palCmdBufferBarrier(
-        cmdBuffers[0], 
-        indirectBuffer, 
-        &oldUsageStateInfo, 
-        &newUsageStateInfo);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
-    }
-
-    // copy to vertex buffer
-    PalShaderStage vertexShaderStage[] = { PAL_SHADER_STAGE_VERTEX };
-
     newUsageStateInfo.shaderStageCount = 1;
     newUsageStateInfo.shaderStages = vertexShaderStage;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_VERTEX_READ;
 
-    PalBufferCopyInfo vertexCopyInfo = {0};
-    vertexCopyInfo.dstOffset = 0;
-    vertexCopyInfo.size = sizeof(vertices);
-    vertexCopyInfo.srcOffset = vertexOffset;
-
-    result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &vertexCopyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
-    }
-
-    result = palCmdBufferBarrier(
-        cmdBuffers[0], 
-        vertexBuffer, 
-        &oldUsageStateInfo, 
-        &newUsageStateInfo);
-        
+    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
         return false;
     }
 
-    // copy to index buffer
-    newUsageStateInfo.shaderStageCount = 0;
-    newUsageStateInfo.shaderStages = nullptr;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_INDEX_READ;
+    // copy image staging buffers to the images
+    // first the image must be in the correct layout
+    PalUsageStateInfo oldImageUsageState = {0};
+    PalUsageStateInfo newImageUsageState = {0};
 
-    PalBufferCopyInfo indexCopyInfo = {0};
-    indexCopyInfo.dstOffset = 0;
-    indexCopyInfo.size = sizeof(indices);
-    indexCopyInfo.srcOffset = indexOffset;
+    // set a barrier on the image to transition it into transfer dst state
+    PalImageSubresourceRange textureRange = {0};
+    textureRange.startMipLevel = 0;
+    textureRange.startArrayLayer = 0;
+    textureRange.mipLevelCount = 1;
+    textureRange.layerArrayCount = 1;
 
-    result = palCmdCopyBuffer(cmdBuffers[0], indexBuffer, stagingBuffer, &indexCopyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
-    }
+    for (int i = 0; i < 4; i++) {
+        newImageUsageState.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+        result = palCmdImageBarrier(
+            cmdBuffers[0], 
+            textures[i], 
+            &textureRange, 
+            &oldImageUsageState, 
+            &newImageUsageState);
 
-    result = palCmdBufferBarrier(
-        cmdBuffers[0], 
-        indexBuffer, 
-        &oldUsageStateInfo, 
-        &newUsageStateInfo);
-        
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set image barrier: %s", error);
+            return false;
+        }
+
+        result = palCmdCopyBufferToImage(
+            cmdBuffers[0], 
+            textures[i], 
+            imageStagingBuffers[i], 
+            &bufferImageCopyInfo);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to copy buffer to image: %s", error);
+            return false;
+        }
+
+        // we should transition the image into a shader read state so we dont do that
+        // in the main loop
+        PalShaderStage fragmentShaderStage[] = { PAL_SHADER_STAGE_FRAGMENT };
+        oldImageUsageState = newImageUsageState;
+        newImageUsageState.usageState = PAL_USAGE_STATE_SHADER_READ;
+        newImageUsageState.shaderStageCount = 1;
+        newImageUsageState.shaderStages = fragmentShaderStage; // fragment shader will read
+
+        result = palCmdImageBarrier(
+            cmdBuffers[0], 
+            textures[i], 
+            &textureRange, 
+            &oldImageUsageState, 
+            &newImageUsageState);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to set image barrier: %s", error);
+            return false;
+        }
     }
 
     result = palCmdEnd(cmdBuffers[0]);
@@ -767,6 +822,52 @@ bool indirectDrawTest()
         return false;
     }
 
+    // now we have the checkerboard texture data in the image
+    // we need an image view and a sampler
+    PalImageViewCreateInfo checkerboardImageViewCreateInfo = {0};
+    checkerboardImageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
+    checkerboardImageViewCreateInfo.subresourceRange = textureRange;
+    checkerboardImageViewCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
+
+    for (int i = 0; i < 4; i++) {
+        result = palCreateImageView(
+            device, 
+            textures[i], 
+            &checkerboardImageViewCreateInfo, 
+            &textureViews[i]);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create checkerboard image view: %s", error);
+            return false;
+        }
+    }
+
+    // create sampler
+    PalSamplerCreateInfo samplerCreateInfo = {0};
+    samplerCreateInfo.addressModeU = PAL_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeV = PAL_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeW = PAL_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.borderColor = PAL_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerCreateInfo.compareOp = PAL_COMPARE_OP_NEVER; // will not be used if its not enabled
+
+    samplerCreateInfo.enableAnisotropy = false;
+    samplerCreateInfo.enableCompare = false;
+    samplerCreateInfo.magFilterMode = PAL_FILTER_MODE_LINEAR;
+    samplerCreateInfo.minFilterMode = PAL_FILTER_MODE_LINEAR;
+    samplerCreateInfo.maxAnisotropy = 1.0f;
+
+    result = palCreateSampler(
+        device, 
+        &samplerCreateInfo,
+        &sampler);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create sampler: %s", error);
+        return false;
+    }
+
     // create shaders
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
@@ -775,12 +876,12 @@ bool indirectDrawTest()
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        sources[0] = "graphics/shaders/bin/spirv/triangle_vert.spv";
-        sources[1] = "graphics/shaders/bin/spirv/triangle_frag.spv";
+        sources[0] = "graphics/shaders/bin/spirv/texture_vert.spv";
+        sources[1] = "graphics/shaders/bin/spirv/descriptor_indexing.spv";
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        sources[0] = "graphics/shaders/bin/dxil/triangle_vert.dxil";
-        sources[1] = "graphics/shaders/bin/dxil/triangle_frag.dxil";
+        sources[0] = "graphics/shaders/bin/dxil/texture_vert.dxil";
+        sources[1] = "graphics/shaders/bin/dxil/descriptor_indexing.dxil";
     }
 
     tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;
@@ -815,9 +916,110 @@ bool indirectDrawTest()
 
         palFree(nullptr, bytecode);
     }
-    
+
+    // create descriptor set layout
+    PalDescriptorSetLayoutBinding descriptorBindings[2];
+    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
+
+    descriptorBindings[0].descriptorCount = 4; // an array
+    descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptorBindings[0].shaderStageCount = 1;
+    descriptorBindings[0].shaderStages = shaderStages;
+
+    descriptorBindings[1].descriptorCount = 1; // not an array
+    descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+    descriptorBindings[1].shaderStageCount = 1;
+    descriptorBindings[1].shaderStages = shaderStages;
+
+    PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
+    descriptorSetLayoutcreateInfo.bindingCount = 2;
+    descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
+
+    result = palCreateDescriptorSetLayout(
+        device,
+        &descriptorSetLayoutcreateInfo,
+        &descriptorSetLayout);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create descriptor set layout: %s", error);
+        return false;
+    }
+
+    // create descriptor pool
+    PalDescriptorPoolBindingSize storageBufferBindingsizes[2];
+    storageBufferBindingsizes[0].bindingCount = 4;
+    storageBufferBindingsizes[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+    storageBufferBindingsizes[1].bindingCount = 1;
+    storageBufferBindingsizes[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+
+    PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
+    descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
+    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 2;
+    descriptorPoolCreateInfo.bindingSizes = storageBufferBindingsizes;
+
+    result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create descriptor pool: %s", error);
+        return false;
+    }
+
+    // allocate a single descriptor set from the descriptor pool
+    // using the layout we created above
+    result = palAllocateDescriptorSet(device, descriptorPool, descriptorSetLayout, &descriptorSet);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to allocate descriptor set: %s", error);
+        return false;
+    }
+
+    // write the inital data to the descriptor set since its created empty
+    PalDescriptorImageViewInfo descriptorImageInfos[4];
+    descriptorImageInfos[0].imageView = textureViews[0];
+    descriptorImageInfos[1].imageView = textureViews[1];
+    descriptorImageInfos[2].imageView = textureViews[2];
+    descriptorImageInfos[3].imageView = textureViews[3];
+
+    PalDescriptorSamplerInfo descriptorSamplerInfo = {0};
+    descriptorSamplerInfo.sampler = sampler;
+
+    PalDescriptorSetWriteInfo writeInfos[2];
+    writeInfos[0].layoutBindingIndex = 0;
+    writeInfos[0].imageViewInfos = descriptorImageInfos;
+    writeInfos[0].descriptorSet = descriptorSet;
+    writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    writeInfos[0].descriptorCount = 4;
+
+    writeInfos[0].arrayElement = 0;
+    writeInfos[0].bufferInfos = nullptr;
+    writeInfos[0].samplerInfos = nullptr;
+    writeInfos[0].tlasInfos =  nullptr;
+
+    writeInfos[1].layoutBindingIndex = 1;
+    writeInfos[1].samplerInfos = &descriptorSamplerInfo;
+    writeInfos[1].descriptorSet = descriptorSet;
+    writeInfos[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+    writeInfos[1].descriptorCount = 1;
+
+    writeInfos[1].arrayElement = 0;
+    writeInfos[1].imageViewInfos = nullptr;
+    writeInfos[1].tlasInfos =  nullptr;
+    writeInfos[1].bufferInfos = nullptr;
+
+    result = palUpdateDescriptorSet(device, 2, writeInfos);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to update descriptor set: %s", error);
+        return false;
+    }
+
     // create pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
+    pipelineLayoutCreateInfo.descriptorSetLayoutCount = 1;
+    pipelineLayoutCreateInfo.descriptorSetLayouts = &descriptorSetLayout;
+
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -841,10 +1043,10 @@ bool indirectDrawTest()
     vertexAttributes[0].semanticName = nullptr; // use default
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
-    // color coordinates
-    vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_COLOR;
+    // texture coordinates
+    vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_TEXCOORD;
     vertexAttributes[1].semanticName = nullptr; // use default
-    vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT3;
+    vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT2;
 
     vertexLayout.attributeCount = 2;
     vertexLayout.attributes = vertexAttributes;
@@ -895,6 +1097,12 @@ bool indirectDrawTest()
     palDestroyFence(fence);
     palDestroyBuffer(stagingBuffer);
     palFreeMemory(device, stagingBufferMemory);
+
+    // we can destroy the image staging buffer
+    for (int i = 0; i < 4; i++) {
+        palDestroyBuffer(imageStagingBuffers[i]);
+        palFreeMemory(device, imageStagingBufferMemories[i]);
+    }
 
     // main loop
     Uint32 currentFrame = 0;
@@ -1056,6 +1264,13 @@ bool indirectDrawTest()
             return false;
         }
 
+        result = palCmdBindDescriptorSet(cmdBuffers[currentFrame], 0, descriptorSet);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to bind descriptor set: %s", error);
+            return false;
+        }
+
         // set viewport and scissors
         result = palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
@@ -1086,23 +1301,10 @@ bool indirectDrawTest()
             return false;
         }
 
-        // bind index buffer
-        result = palCmdBindIndexBuffer(
-            cmdBuffers[currentFrame], 
-            indexBuffer,
-            0,
-            PAL_INDEX_TYPE_UINT32);
-            
+        result = palCmdDraw(cmdBuffers[currentFrame], 6, 1, 0, 0);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind index buffer: %s", error);
-            return false;
-        }
-
-        result = palCmdDrawIndexedIndirect(cmdBuffers[currentFrame], indirectBuffer, 1);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to issue draw indirect command: %s", error);
+            palLog(nullptr, "Failed to issue draw command: %s", error);
             return false;
         }
 
@@ -1185,13 +1387,18 @@ bool indirectDrawTest()
         palDestroyImageView(imageViews[i]);   
     }
 
-    palDestroyBuffer(indirectBuffer);
-    palDestroyBuffer(vertexBuffer);
-    palDestroyBuffer(indexBuffer);
+    palDestroyDescriptorPool(descriptorPool);
+    palDestroyDescriptorSetLayout(descriptorSetLayout);
 
-    palFreeMemory(device, indirectBufferMemory);
+    palDestroySampler(sampler);
+    for (int i = 0; i < 4; i++) {
+        palDestroyImageView(textureViews[i]);
+        palDestroyImage(textures[i]);
+        palFreeMemory(device, textureMemories[i]);
+    }
+
+    palDestroyBuffer(vertexBuffer);
     palFreeMemory(device, vertexBufferMemory);
-    palFreeMemory(device, indexBufferMemory);
 
     palDestroyCommandPool(cmdPool);
     palDestroySwapchain(swapchain);
