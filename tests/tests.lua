@@ -82,7 +82,8 @@ project "tests"
             "graphics/triangle_test.c",
             "graphics/mesh_test.c",
             "graphics/texture_test.c",
-            "graphics/geometry_test.c"
+            "graphics/geometry_test.c",
+            "graphics/indirect_draw_test.c"
         }
     end
 

@@ -27,6 +27,7 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_graphics.h"
 
+// TODO: Check flag for indirect buffers
 #if PAL_HAS_D3D12
 
 #ifdef __WIN32

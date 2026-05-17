@@ -90,5 +90,6 @@ bool triangleTest();
 bool meshTest();
 bool textureTest();
 bool geometryTest();
+bool indirectDrawTest();
 
 #endif // _TESTS_H

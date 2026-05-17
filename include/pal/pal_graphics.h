@@ -1339,7 +1339,8 @@ typedef enum {
     PAL_BUFFER_USAGE_TRANSFER_SRC = PAL_BIT(4),
     PAL_BUFFER_USAGE_TRANSFER_DST = PAL_BIT(5),
     PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE = PAL_BIT(6),
-    PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(7)
+    PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(7),
+    PAL_BUFFER_USAGE_INDIRECT = PAL_BIT(8)
 } PalBufferUsages;
 
 enum PalDebugMessageSeverity {
@@ -1377,6 +1378,7 @@ typedef enum {
     PAL_USAGE_STATE_TRANSFER_WRITE,
     PAL_USAGE_STATE_VERTEX_READ,
     PAL_USAGE_STATE_INDEX_READ,
+    PAL_USAGE_STATE_INDIRECT_READ,
     PAL_USAGE_STATE_UNIFORM_READ,
     PAL_USAGE_STATE_SHADER_READ,
     PAL_USAGE_STATE_SHADER_WRITE,
@@ -5696,6 +5698,7 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -5727,6 +5730,7 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6073,6 +6077,7 @@ PAL_API PalResult PAL_CALL palCmdDraw(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6103,6 +6108,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirect(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6164,6 +6170,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexed(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6194,6 +6201,7 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6429,6 +6437,7 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -6493,6 +6502,7 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * internally copies the data into a GPU buffer for execution.
  * 
  * @note A pipeline must be bound before this call.
+ * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
  * @ingroup pal_graphics

@@ -1502,6 +1502,10 @@ static VkBufferUsageFlags bufferUsageToVk(PalBufferUsages usages)
         flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
 
+    if (usages & PAL_BUFFER_USAGE_INDIRECT) {
+        flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    }
+
     return flags;
 }
 
@@ -1942,6 +1946,13 @@ static Barrier barrierToVk(
         case PAL_USAGE_STATE_INDEX_READ: {
             barrier.stages = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR;
             barrier.access = VK_ACCESS_2_INDEX_READ_BIT_KHR;
+            barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            return barrier;
+        }
+
+        case PAL_USAGE_STATE_INDIRECT_READ: {
+            barrier.stages = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR;
+            barrier.access = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
@@ -6730,6 +6741,10 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     Uint32 stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirect(
         vkCmdBuffer->handle, 
@@ -6754,6 +6769,10 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
 
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
     }
 
     Uint32 stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
@@ -7350,6 +7369,10 @@ PalResult PAL_CALL cmdDrawIndirectVk(
     Buffer* vkBuffer = (Buffer*)buffer;
     Uint32 stride = sizeof(VkDrawIndirectCommand);
 
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     s_Vk.cmdDrawIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, count, stride);
     return PAL_RESULT_SUCCESS;
 }
@@ -7367,6 +7390,10 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
 
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
     }
 
     Uint32 stride = sizeof(VkDrawIndirectCommand);
@@ -7411,6 +7438,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     Buffer* vkBuffer = (Buffer*)buffer;
     Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
 
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     s_Vk.cmdDrawIndexedIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, count, stride);
     return PAL_RESULT_SUCCESS;
 }
@@ -7428,6 +7459,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
 
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
     }
 
     Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
@@ -7615,11 +7650,15 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
     PalBuffer* buffer)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
+    Buffer* vkBuffer = (Buffer*)buffer;
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Buffer* vkBuffer = (Buffer*)buffer;
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     s_Vk.cmdDispatchIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0);
     return PAL_RESULT_SUCCESS;
 }
@@ -7673,6 +7712,10 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
     }
 
     PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
