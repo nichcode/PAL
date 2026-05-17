@@ -3,8 +3,6 @@
 #include "tests.h"
 
 #define BUFFER_SIZE 400
-#define BUFFER_COUNT 3
-#define DESCRIPTOR_SET_COUNT 2
 
 // layout must match shader
 typedef struct {
@@ -34,14 +32,14 @@ bool multiDescriptorSetTest()
     PalCommandBuffer* cmdBuffer;
     PalShader* shader = nullptr;
 
-    PalBuffer* buffers[BUFFER_COUNT];
-    PalBuffer* stagingBuffers[BUFFER_COUNT];
-    PalMemory* bufferMemories[BUFFER_COUNT];
-    PalMemory* stagingBufferMemories[BUFFER_COUNT];
+    PalBuffer* buffers[3];
+    PalBuffer* stagingBuffers[3];
+    PalMemory* bufferMemories[3];
+    PalMemory* stagingBufferMemories[3];
 
     PalDescriptorPool* descriptorPool = nullptr;
-    PalDescriptorSetLayout* descriptorSetLayouts[DESCRIPTOR_SET_COUNT];
-    PalDescriptorSet* descriptorSets[DESCRIPTOR_SET_COUNT];
+    PalDescriptorSetLayout* descriptorSetLayouts[2];
+    PalDescriptorSet* descriptorSets[2];
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
@@ -257,7 +255,7 @@ bool multiDescriptorSetTest()
     PalBufferCreateInfo bufferCreateInfo = {0};
     bufferCreateInfo.size = bufferBytes;
 
-    for (int i = 0; i < BUFFER_COUNT; i++) {
+    for (int i = 0; i < 3; i++) {
         bufferCreateInfo.usages = PAL_BUFFER_USAGE_STORAGE | PAL_BUFFER_USAGE_TRANSFER_SRC;
 
         result = palCreateBuffer(device, &bufferCreateInfo, &buffers[i]);
@@ -389,7 +387,7 @@ bool multiDescriptorSetTest()
     }
 
     // allocate the sets from the descriptor pool
-    for (int i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+    for (int i = 0; i < 2; i++) {
         result = palAllocateDescriptorSet(
             device, 
             descriptorPool, 
@@ -404,19 +402,19 @@ bool multiDescriptorSetTest()
     }
 
     // write the inital data to the descriptor set since its created empty
-    Uint32 bindingCounts[DESCRIPTOR_SET_COUNT] = { 2, 1 };
-    Uint32 bufferOffsets[DESCRIPTOR_SET_COUNT] = { 0, 2 };
-    PalDescriptorSetWriteInfo writeInfos[DESCRIPTOR_SET_COUNT];
-    PalDescriptorBufferInfo descriptorBufferInfos[BUFFER_COUNT];
+    Uint32 bindingCounts[2] = { 2, 1 };
+    Uint32 bufferOffsets[2] = { 0, 2 };
+    PalDescriptorSetWriteInfo writeInfos[2];
+    PalDescriptorBufferInfo descriptorBufferInfos[3];
 
-    for (int i = 0; i < BUFFER_COUNT; i++) {
+    for (int i = 0; i < 3; i++) {
         descriptorBufferInfos[i].buffer = buffers[i];
         descriptorBufferInfos[i].offset = 0;
         descriptorBufferInfos[i].size = bufferBytes;
         descriptorBufferInfos[i].stride = 16; // sizeof(vec4) or float4.
     }
 
-    for (int i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+    for (int i = 0; i < 2; i++) {
         writeInfos[i].layoutBindingIndex = 0; // single descriptor binding
         writeInfos[i].bufferInfos = &descriptorBufferInfos[bufferOffsets[i]];
         writeInfos[i].descriptorSet = descriptorSets[i];
@@ -429,7 +427,7 @@ bool multiDescriptorSetTest()
         writeInfos[i].tlasInfos = nullptr;
     }
 
-    result = palUpdateDescriptorSet(device, DESCRIPTOR_SET_COUNT, writeInfos);
+    result = palUpdateDescriptorSet(device, 2, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to update descriptor set: %s", error);
@@ -446,7 +444,7 @@ bool multiDescriptorSetTest()
 
     // create pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
-    pipelineLayoutCreateInfo.descriptorSetLayoutCount = DESCRIPTOR_SET_COUNT;
+    pipelineLayoutCreateInfo.descriptorSetLayoutCount = 2;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.descriptorSetLayouts = descriptorSetLayouts;
     pipelineLayoutCreateInfo.pushConstantRanges = &pushConstantRange;
@@ -610,7 +608,7 @@ bool multiDescriptorSetTest()
     newUsageStateInfo.shaderStages = nullptr;
     newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
 
-    for (int i = 0; i < BUFFER_COUNT; i++) {
+    for (int i = 0; i < 3; i++) {
         result = palCmdBufferBarrier(
             cmdBuffer, 
             buffers[i], 
@@ -662,7 +660,7 @@ bool multiDescriptorSetTest()
     }
 
     const char* names[3] = { "compute_output1.ppm", "compute_output2.ppm", "compute_output3.ppm" };
-    for (int i = 0; i < BUFFER_COUNT; i++) {
+    for (int i = 0; i < 3; i++) {
         // now our staging buffer has the contents of the GPU buffer
         // we map it and copy the contents to a ppm buffer and save it
         void* ptr = nullptr;
@@ -700,11 +698,11 @@ bool multiDescriptorSetTest()
     palDestroyCommandPool(cmdPool);
 
     palDestroyDescriptorPool(descriptorPool);
-    for (int i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+    for (int i = 0; i < 2; i++) {
         palDestroyDescriptorSetLayout(descriptorSetLayouts[i]);
     }
 
-    for (int i = 0; i < BUFFER_COUNT; i++) {
+    for (int i = 0; i < 3; i++) {
         palDestroyBuffer(buffers[i]);
         palFreeMemory(device, bufferMemories[i]);
 

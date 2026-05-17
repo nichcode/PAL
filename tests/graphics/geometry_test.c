@@ -34,8 +34,8 @@ bool geometryTest()
 
     PalCommandBuffer* cmdBuffers[MAX_FRAMES_IN_FLIGHT];
     PalSemaphore* imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
-    PalSemaphore* renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
+    PalSemaphore** renderFinishedSemaphores; // count of swapchain images
     PalFence** inFlightImages; // count of swapchain images
 
     PalPipelineLayout* pipelineLayout = nullptr;
@@ -316,7 +316,8 @@ bool geometryTest()
     Uint32 imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
-    if (!imageViews || !inFlightImages) {
+    renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
+    if (!imageViews || !inFlightImages || !renderFinishedSemaphores) {
         palLog(nullptr, "Failed to allocate memory");
         return false;
     }
@@ -352,6 +353,14 @@ bool geometryTest()
             return false;
         }
 
+        // create render finished semaphores
+        result = palCreateSemaphore(device, &renderFinishedSemaphores[i]);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to create semaphore: %s", error);
+            return false;
+        }
+
         inFlightImages[i] = nullptr;
     }
 
@@ -365,13 +374,6 @@ bool geometryTest()
     // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         result = palCreateSemaphore(device, &imageAvailableSemaphores[i]);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create semaphore: %s", error);
-            return false;
-        }
-
-        result = palCreateSemaphore(device, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
@@ -720,7 +722,7 @@ bool geometryTest()
         submitInfo.cmdBuffer = cmdBuffers[currentFrame];
         submitInfo.fence = inFlightFences[currentFrame];
         submitInfo.waitSemaphore = imageAvailableSemaphores[currentFrame];
-        submitInfo.signalSemaphore = renderFinishedSemaphores[currentFrame];
+        submitInfo.signalSemaphore = renderFinishedSemaphores[imageIndex];
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {
@@ -732,7 +734,7 @@ bool geometryTest()
         // present
         PalSwapchainPresentInfo presentInfo = {0};
         presentInfo.imageIndex = imageIndex;
-        presentInfo.waitSemaphore = renderFinishedSemaphores[currentFrame];
+        presentInfo.waitSemaphore = renderFinishedSemaphores[imageIndex];
         result = palPresentSwapchain(swapchain, &presentInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -755,13 +757,13 @@ bool geometryTest()
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         palDestroySemaphore(imageAvailableSemaphores[i]);
-        palDestroySemaphore(renderFinishedSemaphores[i]);
         palDestroyFence(inFlightFences[i]);
         palFreeCommandBuffer(cmdBuffers[i]);
     }
 
     for (int i = 0; i < imageCount; i++) {
-        palDestroyImageView(imageViews[i]);
+        palDestroySemaphore(renderFinishedSemaphores[i]);
+        palDestroyImageView(imageViews[i]);   
     }
 
     palDestroyCommandPool(cmdPool);
@@ -770,7 +772,10 @@ bool geometryTest()
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();
+
     palFree(nullptr, imageViews);
+    palFree(nullptr, renderFinishedSemaphores);
+    palFree(nullptr, inFlightImages);
 
     palDestroyWindow(window);
     palShutdownVideo();
