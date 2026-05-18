@@ -2312,15 +2312,28 @@ PalResult PAL_CALL getAdapterInfoD3D12(
     D3D12_FEATURE_DATA_ARCHITECTURE1 arch = {0};
     ID3D12Device* device = d3dAdapter->tmpDevice;
 
+    D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
+    shaderModel.HighestShaderModel = D3D_SHADER_MODEL_6_0;
+
     HRESULT result = adapterHandle->lpVtbl->GetDesc3(adapterHandle, &desc);
     if (FAILED(result)) {
         return PAL_RESULT_INVALID_ADAPTER;
     }
 
+    result = device->lpVtbl->CheckFeatureSupport(
+        device,
+        D3D12_FEATURE_SHADER_MODEL,
+        &shaderModel,
+        sizeof(shaderModel));
+
+    info->shaderFormats = PAL_SHADER_FORMAT_DXBC;
+    if (shaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_0 && result == S_OK) {
+        info->shaderFormats |= PAL_SHADER_FORMAT_DXIL;
+    }
+
     info->vendorId = desc.VendorId;
     info->deviceId= desc.DeviceId;
     info->apiType = PAL_ADAPTER_API_TYPE_D3D12;
-    info->shaderFormats = PAL_SHADER_FORMAT_DXIL;
     info->sharedMemory = desc.SharedSystemMemory;
     strcpy(info->backendName, "PAL");
 
@@ -2542,8 +2555,12 @@ Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
-    if (shaderFormat != PAL_SHADER_FORMAT_DXIL) {
+    if (shaderFormat != PAL_SHADER_FORMAT_DXIL && shaderFormat != PAL_SHADER_FORMAT_DXBC) {
         return 0;
+    }
+
+    if (shaderFormat == PAL_SHADER_FORMAT_DXBC) {
+        return PAL_MAKE_SHADER_TARGET(5, 1);
     }
 
     Adapter* d3dAdapter = (Adapter*)adapter;
@@ -6404,7 +6421,7 @@ PalResult PAL_CALL createBufferD3D12(
     }
 
     if (info->usages & PAL_BUFFER_USAGE_INDIRECT) {
-        buffer->hasIndirect = false;
+        buffer->hasIndirect = true;
     }
 
     buffer->device = d3dDevice;

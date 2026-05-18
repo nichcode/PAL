@@ -179,7 +179,7 @@ bool geometryTest()
         }
 
         if (hasGeometryShader) {
-            // We want an adapter that supports spirv 1.0 or dxil 6.0
+            // We want an adapter that supports spirv 1.0 or dxbc 5.1
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -196,9 +196,9 @@ bool geometryTest()
                 }
             }
 
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
-                if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
                     break;
                 }
             }
@@ -412,10 +412,10 @@ bool geometryTest()
         sources[1] = "graphics/shaders/bin/spirv/triangle_frag.spv";
         sources[2] = "graphics/shaders/bin/spirv/geometry.spv";
 
-    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        sources[0] = "graphics/shaders/bin/dxil/geometry_vert.dxil";
-        sources[1] = "graphics/shaders/bin/dxil/triangle_frag.dxil";
-        sources[2] = "graphics/shaders/bin/dxil/geometry.dxil";
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+        sources[0] = "graphics/shaders/bin/dxbc/geometry_vert.dxbc";
+        sources[1] = "graphics/shaders/bin/dxbc/triangle_frag.dxbc";
+        sources[2] = "graphics/shaders/bin/dxbc/geometry.dxbc";
     }
 
     tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;

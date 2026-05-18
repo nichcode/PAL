@@ -7410,6 +7410,10 @@ PalResult PAL_CALL cmdDrawIndirectVk(
     Buffer* vkBuffer = (Buffer*)buffer;
     Uint32 stride = sizeof(VkDrawIndirectCommand);
 
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
     if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
         return PAL_RESULT_INVALID_BUFFER;
     }
@@ -7482,6 +7486,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
     Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
+
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
     if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
         return PAL_RESULT_INVALID_BUFFER;
