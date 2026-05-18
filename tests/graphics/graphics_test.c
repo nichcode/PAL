@@ -452,6 +452,27 @@ bool graphicsTest()
                 return false;
             }
 
+            if (tmp.runtimeDescriptorArray) {
+                palLog(nullptr, "   Runtime descriptor arrays: True");
+
+            } else {
+                palLog(nullptr, "   Runtime descriptor arrays: False");
+            }
+
+            if (tmp.variableDescriptorCount) {
+                palLog(nullptr, "   Variable descriptor count: True");
+
+            } else {
+                palLog(nullptr, "   Variable descriptor count: False");
+            }
+
+            if (tmp.partiallyBoundDescriptors) {
+                palLog(nullptr, "   Partially bound descriptors: True");
+
+            } else {
+                palLog(nullptr, "   Partially bound descriptors: False");
+            }
+
             if (tmp.sampledImageNonUniformIndexing) {
                 palLog(nullptr, "   Sampled image non uniform indexing: True");
 

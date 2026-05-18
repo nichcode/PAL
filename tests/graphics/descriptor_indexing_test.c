@@ -661,7 +661,7 @@ bool descriptorIndexingTest()
             PAL_MEMORY_TYPE_CPU_UPLOAD, 
             imageStagingBufferMemReq.memoryMask, 
             imageStagingBufferMemReq.size, 
-            &imageStagingBufferMemories);
+            &imageStagingBufferMemories[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

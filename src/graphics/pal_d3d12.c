@@ -27,9 +27,6 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_graphics.h"
 
-// TODO: Check flag for indirect buffers
-// TODO: Add PAL_BUFFER_USAGE_INDIRECT bit
-// TODO: add descriptor indexing shader
 #if PAL_HAS_D3D12
 
 #ifdef __WIN32
@@ -299,6 +296,7 @@ typedef struct {
 
     bool supportsAddress;
     bool canChangeState;
+    bool hasIndirect;
     Uint64 size;
     ID3D12Resource* handle;
     Device* device;
@@ -1521,6 +1519,10 @@ static D3D12_RESOURCE_STATES barrierToD3D12(
             return D3D12_RESOURCE_STATE_INDEX_BUFFER;
         }
 
+        case PAL_USAGE_STATE_INDIRECT_READ: {
+            return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+        }
+
         case PAL_USAGE_STATE_UNIFORM_READ: {
             return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
         }
@@ -2016,6 +2018,95 @@ static void commitShaderbindingTableUpdateD3D12(
     sbt->isDirty = false;
 }
 
+static void getDescriptorLimitsD3D12(
+    void* device, 
+    PalAdapterCapabilities* caps, 
+    PalDescriptorIndexingCapabilities* descCaps)
+{
+    D3D12_FEATURE_DATA_D3D12_OPTIONS options = {0};
+    if (caps) {
+        ID3D12Device* handle = device;
+        handle->lpVtbl->CheckFeatureSupport(
+            handle,
+            D3D12_FEATURE_D3D12_OPTIONS,
+            &options,
+            sizeof(options));
+
+    } else {
+        ID3D12Device5* handle = device;
+        handle->lpVtbl->CheckFeatureSupport(
+            handle,
+            D3D12_FEATURE_D3D12_OPTIONS,
+            &options,
+            sizeof(options));
+    }
+
+    if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1) {
+        // safe defaults
+        if (caps) {
+            caps->maxPerStageDescriptorSampledImages = 1024;
+            caps->maxDescriptorSetSampledImages = 1024;
+            caps->maxPerStageDescriptorStorageImages = 512;
+            caps->maxDescriptorSetStorageImages = 512;
+
+            caps->maxPerStageDescriptorSamplers = 256;
+            caps->maxDescriptorSetSamplers = 256;
+            caps->maxPerStageDescriptorStorageBuffers = 512;
+            caps->maxDescriptorSetStorageBuffers = 512;
+
+            caps->maxPerStageDescriptorUniformBuffers = 256;
+            caps->maxDescriptorSetUniformBuffers = 256;
+            caps->maxBoundDescriptorSets = 30;
+
+        } else {
+            descCaps->maxPerStageBindlessDescriptorSampledImages = 1024;
+            descCaps->maxDescriptorSetBindlessSampledImages = 1024;
+            descCaps->maxPerStageBindlessDescriptorStorageImages = 512;
+            descCaps->maxDescriptorSetBindlessStorageImages = 512;
+
+            descCaps->maxPerStageBindlessDescriptorSamplers = 256;
+            descCaps->maxDescriptorSetBindlessSamplers = 256;
+            descCaps->maxPerStageBindlessDescriptorStorageBuffers = 512;
+            descCaps->maxDescriptorSetBindlessStorageBuffers = 512;
+
+            descCaps->maxPerStageBindlessDescriptorUniformBuffers = 256;
+            descCaps->maxDescriptorSetBindlessUniformBuffers = 256;
+        }
+
+    } else {
+        // safe defaults
+        if (caps) {
+            caps->maxPerStageDescriptorSampledImages = 4096;
+            caps->maxDescriptorSetSampledImages = 4096;
+            caps->maxPerStageDescriptorStorageImages = 1024;
+            caps->maxDescriptorSetStorageImages = 1024;
+
+            caps->maxPerStageDescriptorSamplers = 512;
+            caps->maxDescriptorSetSamplers = 512;
+            caps->maxPerStageDescriptorStorageBuffers = 2048;
+            caps->maxDescriptorSetStorageBuffers = 2048;
+
+            caps->maxPerStageDescriptorUniformBuffers = 256;
+            caps->maxDescriptorSetUniformBuffers = 256;
+            caps->maxBoundDescriptorSets = 30;
+
+        } else {
+            descCaps->maxPerStageBindlessDescriptorSampledImages = 4096;
+            descCaps->maxDescriptorSetBindlessSampledImages = 4096;
+            descCaps->maxPerStageBindlessDescriptorStorageImages = 1024;
+            descCaps->maxDescriptorSetBindlessStorageImages = 1024;
+
+            descCaps->maxPerStageBindlessDescriptorSamplers = 512;
+            descCaps->maxDescriptorSetBindlessSamplers = 512;
+            descCaps->maxPerStageBindlessDescriptorStorageBuffers = 2048;
+            descCaps->maxDescriptorSetBindlessStorageBuffers = 2048;
+
+            descCaps->maxPerStageBindlessDescriptorUniformBuffers = 256;
+            descCaps->maxDescriptorSetBindlessUniformBuffers = 256;
+        }
+    }
+}
+
 // ==================================================
 // Adapter
 // ==================================================
@@ -2274,6 +2365,12 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
+    // always supported
+    caps->sampledImageDynamicArrayIndexing = true;
+    caps->storageImageDynamicArrayIndexing = true;
+    caps->storageBufferDynamicArrayIndexing = true;
+    caps->uniformBufferDynamicArrayIndexing = true;
+
     caps->maxComputeQueues = 2; // safe default
     caps->maxGraphicsQueues = 2; // safe default
     caps->maxCopyQueues = 2; // safe default
@@ -2307,21 +2404,6 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     caps->maxVertexAttributes = 32; // safe
     caps->maxTessellationPatchPoint = 32;
 
-    // safe defaults
-    caps->maxPerStageDescriptorSampledImages = 1024;
-    caps->maxDescriptorSetSampledImages = 1024;
-    caps->maxPerStageDescriptorStorageImages = 512;
-    caps->maxDescriptorSetStorageImages = 512;
-
-    caps->maxPerStageDescriptorSamplers = 256;
-    caps->maxDescriptorSetSamplers = 256;
-    caps->maxPerStageDescriptorStorageBuffers = 512;
-    caps->maxDescriptorSetStorageBuffers = 512;
-
-    caps->maxPerStageDescriptorUniformBuffers = 256;
-    caps->maxDescriptorSetUniformBuffers = 256;
-    caps->maxBoundDescriptorSets = 30;
-
     caps->maxComputeWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
     caps->maxComputeWorkGroupCount[0] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
     caps->maxComputeWorkGroupCount[1] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
@@ -2331,6 +2413,8 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     caps->maxComputeWorkGroupSize[1] = D3D12_CS_THREAD_GROUP_MAX_Y;
     caps->maxComputeWorkGroupSize[2] = D3D12_CS_THREAD_GROUP_MAX_Z;
 
+    Adapter* d3dAdapter = (Adapter*)adapter;
+    getDescriptorLimitsD3D12(d3dAdapter->tmpDevice, caps, nullptr);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2434,10 +2518,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
         features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT;
     }
 
-    if (!(options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1)) {
-        features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-    }
-
     // this features are supported on d3d12
     features |= PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY;
     features |= PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
@@ -2450,6 +2530,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
     features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT;
     features |= PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY;
+    features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
 
     if (d3dAdapter->level >= D3D_FEATURE_LEVEL_12_0) {
         features |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
@@ -3076,27 +3157,21 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    // these are supported if descriptor indexing is
-    caps->bindlessSampledImages = true;
-    caps->bindlessStorageImages = true;
-    caps->bindlessSamplers = true;
-    caps->bindlessStorageBuffers = true;
-    caps->bindlessUniformBuffers = true;
+    caps->runtimeDescriptorArray = true; // always supported
+    caps->variableDescriptorCount = true; // manually
+    caps->partiallyBoundDescriptors = true; // always supported
 
-    // safe defaults
-    caps->maxPerStageBindlessDescriptorSampledImages = 4096;
-    caps->maxDescriptorSetBindlessSampledImages = 4096;
-    caps->maxPerStageBindlessDescriptorStorageImages = 1024;
-    caps->maxDescriptorSetBindlessStorageImages = 1024;
+    // always supported
+    caps->sampledImageNonUniformIndexing = true;
+    caps->sampledImageUpdateAfterBind = true;
+    caps->storageImageNonUniformIndexing = true;
+    caps->storageImageUpdateAfterBind = true;
+    caps->storageBufferNonUniformIndexing = true;
+    caps->storageBufferUpdateAfterBind = true;
+    caps->uniformBufferNonUniformIndexing = true;
+    caps->uniformBufferUpdateAfterBind = true;
 
-    caps->maxPerStageBindlessDescriptorSamplers = 512;
-    caps->maxDescriptorSetBindlessSamplers = 512;
-    caps->maxPerStageBindlessDescriptorStorageBuffers = 2048;
-    caps->maxDescriptorSetBindlessStorageBuffers = 2048;
-
-    caps->maxPerStageBindlessDescriptorUniformBuffers = 256;
-    caps->maxDescriptorSetBindlessUniformBuffers = 256;
-
+    getDescriptorLimitsD3D12(d3dDevice->handle, nullptr, caps);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4912,11 +4987,15 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectD3D12(
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
+    Buffer* d3dBuffer = (Buffer*)buffer;
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Buffer* d3dBuffer = (Buffer*)buffer;
+    if (!d3dBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+    
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->meshSignature,
@@ -4943,6 +5022,10 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
 
     Buffer* d3dBuffer = (Buffer*)buffer;
     Buffer* d3dCountBuffer = (Buffer*)countBuffer;
+    if (!d3dBuffer->hasIndirect || !d3dCountBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->meshSignature,
@@ -5541,11 +5624,15 @@ PalResult PAL_CALL cmdDrawIndirectD3D12(
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
+    Buffer* d3dBuffer = (Buffer*)buffer;
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Buffer* d3dBuffer = (Buffer*)buffer;
+    if (!d3dBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->drawSignature,
@@ -5572,6 +5659,10 @@ PalResult PAL_CALL cmdDrawIndirectCountD3D12(
 
     Buffer* d3dBuffer = (Buffer*)buffer;
     Buffer* d3dCountBuffer = (Buffer*)countBuffer;
+    if (!d3dBuffer->hasIndirect || !d3dCountBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->drawSignature,
@@ -5611,11 +5702,15 @@ PalResult PAL_CALL cmdDrawIndexedIndirectD3D12(
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
+    Buffer* d3dBuffer = (Buffer*)buffer;
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Buffer* d3dBuffer = (Buffer*)buffer;
+    if (!d3dBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->drawIndexedSignature,
@@ -5642,6 +5737,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
 
     Buffer* d3dBuffer = (Buffer*)buffer;
     Buffer* d3dCountBuffer = (Buffer*)countBuffer;
+    if (!d3dBuffer->hasIndirect || !d3dCountBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->drawIndexedSignature,
@@ -5853,11 +5952,15 @@ PalResult PAL_CALL cmdDispatchIndirectD3D12(
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
+    Buffer* d3dBuffer = (Buffer*)buffer;
     if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Buffer* d3dBuffer = (Buffer*)buffer;
+    if (!d3dBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     d3dCmdBuffer->handle->lpVtbl->ExecuteIndirect(
         d3dCmdBuffer->handle,
         device->dispatchSignature,
@@ -5920,6 +6023,10 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 
     if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (!d3dBuffer->hasIndirect) {
+        return PAL_RESULT_INVALID_BUFFER;
     }
 
     // we need to make sure the SBT is up to date
@@ -6294,7 +6401,11 @@ PalResult PAL_CALL createBufferD3D12(
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
         buffer->supportsAddress = true;
-    } 
+    }
+
+    if (info->usages & PAL_BUFFER_USAGE_INDIRECT) {
+        buffer->hasIndirect = false;
+    }
 
     buffer->device = d3dDevice;
     buffer->size = info->size;

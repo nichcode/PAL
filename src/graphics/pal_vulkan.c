@@ -4020,21 +4020,12 @@ PalResult PAL_CALL createDeviceVk(
         coreFeatures.shaderFloat64 = true;
     }
 
-    if (phyDeviceFeatures.shaderSampledImageArrayDynamicIndexing) {
-        coreFeatures.shaderSampledImageArrayDynamicIndexing = true;
-    }
-
-    if (phyDeviceFeatures.shaderStorageImageArrayDynamicIndexing) {
-        coreFeatures.shaderStorageImageArrayDynamicIndexing = true;
-    }
-
-    if (phyDeviceFeatures.shaderStorageBufferArrayDynamicIndexing) {
-        coreFeatures.shaderStorageBufferArrayDynamicIndexing = true;
-    }
-
-    if (phyDeviceFeatures.shaderUniformBufferArrayDynamicIndexing) {
-        coreFeatures.shaderUniformBufferArrayDynamicIndexing = true;
-    }
+    // clang-format off
+    coreFeatures.shaderSampledImageArrayDynamicIndexing = phyDeviceFeatures.shaderSampledImageArrayDynamicIndexing;
+    coreFeatures.shaderStorageImageArrayDynamicIndexing = phyDeviceFeatures.shaderStorageImageArrayDynamicIndexing;
+    coreFeatures.shaderStorageBufferArrayDynamicIndexing = phyDeviceFeatures.shaderStorageBufferArrayDynamicIndexing;
+    coreFeatures.shaderUniformBufferArrayDynamicIndexing = phyDeviceFeatures.shaderUniformBufferArrayDynamicIndexing;
+    // clang-format on
 
     // extensions and features2
     void* next = nullptr;
@@ -4194,8 +4185,6 @@ PalResult PAL_CALL createDeviceVk(
             extensions[extCount++] = "VK_EXT_descriptor_indexing";
         }
 
-        features12.descriptorIndexing = true;
-
         // check support for sub features
         VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
         desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
@@ -4205,42 +4194,25 @@ PalResult PAL_CALL createDeviceVk(
         features.pNext = &desc;
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
 
-        // check sub feature for sampled image
-        if (desc.shaderSampledImageArrayNonUniformIndexing) {
-            descIndex.shaderSampledImageArrayNonUniformIndexing = true;
-        }
+        // clang-format off
+        descIndex.runtimeDescriptorArray = desc.runtimeDescriptorArray;
+        descIndex.descriptorBindingVariableDescriptorCount = desc.descriptorBindingVariableDescriptorCount;
+        descIndex.descriptorBindingPartiallyBound = desc.descriptorBindingPartiallyBound;
 
-        if (desc.descriptorBindingSampledImageUpdateAfterBind) {
-            descIndex.descriptorBindingSampledImageUpdateAfterBind = true;
-        }
+        descIndex.shaderSampledImageArrayNonUniformIndexing = desc.shaderSampledImageArrayNonUniformIndexing;
+        descIndex.descriptorBindingSampledImageUpdateAfterBind = desc.descriptorBindingSampledImageUpdateAfterBind;
 
-        // check sub feature for storage image
-        if (desc.shaderStorageImageArrayNonUniformIndexing) {
-            descIndex.shaderStorageImageArrayNonUniformIndexing = true;
-        }
+        descIndex.shaderStorageImageArrayNonUniformIndexing = desc.shaderStorageImageArrayNonUniformIndexing;
+        descIndex.descriptorBindingStorageImageUpdateAfterBind = desc.descriptorBindingStorageImageUpdateAfterBind;
 
-        if (desc.descriptorBindingStorageImageUpdateAfterBind) {
-            descIndex.descriptorBindingStorageImageUpdateAfterBind = true;
-        }
+        descIndex.shaderStorageBufferArrayNonUniformIndexing = desc.shaderStorageBufferArrayNonUniformIndexing;
+        descIndex.descriptorBindingStorageBufferUpdateAfterBind = desc.descriptorBindingStorageBufferUpdateAfterBind;
 
-        // check sub feature for storage buffer
-        if (desc.shaderStorageBufferArrayNonUniformIndexing) {
-            descIndex.shaderStorageBufferArrayNonUniformIndexing = true;
-        }
+        descIndex.shaderUniformBufferArrayNonUniformIndexing = desc.shaderUniformBufferArrayNonUniformIndexing;
+        descIndex.descriptorBindingUniformBufferUpdateAfterBind = desc.descriptorBindingUniformBufferUpdateAfterBind;
+        // clang-format on
 
-        if (desc.descriptorBindingStorageBufferUpdateAfterBind) {
-            descIndex.descriptorBindingStorageBufferUpdateAfterBind = true;
-        }
-
-        // check sub feature for uniform buffer
-        if (desc.shaderUniformBufferArrayNonUniformIndexing) {
-            descIndex.shaderUniformBufferArrayNonUniformIndexing = true;
-        }
-
-        if (desc.descriptorBindingUniformBufferUpdateAfterBind) {
-            descIndex.descriptorBindingUniformBufferUpdateAfterBind = true;
-        }
-
+        features12.descriptorIndexing = true;
         descIndex.pNext = next;
         next = &descIndex;
     }
@@ -5042,6 +5014,10 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     properties2.pNext = &props;
     s_Vk.getPhysicalDeviceFeatures2(vkDevice->phyDevice, &features);
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+
+    caps->runtimeDescriptorArray = desc.runtimeDescriptorArray;
+    caps->variableDescriptorCount = desc.descriptorBindingVariableDescriptorCount;
+    caps->partiallyBoundDescriptors = desc.descriptorBindingPartiallyBound;
 
     // check sub feature for sampled image
     if (desc.shaderSampledImageArrayNonUniformIndexing) {
@@ -6836,6 +6812,10 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
+    if (!(vkCountBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     Uint32 stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirectCount(
         vkCmdBuffer->handle,
@@ -7457,6 +7437,10 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
+    if (!(vkCountBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
     Uint32 stride = sizeof(VkDrawIndirectCommand);
     device->cmdDrawIndirectCount(
         vkCmdBuffer->handle,
@@ -7523,6 +7507,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     }
 
     if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
+        return PAL_RESULT_INVALID_BUFFER;
+    }
+
+    if (!(vkCountBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
         return PAL_RESULT_INVALID_BUFFER;
     }
 

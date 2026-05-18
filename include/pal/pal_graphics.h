@@ -1598,13 +1598,24 @@ typedef struct {
 /**
  * @struct PalDescriptorIndexingCapabilities
  * @brief Descriptor indexing capabilities of an adapter (GPU).
- * 
- * PAL does not support partially bound descriptors or variable descriptor count.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
+    /** Allows descriptor array whose size is not fixed at compiled time.
+     * The size will be provided at runtime.*/
+    bool runtimeDescriptorArray;
+
+    /** Allows a descriptor set to specify the number of descriptors in a descriptor set 
+     * layout. This is only valid for one binding per descriptor set layout and it must be the
+     * last binding in the descriptor set layput.*/
+    bool variableDescriptorCount;
+
+    /** Allows a descriptor set to contain descriptors that are not initialized. Shader reading
+     * an uninitialized descriptor is still undefined behavior.*/
+    bool partiallyBoundDescriptors;
+
     bool sampledImageNonUniformIndexing;
     bool sampledImageUpdateAfterBind;
     bool storageImageNonUniformIndexing;
@@ -4481,8 +4492,6 @@ PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `caps` is per thread.
- * 
- * @note PAL does not support partially bound descriptors or variable descriptor counts.
  *
  * @since 1.4
  * @ingroup pal_graphics
