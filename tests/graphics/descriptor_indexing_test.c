@@ -4,6 +4,8 @@
 #include "pal/pal_system.h"
 #include "tests.h"
 
+// TODO: test on vulkan first
+
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2

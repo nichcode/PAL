@@ -1,6 +1,7 @@
 
 #version 450
 
+// texs[]; if runtime descriptor array is supported but for this example we wont use it
 layout(set = 0, binding = 0) uniform texture2D texs[4];
 layout(set = 0, binding = 1) uniform sampler samp;
 

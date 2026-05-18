@@ -605,10 +605,11 @@ typedef enum {
     PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT = PAL_BIT64(27),
     PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS = PAL_BIT64(28),
     PAL_ADAPTER_FEATURE_INDIRECT_DRAW = PAL_BIT64(29),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(30),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH = PAL_BIT64(31),
-    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT = PAL_BIT64(32),
-    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(33)
+    PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH = PAL_BIT64(30),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT = PAL_BIT64(31),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH = PAL_BIT64(32),
+    PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT = PAL_BIT64(33),
+    PAL_ADAPTER_FEATURE_DISPATCH_BASE = PAL_BIT64(34)
 } PalAdapterFeatures;
 
 /**
@@ -5158,9 +5159,6 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_COMPUTE_SHADER` must be supported and enabled by the device if
- * `PAL_SHADER_STAGE_COMPUTE` will be used.
- *
  * `PAL_ADAPTER_FEATURE_GEOMETRY_SHADER` must be supported and enabled by the device if
  * `PAL_SHADER_STAGE_GEOMETRY` will be used.
  *
@@ -6377,9 +6375,6 @@ PAL_API PalResult PAL_CALL palCmdBufferBarrier(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_COMPUTE_SHADER` must be supported and enabled by the device if not, this
- * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
- *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] groupCountX Number of compute shader groups to dispatch on the x axis.
  * @param[in] groupCountY Number of compute shader groups to dispatch on the y axis.
@@ -6407,9 +6402,8 @@ PAL_API PalResult PAL_CALL palCmdDispatch(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_COMPUTE_SHADER` and `PAL_ADAPTER_FEATURE_DISPATCH_BASE` must be supported
- * and enabled by the device if not, this function will fail and return
- * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * `PAL_ADAPTER_FEATURE_DISPATCH_BASE` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] baseGroupX Base group offset on the x axis.
@@ -6444,9 +6438,8 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_COMPUTE_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported
- * and enabled by the device if not, this function will fail and return
- * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * `PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH` must be supported and enabled by the device if not, this 
+ * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be nullptr.
@@ -7322,9 +7315,6 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  * @brief Create a compute pipeline.
  *
  * The graphics system must be initialized before this call.
- *
- * `PAL_ADAPTER_FEATURE_COMPUTE_SHADER` must be supported and enabled by the device if not, this
- * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] device Device that creates the compute pipeline.
  * @param[in] info Pointer to a PalComputePipelineCreateInfo struct that specifies parameters.

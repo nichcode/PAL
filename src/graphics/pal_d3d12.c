@@ -2541,6 +2541,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     features |= PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE;
     features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
     features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
+    features |= PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH;
     features |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT;
     features |= PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY;
     features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
@@ -2756,24 +2757,6 @@ PalResult PAL_CALL createDeviceD3D12(
     }
 
     if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW) {
-        // disptach indexed
-        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
-        signatureDesc.ByteStride = sizeof(D3D12_DISPATCH_ARGUMENTS);
-
-        result = device->handle->lpVtbl->CreateCommandSignature(
-            device->handle,
-            &signatureDesc,
-            nullptr,
-            &IID_CommandSignature,
-            (void**)&device->dispatchSignature);
-
-        if (FAILED(result)) {
-            if (result == E_OUTOFMEMORY) {
-                return PAL_RESULT_OUT_OF_MEMORY;
-            }
-            return PAL_RESULT_PLATFORM_FAILURE;
-        }
-
         // draw indexed
         argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
         signatureDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
@@ -2802,6 +2785,25 @@ PalResult PAL_CALL createDeviceD3D12(
             nullptr,
             &IID_CommandSignature,
             (void**)&device->drawSignature);
+
+        if (FAILED(result)) {
+            if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+    }
+
+    if (features & PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH) {
+        argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
+        signatureDesc.ByteStride = sizeof(D3D12_DISPATCH_ARGUMENTS);
+
+        result = device->handle->lpVtbl->CreateCommandSignature(
+            device->handle,
+            &signatureDesc,
+            nullptr,
+            &IID_CommandSignature,
+            (void**)&device->dispatchSignature);
 
         if (FAILED(result)) {
             if (result == E_OUTOFMEMORY) {
@@ -5970,7 +5972,7 @@ PalResult PAL_CALL cmdDispatchIndirectD3D12(
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
     Buffer* d3dBuffer = (Buffer*)buffer;
-    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 

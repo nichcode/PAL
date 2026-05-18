@@ -3896,6 +3896,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     adapterFeatures |= PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY;
     adapterFeatures |= PAL_ADAPTER_FEATURE_FENCE_RESET;
     adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW;
+    adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH;
 
     palFree(s_Vk.allocator, extensionProps);
     return adapterFeatures;
@@ -7708,7 +7709,7 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
