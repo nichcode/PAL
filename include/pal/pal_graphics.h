@@ -1859,8 +1859,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint64 waitValue;   /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
-    Uint64 signalValue; /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
+    Uint64 waitValue;
+    Uint64 signalValue;
     PalCommandBuffer* cmdBuffer;
     PalSemaphore* waitSemaphore;
     PalSemaphore* signalSemaphore;
@@ -1878,7 +1878,7 @@ typedef struct {
  */
 typedef struct {
     Uint64 timeout;     /**< Timeout in milliseconds.*/
-    Uint64 signalValue; /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
+    Uint64 signalValue;
     PalSemaphore* signalSemaphore;
     PalFence* fence;
 } PalSwapchainNextImageInfo;
@@ -1894,7 +1894,7 @@ typedef struct {
  */
 typedef struct {
     Uint32 imageIndex; /**< Image index to present. Must be 0 and less than max images.*/
-    Uint64 waitValue;  /**< Used if `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` is supported.*/
+    Uint64 waitValue;
     PalSemaphore* waitSemaphore;
 } PalSwapchainPresentInfo;
 
@@ -2645,6 +2645,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    /** If true `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled.*/
+    bool enableDescriptorIndexing;
     Uint32 bindingCount;
     PalDescriptorSetLayoutBinding* bindings;
 } PalDescriptorSetLayoutCreateInfo;
@@ -2659,6 +2661,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
+    /** If true `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled.*/
+    bool enableDescriptorIndexing;
     Uint32 maxDescriptorSets;
     Uint32 maxDescriptorBindingSizes;
     PalDescriptorPoolBindingSize* bindingSizes;
@@ -3263,6 +3267,7 @@ typedef struct {
      */
     PalResult PAL_CALL (*createSemaphore)(
         PalDevice* device,
+        bool enableTimeline,
         PalSemaphore** outSemaphore);
 
     /**
@@ -5358,12 +5363,9 @@ PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
  *
  * The graphics system must be initialized before this call.
  *
- * A binary semaphore is created by default. To create a timeline
- * semaphore, enable `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` when creating the device.
- * The feature must be supported by the device if not, this function will fail and return
- * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
- *
  * @param[in] device Device that creates the semaphore.
+ * @param[in] enableTimeline If true, `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported
+ * and enabled by the device creating the semaphore.
  * @param[out] outSemaphore Pointer to a PalSemaphore to recieve the created semaphore.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -5377,6 +5379,7 @@ PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
  */
 PAL_API PalResult PAL_CALL palCreateSemaphore(
     PalDevice* device,
+    bool enableTimeline,
     PalSemaphore** outSemaphore);
 
 /**
@@ -5400,10 +5403,10 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
 /**
  * @brief Waits for a semaphore to reach the provided value.
  *
- * The graphics system must be initialized before this call.
- *
- * `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported and enabled when creating the
- * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * The graphics system must be initialized before this call. 
+ * 
+ * The provided semaphore must be a timeline semaphore If not, this function fails and returns 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] semaphore Semaphore to wait on.
  * @param[in] value Value to wait for.
@@ -5429,8 +5432,8 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported and enabled when creating the
- * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * The provided semaphore must be a timeline semaphore If not, this function fails and returns 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] semaphore Semaphore to signal.
  * @param[in] queue Queue used to signal the semaphore.
@@ -5456,8 +5459,8 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported and enabled when creating the
- * device. If not, this function fails and returns `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * The provided semaphore must be a timeline semaphore If not, this function fails and returns 
+ * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] semaphore Semaphore to get its value.
  * @param[out] outValue Pointer to a Uint64 to receive the semaphore value.

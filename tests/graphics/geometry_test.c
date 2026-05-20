@@ -354,7 +354,7 @@ bool geometryTest()
         }
 
         // create render finished semaphores
-        result = palCreateSemaphore(device, &renderFinishedSemaphores[i]);
+        result = palCreateSemaphore(device, false, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
@@ -373,7 +373,7 @@ bool geometryTest()
 
     // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        result = palCreateSemaphore(device, &imageAvailableSemaphores[i]);
+        result = palCreateSemaphore(device, false, &imageAvailableSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);

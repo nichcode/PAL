@@ -4493,15 +4493,25 @@ bool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
 
 PalResult PAL_CALL createSemaphoreD3D12(
     PalDevice* device,
+    bool enableTimeline,
     PalSemaphore** outSemaphore)
 {
     HRESULT result;
     Device* d3dDevice = (Device*)device;
     Semaphore* semaphore = nullptr;
+    bool hasTimeline = d3dDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
 
     semaphore = palAllocate(s_D3D.allocator, sizeof(Semaphore), 0);
     if (!semaphore) {
         return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    if (enableTimeline && !hasTimeline) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (enableTimeline) {
+        semaphore->isTimeline = true;
     }
 
     result = d3dDevice->handle->lpVtbl->CreateFence(
@@ -4518,11 +4528,6 @@ PalResult PAL_CALL createSemaphoreD3D12(
             return PAL_RESULT_OUT_OF_MEMORY;
         }
         return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    semaphore->isTimeline = false;
-    if (d3dDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-        semaphore->isTimeline = true;
     }
 
     semaphore->canReset = false;
@@ -6634,6 +6639,8 @@ PalDeviceAddress PAL_CALL getBufferDeviceAddressD3D12(PalBuffer* buffer)
 // ==================================================
 // Descriptor Pool, Set and Layout
 // ==================================================
+
+// TODO: rewrite
 
 PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     PalDevice* device,

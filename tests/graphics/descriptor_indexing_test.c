@@ -4,13 +4,21 @@
 #include "pal/pal_system.h"
 #include "tests.h"
 
-// TODO: test on vulkan first
-
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2
 #define TEXTURE_WIDTH 128
 #define TEXTURE_HEIGHT 128
+
+#define ARRAY_ELEMENT_0 17
+#define ARRAY_ELEMENT_1 47
+#define ARRAY_ELEMENT_2 55
+#define ARRAY_ELEMENT_3 78
+
+// layout must match shader
+typedef struct {
+    Uint32 textureIndices[4];
+} PushConstant;
 
 static void createFlatTexture(
     Uint32* texture,
@@ -102,7 +110,7 @@ bool descriptorIndexingTest()
     windowCreateInfo.height = WINDOW_HEIGHT;
     windowCreateInfo.width = WINDOW_WIDTH;
     windowCreateInfo.show = true;
-    windowCreateInfo.title = "Texture Window";
+    windowCreateInfo.title = "Descriptor Indexing Window";
 
     PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
     if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
@@ -216,7 +224,7 @@ bool descriptorIndexingTest()
         }
 
         if (hasDescriptorIndexing) {
-            // We want an adapter that supports spirv 1.4 or dxil 6.6
+            // We want an adapter that supports spirv 1.4 or dxbc 5.1
             result = palGetAdapterInfo(adapter, &adapterInfo);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
@@ -233,9 +241,9 @@ bool descriptorIndexingTest()
                 }
             }
 
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
-                if (target >= PAL_MAKE_SHADER_TARGET(6, 6)) {
+            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
                     break;
                 }
             }
@@ -391,7 +399,7 @@ bool descriptorIndexingTest()
         }
 
         // create render finished semaphores
-        result = palCreateSemaphore(device, &renderFinishedSemaphores[i]);
+        result = palCreateSemaphore(device, false, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
@@ -410,7 +418,7 @@ bool descriptorIndexingTest()
 
     // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        result = palCreateSemaphore(device, &imageAvailableSemaphores[i]);
+        result = palCreateSemaphore(device, false, &imageAvailableSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
@@ -759,7 +767,14 @@ bool descriptorIndexingTest()
     textureRange.layerArrayCount = 1;
 
     for (int i = 0; i < 4; i++) {
+        oldImageUsageState.shaderStageCount = 0;
+        oldImageUsageState.shaderStages = nullptr;
+        oldImageUsageState.usageState = PAL_USAGE_STATE_UNDEFINED;
+
+        newImageUsageState.shaderStageCount = 0;
+        newImageUsageState.shaderStages = nullptr;
         newImageUsageState.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+
         result = palCmdImageBarrier(
             cmdBuffers[0], 
             textures[i], 
@@ -881,9 +896,9 @@ bool descriptorIndexingTest()
         sources[0] = "graphics/shaders/bin/spirv/texture_vert.spv";
         sources[1] = "graphics/shaders/bin/spirv/descriptor_indexing.spv";
 
-    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        sources[0] = "graphics/shaders/bin/dxil/texture_vert.dxil";
-        sources[1] = "graphics/shaders/bin/dxil/descriptor_indexing.dxil";
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+        sources[0] = "graphics/shaders/bin/dxbc/texture_vert.dxbc";
+        sources[1] = "graphics/shaders/bin/dxbc/descriptor_indexing.dxbc";
     }
 
     tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;
@@ -923,7 +938,8 @@ bool descriptorIndexingTest()
     PalDescriptorSetLayoutBinding descriptorBindings[2];
     PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
 
-    descriptorBindings[0].descriptorCount = 4; // an array
+    // We use descriptor count of 100 and only use 4 slots
+    descriptorBindings[0].descriptorCount = 100;
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptorBindings[0].shaderStageCount = 1;
     descriptorBindings[0].shaderStages = shaderStages;
@@ -936,6 +952,9 @@ bool descriptorIndexingTest()
     PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
+
+    // we need to enable descriptor indexing for the descriptor set layout
+    descriptorSetLayoutcreateInfo.enableDescriptorIndexing = true;
 
     result = palCreateDescriptorSetLayout(
         device,
@@ -950,7 +969,7 @@ bool descriptorIndexingTest()
 
     // create descriptor pool
     PalDescriptorPoolBindingSize storageBufferBindingsizes[2];
-    storageBufferBindingsizes[0].bindingCount = 4;
+    storageBufferBindingsizes[0].bindingCount = 100;
     storageBufferBindingsizes[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 
     storageBufferBindingsizes[1].bindingCount = 1;
@@ -960,6 +979,9 @@ bool descriptorIndexingTest()
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
     descriptorPoolCreateInfo.maxDescriptorBindingSizes = 2;
     descriptorPoolCreateInfo.bindingSizes = storageBufferBindingsizes;
+
+    // we need to enable descriptor indexing for the descriptor pool
+    descriptorPoolCreateInfo.enableDescriptorIndexing = true;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
     if (result != PAL_RESULT_SUCCESS) {
@@ -977,7 +999,9 @@ bool descriptorIndexingTest()
         return false;
     }
 
-    // write the inital data to the descriptor set since its created empty
+    // we only write 4 descriptors
+    Uint32 arrElements[] = { ARRAY_ELEMENT_0, ARRAY_ELEMENT_1, ARRAY_ELEMENT_2, ARRAY_ELEMENT_3 };
+
     PalDescriptorImageViewInfo descriptorImageInfos[4];
     descriptorImageInfos[0].imageView = textureViews[0];
     descriptorImageInfos[1].imageView = textureViews[1];
@@ -987,40 +1011,55 @@ bool descriptorIndexingTest()
     PalDescriptorSamplerInfo descriptorSamplerInfo = {0};
     descriptorSamplerInfo.sampler = sampler;
 
-    PalDescriptorSetWriteInfo writeInfos[2];
-    writeInfos[0].layoutBindingIndex = 0;
-    writeInfos[0].imageViewInfos = descriptorImageInfos;
+    PalDescriptorSetWriteInfo writeInfos[5];
+    // sampler
+    writeInfos[0].layoutBindingIndex = 1;
+    writeInfos[0].samplerInfos = &descriptorSamplerInfo;
     writeInfos[0].descriptorSet = descriptorSet;
-    writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    writeInfos[0].descriptorCount = 4;
+    writeInfos[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
+    writeInfos[0].descriptorCount = 1;
 
     writeInfos[0].arrayElement = 0;
-    writeInfos[0].bufferInfos = nullptr;
-    writeInfos[0].samplerInfos = nullptr;
+    writeInfos[0].imageViewInfos = nullptr;
     writeInfos[0].tlasInfos =  nullptr;
+    writeInfos[0].bufferInfos = nullptr;
 
-    writeInfos[1].layoutBindingIndex = 1;
-    writeInfos[1].samplerInfos = &descriptorSamplerInfo;
-    writeInfos[1].descriptorSet = descriptorSet;
-    writeInfos[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
-    writeInfos[1].descriptorCount = 1;
+    // textures
+    for (int i = 0; i < 4; i++) {
+        writeInfos[i + 1].layoutBindingIndex = 0;
+        writeInfos[i + 1].imageViewInfos = &descriptorImageInfos[i];
+        writeInfos[i + 1].descriptorSet = descriptorSet;
+        writeInfos[i + 1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        writeInfos[i + 1].descriptorCount = 1;
 
-    writeInfos[1].arrayElement = 0;
-    writeInfos[1].imageViewInfos = nullptr;
-    writeInfos[1].tlasInfos =  nullptr;
-    writeInfos[1].bufferInfos = nullptr;
+        writeInfos[i + 1].arrayElement = arrElements[i];
+        writeInfos[i + 1].bufferInfos = nullptr;
+        writeInfos[i + 1].samplerInfos = nullptr;
+        writeInfos[i + 1].tlasInfos =  nullptr;
+    }
 
-    result = palUpdateDescriptorSet(device, 2, writeInfos);
+    result = palUpdateDescriptorSet(device, 5, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to update descriptor set: %s", error);
         return false;
     }
 
+
+    // push constants
+    // size must be less than the max size from the adapter capabilities struct
+    PalPushConstantRange pushConstantRange = {0};
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(PushConstant); // must match shader
+    pushConstantRange.shaderStageCount = 1;
+    pushConstantRange.shaderStages = shaderStages;
+
     // create pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     pipelineLayoutCreateInfo.descriptorSetLayoutCount = 1;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.descriptorSetLayouts = &descriptorSetLayout;
+    pipelineLayoutCreateInfo.pushConstantRanges = &pushConstantRange;
 
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
@@ -1119,6 +1158,12 @@ bool descriptorIndexingTest()
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;
     scissor.width = WINDOW_WIDTH;
+
+    PushConstant pushConstant = {0};
+    pushConstant.textureIndices[0] = ARRAY_ELEMENT_0;
+    pushConstant.textureIndices[1] = ARRAY_ELEMENT_1;
+    pushConstant.textureIndices[2] = ARRAY_ELEMENT_2;
+    pushConstant.textureIndices[3] = ARRAY_ELEMENT_3;
 
     while (running) {
         // update the video system to push video events
@@ -1263,6 +1308,20 @@ bool descriptorIndexingTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
+            return false;
+        }
+
+        result = palCmdPushConstants(
+            cmdBuffers[currentFrame],
+            1,
+            shaderStages,
+            0,
+            sizeof(PushConstant),
+            &pushConstant);
+
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to push constants: %s", error);
             return false;
         }
 

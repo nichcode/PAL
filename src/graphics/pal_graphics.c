@@ -367,6 +367,7 @@ bool PAL_CALL isFenceSignaledVk(PalFence* fence);
 
 PalResult PAL_CALL createSemaphoreVk(
     PalDevice* device,
+    bool enableTimeline,
     PalSemaphore** outSemaphore);
 
 void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore);
@@ -1245,6 +1246,7 @@ bool PAL_CALL isFenceSignaledD3D12(PalFence* fence);
 
 PalResult PAL_CALL createSemaphoreD3D12(
     PalDevice* device,
+    bool enableTimeline,
     PalSemaphore** outSemaphore);
 
 void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore);
@@ -3023,6 +3025,7 @@ bool PAL_CALL palIsFenceSignaled(PalFence* fence)
 
 PalResult PAL_CALL palCreateSemaphore(
     PalDevice* device,
+    bool enableTimeline,
     PalSemaphore** outSemaphore)
 {
     if (!s_Graphics.initialized) {
@@ -3035,7 +3038,7 @@ PalResult PAL_CALL palCreateSemaphore(
 
     PalSemaphore* semaphore = nullptr;
     PalResult result;
-    result = device->backend->createSemaphore(device, &semaphore);
+    result = device->backend->createSemaphore(device, enableTimeline, &semaphore);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }

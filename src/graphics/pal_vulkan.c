@@ -6320,11 +6320,13 @@ bool PAL_CALL isFenceSignaledVk(PalFence* fence)
 
 PalResult PAL_CALL createSemaphoreVk(
     PalDevice* device,
+    bool enableTimeline,
     PalSemaphore** outSemaphore)
 {
     VkResult result;
     Semaphore* semaphore = nullptr;
     Device* vkDevice = (Device*)device;
+    bool hasTimeline = vkDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
 
     semaphore = palAllocate(s_Vk.allocator, sizeof(Semaphore), 0);
     if (!semaphore) {
@@ -6340,9 +6342,13 @@ PalResult PAL_CALL createSemaphoreVk(
 
     const void* next = nullptr;
     semaphore->isTimeline = false;
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+    if (enableTimeline && !hasTimeline) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (enableTimeline) {
         next = &timelineCreateInfo;
-        semaphore->isTimeline = true;
+        semaphore->isTimeline = true;   
     }
 
     createInfo.pNext = next;
@@ -6378,7 +6384,7 @@ PalResult PAL_CALL waitSemaphoreVk(
     VkResult result;
     Uint64 timeInNanoseconds = 0;
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
-    if (!(vkSemaphore->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE)) {
+    if (!vkSemaphore->isTimeline) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -6415,7 +6421,7 @@ PalResult PAL_CALL signalSemaphoreVk(
 {
     VkResult result;
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
-    if (!(vkSemaphore->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE)) {
+    if (!vkSemaphore->isTimeline) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -6437,7 +6443,7 @@ PalResult PAL_CALL getSemaphoreValueVk(
     Uint64* outValue)
 {
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
-    if (!(vkSemaphore->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE)) {
+    if (!vkSemaphore->isTimeline) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
@@ -8442,14 +8448,27 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     VkResult result;
     Device* vkDevice = (Device*)device;
     VkDescriptorSetLayoutBinding* bindings = nullptr;
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlags = {0};
+    VkDescriptorBindingFlags* bindingFlags = nullptr;
     DescriptorSetLayout* layout = nullptr;
     Uint32 count = info->bindingCount;
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo = {0};
+
+    bool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+    if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    }
 
     layout = palAllocate(s_Vk.allocator, sizeof(DescriptorSetLayout), 0);
     bindings = palAllocate(s_Vk.allocator, sizeof(VkDescriptorSetLayoutBinding) * count, 0);
     if (!layout || !bindings) {
         return PAL_RESULT_OUT_OF_MEMORY;
+    }
+
+    if (info->enableDescriptorIndexing) {
+        bindingFlags = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBindingFlags) * count, 0);
+        if (!bindingFlags) {
+            return PAL_RESULT_OUT_OF_MEMORY;
+        }
     }
 
     VkDescriptorSetLayoutCreateInfo createInfo = {0};
@@ -8470,16 +8489,22 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
             VkShaderStageFlagBits bit = shaderStageToVK(info->bindings[i].shaderStages[j]);
             binding->stageFlags |= bit;
         }
+
+        if (bindingFlags) {
+            bindingFlags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
+            bindingFlags[i] |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+            bindingFlags[i] |= VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
+        }
     }
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        bindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-        bindingFlags.bindingCount = count;
+    if (info->enableDescriptorIndexing) {
+        bindingFlagsCreateInfo.sType = 
+            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 
-        VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
-        flags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-        bindingFlags.pBindingFlags = &flags;
-        createInfo.pNext = &bindingFlags;
+        bindingFlagsCreateInfo.bindingCount = count;
+        bindingFlagsCreateInfo.pBindingFlags = bindingFlags;
+        createInfo.pNext = &bindingFlagsCreateInfo;
+        createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
     }
 
     result = s_Vk.createDescriptorSetLayout(
@@ -8521,6 +8546,16 @@ PalResult PAL_CALL createDescriptorPoolVk(
     DescriptorPool* pool = nullptr;
     VkDescriptorPoolSize* poolSizes = nullptr;
     Uint32 maxBindings = info->maxDescriptorBindingSizes;
+    VkDescriptorPoolCreateInfo createInfo = {0};
+
+    bool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+    if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
+        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+    } 
+
+    if (info->enableDescriptorIndexing) {
+        createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    }
 
     pool = palAllocate(s_Vk.allocator, sizeof(DescriptorPool), 0);
     poolSizes = palAllocate(s_Vk.allocator, sizeof(VkDescriptorPoolSize) * maxBindings, 0);
@@ -8534,15 +8569,10 @@ PalResult PAL_CALL createDescriptorPoolVk(
         poolSize->type = descriptortypeToVk(info->bindingSizes[i].descriptorType);
     }
 
-    VkDescriptorPoolCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     createInfo.maxSets = info->maxDescriptorSets;
     createInfo.poolSizeCount = maxBindings;
     createInfo.pPoolSizes = poolSizes;
-
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-    }
 
     result = s_Vk.createDescriptorPool(
         vkDevice->handle,
