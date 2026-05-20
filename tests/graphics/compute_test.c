@@ -471,9 +471,9 @@ bool computeTest()
     buildData.workGroupSize[2] = 1; // must match shader (local_size on glsl)
 
     // device limits
-    buildData.workGroupCount[0] = caps.maxComputeWorkGroupCount[0];
-    buildData.workGroupCount[1] = caps.maxComputeWorkGroupCount[1];
-    buildData.workGroupCount[2] = caps.maxComputeWorkGroupCount[2];
+    buildData.workGroupCount[0] = caps.computeCaps.maxWorkGroupCount[0];
+    buildData.workGroupCount[1] = caps.computeCaps.maxWorkGroupCount[1];
+    buildData.workGroupCount[2] = caps.computeCaps.maxWorkGroupCount[2];
 
     Uint32 workGroupInfoCount = 0;
     PalWorkGroupInfo* workGroupInfos = nullptr;

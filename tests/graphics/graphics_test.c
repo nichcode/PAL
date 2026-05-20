@@ -156,76 +156,92 @@ bool graphicsTest()
 
         palLog(nullptr, "");
         palLog(nullptr, " Capabilities:");
-        if (caps.sampledImageDynamicArrayIndexing) {
-            palLog(nullptr, "  Sampled image dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "  Sampled image dynamic array indexing: False");
-        }
-
-        if (caps.storageImageDynamicArrayIndexing) {
-            palLog(nullptr, "  Storage image dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "  Storage image dynamic array indexing: False");
-        }
-
-        if (caps.storageBufferDynamicArrayIndexing) {
-            palLog(nullptr, "  Storage buffer dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "  Storage buffer dynamic array indexing: False");
-        }
-
-        if (caps.uniformBufferDynamicArrayIndexing) {
-            palLog(nullptr, "  Uniform buffer dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "  Uniform buffer dynamic array indexing: False");
-        }
-
         palLog(nullptr, "  Max compute queue: %u", caps.maxComputeQueues);
         palLog(nullptr, "  Max graphics queue: %u", caps.maxGraphicsQueues);
         palLog(nullptr, "  Max copy queue: %u", caps.maxCopyQueues);
-
-        palLog(nullptr, "  Max image width: %u", caps.maxImageWidth);
-        palLog(nullptr, "  Max image height: %u", caps.maxImageHeight);
-        palLog(nullptr, "  Max image depth: %u", caps.maxImageDepth);
-        palLog(nullptr, "  Max image array layers: %u", caps.maxImageArrayLayers);
-        palLog(nullptr, "  Max image mip levels: %u", caps.maxImageMipLevels);
-
         palLog(nullptr, "  Max color attachments: %u", caps.maxColorAttachments);
         palLog(nullptr, "  Max uniform buffer size: %u Bytes", caps.maxUniformBufferSize);
+
         palLog(nullptr, "  Max storage buffer size: %u Bytes", caps.maxStorageBufferSize);
         palLog(nullptr, "  Max push constant size: %u Bytes", caps.maxPushConstantSize);
-
         palLog(nullptr, "  Max vertex layouts: %u", caps.maxVertexLayouts);
         palLog(nullptr, "  Max vertex attributes: %u", caps.maxVertexAttributes);
         palLog(nullptr, "  Max tessellation patch point: %u", caps.maxTessellationPatchPoint);
 
-        // clang-format off
-        palLog(nullptr, "  Max per stage descriptor sampled images: %u", caps.maxPerStageDescriptorSampledImages);
-        palLog(nullptr, "  Max descriptor set sampled images: %u", caps.maxDescriptorSetSampledImages);
-        palLog(nullptr, "  Max per stage descriptor storage images: %u", caps.maxPerStageDescriptorStorageImages);
-        palLog(nullptr, "  Max descriptor set storage images: %u", caps.maxDescriptorSetStorageImages);
-        
-        palLog(nullptr, "  Max per stage descriptor samplers: %u", caps.maxPerStageDescriptorSamplers);
-        palLog(nullptr, "  Max descriptor set samplers: %u", caps.maxDescriptorSetSamplers);
-        palLog(nullptr, "  Max per stage descriptor storage buffers: %u", caps.maxPerStageDescriptorStorageBuffers);
-        palLog(nullptr, "  Max descriptor set storage buffers: %u", caps.maxDescriptorSetStorageBuffers);
+        palLog(nullptr, "");
+        palLog(nullptr, "  Viewport Capabilities:");
+        palLog(nullptr, "   Max width: %u", caps.viewportCaps.maxWidth);
+        palLog(nullptr, "   Max height: %u", caps.viewportCaps.maxHeight);
+        palLog(nullptr, "   Min bounds range: %.1f", caps.viewportCaps.minBoundsRange);
+        palLog(nullptr, "   Max bounds range: %.1f", caps.viewportCaps.maxBoundsRange);
 
-        palLog(nullptr, "  Max per stage descriptor uniform buffers: %u", caps.maxPerStageDescriptorUniformBuffers);
-        palLog(nullptr, "  Max descriptor set uniform buffers: %u", caps.maxDescriptorSetUniformBuffers);
-        palLog(nullptr, "  Max bound descriptor sets: %u", caps.maxBoundDescriptorSets);
+        palLog(nullptr, "");
+        palLog(nullptr, "  Image Capabilities:");
+        palLog(nullptr, "   Max width: %u", caps.imageCaps.maxWidth);
+        palLog(nullptr, "   Max height: %u", caps.imageCaps.maxHeight);
+        palLog(nullptr, "   Max depth: %u", caps.imageCaps.maxDepth);
+        palLog(nullptr, "   Max array layers: %u", caps.imageCaps.maxArrayLayers);
+        palLog(nullptr, "   Max mip levels: %u", caps.imageCaps.maxMipLevels);
+
+        palLog(nullptr, "");
+        palLog(nullptr, "  Resource Capabilities:");
+        PalResourceCapabilities* resourceCaps = &caps.resourceCaps;
+
+        if (resourceCaps->sampledImageDynamicArrayIndexing) {
+            palLog(nullptr, "   Sampled image dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "   Sampled image dynamic array indexing: False");
+        }
+
+        if (resourceCaps->storageImageDynamicArrayIndexing) {
+            palLog(nullptr, "   Storage image dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "   Storage image dynamic array indexing: False");
+        }
+
+        if (resourceCaps->storageBufferDynamicArrayIndexing) {
+            palLog(nullptr, "   Storage buffer dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "   Storage buffer dynamic array indexing: False");
+        }
+
+        if (resourceCaps->uniformBufferDynamicArrayIndexing) {
+            palLog(nullptr, "   Uniform buffer dynamic array indexing: True");
+
+        } else {
+            palLog(nullptr, "   Uniform buffer dynamic array indexing: False");
+        }
+
+        // clang-format off
+        palLog(nullptr, "   Max per stage sampled images: %u", resourceCaps->maxPerStageSampledImages);
+        palLog(nullptr, "   Max per set sampled images: %u", resourceCaps->maxPerSetSampledImages);
+        palLog(nullptr, "   Max per stage storage images: %u", resourceCaps->maxPerStageStorageImages);
+        palLog(nullptr, "   Max per set storage images: %u", resourceCaps->maxPerSetStorageImages);
+        
+        palLog(nullptr, "   Max per stage samplers: %u", resourceCaps->maxPerStageSamplers);
+        palLog(nullptr, "   Max per set samplers: %u", resourceCaps->maxPerSetSamplers);
+        palLog(nullptr, "   Max per stage storage buffers: %u", resourceCaps->maxPerStageStorageBuffers);
+        palLog(nullptr, "   Max per set storage buffers: %u", resourceCaps->maxPerSetStorageBuffers);
+
+        palLog(nullptr, "   Max per stage uniform buffers: %u", resourceCaps->maxPerStageUniformBuffers);
+        palLog(nullptr, "   Max per set uniform buffers: %u", resourceCaps->maxPerSetUniformBuffers);
+        palLog(nullptr, "   Max per stage acceleration structures: %u", resourceCaps->maxPerStageAccelerationStructure);
+        palLog(nullptr, "   Max per set acceleration structures: %u", resourceCaps->maxPerSetAccelerationStructure);
+        palLog(nullptr, "   Max bound sets: %u", resourceCaps->maxBoundSets);
         // clang-format on
 
-        palLog(nullptr, "  Max compute invocations: %u", caps.maxComputeWorkGroupInvocations);
-        palLog(nullptr, "  Max compute work group count[0]: %u", caps.maxComputeWorkGroupCount[0]);
-        palLog(nullptr, "  Max compute work group count[1]: %u", caps.maxComputeWorkGroupCount[1]);
-        palLog(nullptr, "  Max compute work group count[2]: %u", caps.maxComputeWorkGroupCount[2]);
-        palLog(nullptr, "  Max compute work group size[0]: %u", caps.maxComputeWorkGroupSize[0]);
-        palLog(nullptr, "  Max compute work group size[1]: %u", caps.maxComputeWorkGroupSize[1]);
-        palLog(nullptr, "  Max compute work group size[2]: %u", caps.maxComputeWorkGroupSize[2]);
+        palLog(nullptr, "");
+        palLog(nullptr, "  Compute Capabilities:");
+        palLog(nullptr, "   Max invocations: %u", caps.computeCaps.maxWorkGroupInvocations);
+        palLog(nullptr, "   Max work group count[0]: %u", caps.computeCaps.maxWorkGroupCount[0]);
+        palLog(nullptr, "   Max work group count[1]: %u", caps.computeCaps.maxWorkGroupCount[1]);
+        palLog(nullptr, "   Max work group count[2]: %u", caps.computeCaps.maxWorkGroupCount[2]);
+        palLog(nullptr, "   Max work group size[0]: %u", caps.computeCaps.maxWorkGroupSize[0]);
+        palLog(nullptr, "   Max work group size[1]: %u", caps.computeCaps.maxWorkGroupSize[1]);
+        palLog(nullptr, "   Max work group size[2]: %u", caps.computeCaps.maxWorkGroupSize[2]);
 
         // shader formats
         Uint32 target;
@@ -298,7 +314,7 @@ bool graphicsTest()
                 return false;
             }
 
-            palLog(nullptr, "   Max viewports: %u", tmp.maxViewports);
+            palLog(nullptr, "   Max count: %u", tmp.maxCount);
 
             palLog(nullptr, "");
         }
@@ -349,8 +365,6 @@ bool graphicsTest()
             palLog(nullptr, "   Max geometry count: %u", tmp.maxGeometryCount);
             palLog(nullptr, "   Max payload size: %u Bytes", tmp.maxPayloadSize);
             palLog(nullptr, "   Max dispatch invocations: %u", tmp.maxDispatchInvocations);
-            palLog(nullptr, "   Max descriptor set acceleration structures: %u", tmp.maxDescriptorSetAccelerationStructures);
-            palLog(nullptr, "   Max descriptor set bindless acceleration structure: %u", tmp.maxDescriptorSetBindlessAccelerationStructures);
 
             palLog(nullptr, "");
         }
@@ -366,14 +380,14 @@ bool graphicsTest()
                 return false;
             }
 
-            palLog(nullptr, "   Max mesh output primitives: %u", tmp.maxMeshOutputPrimitives);
-            palLog(nullptr, "   Max mesh output vertices: %u", tmp.maxMeshOutputVertices);
-            palLog(nullptr, "   Max mesh invocations: %u", tmp.maxMeshWorkGroupInvocations);
+            palLog(nullptr, "   Max output primitives: %u", tmp.maxOutputPrimitives);
+            palLog(nullptr, "   Max output vertices: %u", tmp.maxOutputVertices);
+            palLog(nullptr, "   Max invocations: %u", tmp.maxWorkGroupInvocations);
             palLog(nullptr, "   Max task invocations: %u", tmp.maxTaskWorkGroupInvocations);
 
-            palLog(nullptr, "   Max mesh work group count[0]: %u", tmp.maxMeshWorkGroupCount[0]);
-            palLog(nullptr, "   Max mesh work group count[1]: %u", tmp.maxMeshWorkGroupCount[1]);
-            palLog(nullptr, "   Max mesh work group count[2]: %u", tmp.maxMeshWorkGroupCount[2]);
+            palLog(nullptr, "   Max work group count[0]: %u", tmp.maxWorkGroupCount[0]);
+            palLog(nullptr, "   Max work group count[1]: %u", tmp.maxWorkGroupCount[1]);
+            palLog(nullptr, "   Max work group count[2]: %u", tmp.maxWorkGroupCount[2]);
             palLog(nullptr, "   Max task work group count[0]: %u", tmp.maxTaskWorkGroupCount[0]);
             palLog(nullptr, "   Max task work group count[1]: %u", tmp.maxTaskWorkGroupCount[1]);
             palLog(nullptr, "   Max task work group count[2]: %u", tmp.maxTaskWorkGroupCount[2]);
@@ -462,27 +476,6 @@ bool graphicsTest()
                 return false;
             }
 
-            if (tmp.runtimeDescriptorArray) {
-                palLog(nullptr, "   Runtime descriptor arrays: True");
-
-            } else {
-                palLog(nullptr, "   Runtime descriptor arrays: False");
-            }
-
-            if (tmp.variableDescriptorCount) {
-                palLog(nullptr, "   Variable descriptor count: True");
-
-            } else {
-                palLog(nullptr, "   Variable descriptor count: False");
-            }
-
-            if (tmp.partiallyBoundDescriptors) {
-                palLog(nullptr, "   Partially bound descriptors: True");
-
-            } else {
-                palLog(nullptr, "   Partially bound descriptors: False");
-            }
-
             if (tmp.sampledImageNonUniformIndexing) {
                 palLog(nullptr, "   Sampled image non uniform indexing: True");
 
@@ -540,18 +533,20 @@ bool graphicsTest()
             }
 
             // clang-format off
-            palLog(nullptr, "   Max per stage bindless descriptor sampled images: %u", tmp.maxPerStageBindlessDescriptorSampledImages);
-            palLog(nullptr, "   Max descriptor set bindless sampled images: %u", tmp.maxDescriptorSetBindlessSampledImages);
-            palLog(nullptr, "   Max per stage binding descriptor storage images: %u", tmp.maxPerStageBindlessDescriptorStorageImages);
-            palLog(nullptr, "   Max descriptor set bindless storage images: %u", tmp.maxDescriptorSetBindlessStorageImages);
+            palLog(nullptr, "   Max per stage sampled images: %u", tmp.maxPerStageSampledImages);
+            palLog(nullptr, "   Max per set sampled images: %u", tmp.maxPerSetSampledImages);
+            palLog(nullptr, "   Max per stage storage images: %u", tmp.maxPerStageStorageImages);
+            palLog(nullptr, "   Max per set storage images: %u", tmp.maxPerSetStorageImages);
             
-            palLog(nullptr, "   Max per stage binding descriptor samplers: %u", tmp.maxPerStageBindlessDescriptorSamplers);
-            palLog(nullptr, "   Max descriptor set bindless samplers: %u", tmp.maxDescriptorSetBindlessSamplers);
-            palLog(nullptr, "   Max per stage binding descriptor storage buffers: %u", tmp.maxPerStageBindlessDescriptorStorageBuffers);
-            palLog(nullptr, "   Max descriptor set bindless storage buffers: %u", tmp.maxDescriptorSetBindlessStorageBuffers);
+            palLog(nullptr, "   Max per stage samplers: %u", tmp.maxPerStageSamplers);
+            palLog(nullptr, "   Max per set samplers: %u", tmp.maxPerSetSamplers);
+            palLog(nullptr, "   Max per stage storage buffers: %u", tmp.maxPerStageStorageBuffers);
+            palLog(nullptr, "   Max per set storage buffers: %u", tmp.maxPerSetStorageBuffers);
 
-            palLog(nullptr, "   Max per stage binding descriptor uniform buffers: %u", tmp.maxPerStageBindlessDescriptorUniformBuffers);
-            palLog(nullptr, "   Max descriptor set bindless uniform buffers: %u", tmp.maxDescriptorSetBindlessUniformBuffers);
+            palLog(nullptr, "   Max per stage uniform buffers: %u", tmp.maxPerStageUniformBuffers);
+            palLog(nullptr, "   Max per set uniform buffers: %u", tmp.maxPerSetUniformBuffers);
+            palLog(nullptr, "   Max per stage acceleration structures: %u", tmp.maxPerStageAccelerationStructure);
+            palLog(nullptr, "   Max per set acceleration structures: %u", tmp.maxPerSetAccelerationStructure);
             // clang-format on
 
             palLog(nullptr, "");
@@ -572,7 +567,7 @@ bool graphicsTest()
                 return false;
             }
 
-            palLog(nullptr, "   Max multi views: %u", tmp.maxMultiViews);
+            palLog(nullptr, "   Max view count: %u", tmp.maxViewCount);
             palLog(nullptr, "");
         }
 
@@ -623,43 +618,43 @@ bool graphicsTest()
                 return false;
             }
 
-            if (tmp.independentDepthStencilResolve) {
-                palLog(nullptr, "   Independent depth stencil resource: True");
+            if (tmp.independentResolve) {
+                palLog(nullptr, "   Independent resource: True");
             } else {
-                palLog(nullptr, "   Independent depth stencil resource: False");
+                palLog(nullptr, "   Independent resource: False");
             }
 
-            palLog(nullptr, "   Supported Depth Resolve Modes:");
-            if (tmp.depthResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO]) {
+            palLog(nullptr, "   Supported Depth Resolves:");
+            if (tmp.depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO]) {
                 palLog(nullptr, "    Zero");
             }
 
-            if (tmp.depthResolveModes[PAL_RESOLVE_MODE_AVERAGE]) {
+            if (tmp.depthResolves[PAL_RESOLVE_MODE_AVERAGE]) {
                 palLog(nullptr, "    Average");
             }
 
-            if (tmp.depthResolveModes[PAL_RESOLVE_MODE_MIN]) {
+            if (tmp.depthResolves[PAL_RESOLVE_MODE_MIN]) {
                 palLog(nullptr, "    Min");
             }
 
-            if (tmp.depthResolveModes[PAL_RESOLVE_MODE_MAX]) {
+            if (tmp.depthResolves[PAL_RESOLVE_MODE_MAX]) {
                 palLog(nullptr, "    Max");
             }
 
-            palLog(nullptr, "   Supported Stencil Resolve Modes:");
-            if (tmp.stencilResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO]) {
+            palLog(nullptr, "   Supported Stencil Resolves:");
+            if (tmp.stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO]) {
                 palLog(nullptr, "    Zero");
             }
 
-            if (tmp.stencilResolveModes[PAL_RESOLVE_MODE_AVERAGE]) {
+            if (tmp.stencilResolves[PAL_RESOLVE_MODE_AVERAGE]) {
                 palLog(nullptr, "    Average");
             }
 
-            if (tmp.stencilResolveModes[PAL_RESOLVE_MODE_MIN]) {
+            if (tmp.stencilResolves[PAL_RESOLVE_MODE_MIN]) {
                 palLog(nullptr, "    Min");
             }
 
-            if (tmp.stencilResolveModes[PAL_RESOLVE_MODE_MAX]) {
+            if (tmp.stencilResolves[PAL_RESOLVE_MODE_MAX]) {
                 palLog(nullptr, "    Max");
             }
 

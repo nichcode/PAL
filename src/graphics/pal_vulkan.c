@@ -3472,33 +3472,21 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
     VkPhysicalDeviceLimits* limits = &props.limits;
 
-    VkPhysicalDeviceFeatures features = {0};
-    s_Vk.getPhysicalDeviceFeatures(phyDevice, &features);
+    VkPhysicalDeviceFeatures fts = {0};
+    s_Vk.getPhysicalDeviceFeatures(phyDevice, &fts);
 
-    caps->maxColorAttachments = limits->maxColorAttachments;
-    caps->maxImageWidth = limits->maxImageDimension2D;
-    caps->maxImageHeight = limits->maxImageDimension2D;
-    caps->maxImageDepth = limits->maxImageDimension3D;
-    caps->maxImageArrayLayers = limits->maxImageArrayLayers;
+    VkPhysicalDeviceProperties2 properties2 = {0};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 
-    caps->maxUniformBufferSize = limits->maxUniformBufferRange;
-    caps->maxStorageBufferSize = limits->maxStorageBufferRange;
-    caps->maxPushConstantSize = limits->maxPushConstantsSize;
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR accProps = {0};
+    accProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+    properties2.pNext = &accProps;
+    s_Vk.getPhysicalDeviceProperties2(phyDevice, &properties2);
 
-    // vulkan does not give this but we calculate from the max width and width
-    Uint32 a = caps->maxImageWidth;
-    Uint32 b = caps->maxImageHeight;
-    Uint32 c = caps->maxImageDepth;
-
-    Uint32 tmp = a > b ? a : b;
-    Uint32 size = tmp > c ? tmp : c;
-    Uint32 levels = 0;
-    while (size > 0) {
-        // divide by two
-        size = size / 2;
-        levels++;
-    }
-    caps->maxImageMipLevels = levels;
+    PalViewportCapabilities* viewportCaps = &caps->viewportCaps;
+    PalImageCapabilities* imageCaps = &caps->imageCaps;
+    PalResourceCapabilities* resourceCaps = &caps->resourceCaps;
+    PalComputeCapabilities* computeCaps = &caps->computeCaps;
 
     // get supported queue commands
     Uint32 count = 0;
@@ -3526,36 +3514,74 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
         }
     }
 
+    caps->maxColorAttachments = limits->maxColorAttachments;
+    caps->maxUniformBufferSize = limits->maxUniformBufferRange;
+    caps->maxStorageBufferSize = limits->maxStorageBufferRange;
+    caps->maxPushConstantSize = limits->maxPushConstantsSize;
+
     caps->maxVertexLayouts = limits->maxVertexInputBindings;
     caps->maxVertexAttributes = limits->maxVertexInputAttributes;
     caps->maxTessellationPatchPoint = limits->maxTessellationPatchSize;
 
-    caps->maxPerStageDescriptorSampledImages = limits->maxPerStageDescriptorSampledImages;
-    caps->maxDescriptorSetSampledImages = limits->maxDescriptorSetSampledImages;
-    caps->maxPerStageDescriptorStorageImages = limits->maxPerStageDescriptorStorageImages;
-    caps->maxDescriptorSetStorageImages = limits->maxDescriptorSetStorageImages;
+    // viewport limits
+    viewportCaps->maxWidth = limits->maxViewportDimensions[0];
+    viewportCaps->maxHeight = limits->maxViewportDimensions[1];
+    viewportCaps->minBoundsRange = limits->viewportBoundsRange[0];
+    viewportCaps->maxBoundsRange = limits->viewportBoundsRange[1];
 
-    caps->maxPerStageDescriptorSamplers = limits->maxPerStageDescriptorSamplers;
-    caps->maxDescriptorSetSamplers = limits->maxDescriptorSetSamplers;
-    caps->maxPerStageDescriptorStorageBuffers = limits->maxPerStageDescriptorStorageBuffers;
-    caps->maxDescriptorSetStorageBuffers = limits->maxDescriptorSetStorageBuffers;
+    // image limits
+    imageCaps->maxWidth = limits->maxImageDimension2D;
+    imageCaps->maxHeight = limits->maxImageDimension2D;
+    imageCaps->maxDepth = limits->maxImageDimension3D;
+    imageCaps->maxArrayLayers = limits->maxImageArrayLayers;
 
-    caps->maxPerStageDescriptorUniformBuffers = limits->maxPerStageDescriptorUniformBuffers;
-    caps->maxDescriptorSetUniformBuffers = limits->maxDescriptorSetUniformBuffers;
-    caps->maxBoundDescriptorSets = limits->maxBoundDescriptorSets;
+    // vulkan does not give this but we calculate from the max width and width
+    Uint32 a = imageCaps->maxWidth;
+    Uint32 b = imageCaps->maxHeight;
+    Uint32 c = imageCaps->maxDepth;
 
-    caps->maxComputeWorkGroupInvocations = limits->maxComputeWorkGroupInvocations;
-    caps->maxComputeWorkGroupCount[0] = limits->maxComputeWorkGroupCount[0];
-    caps->maxComputeWorkGroupCount[1] = limits->maxComputeWorkGroupCount[1];
-    caps->maxComputeWorkGroupCount[2] = limits->maxComputeWorkGroupCount[2];
-    caps->maxComputeWorkGroupSize[0] = limits->maxComputeWorkGroupSize[0];
-    caps->maxComputeWorkGroupSize[1] = limits->maxComputeWorkGroupSize[1];
-    caps->maxComputeWorkGroupSize[2] = limits->maxComputeWorkGroupSize[2];
+    Uint32 tmp = a > b ? a : b;
+    Uint32 size = tmp > c ? tmp : c;
+    Uint32 levels = 0;
+    while (size > 0) {
+        // divide by two
+        size = size / 2;
+        levels++;
+    }
+    imageCaps->maxMipLevels = levels;
 
-    caps->sampledImageDynamicArrayIndexing = features.shaderSampledImageArrayDynamicIndexing;
-    caps->storageImageDynamicArrayIndexing = features.shaderStorageImageArrayDynamicIndexing;
-    caps->storageBufferDynamicArrayIndexing = features.shaderStorageBufferArrayDynamicIndexing;
-    caps->uniformBufferDynamicArrayIndexing = features.shaderUniformBufferArrayDynamicIndexing;
+    // resource limits
+    resourceCaps->sampledImageDynamicArrayIndexing = fts.shaderSampledImageArrayDynamicIndexing;
+    resourceCaps->storageImageDynamicArrayIndexing = fts.shaderStorageImageArrayDynamicIndexing;
+    resourceCaps->storageBufferDynamicArrayIndexing = fts.shaderStorageBufferArrayDynamicIndexing;
+    resourceCaps->uniformBufferDynamicArrayIndexing = fts.shaderUniformBufferArrayDynamicIndexing;
+
+    resourceCaps->maxPerStageSampledImages = limits->maxPerStageDescriptorSampledImages;
+    resourceCaps->maxPerSetSampledImages = limits->maxDescriptorSetSampledImages;
+    resourceCaps->maxPerStageStorageImages = limits->maxPerStageDescriptorStorageImages;
+    resourceCaps->maxPerSetStorageImages = limits->maxDescriptorSetStorageImages;
+
+    resourceCaps->maxPerStageSamplers = limits->maxPerStageDescriptorSamplers;
+    resourceCaps->maxPerSetSamplers = limits->maxDescriptorSetSamplers;
+    resourceCaps->maxPerStageStorageBuffers = limits->maxPerStageDescriptorStorageBuffers;
+    resourceCaps->maxPerSetStorageBuffers = limits->maxDescriptorSetStorageBuffers;
+
+    resourceCaps->maxPerStageUniformBuffers = limits->maxPerStageDescriptorUniformBuffers;
+    resourceCaps->maxPerSetUniformBuffers = limits->maxDescriptorSetUniformBuffers;
+
+    tmp = accProps.maxPerStageDescriptorAccelerationStructures;
+    resourceCaps->maxPerStageAccelerationStructure = tmp;
+    resourceCaps->maxPerSetAccelerationStructure = accProps.maxDescriptorSetAccelerationStructures;
+    resourceCaps->maxBoundSets = limits->maxBoundDescriptorSets;
+
+    // compute limits
+    computeCaps->maxWorkGroupInvocations = limits->maxComputeWorkGroupInvocations;
+    computeCaps->maxWorkGroupCount[0] = limits->maxComputeWorkGroupCount[0];
+    computeCaps->maxWorkGroupCount[1] = limits->maxComputeWorkGroupCount[1];
+    computeCaps->maxWorkGroupCount[2] = limits->maxComputeWorkGroupCount[2];
+    computeCaps->maxWorkGroupSize[0] = limits->maxComputeWorkGroupSize[0];
+    computeCaps->maxWorkGroupSize[1] = limits->maxComputeWorkGroupSize[1];
+    computeCaps->maxWorkGroupSize[2] = limits->maxComputeWorkGroupSize[2];
 
     palFree(s_Vk.allocator, queueProps);
     return PAL_RESULT_SUCCESS;
@@ -3731,10 +3757,10 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         features.pNext = &desc;
 
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-        if (desc.shaderSampledImageArrayNonUniformIndexing || 
-            desc.shaderStorageImageArrayNonUniformIndexing ||
-            desc.shaderStorageBufferArrayNonUniformIndexing ||
-            desc.shaderUniformBufferArrayNonUniformIndexing) {
+        // core features we need
+        if (desc.runtimeDescriptorArray          || 
+            desc.descriptorBindingPartiallyBound || 
+            desc.descriptorBindingUpdateUnusedWhilePending) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
         }
     }
@@ -4197,8 +4223,8 @@ PalResult PAL_CALL createDeviceVk(
 
         // clang-format off
         descIndex.runtimeDescriptorArray = desc.runtimeDescriptorArray;
-        descIndex.descriptorBindingVariableDescriptorCount = desc.descriptorBindingVariableDescriptorCount;
         descIndex.descriptorBindingPartiallyBound = desc.descriptorBindingPartiallyBound;
+        descIndex.descriptorBindingUpdateUnusedWhilePending = desc.descriptorBindingUpdateUnusedWhilePending;
 
         descIndex.shaderSampledImageArrayNonUniformIndexing = desc.shaderSampledImageArrayNonUniformIndexing;
         descIndex.descriptorBindingSampledImageUpdateAfterBind = desc.descriptorBindingSampledImageUpdateAfterBind;
@@ -4792,9 +4818,9 @@ PalResult PAL_CALL queryMultiViewCapabilitiesVk(
     properties2.pNext = &props;
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
 
-    caps->maxMultiViews = props.maxMultiviewViewCount;
-    if (caps->maxMultiViews == 0) {
-        caps->maxMultiViews = 1;
+    caps->maxViewCount = props.maxMultiviewViewCount;
+    if (caps->maxViewCount == 0) {
+        caps->maxViewCount = 1;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -4812,7 +4838,7 @@ PalResult PAL_CALL queryMultiViewportCapabilitiesVk(
     VkPhysicalDeviceProperties props = {0};
     s_Vk.getPhysicalDeviceProperties(vkDevice->phyDevice, &props);
 
-    caps->maxViewports = props.limits.maxViewports;
+    caps->maxCount = props.limits.maxViewports;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -4834,38 +4860,38 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
     properties2.pNext = &props;
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
 
-    caps->independentDepthStencilResolve = props.independentResolve;
+    caps->independentResolve = props.independentResolve;
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
-        caps->depthResolveModes[PAL_RESOLVE_MODE_AVERAGE] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_AVERAGE] = true;
     }
 
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) {
-        caps->depthResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
     }
 
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT_KHR) {
-        caps->depthResolveModes[PAL_RESOLVE_MODE_MIN] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_MIN] = true;
     }
 
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
-        caps->depthResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_MAX] = true;
     }
 
     // stencil
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
-        caps->stencilResolveModes[PAL_RESOLVE_MODE_AVERAGE] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_AVERAGE] = true;
     }
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) {
-        caps->stencilResolveModes[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
     }
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MIN_BIT_KHR) {
-        caps->stencilResolveModes[PAL_RESOLVE_MODE_MIN] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_MIN] = true;
     }
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
-        caps->stencilResolveModes[PAL_RESOLVE_MODE_MAX] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_MAX] = true;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -4936,18 +4962,18 @@ PalResult PAL_CALL queryMeshShaderCapabilitiesVk(
     properties2.pNext = &props;
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
 
-    caps->maxMeshOutputPrimitives = props.maxMeshOutputPrimitives;
-    caps->maxMeshOutputVertices = props.maxMeshOutputVertices;
+    caps->maxOutputPrimitives = props.maxMeshOutputPrimitives;
+    caps->maxOutputVertices = props.maxMeshOutputVertices;
     caps->maxTaskWorkGroupInvocations = props.maxTaskWorkGroupInvocations;
-    caps->maxMeshWorkGroupInvocations = props.maxMeshWorkGroupInvocations;
+    caps->maxWorkGroupInvocations = props.maxMeshWorkGroupInvocations;
 
     caps->maxTaskWorkGroupCount[0] = props.maxTaskWorkGroupCount[0];
     caps->maxTaskWorkGroupCount[1] = props.maxTaskWorkGroupCount[1];
     caps->maxTaskWorkGroupCount[2] = props.maxTaskWorkGroupCount[2];
 
-    caps->maxMeshWorkGroupCount[0] = props.maxMeshWorkGroupCount[0];
-    caps->maxMeshWorkGroupCount[1] = props.maxMeshWorkGroupCount[1];
-    caps->maxMeshWorkGroupCount[2] = props.maxMeshWorkGroupCount[2];
+    caps->maxWorkGroupCount[0] = props.maxMeshWorkGroupCount[0];
+    caps->maxWorkGroupCount[1] = props.maxMeshWorkGroupCount[1];
+    caps->maxWorkGroupCount[2] = props.maxMeshWorkGroupCount[2];
 
     return PAL_RESULT_SUCCESS;
 }
@@ -4983,10 +5009,6 @@ PalResult PAL_CALL queryRayTracingCapabilitiesVk(
     caps->maxPayloadSize = 64; // safe
     caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
 
-    caps->maxDescriptorSetAccelerationStructures = accProps.maxDescriptorSetAccelerationStructures;
-    caps->maxDescriptorSetBindlessAccelerationStructures = 
-      accProps.maxDescriptorSetUpdateAfterBindAccelerationStructures;
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -5010,15 +5032,15 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
 
     VkPhysicalDeviceFeatures2 features;
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR accProps = {0};
+    accProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
     
     features.pNext = &desc;
+    props.pNext = &accProps;
     properties2.pNext = &props;
     s_Vk.getPhysicalDeviceFeatures2(vkDevice->phyDevice, &features);
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
-
-    caps->runtimeDescriptorArray = desc.runtimeDescriptorArray;
-    caps->variableDescriptorCount = desc.descriptorBindingVariableDescriptorCount;
-    caps->partiallyBoundDescriptors = desc.descriptorBindingPartiallyBound;
 
     // check sub feature for sampled image
     if (desc.shaderSampledImageArrayNonUniformIndexing) {
@@ -5056,20 +5078,23 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
         caps->uniformBufferUpdateAfterBind = true;
     }
 
-    // clang-format off
-    caps->maxPerStageBindlessDescriptorSampledImages = props.maxPerStageDescriptorUpdateAfterBindSampledImages;
-    caps->maxDescriptorSetBindlessSampledImages = props.maxDescriptorSetUpdateAfterBindSampledImages;
-    caps->maxPerStageBindlessDescriptorStorageImages = props.maxPerStageDescriptorUpdateAfterBindStorageImages;
-    caps->maxDescriptorSetBindlessStorageImages = props.maxDescriptorSetUpdateAfterBindStorageImages;
+    caps->maxPerStageSampledImages = props.maxPerStageDescriptorUpdateAfterBindSampledImages;
+    caps->maxPerSetSampledImages = props.maxDescriptorSetUpdateAfterBindSampledImages;
+    caps->maxPerStageStorageImages = props.maxPerStageDescriptorUpdateAfterBindStorageImages;
+    caps->maxPerSetStorageImages = props.maxDescriptorSetUpdateAfterBindStorageImages;
 
-    caps->maxPerStageBindlessDescriptorSamplers = props.maxPerStageDescriptorUpdateAfterBindSamplers;
-    caps->maxDescriptorSetBindlessSamplers = props.maxDescriptorSetUpdateAfterBindSamplers;
-    caps->maxPerStageBindlessDescriptorStorageBuffers = props.maxPerStageDescriptorUpdateAfterBindStorageBuffers;
-    caps->maxDescriptorSetBindlessStorageBuffers = props.maxDescriptorSetUpdateAfterBindStorageBuffers;
+    caps->maxPerStageSamplers = props.maxPerStageDescriptorUpdateAfterBindSamplers;
+    caps->maxPerSetSamplers = props.maxDescriptorSetUpdateAfterBindSamplers;
+    caps->maxPerStageStorageBuffers = props.maxPerStageDescriptorUpdateAfterBindStorageBuffers;
+    caps->maxPerSetStorageBuffers = props.maxDescriptorSetUpdateAfterBindStorageBuffers;
 
-    caps->maxPerStageBindlessDescriptorUniformBuffers = props.maxPerStageDescriptorUpdateAfterBindUniformBuffers;
-    caps->maxDescriptorSetBindlessUniformBuffers = props.maxDescriptorSetUpdateAfterBindUniformBuffers;
-    // clang-format on
+    caps->maxPerStageUniformBuffers = props.maxPerStageDescriptorUpdateAfterBindUniformBuffers;
+    caps->maxPerSetUniformBuffers = props.maxDescriptorSetUpdateAfterBindUniformBuffers;
+
+    Uint32 tmp = accProps.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+    Uint32 tmp2 = accProps.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+    caps->maxPerStageAccelerationStructure = tmp;
+    caps->maxPerSetAccelerationStructure = tmp2;
 
     return PAL_RESULT_SUCCESS;
 }
@@ -8452,7 +8477,6 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         bindingFlags.bindingCount = count;
 
         VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
-        flags |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
         flags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
         bindingFlags.pBindingFlags = &flags;
         createInfo.pNext = &bindingFlags;
@@ -8515,7 +8539,10 @@ PalResult PAL_CALL createDescriptorPoolVk(
     createInfo.maxSets = info->maxDescriptorSets;
     createInfo.poolSizeCount = maxBindings;
     createInfo.pPoolSizes = poolSizes;
-    createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    }
 
     result = s_Vk.createDescriptorPool(
         vkDevice->handle,

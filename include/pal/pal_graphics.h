@@ -1445,8 +1445,23 @@ typedef struct {
 } PalAdapterInfo;
 
 /**
- * @struct PalAdapterCapabilities
- * @brief Capabilities of an adapter (GPU).
+ * @struct PalImageCapabilities
+ * @brief Image capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxWidth;
+    Uint32 maxHeight;
+    Uint32 maxDepth;
+    Uint32 maxArrayLayers;
+    Uint32 maxMipLevels;
+} PalImageCapabilities;
+
+/**
+ * @struct PalResourceCapabilities
+ * @brief Resource capabilities of an adapter (GPU).
  *
  * @since 1.4
  * @ingroup pal_graphics
@@ -1456,14 +1471,59 @@ typedef struct {
     bool storageImageDynamicArrayIndexing;
     bool storageBufferDynamicArrayIndexing;
     bool uniformBufferDynamicArrayIndexing;
-    Uint32 maxComputeQueues;  /**< Number of compute queues that can be created.*/
-    Uint32 maxGraphicsQueues; /**< Number of graphics queues that can be created.*/
-    Uint32 maxCopyQueues;     /**< Number of copy queues that can be created.*/
-    Uint32 maxImageWidth;
-    Uint32 maxImageHeight;
-    Uint32 maxImageDepth;
-    Uint32 maxImageArrayLayers;
-    Uint32 maxImageMipLevels;
+    Uint32 maxPerStageSampledImages;
+    Uint32 maxPerSetSampledImages;
+    Uint32 maxPerStageStorageImages;
+    Uint32 maxPerSetStorageImages;
+    Uint32 maxPerStageSamplers;
+    Uint32 maxPerSetSamplers;
+    Uint32 maxPerStageStorageBuffers;
+    Uint32 maxPerSetStorageBuffers;
+    Uint32 maxPerStageUniformBuffers;
+    Uint32 maxPerSetUniformBuffers;
+    Uint32 maxPerStageAccelerationStructure;
+    Uint32 maxPerSetAccelerationStructure;
+    Uint32 maxBoundSets;
+} PalResourceCapabilities;
+
+/**
+ * @struct PalComputeCapabilities
+ * @brief Compute capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxWorkGroupInvocations;
+    Uint32 maxWorkGroupCount[3];
+    Uint32 maxWorkGroupSize[3];
+} PalComputeCapabilities;
+
+/**
+ * @struct PalViewportCapabilities
+ * @brief Viewport capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxWidth;
+    Uint32 maxHeight;
+    float minBoundsRange;
+    float maxBoundsRange;
+} PalViewportCapabilities;
+
+/**
+ * @struct PalAdapterCapabilities
+ * @brief Capabilities of an adapter (GPU).
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 maxComputeQueues;
+    Uint32 maxGraphicsQueues;
+    Uint32 maxCopyQueues;
     Uint32 maxColorAttachments;
     Uint32 maxUniformBufferSize;
     Uint32 maxStorageBufferSize;
@@ -1471,20 +1531,10 @@ typedef struct {
     Uint32 maxVertexLayouts;
     Uint32 maxVertexAttributes;
     Uint32 maxTessellationPatchPoint;
-    Uint32 maxPerStageDescriptorSampledImages;
-    Uint32 maxDescriptorSetSampledImages;
-    Uint32 maxPerStageDescriptorStorageImages;
-    Uint32 maxDescriptorSetStorageImages;
-    Uint32 maxPerStageDescriptorSamplers;
-    Uint32 maxDescriptorSetSamplers;
-    Uint32 maxPerStageDescriptorStorageBuffers;
-    Uint32 maxDescriptorSetStorageBuffers;
-    Uint32 maxPerStageDescriptorUniformBuffers;
-    Uint32 maxDescriptorSetUniformBuffers;
-    Uint32 maxBoundDescriptorSets;
-    Uint32 maxComputeWorkGroupInvocations; /**< Max compute threads per workgroup across all axis.*/
-    Uint32 maxComputeWorkGroupCount[3];    /**< Max compute workgroups per axis.*/
-    Uint32 maxComputeWorkGroupSize[3];     /**< Max compute threads per workgroup per axis.*/
+    PalViewportCapabilities viewportCaps;
+    PalImageCapabilities imageCaps;
+    PalResourceCapabilities resourceCaps;
+    PalComputeCapabilities computeCaps;
 } PalAdapterCapabilities;
 
 /**
@@ -1506,7 +1556,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 maxMultiViews;
+    Uint32 maxViewCount;
 } PalMultiViewCapabilities;
 
 /**
@@ -1517,7 +1567,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 maxViewports;
+    Uint32 maxCount;
 } PalMultiViewportCapabilities;
 
 /**
@@ -1528,16 +1578,15 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** If false, depth and stencil resolve modes must be the same.*/
-    bool independentDepthStencilResolve;
+    bool independentResolve; /**< If false, depth and stencil resolve modes must be the same.*/
 
     /** Bool array of supported depth resolve modes.
-     * (eg. depthResolveModes[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
-    bool depthResolveModes[PAL_MAX_RESOLVE_MODES];
+     * (eg. depthResolves[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
+    bool depthResolves[PAL_MAX_RESOLVE_MODES];
 
     /** Bool array of supported stencil resolve modes.
-     * (eg. stencilResolveModes[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
-    bool stencilResolveModes[PAL_MAX_RESOLVE_MODES];
+     * (eg. stencilResolves[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
+    bool stencilResolves[PAL_MAX_RESOLVE_MODES];
 } PalDepthStencilCapabilities;
 
 /**
@@ -1569,12 +1618,12 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 maxMeshOutputPrimitives;     /**< Max mesh primitives per workgroup.*/
-    Uint32 maxMeshOutputVertices;       /**< Max mesh vertices per workgroup.*/
-    Uint32 maxTaskWorkGroupInvocations; /**< Max task threads per workgroup.*/
-    Uint32 maxMeshWorkGroupInvocations; /**< Max mesh threads per workgroup.*/
-    Uint32 maxTaskWorkGroupCount[3];    /**< Max task workgroups per axis.*/
-    Uint32 maxMeshWorkGroupCount[3];    /**< Max mesh workgroups per axis.*/
+    Uint32 maxOutputPrimitives;
+    Uint32 maxOutputVertices;    
+    Uint32 maxWorkGroupInvocations;
+    Uint32 maxTaskWorkGroupInvocations;
+    Uint32 maxWorkGroupCount[3];
+    Uint32 maxTaskWorkGroupCount[3];
 } PalMeshShaderCapabilities;
 
 /**
@@ -1586,14 +1635,12 @@ typedef struct {
  */
 typedef struct {
     Uint32 maxRecursionDepth;
-    Uint32 maxHitAttributeSize; /**< Max memory per intersection attributes.*/
+    Uint32 maxHitAttributeSize;
     Uint32 maxInstanceCount;
     Uint32 maxPrimitiveCount;
     Uint32 maxGeometryCount;
-    Uint32 maxPayloadSize;         /**< Max memory per ray.*/
+    Uint32 maxPayloadSize;
     Uint32 maxDispatchInvocations;
-    Uint32 maxDescriptorSetAccelerationStructures;
-    Uint32 maxDescriptorSetBindlessAccelerationStructures;
 } PalRayTracingCapabilities;
 
 /**
@@ -1604,19 +1651,6 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** Allows descriptor array whose size is not fixed at compiled time.
-     * The size will be provided at runtime.*/
-    bool runtimeDescriptorArray;
-
-    /** Allows a descriptor set to specify the number of descriptors in a descriptor set 
-     * layout. This is only valid for one binding per descriptor set layout and it must be the
-     * last binding in the descriptor set layput.*/
-    bool variableDescriptorCount;
-
-    /** Allows a descriptor set to contain descriptors that are not initialized. Shader reading
-     * an uninitialized descriptor is still undefined behavior.*/
-    bool partiallyBoundDescriptors;
-
     bool sampledImageNonUniformIndexing;
     bool sampledImageUpdateAfterBind;
     bool storageImageNonUniformIndexing;
@@ -1625,16 +1659,18 @@ typedef struct {
     bool storageBufferUpdateAfterBind;
     bool uniformBufferNonUniformIndexing;
     bool uniformBufferUpdateAfterBind;
-    Uint32 maxPerStageBindlessDescriptorSampledImages;
-    Uint32 maxDescriptorSetBindlessSampledImages;
-    Uint32 maxPerStageBindlessDescriptorStorageImages;
-    Uint32 maxDescriptorSetBindlessStorageImages;
-    Uint32 maxPerStageBindlessDescriptorSamplers;
-    Uint32 maxDescriptorSetBindlessSamplers;
-    Uint32 maxPerStageBindlessDescriptorStorageBuffers;
-    Uint32 maxDescriptorSetBindlessStorageBuffers;
-    Uint32 maxPerStageBindlessDescriptorUniformBuffers;
-    Uint32 maxDescriptorSetBindlessUniformBuffers;
+    Uint32 maxPerStageSampledImages;
+    Uint32 maxPerSetSampledImages;
+    Uint32 maxPerStageStorageImages;
+    Uint32 maxPerSetStorageImages;
+    Uint32 maxPerStageSamplers;
+    Uint32 maxPerSetSamplers;
+    Uint32 maxPerStageStorageBuffers;
+    Uint32 maxPerSetStorageBuffers;
+    Uint32 maxPerStageUniformBuffers;
+    Uint32 maxPerSetUniformBuffers;
+    Uint32 maxPerStageAccelerationStructure;
+    Uint32 maxPerSetAccelerationStructure;
 } PalDescriptorIndexingCapabilities;
 
 /**
@@ -1683,16 +1719,16 @@ typedef struct {
 
 /**
  * @struct PalFormatInfo
- * @brief Information about a format. This includes the supported image, image view usages and
- * sample count from the provided format.
+ * @brief Information about a format. This includes the supported image usages and maximum sample
+ * count from the provided format.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalFormat format;              /**< The format.*/
-    PalImageUsages usages;         /**< Supported image usages of the format.*/
-    PalSampleCount maxSampleCount; /**< Supported multisample count.*/
+    PalFormat format;
+    PalImageUsages usages;
+    PalSampleCount sampleCount; /**< Maximum supported multisample count.*/
 } PalFormatInfo;
 
 /**
@@ -4596,9 +4632,9 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  *
  * The graphics system must be initialized before this call.
  *
- * This function returns the supported format with the supported image and image view usages
+ * This function returns the supported format with the supported image usages
  * associated with the format. This is a handy way of selecting a format based on the image
- * or image view usages. Use palIsFormatSupported() to check for a specific format.
+ * usages. Use palIsFormatSupported() to check for a specific format.
  *
  * Call this function first with PalFormatInfo array set to nullptr to get the number of formats.
  * Allocate memory for the PalFormatInfo array and passed in the count and the allocated array. If
@@ -4631,9 +4667,8 @@ PAL_API PalResult PAL_CALL palEnumerateFormats(
  * The graphics system must be initialized before this call.
  *
  * This is much faster than enumerating all the formats to pick one. You directly check support
- * for the format you want to use. Call palQueryFormatImageUsages() and
- * palQueryFormatImageViewUsages() to check for supported image and image view usages respectively
- * if format is supported.
+ * for the format you want to use. Call palQueryFormatImageUsages() to check for supported image
+ * usages if format is supported.
  *
  * @param[in] adapter Adapter to query format on.
  * @param[in] format Format to query support for.
