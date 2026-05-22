@@ -7086,7 +7086,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             index = set->resourceOffset + bindingOffset + info->arrayElement;
         }
 
-        for (int j = 0; j < binding->range.NumDescriptors; j++) {
+        for (int j = 0; j < info->descriptorCount; j++) {
             D3D12_CPU_DESCRIPTOR_HANDLE dst;
             dst.ptr = getDescriptorHandleD3D12(index + j, heap->incrementSize, heap->cpuBase);
 

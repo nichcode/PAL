@@ -193,10 +193,8 @@ bool descriptorIndexingTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures;
-    bool hasGraphicsQueue = false;
-    bool hasDescriptorIndexing = false;
     for (Int32 i = 0; i < adapterCount; i++) {
-        adapter = adapters[i];
+        adapter = adapters[2];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -206,62 +204,63 @@ bool descriptorIndexingTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
-            hasGraphicsQueue = false;
+            adapter = nullptr;
             continue;
-
-        } else {
-            hasGraphicsQueue = true;
         }
 
-        if (hasGraphicsQueue) {
-            adapterFeatures = palGetAdapterFeatures(adapter);
-            if (adapterFeatures & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-                hasDescriptorIndexing = true;
+        adapterFeatures = palGetAdapterFeatures(adapter);
+        if (!(adapterFeatures & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
+            adapter = nullptr;
+            continue;
+        }
 
-            } else {
-                hasDescriptorIndexing = false;
+        // We want an adapter that supports spirv 1.4 or dxbc 5.1
+        result = palGetAdapterInfo(adapter, &adapterInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get adapter info: %s", error);
+            return false;
+        }
+
+        if (adapterInfo.apiType == PAL_ADAPTER_API_TYPE_D3D12 && 
+            adapterInfo.type == PAL_ADAPTER_TYPE_CPU) {
+            // D3D12 WARP Adapter has a runtime limitation that causes dynamic indices to fold
+            // back to slot 0. This has been tested on multiple WARP drivers
+
+            // explicit registers work for this test but its not reliable for real usage
+            // Texture2D texs[] : register(t0, space0); // set 0
+            // Texture2D tex17 : register(t17, space0); // set 0
+            // Texture2D tex47 : register(t47, space0); // set 0
+            // Texture2D tex55 : register(t55, space0); // set 0
+            // Texture2D tex78 : register(t78, space0); // set 0
+
+            adapter = nullptr;
+            continue;
+        }           
+
+        // we prefer spirv first if an adapter supports multiple shader formats
+        Uint32 target = 0;
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
+            if (target >= PAL_MAKE_SHADER_TARGET(1, 4)) {
+                break;
             }
         }
 
-        if (hasDescriptorIndexing) {
-            // We want an adapter that supports spirv 1.4 or dxbc 5.1
-            result = palGetAdapterInfo(adapter, &adapterInfo);
-            if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get adapter info: %s", error);
-                return false;
-            }
-
-            // we prefer spirv first if an adapter supports multiple shader formats
-            Uint32 target = 0;
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
-                if (target >= PAL_MAKE_SHADER_TARGET(1, 4)) {
-                    break;
-                }
-            }
-
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
-                    break;
-                }
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+            if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
+                break;
             }
         }
+
         adapter = nullptr;
+        continue;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        if (!hasGraphicsQueue) {
-            palLog(nullptr, "Failed to find an adapter that supports graphics queue");
-
-        } else if (!hasDescriptorIndexing) {
-            palLog(nullptr, "Failed to find an adapter that supports descriptor indexing");
-
-        } else {
-            palLog(nullptr, "Failed to find an adapter that supports required shader target");
-        }
+        palLog(nullptr, "Failed to find a required adapter");
         return false;
     }
 

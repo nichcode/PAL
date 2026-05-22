@@ -146,10 +146,7 @@ bool geometryTest()
 
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
-    bool hasGraphicsQueue = false;
-    bool hasGeometryShader = false;
     PalAdapterFeatures adapterFeatures;
-
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -161,62 +158,47 @@ bool geometryTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
-            hasGraphicsQueue = false;
+            adapter = nullptr;
             continue;
-
-        } else {
-            hasGraphicsQueue = true;
         }
 
-        if (hasGraphicsQueue) {
-            adapterFeatures = palGetAdapterFeatures(adapter);
-            if (adapterFeatures & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
-                hasGeometryShader = true;
+        adapterFeatures = palGetAdapterFeatures(adapter);
+        if (!(adapterFeatures & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
+            adapter = nullptr;
+            continue;
+        }
 
-            } else {
-                hasGeometryShader = false;
+        // We want an adapter that supports spirv 1.0 or dxbc 5.1
+        result = palGetAdapterInfo(adapter, &adapterInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get adapter info: %s", error);
+            return false;
+        }   
+
+        // we prefer spirv first if an adapter supports multiple shader formats
+        Uint32 target = 0;
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
+            if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
+                break;
             }
         }
 
-        if (hasGeometryShader) {
-            // We want an adapter that supports spirv 1.0 or dxbc 5.1
-            result = palGetAdapterInfo(adapter, &adapterInfo);
-            if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get adapter info: %s", error);
-                return false;
-            }
-
-            // we prefer spirv first if an adapter supports multiple shader formats
-            Uint32 target = 0;
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
-                if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
-                    break;
-                }
-            }
-
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
-                    break;
-                }
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+            if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
+                break;
             }
         }
+
         adapter = nullptr;
+        continue;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        if (!hasGraphicsQueue) {
-            palLog(nullptr, "Failed to find an adapter that supports graphics queue");
-
-        } else if (!hasGeometryShader) {
-            palLog(nullptr, "Failed to find an adapter that supports geometry shader");
-
-        } else {
-            palLog(nullptr, "Failed to find an adapter that supports required shader target");
-        }
+        palLog(nullptr, "Failed to find a required adapter");
         return false;
     }
 

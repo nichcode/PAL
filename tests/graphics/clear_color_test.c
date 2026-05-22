@@ -153,18 +153,17 @@ bool clearColorTest()
         }
 
         if (caps.maxGraphicsQueues == 0) {
+            adapter = nullptr;
             continue;
 
         } else {
             break;
         }
-
-        adapter = nullptr;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        palLog(nullptr, "Failed to find an adapter that supports graphics queue");
+        palLog(nullptr, "Failed to find a required adapter");
         return false;
     }
 

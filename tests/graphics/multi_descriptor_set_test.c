@@ -88,9 +88,6 @@ bool multiDescriptorSetTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterFeatures adapterFeatures = 0;
     PalAdapterInfo adapterInfo = {0};
-    bool hasComputeQueue = false;
-    bool hasRequiredPushConstantSize = false;
-    bool hasRequiredBoundDescriptorSets = false;
     for (Int32 i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -102,75 +99,53 @@ bool multiDescriptorSetTest()
         }
 
         if (caps.maxComputeQueues == 0) {
-            hasComputeQueue = false;
+            adapter = nullptr;
             continue;
-
-        } else {
-            hasComputeQueue = true;
         }
 
         // we want an adapter that supports the required bound descriptor sets (3)
         if (caps.resourceCaps.maxBoundSets < 3) {
-            hasRequiredBoundDescriptorSets = false;
+            adapter = nullptr;
             continue;
-
-        } else {
-            hasRequiredBoundDescriptorSets = true;
         }
 
         // we want an adapter that supports the required push constant size (64 bytes)
         if (caps.maxPushConstantSize < 64) {
-            hasRequiredPushConstantSize = false;
+            adapter = nullptr;
             continue;
-
-        } else {
-            hasRequiredPushConstantSize = true;
         }
 
-        if (hasComputeQueue) {
-            // We want an adapter that supports spirv 1.0 or dxbc 5.1
-            result = palGetAdapterInfo(adapter, &adapterInfo);
-            if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get adapter info: %s", error);
-                return false;
-            }
+        // We want an adapter that supports spirv 1.0 or dxbc 5.1
+        result = palGetAdapterInfo(adapter, &adapterInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to get adapter info: %s", error);
+            return false;
+        }
 
-            // we prefer spirv first if an adapter supports multiple shader formats
-            Uint32 target = 0;
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
-                if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
-                    break;
-                }
-            }
-
-            if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-                target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-                if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
-                    break;
-                }
+        // we prefer spirv first if an adapter supports multiple shader formats
+        Uint32 target = 0;
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
+            if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
+                break;
             }
         }
+
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
+            if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
+                break;
+            }
+        }
+
         adapter = nullptr;
+        continue;
     }
 
     palFree(nullptr, adapters);
     if (!adapter) {
-        if (!hasComputeQueue) {
-            palLog(nullptr, "Failed to find an adapter that supports compute queue");
-
-        } else if (!hasRequiredBoundDescriptorSets) {
-            palLog(
-                nullptr, 
-                "Failed to find an adapter that has the required bound descriptor sets");
-
-        } else if (!hasRequiredPushConstantSize) {
-            palLog(nullptr, "Failed to find an adapter that has the required push constant size");
-
-        } else {
-            palLog(nullptr, "Failed to find an adapter that supports required shader target");
-        }
+        palLog(nullptr, "Failed to find a required adapter");
         return false;
     }
 
