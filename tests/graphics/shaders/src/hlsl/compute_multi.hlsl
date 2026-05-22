@@ -3,16 +3,15 @@ cbuffer PushConstants : register(b0)
 {
     uint width;
     uint height;
-    float4 bufferColor1;
-    float4 bufferColor2;
-    float4 bufferColor3;
+    float4 set1Color;
+    float4 set2Color;
+    float4 set3Color;
 };
 
 // we use structured buffer for this example.
-// Some drivers do not map the registers well if we declare as an array
-// some use index 0 and so use index 1.
-RWStructuredBuffer<float4> outBuffers[2] : register(u0, space0); // set 0
-RWStructuredBuffer<float4> outBuffer : register(u0, space1); // set 1
+RWStructuredBuffer<float4> set1OutBuffer : register(u0, space0);
+RWStructuredBuffer<float4> set2OutBuffer : register(u0, space1);
+RWStructuredBuffer<float4> set3OutBuffer : register(u0, space2);
 
 [numthreads(16, 16, 1)]
 void main(uint3 id : SV_DispatchThreadID)
@@ -22,7 +21,7 @@ void main(uint3 id : SV_DispatchThreadID)
     }
 
     uint index = id.y * width + id.x;
-    outBuffers[0][index] = bufferColor1;
-    outBuffers[1][index] = bufferColor2;
-    outBuffer[index] = bufferColor3;
+    set1OutBuffer[index] = set1Color;
+    set2OutBuffer[index] = set2Color;
+    set3OutBuffer[index] = set3Color;
 }
