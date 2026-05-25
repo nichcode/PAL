@@ -386,7 +386,7 @@ bool geometryTest()
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[3];
-    PalShaderStage tmpShaderStages[3];
+    PalShaderEntryInfo entries[3];
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
@@ -400,9 +400,17 @@ bool geometryTest()
         sources[2] = "graphics/shaders/bin/dxbc/geometry.dxbc";
     }
 
-    tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;
-    tmpShaderStages[1] = PAL_SHADER_STAGE_FRAGMENT;
-    tmpShaderStages[2] = PAL_SHADER_STAGE_GEOMETRY;
+    entries[0].stage = PAL_SHADER_STAGE_VERTEX;
+    entries[0].entryName = "main";
+    entries[0].patchControlPoints = 0;
+
+    entries[1].stage = PAL_SHADER_STAGE_FRAGMENT;
+    entries[1].entryName = "main";
+    entries[1].patchControlPoints = 0;
+
+    entries[2].stage = PAL_SHADER_STAGE_GEOMETRY;
+    entries[2].entryName = "main";
+    entries[2].patchControlPoints = 0;
 
     for (int i = 0; i < 3; i++) {
         // read file
@@ -421,8 +429,8 @@ bool geometryTest()
 
         shaderCreateInfo.bytecode = bytecode;
         shaderCreateInfo.bytecodeSize = bytecodeSize;
-        shaderCreateInfo.entryName = "main";
-        shaderCreateInfo.stage = tmpShaderStages[i];
+        shaderCreateInfo.entries = &entries[i];
+        shaderCreateInfo.entryCount = 1;
 
         result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
         if (result != PAL_RESULT_SUCCESS) {

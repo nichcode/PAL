@@ -845,7 +845,7 @@ bool textureTest()
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
-    PalShaderStage tmpShaderStages[2];
+    PalShaderEntryInfo entries[2];
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
@@ -857,8 +857,13 @@ bool textureTest()
         sources[1] = "graphics/shaders/bin/dxbc/texture_frag.dxbc";
     }
 
-    tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;
-    tmpShaderStages[1] = PAL_SHADER_STAGE_FRAGMENT;
+    entries[0].stage = PAL_SHADER_STAGE_VERTEX;
+    entries[0].entryName = "main";
+    entries[0].patchControlPoints = 0;
+
+    entries[1].stage = PAL_SHADER_STAGE_FRAGMENT;
+    entries[1].entryName = "main";
+    entries[1].patchControlPoints = 0;
 
     for (int i = 0; i < 2; i++) {
         // read file
@@ -877,8 +882,8 @@ bool textureTest()
 
         shaderCreateInfo.bytecode = bytecode;
         shaderCreateInfo.bytecodeSize = bytecodeSize;
-        shaderCreateInfo.entryName = "main";
-        shaderCreateInfo.stage = tmpShaderStages[i];
+        shaderCreateInfo.entries = &entries[i];
+        shaderCreateInfo.entryCount = 1;
 
         result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
         if (result != PAL_RESULT_SUCCESS) {
@@ -892,21 +897,19 @@ bool textureTest()
 
     // create descriptor set layout
     PalDescriptorSetLayoutBinding descriptorBindings[2];
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
-
     descriptorBindings[0].descriptorCount = 1; // not an array
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    descriptorBindings[0].shaderStageCount = 1;
-    descriptorBindings[0].shaderStages = shaderStages;
-
+    
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
-    descriptorBindings[1].shaderStageCount = 1;
-    descriptorBindings[1].shaderStages = shaderStages;
 
     PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
+
+    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
+    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
+    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
 
     result = palCreateDescriptorSetLayout(
         device,

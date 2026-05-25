@@ -195,10 +195,14 @@ bool computeTest()
 
     readFile(source, bytecode, &bytecodeSize);
 
+    PalShaderEntryInfo computeEntry = {0};
+    computeEntry.entryName = "main";
+    computeEntry.stage = PAL_SHADER_STAGE_COMPUTE;
+
     shaderCreateInfo.bytecode = bytecode;
     shaderCreateInfo.bytecodeSize = bytecodeSize;
-    shaderCreateInfo.entryName = "main";
-    shaderCreateInfo.stage = PAL_SHADER_STAGE_COMPUTE;
+    shaderCreateInfo.entries = &computeEntry;
+    shaderCreateInfo.entryCount = 1;
 
     result = palCreateShader(device, &shaderCreateInfo, &shader);
     if (result != PAL_RESULT_SUCCESS) {
@@ -293,16 +297,16 @@ bool computeTest()
 
     // create descriptor set layout
     PalDescriptorSetLayoutBinding descriptorBinding = {0};
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_COMPUTE };
-
     descriptorBinding.descriptorCount = 1; // not an array
     descriptorBinding.descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptorBinding.shaderStageCount = 1;
-    descriptorBinding.shaderStages = shaderStages;
 
     PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
     descriptorSetLayoutcreateInfo.bindingCount = 1;
     descriptorSetLayoutcreateInfo.bindings = &descriptorBinding;
+
+    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_COMPUTE };
+    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
+    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
 
     result = palCreateDescriptorSetLayout(
         device,

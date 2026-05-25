@@ -26,7 +26,7 @@ bool rayTracingTest()
     PalCommandPool* cmdPool = nullptr;
     PalCommandBuffer* cmdBuffer;
 
-    PalShader* shaders[3];
+    PalShader* rayTracingShader = nullptr;
 
     PalBuffer* buffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
@@ -59,7 +59,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -193,54 +193,56 @@ bool rayTracingTest()
     // create ray tracing shaders
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
-    const char* sources[3];
-    PalShaderStage tmpShaderStages[3];
+    const char* source = nullptr;
+    PalShaderEntryInfo entries[3];
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
-        sources[0] = "graphics/shaders/bin/spirv/raygen.spv";
-        sources[1] = "graphics/shaders/bin/spirv/miss.spv";
-        sources[2] = "graphics/shaders/bin/spirv/closest_hit.spv";
+        source = "graphics/shaders/bin/spirv/ray_tracing.spv";
 
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
-        sources[0] = "graphics/shaders/bin/dxil/raygen.dxil";
-        sources[1] = "graphics/shaders/bin/dxil/miss.dxil";
-        sources[2] = "graphics/shaders/bin/dxil/closest_hit.dxil";
+        source = "graphics/shaders/bin/dxil/ray_tracing.dxil";
     }
 
-    tmpShaderStages[0] = PAL_SHADER_STAGE_RAYGEN;
-    tmpShaderStages[1] = PAL_SHADER_STAGE_MISS;
-    tmpShaderStages[2] = PAL_SHADER_STAGE_CLOSEST_HIT;
+    entries[0].stage = PAL_SHADER_STAGE_RAYGEN;
+    entries[0].entryName = "raygenMain";
+    entries[0].patchControlPoints = 0;
 
-    for (int i = 0; i < 3; i++) {
-        // read file
-        if (!readFile(sources[i], nullptr, &bytecodeSize)) {
-            palLog(nullptr, "Failed to read shader file");
-            return false;
-        }
+    entries[1].stage = PAL_SHADER_STAGE_MISS;
+    entries[1].entryName = "missMain";
+    entries[1].patchControlPoints = 0;
 
-        bytecode = palAllocate(nullptr, bytecodeSize, 0);
-        if (!bytecode) {
-            palLog(nullptr, "Failed to allocate memory");
-            return false;
-        }
+    entries[2].stage = PAL_SHADER_STAGE_CLOSEST_HIT;
+    entries[2].entryName = "closestHitMain";
+    entries[2].patchControlPoints = 0;
 
-        readFile(sources[i], bytecode, &bytecodeSize);
+    // read file
+    if (!readFile(source, nullptr, &bytecodeSize)) {
+        palLog(nullptr, "Failed to read shader file");
+        return false;
+    }
 
-        shaderCreateInfo.bytecode = bytecode;
-        shaderCreateInfo.bytecodeSize = bytecodeSize;
-        shaderCreateInfo.entryName = "main";
-        shaderCreateInfo.stage = tmpShaderStages[i];
+    bytecode = palAllocate(nullptr, bytecodeSize, 0);
+    if (!bytecode) {
+        palLog(nullptr, "Failed to allocate memory");
+        return false;
+    }
 
-        result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create shader: %s", error);
-            return false;
-        }
+    readFile(source, bytecode, &bytecodeSize);
 
-        palFree(nullptr, bytecode);
-    }    
+    shaderCreateInfo.bytecode = bytecode;
+    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.entries = entries;
+    shaderCreateInfo.entryCount = 3;
+
+    result = palCreateShader(device, &shaderCreateInfo, &rayTracingShader);
+    if (result != PAL_RESULT_SUCCESS) {
+        const char* error = palFormatResult(result);
+        palLog(nullptr, "Failed to create shader: %s", error);
+        return false;
+    }
+
+    palFree(nullptr, bytecode);
 
     Uint32 bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
     PalBufferCreateInfo bufferCreateInfo = {0};
@@ -659,23 +661,19 @@ bool rayTracingTest()
 
     // create descriptor set layout
     PalDescriptorSetLayoutBinding descriptorBindings[2];
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_RAYGEN };
-
-    // storage buffer to write to
     descriptorBindings[0].descriptorCount = 1; // not an array
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptorBindings[0].shaderStageCount = 1;
-    descriptorBindings[0].shaderStages = shaderStages;
 
-    // acceleration buffer
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
-    descriptorBindings[1].shaderStageCount = 1;
-    descriptorBindings[1].shaderStages = shaderStages;
 
     PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
+
+    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_RAYGEN };
+    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
+    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
 
     result = palCreateDescriptorSetLayout(
         device,
@@ -767,12 +765,12 @@ bool rayTracingTest()
     // the shader group array must respect the corect layout
     // [raygen][miss][hitGroup][callable]
     // [raygen][raygen][miss][hitGroup][hitGroup][callable]
-
     PalRayTracingShaderGroupCreateInfo shaderGroupCreateInfos[3] = {0};
 
     // raygen must be packed first always
     shaderGroupCreateInfos[0].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
     shaderGroupCreateInfos[0].generalShaderIndex = 0;
+    shaderGroupCreateInfos[0].generalShaderEntryIndex = 0;
     shaderGroupCreateInfos[0].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[0].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
@@ -780,7 +778,8 @@ bool rayTracingTest()
 
     // miss must be packed second always
     shaderGroupCreateInfos[1].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL;
-    shaderGroupCreateInfos[1].generalShaderIndex = 1;
+    shaderGroupCreateInfos[1].generalShaderIndex = 0;
+    shaderGroupCreateInfos[1].generalShaderEntryIndex = 1;
     shaderGroupCreateInfos[1].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].closestHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[1].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
@@ -788,7 +787,8 @@ bool rayTracingTest()
 
     // hitGroup must be packed third always
     shaderGroupCreateInfos[2].type = PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT;
-    shaderGroupCreateInfos[2].closestHitShaderIndex = 2;
+    shaderGroupCreateInfos[2].closestHitShaderIndex = 0;
+    shaderGroupCreateInfos[2].closestHitShaderEntryIndex = 2;
     shaderGroupCreateInfos[2].anyHitShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].generalShaderIndex = PAL_UNUSED_SHADER_INDEX;
     shaderGroupCreateInfos[2].intersectionShaderIndex = PAL_UNUSED_SHADER_INDEX;
@@ -800,10 +800,10 @@ bool rayTracingTest()
     pipelineCreateInfo.maxPayloadSize = 16;
     pipelineCreateInfo.maxAttributeSize = 8;
     pipelineCreateInfo.pipelineLayout = pipelineLayout;
-    pipelineCreateInfo.shaderCount = 3;
+    pipelineCreateInfo.shaderCount = 1;
     pipelineCreateInfo.shaderGroupCount = 3;
     pipelineCreateInfo.shaderGroups = shaderGroupCreateInfos;
-    pipelineCreateInfo.shaders = shaders; 
+    pipelineCreateInfo.shaders = &rayTracingShader; 
 
     result = palCreateRayTracingPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
@@ -812,9 +812,7 @@ bool rayTracingTest()
         return false;
     }
 
-    for (int i = 0; i < 3; i++) {
-        palDestroyShader(shaders[i]);
-    }
+    palDestroyShader(rayTracingShader);
 
     // create shader binding table
     // we need 3 records, only closest hit (git group) only uses the local data

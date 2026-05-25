@@ -194,7 +194,7 @@ bool descriptorIndexingTest()
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures;
     for (Int32 i = 0; i < adapterCount; i++) {
-        adapter = adapters[2];
+        adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -888,7 +888,7 @@ bool descriptorIndexingTest()
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
-    PalShaderStage tmpShaderStages[2];
+    PalShaderEntryInfo entries[2];
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
@@ -900,8 +900,13 @@ bool descriptorIndexingTest()
         sources[1] = "graphics/shaders/bin/dxbc/descriptor_indexing.dxbc";
     }
 
-    tmpShaderStages[0] = PAL_SHADER_STAGE_VERTEX;
-    tmpShaderStages[1] = PAL_SHADER_STAGE_FRAGMENT;
+    entries[0].stage = PAL_SHADER_STAGE_VERTEX;
+    entries[0].entryName = "main";
+    entries[0].patchControlPoints = 0;
+
+    entries[1].stage = PAL_SHADER_STAGE_FRAGMENT;
+    entries[1].entryName = "main";
+    entries[1].patchControlPoints = 0;
 
     for (int i = 0; i < 2; i++) {
         // read file
@@ -920,8 +925,8 @@ bool descriptorIndexingTest()
 
         shaderCreateInfo.bytecode = bytecode;
         shaderCreateInfo.bytecodeSize = bytecodeSize;
-        shaderCreateInfo.entryName = "main";
-        shaderCreateInfo.stage = tmpShaderStages[i];
+        shaderCreateInfo.entries = &entries[i];
+        shaderCreateInfo.entryCount = 1;
 
         result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
         if (result != PAL_RESULT_SUCCESS) {
@@ -934,23 +939,21 @@ bool descriptorIndexingTest()
     }
 
     // create descriptor set layout
-    PalDescriptorSetLayoutBinding descriptorBindings[2];
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
-
     // We use descriptor count of 100 and only use 4 slots
+    PalDescriptorSetLayoutBinding descriptorBindings[2];
     descriptorBindings[0].descriptorCount = 100;
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    descriptorBindings[0].shaderStageCount = 1;
-    descriptorBindings[0].shaderStages = shaderStages;
-
+    
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
-    descriptorBindings[1].shaderStageCount = 1;
-    descriptorBindings[1].shaderStages = shaderStages;
 
     PalDescriptorSetLayoutCreateInfo descriptorSetLayoutcreateInfo = {0};
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
+
+    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
+    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
+    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
 
     // we need to enable descriptor indexing for the descriptor set layout
     descriptorSetLayoutcreateInfo.enableDescriptorIndexing = true;

@@ -388,7 +388,7 @@ bool meshTest()
     Uint64 bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
-    PalShaderStage tmpShaderStages[2];
+    PalShaderEntryInfo entries[2];
 
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
@@ -400,8 +400,13 @@ bool meshTest()
         sources[1] = "graphics/shaders/bin/dxil/triangle_frag.dxil";
     }
 
-    tmpShaderStages[0] = PAL_SHADER_STAGE_MESH;
-    tmpShaderStages[1] = PAL_SHADER_STAGE_FRAGMENT;
+    entries[0].stage = PAL_SHADER_STAGE_MESH;
+    entries[0].entryName = "main";
+    entries[0].patchControlPoints = 0;
+
+    entries[1].stage = PAL_SHADER_STAGE_FRAGMENT;
+    entries[1].entryName = "main";
+    entries[1].patchControlPoints = 0;
 
     for (int i = 0; i < 2; i++) {
         // read file
@@ -420,8 +425,8 @@ bool meshTest()
 
         shaderCreateInfo.bytecode = bytecode;
         shaderCreateInfo.bytecodeSize = bytecodeSize;
-        shaderCreateInfo.entryName = "main";
-        shaderCreateInfo.stage = tmpShaderStages[i];
+        shaderCreateInfo.entries = &entries[i];
+        shaderCreateInfo.entryCount = 1;
 
         result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
         if (result != PAL_RESULT_SUCCESS) {

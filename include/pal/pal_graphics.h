@@ -1578,14 +1578,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool independentResolve; /**< If false, depth and stencil resolve modes must be the same.*/
-
-    /** Bool array of supported depth resolve modes.
-     * (eg. depthResolves[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
+    bool independentResolve;
     bool depthResolves[PAL_MAX_RESOLVE_MODES];
-
-    /** Bool array of supported stencil resolve modes.
-     * (eg. stencilResolves[`PAL_RESOLVE_MODE_SAMPLE_ZERO`]).*/
     bool stencilResolves[PAL_MAX_RESOLVE_MODES];
 } PalDepthStencilCapabilities;
 
@@ -1597,16 +1591,11 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** Bool array of supported fragment shading rates.
-     * (eg. shadingRates[`PAL_FRAGMENT_SHADING_RATE_2X1`]).*/
     bool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
     Uint32 minTexelWidth;
     Uint32 minTexelHeight;
     Uint32 maxTexelWidth;
     Uint32 maxTexelHeight;
-
-    /** Bool array of supported fragment shading rate combiner operations.
-     * (eg. combinerOps[`PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP`]).*/
     bool combinerOps[PAL_MAX_COMBINER_OPS];
 } PalFragmentShadingRateCapabilities;
 
@@ -1681,16 +1670,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** Bool array of supported present modes.
-     * (eg. presentModes[`PAL_PRESENT_MODE_FIFO`]).*/
     bool presentModes[PAL_PRESENT_MODE_MAX];
-
-    /** Bool array of supported composite alphas.
-     * (eg. compositeAlphas[`PAL_COMPOSITE_ALPHA_OPAQUE`]).*/
     bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
-
-    /** Bool array of supported swapchain formats.
-     * (eg. formats[`PAL_COMPOSITE_ALPHA_OPAQUE`]).*/
     bool formats[PAL_SURFACE_FORMAT_MAX];
     Uint32 minImageCount;
     Uint32 maxImageCount;
@@ -1760,9 +1741,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    float color[4]; /**< Color for color attachments.*/
-    float depth;    /**< Depth for depth stencil attachments.*/
-    Uint32 stencil; /**< Stencil for depth stencil attachments.*/
+    float color[4]; /**< Color for color attachments only.*/
+    float depth;
+    Uint32 stencil;
 } PalClearValue;
 
 /**
@@ -1840,10 +1821,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** Bool array of supported memory types.
-     * (eg. memoryTypes[`PAL_MEMORY_TYPE_GPU_ONLY`]).*/
     bool memoryTypes[PAL_MEMORY_TYPE_MAX];
-
     Uint64 memoryMask;
     Uint64 size;
     Uint32 alignment;
@@ -1938,15 +1916,13 @@ typedef struct {
  * @struct PalWorkGroupBuildData
  * @brief Compute or Mesh(or Task) workgroup input data build helper.
  *
- * Uninitialized fields may result in undefined behavior.
+ * Uninitialized fields may result in undefined behavior. `workCount` can be specified in pixels,
+ * vertices etc.Eg. an image of 800 x 600 will be [0] = 800, [1] = 600 and [2] = 1.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** Workcount can be specified in pixels, vertices etc.
-     * eg. an image of 800 x 600 will have a workcount of workCount[0] = 800,
-     * workCount[1] = 600, workCount[2] = 1.*/
     Uint32 workCount[3];
     Uint32 workGroupSize[3];  /**< Threads per workgroup per axis of the adapter (GPU).*/
     Uint32 workGroupCount[3]; /**< Workgroups per axis of the adapter (GPU).*/
@@ -1974,10 +1950,10 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 vertexCount;   /**< Number of vertices to draw.*/
-    Uint32 instanceCount; /**< Number of instances to draw. Set to 1 if not using instanced draw.*/
-    Uint32 firstVertex;   /**< First vertex. Set to 0 for default behavior.*/
-    Uint32 firstInstance; /**< First instance. Set to 0 for default behavior.*/
+    Uint32 vertexCount;
+    Uint32 instanceCount;
+    Uint32 firstVertex;
+    Uint32 firstInstance;
 } PalDrawIndirectData;
 
 /**
@@ -1990,11 +1966,11 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 indexCount;    /**< Number of indices to draw.*/
-    Uint32 instanceCount; /**< Number of instances to draw. Set to 1 if not using instanced draw.*/
-    Uint32 firstIndex;    /**< First index. Set to 0 for default behavior.*/
-    Int32 vertexOffset;   /**< Vertex offset. Set to 0 for default behavior.*/
-    Uint32 firstInstance; /**< First instance. Set to 0 for default behavior.*/
+    Uint32 indexCount;
+    Uint32 instanceCount;
+    Uint32 firstIndex;
+    Int32 vertexOffset;
+    Uint32 firstInstance;
 } PalDrawIndexedIndirectData;
 
 /**
@@ -2016,18 +1992,16 @@ typedef struct {
  * @struct PalVertexAttribute
  * @brief Vertex attribute.
  *
- * Uninitialized fields may result in undefined behavior.
+ * Uninitialized fields may result in undefined behavior. `semanticName` Must not include the index
+ * (eg. "position" or "myown"). Set to nullptr to use the default that will be derived from `
+ * semanticID` which are (`POSITION`, `COLOR`, `TEXCOORD`, `NORMAL` and `TANGENT`).
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalVertexSemanticID semanticID; /**< (eg. PAL_VERTEX_SEMANTIC_ID_POSITION).*/
-    PalVertexType type; /**< (eg. PAL_VERTEX_TYPE_FLOAT).*/
-
-    /** Must not include the index (eg. "position" or "myown"). Set to nullptr to use the default 
-     * that will be derived from `semanticID` which are 
-     * (`POSITION`, `COLOR`, `TEXCOORD`, `NORMAL` and `TANGENT`).*/
+    PalVertexSemanticID semanticID;
+    PalVertexType type;
     const char* semanticName;
 } PalVertexAttribute;
 
@@ -2047,7 +2021,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalVertexLayoutType type; /**< (eg. PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX).*/
+    PalVertexLayoutType type;
     Uint32 binding;
     Uint32 attributeCount;
     PalVertexAttribute* attributes;
@@ -2063,9 +2037,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool denyGeneral; /**< Disable general messages.*/
-    bool denyValidation; /**< Disable validation messages.*/
-    bool denyPerformance;  /**< Disable performance messages.*/
+    bool denyGeneral;
+    bool denyValidation;
+    bool denyPerformance;
     bool denyInfoSeverity;
     bool denyWarningSeverity;
     bool denyErrorSeverity;
@@ -2088,9 +2062,9 @@ typedef struct {
     float depthBiasConstant;
     float depthBiasSlope;
     float depthBiasClamp;
-    PalPolygonMode polygonMode; /**< (eg. PAL_POLYGON_MODE_FILL).*/
-    PalCullMode cullMode;       /**< (eg. PAL_CULL_MODE_BACK).*/
-    PalFrontFace frontFace;     /**< (eg. PAL_FRONT_FACE_CLOCKWISE).*/
+    PalPolygonMode polygonMode;
+    PalCullMode cullMode;
+    PalFrontFace frontFace;
 } PalRasterizerState;
 
 /**
@@ -2177,7 +2151,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalFragmentShadingRate rate; /**< (eg. PAL_FRAGMENT_SHADING_RATE_2X1).*/
+    PalFragmentShadingRate rate;
     PalFragmentShadingRateCombinerOp combinerOps[2];
 } PalFragmentShadingRateState;
 
@@ -2191,11 +2165,11 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 instanceId; /**< User defined id.*/
+    Uint32 instanceId;
     Uint32 mask;
     Uint32 hitGroupOffset;
     PalAccelerationStructureInstanceFlags flags;
-    PalAccelerationStructure* blas; /**< BLAS to use.*/
+    PalAccelerationStructure* blas;
     float transform[12];            /**< row major (3x4).*/
 } PalAccelerationStructureInstance;
 
@@ -2207,9 +2181,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 accelerationStructureSize; /**< Required acceleration structure size.*/
-    Uint32 scratchBufferSize;         /**< Required scratch buffer size.*/
-    Uint32 updateScratchBufferSize;   /**< Required scratch buffer size for updates.*/
+    Uint32 accelerationStructureSize;
+    Uint32 scratchBufferSize;         
+    Uint32 updateScratchBufferSize;   
 } PalAccelerationStructureBuildSize;
 
 /**
@@ -2222,8 +2196,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalVertexType vertexType; /**< (eg. PAL_VERTEX_TYPE_FLOAT3).*/
-    PalIndexType indexType;   /**< (eg. PAL_INDEX_TYPE_UINT32). If indexBufferAddress is not 0.*/
+    PalVertexType vertexType;
+    PalIndexType indexType;
     Uint32 vertexStride;
     Uint32 indexCount;
     Uint32 vertexCount;
@@ -2257,7 +2231,7 @@ typedef struct {
 typedef struct {
     PalGeometryFlags flags;
     Uint32 primitiveCount;
-    PalGeometryType type; /**< (eg. PAL_GEOMETRY_TYPE_TRIANGLE).*/
+    PalGeometryType type;
     void* data; /**< Pointer to geometry data. This will be casted based on the geometry type.*/
 } PalGeometry;
 
@@ -2271,7 +2245,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalAccelerationStructureType type; /**< (eg. PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL).*/
+    PalAccelerationStructureType type;
     Uint32 geometryCount;
     Uint32 instanceCount;
     PalAccelerationStructureBuildHints buildHints;
@@ -2294,9 +2268,7 @@ typedef struct {
  */
 typedef struct {
     Uint32 descriptorCount;
-    Uint32 shaderStageCount;
-    PalShaderStage* shaderStages;     /**< Array of shader stages that can access the descriptor.*/
-    PalDescriptorType descriptorType; /**< (eg. PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER).*/
+    PalDescriptorType descriptorType;
 } PalDescriptorSetLayoutBinding;
 
 /**
@@ -2310,8 +2282,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 bindingCount; /**< Number of descriptors of `descriptorType` that will be used.*/
-    PalDescriptorType descriptorType; /**< (eg. PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER).*/
+    Uint32 bindingCount;
+    PalDescriptorType descriptorType;
 } PalDescriptorPoolBindingSize;
 
 /**
@@ -2384,10 +2356,10 @@ typedef struct {
     Uint32 descriptorCount; 
     PalDescriptorType descriptorType;
     PalDescriptorSet* descriptorSet;
-    PalDescriptorBufferInfo* bufferInfos; /**< If PAL_DESCRIPTOR_TYPE* uniform or storage buffer.*/
-    PalDescriptorImageViewInfo* imageViewInfos; /**< If PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE*/
-    PalDescriptorSamplerInfo* samplerInfos; /**< If PAL_DESCRIPTOR_TYPE_SAMPLER.*/
-    PalDescriptorTLASInfo* tlasInfos;           /**< If PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE.*/
+    PalDescriptorBufferInfo* bufferInfos;
+    PalDescriptorImageViewInfo* imageViewInfos;
+    PalDescriptorSamplerInfo* samplerInfos;
+    PalDescriptorTLASInfo* tlasInfos;
 } PalDescriptorSetWriteInfo;
 
 /**
@@ -2403,7 +2375,7 @@ typedef struct {
     Uint64 offset;
     Uint64 size;
     Uint32 shaderStageCount;
-    PalShaderStage* shaderStages; /**< Array of shader stages that can access the push constant.*/
+    PalShaderStage* shaderStages;
 } PalPushConstantRange;
 
 /**
@@ -2508,6 +2480,21 @@ typedef struct {
 } PalShaderBindingTableRecordInfo;
 
 /**
+ * @struct PalShaderEntryInfo
+ * @brief Entry information of a shader.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 1.4
+ * @ingroup pal_graphics
+ */
+typedef struct {
+    Uint32 patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
+    PalShaderStage stage;
+    const char* entryName;
+} PalShaderEntryInfo;
+
+/**
  * @struct PalImageCreateInfo
  * @brief Creation parameters for an image.
  *
@@ -2517,14 +2504,14 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 width;  /**< Width of the image in pixels.*/
-    Uint32 height; /**< Height of the image in pixels.*/
+    Uint32 width;
+    Uint32 height;
     Uint32 depthOrArraySize;
     Uint32 mipLevelCount;
     PalSampleCount sampleCount;
-    PalImageType type;     /**< (eg. PAL_IMAGE_TYPE_2D).*/
-    PalFormat format;      /**< Format of the image.*/
-    PalImageUsages usages; /**< (eg. PAL_IMAGE_USAGE_COLOR_ATTACHEMENT).*/
+    PalImageType type;
+    PalFormat format;
+    PalImageUsages usages;
 } PalImageCreateInfo;
 
 /**
@@ -2538,7 +2525,7 @@ typedef struct {
  */
 typedef struct {
     PalFormat format; /**< Must be compatible with the image format.*/
-    PalImageViewType type;     /**< (eg. PAL_IMAGE_VIEW_TYPE_2D).*/
+    PalImageViewType type;
     PalImageSubresourceRange subresourceRange;
 } PalImageViewCreateInfo;
 
@@ -2579,13 +2566,13 @@ typedef struct {
  */
 typedef struct {
     bool clipped;
-    Uint32 width;                     /**< Width of the swapchain in pixels.*/
-    Uint32 height;                    /**< Height of the swapchain in pixels.*/
-    Uint32 imageCount;                /**< Number of swapchain images.*/
-    Uint32 imageArrayLayerCount;      /**< Set to 1 for default.*/
-    PalPresentMode presentMode;       /**< (eg. PAL_PRESENT_MODE_FIFO).*/
-    PalCompositeAplha compositeAlpha; /**< (eg. PAL_COMPOSITE_ALPHA_OPAQUE).*/
-    PalSurfaceFormat format;          /**< (eg. PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR).*/
+    Uint32 width;
+    Uint32 height;
+    Uint32 imageCount;
+    Uint32 imageArrayLayerCount;
+    PalPresentMode presentMode;
+    PalCompositeAplha compositeAlpha;
+    PalSurfaceFormat format;
 } PalSwapchainCreateInfo;
 
 /**
@@ -2598,11 +2585,10 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    Uint32 patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
-    PalShaderStage stage;
+    Uint32 entryCount;
     Uint64 bytecodeSize;
     void* bytecode;
-    const char* entryName;
+    PalShaderEntryInfo* entries;
 } PalShaderCreateInfo;
 
 /**
@@ -2615,7 +2601,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalBufferUsages usages; /**< (eg. PAL_BUFFER_USAGE_STORAGE).*/
+    PalBufferUsages usages;
     Uint64 size;
 } PalBufferCreateInfo;
 
@@ -2629,7 +2615,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalAccelerationStructureType type; /**< (eg. PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL).*/
+    PalAccelerationStructureType type;
     PalBuffer* buffer;
     Uint64 offset;
     Uint64 size;
@@ -2639,29 +2625,31 @@ typedef struct {
  * @struct PalDescriptorSetLayoutCreateInfo
  * @brief Creation parameters for a descriptor set layout.
  *
- * Uninitialized fields may result in undefined behavior.
+ * Uninitialized fields may result in undefined behavior. Set `enableDescriptorIndexing` to
+ * true to enable descriptor indexing for the descriptor set layout.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** If true `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled.*/
     bool enableDescriptorIndexing;
     Uint32 bindingCount;
+    Uint32 shaderStageCount;
+    PalShaderStage* shaderStages;
     PalDescriptorSetLayoutBinding* bindings;
 } PalDescriptorSetLayoutCreateInfo;
 
 /**
  * @struct PalDescriptorPoolCreateInfo
  * @brief Creation parameters for a descriptor pool.
- *
- * Uninitialized fields may result in undefined behavior.
+ * 
+ * Uninitialized fields may result in undefined behavior. Set `enableDescriptorIndexing` to
+ * true to enable descriptor indexing for the descriptor pool.
  *
  * @since 1.4
  * @ingroup pal_graphics
  */
 typedef struct {
-    /** If true `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled.*/
     bool enableDescriptorIndexing;
     Uint32 maxDescriptorSets;
     Uint32 maxDescriptorBindingSizes;
@@ -2694,7 +2682,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool primitiveRestartEnable; /**< False to disable.*/
+    bool primitiveRestartEnable;
     Uint32 vertexLayoutCount;
     Uint32 colorBlendAttachmentCount;
     Uint32 shaderCount;
@@ -2703,11 +2691,11 @@ typedef struct {
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
     PalVertexLayout* vertexLayouts;
-    PalColorBlendAttachment* colorBlendAttachments;        /**< Depth only: Can be nullptr.*/
-    PalRasterizerState* rasterizerState;                   /**< Set to nullptr for default.*/
-    PalMultisampleState* multisampleState;                 /**< Set to nullptr for default.*/
-    PalDepthStencilState* depthStencilState;               /**< Color only: Can be nullptr.*/
-    PalFragmentShadingRateState* fragmentShadingRateState; /**< Set to nullptr for default.*/
+    PalColorBlendAttachment* colorBlendAttachments;
+    PalRasterizerState* rasterizerState;
+    PalMultisampleState* multisampleState;
+    PalDepthStencilState* depthStencilState;
+    PalFragmentShadingRateState* fragmentShadingRateState;
     PalRenderingLayoutInfo* renderingLayout;
 } PalGraphicsPipelineCreateInfo;
 
@@ -2737,11 +2725,15 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    PalRayTracingShaderGroupType type; /**< (eg. PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL).*/
-    Uint32 anyHitShaderIndex;          /**< Index of any hit shader from shader array.*/
-    Uint32 closestHitShaderIndex;      /**< Index of closest hit shader from shader array.*/
-    Uint32 generalShaderIndex;         /**< Index of general hit shader from shader array.*/
-    Uint32 intersectionShaderIndex;    /**< Index of intersection hit shader from shader array.*/
+    PalRayTracingShaderGroupType type;
+    Uint32 anyHitShaderIndex;
+    Uint32 anyHitShaderEntryIndex;
+    Uint32 closestHitShaderIndex;
+    Uint32 closestHitShaderEntryIndex;
+    Uint32 generalShaderIndex;
+    Uint32 generalShaderEntryIndex;
+    Uint32 intersectionShaderIndex;
+    Uint32 intersectionShaderEntryIndex;
     Uint32 maxDataSize;    /**< Size of extra data associated with the shader group.*/
 } PalRayTracingShaderGroupCreateInfo;
 
@@ -2761,8 +2753,8 @@ typedef struct {
     Uint32 maxAttributeSize;
     Uint32 maxPayloadSize;
     PalPipelineLayout* pipelineLayout;
-    PalRayTracingShaderGroupCreateInfo* shaderGroups; /**< Array of shader group create info.*/
-    PalShader** shaders; /**< Array of shader stage. This is used by `shaderGroups`.*/
+    PalRayTracingShaderGroupCreateInfo* shaderGroups;
+    PalShader** shaders;
 } PalRayTracingPipelineCreateInfo;
 
 /**
@@ -7123,10 +7115,11 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * @brief Create a descriptor set layout that defines the bindings used by descriptor sets.
  *
  * The graphics system must be initialized before this call.
- *
- * Enable `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` when creating the device for descriptor
- * indexing (bindless resources). The feature must be supported by the device if not,
- * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * Set PalDescriptorSetLayoutCreateInfo::enableDescriptorIndexing to true to enable
+ * descriptor indexing on the descriptor set layout. `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING`
+ * must be supported and enabled when creating the device if not, this function will fail and 
+ * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  * 
  * This defines the layout, ordering and the number of descriptors a descriptor set uses.
  * 
@@ -7176,10 +7169,11 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  * @brief Create a descriptor pool to allocate descriptor sets.
  *
  * The graphics system must be initialized before this call.
- *
- * Enable `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` when creating the device for descriptor
- * indexing (bindless resources). The feature must be supported by the device if not,
- * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * 
+ * Set PalDescriptorPoolCreateInfo::enableDescriptorIndexing to true to enable
+ * descriptor indexing on the descriptor pool. `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING`
+ * must be supported and enabled when creating the device if not, this function will fail and 
+ * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] device Device that creates the descriptor pool.
  * @param[in] info Pointer to a PalDescriptorPoolCreateInfo struct that specifies parameters.
@@ -7239,7 +7233,11 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  * @brief Allocate a descriptor set from the provided descriptor pool.
  *
  * The graphics system must be initialized before this call. The descriptor set will be
- * allocated uninitialized therefore update it before use.
+ * allocated uninitialized therefore update it before use except the case where descriptor
+ * indexing is enabled.
+ * 
+ * `pool` and `layout` must either be created with descriptor indexing enabled or not. Any other
+ * pair will fail and return `PAL_RESULT_INVALID_OPERATION`.
  *
  * @param[in] device Device to allocate descriptor set on.
  * @param[in] pool Descriptor pool to allocate descriptor set from.
@@ -7363,6 +7361,8 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
+ * 
+ * @note The first entry of the compute shader will be used.
  *
  * @since 1.4
  * @ingroup pal_graphics
