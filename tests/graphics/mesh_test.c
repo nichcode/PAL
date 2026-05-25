@@ -390,14 +390,23 @@ bool meshTest()
     const char* sources[2];
     PalShaderEntryInfo entries[2];
 
+    PalViewport viewport = {0};
+    viewport.width = (float)WINDOW_WIDTH;
+    viewport.maxDepth = 1.0f;
+
     PalShaderCreateInfo shaderCreateInfo = {0};
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         sources[0] = "graphics/shaders/bin/spirv/mesh.spv";
         sources[1] = "graphics/shaders/bin/spirv/triangle_frag.spv";
 
+        viewport.height = -(float)WINDOW_HEIGHT;
+        viewport.y = (float)WINDOW_HEIGHT;
+
     } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
         sources[0] = "graphics/shaders/bin/dxil/mesh.dxil";
         sources[1] = "graphics/shaders/bin/dxil/triangle_frag.dxil";
+
+        viewport.height = (float)WINDOW_HEIGHT;
     }
 
     entries[0].stage = PAL_SHADER_STAGE_MESH;
@@ -488,12 +497,6 @@ bool meshTest()
     // main loop
     Uint32 currentFrame = 0;
     bool running = true;
-
-    // we are not resizing for the viewport and scissor will not change
-    PalViewport viewport = {0};
-    viewport.height = (float)WINDOW_HEIGHT;
-    viewport.width = (float)WINDOW_WIDTH;
-    viewport.maxDepth = 1.0f;
 
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;

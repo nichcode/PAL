@@ -1,11 +1,20 @@
 
-Texture2D texs[] : register(t0, space0); // set 0
-SamplerState samp : register(s0, space0); // set 0
 
-cbuffer PushConstants : register(b0)
+struct PushData
 {
     uint textureIndices[4];
 };
+
+[[vk::push_constant]]
+ConstantBuffer<PushData> pc : register(b0);
+
+// binding 0 set 0
+[[vk::binding(0, 0)]]
+Texture2D texs[] : register(t0, space0);
+
+// binding 1 set 0
+[[vk::binding(1, 0)]]
+SamplerState samp : register(s0, space0);
 
 struct PSInput
 {
@@ -33,6 +42,6 @@ float4 main(PSInput input) : SV_Target
         quadrant = 3;
     }
 
-    uint index = textureIndices[quadrant];
+    uint index = pc.textureIndices[quadrant];
     return texs[NonUniformResourceIndex(index)].Sample(samp, input.uv);
 }
