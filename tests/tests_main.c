@@ -66,11 +66,11 @@ int main(int argc, char** argv)
 #if PAL_HAS_GRAPHICS && PAL_HAS_VIDEO
     // registerTest(clearColorTest, "Clear Color Test");
     // registerTest(triangleTest, "Triangle Test");
-    // registerTest(meshTest, "Mesh Test");
+    registerTest(meshTest, "Mesh Test");
     // registerTest(textureTest, "Texture Test");
     // registerTest(geometryTest, "Geometry Test");
     // registerTest(indirectDrawTest, "Indirect Draw Test");
-    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
+    // registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
 #endif //
 
     runTests();

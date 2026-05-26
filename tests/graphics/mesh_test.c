@@ -19,7 +19,6 @@ static void PAL_CALL onGraphicsDebug(
 
 bool meshTest()
 {
-    // FIXME: Test properly on D3D12
     PalResult result;
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;

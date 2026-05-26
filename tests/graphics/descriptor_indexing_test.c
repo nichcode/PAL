@@ -51,6 +51,7 @@ static void PAL_CALL onGraphicsDebug(
 
 bool descriptorIndexingTest()
 {
+    // FIXME: Test properly on D3D12
     PalResult result;
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
@@ -214,7 +215,7 @@ bool descriptorIndexingTest()
             continue;
         }
 
-        // We want an adapter that supports spirv 1.4 or dxbc 5.1
+        // We want an adapter that supports spirv 1.4 or dxil 6.0
         result = palGetAdapterInfo(adapter, &adapterInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -225,7 +226,7 @@ bool descriptorIndexingTest()
         if (adapterInfo.apiType == PAL_ADAPTER_API_TYPE_D3D12 && 
             adapterInfo.type == PAL_ADAPTER_TYPE_CPU) {
             // D3D12 WARP Adapter has a runtime limitation that causes dynamic indices to fold
-            // back to slot 0. This has been tested on multiple WARP drivers
+            // back to slot 0.
 
             // explicit registers work for this test but its not reliable for real usage
             // Texture2D texs[] : register(t0, space0); // set 0
@@ -247,9 +248,9 @@ bool descriptorIndexingTest()
             }
         }
 
-        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-            if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
+            if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
                 break;
             }
         }
@@ -902,9 +903,9 @@ bool descriptorIndexingTest()
         viewport.height = -(float)WINDOW_HEIGHT;
         viewport.y = (float)WINDOW_HEIGHT;
 
-    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-        sources[0] = "graphics/shaders/bin/dxbc/texture_vert.dxbc";
-        sources[1] = "graphics/shaders/bin/dxbc/descriptor_indexing.dxbc";
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        sources[0] = "graphics/shaders/bin/dxil/texture_vert.dxil";
+        sources[1] = "graphics/shaders/bin/dxil/descriptor_indexing.dxil";
 
         viewport.height = (float)WINDOW_HEIGHT;
     }

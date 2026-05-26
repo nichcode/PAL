@@ -115,7 +115,7 @@ bool multiDescriptorSetTest()
             continue;
         }
 
-        // We want an adapter that supports spirv 1.0 or dxbc 5.1
+        // We want an adapter that supports spirv 1.0 or dxil 6.0
         result = palGetAdapterInfo(adapter, &adapterInfo);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -132,9 +132,9 @@ bool multiDescriptorSetTest()
             }
         }
 
-        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXBC);
-            if (target >= PAL_MAKE_SHADER_TARGET(5, 1)) {
+        if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+            target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_DXIL);
+            if (target >= PAL_MAKE_SHADER_TARGET(6, 0)) {
                 break;
             }
         }
@@ -193,8 +193,8 @@ bool multiDescriptorSetTest()
     if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
         source = "graphics/shaders/bin/spirv/compute_multi.spv";
 
-    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXBC) {
-        source = "graphics/shaders/bin/dxbc/compute_multi.dxbc";
+    } else if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_DXIL) {
+        source = "graphics/shaders/bin/dxil/compute_multi.dxil";
     }
 
     // read file
