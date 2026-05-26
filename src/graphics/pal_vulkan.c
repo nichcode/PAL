@@ -1500,9 +1500,15 @@ static VkBufferUsageFlags bufferUsageToVk(PalBufferUsages usages)
     }
 
     if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
-        flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
         flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT) {
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     }
 
     if (usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
@@ -3835,22 +3841,17 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     }
 
     // buffer device address is part of core 1.2
-    // if ray tracing is supported, buffer device address will be supported as well
-    if (adapterFeatures & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        adapterFeatures |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
-    } else {
-        if (props.apiVersion >= VK_API_VERSION_1_2 || bufferDeviceAddress) {
-            VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferAddress = {0};
-            bufferAddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+    if (props.apiVersion >= VK_API_VERSION_1_2 || bufferDeviceAddress) {
+        VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferAddress = {0};
+        bufferAddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 
-            VkPhysicalDeviceFeatures2 features;
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features.pNext = &bufferAddress;
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &bufferAddress;
 
-            s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-            if (bufferAddress.bufferDeviceAddress) {
-                adapterFeatures |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
-            }
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (bufferAddress.bufferDeviceAddress) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
         }
     }
 
@@ -4498,19 +4499,6 @@ PalResult PAL_CALL createDeviceVk(
             (PFN_vkGetRayTracingShaderGroupHandlesKHR)s_Vk.getDeviceProcAddr(
                 device->handle,
                 "vkGetRayTracingShaderGroupHandlesKHR");
-
-        device->getBufferrAddress =
-            (PFN_vkGetBufferDeviceAddress)s_Vk.getDeviceProcAddr(
-                device->handle,
-                "vkGetBufferDeviceAddress");
-
-        if (!device->getBufferrAddress) {
-            device->getBufferrAddress =
-                (PFN_vkGetBufferDeviceAddressKHR)s_Vk.getDeviceProcAddr(
-                    device->handle,
-                    "vkGetBufferDeviceAddressKHR");
-        }
-        device->features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
     }
 
     // buffer address procs
@@ -8240,7 +8228,6 @@ PalResult PAL_CALL createBufferVk(
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
             return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
         }
-        // buffer device address feature is supported if ray tracing is
 
     } else if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
@@ -8266,10 +8253,6 @@ PalResult PAL_CALL createBufferVk(
     }
 
     buffer->usages = info->usages;
-    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
-        buffer->usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
-    }
-
     buffer->device = vkDevice;
     buffer->memory = nullptr;
     *outBuffer = (PalBuffer*)buffer;
@@ -8445,7 +8428,7 @@ void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer)
 PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer* buffer)
 {
     Buffer* vkBuffer = (Buffer*)buffer;
-    if (!(vkBuffer->device->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
+    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS)) {
         return 0;
     }
 

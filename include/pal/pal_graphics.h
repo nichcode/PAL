@@ -1340,8 +1340,10 @@ typedef enum {
     PAL_BUFFER_USAGE_TRANSFER_SRC = PAL_BIT(4),
     PAL_BUFFER_USAGE_TRANSFER_DST = PAL_BIT(5),
     PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE = PAL_BIT(6),
-    PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(7),
-    PAL_BUFFER_USAGE_INDIRECT = PAL_BIT(8)
+    PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH = PAL_BIT(7),
+    PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT = PAL_BIT(8),
+    PAL_BUFFER_USAGE_DEVICE_ADDRESS = PAL_BIT(9),
+    PAL_BUFFER_USAGE_INDIRECT = PAL_BIT(10)
 } PalBufferUsages;
 
 enum PalDebugMessageSeverity {
@@ -6838,12 +6840,16 @@ PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
  *
  * The graphics system must be initialized before this call.
  *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` or `PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS` must be
- * supported and enabled by the device if `PAL_BUFFER_USAGE_DEVICE_ADDRESS` will be used.
- *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if
- * `PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE` will be used.
- *
+ * `PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS` must be supported and enabled by the device if 
+ * `PAL_BUFFER_USAGE_DEVICE_ADDRESS` will be used.
+ * 
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if 
+ * `PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE` or `PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH`
+ * or `PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT` will be used.
+ * 
+ * `PAL_BUFFER_USAGE_INDIRECT` must be supported and enabled by the device if the buffer will be
+ * used as an indirect buffer.
+ * 
  * @param[in] device Device that creates the buffer.
  * @param[in] info Pointer to a PalBufferCreateInfo struct that specifies parameters.
  * Must not be nullptr.

@@ -270,8 +270,6 @@ typedef struct {
 } Fence, Semaphore;
 
 typedef struct {
-    const PalGraphicsBackend* backend;
-
     Uint32 patchControlPoints;
     PalShaderStage stage;
     wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
@@ -1315,9 +1313,14 @@ static bool fillBuildInfoD3D12(
             tmp->Triangles.IndexBuffer = tmpData->indexBufferAddress;
             tmp->Triangles.IndexCount = tmpData->indexCount;
             if (tmpData->indexType == PAL_INDEX_TYPE_UINT16) {
-                tmp->Triangles.IndexFormat = DXGI_FORMAT_R16_FLOAT;
+                if (tmp->Triangles.IndexBuffer) {
+                    tmp->Triangles.IndexFormat = DXGI_FORMAT_R16_FLOAT;
+                }
+                
             } else {
-                tmp->Triangles.IndexFormat = DXGI_FORMAT_R32_FLOAT;
+                if (tmp->Triangles.IndexBuffer) {
+                    tmp->Triangles.IndexFormat = DXGI_FORMAT_R32_FLOAT;
+                }
             }
 
         } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
@@ -6436,6 +6439,17 @@ PalResult PAL_CALL createBufferD3D12(
     Buffer* buffer = nullptr;
     Device* d3dDevice = (Device*)device;
 
+    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
+        if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+
+    } else if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
+        if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
+            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        }
+    }
+
     buffer = palAllocate(s_D3D.allocator, sizeof(Buffer), 0);
     if (!buffer) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -6456,13 +6470,14 @@ PalResult PAL_CALL createBufferD3D12(
     }
 
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
-        buffer->desc.Flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+        buffer->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
+        buffer->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
     if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
-        if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
-        }
         buffer->supportsAddress = true;
     }
 
@@ -8095,7 +8110,6 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         exportCount += shader->entryCount;
     }
 
-    Uint32 localRootSize = 0;
     Uint32 subObjectCount = 0;
     Uint32 localExportCount = 0;
     ShaderBindingTableInfo sbtInfo = {0};
@@ -8125,28 +8139,32 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
                     break;
                 }
             }
+
+        } else {
+            sbtInfo.hitDataSize = max(sbtInfo.hitDataSize, tmp->maxDataSize);
+            sbtInfo.hitCount++;
         }
 
-        sbtInfo.hitDataSize = max(sbtInfo.hitDataSize, tmp->maxDataSize);
         if (tmp->maxDataSize) {
             localExportCount++;
         }
-
-        // find the max data size across all shader groups
-        localRootSize = max(localRootSize, sbtInfo.raygenDataSize);
-        localRootSize = max(localRootSize, sbtInfo.missDataSize);
-        localRootSize = max(localRootSize, sbtInfo.hitDataSize);
-        localRootSize = max(localRootSize, sbtInfo.callableDataSize);
-
-        sbtInfo.hitCount++;
-        subObjectCount++;
     }
 
+    // find the max data size across all shader groups
+    Uint32 localRootSize = 0;
+    localRootSize = max(localRootSize, sbtInfo.raygenDataSize);
+    localRootSize = max(localRootSize, sbtInfo.missDataSize);
+    localRootSize = max(localRootSize, sbtInfo.hitDataSize);
+    localRootSize = max(localRootSize, sbtInfo.callableDataSize);
+
+    // // D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE 
     // // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG 
     // // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG
-    subObjectCount += info->shaderCount + 2;
+    subObjectCount += info->shaderCount + 3;
+
+    subObjectCount += sbtInfo.hitCount;
     if (localRootSize) {
-        // D3D12_LOCAL_ROOT_SIGNATURE
+        // D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE
         // D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION
         subObjectCount += 2;
     }
@@ -8186,62 +8204,14 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    // check if we need a local root signature
+    // global root signature
     Uint32 subObjectIndex = 0;
-    D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION localExportAssociation = {0};
-    if (localRootSize) {
-        D3D12_ROOT_PARAMETER1 parameter = {0};
-        parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        parameter.Constants.Num32BitValues = alignD3D12(localRootSize, 4) / 4;
-        parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    D3D12_GLOBAL_ROOT_SIGNATURE globalRootSignature = {0};
+    globalRootSignature.pGlobalRootSignature = layout->handle;
 
-        D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc = {0};
-        rootDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
-        rootDesc.Desc_1_1.NumParameters = 1;
-        rootDesc.Desc_1_1.pParameters = &parameter;
-        rootDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-
-        ID3DBlob* blob = nullptr;
-        result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
-        if (FAILED(result)) {
-            pollMessagesD3D12(d3dDevice);
-            if (result == E_INVALIDARG) {
-                return PAL_RESULT_INVALID_ARGUMENT;
-            }
-            return PAL_RESULT_PLATFORM_FAILURE;
-        }
-
-        result = d3dDevice->handle->lpVtbl->CreateRootSignature(
-            d3dDevice->handle,
-            0,
-            blob->lpVtbl->GetBufferPointer(blob),
-            blob->lpVtbl->GetBufferSize(blob),
-            &IID_RootSignature,
-            (void**)&pipeline->localRootSignature);
-
-        if (FAILED(result)) {
-            pollMessagesD3D12(d3dDevice);
-            if (result == E_INVALIDARG) {
-                return PAL_RESULT_INVALID_ARGUMENT;
-            } else if (result == E_OUTOFMEMORY) {
-                return PAL_RESULT_OUT_OF_MEMORY;
-            }
-            return PAL_RESULT_PLATFORM_FAILURE;
-        }
-
-        subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
-        subObjects[subObjectIndex].pDesc = pipeline->localRootSignature;
-
-        localExportAssociation.pSubobjectToAssociate = &subObjects[subObjectIndex];
-        localExportAssociation.pExports = localExports;
-        localExportAssociation.NumExports = localExportCount;
-        subObjectIndex++;
-
-        D3D12_STATE_SUBOBJECT_TYPE t = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
-        subObjects[subObjectIndex].Type = t;
-        subObjects[subObjectIndex].pDesc = &localExportAssociation;
-        subObjectIndex++;
-    }
+    subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    subObjects[subObjectIndex].pDesc = &globalRootSignature;
+    subObjectIndex++;
 
     // shaders
     Uint32 exportsOffset = 0;
@@ -8341,6 +8311,65 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         subObjectIndex++;
         hitGroupIndex++;
         localExportIndex++;
+    }
+
+    // check if we need a local root signature
+    D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION localExportAssociation = {0};
+    D3D12_LOCAL_ROOT_SIGNATURE localRootSignature = {0};
+
+    if (localRootSize) {
+        D3D12_ROOT_PARAMETER1 parameter = {0};
+        parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        parameter.Constants.Num32BitValues = alignD3D12(localRootSize, 4) / 4;
+        parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc = {0};
+        rootDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+        rootDesc.Desc_1_1.NumParameters = 1;
+        rootDesc.Desc_1_1.pParameters = &parameter;
+        rootDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+
+        ID3DBlob* blob = nullptr;
+        result = s_D3D.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dDevice);
+            if (result == E_INVALIDARG) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        result = d3dDevice->handle->lpVtbl->CreateRootSignature(
+            d3dDevice->handle,
+            0,
+            blob->lpVtbl->GetBufferPointer(blob),
+            blob->lpVtbl->GetBufferSize(blob),
+            &IID_RootSignature,
+            (void**)&pipeline->localRootSignature);
+
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dDevice);
+            if (result == E_INVALIDARG) {
+                return PAL_RESULT_INVALID_ARGUMENT;
+            } else if (result == E_OUTOFMEMORY) {
+                return PAL_RESULT_OUT_OF_MEMORY;
+            }
+            return PAL_RESULT_PLATFORM_FAILURE;
+        }
+
+        localRootSignature.pLocalRootSignature = pipeline->localRootSignature;
+        subObjects[subObjectIndex].Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+        subObjects[subObjectIndex].pDesc = pipeline->localRootSignature;
+
+        localExportAssociation.pSubobjectToAssociate = &subObjects[subObjectIndex];
+        localExportAssociation.pExports = localExports;
+        localExportAssociation.NumExports = localExportCount;
+        subObjectIndex++;
+
+        D3D12_STATE_SUBOBJECT_TYPE t = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+        subObjects[subObjectIndex].Type = t;
+        subObjects[subObjectIndex].pDesc = &localExportAssociation;
+        subObjectIndex++;
     }
 
     // ray tracing config

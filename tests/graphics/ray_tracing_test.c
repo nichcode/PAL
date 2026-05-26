@@ -119,6 +119,11 @@ bool rayTracingTest()
             adapter = nullptr;
             continue;
         }
+
+        if (!(adapterFeatures & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
+            adapter = nullptr;
+            continue;
+        }
         
         // We want an adapter that supports spirv 1.4 or dxil 6.3
         result = palGetAdapterInfo(adapter, &adapterInfo);
@@ -156,6 +161,7 @@ bool rayTracingTest()
 
     // create a device
     PalAdapterFeatures features = PAL_ADAPTER_FEATURE_RAY_TRACING;
+    features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
     result = palCreateDevice(adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -335,7 +341,8 @@ bool rayTracingTest()
        -1.0f, -1.0f};
 
     bufferCreateInfo.size = sizeof(vertices);
-    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
+    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -419,6 +426,7 @@ bool rayTracingTest()
     // create the blas buffer and blas
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &blasBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -493,7 +501,8 @@ bool rayTracingTest()
     }
 
     bufferCreateInfo.size = instanceBufferSize;
-    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
+    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &instanceBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -574,6 +583,7 @@ bool rayTracingTest()
     // create the tlas buffer and tlas
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
+    bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &tlasBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -622,7 +632,7 @@ bool rayTracingTest()
 
     // create scratch buffer
     bufferCreateInfo.size = buildSizes.scratchBufferSize + blasScratchSize;;
-    bufferCreateInfo.usages = PAL_BUFFER_USAGE_STORAGE;
+    bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &scratchBuffer);
