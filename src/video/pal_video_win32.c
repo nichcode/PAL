@@ -25,6 +25,8 @@ freely, subject to the following restrictions:
 // Includes
 // ==================================================
 
+#ifdef _WIN32
+
 #include "pal/pal_video.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -3050,3 +3052,5 @@ void PAL_CALL palSetPreferredInstance(void* instance)
         s_Video.instance = instance;
     }
 }
+
+#endif // _WIN32

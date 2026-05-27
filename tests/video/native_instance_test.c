@@ -186,6 +186,7 @@ void* openDisplayX11()
 
     return s_XOpenDisplay(nullptr);
 #endif // __linux__
+    return nullptr;
 }
 
 void closeDisplayX11(void* instance)
@@ -245,6 +246,7 @@ void* openDisplayWayland()
 
     return display;
 #endif // __linux__
+    return nullptr;
 }
 
 void closeDisplayWayland(void* instance)
@@ -258,9 +260,9 @@ void closeDisplayWayland(void* instance)
 
 void* openDisplayWin32()
 {
-#ifdef __WIN32
+#ifdef _WIN32
     return GetModuleHandleW(nullptr);
-#endif // __WIN32
+#endif // _WIN32
 }
 
 void closeDisplayWin32(void* instance)

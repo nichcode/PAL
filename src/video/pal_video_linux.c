@@ -25,6 +25,8 @@ freely, subject to the following restrictions:
 // Includes
 // ==================================================
 
+#ifdef __linux__
+
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_video.h"
@@ -8276,3 +8278,5 @@ void PAL_CALL palSetPreferredInstance(void* instance)
         s_Video.platformInstance = instance;
     }
 }
+
+#endif // __linux__

@@ -101,8 +101,8 @@ bool graphicsTest()
             return false;
         }
         
-        Uint32 vramMb = info.vram / (1024.0 * 1024.0);
-        Uint32 sharedMemMb = info.sharedMemory / (1024.0 * 1024.0);
+        Uint32 vramMb = (Uint32)(info.vram / 1024 * 1024);
+        Uint32 sharedMemMb = (Uint32)(info.sharedMemory / 1024 * 1024);
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);

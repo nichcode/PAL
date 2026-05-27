@@ -646,7 +646,7 @@ static Vulkan s_Vk = {0};
 
 static void* loadLibrary(const char* name)
 {
-#ifdef __WIN32
+#ifdef _WIN32
     return LoadLibraryA(name);
 #elif defined (__linux__)
     return dlopen(name, RTLD_LAZY);
@@ -655,7 +655,7 @@ static void* loadLibrary(const char* name)
 
 static void freeLibrary(void* lib)
 {
-#ifdef __WIN32
+#ifdef _WIN32
     FreeLibrary((HMODULE)lib);
 #elif defined (__linux__)
     dlclose(lib);
@@ -664,7 +664,7 @@ static void freeLibrary(void* lib)
 
 static void* loadProc(void* lib, const char* name)
 {
-#ifdef __WIN32
+#ifdef _WIN32
     return GetProcAddress((HMODULE)lib, name);
 #elif defined (__linux__)
     return dlsym(lib, name);
@@ -5642,7 +5642,7 @@ PalResult PAL_CALL createSurfaceVk(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-#ifdef __WIN32
+#ifdef _WIN32
     if (!s_Vk.createWin32Surface) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -5729,7 +5729,7 @@ PalResult PAL_CALL createSurfaceVk(
         return PAL_RESULT_SUCCESS;
     }
 
-#endif // __WIN32
+#endif // _WIN32
 }
 
 void PAL_CALL destroySurfaceVk(PalSurface* surface)

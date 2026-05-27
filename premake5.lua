@@ -27,8 +27,8 @@ workspace "PAL_workspace"
         staticruntime "off"
     end
 
+    multiprocessorcompile "On"
     configurations { "Debug", "Release" }
-    flags { "MultiProcessorCompile" }
 
     filter {"system:windows", "configurations:*"}
         architecture "x64"
@@ -73,7 +73,7 @@ workspace "PAL_workspace"
         end
     end
 
-    if (_ACTION == "vs2022") then
+    if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
         if (_OPTIONS["compiler"] == "clang") then
             toolset("clang")
         end
@@ -82,7 +82,9 @@ workspace "PAL_workspace"
             "_CRT_SECURE_NO_WARNINGS"
         }
         disablewarnings {
-            "6387"
+            "6387",
+            "4018",
+            "4133"
         }
     end
 

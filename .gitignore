@@ -15,6 +15,7 @@ Makefile
 
 #  Visual studio files
 **.sln
+**.slnx
 **.filters
 **.user
 **.vcxproj

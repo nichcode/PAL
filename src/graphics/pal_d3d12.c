@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 
 #if PAL_HAS_D3D12
 
-#ifdef __WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -8839,4 +8839,4 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
 
 #endif // PAL_HAS_D3D12
 
-#endif // __WIN32
+#endif // _WIN32
