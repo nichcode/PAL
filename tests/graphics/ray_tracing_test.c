@@ -59,7 +59,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
