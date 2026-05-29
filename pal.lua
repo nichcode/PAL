@@ -170,11 +170,18 @@ project "PAL"
             hasD3D12 = true
 
         else
-            if (_ACTION == "vs2022") then
-                local sdkDir = os.getenv("WindowsSdkDir")
-                local sdkVer = os.getenv("WindowsSDKVersion")
-                if (sdkDir and sdkVer) then
-                    d3d12_include = path.join(sdkDir, "Include", sdkVer, "um")
+            if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
+                d3d12_include = ""
+                local base = "C:/Program Files (x86)/Windows Kits/10/Include"
+                local versions = os.matchdirs(base .. "/*")
+                table.sort(versions)
+
+                for i = #versions, 1, -1 do
+                    local v = versions[i]
+                    d3d12_include = path.join(v, "um")
+                    if (os.isdir(d3d12_include)) then
+                        break
+                    end
                 end
             else
                 d3d12_include = path.join(ucrt, "include")

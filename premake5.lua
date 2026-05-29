@@ -84,7 +84,8 @@ workspace "PAL_workspace"
         disablewarnings {
             "6387",
             "4018",
-            "4133"
+            "4133",
+            "4101"
         }
     end
 

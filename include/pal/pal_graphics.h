@@ -1826,7 +1826,7 @@ typedef struct {
     bool memoryTypes[PAL_MEMORY_TYPE_MAX];
     Uint64 memoryMask;
     Uint64 size;
-    Uint32 alignment;
+    Uint64 alignment;
 } PalMemoryRequirements;
 
 /**

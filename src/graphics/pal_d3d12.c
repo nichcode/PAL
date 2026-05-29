@@ -67,10 +67,16 @@ freely, subject to the following restrictions:
 #define COMPUTE_PIPELINE 1221
 #define RAY_TRACING_PIPELINE 1222
 
+#if INTPTR_MAX == INT64_MAX
+#define PTR_SIZE 8
+#else
+#define PTR_SIZE 4
+#endif // INTPTR_MAX
+
 #if defined(_MSC_VER)
- #define ALIGN_STREAM __declspec(align(sizeof(void*)))
+#define ALIGN_STREAM __declspec(align(PTR_SIZE))
 #elif defined(__GNUC__) || defined(__clang__)
- #define ALIGN_STREAM __attribute__((aligned(sizeof(void*))))
+#define ALIGN_STREAM __attribute__((aligned(PTR_SIZE)))
 #else
  #define ALIGN_STREAM
 #endif // _MSC_VER
@@ -1589,29 +1595,29 @@ static void fillSubresourceD3D12(
     if (rtvDesc) {
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
             rtvDesc->Texture1D.MipSlice = range->startMipLevel;
-            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+            rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
             rtvDesc->Texture1DArray.MipSlice = range->startMipLevel;
             rtvDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
             rtvDesc->Texture1DArray.ArraySize = range->layerArrayCount;
-            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+            rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
             rtvDesc->Texture2D.MipSlice = range->startMipLevel;
-            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
             rtvDesc->Texture2DArray.MipSlice = range->startMipLevel;
             rtvDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
             rtvDesc->Texture2DArray.ArraySize = range->layerArrayCount;
-            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+            rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_3D) {
             rtvDesc->Texture3D.MipSlice = range->startMipLevel;
             rtvDesc->Texture3D.FirstWSlice = range->startArrayLayer;
             rtvDesc->Texture3D.WSize = range->layerArrayCount;
-            rtvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+            rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
         }
         return;
 
@@ -1624,23 +1630,23 @@ static void fillSubresourceD3D12(
 
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
             dsvDesc->Texture1D.MipSlice = range->startMipLevel;
-            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+            dsvDesc->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
             dsvDesc->Texture1DArray.MipSlice = range->startMipLevel;
             dsvDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
             dsvDesc->Texture1DArray.ArraySize = range->layerArrayCount;
-            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+            dsvDesc->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
             dsvDesc->Texture2D.MipSlice = range->startMipLevel;
-            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            dsvDesc->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
             dsvDesc->Texture2DArray.MipSlice = range->startMipLevel;
             dsvDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
             dsvDesc->Texture2DArray.ArraySize = range->layerArrayCount;
-            dsvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+            dsvDesc->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         }
         return;
 
@@ -1691,29 +1697,29 @@ static void fillSubresourceD3D12(
     } else if (uavDesc) {
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
             uavDesc->Texture1D.MipSlice = range->startMipLevel;
-            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+            uavDesc->ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_1D_ARRAY) {
             uavDesc->Texture1DArray.MipSlice = range->startMipLevel;
             uavDesc->Texture1DArray.FirstArraySlice = range->startArrayLayer;
             uavDesc->Texture1DArray.ArraySize = range->layerArrayCount;
-            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+            uavDesc->ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_2D) {
             uavDesc->Texture2D.MipSlice = range->startMipLevel;
-            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            uavDesc->ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_2D_ARRAY) {
             uavDesc->Texture2DArray.MipSlice = range->startMipLevel;
             uavDesc->Texture2DArray.FirstArraySlice = range->startArrayLayer;
             uavDesc->Texture2DArray.ArraySize = range->layerArrayCount;
-            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+            uavDesc->ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 
         } else if (type == PAL_IMAGE_VIEW_TYPE_3D) {
             uavDesc->Texture3D.MipSlice = range->startMipLevel;
             uavDesc->Texture3D.FirstWSlice = range->startArrayLayer;
             uavDesc->Texture3D.WSize = range->layerArrayCount;
-            uavDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+            uavDesc->ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
         }
         return;
     }
@@ -1926,19 +1932,20 @@ static void pollMessagesD3D12(Device* device)
         return;
     }
 
-    Uint8* tmpBuffer[MAX_MESSAGE_SIZE];
     UINT64 messageCount = queue->lpVtbl->GetNumStoredMessages(queue);
     for (int i = 0; i < messageCount; i++) {
         SIZE_T size = 0;
-        queue->lpVtbl->GetMessageA(queue, i, nullptr, &size);
-        if (size > sizeof(tmpBuffer)) {
-            size = sizeof(tmpBuffer);
+        queue->lpVtbl->GetMessage(queue, i, nullptr, &size);
+
+        Uint8* buffer = palAllocate(s_D3D.allocator, size, 0);
+        if (!buffer) {
+            return;
         }
 
-        queue->lpVtbl->GetMessageA(queue, i, (D3D12_MESSAGE*)tmpBuffer, &size);
-        const char* message = ((D3D12_MESSAGE*)tmpBuffer)->pDescription;
-        D3D12_MESSAGE_CATEGORY category = ((D3D12_MESSAGE*)tmpBuffer)->Category;
-        D3D12_MESSAGE_SEVERITY severity = ((D3D12_MESSAGE*)tmpBuffer)->Severity;
+        queue->lpVtbl->GetMessage(queue, i, (D3D12_MESSAGE*)buffer, &size);
+        const char* message = ((D3D12_MESSAGE*)buffer)->pDescription;
+        D3D12_MESSAGE_CATEGORY category = ((D3D12_MESSAGE*)buffer)->Category;
+        D3D12_MESSAGE_SEVERITY severity = ((D3D12_MESSAGE*)buffer)->Severity;
 
         PalDebugMessageSeverity msgSeverity = 0;
         PalDebugMessageType msgType = 0;
@@ -1984,6 +1991,7 @@ static void pollMessagesD3D12(Device* device)
         }
 
         s_D3D.debugCallback(s_D3D.debugUserData, msgSeverity, msgType, message);
+        palFree(s_D3D.allocator, buffer);
     }
     queue->lpVtbl->ClearStoredMessages(queue);
 }
@@ -3832,7 +3840,7 @@ PalResult PAL_CALL createSamplerD3D12(
 
     sampler->desc.MaxAnisotropy = 1;
     if (info->enableAnisotropy) {
-        sampler->desc.MaxAnisotropy = info->maxAnisotropy;
+        sampler->desc.MaxAnisotropy = (UINT)info->maxAnisotropy;
     }
 
     sampler->desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -4273,10 +4281,9 @@ PalResult PAL_CALL presentSwapchainD3D12(
 
         // check if swapchain needs to be resize
         RECT windowRect;
-        Uint32 w, h;
         bool ret = GetClientRect((HWND)d3dSwapchain->surface->handle, &windowRect);
-        w = windowRect.right - windowRect.left;
-        w = windowRect.bottom - windowRect.top;
+        Uint32 w = windowRect.right - windowRect.left;
+        Uint32 h = windowRect.bottom - windowRect.top;
 
         if (!ret) {
             return PAL_RESULT_SURFACE_LOST;
@@ -4499,7 +4506,7 @@ PalResult PAL_CALL waitFenceD3D12(
         if (timeout == PAL_INFINITE) {
             ret = WaitForSingleObject(event, INFINITE);
         } else {
-            ret = WaitForSingleObject(event, timeout);
+            ret = WaitForSingleObject(event, (DWORD)timeout);
         }
         CloseHandle(event);
     }
@@ -4617,7 +4624,7 @@ PalResult PAL_CALL waitSemaphoreD3D12(
         if (timeout == PAL_INFINITE) {
             ret = WaitForSingleObject(event, INFINITE);
         } else {
-            ret = WaitForSingleObject(event, timeout);
+            ret = WaitForSingleObject(event, (DWORD)timeout);
         }
         CloseHandle(event);
     }
@@ -5626,7 +5633,7 @@ PalResult PAL_CALL cmdBindVertexBuffersD3D12(
         Buffer* tmp = (Buffer*)buffers[i];
         views[i].BufferLocation = tmp->handle->lpVtbl->GetGPUVirtualAddress(tmp->handle);
         views[i].BufferLocation = views[i].BufferLocation + offsets[i];
-        views[i].SizeInBytes = tmp->size;
+        views[i].SizeInBytes = (UINT)tmp->size;
         views[i].StrideInBytes = pipeline->strides[i];
     }
 
@@ -5654,7 +5661,7 @@ PalResult PAL_CALL cmdBindIndexBufferD3D12(
 
     view.BufferLocation = indexBuffer->handle->lpVtbl->GetGPUVirtualAddress(indexBuffer->handle);
     view.BufferLocation = view.BufferLocation + offset;
-    view.SizeInBytes = indexBuffer->size;
+    view.SizeInBytes = (UINT)indexBuffer->size;
     if (type == PAL_INDEX_TYPE_UINT16) {
         view.Format = DXGI_FORMAT_R16_UINT;
     } else {
@@ -6053,7 +6060,7 @@ PalResult PAL_CALL cmdTraceRaysD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Uint32 stride = d3dSbt->raygen.region.StrideInBytes;
+    Uint64 stride = d3dSbt->raygen.region.StrideInBytes;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
     raygenAddress.SizeInBytes = d3dSbt->raygen.region.SizeInBytes;
     raygenAddress.StartAddress = d3dSbt->baseAddress + raygenIndex * stride;
@@ -6114,7 +6121,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     desc.Height = data.groupCountXOrHeight;
     desc.Depth = data.groupCountXOrDepth;
 
-    Uint32 stride = d3dSbt->raygen.region.StrideInBytes;
+    Uint64 stride = d3dSbt->raygen.region.StrideInBytes;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
     raygenAddress.SizeInBytes = d3dSbt->raygen.region.SizeInBytes;
     raygenAddress.StartAddress = d3dSbt->baseAddress + raygenIndex * stride;
@@ -6420,9 +6427,9 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
             &sizeInfo);
     }
 
-    size->accelerationStructureSize = sizeInfo.ResultDataMaxSizeInBytes;
-    size->scratchBufferSize = sizeInfo.ScratchDataSizeInBytes;
-    size->updateScratchBufferSize = sizeInfo.UpdateScratchDataSizeInBytes;
+    size->accelerationStructureSize = (UINT)sizeInfo.ResultDataMaxSizeInBytes;
+    size->scratchBufferSize = (UINT)sizeInfo.ScratchDataSizeInBytes;
+    size->updateScratchBufferSize = (UINT)sizeInfo.UpdateScratchDataSizeInBytes;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6673,7 +6680,7 @@ PalResult PAL_CALL mapBufferMemoryD3D12(
         return PAL_RESULT_MEMORY_MAP_FAILED;
     }
 
-    *outPtr = ptr + offset;
+    *outPtr = (Uint8*)ptr + offset;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -7341,7 +7348,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     PipelineLayout* layout = nullptr;
     Uint32 resourceCount = 0;
     Uint32 samplerCount = 0;
-    Uint32 pushConstantSize = 0;
+    Uint64 pushConstantSize = 0;
     Uint32 sizeInBytes = sizeof(D3D12_DESCRIPTOR_RANGE1);
 
     Uint32 rangesOffset = 0;
@@ -7429,7 +7436,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     if (pushConstantSize) {
         D3D12_ROOT_PARAMETER1* parameter = &parameters[parameterCount];
         parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        parameter->Constants.Num32BitValues = pushConstantSize / 4;
+        parameter->Constants.Num32BitValues = (UINT)pushConstantSize / 4;
         parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
         layout->constantIndex = parameterCount;
@@ -8789,8 +8796,8 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    Uint32 stride = 0;
-    Uint32 offset = 0;
+    Uint64 stride = 0;
+    Uint64 offset = 0;
     Uint32 startIndex = 0;
 
     for (int i = 0; i < count; i++) {
