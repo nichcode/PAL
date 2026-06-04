@@ -697,6 +697,10 @@ bool graphicsTest()
             palLog(nullptr, "  Partially bound descriptors");
         }
 
+        if (features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS) {
+            palLog(nullptr, "  Null descriptors");
+        }
+
         palLog(nullptr, "");
         palDestroyDevice(device);
     }
