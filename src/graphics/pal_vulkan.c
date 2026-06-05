@@ -3771,10 +3771,14 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
 
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         // core features we need
-        if (desc.runtimeDescriptorArray          || 
-            desc.descriptorBindingPartiallyBound || 
+        if (desc.runtimeDescriptorArray || 
             desc.descriptorBindingUpdateUnusedWhilePending) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+        }
+
+        // TODO: add PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS
+        if (desc.descriptorBindingPartiallyBound) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS;
         }
     }
 
@@ -8655,6 +8659,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
     Uint32 count,
     PalDescriptorSetWriteInfo* infos)
 {
+    // TODO: add null descriptors
     VkResult result;
     Device* vkDevice = (Device*)device;
     VkWriteDescriptorSet* writes = nullptr;

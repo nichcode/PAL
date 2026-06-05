@@ -125,6 +125,8 @@ typedef Uint64 PalAdapterFeatures;
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH PAL_BIT64(32)
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT PAL_BIT64(33)
 #define PAL_ADAPTER_FEATURE_DISPATCH_BASE PAL_BIT64(34)
+#define PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS PAL_BIT64(35)
+#define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS PAL_BIT64(36)
 
 /**
  * @struct PalAdapter
@@ -7269,6 +7271,15 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  * @brief Update a descriptor set with descriptors (resources).
  *
  * The graphics system must be initialized before this call.
+ * 
+ * If the write info has no valid resource handle, then `PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS`
+ * must be supported and enabled when creating the device if not, this function will fail and 
+ * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ *
+ * Set PalDescriptorPoolCreateInfo::enableDescriptorIndexing to true to enable
+ * descriptor indexing on the descriptor pool. `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING`
+ * must be supported and enabled when creating the device if not, this function will fail and 
+ * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] device The Device. Must match the one used to allocate descriptor set.
  * @param[in] count Capacity of the PalDescriptorSetWriteInfo array.

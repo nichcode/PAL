@@ -51,7 +51,6 @@ static void PAL_CALL onGraphicsDebug(
 
 bool descriptorIndexingTest()
 {
-    // FIXME: Test properly on D3D12
     PalResult result;
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
@@ -223,22 +222,6 @@ bool descriptorIndexingTest()
             return false;
         }
 
-        if (adapterInfo.apiType == PAL_ADAPTER_API_TYPE_D3D12 && 
-            adapterInfo.type == PAL_ADAPTER_TYPE_CPU) {
-            // D3D12 WARP Adapter has a runtime limitation that causes dynamic indices to fold
-            // back to slot 0.
-
-            // explicit registers work for this test but its not reliable for real usage
-            // Texture2D texs[] : register(t0, space0); // set 0
-            // Texture2D tex17 : register(t17, space0); // set 0
-            // Texture2D tex47 : register(t47, space0); // set 0
-            // Texture2D tex55 : register(t55, space0); // set 0
-            // Texture2D tex78 : register(t78, space0); // set 0
-
-            adapter = nullptr;
-            continue;
-        }           
-
         // we prefer spirv first if an adapter supports multiple shader formats
         Uint32 target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
@@ -270,6 +253,15 @@ bool descriptorIndexingTest()
     features |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
         features |= PAL_ADAPTER_FEATURE_FENCE_RESET;
+    }
+
+    // check if null descriptors or partially bound is supported
+    if (adapterFeatures & PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS) {
+        features |= PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS;
+    }
+
+    if (adapterFeatures & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS) {
+        features |= PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS;
     }
 
     result = palCreateDevice(adapter, features, &device);
@@ -1010,6 +1002,58 @@ bool descriptorIndexingTest()
         palLog(nullptr, "Failed to allocate descriptor set: %s", error);
         return false;
     }
+
+    // check if null descriptors was enabled and partially bound was not supported
+    bool hasPartiallyBound = adapterFeatures & PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS;
+    if (adapterFeatures & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS && !hasPartiallyBound) {
+        // write null descriptors into the slots
+        PalDescriptorSetWriteInfo writeInfo = {0};
+        writeInfo.layoutBindingIndex = 0;
+        writeInfo.descriptorSet = descriptorSet;
+        writeInfo.descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        writeInfo.descriptorCount = 100;
+
+        writeInfo.arrayElement = 0;
+        writeInfo.samplerInfos = nullptr;
+        writeInfo.imageViewInfos = nullptr;
+        writeInfo.tlasInfos =  nullptr;
+        writeInfo.bufferInfos = nullptr;
+
+        result = palUpdateDescriptorSet(device, 1, &writeInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to update descriptor set: %s", error);
+            return false;
+        }
+
+    } else {
+        // both null descriptors and partially bound are not supported
+        // we write the first texture to all slots
+        PalDescriptorImageViewInfo imageViewInfos[100];
+        for (int i = 0; i < 100; i++) {
+            imageViewInfos[i].imageView = textureViews[0];
+        }
+
+        PalDescriptorSetWriteInfo writeInfo = {0};
+        writeInfo.layoutBindingIndex = 0;
+        writeInfo.descriptorSet = descriptorSet;
+        writeInfo.descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        writeInfo.descriptorCount = 100;
+
+        writeInfo.arrayElement = 0;
+        writeInfo.samplerInfos = nullptr;
+        writeInfo.imageViewInfos = imageViewInfos;
+        writeInfo.tlasInfos =  nullptr;
+        writeInfo.bufferInfos = nullptr;
+
+        result = palUpdateDescriptorSet(device, 1, &writeInfo);
+        if (result != PAL_RESULT_SUCCESS) {
+            const char* error = palFormatResult(result);
+            palLog(nullptr, "Failed to update descriptor set: %s", error);
+            return false;
+        }
+    }
+
 
     // we only write 4 descriptors
     Uint32 arrElements[] = { ARRAY_ELEMENT_0, ARRAY_ELEMENT_1, ARRAY_ELEMENT_2, ARRAY_ELEMENT_3 };

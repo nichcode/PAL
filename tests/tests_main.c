@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 #if PAL_HAS_GRAPHICS
     // registerTest(graphicsTest, "Graphics Test");
     // registerTest(computeTest, "Compute Test");
-    registerTest(rayTracingTest, "Ray Tracing Test");
+    // registerTest(rayTracingTest, "Ray Tracing Test");
     // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
 #endif // PAL_HAS_GRAPHICS
 
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     // registerTest(textureTest, "Texture Test");
     // registerTest(geometryTest, "Geometry Test");
     // registerTest(indirectDrawTest, "Indirect Draw Test");
-    // registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
+    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
 #endif //
 
     runTests();

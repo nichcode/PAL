@@ -93,6 +93,10 @@ bool graphicsTest()
             deviceFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
         }
 
+        if (features & PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS) {
+            deviceFeatures |= PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS;
+        }
+
         result = palCreateDevice(adapter, deviceFeatures, &device);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -687,6 +691,10 @@ bool graphicsTest()
 
         if (features & PAL_ADAPTER_FEATURE_DISPATCH_BASE) {
             palLog(nullptr, "  Dispatch base");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS) {
+            palLog(nullptr, "  Partially bound descriptors");
         }
 
         palLog(nullptr, "");
