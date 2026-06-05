@@ -2173,21 +2173,20 @@ PalResult PAL_CALL initGraphicsD3D12(
 
                 // message types
                 if (!debugger->denyGeneral) {
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_APPLICATION_DEFINED;
                     s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_INITIALIZATION;
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_CLEANUP;
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_COMPILATION;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION;
                 }
 
                 if (!debugger->denyPerformance) {
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_CREATION;
                     s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_EXECUTION;
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_SHADER;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
                 }
 
                 if (!debugger->denyValidation) {
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_CREATION;
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_GETTING;
-                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
+                    s_D3D.categories[s_D3D.categoryCount++] = D3D12_MESSAGE_CATEGORY_SHADER;
                 }
 
                 // message severities
