@@ -5,7 +5,7 @@
 #define BUFFER_SIZE 400
 
 typedef struct {
-    float color[3]; // closest hit color
+    float color[3]; // closest hit and miss color
 } LocalData;
 
 static void PAL_CALL onGraphicsDebug(
@@ -19,7 +19,6 @@ static void PAL_CALL onGraphicsDebug(
 
 bool rayTracingTest()
 {
-    // FIXME: Test properly on D3D12
     PalAdapter* adapter = nullptr;
     PalDevice* device = nullptr;
     PalQueue* queue = nullptr;
@@ -59,7 +58,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);

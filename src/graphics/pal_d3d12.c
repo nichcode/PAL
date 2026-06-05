@@ -321,6 +321,8 @@ typedef struct {
     bool supportsAddress;
     bool canChangeState;
     bool hasIndirect;
+    bool isAccelerationStructure;
+    bool isScratch;
     Uint64 size;
     ID3D12Resource* handle;
     Device* device;
@@ -1300,13 +1302,9 @@ static bool fillBuildInfoD3D12(
         }
 
         D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
-        tmp->Flags = 0;
-        if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
-            tmp->Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-        }
-
+        tmp->Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
         if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
-            tmp->Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
+            tmp->Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
         }
 
         if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
@@ -5838,22 +5836,10 @@ PalResult PAL_CALL cmdAccelerationStructureBarrierD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    AccelerationStructure* d3dAS = (AccelerationStructure*)as;
-    D3D12_RESOURCE_STATES old, new;
-
-    old = barrierToD3D12(
-        oldUsageStateInfo->shaderStageCount,
-        oldUsageStateInfo->usageState,
-        oldUsageStateInfo->shaderStages);
-
-    new = barrierToD3D12(
-        newUsageStateInfo->shaderStageCount,
-        newUsageStateInfo->usageState,
-        newUsageStateInfo->shaderStages);
-
+    AccelerationStructure* d3dAs = (AccelerationStructure*)as;
     D3D12_RESOURCE_BARRIER barrier = {0};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = d3dAS->handle;
+    barrier.UAV.pResource = d3dAs->handle;
 
     d3dCmdBuffer->handle->lpVtbl->ResourceBarrier(d3dCmdBuffer->handle, 1, &barrier);
     return PAL_RESULT_SUCCESS;
@@ -6078,7 +6064,6 @@ PalResult PAL_CALL cmdTraceRaysD3D12(
     desc.MissShaderTable = d3dSbt->miss.region;
     desc.CallableShaderTable = d3dSbt->callable.region;
 
-    // TODO: Fix unknown signal
     d3dCmdBuffer->handle->lpVtbl->DispatchRays(d3dCmdBuffer->handle, &desc);
     return PAL_RESULT_SUCCESS;
 }
@@ -6480,10 +6465,12 @@ PalResult PAL_CALL createBufferD3D12(
 
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         buffer->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        buffer->isAccelerationStructure = true;
     }
 
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
         buffer->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        buffer->isScratch = true;
     }
 
     if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
@@ -6643,6 +6630,14 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     } else if (heapProps.Properties.Type == D3D12_HEAP_TYPE_READBACK) {
         state = D3D12_RESOURCE_STATE_COPY_DEST;
         d3dBuffer->canChangeState = false;
+    }
+
+    if (d3dBuffer->isAccelerationStructure) {
+        d3dBuffer->canChangeState = false;
+        state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+
+    } else if (d3dBuffer->isScratch) {
+        state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     }
 
     result = device->lpVtbl->CreatePlacedResource(
@@ -8501,6 +8496,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    memset(sbt, 0, sizeof(ShaderBindingTable));
     if (sbtInfo->raygenCount) {
         raygenHandles = palAllocate(s_D3D.allocator, sizeof(void*) * sbtInfo->raygenCount, 0);
         if (!raygenHandles) {
@@ -8636,7 +8632,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         &heapProps,
         0,
         &bufferDesc,
-        D3D12_RESOURCE_STATE_COMMON,
+        D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr,
         &IID_Resource, 
         (void**)&sbt->buffer);
@@ -8767,42 +8763,53 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     sbt->stagingBuffer->lpVtbl->Unmap(sbt->stagingBuffer, 0, nullptr);
 
     // cache SBT fields and offsets address
-    sbt->baseAddress = sbt->buffer->lpVtbl->GetGPUVirtualAddress(sbt->buffer);
+    sbt->baseAddress = sbt->buffer->lpVtbl->GetGPUVirtualAddress(sbt->stagingBuffer);
 
     // raygen
-    sbt->raygen.region.StartAddress = sbt->baseAddress;
-    sbt->raygen.offset = 0; // always
-    sbt->raygen.startIndex = 0; // always
-    sbt->raygen.region.SizeInBytes = raygenRegionSize;
-    sbt->raygen.region.StrideInBytes = raygenStride;
+    if (sbtInfo->raygenCount) {
+        sbt->raygen.region.StartAddress = sbt->baseAddress;
+        sbt->raygen.offset = 0; // always
+        sbt->raygen.startIndex = 0; // always
+        sbt->raygen.region.SizeInBytes = raygenRegionSize;
+        sbt->raygen.region.StrideInBytes = raygenStride;
 
+        palFree(s_D3D.allocator, raygenHandles);
+    }
+    
     // miss
-    sbt->miss.offset = missOffset;
-    sbt->miss.startIndex = sbtInfo->raygenCount;
-    sbt->miss.region.StartAddress = sbt->baseAddress + missOffset;
-    sbt->miss.region.SizeInBytes = missRegionSize;
-    sbt->miss.region.StrideInBytes = missStride;
+    if (sbtInfo->missCount) {
+        sbt->miss.offset = missOffset;
+        sbt->miss.startIndex = sbtInfo->raygenCount;
+        sbt->miss.region.StartAddress = sbt->baseAddress + missOffset;
+        sbt->miss.region.SizeInBytes = missRegionSize;
+        sbt->miss.region.StrideInBytes = missStride;
+
+        palFree(s_D3D.allocator, missHandles);
+    }
 
     // hit
-    sbt->hit.offset = hitOffset;
-    sbt->hit.startIndex = sbtInfo->raygenCount + sbtInfo->missCount;
-    sbt->hit.region.StartAddress = sbt->baseAddress + hitOffset;
-    sbt->hit.region.SizeInBytes = hitRegionSize;
-    sbt->hit.region.StrideInBytes = hitStride;
+    if (sbtInfo->hitCount) {
+        sbt->hit.offset = hitOffset;
+        sbt->hit.startIndex = sbtInfo->raygenCount + sbtInfo->missCount;
+        sbt->hit.region.StartAddress = sbt->baseAddress + hitOffset;
+        sbt->hit.region.SizeInBytes = hitRegionSize;
+        sbt->hit.region.StrideInBytes = hitStride;
+
+        palFree(s_D3D.allocator, hitHandles);
+    }
 
     // callable
-    sbt->callable.offset = callableOffset;
-    sbt->callable.startIndex = sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount;
-    sbt->callable.region.StartAddress = sbt->baseAddress + callableOffset;
-    sbt->callable.region.SizeInBytes = callableRegionSize;
-    sbt->callable.region.StrideInBytes = callableStride;
+    if (sbtInfo->callableCount) {
+        sbt->callable.offset = callableOffset;
+        sbt->callable.startIndex = sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount;
+        sbt->callable.region.StartAddress = sbt->baseAddress + callableOffset;
+        sbt->callable.region.SizeInBytes = callableRegionSize;
+        sbt->callable.region.StrideInBytes = callableStride;
 
+        palFree(s_D3D.allocator, callableHandles);
+    }
+    
     props->lpVtbl->Release(props);
-    palFree(s_D3D.allocator, raygenHandles);
-    palFree(s_D3D.allocator, missHandles);
-    palFree(s_D3D.allocator, hitHandles);
-    palFree(s_D3D.allocator, callableHandles);
-
     sbt->handleSize = groupHandleSize;
     sbt->stagingBufferSize = bufferSize;
     sbt->pipeline = pipeline;

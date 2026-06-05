@@ -5501,8 +5501,9 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  *
  * The graphics system must be initialized before this call.
  * If the provided command pool is invalid or nullptr, this function returns
- * silently. All command buffers allocated from the command pool must be freed before this
- * function.
+ * silently.
+ * 
+ * Destroying a command pool frees all command buffers automatically.
  *
  * @param[in] pool Command pool to destroy.
  *
