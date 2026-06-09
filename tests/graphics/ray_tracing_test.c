@@ -17,6 +17,13 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
+static inline Uint32 _max(
+    Uint32 a,
+    Uint32 b)
+{
+    return (a > b) ? a : b;
+}
+
 bool rayTracingTest()
 {
     PalAdapter* adapter = nullptr;
@@ -58,7 +65,7 @@ bool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
@@ -630,7 +637,7 @@ bool rayTracingTest()
     }
 
     // create scratch buffer
-    bufferCreateInfo.size = buildSizes.scratchBufferSize + blasScratchSize;;
+    bufferCreateInfo.size = _max(buildSizes.scratchBufferSize, blasScratchSize);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
 

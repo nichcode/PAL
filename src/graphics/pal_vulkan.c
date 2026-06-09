@@ -1504,7 +1504,7 @@ static VkBufferUsageFlags bufferUsageToVk(PalBufferUsages usages)
     }
 
     if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
-        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+        flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
 
     if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT) {
@@ -4086,7 +4086,7 @@ PalResult PAL_CALL createDeviceVk(
     // extensions and features2
     void* next = nullptr;
     int extCount = 0;
-    const char* extensions[16] = {0};
+    const char* extensions[32] = {0};
 
     VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline = {0};
     timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR;
@@ -4126,9 +4126,6 @@ PalResult PAL_CALL createDeviceVk(
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2 = {0};
     sync2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
 
-    VkPhysicalDeviceVulkan12Features features12 = {0};
-    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-
     VkPhysicalDeviceShaderDrawParametersFeatures drawParameters = {0};
     drawParameters.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
 
@@ -4160,7 +4157,6 @@ PalResult PAL_CALL createDeviceVk(
             extensions[extCount++] = "VK_KHR_timeline_semaphore";
         }
         timeline.timelineSemaphore = true;
-        features12.timelineSemaphore = true;
 
         timeline.pNext = next;
         next = &timeline;
@@ -4171,8 +4167,6 @@ PalResult PAL_CALL createDeviceVk(
             extensions[extCount++] = "VK_KHR_shader_float16_int8";
         }
         shader16.shaderFloat16 = true;
-        features12.shaderFloat16 = true;
-        features12.shaderInt8 = true;
 
         shader16.pNext = next;
         next = &shader16;
@@ -4185,17 +4179,9 @@ PalResult PAL_CALL createDeviceVk(
         ray.rayTracingPipeline = true;
         acc.accelerationStructure = true;
 
-        // ray tracing needs buffer address feature enabled
-        if (props.apiVersion < VK_API_VERSION_1_2) {
-            extensions[extCount++] = "VK_KHR_buffer_device_address";
-        }
-        bufferAddress.bufferDeviceAddress = true;
-        features12.bufferDeviceAddress = true;
-
         ray.pNext = next;
         acc.pNext = &ray;
-        bufferAddress.pNext = &acc;
-        next = &bufferAddress;
+        next = &acc;
     }
 
     if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
@@ -4219,10 +4205,6 @@ PalResult PAL_CALL createDeviceVk(
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_draw_indirect_count";
         }
-        features12.drawIndirectCount = true;
-
-        features12.pNext = next;
-        next = &features12;
     }
 
     if ((features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) ||
@@ -4270,7 +4252,6 @@ PalResult PAL_CALL createDeviceVk(
         descIndex.descriptorBindingUniformBufferUpdateAfterBind = desc.descriptorBindingUniformBufferUpdateAfterBind;
         // clang-format on
 
-        features12.descriptorIndexing = true;
         descIndex.pNext = next;
         next = &descIndex;
     }
@@ -4281,7 +4262,6 @@ PalResult PAL_CALL createDeviceVk(
                 extensions[extCount++] = "VK_EXT_descriptor_indexing";
             }
 
-            features12.descriptorIndexing = true;
             descIndex.pNext = next;
             next = &descIndex;
         }
@@ -4326,7 +4306,6 @@ PalResult PAL_CALL createDeviceVk(
             extensions[extCount++] = "VK_KHR_buffer_device_address";
         }
         bufferAddress.bufferDeviceAddress = true;
-        features12.bufferDeviceAddress = true;
 
         bufferAddress.pNext = next;
         next = &bufferAddress;
@@ -8709,11 +8688,8 @@ PalResult PAL_CALL updateDescriptorSetVk(
     VkWriteDescriptorSetAccelerationStructureKHR* tlasInfos = nullptr;
 
     Uint32 bufferCount = 0;
-    Uint32 bufferOffset = 0;
     Uint32 imageCount = 0;
-    Uint32 imageOffset = 0;
     Uint32 tlasCount = 0;
-    Uint32 tlasOffset = 0;
     Uint32 tlasInfoCount = 0;
 
     for (int i = 0; i < count; i++) {
@@ -8767,6 +8743,12 @@ PalResult PAL_CALL updateDescriptorSetVk(
         memset(tlas, 0, sizeof(VkAccelerationStructureKHR) * tlasCount);
     }
 
+    // reset and reuse
+    bufferCount = 0;
+    imageCount = 0;
+    tlasCount = 0;
+    tlasInfoCount = 0;
+
     for (int i = 0; i < count; i++) {
         VkWriteDescriptorSet* write = &writes[i];
         PalDescriptorSetWriteInfo* info = &infos[i];
@@ -8780,14 +8762,10 @@ PalResult PAL_CALL updateDescriptorSetVk(
         DescriptorSet* set = (DescriptorSet*)info->descriptorSet;
         write->dstSet = set->handle;
 
-        bool isImage = false;
-        bool isTlas = false;
-        bool isBuffer = false;
-
         for (int j = 0; j < write->descriptorCount; j++) {
             if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
                 info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferOffset + j];
+                VkDescriptorBufferInfo* bufferInfo = &bufferInfos[bufferCount + j];
 
                 if (info->bufferInfos) {
                     PalDescriptorBufferInfo* tmp = &info->bufferInfos[j];
@@ -8803,27 +8781,22 @@ PalResult PAL_CALL updateDescriptorSetVk(
                     }
                 }
 
-                isBuffer = true;
-
-            } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
+            } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
                 if (info->tlasInfos) {
                     PalDescriptorTLASInfo* tmp = &info->tlasInfos[j];
                     AccelerationStructure* as = (AccelerationStructure*)tmp->tlas;
-                    tlas[tlasOffset + j] = as->handle;
+                    tlas[tlasCount + j] = as->handle;
 
                 } else {
                     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
                         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
                     }
                 }
-           
-                isTlas = true;
 
             } else {
-                VkDescriptorImageInfo* imageInfo = &imageInfos[imageOffset + j];
-                isImage = true;
+                VkDescriptorImageInfo* imageInfo = &imageInfos[imageCount + j];
 
-                if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
+                if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
                     if (info->samplerInfos) {
                         PalDescriptorSamplerInfo* tmp = &info->samplerInfos[j];
                         Sampler* vkSampler = (Sampler*)tmp->sampler;
@@ -8836,7 +8809,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
                         }
                     }    
 
-                } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                     if (info->imageViewInfos) {
                         PalDescriptorImageViewInfo* tmp = &info->imageViewInfos[j];
                         ImageView* vkImageView = (ImageView*)tmp->imageView;
@@ -8851,7 +8824,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
                         }
                     }
 
-                } else if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                     if (info->imageViewInfos) {
                         PalDescriptorImageViewInfo* tmp = &info->imageViewInfos[j];
                         ImageView* vkImageView = (ImageView*)tmp->imageView;
@@ -8869,21 +8842,23 @@ PalResult PAL_CALL updateDescriptorSetVk(
             }
         }
 
-        if (isImage) {
-            write->pImageInfo = &imageInfos[imageOffset];
-            imageOffset += write->descriptorCount;
+        if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+            info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+            write->pBufferInfo = &bufferInfos[bufferCount];
+            bufferCount += write->descriptorCount;
 
-        } else if (isTlas) {
-            tlasInfos[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-            tlasInfos[i].accelerationStructureCount = info->descriptorCount;
-            tlasInfos[i].pAccelerationStructures = &tlas[tlasOffset];
+        } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
+            VkWriteDescriptorSetAccelerationStructureKHR* tlasInfo = &tlasInfos[tlasInfoCount];
+            tlasInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+            tlasInfo->accelerationStructureCount = info->descriptorCount;
+            tlasInfo->pAccelerationStructures = &tlas[tlasCount];
             
-            write->pNext = &tlasInfos[i];
-            tlasOffset += write->descriptorCount;
+            write->pNext = &tlasInfos[tlasInfoCount++];
+            tlasCount += write->descriptorCount;
 
-        } else if (isBuffer) {
-            write->pBufferInfo = &bufferInfos[bufferOffset];
-            bufferOffset += write->descriptorCount;
+        } else {
+            write->pImageInfo = &imageInfos[imageCount];
+            imageCount += write->descriptorCount;
         }
     }
 

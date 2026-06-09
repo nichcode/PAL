@@ -36,8 +36,8 @@ void raygenMain()
     float2 ndcUv = uv * 2.0 - 1.0;
 
     RayDesc desc;
-    desc.Origin = float3(0.0, 0.0, -3.0);;
-    desc.Direction = normalize(float3(ndcUv.x, ndcUv.y, 1.0));;
+    desc.Origin = float3(0.0, 0.0, -3.0);
+    desc.Direction = normalize(float3(ndcUv.x, ndcUv.y, 1.0));
     desc.TMin = 0.001;
     desc.TMax = 1000.0;
     TraceRay(tlas, RAY_FLAG_NONE, 0xFF, 0, 0, 0, desc, payload);
