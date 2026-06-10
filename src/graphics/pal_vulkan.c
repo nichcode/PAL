@@ -3625,8 +3625,8 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     }
 
     // check extensions
-    bool rayTracingFound = false;
-    bool accelerateFound = false;
+    bool rayTracing = false;
+    bool accelerationStructure = false;
     bool meshShader = false;
     bool fragmentRateShading = false;
     bool timelineSemaphore = false;
@@ -3637,6 +3637,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     bool bufferDeviceAddress = false;
     bool shaderParameters = false;
     bool nullDescriptors = false;
+    bool rayQuery = false;
     s_Vk.enumerateDeviceExtensionProperties(phyDevice, nullptr, &extensionCount, extensionProps);
 
     // clang-format off
@@ -3644,10 +3645,10 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     for (int i = 0; i < extensionCount; i++) {
         VkExtensionProperties* props = &extensionProps[i];
         if (strcmp(props->extensionName, "VK_KHR_ray_tracing_pipeline") == 0) {
-            rayTracingFound = true;
+            rayTracing = true;
 
         } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structure") == 0) {
-            accelerateFound = true;
+            accelerationStructure = true;
 
         } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
             meshShader = true;
@@ -3708,9 +3709,8 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // features that require core and extension support
-    // ray tracing is not part of core
-    if (rayTracingFound && accelerateFound) {
+    // features that require additional checks
+    if (rayTracing && accelerationStructure) {
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray = {0};
         VkPhysicalDeviceAccelerationStructureFeaturesKHR acc = {0};
 
@@ -3726,9 +3726,12 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         if (ray.rayTracingPipeline && acc.accelerationStructure) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_RAY_TRACING;
         }
+
+        if (ray.rayTracingPipelineTraceRaysIndirect) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING;
+        }
     }
 
-    // mesh shader is not part of core
     if (meshShader) {
         VkPhysicalDeviceMeshShaderFeaturesEXT mesh = {0};
         mesh.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
@@ -3744,7 +3747,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // fragment shading rate is not part of core
     if (fragmentRateShading) {
         VkPhysicalDeviceFragmentShadingRateFeaturesKHR frag = {0};
         frag.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
@@ -3764,7 +3766,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // descriptor indexing is part of core 1.2
     if (props.apiVersion >= VK_API_VERSION_1_2 || descriptorIndexing) {
         VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
         desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
@@ -3785,7 +3786,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // timeline semaphore is part of core 1.2
     if (props.apiVersion >= VK_API_VERSION_1_2 || timelineSemaphore) {
         VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline = {0};
         timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR;
@@ -3800,7 +3800,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // shader float 16 is part of core 1.2
     if (props.apiVersion >= VK_API_VERSION_1_2 || shaderFloat16) {
         VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader16 = {0};
         shader16.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
@@ -3815,7 +3814,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // multi view is part of core 1.1
     if (props.apiVersion >= VK_API_VERSION_1_1 || multiiView) {
         VkPhysicalDeviceMultiviewFeaturesKHR multiView = {0};
         multiView.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
@@ -3830,7 +3828,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // dynamic state is part of core 1.3
     if (props.apiVersion >= VK_API_VERSION_1_3 || dynamicstate) {
         VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynState = {0};
         dynState.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
@@ -3847,7 +3844,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // buffer device address is part of core 1.2
     if (props.apiVersion >= VK_API_VERSION_1_2 || bufferDeviceAddress) {
         VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferAddress = {0};
         bufferAddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
@@ -3862,7 +3858,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // indirect draw count is part of core 1.2
     if (props.apiVersion >= VK_API_VERSION_1_2) {
         VkPhysicalDeviceVulkan12Features features12 = {0};
         features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -3877,7 +3872,6 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         }
     }
 
-    // shader draw parameters is part of core 1.2
     if (props.apiVersion >= VK_API_VERSION_1_2 || shaderParameters) {
         VkPhysicalDeviceShaderDrawParametersFeatures drawParameters = {0};
         drawParameters.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
@@ -3903,6 +3897,20 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
         if (nullDescriptors.nullDescriptor) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS;
+        }
+    }
+
+    if (rayQuery) {
+        VkPhysicalDeviceRayQueryFeaturesKHR query = {0};
+        query.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+
+        VkPhysicalDeviceFeatures2 features;
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &query;
+
+        s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
+        if (query.rayQuery) {
+            adapterFeatures |= PAL_ADAPTER_FEATURE_RAY_QUERY;
         }
     }
     // clang-format on
@@ -7830,7 +7838,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
     ShaderBindingTable* vkSbt = (ShaderBindingTable*)sbt;
     Buffer* vkBuffer = (Buffer*)buffer;
 
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 

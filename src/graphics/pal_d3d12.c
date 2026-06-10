@@ -2547,6 +2547,11 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
 
     if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
         features |= PAL_ADAPTER_FEATURE_RAY_TRACING;
+        features |= PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING;
+    }
+
+    if (options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1) {
+        features |= PAL_ADAPTER_FEATURE_RAY_QUERY;
     }
 
     if (options6.VariableShadingRateTier != D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED) {
@@ -6081,7 +6086,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     Device* device = (Device*)d3dCmdBuffer->device;
     D3D12_DISPATCH_RAYS_DESC desc = {0};
 
-    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 

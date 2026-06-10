@@ -701,6 +701,14 @@ bool graphicsTest()
             palLog(nullptr, "  Null descriptors");
         }
 
+        if (features & PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING) {
+            palLog(nullptr, "  Indirect ray tracing");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_RAY_QUERY) {
+            palLog(nullptr, "  Ray query");
+        }
+
         palLog(nullptr, "");
         palDestroyDevice(device);
     }
