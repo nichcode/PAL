@@ -303,10 +303,6 @@ bool graphicsTest()
             palLog(nullptr, "");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
-            palLog(nullptr, "  Sample rate shading");
-        }
-
         if (features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
             palLog(nullptr, "  Multi viewport");
 
@@ -321,34 +317,6 @@ bool graphicsTest()
             palLog(nullptr, "   Max count: %u", tmp.maxCount);
 
             palLog(nullptr, "");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-            palLog(nullptr, "  Timeline Semaphore");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
-            palLog(nullptr, "  Tesselation Shader");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
-            palLog(nullptr, "  Geometry shader");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
-            palLog(nullptr, "  Shader float16");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
-            palLog(nullptr, "  Shader float64");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
-            palLog(nullptr, "  Shader int16");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
-            palLog(nullptr, "  Shader int64");
         }
 
         if (features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
@@ -556,10 +524,6 @@ bool graphicsTest()
             palLog(nullptr, "");
         }
 
-        if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
-            palLog(nullptr, "  Swapchain");
-        }
-
         if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
             palLog(nullptr, "  Multiview");
 
@@ -573,42 +537,6 @@ bool graphicsTest()
 
             palLog(nullptr, "   Max view count: %u", tmp.maxViewCount);
             palLog(nullptr, "");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY) {
-            palLog(nullptr, "  Image view type Cube array");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
-            palLog(nullptr, "  Resetting fence");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE) {
-            palLog(nullptr, "  Polygon mode line");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
-            palLog(nullptr, "  Dynamic cull mode");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
-            palLog(nullptr, "  Dynamic front face");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
-            palLog(nullptr, "  Dynamic primitive topology");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
-            palLog(nullptr, "  Dynamic depth test enable");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
-            palLog(nullptr, "  Dynamic depth write enable");
-        }
-
-        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
-            palLog(nullptr, "  Dynamic stencil op");
         }
 
         if (features & PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE) {
@@ -663,6 +591,78 @@ bool graphicsTest()
             }
 
             palLog(nullptr, "");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_SWAPCHAIN) {
+            palLog(nullptr, "  Swapchain");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
+            palLog(nullptr, "  Sample rate shading");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+            palLog(nullptr, "  Timeline Semaphore");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
+            palLog(nullptr, "  Tesselation Shader");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
+            palLog(nullptr, "  Geometry shader");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT16) {
+            palLog(nullptr, "  Shader float16");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
+            palLog(nullptr, "  Shader float64");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
+            palLog(nullptr, "  Shader int16");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
+            palLog(nullptr, "  Shader int64");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY) {
+            palLog(nullptr, "  Image view type Cube array");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
+            palLog(nullptr, "  Resetting fence");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE) {
+            palLog(nullptr, "  Polygon mode line");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
+            palLog(nullptr, "  Dynamic cull mode");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
+            palLog(nullptr, "  Dynamic front face");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+            palLog(nullptr, "  Dynamic primitive topology");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
+            palLog(nullptr, "  Dynamic depth test enable");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
+            palLog(nullptr, "  Dynamic depth write enable");
+        }
+
+        if (features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
+            palLog(nullptr, "  Dynamic stencil op");
         }
 
         if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {

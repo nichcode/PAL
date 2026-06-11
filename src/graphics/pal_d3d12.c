@@ -2621,7 +2621,7 @@ Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
     // find the highest supported shader model
     HRESULT result = 0;
     D3D_SHADER_MODEL highestModel = D3D_SHADER_MODEL_5_1;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 11; i++) {
         shaderModel.HighestShaderModel = models[i];
         result = d3dAdapter->tmpDevice->lpVtbl->CheckFeatureSupport(
             d3dAdapter->tmpDevice,
@@ -4768,7 +4768,9 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
+    memset(cmdBuffer, 0, sizeof(CommandBuffer));
     cmdBuffer->primary = true;
+
     D3D12_COMMAND_LIST_TYPE cmdBufferType = cmdPool->type;
     if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         cmdBufferType = D3D12_COMMAND_LIST_TYPE_BUNDLE;
@@ -4862,10 +4864,14 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         }
     }
 
-    cmdList->lpVtbl->QueryInterface(
+    result = cmdList->lpVtbl->QueryInterface(
         cmdList,
         &IID_CommandList6,
         (void**)&cmdBuffer->handle);
+
+    if (FAILED(result)) {
+        return PAL_RESULT_PLATFORM_FAILURE;
+    }
 
     cmdList->lpVtbl->Release(cmdList);
     cmdBuffer->handle->lpVtbl->Close(cmdBuffer->handle);
@@ -4940,8 +4946,9 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         }
     }
 
-    ID3D12CommandList* tmp = (ID3D12CommandList*)d3dCmdBuffer->handle;
-    queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, &tmp);
+
+    ID3D12CommandList* cmdLists[1] = { (ID3D12CommandList*)d3dCmdBuffer->handle };
+    queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
     d3dQueue->fenceValue++;
     queueHandle->lpVtbl->Signal(queueHandle, d3dQueue->fence, d3dQueue->fenceValue);
 
