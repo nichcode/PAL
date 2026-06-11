@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_graphics.h"
 
-#if PAL_HAS_D3D12
+#if PAL_HAS_D3D12_BACKEND
 
 #ifdef _WIN32
 #include <windows.h>
@@ -8985,6 +8985,6 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-#endif // PAL_HAS_D3D12
+#endif // PAL_HAS_D3D12_BACKEND
 
 #endif // _WIN32

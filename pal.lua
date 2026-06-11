@@ -1,44 +1,6 @@
 
 dofile("pal_config.lua")
 
-function writeConfig(path)
-    local file = io.open(path, "w")
-    file:write("\n// Auto Generated Config Header From pal_config.lua\n")
-    file:write("// Must not be edited manually\n\n")
-
-    if (PAL_BUILD_SYSTEM) then
-        file:write("#define PAL_HAS_SYSTEM 1\n")
-    else
-        file:write("#define PAL_HAS_SYSTEM 0\n")
-    end
-
-    if (PAL_BUILD_THREAD) then
-        file:write("#define PAL_HAS_THREAD 1\n")
-    else
-        file:write("#define PAL_HAS_THREAD 0\n")
-    end
-
-    if (PAL_BUILD_VIDEO) then
-        file:write("#define PAL_HAS_VIDEO 1\n")
-    else
-        file:write("#define PAL_HAS_VIDEO 0\n")
-    end
-
-    if (PAL_BUILD_OPENGL) then
-        file:write("#define PAL_HAS_OPENGL 1\n")
-    else
-        file:write("#define PAL_HAS_OPENGL 0\n")
-    end
-
-    if (PAL_BUILD_GRAPHICS) then
-        file:write("#define PAL_HAS_GRAPHICS 1\n")
-    else
-        file:write("#define PAL_HAS_GRAPHICS 0\n")
-    end
-
-    file:close()
-end
-
 project "PAL"
     language "C"
 
@@ -52,8 +14,8 @@ project "PAL"
         }
     end
 
-    targetdir(target_dir)
-    objdir(obj_dir)
+    targetdir(targetDir)
+    objdir(objDir)
 
     includedirs {
         "include",
@@ -71,7 +33,11 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files { "src/system/pal_system_linux.c" }
+        
         filter {}
+        defines { "PAL_HAS_SYSTEM_MODULE = 1" }
+    else
+        defines { "PAL_HAS_SYSTEM_MODULE = 0" }
     end
 
     if (PAL_BUILD_THREAD) then
@@ -82,6 +48,9 @@ project "PAL"
             files { "src/thread/pal_thread_linux.c" }
 
         filter {}
+        defines { "PAL_HAS_THREAD_MODULE = 1" }
+    else
+        defines { "PAL_HAS_THREAD_MODULE = 0" }
     end
 
     if (PAL_BUILD_VIDEO) then
@@ -108,9 +77,9 @@ project "PAL"
             end
 
             if found then
-                defines { "PAL_HAS_WAYLAND=1" }
+                defines { "PAL_HAS_WAYLAND_BACKEND = 1" }
             else
-                defines { "PAL_HAS_WAYLAND=0" }
+                defines { "PAL_HAS_WAYLAND_BACKEND = 0" }
             end
 
             -- check for X11 support. This is cross compiler
@@ -130,12 +99,15 @@ project "PAL"
             end
 
             if found then
-                defines { "PAL_HAS_X11=1" }
+                defines { "PAL_HAS_X11_BACKEND = 1" }
             else
-                defines { "PAL_HAS_X11=0" }
+                defines { "PAL_HAS_X11_BACKEND = 0" }
             end
 
         filter {}
+        defines { "PAL_HAS_VIDEO_MODULE = 1" }
+    else
+        defines { "PAL_HAS_VIDEO_MODULE = 0" }
     end
 
     if (PAL_BUILD_OPENGL) then
@@ -144,50 +116,54 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files { "src/opengl/pal_opengl_linux.c" }
+
         filter {}
+        defines { "PAL_HAS_OPENGL_MODULE = 1" }
+    else
+        defines { "PAL_HAS_OPENGL_MODULE = 0" }
     end
 
     if (PAL_BUILD_GRAPHICS) then
         -- check for vulkan support. This is cross compiler
-        local vulkan_sdk = os.getenv("VULKAN_SDK")
+        local vulkanSdk = os.getenv("VULKAN_SDK")
         local hasVulkan = false
-        if (vulkan_sdk) then
+        if (vulkanSdk) then
             hasVulkan = true
             -- add to include path if compiler does not see it
             includedirs {
-                path.join(vulkan_sdk, "include")
+                path.join(vulkanSdk, "include")
             }
 
-            defines { "PAL_HAS_VULKAN=1" }
+            defines { "PAL_HAS_VULKAN_BACKEND = 1" }
         else
-            defines { "PAL_HAS_VULKAN=0" }
+            defines { "PAL_HAS_VULKAN_BACKEND = 0" }
         end
 
         -- check for d3d12 support. This is cross compiler
         local hasD3D12 = false
-        local d3d12_include = os.getenv("D3D12_INCLUDE")
-        if (os.isfile(path.join(d3d12_include, "d3d12.h"))) then
+        local d3d12Include = os.getenv("D3D12_INCLUDE")
+        if (os.isfile(path.join(d3d12Include, "d3d12.h"))) then
             hasD3D12 = true
 
         else
             if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
-                d3d12_include = ""
+                d3d12Include = ""
                 local base = "C:/Program Files (x86)/Windows Kits/10/Include"
                 local versions = os.matchdirs(base .. "/*")
                 table.sort(versions)
 
                 for i = #versions, 1, -1 do
                     local v = versions[i]
-                    d3d12_include = path.join(v, "um")
-                    if (os.isdir(d3d12_include)) then
+                    d3d12Include = path.join(v, "um")
+                    if (os.isdir(d3d12Include)) then
                         break
                     end
                 end
             else
-                d3d12_include = path.join(ucrt, "include")
+                d3d12Include = path.join(ucrt, "include")
             end
 
-            if (os.isfile(path.join(d3d12_include, "d3d12.h"))) then
+            if (os.isfile(path.join(d3d12Include, "d3d12.h"))) then
                 hasD3D12 = true
             end
         end
@@ -195,12 +171,12 @@ project "PAL"
         if (hasD3D12) then
             -- add to include path if compiler does not see it
             includedirs {
-                d3d12_include
+                d3d12Include
             }
 
-            defines { "PAL_HAS_D3D12=1" }
+            defines { "PAL_HAS_D3D12_BACKEND = 1" }
         else
-            defines { "PAL_HAS_D3D12=0" }
+            defines { "PAL_HAS_D3D12_BACKEND = 0" }
         end
 
         -- base graphics file
@@ -221,6 +197,7 @@ project "PAL"
             end
             
         filter {}
+        defines { "PAL_HAS_GRAPHICS_MODULE = 1" }
+    else
+        defines { "PAL_HAS_GRAPHICS_MODULE = 0" }
     end
-
-    writeConfig("include/pal/pal_config.h")

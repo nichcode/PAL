@@ -31,7 +31,7 @@ freely, subject to the following restrictions:
 
 #include "pal/pal_graphics.h"
 
-#if PAL_HAS_VULKAN
+#if PAL_HAS_VULKAN_BACKEND
 #include <vulkan/vulkan_core.h>
 
 // HACK: Needed to determine display type if on linux
@@ -10043,4 +10043,4 @@ PalResult PAL_CALL updateShaderBindingTableVk(
     return PAL_RESULT_SUCCESS;
 }
 
-#endif // PAL_HAS_VULKAN
+#endif // PAL_HAS_VULKAN_BACKEND

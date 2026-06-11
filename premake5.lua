@@ -1,9 +1,114 @@
 
 dofile("pal_config.lua")
 
-target_dir = "%{wks.location}/bin/%{cfg.buildcfg}"
-obj_dir = "%{wks.location}/build"
-ucrt = os.getenv("UCRT64") or "C:/msys64/ucrt64"
+targetDir = "%{wks.location}/bin/%{cfg.buildcfg}"
+objDir = "%{wks.location}/build"
+
+workspaceName = "PALWorkspace"
+compilerPath = ""
+intellisenseMode = ""
+problemMatcher = ""
+
+local function getCommandOutput(cmd)
+    local result, exitCode = os.outputof(cmd)
+    if result then
+        result = result:gsub("[\r\n%s]+$", "")
+
+        if (result ~= "") then
+            result = result:gsub("\\", "/")
+            return result
+        else
+            return nil
+        end
+    end
+    return nil
+end
+
+local function generateVscodeProperties()
+    print("\n=======================================================")
+    print("Generating .vscode/c_cpp_properties.json")
+
+    local prjDefines = {}
+    local prjIncludes = {}
+    local workspace = premake.global.getWorkspace(workspaceName)
+
+    for prj in premake.workspace.eachproject(workspace) do
+        for _, path in ipairs(prj.includedirs or {}) do
+            table.insert(prjIncludes, path)
+        end
+
+        for _, define in ipairs(prj.defines or {}) do
+            table.insert(prjDefines, define)
+        end
+    end
+
+    -- write to file
+    os.execute("mkdir .vscode 2>nul") -- ensure .vscode directory exists
+    local file = io.open(".vscode/c_cpp_properties.json", "w")
+    if file then
+        file:write('{\n')
+        file:write('    "configurations": [\n')
+        file:write('        {\n')
+        file:write(string.format('            "name": "%s",\n', workspaceName))
+
+        -- includes
+        file:write('            "includePath": [\n')
+        for i, dir in ipairs(prjIncludes) do
+            file:write(string.format('                "%s"%s\n', dir, i < #prjIncludes and "," or ""))
+        end
+        file:write('            ],\n')
+
+        -- defines
+        file:write("            \"defines\": [\n")
+        for i, define in ipairs(prjDefines) do
+            file:write(string.format('                "%s"%s\n', define, i < #prjDefines and "," or ""))
+        end
+        file:write('            ],\n')
+
+        file:write(string.format('            "compilerPath": "%s",\n', compilerPath))
+        file:write(string.format('            "intelliSenseMode": "%s",\n', intellisenseMode))
+        file:write('            "cStandard": "c99"\n')
+
+        file:write('        }\n')
+        file:write('    ],\n')
+        file:write('    "version": 4\n')
+        file:write('}\n')
+
+        file:close()
+    else
+        print("Error: Could not write to .vscode/c_cpp_properties.json.")
+    end
+end
+
+local function generateTasksJson()
+    print("\n=======================================================")
+    print("Generating .vscode/tasks.json")
+
+    local file = io.open(".vscode/tasks.json", "w")
+    if file then
+        file:write('{\n')
+        file:write('    "tasks": [\n')
+        file:write("        {\n")
+        file:write('            "type": "shell",\n')
+        file:write('            "label": "shell",\n')
+
+        file:write("        }\n")
+        file:write("    ],\n")
+        file:write('    "version": "2.0.0"\n')
+        file:write("}\n")
+
+        file:close()
+    else
+        print("Error: Could not write to .vscode/c_cpp_properties.json.")
+    end
+end
+
+-- generate vscode properties
+premake.override(premake.action, "call", function(base, action)
+    base(action)
+    generateVscodeProperties()
+    generateTasksJson()
+end)
 
 newoption {
     trigger = "compiler",
@@ -16,7 +121,7 @@ newoption {
     }
 }
 
-workspace "PAL_workspace"
+workspace(workspaceName)
     if PAL_BUILD_TESTS then
         startproject("tests")
     end
@@ -50,37 +155,70 @@ workspace "PAL_workspace"
 
     filter {}
 
-    if (_ACTION == "gmake2") then
-        if (_OPTIONS["compiler"] == "clang") then
-            toolset("clang")
+    if (_ACTION == "gmake") then
+        if os.target() == "windows" then
+            local gccPath = getCommandOutput("where gcc.exe 2>nul")
+            local gccBinPath = path.getdirectory(gccPath)
+            local gccBasePath = path.getdirectory(gccBinPath)
 
-            buildoptions {
-                "-target x86_64-w64-windows-gnu",
-                "-I" .. ucrt .. "/include",
-                "-I" .. ucrt .. "/ucrt/include",
-                "-I" .. ucrt .. "/mingw/include",
+            if (_OPTIONS["compiler"] == "clang") then
+                toolset("clang")
+    
+                buildoptions {
+                    "-target x86_64-w64-windows-gnu",
+                    "-I" .. gccBasePath .. "/include",
+                    "-I" .. gccBasePath .. "/ucrt/include",
+                    "-I" .. gccBasePath .. "/mingw/include",
+    
+                    -- warnings
+                    "-Wno-switch",        -- for switch statements
+                    "-Wno-switch-enum"    -- for switch statements
+                }
+    
+                linkoptions {
+                    "-target x86_64-w64-windows-gnu",
+                    "-L" .. gccBasePath .. "/lib",
+                    "-L" .. gccBasePath .. "/mingw/lib"
+                }
 
-                -- warnings
-                "-Wno-switch",        -- for switch statements
-                "-Wno-switch-enum"    -- for switch statements
-            }
+                intellisenseMode = "windows-clang-x64"
+                compilerPath = getCommandOutput("where clang.exe 2>nul")
+            else
+                -- GCC
+                intellisenseMode = "gcc-x64"
+                compilerPath = gccPath
+            end
+        else
+            -- linux
+            if (_OPTIONS["compiler"] == "clang") then
+                toolset("clang")
 
-            linkoptions {
-                "-target x86_64-w64-windows-gnu",
-                "-L" .. ucrt .. "/lib",
-                "-L" .. ucrt .. "/mingw/lib"
-            }
+                intellisenseMode = "linux-clang-x64"
+                compilerPath = "/usr/bin/clang"
+            else
+                -- GCC
+                intellisenseMode = "linux-gcc-x64"
+                compilerPath = "/usr/bin/gcc"
+            end
         end
     end
 
     if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
         if (_OPTIONS["compiler"] == "clang") then
             toolset("clang")
+
+            intellisenseMode = "windows-clang-x64"
+            compilerPath = getCommandOutput("where clang.exe 2>nul")
+        else
+            -- MSVC
+            intellisenseMode = "windows-msvc-x64"
+            compilerPath = getCommandOutput("where cl.exe 2>nul")
         end
 
         defines {
             "_CRT_SECURE_NO_WARNINGS"
         }
+
         disablewarnings {
             "6387",
             "4018",
@@ -94,3 +232,4 @@ workspace "PAL_workspace"
     end
 
     include "pal.lua"
+   

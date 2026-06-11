@@ -97,7 +97,7 @@ static inline Uint32 _min(
 // Vulkan API
 // ==================================================
 
-#if PAL_HAS_VULKAN
+#if PAL_HAS_VULKAN_BACKEND
 
 // ==================================================
 // Adapter
@@ -970,13 +970,13 @@ static PalGraphicsBackend s_VkBackend = {
     .destroyShaderBindingTable = destroyShaderBindingTableVk,
     .updateShaderBindingTable = updateShaderBindingTableVk};
 
-#endif // PAL_HAS_VULKAN
+#endif // PAL_HAS_VULKAN_BACKEND
 
 // ==================================================
 // D3D12 API
 // ==================================================
 
-#if PAL_HAS_D3D12
+#if PAL_HAS_D3D12_BACKEND
 
 // ==================================================
 // Adapter
@@ -1849,7 +1849,7 @@ static PalGraphicsBackend s_D3D12Backend = {
     .destroyShaderBindingTable = destroyShaderBindingTableD3D12,
     .updateShaderBindingTable = updateShaderBindingTableD3D12};
 
-#endif // PAL_HAS_D3D12
+#endif // PAL_HAS_D3D12_BACKEND
 
 // ==================================================
 // Metal API
@@ -2085,7 +2085,7 @@ PalResult PAL_CALL palInitGraphics(
     BackendData* attachedBackend = nullptr;
 #ifdef _WIN32
     // vulkan
-#if PAL_HAS_VULKAN
+#if PAL_HAS_VULKAN_BACKEND
     // result = initGraphicsVk(debugger, allocator);
     // if (result != PAL_RESULT_SUCCESS) {
     //     return result;
@@ -2095,10 +2095,10 @@ PalResult PAL_CALL palInitGraphics(
     // attachedBackend->base = &s_VkBackend;
     // attachedBackend->startIndex = 0;
     // attachedBackend->count = 0;
-#endif // PAL_HAS_VULKAN
+#endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
-#if PAL_HAS_D3D12
+#if PAL_HAS_D3D12_BACKEND
     result = initGraphicsD3D12(debugger, allocator);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -2108,11 +2108,11 @@ PalResult PAL_CALL palInitGraphics(
     attachedBackend->base = &s_D3D12Backend;
     attachedBackend->startIndex = 0;
     attachedBackend->count = 0;
-#endif // PAL_HAS_D3D12
+#endif // PAL_HAS_D3D12_BACKEND
 
 #elif defined(__linux__)
     // vulkan
-#if PAL_HAS_VULKAN
+#if PAL_HAS_VULKAN_BACKEND
     result = initGraphicsVk(debugger, allocator);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
@@ -2122,7 +2122,7 @@ PalResult PAL_CALL palInitGraphics(
     attachedBackend->base = &s_VkBackend;
     attachedBackend->startIndex = 0;
     attachedBackend->count = 0;
-#endif // PAL_HAS_VULKAN
+#endif // PAL_HAS_VULKAN_BACKEND
 #else
     // metal or andriod
 #endif // _WIN32
@@ -2140,20 +2140,20 @@ void PAL_CALL palShutdownGraphics()
 
 #ifdef _WIN32
     // vulkan
-#if PAL_HAS_VULKAN
+#if PAL_HAS_VULKAN_BACKEND
     // shutdownGraphicsVk();
-#endif // PAL_HAS_VULKAN
+#endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
-#if PAL_HAS_D3D12
+#if PAL_HAS_D3D12_BACKEND
     shutdownGraphicsD3D12();
-#endif // PAL_HAS_D3D12
+#endif // PAL_HAS_D3D12_BACKEND
 
 #elif defined(__linux__)
     // vulkan
-#if PAL_HAS_VULKAN
+#if PAL_HAS_VULKAN_BACKEND
     shutdownGraphicsVk();
-#endif // PAL_HAS_VULKAN
+#endif // PAL_HAS_VULKAN_BACKEND
 
 #else
     // metal or andriod
