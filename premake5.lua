@@ -49,7 +49,7 @@ local function generateVscodeProperties()
     end
 
     -- write to file
-    os.execute("mkdir .vscode 2>nul") -- ensure .vscode directory exists
+    os.execute("mkdir -p .vscode") -- ensure .vscode directory exists
     local file = io.open(".vscode/c_cpp_properties.json", "w")
     if file then
         file:write('{\n')
@@ -171,13 +171,17 @@ local function writeLaunchConfiguration(file, isDebug)
 
     if isDebug then
         name = "launch debug"
-        launchType = "cppdbg"
         preLaunchTask = "build debug"
 
     else
         name = "launch release"
-        launchType = "cppvsdbg"
         preLaunchTask = "build release"
+    end
+
+    if os.target() == "windows" then
+        launchType = "cppvsdbg"
+    else
+        launchType = "cppdbg"
     end
 
     file:write("        {\n")
@@ -361,6 +365,8 @@ workspace(workspaceName)
                 intellisenseMode = "linux-gcc-x64"
                 compilerPath = "/usr/bin/gcc"
             end
+
+            debuggerPath = "/usr/bin/gdb"
         end
     end
 
@@ -395,9 +401,38 @@ workspace(workspaceName)
         }
     end
 
+    if (PAL_BUILD_SYSTEM) then
+        defines { "PAL_HAS_SYSTEM_MODULE=1" }
+    else
+        defines { "PAL_HAS_SYSTEM_MODULE=0" }
+    end
+
+    if (PAL_BUILD_THREAD) then
+        defines { "PAL_HAS_THREAD_MODULE=1" }
+    else
+        defines { "PAL_HAS_THREAD_MODULE=0" }
+    end
+
+    if (PAL_BUILD_VIDEO) then
+        defines { "PAL_HAS_VIDEO_MODULE=1" }
+    else
+        defines { "PAL_HAS_VIDEO_MODULE=0" }
+    end
+
+    if (PAL_BUILD_OPENGL) then
+        defines { "PAL_HAS_OPENGL_MODULE=1" }
+    else
+        defines { "PAL_HAS_OPENGL_MODULE=0" }
+    end
+
+    if (PAL_BUILD_GRAPHICS) then
+        defines { "PAL_HAS_GRAPHICS_MODULE=1" }
+    else
+        defines { "PAL_HAS_GRAPHICS_MODULE=0" }
+    end
+
     if (PAL_BUILD_TESTS) then
         include "tests/tests.lua"
     end
 
     include "pal.lua"
-   

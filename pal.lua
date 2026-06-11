@@ -35,9 +35,6 @@ project "PAL"
             files { "src/system/pal_system_linux.c" }
         
         filter {}
-        defines { "PAL_HAS_SYSTEM_MODULE = 1" }
-    else
-        defines { "PAL_HAS_SYSTEM_MODULE = 0" }
     end
 
     if (PAL_BUILD_THREAD) then
@@ -48,9 +45,6 @@ project "PAL"
             files { "src/thread/pal_thread_linux.c" }
 
         filter {}
-        defines { "PAL_HAS_THREAD_MODULE = 1" }
-    else
-        defines { "PAL_HAS_THREAD_MODULE = 0" }
     end
 
     if (PAL_BUILD_VIDEO) then
@@ -77,9 +71,9 @@ project "PAL"
             end
 
             if found then
-                defines { "PAL_HAS_WAYLAND_BACKEND = 1" }
+                defines { "PAL_HAS_WAYLAND_BACKEND=1" }
             else
-                defines { "PAL_HAS_WAYLAND_BACKEND = 0" }
+                defines { "PAL_HAS_WAYLAND_BACKEND=0" }
             end
 
             -- check for X11 support. This is cross compiler
@@ -99,15 +93,12 @@ project "PAL"
             end
 
             if found then
-                defines { "PAL_HAS_X11_BACKEND = 1" }
+                defines { "PAL_HAS_X11_BACKEND=1" }
             else
-                defines { "PAL_HAS_X11_BACKEND = 0" }
+                defines { "PAL_HAS_X11_BACKEND=0" }
             end
 
         filter {}
-        defines { "PAL_HAS_VIDEO_MODULE = 1" }
-    else
-        defines { "PAL_HAS_VIDEO_MODULE = 0" }
     end
 
     if (PAL_BUILD_OPENGL) then
@@ -118,9 +109,6 @@ project "PAL"
             files { "src/opengl/pal_opengl_linux.c" }
 
         filter {}
-        defines { "PAL_HAS_OPENGL_MODULE = 1" }
-    else
-        defines { "PAL_HAS_OPENGL_MODULE = 0" }
     end
 
     if (PAL_BUILD_GRAPHICS) then
@@ -134,9 +122,9 @@ project "PAL"
                 path.join(vulkanSdk, "include")
             }
 
-            defines { "PAL_HAS_VULKAN_BACKEND = 1" }
+            defines { "PAL_HAS_VULKAN_BACKEND=1" }
         else
-            defines { "PAL_HAS_VULKAN_BACKEND = 0" }
+            defines { "PAL_HAS_VULKAN_BACKEND=0" }
         end
 
         -- check for d3d12 support. This is cross compiler
@@ -174,9 +162,9 @@ project "PAL"
                 d3d12Include
             }
 
-            defines { "PAL_HAS_D3D12_BACKEND = 1" }
+            defines { "PAL_HAS_D3D12_BACKEND=1" }
         else
-            defines { "PAL_HAS_D3D12_BACKEND = 0" }
+            defines { "PAL_HAS_D3D12_BACKEND=0" }
         end
 
         -- base graphics file
@@ -197,7 +185,4 @@ project "PAL"
             end
             
         filter {}
-        defines { "PAL_HAS_GRAPHICS_MODULE = 1" }
-    else
-        defines { "PAL_HAS_GRAPHICS_MODULE = 0" }
     end
