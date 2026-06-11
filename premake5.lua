@@ -13,6 +13,7 @@ cleanCommand = ""
 
 debugConfiguration = ""
 releaseConfiguration = ""
+debuggerPath = ""
 
 local function getCommandOutput(cmd)
     local result, exitCode = os.outputof(cmd)
@@ -164,7 +165,70 @@ local function generateTasksJson()
 end
 
 local function writeLaunchConfiguration(file, isDebug)
-    
+    local name = ""
+    local launchType = ""
+    local preLaunchTask = ""
+
+    if isDebug then
+        name = "launch debug"
+        launchType = "cppdbg"
+        preLaunchTask = "build debug"
+
+    else
+        name = "launch release"
+        launchType = "cppvsdbg"
+        preLaunchTask = "build release"
+    end
+
+    file:write("        {\n")
+    file:write(string.format('            "name": "%s %s",\n', workspaceName, name))
+    file:write(string.format('            "type": "%s",\n', launchType))
+    file:write('            "request": "launch",\n')
+    file:write('            "stopAtEntry": false,\n')
+    file:write('            "cwd": "${workspaceFolder}/tests",\n')
+
+    file:write('            "environment": [],\n')
+    file:write('            "externalConsole": false,\n')
+    file:write(string.format('            "preLaunchTask": "%s %s",\n', workspaceName, preLaunchTask))
+
+    if isDebug then
+        if os.target() == "windows" then
+            file:write('            "program": "${workspaceFolder}/bin/Debug/tests.exe",\n')
+        else
+            file:write('            "program": "${workspaceFolder}/bin/Debug/tests",\n')
+        end
+
+    else
+        if os.target() == "windows" then
+            file:write('            "program": "${workspaceFolder}/bin/Release/tests.exe",\n')
+        else
+            file:write('            "program": "${workspaceFolder}/bin/Release/tests",\n')
+        end
+    end
+
+    if launchType == "cppdbg" then
+        file:write('            "MIMode": "gdb",\n')
+        file:write(string.format('            "miDebuggerPath": "%s",\n', debuggerPath))
+    end
+
+    if isDebug then
+        file:write('            "setupCommands": [\n')
+
+        file:write('                {\n')
+        file:write('                    "description": "Enable pretty printing for gdb",\n')
+        file:write('                    "text": "-enable-pretty-printing",\n')
+        file:write('                    "ignoreFailures": false,\n')
+        file:write('                },\n')
+
+        file:write('                {\n')
+        file:write('                    "description": "Set disassembly flavor to intel",\n')
+        file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
+        file:write('                    "ignoreFailures": false,\n')
+        file:write('                }\n')
+
+        file:write('            ]\n')
+    end
+
 end
 
 local function generateLaunchJson()
@@ -173,9 +237,19 @@ local function generateLaunchJson()
 
     local file = io.open(".vscode/launch.json", "w")
     if file then
+        file:write('{\n')
+        file:write('    "configurations": [\n')
+
         writeLaunchConfiguration(file, true)
+        file:write("        },\n")
         file:write('\n')
+
         writeLaunchConfiguration(file, false)
+        file:write("        }\n")
+
+        file:write("    ],\n")
+        file:write('    "version": "0.2.0"\n')
+        file:write("}\n")
         file:close()
     end
 end
@@ -185,6 +259,7 @@ premake.override(premake.action, "call", function(base, action)
     base(action)
     generateVscodeProperties()
     generateTasksJson()
+    generateLaunchJson()
 end)
 
 newoption {
@@ -245,6 +320,7 @@ workspace(workspaceName)
             local gccPath = getCommandOutput("where gcc.exe 2>nul")
             local gccBinPath = path.getdirectory(gccPath)
             local gccBasePath = path.getdirectory(gccBinPath)
+            debuggerPath = getCommandOutput("where gdb.exe 2>nul")
 
             if (_OPTIONS["compiler"] == "clang") then
                 toolset("clang")
