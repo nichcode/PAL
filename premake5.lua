@@ -8,6 +8,11 @@ workspaceName = "PALWorkspace"
 compilerPath = ""
 intellisenseMode = ""
 problemMatcher = ""
+buildCommand = ""
+cleanCommand = ""
+
+debugConfiguration = ""
+releaseConfiguration = ""
 
 local function getCommandOutput(cmd)
     local result, exitCode = os.outputof(cmd)
@@ -59,7 +64,7 @@ local function generateVscodeProperties()
         file:write('            ],\n')
 
         -- defines
-        file:write("            \"defines\": [\n")
+        file:write('            "defines": [\n')
         for i, define in ipairs(prjDefines) do
             file:write(string.format('                "%s"%s\n', define, i < #prjDefines and "," or ""))
         end
@@ -75,9 +80,54 @@ local function generateVscodeProperties()
         file:write('}\n')
 
         file:close()
-    else
-        print("Error: Could not write to .vscode/c_cpp_properties.json.")
     end
+end
+
+local function writeTasksConfiguration(file, actionType)
+    local name = ""
+    local configuration = ""
+    local isDefault = "false"
+    local command = ""
+
+    if actionType == "buildDebug" then
+        name = "build debug"
+        configuration = debugConfiguration
+        command = buildCommand
+        isDefault = "true"
+
+    elseif actionType == "buildRelease" then
+        name = "build release"
+        configuration = releaseConfiguration
+        command = buildCommand
+
+    elseif actionType == "cleanDebug" then
+        name = "clean debug"
+        configuration = debugConfiguration
+        command = cleanCommand
+
+    elseif actionType == "cleanRelease" then
+        name = "clean release"
+        configuration = releaseConfiguration
+        command = cleanCommand
+    end
+    
+    file:write("        {\n")
+    file:write('            "type": "shell",\n')
+    file:write(string.format('            "label": "%s %s",\n', workspaceName, name))
+    file:write(string.format('            "command": "%s %s",\n', command, configuration))
+
+    file:write('            "options": {\n')
+    file:write('                "cwd": "${workspaceFolder}"\n')
+    file:write('            },\n')
+
+    file:write('            "problemMatcher": [\n')
+    file:write(string.format('                "$%s",\n', problemMatcher))
+    file:write('            ],\n')
+
+    file:write('            "group": {\n')
+    file:write('                "kind": "build",\n')
+    file:write(string.format('                "isDefault": %s\n', isDefault))
+    file:write('            }\n')
 end
 
 local function generateTasksJson()
@@ -88,18 +138,45 @@ local function generateTasksJson()
     if file then
         file:write('{\n')
         file:write('    "tasks": [\n')
-        file:write("        {\n")
-        file:write('            "type": "shell",\n')
-        file:write('            "label": "shell",\n')
+        
+        writeTasksConfiguration(file, "buildDebug")
+        file:write("        },\n")
+        file:write('\n')
 
+        writeTasksConfiguration(file, "buildRelease")
+        file:write("        },\n")
+        file:write('\n')
+
+        -- clean configurations
+        writeTasksConfiguration(file, "cleanDebug")
+        file:write("        },\n")
+        file:write('\n')
+
+        writeTasksConfiguration(file, "cleanRelease")
         file:write("        }\n")
+
         file:write("    ],\n")
         file:write('    "version": "2.0.0"\n')
         file:write("}\n")
 
         file:close()
-    else
-        print("Error: Could not write to .vscode/c_cpp_properties.json.")
+    end
+end
+
+local function writeLaunchConfiguration(file, isDebug)
+    
+end
+
+local function generateLaunchJson()
+    print("\n=======================================================")
+    print("Generating .vscode/launch.json")
+
+    local file = io.open(".vscode/launch.json", "w")
+    if file then
+        writeLaunchConfiguration(file, true)
+        file:write('\n')
+        writeLaunchConfiguration(file, false)
+        file:close()
     end
 end
 
@@ -156,6 +233,14 @@ workspace(workspaceName)
     filter {}
 
     if (_ACTION == "gmake") then
+        problemMatcher = "gcc"
+        command = "make all"
+        buildCommand = "make all"
+        cleanCommand = "make clean"
+
+        debugConfiguration = "config=debug"
+        releaseConfiguration = "config=release"
+
         if os.target() == "windows" then
             local gccPath = getCommandOutput("where gcc.exe 2>nul")
             local gccBinPath = path.getdirectory(gccPath)
@@ -204,6 +289,13 @@ workspace(workspaceName)
     end
 
     if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
+        problemMatcher = "msCompile"
+        command = "msbuild"
+        cleanCommand = "msbuild /t:clean"
+
+        debugConfiguration = "p:Configuration=Debug"
+        releaseConfiguration = "p:Configuration=Release"
+
         if (_OPTIONS["compiler"] == "clang") then
             toolset("clang")
 
