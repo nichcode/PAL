@@ -14,6 +14,7 @@ cleanCommand = ""
 debugConfiguration = ""
 releaseConfiguration = ""
 debuggerPath = ""
+gccBasePath = ""
 
 local function getCommandOutput(cmd)
     local result, exitCode = os.outputof(cmd)
@@ -28,6 +29,20 @@ local function getCommandOutput(cmd)
         end
     end
     return nil
+end
+
+local function removeDuplicates(list)
+    local seen = {}
+    local out = {}
+
+    for _, v in ipairs(list) do
+        if not seen[v] then
+            seen[v] = true
+            table.insert(out, v)
+        end
+    end
+
+    return out
 end
 
 local function generateVscodeProperties()
@@ -48,8 +63,12 @@ local function generateVscodeProperties()
         end
     end
 
+    -- remove duplicates
+    prjIncludes = removeDuplicates(prjIncludes)
+    prjDefines = removeDuplicates(prjDefines)
+
     -- write to file
-    os.execute("mkdir -p .vscode") -- ensure .vscode directory exists
+    os.mkdir(".vscode") -- ensure .vscode directory exists
     local file = io.open(".vscode/c_cpp_properties.json", "w")
     if file then
         file:write('{\n')
@@ -178,10 +197,10 @@ local function writeLaunchConfiguration(file, isDebug)
         preLaunchTask = "build release"
     end
 
-    if os.target() == "windows" then
-        launchType = "cppvsdbg"
-    else
+    if (_ACTION == "gmake") then
         launchType = "cppdbg"
+    else
+        launchType = "cppvsdbg"
     end
 
     file:write("        {\n")
@@ -192,7 +211,12 @@ local function writeLaunchConfiguration(file, isDebug)
     file:write('            "cwd": "${workspaceFolder}/tests",\n')
 
     file:write('            "environment": [],\n')
-    file:write('            "externalConsole": false,\n')
+    if launchType == "cppvsdbg" then
+        file:write('            "console": "internalConsole",\n')
+    else
+        file:write('            "externalConsole": false,\n')
+    end
+
     file:write(string.format('            "preLaunchTask": "%s %s",\n', workspaceName, preLaunchTask))
 
     if isDebug then
@@ -213,26 +237,25 @@ local function writeLaunchConfiguration(file, isDebug)
     if launchType == "cppdbg" then
         file:write('            "MIMode": "gdb",\n')
         file:write(string.format('            "miDebuggerPath": "%s",\n', debuggerPath))
+
+        if isDebug then
+            file:write('            "setupCommands": [\n')
+
+            file:write('                {\n')
+            file:write('                    "description": "Enable pretty printing for gdb",\n')
+            file:write('                    "text": "-enable-pretty-printing",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                },\n')
+
+            file:write('                {\n')
+            file:write('                    "description": "Set disassembly flavor to intel",\n')
+            file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                }\n')
+
+            file:write('            ]\n')
+        end
     end
-
-    if isDebug then
-        file:write('            "setupCommands": [\n')
-
-        file:write('                {\n')
-        file:write('                    "description": "Enable pretty printing for gdb",\n')
-        file:write('                    "text": "-enable-pretty-printing",\n')
-        file:write('                    "ignoreFailures": false,\n')
-        file:write('                },\n')
-
-        file:write('                {\n')
-        file:write('                    "description": "Set disassembly flavor to intel",\n')
-        file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
-        file:write('                    "ignoreFailures": false,\n')
-        file:write('                }\n')
-
-        file:write('            ]\n')
-    end
-
 end
 
 local function generateLaunchJson()
@@ -323,7 +346,7 @@ workspace(workspaceName)
         if os.target() == "windows" then
             local gccPath = getCommandOutput("where gcc.exe 2>nul")
             local gccBinPath = path.getdirectory(gccPath)
-            local gccBasePath = path.getdirectory(gccBinPath)
+            gccBasePath = path.getdirectory(gccBinPath)
             debuggerPath = getCommandOutput("where gdb.exe 2>nul")
 
             if (_OPTIONS["compiler"] == "clang") then
@@ -381,12 +404,23 @@ workspace(workspaceName)
         if (_OPTIONS["compiler"] == "clang") then
             toolset("clang")
 
-            intellisenseMode = "windows-clang-x64"
+            intellisenseMode = "windows-clang-x64";
             compilerPath = getCommandOutput("where clang.exe 2>nul")
         else
             -- MSVC
             intellisenseMode = "windows-msvc-x64"
-            compilerPath = getCommandOutput("where cl.exe 2>nul")
+            local base = "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC"
+            local versions = os.matchdirs(base .. "/*")
+            table.sort(versions)
+
+            for i = #versions, 1, -1 do
+                local v = versions[i]
+                local tmp = path.join(v, "bin")
+                if (os.isdir(tmp)) then
+                    compilerPath = path.join(tmp, "Hostx64/x64/cl.exe")
+                    break
+                end
+            end
         end
 
         defines {

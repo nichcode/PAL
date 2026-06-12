@@ -148,7 +148,8 @@ project "PAL"
                     end
                 end
             else
-                d3d12Include = path.join(ucrt, "include")
+                -- gccBasePath will be set if we are on gcc
+                d3d12Include = path.join(gccBasePath, "include")
             end
 
             if (os.isfile(path.join(d3d12Include, "d3d12.h"))) then
