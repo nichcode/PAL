@@ -274,11 +274,11 @@ newoption {
 }
 
 workspace(workspaceName)
-    if PAL_BUILD_TESTS then
+    if PAL_BUILD_TEST_APPLICATION then
         startproject("tests")
     end
 
-    if PAL_BUILD_STATIC then
+    if PAL_BUILD_STATIC_LIBRARY then
         staticruntime "on"
     else
         staticruntime "off"
@@ -375,37 +375,37 @@ workspace(workspaceName)
         }
     end
 
-    if (PAL_BUILD_SYSTEM) then
+    if (PAL_BUILD_SYSTEM_MODULE) then
         defines { "PAL_HAS_SYSTEM_MODULE=1" }
     else
         defines { "PAL_HAS_SYSTEM_MODULE=0" }
     end
 
-    if (PAL_BUILD_THREAD) then
+    if (PAL_BUILD_THREAD_MODULE) then
         defines { "PAL_HAS_THREAD_MODULE=1" }
     else
         defines { "PAL_HAS_THREAD_MODULE=0" }
     end
 
-    if (PAL_BUILD_VIDEO) then
+    if (PAL_BUILD_VIDEO_MODULE) then
         defines { "PAL_HAS_VIDEO_MODULE=1" }
     else
         defines { "PAL_HAS_VIDEO_MODULE=0" }
     end
 
-    if (PAL_BUILD_OPENGL) then
+    if (PAL_BUILD_OPENGL_MODULE) then
         defines { "PAL_HAS_OPENGL_MODULE=1" }
     else
         defines { "PAL_HAS_OPENGL_MODULE=0" }
     end
 
-    if (PAL_BUILD_GRAPHICS) then
+    if (PAL_BUILD_GRAPHICS_MODULE) then
         defines { "PAL_HAS_GRAPHICS_MODULE=1" }
     else
         defines { "PAL_HAS_GRAPHICS_MODULE=0" }
     end
 
-    if (PAL_BUILD_TESTS) then
+    if (PAL_BUILD_TEST_APPLICATION) then
         include "tests/tests.lua"
     end
 

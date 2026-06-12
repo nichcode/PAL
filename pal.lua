@@ -4,7 +4,7 @@ dofile("pal_config.lua")
 project "PAL"
     language "C"
 
-    if PAL_BUILD_STATIC then
+    if PAL_BUILD_STATIC_LIBRARY then
         kind "StaticLib"
     else
         kind "SharedLib"
@@ -23,11 +23,15 @@ project "PAL"
     }
 
     files {
-        "src/pal_core.c",
-        "src/pal_event.c"
+        -- core
+        "src/core/pal_log.c",
+        "src/core/pal_memory.c",
+        "src/core/pal_result.c",
+        "src/core/pal_time.c",
+        "src/core/pal_version.c"
     }
 
-    if (PAL_BUILD_SYSTEM) then
+    if (PAL_BUILD_SYSTEM_MODULE) then
         filter {"system:windows", "configurations:*"}
             files { "src/system/pal_system_win32.c" }
 
@@ -37,7 +41,7 @@ project "PAL"
         filter {}
     end
 
-    if (PAL_BUILD_THREAD) then
+    if (PAL_BUILD_THREAD_MODULE) then
         filter {"system:windows", "configurations:*"}
             files { "src/thread/pal_thread_win32.c" }
 
@@ -47,7 +51,7 @@ project "PAL"
         filter {}
     end
 
-    if (PAL_BUILD_VIDEO) then
+    if (PAL_BUILD_VIDEO_MODULE) then
         filter {"system:windows", "configurations:*"}
             files { "src/video/pal_video_win32.c" }
 
@@ -101,7 +105,7 @@ project "PAL"
         filter {}
     end
 
-    if (PAL_BUILD_OPENGL) then
+    if (PAL_BUILD_OPENGL_MODULE) then
         filter {"system:windows", "configurations:*"}
             files { "src/opengl/pal_opengl_win32.c" }
 
@@ -111,7 +115,7 @@ project "PAL"
         filter {}
     end
 
-    if (PAL_BUILD_GRAPHICS) then
+    if (PAL_BUILD_GRAPHICS_MODULE) then
         -- check for vulkan support. This is cross compiler
         local vulkanSdk = os.getenv("VULKAN_SDK")
         local hasVulkan = false

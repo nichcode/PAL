@@ -15,17 +15,17 @@ project "tests"
         "core/time_test.c",
 
         -- event
-        "event/user_event_test.c",
-        "event/event_test.c"
+        -- "event/user_event_test.c",
+        -- "event/event_test.c"
     }
 
-    if (PAL_BUILD_SYSTEM) then
+    if (PAL_BUILD_SYSTEM_MODULE) then
         files {
             "system/system_test.c"
         }
     end
 
-    if (PAL_BUILD_THREAD) then
+    if (PAL_BUILD_THREAD_MODULE) then
         files {
             "thread/thread_test.c",
             "thread/tls_test.c",
@@ -34,7 +34,7 @@ project "tests"
         }
     end
 
-    if (PAL_BUILD_VIDEO) then
+    if (PAL_BUILD_VIDEO_MODULE) then
         files {
             "video/video_test.c",
             "video/monitor_test.c",
@@ -52,7 +52,7 @@ project "tests"
         }
     end
 
-    if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO) then
+    if (PAL_BUILD_OPENGL_MODULE and PAL_BUILD_VIDEO_MODULE) then
         files {
             "opengl/opengl_test.c",
             "opengl/opengl_fbconfig_test.c",
@@ -61,13 +61,13 @@ project "tests"
         }
     end
 
-    if (PAL_BUILD_OPENGL and PAL_BUILD_VIDEO and PAL_BUILD_THREAD) then
+    if (PAL_BUILD_OPENGL_MODULE and PAL_BUILD_VIDEO_MODULE and PAL_BUILD_THREAD_MODULE) then
         files {
             "opengl/multi_thread_opengl_test.c"
         }
     end
 
-    if (PAL_BUILD_GRAPHICS) then
+    if (PAL_BUILD_GRAPHICS_MODULE) then
         files {
             "graphics/graphics_test.c",
             "graphics/compute_test.c",
@@ -76,7 +76,7 @@ project "tests"
         }
     end
 
-    if (PAL_BUILD_GRAPHICS and PAL_BUILD_VIDEO) then
+    if (PAL_BUILD_GRAPHICS_MODULE and PAL_BUILD_VIDEO_MODULE) then
         files {
             "graphics/clear_color_test.c",
             "graphics/triangle_test.c",

@@ -137,7 +137,7 @@ premake\premake5.exe vs2022 --compiler=clang
 ./premake/premake5 gmake        # generate Makefiles (default: GCC)
 ```
 
-Enable tests in `pal_config.lua` by setting `PAL_BUILD_TESTS = true`.
+Enable tests in `pal_config.lua` by setting `PAL_BUILD_TEST_APPLICATION = true`.
 
 ---
 
