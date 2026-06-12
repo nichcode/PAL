@@ -129,32 +129,26 @@ project "PAL"
 
         -- check for d3d12 support. This is cross compiler
         local hasD3D12 = false
-        local d3d12Include = os.getenv("D3D12_INCLUDE")
+        local d3d12Include = ""
+        if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
+            local base = "C:/Program Files (x86)/Windows Kits/10/Include"
+            local versions = os.matchdirs(base .. "/*")
+            table.sort(versions)
+
+            for i = #versions, 1, -1 do
+                local v = versions[i]
+                d3d12Include = path.join(v, "um")
+                if (os.isdir(d3d12Include)) then
+                    break
+                end
+            end
+        else
+            -- gccBasePath will be set if we are on gcc
+            d3d12Include = path.join(gccBasePath, "include")
+        end
+
         if (os.isfile(path.join(d3d12Include, "d3d12.h"))) then
             hasD3D12 = true
-
-        else
-            if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
-                d3d12Include = ""
-                local base = "C:/Program Files (x86)/Windows Kits/10/Include"
-                local versions = os.matchdirs(base .. "/*")
-                table.sort(versions)
-
-                for i = #versions, 1, -1 do
-                    local v = versions[i]
-                    d3d12Include = path.join(v, "um")
-                    if (os.isdir(d3d12Include)) then
-                        break
-                    end
-                end
-            else
-                -- gccBasePath will be set if we are on gcc
-                d3d12Include = path.join(gccBasePath, "include")
-            end
-
-            if (os.isfile(path.join(d3d12Include, "d3d12.h"))) then
-                hasD3D12 = true
-            end
         end
 
         if (hasD3D12) then

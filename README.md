@@ -120,7 +120,6 @@ PAL is written in **C99** and uses Premake as its build system. Configure module
 See [pal_config.h](./include/pal/pal_config.h) to see the reflection of modules that will be built.
 
 // TODO: docs
-os.getenv("D3D12_INCLUDE")
 const char* resName = getenv("RESOURCE_NAME");
 const char* resClass = getenv("RESOURCE_CLASS");
 
