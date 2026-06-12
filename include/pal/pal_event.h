@@ -1,44 +1,27 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 /**
- * @defgroup pal_event Event
- * Event PAL functionality such as queues, event drivers, and event callbacks.
- *
+ * @defgroup pal_event Event System
+ * @ingroup pal_event
  * @{
  */
 
 #ifndef _PAL_EVENT_H
 #define _PAL_EVENT_H
 
-#include "pal_core.h"
+#include "pal/core/memory.h"
+#include "pal/core/result.h"
 
 /**
  * @struct PalEventDriver
  * @brief Opaque handle to an event driver.
  *
  * @since 1.0
- * @ingroup pal_event
  */
 typedef struct PalEventDriver PalEventDriver;
 
@@ -47,7 +30,6 @@ typedef struct PalEventDriver PalEventDriver;
  * @brief A single event.
  *
  * @since 1.0
- * @ingroup pal_event
  */
 typedef struct PalEvent PalEvent;
 
@@ -59,7 +41,6 @@ typedef struct PalEvent PalEvent;
  * @param[in] event Pointer to the event.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa PalPushFn
  */
 typedef void(PAL_CALL* PalEventCallback)(
@@ -74,7 +55,6 @@ typedef void(PAL_CALL* PalEventCallback)(
  * @param[in] event Pointer to the event to push.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa PalEventCallback
  */
 typedef void(PAL_CALL* PalPushFn)(
@@ -93,7 +73,6 @@ typedef void(PAL_CALL* PalPushFn)(
  * @param[out] event Pointer to the PalEvent to recieve the event.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa PalPushFn
  */
 typedef bool(PAL_CALL* PalPollFn)(
@@ -108,7 +87,6 @@ typedef bool(PAL_CALL* PalPollFn)(
  * consistency and API use.
  *
  * @since 1.3
- * @ingroup pal_event
  */
 typedef enum {
     PAL_DECORATION_MODE_CLIENT_SIDE,
@@ -123,7 +101,6 @@ typedef enum {
  * API use.
  *
  * @since 1.0
- * @ingroup pal_event
  */
 typedef enum {
     /**
@@ -386,7 +363,6 @@ typedef enum {
  * and API use.
  *
  * @since 1.0
- * @ingroup pal_event
  */
 typedef enum {
     PAL_DISPATCH_NONE,     /**< No dispatch.*/
@@ -409,7 +385,6 @@ struct PalEvent {
  * Provides user-defined event queue push and poll functions.
  *
  * @since 1.0
- * @ingroup pal_event
  */
 typedef struct {
     PalPushFn push;
@@ -424,7 +399,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.0
- * @ingroup pal_event
  */
 typedef struct {
     const PalAllocator* allocator; /**< Set to nullptr to use default.*/
@@ -454,7 +428,6 @@ typedef struct {
  * thread safe.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa palDestroyEventDriver
  */
 PAL_API PalResult PAL_CALL palCreateEventDriver(
@@ -473,7 +446,6 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
  * the event driver is thread safe and `eventDriver` is per thread.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa palCreateEventDriver
  */
 PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
@@ -499,7 +471,6 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa palGetEventDispatchMode
  */
 PAL_API void PAL_CALL palSetEventDispatchMode(
@@ -520,7 +491,6 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa palSetEventDispatchMode
  */
 PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
@@ -549,7 +519,6 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * not thread safe.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa palPollEvent
  */
 PAL_API void PAL_CALL palPushEvent(
@@ -576,13 +545,12 @@ PAL_API void PAL_CALL palPushEvent(
  * not thread safe.
  *
  * @since 1.0
- * @ingroup pal_event
  * @sa palPushEvent
  */
 PAL_API bool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
     PalEvent* outEvent);
 
-/** @} */ // end of pal_event group
+/** @} */
 
 #endif // _PAL_EVENT_H

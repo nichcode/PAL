@@ -28,7 +28,10 @@ project "PAL"
         "src/core/pal_memory.c",
         "src/core/pal_result.c",
         "src/core/pal_time.c",
-        "src/core/pal_version.c"
+        "src/core/pal_version.c",
+
+        -- event
+        "src/pal_event.c"
     }
 
     if (PAL_BUILD_SYSTEM_MODULE) then
