@@ -1,29 +1,10 @@
-
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
-// ==================================================
-// Includes
-// ==================================================
+#ifdef __linux__
 
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
@@ -68,8 +49,6 @@ static Uint32 parseCache(const char* path)
     return cacheSize;
 }
 
-void palSetLastPlatformError(Uint32 e);
-
 // ==================================================
 // Public API
 // ==================================================
@@ -95,7 +74,6 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     FILE* file = fopen("/etc/os-release", "r");
     if (!file) {
-        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -124,7 +102,6 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     struct statvfs stats;
     if (statvfs("/", &stats) != 0) {
-        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -148,7 +125,6 @@ PalResult PAL_CALL palGetCPUInfo(
 
     FILE* file = fopen("/proc/cpuinfo", "r");
     if (!file) {
-        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -228,7 +204,6 @@ PalResult PAL_CALL palGetCPUInfo(
     // get architecture
     struct utsname arch;
     if (uname(&arch) != 0) {
-        palSetLastPlatformError(errno);
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
@@ -254,3 +229,5 @@ PalResult PAL_CALL palGetCPUInfo(
 
     return PAL_RESULT_SUCCESS;
 }
+
+#endif // __linux__

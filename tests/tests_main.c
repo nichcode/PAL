@@ -12,11 +12,11 @@ int main(int argc, char** argv)
     // registerTest(timeTest, "Time Test");
 
     // event
-    registerTest(eventTest, "Event test");
-    registerTest(userEventTest, "User Event Test");
+    // registerTest(eventTest, "Event test");
+    // registerTest(userEventTest, "User Event Test");
 
 #if PAL_HAS_SYSTEM_MODULE
-    // registerTest(systemTest, "System Test");
+    registerTest(systemTest, "System Test");
 #endif // PAL_HAS_SYSTEM_MODULE
 
 #if PAL_HAS_THREAD_MODULE

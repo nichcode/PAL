@@ -1,36 +1,22 @@
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 /**
- * @defgroup pal_system System
- * System PAL functionality such as CPU info and Platform info.
- *
+ * @defgroup pal_system CPU and platform
+ * @ingroup pal_system
  * @{
  */
 
 #ifndef _PAL_SYSTEM_H
 #define _PAL_SYSTEM_H
 
-#include "pal_core.h"
+#include "core/defines.h"
+#include "core/result.h"
+#include "core/version.h"
+#include "core/memory.h"
 
 #define PAL_PLATFORM_NAME_SIZE 32
 #define PAL_CPU_VENDOR_NAME_SIZE 16
@@ -47,7 +33,6 @@ freely, subject to the following restrictions:
  * consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 typedef enum {
     PAL_CPU_ARCH_UNKNOWN,
@@ -65,7 +50,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 typedef enum {
     PAL_CPU_FEATURE_SSE = PAL_BIT(0),
@@ -93,7 +77,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 typedef enum {
     PAL_PLATFORM_WINDOWS,
@@ -114,7 +97,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 typedef enum {
     PAL_PLATFORM_API_WIN32,
@@ -131,7 +113,6 @@ typedef enum {
  * @brief Information about a platform (OS).
  *
  * @since 1.0
- * @ingroup pal_system
  */
 typedef struct {
     PalPlatformType type;
@@ -147,7 +128,6 @@ typedef struct {
  * @brief Information about a CPU.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 typedef struct {
     Uint32 numCores;
@@ -172,7 +152,6 @@ typedef struct {
  * Thread safety: Thread-safe if `info` is per thread.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 
@@ -190,12 +169,11 @@ PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
  * thread safe and `info` is per thread. The default allocator is thread safe.
  *
  * @since 1.0
- * @ingroup pal_system
  */
 PAL_API PalResult PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info);
 
-/** @} */ // end of pal_system group
+/** @} */
 
 #endif // _PAL_SYSTEM_H

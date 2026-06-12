@@ -6,7 +6,7 @@ PAL_BUILD_STATIC_LIBRARY = false
 PAL_BUILD_TEST_APPLICATION = true
 
 -- build system module
-PAL_BUILD_SYSTEM_MODULE = false
+PAL_BUILD_SYSTEM_MODULE = true
 
 -- build thread module
 PAL_BUILD_THREAD_MODULE = false
