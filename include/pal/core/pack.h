@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup pack Packing and unpacking helpers
+ * @defgroup pack Packing and unpack helpers section
  * @ingroup pal_core
  * @{
  */

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -76,7 +77,6 @@ static inline LogTLSData* getLogTlsData()
         if (s_TlsID == 0) {
             DWORD TLSIndex = FlsAlloc(destroyTlsData);
             if (TLSIndex == TLS_OUT_OF_INDEXES) {
-                // FIXME: Use a global log buffer with a mutex
                 return nullptr;
             } else {
                 // update the TLS using atomic operations to avoid thread race

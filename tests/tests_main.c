@@ -16,14 +16,14 @@ int main(int argc, char** argv)
     // registerTest(userEventTest, "User Event Test");
 
 #if PAL_HAS_SYSTEM_MODULE
-    registerTest(systemTest, "System Test");
+    // registerTest(systemTest, "System Test");
 #endif // PAL_HAS_SYSTEM_MODULE
 
 #if PAL_HAS_THREAD_MODULE
-    // registerTest(threadTest, "Thread Test");
-    // registerTest(tlsTest, "TLS Test");
-    // registerTest(mutexTest, "Mutex Test");
-    // registerTest(condvarTest, "Condvar Test");
+    registerTest(threadTest, "Thread Test");
+    registerTest(tlsTest, "TLS Test");
+    registerTest(mutexTest, "Mutex Test");
+    registerTest(condvarTest, "Condvar Test");
 #endif // PAL_HAS_THREAD_MODULE
 
 #if PAL_HAS_VIDEO_MODULE

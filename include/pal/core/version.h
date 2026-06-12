@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup version Versioning
+ * @defgroup version Version section
  * @ingroup pal_core
  * @{
  */

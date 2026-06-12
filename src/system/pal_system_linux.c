@@ -5,7 +5,6 @@
  */
 
 #ifdef __linux__
-
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_system.h"
@@ -18,14 +17,6 @@
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <unistd.h>
-
-// ==================================================
-// Typedefs, enums and structs
-// ==================================================
-
-// ==================================================
-// Internal API
-// ==================================================
 
 static Uint32 parseCache(const char* path)
 {
@@ -48,10 +39,6 @@ static Uint32 parseCache(const char* path)
     fclose(file);
     return cacheSize;
 }
-
-// ==================================================
-// Public API
-// ==================================================
 
 PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {

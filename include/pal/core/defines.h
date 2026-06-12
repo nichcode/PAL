@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup defines Base defines
+ * @defgroup defines Defines section
  * @ingroup pal_core
  * @{
  */

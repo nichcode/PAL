@@ -6,10 +6,10 @@ PAL_BUILD_STATIC_LIBRARY = false
 PAL_BUILD_TEST_APPLICATION = true
 
 -- build system module
-PAL_BUILD_SYSTEM_MODULE = true
+PAL_BUILD_SYSTEM_MODULE = false
 
 -- build thread module
-PAL_BUILD_THREAD_MODULE = false
+PAL_BUILD_THREAD_MODULE = true
 
 -- build video module
 PAL_BUILD_VIDEO_MODULE = false

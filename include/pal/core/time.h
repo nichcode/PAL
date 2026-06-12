@@ -7,7 +7,7 @@
  */
 
 /**
- * @defgroup time Time System
+ * @defgroup time Time section
  * @ingroup pal_core
  * @{
  */

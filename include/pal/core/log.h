@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup log Log System
+ * @defgroup log Log section
  * @ingroup pal_core
  * @{
  */

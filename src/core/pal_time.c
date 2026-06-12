@@ -5,6 +5,8 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
+#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 200112L
 #include "pal/core/time.h"
 
 #ifdef _WIN32

@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup memory Memory System
+ * @defgroup memory Memory section
  * @ingroup pal_core
  * @{
  */

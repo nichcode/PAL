@@ -28,15 +28,7 @@
 #include <intrin.h>
 #endif // _MSC_VER
 
-// ==================================================
-// Typedefs, enums and structs
-// ==================================================
-
 typedef LONG(WINAPI* RtlGetVersionFn)(PRTL_OSVERSIONINFOW);
-
-// ==================================================
-// Internal API
-// ==================================================
 
 static inline void cpuid(
     int regs[4],
@@ -97,10 +89,6 @@ static inline bool isVersionWin32(
 
     return osVersion->build >= build;
 }
-
-// ==================================================
-// Public API
-// ==================================================
 
 PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {

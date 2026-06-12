@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup result Result codes
+ * @defgroup result Result codes section
  * @ingroup pal_core
  * @{
  */

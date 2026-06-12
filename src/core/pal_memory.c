@@ -9,7 +9,10 @@
 #include <malloc.h>
 #endif // _MSC_VER
 
+#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 200112L
 #include "pal/core/memory.h"
+#include <stdlib.h>
 
 #define PAL_DEFAULT_ALIGNMENT 16
 

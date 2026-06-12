@@ -46,10 +46,20 @@ project "PAL"
 
     if (PAL_BUILD_THREAD_MODULE) then
         filter {"system:windows", "configurations:*"}
-            files { "src/thread/pal_thread_win32.c" }
+            files { 
+                "src/thread/pal_condvar_win32.c",
+                "src/thread/pal_mutex_win32.c",
+                "src/thread/pal_tls_win32.c",
+                "src/thread/pal_thread_win32.c"
+            }
 
         filter {"system:linux", "configurations:*"}
-            files { "src/thread/pal_thread_linux.c" }
+            files { 
+                "src/thread/pal_condvar_posix.c",
+                "src/thread/pal_mutex_posix.c",
+                "src/thread/pal_tls_posix.c",
+                "src/thread/pal_thread_posix.c"
+            }
 
         filter {}
     end
