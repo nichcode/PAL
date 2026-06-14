@@ -8,8 +8,8 @@ int main(int argc, char** argv)
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core
-    // registerTest(loggerTest, "Logger Test");
-    // registerTest(timeTest, "Time Test");
+    registerTest(loggerTest, "Logger Test");
+    registerTest(timeTest, "Time Test");
 
     // event
     // registerTest(eventTest, "Event test");
@@ -20,10 +20,10 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_SYSTEM_MODULE
 
 #if PAL_HAS_THREAD_MODULE
-    registerTest(threadTest, "Thread Test");
-    registerTest(tlsTest, "TLS Test");
-    registerTest(mutexTest, "Mutex Test");
-    registerTest(condvarTest, "Condvar Test");
+    // registerTest(threadTest, "Thread Test");
+    // registerTest(tlsTest, "TLS Test");
+    // registerTest(mutexTest, "Mutex Test");
+    // registerTest(condvarTest, "Condvar Test");
 #endif // PAL_HAS_THREAD_MODULE
 
 #if PAL_HAS_VIDEO_MODULE

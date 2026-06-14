@@ -5,7 +5,7 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal/core/version.h"
+#include "pal/pal_core.h"
 
 #define PAL_VERSION_MAJOR 2
 #define PAL_VERSION_MINOR 0

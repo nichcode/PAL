@@ -17,7 +17,7 @@ static PalBool readFile(
 {
     FILE* file = fopen(filename, "rb");
     if (!file) {
-        return false;
+        return PAL_FALSE;
     }
 
     fseek(file, 0, SEEK_END);
@@ -28,13 +28,13 @@ static PalBool readFile(
         tmpSize = *size;
         size_t read = fread(buffer, 1, tmpSize, file);
         if (read != tmpSize) {
-            return false;
+            return PAL_FALSE;
         }
     }
 
     fclose(file);
     *size = tmpSize;
-    return true;
+    return PAL_TRUE;
 }
 
 // core tests

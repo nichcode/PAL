@@ -14,8 +14,7 @@
 #ifndef _PAL_EVENT_H
 #define _PAL_EVENT_H
 
-#include "pal/core/memory.h"
-#include "pal/core/result.h"
+#include "pal/pal_core.h"
 
 /**
  * @struct PalEventDriver

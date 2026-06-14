@@ -145,6 +145,7 @@ palJoinThread(thread, &retval);
 - **Core:** Rename **Uint32** to **uint32_t**.
 - **Core:** Rename **Uint64** to **uint64_t**.
 - **Core:** Rename **UintPtr** to **uintptr_t**.
+- **Core:** **palFormatResult()** now takes two additional parameters.
 
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
 

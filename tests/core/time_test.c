@@ -39,5 +39,5 @@ PalBool timeTest()
 
     palLog(nullptr, "Loop finished after %f seconds and %d frames", totalTime, frameCount);
 
-    return true;
+    return PAL_TRUE;
 }

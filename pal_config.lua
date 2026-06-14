@@ -3,7 +3,7 @@
 PAL_BUILD_STATIC_LIBRARY = false
 
 -- build PAL tests as a single application
-PAL_BUILD_TEST_APPLICATION = false
+PAL_BUILD_TEST_APPLICATION = true
 
 -- build system module
 PAL_BUILD_SYSTEM_MODULE = false

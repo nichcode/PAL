@@ -5,9 +5,7 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#define _GNU_SOURCE
-#define _POSIX_C_SOURCE 200112L
-#include "pal/core/time.h"
+#include "pal/pal_core.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -24,30 +22,18 @@
 #endif // UNICODE
 #include <windows.h>
 
-#else
-#include <time.h>
-#endif // _WIN32
-
 uint64_t PAL_CALL palGetPerformanceCounter()
 {
-#ifdef _WIN32
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return (uint64_t)counter.QuadPart;
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
-#endif // _WIN32
 }
 
 uint64_t PAL_CALL palGetPerformanceFrequency()
 {
-#ifdef _WIN32
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     return (uint64_t)frequency.QuadPart;
-#else
-    return 1000000000LL;
-#endif // _WIN32    
 }
+
+#endif // _WIN32

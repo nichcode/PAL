@@ -24,15 +24,29 @@ project "PAL"
 
     files {
         -- core
-        "src/core/pal_log.c",
-        "src/core/pal_memory.c",
-        "src/core/pal_result.c",
-        "src/core/pal_time.c",
         "src/core/pal_version.c",
 
         -- event
-        "src/pal_event.c"
+        -- "src/pal_event.c"
     }
+
+    filter {"system:windows", "configurations:*"}
+        files {
+            "src/core/win32/pal_log_win32.c",
+            "src/core/win32/pal_memory_win32.c",
+            "src/core/win32/pal_result_win32.c",
+            "src/core/win32/pal_time_win32.c"
+        }
+
+    filter {"system:linux", "configurations:*"}
+        files { 
+            "src/core/linux/pal_log_linux.c",
+            "src/core/linux/pal_memory_linux.c",
+            "src/core/linux/pal_result_linux.c",
+            "src/core/linux/pal_time_linux.c"
+        }
+
+    filter {}
 
     if (PAL_BUILD_SYSTEM_MODULE) then
         filter {"system:windows", "configurations:*"}

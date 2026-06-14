@@ -14,6 +14,7 @@
 #define _PAL_CORE_H
 
 #include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 #define PAL_EXTERN_C extern "C"
@@ -71,7 +72,7 @@
 
 /**
  * @typedef PalBool
- * @brief Must be @c PAL_TRUE or @c PAL_FALSE.
+ * @brief Must be `PAL_TRUE` or `PAL_FALSE`.
  * 
  * @since 2.0
  */
@@ -79,7 +80,17 @@ typedef uint32_t PalBool;
 
 /**
  * @typedef PalResult
- * @brief Codes returned by most PAL functions. This is not a bitmask.
+ * @brief Value returned by most PAL functions.
+ * 
+ * Non-success results (eg. `PAL_RESULT_INVALID_HANDLE`) may contain
+ * additional information for debugging and logging purposes. For checking specific
+ * result codes, call `palGetResultCode()` to get the code from the result value. 
+ * 
+ * Example: 
+ * 
+ * uint16_t resultCode = palGetResultCode(result);
+ * 
+ * if (resultCode == `PAL_RESULT_INVALID_DEVICE_LOST`) {}.
  *
  * All result codes follow the format `PAL_RESULT_**` for consistency and API use.
  *
@@ -174,17 +185,38 @@ typedef struct {
 } PalLogger;
 
 /**
- * Convert a result code to a human-readable string.
+ * Get the result code from the result value.
+ * 
+ * `PAL_RESULT_SUCCESS` code can be compared with the result value without comparing the
+ * result code. 
+ * 
+ * @param result The result value.
  *
- * @param result The PalResult code to format.
- *
- * @return Null-terminated static string describing the result.
+ * @return The result code from the result value.
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
-PAL_API const char* PAL_CALL palFormatResult(PalResult result);
+PAL_API uint16_t PAL_CALL palGetResultCode(PalResult result);
+
+/**
+ * Convert a result value to a human-readable string.
+ * 
+ * This returns a null-terminated string. The string is truncated if `bufferSize` is insufficient.
+ *
+ * @param result The PalResult value to format.
+ * @param bufferSize The size of the buffer.
+ * @param buffer The buffer.
+ *
+ * Thread safety: Thread safe if the provided buffer is per thread.
+ *
+ * @since 2.0
+ */
+PAL_API void PAL_CALL palFormatResult(
+    PalResult result, 
+    uint64_t bufferSize,
+    char* buffer);
 
 /**
  * Retrieve the PAL version number.
@@ -399,7 +431,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: Thread-safe if `outLow` and `outHigh` are
+ * Thread safety: Thread-safe if @c outLow and @c outHigh are
  * thread local.
  *
  * @since 1.0
@@ -440,7 +472,7 @@ static inline void* PAL_CALL palUnpackPointer(int64_t data)
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: Thread-safe if `outLow` and `outHigh` are
+ * Thread safety: Thread-safe if @c outLow and @c outHigh are
  * thread local.
  *
  * @since 1.3

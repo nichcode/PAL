@@ -38,5 +38,5 @@ PalBool loggerTest()
         palLog(&loggers[i], "This is directed to a logger");
     }
 
-    return true;
+    return PAL_TRUE;
 }
