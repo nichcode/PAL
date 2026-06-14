@@ -121,7 +121,7 @@ void* retval;
 palJoinThread(thread, &retval);
 ```
 
-## [1.4.0] - 2026-01-00
+## [2.0.0] - 2026-01-00
 
 ### Features
 
@@ -153,6 +153,14 @@ palJoinThread(thread, &retval);
 
 - **Graphics:** Added **Graphics System To PAL**.
 
+### Changed
+- **All systems:** All enum types have been changed to defines and explicit width types.
+- **Thread:** **palJoinThread()** now takes a void** for retval parameter.
+- **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
+
+### Removed
+- **Core:** Removed **PAL_RESULT_DEVICE_LOST** define.
+
 ### Tests
 
 - Added grapics example: see **graphics_test.c**
@@ -170,5 +178,4 @@ palJoinThread(thread, &retval);
 - Added texture rendering example: see **texture_test.c**
 
 ### Notes
-- No API or ABI changes - existing code remains compatible.
-- Safe upgrade from **v1.3.0** - just rebuild your project after updating.
+- API or ABI changes

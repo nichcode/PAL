@@ -7,10 +7,10 @@
 
 #include "pal/core/version.h"
 
-#define PAL_VERSION_MAJOR 1
-#define PAL_VERSION_MINOR 4
+#define PAL_VERSION_MAJOR 2
+#define PAL_VERSION_MINOR 0
 #define PAL_VERSION_BUILD 0
-#define PAL_VERSION_STRING "1.4.0"
+#define PAL_VERSION_STRING "2.0.0"
 
 PalVersion PAL_CALL palGetVersion()
 {
