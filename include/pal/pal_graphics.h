@@ -1473,10 +1473,10 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool sampledImageDynamicArrayIndexing;
-    bool storageImageDynamicArrayIndexing;
-    bool storageBufferDynamicArrayIndexing;
-    bool uniformBufferDynamicArrayIndexing;
+    PalBool sampledImageDynamicArrayIndexing;
+    PalBool storageImageDynamicArrayIndexing;
+    PalBool storageBufferDynamicArrayIndexing;
+    PalBool uniformBufferDynamicArrayIndexing;
     uint32_t maxPerStageSampledImages;
     uint32_t maxPerSetSampledImages;
     uint32_t maxPerStageStorageImages;
@@ -1584,9 +1584,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool independentResolve;
-    bool depthResolves[PAL_MAX_RESOLVE_MODES];
-    bool stencilResolves[PAL_MAX_RESOLVE_MODES];
+    PalBool independentResolve;
+    PalBool depthResolves[PAL_MAX_RESOLVE_MODES];
+    PalBool stencilResolves[PAL_MAX_RESOLVE_MODES];
 } PalDepthStencilCapabilities;
 
 /**
@@ -1597,12 +1597,12 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
+    PalBool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
     uint32_t minTexelWidth;
     uint32_t minTexelHeight;
     uint32_t maxTexelWidth;
     uint32_t maxTexelHeight;
-    bool combinerOps[PAL_MAX_COMBINER_OPS];
+    PalBool combinerOps[PAL_MAX_COMBINER_OPS];
 } PalFragmentShadingRateCapabilities;
 
 /**
@@ -1646,14 +1646,14 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool sampledImageNonUniformIndexing;
-    bool sampledImageUpdateAfterBind;
-    bool storageImageNonUniformIndexing;
-    bool storageImageUpdateAfterBind;
-    bool storageBufferNonUniformIndexing;
-    bool storageBufferUpdateAfterBind;
-    bool uniformBufferNonUniformIndexing;
-    bool uniformBufferUpdateAfterBind;
+    PalBool sampledImageNonUniformIndexing;
+    PalBool sampledImageUpdateAfterBind;
+    PalBool storageImageNonUniformIndexing;
+    PalBool storageImageUpdateAfterBind;
+    PalBool storageBufferNonUniformIndexing;
+    PalBool storageBufferUpdateAfterBind;
+    PalBool uniformBufferNonUniformIndexing;
+    PalBool uniformBufferUpdateAfterBind;
     uint32_t maxPerStageSampledImages;
     uint32_t maxPerSetSampledImages;
     uint32_t maxPerStageStorageImages;
@@ -1676,9 +1676,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool presentModes[PAL_PRESENT_MODE_MAX];
-    bool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
-    bool formats[PAL_SURFACE_FORMAT_MAX];
+    PalBool presentModes[PAL_PRESENT_MODE_MAX];
+    PalBool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
+    PalBool formats[PAL_SURFACE_FORMAT_MAX];
     uint32_t minImageCount;
     uint32_t maxImageCount;
     uint32_t minImageWidth;
@@ -1827,7 +1827,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool memoryTypes[PAL_MEMORY_TYPE_MAX];
+    PalBool memoryTypes[PAL_MEMORY_TYPE_MAX];
     uint64_t memoryMask;
     uint64_t size;
     uint64_t alignment;
@@ -2043,12 +2043,12 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool denyGeneral;
-    bool denyValidation;
-    bool denyPerformance;
-    bool denyInfoSeverity;
-    bool denyWarningSeverity;
-    bool denyErrorSeverity;
+    PalBool denyGeneral;
+    PalBool denyValidation;
+    PalBool denyPerformance;
+    PalBool denyInfoSeverity;
+    PalBool denyWarningSeverity;
+    PalBool denyErrorSeverity;
     void* userData;
     PalDebugCallback callback;
 } PalGraphicsDebugger;
@@ -2063,8 +2063,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableDepthClamp;
-    bool enableDepthBias;
+    PalBool enableDepthClamp;
+    PalBool enableDepthBias;
     float depthBiasConstant;
     float depthBiasSlope;
     float depthBiasClamp;
@@ -2083,8 +2083,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableSampleShading;
-    bool enableAlphaToCoverage;
+    PalBool enableSampleShading;
+    PalBool enableAlphaToCoverage;
     PalSampleCount sampleCount;
     uint64_t sampleMask;
     float minSampleShading;
@@ -2116,9 +2116,9 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableDepthTest;
-    bool enableDepthWrite;
-    bool enableStencilTest;
+    PalBool enableDepthTest;
+    PalBool enableDepthWrite;
+    PalBool enableStencilTest;
     PalCompareOp compareOp;
     PalStencilOpState frontStencilOpState;
     PalStencilOpState backStencilOpState;
@@ -2137,7 +2137,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableBlend;
+    PalBool enableBlend;
     PalColorMask colorWriteMask;
     PalBlendFactor srcColorBlendFactor;
     PalBlendFactor dstColorBlendFactor;
@@ -2545,8 +2545,8 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableCompare;
-    bool enableAnisotropy; /**< `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported.*/
+    PalBool enableCompare;
+    PalBool enableAnisotropy; /**< `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported.*/
     float mipLodBias;
     float minLod;
     float maxLod;
@@ -2571,7 +2571,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool clipped;
+    PalBool clipped;
     uint32_t width;
     uint32_t height;
     uint32_t imageCount;
@@ -2638,7 +2638,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableDescriptorIndexing;
+    PalBool enableDescriptorIndexing;
     uint32_t bindingCount;
     uint32_t shaderStageCount;
     PalShaderStage* shaderStages;
@@ -2656,7 +2656,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool enableDescriptorIndexing;
+    PalBool enableDescriptorIndexing;
     uint32_t maxDescriptorSets;
     uint32_t maxDescriptorBindingSizes;
     PalDescriptorPoolBindingSize* bindingSizes;
@@ -2688,7 +2688,7 @@ typedef struct {
  * @ingroup pal_graphics
  */
 typedef struct {
-    bool primitiveRestartEnable;
+    PalBool primitiveRestartEnable;
     uint32_t vertexLayoutCount;
     uint32_t colorBlendAttachmentCount;
     uint32_t shaderCount;
@@ -2971,7 +2971,7 @@ typedef struct {
      *
      * Must obey the rules and semantics documented in palCanQueuePresent().
      */
-    bool (PAL_CALL *canQueuePresent)(
+    PalBool (PAL_CALL *canQueuePresent)(
         PalQueue* queue,
         PalSurface* surface);
 
@@ -2997,7 +2997,7 @@ typedef struct {
      *
      * Must obey the rules and semantics documented in palIsFormatSupported().
      */
-    bool (PAL_CALL *isFormatSupported)(
+    PalBool (PAL_CALL *isFormatSupported)(
         PalAdapter* adapter,
         PalFormat format);
 
@@ -3225,7 +3225,7 @@ typedef struct {
      */
     PalResult (PAL_CALL *createFence)(
         PalDevice* device,
-        bool signaled,
+        PalBool signaled,
         PalFence** outFence);
 
     /**
@@ -3256,7 +3256,7 @@ typedef struct {
      *
      * Must obey the rules and semantics documented in palIsFenceSignaled().
      */
-    bool (PAL_CALL *isFenceSignaled)(PalFence* fence);
+    PalBool (PAL_CALL *isFenceSignaled)(PalFence* fence);
 
     /**
      * Backend implementation of ::palCreateSemaphore.
@@ -3265,7 +3265,7 @@ typedef struct {
      */
     PalResult (PAL_CALL *createSemaphore)(
         PalDevice* device,
-        bool enableTimeline,
+        PalBool enableTimeline,
         PalSemaphore** outSemaphore);
 
     /**
@@ -3765,7 +3765,7 @@ typedef struct {
      */
     PalResult (PAL_CALL *cmdSetDepthTestEnable)(
         PalCommandBuffer* cmdBuffer,
-        bool enable);
+        PalBool enable);
 
     /**
      * Backend implementation of ::palCmdSetDepthWriteEnable.
@@ -3774,7 +3774,7 @@ typedef struct {
      */
     PalResult (PAL_CALL *cmdSetDepthWriteEnable)(
         PalCommandBuffer* cmdBuffer,
-        bool enable);
+        PalBool enable);
 
     /**
      * Backend implementation of ::palCmdSetStencilOp.
@@ -4606,7 +4606,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  * @ingroup pal_graphics
  * @sa palCreateQueue
  */
-PAL_API bool PAL_CALL palCanQueuePresent(
+PAL_API PalBool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
     PalSurface* surface);
 
@@ -4685,7 +4685,7 @@ PAL_API PalResult PAL_CALL palEnumerateFormats(
  * @sa palQueryFormatImageUsages
  * @sa palQueryFormatImageViewUsages
  */
-PAL_API bool PAL_CALL palIsFormatSupported(
+PAL_API PalBool PAL_CALL palIsFormatSupported(
     PalAdapter* adapter,
     PalFormat format);
 
@@ -5272,7 +5272,7 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  */
 PAL_API PalResult PAL_CALL palCreateFence(
     PalDevice* device,
-    bool signaled,
+    PalBool signaled,
     PalFence** outFence);
 
 /**
@@ -5354,7 +5354,7 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
  * @sa palResetFence
  * @sa palWaitFence
  */
-PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
+PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
 
 /**
  * @brief Create a semaphore.
@@ -5377,7 +5377,7 @@ PAL_API bool PAL_CALL palIsFenceSignaled(PalFence* fence);
  */
 PAL_API PalResult PAL_CALL palCreateSemaphore(
     PalDevice* device,
-    bool enableTimeline,
+    PalBool enableTimeline,
     PalSemaphore** outSemaphore);
 
 /**
@@ -6707,7 +6707,7 @@ PAL_API PalResult PAL_CALL palCmdSetPrimitiveTopology(
  */
 PAL_API PalResult PAL_CALL palCmdSetDepthTestEnable(
     PalCommandBuffer* cmdBuffer,
-    bool enable);
+    PalBool enable);
 
 /**
  * @brief Set depth write enable for the provided command buffer.
@@ -6730,7 +6730,7 @@ PAL_API PalResult PAL_CALL palCmdSetDepthTestEnable(
  */
 PAL_API PalResult PAL_CALL palCmdSetDepthWriteEnable(
     PalCommandBuffer* cmdBuffer,
-    bool enable);
+    PalBool enable);
 
 /**
  * @brief Set depth stencil operation for the provided command buffer.
@@ -7550,7 +7550,7 @@ PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
  * @sa palCmdDispatch
  * @sa palCmdDispatchBase
  */
-PAL_API bool PAL_CALL palBuildWorkGroupInfo(
+PAL_API PalBool PAL_CALL palBuildWorkGroupInfo(
     const PalWorkGroupBuildData* data,
     int32_t* count,
     PalWorkGroupInfo* info);

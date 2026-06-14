@@ -95,15 +95,15 @@ typedef BOOL(WINAPI* SetPixelFormatFn)(
     CONST PIXELFORMATDESCRIPTOR*);
 
 typedef struct {
-    bool used;
-    bool isAttached;
+    PalBool used;
+    PalBool isAttached;
     PalWindowState state;
     HCURSOR cursor;
     LONG_PTR wndProc;
 } WindowData;
 
 typedef struct {
-    bool initialized;
+    PalBool initialized;
     int32_t pixelFormat;
     int32_t maxWindowData;
     PalVideoFeatures features;
@@ -134,9 +134,9 @@ typedef struct {
 } MonitorData;
 
 typedef struct {
-    bool pendingResize;
-    bool pendingMove;
-    bool pendingState;
+    PalBool pendingResize;
+    PalBool pendingMove;
+    PalBool pendingState;
     uint32_t width;
     uint32_t height;
     int32_t x;
@@ -147,19 +147,19 @@ typedef struct {
 
 typedef struct {
     int32_t pendingHighSurrogate;
-    bool scancodeState[PAL_SCANCODE_MAX];
-    bool keycodeState[PAL_KEYCODE_MAX];
+    PalBool scancodeState[PAL_SCANCODE_MAX];
+    PalBool keycodeState[PAL_KEYCODE_MAX];
     int scancodes[512];
     int keycodes[256];
 } Keyboard;
 
 typedef struct {
-    bool push;
+    PalBool push;
     int32_t dx;
     int32_t dy;
     int32_t WheelX;
     int32_t WheelY;
-    bool state[PAL_MOUSE_BUTTON_MAX];
+    PalBool state[PAL_MOUSE_BUTTON_MAX];
 } Mouse;
 
 static PendingEvent s_Event;
@@ -299,7 +299,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
                     event.type = type;
-                    event.data = (bool)wParam;
+                    event.data = (PalBool)wParam;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -504,7 +504,7 @@ LRESULT CALLBACK videoProc(
         case WM_XBUTTONUP: {
             PalMouseButton button = PAL_MOUSE_BUTTON_UNKNOWN;
             PalEventType type;
-            bool pressed = false;
+            PalBool pressed = false;
 
             if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) {
                 button = PAL_MOUSE_BUTTON_LEFT;
@@ -573,8 +573,8 @@ LRESULT CALLBACK videoProc(
             PalEventType type;
             int32_t win32Keycode;
             int32_t win32Scancode;
-            bool pressed = false;
-            bool extended = false;
+            PalBool pressed = false;
+            PalBool extended = false;
 
             pressed = (HIWORD(lParam) & KF_UP) ? false : true;
             extended = (lParam >> 24) & 1; // we use this for special keys
@@ -619,7 +619,7 @@ LRESULT CALLBACK videoProc(
             }
 
             // check before updating state
-            bool repeat = s_Keyboard.keycodeState[keycode];
+            PalBool repeat = s_Keyboard.keycodeState[keycode];
             if (pressed) {
                 s_Keyboard.keycodeState[keycode] = true;
                 s_Keyboard.scancodeState[scancode] = true;
@@ -764,7 +764,7 @@ static inline DWORD orientationToin32(PalOrientation orientation)
 static inline PalResult setMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode,
-    bool test)
+    PalBool test)
 {
     if (!monitor || !mode) {
         return PAL_RESULT_NULL_POINTER;
@@ -808,7 +808,7 @@ static inline PalResult setMonitorMode(
     }
 }
 
-static inline bool compareMonitorMode(
+static inline PalBool compareMonitorMode(
     const PalMonitorMode* a,
     const PalMonitorMode* b)
 {
@@ -1645,10 +1645,10 @@ PalResult PAL_CALL palSetMonitorOrientation(
 
     // clang-format off
     // only swap size if switching between landscape and portrait
-    bool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT ||
+    PalBool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT ||
                                monitorOrientation == DMDO_180);
 
-    bool isLandscape = (win32Orientation == DMDO_DEFAULT ||
+    PalBool isLandscape = (win32Orientation == DMDO_DEFAULT ||
                         win32Orientation == DMDO_180);
     // clang-format on
 
@@ -1996,7 +1996,7 @@ PalResult PAL_CALL palFlashWindow(
     flashInfo.hwnd = (HWND)window;
     flashInfo.uCount = info->count;
 
-    bool success = FlashWindowEx(&flashInfo);
+    PalBool success = FlashWindowEx(&flashInfo);
     if (!success) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
@@ -2225,7 +2225,7 @@ PalResult PAL_CALL palGetWindowState(
     return PAL_RESULT_SUCCESS;
 }
 
-const bool* PAL_CALL palGetKeycodeState()
+const PalBool* PAL_CALL palGetKeycodeState()
 {
     if (!s_Video.initialized) {
         return nullptr;
@@ -2233,7 +2233,7 @@ const bool* PAL_CALL palGetKeycodeState()
     return s_Keyboard.keycodeState;
 }
 
-const bool* PAL_CALL palGetScancodeState()
+const PalBool* PAL_CALL palGetScancodeState()
 {
     if (!s_Video.initialized) {
         return nullptr;
@@ -2241,7 +2241,7 @@ const bool* PAL_CALL palGetScancodeState()
     return s_Keyboard.scancodeState;
 }
 
-const bool* PAL_CALL palGetMouseState()
+const PalBool* PAL_CALL palGetMouseState()
 {
     if (!s_Video.initialized) {
         return nullptr;
@@ -2300,7 +2300,7 @@ void PAL_CALL palGetRawMouseWheelDelta(
     }
 }
 
-bool PAL_CALL palIsWindowVisible(PalWindow* window)
+PalBool PAL_CALL palIsWindowVisible(PalWindow* window)
 {
     if (!s_Video.initialized) {
         return false;
@@ -2361,7 +2361,7 @@ PalResult PAL_CALL palSetWindowOpacity(
         opacity = 1.0f;
     }
 
-    bool ret = SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);
+    PalBool ret = SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
@@ -2439,7 +2439,7 @@ PalResult PAL_CALL palSetWindowStyle(
     SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle);
 
     // force a frame update
-    bool success = SetWindowPos(
+    PalBool success = SetWindowPos(
         hwnd,
         nullptr,
         0,
@@ -2498,7 +2498,7 @@ PalResult PAL_CALL palSetWindowPos(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    bool success =
+    PalBool success =
         SetWindowPos((HWND)window, nullptr, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
 
     if (!success) {
@@ -2527,7 +2527,7 @@ PalResult PAL_CALL palSetWindowSize(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    bool success = SetWindowPos(
+    PalBool success = SetWindowPos(
         (HWND)window,
         HWND_TOP,
         0,
@@ -2849,7 +2849,7 @@ void PAL_CALL palDestroyCursor(PalCursor* cursor)
     }
 }
 
-void PAL_CALL palShowCursor(bool show)
+void PAL_CALL palShowCursor(PalBool show)
 {
     if (s_Video.initialized) {
         ShowCursor(show);
@@ -2858,7 +2858,7 @@ void PAL_CALL palShowCursor(bool show)
 
 PalResult PAL_CALL palClipCursor(
     PalWindow* window,
-    bool clip)
+    PalBool clip)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;

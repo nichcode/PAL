@@ -803,7 +803,7 @@ static void PAL_CALL onEvent(
                 xdgToplevelMove(s_WinHandle.nativeHandle2, s_Seat, serial);
 
                 // Optionally check for another click and maximize the window
-                // maybe set a bool or query mouse button state
+                // maybe set a PalBool or query mouse button state
                 // we will skip it for this example
             }
 
@@ -833,7 +833,7 @@ static void PAL_CALL onEvent(
     }
 }
 
-bool customDecorationTest()
+PalBool customDecorationTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "This only implements close and window movement for simplicity");
@@ -903,7 +903,7 @@ bool customDecorationTest()
     s_Decoration.driver = eventDriver;
     createDecoration();
 
-    bool running = true;
+    PalBool running = true;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -957,7 +957,7 @@ bool customDecorationTest()
 
 #else
 #include "tests.h"
-bool customDecorationTest()
+PalBool customDecorationTest()
 {
     return false;
 }

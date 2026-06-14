@@ -144,9 +144,9 @@ typedef struct {
  * @ingroup pal_opengl
  */
 typedef struct {
-    bool doubleBuffer;
-    bool stereo;
-    bool sRGB;
+    PalBool doubleBuffer;
+    PalBool stereo;
+    PalBool sRGB;
     uint16_t index; /**< Driver index. Must not be changed.*/
     uint16_t redBits;
     uint16_t greenBits;
@@ -182,9 +182,9 @@ typedef struct {
  * @ingroup pal_opengl
  */
 typedef struct {
-    bool forward;                  /**< Forward compatible context.*/
-    bool noError;                  /**< No error context.*/
-    bool debug;                    /**< Debug context. */
+    PalBool forward;                  /**< Forward compatible context.*/
+    PalBool noError;                  /**< No error context.*/
+    PalBool debug;                    /**< Debug context. */
     uint16_t major;                  /** major version.*/
     uint16_t minor;                  /** minor version.*/
     PalGLProfile profile;          /**< see PalGLProfile.*/

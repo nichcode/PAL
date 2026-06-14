@@ -142,14 +142,14 @@ static void PAL_CALL onEvent(
     }
 }
 
-bool windowTest()
+PalBool windowTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
     PalResult result;
     PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    bool running = false;
+    PalBool running = false;
 
     // event driver
     PalEventDriver* eventDriver = nullptr;

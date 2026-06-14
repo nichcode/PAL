@@ -215,13 +215,13 @@ typedef void(PAL_GL_APIENTRY* glClearColorFn)(
     float);
 
 typedef struct {
-    bool used;
+    PalBool used;
     EGLSurface surface;
     PalGLContext* context;
 } ContextData;
 
 typedef struct {
-    bool initialized;
+    PalBool initialized;
     int32_t maxContextData;
     EGLenum apiType;
     int apiTypeBit;
@@ -263,7 +263,7 @@ static GLLinux s_GL = {0};
 // Internal API
 // ==================================================
 
-static inline bool checkExtension(
+static inline PalBool checkExtension(
     const char* extension,
     const char* extensions)
 {
@@ -918,7 +918,7 @@ PalResult PAL_CALL palCreateGLContext(
     }
 
     // check version
-    bool valid = info->major < s_GL.info.major ||
+    PalBool valid = info->major < s_GL.info.major ||
                  (info->major == s_GL.info.major && info->minor <= s_GL.info.minor);
 
     if (!valid) {

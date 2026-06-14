@@ -125,7 +125,7 @@ typedef struct {
 } Adapter;
 
 typedef struct {
-    bool debugLayer;
+    PalBool debugLayer;
     uint32_t adapterCount;
     uint32_t severityCount;
     uint32_t categoryCount;
@@ -225,7 +225,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool belongsToSwapchain;
+    PalBool belongsToSwapchain;
     Device* device;
     ID3D12Resource* handle;
     PalImageInfo info;
@@ -269,8 +269,8 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool isTimeline;
-    bool canReset;
+    PalBool isTimeline;
+    PalBool canReset;
     UINT64 value;
     ID3D12Fence* handle;
 } Fence, Semaphore;
@@ -292,7 +292,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool primary;
+    PalBool primary;
     void* pool; // CommandPool
     Device* device;
     ID3D12Resource* stagingBuffer;
@@ -303,7 +303,7 @@ typedef struct {
 } CommandBuffer;
 
 typedef struct {
-    bool used;
+    PalBool used;
     CommandBuffer* cmdBuffer;
 } CommandBufferData;
 
@@ -318,11 +318,11 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool supportsAddress;
-    bool canChangeState;
-    bool hasIndirect;
-    bool isAccelerationStructure;
-    bool isScratch;
+    PalBool supportsAddress;
+    PalBool canChangeState;
+    PalBool hasIndirect;
+    PalBool isAccelerationStructure;
+    PalBool isScratch;
     uint64_t size;
     ID3D12Resource* handle;
     Device* device;
@@ -345,7 +345,7 @@ typedef struct {
 } PipelineLayout;
 
 typedef struct {
-    bool isHitGroup;
+    PalBool isHitGroup;
     PalShaderStage stage;
     wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
 } ShaderExport;
@@ -369,7 +369,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool hasFsr;
+    PalBool hasFsr;
     uint32_t type;
     uint32_t shaderExportCount;
     D3D12_SHADING_RATE shadingRate;
@@ -392,7 +392,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool isDirty;
+    PalBool isDirty;
     uint32_t stagingBufferSize;
     uint32_t handleSize;
     ID3D12Resource* buffer;
@@ -414,7 +414,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool hasDescriptorIndexing;
+    PalBool hasDescriptorIndexing;
     uint32_t bindingCount;
     uint32_t samplerCount;
     D3D12_SHADER_VISIBILITY visibility;
@@ -457,9 +457,9 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool hasDescriptorIndexing;
-    bool hasResourceHeap;
-    bool hasSamplerHeap;
+    PalBool hasDescriptorIndexing;
+    PalBool hasResourceHeap;
+    PalBool hasSamplerHeap;
     uint32_t maxSets;
     uint32_t usedSets;
     DescriptorHeapLimits limits;
@@ -1277,7 +1277,7 @@ static DXGI_FORMAT vertexTypeToD3D12(PalVertexType type)
     return DXGI_FORMAT_UNKNOWN;
 }
 
-static bool fillBuildInfoD3D12(
+static PalBool fillBuildInfoD3D12(
     PalAccelerationStructureBuildInfo* info,
     D3D12_RAYTRACING_GEOMETRY_DESC* geometries,
     D3D12_GPU_VIRTUAL_ADDRESS srcAs,
@@ -2688,7 +2688,7 @@ PalResult PAL_CALL createDeviceD3D12(
 
     // check if any of the features are not supported
     PalAdapterFeatures adapterFeatures = getAdapterFeaturesD3D12(adapter);
-    bool valid = (adapterFeatures & features) == features;
+    PalBool valid = (adapterFeatures & features) == features;
     if (!valid) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -3349,7 +3349,7 @@ PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL canQueuePresentD3D12(
+PalBool PAL_CALL canQueuePresentD3D12(
     PalQueue* queue,
     PalSurface* surface)
 {
@@ -3412,7 +3412,7 @@ PalResult PAL_CALL enumerateFormatsD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL isFormatSupportedD3D12(
+PalBool PAL_CALL isFormatSupportedD3D12(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -3733,8 +3733,8 @@ PalResult PAL_CALL createImageViewD3D12(
     }
 
     imageView->heapIndex = UINT32_MAX;
-    bool hasRTV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-    bool hasDSV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    PalBool hasRTV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+    PalBool hasDSV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
     imageView->format = formatToD3D12(info->format);
     if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR && hasRTV) {
@@ -3917,7 +3917,7 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     HRESULT result;
     Surface* d3dSurface = (Surface*)surface;
     Device* d3dDevice = (Device*)device;
-    bool supportHDR10 = false;
+    PalBool supportHDR10 = false;
     IDXGISwapChain1* swapchain1 = nullptr;
     IDXGISwapChain3* swapchain3 = nullptr;
 
@@ -4059,7 +4059,7 @@ PalResult PAL_CALL createSwapchainD3D12(
     Device* d3dDevice = (Device*)device;
     Queue* d3dQueue = (Queue*)queue;
     Swapchain* swapchain = nullptr;
-    bool isHDRColorspace = false;
+    PalBool isHDRColorspace = false;
 
     if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -4286,7 +4286,7 @@ PalResult PAL_CALL presentSwapchainD3D12(
 
         // check if swapchain needs to be resize
         RECT windowRect;
-        bool ret = GetClientRect((HWND)d3dSwapchain->surface->handle, &windowRect);
+        PalBool ret = GetClientRect((HWND)d3dSwapchain->surface->handle, &windowRect);
         uint32_t w = windowRect.right - windowRect.left;
         uint32_t h = windowRect.bottom - windowRect.top;
 
@@ -4439,7 +4439,7 @@ void PAL_CALL destroyShaderD3D12(PalShader* shader)
 
 PalResult PAL_CALL createFenceD3D12(
     PalDevice* device,
-    bool signaled,
+    PalBool signaled,
     PalFence** outFence)
 {
     HRESULT result;
@@ -4535,7 +4535,7 @@ PalResult PAL_CALL resetFenceD3D12(PalFence* fence)
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
+PalBool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
 {
     Fence* d3dFence = (Fence*)fence;
     if (d3dFence->handle->lpVtbl->GetCompletedValue(d3dFence->handle) == 0) {
@@ -4550,13 +4550,13 @@ bool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
 
 PalResult PAL_CALL createSemaphoreD3D12(
     PalDevice* device,
-    bool enableTimeline,
+    PalBool enableTimeline,
     PalSemaphore** outSemaphore)
 {
     HRESULT result;
     Device* d3dDevice = (Device*)device;
     Semaphore* semaphore = nullptr;
-    bool hasTimeline = d3dDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
+    PalBool hasTimeline = d3dDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
 
     semaphore = palAllocate(s_D3D.allocator, sizeof(Semaphore), 0);
     if (!semaphore) {
@@ -5154,7 +5154,7 @@ PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
         }
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->geometryCount);
-        bool success = fillBuildInfoD3D12(
+        PalBool success = fillBuildInfoD3D12(
             info,
             geometries,
             srcAsAddress,
@@ -5174,7 +5174,7 @@ PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
         palFree(s_D3D.allocator, geometries);
 
     } else {
-        bool success = fillBuildInfoD3D12(
+        PalBool success = fillBuildInfoD3D12(
             info,
             nullptr,
             srcAsAddress,
@@ -6304,14 +6304,14 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyD3D12(
 
 PalResult PAL_CALL cmdSetDepthTestEnableD3D12(
     PalCommandBuffer* cmdBuffer,
-    bool enable)
+    PalBool enable)
 {
     return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult PAL_CALL cmdSetDepthWriteEnableD3D12(
     PalCommandBuffer* cmdBuffer,
-    bool enable)
+    PalBool enable)
 {
     return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
 }
@@ -6390,7 +6390,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
         }
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->geometryCount);
-        bool success = fillBuildInfoD3D12(
+        PalBool success = fillBuildInfoD3D12(
             info,
             geometries,
             0,
@@ -6409,7 +6409,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
         palFree(s_D3D.allocator, geometries);
 
     } else {
-        bool success = fillBuildInfoD3D12(
+        PalBool success = fillBuildInfoD3D12(
             info,
             nullptr,
             0,
@@ -6724,7 +6724,7 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     DescriptorSetBinding* bindings = nullptr;
     uint32_t count = info->bindingCount;
 
-    bool hasDescriptorIndexing = d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+    PalBool hasDescriptorIndexing = d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -6934,7 +6934,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
     Device* d3dDevice = (Device*)device;
     DescriptorPool* pool = nullptr;
 
-    bool hasDescriptorIndexing = d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+    PalBool hasDescriptorIndexing = d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -7659,7 +7659,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     HRESULT result;
     uint32_t patchControlPoints = 0;
     uint32_t totalSize = 0;
-    bool alphaToCoverageEnable = false;
+    PalBool alphaToCoverageEnable = false;
     Pipeline* pipeline = nullptr;
     Device* d3dDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
@@ -8767,8 +8767,8 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         ShaderExport* tmp = &pipeline->shaderExports[i];
         PalShaderStage stage = tmp->stage;
 
-        // skip any hit, closest hit, intersection shaders without isHitGroup bool
-        bool isHitGroup = false;
+        // skip any hit, closest hit, intersection shaders without isHitGroup PalBool
+        PalBool isHitGroup = false;
         if (stage == PAL_SHADER_STAGE_ANY_HIT ||
             stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
             stage == PAL_SHADER_STAGE_INTERSECTION) {

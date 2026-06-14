@@ -9,7 +9,7 @@ static PalMutex* g_Mutex;
 static PalCondVar* g_Condition;
 
 typedef struct {
-    bool ready;
+    PalBool ready;
     uint32_t id;
 } ThreadData;
 
@@ -28,7 +28,7 @@ static void* PAL_CALL worker(void* arg)
     return nullptr;
 }
 
-bool condvarTest()
+PalBool condvarTest()
 {
     PalResult result;
     PalThread* threads[THREAD_COUNT];

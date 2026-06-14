@@ -49,7 +49,7 @@ static void* PAL_CALL worker(void* arg)
     return nullptr;
 }
 
-bool tlsTest()
+PalBool tlsTest()
 {
     PalThread* thread = nullptr;
 

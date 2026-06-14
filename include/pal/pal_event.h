@@ -75,7 +75,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * @since 1.0
  * @sa PalPushFn
  */
-typedef bool(PAL_CALL* PalPollFn)(
+typedef PalBool(PAL_CALL* PalPollFn)(
     void* userData,
     PalEvent* outEvent);
 
@@ -547,7 +547,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @since 1.0
  * @sa palPushEvent
  */
-PAL_API bool PAL_CALL palPollEvent(
+PAL_API PalBool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
     PalEvent* outEvent);
 

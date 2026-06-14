@@ -21,7 +21,7 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
-bool computeTest()
+PalBool computeTest()
 {
     PalAdapter* adapter = nullptr;
     PalDevice* device = nullptr;
@@ -472,7 +472,7 @@ bool computeTest()
 
     uint32_t workGroupInfoCount = 0;
     PalWorkGroupInfo* workGroupInfos = nullptr;
-    bool ret = palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
+    PalBool ret = palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
     if (!ret) {
         palLog(nullptr, "Failed to build work group info");
         return false;

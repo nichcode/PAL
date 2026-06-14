@@ -222,7 +222,7 @@ typedef struct {
 } Adapter;
 
 typedef struct {
-    bool useCache;
+    PalBool useCache;
     void* handle;
     Adapter* adapters;
     VkInstance instance;
@@ -444,7 +444,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool belongsToSwapchain;
+    PalBool belongsToSwapchain;
     Device* device;
     Memory* memory;
     VkImage handle;
@@ -502,7 +502,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool primary;
+    PalBool primary;
     Device* device;
     CommandPool* pool;
     void* pipeline;
@@ -521,7 +521,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool isTimeline;
+    PalBool isTimeline;
     Device* device;
     VkSemaphore handle;
 } Semaphore;
@@ -549,7 +549,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool hasDescriptorIndexing;
+    PalBool hasDescriptorIndexing;
     Device* device;
     VkDescriptorSetLayout handle;
 } DescriptorSetLayout;
@@ -557,7 +557,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool hasDescriptorIndexing;
+    PalBool hasDescriptorIndexing;
     Device* device;
     VkDescriptorPool handle;
 } DescriptorPool;
@@ -614,7 +614,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    bool isDirty;
+    PalBool isDirty;
     uint32_t stagingBufferSize;
     uint32_t handleSize;
     Device* device;
@@ -3023,7 +3023,7 @@ PalResult PAL_CALL initGraphicsVk(
     // clang-format on
 
     // get version
-    bool versionFallback = false;
+    PalBool versionFallback = false;
     uint32_t version = 0;
     if (s_Vk.enumerateInstanceVersion) {
         s_Vk.enumerateInstanceVersion(&version);
@@ -3034,7 +3034,7 @@ PalResult PAL_CALL initGraphicsVk(
 
     VkResult result;
     uint32_t layerCount = 0;
-    bool hasValidationLayer = false;
+    PalBool hasValidationLayer = false;
     s_Vk.messenger = nullptr;
     s_Vk.allocator = allocator;
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {0};
@@ -3106,12 +3106,12 @@ PalResult PAL_CALL initGraphicsVk(
         return PAL_RESULT_SUCCESS;
     }
 
-    bool hasXlib = false;
-    bool hasXcb = false;
-    bool hasWayland = false;
-    bool hasWin32 = false;
-    bool hasSurface = false;
-    bool hasExtDebug = false;
+    PalBool hasXlib = false;
+    PalBool hasXcb = false;
+    PalBool hasWayland = false;
+    PalBool hasWin32 = false;
+    PalBool hasSurface = false;
+    PalBool hasExtDebug = false;
     s_Vk.enumerateInstanceExtensionProperties(nullptr, &extCount, extensionProps);
 
     for (int i = 0; i < extCount; i++) {
@@ -3366,7 +3366,7 @@ PalResult PAL_CALL enumerateAdaptersVk(
                 return PAL_RESULT_OUT_OF_MEMORY;
             }
 
-            bool found = false;
+            PalBool found = false;
             s_Vk.enumerateDeviceExtensionProperties(phyDevice, nullptr, &extCount, exts);
 
             for (int i = 0; i < extCount; i++) {
@@ -3625,19 +3625,19 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     }
 
     // check extensions
-    bool rayTracing = false;
-    bool accelerationStructure = false;
-    bool meshShader = false;
-    bool fragmentRateShading = false;
-    bool timelineSemaphore = false;
-    bool descriptorIndexing = false;
-    bool shaderFloat16 = false;
-    bool multiiView = false;
-    bool dynamicstate = false;
-    bool bufferDeviceAddress = false;
-    bool shaderParameters = false;
-    bool nullDescriptors = false;
-    bool rayQuery = false;
+    PalBool rayTracing = false;
+    PalBool accelerationStructure = false;
+    PalBool meshShader = false;
+    PalBool fragmentRateShading = false;
+    PalBool timelineSemaphore = false;
+    PalBool descriptorIndexing = false;
+    PalBool shaderFloat16 = false;
+    PalBool multiiView = false;
+    PalBool dynamicstate = false;
+    PalBool bufferDeviceAddress = false;
+    PalBool shaderParameters = false;
+    PalBool nullDescriptors = false;
+    PalBool rayQuery = false;
     s_Vk.enumerateDeviceExtensionProperties(phyDevice, nullptr, &extensionCount, extensionProps);
 
     // clang-format off
@@ -5231,7 +5231,7 @@ PalResult PAL_CALL waitQueueVk(PalQueue* queue)
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL canQueuePresentVk(
+PalBool PAL_CALL canQueuePresentVk(
     PalQueue* queue,
     PalSurface* surface)
 {
@@ -5297,7 +5297,7 @@ PalResult PAL_CALL enumerateFormatsVk(
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL isFormatSupportedVk(
+PalBool PAL_CALL isFormatSupportedVk(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -5347,7 +5347,7 @@ PalSampleCount PAL_CALL queryFormatSampleCountVk(
 
     VkImageUsageFlags vkImageUsage = 0;
     PalImageUsages imageUsages = ImageUsageFromVk(props.optimalTilingFeatures);
-    bool isDepth = (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) != 0;
+    PalBool isDepth = (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) != 0;
     if (isDepth) {
         vkImageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     } else {
@@ -6266,7 +6266,7 @@ void PAL_CALL destroyShaderVk(PalShader* shader)
 
 PalResult PAL_CALL createFenceVk(
     PalDevice* device,
-    bool signaled,
+    PalBool signaled,
     PalFence** outFence)
 {
     VkResult result;
@@ -6342,7 +6342,7 @@ PalResult PAL_CALL resetFenceVk(PalFence* fence)
     return PAL_RESULT_SUCCESS;
 }
 
-bool PAL_CALL isFenceSignaledVk(PalFence* fence)
+PalBool PAL_CALL isFenceSignaledVk(PalFence* fence)
 {
     Fence* vkFence = (Fence*)fence;
     VkResult result = s_Vk.isFenceSignaled(vkFence->device->handle, vkFence->handle);
@@ -6359,13 +6359,13 @@ bool PAL_CALL isFenceSignaledVk(PalFence* fence)
 
 PalResult PAL_CALL createSemaphoreVk(
     PalDevice* device,
-    bool enableTimeline,
+    PalBool enableTimeline,
     PalSemaphore** outSemaphore)
 {
     VkResult result;
     Semaphore* semaphore = nullptr;
     Device* vkDevice = (Device*)device;
-    bool hasTimeline = vkDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
+    PalBool hasTimeline = vkDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
 
     semaphore = palAllocate(s_Vk.allocator, sizeof(Semaphore), 0);
     if (!semaphore) {
@@ -8038,7 +8038,7 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
 
 PalResult PAL_CALL cmdSetDepthTestEnableVk(
     PalCommandBuffer* cmdBuffer,
-    bool enable)
+    PalBool enable)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -8053,7 +8053,7 @@ PalResult PAL_CALL cmdSetDepthTestEnableVk(
 
 PalResult PAL_CALL cmdSetDepthWriteEnableVk(
     PalCommandBuffer* cmdBuffer,
-    bool enable)
+    PalBool enable)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -8487,7 +8487,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     uint32_t count = info->bindingCount;
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo = {0};
 
-    bool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+    PalBool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
@@ -8584,7 +8584,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
     uint32_t maxBindings = info->maxDescriptorBindingSizes;
     VkDescriptorPoolCreateInfo createInfo = {0};
 
-    bool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
+    PalBool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     } 

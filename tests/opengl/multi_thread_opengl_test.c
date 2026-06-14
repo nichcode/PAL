@@ -34,9 +34,9 @@ typedef void (*glViewportFn)(
     int);
 
 typedef struct {
-    bool driverCreated;
-    bool running;
-    bool fixedPipeline;
+    PalBool driverCreated;
+    PalBool running;
+    PalBool fixedPipeline;
     PalEventDriver* videoEventDriver;
     PalEventDriver* openglEventDriver;
     PalGLContext* context;
@@ -173,7 +173,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
     return nullptr;
 }
 
-bool multiThreadOpenGlTest()
+PalBool multiThreadOpenGlTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     PalResult result;

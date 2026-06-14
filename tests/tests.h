@@ -5,12 +5,12 @@
 #include "pal/pal_core.h"
 #include <stdio.h>
 
-typedef bool (*TestFn)();
+typedef PalBool (*TestFn)();
 
 void registerTest(TestFn func, const char* name);
 void runTests();
 
-static bool readFile(
+static PalBool readFile(
     const char* filename,
     void* buffer,
     uint64_t* size)
@@ -38,59 +38,59 @@ static bool readFile(
 }
 
 // core tests
-bool loggerTest();
-bool timeTest();
-bool userEventTest();
-bool eventTest();
+PalBool loggerTest();
+PalBool timeTest();
+PalBool userEventTest();
+PalBool eventTest();
 
 // system tests
-bool systemTest();
+PalBool systemTest();
 
 // system tests
-bool threadTest();
-bool tlsTest();
-bool mutexTest();
-bool condvarTest();
+PalBool threadTest();
+PalBool tlsTest();
+PalBool mutexTest();
+PalBool condvarTest();
 
 // video test
-bool videoTest();
-bool monitorTest();
-bool monitorModeTest();
-bool windowTest();
-bool iconTest();
-bool cursorTest();
-bool inputWindowTest();
-bool systemCursorTest();
-bool attachWindowTest();
-bool charEventTest();
-bool nativeIntegrationTest();
-bool nativeInstanceTest();
-bool customDecorationTest();
+PalBool videoTest();
+PalBool monitorTest();
+PalBool monitorModeTest();
+PalBool windowTest();
+PalBool iconTest();
+PalBool cursorTest();
+PalBool inputWindowTest();
+PalBool systemCursorTest();
+PalBool attachWindowTest();
+PalBool charEventTest();
+PalBool nativeIntegrationTest();
+PalBool nativeInstanceTest();
+PalBool customDecorationTest();
 
 // opengl test
-bool openglTest();
+PalBool openglTest();
 
 // opengl and video test
-bool openglFBConfigTest();
-bool openglContextTest();
-bool openglMultiContextTest();
+PalBool openglFBConfigTest();
+PalBool openglContextTest();
+PalBool openglMultiContextTest();
 
 // opengl, video and thread
-bool multiThreadOpenGlTest();
+PalBool multiThreadOpenGlTest();
 
 // graphics
-bool graphicsTest();
-bool computeTest();
-bool rayTracingTest();
-bool multiDescriptorSetTest();
+PalBool graphicsTest();
+PalBool computeTest();
+PalBool rayTracingTest();
+PalBool multiDescriptorSetTest();
 
 // graphics and video
-bool clearColorTest();
-bool triangleTest();
-bool meshTest();
-bool textureTest();
-bool geometryTest();
-bool indirectDrawTest();
-bool descriptorIndexingTest();
+PalBool clearColorTest();
+PalBool triangleTest();
+PalBool meshTest();
+PalBool textureTest();
+PalBool geometryTest();
+PalBool indirectDrawTest();
+PalBool descriptorIndexingTest();
 
 #endif // _TESTS_H

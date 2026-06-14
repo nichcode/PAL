@@ -25,7 +25,7 @@ static void PAL_CALL onLogger(
     palLog(nullptr, "%s: %s", name, msg);
 }
 
-bool loggerTest()
+PalBool loggerTest()
 {
     PalLogger loggers[LOGGER_COUNT];
     for (int32_t i = 0; i < LOGGER_COUNT; i++) {

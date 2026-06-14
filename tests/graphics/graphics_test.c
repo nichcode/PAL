@@ -2,7 +2,7 @@
 #include "pal/pal_graphics.h"
 #include "tests.h"
 
-bool graphicsTest()
+PalBool graphicsTest()
 {
     // initialize the graphics system
     PalResult result = palInitGraphics(nullptr, nullptr);

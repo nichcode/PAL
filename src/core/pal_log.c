@@ -50,7 +50,7 @@ typedef struct {
     char tmp[PAL_LOG_MSG_SIZE];
     char buffer[PAL_LOG_MSG_SIZE];
     wchar_t wideBuffer[PAL_LOG_MSG_SIZE];
-    bool isLogging;
+    PalBool isLogging;
 } LogTLSData;
 
 static void destroyTlsData(void* data)

@@ -2,7 +2,7 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool monitorTest()
+PalBool monitorTest()
 {
     PalMonitorInfo info;
     int32_t count = 0;

@@ -17,7 +17,7 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
-bool clearColorTest()
+PalBool clearColorTest()
 {
     PalResult result;
     PalWindow* window = nullptr;
@@ -190,7 +190,7 @@ bool clearColorTest()
     }
 
     // create a graphics command queue and check if its supports presenting to the surface
-    bool foundQueue = false;
+    PalBool foundQueue = false;
     for (int i = 0; i < caps.maxGraphicsQueues; i++) {
         result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
         if (result != PAL_RESULT_SUCCESS) {
@@ -349,7 +349,7 @@ bool clearColorTest()
 
     // main loop
     uint32_t currentFrame = 0;
-    bool running = true;
+    PalBool running = true;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();

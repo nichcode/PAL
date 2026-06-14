@@ -17,7 +17,7 @@ typedef struct {
 } QueueData;
 
 struct PalEventDriver {
-    bool freeQueue;
+    PalBool freeQueue;
     PalEventQueue* queue;
     const PalAllocator* allocator;
     PalEventCallback callback;
@@ -34,7 +34,7 @@ static void PAL_CALL defaultPush(
     data->data[data->tail++ % PAL_MAX_EVENTS] = *event;
 }
 
-static bool PAL_CALL defaultPoll(
+static PalBool PAL_CALL defaultPoll(
     void* queue,
     PalEvent* outEvent)
 {
@@ -167,7 +167,7 @@ void PAL_CALL palPushEvent(
     }
 }
 
-bool PAL_CALL palPollEvent(
+PalBool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
     PalEvent* outEvent)
 {

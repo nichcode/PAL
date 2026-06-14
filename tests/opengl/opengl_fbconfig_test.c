@@ -5,7 +5,7 @@
 
 static const char* g_BoolsToSting[2] = {"False", "True"};
 
-bool openglFBConfigTest()
+PalBool openglFBConfigTest()
 {
     // initialize the video system and create a window
     PalResult result = palInitVideo(nullptr, nullptr);

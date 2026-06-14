@@ -25,7 +25,7 @@ static void* PAL_CALL worker(void* arg)
     return nullptr;
 }
 
-bool mutexTest()
+PalBool mutexTest()
 {
     PalResult result;
     PalThread* threads[THREAD_COUNT];

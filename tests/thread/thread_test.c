@@ -16,7 +16,7 @@ static void* PAL_CALL worker(void* arg)
     return nullptr;
 }
 
-bool threadTest()
+PalBool threadTest()
 {
     PalResult result;
     PalThread* threads[THREAD_COUNT];

@@ -179,7 +179,7 @@ typedef struct {
 } Gdi;
 
 typedef struct {
-    bool initialized;
+    PalBool initialized;
     wglGetProcAddressFn wglGetProcAddress;
     wglCreateContextFn wglCreateContext;
     wglDeleteContextFn wglDeleteContext;
@@ -210,7 +210,7 @@ static Wgl s_Wgl = {0};
 // Internal API
 // ==================================================
 
-static inline bool checkExtension(
+static inline PalBool checkExtension(
     const char* extension,
     const char* extensions)
 {
@@ -804,7 +804,7 @@ PalResult PAL_CALL palCreateGLContext(
 
     // clang-format off
     // check version
-    bool valid = info->major < s_Wgl.info.major ||
+    PalBool valid = info->major < s_Wgl.info.major ||
         (info->major == s_Wgl.info.major && info->minor <= s_Wgl.info.minor);
     // clang-format on
 

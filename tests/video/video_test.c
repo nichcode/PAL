@@ -2,7 +2,7 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool videoTest()
+PalBool videoTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     

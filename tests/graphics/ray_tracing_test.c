@@ -24,7 +24,7 @@ static inline uint32_t _max(
     return (a > b) ? a : b;
 }
 
-bool rayTracingTest()
+PalBool rayTracingTest()
 {
     PalAdapter* adapter = nullptr;
     PalDevice* device = nullptr;

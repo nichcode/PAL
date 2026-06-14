@@ -112,7 +112,7 @@ static XFreeFn s_XFree;
 static Atom s_NET_WM_NAME;
 static Atom s_UTF8_STRING;
 
-static bool s_OnWayland = false;
+static PalBool s_OnWayland = false;
 static void* s_X11Lib;
 
 static void* s_WaylandLib;
@@ -312,7 +312,7 @@ void getWindowTitle(PalWindowHandleInfoEx* windowInfo)
 #endif // _WIN32
 }
 
-bool nativeIntegrationTest()
+PalBool nativeIntegrationTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
@@ -391,7 +391,7 @@ bool nativeIntegrationTest()
     // using native API like wl_proxy_set_user_data, XContext and
     // SetWindowLongPtr(GWLP_USERDATA) can be used freely
 
-    bool running = true;
+    PalBool running = true;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();

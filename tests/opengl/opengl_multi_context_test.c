@@ -14,7 +14,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
 
 typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask); // use GL typedefs if needed
 
-bool openglMultiContextTest()
+PalBool openglMultiContextTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     PalResult result;
@@ -62,7 +62,7 @@ bool openglMultiContextTest()
     PalWindowCreateInfo createInfo = {0};
     PalGLContextCreateInfo contextCreateInfo = {0};
     int32_t fbCount = 0;
-    bool running = false;
+    PalBool running = false;
 
     // enumerate supported opengl framebuffer configs
     // glWindow must be nullptr

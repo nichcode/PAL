@@ -45,7 +45,7 @@ static inline void cpuid(
 #endif // _MSC_VER
 }
 
-static inline bool getVersionWin32(PalVersion* version)
+static inline PalBool getVersionWin32(PalVersion* version)
 {
     OSVERSIONINFOEXW ver = {0};
     ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
@@ -65,7 +65,7 @@ static inline bool getVersionWin32(PalVersion* version)
     return true;
 }
 
-static inline bool isVersionWin32(
+static inline PalBool isVersionWin32(
     PalVersion* osVersion,
     uint16_t major,
     uint16_t minor,

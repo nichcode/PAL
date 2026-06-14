@@ -272,7 +272,7 @@ static const char* dispatchString = "Poll Mode";
 static const char* dispatchString = "Callback Mode";
 #endif // DISPATCH_MODE_POLL
 
-static bool s_Running = false;
+static PalBool s_Running = false;
 
 // inline helpers
 static inline void onKeydown(const PalEvent* event)
@@ -397,14 +397,14 @@ static void PAL_CALL onEvent(
     }
 }
 
-bool inputWindowTest()
+PalBool inputWindowTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
     PalResult result;
     PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    bool running = false;
+    PalBool running = false;
 
     // event driver
     PalEventDriver* eventDriver = nullptr;

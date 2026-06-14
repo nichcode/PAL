@@ -14,7 +14,7 @@ static inline double getTime(MyTimer* timer)
     return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 
-bool timeTest()
+PalBool timeTest()
 {
     // create and set the frequency and start time for time related calculations
     MyTimer timer;

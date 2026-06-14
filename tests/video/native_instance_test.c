@@ -132,7 +132,7 @@ static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_dis
     return (struct wl_registry*)registry;
 }
 
-static bool s_Logged = false;
+static PalBool s_Logged = false;
 static void globalHandle(
     void* data,
     struct wl_registry* registry,
@@ -161,7 +161,7 @@ static const struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
     .global_remove = globalRemove};
 
-static bool s_OnWayland = false;
+static PalBool s_OnWayland = false;
 
 #endif // _WIN32
 
@@ -306,7 +306,7 @@ void closeInstance(void* instance)
 #endif // _WIN32
 }
 
-bool nativeInstanceTest()
+PalBool nativeInstanceTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
@@ -374,7 +374,7 @@ bool nativeInstanceTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
-    bool running = true;
+    PalBool running = true;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();

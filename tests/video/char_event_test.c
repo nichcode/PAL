@@ -2,7 +2,7 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool charEventTest()
+PalBool charEventTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
@@ -60,7 +60,7 @@ bool charEventTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYCHAR, PAL_DISPATCH_POLL);
 
-    bool running = true;
+    PalBool running = true;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();

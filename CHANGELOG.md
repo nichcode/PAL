@@ -124,57 +124,65 @@ palJoinThread(thread, &retval);
 ## [2.0.0] - 2026-01-00
 
 ### Features
-
-- **Core:** Added **PAL_RESULT_GRAPHICS_NOT_INITIALIZED** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_ADAPTER** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_BACKEND** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_QUEUE_NOT_SUPPORTED** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_DRIVER** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_DEVICE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_QUEUE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_OUT_OF_QUEUE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_GRAPHICS_WINDOW** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_SWAPCHAIN** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_IMAGE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_IMAGE_VIEW** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_OPERATION** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_SHADER_TYPE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_COMMAND_POOL** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_COMMAND_BUFFER** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_FENCE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_SEMAPHORE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_RENDER_PASS** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_BUFFER** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_INVALID_ACCELERATION_STRUCTURE** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_MEMORY_MAP_FAILED** to `PalResult` enum.
-- **Core:** Added **PAL_RESULT_DEVICE_LOST** to `PalResult` enum.
+- **Core:** Added **PAL_RESULT_INVALID_HANDLE** result code.
+- **Core:** Added **PAL_RESULT_FEATURE_NOT_SUPPORTED** result code.
+- **Core:** Added **PAL_RESULT_NOT_INITIALIZED** result code.
+- **Core:** Added **PAL_RESULT_DEVICE_LOST** result code.
+- **Core:** Added **PAL_RESULT_OUT_OF_DATE** result code.
 
 - **Graphics:** Added **Graphics System To PAL**.
 
 ### Changed
 - **All systems:** All enum types have been changed to defines and explicit width types.
+
+- **Core:** Rename **Int8** to **int8_t**.
+- **Core:** Rename **Int16** to **int16_t**.
+- **Core:** Rename **Int32** to **int32_t**.
+- **Core:** Rename **Int64** to **int64_t**.
+- **Core:** Rename **IntPtr** to **intptr_t**.
+- **Core:** Rename **Uint8** to **uint8_t**.
+- **Core:** Rename **Uint16** to **uint16_t**.
+- **Core:** Rename **Uint32** to **uint32_t**.
+- **Core:** Rename **Uint64** to **uint64_t**.
+- **Core:** Rename **UintPtr** to **uintptr_t**.
+
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
+
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
 
 ### Removed
-- **Core:** Removed **PAL_RESULT_DEVICE_LOST** define.
+- **Core:** Removed **PAL_RESULT_NULL_POINTER** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_ALLOCATOR** result code.
+- **Core:** Removed **PAL_RESULT_ACCESS_DENIED** result code.
+- **Core:** Removed **PAL_RESULT_INSUFFICIENT_BUFFER** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_THREAD** result code.
+- **Core:** Removed **PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED** result code.
+- **Core:** Removed **PAL_RESULT_VIDEO_NOT_INITIALIZED** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_MONITOR** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_MONITOR_MODE** result code.
+- **Core:** Removed **PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_KEYCODE** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_SCANCODE** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_MOUSE_BUTTON** result code.
+- **Core:** Removed **PAL_RESULT_GL_NOT_INITIALIZED** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_GL_WINDOW** result code.
+- **Core:** Removed **PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_GL_FBCONFIG** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_GL_VERSION** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_GL_PROFILE** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_GL_CONTEXT** result code.
+- **Core:** Removed **PAL_RESULT_INVALID_FBCONFIG_BACKEND** result code.
+
+- **Video:** Removed **palGetVideoFeaturesEx** functions.
 
 ### Tests
 
 - Added grapics example: see **graphics_test.c**
-
 - Added clear color example: see **clear_color_test.c**
-
 - Added vertex shader/buffer triangle example: see **triangle_test.c**
-
 - Added mesh example: see **mesh_test.c**
-
 - Added compute example: see **compute_test.c**
-
 - Added ray tracing example: see **ray_tracing_test.c**
-
 - Added texture rendering example: see **texture_test.c**
 
 ### Notes

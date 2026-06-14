@@ -566,7 +566,7 @@ typedef enum {
  * @ingroup pal_video
  */
 typedef struct {
-    bool primary; /**< True if this is the primary monitor.*/
+    PalBool primary; /**< True if this is the primary monitor.*/
     uint32_t dpi;
     uint32_t refreshRate;
     int32_t x;       /**< X position in pixels.*/
@@ -675,10 +675,10 @@ typedef struct {
  * @ingroup pal_video
  */
 typedef struct {
-    bool show;            /**< Show after creation.*/
-    bool maximized;       /**< Maximize after creation.*/
-    bool minimized;       /**< Minimze after creation.*/
-    bool center;          /**< Center after creation.*/
+    PalBool show;            /**< Show after creation.*/
+    PalBool maximized;       /**< Maximize after creation.*/
+    PalBool minimized;       /**< Minimze after creation.*/
+    PalBool center;          /**< Center after creation.*/
     uint32_t width;         /**< Width in pixels.*/
     uint32_t height;        /**< Width in pixels.*/
     PalWindowStyle style; /**< Window style.*/
@@ -758,23 +758,6 @@ PAL_API void PAL_CALL palUpdateVideo();
  * @sa palInitVideo
  */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
-
-/**
- * @brief Get the supported features of the video system.
- *
- * The video system must be initialized before this call.
- * This returns the supported features from palGetVideoFeatures()
- * and adds additionally supported features.
- *
- * @return video features on success or `0` on failure.
- *
- * Thread safety: Thread safe.
- *
- * @since 1.3
- * @ingroup pal_video
- * @sa palInitVideo
- */
-PAL_API PalVideoFeatures64 PAL_CALL palGetVideoFeaturesEx();
 
 /**
  * @brief Set the FBConfig for the video system.
@@ -1358,7 +1341,7 @@ PAL_API PalResult PAL_CALL palGetWindowState(
  * @since 1.0
  * @ingroup pal_video
  */
-PAL_API const bool* PAL_CALL palGetKeycodeState();
+PAL_API const PalBool* PAL_CALL palGetKeycodeState();
 
 /**
  * @brief Get the state of the scancodes (layout independent keys) of
@@ -1377,7 +1360,7 @@ PAL_API const bool* PAL_CALL palGetKeycodeState();
  * @since 1.0
  * @ingroup pal_video
  */
-PAL_API const bool* PAL_CALL palGetScancodeState();
+PAL_API const PalBool* PAL_CALL palGetScancodeState();
 
 /**
  * @brief Get the state of the buttons of the mouse.
@@ -1395,7 +1378,7 @@ PAL_API const bool* PAL_CALL palGetScancodeState();
  * @since 1.0
  * @ingroup pal_video
  */
-PAL_API const bool* PAL_CALL palGetMouseState();
+PAL_API const PalBool* PAL_CALL palGetMouseState();
 
 /**
  * @brief Get the relative movement of the mouse in desktop pixels.
@@ -1473,7 +1456,7 @@ PAL_API void PAL_CALL palGetRawMouseWheelDelta(
  * @since 1.0
  * @ingroup pal_video
  */
-PAL_API bool PAL_CALL palIsWindowVisible(PalWindow* window);
+PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
 
 /**
  * @brief Get the current input-focused window per application.
@@ -1806,7 +1789,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  * @since 1.0
  * @ingroup pal_video
  */
-PAL_API void PAL_CALL palShowCursor(bool show);
+PAL_API void PAL_CALL palShowCursor(PalBool show);
 
 /**
  * @brief Clip the cursor to the provided window.
@@ -1831,7 +1814,7 @@ PAL_API void PAL_CALL palShowCursor(bool show);
  */
 PAL_API PalResult PAL_CALL palClipCursor(
     PalWindow* window,
-    bool clip);
+    PalBool clip);
 
 /**
  * @brief Get the position of the cursor relative to the provided window in

@@ -67,7 +67,7 @@ typedef struct {
 } BackendData;
 
 typedef struct {
-    bool initialized;
+    PalBool initialized;
     int32_t backendCount;
     const PalAllocator* allocator;
     BackendData backends[MAX_BACKENDS];
@@ -204,7 +204,7 @@ void PAL_CALL destroyQueueVk(PalQueue* queue);
 
 PalResult PAL_CALL waitQueueVk(PalQueue* queue);
 
-bool PAL_CALL canQueuePresentVk(
+PalBool PAL_CALL canQueuePresentVk(
     PalQueue* queue,
     PalSurface* surface);
 
@@ -217,7 +217,7 @@ PalResult PAL_CALL enumerateFormatsVk(
     int32_t* count,
     PalFormatInfo* outFormats);
 
-bool PAL_CALL isFormatSupportedVk(
+PalBool PAL_CALL isFormatSupportedVk(
     PalAdapter* adapter,
     PalFormat format);
 
@@ -348,7 +348,7 @@ void PAL_CALL destroyShaderVk(PalShader* shader);
 
 PalResult PAL_CALL createFenceVk(
     PalDevice* device,
-    bool signaled,
+    PalBool signaled,
     PalFence** outFence);
 
 void PAL_CALL destroyFenceVk(PalFence* fence);
@@ -359,7 +359,7 @@ PalResult PAL_CALL waitFenceVk(
 
 PalResult PAL_CALL resetFenceVk(PalFence* fence);
 
-bool PAL_CALL isFenceSignaledVk(PalFence* fence);
+PalBool PAL_CALL isFenceSignaledVk(PalFence* fence);
 
 // ==================================================
 // Semaphore
@@ -367,7 +367,7 @@ bool PAL_CALL isFenceSignaledVk(PalFence* fence);
 
 PalResult PAL_CALL createSemaphoreVk(
     PalDevice* device,
-    bool enableTimeline,
+    PalBool enableTimeline,
     PalSemaphore** outSemaphore);
 
 void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore);
@@ -625,11 +625,11 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
 
 PalResult PAL_CALL cmdSetDepthTestEnableVk(
     PalCommandBuffer* cmdBuffer,
-    bool enable);
+    PalBool enable);
 
 PalResult PAL_CALL cmdSetDepthWriteEnableVk(
     PalCommandBuffer* cmdBuffer,
-    bool enable);
+    PalBool enable);
 
 PalResult PAL_CALL cmdSetStencilOpVk(
     PalCommandBuffer* cmdBuffer,
@@ -1083,7 +1083,7 @@ void PAL_CALL destroyQueueD3D12(PalQueue* queue);
 
 PalResult PAL_CALL waitQueueD3D12(PalQueue* queue);
 
-bool PAL_CALL canQueuePresentD3D12(
+PalBool PAL_CALL canQueuePresentD3D12(
     PalQueue* queue,
     PalSurface* surface);
 
@@ -1096,7 +1096,7 @@ PalResult PAL_CALL enumerateFormatsD3D12(
     int32_t* count,
     PalFormatInfo* outFormats);
 
-bool PAL_CALL isFormatSupportedD3D12(
+PalBool PAL_CALL isFormatSupportedD3D12(
     PalAdapter* adapter,
     PalFormat format);
 
@@ -1227,7 +1227,7 @@ void PAL_CALL destroyShaderD3D12(PalShader* shader);
 
 PalResult PAL_CALL createFenceD3D12(
     PalDevice* device,
-    bool signaled,
+    PalBool signaled,
     PalFence** outFence);
 
 void PAL_CALL destroyFenceD3D12(PalFence* fence);
@@ -1238,7 +1238,7 @@ PalResult PAL_CALL waitFenceD3D12(
 
 PalResult PAL_CALL resetFenceD3D12(PalFence* fence);
 
-bool PAL_CALL isFenceSignaledD3D12(PalFence* fence);
+PalBool PAL_CALL isFenceSignaledD3D12(PalFence* fence);
 
 // ==================================================
 // Semaphore
@@ -1246,7 +1246,7 @@ bool PAL_CALL isFenceSignaledD3D12(PalFence* fence);
 
 PalResult PAL_CALL createSemaphoreD3D12(
     PalDevice* device,
-    bool enableTimeline,
+    PalBool enableTimeline,
     PalSemaphore** outSemaphore);
 
 void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore);
@@ -1504,11 +1504,11 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyD3D12(
 
 PalResult PAL_CALL cmdSetDepthTestEnableD3D12(
     PalCommandBuffer* cmdBuffer,
-    bool enable);
+    PalBool enable);
 
 PalResult PAL_CALL cmdSetDepthWriteEnableD3D12(
     PalCommandBuffer* cmdBuffer,
-    bool enable);
+    PalBool enable);
 
 PalResult PAL_CALL cmdSetStencilOpD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -2498,7 +2498,7 @@ void PAL_CALL palDestroyQueue(PalQueue* queue)
     }
 }
 
-bool PAL_CALL palCanQueuePresent(
+PalBool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
     PalSurface* surface)
 {
@@ -2545,7 +2545,7 @@ PalResult PAL_CALL palEnumerateFormats(
     return adapter->backend->enumerateFormats(adapter, count, outFormats);
 }
 
-bool PAL_CALL palIsFormatSupported(
+PalBool PAL_CALL palIsFormatSupported(
     PalAdapter* adapter,
     PalFormat format)
 {
@@ -2953,7 +2953,7 @@ void PAL_CALL palDestroyShader(PalShader* shader)
 
 PalResult PAL_CALL palCreateFence(
     PalDevice* device,
-    bool signaled,
+    PalBool signaled,
     PalFence** outFence)
 {
     if (!s_Graphics.initialized) {
@@ -3011,7 +3011,7 @@ PalResult PAL_CALL palResetFence(PalFence* fence)
     return fence->backend->resetFence(fence);
 }
 
-bool PAL_CALL palIsFenceSignaled(PalFence* fence)
+PalBool PAL_CALL palIsFenceSignaled(PalFence* fence)
 {
     if (s_Graphics.initialized && fence) {
         return fence->backend->isFenceSignaled(fence);
@@ -3025,7 +3025,7 @@ bool PAL_CALL palIsFenceSignaled(PalFence* fence)
 
 PalResult PAL_CALL palCreateSemaphore(
     PalDevice* device,
-    bool enableTimeline,
+    PalBool enableTimeline,
     PalSemaphore** outSemaphore)
 {
     if (!s_Graphics.initialized) {
@@ -3910,7 +3910,7 @@ PalResult PAL_CALL palCmdSetPrimitiveTopology(
 
 PalResult PAL_CALL palCmdSetDepthTestEnable(
     PalCommandBuffer* cmdBuffer,
-    bool enable)
+    PalBool enable)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3925,7 +3925,7 @@ PalResult PAL_CALL palCmdSetDepthTestEnable(
 
 PalResult PAL_CALL palCmdSetDepthWriteEnable(
     PalCommandBuffer* cmdBuffer,
-    bool enable)
+    PalBool enable)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -4540,7 +4540,7 @@ PalResult PAL_CALL palUpdateShaderBindingTable(
 // Utils
 // ==================================================
 
-bool PAL_CALL palBuildWorkGroupInfo(
+PalBool PAL_CALL palBuildWorkGroupInfo(
     const PalWorkGroupBuildData* data,
     int32_t* count,
     PalWorkGroupInfo* infos)

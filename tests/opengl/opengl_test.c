@@ -3,7 +3,7 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool openglTest()
+PalBool openglTest()
 {
     // initialize the video system and create a window
     PalResult result = palInitVideo(nullptr, nullptr);

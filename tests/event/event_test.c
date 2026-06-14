@@ -28,7 +28,7 @@ static void PAL_CALL onEvent(
     s_CallbackCounter++;
 }
 
-static inline void eventDispatchTest(bool poll)
+static inline void eventDispatchTest(PalBool poll)
 {
     PalResult result;
     PalEventDriver* driver = nullptr;
@@ -76,7 +76,7 @@ static inline void eventDispatchTest(bool poll)
     palDestroyEventDriver(driver);
 }
 
-bool eventTest()
+PalBool eventTest()
 {
     MyTimer timer;
     timer.frequency = palGetPerformanceFrequency();

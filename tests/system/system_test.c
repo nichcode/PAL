@@ -61,7 +61,7 @@ static inline const char* cpuArchToString(PalCpuArch arch)
     return nullptr;
 }
 
-bool systemTest()
+PalBool systemTest()
 {
     PalResult result;
     PalCPUInfo cpuInfo;

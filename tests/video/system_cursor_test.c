@@ -2,7 +2,7 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool systemCursorTest()
+PalBool systemCursorTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
@@ -10,7 +10,7 @@ bool systemCursorTest()
     PalWindow* window = nullptr;
     PalCursor* cursor = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    bool running = false;
+    PalBool running = false;
 
     // event driver
     PalEventDriver* eventDriver = nullptr;

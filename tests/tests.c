@@ -21,7 +21,7 @@ void registerTest(TestFn func, const char* name)
 
 void runTests()
 {
-    bool status = false;
+    PalBool status = false;
     const char* statusString = nullptr;
     for (int32_t i = 0; i < s_Count; i++) {
         palLog(nullptr, "");

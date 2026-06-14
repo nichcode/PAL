@@ -205,7 +205,7 @@ static void destroyPlatformWindow(void* windowHandle)
 #endif // _WIN32
 }
 
-bool attachWindowTest()
+PalBool attachWindowTest()
 {
     palLog(nullptr, "Press A to attach and D to detach window");
     palLog(nullptr, "Press Escape or click close button to close Test");
@@ -283,8 +283,8 @@ bool attachWindowTest()
         return false;
     }
 
-    bool running = true;
-    bool detached = false;
+    PalBool running = true;
+    PalBool detached = false;
     int32_t counter = 0;
     while (running) {
         // update the video system to push video events

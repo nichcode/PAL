@@ -141,14 +141,14 @@ typedef struct {
 } SpanMonitor;
 
 typedef struct {
-    bool skipConfigure;
-    bool skipState;
-    bool used;
-    bool isAttached;
-    bool skipIfAttached;
-    bool focused;
-    bool pushConfigureEvent;
-    bool pushStateEvent;
+    PalBool skipConfigure;
+    PalBool skipState;
+    PalBool used;
+    PalBool isAttached;
+    PalBool skipIfAttached;
+    PalBool focused;
+    PalBool pushConfigureEvent;
+    PalBool pushStateEvent;
     int x;
     int y;
     uint32_t w;
@@ -173,7 +173,7 @@ typedef struct {
 } WindowData;
 
 typedef struct {
-    bool used;
+    PalBool used;
     int dpi;
     int x;
     int y;
@@ -188,7 +188,7 @@ typedef struct {
 } MonitorData;
 
 typedef struct {
-    bool pendingScroll;
+    PalBool pendingScroll;
     int32_t lastX;
     int32_t lastY;
     int32_t dx;
@@ -197,7 +197,7 @@ typedef struct {
     int32_t WheelY;
     float WheelXf;
     float WheelYf;
-    bool state[PAL_MOUSE_BUTTON_MAX];
+    PalBool state[PAL_MOUSE_BUTTON_MAX];
     double tmpScrollX;
     double tmpScrollY;
     double accumScrollX;
@@ -205,8 +205,8 @@ typedef struct {
 } Mouse;
 
 typedef struct {
-    bool scancodeState[PAL_SCANCODE_MAX];
-    bool keycodeState[PAL_KEYCODE_MAX];
+    PalBool scancodeState[PAL_SCANCODE_MAX];
+    PalBool keycodeState[PAL_KEYCODE_MAX];
     int repeatRate;
     int repeatDelay;
     int repeatKey;
@@ -257,7 +257,7 @@ typedef struct {
     PalResult (*getWindowPos)(PalWindow*, int32_t*, int32_t*);
     PalResult (*getWindowSize)(PalWindow*, uint32_t*, uint32_t*);
     PalResult (*getWindowState)(PalWindow*, PalWindowState*);
-    bool (*isWindowVisible)(PalWindow*);
+    PalBool (*isWindowVisible)(PalWindow*);
     PalWindow* (*getFocusWindow)();
     PalWindowHandleInfo (*getWindowHandleInfo)(PalWindow*);
     PalWindowHandleInfoEx (*getWindowHandleInfoEx)(PalWindow*);
@@ -275,8 +275,8 @@ typedef struct {
     PalResult (*createCursor)(const PalCursorCreateInfo*, PalCursor**);
     PalResult (*createCursorFrom)(PalCursorType, PalCursor**);
     void (*destroyCursor)(PalCursor*);
-    void (*showCursor)(bool);
-    PalResult (*clipCursor)(PalWindow*, bool);
+    void (*showCursor)(PalBool);
+    PalResult (*clipCursor)(PalWindow*, PalBool);
     PalResult (*getCursorPos)(PalWindow*, int32_t*, int32_t*);
     PalResult (*setCursorPos)(PalWindow*, int32_t, int32_t);
     PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
@@ -287,7 +287,7 @@ typedef struct {
 } Backend;
 
 typedef struct {
-    bool initialized;
+    PalBool initialized;
     int32_t maxWindowData;
     int32_t maxMonitorData;
     int32_t pixelFormat;
@@ -721,7 +721,7 @@ typedef int (*Xutf8LookupStringFn)(
     int*);
 
 typedef struct {
-    bool unicodeTitle;
+    PalBool unicodeTitle;
 
     Atom WM_DELETE_WINDOW;
     Atom _NET_SUPPORTED;
@@ -746,8 +746,8 @@ typedef struct {
 } X11Atoms;
 
 typedef struct {
-    bool error;
-    bool skipScreenEvent;
+    PalBool error;
+    PalBool skipScreenEvent;
     int bpp;
     int screen;
     int depth;
@@ -966,7 +966,7 @@ typedef void (*wl_egl_window_resize_fn)(
     int);
 
 typedef struct {
-    bool checkFeatures;
+    PalBool checkFeatures;
     int monitorCount;
 
     void* handle;
@@ -1596,7 +1596,7 @@ static void pointerHandleButton(
         return;
     }
 
-    bool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
+    PalBool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
     PalMouseButton _button = 0;
     PalEventType type = PAL_EVENT_MOUSE_BUTTONUP;
 
@@ -1824,7 +1824,7 @@ static void keyboardHandleKey(
 
     PalScancode scancode = 0;
     PalKeycode keycode = 0;
-    bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+    PalBool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
     PalEventType type = PAL_EVENT_KEYUP;
     PalDispatchMode mode = PAL_DISPATCH_NONE;
     xkb_keysym_t keySym = s_Wl.xkbStateKeyGetOneSym(s_Wl.state, key + 8);
@@ -2012,7 +2012,7 @@ static struct wl_buffer* createShmBuffer(
     int width,
     int height,
     const uint8_t* pixels,
-    bool cursor);
+    PalBool cursor);
 
 const struct wl_interface xdg_popup_interface;
 const struct wl_interface xdg_positioner_interface;
@@ -2202,7 +2202,7 @@ static void xdgToplevelHandleConfigure(
 {
     WindowData* winData = (WindowData*)data;
     uint32_t* state;
-    bool activated = false;
+    PalBool activated = false;
     wl_array_for_each(state, states)
     {
         // we need only maximized
@@ -3321,7 +3321,7 @@ static void xSendWMEvent(
     long b,
     long c,
     long d,
-    bool add)
+    PalBool add)
 {
     XEvent e = {0};
     e.xclient.type = ClientMessage;
@@ -4093,7 +4093,7 @@ static void xUpdateVideo()
             case ButtonPress:
             case ButtonRelease: {
                 int xButton = event.xbutton.button;
-                bool pressed = (event.xbutton.type == ButtonPress);
+                PalBool pressed = (event.xbutton.type == ButtonPress);
                 PalMouseButton button = 0;
                 PalEventType type;
 
@@ -4159,7 +4159,7 @@ static void xUpdateVideo()
             case KeyPress:
             case KeyRelease: {
                 int xScancode = event.xkey.keycode;
-                bool pressed = (event.xbutton.type == KeyPress);
+                PalBool pressed = (event.xbutton.type == KeyPress);
                 PalScancode scancode = PAL_SCANCODE_UNKNOWN;
                 PalKeycode keycode = PAL_KEYCODE_UNKNOWN;
                 PalEventType type;
@@ -4201,7 +4201,7 @@ static void xUpdateVideo()
                 }
 
                 // update our keyboard and mouse state to handle key repeat
-                bool repeat = s_Keyboard.keycodeState[keycode];
+                PalBool repeat = s_Keyboard.keycodeState[keycode];
                 s_Keyboard.scancodeState[scancode] = pressed;
                 s_Keyboard.keycodeState[keycode] = pressed;
 
@@ -4985,7 +4985,7 @@ static PalResult xCreateWindow(
     // we use this to minimize or maximize
     XWindowAttributes attr;
     s_X11.getWindowAttributes(s_X11.display, window, &attr);
-    bool windowMapped = attr.map_state = IsViewable;
+    PalBool windowMapped = attr.map_state = IsViewable;
 
     // maximize
     if (info->maximized) {
@@ -5197,7 +5197,7 @@ PalResult xFlashWindow(
         return PAL_RESULT_INVALID_WINDOW;
     }
 
-    bool add = false;
+    PalBool add = false;
     if (info->flags & PAL_FLASH_TRAY) {
         add = true;
     }
@@ -5403,7 +5403,7 @@ PalResult xGetWindowState(
     return PAL_RESULT_SUCCESS;
 }
 
-bool xIsWindowVisible(PalWindow* window)
+PalBool xIsWindowVisible(PalWindow* window)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -5732,7 +5732,7 @@ void xDestroyCursor(PalCursor* cursor)
     s_X11.freeCursor(s_X11.display, FROM_PAL_HANDLE(Cursor, cursor));
 }
 
-void xShowCursor(bool show)
+void xShowCursor(PalBool show)
 {
     // x11 does not support Hiding and showing cursor
     return;
@@ -5740,7 +5740,7 @@ void xShowCursor(bool show)
 
 PalResult xClipCursor(
     PalWindow* window,
-    bool clip)
+    PalBool clip)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -6088,7 +6088,7 @@ static struct wl_buffer* createShmBuffer(
     int width,
     int height,
     const uint8_t* pixels,
-    bool cursor)
+    PalBool cursor)
 {
     int stride = width * 4;
     uint64_t size = stride * height;
@@ -7050,7 +7050,7 @@ PalResult wlGetWindowState(
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
 
-bool wlIsWindowVisible(PalWindow* window)
+PalBool wlIsWindowVisible(PalWindow* window)
 {
     return false;
 }
@@ -7260,7 +7260,7 @@ void wlDestroyCursor(PalCursor* cursor)
     palFree(s_Video.allocator, waylandCursor);
 }
 
-void wlShowCursor(bool show)
+void wlShowCursor(PalBool show)
 {
     // not supported
     return;
@@ -7268,7 +7268,7 @@ void wlShowCursor(bool show)
 
 PalResult wlClipCursor(
     PalWindow* window,
-    bool clip)
+    PalBool clip)
 {
     if (!(s_Video.features & PAL_VIDEO_FEATURE_CLIP_CURSOR)) {
         return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
@@ -7399,7 +7399,7 @@ PalResult PAL_CALL palInitVideo(
     }
 
     // get backend type
-    bool x11 = true;
+    PalBool x11 = true;
     const char* session = getenv("XDG_SESSION_TYPE");
     if (session) {
         if (strcmp(session, "wayland") == 0) {
@@ -7869,7 +7869,7 @@ PalResult PAL_CALL palGetWindowState(
     return s_Video.backend->getWindowState(window, outState);
 }
 
-const bool* PAL_CALL palGetKeycodeState()
+const PalBool* PAL_CALL palGetKeycodeState()
 {
     if (!s_Video.initialized) {
         return nullptr;
@@ -7877,7 +7877,7 @@ const bool* PAL_CALL palGetKeycodeState()
     return s_Keyboard.keycodeState;
 }
 
-const bool* PAL_CALL palGetScancodeState()
+const PalBool* PAL_CALL palGetScancodeState()
 {
     if (!s_Video.initialized) {
         return nullptr;
@@ -7885,7 +7885,7 @@ const bool* PAL_CALL palGetScancodeState()
     return s_Keyboard.scancodeState;
 }
 
-const bool* PAL_CALL palGetMouseState()
+const PalBool* PAL_CALL palGetMouseState()
 {
     if (!s_Video.initialized) {
         return nullptr;
@@ -7944,7 +7944,7 @@ void PAL_CALL palGetRawMouseWheelDelta(
     }
 }
 
-bool PAL_CALL palIsWindowVisible(PalWindow* window)
+PalBool PAL_CALL palIsWindowVisible(PalWindow* window)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -8164,7 +8164,7 @@ void PAL_CALL palDestroyCursor(PalCursor* cursor)
     }
 }
 
-void PAL_CALL palShowCursor(bool show)
+void PAL_CALL palShowCursor(PalBool show)
 {
     if (s_Video.initialized) {
         s_Video.backend->showCursor(show);
@@ -8173,7 +8173,7 @@ void PAL_CALL palShowCursor(bool show)
 
 PalResult PAL_CALL palClipCursor(
     PalWindow* window,
-    bool clip)
+    PalBool clip)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;

@@ -2,7 +2,7 @@
 #include "pal/pal_video.h"
 #include "tests.h"
 
-bool iconTest()
+PalBool iconTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
     
@@ -11,7 +11,7 @@ bool iconTest()
     PalIcon* icon = nullptr;
     PalWindowCreateInfo createInfo = {0};
     PalIconCreateInfo iconCreateInfo = {0};
-    bool running = false;
+    PalBool running = false;
 
     // event driver
     PalEventDriver* eventDriver = nullptr;

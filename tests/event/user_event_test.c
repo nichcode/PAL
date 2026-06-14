@@ -18,12 +18,12 @@ static inline double getTime(MyTimer* timer)
     return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 
-bool userEventTest()
+PalBool userEventTest()
 {
     PalResult result;
     PalEventDriver* eventDriver = nullptr;
     PalEventDriverCreateInfo createInfo;
-    bool running, logged = false;
+    PalBool running, logged = false;
 
     // fill the event driver create info
     createInfo.allocator = nullptr; // default allocator
