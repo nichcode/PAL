@@ -23,9 +23,9 @@
  * @since 1.0
  */
 typedef struct {
-    Uint32 major; /**< Major version (breaking changes).*/
-    Uint32 minor; /**< Minor version (adding features).*/
-    Uint32 build; /**< Build version (bug fixes).*/
+    uint32_t major; /**< Major version (breaking changes).*/
+    uint32_t minor; /**< Minor version (adding features).*/
+    uint32_t build; /**< Build version (bug fixes).*/
 } PalVersion;
 
 /**

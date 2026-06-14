@@ -116,7 +116,7 @@ bool geometryTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -147,7 +147,7 @@ bool geometryTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures;
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -177,7 +177,7 @@ bool geometryTest()
         }   
 
         // we prefer spirv first if an adapter supports multiple shader formats
-        Uint32 target = 0;
+        uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
             if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
@@ -295,7 +295,7 @@ bool geometryTest()
     }
 
     // get all swapchain images and create image views for them
-    Uint32 imageCount = swapchainCreateInfo.imageCount;
+    uint32_t imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
@@ -383,7 +383,7 @@ bool geometryTest()
     }
 
     // create shaders
-    Uint64 bytecodeSize = 0;
+    uint64_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[3];
     PalShaderEntryInfo entries[3];
@@ -499,7 +499,7 @@ bool geometryTest()
     }
 
     // main loop
-    Uint32 currentFrame = 0;
+    uint32_t currentFrame = 0;
     bool running = true;
 
     PalRect2D scissor = {0};
@@ -542,7 +542,7 @@ bool geometryTest()
         nextImageInfo.signalSemaphore = imageAvailableSemaphores[currentFrame];
         nextImageInfo.timeout = PAL_INFINITE;
 
-        Uint32 imageIndex = 0;
+        uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

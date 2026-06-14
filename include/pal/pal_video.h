@@ -43,48 +43,48 @@ freely, subject to the following restrictions:
  * @since 1.3
  * @ingroup pal_video
  */
-typedef Uint64 PalVideoFeatures64;
+typedef uint64_t PalVideoFeatures64;
 
-#define PAL_VIDEO_FEATURE64_HIGH_DPI PAL_BIT64(0)
-#define PAL_VIDEO_FEATURE64_MONITOR_SET_ORIENTATION PAL_BIT64(1)
-#define PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION PAL_BIT64(2)
-#define PAL_VIDEO_FEATURE64_BORDERLESS_WINDOW PAL_BIT64(3)
-#define PAL_VIDEO_FEATURE64_TRANSPARENT_WINDOW PAL_BIT64(4)
-#define PAL_VIDEO_FEATURE64_TOOL_WINDOW PAL_BIT64(5)
-#define PAL_VIDEO_FEATURE64_MONITOR_SET_MODE PAL_BIT64(6)
-#define PAL_VIDEO_FEATURE64_MONITOR_GET_MODE PAL_BIT64(7)
-#define PAL_VIDEO_FEATURE64_MULTI_MONITORS PAL_BIT64(8)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE PAL_BIT64(9)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_SIZE PAL_BIT64(10)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_POS PAL_BIT64(11)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_POS PAL_BIT64(12)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_STATE PAL_BIT64(13)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_STATE PAL_BIT64(14)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_VISIBILITY PAL_BIT64(15)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_VISIBILITY PAL_BIT64(16)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE PAL_BIT64(17)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE PAL_BIT64(18)
-#define PAL_VIDEO_FEATURE64_NO_MAXIMIZEBOX PAL_BIT64(19)
-#define PAL_VIDEO_FEATURE64_NO_MINIMIZEBOX PAL_BIT64(20)
-#define PAL_VIDEO_FEATURE64_CLIP_CURSOR PAL_BIT64(21)
-#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_CAPTION PAL_BIT64(22)
-#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY PAL_BIT64(23)
-#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_INTERVAL PAL_BIT64(24)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_INPUT_FOCUS PAL_BIT64(25)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_INPUT_FOCUS PAL_BIT64(26)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_STYLE PAL_BIT64(27)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_STYLE PAL_BIT64(28)
-#define PAL_VIDEO_FEATURE64_CURSOR_SET_POS PAL_BIT64(29)
-#define PAL_VIDEO_FEATURE64_CURSOR_GET_POS PAL_BIT64(30)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_ICON PAL_BIT64(31)
-#define PAL_VIDEO_FEATURE64_TOPMOST_WINDOW PAL_BIT64(32)
-#define PAL_VIDEO_FEATURE64_DECORATED_WINDOW PAL_BIT64(33)
-#define PAL_VIDEO_FEATURE64_CURSOR_SET_VISIBILITY PAL_BIT64(34)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_MONITOR PAL_BIT64(35)
-#define PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY PAL_BIT64(36)
-#define PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS PAL_BIT64(37)
-#define PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE PAL_BIT64(38)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR PAL_BIT64(39)
+#define PAL_VIDEO_FEATURE64_HIGH_DPI (1ULL << 0)
+#define PAL_VIDEO_FEATURE64_MONITOR_SET_ORIENTATION (1ULL << 1)
+#define PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION (1ULL << 2)
+#define PAL_VIDEO_FEATURE64_BORDERLESS_WINDOW (1ULL << 3)
+#define PAL_VIDEO_FEATURE64_TRANSPARENT_WINDOW (1ULL << 4)
+#define PAL_VIDEO_FEATURE64_TOOL_WINDOW (1ULL << 5)
+#define PAL_VIDEO_FEATURE64_MONITOR_SET_MODE (1ULL << 6)
+#define PAL_VIDEO_FEATURE64_MONITOR_GET_MODE (1ULL << 7)
+#define PAL_VIDEO_FEATURE64_MULTI_MONITORS (1ULL << 8)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE (1ULL << 9)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_SIZE (1ULL << 10)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_POS (1ULL << 11)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_POS (1ULL << 12)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_STATE (1ULL << 13)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_STATE (1ULL << 14)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_VISIBILITY (1ULL << 15)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_VISIBILITY (1ULL << 16)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE (1ULL << 17)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE (1ULL << 18)
+#define PAL_VIDEO_FEATURE64_NO_MAXIMIZEBOX (1ULL << 19)
+#define PAL_VIDEO_FEATURE64_NO_MINIMIZEBOX (1ULL << 20)
+#define PAL_VIDEO_FEATURE64_CLIP_CURSOR (1ULL << 21)
+#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_CAPTION (1ULL << 22)
+#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY (1ULL << 23)
+#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_INTERVAL (1ULL << 24)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_INPUT_FOCUS (1ULL << 25)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_INPUT_FOCUS (1ULL << 26)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_STYLE (1ULL << 27)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_STYLE (1ULL << 28)
+#define PAL_VIDEO_FEATURE64_CURSOR_SET_POS (1ULL << 29)
+#define PAL_VIDEO_FEATURE64_CURSOR_GET_POS (1ULL << 30)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_ICON (1ULL << 31)
+#define PAL_VIDEO_FEATURE64_TOPMOST_WINDOW (1ULL << 32)
+#define PAL_VIDEO_FEATURE64_DECORATED_WINDOW (1ULL << 33)
+#define PAL_VIDEO_FEATURE64_CURSOR_SET_VISIBILITY (1ULL << 34)
+#define PAL_VIDEO_FEATURE64_WINDOW_GET_MONITOR (1ULL << 35)
+#define PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY (1ULL << 36)
+#define PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS (1ULL << 37)
+#define PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE (1ULL << 38)
+#define PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR (1ULL << 39)
 
 /**
  * @struct PalMonitor
@@ -133,38 +133,38 @@ typedef struct PalCursor PalCursor;
  * @ingroup pal_video
  */
 typedef enum {
-    PAL_VIDEO_FEATURE_HIGH_DPI = PAL_BIT(0),
-    PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION = PAL_BIT(1),
-    PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION = PAL_BIT(2),
-    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = PAL_BIT(3),
-    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = PAL_BIT(4),
-    PAL_VIDEO_FEATURE_TOOL_WINDOW = PAL_BIT(5),
-    PAL_VIDEO_FEATURE_MONITOR_SET_MODE = PAL_BIT(6),
-    PAL_VIDEO_FEATURE_MONITOR_GET_MODE = PAL_BIT(7),
-    PAL_VIDEO_FEATURE_MULTI_MONITORS = PAL_BIT(8),
-    PAL_VIDEO_FEATURE_WINDOW_SET_SIZE = PAL_BIT(9),
-    PAL_VIDEO_FEATURE_WINDOW_GET_SIZE = PAL_BIT(10),
-    PAL_VIDEO_FEATURE_WINDOW_SET_POS = PAL_BIT(11),
-    PAL_VIDEO_FEATURE_WINDOW_GET_POS = PAL_BIT(12),
-    PAL_VIDEO_FEATURE_WINDOW_SET_STATE = PAL_BIT(13),
-    PAL_VIDEO_FEATURE_WINDOW_GET_STATE = PAL_BIT(14),
-    PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY = PAL_BIT(15),
-    PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY = PAL_BIT(16),
-    PAL_VIDEO_FEATURE_WINDOW_SET_TITLE = PAL_BIT(17),
-    PAL_VIDEO_FEATURE_WINDOW_GET_TITLE = PAL_BIT(18),
-    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = PAL_BIT(19),
-    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = PAL_BIT(20),
-    PAL_VIDEO_FEATURE_CLIP_CURSOR = PAL_BIT(21),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = PAL_BIT(22),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = PAL_BIT(23),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL = PAL_BIT(24),
-    PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS = PAL_BIT(25),
-    PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS = PAL_BIT(26),
-    PAL_VIDEO_FEATURE_WINDOW_SET_STYLE = PAL_BIT(27),
-    PAL_VIDEO_FEATURE_WINDOW_GET_STYLE = PAL_BIT(28),
-    PAL_VIDEO_FEATURE_CURSOR_SET_POS = PAL_BIT(29),
-    PAL_VIDEO_FEATURE_CURSOR_GET_POS = PAL_BIT(30),
-    PAL_VIDEO_FEATURE_WINDOW_SET_ICON = PAL_BIT(31)
+    PAL_VIDEO_FEATURE_HIGH_DPI = (1ULL << 0),
+    PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION = (1ULL << 1),
+    PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION = (1ULL << 2),
+    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = (1ULL << 3),
+    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = (1ULL << 4),
+    PAL_VIDEO_FEATURE_TOOL_WINDOW = (1ULL << 5),
+    PAL_VIDEO_FEATURE_MONITOR_SET_MODE = (1ULL << 6),
+    PAL_VIDEO_FEATURE_MONITOR_GET_MODE = (1ULL << 7),
+    PAL_VIDEO_FEATURE_MULTI_MONITORS = (1ULL << 8),
+    PAL_VIDEO_FEATURE_WINDOW_SET_SIZE = (1ULL << 9),
+    PAL_VIDEO_FEATURE_WINDOW_GET_SIZE = (1ULL << 10),
+    PAL_VIDEO_FEATURE_WINDOW_SET_POS = (1ULL << 11),
+    PAL_VIDEO_FEATURE_WINDOW_GET_POS = (1ULL << 12),
+    PAL_VIDEO_FEATURE_WINDOW_SET_STATE = (1ULL << 13),
+    PAL_VIDEO_FEATURE_WINDOW_GET_STATE = (1ULL << 14),
+    PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY = (1ULL << 15),
+    PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY = (1ULL << 16),
+    PAL_VIDEO_FEATURE_WINDOW_SET_TITLE = (1ULL << 17),
+    PAL_VIDEO_FEATURE_WINDOW_GET_TITLE = (1ULL << 18),
+    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = (1ULL << 19),
+    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = (1ULL << 20),
+    PAL_VIDEO_FEATURE_CLIP_CURSOR = (1ULL << 21),
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = (1ULL << 22),
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = (1ULL << 23),
+    PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL = (1ULL << 24),
+    PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS = (1ULL << 25),
+    PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS = (1ULL << 26),
+    PAL_VIDEO_FEATURE_WINDOW_SET_STYLE = (1ULL << 27),
+    PAL_VIDEO_FEATURE_WINDOW_GET_STYLE = (1ULL << 28),
+    PAL_VIDEO_FEATURE_CURSOR_SET_POS = (1ULL << 29),
+    PAL_VIDEO_FEATURE_CURSOR_GET_POS = (1ULL << 30),
+    PAL_VIDEO_FEATURE_WINDOW_SET_ICON = (1ULL << 31)
 } PalVideoFeatures;
 
 /**
@@ -196,13 +196,13 @@ typedef enum {
  * @ingroup pal_video
  */
 typedef enum {
-    PAL_WINDOW_STYLE_RESIZABLE = PAL_BIT(0),
-    PAL_WINDOW_STYLE_TRANSPARENT = PAL_BIT(1),
-    PAL_WINDOW_STYLE_TOPMOST = PAL_BIT(2),
-    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = PAL_BIT(3),
-    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = PAL_BIT(4),
-    PAL_WINDOW_STYLE_TOOL = PAL_BIT(5),
-    PAL_WINDOW_STYLE_BORDERLESS = PAL_BIT(6)
+    PAL_WINDOW_STYLE_RESIZABLE = (1ULL << 0),
+    PAL_WINDOW_STYLE_TRANSPARENT = (1ULL << 1),
+    PAL_WINDOW_STYLE_TOPMOST = (1ULL << 2),
+    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = (1ULL << 3),
+    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = (1ULL << 4),
+    PAL_WINDOW_STYLE_TOOL = (1ULL << 5),
+    PAL_WINDOW_STYLE_BORDERLESS = (1ULL << 6)
 } PalWindowStyle;
 
 /**
@@ -236,8 +236,8 @@ typedef enum {
  */
 typedef enum {
     PAL_FLASH_STOP = 0,             /**< Stop flashing.*/
-    PAL_FLASH_CAPTION = PAL_BIT(0), /**< Flash the titlebar of the window.*/
-    PAL_FLASH_TRAY = PAL_BIT(1)     /**< Flash the icon of the window.*/
+    PAL_FLASH_CAPTION = (1ULL << 0), /**< Flash the titlebar of the window.*/
+    PAL_FLASH_TRAY = (1ULL << 1)     /**< Flash the icon of the window.*/
 } PalFlashFlag;
 
 /**
@@ -567,12 +567,12 @@ typedef enum {
  */
 typedef struct {
     bool primary; /**< True if this is the primary monitor.*/
-    Uint32 dpi;
-    Uint32 refreshRate;
-    Int32 x;       /**< X position in pixels.*/
-    Int32 y;       /**< Y position in pixels.*/
-    Uint32 width;  /**< Width in pixels.*/
-    Uint32 height; /**< Height in pixels.*/
+    uint32_t dpi;
+    uint32_t refreshRate;
+    int32_t x;       /**< X position in pixels.*/
+    int32_t y;       /**< Y position in pixels.*/
+    uint32_t width;  /**< Width in pixels.*/
+    uint32_t height; /**< Height in pixels.*/
     PalOrientation orientation;
     char name[32];
 } PalMonitorInfo;
@@ -585,10 +585,10 @@ typedef struct {
  * @ingroup pal_video
  */
 typedef struct {
-    Uint32 bpp; /**< Bits per pixel.*/
-    Uint32 refreshRate;
-    Uint32 width;  /**< Width in pixels.*/
-    Uint32 height; /**< Height in pixels.*/
+    uint32_t bpp; /**< Bits per pixel.*/
+    uint32_t refreshRate;
+    uint32_t width;  /**< Width in pixels.*/
+    uint32_t height; /**< Height in pixels.*/
 } PalMonitorMode;
 
 /**
@@ -601,9 +601,9 @@ typedef struct {
  * @ingroup pal_video
  */
 typedef struct {
-    Uint32 interval;    /**< In milliseconds. Set to 0 for default.*/
+    uint32_t interval;    /**< In milliseconds. Set to 0 for default.*/
     PalFlashFlag flags; /**< See PalFlashFlag.*/
-    Uint32 count;       /**< Set to 0 to flash until focused or cancelled.*/
+    uint32_t count;       /**< Set to 0 to flash until focused or cancelled.*/
 } PalFlashInfo;
 
 /**
@@ -616,9 +616,9 @@ typedef struct {
  * @ingroup pal_video
  */
 typedef struct {
-    Uint32 width;        /**< Width in pixels.*/
-    Uint32 height;       /**< Height in pixels.*/
-    const Uint8* pixels; /**< Pixels in `RGBA` format.*/
+    uint32_t width;        /**< Width in pixels.*/
+    uint32_t height;       /**< Height in pixels.*/
+    const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
 } PalIconCreateInfo;
 
 /**
@@ -631,11 +631,11 @@ typedef struct {
  * @ingroup pal_video
  */
 typedef struct {
-    Uint32 width;        /**< Width in pixels..*/
-    Uint32 height;       /**< Height in pixels.*/
-    Int32 xHotspot;      /**< X pixel for detecting clicks.*/
-    Int32 yHotspot;      /**< Y pixel for detecting clicks.*/
-    const Uint8* pixels; /**< Pixels in `RGBA` format.*/
+    uint32_t width;        /**< Width in pixels..*/
+    uint32_t height;       /**< Height in pixels.*/
+    int32_t xHotspot;      /**< X pixel for detecting clicks.*/
+    int32_t yHotspot;      /**< Y pixel for detecting clicks.*/
+    const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
 } PalCursorCreateInfo;
 
 /**
@@ -679,8 +679,8 @@ typedef struct {
     bool maximized;       /**< Maximize after creation.*/
     bool minimized;       /**< Minimze after creation.*/
     bool center;          /**< Center after creation.*/
-    Uint32 width;         /**< Width in pixels.*/
-    Uint32 height;        /**< Width in pixels.*/
+    uint32_t width;         /**< Width in pixels.*/
+    uint32_t height;        /**< Width in pixels.*/
     PalWindowStyle style; /**< Window style.*/
     const char* title;    /**< Title in UTF-8 encoding.*/
     PalMonitor* monitor;  /**< Set to nullptr to use primary monitor.*/
@@ -842,7 +842,7 @@ PAL_API PalResult PAL_CALL palSetFBConfig(
  * @sa palGetPrimaryMonitor
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitors(
-    Int32* count,
+    int32_t* count,
     PalMonitor** outMonitors);
 
 /**
@@ -921,7 +921,7 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
-    Int32* count,
+    int32_t* count,
     PalMonitorMode* modes);
 
 /**
@@ -1268,8 +1268,8 @@ PAL_API PalResult PAL_CALL palGetWindowMonitor(
  */
 PAL_API PalResult PAL_CALL palGetWindowTitle(
     PalWindow* window,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer);
 
 /**
@@ -1293,8 +1293,8 @@ PAL_API PalResult PAL_CALL palGetWindowTitle(
  */
 PAL_API PalResult PAL_CALL palGetWindowPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y);
+    int32_t* x,
+    int32_t* y);
 
 /**
  * @brief Get the size of the provided window in pixels.
@@ -1317,8 +1317,8 @@ PAL_API PalResult PAL_CALL palGetWindowPos(
  */
 PAL_API PalResult PAL_CALL palGetWindowSize(
     PalWindow* window,
-    Uint32* width,
-    Uint32* height);
+    uint32_t* width,
+    uint32_t* height);
 
 /**
  * @brief Get the state of the provided window.
@@ -1415,8 +1415,8 @@ PAL_API const bool* PAL_CALL palGetMouseState();
  * @ingroup pal_video
  */
 PAL_API void PAL_CALL palGetMouseDelta(
-    Int32* dx,
-    Int32* dy);
+    int32_t* dx,
+    int32_t* dy);
 
 /**
  * @brief Get the wheel delta of the mouse.
@@ -1434,8 +1434,8 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * @ingroup pal_video
  */
 PAL_API void PAL_CALL palGetMouseWheelDelta(
-    Int32* dx,
-    Int32* dy);
+    int32_t* dx,
+    int32_t* dy);
 
 /**
  * @brief Get the raw wheel delta of the mouse in floats.
@@ -1616,8 +1616,8 @@ PAL_API PalResult PAL_CALL palSetWindowTitle(
  */
 PAL_API PalResult PAL_CALL palSetWindowPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y);
+    int32_t x,
+    int32_t y);
 
 /**
  * @brief Set the size of the provided window in pixels.
@@ -1642,8 +1642,8 @@ PAL_API PalResult PAL_CALL palSetWindowPos(
  */
 PAL_API PalResult PAL_CALL palSetWindowSize(
     PalWindow* window,
-    Uint32 width,
-    Uint32 height);
+    uint32_t width,
+    uint32_t height);
 
 /**
  * @brief Request input focus for the provided window.
@@ -1856,8 +1856,8 @@ PAL_API PalResult PAL_CALL palClipCursor(
  */
 PAL_API PalResult PAL_CALL palGetCursorPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y);
+    int32_t* x,
+    int32_t* y);
 
 /**
  * @brief Set the position of the cursor relative to the provided window in
@@ -1880,8 +1880,8 @@ PAL_API PalResult PAL_CALL palGetCursorPos(
  */
 PAL_API PalResult PAL_CALL palSetCursorPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y);
+    int32_t x,
+    int32_t y);
 
 /**
  * @brief Set the cursor for the provided window.

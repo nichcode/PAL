@@ -239,7 +239,7 @@ static inline bool checkExtension(
     }
 }
 
-void palSetLastPlatformError(Uint32 e);
+void palSetLastPlatformError(uint32_t e);
 
 // ==================================================
 // Public API
@@ -376,7 +376,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     pfd.cDepthBits = 24;
     pfd.cStencilBits = 8;
 
-    Int32 pixelFormat = s_Gdi.choosePixelFormat(s_Wgl.hdc, &pfd);
+    int32_t pixelFormat = s_Gdi.choosePixelFormat(s_Wgl.hdc, &pfd);
     s_Gdi.setPixelFormat(s_Wgl.hdc, pixelFormat, &pfd);
     s_Wgl.context = s_Wgl.wglCreateContext(s_Wgl.hdc);
 
@@ -539,7 +539,7 @@ const PalGLInfo* PAL_CALL palGetGLInfo()
 
 PalResult PAL_CALL palEnumerateGLFBConfigs(
     PalGLWindow* glWindow,
-    Int32* count,
+    int32_t* count,
     PalGLFBConfig* configs)
 {
     if (!s_Wgl.initialized) {
@@ -554,10 +554,10 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    Int32 configCount = 0;
-    Int32 maxConfigCount = 0;
-    Int32 nativeCount = 0;
-    const Int32 configAttrib = WGL_NUMBER_PIXEL_FORMATS_ARB;
+    int32_t configCount = 0;
+    int32_t maxConfigCount = 0;
+    int32_t nativeCount = 0;
+    const int32_t configAttrib = WGL_NUMBER_PIXEL_FORMATS_ARB;
 
     if (configs) {
         maxConfigCount = *count;
@@ -573,7 +573,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         }
 
         // attributes we care about
-        Int32 attributes[] = {
+        int32_t attributes[] = {
             WGL_SUPPORT_OPENGL_ARB,
             WGL_DRAW_TO_WINDOW_ARB,
             WGL_PIXEL_TYPE_ARB,
@@ -589,8 +589,8 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             WGL_DOUBLE_BUFFER_ARB,
             WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB};
 
-        Int32 values[sizeof(attributes) / sizeof(attributes[0])];
-        for (Int32 i = 1; i <= nativeCount; i++) {
+        int32_t values[sizeof(attributes) / sizeof(attributes[0])];
+        for (int32_t i = 1; i <= nativeCount; i++) {
             if (!s_Wgl.wglGetPixelFormatAttribivARB(
                     s_Wgl.hdc,
                     i,
@@ -650,7 +650,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         // get pixel format with legacy pixel descriptor
         nativeCount = s_Gdi.describePixelFormat(s_Wgl.hdc, 1, 0, nullptr);
 
-        for (Int32 i = 1; i <= nativeCount; i++) {
+        for (int32_t i = 1; i <= nativeCount; i++) {
             PIXELFORMATDESCRIPTOR pfd;
             if (!s_Gdi.describePixelFormat(s_Wgl.hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pfd)) {
                 continue;
@@ -697,7 +697,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
 const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
-    Int32 count,
+    int32_t count,
     const PalGLFBConfig* desired)
 {
     if (!s_Wgl.initialized) {
@@ -712,10 +712,10 @@ const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
         return nullptr;
     }
 
-    Int32 score = 0;
-    Int32 bestScore = 0x7FFFFFFF;
+    int32_t score = 0;
+    int32_t bestScore = 0x7FFFFFFF;
     PalGLFBConfig* best = nullptr;
-    for (Int32 i = 0; i < count; i++) {
+    for (int32_t i = 0; i < count; i++) {
         PalGLFBConfig* tmp = &configs[i];
 
         // filter out hard constraints
@@ -830,10 +830,10 @@ PalResult PAL_CALL palCreateGLContext(
     HGLRC context = nullptr;
     if (s_Wgl.wglCreateContextAttribsARB) {
         // create context with modern wgl functions
-        Int32 attribs[40];
-        Int32 index = 0;
-        Int32 profile = 0;
-        Int32 flags = 0;
+        int32_t attribs[40];
+        int32_t index = 0;
+        int32_t profile = 0;
+        int32_t flags = 0;
 
         // set context attributes
         // the first element is the key and the second is the value
@@ -1028,7 +1028,7 @@ PalResult PAL_CALL palSwapBuffers(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetSwapInterval(Int32 interval)
+PalResult PAL_CALL palSetSwapInterval(int32_t interval)
 {
     if (!s_Wgl.initialized) {
         return PAL_RESULT_GL_NOT_INITIALIZED;

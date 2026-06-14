@@ -13,7 +13,7 @@ bool graphicsTest()
     }
 
     // enumerate all available adapters
-    Int32 count = 0;
+    int32_t count = 0;
     result = palEnumerateAdapters(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -47,7 +47,7 @@ bool graphicsTest()
     PalAdapterInfo info;
     PalAdapterCapabilities caps;
     PalAdapterFeatures features = 0;
-    for (Int32 i = 0; i < count; i++) {
+    for (int32_t i = 0; i < count; i++) {
         PalAdapter* adapter = adapters[i];
         result = palGetAdapterInfo(adapter, &info);
         if (result != PAL_RESULT_SUCCESS) {
@@ -105,8 +105,8 @@ bool graphicsTest()
             return false;
         }
         
-        Uint32 vramMb = (Uint32)info.vram / (1024 * 1024);
-        Uint32 sharedMemMb = (Uint32)info.sharedMemory /(1024 * 1024);
+        uint32_t vramMb = (uint32_t)info.vram / (1024 * 1024);
+        uint32_t sharedMemMb = (uint32_t)info.sharedMemory /(1024 * 1024);
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);
@@ -248,9 +248,9 @@ bool graphicsTest()
         palLog(nullptr, "   Max work group size[2]: %u", caps.computeCaps.maxWorkGroupSize[2]);
 
         // shader formats
-        Uint32 target;
-        Uint32 targetMajor = 0;
-        Uint32 targetMinor = 0;
+        uint32_t target;
+        uint32_t targetMajor = 0;
+        uint32_t targetMinor = 0;
 
         palLog(nullptr, "");
         palLog(nullptr, " Supported Shader Formats:");

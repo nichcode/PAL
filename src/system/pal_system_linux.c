@@ -18,7 +18,7 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
-static Uint32 parseCache(const char* path)
+static uint32_t parseCache(const char* path)
 {
     long cacheSize = 0;
     FILE* file = fopen(path, "r");
@@ -85,15 +85,15 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     // get total memory and disk space for the root drive
     struct sysinfo sysInfo;
     sysinfo(&sysInfo);
-    info->totalRAM = (Uint32)(sysInfo.totalram / (1024 * 1024));
+    info->totalRAM = (uint32_t)(sysInfo.totalram / (1024 * 1024));
 
     struct statvfs stats;
     if (statvfs("/", &stats) != 0) {
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    Uint64 size = (stats.f_blocks * stats.f_frsize) / (1024 * 1024 * 1024);
-    info->totalMemory = (Uint32)size;
+    uint64_t size = (stats.f_blocks * stats.f_frsize) / (1024 * 1024 * 1024);
+    info->totalMemory = (uint32_t)size;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -179,11 +179,11 @@ PalResult PAL_CALL palGetCPUInfo(
     }
     fclose(file);
 
-    Uint32 l1 = parseCache("/sys/devices/system/cpu/cpu0/cache/index0/size");
-    Uint32 l2 = parseCache("/sys/devices/system/cpu/cpu0/cache/index2/size");
-    Uint32 l3 = parseCache("/sys/devices/system/cpu/cpu0/cache/index3/size");
+    uint32_t l1 = parseCache("/sys/devices/system/cpu/cpu0/cache/index0/size");
+    uint32_t l2 = parseCache("/sys/devices/system/cpu/cpu0/cache/index2/size");
+    uint32_t l3 = parseCache("/sys/devices/system/cpu/cpu0/cache/index3/size");
 
-    info->numLogicalProcessors = (Uint32)sysconf(_SC_NPROCESSORS_ONLN);
+    info->numLogicalProcessors = (uint32_t)sysconf(_SC_NPROCESSORS_ONLN);
     info->cacheL1 = l1;
     info->cacheL2 = l2;
     info->cacheL3 = l3;

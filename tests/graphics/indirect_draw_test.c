@@ -8,9 +8,9 @@
 #define WINDOW_HEIGHT 480
 #define MAX_FRAMES_IN_FLIGHT 2
 
-static inline Uint32 align(
-    Uint32 value,
-    Uint32 alignment)
+static inline uint32_t align(
+    uint32_t value,
+    uint32_t alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }
@@ -133,7 +133,7 @@ bool indirectDrawTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -164,7 +164,7 @@ bool indirectDrawTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures;
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -194,7 +194,7 @@ bool indirectDrawTest()
         }   
 
         // we prefer spirv first if an adapter supports multiple shader formats
-        Uint32 target = 0;
+        uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
             if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
@@ -312,7 +312,7 @@ bool indirectDrawTest()
     }
 
     // get all swapchain images and create image views for them
-    Uint32 imageCount = swapchainCreateInfo.imageCount;
+    uint32_t imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
@@ -409,7 +409,7 @@ bool indirectDrawTest()
     };
     // clang-format on
 
-    Uint32 indices[6] = { 0, 1, 2, 2, 3, 0 };
+    uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
     // vertex buffer
     PalBufferCreateInfo bufferCreateInfo = {0};
@@ -446,20 +446,20 @@ bool indirectDrawTest()
     }
 
     // staging buffer for vertex, index and indirect buffer
-    Uint32 offset = 0;
-    Uint32 indirectOffset = offset;
+    uint32_t offset = 0;
+    uint32_t indirectOffset = offset;
     offset += sizeof(PalDrawIndexedIndirectData);
     offset = align(offset, 16);
 
-    Uint32 indexOffset = offset;
+    uint32_t indexOffset = offset;
     offset += sizeof(indices);
     offset = align(offset, 16);
 
-    Uint32 vertexOffset = offset;
+    uint32_t vertexOffset = offset;
     offset += sizeof(vertices);
     offset = align(offset, 16);
 
-    Uint32 stagingBufferSize = offset;
+    uint32_t stagingBufferSize = offset;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC; // will send
     bufferCreateInfo.size = offset;
     result = palCreateBuffer(device, &bufferCreateInfo, &stagingBuffer);
@@ -611,7 +611,7 @@ bool indirectDrawTest()
     indirectData.instanceCount = 1;
     indirectData.vertexOffset = 0;
 
-    Uint8* dst = (Uint8*)ptr;
+    uint8_t* dst = (uint8_t*)ptr;
     memcpy(dst + indirectOffset, &indirectData, sizeof(PalDrawIndexedIndirectData));
 
     // copy vertices
@@ -752,7 +752,7 @@ bool indirectDrawTest()
     }
 
     // create shaders
-    Uint64 bytecodeSize = 0;
+    uint64_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
     PalShaderEntryInfo entries[2];
@@ -895,7 +895,7 @@ bool indirectDrawTest()
     palFreeMemory(device, stagingBufferMemory);
 
     // main loop
-    Uint32 currentFrame = 0;
+    uint32_t currentFrame = 0;
     bool running = true;
 
     PalRect2D scissor = {0};
@@ -938,7 +938,7 @@ bool indirectDrawTest()
         nextImageInfo.signalSemaphore = imageAvailableSemaphores[currentFrame];
         nextImageInfo.timeout = PAL_INFINITE;
 
-        Uint32 imageIndex = 0;
+        uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -1064,7 +1064,7 @@ bool indirectDrawTest()
         }
 
         // bind vertex buffer
-        Uint64 offset[] = {0};
+        uint64_t offset[] = {0};
         result = palCmdBindVertexBuffers(
             cmdBuffers[currentFrame], 
             0, 

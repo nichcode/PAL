@@ -121,7 +121,7 @@ static void* createX11Window()
     s_XMapRaised(display, window);
     s_XSync(display, False);
 
-    return (void*)(UintPtr)window;
+    return (void*)(uintptr_t)window;
 #endif // __linux__
     return nullptr;
 }
@@ -182,7 +182,7 @@ static void destroyX11Window(void* windowHandle)
 {
 #ifdef __linux__
     Display* display = palGetInstance();
-    s_XDestroyWindow(display, (Window)(UintPtr)windowHandle);
+    s_XDestroyWindow(display, (Window)(uintptr_t)windowHandle);
     dlclose(s_LibX); // we loaded dynamically
 #endif
 }
@@ -285,7 +285,7 @@ bool attachWindowTest()
 
     bool running = true;
     bool detached = false;
-    Int32 counter = 0;
+    int32_t counter = 0;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -304,7 +304,7 @@ bool attachWindowTest()
 
                 case PAL_EVENT_WINDOW_MOVE: {
                     // this will be triggered for our attached window
-                    Int32 x, y; // x == low, y == high
+                    int32_t x, y; // x == low, y == high
                     palUnpackInt32(event.data, &x, &y);
                     palLog(nullptr, "Window Moved: (%d, %d)", x, y);
                     break;
@@ -324,7 +324,7 @@ bool attachWindowTest()
                     // since if the window is detached,
                     // we wont recieve the key up event
                     // keycode == low, scancode == high
-                    Uint32 keycode;
+                    uint32_t keycode;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_D) {
                         palDetachWindow(myWindow, nullptr);

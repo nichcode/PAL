@@ -13,7 +13,7 @@ void runTests();
 static bool readFile(
     const char* filename,
     void* buffer,
-    Uint64* size)
+    uint64_t* size)
 {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -21,7 +21,7 @@ static bool readFile(
     }
 
     fseek(file, 0, SEEK_END);
-    Uint64 tmpSize = ftell(file);
+    uint64_t tmpSize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
     if (buffer) {

@@ -52,18 +52,18 @@ typedef enum {
  * @since 1.0
  */
 typedef enum {
-    PAL_CPU_FEATURE_SSE = PAL_BIT(0),
-    PAL_CPU_FEATURE_SSE2 = PAL_BIT(1),
-    PAL_CPU_FEATURE_SSE3 = PAL_BIT(2),
-    PAL_CPU_FEATURE_SSSE3 = PAL_BIT(3),
-    PAL_CPU_FEATURE_SSE41 = PAL_BIT(4), /**< SSE4.1.*/
-    PAL_CPU_FEATURE_SSE42 = PAL_BIT(5), /**< SSE4.1.*/
-    PAL_CPU_FEATURE_AVX = PAL_BIT(6),
-    PAL_CPU_FEATURE_AVX2 = PAL_BIT(7),
-    PAL_CPU_FEATURE_AVX512F = PAL_BIT(8),
-    PAL_CPU_FEATURE_FMA3 = PAL_BIT(9),
-    PAL_CPU_FEATURE_BMI1 = PAL_BIT(10),
-    PAL_CPU_FEATURE_BMI2 = PAL_BIT(11)
+    PAL_CPU_FEATURE_SSE = (1ULL << 0),
+    PAL_CPU_FEATURE_SSE2 = (1ULL << 1),
+    PAL_CPU_FEATURE_SSE3 = (1ULL << 2),
+    PAL_CPU_FEATURE_SSSE3 = (1ULL << 3),
+    PAL_CPU_FEATURE_SSE41 = (1ULL << 4), /**< SSE4.1.*/
+    PAL_CPU_FEATURE_SSE42 = (1ULL << 5), /**< SSE4.1.*/
+    PAL_CPU_FEATURE_AVX = (1ULL << 6),
+    PAL_CPU_FEATURE_AVX2 = (1ULL << 7),
+    PAL_CPU_FEATURE_AVX512F = (1ULL << 8),
+    PAL_CPU_FEATURE_FMA3 = (1ULL << 9),
+    PAL_CPU_FEATURE_BMI1 = (1ULL << 10),
+    PAL_CPU_FEATURE_BMI2 = (1ULL << 11)
 } PalCpuFeatures;
 
 /**
@@ -117,8 +117,8 @@ typedef enum {
 typedef struct {
     PalPlatformType type;
     PalPlatformApiType apiType;
-    Uint32 totalMemory; /**< Total Disk space (memory) in GB.*/
-    Uint32 totalRAM;    /**< Total CPU RAM (memory) in MB.*/
+    uint32_t totalMemory; /**< Total Disk space (memory) in GB.*/
+    uint32_t totalRAM;    /**< Total CPU RAM (memory) in MB.*/
     PalVersion version;
     char name[PAL_PLATFORM_NAME_SIZE]; /**< (eg. Windows 11.22000).*/
 } PalPlatformInfo;
@@ -130,11 +130,11 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    Uint32 numCores;
-    Uint32 cacheL1;              /**< L1 cache in KB.*/
-    Uint32 cacheL2;              /**< L2 cache in KB.*/
-    Uint32 cacheL3;              /**< L3 cache in KB.*/
-    Uint32 numLogicalProcessors; /**< Number of CPUs.*/
+    uint32_t numCores;
+    uint32_t cacheL1;              /**< L1 cache in KB.*/
+    uint32_t cacheL2;              /**< L2 cache in KB.*/
+    uint32_t cacheL3;              /**< L3 cache in KB.*/
+    uint32_t numLogicalProcessors; /**< Number of CPUs.*/
     PalCpuArch architecture;
     PalCpuFeatures features;
     char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name.*/

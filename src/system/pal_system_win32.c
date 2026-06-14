@@ -67,9 +67,9 @@ static inline bool getVersionWin32(PalVersion* version)
 
 static inline bool isVersionWin32(
     PalVersion* osVersion,
-    Uint16 major,
-    Uint16 minor,
-    Uint16 build)
+    uint16_t major,
+    uint16_t minor,
+    uint16_t build)
 {
     if (osVersion->major > major) {
         return true;
@@ -145,14 +145,14 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     // get total disk memory (size) in GB
     ULARGE_INTEGER free, total, available;
     if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory = (Uint32)(total.QuadPart / (1024 * 1024 * 1024));
+        info->totalMemory = (uint32_t)(total.QuadPart / (1024 * 1024 * 1024));
     }
 
     // get ram (size) in MB
     MEMORYSTATUSEX status = {0};
     status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
-        info->totalRAM = (Uint32)(status.ullTotalPhys / (1024 * 1024));
+        info->totalRAM = (uint32_t)(status.ullTotalPhys / (1024 * 1024));
     }
 
     return PAL_RESULT_SUCCESS;

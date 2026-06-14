@@ -7,14 +7,14 @@
 
 // a simple timer object to hold frequency and start time
 typedef struct {
-    Uint64 frequency;
-    Uint64 startTime;
+    uint64_t frequency;
+    uint64_t startTime;
 } MyTimer;
 
 // get the time in seconds
 static inline double getTime(MyTimer* timer)
 {
-    Uint64 now = palGetPerformanceCounter();
+    uint64_t now = palGetPerformanceCounter();
     return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 

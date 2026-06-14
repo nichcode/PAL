@@ -30,7 +30,7 @@ static const char* dispatchString = "Callback Mode";
 // inline helpers
 static inline void onWindowResize(const PalEvent* event)
 {
-    Uint32 width, height; // width == low, height == high
+    uint32_t width, height; // width == low, height == high
     palUnpackUint32(event->data, &width, &height);
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Window Resized: (%d, %d)", dispatchString, width, height);
@@ -38,7 +38,7 @@ static inline void onWindowResize(const PalEvent* event)
 
 static inline void onWindowMove(const PalEvent* event)
 {
-    Int32 x, y; // x == low, y == high
+    int32_t x, y; // x == low, y == high
     palUnpackInt32(event->data, &x, &y);
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Window Moved: (%d, %d)", dispatchString, x, y);
@@ -177,7 +177,7 @@ bool windowTest()
 #endif // DISPATCH_MODE_POLL
 
     // set dispatch mode for all events.
-    for (Uint32 e = 0; e < PAL_EVENT_KEYDOWN; e++) {
+    for (uint32_t e = 0; e < PAL_EVENT_KEYDOWN; e++) {
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 

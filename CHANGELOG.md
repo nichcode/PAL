@@ -80,8 +80,8 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - **Video:** Added **PAL_CONFIG_BACKEND_GLES** to `PalFBConfigBackend` enum.
 - **Video:** Added **palSetPreferredInstance()** to set the native instance or display PAL video should use rather than creating a new one.
 
-- **Core:** Added **palPackFloat()** to combine two floats into a single Int64 integer.
-- **Core:** Added **palUnpackFloat()** to retreive two floats from a single Int64 integer.
+- **Core:** Added **palPackFloat()** to combine two floats into a single int64_t integer.
+- **Core:** Added **palUnpackFloat()** to retreive two floats from a single int64_t integer.
 
 - **OpenGL:** Added **palGLSetInstance()** to set the native instance or display PAL opengl should use. This must be set before calling **palInitGL()**.
 - **OpenGL:** Added **palGLGetBackend()** to get the opengl backend.

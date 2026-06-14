@@ -12,7 +12,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
     float blue,
     float alpha);
 
-typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(Uint32 mask); // use GL typedefs if needed
+typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask); // use GL typedefs if needed
 
 bool openglContextTest()
 {
@@ -61,7 +61,7 @@ bool openglContextTest()
     PalGLContext* context = nullptr;
     PalWindowCreateInfo createInfo = {0};
     PalGLContextCreateInfo contextCreateInfo = {0};
-    Int32 fbCount = 0;
+    int32_t fbCount = 0;
     bool running = false;
 
     // enumerate supported opengl framebuffer configs

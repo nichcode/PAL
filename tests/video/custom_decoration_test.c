@@ -42,9 +42,9 @@ typedef struct {
     struct wl_buffer* buffer;
     struct wl_surface* surface;
     struct wl_subsurface* subsurface;
-    Uint32* pixels;
+    uint32_t* pixels;
     PalEventDriver* driver; // a pointer to the event driver
-    Uint64 size;
+    uint64_t size;
 } WaylandDecoration;
 
 static struct wl_display* s_Display = nullptr;
@@ -506,7 +506,7 @@ static void closeDisplayWayland()
     dlclose(s_LibWayland);
 }
 
-static int createShmFile(Uint64 size)
+static int createShmFile(uint64_t size)
 {
     char template[] = "/tmp/pal-shm-XXXXXX";
     int fd = mkstemp(template);
@@ -526,11 +526,11 @@ static struct wl_buffer* createShmBuffer(
     int width,
     int height,
     int* outFd,
-    Uint64* outSize,
-    Uint32** outPixels)
+    uint64_t* outSize,
+    uint32_t** outPixels)
 {
     int stride = width * 4;
-    Uint64 size = stride * height;
+    uint64_t size = stride * height;
     struct wl_buffer* buffer = nullptr;
     struct wl_shm_pool* pool = nullptr;
     void* data = nullptr;
@@ -557,7 +557,7 @@ static struct wl_buffer* createShmBuffer(
 
     wlShmPoolDestroy(pool);
 
-    *outPixels = (Uint32*)data;
+    *outPixels = (uint32_t*)data;
     *outFd = fd;
     *outSize = size;
     return buffer;
@@ -582,7 +582,7 @@ void fillRect(
 // a simple 8x8 bitmap font
 // exchange with your font
 // Each byte = one row of 8 pixels, MSB = leftmost pixel
-static const Uint8 s_FontBasic[128][8] = {
+static const uint8_t s_FontBasic[128][8] = {
     ['A'] = {0x18, 0x24, 0x42, 0x42, 0x7E, 0x42, 0x42, 0x42},
     ['B'] = {0x7C, 0x42, 0x42, 0x7C, 0x42, 0x42, 0x42, 0x7C},
     ['C'] = {0x3C, 0x42, 0x40, 0x40, 0x40, 0x40, 0x42, 0x3C},
@@ -788,7 +788,7 @@ static void PAL_CALL onEvent(
     const PalEvent* event)
 {
     if (event->type == PAL_EVENT_MOUSE_BUTTONDOWN) {
-        Uint32 button, serial;
+        uint32_t button, serial;
         palUnpackUint32(event->data, &button, &serial);
 
         if (button == PAL_MOUSE_BUTTON_LEFT) {
@@ -823,7 +823,7 @@ static void PAL_CALL onEvent(
         }
 
     } else if (event->type == PAL_EVENT_MOUSE_MOVE) {
-        Int32 x, y;
+        int32_t x, y;
         palUnpackInt32(event->data, &x, &y);
         s_Decoration.mouseX = x;
         s_Decoration.mouseY = y;

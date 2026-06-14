@@ -277,7 +277,7 @@ static bool s_Running = false;
 // inline helpers
 static inline void onKeydown(const PalEvent* event)
 {
-    Uint32 keycode, scancode; // keycode == low, scancode == high
+    uint32_t keycode, scancode; // keycode == low, scancode == high
     palUnpackUint32(event->data, &keycode, &scancode);
     PalWindow* window = palUnpackPointer(event->data2);
 
@@ -293,7 +293,7 @@ static inline void onKeydown(const PalEvent* event)
 
 static inline void onKeyrepeat(const PalEvent* event)
 {
-    Uint32 keycode, scancode; // keycode == low, scancode == high
+    uint32_t keycode, scancode; // keycode == low, scancode == high
     palUnpackUint32(event->data, &keycode, &scancode);
     PalWindow* window = palUnpackPointer(event->data2);
 
@@ -305,7 +305,7 @@ static inline void onKeyrepeat(const PalEvent* event)
 
 static inline void onKeyup(const PalEvent* event)
 {
-    Uint32 keycode, scancode; // keycode == low, scancode == high
+    uint32_t keycode, scancode; // keycode == low, scancode == high
     palUnpackUint32(event->data, &keycode, &scancode);
     PalWindow* window = palUnpackPointer(event->data2);
 
@@ -317,7 +317,7 @@ static inline void onKeyup(const PalEvent* event)
 
 static inline void onMouseButtondown(const PalEvent* event)
 {
-    Uint32 button, serial; // button == low, serial == high
+    uint32_t button, serial; // button == low, serial == high
     palUnpackUint32(event->data, &button, &serial);
     PalWindow* window = palUnpackPointer(event->data2);
 
@@ -328,7 +328,7 @@ static inline void onMouseButtondown(const PalEvent* event)
 
 static inline void onMouseButtonup(const PalEvent* event)
 {
-    Uint32 button, serial; // button == low, serial == high
+    uint32_t button, serial; // button == low, serial == high
     palUnpackUint32(event->data, &button, &serial);
     PalWindow* window = palUnpackPointer(event->data2);
 
@@ -339,7 +339,7 @@ static inline void onMouseButtonup(const PalEvent* event)
 
 static inline void onMouseMove(const PalEvent* event)
 {
-    Int32 x, y; // x == low, y == high
+    int32_t x, y; // x == low, y == high
     palUnpackInt32(event->data, &x, &y);
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Mouse Moved: (%d, %d)", dispatchString, x, y);
@@ -347,7 +347,7 @@ static inline void onMouseMove(const PalEvent* event)
 
 static inline void onMouseDelta(const PalEvent* event)
 {
-    Int32 dx, dy; // dx == low, dy == high
+    int32_t dx, dy; // dx == low, dy == high
     palUnpackInt32(event->data, &dx, &dy);
     PalWindow* window = palUnpackPointer(event->data2);
     palLog(nullptr, "%s: Mouse Delta: (%d, %d)", dispatchString, dx, dy);
@@ -355,7 +355,7 @@ static inline void onMouseDelta(const PalEvent* event)
 
 static inline void onMouseWheel(const PalEvent* event)
 {
-    Int32 dx, dy; // dx == low, dy == high
+    int32_t dx, dy; // dx == low, dy == high
     palUnpackInt32(event->data, &dx, &dy);
 
     // get the raw wheel delta (float)
@@ -469,7 +469,7 @@ bool inputWindowTest()
 #endif // DISPATCH_MODE_POLL
 
     // set dispatch mode for all events.
-    for (Uint32 e = PAL_EVENT_KEYDOWN; e < PAL_EVENT_USER; e++) {
+    for (uint32_t e = PAL_EVENT_KEYDOWN; e < PAL_EVENT_USER; e++) {
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 

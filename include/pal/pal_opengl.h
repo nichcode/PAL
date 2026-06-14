@@ -60,16 +60,16 @@ typedef struct PalGLContext PalGLContext;
  * @ingroup pal_opengl
  */
 typedef enum {
-    PAL_GL_EXTENSION_CREATE_CONTEXT = PAL_BIT(0), /**< Modern context.*/
-    PAL_GL_EXTENSION_CONTEXT_PROFILE = PAL_BIT(1),
-    PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 = PAL_BIT(2),
-    PAL_GL_EXTENSION_ROBUSTNESS = PAL_BIT(3),     /**< Reset behaviour.*/
-    PAL_GL_EXTENSION_NO_ERROR = PAL_BIT(4),       /**< No errors*/
-    PAL_GL_EXTENSION_PIXEL_FORMAT = PAL_BIT(5),   /**< Modern PalGLFBConfig.*/
-    PAL_GL_EXTENSION_MULTISAMPLE = PAL_BIT(6),    /**< Multisample FBConfigs.*/
-    PAL_GL_EXTENSION_SWAP_CONTROL = PAL_BIT(7),   /**< Vsync.*/
-    PAL_GL_EXTENSION_FLUSH_CONTROL = PAL_BIT(8),  /**< Release behavior.*/
-    PAL_GL_EXTENSION_COLORSPACE_SRGB = PAL_BIT(9) /**< Standard RGB.*/
+    PAL_GL_EXTENSION_CREATE_CONTEXT = (1ULL << 0), /**< Modern context.*/
+    PAL_GL_EXTENSION_CONTEXT_PROFILE = (1ULL << 1),
+    PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 = (1ULL << 2),
+    PAL_GL_EXTENSION_ROBUSTNESS = (1ULL << 3),     /**< Reset behaviour.*/
+    PAL_GL_EXTENSION_NO_ERROR = (1ULL << 4),       /**< No errors*/
+    PAL_GL_EXTENSION_PIXEL_FORMAT = (1ULL << 5),   /**< Modern PalGLFBConfig.*/
+    PAL_GL_EXTENSION_MULTISAMPLE = (1ULL << 6),    /**< Multisample FBConfigs.*/
+    PAL_GL_EXTENSION_SWAP_CONTROL = (1ULL << 7),   /**< Vsync.*/
+    PAL_GL_EXTENSION_FLUSH_CONTROL = (1ULL << 8),  /**< Release behavior.*/
+    PAL_GL_EXTENSION_COLORSPACE_SRGB = (1ULL << 9) /**< Standard RGB.*/
 } PalGLExtensions;
 
 /**
@@ -129,8 +129,8 @@ typedef enum {
  */
 typedef struct {
     PalGLExtensions extensions;
-    Uint32 major;          /**< Version major.*/
-    Uint32 minor;          /**< Version minor.*/
+    uint32_t major;          /**< Version major.*/
+    uint32_t minor;          /**< Version minor.*/
     char vendor[32];       /**< Graphics card vendor name (eg. Intel).*/
     char graphicsCard[64]; /**< Graphics card name.*/
     char version[64];      /**< Version string (major, minor, build).*/
@@ -147,14 +147,14 @@ typedef struct {
     bool doubleBuffer;
     bool stereo;
     bool sRGB;
-    Uint16 index; /**< Driver index. Must not be changed.*/
-    Uint16 redBits;
-    Uint16 greenBits;
-    Uint16 blueBits;
-    Uint16 alphaBits;
-    Uint16 depthBits;
-    Uint16 stencilBits;
-    Uint16 samples; /**< PAL_GL_EXTENSION_MULTISAMPLE or 1.*/
+    uint16_t index; /**< Driver index. Must not be changed.*/
+    uint16_t redBits;
+    uint16_t greenBits;
+    uint16_t blueBits;
+    uint16_t alphaBits;
+    uint16_t depthBits;
+    uint16_t stencilBits;
+    uint16_t samples; /**< PAL_GL_EXTENSION_MULTISAMPLE or 1.*/
 } PalGLFBConfig;
 
 /**
@@ -185,8 +185,8 @@ typedef struct {
     bool forward;                  /**< Forward compatible context.*/
     bool noError;                  /**< No error context.*/
     bool debug;                    /**< Debug context. */
-    Uint16 major;                  /** major version.*/
-    Uint16 minor;                  /** minor version.*/
+    uint16_t major;                  /** major version.*/
+    uint16_t minor;                  /** minor version.*/
     PalGLProfile profile;          /**< see PalGLProfile.*/
     PalGLContextReset reset;       /**< see PalGLContextReset.*/
     PalGLRelease release;          /**< see PalGLRelease.*/
@@ -277,7 +277,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  */
 PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
     PalGLWindow* glWindow,
-    Int32* count,
+    int32_t* count,
     PalGLFBConfig* configs);
 
 /**
@@ -305,7 +305,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  */
 PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
-    Int32 count,
+    int32_t count,
     const PalGLFBConfig* desired);
 
 /**
@@ -447,7 +447,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  * @ingroup pal_opengl
  * @sa palMakeContextCurrent
  */
-PAL_API PalResult PAL_CALL palSetSwapInterval(Int32 interval);
+PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
 
 /**
  * @brief Set the native application instance or display for the opengl system.

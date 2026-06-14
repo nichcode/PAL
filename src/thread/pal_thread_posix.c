@@ -13,8 +13,8 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
-#define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
+#define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
+#define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
 
 PalResult PAL_CALL palCreateThread(
     const PalThreadCreateInfo* info,
@@ -85,7 +85,7 @@ void PAL_CALL palDetachThread(PalThread* thread)
     }
 }
 
-void PAL_CALL palSleep(Uint64 milliseconds)
+void PAL_CALL palSleep(uint64_t milliseconds)
 {
     usleep(milliseconds * 1000);
 }
@@ -137,7 +137,7 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
     }
 }
 
-Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
+uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
 {
     if (!thread) {
         return 0;
@@ -150,7 +150,7 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
         return 0;
     }
 
-    Uint64 mask = 0;
+    uint64_t mask = 0;
     for (int i = 0; i < 64; ++i) {
         if (CPU_ISSET(i, &cpuset)) {
             mask |= (1ULL << 1);
@@ -161,8 +161,8 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
 
 PalResult PAL_CALL palGetThreadName(
     PalThread* thread,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer)
 {
     if (!thread) {
@@ -215,7 +215,7 @@ PalResult PAL_CALL palSetThreadPriority(
 
 PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
-    Uint64 mask)
+    uint64_t mask)
 {
     if (!thread) {
         return PAL_RESULT_NULL_POINTER;

@@ -161,7 +161,7 @@ void setWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
     // clang-format on
 
     Display* display = (Display*)windowInfo->nativeDisplay;
-    Window window = (Window)(UintPtr)windowInfo->nativeWindow;
+    Window window = (Window)(uintptr_t)windowInfo->nativeWindow;
 
     s_NET_WM_NAME = s_XInternAtom(display, "_NET_WM_NAME", False);
     s_UTF8_STRING = s_XInternAtom(display, "UTF8_STRING", False);
@@ -190,7 +190,7 @@ void getWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
 {
 #ifdef __linux__
     Display* display = (Display*)windowInfo->nativeDisplay;
-    Window window = (Window)(UintPtr)windowInfo->nativeWindow;
+    Window window = (Window)(uintptr_t)windowInfo->nativeWindow;
 
     if (s_NET_WM_NAME) {
         Atom type;

@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup pal_core Core System
+ * @defgroup pal_core Core
  * @{
  */
 

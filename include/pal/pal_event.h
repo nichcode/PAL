@@ -373,9 +373,9 @@ typedef enum {
 
 struct PalEvent {
     PalEventType type;
-    Int64 data;   /**< First data payload.*/
-    Int64 data2;  /**< Second data payload.*/
-    Int64 userId; /**< You can have user events upto Int64 max.*/
+    int64_t data;   /**< First data payload.*/
+    int64_t data2;  /**< Second data payload.*/
+    int64_t userId; /**< You can have user events upto int64_t max.*/
 };
 
 /**

@@ -5,18 +5,18 @@
 #define MAX_ITERATIONS 10
 #define MAX_EVENTS 100000
 
-static Uint32 s_CallbackCounter = 0;
-static Uint32 s_PollCounter = 0;
+static uint32_t s_CallbackCounter = 0;
+static uint32_t s_PollCounter = 0;
 
 typedef struct {
-    Uint64 frequency;
-    Uint64 startTime;
+    uint64_t frequency;
+    uint64_t startTime;
 } MyTimer;
 
 // get the time in seconds
 static inline double getTime(MyTimer* timer)
 {
-    Uint64 now = palGetPerformanceCounter();
+    uint64_t now = palGetPerformanceCounter();
     return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 
@@ -48,14 +48,14 @@ static inline void eventDispatchTest(bool poll)
         mode = PAL_DISPATCH_POLL;
     }
 
-    for (Uint32 e = 0; e < PAL_EVENT_MAX; e++) {
+    for (uint32_t e = 0; e < PAL_EVENT_MAX; e++) {
         palSetEventDispatchMode(driver, e, mode);
     }
 
-    Int32 counter = 0;
+    int32_t counter = 0;
     while (counter < MAX_EVENTS) {
         // push all types of event up to max
-        for (Int32 i = 0; i < MAX_EVENTS; i++) {
+        for (int32_t i = 0; i < MAX_EVENTS; i++) {
             PalEventType type = i % PAL_EVENT_MAX;
             PalEvent event = {0};
             event.type = type;
@@ -86,7 +86,7 @@ bool eventTest()
     // get start time
     double startTime = getTime(&timer);
 
-    for (Int32 i = 0; i < MAX_ITERATIONS; i++) {
+    for (int32_t i = 0; i < MAX_ITERATIONS; i++) {
         eventDispatchTest(false); // callback mode first
     }
 
@@ -106,7 +106,7 @@ bool eventTest()
     // get start time
     startTime = getTime(&timer);
 
-    for (Int32 i = 0; i < MAX_ITERATIONS; i++) {
+    for (int32_t i = 0; i < MAX_ITERATIONS; i++) {
         eventDispatchTest(true); // poll mode first
     }
 

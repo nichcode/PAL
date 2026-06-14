@@ -11,7 +11,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
     float blue,
     float alpha);
 
-typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(Uint32 mask); // use GL typedefs if needed
+typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask); // use GL typedefs if needed
 
 typedef void (*glFlushFn)();
 typedef void (*glBeginFn)(unsigned int);
@@ -130,7 +130,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
         while (palPollEvent(shared->openglEventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_SIZE: {
-                    Uint32 width, height;
+                    uint32_t width, height;
                     palUnpackUint32(event.data, &width, &height);
                     palLog(nullptr, "Video driver sent a resize event (%d, %d)", width, height);
 
@@ -231,7 +231,7 @@ bool multiThreadOpenGlTest()
     }
 
     // get all FBConfigs and select one
-    Int32 fbCount = 0;
+    int32_t fbCount = 0;
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);

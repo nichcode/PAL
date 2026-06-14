@@ -126,9 +126,9 @@ typedef struct {
 
 typedef struct {
     bool debugLayer;
-    Uint32 adapterCount;
-    Uint32 severityCount;
-    Uint32 categoryCount;
+    uint32_t adapterCount;
+    uint32_t severityCount;
+    uint32_t categoryCount;
     HMODULE handle;
     HMODULE dxgi;
     Adapter* adapters;
@@ -147,51 +147,51 @@ typedef struct {
 } D3D12;
 
 typedef struct {
-    Uint32 incrementSize;
-    Uint32 freeTop;
-    Uint64 baseOffset;
+    uint32_t incrementSize;
+    uint32_t freeTop;
+    uint64_t baseOffset;
     ID3D12DescriptorHeap* heap;
-    Uint32 freeList[MAX_RTV];
+    uint32_t freeList[MAX_RTV];
 } RTVHeapAllocator;
 
 typedef struct {
-    Uint32 incrementSize;
-    Uint32 freeTop;
-    Uint64 baseOffset;
+    uint32_t incrementSize;
+    uint32_t freeTop;
+    uint64_t baseOffset;
     ID3D12DescriptorHeap* heap;
-    Uint32 freeList[MAX_DSV];
+    uint32_t freeList[MAX_DSV];
 } DSVHeapAllocator;
 
 // Limits we must enforce ourselves
 typedef struct {
-    Uint32 freeComputeQueues;
-    Uint32 freeGraphicsQueues;
-    Uint32 freeCopyQueues;
-    Uint32 maxVertexLayouts;
-    Uint32 maxVertexAttributes;
+    uint32_t freeComputeQueues;
+    uint32_t freeGraphicsQueues;
+    uint32_t freeCopyQueues;
+    uint32_t maxVertexLayouts;
+    uint32_t maxVertexAttributes;
 
-    Uint32 maxAnisotropy;
-    Uint32 maxPushConstantSize;
-    Uint32 maxTessellationPatchPoint;
+    uint32_t maxAnisotropy;
+    uint32_t maxPushConstantSize;
+    uint32_t maxTessellationPatchPoint;
 
-    Uint32 maxDescriptorSampledImages;
-    Uint32 maxDescriptorStorageImages;
-    Uint32 maxDescriptorSamplers;
-    Uint32 maxDescriptorStorageBuffers;
-    Uint32 maxDescriptorUniformBuffers;
-    Uint32 maxBoundDescriptorSets;
+    uint32_t maxDescriptorSampledImages;
+    uint32_t maxDescriptorStorageImages;
+    uint32_t maxDescriptorSamplers;
+    uint32_t maxDescriptorStorageBuffers;
+    uint32_t maxDescriptorUniformBuffers;
+    uint32_t maxBoundDescriptorSets;
 
-    Uint32 maxRecursionDepth;
-    Uint32 maxHitAttributeSize;
-    Uint32 maxPayloadSize;
-    Uint32 maxDispatchInvocations;
-    Uint32 maxDescriptorAccelerationStructures;
+    uint32_t maxRecursionDepth;
+    uint32_t maxHitAttributeSize;
+    uint32_t maxPayloadSize;
+    uint32_t maxDispatchInvocations;
+    uint32_t maxDescriptorAccelerationStructures;
 } DeviceLimits;
 
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 shaderModel;
+    uint32_t shaderModel;
     PalAdapterFeatures features;
     IDXGIAdapter4* adapter;
     ID3D12CommandSignature* meshSignature;
@@ -210,7 +210,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 fenceValue;
+    uint32_t fenceValue;
     PalQueueType type;
     ID3D12Fence* fence;
     ID3D12CommandQueue* handle;
@@ -235,7 +235,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 heapIndex;
+    uint32_t heapIndex;
     PalImageViewType type;
     DXGI_FORMAT format;
     Image* image;
@@ -252,11 +252,11 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 imageCount;
-    Uint32 syncInterval;
-    Uint32 windowWidth;
-    Uint32 windowHeight;
-    Uint32 flags;
+    uint32_t imageCount;
+    uint32_t syncInterval;
+    uint32_t windowWidth;
+    uint32_t windowHeight;
+    uint32_t flags;
     DXGI_FORMAT format;
     DXGI_FEATURE presentFlags;
     Surface* surface;
@@ -276,7 +276,7 @@ typedef struct {
 } Fence, Semaphore;
 
 typedef struct {
-    Uint32 patchControlPoints;
+    uint32_t patchControlPoints;
     PalShaderStage stage;
     wchar_t entryName[PAL_SHADER_ENTRY_NAME_SIZE];
 } ShaderEntry;
@@ -284,7 +284,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 entryCount;
+    uint32_t entryCount;
     D3D12_SHADER_BYTECODE byteCode;
     ShaderEntry* entries;
 } Shader;
@@ -310,7 +310,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 size;
+    uint32_t size;
     D3D12_COMMAND_LIST_TYPE type;
     CommandBufferData* cmdBuffersData;
 } CommandPool;
@@ -323,7 +323,7 @@ typedef struct {
     bool hasIndirect;
     bool isAccelerationStructure;
     bool isScratch;
-    Uint64 size;
+    uint64_t size;
     ID3D12Resource* handle;
     Device* device;
     D3D12_RESOURCE_DESC desc;
@@ -340,7 +340,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 constantIndex;
+    uint32_t constantIndex;
     ID3D12RootSignature* handle;
 } PipelineLayout;
 
@@ -356,25 +356,25 @@ typedef struct {
 } RayHitGroup;
 
 typedef struct {
-    Uint32 raygenCount;
-    Uint32 raygenDataSize;
-    Uint32 missCount;
-    Uint32 missDataSize;
-    Uint32 hitCount;
-    Uint32 hitDataSize;
-    Uint32 callableCount;
-    Uint32 callableDataSize;
+    uint32_t raygenCount;
+    uint32_t raygenDataSize;
+    uint32_t missCount;
+    uint32_t missDataSize;
+    uint32_t hitCount;
+    uint32_t hitDataSize;
+    uint32_t callableCount;
+    uint32_t callableDataSize;
 } ShaderBindingTableInfo;
 
 typedef struct {
     const PalGraphicsBackend* backend;
 
     bool hasFsr;
-    Uint32 type;
-    Uint32 shaderExportCount;
+    uint32_t type;
+    uint32_t shaderExportCount;
     D3D12_SHADING_RATE shadingRate;
     D3D_PRIMITIVE_TOPOLOGY topology;
-    Uint32* strides;
+    uint32_t* strides;
     void* handle;
     ShaderExport* shaderExports;
     PipelineLayout* layout;
@@ -384,8 +384,8 @@ typedef struct {
 } Pipeline;
 
 typedef struct {
-    Uint32 startIndex;
-    Uint32 offset;
+    uint32_t startIndex;
+    uint32_t offset;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE region;
 } AddressRegion;
 
@@ -393,8 +393,8 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool isDirty;
-    Uint32 stagingBufferSize;
-    Uint32 handleSize;
+    uint32_t stagingBufferSize;
+    uint32_t handleSize;
     ID3D12Resource* buffer;
     ID3D12Resource* stagingBuffer;
     D3D12_GPU_VIRTUAL_ADDRESS baseAddress;
@@ -415,41 +415,41 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool hasDescriptorIndexing;
-    Uint32 bindingCount;
-    Uint32 samplerCount;
+    uint32_t bindingCount;
+    uint32_t samplerCount;
     D3D12_SHADER_VISIBILITY visibility;
     DescriptorSetBinding* bindings;
 } DescriptorSetLayout;
 
 typedef struct {
-    Uint32 incrementSize;
-    Uint32 nextOffset;
-    Uint64 cpuBase;
-    Uint64 gpuBase;
+    uint32_t incrementSize;
+    uint32_t nextOffset;
+    uint64_t cpuBase;
+    uint64_t gpuBase;
     ID3D12DescriptorHeap* handle;
 } DescriptorHeap;
 
 typedef struct {
-    Uint32 maxUniformBuffers;
-    Uint32 maxSampledImages;
-    Uint32 maxStorageBuffers;
-    Uint32 maxSamplers;
-    Uint32 maxStorageImages;
-    Uint32 maxAs;
+    uint32_t maxUniformBuffers;
+    uint32_t maxSampledImages;
+    uint32_t maxStorageBuffers;
+    uint32_t maxSamplers;
+    uint32_t maxStorageImages;
+    uint32_t maxAs;
 
-    Uint32 usedUniformBuffers;
-    Uint32 usedSampledImages;
-    Uint32 usedStorageBuffers;
-    Uint32 usedSamplers;
-    Uint32 usedStorageImages;
-    Uint32 usedAs;
+    uint32_t usedUniformBuffers;
+    uint32_t usedSampledImages;
+    uint32_t usedStorageBuffers;
+    uint32_t usedSamplers;
+    uint32_t usedStorageImages;
+    uint32_t usedAs;
 } DescriptorHeapLimits;
 
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 resourceOffset;
-    Uint32 samplerOffset;
+    uint32_t resourceOffset;
+    uint32_t samplerOffset;
     DescriptorSetLayout* layout;
     void* pool; // DescriptorPool
 } DescriptorSet;
@@ -460,8 +460,8 @@ typedef struct {
     bool hasDescriptorIndexing;
     bool hasResourceHeap;
     bool hasSamplerHeap;
-    Uint32 maxSets;
-    Uint32 usedSets;
+    uint32_t maxSets;
+    uint32_t usedSets;
     DescriptorHeapLimits limits;
     DescriptorHeap resourceHeap;
     DescriptorHeap samplerHeap;
@@ -822,7 +822,7 @@ static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
     return usages;
 }
 
-static Uint32 samplesToD3D12(PalSampleCount count)
+static uint32_t samplesToD3D12(PalSampleCount count)
 {
     switch (count) {
         case PAL_SAMPLE_COUNT_2:
@@ -1284,9 +1284,9 @@ static bool fillBuildInfoD3D12(
     D3D12_GPU_VIRTUAL_ADDRESS dstAs,
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* buildInfo)
 {
-    static Uint32 maxInstanceCount = 1000000;
-    static Uint32 maxPrimitiveCount = 10000000;
-    static Uint32 maxGeometryCount = 100000;
+    static uint32_t maxInstanceCount = 1000000;
+    static uint32_t maxPrimitiveCount = 10000000;
+    static uint32_t maxGeometryCount = 100000;
 
     if (info->geometryCount > maxGeometryCount) {
         return false;
@@ -1380,7 +1380,7 @@ static bool fillBuildInfoD3D12(
     return true;
 }
 
-static Uint32 getFormatSizeD3D12(PalFormat format)
+static uint32_t getFormatSizeD3D12(PalFormat format)
 {
     switch (format) {
         case PAL_FORMAT_R8_UNORM:
@@ -1489,15 +1489,15 @@ static Uint32 getFormatSizeD3D12(PalFormat format)
     return 0;
 }
 
-static inline Uint32 alignD3D12(
-    Uint32 value,
-    Uint32 alignment)
+static inline uint32_t alignD3D12(
+    uint32_t value,
+    uint32_t alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
 static D3D12_RESOURCE_STATES barrierToD3D12(
-    Uint32 stageCount,
+    uint32_t stageCount,
     PalUsageState state,
     PalShaderStage* shaderStages)
 {
@@ -1725,10 +1725,10 @@ static void fillSubresourceD3D12(
     }
 }
 
-static inline Uint64 getDescriptorHandleD3D12(
-    Uint32 index,
-    Uint32 size,
-    Uint64 baseOffset)
+static inline uint64_t getDescriptorHandleD3D12(
+    uint32_t index,
+    uint32_t size,
+    uint64_t baseOffset)
 {
     return baseOffset + index * size;
 }
@@ -1756,7 +1756,7 @@ static D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlagsToD3D12(
     return instanceFlags;
 }
 
-static D3D_PRIMITIVE_TOPOLOGY getPatchTopology(Uint32 patch)
+static D3D_PRIMITIVE_TOPOLOGY getPatchTopology(uint32_t patch)
 {
     switch (patch) {
         case 1:
@@ -1853,7 +1853,7 @@ static D3D_PRIMITIVE_TOPOLOGY getPatchTopology(Uint32 patch)
     return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
 }
 
-static Uint32 getVertexTypeSizeD3D12(PalVertexType type)
+static uint32_t getVertexTypeSizeD3D12(PalVertexType type)
 {
     // count x sizeof type returned as size
     switch (type) {
@@ -1918,7 +1918,7 @@ static void convertToWcharD3D12(
 }
 
 static void getHitGroupNameD3D12(
-    Uint32 index,
+    uint32_t index,
     wchar_t dst[PAL_SHADER_ENTRY_NAME_SIZE])
 {
     wcscpy(dst, L"HitGroup");
@@ -1937,7 +1937,7 @@ static void pollMessagesD3D12(Device* device)
         SIZE_T size = 0;
         queue->lpVtbl->GetMessage(queue, i, nullptr, &size);
 
-        Uint8* buffer = palAllocate(s_D3D.allocator, size, 0);
+        uint8_t* buffer = palAllocate(s_D3D.allocator, size, 0);
         if (!buffer) {
             return;
         }
@@ -2066,7 +2066,7 @@ static void getDescriptorTierLimitsD3D12(
         &options5,
         sizeof(options5));
 
-    Uint32 perStage = 0;
+    uint32_t perStage = 0;
     if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
         // add buckets for acceleration structure
         if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1) {
@@ -2238,10 +2238,10 @@ void PAL_CALL shutdownGraphicsD3D12()
 }
 
 PalResult PAL_CALL enumerateAdaptersD3D12(
-    Int32* count,
+    int32_t* count,
     PalAdapter** outAdapters)
 {
-    Uint32 adapterCount = 0;
+    uint32_t adapterCount = 0;
     IDXGIAdapter* adapter = nullptr;
     IDXGIAdapter4* dxAdapters[32]; // should be more than enough
     ID3D12Device* devices[32]; // should be more than enough
@@ -2425,13 +2425,13 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     imageCaps->maxArrayLayers = D3D12_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION;
 
     // d3d12 does not give this but we calculate from the max width and width
-    Uint32 a = imageCaps->maxWidth;
-    Uint32 b = imageCaps->maxHeight;
-    Uint32 c = imageCaps->maxDepth;
+    uint32_t a = imageCaps->maxWidth;
+    uint32_t b = imageCaps->maxHeight;
+    uint32_t c = imageCaps->maxDepth;
 
-    Uint32 tmp = a > b ? a : b;
-    Uint32 size = tmp > c ? tmp : c;
-    Uint32 levels = 0;
+    uint32_t tmp = a > b ? a : b;
+    uint32_t size = tmp > c ? tmp : c;
+    uint32_t levels = 0;
     while (size > 0) {
         // divide by two
         size = size / 2;
@@ -2590,7 +2590,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     return features;
 }
 
-Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
+uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
@@ -3012,8 +3012,8 @@ void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 PalResult PAL_CALL allocateMemoryD3D12(
     PalDevice* device,
     PalMemoryType type,
-    Uint64 memoryMask,
-    Uint64 size,
+    uint64_t memoryMask,
+    uint64_t size,
     PalMemory** outMemory)
 {
     HRESULT result;
@@ -3366,10 +3366,10 @@ bool PAL_CALL canQueuePresentD3D12(
 
 PalResult PAL_CALL enumerateFormatsD3D12(
     PalAdapter* adapter,
-    Int32* count,
+    int32_t* count,
     PalFormatInfo* outFormats)
 {
-    Int32 fmtCount = 0;
+    int32_t fmtCount = 0;
     HRESULT result;
     Adapter* d3dAdapter = (Adapter*)adapter;
     ID3D12Device* device = d3dAdapter->tmpDevice;
@@ -3514,7 +3514,7 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS samples = {0};
     samples.Format = fmt;
 
-    Uint32 tmp = 0;
+    uint32_t tmp = 0;
     for (int i = 0; i < 6; i++) {
         samples.SampleCount = sampleCounts[i];
         result = device->lpVtbl->CheckFeatureSupport(
@@ -3659,7 +3659,7 @@ PalResult PAL_CALL getImageMemoryRequirementsD3D12(
 PalResult PAL_CALL bindImageMemoryD3D12(
     PalImage* image,
     PalMemory* memory,
-    Uint64 offset)
+    uint64_t offset)
 {
     HRESULT result;
     Image* d3dImage = (Image*)image;
@@ -3694,8 +3694,8 @@ PalResult PAL_CALL bindImageMemoryD3D12(
 
 PalResult PAL_CALL mapImageMemoryD3D12(
     PalImage* image,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr)
 {
     return PAL_RESULT_MEMORY_MAP_FAILED;
@@ -3739,7 +3739,7 @@ PalResult PAL_CALL createImageViewD3D12(
     imageView->format = formatToD3D12(info->format);
     if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR && hasRTV) {
         RTVHeapAllocator* allocator = &d3dDevice->rtvAllocator;
-        Uint32 index = allocator->freeTop;
+        uint32_t index = allocator->freeTop;
         allocator->freeTop = allocator->freeList[index];
 
         D3D12_CPU_DESCRIPTOR_HANDLE dst;
@@ -3764,7 +3764,7 @@ PalResult PAL_CALL createImageViewD3D12(
 
     } else if (info->subresourceRange.aspect != PAL_IMAGE_ASPECT_COLOR && hasDSV) {
         DSVHeapAllocator* allocator = &d3dDevice->dsvAllocator;
-        Uint32 index = allocator->freeTop;
+        uint32_t index = allocator->freeTop;
         allocator->freeTop = allocator->freeList[index];
 
         D3D12_CPU_DESCRIPTOR_HANDLE dst;
@@ -4215,7 +4215,7 @@ void PAL_CALL destroySwapchainD3D12(PalSwapchain* swapchain)
 
 PalImage* PAL_CALL getSwapchainImageD3D12(
     PalSwapchain* swapchain,
-    Int32 index)
+    int32_t index)
 {
     Swapchain* d3dSwapchain = (Swapchain*)swapchain;
     if (index > d3dSwapchain->imageCount) {
@@ -4227,9 +4227,9 @@ PalImage* PAL_CALL getSwapchainImageD3D12(
 PalResult PAL_CALL getNextSwapchainImageD3D12(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32* outIndex)
+    uint32_t* outIndex)
 {
-    Uint32 index = 0;
+    uint32_t index = 0;
     Swapchain* d3dSwapchain = (Swapchain*)swapchain;
     ID3D12CommandQueue* queue = d3dSwapchain->queue;
 
@@ -4287,8 +4287,8 @@ PalResult PAL_CALL presentSwapchainD3D12(
         // check if swapchain needs to be resize
         RECT windowRect;
         bool ret = GetClientRect((HWND)d3dSwapchain->surface->handle, &windowRect);
-        Uint32 w = windowRect.right - windowRect.left;
-        Uint32 h = windowRect.bottom - windowRect.top;
+        uint32_t w = windowRect.right - windowRect.left;
+        uint32_t h = windowRect.bottom - windowRect.top;
 
         if (!ret) {
             return PAL_RESULT_SURFACE_LOST;
@@ -4305,8 +4305,8 @@ PalResult PAL_CALL presentSwapchainD3D12(
 
 PalResult PAL_CALL resizeSwapchainD3D12(
     PalSwapchain* swapchain,
-    Uint32 newWidth,
-    Uint32 newHeight)
+    uint32_t newWidth,
+    uint32_t newHeight)
 {
     HRESULT result;
     Swapchain* d3dSwapchain = (Swapchain*)swapchain;
@@ -4487,12 +4487,12 @@ void PAL_CALL destroyFenceD3D12(PalFence* fence)
 
 PalResult PAL_CALL waitFenceD3D12(
     PalFence* fence,
-    Uint64 timeout)
+    uint64_t timeout)
 {
     HRESULT result;
     Fence* d3dFence = (Fence*)fence;
     DWORD ret = 0;
-    Uint64 value = d3dFence->value;
+    uint64_t value = d3dFence->value;
 
     if (d3dFence->handle->lpVtbl->GetCompletedValue(d3dFence->handle) < value) {
         HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -4602,8 +4602,8 @@ void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore)
 
 PalResult PAL_CALL waitSemaphoreD3D12(
     PalSemaphore* semaphore,
-    Uint64 value,
-    Uint64 timeout)
+    uint64_t value,
+    uint64_t timeout)
 {
     HRESULT result;
     DWORD ret = 0;
@@ -4643,7 +4643,7 @@ PalResult PAL_CALL waitSemaphoreD3D12(
 PalResult PAL_CALL signalSemaphoreD3D12(
     PalSemaphore* semaphore,
     PalQueue* queue,
-    Uint64 value)
+    uint64_t value)
 {
     Semaphore* d3dSemaphore = (Semaphore*)semaphore;
     if (!d3dSemaphore->isTimeline) {
@@ -4662,7 +4662,7 @@ PalResult PAL_CALL signalSemaphoreD3D12(
 
 PalResult PAL_CALL getSemaphoreValueD3D12(
     PalSemaphore* semaphore,
-    Uint64* outValue)
+    uint64_t* outValue)
 {
     Semaphore* d3dSemaphore = (Semaphore*)semaphore;
     if (!d3dSemaphore->isTimeline) {
@@ -4694,7 +4694,7 @@ PalResult PAL_CALL createCommandPoolD3D12(
 
     pool->size = 8;
     pool->cmdBuffersData = nullptr;
-    Uint32 size =  sizeof(CommandBufferData) * pool->size;
+    uint32_t size =  sizeof(CommandBufferData) * pool->size;
     pool->cmdBuffersData = palAllocate(s_D3D.allocator,  size, 0);
     if (!pool->cmdBuffersData) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -5046,9 +5046,9 @@ PalResult PAL_CALL cmdSetFragmentShadingRateD3D12(
 
 PalResult PAL_CALL cmdDrawMeshTasksD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5068,7 +5068,7 @@ PalResult PAL_CALL cmdDrawMeshTasksD3D12(
 PalResult PAL_CALL cmdDrawMeshTasksIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 drawCount)
+    uint32_t drawCount)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5097,7 +5097,7 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5209,16 +5209,16 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
         ImageView* tmp = (ImageView*)info->colorAttachments[i].imageView;
 
         RTVHeapAllocator* allocator = &tmp->device->rtvAllocator;
-        Uint32 size = allocator->incrementSize;
-        Uint64 base = allocator->baseOffset;
+        uint32_t size = allocator->incrementSize;
+        uint64_t base = allocator->baseOffset;
         colorAttachments[i].ptr = getDescriptorHandleD3D12(tmp->heapIndex, size, base);
     }
 
     if (info->depthStencilAttachment) {
         ImageView* tmp = (ImageView*)info->depthStencilAttachment->imageView;
         DSVHeapAllocator* allocator = &tmp->device->dsvAllocator;
-        Uint32 size = allocator->incrementSize;
-        Uint64 base = allocator->baseOffset;
+        uint32_t size = allocator->incrementSize;
+        uint64_t base = allocator->baseOffset;
         depthStencilAttachment.ptr = getDescriptorHandleD3D12(tmp->heapIndex, size, base);
         depthStencil = &depthStencilAttachment;
     }
@@ -5330,11 +5330,11 @@ PalResult PAL_CALL cmdCopyBufferToImageD3D12(
     footPrint->Footprint.Depth = copyInfo->imageDepth;
     footPrint->Footprint.Format = formatToD3D12(dst->info.format);
 
-    Uint32 imageFormatSize = getFormatSizeD3D12(dst->info.format);
-    Uint64 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    uint32_t imageFormatSize = getFormatSizeD3D12(dst->info.format);
+    uint64_t rowPitch = alignD3D12((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     footPrint->Footprint.RowPitch = (UINT)rowPitch;
 
-    Uint32 planeCount = 1;
+    uint32_t planeCount = 1;
     if (copyInfo->imageAspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
         planeCount = 2;
     }
@@ -5344,15 +5344,15 @@ PalResult PAL_CALL cmdCopyBufferToImageD3D12(
     box.bottom = copyInfo->imageHeight;
     box.back = copyInfo->imageDepth;
 
-    Uint32 level = copyInfo->ImageMipLevel;
-    Uint32 startLayer = copyInfo->ImageStartArrayLayer;
-    Uint32 layerCount = copyInfo->ImageArrayLayerCount;
-    Uint32 maxLayers = dst->info.depthOrArraySize;
-    Uint32 maxLevels = dst->info.mipLevelCount;
+    uint32_t level = copyInfo->ImageMipLevel;
+    uint32_t startLayer = copyInfo->ImageStartArrayLayer;
+    uint32_t layerCount = copyInfo->ImageArrayLayerCount;
+    uint32_t maxLayers = dst->info.depthOrArraySize;
+    uint32_t maxLevels = dst->info.mipLevelCount;
 
-    for (Uint32 plane = 0; plane < planeCount; plane++) {
-        for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
-            Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+    for (uint32_t plane = 0; plane < planeCount; plane++) {
+        for (uint32_t layer = startLayer; layer < startLayer + layerCount; layer++) {
+            uint32_t index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
 
             dstLocation.SubresourceIndex = index;
             d3dCmdBuffer->handle->lpVtbl->CopyTextureRegion(
@@ -5395,27 +5395,27 @@ PalResult PAL_CALL cmdCopyImageD3D12(
     box.bottom = copyInfo->srcOffsetY + copyInfo->height;
     box.back = copyInfo->srcOffsetZ + copyInfo->depth;
 
-    Uint32 planeCount = 1;
-    Uint32 layerCount = copyInfo->arrayLayerCount;
+    uint32_t planeCount = 1;
+    uint32_t layerCount = copyInfo->arrayLayerCount;
     if (copyInfo->aspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
         planeCount = 2;
     }
 
-    Uint32 dstLevel = copyInfo->dstMipLevel;
-    Uint32 dstStartLayer = copyInfo->dstStartArrayLayer;
-    Uint32 dstMaxLayers = dstImage->info.depthOrArraySize;
-    Uint32 dstMaxLevels = dstImage->info.mipLevelCount;
+    uint32_t dstLevel = copyInfo->dstMipLevel;
+    uint32_t dstStartLayer = copyInfo->dstStartArrayLayer;
+    uint32_t dstMaxLayers = dstImage->info.depthOrArraySize;
+    uint32_t dstMaxLevels = dstImage->info.mipLevelCount;
 
-    Uint32 srcLevel = copyInfo->srcMipLevel;
-    Uint32 srcStartLayer = copyInfo->srcStartArrayLayer;
-    Uint32 srcMaxLayers = srcImage->info.depthOrArraySize;
-    Uint32 srcMaxLevels = srcImage->info.mipLevelCount;
+    uint32_t srcLevel = copyInfo->srcMipLevel;
+    uint32_t srcStartLayer = copyInfo->srcStartArrayLayer;
+    uint32_t srcMaxLayers = srcImage->info.depthOrArraySize;
+    uint32_t srcMaxLevels = srcImage->info.mipLevelCount;
 
-    for (Uint32 plane = 0; plane < planeCount; plane++) {
-        for (Uint32 layer = 0; layer + layerCount; layer++) {
+    for (uint32_t plane = 0; plane < planeCount; plane++) {
+        for (uint32_t layer = 0; layer + layerCount; layer++) {
             // clang-format off
-            Uint32 dstIndex = dstLevel + (dstStartLayer + layer * dstMaxLevels) + (plane * dstMaxLevels * dstMaxLayers);
-            Uint32 srcIndex = srcLevel + (srcStartLayer + layer * srcMaxLevels) + (plane * srcMaxLevels * srcMaxLayers);
+            uint32_t dstIndex = dstLevel + (dstStartLayer + layer * dstMaxLevels) + (plane * dstMaxLevels * dstMaxLayers);
+            uint32_t srcIndex = srcLevel + (srcStartLayer + layer * srcMaxLevels) + (plane * srcMaxLevels * srcMaxLayers);
             // clang-format on
 
             dstLocation.SubresourceIndex = dstIndex;
@@ -5459,8 +5459,8 @@ PalResult PAL_CALL cmdCopyImageToBufferD3D12(
     srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     srcLocation.pResource = src->handle;
 
-    Uint32 imageFormatSize = getFormatSizeD3D12(src->info.format);
-    Uint64 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    uint32_t imageFormatSize = getFormatSizeD3D12(src->info.format);
+    uint64_t rowPitch = alignD3D12((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     footPrint->Footprint.RowPitch = (UINT)rowPitch;
 
     D3D12_BOX box = {0};
@@ -5471,20 +5471,20 @@ PalResult PAL_CALL cmdCopyImageToBufferD3D12(
     box.bottom = copyInfo->imageOffsetY + copyInfo->imageHeight;
     box.back = copyInfo->imageOffsetX + copyInfo->imageDepth;
 
-    Uint32 planeCount = 1;
+    uint32_t planeCount = 1;
     if (copyInfo->imageAspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
         planeCount = 2;
     }
 
-    Uint32 level = copyInfo->ImageMipLevel;
-    Uint32 startLayer = copyInfo->ImageStartArrayLayer;
-    Uint32 layerCount = copyInfo->ImageArrayLayerCount;
-    Uint32 maxLayers = src->info.depthOrArraySize;
-    Uint32 maxLevels = src->info.mipLevelCount;
+    uint32_t level = copyInfo->ImageMipLevel;
+    uint32_t startLayer = copyInfo->ImageStartArrayLayer;
+    uint32_t layerCount = copyInfo->ImageArrayLayerCount;
+    uint32_t maxLayers = src->info.depthOrArraySize;
+    uint32_t maxLevels = src->info.mipLevelCount;
 
-    for (Uint32 plane = 0; plane < planeCount; plane++) {
-        for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
-            Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+    for (uint32_t plane = 0; plane < planeCount; plane++) {
+        for (uint32_t layer = startLayer; layer < startLayer + layerCount; layer++) {
+            uint32_t index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
 
             srcLocation.SubresourceIndex = index;
             d3dCmdBuffer->handle->lpVtbl->CopyTextureRegion(
@@ -5546,7 +5546,7 @@ PalResult PAL_CALL cmdBindPipelineD3D12(
 
 PalResult PAL_CALL cmdSetViewportD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalViewport* viewports)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -5582,7 +5582,7 @@ PalResult PAL_CALL cmdSetViewportD3D12(
 
 PalResult PAL_CALL cmdSetScissorsD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalRect2D* scissors)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -5616,10 +5616,10 @@ PalResult PAL_CALL cmdSetScissorsD3D12(
 
 PalResult PAL_CALL cmdBindVertexBuffersD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 firstSlot,
-    Uint32 count,
+    uint32_t firstSlot,
+    uint32_t count,
     PalBuffer** buffers,
-    Uint64* offsets)
+    uint64_t* offsets)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Pipeline* pipeline = d3dCmdBuffer->pipeline;
@@ -5663,7 +5663,7 @@ PalResult PAL_CALL cmdBindVertexBuffersD3D12(
 PalResult PAL_CALL cmdBindIndexBufferD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
+    uint64_t offset,
     PalIndexType type)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -5685,10 +5685,10 @@ PalResult PAL_CALL cmdBindIndexBufferD3D12(
 
 PalResult PAL_CALL cmdDrawD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 vertexCount,
-    Uint32 instanceCount,
-    Uint32 firstVertex,
-    Uint32 firstInstance)
+    uint32_t vertexCount,
+    uint32_t instanceCount,
+    uint32_t firstVertex,
+    uint32_t firstInstance)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     d3dCmdBuffer->handle->lpVtbl->DrawInstanced(
@@ -5704,7 +5704,7 @@ PalResult PAL_CALL cmdDrawD3D12(
 PalResult PAL_CALL cmdDrawIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count)
+    uint32_t count)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5733,7 +5733,7 @@ PalResult PAL_CALL cmdDrawIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5761,11 +5761,11 @@ PalResult PAL_CALL cmdDrawIndirectCountD3D12(
 
 PalResult PAL_CALL cmdDrawIndexedD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 indexCount,
-    Uint32 instanceCount,
-    Uint32 firstIndex,
-    Int32 vertexOffset,
-    Uint32 firstInstance)
+    uint32_t indexCount,
+    uint32_t instanceCount,
+    uint32_t firstIndex,
+    int32_t vertexOffset,
+    uint32_t firstInstance)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     d3dCmdBuffer->handle->lpVtbl->DrawIndexedInstanced(
@@ -5782,7 +5782,7 @@ PalResult PAL_CALL cmdDrawIndexedD3D12(
 PalResult PAL_CALL cmdDrawIndexedIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count)
+    uint32_t count)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5811,7 +5811,7 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = d3dCmdBuffer->device;
@@ -5887,20 +5887,20 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
         return PAL_RESULT_SUCCESS;
     }
 
-    Uint32 planeCount = 1; // for color or depth
+    uint32_t planeCount = 1; // for color or depth
     if (subresourceRange->aspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
         planeCount = 2;
     }
 
     D3D12_RESOURCE_BARRIER* barriers = nullptr;
-    Uint32 levelCount = subresourceRange->mipLevelCount;
-    Uint32 layerCount = subresourceRange->layerArrayCount;
+    uint32_t levelCount = subresourceRange->mipLevelCount;
+    uint32_t layerCount = subresourceRange->layerArrayCount;
 
-    Uint32 startLevel = subresourceRange->startMipLevel;
-    Uint32 startLayer = subresourceRange->startArrayLayer;
-    Uint32 maxLevels = d3dImage->info.mipLevelCount;
-    Uint32 maxLayers = d3dImage->info.depthOrArraySize;
-    Uint32 barrierCount = layerCount * levelCount * planeCount;
+    uint32_t startLevel = subresourceRange->startMipLevel;
+    uint32_t startLayer = subresourceRange->startArrayLayer;
+    uint32_t maxLevels = d3dImage->info.mipLevelCount;
+    uint32_t maxLayers = d3dImage->info.depthOrArraySize;
+    uint32_t barrierCount = layerCount * levelCount * planeCount;
 
     if (startLevel == 0 && levelCount == maxLevels && startLayer == 0 && layerCount == maxLayers) {
         // full resource
@@ -5931,11 +5931,11 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    Uint32 count = 0;
-    for (Uint32 plane = 0; plane < planeCount; plane++) {
-        for (Uint32 layer = startLayer; layer < startLayer + layerCount; layer++) {
-            for (Uint32 level = startLevel; level < startLevel + levelCount; level++) {
-                Uint32 index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+    uint32_t count = 0;
+    for (uint32_t plane = 0; plane < planeCount; plane++) {
+        for (uint32_t layer = startLayer; layer < startLayer + layerCount; layer++) {
+            for (uint32_t level = startLevel; level < startLevel + levelCount; level++) {
+                uint32_t index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
 
                 D3D12_RESOURCE_BARRIER* tmp = &barriers[count++];
                 tmp->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -5992,9 +5992,9 @@ PalResult PAL_CALL cmdBufferBarrierD3D12(
 
 PalResult PAL_CALL cmdDispatchD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     d3dCmdBuffer->handle->lpVtbl->Dispatch(
@@ -6008,12 +6008,12 @@ PalResult PAL_CALL cmdDispatchD3D12(
 
 PalResult PAL_CALL cmdDispatchBaseD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 baseGroupX,
-    Uint32 baseGroupY,
-    Uint32 baseGroupZ,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t baseGroupX,
+    uint32_t baseGroupY,
+    uint32_t baseGroupZ,
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
 }
@@ -6048,10 +6048,10 @@ PalResult PAL_CALL cmdDispatchIndirectD3D12(
 PalResult PAL_CALL cmdTraceRaysD3D12(
     PalCommandBuffer* cmdBuffer,
     PalShaderBindingTable* sbt,
-    Uint32 raygenIndex,
-    Uint32 width,
-    Uint32 height,
-    Uint32 depth)
+    uint32_t raygenIndex,
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
     ShaderBindingTable* d3dSbt = (ShaderBindingTable*)sbt;
@@ -6059,7 +6059,7 @@ PalResult PAL_CALL cmdTraceRaysD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Uint64 stride = d3dSbt->raygen.region.StrideInBytes;
+    uint64_t stride = d3dSbt->raygen.region.StrideInBytes;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
     raygenAddress.SizeInBytes = d3dSbt->raygen.region.SizeInBytes;
     raygenAddress.StartAddress = d3dSbt->baseAddress + raygenIndex * stride;
@@ -6082,7 +6082,7 @@ PalResult PAL_CALL cmdTraceRaysD3D12(
 
 PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 raygenIndex,
+    uint32_t raygenIndex,
     PalShaderBindingTable* sbt,
     PalBuffer* buffer)
 {
@@ -6120,7 +6120,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     desc.Height = data.groupCountXOrHeight;
     desc.Depth = data.groupCountXOrDepth;
 
-    Uint64 stride = d3dSbt->raygen.region.StrideInBytes;
+    uint64_t stride = d3dSbt->raygen.region.StrideInBytes;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
     raygenAddress.SizeInBytes = d3dSbt->raygen.region.SizeInBytes;
     raygenAddress.StartAddress = d3dSbt->baseAddress + raygenIndex * stride;
@@ -6168,7 +6168,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 setIndex,
+    uint32_t setIndex,
     PalDescriptorSet* set)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -6177,7 +6177,7 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     DescriptorPool* pool = d3dSet->pool;
 
     // bind heaps
-    Uint32 heapCount = 0;
+    uint32_t heapCount = 0;
     ID3D12DescriptorHeap* heaps[2];
     if (pool->hasResourceHeap) {
         heaps[heapCount++] = pool->resourceHeap.handle;
@@ -6189,8 +6189,8 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     d3dCmdBuffer->handle->lpVtbl->SetDescriptorHeaps(d3dCmdBuffer->handle, heapCount, heaps);
 
     // bind resource descriptor table
-    Uint32 resourceCount = d3dSet->layout->bindingCount - d3dSet->layout->samplerCount;
-    Uint32 baseIndex = setIndex;
+    uint32_t resourceCount = d3dSet->layout->bindingCount - d3dSet->layout->samplerCount;
+    uint32_t baseIndex = setIndex;
     if (pipeline->layout->constantIndex != UINT32_MAX) {
         // If push constant was used to create the pipeline layout
         // slot 0 will be reserve for it
@@ -6249,10 +6249,10 @@ PalResult PAL_CALL cmdBindDescriptorSetD3D12(
 
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 shaderStageCount,
+    uint32_t shaderStageCount,
     PalShaderStage* shaderStages,
-    Uint32 offset,
-    Uint32 size,
+    uint32_t offset,
+    uint32_t size,
     const void* value)
 {
     CommandBuffer* d3dCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -6537,8 +6537,8 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
     PalDevice* device,
-    Uint32 instanceCount,
-    Uint64* outSize)
+    uint32_t instanceCount,
+    uint64_t* outSize)
 {
     *outSize = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instanceCount;
     return PAL_RESULT_SUCCESS;
@@ -6548,13 +6548,13 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
     PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
-    Uint32* outBufferRowLength,
-    Uint32* outBufferImageHeight,
-    Uint64* outSize)
+    uint32_t* outBufferRowLength,
+    uint32_t* outBufferImageHeight,
+    uint64_t* outSize)
 {
-    Uint32 imageFormatSize = getFormatSizeD3D12(imageFormat);
-    Uint32 rowPitch = alignD3D12((Uint64)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
-    Uint32 bufferImageHeight = 0;
+    uint32_t imageFormatSize = getFormatSizeD3D12(imageFormat);
+    uint32_t rowPitch = alignD3D12((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    uint32_t bufferImageHeight = 0;
 
     if (copyInfo->bufferImageHeight) {
         bufferImageHeight = copyInfo->bufferImageHeight;
@@ -6564,7 +6564,7 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
 
     *outBufferRowLength = rowPitch;
     *outBufferImageHeight = bufferImageHeight;
-    *outSize = (Uint64)rowPitch * bufferImageHeight * copyInfo->imageDepth;
+    *outSize = (uint64_t)rowPitch * bufferImageHeight * copyInfo->imageDepth;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6572,7 +6572,7 @@ PalResult PAL_CALL writeToInstanceBufferD3D12(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
-    Uint32 instanceCount)
+    uint32_t instanceCount)
 {
     D3D12_RAYTRACING_INSTANCE_DESC* data = ptr;
     for (int i = 0; i < instanceCount; i++) {
@@ -6597,18 +6597,18 @@ PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo)
 {
-    Uint32 imageFormatSize = getFormatSizeD3D12(imageFormat);
-    Uint32 srcRowPitch = copyInfo->imageWidth * imageFormatSize;
-    const Uint32 dstSlicePitch = copyInfo->bufferRowLength * copyInfo->bufferImageHeight;
-    const Uint32 srcSlicePitch = srcRowPitch * copyInfo->imageHeight;
+    uint32_t imageFormatSize = getFormatSizeD3D12(imageFormat);
+    uint32_t srcRowPitch = copyInfo->imageWidth * imageFormatSize;
+    const uint32_t dstSlicePitch = copyInfo->bufferRowLength * copyInfo->bufferImageHeight;
+    const uint32_t srcSlicePitch = srcRowPitch * copyInfo->imageHeight;
 
     // manually offset the buffer with the provided offset
-    Uint8* dst = (Uint8*)ptr + copyInfo->bufferOffset;
-    const Uint8* src = (const Uint8*)srcData;
+    uint8_t* dst = (uint8_t*)ptr + copyInfo->bufferOffset;
+    const uint8_t* src = (const uint8_t*)srcData;
 
     // write to destination pointer
-    for (Uint32 z = 0; z < copyInfo->imageDepth; z++) {
-        for (Uint32 y = 0; y < copyInfo->imageHeight; y++) {
+    for (uint32_t z = 0; z < copyInfo->imageDepth; z++) {
+        for (uint32_t y = 0; y < copyInfo->imageHeight; y++) {
             memcpy(
                 dst + z * dstSlicePitch + y * copyInfo->bufferRowLength,
                 src + z * srcSlicePitch + y * srcRowPitch,
@@ -6622,7 +6622,7 @@ PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
 PalResult PAL_CALL bindBufferMemoryD3D12(
     PalBuffer* buffer,
     PalMemory* memory,
-    Uint64 offset)
+    uint64_t offset)
 {
     HRESULT result;
     Buffer* d3dBuffer = (Buffer*)buffer;
@@ -6677,8 +6677,8 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
 
 PalResult PAL_CALL mapBufferMemoryD3D12(
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr)
 {
     void* ptr = nullptr;
@@ -6689,7 +6689,7 @@ PalResult PAL_CALL mapBufferMemoryD3D12(
         return PAL_RESULT_MEMORY_MAP_FAILED;
     }
 
-    *outPtr = (Uint8*)ptr + offset;
+    *outPtr = (uint8_t*)ptr + offset;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -6722,7 +6722,7 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     Device* d3dDevice = (Device*)device;
     DescriptorSetLayout* layout = nullptr;
     DescriptorSetBinding* bindings = nullptr;
-    Uint32 count = info->bindingCount;
+    uint32_t count = info->bindingCount;
 
     bool hasDescriptorIndexing = d3dDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
     if (info->enableDescriptorIndexing && !hasDescriptorIndexing) {
@@ -6795,18 +6795,18 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
         rangeFlags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
     }
 
-    Uint32 resourceOffset = 0;
-    Uint32 samplerOffset = 0;
-    Uint32 SRVRegister = 0;
-    Uint32 UAVRegister = 0;
-    Uint32 CBVRegister = 0;
+    uint32_t resourceOffset = 0;
+    uint32_t samplerOffset = 0;
+    uint32_t SRVRegister = 0;
+    uint32_t UAVRegister = 0;
+    uint32_t CBVRegister = 0;
 
-    Uint32 sampledImageCount = 0;
-    Uint32 storageImageCount = 0;
-    Uint32 storageBufferCount = 0;
-    Uint32 uniformBufferCount = 0;
-    Uint32 tlasCount = 0;
-    Uint32 samplerCount = 0;
+    uint32_t sampledImageCount = 0;
+    uint32_t storageImageCount = 0;
+    uint32_t storageBufferCount = 0;
+    uint32_t uniformBufferCount = 0;
+    uint32_t tlasCount = 0;
+    uint32_t samplerCount = 0;
 
     for (int i = 0; i < count; i++) {
         DescriptorSetBinding* binding = &bindings[i];
@@ -6950,7 +6950,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         return PAL_RESULT_OUT_OF_MEMORY;
     }
 
-    Uint32 resourceCount = 0;
+    uint32_t resourceCount = 0;
     DescriptorHeapLimits* limits = &pool->limits;
     for (int i = 0; i < info->maxDescriptorBindingSizes; i++) {
         PalDescriptorPoolBindingSize* bindingSize = &info->bindingSizes[i];
@@ -7115,12 +7115,12 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     DescriptorSetLayout* d3dLayout = (DescriptorSetLayout*)layout;
     DescriptorSet* set = nullptr;
 
-    Uint32 storageImageCount = 0;
-    Uint32 samplerCount = 0;
-    Uint32 storageBufferCount = 0;
-    Uint32 uniformBufferCount = 0;
-    Uint32 sampledImageCount = 0;
-    Uint32 tlasCount = 0;
+    uint32_t storageImageCount = 0;
+    uint32_t samplerCount = 0;
+    uint32_t storageBufferCount = 0;
+    uint32_t uniformBufferCount = 0;
+    uint32_t sampledImageCount = 0;
+    uint32_t tlasCount = 0;
 
     if (d3dPool->hasDescriptorIndexing != d3dLayout->hasDescriptorIndexing) {
         return PAL_RESULT_INVALID_OPERATION;
@@ -7189,7 +7189,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     set->layout = d3dLayout;
     set->pool = d3dPool;
 
-    Uint32 totalDescriptors = tlasCount + storageBufferCount + uniformBufferCount;
+    uint32_t totalDescriptors = tlasCount + storageBufferCount + uniformBufferCount;
     totalDescriptors += sampledImageCount + storageImageCount;
     d3dPool->resourceHeap.nextOffset += totalDescriptors;
     d3dPool->samplerHeap.nextOffset += samplerCount;
@@ -7206,7 +7206,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
 
 PalResult PAL_CALL updateDescriptorSetD3D12(
     PalDevice* device,
-    Uint32 count,
+    uint32_t count,
     PalDescriptorSetWriteInfo* infos)
 {
     Device* d3dDevice = (Device*)device;
@@ -7222,8 +7222,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
 
         DescriptorSetBinding* binding = &layout->bindings[info->layoutBindingIndex];
         DescriptorHeap* heap = nullptr;
-        Uint32 index = 0;
-        Uint32 bindingOffset = binding->range.OffsetInDescriptorsFromTableStart;
+        uint32_t index = 0;
+        uint32_t bindingOffset = binding->range.OffsetInDescriptorsFromTableStart;
 
         if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
             heap = &pool->samplerHeap;
@@ -7395,7 +7395,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     PalDescriptorBufferInfo* bufferInfo = &info->bufferInfos[j];
                     Buffer* buffer = (Buffer*)bufferInfo->buffer;
 
-                    Uint32 stride = 4;
+                    uint32_t stride = 4;
                     if (bufferInfo->stride) {
                         stride = bufferInfo->stride;
                         desc.Buffer.StructureByteStride = bufferInfo->stride;
@@ -7437,17 +7437,17 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
 {
     Device* d3dDevice = (Device*)device;
     PipelineLayout* layout = nullptr;
-    Uint32 resourceCount = 0;
-    Uint32 samplerCount = 0;
-    Uint64 pushConstantSize = 0;
-    Uint32 sizeInBytes = sizeof(D3D12_DESCRIPTOR_RANGE1);
+    uint32_t resourceCount = 0;
+    uint32_t samplerCount = 0;
+    uint64_t pushConstantSize = 0;
+    uint32_t sizeInBytes = sizeof(D3D12_DESCRIPTOR_RANGE1);
 
-    Uint32 rangesOffset = 0;
-    Uint32 samplerRangesOffset = 0;
+    uint32_t rangesOffset = 0;
+    uint32_t samplerRangesOffset = 0;
     D3D12_DESCRIPTOR_RANGE1* ranges = nullptr;
     D3D12_DESCRIPTOR_RANGE1* samplerRanges = nullptr;
 
-    Uint32 parameterCount = 0;
+    uint32_t parameterCount = 0;
     D3D12_ROOT_PARAMETER1* parameters = nullptr;
     D3D12_ROOT_SIGNATURE_FLAGS rootFlags = 0;
     rootFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -7498,7 +7498,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     }
 
     if (parameterCount) {
-        Uint32 paramtersSize = sizeof(D3D12_ROOT_PARAMETER1) * parameterCount;
+        uint32_t paramtersSize = sizeof(D3D12_ROOT_PARAMETER1) * parameterCount;
         parameters = palAllocate(s_D3D.allocator, paramtersSize, 0);
         if (!parameters) {
             return PAL_RESULT_OUT_OF_MEMORY;
@@ -7534,7 +7534,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         parameterCount++;
     }
 
-    Uint32 registerSpace = 0;
+    uint32_t registerSpace = 0;
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
         DescriptorSetLayout* tmp = (DescriptorSetLayout*)info->descriptorSetLayouts[i];
         D3D12_ROOT_PARAMETER1* parameter = nullptr;
@@ -7543,8 +7543,8 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         resourceCount = tmp->bindingCount - tmp->samplerCount;
         samplerCount = tmp->samplerCount;
 
-        Uint32 samplerIndex = samplerRangesOffset;
-        Uint32 rangeIndex = rangesOffset;
+        uint32_t samplerIndex = samplerRangesOffset;
+        uint32_t rangeIndex = rangesOffset;
 
         // seperate the samplers from the remaining descriptors
         for (int j = 0; j < tmp->bindingCount; j++) {
@@ -7657,8 +7657,8 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     PalPipeline** outPipeline)
 {
     HRESULT result;
-    Uint32 patchControlPoints = 0;
-    Uint32 totalSize = 0;
+    uint32_t patchControlPoints = 0;
+    uint32_t totalSize = 0;
     bool alphaToCoverageEnable = false;
     Pipeline* pipeline = nullptr;
     Device* d3dDevice = (Device*)device;
@@ -7738,8 +7738,8 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
 
     // Vertex input state
     // get the max size of vertex attributes in all layouts
-    Uint32 vertexCount = 0;
-    Uint32 vertexLayoutCount = info->vertexLayoutCount;
+    uint32_t vertexCount = 0;
+    uint32_t vertexLayoutCount = info->vertexLayoutCount;
     for (int i = 0; i < vertexLayoutCount; i++) {
         PalVertexLayout* layout = &info->vertexLayouts[i];
         vertexCount += layout->attributeCount;
@@ -7759,7 +7759,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
 
     pipeline->strides = nullptr;
     if (vertexCount) {
-        pipeline->strides = palAllocate(s_D3D.allocator, sizeof(Uint32) * 8, 0);
+        pipeline->strides = palAllocate(s_D3D.allocator, sizeof(uint32_t) * 8, 0);
         if (!pipeline->strides) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
@@ -7774,16 +7774,16 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        Uint32 positionIndex = 0;
-        Uint32 colorIndex = 0;
-        Uint32 texCoordIndex = 0;
-        Uint32 normalIndex = 0;
-        Uint32 tangentIndex = 0;
+        uint32_t positionIndex = 0;
+        uint32_t colorIndex = 0;
+        uint32_t texCoordIndex = 0;
+        uint32_t normalIndex = 0;
+        uint32_t tangentIndex = 0;
 
         for (int i = 0; i < info->vertexLayoutCount; i++) {
             PalVertexLayout* layout = &info->vertexLayouts[i];
-            Uint32 stride = 0;
-            Uint32 offset = 0;
+            uint32_t stride = 0;
+            uint32_t offset = 0;
 
             for (int j = 0; j < layout->attributeCount; j++) {
                 PalVertexAttribute* vertexAttrib = &layout->attributes[j];
@@ -7823,7 +7823,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
                 }
 
                 // build offsets and stride
-                Uint32 size = getVertexTypeSizeD3D12(vertexAttrib->type);
+                uint32_t size = getVertexTypeSizeD3D12(vertexAttrib->type);
                 elementDesc->AlignedByteOffset = offset;
                 offset += size;
                 stride += size;
@@ -8202,14 +8202,14 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     const wchar_t** localExports = nullptr;
 
     // find the total number of exports
-    Uint32 exportCount = 0;
+    uint32_t exportCount = 0;
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* shader = (Shader*)info->shaders[i];
         exportCount += shader->entryCount;
     }
 
-    Uint32 subObjectCount = 0;
-    Uint32 localExportCount = 0;
+    uint32_t subObjectCount = 0;
+    uint32_t localExportCount = 0;
     ShaderBindingTableInfo sbtInfo = {0};
 
     for (int i = 0; i < info->shaderGroupCount; i++) {
@@ -8249,7 +8249,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     }
 
     // find the max data size across all shader groups
-    Uint32 localRootSize = 0;
+    uint32_t localRootSize = 0;
     localRootSize = max(localRootSize, sbtInfo.raygenDataSize);
     localRootSize = max(localRootSize, sbtInfo.missDataSize);
     localRootSize = max(localRootSize, sbtInfo.hitDataSize);
@@ -8304,7 +8304,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     }
 
     // global root signature
-    Uint32 subObjectIndex = 0;
+    uint32_t subObjectIndex = 0;
     D3D12_GLOBAL_ROOT_SIGNATURE globalRootSignature = {0};
     globalRootSignature.pGlobalRootSignature = layout->handle;
 
@@ -8327,7 +8327,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     subObjectIndex++;
 
     // shaders
-    Uint32 exportsOffset = 0;
+    uint32_t exportsOffset = 0;
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
         D3D12_DXIL_LIBRARY_DESC* libraryDesc = &libraryDescs[i];
@@ -8357,8 +8357,8 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     }
 
     // hit groups
-    Uint32 localExportIndex = 0;
-    Uint32 hitGroupIndex = 0;
+    uint32_t localExportIndex = 0;
+    uint32_t hitGroupIndex = 0;
     for (int i = 0; i < info->shaderGroupCount; i++) {
         const wchar_t* exportName = nullptr;
         PalRayTracingShaderGroupCreateInfo* tmp = &info->shaderGroups[i];
@@ -8574,7 +8574,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Uint32 totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
+    uint32_t totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
     totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
     if (info->recordCount != totalGroups) {
         return PAL_RESULT_INVALID_ARGUMENT;
@@ -8635,14 +8635,14 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    Uint32 groupHandleSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    Uint32 groupHandleAlignment = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
-    Uint32 groupBaseAlignment = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+    uint32_t groupHandleSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    uint32_t groupHandleAlignment = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+    uint32_t groupBaseAlignment = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
     // get the max local data size
     for (int i = 0; i < info->recordCount; i++) {
         PalShaderBindingTableRecordInfo* record = &info->records[i];
-        Uint32 index = record->groupIndex;
+        uint32_t index = record->groupIndex;
 
         if (index < sbtInfo->raygenCount) {
             // raygen group
@@ -8671,10 +8671,10 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     }
 
     // get strides
-    Uint32 raygenStride = 0;
-    Uint32 missStride = 0;
-    Uint32 hitStride = 0;
-    Uint32 callableStride = 0;
+    uint32_t raygenStride = 0;
+    uint32_t missStride = 0;
+    uint32_t hitStride = 0;
+    uint32_t callableStride = 0;
 
     raygenStride = alignD3D12(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
     missStride = alignD3D12(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
@@ -8682,17 +8682,17 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     callableStride = alignD3D12(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
 
     // get region size
-    Uint32 raygenRegionSize = raygenStride * sbtInfo->raygenCount;
-    Uint32 missRegionSize = missStride * sbtInfo->missCount;
-    Uint32 hitRegionSize = hitStride * sbtInfo->hitCount;
-    Uint32 callableRegionSize = callableStride * sbtInfo->callableCount;
+    uint32_t raygenRegionSize = raygenStride * sbtInfo->raygenCount;
+    uint32_t missRegionSize = missStride * sbtInfo->missCount;
+    uint32_t hitRegionSize = hitStride * sbtInfo->hitCount;
+    uint32_t callableRegionSize = callableStride * sbtInfo->callableCount;
 
     // get offsets
-    Uint32 offset = 0;
-    Uint32 raygenOffset = 0;
-    Uint32 missOffset = 0;
-    Uint32 hitOffset = 0;
-    Uint32 callableOffset = 0;
+    uint32_t offset = 0;
+    uint32_t raygenOffset = 0;
+    uint32_t missOffset = 0;
+    uint32_t hitOffset = 0;
+    uint32_t callableOffset = 0;
 
     raygenOffset = alignD3D12(offset, groupBaseAlignment);
     offset = raygenOffset + raygenRegionSize;
@@ -8706,7 +8706,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     callableOffset = alignD3D12(offset, groupBaseAlignment);
     offset = callableOffset + callableRegionSize;
 
-    Uint32 bufferSize = alignD3D12(offset, groupBaseAlignment);
+    uint32_t bufferSize = alignD3D12(offset, groupBaseAlignment);
 
     // create gpu buffer
     D3D12_HEAP_PROPERTIES heapProps = {0};
@@ -8758,10 +8758,10 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     }
 
     // get shader group handles
-    Uint32 raygenIndex = 0;
-    Uint32 missIndex = 0;
-    Uint32 hitIndex = 0;
-    Uint32 callableIndex = 0;
+    uint32_t raygenIndex = 0;
+    uint32_t missIndex = 0;
+    uint32_t hitIndex = 0;
+    uint32_t callableIndex = 0;
 
     for (int i = 0; i < pipeline->shaderExportCount; i++) {
         ShaderExport* tmp = &pipeline->shaderExports[i];
@@ -8805,7 +8805,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
     // raygen
     for (int i = 0; i < sbtInfo->raygenCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + (i * raygenStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + (i * raygenStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, raygenHandles[i], groupHandleSize);
@@ -8818,7 +8818,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
     // miss
     for (int i = 0; i < sbtInfo->missCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + missOffset + (i * missStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + missOffset + (i * missStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, missHandles[i], groupHandleSize);
@@ -8831,7 +8831,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
     // hit group
     for (int i = 0; i < sbtInfo->hitCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + hitOffset + (i * hitStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + hitOffset + (i * hitStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, hitHandles[i], groupHandleSize);
@@ -8844,7 +8844,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
     // callable
     for (int i = 0; i < sbtInfo->callableCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + callableOffset + (i * callableStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + callableOffset + (i * callableStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, callableHandles[i], groupHandleSize);
@@ -8923,7 +8923,7 @@ void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
 
 PalResult PAL_CALL updateShaderBindingTableD3D12(
     PalShaderBindingTable* sbt, 
-    Uint32 count,
+    uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
     HRESULT result;
@@ -8937,9 +8937,9 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    Uint64 stride = 0;
-    Uint64 offset = 0;
-    Uint32 startIndex = 0;
+    uint64_t stride = 0;
+    uint64_t offset = 0;
+    uint32_t startIndex = 0;
 
     for (int i = 0; i < count; i++) {
         PalShaderBindingTableRecordInfo* info = &infos[i];
@@ -8948,7 +8948,7 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
         }
 
         // find the group the record belongs to
-        Uint32 index = info->groupIndex;
+        uint32_t index = info->groupIndex;
         if (index < sbtInfo->raygenCount) {
             // raygen group
             offset = 0;
@@ -8975,8 +8975,8 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
         }
 
         // write payload
-        Uint32 localIndex = index - startIndex;
-        Uint8* dst = (Uint8*)data + offset + (localIndex * stride);
+        uint32_t localIndex = index - startIndex;
+        uint8_t* dst = (uint8_t*)data + offset + (localIndex * stride);
         memcpy(dst + d3dSbt->handleSize, info->localData, info->localDataSize);
     }
 

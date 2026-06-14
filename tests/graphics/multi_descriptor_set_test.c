@@ -6,9 +6,9 @@
 
 // layout must match shader
 typedef struct {
-    Uint32 width;
-    Uint32 height;
-    Uint32 _padding[2];
+    uint32_t width;
+    uint32_t height;
+    uint32_t _padding[2];
     float set1Color[4];
     float set2Color[4];
     float set3Color[4];
@@ -57,7 +57,7 @@ bool multiDescriptorSetTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -88,7 +88,7 @@ bool multiDescriptorSetTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterFeatures adapterFeatures = 0;
     PalAdapterInfo adapterInfo = {0};
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -124,7 +124,7 @@ bool multiDescriptorSetTest()
         }
 
         // we prefer spirv first if an adapter supports multiple shader formats
-        Uint32 target = 0;
+        uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
             if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
@@ -185,7 +185,7 @@ bool multiDescriptorSetTest()
     }
 
     // create a compute shader
-    Uint64 bytecodeSize = 0;
+    uint64_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* source = nullptr;
 
@@ -230,7 +230,7 @@ bool multiDescriptorSetTest()
     palFree(nullptr, bytecode);
 
     // create a storage buffer
-    Uint32 bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
+    uint32_t bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
     PalBufferCreateInfo bufferCreateInfo = {0};
     bufferCreateInfo.size = bufferBytes;
 
@@ -527,7 +527,7 @@ bool multiDescriptorSetTest()
     buildData.workGroupCount[1] = caps.computeCaps.maxWorkGroupCount[1];
     buildData.workGroupCount[2] = caps.computeCaps.maxWorkGroupCount[2];
 
-    Uint32 workGroupInfoCount = 0;
+    uint32_t workGroupInfoCount = 0;
     PalWorkGroupInfo* workGroupInfos = nullptr;
     bool ret = palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
     if (!ret) {
@@ -548,9 +548,9 @@ bool multiDescriptorSetTest()
         // palDispatchBase is not supported on all platforms so we dont use it for this example
         // We cap the buffer size small so we only get a single dispatch
         // but you can add fields in yout constants to send the base to the shader driectly
-        Uint32 groupCountX = workGroupInfos[i].workGroupCount[0];
-        Uint32 groupCountY = workGroupInfos[i].workGroupCount[1];
-        Uint32 groupCountZ = workGroupInfos[i].workGroupCount[2];
+        uint32_t groupCountX = workGroupInfos[i].workGroupCount[0];
+        uint32_t groupCountY = workGroupInfos[i].workGroupCount[1];
+        uint32_t groupCountZ = workGroupInfos[i].workGroupCount[2];
 
         result = palCmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
         if (result != PAL_RESULT_SUCCESS) {
@@ -647,7 +647,7 @@ bool multiDescriptorSetTest()
             int row = BUFFER_SIZE - 1 - y; // flip y
             for (int x = 0; x < BUFFER_SIZE; x++) {
                 int index = row * BUFFER_SIZE + x;
-                Uint8 rgb[3];
+                uint8_t rgb[3];
 
                 rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
                 rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;

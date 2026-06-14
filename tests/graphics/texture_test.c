@@ -12,15 +12,15 @@
 #define CHECKER_SIZE 16
 
 static void createCheckerboardTexture(
-    Uint32* texture,
-    Uint32 width,
-    Uint32 height,
-    Uint32 checkerSize)
+    uint32_t* texture,
+    uint32_t width,
+    uint32_t height,
+    uint32_t checkerSize)
 {
-    Uint8* pixels = (Uint8*)texture;
-    for (Int32 y = 0; y < height; ++y) {
-        for (Int32 x = 0; x < width; ++x) {
-            Int32 i = (y * width + x) * 4;
+    uint8_t* pixels = (uint8_t*)texture;
+    for (int32_t y = 0; y < height; ++y) {
+        for (int32_t x = 0; x < width; ++x) {
+            int32_t i = (y * width + x) * 4;
             int checker = ((x / checkerSize) ^ (y / checkerSize)) & 1;
             if (checker) {
                 pixels[i + 0] = 255; // Red bit
@@ -155,7 +155,7 @@ bool textureTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -185,7 +185,7 @@ bool textureTest()
 
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -209,7 +209,7 @@ bool textureTest()
         }
 
         // we prefer spirv first if an adapter supports multiple shader formats
-        Uint32 target = 0;
+        uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
             if (target >= PAL_MAKE_SHADER_TARGET(1, 0)) {
@@ -327,7 +327,7 @@ bool textureTest()
     }
 
     // get all swapchain images and create image views for them
-    Uint32 imageCount = swapchainCreateInfo.imageCount;
+    uint32_t imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
@@ -529,7 +529,7 @@ bool textureTest()
 
     // we dont want to load the texture from disk so we will create a 
     // checkerboard texture and use that rather
-    Uint32 texture[TEXTURE_WIDTH * TEXTURE_HEIGHT];
+    uint32_t texture[TEXTURE_WIDTH * TEXTURE_HEIGHT];
     memset(texture, 0, TEXTURE_WIDTH * TEXTURE_HEIGHT);
     createCheckerboardTexture(texture, TEXTURE_WIDTH, TEXTURE_HEIGHT, CHECKER_SIZE);
 
@@ -589,9 +589,9 @@ bool textureTest()
     bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
     bufferImageCopyInfo.imageDepth = 1; // 2D image
 
-    Uint64 imageCopyStagingBufferSize = 0;
-    Uint32 bufferRowLength = 0;
-    Uint32 bufferImageHeight = 0;
+    uint64_t imageCopyStagingBufferSize = 0;
+    uint32_t bufferRowLength = 0;
+    uint32_t bufferImageHeight = 0;
 
     result = palComputeImageCopyStagingBufferRequirements(
         device, 
@@ -842,7 +842,7 @@ bool textureTest()
     }
 
     // create shaders
-    Uint64 bytecodeSize = 0;
+    uint64_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
     PalShaderEntryInfo entries[2];
@@ -1085,7 +1085,7 @@ bool textureTest()
     palFreeMemory(device, imageStagingBufferMemory);
 
     // main loop
-    Uint32 currentFrame = 0;
+    uint32_t currentFrame = 0;
     bool running = true;
 
     PalRect2D scissor = {0};
@@ -1128,7 +1128,7 @@ bool textureTest()
         nextImageInfo.signalSemaphore = imageAvailableSemaphores[currentFrame];
         nextImageInfo.timeout = PAL_INFINITE;
 
-        Uint32 imageIndex = 0;
+        uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -1261,7 +1261,7 @@ bool textureTest()
         }
 
         // bind vertex buffer
-        Uint64 offset[] = {0};
+        uint64_t offset[] = {0};
         result = palCmdBindVertexBuffers(
             cmdBuffers[currentFrame], 
             0, 

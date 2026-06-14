@@ -8,7 +8,7 @@ typedef struct {
     const char* name;
 } TestEntry;
 
-static Uint32 s_Count = 0;
+static uint32_t s_Count = 0;
 static TestEntry s_Test[MAX_TESTS];
 static const char* s_FailedString = "FAILED";
 static const char* s_PassedString = "PASSED";
@@ -23,7 +23,7 @@ void runTests()
 {
     bool status = false;
     const char* statusString = nullptr;
-    for (Int32 i = 0; i < s_Count; i++) {
+    for (int32_t i = 0; i < s_Count; i++) {
         palLog(nullptr, "");
         palLog(nullptr, "===========================================");
         palLog(nullptr, s_Test[i].name);

@@ -82,7 +82,7 @@ static DWORD WINAPI threadEntryToWin32(LPVOID arg)
     return (DWORD)(uintptr_t)ret;
 }
 
-void palSetLastPlatformError(Uint32 e);
+void palSetLastPlatformError(uint32_t e);
 
 // ==================================================
 // Public API
@@ -172,7 +172,7 @@ void PAL_CALL palDetachThread(PalThread* thread)
     }
 }
 
-void PAL_CALL palSleep(Uint64 milliseconds)
+void PAL_CALL palSleep(uint64_t milliseconds)
 {
     Sleep((DWORD)milliseconds);
 }
@@ -230,7 +230,7 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
     return 0;
 }
 
-Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
+uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
 {
     if (!thread) {
         return 0;
@@ -247,8 +247,8 @@ Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread)
 
 PalResult PAL_CALL palGetThreadName(
     PalThread* thread,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer)
 {
     if (!thread) {
@@ -332,7 +332,7 @@ PalResult PAL_CALL palSetThreadPriority(
 
 PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
-    Uint64 mask)
+    uint64_t mask)
 {
     if (!thread) {
         return PAL_RESULT_NULL_POINTER;
@@ -541,7 +541,7 @@ PalResult PAL_CALL palWaitCondVar(
 PalResult PAL_CALL palWaitCondVarTimeout(
     PalCondVar* condVar,
     PalMutex* mutex,
-    Uint64 milliseconds)
+    uint64_t milliseconds)
 {
     if (!condVar || !mutex) {
         return PAL_RESULT_NULL_POINTER;

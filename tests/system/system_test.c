@@ -91,7 +91,7 @@ bool systemTest()
     palLog(nullptr, " Total RAM: %llu MB", platformInfo.totalRAM);
     palLog(nullptr, " Total Memory: %llu GB", platformInfo.totalMemory);
 
-    Uint16 major, minor, build;
+    uint16_t major, minor, build;
     major = platformInfo.version.major;
     minor = platformInfo.version.minor;
     build = platformInfo.version.build;
@@ -99,7 +99,7 @@ bool systemTest()
 
     // log cpu information
     const char* archString = cpuArchToString(cpuInfo.architecture);
-    Int32 processors = cpuInfo.numLogicalProcessors;
+    int32_t processors = cpuInfo.numLogicalProcessors;
 
     palLog(nullptr, " Cpu: %s", cpuInfo.model);
     palLog(nullptr, "  Vendor: %s", cpuInfo.vendor);

@@ -105,7 +105,7 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
 PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
     PalCondVar* condVar,
     PalMutex* mutex,
-    Uint64 milliseconds);
+    uint64_t milliseconds);
 
 /**
  * @brief Wake a single thread waiting on the condition variable.

@@ -5,7 +5,7 @@
 bool monitorTest()
 {
     PalMonitorInfo info;
-    Int32 count = 0;
+    int32_t count = 0;
 
     // initialize the video system
     PalResult result = palInitVideo(nullptr, nullptr);
@@ -48,7 +48,7 @@ bool monitorTest()
     }
 
     // get monitor info for every monitor and log the information
-    for (Int32 i = 0; i < count; i++) {
+    for (int32_t i = 0; i < count; i++) {
         PalMonitor* monitor = monitors[i];
         result = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {

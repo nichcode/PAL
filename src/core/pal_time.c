@@ -28,25 +28,25 @@
 #include <time.h>
 #endif // _WIN32
 
-Uint64 PAL_CALL palGetPerformanceCounter()
+uint64_t PAL_CALL palGetPerformanceCounter()
 {
 #ifdef _WIN32
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
-    return (Uint64)counter.QuadPart;
+    return (uint64_t)counter.QuadPart;
 #else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (Uint64)ts.tv_sec * 1000000000LL + (Uint64)ts.tv_nsec;
+    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
 #endif // _WIN32
 }
 
-Uint64 PAL_CALL palGetPerformanceFrequency()
+uint64_t PAL_CALL palGetPerformanceFrequency()
 {
 #ifdef _WIN32
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
-    return (Uint64)frequency.QuadPart;
+    return (uint64_t)frequency.QuadPart;
 #else
     return 1000000000LL;
 #endif // _WIN32    

@@ -5,7 +5,7 @@
 // data every thread will have its own copy of
 typedef struct {
     const char* name;
-    Uint32 number;
+    uint32_t number;
 } TlsData;
 
 // thread data

@@ -8,7 +8,7 @@
 static void* PAL_CALL worker(void* arg)
 {
     // palLog is thread safe so there should'nt be any race conditions
-    Int32 id = (Int32)(IntPtr)arg;
+    int32_t id = (int32_t)(intptr_t)arg;
     palLog(nullptr, "Thread %d: started", id);
 
     palSleep(THREAD_TIME * id);
@@ -26,8 +26,8 @@ bool threadTest()
     createInfo.entry = worker;      // will be the same for all threads
     createInfo.stackSize = 0;       // same for all threads
     createInfo.allocator = nullptr; // default
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
-        createInfo.arg = (void*)((IntPtr)i + 1);
+    for (int32_t i = 0; i < THREAD_COUNT; i++) {
+        createInfo.arg = (void*)((intptr_t)i + 1);
 
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);
@@ -39,7 +39,7 @@ bool threadTest()
     }
 
     // join threads
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
+    for (int32_t i = 0; i < THREAD_COUNT; i++) {
         // we dont need the return value
         // joint threads does not need to be detached
         result = palJoinThread(threads[i], nullptr);

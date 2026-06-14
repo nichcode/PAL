@@ -348,7 +348,7 @@ typedef struct {
 } Vulkan;
 
 typedef struct {
-    Int32 familyIndex;
+    int32_t familyIndex;
     VkPhysicalDevice phyDevice;
     VkQueue handle;
     VkQueueFlags usages;
@@ -357,17 +357,17 @@ typedef struct {
 
 // Limits we must enforce ourselves
 typedef struct {
-    Uint32 maxPayloadSize;
+    uint32_t maxPayloadSize;
 } DeviceLimits;
 
 typedef struct {
     const PalGraphicsBackend* backend;
 
     PalAdapterFeatures features;
-    Int32 phyQueueCount;
-    Int32 phyQueueIndex;
-    Int32 queueFamilyCount;
-    Uint32 memoryClassMask[3];
+    int32_t phyQueueCount;
+    int32_t phyQueueIndex;
+    int32_t queueFamilyCount;
+    uint32_t memoryClassMask[3];
     VkPhysicalDevice phyDevice;
     VkDevice handle;
     PhysicalQueue* phyQueues;
@@ -454,7 +454,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 layerCount;
+    uint32_t layerCount;
     Device* device;
     Image* image;
     VkImageView handle;
@@ -470,7 +470,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 imageCount;
+    uint32_t imageCount;
     Device* device;
     Queue* queue;
     VkSwapchainKHR handle;
@@ -478,7 +478,7 @@ typedef struct {
 } Swapchain;
 
 typedef struct {
-    Uint32 patchControlPoints;
+    uint32_t patchControlPoints;
     VkShaderStageFlagBits stage;
     char entryName[PAL_SHADER_ENTRY_NAME_SIZE];
 } ShaderEntry;
@@ -486,7 +486,7 @@ typedef struct {
 typedef struct {
     const PalGraphicsBackend* backend;
 
-    Uint32 entryCount;
+    uint32_t entryCount;
     ShaderEntry* entries;
     Device* device;
     VkShaderModule handle;
@@ -585,14 +585,14 @@ typedef struct {
 } PipelineLayout;
 
 typedef struct {
-    Uint32 raygenCount;
-    Uint32 raygenDataSize;
-    Uint32 missCount;
-    Uint32 missDataSize;
-    Uint32 hitCount;
-    Uint32 hitDataSize;
-    Uint32 callableCount;
-    Uint32 callableDataSize;
+    uint32_t raygenCount;
+    uint32_t raygenDataSize;
+    uint32_t missCount;
+    uint32_t missDataSize;
+    uint32_t hitCount;
+    uint32_t hitDataSize;
+    uint32_t callableCount;
+    uint32_t callableDataSize;
 } ShaderBindingTableInfo;
 
 typedef struct {
@@ -606,8 +606,8 @@ typedef struct {
 } Pipeline;
 
 typedef struct {
-    Uint32 startIndex;
-    Uint32 offset;
+    uint32_t startIndex;
+    uint32_t offset;
     VkStridedDeviceAddressRegionKHR region;
 } AddressRegion;
 
@@ -615,8 +615,8 @@ typedef struct {
     const PalGraphicsBackend* backend;
 
     bool isDirty;
-    Uint32 stagingBufferSize;
-    Uint32 handleSize;
+    uint32_t stagingBufferSize;
+    uint32_t handleSize;
     Device* device;
     VkBuffer buffer;
     VkBuffer stagingBuffer;
@@ -1522,7 +1522,7 @@ static VkBufferUsageFlags bufferUsageToVk(PalBufferUsages usages)
     return flags;
 }
 
-static Uint32 getVertexTypeSizeVk(PalVertexType type)
+static uint32_t getVertexTypeSizeVk(PalVertexType type)
 {
     // count x sizeof type returned as size
     switch (type) {
@@ -1869,7 +1869,7 @@ static VkBorderColor borderColorToVk(PalBorderColor color)
 }
 
 static Barrier barrierToVk(
-    Uint32 stageCount,
+    uint32_t stageCount,
     PalUsageState state,
     PalShaderStage* shaderStages)
 {
@@ -2169,8 +2169,8 @@ static VkShaderStageFlags shaderStageToVK(PalShaderStage stage)
 
 static inline void* alignedRealloc(
     void* memory,
-    Uint64 size,
-    Uint64 alignment)
+    uint64_t size,
+    uint64_t alignment)
 {
 #if defined(_MSC_VER) || defined(__MINGW32__)
     return _aligned_realloc(memory, size, alignment);
@@ -2269,12 +2269,12 @@ VkBool32 VKAPI_CALL debugCallbackVk(
     return VK_FALSE;
 }
 
-static Uint32 findBestMemoryIndexVk(
+static uint32_t findBestMemoryIndexVk(
     VkPhysicalDevice phyDevice,
-    Uint32 memoryMask)
+    uint32_t memoryMask)
 {
     int bestScore = -1;
-    Uint32 bestIndex = UINT32_MAX;
+    uint32_t bestIndex = UINT32_MAX;
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
 
@@ -2312,31 +2312,31 @@ static Uint32 findBestMemoryIndexVk(
     return bestIndex;
 }
 
-static inline Uint32 alignVk(
-    Uint32 value,
-    Uint32 alignment)
+static inline uint32_t alignVk(
+    uint32_t value,
+    uint32_t alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-static inline Uint32 maxVk(
-    Uint32 a,
-    Uint32 b)
+static inline uint32_t maxVk(
+    uint32_t a,
+    uint32_t b)
 {
     return (a > b) ? a : b;
 }
 
-static inline Uint32 minVk(
-    Uint32 a,
-    Uint32 b)
+static inline uint32_t minVk(
+    uint32_t a,
+    uint32_t b)
 {
     return (a < b) ? a : b;
 }
 
 static void fillBuildInfoVk(
-    Uint32 count,
+    uint32_t count,
     PalAccelerationStructureBuildInfo* info,
-    Uint32* maxPrimities,
+    uint32_t* maxPrimities,
     VkAccelerationStructureGeometryKHR* geometries,
     VkAccelerationStructureKHR srcAs,
     VkAccelerationStructureKHR dstAs,
@@ -2476,7 +2476,7 @@ static void fillBuildInfoVk(
     buildInfo->scratchData = scratchData;
 }
 
-static Uint32 getFormatSizeVk(PalFormat format)
+static uint32_t getFormatSizeVk(PalFormat format)
 {
     switch (format) {
         case PAL_FORMAT_R8_UNORM:
@@ -3024,7 +3024,7 @@ PalResult PAL_CALL initGraphicsVk(
 
     // get version
     bool versionFallback = false;
-    Uint32 version = 0;
+    uint32_t version = 0;
     if (s_Vk.enumerateInstanceVersion) {
         s_Vk.enumerateInstanceVersion(&version);
         if (version <= VK_API_VERSION_1_0) {
@@ -3033,7 +3033,7 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     VkResult result;
-    Uint32 layerCount = 0;
+    uint32_t layerCount = 0;
     bool hasValidationLayer = false;
     s_Vk.messenger = nullptr;
     s_Vk.allocator = allocator;
@@ -3093,7 +3093,7 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     // extensions
-    Uint32 extCount = 0;
+    uint32_t extCount = 0;
     const char* extensions[8];
     result = s_Vk.enumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
     if (result != VK_SUCCESS) {
@@ -3328,7 +3328,7 @@ void PAL_CALL shutdownGraphicsVk()
 }
 
 PalResult PAL_CALL enumerateAdaptersVk(
-    Int32* count,
+    int32_t* count,
     PalAdapter** outAdapters)
 {
     int deviceCount = 0;
@@ -3502,7 +3502,7 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     PalComputeCapabilities* computeCaps = &caps->computeCaps;
 
     // get supported queue commands
-    Uint32 count = 0;
+    uint32_t count = 0;
     s_Vk.getPhysicalDeviceQueueFamilyProperties(phyDevice, &count, nullptr);
 
     VkQueueFamilyProperties* queueProps = nullptr;
@@ -3549,13 +3549,13 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     imageCaps->maxArrayLayers = limits->maxImageArrayLayers;
 
     // vulkan does not give this but we calculate from the max width and width
-    Uint32 a = imageCaps->maxWidth;
-    Uint32 b = imageCaps->maxHeight;
-    Uint32 c = imageCaps->maxDepth;
+    uint32_t a = imageCaps->maxWidth;
+    uint32_t b = imageCaps->maxHeight;
+    uint32_t c = imageCaps->maxDepth;
 
-    Uint32 tmp = a > b ? a : b;
-    Uint32 size = tmp > c ? tmp : c;
-    Uint32 levels = 0;
+    uint32_t tmp = a > b ? a : b;
+    uint32_t size = tmp > c ? tmp : c;
+    uint32_t levels = 0;
     while (size > 0) {
         // divide by two
         size = size / 2;
@@ -3604,7 +3604,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
 {
     VkResult result;
     PalAdapterFeatures adapterFeatures = 0;
-    Uint32 extensionCount = 0;
+    uint32_t extensionCount = 0;
     VkPhysicalDeviceProperties props = {0};
 
     Adapter* vkAdapter = (Adapter*)adapter;
@@ -3965,7 +3965,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     return adapterFeatures;
 }
 
-Uint32 PAL_CALL getHighestSupportedShaderTargetVk(
+uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
@@ -4003,8 +4003,8 @@ PalResult PAL_CALL createDeviceVk(
     PalDevice** outDevice)
 {
     float priority = 1.0f;
-    Uint32 phyQueueCount = 0;
-    Uint32 queueFamilyCount = 0;
+    uint32_t phyQueueCount = 0;
+    uint32_t queueFamilyCount = 0;
     VkResult result = VK_SUCCESS;
     Device* device = nullptr;
     VkPhysicalDeviceProperties props = {0};
@@ -4017,8 +4017,8 @@ PalResult PAL_CALL createDeviceVk(
     VkDeviceQueueCreateInfo* queueCreateInfos = nullptr;
     s_Vk.getPhysicalDeviceQueueFamilyProperties(phyDevice, &queueFamilyCount, nullptr);
 
-    Uint32 queueFamilySize = sizeof(VkQueueFamilyProperties) * queueFamilyCount;
-    Uint32 queueCreateInfosSize = sizeof(VkDeviceQueueCreateInfo) * queueFamilyCount;
+    uint32_t queueFamilySize = sizeof(VkQueueFamilyProperties) * queueFamilyCount;
+    uint32_t queueCreateInfosSize = sizeof(VkDeviceQueueCreateInfo) * queueFamilyCount;
 
     queueFamilyProps = palAllocate(s_Vk.allocator, queueFamilySize, 0);
     queueCreateInfos = palAllocate(s_Vk.allocator, queueCreateInfosSize, 0);
@@ -4377,11 +4377,11 @@ PalResult PAL_CALL createDeviceVk(
     VkPhysicalDeviceMemoryProperties memProps = {0};
     s_Vk.getPhysicalDeviceMemoryProperties(phyDevice, &memProps);
 
-    memset(device->memoryClassMask, 0, sizeof(Uint32) * 3);
+    memset(device->memoryClassMask, 0, sizeof(uint32_t) * 3);
     for (int i = 0; i < memProps.memoryTypeCount; i++) {
         VkMemoryPropertyFlags flags = memProps.memoryTypes[i].propertyFlags;
 
-        Uint32 bit = (1u << i);
+        uint32_t bit = (1u << i);
         if ((flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) &&
             !(flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
             device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] |= bit;
@@ -4740,8 +4740,8 @@ void PAL_CALL destroyDeviceVk(PalDevice* device)
 PalResult PAL_CALL allocateMemoryVk(
     PalDevice* device,
     PalMemoryType type,
-    Uint64 memoryMask,
-    Uint64 size,
+    uint64_t memoryMask,
+    uint64_t size,
     PalMemory** outMemory)
 {
     VkResult result;
@@ -4757,16 +4757,16 @@ PalResult PAL_CALL allocateMemoryVk(
         return PAL_RESULT_NULL_POINTER;
     }
 
-    Uint32 memoryTypeMask = 0;
-    Uint32 usages = 0;
+    uint32_t memoryTypeMask = 0;
+    uint32_t usages = 0;
     palUnpackUint32(memoryMask, &memoryTypeMask, &usages);
-    Uint32 memoryClassMask = vkDevice->memoryClassMask[type] & memoryTypeMask;
+    uint32_t memoryClassMask = vkDevice->memoryClassMask[type] & memoryTypeMask;
     if (memoryClassMask == 0) {
         return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
     }
 
     // pick an index using the scoring system
-    Uint32 memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, memoryClassMask);
+    uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, memoryClassMask);
     if (memoryIndex == UINT32_MAX) {
         return PAL_RESULT_MEMORY_TYPE_NOT_SUPPORTED;
     }
@@ -5118,8 +5118,8 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     caps->maxPerStageUniformBuffers = props.maxPerStageDescriptorUpdateAfterBindUniformBuffers;
     caps->maxPerSetUniformBuffers = props.maxDescriptorSetUpdateAfterBindUniformBuffers;
 
-    Uint32 tmp = accProps.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
-    Uint32 tmp2 = accProps.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+    uint32_t tmp = accProps.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+    uint32_t tmp2 = accProps.maxDescriptorSetUpdateAfterBindAccelerationStructures;
     caps->maxPerStageAccelerationStructure = tmp;
     caps->maxPerSetAccelerationStructure = tmp2;
 
@@ -5266,10 +5266,10 @@ bool PAL_CALL canQueuePresentVk(
 
 PalResult PAL_CALL enumerateFormatsVk(
     PalAdapter* adapter,
-    Int32* count,
+    int32_t* count,
     PalFormatInfo* outFormats)
 {
-    Int32 fmtCount = 0;
+    int32_t fmtCount = 0;
     Adapter* vkAdapter = (Adapter*)adapter;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
     VkFormatProperties props = {0};
@@ -5467,8 +5467,8 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
     Device* device = vkImage->device;
     VkMemoryRequirements memReq = {0};
     s_Vk.getImageMemoryRequirements(device->handle, vkImage->handle, &memReq);
-    requirements->alignment = (Uint64)memReq.alignment;
-    requirements->size = (Uint64)memReq.size;
+    requirements->alignment = (uint64_t)memReq.alignment;
+    requirements->size = (uint64_t)memReq.size;
     requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, 0);
 
     requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
@@ -5485,7 +5485,7 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
 PalResult PAL_CALL bindImageMemoryVk(
     PalImage* image,
     PalMemory* memory,
-    Uint64 offset)
+    uint64_t offset)
 {
     Image* vkImage = (Image*)image;
     if (vkImage->belongsToSwapchain) {
@@ -5504,8 +5504,8 @@ PalResult PAL_CALL bindImageMemoryVk(
 
 PalResult PAL_CALL mapImageMemoryVk(
     PalImage* image,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr)
 {
     VkResult result;
@@ -5726,7 +5726,7 @@ PalResult PAL_CALL createSurfaceVk(
 
         VkXlibSurfaceCreateInfoKHR cInfo = {0};
         cInfo.dpy = window->display;
-        cInfo.window = (Window)(UintPtr)(window->window);
+        cInfo.window = (Window)(uintptr_t)(window->window);
         cInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
 
         VkSurfaceKHR tmp = nullptr;
@@ -5777,8 +5777,8 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
     PalSurface* surface,
     PalSurfaceCapabilities* caps)
 {
-    Int32 formatCount = 0;
-    Int32 modeCount = 0;
+    int32_t formatCount = 0;
+    int32_t modeCount = 0;
     Surface* vkSurface = (Surface*)surface;
     VkSurfaceFormatKHR* formats = nullptr;
     VkPresentModeKHR* modes = nullptr;
@@ -5986,7 +5986,7 @@ PalResult PAL_CALL createSwapchainVk(
     }
 
     // get and cache all images
-    Int32 count = 0;
+    int32_t count = 0;
     result = vkDevice->getSwapchainImages(vkDevice->handle, swapchain->handle, &count, nullptr);
 
     swapchain->images = palAllocate(s_Vk.allocator, sizeof(Image) * count, 0);
@@ -6038,7 +6038,7 @@ void PAL_CALL destroySwapchainVk(PalSwapchain* swapchain)
 
 PalImage* PAL_CALL getSwapchainImageVk(
     PalSwapchain* swapchain,
-    Int32 index)
+    int32_t index)
 {
     Swapchain* vkSwapchain = (Swapchain*)swapchain;
     if (index > vkSwapchain->imageCount) {
@@ -6050,11 +6050,11 @@ PalImage* PAL_CALL getSwapchainImageVk(
 PalResult PAL_CALL getNextSwapchainImageVk(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32* outIndex)
+    uint32_t* outIndex)
 {
     VkResult result;
-    Uint32 index = 0;
-    Uint64 timeInNanoseconds = 0;
+    uint32_t index = 0;
+    uint64_t timeInNanoseconds = 0;
     VkFence fenceHandle = nullptr;
     VkSemaphore semaphoreHandle = nullptr;
     Swapchain* vkSwapchain = (Swapchain*)swapchain;
@@ -6098,7 +6098,7 @@ PalResult PAL_CALL presentSwapchainVk(
     PalSwapchainPresentInfo* info)
 {
     Swapchain* vkSwapchain = (Swapchain*)swapchain;
-    Int32 semaphoreCount = 0;
+    int32_t semaphoreCount = 0;
     VkSemaphore semaphoreHandle = nullptr;
     if (info->waitSemaphore) {
         Semaphore* vkSemaphore = (Semaphore*)info->waitSemaphore;
@@ -6125,8 +6125,8 @@ PalResult PAL_CALL presentSwapchainVk(
 
 PalResult PAL_CALL resizeSwapchainVk(
     PalSwapchain* swapchain,
-    Uint32 newWidth,
-    Uint32 newHeight)
+    uint32_t newWidth,
+    uint32_t newHeight)
 {
     VkResult result;
     Swapchain* vkSwapchain = (Swapchain*)swapchain;
@@ -6150,7 +6150,7 @@ PalResult PAL_CALL resizeSwapchainVk(
         return resultFromVk(result);
     }
 
-    Uint32 count = vkSwapchain->imageCount;
+    uint32_t count = vkSwapchain->imageCount;
     images = palAllocate(s_Vk.allocator, sizeof(VkImage) * count, 0);
     if (!images) {
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -6237,7 +6237,7 @@ PalResult PAL_CALL createShaderVk(
     VkShaderModuleCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = info->bytecodeSize;
-    createInfo.pCode = (const Uint32*)info->bytecode;
+    createInfo.pCode = (const uint32_t*)info->bytecode;
 
     result = s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
     if (result != VK_SUCCESS) {
@@ -6305,11 +6305,11 @@ void PAL_CALL destroyFenceVk(PalFence* fence)
 
 PalResult PAL_CALL waitFenceVk(
     PalFence* fence,
-    Uint64 timeout)
+    uint64_t timeout)
 {
     Fence* vkFence = (Fence*)fence;
     VkResult result;
-    Uint64 timeInNanoseconds = 0;
+    uint64_t timeInNanoseconds = 0;
 
     if (timeout) {
         if (timeout == PAL_INFINITE) {
@@ -6417,11 +6417,11 @@ void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore)
 
 PalResult PAL_CALL waitSemaphoreVk(
     PalSemaphore* semaphore,
-    Uint64 value,
-    Uint64 timeout)
+    uint64_t value,
+    uint64_t timeout)
 {
     VkResult result;
-    Uint64 timeInNanoseconds = 0;
+    uint64_t timeInNanoseconds = 0;
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
     if (!vkSemaphore->isTimeline) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -6456,7 +6456,7 @@ PalResult PAL_CALL waitSemaphoreVk(
 PalResult PAL_CALL signalSemaphoreVk(
     PalSemaphore* semaphore,
     PalQueue* queue,
-    Uint64 value)
+    uint64_t value)
 {
     VkResult result;
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
@@ -6479,7 +6479,7 @@ PalResult PAL_CALL signalSemaphoreVk(
 
 PalResult PAL_CALL getSemaphoreValueVk(
     PalSemaphore* semaphore,
-    Uint64* outValue)
+    uint64_t* outValue)
 {
     Semaphore* vkSemaphore = (Semaphore*)semaphore;
     if (!vkSemaphore->isTimeline) {
@@ -6609,8 +6609,8 @@ PalResult PAL_CALL allocateCommandBufferVk(
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.allocationSize = memReq.size;
 
-        Uint32 mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
-        Uint32 memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+        uint32_t mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
+        uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
         allocateInfo.memoryTypeIndex = memoryIndex;
 
         result = s_Vk.allocateMemory(
@@ -6661,8 +6661,8 @@ PalResult PAL_CALL submitCommandBufferVk(
     PalCommandBufferSubmitInfo* info)
 {
     VkResult result;
-    Int32 waitSemaphoreCount = 0;
-    Int32 signalSemaphoreCount = 0;
+    int32_t waitSemaphoreCount = 0;
+    int32_t signalSemaphoreCount = 0;
     VkFence fenceHandle = nullptr;
     VkSemaphore waitSemaphoreHandle = nullptr;
     VkSemaphore signalSemaphoreHandle = nullptr;
@@ -6821,9 +6821,9 @@ PalResult PAL_CALL cmdSetFragmentShadingRateVk(
 
 PalResult PAL_CALL cmdDrawMeshTasksVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -6839,7 +6839,7 @@ PalResult PAL_CALL cmdDrawMeshTasksVk(
 PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 drawCount)
+    uint32_t drawCount)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -6853,7 +6853,7 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
-    Uint32 stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
+    uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirect(
         vkCmdBuffer->handle, 
         vkBuffer->handle,
@@ -6868,7 +6868,7 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -6887,7 +6887,7 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
-    Uint32 stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
+    uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirectCount(
         vkCmdBuffer->handle,
         vkBuffer->handle,
@@ -6920,7 +6920,7 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     // cache these for top level as
     VkAccelerationStructureBuildRangeInfoKHR cachedRangeInfo = {0};
     VkAccelerationStructureGeometryKHR cachedGeometries = {0};
-    Uint32 geometryCount = info->geometryCount;
+    uint32_t geometryCount = info->geometryCount;
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
         geometryCount = 1;
         rangeInfos = &cachedRangeInfo;
@@ -6992,9 +6992,9 @@ PalResult PAL_CALL cmdBeginRenderingVk(
     VkRenderingFragmentShadingRateAttachmentInfoKHR fsrInfo = {0};
     fsrInfo.sType = VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
 
-    Uint32 layerCount = UINT32_MAX;
-    Uint32 renderWidth = UINT32_MAX;
-    Uint32 renderHeight = UINT32_MAX;
+    uint32_t layerCount = UINT32_MAX;
+    uint32_t renderWidth = UINT32_MAX;
+    uint32_t renderHeight = UINT32_MAX;
     for (int i = 0; i < info->colorAttachentCount; i++) {
         attachment = &colorAttachments[i];
         desc = &info->colorAttachments[i];
@@ -7342,7 +7342,7 @@ PalResult PAL_CALL cmdBindPipelineVk(
 
 PalResult PAL_CALL cmdSetViewportVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalViewport* viewports)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -7378,7 +7378,7 @@ PalResult PAL_CALL cmdSetViewportVk(
 
 PalResult PAL_CALL cmdSetScissorsVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalRect2D* scissors)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -7412,10 +7412,10 @@ PalResult PAL_CALL cmdSetScissorsVk(
 
 PalResult PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 firstSlot,
-    Uint32 count,
+    uint32_t firstSlot,
+    uint32_t count,
     PalBuffer** buffers,
-    Uint64* offsets)
+    uint64_t* offsets)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     VkBuffer cachedbuffer = nullptr;
@@ -7446,7 +7446,7 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
 PalResult PAL_CALL cmdBindIndexBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
+    uint64_t offset,
     PalIndexType type)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -7462,10 +7462,10 @@ PalResult PAL_CALL cmdBindIndexBufferVk(
 
 PalResult PAL_CALL cmdDrawVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 vertexCount,
-    Uint32 instanceCount,
-    Uint32 firstVertex,
-    Uint32 firstInstance)
+    uint32_t vertexCount,
+    uint32_t instanceCount,
+    uint32_t firstVertex,
+    uint32_t firstInstance)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDraw(vkCmdBuffer->handle, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -7475,11 +7475,11 @@ PalResult PAL_CALL cmdDrawVk(
 PalResult PAL_CALL cmdDrawIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count)
+    uint32_t count)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
-    Uint32 stride = sizeof(VkDrawIndirectCommand);
+    uint32_t stride = sizeof(VkDrawIndirectCommand);
 
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -7497,7 +7497,7 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
@@ -7516,7 +7516,7 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
-    Uint32 stride = sizeof(VkDrawIndirectCommand);
+    uint32_t stride = sizeof(VkDrawIndirectCommand);
     device->cmdDrawIndirectCount(
         vkCmdBuffer->handle,
         vkBuffer->handle,
@@ -7531,11 +7531,11 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
 
 PalResult PAL_CALL cmdDrawIndexedVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 indexCount,
-    Uint32 instanceCount,
-    Uint32 firstIndex,
-    Int32 vertexOffset,
-    Uint32 firstInstance)
+    uint32_t indexCount,
+    uint32_t instanceCount,
+    uint32_t firstIndex,
+    int32_t vertexOffset,
+    uint32_t firstInstance)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDrawIndexed(
@@ -7552,11 +7552,11 @@ PalResult PAL_CALL cmdDrawIndexedVk(
 PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count)
+    uint32_t count)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
-    Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
+    uint32_t stride = sizeof(VkDrawIndexedIndirectCommand);
 
     if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -7574,7 +7574,7 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Buffer* vkBuffer = (Buffer*)buffer;
@@ -7593,7 +7593,7 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
         return PAL_RESULT_INVALID_BUFFER;
     }
 
-    Uint32 stride = sizeof(VkDrawIndexedIndirectCommand);
+    uint32_t stride = sizeof(VkDrawIndexedIndirectCommand);
     device->cmdDrawIndexedIndirectCount(
         vkCmdBuffer->handle,
         vkBuffer->handle,
@@ -7736,9 +7736,9 @@ PalResult PAL_CALL cmdBufferBarrierVk(
 
 PalResult PAL_CALL cmdDispatchVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     s_Vk.cmdDispatch(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
@@ -7747,12 +7747,12 @@ PalResult PAL_CALL cmdDispatchVk(
 
 PalResult PAL_CALL cmdDispatchBaseVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 baseGroupX,
-    Uint32 baseGroupY,
-    Uint32 baseGroupZ,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t baseGroupX,
+    uint32_t baseGroupY,
+    uint32_t baseGroupZ,
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -7794,10 +7794,10 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
 PalResult PAL_CALL cmdTraceRaysVk(
     PalCommandBuffer* cmdBuffer,
     PalShaderBindingTable* sbt,
-    Uint32 raygenIndex,
-    Uint32 width,
-    Uint32 height,
-    Uint32 depth)
+    uint32_t raygenIndex,
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
     Device* device = vkCmdBuffer->device;
@@ -7830,7 +7830,7 @@ PalResult PAL_CALL cmdTraceRaysVk(
 
 PalResult PAL_CALL cmdTraceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 raygenIndex,
+    uint32_t raygenIndex,
     PalShaderBindingTable* sbt,
     PalBuffer* buffer)
 {
@@ -7894,7 +7894,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 setIndex,
+    uint32_t setIndex,
     PalDescriptorSet* set)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -7916,10 +7916,10 @@ PalResult PAL_CALL cmdBindDescriptorSetVk(
 
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 shaderStageCount,
+    uint32_t shaderStageCount,
     PalShaderStage* shaderStages,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     const void* value)
 {
     CommandBuffer* vkCmdBuffer = (CommandBuffer*)cmdBuffer;
@@ -8178,7 +8178,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
-    Uint32* maxPrimities = nullptr;
+    uint32_t* maxPrimities = nullptr;
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     Device* vkDevice = (Device*)device;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
@@ -8189,8 +8189,8 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
 
     // cache these for top level as
     VkAccelerationStructureGeometryKHR cachedGeometries = {0};
-    Uint32 cachedPrimitives = 0;
-    Uint32 geometryCount = info->geometryCount;
+    uint32_t cachedPrimitives = 0;
+    uint32_t geometryCount = info->geometryCount;
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
         geometryCount = 1;
         geometries = &cachedGeometries;
@@ -8203,13 +8203,13 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
             sizeof(VkAccelerationStructureGeometryKHR) * geometryCount,
             0);
 
-        maxPrimities = palAllocate(s_Vk.allocator, sizeof(Uint32) * geometryCount, 0);
+        maxPrimities = palAllocate(s_Vk.allocator, sizeof(uint32_t) * geometryCount, 0);
         if (!maxPrimities || !geometries) {
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
         memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * geometryCount);
-        memset(maxPrimities, 0, sizeof(Uint32) * geometryCount);
+        memset(maxPrimities, 0, sizeof(uint32_t) * geometryCount);
     }
 
     fillBuildInfoVk(
@@ -8307,8 +8307,8 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
     VkMemoryRequirements memReq = {0};
     s_Vk.getBufferMemoryRequirements(device->handle, vkBuffer->handle, &memReq);
 
-    requirements->alignment = (Uint64)memReq.alignment;
-    requirements->size = (Uint64)memReq.size;
+    requirements->alignment = (uint64_t)memReq.alignment;
+    requirements->size = (uint64_t)memReq.size;
     requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, vkBuffer->usages);
 
     requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
@@ -8323,8 +8323,8 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsVk(
     PalDevice* device,
-    Uint32 instanceCount,
-    Uint64* outSize)
+    uint32_t instanceCount,
+    uint64_t* outSize)
 {
     *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
     return PAL_RESULT_SUCCESS;
@@ -8334,20 +8334,20 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
-    Uint32* outBufferRowLength,
-    Uint32* outBufferImageHeight,
-    Uint64* outSize)
+    uint32_t* outBufferRowLength,
+    uint32_t* outBufferImageHeight,
+    uint64_t* outSize)
 {
-    Uint32 imageFormatSize = getFormatSizeVk(imageFormat);
-    Uint32 length = 0;
-    Uint32 height = 0;
+    uint32_t imageFormatSize = getFormatSizeVk(imageFormat);
+    uint32_t length = 0;
+    uint32_t height = 0;
     length = copyInfo->bufferRowLength ? copyInfo->bufferRowLength : copyInfo->imageWidth;
     height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
-    Uint32 rowPitch = length * imageFormatSize;
+    uint32_t rowPitch = length * imageFormatSize;
 
     *outBufferRowLength = length;
     *outBufferImageHeight = height;
-    *outSize = (Uint64)rowPitch * length * copyInfo->imageDepth;
+    *outSize = (uint64_t)rowPitch * length * copyInfo->imageDepth;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -8355,7 +8355,7 @@ PalResult PAL_CALL writeToInstanceBufferVk(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
-    Uint32 instanceCount)
+    uint32_t instanceCount)
 {
     VkAccelerationStructureInstanceKHR* data = ptr;
     for (int i = 0; i < instanceCount; i++) {
@@ -8380,19 +8380,19 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo)
 {
-    Uint32 imageFormatSize = getFormatSizeVk(imageFormat);
-    Uint32 dstRowPitch = copyInfo->bufferRowLength * imageFormatSize;
-    Uint32 srcRowPitch = copyInfo->imageWidth * imageFormatSize;
-    const Uint32 dstSlicePitch = dstRowPitch * copyInfo->bufferImageHeight;
-    const Uint32 srcSlicePitch = srcRowPitch * copyInfo->imageHeight;
+    uint32_t imageFormatSize = getFormatSizeVk(imageFormat);
+    uint32_t dstRowPitch = copyInfo->bufferRowLength * imageFormatSize;
+    uint32_t srcRowPitch = copyInfo->imageWidth * imageFormatSize;
+    const uint32_t dstSlicePitch = dstRowPitch * copyInfo->bufferImageHeight;
+    const uint32_t srcSlicePitch = srcRowPitch * copyInfo->imageHeight;
 
     // manually offset the buffer with the provided offset
-    Uint8* dst = (Uint8*)ptr + copyInfo->bufferOffset;
-    const Uint8* src = (const Uint8*)srcData;
+    uint8_t* dst = (uint8_t*)ptr + copyInfo->bufferOffset;
+    const uint8_t* src = (const uint8_t*)srcData;
 
     // write to destination pointer
-    for (Uint32 z = 0; z < copyInfo->imageDepth; z++) {
-        for (Uint32 y = 0; y < copyInfo->imageHeight; y++) {
+    for (uint32_t z = 0; z < copyInfo->imageDepth; z++) {
+        for (uint32_t y = 0; y < copyInfo->imageHeight; y++) {
             memcpy(
                 dst + z * dstSlicePitch + y * dstRowPitch,
                 src + z * srcSlicePitch + y * srcRowPitch,
@@ -8406,7 +8406,7 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
 PalResult PAL_CALL bindBufferMemoryVk(
     PalBuffer* buffer,
     PalMemory* memory,
-    Uint64 offset)
+    uint64_t offset)
 {
     VkResult result;
     Memory* vkMemory = (Memory*)memory;
@@ -8432,8 +8432,8 @@ PalResult PAL_CALL bindBufferMemoryVk(
 
 PalResult PAL_CALL mapBufferMemoryVk(
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr)
 {
     VkResult result;
@@ -8484,7 +8484,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     VkDescriptorSetLayoutBinding* bindings = nullptr;
     VkDescriptorBindingFlags* bindingFlags = nullptr;
     DescriptorSetLayout* layout = nullptr;
-    Uint32 count = info->bindingCount;
+    uint32_t count = info->bindingCount;
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo = {0};
 
     bool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
@@ -8516,7 +8516,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         stageFlags |= bit;
     }
 
-    Uint32 bindingIndex = 0;
+    uint32_t bindingIndex = 0;
     for (int i = 0; i < count; i++) {
         VkDescriptorSetLayoutBinding* binding = &bindings[i];
         binding->binding = bindingIndex++;
@@ -8581,7 +8581,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
     Device* vkDevice = (Device*)device;
     DescriptorPool* pool = nullptr;
     VkDescriptorPoolSize* poolSizes = nullptr;
-    Uint32 maxBindings = info->maxDescriptorBindingSizes;
+    uint32_t maxBindings = info->maxDescriptorBindingSizes;
     VkDescriptorPoolCreateInfo createInfo = {0};
 
     bool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
@@ -8684,7 +8684,7 @@ PalResult PAL_CALL allocateDescriptorSetVk(
 
 PalResult PAL_CALL updateDescriptorSetVk(
     PalDevice* device,
-    Uint32 count,
+    uint32_t count,
     PalDescriptorSetWriteInfo* infos)
 {
     VkResult result;
@@ -8695,10 +8695,10 @@ PalResult PAL_CALL updateDescriptorSetVk(
     VkAccelerationStructureKHR* tlas = nullptr;
     VkWriteDescriptorSetAccelerationStructureKHR* tlasInfos = nullptr;
 
-    Uint32 bufferCount = 0;
-    Uint32 imageCount = 0;
-    Uint32 tlasCount = 0;
-    Uint32 tlasInfoCount = 0;
+    uint32_t bufferCount = 0;
+    uint32_t imageCount = 0;
+    uint32_t tlasCount = 0;
+    uint32_t tlasInfoCount = 0;
 
     for (int i = 0; i < count; i++) {
         if (infos[i].descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
@@ -8740,7 +8740,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
     }
 
     if (tlasCount) {
-        Uint32 tlasInfoSize = sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasInfoCount;
+        uint32_t tlasInfoSize = sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasInfoCount;
         tlasInfos = palAllocate(s_Vk.allocator, tlasInfoSize, 0);
         tlas = palAllocate(s_Vk.allocator, sizeof(VkAccelerationStructureKHR) * count, 0);
         if (!tlasInfos || !tlas) {
@@ -8894,8 +8894,8 @@ PalResult PAL_CALL createPipelineLayoutVk(
     PipelineLayout* layout = nullptr;
     VkPushConstantRange* pushConstants = nullptr;
     VkDescriptorSetLayout* descriptorLayouts = nullptr;
-    Uint32 pushConstantSize = sizeof(VkPushConstantRange) * info->pushConstantRangeCount;
-    Uint32 setLayoutSize = sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount;
+    uint32_t pushConstantSize = sizeof(VkPushConstantRange) * info->pushConstantRangeCount;
+    uint32_t setLayoutSize = sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount;
 
     layout = palAllocate(s_Vk.allocator, sizeof(PipelineLayout), 0);
     pushConstants = palAllocate(s_Vk.allocator, pushConstantSize, 0);
@@ -9019,7 +9019,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.layout = layout->handle;
 
     // find the total number of shader stages
-    Uint32 stageCount = 0;
+    uint32_t stageCount = 0;
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* shader = (Shader*)info->shaders[i];
         stageCount += shader->entryCount;
@@ -9036,7 +9036,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     }
 
     // shaders
-    Uint32 stageIndex = 0;
+    uint32_t stageIndex = 0;
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stageCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
@@ -9067,15 +9067,15 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
     // Vertex input state
     // get the max size of vertex attributes in all layouts
-    Uint32 vertexCount = 0;
+    uint32_t vertexCount = 0;
     for (int i = 0; i < info->vertexLayoutCount; i++) {
         PalVertexLayout* layout = &info->vertexLayouts[i];
         vertexCount += layout->attributeCount;
     }
 
     if (vertexCount) {
-        Uint32 tmpBindingSize = sizeof(VkVertexInputBindingDescription) * info->vertexLayoutCount;
-        Uint32 tmpAttribSize = sizeof(VkVertexInputAttributeDescription) * vertexCount;
+        uint32_t tmpBindingSize = sizeof(VkVertexInputBindingDescription) * info->vertexLayoutCount;
+        uint32_t tmpAttribSize = sizeof(VkVertexInputAttributeDescription) * vertexCount;
         bindingDescs = palAllocate(s_Vk.allocator, tmpBindingSize, 0);
         attribDescs = palAllocate(s_Vk.allocator, tmpAttribSize, 0);
         if (!bindingDescs || !attribDescs) {
@@ -9083,7 +9083,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
             return PAL_RESULT_OUT_OF_MEMORY;
         }
 
-        Uint32 location = 0;
+        uint32_t location = 0;
         for (int i = 0; i < info->vertexLayoutCount; i++) {
             PalVertexLayout* layout = &info->vertexLayouts[i];
             VkVertexInputBindingDescription* bindingDesc = &bindingDescs[i];
@@ -9097,7 +9097,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
             // find the stride and offset of the layout
             bindingDesc->stride = 0;
-            Uint32 offset = 0;
+            uint32_t offset = 0;
             for (int j = 0; j < layout->attributeCount; j++) {
                 PalVertexAttribute* vertexAttrib = &layout->attributes[j];
                 VkVertexInputAttributeDescription* attribDesc = &attribDescs[j];
@@ -9107,7 +9107,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
                 attribDesc->location = location++;
 
                 // build offsets and stride
-                Uint32 size = getVertexTypeSizeVk(vertexAttrib->type);
+                uint32_t size = getVertexTypeSizeVk(vertexAttrib->type);
                 attribDesc->offset = offset;
                 offset += size;
                 bindingDesc->stride += size;
@@ -9154,7 +9154,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.pInputAssemblyState = &inputAssemblyState;
 
     // Dynamic states
-    Uint32 dynCount = 0;
+    uint32_t dynCount = 0;
     dynamicStates[dynCount++] = VK_DYNAMIC_STATE_VIEWPORT;
     dynamicStates[dynCount++] = VK_DYNAMIC_STATE_SCISSOR;
     dynamicStates[dynCount++] = VK_DYNAMIC_STATE_LINE_WIDTH;
@@ -9233,7 +9233,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.pRasterizationState = &rasterizerState;
 
     // Multisample state
-    Uint32 sampleMask[2] = {0}; // PAL supports upto 64 samples
+    uint32_t sampleMask[2] = {0}; // PAL supports upto 64 samples
     multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampleState.pSampleMask = nullptr;
     if (info->multisampleState) {
@@ -9251,11 +9251,11 @@ PalResult PAL_CALL createGraphicsPipelineVk(
                 state->sampleCount == PAL_SAMPLE_COUNT_8  ||
                 state->sampleCount == PAL_SAMPLE_COUNT_16 ||
                 state->sampleCount == PAL_SAMPLE_COUNT_32) {
-                sampleMask[0] = (Uint32)(state->sampleMask & 0xFFFFFFFFULL);
+                sampleMask[0] = (uint32_t)(state->sampleMask & 0xFFFFFFFFULL);
 
             } else {
-                sampleMask[0] = (Uint32)(state->sampleMask & 0xFFFFFFFFULL);
-                sampleMask[1] = (Uint32)((state->sampleMask >> 32) & 0xFFFFFFFFULL);
+                sampleMask[0] = (uint32_t)(state->sampleMask & 0xFFFFFFFFULL);
+                sampleMask[1] = (uint32_t)((state->sampleMask >> 32) & 0xFFFFFFFFULL);
             }
             multisampleState.pSampleMask = sampleMask;
 
@@ -9294,8 +9294,8 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
     // Color blend state
     if (info->colorBlendAttachmentCount) {
-        Uint32 count = info->colorBlendAttachmentCount;
-        Uint32 size = sizeof(VkPipelineColorBlendAttachmentState) * count;
+        uint32_t count = info->colorBlendAttachmentCount;
+        uint32_t size = sizeof(VkPipelineColorBlendAttachmentState) * count;
         blendattachments = palAllocate(s_Vk.allocator, size, 0);
         if (!blendattachments) {
             return PAL_RESULT_OUT_OF_MEMORY;
@@ -9481,7 +9481,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     createInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 
     // find the total number of shader stages
-    Uint32 stageCount = 0;
+    uint32_t stageCount = 0;
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* shader = (Shader*)info->shaders[i];
         stageCount += shader->entryCount;
@@ -9505,7 +9505,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     memset(pipeline, 0, sizeof(Pipeline));
 
     // shaders
-    Uint32 stageIndex = 0;
+    uint32_t stageIndex = 0;
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stageCount);
     for (int i = 0; i < info->shaderCount; i++) {
         Shader* tmp = (Shader*)info->shaders[i];
@@ -9654,7 +9654,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    Uint32 totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
+    uint32_t totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
     totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
     if (info->recordCount != totalGroups) {
         return PAL_RESULT_INVALID_ARGUMENT;
@@ -9674,14 +9674,14 @@ PalResult PAL_CALL createShaderBindingTableVk(
     props.pNext = &rayProps;
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &props);
 
-    Uint32 groupHandleSize = rayProps.shaderGroupHandleSize;
-    Uint32 groupHandleAlignment = rayProps.shaderGroupHandleAlignment;
-    Uint32 groupBaseAlignment = rayProps.shaderGroupBaseAlignment;
+    uint32_t groupHandleSize = rayProps.shaderGroupHandleSize;
+    uint32_t groupHandleAlignment = rayProps.shaderGroupHandleAlignment;
+    uint32_t groupBaseAlignment = rayProps.shaderGroupBaseAlignment;
 
     // get the max local data size
     for (int i = 0; i < info->recordCount; i++) {
         PalShaderBindingTableRecordInfo* record = &info->records[i];
-        Uint32 index = record->groupIndex;
+        uint32_t index = record->groupIndex;
 
         if (index < sbtInfo->raygenCount) {
             // raygen group
@@ -9710,24 +9710,24 @@ PalResult PAL_CALL createShaderBindingTableVk(
     }
 
     // get strides
-    Uint32 callableStride = 0;
-    Uint32 raygenStride = alignVk(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
-    Uint32 missStride = alignVk(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
-    Uint32 hitStride = alignVk(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
+    uint32_t callableStride = 0;
+    uint32_t raygenStride = alignVk(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
+    uint32_t missStride = alignVk(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
+    uint32_t hitStride = alignVk(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
     callableStride = alignVk(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
 
     // get region size
-    Uint32 raygenRegionSize = raygenStride * sbtInfo->raygenCount;
-    Uint32 missRegionSize = missStride * sbtInfo->missCount;
-    Uint32 hitRegionSize = hitStride * sbtInfo->hitCount;
-    Uint32 callableRegionSize = callableStride * sbtInfo->callableCount;
+    uint32_t raygenRegionSize = raygenStride * sbtInfo->raygenCount;
+    uint32_t missRegionSize = missStride * sbtInfo->missCount;
+    uint32_t hitRegionSize = hitStride * sbtInfo->hitCount;
+    uint32_t callableRegionSize = callableStride * sbtInfo->callableCount;
 
     // get offsets
-    Uint32 offset = 0;
-    Uint32 raygenOffset = 0;
-    Uint32 missOffset = 0;
-    Uint32 hitOffset = 0;
-    Uint32 callableOffset = 0;
+    uint32_t offset = 0;
+    uint32_t raygenOffset = 0;
+    uint32_t missOffset = 0;
+    uint32_t hitOffset = 0;
+    uint32_t callableOffset = 0;
 
     raygenOffset = alignVk(offset, groupBaseAlignment);
     offset = raygenOffset + raygenRegionSize;
@@ -9741,7 +9741,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     callableOffset = alignVk(offset, groupBaseAlignment);
     offset = callableOffset + callableRegionSize;
 
-    Uint32 bufferSize = alignVk(offset, groupBaseAlignment);
+    uint32_t bufferSize = alignVk(offset, groupBaseAlignment);
 
     // create gpu buffer
     VkBufferCreateInfo bufCreateInfo = {0};
@@ -9780,8 +9780,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = memReq.size;
 
-    Uint32 mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
-    Uint32 memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+    uint32_t mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
+    uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
     allocateInfo.memoryTypeIndex = memoryIndex;
 
     VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
@@ -9824,8 +9824,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
     s_Vk.bindBufferMemory(vkDevice->handle, sbt->stagingBuffer, sbt->stagingBufferMemory, 0);
 
     // get shader group handles
-    Uint32 handlesSize = totalGroups * groupHandleSize;
-    Uint8* handles = palAllocate(s_Vk.allocator, handlesSize, 0);
+    uint32_t handlesSize = totalGroups * groupHandleSize;
+    uint8_t* handles = palAllocate(s_Vk.allocator, handlesSize, 0);
     if (!handles) {
         palFree(s_Vk.allocator, sbt);
         return PAL_RESULT_OUT_OF_MEMORY;
@@ -9853,11 +9853,11 @@ PalResult PAL_CALL createShaderBindingTableVk(
     }
 
     offset = 0; // reuse variable
-    Uint8* srcPtr = (Uint8*)handles;
+    uint8_t* srcPtr = (uint8_t*)handles;
 
     // raygen
     for (int i = 0; i < sbtInfo->raygenCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + (i * raygenStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + (i * raygenStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
@@ -9872,7 +9872,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // miss
     for (int i = 0; i < sbtInfo->missCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + missOffset + (i * missStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + missOffset + (i * missStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
@@ -9887,7 +9887,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // hit
     for (int i = 0; i < sbtInfo->hitCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + hitOffset + (i * hitStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + hitOffset + (i * hitStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
@@ -9902,7 +9902,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // callable
     for (int i = 0; i < sbtInfo->callableCount; i++) {
-        Uint8* dstPtr = (Uint8*)ptr + callableOffset + (i * callableStride);
+        uint8_t* dstPtr = (uint8_t*)ptr + callableOffset + (i * callableStride);
         PalShaderBindingTableRecordInfo* record = &info->records[offset + i];
 
         memcpy(dstPtr, srcPtr + (i * groupHandleSize), groupHandleSize);
@@ -9973,7 +9973,7 @@ void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt)
 
 PalResult PAL_CALL updateShaderBindingTableVk(
     PalShaderBindingTable* sbt, 
-    Uint32 count,
+    uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
     VkResult result;
@@ -9995,9 +9995,9 @@ PalResult PAL_CALL updateShaderBindingTableVk(
         return resultFromVk(result);
     }
 
-    Uint32 stride = 0;
-    Uint32 offset = 0;
-    Uint32 startIndex = 0;
+    uint32_t stride = 0;
+    uint32_t offset = 0;
+    uint32_t startIndex = 0;
 
     for (int i = 0; i < count; i++) {
         PalShaderBindingTableRecordInfo* info = &infos[i];
@@ -10006,7 +10006,7 @@ PalResult PAL_CALL updateShaderBindingTableVk(
         }
 
         // find the group the record belongs to
-        Uint32 index = info->groupIndex;
+        uint32_t index = info->groupIndex;
         if (index < sbtInfo->raygenCount) {
             // raygen group
             offset = 0;
@@ -10033,8 +10033,8 @@ PalResult PAL_CALL updateShaderBindingTableVk(
         }
 
         // write payload
-        Uint32 localIndex = index - startIndex;
-        Uint8* dst = (Uint8*)data + offset + (localIndex * stride);
+        uint32_t localIndex = index - startIndex;
+        uint8_t* dst = (uint8_t*)data + offset + (localIndex * stride);
         memcpy(dst + vkSbt->handleSize, info->localData, info->localDataSize);
     }
 

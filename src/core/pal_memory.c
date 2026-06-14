@@ -17,8 +17,8 @@
 #define PAL_DEFAULT_ALIGNMENT 16
 
 static inline void* alignedAlloc(
-    Uint64 size,
-    Uint64 alignment)
+    uint64_t size,
+    uint64_t alignment)
 {
 #if defined(_MSC_VER) || defined(__MINGW32__)
     return _aligned_malloc(size, alignment);
@@ -42,10 +42,10 @@ static inline void alignedFree(void* ptr)
 
 void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
-    Uint64 size,
-    Uint64 alignment)
+    uint64_t size,
+    uint64_t alignment)
 {
-    Uint64 align = alignment;
+    uint64_t align = alignment;
     if (align == 0) {
         align = PAL_DEFAULT_ALIGNMENT;
     }

@@ -17,9 +17,9 @@ static void PAL_CALL onGraphicsDebug(
     palLog(nullptr, msg);
 }
 
-static inline Uint32 _max(
-    Uint32 a,
-    Uint32 b)
+static inline uint32_t _max(
+    uint32_t a,
+    uint32_t b)
 {
     return (a > b) ? a : b;
 }
@@ -73,7 +73,7 @@ bool rayTracingTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -104,7 +104,7 @@ bool rayTracingTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures = 0;
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -140,7 +140,7 @@ bool rayTracingTest()
         }
 
         // we prefer spirv first if an adapter supports multiple shader formats
-        Uint32 target = 0;
+        uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
             if (target >= PAL_MAKE_SHADER_TARGET(1, 4)) {
@@ -203,7 +203,7 @@ bool rayTracingTest()
     }
 
     // create ray tracing shaders
-    Uint64 bytecodeSize = 0;
+    uint64_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* source = nullptr;
     PalShaderEntryInfo entries[3];
@@ -256,7 +256,7 @@ bool rayTracingTest()
 
     palFree(nullptr, bytecode);
 
-    Uint32 bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
+    uint32_t bufferBytes = BUFFER_SIZE * BUFFER_SIZE * sizeof(float) * 4; // must match shader
     PalBufferCreateInfo bufferCreateInfo = {0};
     bufferCreateInfo.size = bufferBytes;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_STORAGE | PAL_BUFFER_USAGE_TRANSFER_SRC;
@@ -494,7 +494,7 @@ bool rayTracingTest()
     };
     memcpy(asInstance.transform, transform, sizeof(float) * 12);
 
-    Uint64 instanceBufferSize = 0;
+    uint64_t instanceBufferSize = 0;
     result = palComputeInstanceBufferRequirements(
         device, 
         1,
@@ -578,7 +578,7 @@ bool rayTracingTest()
     tlasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
 
     // get the build sizes for tlas
-    Uint32 blasScratchSize = buildSizes.scratchBufferSize;
+    uint32_t blasScratchSize = buildSizes.scratchBufferSize;
     result = palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -1038,7 +1038,7 @@ bool rayTracingTest()
         int row = BUFFER_SIZE - 1 - y; // flip y
         for (int x = 0; x < BUFFER_SIZE; x++) {
             int index = row * BUFFER_SIZE + x;
-            Uint8 rgb[3];
+            uint8_t rgb[3];
 
             rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
             rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;
@@ -1187,7 +1187,7 @@ bool rayTracingTest()
         int row = BUFFER_SIZE - 1 - y; // flip y
         for (int x = 0; x < BUFFER_SIZE; x++) {
             int index = row * BUFFER_SIZE + x;
-            Uint8 rgb[3];
+            uint8_t rgb[3];
 
             rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
             rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;

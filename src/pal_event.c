@@ -11,8 +11,8 @@
 #define PAL_MAX_EVENTS 512
 
 typedef struct {
-    Uint8 head;
-    Uint8 tail;
+    uint8_t head;
+    uint8_t tail;
     PalEvent data[PAL_MAX_EVENTS];
 } QueueData;
 

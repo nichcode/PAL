@@ -112,7 +112,7 @@ bool clearColorTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -142,7 +142,7 @@ bool clearColorTest()
 
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -260,7 +260,7 @@ bool clearColorTest()
     }
 
     // get all swapchain images and create image views for them
-    Uint32 imageCount = swapchainCreateInfo.imageCount;
+    uint32_t imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
@@ -348,7 +348,7 @@ bool clearColorTest()
     }
 
     // main loop
-    Uint32 currentFrame = 0;
+    uint32_t currentFrame = 0;
     bool running = true;
     while (running) {
         // update the video system to push video events
@@ -386,7 +386,7 @@ bool clearColorTest()
         nextImageInfo.signalSemaphore = imageAvailableSemaphores[currentFrame];
         nextImageInfo.timeout = PAL_INFINITE;
 
-        Uint32 imageIndex = 0;
+        uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);

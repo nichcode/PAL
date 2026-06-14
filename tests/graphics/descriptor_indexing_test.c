@@ -17,21 +17,21 @@
 
 // layout must match shader
 typedef struct {
-    Uint32 textureIndices[4];
+    uint32_t textureIndices[4];
 } PushConstant;
 
 static void createFlatTexture(
-    Uint32* texture,
-    Uint32 width,
-    Uint32 height,
-    Uint8 r,
-    Uint8 g,
-    Uint8 b)
+    uint32_t* texture,
+    uint32_t width,
+    uint32_t height,
+    uint8_t r,
+    uint8_t g,
+    uint8_t b)
 {
-    Uint8* pixels = (Uint8*)texture;
-    for (Int32 y = 0; y < height; ++y) {
-        for (Int32 x = 0; x < width; ++x) {
-            Int32 i = (y * width + x) * 4;
+    uint8_t* pixels = (uint8_t*)texture;
+    for (int32_t y = 0; y < height; ++y) {
+        for (int32_t x = 0; x < width; ++x) {
+            int32_t i = (y * width + x) * 4;
             pixels[i + 0] = r;
             pixels[i + 1] = g;
             pixels[i + 2] = b;
@@ -162,7 +162,7 @@ bool descriptorIndexingTest()
     }
 
     // enumerate all available adapters
-    Int32 adapterCount = 0;
+    int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -193,7 +193,7 @@ bool descriptorIndexingTest()
     PalAdapterCapabilities caps = {0};
     PalAdapterInfo adapterInfo = {0};
     PalAdapterFeatures adapterFeatures;
-    for (Int32 i = 0; i < adapterCount; i++) {
+    for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
@@ -223,7 +223,7 @@ bool descriptorIndexingTest()
         }
 
         // we prefer spirv first if an adapter supports multiple shader formats
-        Uint32 target = 0;
+        uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
             target = palGetHighestSupportedShaderTarget(adapter, PAL_SHADER_FORMAT_SPIRV);
             if (target >= PAL_MAKE_SHADER_TARGET(1, 4)) {
@@ -350,7 +350,7 @@ bool descriptorIndexingTest()
     }
 
     // get all swapchain images and create image views for them
-    Uint32 imageCount = swapchainCreateInfo.imageCount;
+    uint32_t imageCount = swapchainCreateInfo.imageCount;
     imageViews = palAllocate(nullptr, sizeof(PalImageView*) * imageCount, 0);
     inFlightImages = palAllocate(nullptr, sizeof(PalFence*) * imageCount, 0);
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
@@ -606,9 +606,9 @@ bool descriptorIndexingTest()
     bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
     bufferImageCopyInfo.imageDepth = 1; // 2D image
 
-    Uint64 imageCopyStagingBufferSize = 0;
-    Uint32 bufferRowLength = 0;
-    Uint32 bufferImageHeight = 0;
+    uint64_t imageCopyStagingBufferSize = 0;
+    uint32_t bufferRowLength = 0;
+    uint32_t bufferImageHeight = 0;
 
     result = palComputeImageCopyStagingBufferRequirements(
         device, 
@@ -632,7 +632,7 @@ bool descriptorIndexingTest()
     PalBuffer* imageStagingBuffers[4];
     PalMemory* imageStagingBufferMemories[4];
 
-    Uint32 textureDatas[4][TEXTURE_WIDTH * TEXTURE_HEIGHT];
+    uint32_t textureDatas[4][TEXTURE_WIDTH * TEXTURE_HEIGHT];
     createFlatTexture(textureDatas[0], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 0, 0);
     createFlatTexture(textureDatas[1], TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, 255, 0);
     createFlatTexture(textureDatas[2], TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, 0, 255);
@@ -878,7 +878,7 @@ bool descriptorIndexingTest()
     }
 
     // create shaders
-    Uint64 bytecodeSize = 0;
+    uint64_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
     PalShaderEntryInfo entries[2];
@@ -1056,7 +1056,7 @@ bool descriptorIndexingTest()
 
 
     // we only write 4 descriptors
-    Uint32 arrElements[] = { ARRAY_ELEMENT_0, ARRAY_ELEMENT_1, ARRAY_ELEMENT_2, ARRAY_ELEMENT_3 };
+    uint32_t arrElements[] = { ARRAY_ELEMENT_0, ARRAY_ELEMENT_1, ARRAY_ELEMENT_2, ARRAY_ELEMENT_3 };
 
     PalDescriptorImageViewInfo descriptorImageInfos[4];
     descriptorImageInfos[0].imageView = textureViews[0];
@@ -1202,7 +1202,7 @@ bool descriptorIndexingTest()
     }
 
     // main loop
-    Uint32 currentFrame = 0;
+    uint32_t currentFrame = 0;
     bool running = true;
 
     PalRect2D scissor = {0};
@@ -1251,7 +1251,7 @@ bool descriptorIndexingTest()
         nextImageInfo.signalSemaphore = imageAvailableSemaphores[currentFrame];
         nextImageInfo.timeout = PAL_INFINITE;
 
-        Uint32 imageIndex = 0;
+        uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
@@ -1398,7 +1398,7 @@ bool descriptorIndexingTest()
         }
 
         // bind vertex buffer
-        Uint64 offset[] = {0};
+        uint64_t offset[] = {0};
         result = palCmdBindVertexBuffers(
             cmdBuffers[currentFrame], 
             0, 

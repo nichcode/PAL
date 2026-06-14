@@ -72,8 +72,8 @@ freely, subject to the following restrictions:
 // Typedefs, enums and structs
 // ==================================================
 
-#define TO_PAL_HANDLE(type, val) ((type*)(UintPtr)(val))
-#define FROM_PAL_HANDLE(type, handle) ((type)(UintPtr)(handle))
+#define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
+#define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
 #define MAX_SPAN_MONITORS 4
 #define NULL_BUTTON_SERIAL 0xffffffffU
 
@@ -151,10 +151,10 @@ typedef struct {
     bool pushStateEvent;
     int x;
     int y;
-    Uint32 w;
+    uint32_t w;
     int dpi;
     int monitorCount;
-    Uint32 h;
+    uint32_t h;
     PalWindowState state;
     PalWindow* window;
 
@@ -177,10 +177,10 @@ typedef struct {
     int dpi;
     int x;
     int y;
-    Uint32 w;
-    Uint32 h;
-    Uint32 refreshRate;
-    Uint32 wlName;
+    uint32_t w;
+    uint32_t h;
+    uint32_t refreshRate;
+    uint32_t wlName;
     PalOrientation orientation;
     PalMonitor* monitor;
     PalMonitorMode mode; // wayland only sends current
@@ -189,12 +189,12 @@ typedef struct {
 
 typedef struct {
     bool pendingScroll;
-    Int32 lastX;
-    Int32 lastY;
-    Int32 dx;
-    Int32 dy;
-    Int32 WheelX;
-    Int32 WheelY;
+    int32_t lastX;
+    int32_t lastY;
+    int32_t dx;
+    int32_t dy;
+    int32_t WheelX;
+    int32_t WheelY;
     float WheelXf;
     float WheelYf;
     bool state[PAL_MOUSE_BUTTON_MAX];
@@ -213,8 +213,8 @@ typedef struct {
     int repeatScancode;
     int scancodes[512];
     int keycodes[256];
-    Uint64 timer;
-    Uint64 frequency;
+    uint64_t timer;
+    uint64_t frequency;
 } Keyboard;
 
 typedef struct {
@@ -234,10 +234,10 @@ typedef struct {
     void (*shutdownVideo)();
     void (*updateVideo)();
     PalResult (*setFBConfig)(const int, PalFBConfigBackend);
-    PalResult (*enumerateMonitors)(Int32*, PalMonitor**);
+    PalResult (*enumerateMonitors)(int32_t*, PalMonitor**);
     PalResult (*getPrimaryMonitor)(PalMonitor**);
     PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
-    PalResult (*enumerateMonitorModes)(PalMonitor*, Int32*, PalMonitorMode*);
+    PalResult (*enumerateMonitorModes)(PalMonitor*, int32_t*, PalMonitorMode*);
     PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
@@ -253,9 +253,9 @@ typedef struct {
     PalResult (*flashWindow)(PalWindow*, const PalFlashInfo*);
     PalResult (*getWindowStyle)(PalWindow*, PalWindowStyle*);
     PalResult (*getWindowMonitor)(PalWindow*, PalMonitor**);
-    PalResult (*getWindowTitle)(PalWindow*, Uint64, Uint64*, char*);
-    PalResult (*getWindowPos)(PalWindow*, Int32*, Int32*);
-    PalResult (*getWindowSize)(PalWindow*, Uint32*, Uint32*);
+    PalResult (*getWindowTitle)(PalWindow*, uint64_t, uint64_t*, char*);
+    PalResult (*getWindowPos)(PalWindow*, int32_t*, int32_t*);
+    PalResult (*getWindowSize)(PalWindow*, uint32_t*, uint32_t*);
     PalResult (*getWindowState)(PalWindow*, PalWindowState*);
     bool (*isWindowVisible)(PalWindow*);
     PalWindow* (*getFocusWindow)();
@@ -264,8 +264,8 @@ typedef struct {
     PalResult (*setWindowOpacity)(PalWindow*, float);
     PalResult (*setWindowStyle)(PalWindow*, PalWindowStyle);
     PalResult (*setWindowTitle)(PalWindow*, const char*);
-    PalResult (*setWindowPos)(PalWindow*, Int32, Int32);
-    PalResult (*setWindowSize)(PalWindow*, Uint32, Uint32);
+    PalResult (*setWindowPos)(PalWindow*, int32_t, int32_t);
+    PalResult (*setWindowSize)(PalWindow*, uint32_t, uint32_t);
     PalResult (*setFocusWindow)(PalWindow*);
 
     PalResult (*createIcon)(const PalIconCreateInfo*, PalIcon**);
@@ -277,8 +277,8 @@ typedef struct {
     void (*destroyCursor)(PalCursor*);
     void (*showCursor)(bool);
     PalResult (*clipCursor)(PalWindow*, bool);
-    PalResult (*getCursorPos)(PalWindow*, Int32*, Int32*);
-    PalResult (*setCursorPos)(PalWindow*, Int32, Int32);
+    PalResult (*getCursorPos)(PalWindow*, int32_t*, int32_t*);
+    PalResult (*setCursorPos)(PalWindow*, int32_t, int32_t);
     PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
 
     PalResult (*attachWindow)(void*, PalWindow**);
@@ -288,9 +288,9 @@ typedef struct {
 
 typedef struct {
     bool initialized;
-    Int32 maxWindowData;
-    Int32 maxMonitorData;
-    Int32 pixelFormat;
+    int32_t maxWindowData;
+    int32_t maxMonitorData;
+    int32_t pixelFormat;
     PalVideoFeatures features;
     PalVideoFeatures64 features64;
     const PalAllocator* allocator;
@@ -1059,9 +1059,9 @@ static Wayland s_Wl = {0};
 static WindowData* findWindowData(PalWindow* window);
 static MonitorData* findMonitorData(PalMonitor* monitor);
 
-static inline Uint64 getTime()
+static inline uint64_t getTime()
 {
-    Uint64 now = palGetPerformanceCounter();
+    uint64_t now = palGetPerformanceCounter();
     return (now * 1000) / s_Keyboard.frequency;
 }
 
@@ -1856,13 +1856,13 @@ static void keyboardHandleKey(
         // Since PalKeycode and PalScancode have the same integers
         // we can make a direct cast without a table
         // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
-        keycode = (PalKeycode)(Uint32)scancode;
+        keycode = (PalKeycode)(uint32_t)scancode;
     }
 
     // If we got a keySym but its not mapped into our keycode array
     // we do a direct cast as well
     if (keycode == PAL_KEYCODE_UNKNOWN) {
-        keycode = (PalKeycode)(Uint32)scancode;
+        keycode = (PalKeycode)(uint32_t)scancode;
     }
 
     s_Keyboard.scancodeState[scancode] = pressed;
@@ -1906,7 +1906,7 @@ static void keyboardHandleKey(
             return;
         }
 
-        Uint32 codepoint = s_Wl.xkbKeysymToUtf32(keySym);
+        uint32_t codepoint = s_Wl.xkbKeysymToUtf32(keySym);
         if (codepoint <= 0) {
             return;
         }
@@ -2011,7 +2011,7 @@ struct xdg_toplevel;
 static struct wl_buffer* createShmBuffer(
     int width,
     int height,
-    const Uint8* pixels,
+    const uint8_t* pixels,
     bool cursor);
 
 const struct wl_interface xdg_popup_interface;
@@ -2954,7 +2954,7 @@ static void createScancodeTable()
     s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
 }
 
-void palSetLastPlatformError(Uint32 e);
+void palSetLastPlatformError(uint32_t e);
 
 // ==================================================
 // X11 API
@@ -3054,7 +3054,7 @@ static RRMode xFindMode(
 
         // compare with width, height and refresh rate
         if (info->width == mode->width && info->height == mode->height &&
-            (Uint32)(rate + 0.5) == mode->refreshRate) {
+            (uint32_t)(rate + 0.5) == mode->refreshRate) {
             return info->id;
         }
     }
@@ -3278,7 +3278,7 @@ static void xCacheMonitors()
                 }
             }
 
-            data->dpi = (Uint32)(closest * 96.0f);
+            data->dpi = (uint32_t)(closest * 96.0f);
             data->w = crtc->width;
             data->h = crtc->height;
             data->x = crtc->x;
@@ -4191,13 +4191,13 @@ static void xUpdateVideo()
                     // Since PalKeycode and PalScancode have the same integers
                     // we can make a direct cast without a table
                     // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
-                    keycode = (PalKeycode)(Uint32)scancode;
+                    keycode = (PalKeycode)(uint32_t)scancode;
                 }
 
                 // If we got a keySym but its not mapped into our keycode array
                 // we do a direct cast as well
                 if (keycode == PAL_KEYCODE_UNKNOWN) {
-                    keycode = (PalKeycode)(Uint32)scancode;
+                    keycode = (PalKeycode)(uint32_t)scancode;
                 }
 
                 // update our keyboard and mouse state to handle key repeat
@@ -4244,7 +4244,7 @@ static void xUpdateVideo()
                         &keySym,
                         &status);
 
-                    Uint32 codepoint = 0;
+                    uint32_t codepoint = 0;
                     if (status == XLookupChars || status == XLookupBoth) {
                         // decode to Unicode codepoint
                         unsigned char ch = buffer[0];
@@ -4290,7 +4290,7 @@ static void xUpdateVideo()
 }
 
 static PalResult xEnumerateMonitors(
-    Int32* count,
+    int32_t* count,
     PalMonitor** outMonitors)
 {
     int _count = 0;
@@ -4420,7 +4420,7 @@ static PalResult xGetMonitorInfo(
         }
     }
 
-    info->dpi = (Uint32)(closest * 96.0f);
+    info->dpi = (uint32_t)(closest * 96.0f);
 
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
@@ -4431,10 +4431,10 @@ static PalResult xGetMonitorInfo(
 
 static PalResult xEnumerateMonitorModes(
     PalMonitor* monitor,
-    Int32* count,
+    int32_t* count,
     PalMonitorMode* modes)
 {
-    Int32 modeCount = 0;
+    int32_t modeCount = 0;
     int maxModeCount = modes ? *count : 0;
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
@@ -4733,8 +4733,8 @@ static PalResult xCreateWindow(
     // get monitor
     int monitorX = 0;
     int monitorY = 0;
-    Uint32 monitorW = 0;
-    Uint32 monitorH = 0;
+    uint32_t monitorW = 0;
+    uint32_t monitorH = 0;
     int dpi = 0;
     if (info->monitor) {
         monitor = info->monitor;
@@ -4793,7 +4793,7 @@ static PalResult xCreateWindow(
                 }
             }
 
-            dpi = (Uint32)(closest * 96.0f);
+            dpi = (uint32_t)(closest * 96.0f);
 
             s_X11.freeCrtcInfo(crtc);
             s_X11.freeOutputInfo(outputInfo);
@@ -4802,7 +4802,7 @@ static PalResult xCreateWindow(
         s_X11.freeScreenResources(resources);
     }
 
-    Int32 x, y = 0;
+    int32_t x, y = 0;
     // the position and size must be scaled with the dpi before this call
     if (info->center) {
         x = monitorX + (monitorW - info->width) / 2;
@@ -5252,8 +5252,8 @@ PalResult xGetWindowMonitor(
 
 PalResult xGetWindowTitle(
     PalWindow* window,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
@@ -5313,8 +5313,8 @@ PalResult xGetWindowTitle(
 
 PalResult xGetWindowPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y)
+    int32_t* x,
+    int32_t* y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -5335,8 +5335,8 @@ PalResult xGetWindowPos(
 
 PalResult xGetWindowSize(
     PalWindow* window,
-    Uint32* width,
-    Uint32* height)
+    uint32_t* width,
+    uint32_t* height)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -5509,8 +5509,8 @@ PalResult xSetWindowTitle(
 
 PalResult xSetWindowPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y)
+    int32_t x,
+    int32_t y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -5525,8 +5525,8 @@ PalResult xSetWindowPos(
 
 PalResult xSetWindowSize(
     PalWindow* window,
-    Uint32 width,
-    Uint32 height)
+    uint32_t width,
+    uint32_t height)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -5585,8 +5585,8 @@ PalResult xCreateIcon(
     const PalIconCreateInfo* info,
     PalIcon** outIcon)
 {
-    Uint64 totalPixels = 2 + (Uint64)(info->width * info->height);
-    Uint64 totalBytes = sizeof(unsigned long) * totalPixels;
+    uint64_t totalPixels = 2 + (uint64_t)(info->width * info->height);
+    uint64_t totalBytes = sizeof(unsigned long) * totalPixels;
 
     unsigned long* icon = palAllocate(s_Video.allocator, totalBytes, 0);
     if (!icon) {
@@ -5600,10 +5600,10 @@ PalResult xCreateIcon(
 
     // convert from RGBA8 to ARGB32
     for (int i = 0; i < info->width * info->height; i++) {
-        Uint8 r = info->pixels[i * 4 + 0]; // Red
-        Uint8 g = info->pixels[i * 4 + 1]; // Green
-        Uint8 b = info->pixels[i * 4 + 2]; // Blue
-        Uint8 a = info->pixels[i * 4 + 3]; // Alpha
+        uint8_t r = info->pixels[i * 4 + 0]; // Red
+        uint8_t g = info->pixels[i * 4 + 1]; // Green
+        uint8_t b = info->pixels[i * 4 + 2]; // Blue
+        uint8_t a = info->pixels[i * 4 + 3]; // Alpha
 
         // clang-format off
         icon[2 + i] = ((unsigned long)a << 24) |
@@ -5636,7 +5636,7 @@ PalResult xSetWindowIcon(
     }
 
     unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
-    Uint64 totalPixels = 2 + iconData[0] * iconData[1];
+    uint64_t totalPixels = 2 + iconData[0] * iconData[1];
     s_X11.changeProperty(
         s_X11.display,
         xWin,
@@ -5661,10 +5661,10 @@ PalResult xCreateCursor(
 
     // convert from RGBA8 to ARGB32
     for (int i = 0; i < info->width * info->height; i++) {
-        Uint8 r = info->pixels[i * 4 + 0]; // Red
-        Uint8 g = info->pixels[i * 4 + 1]; // Green
-        Uint8 b = info->pixels[i * 4 + 2]; // Blue
-        Uint8 a = info->pixels[i * 4 + 3]; // Alpha
+        uint8_t r = info->pixels[i * 4 + 0]; // Red
+        uint8_t g = info->pixels[i * 4 + 1]; // Green
+        uint8_t b = info->pixels[i * 4 + 2]; // Blue
+        uint8_t a = info->pixels[i * 4 + 3]; // Alpha
 
         // clang-format off
         image->pixels[i] = ((unsigned long)a << 24) |
@@ -5769,8 +5769,8 @@ PalResult xClipCursor(
 
 PalResult xGetCursorPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y)
+    int32_t* x,
+    int32_t* y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -5796,8 +5796,8 @@ PalResult xGetCursorPos(
 
 PalResult xSetCursorPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y)
+    int32_t x,
+    int32_t y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
@@ -6068,7 +6068,7 @@ static void wlCreateKeycodeTable()
     s_Keyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-static int createShmFile(Uint64 size)
+static int createShmFile(uint64_t size)
 {
     char template[] = "/tmp/pal-shm-XXXXXX";
     int fd = mkstemp(template);
@@ -6087,11 +6087,11 @@ static int createShmFile(Uint64 size)
 static struct wl_buffer* createShmBuffer(
     int width,
     int height,
-    const Uint8* pixels,
+    const uint8_t* pixels,
     bool cursor)
 {
     int stride = width * 4;
-    Uint64 size = stride * height;
+    uint64_t size = stride * height;
     struct wl_buffer* buffer = nullptr;
     struct wl_shm_pool* pool = nullptr;
     void* data = nullptr;
@@ -6109,14 +6109,14 @@ static struct wl_buffer* createShmBuffer(
     enum wl_shm_format format = WL_SHM_FORMAT_XRGB8888;
     if (cursor) {
         format = WL_SHM_FORMAT_ARGB8888;
-        Uint32* dataPixels = (Uint32*)data;
+        uint32_t* dataPixels = (uint32_t*)data;
 
         // convert from RGBA8 to ARGB32
         for (int i = 0; i < width * height; i++) {
-            Uint8 r = pixels[i * 4 + 0]; // Red
-            Uint8 g = pixels[i * 4 + 1]; // Green
-            Uint8 b = pixels[i * 4 + 2]; // Blue
-            Uint8 a = pixels[i * 4 + 3]; // Alpha
+            uint8_t r = pixels[i * 4 + 0]; // Red
+            uint8_t g = pixels[i * 4 + 1]; // Green
+            uint8_t b = pixels[i * 4 + 2]; // Blue
+            uint8_t a = pixels[i * 4 + 3]; // Alpha
 
             // clang-format off
             dataPixels[i] = ((unsigned long)a << 24) |
@@ -6220,7 +6220,7 @@ static void wlOutputScale(
 {
     MonitorData* monitorData = data;
     float dpi = (float)scale * 96.0f;
-    monitorData->dpi = (Uint32)dpi;
+    monitorData->dpi = (uint32_t)dpi;
 }
 
 static void wlOutputDone(
@@ -6607,7 +6607,7 @@ void wlUpdateVideo()
         mode = palGetEventDispatchMode(driver, PAL_EVENT_KEYREPEAT);
         if (mode != PAL_DISPATCH_NONE) {
             // get now time and check with the key repeat time
-            Uint64 now = getTime();
+            uint64_t now = getTime();
             if (now >= s_Keyboard.timer) {
                 PalWindow* window = (PalWindow*)s_Wl.keyboardSurface;
                 PalKeycode key = s_Keyboard.repeatKey;
@@ -6643,7 +6643,7 @@ void wlUpdateVideo()
 }
 
 PalResult wlEnumerateMonitors(
-    Int32* count,
+    int32_t* count,
     PalMonitor** outMonitors)
 {
     if (outMonitors) {
@@ -6695,7 +6695,7 @@ PalResult wlGetMonitorInfo(
 
 PalResult wlEnumerateMonitorModes(
     PalMonitor* monitor,
-    Int32* count,
+    int32_t* count,
     PalMonitorMode* modes)
 {
     MonitorData* monitorData = findMonitorData(monitor);
@@ -7020,8 +7020,8 @@ PalResult wlGetWindowMonitor(
 
 PalResult wlGetWindowTitle(
     PalWindow* window,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer)
 {
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
@@ -7029,16 +7029,16 @@ PalResult wlGetWindowTitle(
 
 PalResult wlGetWindowPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y)
+    int32_t* x,
+    int32_t* y)
 {
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowSize(
     PalWindow* window,
-    Uint32* width,
-    Uint32* height)
+    uint32_t* width,
+    uint32_t* height)
 {
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
@@ -7114,16 +7114,16 @@ PalResult wlSetWindowTitle(
 
 PalResult wlSetWindowPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y)
+    int32_t x,
+    int32_t y)
 {
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetWindowSize(
     PalWindow* window,
-    Uint32 width,
-    Uint32 height)
+    uint32_t width,
+    uint32_t height)
 {
     WindowData* data = findWindowData(window);
     if (!data) {
@@ -7279,16 +7279,16 @@ PalResult wlClipCursor(
 
 PalResult wlGetCursorPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y)
+    int32_t* x,
+    int32_t* y)
 {
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetCursorPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y)
+    int32_t x,
+    int32_t y)
 {
     return PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED;
 }
@@ -7529,7 +7529,7 @@ PalResult PAL_CALL palSetFBConfig(
 }
 
 PalResult PAL_CALL palEnumerateMonitors(
-    Int32* count,
+    int32_t* count,
     PalMonitor** outMonitors)
 {
     if (!s_Video.initialized) {
@@ -7577,7 +7577,7 @@ PalResult PAL_CALL palGetMonitorInfo(
 
 PalResult PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
-    Int32* count,
+    int32_t* count,
     PalMonitorMode* modes)
 {
     if (!s_Video.initialized) {
@@ -7807,8 +7807,8 @@ PalResult PAL_CALL palGetWindowMonitor(
 
 PalResult PAL_CALL palGetWindowTitle(
     PalWindow* window,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer)
 {
     if (!s_Video.initialized) {
@@ -7824,8 +7824,8 @@ PalResult PAL_CALL palGetWindowTitle(
 
 PalResult PAL_CALL palGetWindowPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y)
+    int32_t* x,
+    int32_t* y)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -7840,8 +7840,8 @@ PalResult PAL_CALL palGetWindowPos(
 
 PalResult PAL_CALL palGetWindowSize(
     PalWindow* window,
-    Uint32* width,
-    Uint32* height)
+    uint32_t* width,
+    uint32_t* height)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -7894,8 +7894,8 @@ const bool* PAL_CALL palGetMouseState()
 }
 
 void PAL_CALL palGetMouseDelta(
-    Int32* dx,
-    Int32* dy)
+    int32_t* dx,
+    int32_t* dy)
 {
     if (!s_Video.initialized) {
         return;
@@ -7911,8 +7911,8 @@ void PAL_CALL palGetMouseDelta(
 }
 
 void PAL_CALL palGetMouseWheelDelta(
-    Int32* dx,
-    Int32* dy)
+    int32_t* dx,
+    int32_t* dy)
 {
     if (!s_Video.initialized) {
         return;
@@ -8039,8 +8039,8 @@ PalResult PAL_CALL palSetWindowTitle(
 
 PalResult PAL_CALL palSetWindowPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y)
+    int32_t x,
+    int32_t y)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -8055,8 +8055,8 @@ PalResult PAL_CALL palSetWindowPos(
 
 PalResult PAL_CALL palSetWindowSize(
     PalWindow* window,
-    Uint32 width,
-    Uint32 height)
+    uint32_t width,
+    uint32_t height)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -8188,8 +8188,8 @@ PalResult PAL_CALL palClipCursor(
 
 PalResult PAL_CALL palGetCursorPos(
     PalWindow* window,
-    Int32* x,
-    Int32* y)
+    int32_t* x,
+    int32_t* y)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;
@@ -8204,8 +8204,8 @@ PalResult PAL_CALL palGetCursorPos(
 
 PalResult PAL_CALL palSetCursorPos(
     PalWindow* window,
-    Int32 x,
-    Int32 y)
+    int32_t x,
+    int32_t y)
 {
     if (!s_Video.initialized) {
         return PAL_RESULT_VIDEO_NOT_INITIALIZED;

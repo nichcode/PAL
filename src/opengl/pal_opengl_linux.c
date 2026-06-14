@@ -206,7 +206,7 @@ typedef EGLSurface (*eglCreateWindowSurfaceFn)(
     const EGLint*);
 
 typedef const GLubyte* (*glGetStringFn)(GLenum);
-typedef void(PAL_GL_APIENTRY* glClearFn)(Uint32);
+typedef void(PAL_GL_APIENTRY* glClearFn)(uint32_t);
 
 typedef void(PAL_GL_APIENTRY* glClearColorFn)(
     float,
@@ -222,7 +222,7 @@ typedef struct {
 
 typedef struct {
     bool initialized;
-    Int32 maxContextData;
+    int32_t maxContextData;
     EGLenum apiType;
     int apiTypeBit;
     const PalAllocator* allocator;
@@ -338,7 +338,7 @@ static void freeContextData(PalGLContext* context)
     }
 }
 
-void palSetLastPlatformError(Uint32 e);
+void palSetLastPlatformError(uint32_t e);
 
 // ==================================================
 // Public API
@@ -676,7 +676,7 @@ const PalGLInfo* PAL_CALL palGetGLInfo()
 
 PalResult PAL_CALL palEnumerateGLFBConfigs(
     PalGLWindow* glWindow,
-    Int32* count,
+    int32_t* count,
     PalGLFBConfig* configs)
 {
     if (!s_GL.initialized) {
@@ -691,8 +691,8 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
         return PAL_RESULT_INSUFFICIENT_BUFFER;
     }
 
-    Int32 configCount = 0;
-    Int32 maxConfigCount = 0;
+    int32_t configCount = 0;
+    int32_t maxConfigCount = 0;
 
     if (configs) {
         maxConfigCount = *count;
@@ -802,7 +802,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
 const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
-    Int32 count,
+    int32_t count,
     const PalGLFBConfig* desired)
 {
     if (!s_GL.initialized) {
@@ -817,10 +817,10 @@ const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
         return nullptr;
     }
 
-    Int32 score = 0;
-    Int32 bestScore = 0x7FFFFFFF;
+    int32_t score = 0;
+    int32_t bestScore = 0x7FFFFFFF;
     PalGLFBConfig* best = nullptr;
-    for (Int32 i = 0; i < count; i++) {
+    for (int32_t i = 0; i < count; i++) {
         PalGLFBConfig* tmp = &configs[i];
 
         // filter out hard constraints
@@ -953,10 +953,10 @@ PalResult PAL_CALL palCreateGLContext(
         share = EGL_NO_CONTEXT;
     }
 
-    Int32 attribs[40];
-    Int32 index = 0;
-    Int32 profile = 0;
-    Int32 flags = 0;
+    int32_t attribs[40];
+    int32_t index = 0;
+    int32_t profile = 0;
+    int32_t flags = 0;
 
     // set context attributes
     // the first element is the key and the second is the value
@@ -1194,7 +1194,7 @@ PalResult PAL_CALL palSwapBuffers(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetSwapInterval(Int32 interval)
+PalResult PAL_CALL palSetSwapInterval(int32_t interval)
 {
     if (!s_GL.initialized) {
         return PAL_RESULT_GL_NOT_INITIALIZED;

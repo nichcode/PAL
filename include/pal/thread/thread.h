@@ -48,10 +48,10 @@ typedef void* (*PalThreadFn)(void* arg);
  * @since 1.0
  */
 typedef enum {
-    PAL_THREAD_FEATURE_STACK_SIZE = PAL_BIT(0),
-    PAL_THREAD_FEATURE_PRIORITY = PAL_BIT(1),
-    PAL_THREAD_FEATURE_AFFINITY = PAL_BIT(2),
-    PAL_THREAD_FEATURE_NAME = PAL_BIT(3)
+    PAL_THREAD_FEATURE_STACK_SIZE = (1ULL << 0),
+    PAL_THREAD_FEATURE_PRIORITY = (1ULL << 1),
+    PAL_THREAD_FEATURE_AFFINITY = (1ULL << 2),
+    PAL_THREAD_FEATURE_NAME = (1ULL << 3)
 } PalThreadFeatures;
 
 /**
@@ -78,7 +78,7 @@ typedef enum {
  * @since 1.0
  */
 typedef struct {
-    Uint64 stackSize;              /**< Set to 0 to use default*/
+    uint64_t stackSize;              /**< Set to 0 to use default*/
     const PalAllocator* allocator; /**< Set to nullptr to use default.*/
     PalThreadFn entry;             /**< Thread entry function*/
     void* arg;                     /**< Optional user-provided data. Can be nullptr.*/
@@ -162,7 +162,7 @@ PAL_API void PAL_CALL palDetachThread(PalThread* thread);
  *
  * @since 1.0
  */
-PAL_API void PAL_CALL palSleep(Uint64 milliseconds);
+PAL_API void PAL_CALL palSleep(uint64_t milliseconds);
 
 /**
  * @brief Yield the remainder of the calling threads time sliced,
@@ -227,7 +227,7 @@ PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
  *
  * @since 1.0
  */
-PAL_API Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread);
+PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
 
 /**
  * @brief Get the name of the provided thread.
@@ -258,8 +258,8 @@ PAL_API Uint64 PAL_CALL palGetThreadAffinity(PalThread* thread);
  */
 PAL_API PalResult PAL_CALL palGetThreadName(
     PalThread* thread,
-    Uint64 bufferSize,
-    Uint64* outSize,
+    uint64_t bufferSize,
+    uint64_t* outSize,
     char* outBuffer);
 
 /**
@@ -294,7 +294,7 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
  * Example: we set a thread to the first and second CPU core.
  *
  * @code
- * Uint64 cpuMask = PAL_BIT(0) | PAL_BIT(1).
+ * uint64_t cpuMask = (1ULL << 0) | (1ULL << 1).
  * @endcode
  *
  * @param[in] thread The thread to set affinity for.
@@ -309,7 +309,7 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
  */
 PAL_API PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
-    Uint64 mask);
+    uint64_t mask);
 
 /**
  * @brief Set the name of the provided thread.

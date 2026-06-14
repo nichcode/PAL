@@ -31,8 +31,8 @@
  */
 typedef void*(PAL_CALL* PalAllocateFn)(
     void* userData,
-    Uint64 size,
-    Uint64 alignment);
+    uint64_t size,
+    uint64_t alignment);
 
 /**
  * @typedef PalFreeFn
@@ -80,8 +80,8 @@ typedef struct {
  */
 PAL_API void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
-    Uint64 size,
-    Uint64 alignment);
+    uint64_t size,
+    uint64_t alignment);
 
 /**
  * Free memory allocated by palAllocate.

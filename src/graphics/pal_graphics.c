@@ -61,14 +61,14 @@ PAL_HANDLE(PalSurface)
 PAL_HANDLE(PalShaderBindingTable)
 
 typedef struct {
-    Int32 count;
-    Int32 startIndex;
+    int32_t count;
+    int32_t startIndex;
     const PalGraphicsBackend* base;
 } BackendData;
 
 typedef struct {
     bool initialized;
-    Int32 backendCount;
+    int32_t backendCount;
     const PalAllocator* allocator;
     BackendData backends[MAX_BACKENDS];
 } GraphicsLinux;
@@ -79,16 +79,16 @@ static GraphicsLinux s_Graphics = {0};
 // Internal API
 // ==================================================
 
-static inline Uint32 _ceil(
-    Uint32 a,
-    Uint32 b)
+static inline uint32_t _ceil(
+    uint32_t a,
+    uint32_t b)
 {
     return (a + b - 1) / b;
 }
 
-static inline Uint32 _min(
-    Uint32 a,
-    Uint32 b)
+static inline uint32_t _min(
+    uint32_t a,
+    uint32_t b)
 {
     return (a < b) ? a : b;
 }
@@ -110,7 +110,7 @@ PalResult PAL_CALL initGraphicsVk(
 void PAL_CALL shutdownGraphicsVk();
 
 PalResult PAL_CALL enumerateAdaptersVk(
-    Int32* count,
+    int32_t* count,
     PalAdapter** outAdapters);
 
 PalResult PAL_CALL getAdapterInfoVk(
@@ -123,7 +123,7 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter);
 
-Uint32 PAL_CALL getHighestSupportedShaderTargetVk(
+uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat);
 
@@ -147,8 +147,8 @@ PalResult PAL_CALL waitDeviceVk(PalDevice* device);
 PalResult PAL_CALL allocateMemoryVk(
     PalDevice* device,
     PalMemoryType type,
-    Uint64 memoryMask,
-    Uint64 size,
+    uint64_t memoryMask,
+    uint64_t size,
     PalMemory** outMemory);
 
 void PAL_CALL freeMemoryVk(
@@ -214,7 +214,7 @@ bool PAL_CALL canQueuePresentVk(
 
 PalResult PAL_CALL enumerateFormatsVk(
     PalAdapter* adapter,
-    Int32* count,
+    int32_t* count,
     PalFormatInfo* outFormats);
 
 bool PAL_CALL isFormatSupportedVk(
@@ -251,12 +251,12 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
 PalResult PAL_CALL bindImageMemoryVk(
     PalImage* image,
     PalMemory* memory,
-    Uint64 offset);
+    uint64_t offset);
 
 PalResult PAL_CALL mapImageMemoryVk(
     PalImage* image,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr);
 
 void PAL_CALL unmapImageMemoryVk(PalImage* image);
@@ -315,12 +315,12 @@ void PAL_CALL destroySwapchainVk(PalSwapchain* swapchain);
 
 PalImage* PAL_CALL getSwapchainImageVk(
     PalSwapchain* swapchain,
-    Int32 index);
+    int32_t index);
 
 PalResult PAL_CALL getNextSwapchainImageVk(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32* outIndex);
+    uint32_t* outIndex);
 
 PalResult PAL_CALL presentSwapchainVk(
     PalSwapchain* swapchain,
@@ -328,8 +328,8 @@ PalResult PAL_CALL presentSwapchainVk(
 
 PalResult PAL_CALL resizeSwapchainVk(
     PalSwapchain* swapchain,
-    Uint32 newWidth,
-    Uint32 newHeight);
+    uint32_t newWidth,
+    uint32_t newHeight);
 
 // ==================================================
 // Shader
@@ -355,7 +355,7 @@ void PAL_CALL destroyFenceVk(PalFence* fence);
 
 PalResult PAL_CALL waitFenceVk(
     PalFence* fence,
-    Uint64 timeout);
+    uint64_t timeout);
 
 PalResult PAL_CALL resetFenceVk(PalFence* fence);
 
@@ -374,17 +374,17 @@ void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore);
 
 PalResult PAL_CALL waitSemaphoreVk(
     PalSemaphore* semaphore,
-    Uint64 value,
-    Uint64 timeout);
+    uint64_t value,
+    uint64_t timeout);
 
 PalResult PAL_CALL signalSemaphoreVk(
     PalSemaphore* semaphore,
     PalQueue* queue,
-    Uint64 value);
+    uint64_t value);
 
 PalResult PAL_CALL getSemaphoreValueVk(
     PalSemaphore* semaphore,
-    Uint64* outValue);
+    uint64_t* outValue);
 
 // ==================================================
 // Command Pool And Buffer
@@ -433,20 +433,20 @@ PalResult PAL_CALL cmdSetFragmentShadingRateVk(
 
 PalResult PAL_CALL cmdDrawMeshTasksVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ);
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 drawCount);
+    uint32_t drawCount);
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount);
+    uint32_t maxDrawCount);
 
 PalResult PAL_CALL cmdBuildAccelerationStructureVk(
     PalCommandBuffer* cmdBuffer,
@@ -488,63 +488,63 @@ PalResult PAL_CALL cmdBindPipelineVk(
 
 PalResult PAL_CALL cmdSetViewportVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalViewport* viewports);
 
 PalResult PAL_CALL cmdSetScissorsVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalRect2D* scissors);
 
 PalResult PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 firstSlot,
-    Uint32 count,
+    uint32_t firstSlot,
+    uint32_t count,
     PalBuffer** buffers,
-    Uint64* offsets);
+    uint64_t* offsets);
 
 PalResult PAL_CALL cmdBindIndexBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
+    uint64_t offset,
     PalIndexType type);
 
 PalResult PAL_CALL cmdDrawVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 vertexCount,
-    Uint32 instanceCount,
-    Uint32 firstVertex,
-    Uint32 firstInstance);
+    uint32_t vertexCount,
+    uint32_t instanceCount,
+    uint32_t firstVertex,
+    uint32_t firstInstance);
 
 PalResult PAL_CALL cmdDrawIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count);
+    uint32_t count);
 
 PalResult PAL_CALL cmdDrawIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount);
+    uint32_t maxDrawCount);
 
 PalResult PAL_CALL cmdDrawIndexedVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 indexCount,
-    Uint32 instanceCount,
-    Uint32 firstIndex,
-    Int32 vertexOffset,
-    Uint32 firstInstance);
+    uint32_t indexCount,
+    uint32_t instanceCount,
+    uint32_t firstIndex,
+    int32_t vertexOffset,
+    uint32_t firstInstance);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count);
+    uint32_t count);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount);
+    uint32_t maxDrawCount);
 
 PalResult PAL_CALL cmdAccelerationStructureBarrierVk(
     PalCommandBuffer* cmdBuffer,
@@ -567,18 +567,18 @@ PalResult PAL_CALL cmdBufferBarrierVk(
 
 PalResult PAL_CALL cmdDispatchVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ);
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
 
 PalResult PAL_CALL cmdDispatchBaseVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 baseGroupX,
-    Uint32 baseGroupY,
-    Uint32 baseGroupZ,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ);
+    uint32_t baseGroupX,
+    uint32_t baseGroupY,
+    uint32_t baseGroupZ,
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
 
 PalResult PAL_CALL cmdDispatchIndirectVk(
     PalCommandBuffer* cmdBuffer,
@@ -587,28 +587,28 @@ PalResult PAL_CALL cmdDispatchIndirectVk(
 PalResult PAL_CALL cmdTraceRaysVk(
     PalCommandBuffer* cmdBuffer,
     PalShaderBindingTable* sbt,
-    Uint32 raygenIndex,
-    Uint32 width,
-    Uint32 height,
-    Uint32 depth);
+    uint32_t raygenIndex,
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth);
 
 PalResult PAL_CALL cmdTraceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 raygenIndex,
+    uint32_t raygenIndex,
     PalShaderBindingTable* sbt,
     PalBuffer* buffer);
 
 PalResult PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 setIndex,
+    uint32_t setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
-    Uint32 shaderStageCount,
+    uint32_t shaderStageCount,
     PalShaderStage* shaderStages,
-    Uint32 offset,
-    Uint32 size,
+    uint32_t offset,
+    uint32_t size,
     const void* value);
 
 PalResult PAL_CALL cmdSetCullModeVk(
@@ -672,22 +672,22 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsVk(
     PalDevice* device,
-    Uint32 instanceCount,
-    Uint64* outSize);
+    uint32_t instanceCount,
+    uint64_t* outSize);
 
 PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
-    Uint32* outBufferRowLength,
-    Uint32* outBufferImageHeight,
-    Uint64* outSize);
+    uint32_t* outBufferRowLength,
+    uint32_t* outBufferImageHeight,
+    uint64_t* outSize);
 
 PalResult PAL_CALL writeToInstanceBufferVk(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
-    Uint32 instanceCount);
+    uint32_t instanceCount);
 
 PalResult PAL_CALL writeToImageCopyStagingBufferVk(
     PalDevice* device,
@@ -699,12 +699,12 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
 PalResult PAL_CALL bindBufferMemoryVk(
     PalBuffer* buffer,
     PalMemory* memory,
-    Uint64 offset);
+    uint64_t offset);
 
 PalResult PAL_CALL mapBufferMemoryVk(
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr);
 
 void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer);
@@ -739,7 +739,7 @@ PalResult PAL_CALL allocateDescriptorSetVk(
 
 PalResult PAL_CALL updateDescriptorSetVk(
     PalDevice* device,
-    Uint32 count,
+    uint32_t count,
     PalDescriptorSetWriteInfo* infos);
 
 // ==================================================
@@ -787,7 +787,7 @@ void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt);
 
 PalResult PAL_CALL updateShaderBindingTableVk(
     PalShaderBindingTable* sbt, 
-    Uint32 count,
+    uint32_t count,
     PalShaderBindingTableRecordInfo* infos);
 
 static PalGraphicsBackend s_VkBackend = {
@@ -989,7 +989,7 @@ PalResult PAL_CALL initGraphicsD3D12(
 void PAL_CALL shutdownGraphicsD3D12();
 
 PalResult PAL_CALL enumerateAdaptersD3D12(
-    Int32* count,
+    int32_t* count,
     PalAdapter** outAdapters);
 
 PalResult PAL_CALL getAdapterInfoD3D12(
@@ -1002,7 +1002,7 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter);
 
-Uint32 PAL_CALL getHighestSupportedShaderTargetD3D12(
+uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat);
 
@@ -1026,8 +1026,8 @@ PalResult PAL_CALL waitDeviceD3D12(PalDevice* device);
 PalResult PAL_CALL allocateMemoryD3D12(
     PalDevice* device,
     PalMemoryType type,
-    Uint64 memoryMask,
-    Uint64 size,
+    uint64_t memoryMask,
+    uint64_t size,
     PalMemory** outMemory);
 
 void PAL_CALL freeMemoryD3D12(
@@ -1093,7 +1093,7 @@ bool PAL_CALL canQueuePresentD3D12(
 
 PalResult PAL_CALL enumerateFormatsD3D12(
     PalAdapter* adapter,
-    Int32* count,
+    int32_t* count,
     PalFormatInfo* outFormats);
 
 bool PAL_CALL isFormatSupportedD3D12(
@@ -1130,12 +1130,12 @@ PalResult PAL_CALL getImageMemoryRequirementsD3D12(
 PalResult PAL_CALL bindImageMemoryD3D12(
     PalImage* image,
     PalMemory* memory,
-    Uint64 offset);
+    uint64_t offset);
 
 PalResult PAL_CALL mapImageMemoryD3D12(
     PalImage* image,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr);
 
 void PAL_CALL unmapImageMemoryD3D12(PalImage* image);
@@ -1194,12 +1194,12 @@ void PAL_CALL destroySwapchainD3D12(PalSwapchain* swapchain);
 
 PalImage* PAL_CALL getSwapchainImageD3D12(
     PalSwapchain* swapchain,
-    Int32 index);
+    int32_t index);
 
 PalResult PAL_CALL getNextSwapchainImageD3D12(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32* outIndex);
+    uint32_t* outIndex);
 
 PalResult PAL_CALL presentSwapchainD3D12(
     PalSwapchain* swapchain,
@@ -1207,8 +1207,8 @@ PalResult PAL_CALL presentSwapchainD3D12(
 
 PalResult PAL_CALL resizeSwapchainD3D12(
     PalSwapchain* swapchain,
-    Uint32 newWidth,
-    Uint32 newHeight);
+    uint32_t newWidth,
+    uint32_t newHeight);
 
 // ==================================================
 // Shader
@@ -1234,7 +1234,7 @@ void PAL_CALL destroyFenceD3D12(PalFence* fence);
 
 PalResult PAL_CALL waitFenceD3D12(
     PalFence* fence,
-    Uint64 timeout);
+    uint64_t timeout);
 
 PalResult PAL_CALL resetFenceD3D12(PalFence* fence);
 
@@ -1253,17 +1253,17 @@ void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore);
 
 PalResult PAL_CALL waitSemaphoreD3D12(
     PalSemaphore* semaphore,
-    Uint64 value,
-    Uint64 timeout);
+    uint64_t value,
+    uint64_t timeout);
 
 PalResult PAL_CALL signalSemaphoreD3D12(
     PalSemaphore* semaphore,
     PalQueue* queue,
-    Uint64 value);
+    uint64_t value);
 
 PalResult PAL_CALL getSemaphoreValueD3D12(
     PalSemaphore* semaphore,
-    Uint64* outValue);
+    uint64_t* outValue);
 
 // ==================================================
 // Command Pool And Buffer
@@ -1312,20 +1312,20 @@ PalResult PAL_CALL cmdSetFragmentShadingRateD3D12(
 
 PalResult PAL_CALL cmdDrawMeshTasksD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ);
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 drawCount);
+    uint32_t drawCount);
 
 PalResult PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount);
+    uint32_t maxDrawCount);
 
 PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1367,63 +1367,63 @@ PalResult PAL_CALL cmdBindPipelineD3D12(
 
 PalResult PAL_CALL cmdSetViewportD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalViewport* viewports);
 
 PalResult PAL_CALL cmdSetScissorsD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalRect2D* scissors);
 
 PalResult PAL_CALL cmdBindVertexBuffersD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 firstSlot,
-    Uint32 count,
+    uint32_t firstSlot,
+    uint32_t count,
     PalBuffer** buffers,
-    Uint64* offsets);
+    uint64_t* offsets);
 
 PalResult PAL_CALL cmdBindIndexBufferD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
+    uint64_t offset,
     PalIndexType type);
 
 PalResult PAL_CALL cmdDrawD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 vertexCount,
-    Uint32 instanceCount,
-    Uint32 firstVertex,
-    Uint32 firstInstance);
+    uint32_t vertexCount,
+    uint32_t instanceCount,
+    uint32_t firstVertex,
+    uint32_t firstInstance);
 
 PalResult PAL_CALL cmdDrawIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count);
+    uint32_t count);
 
 PalResult PAL_CALL cmdDrawIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount);
+    uint32_t maxDrawCount);
 
 PalResult PAL_CALL cmdDrawIndexedD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 indexCount,
-    Uint32 instanceCount,
-    Uint32 firstIndex,
-    Int32 vertexOffset,
-    Uint32 firstInstance);
+    uint32_t indexCount,
+    uint32_t instanceCount,
+    uint32_t firstIndex,
+    int32_t vertexOffset,
+    uint32_t firstInstance);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count);
+    uint32_t count);
 
 PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount);
+    uint32_t maxDrawCount);
 
 PalResult PAL_CALL cmdAccelerationStructureBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1446,18 +1446,18 @@ PalResult PAL_CALL cmdBufferBarrierD3D12(
 
 PalResult PAL_CALL cmdDispatchD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ);
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
 
 PalResult PAL_CALL cmdDispatchBaseD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 baseGroupX,
-    Uint32 baseGroupY,
-    Uint32 baseGroupZ,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ);
+    uint32_t baseGroupX,
+    uint32_t baseGroupY,
+    uint32_t baseGroupZ,
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
 
 PalResult PAL_CALL cmdDispatchIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1466,28 +1466,28 @@ PalResult PAL_CALL cmdDispatchIndirectD3D12(
 PalResult PAL_CALL cmdTraceRaysD3D12(
     PalCommandBuffer* cmdBuffer,
     PalShaderBindingTable* sbt,
-    Uint32 raygenIndex,
-    Uint32 width,
-    Uint32 height,
-    Uint32 depth);
+    uint32_t raygenIndex,
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth);
 
 PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 raygenIndex,
+    uint32_t raygenIndex,
     PalShaderBindingTable* sbt,
     PalBuffer* buffer);
 
 PalResult PAL_CALL cmdBindDescriptorSetD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 setIndex,
+    uint32_t setIndex,
     PalDescriptorSet* set);
 
 PalResult PAL_CALL cmdPushConstantsD3D12(
     PalCommandBuffer* cmdBuffer,
-    Uint32 shaderStageCount,
+    uint32_t shaderStageCount,
     PalShaderStage* shaderStages,
-    Uint32 offset,
-    Uint32 size,
+    uint32_t offset,
+    uint32_t size,
     const void* value);
 
 PalResult PAL_CALL cmdSetCullModeD3D12(
@@ -1551,22 +1551,22 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
 
 PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
     PalDevice* device,
-    Uint32 instanceCount,
-    Uint64* outSize);
+    uint32_t instanceCount,
+    uint64_t* outSize);
 
 PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
     PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
-    Uint32* outBufferRowLength,
-    Uint32* outBufferImageHeight,
-    Uint64* outSize);
+    uint32_t* outBufferRowLength,
+    uint32_t* outBufferImageHeight,
+    uint64_t* outSize);
 
 PalResult PAL_CALL writeToInstanceBufferD3D12(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
-    Uint32 instanceCount);
+    uint32_t instanceCount);
 
 PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
     PalDevice* device,
@@ -1578,12 +1578,12 @@ PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
 PalResult PAL_CALL bindBufferMemoryD3D12(
     PalBuffer* buffer,
     PalMemory* memory,
-    Uint64 offset);
+    uint64_t offset);
 
 PalResult PAL_CALL mapBufferMemoryD3D12(
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr);
 
 void PAL_CALL unmapBufferMemoryD3D12(PalBuffer* buffer);
@@ -1618,7 +1618,7 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
 
 PalResult PAL_CALL updateDescriptorSetD3D12(
     PalDevice* device,
-    Uint32 count,
+    uint32_t count,
     PalDescriptorSetWriteInfo* infos);
 
 // ==================================================
@@ -1666,7 +1666,7 @@ void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt);
 
 PalResult PAL_CALL updateShaderBindingTableD3D12(
     PalShaderBindingTable* sbt, 
-    Uint32 count,
+    uint32_t count,
     PalShaderBindingTableRecordInfo* infos);
 
 static PalGraphicsBackend s_D3D12Backend = {
@@ -2168,7 +2168,7 @@ void PAL_CALL palShutdownGraphics()
 // ==================================================
 
 PalResult PAL_CALL palEnumerateAdapters(
-    Int32* count,
+    int32_t* count,
     PalAdapter** outAdapters)
 {
     // enumerate all adapters for both custom and PAL backends
@@ -2265,7 +2265,7 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
     return adapter->backend->getAdapterFeatures(adapter);
 }
 
-Uint32 PAL_CALL palGetHighestSupportedShaderTarget(
+uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
     PalAdapter* adapter, 
     PalShaderFormats shaderFormat)
 {
@@ -2314,8 +2314,8 @@ void PAL_CALL palDestroyDevice(PalDevice* device)
 PalResult PAL_CALL palAllocateMemory(
     PalDevice* device,
     PalMemoryType type,
-    Uint64 memoryMask,
-    Uint64 size,
+    uint64_t memoryMask,
+    uint64_t size,
     PalMemory** outMemory)
 {
     if (!s_Graphics.initialized) {
@@ -2527,7 +2527,7 @@ PalResult PAL_CALL palWaitQueue(PalQueue* queue)
 
 PalResult PAL_CALL palEnumerateFormats(
     PalAdapter* adapter,
-    Int32* count,
+    int32_t* count,
     PalFormatInfo* outFormats)
 {
     if (!s_Graphics.initialized) {
@@ -2647,7 +2647,7 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
 PalResult PAL_CALL palBindImageMemory(
     PalImage* image,
     PalMemory* memory,
-    Uint64 offset)
+    uint64_t offset)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2662,8 +2662,8 @@ PalResult PAL_CALL palBindImageMemory(
 
 PalResult PAL_CALL palMapImageMemory(
     PalImage* image,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr)
 {
     if (!s_Graphics.initialized) {
@@ -2855,7 +2855,7 @@ void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 
 PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
-    Int32 index)
+    int32_t index)
 {
     if (!s_Graphics.initialized || !swapchain || index < 0) {
         return nullptr;
@@ -2867,7 +2867,7 @@ PalImage* PAL_CALL palGetSwapchainImage(
 PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchain* swapchain,
     PalSwapchainNextImageInfo* info,
-    Uint32* outIndex)
+    uint32_t* outIndex)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2897,8 +2897,8 @@ PalResult PAL_CALL palPresentSwapchain(
 
 PalResult PAL_CALL palResizeSwapchain(
     PalSwapchain* swapchain,
-    Uint32 newWidth,
-    Uint32 newHeight)
+    uint32_t newWidth,
+    uint32_t newHeight)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -2985,7 +2985,7 @@ void PAL_CALL palDestroyFence(PalFence* fence)
 
 PalResult PAL_CALL palWaitFence(
     PalFence* fence,
-    Uint64 timeout)
+    uint64_t timeout)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3057,8 +3057,8 @@ void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
 
 PalResult PAL_CALL palWaitSemaphore(
     PalSemaphore* semaphore,
-    Uint64 value,
-    Uint64 timeout)
+    uint64_t value,
+    uint64_t timeout)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3074,7 +3074,7 @@ PalResult PAL_CALL palWaitSemaphore(
 PalResult PAL_CALL palSignalSemaphore(
     PalSemaphore* semaphore,
     PalQueue* queue,
-    Uint64 value)
+    uint64_t value)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3089,7 +3089,7 @@ PalResult PAL_CALL palSignalSemaphore(
 
 PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore,
-    Uint64* outValue)
+    uint64_t* outValue)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3276,9 +3276,9 @@ PalResult PAL_CALL palCmdSetFragmentShadingRate(
 
 PalResult PAL_CALL palCmdDrawMeshTasks(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3294,7 +3294,7 @@ PalResult PAL_CALL palCmdDrawMeshTasks(
 PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 drawCount)
+    uint32_t drawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3311,7 +3311,7 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3472,7 +3472,7 @@ PalResult PAL_CALL palCmdBindPipeline(
 
 PalResult PAL_CALL palCmdSetViewport(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalViewport* viewports)
 {
     if (!s_Graphics.initialized) {
@@ -3488,7 +3488,7 @@ PalResult PAL_CALL palCmdSetViewport(
 
 PalResult PAL_CALL palCmdSetScissors(
     PalCommandBuffer* cmdBuffer,
-    Uint32 count,
+    uint32_t count,
     PalRect2D* scissors)
 {
     if (!s_Graphics.initialized) {
@@ -3504,10 +3504,10 @@ PalResult PAL_CALL palCmdSetScissors(
 
 PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
-    Uint32 firstSlot,
-    Uint32 count,
+    uint32_t firstSlot,
+    uint32_t count,
     PalBuffer** buffers,
-    Uint64* offsets)
+    uint64_t* offsets)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3528,7 +3528,7 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
 PalResult PAL_CALL palCmdBindIndexBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint64 offset,
+    uint64_t offset,
     PalIndexType type)
 {
     if (!s_Graphics.initialized) {
@@ -3544,10 +3544,10 @@ PalResult PAL_CALL palCmdBindIndexBuffer(
 
 PalResult PAL_CALL palCmdDraw(
     PalCommandBuffer* cmdBuffer,
-    Uint32 vertexCount,
-    Uint32 instanceCount,
-    Uint32 firstVertex,
-    Uint32 firstInstance)
+    uint32_t vertexCount,
+    uint32_t instanceCount,
+    uint32_t firstVertex,
+    uint32_t firstInstance)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3564,7 +3564,7 @@ PalResult PAL_CALL palCmdDraw(
 PalResult PAL_CALL palCmdDrawIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count)
+    uint32_t count)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3581,7 +3581,7 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3600,11 +3600,11 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
 
 PalResult PAL_CALL palCmdDrawIndexed(
     PalCommandBuffer* cmdBuffer,
-    Uint32 indexCount,
-    Uint32 instanceCount,
-    Uint32 firstIndex,
-    Int32 vertexOffset,
-    Uint32 firstInstance)
+    uint32_t indexCount,
+    uint32_t instanceCount,
+    uint32_t firstIndex,
+    int32_t vertexOffset,
+    uint32_t firstInstance)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3626,7 +3626,7 @@ PalResult PAL_CALL palCmdDrawIndexed(
 PalResult PAL_CALL palCmdDrawIndexedIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    Uint32 count)
+    uint32_t count)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3643,7 +3643,7 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
-    Uint32 maxDrawCount)
+    uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3724,9 +3724,9 @@ PalResult PAL_CALL palCmdBufferBarrier(
 
 PalResult PAL_CALL palCmdDispatch(
     PalCommandBuffer* cmdBuffer,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3741,12 +3741,12 @@ PalResult PAL_CALL palCmdDispatch(
 
 PalResult PAL_CALL palCmdDispatchBase(
     PalCommandBuffer* cmdBuffer,
-    Uint32 baseGroupX,
-    Uint32 baseGroupY,
-    Uint32 baseGroupZ,
-    Uint32 groupCountX,
-    Uint32 groupCountY,
-    Uint32 groupCountZ)
+    uint32_t baseGroupX,
+    uint32_t baseGroupY,
+    uint32_t baseGroupZ,
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3784,10 +3784,10 @@ PalResult PAL_CALL palCmdDispatchIndirect(
 PalResult PAL_CALL palCmdTraceRays(
     PalCommandBuffer* cmdBuffer,
     PalShaderBindingTable* sbt,
-    Uint32 raygenIndex,
-    Uint32 width,
-    Uint32 height,
-    Uint32 depth)
+    uint32_t raygenIndex,
+    uint32_t width,
+    uint32_t height,
+    uint32_t depth)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -3802,7 +3802,7 @@ PalResult PAL_CALL palCmdTraceRays(
 
 PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
-    Uint32 raygenIndex,
+    uint32_t raygenIndex,
     PalShaderBindingTable* sbt,
     PalBuffer* buffer)
 {
@@ -3819,7 +3819,7 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
 
 PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
-    Uint32 setIndex,
+    uint32_t setIndex,
     PalDescriptorSet* set)
 {
     if (!s_Graphics.initialized) {
@@ -3838,10 +3838,10 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
 
 PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
-    Uint32 shaderStageCount,
+    uint32_t shaderStageCount,
     PalShaderStage* shaderStages,
-    Uint32 offset,
-    Uint32 size,
+    uint32_t offset,
+    uint32_t size,
     const void* value)
 {
     if (!s_Graphics.initialized) {
@@ -4072,8 +4072,8 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
 
 PalResult PAL_CALL palComputeInstanceBufferRequirements(
     PalDevice* device,
-    Uint32 instanceCount,
-    Uint64* outSize)
+    uint32_t instanceCount,
+    uint64_t* outSize)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -4093,9 +4093,9 @@ PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
-    Uint32* outBufferRowLength,
-    Uint32* outBufferImageHeight,
-    Uint64* outSize)
+    uint32_t* outBufferRowLength,
+    uint32_t* outBufferImageHeight,
+    uint64_t* outSize)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -4126,7 +4126,7 @@ PalResult PAL_CALL palWriteToInstanceBuffer(
     PalDevice* device,
     void* ptr,
     PalAccelerationStructureInstance* instances,
-    Uint32 instanceCount)
+    uint32_t instanceCount)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -4174,7 +4174,7 @@ PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
 PalResult PAL_CALL palBindBufferMemory(
     PalBuffer* buffer,
     PalMemory* memory,
-    Uint64 offset)
+    uint64_t offset)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
@@ -4189,8 +4189,8 @@ PalResult PAL_CALL palBindBufferMemory(
 
 PalResult PAL_CALL palMapBufferMemory(
     PalBuffer* buffer,
-    Uint64 offset,
-    Uint64 size,
+    uint64_t offset,
+    uint64_t size,
     void** outPtr)
 {
     if (!s_Graphics.initialized) {
@@ -4332,7 +4332,7 @@ PalResult PAL_CALL palAllocateDescriptorSet(
 
 PalResult PAL_CALL palUpdateDescriptorSet(
     PalDevice* device,
-    Uint32 count,
+    uint32_t count,
     PalDescriptorSetWriteInfo* infos)
 {
     if (!s_Graphics.initialized) {
@@ -4518,7 +4518,7 @@ void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt)
 
 PalResult PAL_CALL palUpdateShaderBindingTable(
     PalShaderBindingTable* sbt, 
-    Uint32 count,
+    uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
     if (!s_Graphics.initialized) {
@@ -4542,7 +4542,7 @@ PalResult PAL_CALL palUpdateShaderBindingTable(
 
 bool PAL_CALL palBuildWorkGroupInfo(
     const PalWorkGroupBuildData* data,
-    Int32* count,
+    int32_t* count,
     PalWorkGroupInfo* infos)
 {
     if (!data) {
@@ -4553,10 +4553,10 @@ bool PAL_CALL palBuildWorkGroupInfo(
         return false;
     }
 
-    Uint32 workGroupCount[3];
-    Uint32 groupInfoCount[3];
+    uint32_t workGroupCount[3];
+    uint32_t groupInfoCount[3];
     for (int i = 0; i < 3; i++) {
-        Uint32 tmp = _ceil(data->workCount[i], data->workGroupSize[i]);
+        uint32_t tmp = _ceil(data->workCount[i], data->workGroupSize[i]);
         workGroupCount[i] = tmp;
         groupInfoCount[i] = _ceil(tmp, data->workGroupCount[i]);
     }
@@ -4571,7 +4571,7 @@ bool PAL_CALL palBuildWorkGroupInfo(
     for (int i = 0; i < *count; i++) {
         PalWorkGroupInfo* buildInfo = &infos[i];
         // find index
-        Uint32 index[3];
+        uint32_t index[3];
         index[0] = i % groupInfoCount[0];
         index[1] = (i / groupInfoCount[0]) % groupInfoCount[1];
         index[2] = i / (groupInfoCount[0] * groupInfoCount[1]);
@@ -4582,7 +4582,7 @@ bool PAL_CALL palBuildWorkGroupInfo(
             buildInfo->workGroupBase[j] = index[j] * data->workGroupCount[j];
             buildInfo->workGroupBase[j] = index[j] * data->workGroupCount[j];
 
-            Uint32 tmp = workGroupCount[j] - buildInfo->workGroupBase[j];
+            uint32_t tmp = workGroupCount[j] - buildInfo->workGroupBase[j];
             buildInfo->workGroupCount[j] = _min(data->workGroupCount[j], tmp);
         }
     }

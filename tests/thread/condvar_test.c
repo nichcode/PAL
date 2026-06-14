@@ -10,7 +10,7 @@ static PalCondVar* g_Condition;
 
 typedef struct {
     bool ready;
-    Uint32 id;
+    uint32_t id;
 } ThreadData;
 
 static void* PAL_CALL worker(void* arg)
@@ -61,7 +61,7 @@ bool condvarTest()
     createInfo.entry = worker;      // will be the same for all threads
     createInfo.stackSize = 0;       // same for all threads
     createInfo.allocator = nullptr; // default
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
+    for (int32_t i = 0; i < THREAD_COUNT; i++) {
         ThreadData* threadData = &data[i];
         threadData->id = i + 1;
         threadData->ready = false;
@@ -97,7 +97,7 @@ bool condvarTest()
 
     // broadcast to all remaining threads
     palLockMutex(g_Mutex);
-    for (Int32 i = 1; i < THREAD_COUNT; i++) {
+    for (int32_t i = 1; i < THREAD_COUNT; i++) {
         data[i].ready = true;
     }
 
@@ -106,7 +106,7 @@ bool condvarTest()
 
     // wait for the remaining threads
     // joint threads does not need to be detached
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
+    for (int32_t i = 0; i < THREAD_COUNT; i++) {
         palJoinThread(threads[i], nullptr);
         palLog(nullptr, "Thread %d finished successfully", data[i].id);
     }

@@ -52,10 +52,10 @@ bool cursorTest()
 
     // simple checkerboard RGBA pixel buffer
     // every block contains 64 pixels
-    Uint8 pixels[32 * 32 * 4]; // size is 32 and we have 4 channles
-    for (Int32 y = 0; y < 32; ++y) {
-        for (Int32 x = 0; x < 32; ++x) {
-            Int32 i = (y * 32 + x) * 4;
+    uint8_t pixels[32 * 32 * 4]; // size is 32 and we have 4 channles
+    for (int32_t y = 0; y < 32; ++y) {
+        for (int32_t x = 0; x < 32; ++x) {
+            int32_t i = (y * 32 + x) * 4;
             int checker = ((x / 8) ^ (y / 8)) & 1;
             if (checker) {
                 pixels[i + 0] = 255; // Red bit

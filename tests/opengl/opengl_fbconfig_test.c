@@ -28,7 +28,7 @@ bool openglFBConfigTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    Int32 fbCount = 0;
+    int32_t fbCount = 0;
     result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
@@ -60,7 +60,7 @@ bool openglFBConfigTest()
 
     // log configs
     palLog(nullptr, "");
-    for (Int32 i = 0; i < fbCount; i++) {
+    for (int32_t i = 0; i < fbCount; i++) {
         // log pixel formate
         PalGLFBConfig* config = &fbConfigs[i];
         palLog(nullptr, "FB Config Index: %d", config->index);

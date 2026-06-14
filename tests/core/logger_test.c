@@ -28,12 +28,12 @@ static void PAL_CALL onLogger(
 bool loggerTest()
 {
     PalLogger loggers[LOGGER_COUNT];
-    for (Int32 i = 0; i < LOGGER_COUNT; i++) {
+    for (int32_t i = 0; i < LOGGER_COUNT; i++) {
         loggers[i].callback = onLogger;
         loggers[i].userData = (void*)g_LoggerNames[i];
     }
 
-    for (Int32 i = 0; i < LOGGER_COUNT; i++) {
+    for (int32_t i = 0; i < LOGGER_COUNT; i++) {
         // push a log message to all loggers
         palLog(&loggers[i], "This is directed to a logger");
     }

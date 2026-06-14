@@ -76,7 +76,7 @@ PalResult PAL_CALL palWaitCondVar(
 PalResult PAL_CALL palWaitCondVarTimeout(
     PalCondVar* condVar,
     PalMutex* mutex,
-    Uint64 milliseconds)
+    uint64_t milliseconds)
 {
     if (!condVar || !mutex) {
         return PAL_RESULT_NULL_POINTER;

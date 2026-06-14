@@ -22,7 +22,7 @@
  *
  * @since 1.0
  */
-typedef Uint32 PalTLSId;
+typedef uint32_t PalTLSId;
 
 /**
  * @typedef PaTlsDestructorFn

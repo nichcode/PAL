@@ -7,7 +7,7 @@
 
 typedef struct {
     PalMutex* mutex;
-    Int32 counter;
+    int32_t counter;
 } SharedData;
 
 static void* PAL_CALL worker(void* arg)
@@ -16,7 +16,7 @@ static void* PAL_CALL worker(void* arg)
 
     // this is only needed when two or more threads are writing to the same
     // variable
-    for (Int32 i = 0; i < MAX_COUNTER; i++) {
+    for (int32_t i = 0; i < MAX_COUNTER; i++) {
         palLockMutex(data->mutex);
         data->counter++; // a shared variable. we need lock and unlocks
         palLog(nullptr, "Counter: %d", data->counter);
@@ -53,7 +53,7 @@ bool mutexTest()
     createInfo.entry = worker;      // will be the same for all threads
     createInfo.stackSize = 0;       // same for all threads
     createInfo.allocator = nullptr; // default
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
+    for (int32_t i = 0; i < THREAD_COUNT; i++) {
         createInfo.arg = (void*)data;
 
         // create thread
@@ -67,7 +67,7 @@ bool mutexTest()
 
     // join the threads to main thread
     // joint threads does not need to be detached
-    for (Int32 i = 0; i < THREAD_COUNT; i++) {
+    for (int32_t i = 0; i < THREAD_COUNT; i++) {
         palJoinThread(threads[i], nullptr);
     }
 
