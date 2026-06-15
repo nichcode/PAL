@@ -1,6 +1,6 @@
 
-#include "pal/pal_thread.h"
 #include "tests.h"
+#include "pal/pal_thread.h"
 
 #define THREAD_COUNT 4
 
@@ -37,23 +37,21 @@ PalBool condvarTest()
     data = palAllocate(nullptr, sizeof(ThreadData) * THREAD_COUNT, 0);
     if (!data) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     // create mutex
     result = palCreateMutex(nullptr, &g_Mutex);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create mutex: %s", error);
-        return false;
+        logResult(result, "Failed to create mutex");
+        return PAL_FALSE;
     }
 
     // create condition
     result = palCreateCondVar(nullptr, &g_Condition);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create cond var: %s", error);
-        return false;
+        logResult(result, "Failed to create condition variable");
+        return PAL_FALSE;
     }
 
     // create threads
@@ -64,14 +62,13 @@ PalBool condvarTest()
     for (int32_t i = 0; i < THREAD_COUNT; i++) {
         ThreadData* threadData = &data[i];
         threadData->id = i + 1;
-        threadData->ready = false;
+        threadData->ready = PAL_FALSE;
         createInfo.arg = (void*)threadData;
 
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create thread: %s", error);
-            return false;
+            logResult(result, "Failed to create thread");
+            return PAL_FALSE;
         }
 
         // since thread priority is not supported on all platforms
@@ -87,7 +84,7 @@ PalBool condvarTest()
 
     // signal thread 1
     palLockMutex(g_Mutex);
-    data[0].ready = true;
+    data[0].ready = PAL_TRUE;
     palSignalCondVar(g_Condition);
     palUnlockMutex(g_Mutex);
 
@@ -98,7 +95,7 @@ PalBool condvarTest()
     // broadcast to all remaining threads
     palLockMutex(g_Mutex);
     for (int32_t i = 1; i < THREAD_COUNT; i++) {
-        data[i].ready = true;
+        data[i].ready = PAL_TRUE;
     }
 
     palBroadcastCondVar(g_Condition);
@@ -112,5 +109,5 @@ PalBool condvarTest()
     }
 
     palFree(nullptr, data);
-    return true;
+    return PAL_TRUE;
 }

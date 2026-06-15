@@ -5,7 +5,8 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal/thread/tls.h"
+#ifdef __linux__
+#include "pal/pal_thread.h"
 #include <pthread.h>
 
 PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor)
@@ -33,3 +34,5 @@ void PAL_CALL palSetTLS(
 {
     pthread_setspecific((pthread_key_t)id, data);
 }
+
+#endif // __linux__

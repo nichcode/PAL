@@ -1,5 +1,5 @@
 
-#include "pal/pal_core.h"
+#include "tests.h"
 #include "pal/pal_thread.h"
 
 // data every thread will have its own copy of
@@ -57,14 +57,14 @@ PalBool tlsTest()
     PalTLSId tlsID = palCreateTLS(TlsDestructor);
     if (tlsID == 0) {
         palLog(nullptr, "Failed to create TLS");
-        return false;
+        return PAL_FALSE;
     }
 
     // allocate thread data
     ThreadData* threadData = palAllocate(nullptr, sizeof(ThreadData), 0);
     if (!threadData) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
     threadData->tlsId = tlsID;
 
@@ -77,9 +77,8 @@ PalBool tlsTest()
 
     PalResult result = palCreateThread(&info, &thread);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create thread: %s", error);
-        return false;
+        logResult(result, "Failed to create thread");
+        return PAL_FALSE;
     }
 
     // join thread
@@ -90,5 +89,5 @@ PalBool tlsTest()
     palDestroyTLS(tlsID);
 
     palFree(nullptr, threadData);
-    return true;
+    return PAL_TRUE;
 }

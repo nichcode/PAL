@@ -12,7 +12,7 @@ PAL_BUILD_ABI_DUMP = true
 PAL_BUILD_SYSTEM_MODULE = false
 
 -- build thread module
-PAL_BUILD_THREAD_MODULE = false
+PAL_BUILD_THREAD_MODULE = true
 
 -- build video module
 PAL_BUILD_VIDEO_MODULE = false

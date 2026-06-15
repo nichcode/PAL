@@ -1,6 +1,6 @@
 
-#include "pal/pal_thread.h"
 #include "tests.h"
+#include "pal/pal_thread.h"
 
 #define MAX_COUNTER 10000
 #define THREAD_COUNT 2
@@ -34,15 +34,14 @@ PalBool mutexTest()
     SharedData* data = palAllocate(nullptr, sizeof(SharedData), 0);
     if (!data) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     // create mutex
     result = palCreateMutex(nullptr, &mutex);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create mutex: %s", error);
-        return false;
+        logResult(result, "Failed to create mutex");
+        return PAL_FALSE;
     }
 
     data->counter = 0;
@@ -59,9 +58,8 @@ PalBool mutexTest()
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create thread: %s", error);
-            return false;
+            logResult(result, "Failed to create thread");
+            return PAL_FALSE;
         }
     }
 
@@ -77,5 +75,5 @@ PalBool mutexTest()
     palLog(nullptr, "Final Counter: %d", data->counter);
     palFree(nullptr, data);
 
-    return true;
+    return PAL_TRUE;
 }

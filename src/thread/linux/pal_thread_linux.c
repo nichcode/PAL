@@ -5,13 +5,13 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
+#ifdef __linux__
 #define _GNU_SOURCE
-#define _POSIX_C_SOURCE 200112L
-#include "pal/thread/thread.h"
-#include <pthread.h>
-#include <errno.h>
+#include "pal_thread_common_linux.h"
+#include "pal_shared.h"
 #include <sys/resource.h>
 #include <unistd.h>
+#include <sched.h>
 
 #define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
@@ -21,19 +21,28 @@ PalResult PAL_CALL palCreateThread(
     PalThread** outThread)
 {
     if (!info || !outThread) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     if (info->allocator) {
         if (!info->allocator->allocate && !info->allocator->free) {
-            return PAL_RESULT_INVALID_ALLOCATOR;
+            return palMakeResult(
+                PAL_RESULT_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
         }
     }
 
     pthread_t thread;
     if (info->stackSize == 0) {
         if (pthread_create(&thread, nullptr, info->entry, info->arg) != 0) {
-            return PAL_RESULT_PLATFORM_FAILURE;
+            return palMakeResult(
+                PAL_RESULT_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
         }
 
     } else {
@@ -42,7 +51,10 @@ PalResult PAL_CALL palCreateThread(
         pthread_attr_setstacksize(&attr, info->stackSize);
 
         if (pthread_create(&thread, nullptr, info->entry, info->arg) != 0) {
-            return PAL_RESULT_PLATFORM_FAILURE;
+            return palMakeResult(
+                PAL_RESULT_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
         }
         pthread_attr_destroy(&attr);
     }
@@ -53,28 +65,31 @@ PalResult PAL_CALL palCreateThread(
 
 PalResult PAL_CALL palJoinThread(
     PalThread* thread,
-    void* retval)
+    void** retval)
 {
     if (!thread) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     int ret = 0;
-    void* value = nullptr;
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     if (retval) {
-        ret = pthread_join(_thread, &value);
-        void** out = (void**)retval;
-        *out = value;
-
+        ret = pthread_join(_thread, retval);
     } else {
         ret = pthread_join(_thread, nullptr);
     }
 
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
+
     } else {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 }
 
@@ -166,14 +181,20 @@ PalResult PAL_CALL palGetThreadName(
     char* outBuffer)
 {
     if (!thread) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     // see if user provided a buffer and write to it
     if (outBuffer && bufferSize > 0) {
         pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
         if (pthread_getname_np(_thread, outBuffer, bufferSize) != 0) {
-            return PAL_RESULT_INVALID_THREAD;
+            return palMakeResult(
+                PAL_RESULT_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
         }
     }
 
@@ -185,7 +206,10 @@ PalResult PAL_CALL palSetThreadPriority(
     PalThreadPriority priority)
 {
     if (!thread) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     switch (priority) {
@@ -205,7 +229,10 @@ PalResult PAL_CALL palSetThreadPriority(
             pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
             int ret = pthread_setschedparam(_thread, SCHED_FIFO, &param);
             if (ret == EPERM) {
-                return PAL_RESULT_ACCESS_DENIED;
+                return palMakeResult(
+                    PAL_RESULT_INVALID_OPERATION, 
+                    PAL_RESULT_SOURCE_LINUX, 
+                    errno);
             }
         }
     }
@@ -218,7 +245,10 @@ PalResult PAL_CALL palSetThreadAffinity(
     uint64_t mask)
 {
     if (!thread) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     cpu_set_t cpuset;
@@ -234,8 +264,12 @@ PalResult PAL_CALL palSetThreadAffinity(
     int ret = pthread_setaffinity_np(_thread, sizeof(cpuset), &cpuset);
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
+
     } else {
-        return PAL_RESULT_INVALID_THREAD;
+        return palMakeResult(
+            PAL_RESULT_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 }
 
@@ -244,14 +278,23 @@ PalResult PAL_CALL palSetThreadName(
     const char* name)
 {
     if (!thread || !name) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     int ret = pthread_setname_np(_thread, name);
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
+
     } else {
-        return PAL_RESULT_INVALID_THREAD;
+        return palMakeResult(
+            PAL_RESULT_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 }
+
+#endif // __linux__

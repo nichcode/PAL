@@ -1,5 +1,5 @@
 
-#include "pal/pal_core.h"
+#include "tests.h"
 #include "pal/pal_thread.h"
 
 #define THREAD_TIME 1000
@@ -32,9 +32,8 @@ PalBool threadTest()
         // create thread
         result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create thread: %s", error);
-            return false;
+            logResult(result, "Failed to create thread");
+            return PAL_FALSE;
         }
     }
 
@@ -44,12 +43,11 @@ PalBool threadTest()
         // joint threads does not need to be detached
         result = palJoinThread(threads[i], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to join threads: %s", error);
-            return false;
+            logResult(result, "Failed to join threads");
+            return PAL_FALSE;
         }
     }
 
     palLog(nullptr, "All threads finished successfully");
-    return true;
+    return PAL_TRUE;
 }

@@ -7,6 +7,7 @@
 
 /**
  * @defgroup pal_core Core
+ * @ingroup pal_core
  * @{
  */
 
