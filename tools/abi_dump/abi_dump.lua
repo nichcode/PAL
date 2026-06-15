@@ -8,6 +8,7 @@ project "pal-abi-dump"
     files {
         "core_abi_dump.c",
         "event_abi_dump.c",
+        "thread_abi_dump.c",
         "abi_dump_main.c"
     }
 

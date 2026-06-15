@@ -1,4 +1,10 @@
 
+/**
+ PAL - Prime Abstraction Layer
+ Copyright (C) 2025
+ Licensed under the Zlib license. See LICENSE file in root.
+ */
+
 #include "dumps.h"
 
 #define VERSION "1.0"
@@ -61,16 +67,26 @@ int main(int argc, char** argv)
         dumpEventABI();
     }
 
+    if (dumpThread) {
+        dumpThreadABI();
+    }
+
     if (dumpVersion) {
         palLog(nullptr, "PAL ABI dump %s", VERSION);
     }
 
     if (dumpHelp) {
         palLog(nullptr, "USAGE: %s [options]", EXE_NAME);
-        palLog(nullptr, "Options:"); // 10 spaces
+        palLog(nullptr, "Options:");
         palLog(nullptr, "  --help          Display available options");
         palLog(nullptr, "  --version       Display ABI dump version information");
-        palLog(nullptr, "  --core          Display PAL core system structs ABI information");
+        palLog(nullptr, "  --core          Display PAL core structs ABI information");
+        palLog(nullptr, "  --event         Display PAL event structs ABI information");
+        palLog(nullptr, "  --graphics      Display PAL graphics structs ABI information");
+        palLog(nullptr, "  --opengl        Display PAL opengl structs ABI information");
+        palLog(nullptr, "  --system        Display PAL system structs ABI information");
+        palLog(nullptr, "  --thread        Display PAL thread structs ABI information");
+        palLog(nullptr, "  --video         Display PAL video structs ABI information");
     }
 
     return 0;

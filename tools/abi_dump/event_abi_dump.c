@@ -1,4 +1,10 @@
 
+/**
+ PAL - Prime Abstraction Layer
+ Copyright (C) 2025
+ Licensed under the Zlib license. See LICENSE file in root.
+ */
+
 #include "dumps.h"
 #include "pal/pal_event.h"
 
@@ -137,7 +143,7 @@ void dumpEventABI()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Event System ABI Dump");
+    palLog(nullptr, "Event ABI Dump");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 

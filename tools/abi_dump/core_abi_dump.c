@@ -1,4 +1,10 @@
 
+/**
+ PAL - Prime Abstraction Layer
+ Copyright (C) 2025
+ Licensed under the Zlib license. See LICENSE file in root.
+ */
+
 #include "dumps.h"
 
 static void versionDump()
@@ -124,7 +130,7 @@ void dumpCoreABI()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
-    palLog(nullptr, "Core System ABI Dump");
+    palLog(nullptr, "Core ABI Dump");
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 

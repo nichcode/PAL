@@ -1,4 +1,10 @@
 
+/**
+ PAL - Prime Abstraction Layer
+ Copyright (C) 2025
+ Licensed under the Zlib license. See LICENSE file in root.
+ */
+
 #ifndef _DUMPS_H
 #define _DUMPS_H
 
@@ -16,5 +22,6 @@ static const char* s_PassedString = "PASSED";
 
 void dumpCoreABI();
 void dumpEventABI();
+void dumpThreadABI();
 
 #endif // _DUMPS_H
