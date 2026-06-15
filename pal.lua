@@ -27,7 +27,8 @@ project "PAL"
         "src/core/pal_version.c",
 
         -- event
-        -- "src/pal_event.c"
+        "src/event/pal_default_queue.c",
+        "src/event/pal_event.c"
     }
 
     filter {"system:windows", "configurations:*"}

@@ -37,6 +37,13 @@ static PalBool readFile(
     return PAL_TRUE;
 }
 
+static inline void logResult(PalResult result, const char* msg)
+{
+    char buffer[256];
+    palFormatResult(result, 256, buffer);
+    palLog(nullptr, "%s \n %s", msg, buffer);
+}
+
 // core tests
 PalBool loggerTest();
 PalBool timeTest();

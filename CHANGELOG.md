@@ -129,6 +129,7 @@ palJoinThread(thread, &retval);
 - **Core:** Added **PAL_RESULT_NOT_INITIALIZED** result code.
 - **Core:** Added **PAL_RESULT_DEVICE_LOST** result code.
 - **Core:** Added **PAL_RESULT_OUT_OF_DATE** result code.
+- **Core:** Added **palGetResultCode()**.
 
 - **Graphics:** Added **Graphics System To PAL**.
 
@@ -146,6 +147,7 @@ palJoinThread(thread, &retval);
 - **Core:** Rename **Uint64** to **uint64_t**.
 - **Core:** Rename **UintPtr** to **uintptr_t**.
 - **Core:** **palFormatResult()** now takes two additional parameters.
+- **Core:** **palGetVersion()** now takes a parameter and returns nothing.
 
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
 

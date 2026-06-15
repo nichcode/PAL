@@ -12,13 +12,13 @@
 #define PAL_VERSION_BUILD 0
 #define PAL_VERSION_STRING "2.0.0"
 
-PalVersion PAL_CALL palGetVersion()
+void PAL_CALL palGetVersion(PalVersion* version)
 {
-    PalVersion version = {0};
-    version.major = PAL_VERSION_MAJOR;
-    version.minor = PAL_VERSION_MINOR;
-    version.build = PAL_VERSION_BUILD;
-    return version;
+    if (version) {
+        version->major = PAL_VERSION_MAJOR;
+        version->minor = PAL_VERSION_MINOR;
+        version->build = PAL_VERSION_BUILD;
+    }
 }
 
 const char* PAL_CALL palGetVersionString()

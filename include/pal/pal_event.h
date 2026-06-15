@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup pal_event Event System
+ * @defgroup pal_event Event
  * @ingroup pal_event
  * @{
  */
@@ -15,6 +15,227 @@
 #define _PAL_EVENT_H
 
 #include "pal/pal_core.h"
+
+#define PAL_DECORATION_MODE_CLIENT_SIDE 0
+#define PAL_DECORATION_MODE_SERVER_SIDE 1
+
+/**
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_CLOSE 0
+
+/**
+ * event.data : lower 32 bits = width, upper 32 bits = height
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_SIZE 1
+
+/**
+ * event.data : lower 32 bits = x, upper 32 bits = y
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackInt32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_MOVE 2
+
+/**
+ * event.data : state(minimized, maximized, restored).
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_STATE 3
+
+/**
+ * event.data : `true` for focus gained or `false` for focus lost.
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_FOCUS 4
+
+/**
+ * event.data : `true` for visible or `false` for hidden.
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_VISIBILITY 5
+
+/**
+ * event.data2 : window
+ */
+#define PAL_EVENT_WINDOW_MODAL_BEGIN 6
+
+/**
+ * event.data2 : window
+ */
+#define PAL_EVENT_WINDOW_MODAL_END 7
+
+/**
+ * event.data2 : window
+ */
+#define PAL_EVENT_MONITOR_DPI_CHANGED 8
+
+/**
+ * event.data2 : window
+ */
+#define PAL_EVENT_MONITOR_LIST_CHANGED 9
+
+/**
+ * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_KEYDOWN 10
+
+/**
+ * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_KEYREPEAT 11
+
+/**
+ * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_KEYUP 12
+
+/**
+ * event.data : lower 32 bits = button, upper 32 bits = serial
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_MOUSE_BUTTONDOWN 13
+
+/**
+ * event.data : lower 32 bits = button, upper 32 bits = serial
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_MOUSE_BUTTONUP 14
+
+/**
+ * event.data : lower 32 bits = x, upper 32 bits = y
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackInt32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_MOUSE_MOVE 15
+
+/**
+ * event.data : lower 32 bits = dx, upper 32 bits = dy
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackInt32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_MOUSE_DELTA 16
+
+/**
+ * event.data : lower 32 bits = dx, upper 32 bits = dy
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackInt32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_MOUSE_WHEEL 17
+
+/**
+ * event.userId : User event ID or type.
+ *
+ * Use inline helpers:
+ * - palPackInt32()
+ * - palPackUint32()
+ * - palPackPointer()
+ * - palUnpackInt32()
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_USER 18
+
+/**
+ * event.data : codepoint
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_KEYCHAR 19
+
+/**
+ * event.data : negotiated decorations mode
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_WINDOW_DECORATION_MODE 20
+
+#define PAL_EVENT_MAX 21
+
+/**
+ * No dispatch.
+ */
+#define PAL_DISPATCH_NONE 0
+
+/**
+ * Dispatch to event callback.
+ */
+#define PAL_DISPATCH_CALLBACK 1
+
+/**
+ * Dispatch to event queue.
+ */
+#define PAL_DISPATCH_POLL 2
+
+#define PAL_DISPATCH_MAX
 
 /**
  * @struct PalEventDriver
@@ -31,6 +252,39 @@ typedef struct PalEventDriver PalEventDriver;
  * @since 1.0
  */
 typedef struct PalEvent PalEvent;
+
+/**
+ * @typedef PalDecorationMode
+ * @brief Decoration types. This is not a bitmask enum.
+ *
+ * All decoration types follow the format `PAL_DECORATION_MODE_**` for
+ * consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalDecorationMode;
+
+/**
+ * @typedef PalEventType
+ * @brief Event types. This is not a bitmask enum.
+ *
+ * All event types follow the format `PAL_EVENT_**` for consistency and
+ * API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalEventType;
+
+/**
+ * @typedef PalDispatchMode
+ * @brief Dispatch types for an event. This is not a bitmask enum.
+ *
+ * All dispatch modes follow the format `PAL_DISPATCH_**` for consistency
+ * and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalDispatchMode;
 
 /**
  * @typedef PalEventCallback
@@ -78,303 +332,11 @@ typedef PalBool(PAL_CALL* PalPollFn)(
     void* userData,
     PalEvent* outEvent);
 
-/**
- * @enum PalDecorationMode
- * @brief Decoration types. This is not a bitmask enum.
- *
- * All decoration types follow the format `PAL_DECORATION_MODE_**` for
- * consistency and API use.
- *
- * @since 1.3
- */
-typedef enum {
-    PAL_DECORATION_MODE_CLIENT_SIDE,
-    PAL_DECORATION_MODE_SERVER_SIDE
-} PalDecorationMode;
-
-/**
- * @enum PalEventType
- * @brief Event types. This is not a bitmask enum.
- *
- * All event types follow the format `PAL_EVENT_**` for consistency and
- * API use.
- *
- * @since 1.0
- */
-typedef enum {
-    /**
-     * PAL_EVENT_WINDOW_CLOSE
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_CLOSE,
-
-    /**
-     * PAL_EVENT_WINDOW_SIZE
-     *
-     * event.data : lower 32 bits = width, upper 32 bits = height
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackUint32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_SIZE,
-
-    /**
-     * PAL_EVENT_WINDOW_MOVE
-     *
-     * event.data : lower 32 bits = x, upper 32 bits = y
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackInt32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_MOVE,
-
-    /**
-     * PAL_EVENT_WINDOW_STATE
-     *
-     * event.data : state(minimized, maximized, restored).
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_STATE,
-
-    /**
-     * PAL_EVENT_WINDOW_FOCUS
-     *
-     * event.data : `true` for focus gained or `false` for focus lost.
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_FOCUS,
-
-    /**
-     * PAL_EVENT_WINDOW_VISIBILITY
-     *
-     * event.data : `true` for visible or `false` for hidden.
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_VISIBILITY,
-
-    /**
-     * @brief WM_ENTERSIZEMOVE (Windows Only).
-     *
-     * PAL_EVENT_WINDOW_MODAL_BEGIN
-     *
-     * event.data2 : window
-     */
-    PAL_EVENT_WINDOW_MODAL_BEGIN,
-
-    /**
-     * @brief WM_EXITSIZEMOVE (Windows Only).
-     *
-     * PAL_EVENT_WINDOW_MODAL_END
-     *
-     * event.data2 : window
-     */
-    PAL_EVENT_WINDOW_MODAL_END,
-
-    /**
-     * PAL_EVENT_MONITOR_DPI_CHANGED
-     *
-     * event.data2 : window
-     */
-    PAL_EVENT_MONITOR_DPI_CHANGED,
-
-    /**
-     * @brief Monitor list changed
-     *
-     * PAL_EVENT_MONITOR_LIST_CHANGED
-     *
-     * event.data2 : window
-     */
-    PAL_EVENT_MONITOR_LIST_CHANGED,
-
-    /**
-     * PAL_EVENT_KEYDOWN
-     *
-     * event.data : lower 32 bits = keycode, upper 32 bits = scancode
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackUint32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_KEYDOWN,
-
-    /**
-     * PAL_EVENT_KEYREPEAT
-     *
-     * event.data : lower 32 bits = keycode, upper 32 bits = scancode
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackUint32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_KEYREPEAT,
-
-    /**
-     * PAL_EVENT_KEYUP
-     *
-     * event.data : lower 32 bits = keycode, upper 32 bits = scancode
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackUint32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_KEYUP,
-
-    /**
-     * PAL_EVENT_MOUSE_BUTTONDOWN
-     *
-     * event.data : lower 32 bits = button, upper 32 bits = serial
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_MOUSE_BUTTONDOWN,
-
-    /**
-     * PAL_EVENT_MOUSE_BUTTONUP
-     *
-     * event.data : lower 32 bits = button, upper 32 bits = serial
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_MOUSE_BUTTONUP,
-
-    /**
-     * PAL_EVENT_MOUSE_MOVE
-     *
-     * event.data : lower 32 bits = x, upper 32 bits = y
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackInt32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_MOUSE_MOVE,
-
-    /**
-     * @brief Mouse movement delta.
-     *
-     * PAL_EVENT_MOUSE_DELTA
-     *
-     * event.data : lower 32 bits = dx, upper 32 bits = dy
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackInt32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_MOUSE_DELTA,
-
-    /**
-     * PAL_EVENT_MOUSE_WHEEL
-     *
-     * event.data : lower 32 bits = dx, upper 32 bits = dy
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackInt32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_MOUSE_WHEEL,
-
-    /**
-     * PAL_EVENT_USER
-     *
-     * event.userId : User event ID or type.
-     *
-     * Use inline helpers:
-     * - palPackInt32()
-     * - palPackUint32()
-     * - palPackPointer()
-     * - palUnpackInt32()
-     * - palUnpackUint32()
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_USER,
-
-    /**
-     * PAL_EVENT_USER
-     *
-     * event.data : codepoint
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_KEYCHAR,
-
-    /**
-     * PAL_EVENT_WINDOW_DECORATION_MODE
-     *
-     * event.data : negotiated decorations mode
-     *
-     * event.data2 : window
-     *
-     * Use inline helpers:
-     * - palUnpackPointer()
-     */
-    PAL_EVENT_WINDOW_DECORATION_MODE,
-
-    PAL_EVENT_MAX
-} PalEventType;
-
-/**
- * @enum PalDispatchMode
- * @brief Dispatch types for an event. This is not a bitmask enum.
- *
- * All dispatch modes follow the format `PAL_DISPATCH_**` for consistency
- * and API use.
- *
- * @since 1.0
- */
-typedef enum {
-    PAL_DISPATCH_NONE,     /**< No dispatch.*/
-    PAL_DISPATCH_CALLBACK, /**< Dispatch to event callback.*/
-    PAL_DISPATCH_POLL,     /**< Dispatch to the event queue.*/
-    PAL_DISPATCH_MAX
-} PalDispatchMode;
-
 struct PalEvent {
-    PalEventType type;
+    int64_t userId; /**< You can have user events upto int64_t max.*/
     int64_t data;   /**< First data payload.*/
     int64_t data2;  /**< Second data payload.*/
-    int64_t userId; /**< You can have user events upto int64_t max.*/
+    PalEventType type;
 };
 
 /**

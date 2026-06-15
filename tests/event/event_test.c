@@ -28,7 +28,7 @@ static void PAL_CALL onEvent(
     s_CallbackCounter++;
 }
 
-static inline void eventDispatchTest(PalBool poll)
+static inline PalBool eventDispatchTest(PalBool poll)
 {
     PalResult result;
     PalEventDriver* driver = nullptr;
@@ -37,9 +37,8 @@ static inline void eventDispatchTest(PalBool poll)
 
     result = palCreateEventDriver(&createInfo, &driver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // set dispatch mode
@@ -74,6 +73,7 @@ static inline void eventDispatchTest(PalBool poll)
     }
 
     palDestroyEventDriver(driver);
+    return PAL_TRUE;
 }
 
 PalBool eventTest()
@@ -87,7 +87,10 @@ PalBool eventTest()
     double startTime = getTime(&timer);
 
     for (int32_t i = 0; i < MAX_ITERATIONS; i++) {
-        eventDispatchTest(false); // callback mode first
+        PalBool success = eventDispatchTest(PAL_FALSE); // callback mode
+        if (success == PAL_FALSE) {
+            return PAL_FALSE;
+        }
     }
 
     // get end time
@@ -107,7 +110,10 @@ PalBool eventTest()
     startTime = getTime(&timer);
 
     for (int32_t i = 0; i < MAX_ITERATIONS; i++) {
-        eventDispatchTest(true); // poll mode first
+        PalBool success = eventDispatchTest(PAL_TRUE); // poll mode
+        if (success == PAL_FALSE) {
+            return PAL_FALSE;
+        }
     }
 
     // get end time
@@ -128,5 +134,5 @@ PalBool eventTest()
     // how many times poll event was called
     palLog(nullptr, "Poll counter: %d", s_PollCounter);
 
-    return true;
+    return PAL_TRUE;
 }

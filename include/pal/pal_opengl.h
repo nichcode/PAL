@@ -50,7 +50,7 @@ freely, subject to the following restrictions:
 typedef struct PalGLContext PalGLContext;
 
 /**
- * @enum PalGLExtensions
+ * @typedef PalGLExtensions
  * @brief Opengl system extensions.
  *
  * All opengl extensions follow the format `PAL_GL_EXTENSION_**` for
@@ -73,7 +73,7 @@ typedef enum {
 } PalGLExtensions;
 
 /**
- * @enum PalGLProfile
+ * @typedef PalGLProfile
  * @brief Opengl context creation profiles. This is not a bitmask.
  *
  * All opengl profiles follow the format `PAL_GL_PROFILE_**` for
@@ -90,7 +90,7 @@ typedef enum {
 } PalGLProfile;
 
 /**
- * @enum PalGLContextReset
+ * @typedef PalGLContextReset
  * @brief Opengl context reset behavior. This is not a bitmask.
  *
  * All context reset behavior follow the format `PAL_GL_CONTEXT_RESET_**`
@@ -106,7 +106,7 @@ typedef enum {
 } PalGLContextReset;
 
 /**
- * @enum PalGLRelease
+ * @typedef PalGLRelease
  * @brief Opengl context release behavior. This is not a bitmask.
  *
  * All opengl context release behavior follow the format

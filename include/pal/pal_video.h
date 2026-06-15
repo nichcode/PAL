@@ -34,7 +34,7 @@ freely, subject to the following restrictions:
 #include "pal_event.h"
 
 /**
- * @enum PalVideoFeatures64
+ * @typedef PalVideoFeatures64
  * @brief Extended Video system features.
  *
  * All extended video features follow the format `PAL_VIDEO_FEATURE64_**` for
@@ -123,7 +123,7 @@ typedef struct PalIcon PalIcon;
 typedef struct PalCursor PalCursor;
 
 /**
- * @enum PalVideoFeatures
+ * @typedef PalVideoFeatures
  * @brief Video system features.
  *
  * All video features follow the format `PAL_VIDEO_FEATURE_**` for
@@ -168,7 +168,7 @@ typedef enum {
 } PalVideoFeatures;
 
 /**
- * @enum PalOrientation
+ * @typedef PalOrientation
  * @brief Orientation types for a monitor.
  *
  * All orientation types follow the format `PAL_ORIENTATION_**` for consistency
@@ -185,7 +185,7 @@ typedef enum {
 } PalOrientation;
 
 /**
- * @enum PalWindowStyle
+ * @typedef PalWindowStyle
  * @brief Window styles. Multiple styles can be OR'ed together using bitwise
  * OR operator (`|`).
  *
@@ -206,7 +206,7 @@ typedef enum {
 } PalWindowStyle;
 
 /**
- * @enum PalWindowState
+ * @typedef PalWindowState
  * @brief Represents the current state of a window.
  *
  * All window states follow the format `PAL_WINDOW_STATE_**` for consistency and
@@ -222,7 +222,7 @@ typedef enum {
 } PalWindowState;
 
 /**
- * @enum PalFlashFlag
+ * @typedef PalFlashFlag
  * @brief Flash flags. Multiple flash flags can be OR'ed together using bitwise
  * OR operator (`|`).
  *
@@ -241,7 +241,7 @@ typedef enum {
 } PalFlashFlag;
 
 /**
- * @enum PalFBConfigBackend
+ * @typedef PalFBConfigBackend
  * @brief Represents the backend of a FBConfig.
  *
  * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for
@@ -259,7 +259,7 @@ typedef enum {
 } PalFBConfigBackend;
 
 /**
- * @enum PalScancode
+ * @typedef PalScancode
  * @brief scancodes (layout independent keys) of a keyboard.
  *
  * All scancodes follow the format `PAL_SCANCODE_**` for consistency and
@@ -388,7 +388,7 @@ typedef enum {
 } PalScancode;
 
 /**
- * @enum PalKeycode
+ * @typedef PalKeycode
  * @brief Keycodes (layout aware keys) of a keyboard.
  *
  * All keycodes follow the format `PAL_KEYCODE_**` for consistency and API
@@ -517,7 +517,7 @@ typedef enum {
 } PalKeycode;
 
 /**
- * @enum PalMouseButton
+ * @typedef PalMouseButton
  * @brief Buttons of a mouse.
  *
  * All mouse buttons follow the format `PAL_MOUSE_BUTTON_**` for
@@ -539,7 +539,7 @@ typedef enum {
 } PalMouseButton;
 
 /**
- * @enum PalCursorType
+ * @typedef PalCursorType
  * @brief System cursor types.
  *
  * All cursor types follow the format `PAL_CURSOR_**` for

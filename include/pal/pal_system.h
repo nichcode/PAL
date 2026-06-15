@@ -23,7 +23,7 @@
 #define PAL_CPU_MODEL_NAME_SIZE 64
 
 /**
- * @enum PalCpuArch
+ * @typedef PalCpuArch
  * @brief CPU achitecture. This is not a bitmask.
  *
  * This is a build time achitecture. Example: Generating your project with x64
@@ -43,7 +43,7 @@ typedef enum {
 } PalCpuArch;
 
 /**
- * @enum PalCpuFeatures
+ * @typedef PalCpuFeatures
  * @brief CPU features (instruction sets).
  *
  * All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
@@ -67,7 +67,7 @@ typedef enum {
 } PalCpuFeatures;
 
 /**
- * @enum PalPlatformType
+ * @typedef PalPlatformType
  * @brief Platform types. This is not a bitmask.
  *
  * This is the family name (eg. This does not show if its Windows 7 or Windows 8
@@ -87,7 +87,7 @@ typedef enum {
 } PalPlatformType;
 
 /**
- * @enum PalPlatformApiType
+ * @typedef PalPlatformApiType
  * @brief Platform API types. This is not a bitmask.
  *
  * This is the API the playform uses. Most platforms support only one (eg.

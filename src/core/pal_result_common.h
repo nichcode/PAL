@@ -8,22 +8,7 @@
 #ifndef _PAL_RESULT_COMMON_H
 #define _PAL_RESULT_COMMON_H
 
-#include "pal/pal_core.h"
-
-#define PAL_RESULT_SOURCE_WINDOWS 100
-#define PAL_RESULT_SOURCE_LINUX 101
-#define PAL_RESULT_SOURCE_MACOS 102
-#define PAL_RESULT_SOURCE_VULKAN 103
-#define PAL_RESULT_SOURCE_D3D12 104
-#define PAL_RESULT_SOURCE_METAL 105
-
-static inline PalResult makeResult(
-    uint16_t code, 
-    uint16_t source, 
-    uint32_t nativeCode)
-{
-    return ((uint64_t)nativeCode << 32) | ((uint64_t)source << 16) | (uint64_t)code;
-}
+#include "pal_shared.h"
 
 static inline uint16_t getResultCode(PalResult result)
 {
@@ -41,6 +26,47 @@ static inline uint32_t getResultNativeCode(PalResult result)
 }
 
 static const char* PAL_CALL resultCodeToString(PalResult result)
+{
+    uint16_t code = getResultCode(result);
+    switch (code) {
+        case PAL_RESULT_SUCCESS:
+            return "PAL_RESULT_SUCCESS";
+
+        case PAL_RESULT_INVALID_ARGUMENT:
+            return "PAL_RESULT_INVALID_ARGUMENT";
+
+        case PAL_RESULT_OUT_OF_MEMORY:
+            return "PAL_RESULT_OUT_OF_MEMORY";
+
+        case PAL_RESULT_PLATFORM_FAILURE:
+            return "PAL_RESULT_PLATFORM_FAILURE";
+
+        case PAL_RESULT_TIMEOUT:
+            return "PAL_RESULT_TIMEOUT";
+
+        case PAL_RESULT_INVALID_HANDLE:
+            return "PAL_RESULT_INVALID_HANDLE";
+
+        case PAL_RESULT_FEATURE_NOT_SUPPORTED:
+            return "PAL_RESULT_FEATURE_NOT_SUPPORTED";
+
+        case PAL_RESULT_NOT_INITIALIZED:
+            return "PAL_RESULT_NOT_INITIALIZED";
+
+        case PAL_RESULT_INVALID_OPERATION:
+            return "PAL_RESULT_INVALID_OPERATION";
+
+        case PAL_RESULT_DEVICE_LOST:
+            return "PAL_RESULT_DEVICE_LOST";
+
+        case PAL_RESULT_OUT_OF_DATE:
+            return "PAL_RESULT_OUT_OF_DATE";
+    }
+
+    return nullptr;
+}
+
+static const char* PAL_CALL resultCodeToDescription(PalResult result)
 {
     uint16_t code = getResultCode(result);
     switch (code) {
@@ -91,20 +117,36 @@ static const char* PAL_CALL resultSourceToString(PalResult result)
         case PAL_RESULT_SOURCE_LINUX:
             return "Linux";
 
-        case PAL_RESULT_SOURCE_MACOS:
-            return "MacOS";
-
         case PAL_RESULT_SOURCE_VULKAN:
             return "Vulkan";
 
         case PAL_RESULT_SOURCE_D3D12:
             return "D3D12";
-
-        case PAL_RESULT_SOURCE_METAL:
-            return "Metal";
     }
 
     return nullptr;
+}
+
+static void formatResultMsg(PalResult result, char* buffer, char* msg)
+{
+    const char* baseString = resultCodeToString(result);
+    const char* sourceString = resultSourceToString(result);
+    const char* baseDescription = resultCodeToDescription(result);
+    uint32_t nativeCode = getResultNativeCode(result);
+    
+    const char* description = "";
+    if (msg) {
+        description = msg;
+    }
+
+    format(
+        buffer, 
+        "Source: %s\n PAL Code: %s\n Native Code: 0x%08x\n PAL Description: %s\n Native Description: %s",
+        sourceString, 
+        baseString,
+        nativeCode, 
+        baseDescription,
+        description);
 }
 
 #endif // _PAL_RESULT_COMMON_H

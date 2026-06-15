@@ -20,12 +20,9 @@ void PAL_CALL palFormatResult(
     uint64_t bufferSize, 
     char* buffer)
 {
-    const char* baseString = resultCodeToString(result);
-    const char* sourceString = resultSourceToString(result);
-
+    char tmpBuffer[256];
     uint32_t nativeCode = getResultNativeCode(result);
     if (nativeCode != 0) {
-        char tmpBuffer[256];
         FormatMessageA(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             nullptr,
@@ -35,10 +32,10 @@ void PAL_CALL palFormatResult(
             256,
             nullptr);
 
-        format(buffer, "%s (0x%08x) - %s: %s", sourceString, nativeCode, baseString, tmpBuffer);
+        formatResultMsg(result, buffer, tmpBuffer);
 
     } else {
-        format(buffer, "%s (0x%08x) - %s", sourceString, nativeCode, baseString);
+        formatResultMsg(result, buffer, nullptr);
     }
 }
 

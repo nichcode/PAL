@@ -209,7 +209,7 @@ PAL_API uint16_t PAL_CALL palGetResultCode(PalResult result);
  * @param bufferSize The size of the buffer.
  * @param buffer The buffer.
  *
- * Thread safety: Thread safe if the provided buffer is per thread.
+ * Thread safety: Thread safe if buffer is per thread.
  *
  * @since 2.0
  */
@@ -220,15 +220,15 @@ PAL_API void PAL_CALL palFormatResult(
 
 /**
  * Retrieve the PAL version number.
+ * 
+ * @param version Pointer to PalVersion struct to fill.
  *
- * @return PAL version (major, minor, build).
+ * Thread safety: Thread safe if version is per thread.
  *
- * Thread safety: Thread safe.
- *
- * @since 1.0
+ * @since 2.0
  * @sa palGetVersionString
  */
-PAL_API PalVersion PAL_CALL palGetVersion();
+PAL_API void PAL_CALL palGetVersion(PalVersion* version);
 
 /**
  * Retrieve the PAL version string.

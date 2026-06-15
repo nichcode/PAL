@@ -79,7 +79,7 @@ freely, subject to the following restrictions:
 #define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF);
 
 /**
- * @enum PalAdapterFeatures
+ * @typedef PalAdapterFeatures
  * @brief Adapter features. This is a bitmask.
  *
  * All adapter features follow the format `PAL_ADAPTER_FEATURE_**` for
@@ -336,7 +336,7 @@ typedef struct PalShaderBindingTable PalShaderBindingTable;
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 /**
- * @enum PalDebugMessageSeverity
+ * @typedef PalDebugMessageSeverity
  * @brief Debugger messages severity types used to filter incoming messages.
  *
  * @since 1.4
@@ -345,7 +345,7 @@ typedef struct PalAccelerationStructure PalAccelerationStructure;
 typedef enum PalDebugMessageSeverity PalDebugMessageSeverity;
 
 /**
- * @enum PalDebugMessageType
+ * @typedef PalDebugMessageType
  * @brief Debugger messages types used to filter incoming messages.
  *
  * @since 1.4
@@ -384,7 +384,7 @@ typedef void(PAL_CALL* PalDebugCallback)(
     const char* msg);
 
 /**
- * @enum PalAdapterType
+ * @typedef PalAdapterType
  * @brief Adapter (GPU) types.
  *
  * All adapter types follow the format `PAL_ADAPTER_TYPE_**` for
@@ -402,7 +402,7 @@ typedef enum {
 } PalAdapterType;
 
 /**
- * @enum PalAdapterApiType
+ * @typedef PalAdapterApiType
  * @brief Adapter API types.
  *
  * All adapter api types follow the format `PAL_ADAPTER_API_TYPE_**` for
@@ -427,7 +427,7 @@ typedef enum {
 } PalAdapterApiType;
 
 /**
- * @enum PalQueueType
+ * @typedef PalQueueType
  * @brief Queue types.
  *
  * All queue types follow the format `PAL_QUEUE_TYPE_**` for
@@ -443,7 +443,7 @@ typedef enum {
 } PalQueueType;
 
 /**
- * @enum PalPresentMode
+ * @typedef PalPresentMode
  * @brief Present modes
  *
  * All present modes follow the format `PAL_PRESENT_MODE_**` for
@@ -461,7 +461,7 @@ typedef enum {
 } PalPresentMode;
 
 /**
- * @enum PalCompositeAplha
+ * @typedef PalCompositeAplha
  * @brief Composite alphas
  *
  * All composite alphas follow the format `PAL_COMPOSITE_ALPHA_**` for
@@ -479,7 +479,7 @@ typedef enum {
 } PalCompositeAplha;
 
 /**
- * @enum PalFormat
+ * @typedef PalFormat
  * @brief Format types.
  *
  * All format types follow the format `PAL_FORMAT_**` for
@@ -576,7 +576,7 @@ typedef enum {
 } PalFormat;
 
 /**
- * @enum PalImageUsages
+ * @typedef PalImageUsages
  * @brief Image usages. Multiple image usages can be OR'ed together using bitwise
  * OR operator (`|`).
  *
@@ -598,7 +598,7 @@ typedef enum {
 } PalImageUsages;
 
 /**
- * @enum PalShaderFormats
+ * @typedef PalShaderFormats
  * @brief Shader formats. This is a bitmask.
  *
  * All shader formats follow the format `PAL_SHADER_FORMAT_**` for
@@ -617,7 +617,7 @@ typedef enum {
 } PalShaderFormats;
 
 /**
- * @enum PalLoadOp
+ * @typedef PalLoadOp
  * @brief Load operation type.
  *
  * All load operation type follow the format `PAL_LOAD_OP_**` for
@@ -633,7 +633,7 @@ typedef enum {
 } PalLoadOp;
 
 /**
- * @enum PalStoreOp
+ * @typedef PalStoreOp
  * @brief Store operation type.
  *
  * All store operation type follow the format `PAL_STORE_OP_**` for
@@ -648,7 +648,7 @@ typedef enum {
 } PalStoreOp;
 
 /**
- * @enum PalMemoryType
+ * @typedef PalMemoryType
  * @brief Memory types.
  *
  * All memory types follow the format `PAL_MEMORY_TYPE_**` for
@@ -666,7 +666,7 @@ typedef enum {
 } PalMemoryType;
 
 /**
- * @enum PalImageType
+ * @typedef PalImageType
  * @brief Image types.
  *
  * All image types follow the format `PAL_IMAGE_TYPE_**` for
@@ -682,7 +682,7 @@ typedef enum {
 } PalImageType;
 
 /**
- * @enum PalImageAspect
+ * @typedef PalImageAspect
  * @brief Image aspects.
  *
  * All image aspect follow the format `PAL_IMAGE_ASPECT_**` for
@@ -699,7 +699,7 @@ typedef enum {
 } PalImageAspect;
 
 /**
- * @enum PalImageViewType
+ * @typedef PalImageViewType
  * @brief Image view types.
  *
  * All image view types follow the format `PAL_IMAGE_VIEW_TYPE_**` for
@@ -719,7 +719,7 @@ typedef enum {
 } PalImageViewType;
 
 /**
- * @enum PalFilterMode
+ * @typedef PalFilterMode
  * @brief Filter modes.
  *
  * All filter modes follow the format `PAL_FILTER_MODE_**` for
@@ -734,7 +734,7 @@ typedef enum {
 } PalFilterMode;
 
 /**
- * @enum PalSamplerMipmapMode
+ * @typedef PalSamplerMipmapMode
  * @brief Sampler mipmap modes.
  *
  * All sampler mipmap modes follow the format `PAL_SAMPLER_MIPMAP_MODE_**` for
@@ -749,7 +749,7 @@ typedef enum {
 } PalSamplerMipmapMode;
 
 /**
- * @enum PalSamplerAddressMode
+ * @typedef PalSamplerAddressMode
  * @brief Sampler address modes.
  *
  * All sampler address modes follow the format `PAL_SAMPLER_ADDRESS_MODE_**` for
@@ -766,7 +766,7 @@ typedef enum {
 } PalSamplerAddressMode;
 
 /**
- * @enum PalBorderColor
+ * @typedef PalBorderColor
  * @brief Border color.
  *
  * All border colors follow the format `PAL_BORDER_COLOR_**` for
@@ -785,7 +785,7 @@ typedef enum {
 } PalBorderColor;
 
 /**
- * @enum PalSurfaceFormat
+ * @typedef PalSurfaceFormat
  * @brief Surface format types.
  *
  * All surface format types follow the format `PAL_SURFACE_FORMAT_**` for
@@ -804,7 +804,7 @@ typedef enum {
 } PalSurfaceFormat;
 
 /**
- * @enum PalGraphicsWindowDisplayType
+ * @typedef PalGraphicsWindowDisplayType
  * @brief Display types for a graphics window.
  *
  * All graphics window display types follow the format `PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_**` for
@@ -820,7 +820,7 @@ typedef enum {
 } PalGraphicsWindowDisplayType;
 
 /**
- * @enum PalShaderStage
+ * @typedef PalShaderStage
  * @brief shader stage types.
  *
  * All shader stage types follow the format `PAL_SHADER_STAGE_**` for
@@ -849,7 +849,7 @@ typedef enum {
 } PalShaderStage;
 
 /**
- * @enum PalSampleCount
+ * @typedef PalSampleCount
  * @brief sample count.
  *
  * All sample count follow the format `PAL_SAMPLE_COUNT_**` for
@@ -869,7 +869,7 @@ typedef enum {
 } PalSampleCount;
 
 /**
- * @enum PalPrimitiveTopology
+ * @typedef PalPrimitiveTopology
  * @brief Primitve topology types.
  *
  * All primitve topology types follow the format `PAL_PRIMITIVE_TOPOLOGY_**` for
@@ -888,7 +888,7 @@ typedef enum {
 } PalPrimitiveTopology;
 
 /**
- * @enum PalCullMode
+ * @typedef PalCullMode
  * @brief Cull modes.
  *
  * All cull modes follow the format `PAL_CULL_MODE_**` for
@@ -904,7 +904,7 @@ typedef enum {
 } PalCullMode;
 
 /**
- * @enum PalFrontFace
+ * @typedef PalFrontFace
  * @brief Front face modes.
  *
  * All front face modes follow the format `PAL_FRONT_FACE_**` for
@@ -919,7 +919,7 @@ typedef enum {
 } PalFrontFace;
 
 /**
- * @enum PalPolygonMode
+ * @typedef PalPolygonMode
  * @brief Polygon modes.
  *
  * All polygon modes follow the format `PAL_POLYGON_MODE_**` for
@@ -934,7 +934,7 @@ typedef enum {
 } PalPolygonMode;
 
 /**
- * @enum PalStencilFaceFlags
+ * @typedef PalStencilFaceFlags
  * @brief Stencil face flags. Multiple stencil face flags can be OR'ed together using bitwise
  * OR operator (`|`).
  *
@@ -951,7 +951,7 @@ typedef enum {
 } PalStencilFaceFlags;
 
 /**
- * @enum PalVertexType
+ * @typedef PalVertexType
  * @brief Vertex attribute types.
  *
  * All vertex attribute types follow the format `PAL_VERTEX_TYPE_**` for
@@ -1003,7 +1003,7 @@ typedef enum {
 } PalVertexType;
 
 /**
- * @enum PalVertexSemanticID
+ * @typedef PalVertexSemanticID
  * @brief Vertex semantic id types.
  *
  * All vertex semantic id types follow the format `PAL_VERTEX_SEMANTIC_ID_**` for
@@ -1021,7 +1021,7 @@ typedef enum {
 } PalVertexSemanticID;
 
 /**
- * @enum PalCommandBufferType
+ * @typedef PalCommandBufferType
  * @brief Command buffer types.
  *
  * All command buffer types follow the format `PAL_COMMAND_BUFFER_TYPE_**` for
@@ -1036,7 +1036,7 @@ typedef enum {
 } PalCommandBufferType;
 
 /**
- * @enum PalVertexLayoutType
+ * @typedef PalVertexLayoutType
  * @brief Vertex layout types.
  *
  * All vertex layout types follow the format `PAL_VERTEX_LAYOUT_TYPE_**` for
@@ -1051,7 +1051,7 @@ typedef enum {
 } PalVertexLayoutType;
 
 /**
- * @enum PalCompareOp
+ * @typedef PalCompareOp
  * @brief Compare operation modes.
  *
  * All compare operation modes follow the format `PAL_COMPARE_OP_**` for
@@ -1072,7 +1072,7 @@ typedef enum {
 } PalCompareOp;
 
 /**
- * @enum PalStencilOp
+ * @typedef PalStencilOp
  * @brief Stencil operation modes.
  *
  * All stencil operation modes follow the format `PAL_STENCIL_OP_**` for
@@ -1093,7 +1093,7 @@ typedef enum {
 } PalStencilOp;
 
 /**
- * @enum PalBlendOp
+ * @typedef PalBlendOp
  * @brief Blend operation modes.
  *
  * All blend operation modes follow the format `PAL_BLEND_OP_**` for
@@ -1111,7 +1111,7 @@ typedef enum {
 } PalBlendOp;
 
 /**
- * @enum PalBlendOp
+ * @typedef PalBlendOp
  * @brief Blend factor modes.
  *
  * All blend factor modes follow the format `PAL_BLEND_FACTOR_**` for
@@ -1138,7 +1138,7 @@ typedef enum {
 } PalBlendFactor;
 
 /**
- * @enum PalColorMask
+ * @typedef PalColorMask
  * @brief Color mask flags. Multiple color mask flags can be OR'ed together using bitwise
  * OR operator (`|`).
  *
@@ -1160,7 +1160,7 @@ typedef enum {
 } PalColorMask;
 
 /**
- * @enum PalResolveMode
+ * @typedef PalResolveMode
  * @brief Resolve modes.
  *
  * All resolve modes follow the format `PAL_RESOLVE_MODE_**` for
@@ -1179,7 +1179,7 @@ typedef enum {
 } PalResolveMode;
 
 /**
- * @enum PalFragmentShadingRate
+ * @typedef PalFragmentShadingRate
  * @brief Fragment shading rates.
  *
  * All fragment shading rates follow the format `PAL_FRAGMENT_SHADING_RATE_**` for
@@ -1201,7 +1201,7 @@ typedef enum {
 } PalFragmentShadingRate;
 
 /**
- * @enum PalFragmentShadingRateCombinerOp
+ * @typedef PalFragmentShadingRateCombinerOp
  * @brief Fragment shading rate combiner operaton modes.
  *
  * All fragment shading rate combiner operation modes follow the format
@@ -1219,7 +1219,7 @@ typedef enum {
 } PalFragmentShadingRateCombinerOp;
 
 /**
- * @enum PalAccelerationStructureType
+ * @typedef PalAccelerationStructureType
  * @brief Acceleration structure types.
  *
  * All acceleration structure types follow the format `PAL_ACCELERATION_STRUCTURE_TYPE_**`
@@ -1234,7 +1234,7 @@ typedef enum {
 } PalAccelerationStructureType;
 
 /**
- * @enum PalAccelerationStructureBuildMode
+ * @typedef PalAccelerationStructureBuildMode
  * @brief Acceleration structure build modes.
  *
  * All acceleration structure build modes follow the format 
@@ -1249,7 +1249,7 @@ typedef enum {
 } PalAccelerationStructureBuildMode;
 
 /**
- * @enum PalAccelerationStructureBuildHints
+ * @typedef PalAccelerationStructureBuildHints
  * @brief Acceleration structure build hints. Multiple hints can be OR'ed together using 
  * bitwise OR operator (`|`). Hints can be ignored by the driver.
  *
@@ -1266,7 +1266,7 @@ typedef enum {
 } PalAccelerationStructureBuildHints;
 
 /**
- * @enum PalAccelerationStructureInstanceFlags
+ * @typedef PalAccelerationStructureInstanceFlags
  * @brief Acceleration structure instance flags. Multiple flags can be OR'ed together using 
  * bitwise OR operator (`|`). Not all combinations are valid.
  *
@@ -1284,7 +1284,7 @@ typedef enum {
 } PalAccelerationStructureInstanceFlags;
 
 /**
- * @enum PalGeometryType
+ * @typedef PalGeometryType
  * @brief Geometry types.
  *
  * All geometry types follow the format `PAL_GEOMETRY_TYPE_**` for consistency and API use.
@@ -1298,7 +1298,7 @@ typedef enum {
 } PalGeometryType;
 
 /**
- * @enum PalGeometryFlags
+ * @typedef PalGeometryFlags
  * @brief Geometry flags. Multiple flags can be OR'ed together using 
  * bitwise OR operator (`|`). Not all combinations are valid.
  *
@@ -1313,7 +1313,7 @@ typedef enum {
 } PalGeometryFlags;
 
 /**
- * @enum PalIndexType
+ * @typedef PalIndexType
  * @brief Index types.
  *
  * All index types follow the format `PAL_INDEX_TYPE_**` for consistency and API use.
@@ -1327,7 +1327,7 @@ typedef enum {
 } PalIndexType;
 
 /**
- * @enum PalBufferUsages
+ * @typedef PalBufferUsages
  * @brief Buffer usages. Multiple buffer usages can be OR'ed together using bitwise
  * OR operator (`|`).
  *
@@ -1363,7 +1363,7 @@ enum PalDebugMessageType {
 };
 
 /**
- * @enum PalUsageState
+ * @typedef PalUsageState
  * @brief Usage states.
  *
  * All usage states follow the format `PAL_USAGE_STATE_**` for consistency and API use.
@@ -1398,7 +1398,7 @@ typedef enum {
 } PalUsageState;
 
 /**
- * @enum PalDescriptorType
+ * @typedef PalDescriptorType
  * @brief Descriptor types.
  *
  * All descriptor types follow the format `PAL_DESCRIPTOR_TYPE_**` for consistency and API use.
@@ -1416,7 +1416,7 @@ typedef enum {
 } PalDescriptorType;
 
 /**
- * @enum PalRayTracingShaderGroupType
+ * @typedef PalRayTracingShaderGroupType
  * @brief Ray tracing shader group types.
  *
  * All ray tracing shader group types follow the format `PAL_RAY_TRACING_SHADER_GROUP_TYPE_**`

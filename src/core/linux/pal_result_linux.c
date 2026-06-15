@@ -7,7 +7,7 @@
 
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
-#include "pal/pal_core.h"
+#include "core/pal_format.h"
 #include "core/pal_result_common.h"
 #include <string.h>
 
@@ -21,10 +21,15 @@ void PAL_CALL palFormatResult(
     uint64_t bufferSize,
     char* buffer)
 {
-    const char* baseString = resultCodeToString(result);
-    const char* sourceString = resultSourceToString(result);
+    char tmpBuffer[256];
     uint32_t nativeCode = getResultNativeCode(result);
-    strerror_r(nativeCode, buffer, bufferSize);
+    if (nativeCode != 0) {
+        strerror_r(nativeCode, tmpBuffer, 256);
+        formatResultMsg(result, buffer, tmpBuffer);
+
+    } else {
+        formatResultMsg(result, buffer, nullptr);
+    }
 }
 
 #endif // __linux__

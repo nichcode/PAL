@@ -39,7 +39,7 @@ typedef struct PalThread PalThread;
 typedef void* (*PalThreadFn)(void* arg);
 
 /**
- * @enum PalThreadFeatures
+ * @typedef PalThreadFeatures
  * @brief Thread system features.
  *
  * All thread features follow the format `PAL_THREAD_FEATURE_**` for
@@ -55,7 +55,7 @@ typedef enum {
 } PalThreadFeatures;
 
 /**
- * @enum PalThreadPriority
+ * @typedef PalThreadPriority
  * @brief Thread priority types. This is not a bitmask enum.
  *
  * All thread priority types follow the format `PAL_THREAD_PRIORITY_**` for

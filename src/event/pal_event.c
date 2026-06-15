@@ -5,16 +5,28 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal/pal_event.h"
+#include "pal_default_queue.h"
+#include "pal_shared.h"
 #include <string.h>
 
-#define PAL_MAX_EVENTS 512
+#ifdef _WIN32
+#define PLATFORM_SOURCE PAL_RESULT_SOURCE_WINDOWS
 
-typedef struct {
-    uint8_t head;
-    uint8_t tail;
-    PalEvent data[PAL_MAX_EVENTS];
-} QueueData;
+uint32_t __stdcall GetLastError();
+
+#elif defined(__linux__)
+#include <errno.h>
+#define PLATFORM_SOURCE PAL_RESULT_SOURCE_LINUX
+#endif // _WIN32
+
+static inline uint32_t getLastErrorCode()
+{
+#ifdef _WIN32
+    return GetLastError();
+#elif defined(__linux__)
+    return (uint32_t)errno;
+#endif // _WIN32
+}
 
 struct PalEventDriver {
     PalBool freeQueue;
@@ -22,50 +34,36 @@ struct PalEventDriver {
     const PalAllocator* allocator;
     PalEventCallback callback;
     void* userData;
-    PalDispatchMode modes[PAL_MAX_EVENTS];
+    PalDispatchMode modes[MAX_EVENTS];
 };
-
-static void PAL_CALL defaultPush(
-    void* queue,
-    PalEvent* event)
-{
-    PalEventQueue* eventQueue = queue;
-    QueueData* data = eventQueue->userData;
-    data->data[data->tail++ % PAL_MAX_EVENTS] = *event;
-}
-
-static PalBool PAL_CALL defaultPoll(
-    void* queue,
-    PalEvent* outEvent)
-{
-    PalEventQueue* eventQueue = queue;
-    QueueData* data = eventQueue->userData;
-    if (data->head == data->tail) {
-        return false;
-    }
-
-    *outEvent = data->data[data->head++ % PAL_MAX_EVENTS];
-    return true;
-}
 
 PalResult PAL_CALL palCreateEventDriver(
     const PalEventDriverCreateInfo* info,
     PalEventDriver** outEventDriver)
 {
     if (!info || !outEventDriver) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PLATFORM_SOURCE, 
+            getLastErrorCode());
     }
 
     if (info->allocator) {
         if (!info->allocator->allocate && !info->allocator->free) {
-            return PAL_RESULT_INVALID_ALLOCATOR;
+            return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PLATFORM_SOURCE, 
+            getLastErrorCode());
         }
     }
 
     PalEventDriver* driver = nullptr;
     driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
     if (!driver) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return palMakeResult(
+            PAL_RESULT_OUT_OF_MEMORY, 
+            PLATFORM_SOURCE, 
+            getLastErrorCode());
     }
 
     memset(driver, 0, sizeof(PalEventDriver));
@@ -76,33 +74,21 @@ PalResult PAL_CALL palCreateEventDriver(
     if (info->queue) {
         // user supplied an event queue
         driver->queue = info->queue;
-        driver->freeQueue = false;
+        driver->freeQueue = PAL_FALSE;
 
     } else {
         // we create a default event queue
-        PalEventQueue* queue = nullptr;
-        queue = palAllocate(info->allocator, sizeof(PalEventQueue), 0);
+        PalEventQueue* queue = createDefaultEventQueue(info->allocator);
         if (!queue) {
             palFree(info->allocator, driver);
-            return PAL_RESULT_OUT_OF_MEMORY;
+            return palMakeResult(
+                PAL_RESULT_OUT_OF_MEMORY, 
+                PLATFORM_SOURCE, 
+                getLastErrorCode());
         }
-
-        // we create a default event queue data
-        QueueData* queueData = nullptr;
-        queueData = palAllocate(info->allocator, sizeof(QueueData), 0);
-        if (!queueData) {
-            palFree(info->allocator, queue);
-            palFree(info->allocator, driver);
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
-
-        memset(queueData, 0, sizeof(QueueData));
-        queue->userData = queueData;
-        queue->poll = defaultPoll;
-        queue->push = defaultPush;
 
         driver->queue = queue;
-        driver->freeQueue = true;
+        driver->freeQueue = PAL_TRUE;
     }
 
     driver->callback = info->callback;
@@ -119,8 +105,7 @@ void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver)
 
     const PalAllocator* allocator = eventDriver->allocator;
     if (eventDriver->freeQueue) {
-        palFree(allocator, eventDriver->queue->userData);
-        palFree(allocator, eventDriver->queue);
+        destroyDefaultEventQueue(allocator, eventDriver->queue);
     }
     palFree(allocator, eventDriver);
 }
@@ -172,7 +157,7 @@ PalBool PAL_CALL palPollEvent(
     PalEvent* outEvent)
 {
     if (!eventDriver || !outEvent) {
-        return false;
+        return PAL_FALSE;
     }
 
     return eventDriver->queue->poll(eventDriver->queue, outEvent);

@@ -23,7 +23,7 @@ PalBool userEventTest()
     PalResult result;
     PalEventDriver* eventDriver = nullptr;
     PalEventDriverCreateInfo createInfo;
-    PalBool running, logged = false;
+    PalBool running, logged = PAL_FALSE;
 
     // fill the event driver create info
     createInfo.allocator = nullptr; // default allocator
@@ -34,9 +34,8 @@ PalBool userEventTest()
     // create the event driver
     result = palCreateEventDriver(&createInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_USER, PAL_DISPATCH_POLL);
@@ -49,7 +48,7 @@ PalBool userEventTest()
     // get the start time normalize by timer.startTime
     double lastTime = getTime(&timer);
 
-    running = true;
+    running = PAL_TRUE;
     while (running) {
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
@@ -62,14 +61,14 @@ PalBool userEventTest()
                             // log a message
                             if (!logged) {
                                 palLog(nullptr, "5 seconds have passed");
-                                logged = true;
+                                logged = PAL_TRUE;
                             }
                             break;
                         }
 
                         case USER_CLOSE_EVENT_ID: {
                             palLog(nullptr, "10 seconds have passed");
-                            running = false;
+                            running = PAL_FALSE;
                             break;
                         }
                     }
@@ -101,5 +100,5 @@ PalBool userEventTest()
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
 
-    return true;
+    return PAL_TRUE;
 }
