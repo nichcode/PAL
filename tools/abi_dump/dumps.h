@@ -3,6 +3,10 @@
 #define _DUMPS_H
 
 #include "pal/pal_core.h"
+#include <stddef.h>
+
+static const char* s_FailedString = "FAILED";
+static const char* s_PassedString = "PASSED";
 
 #ifdef _MSC_VER
 #define PAL_ALIGNOF(type) __alignof(type)
