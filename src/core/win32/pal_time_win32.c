@@ -5,8 +5,6 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal/pal_core.h"
-
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -20,6 +18,8 @@
 #ifndef UNICODE
 #define UNICODE
 #endif // UNICODE
+
+#include "pal/pal_core.h"
 #include <windows.h>
 
 uint64_t PAL_CALL palGetPerformanceCounter()

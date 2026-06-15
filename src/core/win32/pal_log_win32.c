@@ -53,7 +53,7 @@ void PAL_CALL palLog(
 
     LogTLSData* data = FlsGetValue((DWORD)s_TlsID);
     if (!data) {
-        data = palAllocate(nullptr, sizeof(LogTLSData),0);
+        data = palAllocate(nullptr, sizeof(LogTLSData), 0);
         memset(data, 0, sizeof(LogTLSData));
 
         // create TLS if it has not been created
@@ -83,8 +83,8 @@ void PAL_CALL palLog(
         }
 
         // update the tls to stop recursive calls
-        memcpy(data->buffer, data->tmp, PAL_LOG_MSG_SIZE);
-        data->isLogging = true;
+        memcpy(data->buffer, data->tmp, MSG_SIZE);
+        data->isLogging = PAL_TRUE;
         FlsSetValue(s_TlsID, data);
         logger->callback(logger->userData, data->buffer);
 
@@ -107,7 +107,7 @@ void PAL_CALL palLog(
         }
     }
 
-    data->isLogging = false;
+    data->isLogging = PAL_FALSE;
     FlsSetValue(s_TlsID, data);
 }
 

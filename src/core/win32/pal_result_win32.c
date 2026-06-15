@@ -6,9 +6,23 @@
  */
 
 #ifdef _WIN32
-#include "pal_format.h" 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
+
+// set unicode
+#ifndef UNICODE
+#define UNICODE
+#endif // UNICODE
+
+#include "core/pal_format.h"
 #include "core/pal_result_common.h"
 #include <string.h>
+#include <windows.h>
 
 uint16_t PAL_CALL palGetResultCode(PalResult result)
 {

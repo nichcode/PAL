@@ -10,10 +10,21 @@
 #include <string.h>
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
+
+// set unicode
+#ifndef UNICODE
+#define UNICODE
+#endif // UNICODE
+
+#include <windows.h>
 #define PLATFORM_SOURCE PAL_RESULT_SOURCE_WINDOWS
-
-uint32_t __stdcall GetLastError();
-
 #elif defined(__linux__)
 #include <errno.h>
 #define PLATFORM_SOURCE PAL_RESULT_SOURCE_LINUX
@@ -22,7 +33,7 @@ uint32_t __stdcall GetLastError();
 static inline uint32_t getLastErrorCode()
 {
 #ifdef _WIN32
-    return GetLastError();
+    return (uint32_t)GetLastError();
 #elif defined(__linux__)
     return (uint32_t)errno;
 #endif // _WIN32

@@ -30,7 +30,7 @@ void* PAL_CALL palAllocate(
         return allocator->allocate(allocator->userData, size, align);
     }
 
-    return _aligned_malloc(size, alignment);
+    return _aligned_malloc(size, align);
 }
 
 void PAL_CALL palFree(
