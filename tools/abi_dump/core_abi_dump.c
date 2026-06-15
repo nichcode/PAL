@@ -1,27 +1,27 @@
 
 #include "dumps.h"
 
-static void palVersionDump()
+static void versionDump()
 {
-    uint32_t expectedSize = 12;
-    uint32_t expectedAlignof = 4;
-    uint32_t expectedMajorOffset = 0;
-    uint32_t expectedMinorOffset = 4;
-    uint32_t expectedBuildOffset = 8;
+    uint32_t xSize = 12;
+    uint32_t xAlign = 4;
+    uint32_t xOffset1 = 0;
+    uint32_t xOffset2 = 4;
+    uint32_t xOffset3 = 8;
 
-    uint32_t size = sizeof(PalVersion);
-    uint32_t alignof = PAL_ALIGNOF(PalVersion);
-    uint32_t majorOffset = offsetof(PalVersion, major);
-    uint32_t minorOffset = offsetof(PalVersion, minor);
-    uint32_t buildOffset = offsetof(PalVersion, build);
+    uint32_t ySize = sizeof(PalVersion);
+    uint32_t yAlign = PAL_ALIGNOF(PalVersion);
+    uint32_t yOffset1 = offsetof(PalVersion, major);
+    uint32_t yOffset2 = offsetof(PalVersion, minor);
+    uint32_t yOffset3 = offsetof(PalVersion, build);
 
     const char* result = s_FailedString;
     // clang-format off
-    if (expectedSize == size               && 
-        expectedAlignof == alignof         && 
-        expectedMajorOffset == majorOffset && 
-        expectedMinorOffset == minorOffset && 
-        expectedBuildOffset == buildOffset) {
+    if (xSize == ySize            && 
+        xAlign == yAlign          && 
+        xOffset1 == yOffset1      && 
+        xOffset2 == yOffset2      && 
+        xOffset3 == yOffset3) {
         result = s_PassedString;
     }
     // clang-format on
@@ -31,38 +31,38 @@ static void palVersionDump()
     palLog(nullptr, "Field         Expected     Actual");
     palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "sizeof        %u          %u", expectedSize, size);
-    palLog(nullptr, "alignof       %u           %u", expectedAlignof, alignof);
-    palLog(nullptr, "major @       %u           %u", expectedMajorOffset, majorOffset);
-    palLog(nullptr, "minor @       %u           %u", expectedMinorOffset, minorOffset);
-    palLog(nullptr, "build @       %u           %u", expectedBuildOffset, buildOffset);
+    palLog(nullptr, "size          %u          %u", xSize, ySize);
+    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+    palLog(nullptr, "major @       %u           %u", xOffset1, yOffset1);
+    palLog(nullptr, "minor @       %u           %u", xOffset2, yOffset2);
+    palLog(nullptr, "build @       %u           %u", xOffset3, yOffset3);
     palLog(nullptr, "===========================================");
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void palAllocatorDump()
+static void allocatorDump()
 {
-    uint32_t expectedSize = 24;
-    uint32_t expectedAlignof = 8;
-    uint32_t expectedAllocateOffset = 0;
-    uint32_t expectedFreeOffset = 8;
-    uint32_t expectedUserDataOffset = 16;
+    uint32_t xSize = 24;
+    uint32_t xAlign = 8;
+    uint32_t xOffset1 = 0;
+    uint32_t xOffset2 = 8;
+    uint32_t xOffset3 = 16;
 
-    uint32_t size = sizeof(PalAllocator);
-    uint32_t alignof = PAL_ALIGNOF(PalAllocator);
-    uint32_t allocateOffset = offsetof(PalAllocator, allocate);
-    uint32_t freeOffset = offsetof(PalAllocator, free);
-    uint32_t userDataOffset = offsetof(PalAllocator, userData);
+    uint32_t ySize = sizeof(PalAllocator);
+    uint32_t yAlign = PAL_ALIGNOF(PalAllocator);
+    uint32_t yOffset1 = offsetof(PalAllocator, allocate);
+    uint32_t yOffset2 = offsetof(PalAllocator, free);
+    uint32_t yOffset3 = offsetof(PalAllocator, userData);
 
     const char* result = s_FailedString;
     // clang-format off
-    if (expectedSize == size                        && 
-        expectedAlignof == alignof                  && 
-        expectedAllocateOffset == allocateOffset    && 
-        expectedFreeOffset == freeOffset            && 
-        expectedUserDataOffset == userDataOffset) {
+    if (xSize == ySize          && 
+        xAlign == yAlign        && 
+        xOffset1 == yOffset1    && 
+        xOffset2 == yOffset2    && 
+        xOffset3 == yOffset3) {
         result = s_PassedString;
     }
     // clang-format on
@@ -72,35 +72,35 @@ static void palAllocatorDump()
     palLog(nullptr, "Field         Expected     Actual");
     palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "sizeof        %u          %u", expectedSize, size);
-    palLog(nullptr, "alignof       %u           %u", expectedAlignof, alignof);
-    palLog(nullptr, "allocate @    %u           %u", expectedAllocateOffset, allocateOffset);
-    palLog(nullptr, "free @        %u           %u", expectedFreeOffset, freeOffset);
-    palLog(nullptr, "userData @    %u          %u", expectedUserDataOffset, userDataOffset);
+    palLog(nullptr, "size          %u          %u", xSize, ySize);
+    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+    palLog(nullptr, "allocate @    %u           %u", xOffset1, yOffset1);
+    palLog(nullptr, "free @        %u           %u", xOffset2, yOffset2);
+    palLog(nullptr, "userData @    %u          %u", xOffset3, yOffset3);
     palLog(nullptr, "===========================================");
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void palLoggerDump()
+static void loggerDump()
 {
-    uint32_t expectedSize = 16;
-    uint32_t expectedAlignof = 8;
-    uint32_t expectedCallbackOffset = 0;
-    uint32_t expectedUserDataOffset = 8;
+    uint32_t xSize = 16;
+    uint32_t xAlign = 8;
+    uint32_t xOffset1 = 0;
+    uint32_t xOffset2 = 8;
 
-    uint32_t size = sizeof(PalLogger);
-    uint32_t alignof = PAL_ALIGNOF(PalLogger);
-    uint32_t callbackOffset = offsetof(PalLogger, callback);
-    uint32_t userDataOffset = offsetof(PalLogger, userData);
+    uint32_t ySize = sizeof(PalLogger);
+    uint32_t yAlign = PAL_ALIGNOF(PalLogger);
+    uint32_t yOffset1 = offsetof(PalLogger, callback);
+    uint32_t yOffset2 = offsetof(PalLogger, userData);
 
     const char* result = s_FailedString;
     // clang-format off
-    if (expectedSize == size                        && 
-        expectedAlignof == alignof                  && 
-        expectedCallbackOffset == callbackOffset    &&
-        expectedUserDataOffset == userDataOffset) {
+    if (xSize == ySize          && 
+        xAlign == yAlign        && 
+        xOffset1 == yOffset1    &&
+        xOffset2 == yOffset2) {
         result = s_PassedString;
     }
     // clang-format on
@@ -110,10 +110,10 @@ static void palLoggerDump()
     palLog(nullptr, "Field         Expected     Actual");
     palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "sizeof        %u          %u", expectedSize, size);
-    palLog(nullptr, "alignof       %u           %u", expectedAlignof, alignof);
-    palLog(nullptr, "allocate @    %u           %u", expectedCallbackOffset, callbackOffset);
-    palLog(nullptr, "userData @    %u           %u", expectedUserDataOffset, userDataOffset);
+    palLog(nullptr, "size          %u          %u", xSize, ySize);
+    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+    palLog(nullptr, "allocate @    %u           %u", xOffset1, yOffset1);
+    palLog(nullptr, "userData @    %u           %u", xOffset2, yOffset2);
     palLog(nullptr, "===========================================");
 
     palLog(nullptr, "Status: %s", result);
@@ -128,7 +128,7 @@ void dumpCoreABI()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    palVersionDump();
-    palAllocatorDump();
-    palLoggerDump();
+    versionDump();
+    allocatorDump();
+    loggerDump();
 }

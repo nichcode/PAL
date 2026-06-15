@@ -15,5 +15,6 @@ static const char* s_PassedString = "PASSED";
 #endif // _MSC_VER
 
 void dumpCoreABI();
+void dumpEventABI();
 
 #endif // _DUMPS_H

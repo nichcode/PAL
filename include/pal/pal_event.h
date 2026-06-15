@@ -273,7 +273,7 @@ typedef uint32_t PalDecorationMode;
  *
  * @since 2.0
  */
-typedef uint32_t PalEventType;
+typedef uint64_t PalEventType;
 
 /**
  * @typedef PalDispatchMode
@@ -284,7 +284,7 @@ typedef uint32_t PalEventType;
  *
  * @since 2.0
  */
-typedef uint32_t PalDispatchMode;
+typedef uint64_t PalDispatchMode;
 
 /**
  * @typedef PalEventCallback
