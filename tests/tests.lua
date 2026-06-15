@@ -1,6 +1,5 @@
 
 project "tests"
-    language "C"
     kind "ConsoleApp"
 
     targetdir(targetDir)
@@ -92,4 +91,5 @@ project "tests"
         "%{wks.location}/include",
         "%{wks.location}/tests" 
     }
+    
     links { "PAL" }

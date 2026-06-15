@@ -276,6 +276,8 @@ newoption {
 workspace(workspaceName)
     if PAL_BUILD_TEST_APPLICATION then
         startproject("tests")
+    else
+        startproject("pal-abi-dump")
     end
 
     if PAL_BUILD_STATIC_LIBRARY then
@@ -285,16 +287,14 @@ workspace(workspaceName)
     end
 
     multiprocessorcompile "On"
+    cdialect "C99"
+    architecture "x64"
+    language "C"
+
     configurations { "Debug", "Release" }
 
     filter {"system:windows", "configurations:*"}
-        architecture "x64"
         systemversion "latest"
-        cdialect "C99"
-
-    filter {"system:linux", "configurations:*"}
-        architecture "x86_64"
-        cdialect "C99"
 
     filter "configurations:Debug"
         symbols "on"
@@ -407,6 +407,10 @@ workspace(workspaceName)
 
     if (PAL_BUILD_TEST_APPLICATION) then
         include "tests/tests.lua"
+    end
+
+    if (PAL_BUILD_ABI_DUMP) then
+        include "tools/abi_dump/abi_dump.lua"
     end
 
     include "pal.lua"

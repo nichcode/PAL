@@ -5,6 +5,9 @@ PAL_BUILD_STATIC_LIBRARY = false
 -- build PAL tests as a single application
 PAL_BUILD_TEST_APPLICATION = true
 
+-- build PAL abi dump
+PAL_BUILD_ABI_DUMP = true
+
 -- build system module
 PAL_BUILD_SYSTEM_MODULE = false
 
