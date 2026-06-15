@@ -5,8 +5,6 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal/pal_system.h"
-
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -21,14 +19,14 @@
 #define UNICODE
 #endif // UNICODE
 
+#include "pal/pal_system.h"
+#include "pal_shared.h"
 #include <string.h>
 #include <windows.h>
 
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif // _MSC_VER
-
-typedef LONG(WINAPI* RtlGetVersionFn)(PRTL_OSVERSIONINFOW);
 
 static inline void cpuid(
     int regs[4],
@@ -45,130 +43,23 @@ static inline void cpuid(
 #endif // _MSC_VER
 }
 
-static inline PalBool getVersionWin32(PalVersion* version)
-{
-    OSVERSIONINFOEXW ver = {0};
-    ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
-    HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
-    RtlGetVersionFn getVer = (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion");
-    if (!getVer) {
-        return false;
-    }
-
-    if (getVer((PRTL_OSVERSIONINFOW)&ver)) {
-        return false;
-    }
-
-    version->major = ver.dwMajorVersion;
-    version->minor = ver.dwMinorVersion;
-    version->build = ver.dwBuildNumber;
-    return true;
-}
-
-static inline PalBool isVersionWin32(
-    PalVersion* osVersion,
-    uint16_t major,
-    uint16_t minor,
-    uint16_t build)
-{
-    if (osVersion->major > major) {
-        return true;
-    }
-
-    if (osVersion->major < major) {
-        return false;
-    }
-
-    if (osVersion->minor > minor) {
-        return true;
-    }
-
-    if (osVersion->minor < minor) {
-        return false;
-    }
-
-    return osVersion->build >= build;
-}
-
-PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
-{
-    if (!info) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    info->apiType = PAL_PLATFORM_API_WIN32;
-    info->type = PAL_PLATFORM_WINDOWS;
-
-    // get windows build, version and combine them
-    if (!getVersionWin32(&info->version)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
-    }
-
-    const char* name = nullptr;
-    const char* build = nullptr;
-    // check the versions and set the appropriate name
-    if (isVersionWin32(&info->version, 5, 1, 0)) {
-        name = "Windows XP";
-    }
-
-    if (isVersionWin32(&info->version, 6, 0, 0)) {
-        name = "Windows Vista";
-    }
-
-    if (isVersionWin32(&info->version, 6, 1, 0)) {
-        name = "Windows 7";
-    }
-
-    if (isVersionWin32(&info->version, 6, 2, 0)) {
-        name = "Windows 8";
-    }
-
-    if (isVersionWin32(&info->version, 6, 3, 0)) {
-        name = "Windows 8.1";
-    }
-
-    if (isVersionWin32(&info->version, 10, 0, 0)) {
-        name = "Windows 10";
-    }
-
-    if (isVersionWin32(&info->version, 10, 0, 22000)) {
-        name = "Windows 11";
-        build = ".22000";
-    }
-
-    // combine them into a single string
-    strcpy(info->name, name);
-    if (build) {
-        strcat(info->name, build);
-    }
-
-    // get total disk memory (size) in GB
-    ULARGE_INTEGER free, total, available;
-    if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory = (uint32_t)(total.QuadPart / (1024 * 1024 * 1024));
-    }
-
-    // get ram (size) in MB
-    MEMORYSTATUSEX status = {0};
-    status.dwLength = sizeof(MEMORYSTATUSEX);
-    if (GlobalMemoryStatusEx(&status)) {
-        info->totalRAM = (uint32_t)(status.ullTotalPhys / (1024 * 1024));
-    }
-
-    return PAL_RESULT_SUCCESS;
-}
-
 PalResult PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info)
 {
     if (!info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_WINDOWS, 
+            GetLastError());
     }
 
     // check invalid allocator
     if (allocator && (!allocator->allocate || !allocator->free)) {
-        return PAL_RESULT_INVALID_ALLOCATOR;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_WINDOWS, 
+            GetLastError());
     }
 
     memset(info, 0, sizeof(PalCPUInfo));
@@ -231,13 +122,19 @@ PalResult PAL_CALL palGetCPUInfo(
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = nullptr;
     buffer = palAllocate(allocator, len, 16);
     if (!buffer) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return palMakeResult(
+            PAL_RESULT_OUT_OF_MEMORY, 
+            PAL_RESULT_SOURCE_WINDOWS, 
+            GetLastError());
     }
 
     BOOL ret = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
     if (!ret) {
         palFree(allocator, buffer);
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WINDOWS, 
+            GetLastError());
     }
 
     char* ptr = (char*)buffer;

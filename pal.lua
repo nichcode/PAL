@@ -49,10 +49,16 @@ project "PAL"
 
     if (PAL_BUILD_SYSTEM_MODULE) then
         filter {"system:windows", "configurations:*"}
-            files { "src/system/pal_system_win32.c" }
+            files { 
+                "src/system/win32/pal_cpu_win32.c",
+                "src/system/win32/pal_platform_win32.c" 
+            }
 
         filter {"system:linux", "configurations:*"}
-            files { "src/system/pal_system_linux.c" }
+            files { 
+                "src/system/linux/pal_cpu_linux.c",
+                "src/system/linux/pal_platform_linux.c" 
+            }
         
         filter {}
     end

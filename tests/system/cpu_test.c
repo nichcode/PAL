@@ -1,44 +1,7 @@
 
-#include "pal/pal_system.h"
 #include "tests.h"
-
+#include "pal/pal_system.h"
 #include <string.h> // for strcat
-
-static inline const char* platformToString(PalPlatformType type)
-{
-    switch (type) {
-        case PAL_PLATFORM_WINDOWS:
-            return "Windows";
-
-        case PAL_PLATFORM_LINUX:
-            return "Linux";
-
-        case PAL_PLATFORM_MACOS:
-            return "MacOs";
-
-        case PAL_PLATFORM_ANDROID:
-            return "Android";
-
-        case PAL_PLATFORM_IOS:
-            return "Ios";
-    }
-    return nullptr;
-}
-
-static inline const char* platformApiToString(PalPlatformApiType type)
-{
-    switch (type) {
-        case PAL_PLATFORM_API_WIN32:
-            return "Win32";
-
-        case PAL_PLATFORM_API_X11:
-            return "X11";
-
-        case PAL_PLATFORM_API_WAYLAND:
-            return "Wayland";
-    }
-    return nullptr;
-}
 
 static inline const char* cpuArchToString(PalCpuArch arch)
 {
@@ -61,43 +24,18 @@ static inline const char* cpuArchToString(PalCpuArch arch)
     return nullptr;
 }
 
-PalBool systemTest()
+PalBool cpuTest()
 {
     PalResult result;
     PalCPUInfo cpuInfo;
-    PalPlatformInfo platformInfo;
 
-    // get the platform info. Users must cache this
-    result = palGetPlatformInfo(&platformInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get platform info: %s", error);
-        return false;
-    }
-
-    // user defined allocator, set to override the default one or nullptr for
-    // default
+    // user defined allocator, set to override the default one or nullptr for default
     result = palGetCPUInfo(nullptr, &cpuInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get Cpu info: %s", error);
-        return false;
+        logResult(result, "Failed to get cpu information");
+        return PAL_FALSE;
     }
 
-    // log platform information
-    palLog(nullptr, "Platform: %s", platformToString(platformInfo.type));
-    palLog(nullptr, " Name: %s", platformInfo.name);
-    palLog(nullptr, " API: %s", platformApiToString(platformInfo.apiType));
-    palLog(nullptr, " Total RAM: %llu MB", platformInfo.totalRAM);
-    palLog(nullptr, " Total Memory: %llu GB", platformInfo.totalMemory);
-
-    uint16_t major, minor, build;
-    major = platformInfo.version.major;
-    minor = platformInfo.version.minor;
-    build = platformInfo.version.build;
-    palLog(nullptr, " Version: (%d.%d.%d)", major, minor, build);
-
-    // log cpu information
     const char* archString = cpuArchToString(cpuInfo.architecture);
     int32_t processors = cpuInfo.numLogicalProcessors;
 
@@ -162,5 +100,5 @@ PalBool systemTest()
 
     palLog(nullptr, "  Instructions Sets: %s", instructionSets);
 
-    return true;
+    return PAL_TRUE;
 }

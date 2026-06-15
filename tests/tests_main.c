@@ -16,7 +16,8 @@ int main(int argc, char** argv)
     // registerTest(userEventTest, "User Event Test");
 
 #if PAL_HAS_SYSTEM_MODULE
-    // registerTest(systemTest, "System Test");
+    registerTest(platformTest, "Platform Test");
+    registerTest(cpuTest, "CPU Test");
 #endif // PAL_HAS_SYSTEM_MODULE
 
 #if PAL_HAS_THREAD_MODULE

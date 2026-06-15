@@ -20,7 +20,8 @@ project "tests"
 
     if (PAL_BUILD_SYSTEM_MODULE) then
         files {
-            "system/system_test.c"
+            "system/platform_test.c",
+            "system/cpu_test.c"
         }
     end
 

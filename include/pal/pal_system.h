@@ -5,7 +5,7 @@
  */
 
 /**
- * @defgroup pal_system CPU and platform
+ * @defgroup pal_system System
  * @ingroup pal_system
  * @{
  */
@@ -13,34 +13,55 @@
 #ifndef _PAL_SYSTEM_H
 #define _PAL_SYSTEM_H
 
-#include "core/defines.h"
-#include "core/result.h"
-#include "core/version.h"
-#include "core/memory.h"
+#include "pal_core.h"
 
 #define PAL_PLATFORM_NAME_SIZE 32
 #define PAL_CPU_VENDOR_NAME_SIZE 16
 #define PAL_CPU_MODEL_NAME_SIZE 64
 
+#define PAL_CPU_ARCH_UNKNOWN 0
+#define PAL_CPU_ARCH_X86 1
+#define PAL_CPU_ARCH_X86_64 2
+#define PAL_CPU_ARCH_ARM 3
+#define PAL_CPU_ARCH_ARM64 4
+
+#define PAL_CPU_FEATURE_SSE (1ULL << 0)
+#define PAL_CPU_FEATURE_SSE2 (1ULL << 1)
+#define PAL_CPU_FEATURE_SSE3 (1ULL << 2)
+#define PAL_CPU_FEATURE_SSSE3 (1ULL << 3)
+#define PAL_CPU_FEATURE_SSE41 (1ULL << 4) /**< SSE4.1.*/
+#define PAL_CPU_FEATURE_SSE42 (1ULL << 5) /**< SSE4.2.*/
+#define PAL_CPU_FEATURE_AVX (1ULL << 6)
+#define PAL_CPU_FEATURE_AVX2 (1ULL << 7)
+#define PAL_CPU_FEATURE_AVX512F (1ULL << 8)
+#define PAL_CPU_FEATURE_FMA3 (1ULL << 9)
+#define PAL_CPU_FEATURE_BMI1 (1ULL << 10)
+#define PAL_CPU_FEATURE_BMI2 (1ULL << 11)
+
+#define PAL_PLATFORM_WINDOWS 0
+#define PAL_PLATFORM_LINUX 1
+#define PAL_PLATFORM_MACOS 2
+#define PAL_PLATFORM_ANDROID 3
+#define PAL_PLATFORM_IOS 4
+
+#define PAL_PLATFORM_API_WIN32 0
+#define PAL_PLATFORM_API_WAYLAND 1
+#define PAL_PLATFORM_API_X11 2
+#define PAL_PLATFORM_API_COCOA 3
+#define PAL_PLATFORM_API_ANDRIOD 4
+#define PAL_PLATFORM_API_UIKIT 5
+#define PAL_PLATFORM_API_HEADLESS 6
+
 /**
  * @typedef PalCpuArch
  * @brief CPU achitecture. This is not a bitmask.
  *
- * This is a build time achitecture. Example: Generating your project with x64
- * will reflect PAL_CPU_ARCH_X86_64.
- *
  * All CPU achitectures follow the format `PAL_CPU_ARCH_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
-typedef enum {
-    PAL_CPU_ARCH_UNKNOWN,
-    PAL_CPU_ARCH_X86,
-    PAL_CPU_ARCH_X86_64,
-    PAL_CPU_ARCH_ARM,
-    PAL_CPU_ARCH_ARM64
-} PalCpuArch;
+typedef uint32_t PalCpuArch;
 
 /**
  * @typedef PalCpuFeatures
@@ -49,22 +70,9 @@ typedef enum {
  * All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
-typedef enum {
-    PAL_CPU_FEATURE_SSE = (1ULL << 0),
-    PAL_CPU_FEATURE_SSE2 = (1ULL << 1),
-    PAL_CPU_FEATURE_SSE3 = (1ULL << 2),
-    PAL_CPU_FEATURE_SSSE3 = (1ULL << 3),
-    PAL_CPU_FEATURE_SSE41 = (1ULL << 4), /**< SSE4.1.*/
-    PAL_CPU_FEATURE_SSE42 = (1ULL << 5), /**< SSE4.1.*/
-    PAL_CPU_FEATURE_AVX = (1ULL << 6),
-    PAL_CPU_FEATURE_AVX2 = (1ULL << 7),
-    PAL_CPU_FEATURE_AVX512F = (1ULL << 8),
-    PAL_CPU_FEATURE_FMA3 = (1ULL << 9),
-    PAL_CPU_FEATURE_BMI1 = (1ULL << 10),
-    PAL_CPU_FEATURE_BMI2 = (1ULL << 11)
-} PalCpuFeatures;
+typedef uint64_t PalCpuFeatures;
 
 /**
  * @typedef PalPlatformType
@@ -76,15 +84,9 @@ typedef enum {
  * All platform types follow the format `PAL_PLATFORM_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
-typedef enum {
-    PAL_PLATFORM_WINDOWS,
-    PAL_PLATFORM_LINUX,
-    PAL_PLATFORM_MACOS,
-    PAL_PLATFORM_ANDROID,
-    PAL_PLATFORM_IOS
-} PalPlatformType;
+typedef uint32_t PalPlatformType;
 
 /**
  * @typedef PalPlatformApiType
@@ -96,23 +98,15 @@ typedef enum {
  * All platform API types follow the format `PAL_PLATFORM_API_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
-typedef enum {
-    PAL_PLATFORM_API_WIN32,
-    PAL_PLATFORM_API_WAYLAND,
-    PAL_PLATFORM_API_X11,
-    PAL_PLATFORM_API_COCOA,
-    PAL_PLATFORM_API_ANDRIOD,
-    PAL_PLATFORM_API_UIKIT,
-    PAL_PLATFORM_API_HEADLESS
-} PalPlatformApiType;
+typedef uint32_t PalPlatformApiType;
 
 /**
  * @struct PalPlatformInfo
  * @brief Information about a platform (OS).
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalPlatformType type;
@@ -127,16 +121,16 @@ typedef struct {
  * @struct PalCPUInfo
  * @brief Information about a CPU.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
+    PalCpuFeatures features;
+    PalCpuArch architecture;
     uint32_t numCores;
     uint32_t cacheL1;              /**< L1 cache in KB.*/
     uint32_t cacheL2;              /**< L2 cache in KB.*/
     uint32_t cacheL3;              /**< L3 cache in KB.*/
     uint32_t numLogicalProcessors; /**< Number of CPUs.*/
-    PalCpuArch architecture;
-    PalCpuFeatures features;
     char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name.*/
     char model[PAL_CPU_MODEL_NAME_SIZE];   /**< CPU modal name.*/
 } PalCPUInfo;

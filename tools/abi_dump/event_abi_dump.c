@@ -16,6 +16,7 @@ static void eventDump()
     uint32_t xOffset2 = 8;
     uint32_t xOffset3 = 16;
     uint32_t xOffset4 = 24;
+    uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEvent);
     uint32_t yAlign = PAL_ALIGNOF(PalEvent);
@@ -23,6 +24,7 @@ static void eventDump()
     uint32_t yOffset2 = offsetof(PalEvent, data);
     uint32_t yOffset3 = offsetof(PalEvent, data2);
     uint32_t yOffset4 = offsetof(PalEvent, type);
+    uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
     const char* result = s_FailedString;
     // clang-format off
@@ -31,7 +33,8 @@ static void eventDump()
         xOffset1 == yOffset1      && 
         xOffset2 == yOffset2      && 
         xOffset3 == yOffset3      && 
-        xOffset4 == yOffset4) {
+        xOffset4 == yOffset4      && 
+        xPadding == yPadding) {
         result = s_PassedString;
     }
     // clang-format on
@@ -43,6 +46,7 @@ static void eventDump()
 
     palLog(nullptr, "size          %u          %u", xSize, ySize);
     palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
     palLog(nullptr, "userId @      %u           %u", xOffset1, yOffset1);
     palLog(nullptr, "data @        %u           %u", xOffset2, yOffset2);
     palLog(nullptr, "data2 @       %u          %u", xOffset3, yOffset3);
@@ -60,12 +64,14 @@ static void eventQueueDump()
     uint32_t xOffset1 = 0;
     uint32_t xOffset2 = 8;
     uint32_t xOffset3 = 16;
+    uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEventQueue);
     uint32_t yAlign = PAL_ALIGNOF(PalEventQueue);
     uint32_t yOffset1 = offsetof(PalEventQueue, push);
     uint32_t yOffset2 = offsetof(PalEventQueue, poll);
     uint32_t yOffset3 = offsetof(PalEventQueue, userData);
+    uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
     const char* result = s_FailedString;
     // clang-format off
@@ -73,7 +79,8 @@ static void eventQueueDump()
         xAlign == yAlign          && 
         xOffset1 == yOffset1      && 
         xOffset2 == yOffset2      && 
-        xOffset3 == yOffset3) {
+        xOffset3 == yOffset3      && 
+        xPadding == yPadding) {
         result = s_PassedString;
     }
     // clang-format on
@@ -85,6 +92,7 @@ static void eventQueueDump()
 
     palLog(nullptr, "size          %u          %u", xSize, ySize);
     palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
     palLog(nullptr, "push @        %u           %u", xOffset1, yOffset1);
     palLog(nullptr, "poll @        %u           %u", xOffset2, yOffset2);
     palLog(nullptr, "userData @    %u          %u", xOffset3, yOffset3);
@@ -102,6 +110,7 @@ static void eventCreateInfoDump()
     uint32_t xOffset2 = 8;
     uint32_t xOffset3 = 16;
     uint32_t xOffset4 = 24;
+    uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEventDriverCreateInfo);
     uint32_t yAlign = PAL_ALIGNOF(PalEventDriverCreateInfo);
@@ -109,6 +118,7 @@ static void eventCreateInfoDump()
     uint32_t yOffset2 = offsetof(PalEventDriverCreateInfo, queue);
     uint32_t yOffset3 = offsetof(PalEventDriverCreateInfo, callback);
     uint32_t yOffset4 = offsetof(PalEventDriverCreateInfo, userData);
+    uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
     const char* result = s_FailedString;
     // clang-format off
@@ -117,7 +127,8 @@ static void eventCreateInfoDump()
         xOffset1 == yOffset1      && 
         xOffset2 == yOffset2      && 
         xOffset3 == yOffset3      && 
-        xOffset4 == yOffset4) {
+        xOffset4 == yOffset4      && 
+        xPadding == yPadding) {
         result = s_PassedString;
     }
     // clang-format on
@@ -129,6 +140,7 @@ static void eventCreateInfoDump()
 
     palLog(nullptr, "size          %u          %u", xSize, ySize);
     palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
     palLog(nullptr, "allocator @   %u           %u", xOffset1, yOffset1);
     palLog(nullptr, "queue @       %u           %u", xOffset2, yOffset2);
     palLog(nullptr, "callback @    %u          %u", xOffset3, yOffset3);

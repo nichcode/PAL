@@ -51,7 +51,8 @@ PalBool userEventTest();
 PalBool eventTest();
 
 // system tests
-PalBool systemTest();
+PalBool platformTest();
+PalBool cpuTest();
 
 // system tests
 PalBool threadTest();
