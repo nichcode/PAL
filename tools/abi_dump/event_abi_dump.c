@@ -151,7 +151,7 @@ static void eventCreateInfoDump()
     palLog(nullptr, "");
 }
 
-void dumpEventABI()
+void eventABIDump()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");

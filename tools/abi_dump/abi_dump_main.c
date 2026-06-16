@@ -19,6 +19,7 @@
 int main(int argc, char** argv)
 {
     // clang-format on
+    PalBool dumpAll = PAL_FALSE;
     PalBool dumpCore = PAL_FALSE;
     PalBool dumpEvent = PAL_FALSE;
     PalBool dumpThread = PAL_FALSE;
@@ -30,7 +31,10 @@ int main(int argc, char** argv)
     PalBool dumpHelp = PAL_FALSE;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--core") == 0) {
+        if (strcmp(argv[i], "--all") == 0) {
+            dumpAll = PAL_TRUE;
+
+        } else if (strcmp(argv[i], "--core") == 0) {
             dumpCore = PAL_TRUE;
 
         } else if (strcmp(argv[i], "--event") == 0) {
@@ -59,16 +63,26 @@ int main(int argc, char** argv)
         }
     }
 
+    if (dumpAll) {
+        dumpCore = PAL_TRUE;
+        dumpEvent = PAL_TRUE;
+        dumpThread = PAL_TRUE;
+        dumpOpengl = PAL_TRUE;
+        dumpGraphics = PAL_TRUE;
+        dumpSystem = PAL_TRUE;
+        dumpVideo = PAL_TRUE;
+    }
+
     if (dumpCore) {
-        dumpCoreABI();
+        coreABIDump();
     }
 
     if (dumpEvent) {
-        dumpEventABI();
+        eventABIDump();
     }
 
     if (dumpThread) {
-        dumpThreadABI();
+        threadABIDump();
     }
 
     if (dumpVersion) {
@@ -80,6 +94,7 @@ int main(int argc, char** argv)
         palLog(nullptr, "Options:");
         palLog(nullptr, "  --help          Display available options");
         palLog(nullptr, "  --version       Display ABI dump version information");
+        palLog(nullptr, "  --all           Display all PAL structs ABI information");
         palLog(nullptr, "  --core          Display PAL core structs ABI information");
         palLog(nullptr, "  --event         Display PAL event structs ABI information");
         palLog(nullptr, "  --graphics      Display PAL graphics structs ABI information");

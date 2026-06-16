@@ -33,17 +33,17 @@ static inline PalBool getVersionWin32(PalVersion* version)
     HINSTANCE ntdll = GetModuleHandleW(L"ntdll.dll");
     RtlGetVersionFn getVer = (RtlGetVersionFn)GetProcAddress(ntdll, "RtlGetVersion");
     if (!getVer) {
-        return false;
+        return PAL_FALSE;
     }
 
     if (getVer((PRTL_OSVERSIONINFOW)&ver)) {
-        return false;
+        return PAL_FALSE;
     }
 
     version->major = ver.dwMajorVersion;
     version->minor = ver.dwMinorVersion;
     version->build = ver.dwBuildNumber;
-    return true;
+    return PAL_TRUE;
 }
 
 static inline PalBool isVersionWin32(
@@ -53,19 +53,19 @@ static inline PalBool isVersionWin32(
     uint32_t build)
 {
     if (osVersion->major > major) {
-        return true;
+        return PAL_TRUE;
     }
 
     if (osVersion->major < major) {
-        return false;
+        return PAL_FALSE;
     }
 
     if (osVersion->minor > minor) {
-        return true;
+        return PAL_TRUE;
     }
 
     if (osVersion->minor < minor) {
-        return false;
+        return PAL_FALSE;
     }
 
     return osVersion->build >= build;

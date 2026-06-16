@@ -138,7 +138,7 @@ static void loggerDump()
     palLog(nullptr, "");
 }
 
-void dumpCoreABI()
+void coreABIDump()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");

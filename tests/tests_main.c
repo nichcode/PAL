@@ -15,19 +15,19 @@ int main(int argc, char** argv)
     // registerTest(eventTest, "Event test");
     // registerTest(userEventTest, "User Event Test");
 
-#if PAL_HAS_SYSTEM_MODULE
+#if PAL_HAS_SYSTEM_MODULE == 1
     registerTest(platformTest, "Platform Test");
     registerTest(cpuTest, "CPU Test");
 #endif // PAL_HAS_SYSTEM_MODULE
 
-#if PAL_HAS_THREAD_MODULE
+#if PAL_HAS_THREAD_MODULE == 1
     registerTest(threadTest, "Thread Test");
     registerTest(tlsTest, "TLS Test");
     registerTest(mutexTest, "Mutex Test");
     registerTest(condvarTest, "Condvar Test");
 #endif // PAL_HAS_THREAD_MODULE
 
-#if PAL_HAS_VIDEO_MODULE
+#if PAL_HAS_VIDEO_MODULE == 1
     // registerTest(videoTest, "Video Test");
     // registerTest(monitorTest, "Monitor Test");
     // registerTest(monitorModeTest, "Monitor Mode Test");
@@ -45,25 +45,25 @@ int main(int argc, char** argv)
 
     // This test can run without video system so long as your have a valid
     // window
-#if PAL_HAS_OPENGL_MODULE && PAL_HAS_VIDEO_MODULE
+#if PAL_HAS_OPENGL_MODULE == 1&& PAL_HAS_VIDEO_MODULE == 1
     // registerTest(openglTest, "Opengl Test");
     // registerTest(openglFBConfigTest, "Opengl FBConfig Test");
     // registerTest(openglContextTest, "Context Test");
     // registerTest(openglMultiContextTest, "Opengl Multi Context Test");
 #endif // PAL_HAS_OPENGL_MODULE
 
-#if PAL_HAS_OPENGL_MODULE && PAL_HAS_VIDEO_MODULE && PAL_HAS_THREAD_MODULE
+#if PAL_HAS_OPENGL_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1 && PAL_HAS_THREAD_MODULE == 1
     // registerTest(multiThreadOpenGlTest, "Multi Thread Opengl Test");
 #endif
 
-#if PAL_HAS_GRAPHICS_MODULE
+#if PAL_HAS_GRAPHICS_MODULE == 1
     // registerTest(graphicsTest, "Graphics Test");
     // registerTest(computeTest, "Compute Test");
     // registerTest(rayTracingTest, "Ray Tracing Test");
     // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
 #endif // PAL_HAS_GRAPHICS_MODULE
 
-#if PAL_HAS_GRAPHICS_MODULE && PAL_HAS_VIDEO_MODULE
+#if PAL_HAS_GRAPHICS_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1
     // registerTest(clearColorTest, "Clear Color Test");
     // registerTest(triangleTest, "Triangle Test");
     // registerTest(meshTest, "Mesh Test");

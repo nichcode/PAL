@@ -8,7 +8,7 @@
 #include "dumps.h"
 #include "pal/pal_thread.h"
 
-void dumpThreadABI()
+void threadABIDump()
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
