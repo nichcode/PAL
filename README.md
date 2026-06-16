@@ -55,7 +55,7 @@ int main() {
     w.width = 640; 
     w.height = 480; 
     w.title = "Hello PAL";
-    w.show = true;
+    w.show = PAL_TRUE;
     palCreateWindow(&w, &window);
 
     while (1) {

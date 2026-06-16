@@ -219,9 +219,8 @@ PalBool attachWindowTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // initialize the video system. We pass the event driver to recieve video
@@ -229,18 +228,17 @@ PalBool attachWindowTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // check for support
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS)) {
+    PalVideoFeatures features = palGetVideoFeatures();
+    if (!(features & PAL_VIDEO_FEATURE_FOREIGN_WINDOWS)) {
         palLog(nullptr, "Attaching and detaching foreign windows feature not supported");
         palDestroyEventDriver(eventDriver);
         palShutdownVideo();
-        return false;
+        return PAL_FALSE;
     }
 
     // we are interested in move and close events
@@ -259,7 +257,7 @@ PalBool attachWindowTest()
     void* platformWindow = createPlatformWindow();
     if (!platformWindow) {
         palLog(nullptr, "Failed to create platform window");
-        return false;
+        return PAL_FALSE;
     }
 
     // attach the created window to PAL video system
@@ -269,22 +267,20 @@ PalBool attachWindowTest()
     PalWindow* myWindow = nullptr;
     result = palAttachWindow(platformWindow, &myWindow);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to attach window: %s", error);
-        return false;
+        logResult(result, "Failed to attach window");
+        return PAL_FALSE;
     }
 
     // now that the window is attached, we can use PAL video API
     // to manager it
     result = palSetWindowTitle(myWindow, WINDOW_TITLE);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to attach window: %s", error);
-        return false;
+        logResult(result, "Failed to set window title");
+        return PAL_FALSE;
     }
 
-    PalBool running = true;
-    PalBool detached = false;
+    PalBool running = PAL_TRUE;
+    PalBool detached = PAL_FALSE;
     int32_t counter = 0;
     while (running) {
         // update the video system to push video events
@@ -297,7 +293,7 @@ PalBool attachWindowTest()
                     // we check if its really our attached window
                     PalWindow* window = palUnpackPointer(event.data2);
                     if (window == myWindow) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -314,7 +310,7 @@ PalBool attachWindowTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -330,7 +326,7 @@ PalBool attachWindowTest()
                         palDetachWindow(myWindow, nullptr);
                         palLog(nullptr, "window detached");
                         palLog(nullptr, "not recieving events anymore");
-                        detached = true;
+                        detached = PAL_TRUE;
                         counter = 0;
                     }
                     break;
@@ -347,7 +343,7 @@ PalBool attachWindowTest()
             palLog(nullptr, "window attached");
             palLog(nullptr, "recieving events");
             counter = 0; // reset it
-            detached = false;
+            detached = PAL_FALSE;
         }
     }
 
@@ -355,9 +351,8 @@ PalBool attachWindowTest()
     // myPlatformWindow will be equal our platformWindow
     result = palDetachWindow(myWindow, &myPlatformWindow);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to attach window: %s", error);
-        return false;
+        logResult(result, "Failed to detach window");
+        return PAL_FALSE;
     }
 
     // We need to destroy the platform window before we shutdown
@@ -368,5 +363,5 @@ PalBool attachWindowTest()
     palShutdownVideo();
     palDestroyEventDriver(eventDriver);
 
-    return true;
+    return PAL_TRUE;
 }

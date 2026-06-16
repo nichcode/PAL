@@ -70,7 +70,7 @@ typedef uint64_t PalThreadFeatures;
 
 /**
  * @typedef PalThreadPriority
- * @brief Thread priority types. This is not a bitmask enum.
+ * @brief Thread priority types. This is not a bitmask.
  *
  * All thread priority types follow the format `PAL_THREAD_PRIORITY_**` for
  * consistency and API use.

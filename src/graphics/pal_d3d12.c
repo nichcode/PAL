@@ -1,24 +1,8 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 // ==================================================
@@ -1094,7 +1078,7 @@ static CommandBufferData* getFreeCmdBufferData(CommandPool* pool)
 {
     for (int i = 0; i < pool->size; ++i) {
         if (!pool->cmdBuffersData[i].used) {
-            pool->cmdBuffersData[i].used = true;
+            pool->cmdBuffersData[i].used = PAL_TRUE;
             return &pool->cmdBuffersData[i];
         }
     }
@@ -1112,7 +1096,7 @@ static CommandBufferData* getFreeCmdBufferData(CommandPool* pool)
         pool->cmdBuffersData = data;
         pool->size = count;
 
-        pool->cmdBuffersData[freeIndex].used = true;
+        pool->cmdBuffersData[freeIndex].used = PAL_TRUE;
         return &pool->cmdBuffersData[freeIndex];
     }
     return nullptr;
@@ -1289,16 +1273,16 @@ static PalBool fillBuildInfoD3D12(
     static uint32_t maxGeometryCount = 100000;
 
     if (info->geometryCount > maxGeometryCount) {
-        return false;
+        return PAL_FALSE;
     }
 
     if (info->instanceCount > maxInstanceCount) {
-        return false;
+        return PAL_FALSE;
     }
 
     for (int i = 0; i < info->geometryCount; i++) {
         if (info->geometries[i].primitiveCount > maxPrimitiveCount) {
-            return false;
+            return PAL_FALSE;
         }
 
         D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
@@ -1377,7 +1361,7 @@ static PalBool fillBuildInfoD3D12(
     buildInfo->DestAccelerationStructureData = dstAs;
     buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
     
-    return true;
+    return PAL_TRUE;
 }
 
 static uint32_t getFormatSizeD3D12(PalFormat format)
@@ -2043,7 +2027,7 @@ static void commitShaderbindingTableUpdateD3D12(
     barrier.Transition.pResource = sbt->buffer;
 
     cmdBuffer->handle->lpVtbl->ResourceBarrier(cmdBuffer->handle, 1, &barrier);
-    sbt->isDirty = false;
+    sbt->isDirty = PAL_FALSE;
 }
 
 static void getDescriptorTierLimitsD3D12(
@@ -2203,7 +2187,7 @@ PalResult PAL_CALL initGraphicsD3D12(
                     s_D3D.severities[s_D3D.severityCount++] = D3D12_MESSAGE_SEVERITY_CORRUPTION;
                 }
             }
-            s_D3D.debugLayer = true;
+            s_D3D.debugLayer = PAL_TRUE;
             s_D3D.debugCallback = debugger->callback;
         }
     }
@@ -2364,7 +2348,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
         &arch,
         sizeof(arch));
 
-    if (arch.UMA == true) {
+    if (arch.UMA == PAL_TRUE) {
         info->type = PAL_ADAPTER_TYPE_INTEGRATED;
 
     } else {
@@ -2443,10 +2427,10 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     // always supported
     getDescriptorTierLimitsD3D12(d3dAdapter->tmpDevice, resourceCaps, nullptr);
     resourceCaps->maxBoundSets = 32;
-    resourceCaps->sampledImageDynamicArrayIndexing = true;
-    resourceCaps->storageImageDynamicArrayIndexing = true;
-    resourceCaps->storageBufferDynamicArrayIndexing = true;
-    resourceCaps->uniformBufferDynamicArrayIndexing = true;
+    resourceCaps->sampledImageDynamicArrayIndexing = PAL_TRUE;
+    resourceCaps->storageImageDynamicArrayIndexing = PAL_TRUE;
+    resourceCaps->storageBufferDynamicArrayIndexing = PAL_TRUE;
+    resourceCaps->uniformBufferDynamicArrayIndexing = PAL_TRUE;
 
     // compute limits
     computeCaps->maxWorkGroupInvocations = D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
@@ -3106,17 +3090,17 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
-    caps->depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
-    caps->depthResolves[PAL_RESOLVE_MODE_AVERAGE] = true;
-    caps->depthResolves[PAL_RESOLVE_MODE_MIN] = true;
-    caps->depthResolves[PAL_RESOLVE_MODE_MAX] = true;
+    caps->depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = PAL_TRUE;
+    caps->depthResolves[PAL_RESOLVE_MODE_AVERAGE] = PAL_TRUE;
+    caps->depthResolves[PAL_RESOLVE_MODE_MIN] = PAL_TRUE;
+    caps->depthResolves[PAL_RESOLVE_MODE_MAX] = PAL_TRUE;
 
-    caps->stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
-    caps->stencilResolves[PAL_RESOLVE_MODE_AVERAGE] = false;
-    caps->stencilResolves[PAL_RESOLVE_MODE_MIN] = true;
-    caps->stencilResolves[PAL_RESOLVE_MODE_MAX] = true;
+    caps->stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = PAL_TRUE;
+    caps->stencilResolves[PAL_RESOLVE_MODE_AVERAGE] = PAL_FALSE;
+    caps->stencilResolves[PAL_RESOLVE_MODE_MIN] = PAL_TRUE;
+    caps->stencilResolves[PAL_RESOLVE_MODE_MAX] = PAL_TRUE;
 
-    caps->independentResolve = true;
+    caps->independentResolve = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -3130,10 +3114,10 @@ PalResult PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
     }
 
     // these are supported if fragment shading rate feature is
-    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_1X1] = true;
-    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_1X2] = true;
-    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X1] = true;
-    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X2] = true;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_1X1] = PAL_TRUE;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_1X2] = PAL_TRUE;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X1] = PAL_TRUE;
+    caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X2] = PAL_TRUE;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 options = {0};
     d3dDevice->handle->lpVtbl->CheckFeatureSupport(
@@ -3143,22 +3127,22 @@ PalResult PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
         sizeof(options));
 
     if (options.AdditionalShadingRatesSupported) {
-        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4] = true;
-        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2] = true;
-        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4] = true;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4] = PAL_TRUE;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2] = PAL_TRUE;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4] = PAL_TRUE;
 
     } else {
-        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4] = false;
-        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2] = false;
-        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4] = false;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4] = PAL_FALSE;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2] = PAL_FALSE;
+        caps->shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4] = PAL_FALSE;
     }
 
     // there are supported if fragment shading rate feature is
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP] = true;
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE] = true;
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN] = true;
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX] = true;
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP] = PAL_TRUE;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE] = PAL_TRUE;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN] = PAL_TRUE;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX] = PAL_TRUE;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = PAL_TRUE;
 
     caps->minTexelWidth = 1; // safe default
     caps->minTexelHeight = 1; // safe default
@@ -3224,14 +3208,14 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     }
 
     // always supported
-    caps->sampledImageNonUniformIndexing = true;
-    caps->sampledImageUpdateAfterBind = true;
-    caps->storageImageNonUniformIndexing = true;
-    caps->storageImageUpdateAfterBind = true;
-    caps->storageBufferNonUniformIndexing = true;
-    caps->storageBufferUpdateAfterBind = true;
-    caps->uniformBufferNonUniformIndexing = true;
-    caps->uniformBufferUpdateAfterBind = true;
+    caps->sampledImageNonUniformIndexing = PAL_TRUE;
+    caps->sampledImageUpdateAfterBind = PAL_TRUE;
+    caps->storageImageNonUniformIndexing = PAL_TRUE;
+    caps->storageImageUpdateAfterBind = PAL_TRUE;
+    caps->storageBufferNonUniformIndexing = PAL_TRUE;
+    caps->storageBufferUpdateAfterBind = PAL_TRUE;
+    caps->uniformBufferNonUniformIndexing = PAL_TRUE;
+    caps->uniformBufferUpdateAfterBind = PAL_TRUE;
 
     getDescriptorTierLimitsD3D12(d3dDevice->handle, nullptr, caps);
     return PAL_RESULT_SUCCESS;
@@ -3341,7 +3325,7 @@ PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
 
     // wait on the fence if the submited work is not done
     if (fence->lpVtbl->GetCompletedValue(fence) < d3dQueue->fenceValue) {
-        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        HANDLE event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
         fence->lpVtbl->SetEventOnCompletion(fence, d3dQueue->fenceValue, event);
         WaitForSingleObject(event, INFINITE);
         CloseHandle(event);
@@ -3355,9 +3339,9 @@ PalBool PAL_CALL canQueuePresentD3D12(
 {
     Queue* d3dQueue = (Queue*)queue;
     if (d3dQueue->type == PAL_QUEUE_TYPE_GRAPHICS) {
-        return true; // all graphics queues support presentation
+        return PAL_TRUE; // all graphics queues support presentation
     }
-    return false;
+    return PAL_FALSE;
 }
 
 // ==================================================
@@ -3423,7 +3407,7 @@ PalBool PAL_CALL isFormatSupportedD3D12(
 
     DXGI_FORMAT fmt = formatToD3D12(format);
     if (fmt == DXGI_FORMAT_UNKNOWN) {
-        return false;
+        return PAL_FALSE;
     }
 
     support.Format = fmt;
@@ -3434,10 +3418,10 @@ PalBool PAL_CALL isFormatSupportedD3D12(
         sizeof(support));
 
     if (FAILED(result) || (support.Support1 == 0 && support.Support2 == 0)) {
-        return false;
+        return PAL_FALSE;
     }
 
-    return true;
+    return PAL_TRUE;
 }
 
 PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
@@ -3490,7 +3474,7 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
 
     DXGI_FORMAT fmt = formatToD3D12(format);
     if (fmt == DXGI_FORMAT_UNKNOWN) {
-        return false;
+        return PAL_FALSE;
     }
 
     support.Format = fmt;
@@ -3501,12 +3485,12 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
         sizeof(support));
 
     if (FAILED(result)) {
-        return false;
+        return PAL_FALSE;
     }
 
     if (support.Support1 == 0 && support.Support2 == 0) {
         // format not supported
-        return false;
+        return PAL_FALSE;
     }
 
     // check sample count
@@ -3593,7 +3577,7 @@ PalResult PAL_CALL createImageD3D12(
         image->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    image->belongsToSwapchain = false;
+    image->belongsToSwapchain = PAL_FALSE;
     image->info.depthOrArraySize = info->depthOrArraySize;
     image->info.type = info->type;
     image->info.format = info->format;
@@ -3647,9 +3631,9 @@ PalResult PAL_CALL getImageMemoryRequirementsD3D12(
         &d3dImage->desc);
 
     // d3d12 allows images to be used with only GPU only heap
-    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = PAL_TRUE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = PAL_FALSE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = PAL_FALSE;
 
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
@@ -3917,7 +3901,7 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     HRESULT result;
     Surface* d3dSurface = (Surface*)surface;
     Device* d3dDevice = (Device*)device;
-    PalBool supportHDR10 = false;
+    PalBool supportHDR10 = PAL_FALSE;
     IDXGISwapChain1* swapchain1 = nullptr;
     IDXGISwapChain3* swapchain3 = nullptr;
 
@@ -3963,31 +3947,31 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
         &flags);
 
     if (SUCCEEDED(result) && (flags & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)) {
-        supportHDR10 = true;
+        supportHDR10 = PAL_TRUE;
     }
 
-    BOOL allowTearing = FALSE;
+    BOOL allowTearing = PAL_FALSE;
     s_D3D.factory->lpVtbl->CheckFeatureSupport(
         s_D3D.factory,
         DXGI_FEATURE_PRESENT_ALLOW_TEARING,
         &allowTearing,
         sizeof(allowTearing));
 
-    caps->presentModes[PAL_PRESENT_MODE_FIFO] = true;
+    caps->presentModes[PAL_PRESENT_MODE_FIFO] = PAL_TRUE;
     if (allowTearing) {
         caps->minImageCount = 3;
-        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = true;
-        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = true;
+        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = PAL_TRUE;
+        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = PAL_TRUE;
 
     } else {
         caps->minImageCount = 2;
-        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = false;
-        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = false;
+        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = PAL_FALSE;
+        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = PAL_FALSE;
     }
 
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = true;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = PAL_TRUE;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = PAL_FALSE;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = PAL_FALSE;
 
     caps->maxImageCount = 8; // safe default
     caps->minImageWidth = 1;
@@ -4004,10 +3988,10 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     baseFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     baseFormats[3] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = false;
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = false;
-    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = false;
-    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = false;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = PAL_FALSE;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = PAL_FALSE;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = PAL_FALSE;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = PAL_FALSE;
 
     for (int i = 0; i < PAL_SURFACE_FORMAT_MAX; i++) {
         formatSupport.Format = baseFormats[i];
@@ -4019,21 +4003,21 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
 
         if (SUCCEEDED(result) && (formatSupport.Support1 != 0 || formatSupport.Support2 != 0)) {
             if (baseFormats[i] == DXGI_FORMAT_B8G8R8A8_UNORM) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = PAL_TRUE;
             }
 
             if (baseFormats[i] == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = PAL_TRUE;
             }
 
             if (baseFormats[i] == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
-                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = true;
+                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = PAL_TRUE;
             }
 
             if (baseFormats[i] == DXGI_FORMAT_R16G16B16A16_FLOAT) {
                 // check HDR10 color space
                 if (supportHDR10) {
-                    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = true;
+                    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = PAL_TRUE;
                 }
             }
         }
@@ -4059,7 +4043,7 @@ PalResult PAL_CALL createSwapchainD3D12(
     Device* d3dDevice = (Device*)device;
     Queue* d3dQueue = (Queue*)queue;
     Swapchain* swapchain = nullptr;
-    PalBool isHDRColorspace = false;
+    PalBool isHDRColorspace = PAL_FALSE;
 
     if (!(d3dDevice->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
@@ -4093,7 +4077,7 @@ PalResult PAL_CALL createSwapchainD3D12(
     desc.SampleDesc.Count = 1;
     desc.BufferCount = info->imageCount;
     desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    desc.Stereo = false;
+    desc.Stereo = PAL_FALSE;
     desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
     desc.Scaling = DXGI_SCALING_NONE;
 
@@ -4129,7 +4113,7 @@ PalResult PAL_CALL createSwapchainD3D12(
     } else if (info->format == PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10) {
         desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
         imageFormat = PAL_FORMAT_R16G16B16A16_SFLOAT;
-        isHDRColorspace = true;
+        isHDRColorspace = PAL_TRUE;
     }
 
     swapchain->format = desc.Format;
@@ -4178,7 +4162,7 @@ PalResult PAL_CALL createSwapchainD3D12(
         swapchain->handle->lpVtbl->GetBuffer(swapchain->handle, i, &IID_Resource, (void**)&tmp);
 
         Image* image = &swapchain->images[i];
-        image->belongsToSwapchain = true;
+        image->belongsToSwapchain = PAL_TRUE;
         image->device = d3dDevice;
         image->handle = tmp;
 
@@ -4467,12 +4451,12 @@ PalResult PAL_CALL createFenceD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    fence->canReset = false;
+    fence->canReset = PAL_FALSE;
     if (d3dDevice->features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
-        fence->canReset = true;
+        fence->canReset = PAL_TRUE;
     }
 
-    fence->isTimeline = false; // for sempaphores
+    fence->isTimeline = PAL_FALSE; // for sempaphores
     fence->value = 0;
     *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
@@ -4495,7 +4479,7 @@ PalResult PAL_CALL waitFenceD3D12(
     uint64_t value = d3dFence->value;
 
     if (d3dFence->handle->lpVtbl->GetCompletedValue(d3dFence->handle) < value) {
-        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        HANDLE event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
         result = d3dFence->handle->lpVtbl->SetEventOnCompletion(
             d3dFence->handle,
             value,
@@ -4539,9 +4523,9 @@ PalBool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
 {
     Fence* d3dFence = (Fence*)fence;
     if (d3dFence->handle->lpVtbl->GetCompletedValue(d3dFence->handle) == 0) {
-        return false;
+        return PAL_FALSE;
     }
-    return true;
+    return PAL_TRUE;
 }
 
 // ==================================================
@@ -4568,7 +4552,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
     }
 
     if (enableTimeline) {
-        semaphore->isTimeline = true;
+        semaphore->isTimeline = PAL_TRUE;
     }
 
     result = d3dDevice->handle->lpVtbl->CreateFence(
@@ -4587,7 +4571,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
         return PAL_RESULT_PLATFORM_FAILURE;
     }
 
-    semaphore->canReset = false;
+    semaphore->canReset = PAL_FALSE;
     semaphore->value = 0;
     *outSemaphore = (PalSemaphore*)semaphore;
     return PAL_RESULT_SUCCESS;
@@ -4613,7 +4597,7 @@ PalResult PAL_CALL waitSemaphoreD3D12(
     }
 
     if (d3dSemaphore->handle->lpVtbl->GetCompletedValue(d3dSemaphore->handle) < value) {
-        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        HANDLE event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
         result = d3dSemaphore->handle->lpVtbl->SetEventOnCompletion(
             d3dSemaphore->handle,
             value,
@@ -4769,12 +4753,12 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
     }
 
     memset(cmdBuffer, 0, sizeof(CommandBuffer));
-    cmdBuffer->primary = true;
+    cmdBuffer->primary = PAL_TRUE;
 
     D3D12_COMMAND_LIST_TYPE cmdBufferType = cmdPool->type;
     if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         cmdBufferType = D3D12_COMMAND_LIST_TYPE_BUNDLE;
-        cmdBuffer->primary = false;
+        cmdBuffer->primary = PAL_FALSE;
     }
 
     // create an allocator
@@ -4898,7 +4882,7 @@ void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
 
         palFree(s_D3D.allocator, cmdBuffer);
         data->cmdBuffer = nullptr;
-        data->used = false;
+        data->used = PAL_FALSE;
     }
 }
 
@@ -5227,7 +5211,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
         d3dCmdBuffer->handle,
         info->colorAttachentCount,
         colorAttachments,
-        FALSE,
+        PAL_FALSE,
         depthStencil);
 
     for (int i = 0; i < info->colorAttachentCount; i++) {
@@ -6477,20 +6461,20 @@ PalResult PAL_CALL createBufferD3D12(
 
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         buffer->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-        buffer->isAccelerationStructure = true;
+        buffer->isAccelerationStructure = PAL_TRUE;
     }
 
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
         buffer->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-        buffer->isScratch = true;
+        buffer->isScratch = PAL_TRUE;
     }
 
     if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
-        buffer->supportsAddress = true;
+        buffer->supportsAddress = PAL_TRUE;
     }
 
     if (info->usages & PAL_BUFFER_USAGE_INDIRECT) {
-        buffer->hasIndirect = true;
+        buffer->hasIndirect = PAL_TRUE;
     }
 
     buffer->device = d3dDevice;
@@ -6526,9 +6510,9 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
         &d3dBuffer->desc);
 
     // d3d12 allows buffers to be used with all memory heap types
-    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = true;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = true;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = true;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = PAL_TRUE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = PAL_TRUE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = PAL_TRUE;
 
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
@@ -6634,18 +6618,18 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     D3D12_HEAP_DESC heapProps = {0};
     heapProps = *mem->lpVtbl->GetDesc(mem, &__ret);
 
-    d3dBuffer->canChangeState = true;
+    d3dBuffer->canChangeState = PAL_TRUE;
     if (heapProps.Properties.Type == D3D12_HEAP_TYPE_UPLOAD) {
         state = D3D12_RESOURCE_STATE_GENERIC_READ;
-        d3dBuffer->canChangeState = false;
+        d3dBuffer->canChangeState = PAL_FALSE;
 
     } else if (heapProps.Properties.Type == D3D12_HEAP_TYPE_READBACK) {
         state = D3D12_RESOURCE_STATE_COPY_DEST;
-        d3dBuffer->canChangeState = false;
+        d3dBuffer->canChangeState = PAL_FALSE;
     }
 
     if (d3dBuffer->isAccelerationStructure) {
-        d3dBuffer->canChangeState = false;
+        d3dBuffer->canChangeState = PAL_FALSE;
         state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
     } else if (d3dBuffer->isScratch) {
@@ -7020,7 +7004,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             &__gpuRet);
         heap->gpuBase = gpuHandle.ptr;
 
-        pool->hasResourceHeap = true;
+        pool->hasResourceHeap = PAL_TRUE;
     }
 
     // sampler heap
@@ -7064,7 +7048,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             &__gpuRet);
         heap->gpuBase = gpuHandle.ptr;
 
-        pool->hasSamplerHeap = true;
+        pool->hasSamplerHeap = PAL_TRUE;
     }
 
     pool->hasDescriptorIndexing = info->enableDescriptorIndexing;
@@ -7659,7 +7643,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     HRESULT result;
     uint32_t patchControlPoints = 0;
     uint32_t totalSize = 0;
-    PalBool alphaToCoverageEnable = false;
+    PalBool alphaToCoverageEnable = PAL_FALSE;
     Pipeline* pipeline = nullptr;
     Device* d3dDevice = (Device*)device;
     PipelineLayout* layout = (PipelineLayout*)info->pipelineLayout;
@@ -7887,7 +7871,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     IBStripCutStream* inStripCutStream = &graphicsStreamDesc.ibStripCut;
     totalSize += sizeof(IBStripCutStream);
     inStripCutStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_IB_STRIP_CUT_VALUE;
-    if (info->primitiveRestartEnable == false) {
+    if (info->primitiveRestartEnable == PAL_FALSE) {
         inStripCutStream->value = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
     } else {
@@ -7905,7 +7889,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
 
     rasterizerStream->desc.CullMode = D3D12_CULL_MODE_NONE;
     rasterizerStream->desc.FillMode = D3D12_FILL_MODE_SOLID;
-    rasterizerStream->desc.FrontCounterClockwise = FALSE;
+    rasterizerStream->desc.FrontCounterClockwise = PAL_FALSE;
     rasterizerStream->desc.DepthClipEnable = TRUE;
 
     if (info->rasterizerState) {
@@ -7928,7 +7912,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         }
 
         if (state->frontFace == PAL_FRONT_FACE_CLOCKWISE) {
-            rasterizerStream->desc.FrontCounterClockwise = FALSE;
+            rasterizerStream->desc.FrontCounterClockwise = PAL_FALSE;
 
         } else {
             rasterizerStream->desc.FrontCounterClockwise = TRUE;
@@ -7967,8 +7951,8 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     DepthStencilStream* depthStencilStream = &graphicsStreamDesc.depthStencil;
     totalSize += sizeof(DepthStencilStream);
     depthStencilStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL;
-    depthStencilStream->desc.DepthEnable = FALSE;
-    depthStencilStream->desc.StencilEnable = FALSE;
+    depthStencilStream->desc.DepthEnable = PAL_FALSE;
+    depthStencilStream->desc.StencilEnable = PAL_FALSE;
 
     if (info->depthStencilState) {
         PalDepthStencilState* state = info->depthStencilState;
@@ -8041,7 +8025,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     }
 
     // Fragment shading rate
-    pipeline->hasFsr = false;
+    pipeline->hasFsr = PAL_FALSE;
     if (info->fragmentShadingRateState) {
         PalFragmentShadingRateState* state = info->fragmentShadingRateState;
         pipeline->shadingRate = shadingRateToD3D12(state->rate);
@@ -8160,7 +8144,7 @@ PalResult PAL_CALL createComputePipelineD3D12(
 
     pipeline->type = COMPUTE_PIPELINE;
     pipeline->strides = nullptr;
-    pipeline->hasFsr = false;
+    pipeline->hasFsr = PAL_FALSE;
     pipeline->layout = layout;
     pipeline->shaderExports = nullptr;
     pipeline->localRootSignature = nullptr;
@@ -8338,7 +8322,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
             ShaderExport* shaderExport = &pipeline->shaderExports[exportsOffset + j];
             ShaderEntry* entry = &tmp->entries[j];
 
-            shaderExport->isHitGroup = false;
+            shaderExport->isHitGroup = PAL_FALSE;
             shaderExport->stage = entry->stage;
             wcscpy(shaderExport->entryName, entry->entryName);
 
@@ -8377,7 +8361,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
         ShaderExport* hitGroupExport = &pipeline->shaderExports[exportCount++];
         wcscpy(hitGroupExport->entryName, hitGroups[hitGroupIndex].entryName);
-        hitGroupExport->isHitGroup = true;
+        hitGroupExport->isHitGroup = PAL_TRUE;
         hitGroupExport->stage = PAL_SHADER_STAGE_CLOSEST_HIT; // to identify
 
         group->AnyHitShaderImport = nullptr;
@@ -8520,7 +8504,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
     pipeline->type = RAY_TRACING_PIPELINE;
     pipeline->strides = nullptr;
-    pipeline->hasFsr = false;
+    pipeline->hasFsr = PAL_FALSE;
     pipeline->layout = layout;
 
     pipeline->sbtInfo = sbtInfo;
@@ -8768,12 +8752,12 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         PalShaderStage stage = tmp->stage;
 
         // skip any hit, closest hit, intersection shaders without isHitGroup PalBool
-        PalBool isHitGroup = false;
+        PalBool isHitGroup = PAL_FALSE;
         if (stage == PAL_SHADER_STAGE_ANY_HIT ||
             stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
             stage == PAL_SHADER_STAGE_INTERSECTION) {
             if (tmp->isHitGroup) {
-                isHitGroup = true;
+                isHitGroup = PAL_TRUE;
 
             } else {
                 continue;
@@ -8908,7 +8892,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     sbt->stagingBufferSize = bufferSize;
     sbt->pipeline = pipeline;
 
-    sbt->isDirty = true; // we need to copy from the staging to the gpu buffer
+    sbt->isDirty = PAL_TRUE; // we need to copy from the staging to the gpu buffer
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;
 }
@@ -8981,7 +8965,7 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
     }
 
     d3dSbt->stagingBuffer->lpVtbl->Unmap(d3dSbt->stagingBuffer, 0, nullptr);
-    d3dSbt->isDirty = true;
+    d3dSbt->isDirty = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 

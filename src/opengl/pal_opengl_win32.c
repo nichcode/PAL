@@ -1,24 +1,8 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 // ==================================================
@@ -223,7 +207,7 @@ static inline PalBool checkExtension(
 
         where = strstr(start, extension);
         if (!where) {
-            return false;
+            return PAL_FALSE;
         }
 
         // the extension was found, we find the terminator by adding the sizeof
@@ -231,7 +215,7 @@ static inline PalBool checkExtension(
         terminator = where + extensionLen;
         if (where == start || *(where - 1) == ' ') {
             if (*terminator == ' ' || *terminator == '\0') {
-                return true;
+                return PAL_TRUE;
             }
         }
 
@@ -506,7 +490,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
         // pixel format
     }
 
-    s_Wgl.initialized = true;
+    s_Wgl.initialized = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -526,7 +510,7 @@ void PAL_CALL palShutdownGL()
     FreeLibrary(s_Gdi.handle);
 
     memset(&s_Wgl, 0, sizeof(Wgl));
-    s_Wgl.initialized = false;
+    s_Wgl.initialized = PAL_FALSE;
 }
 
 const PalGLInfo* PAL_CALL palGetGLInfo()
@@ -681,9 +665,9 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
                 config->stencilBits = pfd.cStencilBits;
                 config->samples = 1;
 
-                config->stereo = (pfd.dwFlags & PFD_STEREO) ? true : false;
-                config->sRGB = false;
-                config->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? true : false;
+                config->stereo = (pfd.dwFlags & PFD_STEREO) ? PAL_TRUE : PAL_FALSE;
+                config->sRGB = PAL_FALSE;
+                config->doubleBuffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? PAL_TRUE : PAL_FALSE;
             }
             configCount++;
         }
@@ -884,7 +868,7 @@ PalResult PAL_CALL palCreateGLContext(
         // set no error
         if (info->noError) {
             attribs[index++] = WGL_CONTEXT_OPENGL_NO_ERROR_ARB;
-            attribs[index++] = true;
+            attribs[index++] = PAL_TRUE;
         }
 
         // release

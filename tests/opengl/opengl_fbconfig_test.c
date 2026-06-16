@@ -10,9 +10,8 @@ PalBool openglFBConfigTest()
     // initialize the video system and create a window
     PalResult result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // get the instance or display handle and pass it to the opengl system
@@ -24,7 +23,7 @@ PalBool openglFBConfigTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize opengl: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // enumerate supported opengl framebuffer configs
@@ -33,20 +32,20 @@ PalBool openglFBConfigTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     palLog(nullptr, "GL FBConfig count: %d", fbCount);
     if (fbCount == 0) {
         palLog(nullptr, "No supported FBConfig found");
-        return false;
+        return PAL_FALSE;
     }
 
     PalGLFBConfig* fbConfigs = nullptr;
     fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
     if (!fbConfigs) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     // enumerate supported opengl framebuffer configs
@@ -55,7 +54,7 @@ PalBool openglFBConfigTest()
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
         palFree(nullptr, fbConfigs);
-        return false;
+        return PAL_FALSE;
     }
 
     // log configs
@@ -91,9 +90,9 @@ PalBool openglFBConfigTest()
     desired.stencilBits = 8;
     desired.samples = 2;
 
-    desired.stereo = false; // not widely supported
-    desired.sRGB = true;
-    desired.doubleBuffer = true;
+    desired.stereo = PAL_FALSE; // not widely supported
+    desired.sRGB = PAL_TRUE;
+    desired.doubleBuffer = PAL_TRUE;
 
     // get the closest
     const PalGLFBConfig* closest = nullptr;
@@ -138,5 +137,5 @@ PalBool openglFBConfigTest()
     // free the framebuffer configs
     palFree(nullptr, fbConfigs);
 
-    return true;
+    return PAL_TRUE;
 }

@@ -1,30 +1,13 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 /**
  * @defgroup pal_video Video
- * Video PAL functionality such as windows, cursors, monitors and icons.
- *
+ * @ingroup pal_video
  * @{
  */
 
@@ -33,65 +16,330 @@ freely, subject to the following restrictions:
 
 #include "pal_event.h"
 
-/**
- * @typedef PalVideoFeatures64
- * @brief Extended Video system features.
- *
- * All extended video features follow the format `PAL_VIDEO_FEATURE64_**` for
- * consistency and API use.
- *
- * @since 1.3
- * @ingroup pal_video
- */
-typedef uint64_t PalVideoFeatures64;
+#define PAL_MONITOR_NAME_SIZE 32
 
-#define PAL_VIDEO_FEATURE64_HIGH_DPI (1ULL << 0)
-#define PAL_VIDEO_FEATURE64_MONITOR_SET_ORIENTATION (1ULL << 1)
-#define PAL_VIDEO_FEATURE64_MONITOR_GET_ORIENTATION (1ULL << 2)
-#define PAL_VIDEO_FEATURE64_BORDERLESS_WINDOW (1ULL << 3)
-#define PAL_VIDEO_FEATURE64_TRANSPARENT_WINDOW (1ULL << 4)
-#define PAL_VIDEO_FEATURE64_TOOL_WINDOW (1ULL << 5)
-#define PAL_VIDEO_FEATURE64_MONITOR_SET_MODE (1ULL << 6)
-#define PAL_VIDEO_FEATURE64_MONITOR_GET_MODE (1ULL << 7)
-#define PAL_VIDEO_FEATURE64_MULTI_MONITORS (1ULL << 8)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_SIZE (1ULL << 9)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_SIZE (1ULL << 10)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_POS (1ULL << 11)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_POS (1ULL << 12)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_STATE (1ULL << 13)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_STATE (1ULL << 14)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_VISIBILITY (1ULL << 15)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_VISIBILITY (1ULL << 16)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_TITLE (1ULL << 17)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_TITLE (1ULL << 18)
-#define PAL_VIDEO_FEATURE64_NO_MAXIMIZEBOX (1ULL << 19)
-#define PAL_VIDEO_FEATURE64_NO_MINIMIZEBOX (1ULL << 20)
-#define PAL_VIDEO_FEATURE64_CLIP_CURSOR (1ULL << 21)
-#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_CAPTION (1ULL << 22)
-#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_TRAY (1ULL << 23)
-#define PAL_VIDEO_FEATURE64_WINDOW_FLASH_INTERVAL (1ULL << 24)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_INPUT_FOCUS (1ULL << 25)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_INPUT_FOCUS (1ULL << 26)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_STYLE (1ULL << 27)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_STYLE (1ULL << 28)
-#define PAL_VIDEO_FEATURE64_CURSOR_SET_POS (1ULL << 29)
-#define PAL_VIDEO_FEATURE64_CURSOR_GET_POS (1ULL << 30)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_ICON (1ULL << 31)
-#define PAL_VIDEO_FEATURE64_TOPMOST_WINDOW (1ULL << 32)
-#define PAL_VIDEO_FEATURE64_DECORATED_WINDOW (1ULL << 33)
-#define PAL_VIDEO_FEATURE64_CURSOR_SET_VISIBILITY (1ULL << 34)
-#define PAL_VIDEO_FEATURE64_WINDOW_GET_MONITOR (1ULL << 35)
-#define PAL_VIDEO_FEATURE64_MONITOR_GET_PRIMARY (1ULL << 36)
-#define PAL_VIDEO_FEATURE64_FOREIGN_WINDOWS (1ULL << 37)
-#define PAL_VIDEO_FEATURE64_MONITOR_VALIDATE_MODE (1ULL << 38)
-#define PAL_VIDEO_FEATURE64_WINDOW_SET_CURSOR (1ULL << 39)
+#define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0)
+#define PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION (1ULL << 1)
+#define PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION (1ULL << 2)
+#define PAL_VIDEO_FEATURE_BORDERLESS_WINDOW (1ULL << 3)
+#define PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW (1ULL << 4)
+#define PAL_VIDEO_FEATURE_TOOL_WINDOW (1ULL << 5)
+#define PAL_VIDEO_FEATURE_MONITOR_SET_MODE (1ULL << 6)
+#define PAL_VIDEO_FEATURE_MONITOR_GET_MODE (1ULL << 7)
+#define PAL_VIDEO_FEATURE_MULTI_MONITORS (1ULL << 8)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_SIZE (1ULL << 9)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_SIZE (1ULL << 10)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_POS (1ULL << 11)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_POS (1ULL << 12)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_STATE (1ULL << 13)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_STATE (1ULL << 14)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY (1ULL << 15)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY (1ULL << 16)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_TITLE (1ULL << 17)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_TITLE (1ULL << 18)
+#define PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX (1ULL << 19)
+#define PAL_VIDEO_FEATURE_NO_MINIMIZEBOX (1ULL << 20)
+#define PAL_VIDEO_FEATURE_CLIP_CURSOR (1ULL << 21)
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION (1ULL << 22)
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY (1ULL << 23)
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL (1ULL << 24)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS (1ULL << 25)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS (1ULL << 26)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_STYLE (1ULL << 27)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_STYLE (1ULL << 28)
+#define PAL_VIDEO_FEATURE_CURSOR_SET_POS (1ULL << 29)
+#define PAL_VIDEO_FEATURE_CURSOR_GET_POS (1ULL << 30)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_ICON (1ULL << 31)
+#define PAL_VIDEO_FEATURE_TOPMOST_WINDOW (1ULL << 32)
+#define PAL_VIDEO_FEATURE_DECORATED_WINDOW (1ULL << 33)
+#define PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY (1ULL << 34)
+#define PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR (1ULL << 35)
+#define PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY (1ULL << 36)
+#define PAL_VIDEO_FEATURE_FOREIGN_WINDOWS (1ULL << 37)
+#define PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE (1ULL << 38)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39)
+
+#define PAL_ORIENTATION_LANDSCAPE 0
+#define PAL_ORIENTATION_PORTRAIT 1
+#define PAL_ORIENTATION_LANDSCAPE_FLIPPED 2
+#define PAL_ORIENTATION_PORTRAIT_FLIPPED 3
+
+#define PAL_WINDOW_STYLE_RESIZABLE (1ULL << 0)
+#define PAL_WINDOW_STYLE_TRANSPARENT (1ULL << 1)
+#define PAL_WINDOW_STYLE_TOPMOST (1ULL << 2)
+#define PAL_WINDOW_STYLE_NO_MINIMIZEBOX (1ULL << 3)
+#define PAL_WINDOW_STYLE_NO_MAXIMIZEBOX (1ULL << 4)
+#define PAL_WINDOW_STYLE_TOOL (1ULL << 5)
+#define PAL_WINDOW_STYLE_BORDERLESS (1ULL << 6)
+
+#define PAL_WINDOW_STATE_MAXIMIZED 0
+#define PAL_WINDOW_STATE_MINIMIZED 1
+#define PAL_WINDOW_STATE_RESTORED 2
+
+#define PAL_FLASH_STOP 0                 /**< Stop flashing.*/
+#define PAL_FLASH_CAPTION (1ULL << 0)    /**< Flash the titlebar of the window.*/
+#define PAL_FLASH_TRAY (1ULL << 1)       /**< Flash the icon of the window.*/
+
+#define PAL_CONFIG_BACKEND_PAL_OPENGL 0 /**< Use PAL opengl module backend.*/
+#define PAL_CONFIG_BACKEND_EGL 1
+#define PAL_CONFIG_BACKEND_GLX 2
+#define PAL_CONFIG_BACKEND_WGL 3
+#define PAL_CONFIG_BACKEND_GLES 4
+
+#define PAL_SCANCODE_UNKNOWN 0
+#define PAL_SCANCODE_A 1
+#define PAL_SCANCODE_B 2
+#define PAL_SCANCODE_C 3
+#define PAL_SCANCODE_D 4
+#define PAL_SCANCODE_E 5
+#define PAL_SCANCODE_F 6
+#define PAL_SCANCODE_G 7
+#define PAL_SCANCODE_H 8
+#define PAL_SCANCODE_I 9
+#define PAL_SCANCODE_J 10
+#define PAL_SCANCODE_K 11
+#define PAL_SCANCODE_L 12
+#define PAL_SCANCODE_M 13
+#define PAL_SCANCODE_N 14
+#define PAL_SCANCODE_O 15
+#define PAL_SCANCODE_P 16
+#define PAL_SCANCODE_Q 17
+#define PAL_SCANCODE_R 18
+#define PAL_SCANCODE_S 19
+#define PAL_SCANCODE_T 20
+#define PAL_SCANCODE_U 21
+#define PAL_SCANCODE_V 22
+#define PAL_SCANCODE_W 23
+#define PAL_SCANCODE_X 24
+#define PAL_SCANCODE_Y 25
+#define PAL_SCANCODE_Z 26
+
+#define PAL_SCANCODE_0 27
+#define PAL_SCANCODE_1 28
+#define PAL_SCANCODE_2 29
+#define PAL_SCANCODE_3 30
+#define PAL_SCANCODE_4 31
+#define PAL_SCANCODE_5 32
+#define PAL_SCANCODE_6 33
+#define PAL_SCANCODE_7 34
+#define PAL_SCANCODE_8 35
+#define PAL_SCANCODE_9 36
+
+#define PAL_SCANCODE_F1 37
+#define PAL_SCANCODE_F2 38
+#define PAL_SCANCODE_F3 39
+#define PAL_SCANCODE_F4 40
+#define PAL_SCANCODE_F5 41
+#define PAL_SCANCODE_F6 42
+#define PAL_SCANCODE_F7 43
+#define PAL_SCANCODE_F8 44
+#define PAL_SCANCODE_F9 45
+#define PAL_SCANCODE_F10 46
+#define PAL_SCANCODE_F11 47
+#define PAL_SCANCODE_F12 48
+
+#define PAL_SCANCODE_ESCAPE 49
+#define PAL_SCANCODE_ENTER 50
+#define PAL_SCANCODE_TAB 51
+#define PAL_SCANCODE_BACKSPACE 52
+#define PAL_SCANCODE_SPACE 53
+#define PAL_SCANCODE_CAPSLOCK 54
+#define PAL_SCANCODE_NUMLOCK 55
+#define PAL_SCANCODE_SCROLLLOCK 56
+#define PAL_SCANCODE_LSHIFT 57
+#define PAL_SCANCODE_RSHIFT 58
+#define PAL_SCANCODE_LCTRL 59
+#define PAL_SCANCODE_RCTRL 60
+#define PAL_SCANCODE_LALT 61
+#define PAL_SCANCODE_RALT 62
+
+#define PAL_SCANCODE_LEFT 63
+#define PAL_SCANCODE_RIGHT 64
+#define PAL_SCANCODE_UP 65
+#define PAL_SCANCODE_DOWN 66
+
+#define PAL_SCANCODE_INSERT 67
+#define PAL_SCANCODE_DELETE 68
+#define PAL_SCANCODE_HOME 69
+#define PAL_SCANCODE_END 70
+#define PAL_SCANCODE_PAGEUP 71
+#define PAL_SCANCODE_PAGEDOWN 72
+
+#define PAL_SCANCODE_KP_0 73
+#define PAL_SCANCODE_KP_1 74
+#define PAL_SCANCODE_KP_2 75
+#define PAL_SCANCODE_KP_3 76
+#define PAL_SCANCODE_KP_4 77
+#define PAL_SCANCODE_KP_5 78
+#define PAL_SCANCODE_KP_6 79
+#define PAL_SCANCODE_KP_7 80
+#define PAL_SCANCODE_KP_8 81
+#define PAL_SCANCODE_KP_9 82
+#define PAL_SCANCODE_KP_ENTER 83
+#define PAL_SCANCODE_KP_ADD 84
+#define PAL_SCANCODE_KP_SUBTRACT 85
+#define PAL_SCANCODE_KP_MULTIPLY 86
+#define PAL_SCANCODE_KP_DIVIDE 87
+#define PAL_SCANCODE_KP_DECIMAL 88
+#define PAL_SCANCODE_KP_EQUAL 89
+
+#define PAL_SCANCODE_PRINTSCREEN 90
+#define PAL_SCANCODE_PAUSE 91
+#define PAL_SCANCODE_MENU 92
+#define PAL_SCANCODE_APOSTROPHE 93
+#define PAL_SCANCODE_BACKSLASH 94
+#define PAL_SCANCODE_COMMA 95
+#define PAL_SCANCODE_EQUAL 96
+#define PAL_SCANCODE_GRAVEACCENT 97
+#define PAL_SCANCODE_SUBTRACT 98
+#define PAL_SCANCODE_PERIOD 99
+#define PAL_SCANCODE_SEMICOLON 100
+#define PAL_SCANCODE_SLASH 101
+#define PAL_SCANCODE_LBRACKET 102
+#define PAL_SCANCODE_RBRACKET 103
+#define PAL_SCANCODE_LSUPER 104
+#define PAL_SCANCODE_RSUPER 105
+
+#define PAL_SCANCODE_MAX 106
+
+#define PAL_KEYCODE_UNKNOWN 0
+#define PAL_KEYCODE_A 1
+#define PAL_KEYCODE_B 2
+#define PAL_KEYCODE_C 3
+#define PAL_KEYCODE_D 4
+#define PAL_KEYCODE_E 5
+#define PAL_KEYCODE_F 6
+#define PAL_KEYCODE_G 7
+#define PAL_KEYCODE_H 8
+#define PAL_KEYCODE_I 9
+#define PAL_KEYCODE_J 10
+#define PAL_KEYCODE_K 11
+#define PAL_KEYCODE_L 12
+#define PAL_KEYCODE_M 13
+#define PAL_KEYCODE_N 14
+#define PAL_KEYCODE_O 15
+#define PAL_KEYCODE_P 16
+#define PAL_KEYCODE_Q 17
+#define PAL_KEYCODE_R 18
+#define PAL_KEYCODE_S 19
+#define PAL_KEYCODE_T 20
+#define PAL_KEYCODE_U 21
+#define PAL_KEYCODE_V 22
+#define PAL_KEYCODE_W 23
+#define PAL_KEYCODE_X 24
+#define PAL_KEYCODE_Y 25
+#define PAL_KEYCODE_Z 26
+
+#define PAL_KEYCODE_0 27
+#define PAL_KEYCODE_1 28
+#define PAL_KEYCODE_2 29
+#define PAL_KEYCODE_3 30
+#define PAL_KEYCODE_4 31
+#define PAL_KEYCODE_5 32
+#define PAL_KEYCODE_6 33
+#define PAL_KEYCODE_7 34
+#define PAL_KEYCODE_8 35
+#define PAL_KEYCODE_9 36
+
+#define PAL_KEYCODE_F1 37
+#define PAL_KEYCODE_F2 38
+#define PAL_KEYCODE_F3 39
+#define PAL_KEYCODE_F4 40
+#define PAL_KEYCODE_F5 41
+#define PAL_KEYCODE_F6 42
+#define PAL_KEYCODE_F7 43
+#define PAL_KEYCODE_F8 44
+#define PAL_KEYCODE_F9 45
+#define PAL_KEYCODE_F10 46
+#define PAL_KEYCODE_F11 47
+#define PAL_KEYCODE_F12 48
+
+#define PAL_KEYCODE_ESCAPE 49
+#define PAL_KEYCODE_ENTER 50
+#define PAL_KEYCODE_TAB 51
+#define PAL_KEYCODE_BACKSPACE 52
+#define PAL_KEYCODE_SPACE 53
+#define PAL_KEYCODE_CAPSLOCK 54
+#define PAL_KEYCODE_NUMLOCK 55
+#define PAL_KEYCODE_SCROLLLOCK 56
+#define PAL_KEYCODE_LSHIFT 57
+#define PAL_KEYCODE_RSHIFT 58
+#define PAL_KEYCODE_LCTRL 59
+#define PAL_KEYCODE_RCTRL 60
+#define PAL_KEYCODE_LALT 61
+#define PAL_KEYCODE_RALT 62
+
+#define PAL_KEYCODE_LEFT 63
+#define PAL_KEYCODE_RIGHT 64
+#define PAL_KEYCODE_UP 65
+#define PAL_KEYCODE_DOWN 66
+
+#define PAL_KEYCODE_INSERT 67
+#define PAL_KEYCODE_DELETE 68
+#define PAL_KEYCODE_HOME 69
+#define PAL_KEYCODE_END 70
+#define PAL_KEYCODE_PAGEUP 71
+#define PAL_KEYCODE_PAGEDOWN 72
+
+#define PAL_KEYCODE_KP_0 73
+#define PAL_KEYCODE_KP_1 74
+#define PAL_KEYCODE_KP_2 75
+#define PAL_KEYCODE_KP_3 76
+#define PAL_KEYCODE_KP_4 77
+#define PAL_KEYCODE_KP_5 78
+#define PAL_KEYCODE_KP_6 79
+#define PAL_KEYCODE_KP_7 80
+#define PAL_KEYCODE_KP_8 81
+#define PAL_KEYCODE_KP_9 82
+#define PAL_KEYCODE_KP_ENTER 83
+#define PAL_KEYCODE_KP_ADD 84
+#define PAL_KEYCODE_KP_SUBTRACT 85
+#define PAL_KEYCODE_KP_MULTIPLY 86
+#define PAL_KEYCODE_KP_DIVIDE 87
+#define PAL_KEYCODE_KP_DECIMAL 88
+#define PAL_KEYCODE_KP_EQUAL 89
+
+#define PAL_KEYCODE_PRINTSCREEN 90
+#define PAL_KEYCODE_PAUSE 91
+#define PAL_KEYCODE_MENU 92
+#define PAL_KEYCODE_APOSTROPHE 93
+#define PAL_KEYCODE_BACKSLASH 94
+#define PAL_KEYCODE_COMMA 95
+#define PAL_KEYCODE_EQUAL 96
+#define PAL_KEYCODE_GRAVEACCENT 97
+#define PAL_KEYCODE_SUBTRACT 98
+#define PAL_KEYCODE_PERIOD 99
+#define PAL_KEYCODE_SEMICOLON 100
+#define PAL_KEYCODE_SLASH 101
+#define PAL_KEYCODE_LBRACKET 102
+#define PAL_KEYCODE_RBRACKET 103
+#define PAL_KEYCODE_LSUPER 104
+#define PAL_KEYCODE_RSUPER 105
+
+#define PAL_KEYCODE_MAX 106
+
+#define PAL_MOUSE_BUTTON_UNKNOWN 0
+#define PAL_MOUSE_BUTTON_LEFT 1
+#define PAL_MOUSE_BUTTON_RIGHT 2
+#define PAL_MOUSE_BUTTON_MIDDLE 3
+#define PAL_MOUSE_BUTTON_X1 4
+#define PAL_MOUSE_BUTTON_X2 5
+
+#define PAL_MOUSE_BUTTON_MAX 6
+
+#define PAL_CURSOR_ARROW 0
+#define PAL_CURSOR_HAND 1
+#define PAL_CURSOR_CROSS 2
+#define PAL_CURSOR_IBEAM 3
+#define PAL_CURSOR_WAIT 4
+
+#define PAL_CURSOR_MAX 5
 
 /**
  * @struct PalMonitor
  * @brief Opaque handle to a monitor.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 typedef struct PalMonitor PalMonitor;
 
@@ -100,7 +348,6 @@ typedef struct PalMonitor PalMonitor;
  * @brief Opaque handle to a window.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 typedef struct PalWindow PalWindow;
 
@@ -109,7 +356,6 @@ typedef struct PalWindow PalWindow;
  * @brief Opaque handle to an icon.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 typedef struct PalIcon PalIcon;
 
@@ -118,7 +364,6 @@ typedef struct PalIcon PalIcon;
  * @brief Opaque handle to a cursor.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 typedef struct PalCursor PalCursor;
 
@@ -129,43 +374,9 @@ typedef struct PalCursor PalCursor;
  * All video features follow the format `PAL_VIDEO_FEATURE_**` for
  * consistency and API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_VIDEO_FEATURE_HIGH_DPI = (1ULL << 0),
-    PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION = (1ULL << 1),
-    PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION = (1ULL << 2),
-    PAL_VIDEO_FEATURE_BORDERLESS_WINDOW = (1ULL << 3),
-    PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW = (1ULL << 4),
-    PAL_VIDEO_FEATURE_TOOL_WINDOW = (1ULL << 5),
-    PAL_VIDEO_FEATURE_MONITOR_SET_MODE = (1ULL << 6),
-    PAL_VIDEO_FEATURE_MONITOR_GET_MODE = (1ULL << 7),
-    PAL_VIDEO_FEATURE_MULTI_MONITORS = (1ULL << 8),
-    PAL_VIDEO_FEATURE_WINDOW_SET_SIZE = (1ULL << 9),
-    PAL_VIDEO_FEATURE_WINDOW_GET_SIZE = (1ULL << 10),
-    PAL_VIDEO_FEATURE_WINDOW_SET_POS = (1ULL << 11),
-    PAL_VIDEO_FEATURE_WINDOW_GET_POS = (1ULL << 12),
-    PAL_VIDEO_FEATURE_WINDOW_SET_STATE = (1ULL << 13),
-    PAL_VIDEO_FEATURE_WINDOW_GET_STATE = (1ULL << 14),
-    PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY = (1ULL << 15),
-    PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY = (1ULL << 16),
-    PAL_VIDEO_FEATURE_WINDOW_SET_TITLE = (1ULL << 17),
-    PAL_VIDEO_FEATURE_WINDOW_GET_TITLE = (1ULL << 18),
-    PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX = (1ULL << 19),
-    PAL_VIDEO_FEATURE_NO_MINIMIZEBOX = (1ULL << 20),
-    PAL_VIDEO_FEATURE_CLIP_CURSOR = (1ULL << 21),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION = (1ULL << 22),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY = (1ULL << 23),
-    PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL = (1ULL << 24),
-    PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS = (1ULL << 25),
-    PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS = (1ULL << 26),
-    PAL_VIDEO_FEATURE_WINDOW_SET_STYLE = (1ULL << 27),
-    PAL_VIDEO_FEATURE_WINDOW_GET_STYLE = (1ULL << 28),
-    PAL_VIDEO_FEATURE_CURSOR_SET_POS = (1ULL << 29),
-    PAL_VIDEO_FEATURE_CURSOR_GET_POS = (1ULL << 30),
-    PAL_VIDEO_FEATURE_WINDOW_SET_ICON = (1ULL << 31)
-} PalVideoFeatures;
+typedef uint64_t PalVideoFeatures;
 
 /**
  * @typedef PalOrientation
@@ -174,15 +385,9 @@ typedef enum {
  * All orientation types follow the format `PAL_ORIENTATION_**` for consistency
  * and API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_ORIENTATION_LANDSCAPE,
-    PAL_ORIENTATION_PORTRAIT,
-    PAL_ORIENTATION_LANDSCAPE_FLIPPED,
-    PAL_ORIENTATION_PORTRAIT_FLIPPED
-} PalOrientation;
+typedef uint32_t PalOrientation;
 
 /**
  * @typedef PalWindowStyle
@@ -192,18 +397,9 @@ typedef enum {
  * All window flags follow the format `PAL_WINDOW_STYLE_**` for
  * consistency and API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_WINDOW_STYLE_RESIZABLE = (1ULL << 0),
-    PAL_WINDOW_STYLE_TRANSPARENT = (1ULL << 1),
-    PAL_WINDOW_STYLE_TOPMOST = (1ULL << 2),
-    PAL_WINDOW_STYLE_NO_MINIMIZEBOX = (1ULL << 3),
-    PAL_WINDOW_STYLE_NO_MAXIMIZEBOX = (1ULL << 4),
-    PAL_WINDOW_STYLE_TOOL = (1ULL << 5),
-    PAL_WINDOW_STYLE_BORDERLESS = (1ULL << 6)
-} PalWindowStyle;
+typedef uint64_t PalWindowStyle;
 
 /**
  * @typedef PalWindowState
@@ -212,14 +408,9 @@ typedef enum {
  * All window states follow the format `PAL_WINDOW_STATE_**` for consistency and
  * API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_WINDOW_STATE_MAXIMIZED,
-    PAL_WINDOW_STATE_MINIMIZED,
-    PAL_WINDOW_STATE_RESTORED
-} PalWindowState;
+typedef uint32_t PalWindowState;
 
 /**
  * @typedef PalFlashFlag
@@ -231,14 +422,9 @@ typedef enum {
  * All flash flags follow the format `PAL_FLASH_**` for consistency and
  * API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_FLASH_STOP = 0,             /**< Stop flashing.*/
-    PAL_FLASH_CAPTION = (1ULL << 0), /**< Flash the titlebar of the window.*/
-    PAL_FLASH_TRAY = (1ULL << 1)     /**< Flash the icon of the window.*/
-} PalFlashFlag;
+typedef uint64_t PalFlashFlag;
 
 /**
  * @typedef PalFBConfigBackend
@@ -247,16 +433,9 @@ typedef enum {
  * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for
  * consistency and API use.
  *
- * @since 1.1
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_CONFIG_BACKEND_EGL,
-    PAL_CONFIG_BACKEND_GLX,
-    PAL_CONFIG_BACKEND_WGL,
-    PAL_CONFIG_BACKEND_PAL_OPENGL, /**< Use PAL opengl module backend.*/
-    PAL_CONFIG_BACKEND_GLES
-} PalFBConfigBackend;
+typedef uint32_t PalFBConfigBackend;
 
 /**
  * @typedef PalScancode
@@ -265,127 +444,9 @@ typedef enum {
  * All scancodes follow the format `PAL_SCANCODE_**` for consistency and
  * API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_SCANCODE_UNKNOWN = 0,
-
-    PAL_SCANCODE_A,
-    PAL_SCANCODE_B,
-    PAL_SCANCODE_C,
-    PAL_SCANCODE_D,
-    PAL_SCANCODE_E,
-    PAL_SCANCODE_F,
-    PAL_SCANCODE_G,
-    PAL_SCANCODE_H,
-    PAL_SCANCODE_I,
-    PAL_SCANCODE_J,
-    PAL_SCANCODE_K,
-    PAL_SCANCODE_L,
-    PAL_SCANCODE_M,
-    PAL_SCANCODE_N,
-    PAL_SCANCODE_O,
-    PAL_SCANCODE_P,
-    PAL_SCANCODE_Q,
-    PAL_SCANCODE_R,
-    PAL_SCANCODE_S,
-    PAL_SCANCODE_T,
-    PAL_SCANCODE_U,
-    PAL_SCANCODE_V,
-    PAL_SCANCODE_W,
-    PAL_SCANCODE_X,
-    PAL_SCANCODE_Y,
-    PAL_SCANCODE_Z,
-
-    PAL_SCANCODE_0,
-    PAL_SCANCODE_1,
-    PAL_SCANCODE_2,
-    PAL_SCANCODE_3,
-    PAL_SCANCODE_4,
-    PAL_SCANCODE_5,
-    PAL_SCANCODE_6,
-    PAL_SCANCODE_7,
-    PAL_SCANCODE_8,
-    PAL_SCANCODE_9,
-
-    PAL_SCANCODE_F1,
-    PAL_SCANCODE_F2,
-    PAL_SCANCODE_F3,
-    PAL_SCANCODE_F4,
-    PAL_SCANCODE_F5,
-    PAL_SCANCODE_F6,
-    PAL_SCANCODE_F7,
-    PAL_SCANCODE_F8,
-    PAL_SCANCODE_F9,
-    PAL_SCANCODE_F10,
-    PAL_SCANCODE_F11,
-    PAL_SCANCODE_F12,
-
-    PAL_SCANCODE_ESCAPE,
-    PAL_SCANCODE_ENTER,
-    PAL_SCANCODE_TAB,
-    PAL_SCANCODE_BACKSPACE,
-    PAL_SCANCODE_SPACE,
-    PAL_SCANCODE_CAPSLOCK,
-    PAL_SCANCODE_NUMLOCK,
-    PAL_SCANCODE_SCROLLLOCK,
-    PAL_SCANCODE_LSHIFT,
-    PAL_SCANCODE_RSHIFT,
-    PAL_SCANCODE_LCTRL,
-    PAL_SCANCODE_RCTRL,
-    PAL_SCANCODE_LALT,
-    PAL_SCANCODE_RALT,
-
-    PAL_SCANCODE_LEFT,
-    PAL_SCANCODE_RIGHT,
-    PAL_SCANCODE_UP,
-    PAL_SCANCODE_DOWN,
-
-    PAL_SCANCODE_INSERT,
-    PAL_SCANCODE_DELETE,
-    PAL_SCANCODE_HOME,
-    PAL_SCANCODE_END,
-    PAL_SCANCODE_PAGEUP,
-    PAL_SCANCODE_PAGEDOWN,
-
-    PAL_SCANCODE_KP_0,
-    PAL_SCANCODE_KP_1,
-    PAL_SCANCODE_KP_2,
-    PAL_SCANCODE_KP_3,
-    PAL_SCANCODE_KP_4,
-    PAL_SCANCODE_KP_5,
-    PAL_SCANCODE_KP_6,
-    PAL_SCANCODE_KP_7,
-    PAL_SCANCODE_KP_8,
-    PAL_SCANCODE_KP_9,
-    PAL_SCANCODE_KP_ENTER,
-    PAL_SCANCODE_KP_ADD,
-    PAL_SCANCODE_KP_SUBTRACT,
-    PAL_SCANCODE_KP_MULTIPLY,
-    PAL_SCANCODE_KP_DIVIDE,
-    PAL_SCANCODE_KP_DECIMAL,
-    PAL_SCANCODE_KP_EQUAL,
-
-    PAL_SCANCODE_PRINTSCREEN,
-    PAL_SCANCODE_PAUSE,
-    PAL_SCANCODE_MENU,
-    PAL_SCANCODE_APOSTROPHE,
-    PAL_SCANCODE_BACKSLASH,
-    PAL_SCANCODE_COMMA,
-    PAL_SCANCODE_EQUAL,
-    PAL_SCANCODE_GRAVEACCENT,
-    PAL_SCANCODE_SUBTRACT,
-    PAL_SCANCODE_PERIOD,
-    PAL_SCANCODE_SEMICOLON,
-    PAL_SCANCODE_SLASH,
-    PAL_SCANCODE_LBRACKET,
-    PAL_SCANCODE_RBRACKET,
-    PAL_SCANCODE_LSUPER,
-    PAL_SCANCODE_RSUPER,
-
-    PAL_SCANCODE_MAX
-} PalScancode;
+typedef uint32_t PalScancode;
 
 /**
  * @typedef PalKeycode
@@ -394,127 +455,9 @@ typedef enum {
  * All keycodes follow the format `PAL_KEYCODE_**` for consistency and API
  * use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_KEYCODE_UNKNOWN = 0,
-
-    PAL_KEYCODE_A,
-    PAL_KEYCODE_B,
-    PAL_KEYCODE_C,
-    PAL_KEYCODE_D,
-    PAL_KEYCODE_E,
-    PAL_KEYCODE_F,
-    PAL_KEYCODE_G,
-    PAL_KEYCODE_H,
-    PAL_KEYCODE_I,
-    PAL_KEYCODE_J,
-    PAL_KEYCODE_K,
-    PAL_KEYCODE_L,
-    PAL_KEYCODE_M,
-    PAL_KEYCODE_N,
-    PAL_KEYCODE_O,
-    PAL_KEYCODE_P,
-    PAL_KEYCODE_Q,
-    PAL_KEYCODE_R,
-    PAL_KEYCODE_S,
-    PAL_KEYCODE_T,
-    PAL_KEYCODE_U,
-    PAL_KEYCODE_V,
-    PAL_KEYCODE_W,
-    PAL_KEYCODE_X,
-    PAL_KEYCODE_Y,
-    PAL_KEYCODE_Z,
-
-    PAL_KEYCODE_0,
-    PAL_KEYCODE_1,
-    PAL_KEYCODE_2,
-    PAL_KEYCODE_3,
-    PAL_KEYCODE_4,
-    PAL_KEYCODE_5,
-    PAL_KEYCODE_6,
-    PAL_KEYCODE_7,
-    PAL_KEYCODE_8,
-    PAL_KEYCODE_9,
-
-    PAL_KEYCODE_F1,
-    PAL_KEYCODE_F2,
-    PAL_KEYCODE_F3,
-    PAL_KEYCODE_F4,
-    PAL_KEYCODE_F5,
-    PAL_KEYCODE_F6,
-    PAL_KEYCODE_F7,
-    PAL_KEYCODE_F8,
-    PAL_KEYCODE_F9,
-    PAL_KEYCODE_F10,
-    PAL_KEYCODE_F11,
-    PAL_KEYCODE_F12,
-
-    PAL_KEYCODE_ESCAPE,
-    PAL_KEYCODE_ENTER,
-    PAL_KEYCODE_TAB,
-    PAL_KEYCODE_BACKSPACE,
-    PAL_KEYCODE_SPACE,
-    PAL_KEYCODE_CAPSLOCK,
-    PAL_KEYCODE_NUMLOCK,
-    PAL_KEYCODE_SCROLLLOCK,
-    PAL_KEYCODE_LSHIFT,
-    PAL_KEYCODE_RSHIFT,
-    PAL_KEYCODE_LCTRL,
-    PAL_KEYCODE_RCTRL,
-    PAL_KEYCODE_LALT,
-    PAL_KEYCODE_RALT,
-
-    PAL_KEYCODE_LEFT,
-    PAL_KEYCODE_RIGHT,
-    PAL_KEYCODE_UP,
-    PAL_KEYCODE_DOWN,
-
-    PAL_KEYCODE_INSERT,
-    PAL_KEYCODE_DELETE,
-    PAL_KEYCODE_HOME,
-    PAL_KEYCODE_END,
-    PAL_KEYCODE_PAGEUP,
-    PAL_KEYCODE_PAGEDOWN,
-
-    PAL_KEYCODE_KP_0,
-    PAL_KEYCODE_KP_1,
-    PAL_KEYCODE_KP_2,
-    PAL_KEYCODE_KP_3,
-    PAL_KEYCODE_KP_4,
-    PAL_KEYCODE_KP_5,
-    PAL_KEYCODE_KP_6,
-    PAL_KEYCODE_KP_7,
-    PAL_KEYCODE_KP_8,
-    PAL_KEYCODE_KP_9,
-    PAL_KEYCODE_KP_ENTER,
-    PAL_KEYCODE_KP_ADD,
-    PAL_KEYCODE_KP_SUBTRACT,
-    PAL_KEYCODE_KP_MULTIPLY,
-    PAL_KEYCODE_KP_DIVIDE,
-    PAL_KEYCODE_KP_DECIMAL,
-    PAL_KEYCODE_KP_EQUAL,
-
-    PAL_KEYCODE_PRINTSCREEN,
-    PAL_KEYCODE_PAUSE,
-    PAL_KEYCODE_MENU,
-    PAL_KEYCODE_APOSTROPHE,
-    PAL_KEYCODE_BACKSLASH,
-    PAL_KEYCODE_COMMA,
-    PAL_KEYCODE_EQUAL,
-    PAL_KEYCODE_GRAVEACCENT,
-    PAL_KEYCODE_SUBTRACT,
-    PAL_KEYCODE_PERIOD,
-    PAL_KEYCODE_SEMICOLON,
-    PAL_KEYCODE_SLASH,
-    PAL_KEYCODE_LBRACKET,
-    PAL_KEYCODE_RBRACKET,
-    PAL_KEYCODE_LSUPER,
-    PAL_KEYCODE_RSUPER,
-
-    PAL_KEYCODE_MAX
-} PalKeycode;
+typedef uint32_t PalKeycode;
 
 /**
  * @typedef PalMouseButton
@@ -523,20 +466,9 @@ typedef enum {
  * All mouse buttons follow the format `PAL_MOUSE_BUTTON_**` for
  * consistency and API use.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_MOUSE_BUTTON_UNKNOWN = 0,
-
-    PAL_MOUSE_BUTTON_LEFT,
-    PAL_MOUSE_BUTTON_RIGHT,
-    PAL_MOUSE_BUTTON_MIDDLE,
-    PAL_MOUSE_BUTTON_X1,
-    PAL_MOUSE_BUTTON_X2,
-
-    PAL_MOUSE_BUTTON_MAX
-} PalMouseButton;
+typedef uint32_t PalMouseButton;
 
 /**
  * @typedef PalCursorType
@@ -545,36 +477,26 @@ typedef enum {
  * All cursor types follow the format `PAL_CURSOR_**` for
  * consistency and API use.
  *
- * @since 1.1
- * @ingroup pal_video
+ * @since 2.0
  */
-typedef enum {
-    PAL_CURSOR_ARROW,
-    PAL_CURSOR_HAND,
-    PAL_CURSOR_CROSS,
-    PAL_CURSOR_IBEAM,
-    PAL_CURSOR_WAIT,
-
-    PAL_CURSOR_MAX
-} PalCursorType;
+typedef uint32_t PalCursorType;
 
 /**
  * @struct PalMonitorInfo
  * @brief Information about a monitor.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 typedef struct {
-    PalBool primary; /**< True if this is the primary monitor.*/
-    uint32_t dpi;
-    uint32_t refreshRate;
     int32_t x;       /**< X position in pixels.*/
     int32_t y;       /**< Y position in pixels.*/
     uint32_t width;  /**< Width in pixels.*/
     uint32_t height; /**< Height in pixels.*/
+    uint32_t dpi;
+    uint32_t refreshRate;
     PalOrientation orientation;
-    char name[32];
+    PalBool primary; /**< True if this is the primary monitor.*/
+    char name[PAL_MONITOR_NAME_SIZE];
 } PalMonitorInfo;
 
 /**
@@ -582,7 +504,6 @@ typedef struct {
  * @brief information about a monitor display mode.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 typedef struct {
     uint32_t bpp; /**< Bits per pixel.*/
@@ -597,12 +518,11 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 typedef struct {
+    PalFlashFlag flags;   /**< See PalFlashFlag.*/
     uint32_t interval;    /**< In milliseconds. Set to 0 for default.*/
-    PalFlashFlag flags; /**< See PalFlashFlag.*/
     uint32_t count;       /**< Set to 0 to flash until focused or cancelled.*/
 } PalFlashInfo;
 
@@ -612,13 +532,12 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 typedef struct {
+    const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
     uint32_t width;        /**< Width in pixels.*/
     uint32_t height;       /**< Height in pixels.*/
-    const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
 } PalIconCreateInfo;
 
 /**
@@ -627,43 +546,29 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 typedef struct {
+    const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
     uint32_t width;        /**< Width in pixels..*/
     uint32_t height;       /**< Height in pixels.*/
     int32_t xHotspot;      /**< X pixel for detecting clicks.*/
     int32_t yHotspot;      /**< Y pixel for detecting clicks.*/
-    const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
 } PalCursorCreateInfo;
 
 /**
  * @struct PalWindowHandleInfo
  * @brief Information about a window handle.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 typedef struct {
-    void* nativeDisplay; /**< The platform (OS) display.*/
-    void* nativeWindow;  /**< The window platform (OS) handle.*/
-} PalWindowHandleInfo;
-
-/**
- * @struct PalWindowHandleInfoEx
- * @brief Extended information about a window handle.
- *
- * @since 1.3
- * @ingroup pal_video
- */
-typedef struct {
-    void* nativeDisplay; /**< The platform (OS) display.*/
+    void* nativeDisplay; /**< The platform (OS) display or instance.*/
     void* nativeWindow;  /**< The window platform (OS) handle.*/
     void* nativeHandle1; /**< Extra window handle (xdgSurface)*/
     void* nativeHandle2; /**< Extra window handle (xdgToplevel)*/
     void* nativeHandle3; /**< Extra window handle (wl_egl_window)*/
-} PalWindowHandleInfoEx;
+} PalWindowHandleInfo;
 
 /**
  * @struct PalWindowCreateInfo
@@ -671,19 +576,18 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 typedef struct {
+    PalWindowStyle style;    /**< Window style.*/
+    const char* title;       /**< Title in UTF-8 encoding.*/
+    PalMonitor* monitor;     /**< Set to nullptr to use primary monitor.*/
+    uint32_t width;          /**< Width in pixels.*/
+    uint32_t height;         /**< Width in pixels.*/
     PalBool show;            /**< Show after creation.*/
     PalBool maximized;       /**< Maximize after creation.*/
     PalBool minimized;       /**< Minimze after creation.*/
     PalBool center;          /**< Center after creation.*/
-    uint32_t width;         /**< Width in pixels.*/
-    uint32_t height;        /**< Width in pixels.*/
-    PalWindowStyle style; /**< Window style.*/
-    const char* title;    /**< Title in UTF-8 encoding.*/
-    PalMonitor* monitor;  /**< Set to nullptr to use primary monitor.*/
 } PalWindowCreateInfo;
 
 /**
@@ -707,7 +611,6 @@ typedef struct {
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palShutdownVideo
  * @sa palSetPreferredInstance
  */
@@ -724,7 +627,6 @@ PAL_API PalResult PAL_CALL palInitVideo(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palInitVideo
  */
 PAL_API void PAL_CALL palShutdownVideo();
@@ -739,7 +641,6 @@ PAL_API void PAL_CALL palShutdownVideo();
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palInitVideo
  */
 PAL_API void PAL_CALL palUpdateVideo();
@@ -754,7 +655,6 @@ PAL_API void PAL_CALL palUpdateVideo();
  * Thread safety: Thread safe.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palInitVideo
  */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
@@ -788,7 +688,6 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.1
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetFBConfig(
     const int index,
@@ -821,7 +720,6 @@ PAL_API PalResult PAL_CALL palSetFBConfig(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetPrimaryMonitor
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitors(
@@ -846,7 +744,6 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palEnumerateMonitors
  */
 PAL_API PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
@@ -869,7 +766,6 @@ PAL_API PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palGetMonitorInfo(
     PalMonitor* monitor,
@@ -900,7 +796,6 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
@@ -923,7 +818,6 @@ PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palSetMonitorMode
  */
 PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
@@ -953,7 +847,6 @@ PAL_API PalResult PAL_CALL palGetCurrentMonitorMode(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetCurrentMonitorMode
  */
 PAL_API PalResult PAL_CALL palSetMonitorMode(
@@ -975,7 +868,6 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palValidateMonitorMode(
     PalMonitor* monitor,
@@ -998,7 +890,6 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetMonitorOrientation(
     PalMonitor* monitor,
@@ -1029,7 +920,6 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * - Creating hidden window is not supported. It will be ignored.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palCreateWindow(
     const PalWindowCreateInfo* info,
@@ -1047,7 +937,6 @@ PAL_API PalResult PAL_CALL palCreateWindow(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palCreateWindow
  */
 PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
@@ -1067,7 +956,6 @@ PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palMaximizeWindow
  * @sa palRestoreWindow
  */
@@ -1088,7 +976,6 @@ PAL_API PalResult PAL_CALL palMinimizeWindow(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palMinimizeWindow
  * @sa palRestoreWindow
  */
@@ -1111,7 +998,6 @@ PAL_API PalResult PAL_CALL palMaximizeWindow(PalWindow* window);
  * @note Wayland does not support restoring a minimized windows.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palMinimizeWindow
  * @sa palMaximizeWindow
  */
@@ -1133,7 +1019,6 @@ PAL_API PalResult PAL_CALL palRestoreWindow(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palHideWindow
  */
 PAL_API PalResult PAL_CALL palShowWindow(PalWindow* window);
@@ -1153,7 +1038,6 @@ PAL_API PalResult PAL_CALL palShowWindow(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palShowWindow
  */
 PAL_API PalResult PAL_CALL palHideWindow(PalWindow* window);
@@ -1178,7 +1062,6 @@ PAL_API PalResult PAL_CALL palHideWindow(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palFlashWindow(
     PalWindow* window,
@@ -1199,7 +1082,6 @@ PAL_API PalResult PAL_CALL palFlashWindow(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palSetWindowStyle
  */
 PAL_API PalResult PAL_CALL palGetWindowStyle(
@@ -1221,7 +1103,6 @@ PAL_API PalResult PAL_CALL palGetWindowStyle(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palGetWindowMonitor(
     PalWindow* window,
@@ -1246,7 +1127,6 @@ PAL_API PalResult PAL_CALL palGetWindowMonitor(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palSetWindowTitle
  */
 PAL_API PalResult PAL_CALL palGetWindowTitle(
@@ -1271,7 +1151,6 @@ PAL_API PalResult PAL_CALL palGetWindowTitle(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palSetWindowPos
  */
 PAL_API PalResult PAL_CALL palGetWindowPos(
@@ -1295,7 +1174,6 @@ PAL_API PalResult PAL_CALL palGetWindowPos(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palSetWindowSize
  */
 PAL_API PalResult PAL_CALL palGetWindowSize(
@@ -1318,7 +1196,6 @@ PAL_API PalResult PAL_CALL palGetWindowSize(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palGetWindowState(
     PalWindow* window,
@@ -1339,7 +1216,6 @@ PAL_API PalResult PAL_CALL palGetWindowState(
  * Thread safety: Thread-safe.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API const PalBool* PAL_CALL palGetKeycodeState();
 
@@ -1358,7 +1234,6 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  * Thread safety: Thread-safe.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API const PalBool* PAL_CALL palGetScancodeState();
 
@@ -1376,7 +1251,6 @@ PAL_API const PalBool* PAL_CALL palGetScancodeState();
  * @Thread safety: Thread-safe.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API const PalBool* PAL_CALL palGetMouseState();
 
@@ -1394,12 +1268,11 @@ PAL_API const PalBool* PAL_CALL palGetMouseState();
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 PAL_API void PAL_CALL palGetMouseDelta(
-    int32_t* dx,
-    int32_t* dy);
+    float* dx,
+    float* dy);
 
 /**
  * @brief Get the wheel delta of the mouse.
@@ -1413,31 +1286,9 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
 PAL_API void PAL_CALL palGetMouseWheelDelta(
-    int32_t* dx,
-    int32_t* dy);
-
-/**
- * @brief Get the raw wheel delta of the mouse in floats.
- *
- * The video system must be initialized before this call.
- * The wheel delta will be updated when palUpdateVideo() is called.
- *
- * @param[in] dx Pointer to recieve the mouse wheel delta x in floats. Can be
- * nullptr.
- * @param[in] dy Pointer to recieve the mouse wheel delta y in floats. Can be
- * nullptr.
- *
- * Thread safety: Thread-safe if `dx` and `dy` are thread
- * local.
- *
- * @since 1.3
- * @ingroup pal_video
- */
-PAL_API void PAL_CALL palGetRawMouseWheelDelta(
     float* dx,
     float* dy);
 
@@ -1449,12 +1300,11 @@ PAL_API void PAL_CALL palGetRawMouseWheelDelta(
  *
  * @param[in] window Pointer to the window.
  *
- * @return `true` if the window is visible otherwise `false`.
+ * @return `true` if the window is visible otherwise `PAL_FALSE`.
  *
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
 
@@ -1470,7 +1320,6 @@ PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalWindow* PAL_CALL palGetFocusWindow();
 
@@ -1478,38 +1327,23 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  * @brief Get the native handle of the provided window.
  *
  * The video system must be initialized before this call.
+ * 
+ * On Wayland: `::nativeHandle1`, `::nativeHandle2` and `::nativeHandle3` 
+ * are `xdg_surface`, `xdg_toplevel` and `wl_egl_window` respectively if available.
  *
  * @param[in] window Pointer to the window.
+ * @param[out] info Pointer to a PalWindowHandleInfo to fill.
  *
- * @return The native handle of the window on success or nullptr on failure.
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread-safe.
  *
- * @since 1.0
- * @ingroup pal_video
+ * @since 2.0
  */
-PAL_API PalWindowHandleInfo PAL_CALL palGetWindowHandleInfo(PalWindow* window);
-
-/**
- * @brief Get the native handles of the provided window.
- *
- * The video system must be initialized before this call.
- *
- * On Wayland: `PalWindowHandleInfoEx::nativeHandle1`,
- * `PalWindowHandleInfoEx::nativeHandle2` and
- * `PalWindowHandleInfoEx::nativeHandle3` are xdg_surface, xdg_toplevel
- * and wl_egl_window respectively.
- *
- * @param[in] window Pointer to the window.
- *
- * @return The native handles of the window on success or nullptr on failure.
- *
- * Thread safety: Thread-safe.
- *
- * @since 1.3
- * @ingroup pal_video
- */
-PAL_API PalWindowHandleInfoEx PAL_CALL palGetWindowHandleInfoEx(PalWindow* w);
+PAL_API PalResult PAL_CALL palGetWindowHandleInfo(
+    PalWindow* window, 
+    PalWindowHandleInfo* info);
 
 /**
  * @brief Set the opacity of the provided window.
@@ -1527,7 +1361,6 @@ PAL_API PalWindowHandleInfoEx PAL_CALL palGetWindowHandleInfoEx(PalWindow* w);
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetWindowOpacity(
     PalWindow* window,
@@ -1548,7 +1381,6 @@ PAL_API PalResult PAL_CALL palSetWindowOpacity(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetWindowStyle
  */
 PAL_API PalResult PAL_CALL palSetWindowStyle(
@@ -1571,7 +1403,6 @@ PAL_API PalResult PAL_CALL palSetWindowStyle(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetWindowTitle
  */
 PAL_API PalResult PAL_CALL palSetWindowTitle(
@@ -1594,7 +1425,6 @@ PAL_API PalResult PAL_CALL palSetWindowTitle(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetWindowPos
  */
 PAL_API PalResult PAL_CALL palSetWindowPos(
@@ -1620,7 +1450,6 @@ PAL_API PalResult PAL_CALL palSetWindowPos(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetWindowSize
  */
 PAL_API PalResult PAL_CALL palSetWindowSize(
@@ -1642,7 +1471,6 @@ PAL_API PalResult PAL_CALL palSetWindowSize(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palGetFocusWindow
  */
 PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
@@ -1664,7 +1492,6 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palDestroyIcon
  */
 PAL_API PalResult PAL_CALL palCreateIcon(
@@ -1684,7 +1511,6 @@ PAL_API PalResult PAL_CALL palCreateIcon(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palCreateIcon
  */
 PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
@@ -1704,7 +1530,6 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetWindowIcon(
     PalWindow* window,
@@ -1726,7 +1551,6 @@ PAL_API PalResult PAL_CALL palSetWindowIcon(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palDestroyCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursor(
@@ -1748,7 +1572,6 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.1
- * @ingroup pal_video
  * @sa palDestroyCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursorFrom(
@@ -1768,7 +1591,6 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  * @sa palCreateCursor
  */
 PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
@@ -1782,12 +1604,11 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  * This affects all created cursors since the platform (OS) merges all cursors
  * into a single one on the screen.
  *
- * @param[in] show True to make the cursor visible otherwise false.
+ * @param[in] show True to make the cursor visible otherwise `PAL_FALSE`.
  *
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API void PAL_CALL palShowCursor(PalBool show);
 
@@ -1802,7 +1623,7 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
  * the window before destroying the window.
  *
  * @param[in] window Pointer to the window.
- * @param[in] clip True to clip to window or false to unclip.
+ * @param[in] clip True to clip to window or `PAL_FALSE` to unclip.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1810,7 +1631,6 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palClipCursor(
     PalWindow* window,
@@ -1835,7 +1655,6 @@ PAL_API PalResult PAL_CALL palClipCursor(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palGetCursorPos(
     PalWindow* window,
@@ -1859,7 +1678,6 @@ PAL_API PalResult PAL_CALL palGetCursorPos(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetCursorPos(
     PalWindow* window,
@@ -1880,7 +1698,6 @@ PAL_API PalResult PAL_CALL palSetCursorPos(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetWindowCursor(
     PalWindow* window,
@@ -1905,7 +1722,6 @@ PAL_API PalResult PAL_CALL palSetWindowCursor(
  * @note The returned instance or display must not be freed.
  *
  * @since 1.2
- * @ingroup pal_video
  */
 PAL_API void* PAL_CALL palGetInstance();
 
@@ -1941,7 +1757,6 @@ PAL_API void* PAL_CALL palGetInstance();
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.2
- * @ingroup pal_video
  * @sa palGetInstance
  * @sa palDestroyWindow
  * @sa palDetachWindow
@@ -1978,7 +1793,6 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * Thread safety: Must be called from the main thread.
  *
  * @since 1.2
- * @ingroup pal_video
  * @sa palAttachWindow
  */
 PAL_API PalResult PAL_CALL palDetachWindow(
@@ -2001,7 +1815,6 @@ PAL_API PalResult PAL_CALL palDetachWindow(
  * @note The provided instance will not be freed by the video system.
  *
  * @since 1.3
- * @ingroup pal_video
  * @sa palInitVideo
  */
 PAL_API void PAL_CALL palSetPreferredInstance(void* instance);

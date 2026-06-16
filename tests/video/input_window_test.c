@@ -272,7 +272,7 @@ static const char* dispatchString = "Poll Mode";
 static const char* dispatchString = "Callback Mode";
 #endif // DISPATCH_MODE_POLL
 
-static PalBool s_Running = false;
+static PalBool s_Running = PAL_FALSE;
 
 // inline helpers
 static inline void onKeydown(const PalEvent* event)
@@ -287,7 +287,7 @@ static inline void onKeydown(const PalEvent* event)
     palLog(nullptr, "%s: Key pressed: (%s, %s)", dispatchString, keyName, scancodeName);
 
     if (keycode == PAL_KEYCODE_ESCAPE) {
-        s_Running = false;
+        s_Running = PAL_FALSE;
     }
 }
 
@@ -347,24 +347,18 @@ static inline void onMouseMove(const PalEvent* event)
 
 static inline void onMouseDelta(const PalEvent* event)
 {
-    int32_t dx, dy; // dx == low, dy == high
-    palUnpackInt32(event->data, &dx, &dy);
+    float dx, dy; // dx == low, dy == high
+    palUnpackFloat(event->data, &dx, &dy);
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(nullptr, "%s: Mouse Delta: (%d, %d)", dispatchString, dx, dy);
+    palLog(nullptr, "%s: Mouse Delta: (%.2f, %.2f)", dispatchString, dx, dy);
 }
 
 static inline void onMouseWheel(const PalEvent* event)
 {
-    int32_t dx, dy; // dx == low, dy == high
-    palUnpackInt32(event->data, &dx, &dy);
-
-    // get the raw wheel delta (float)
-    float fdx, fdy;
-    palGetRawMouseWheelDelta(&fdx, &fdy);
-
+    float dx, dy; // dx == low, dy == high
+    palUnpackFloat(event->data, &dx, &dy);
     PalWindow* window = palUnpackPointer(event->data2);
-    palLog(nullptr, "%s: Mouse Wheel: (%d, %d)", dispatchString, dx, dy);
-    palLog(nullptr, "%s: Mouse Wheel Raw: (%.2f, %.2f)", dispatchString, fdx, fdy);
+    palLog(nullptr, "%s: Mouse Wheel: (%.2f, %.2f)", dispatchString, dx, dy);
 }
 
 static void PAL_CALL onEvent(
@@ -404,7 +398,7 @@ PalBool inputWindowTest()
     PalResult result;
     PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
-    PalBool running = false;
+    PalBool running = PAL_FALSE;
 
     // event driver
     PalEventDriver* eventDriver = nullptr;
@@ -419,9 +413,8 @@ PalBool inputWindowTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // initialize the video system. We pass the event driver to recieve video
@@ -429,22 +422,21 @@ PalBool inputWindowTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // fill the create info struct
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.show = true;
+    createInfo.show = PAL_TRUE;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Input Window";
 
     // check if we support decorated windows (title bar, close etc)
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+    PalVideoFeatures features = palGetVideoFeatures();
+    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
@@ -453,9 +445,8 @@ PalBool inputWindowTest()
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     // we set window close to poll
@@ -473,7 +464,7 @@ PalBool inputWindowTest()
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 
-    s_Running = true;
+    s_Running = PAL_TRUE;
     while (s_Running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -482,7 +473,7 @@ PalBool inputWindowTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    s_Running = false;
+                    s_Running = PAL_FALSE;
                     break;
                 }
 
@@ -537,5 +528,5 @@ PalBool inputWindowTest()
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
 
-    return true;
+    return PAL_TRUE;
 }

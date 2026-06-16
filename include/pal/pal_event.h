@@ -60,7 +60,7 @@
 #define PAL_EVENT_WINDOW_STATE 3
 
 /**
- * event.data : `true` for focus gained or `false` for focus lost.
+ * event.data : `PAL_TRUE` for focus gained or `PAL_FALSE` for focus lost.
  *
  * event.data2 : window
  *
@@ -70,7 +70,7 @@
 #define PAL_EVENT_WINDOW_FOCUS 4
 
 /**
- * event.data : `true` for visible or `false` for hidden.
+ * event.data : `PAL_TRUE` for visible or `PAL_FALSE` for hidden.
  *
  * event.data2 : window
  *
@@ -169,7 +169,7 @@
  * event.data2 : window
  *
  * Use inline helpers:
- * - palUnpackInt32()
+ * - palUnpackFloat()
  * - palUnpackPointer()
  */
 #define PAL_EVENT_MOUSE_DELTA 16
@@ -180,7 +180,7 @@
  * event.data2 : window
  *
  * Use inline helpers:
- * - palUnpackInt32()
+ * - palUnpackFloat()
  * - palUnpackPointer()
  */
 #define PAL_EVENT_MOUSE_WHEEL 17
@@ -318,9 +318,9 @@ typedef void(PAL_CALL* PalPushFn)(
  * @typedef PalPollFn
  * @brief Function pointer type used for polling events from event queues.
  *
- * This function should return false if the event queue is empty.
+ * This function should return `PAL_FALSE` if the event queue is empty.
  * If the queue is not empty and the event was retrieved, this should return
- * true.
+ * `PAL_TRUE`.
  *
  * @param[in] userData Optional pointer to user data. Can be nullptr.
  * @param[out] event Pointer to the PalEvent to recieve the event.
@@ -495,7 +495,7 @@ PAL_API void PAL_CALL palPushEvent(
  *
  * This function retrieves the next pending event from the queue of the
  * provided event driver without blocking. If no events are available, it
- * returns false.
+ * returns `PAL_FALSE`.
  *
  * @param[in] eventDriver Pointer to the event driver.
  * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be

@@ -85,10 +85,22 @@ project "PAL"
 
     if (PAL_BUILD_VIDEO_MODULE) then
         filter {"system:windows", "configurations:*"}
-            files { "src/video/pal_video_win32.c" }
+            files { 
+                "src/video/win32/pal_cursor_win32.c",
+                "src/video/win32/pal_icon_win32.c",
+                "src/video/win32/pal_monitor_win32.c",
+                "src/video/win32/pal_window_win32.c",
+                "src/video/win32/pal_video_win32.c"
+            }
 
         filter {"system:linux", "configurations:*"}
-            files { "src/video/pal_video_linux.c" }
+            files {
+                "src/video/linux/pal_cursor_linux.c",
+                "src/video/linux/pal_icon_linux.c",
+                "src/video/linux/pal_monitor_linux.c",
+                "src/video/linux/pal_window_linux.c",
+                "src/video/linux/pal_video_linux.c"
+            }
 
             -- check for wayland support. This is cross compiler
             local waylandPaths = {

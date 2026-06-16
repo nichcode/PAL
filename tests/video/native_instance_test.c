@@ -132,7 +132,7 @@ static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_dis
     return (struct wl_registry*)registry;
 }
 
-static PalBool s_Logged = false;
+static PalBool s_Logged = PAL_FALSE;
 static void globalHandle(
     void* data,
     struct wl_registry* registry,
@@ -142,7 +142,7 @@ static void globalHandle(
 {
     if (!s_Logged) {
         palLog(nullptr, "Registry global handle working");
-        s_Logged = true;
+        s_Logged = PAL_TRUE;
     }
 }
 
@@ -153,7 +153,7 @@ static void globalRemove(
 {
     if (s_Logged) {
         palLog(nullptr, "Registry global remove working");
-        s_Logged = false;
+        s_Logged = PAL_FALSE;
     }
 }
 
@@ -161,7 +161,7 @@ static const struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
     .global_remove = globalRemove};
 
-static PalBool s_OnWayland = false;
+static PalBool s_OnWayland = PAL_FALSE;
 
 #endif // _WIN32
 
@@ -279,9 +279,9 @@ void* openInstance()
     const char* session = getenv("XDG_SESSION_TYPE");
     if (session) {
         if (strcmp(session, "wayland") == 0) {
-            s_OnWayland = true;
+            s_OnWayland = PAL_TRUE;
         } else {
-            s_OnWayland = false;
+            s_OnWayland = PAL_FALSE;
         }
     }
 
@@ -319,16 +319,15 @@ PalBool nativeInstanceTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // open our own display or instance
     void* instance = openInstance();
     if (!instance) {
         palLog(nullptr, "Failed to open instance");
-        return false;
+        return PAL_FALSE;
     }
 
     // tell the video system to use out instance rather
@@ -341,9 +340,8 @@ PalBool nativeInstanceTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     PalWindow* window = nullptr;
@@ -351,13 +349,13 @@ PalBool nativeInstanceTest()
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.show = true;
+    createInfo.show = PAL_TRUE;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Native Instance Test";
 
     // check if we support decorated windows (title bar, close etc)
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+    PalVideoFeatures features = palGetVideoFeatures();
+    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
@@ -365,16 +363,15 @@ PalBool nativeInstanceTest()
 
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     // we set window close to poll
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
-    PalBool running = true;
+    PalBool running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -383,7 +380,7 @@ PalBool nativeInstanceTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -391,7 +388,7 @@ PalBool nativeInstanceTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -411,5 +408,5 @@ PalBool nativeInstanceTest()
     // the video system does not destroy or close the handle provided
     closeInstance(instance);
 
-    return true;
+    return PAL_TRUE;
 }

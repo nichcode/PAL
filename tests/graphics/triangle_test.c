@@ -50,9 +50,8 @@ PalBool triangleTest()
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
@@ -60,27 +59,25 @@ PalBool triangleTest()
 
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     PalWindowCreateInfo windowCreateInfo = {0};
     windowCreateInfo.height = WINDOW_HEIGHT;
     windowCreateInfo.width = WINDOW_WIDTH;
-    windowCreateInfo.show = true;
+    windowCreateInfo.show = PAL_TRUE;
     windowCreateInfo.title = "Triangle Window";
 
-    PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
-    if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+    PalVideoFeatures videoFeatures = palGetVideoFeatures();
+    if (!(videoFeatures & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         windowCreateInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
     }
 
     result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     PalWindowHandleInfo winHandle = palGetWindowHandleInfo(window);
@@ -95,7 +92,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get platform information: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     if (platformInfo.apiType == PAL_PLATFORM_API_WAYLAND) {
@@ -117,7 +114,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // enumerate all available adapters
@@ -126,12 +123,12 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     if (adapterCount == 0) {
         palLog(nullptr, "No adapters found");
-        return false;
+        return PAL_FALSE;
     }
     palLog(nullptr, "Adapter count: %d", adapterCount);
 
@@ -139,14 +136,14 @@ PalBool triangleTest()
     adapters = palAllocate(nullptr, sizeof(PalAdapter*) * adapterCount, 0);
     if (!adapters) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalAdapterCapabilities caps = {0};
@@ -158,7 +155,7 @@ PalBool triangleTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter capabilities: %s", error);
             palFree(nullptr, adapters);
-            return false;
+            return PAL_FALSE;
         }
 
         if (caps.maxGraphicsQueues == 0) {
@@ -171,7 +168,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter info: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // we prefer spirv first if an adapter supports multiple shader formats
@@ -197,7 +194,7 @@ PalBool triangleTest()
     palFree(nullptr, adapters);
     if (!adapter) {
         palLog(nullptr, "Failed to find a required adapter");
-        return false;
+        return PAL_FALSE;
     }
 
     // create a device
@@ -211,7 +208,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create surface
@@ -219,17 +216,17 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create surface: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create a graphics command queue and check if its supports presenting to the surface
-    PalBool foundQueue = false;
+    PalBool foundQueue = PAL_FALSE;
     for (int i = 0; i < caps.maxGraphicsQueues; i++) {
         result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create queue: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         if (!palCanQueuePresent(queue, surface)) {
@@ -237,14 +234,14 @@ PalBool triangleTest()
             queue = nullptr;
         }  else {
             // found a queue
-            foundQueue = true;
+            foundQueue = PAL_TRUE;
             break;
         }
     }
 
     if (!foundQueue) {
         palLog(nullptr, "Failed to find a queue that can present to the surface");
-        return false;
+        return PAL_FALSE;
     }
 
     // create a swapchain with the graphics queue
@@ -253,11 +250,11 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get surface capabilities: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalSwapchainCreateInfo swapchainCreateInfo = {0};
-    swapchainCreateInfo.clipped = true;
+    swapchainCreateInfo.clipped = PAL_TRUE;
     swapchainCreateInfo.compositeAlpha = PAL_COMPOSITE_ALPHA_OPAQUE;
     swapchainCreateInfo.height = WINDOW_HEIGHT;
     swapchainCreateInfo.width = WINDOW_WIDTH;
@@ -281,7 +278,7 @@ PalBool triangleTest()
         swapchainCreateInfo.imageCount++;
         if (surfaceCaps.maxImageCount < 2) {
             palLog(nullptr, "Surface does not support double buffers");
-            return false;
+            return PAL_FALSE;
         }
     }
 
@@ -289,7 +286,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create swapchain: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get all swapchain images and create image views for them
@@ -299,7 +296,7 @@ PalBool triangleTest()
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
     if (!imageViews || !inFlightImages || !renderFinishedSemaphores) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     PalImageInfo imageInfo;
@@ -307,7 +304,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get image info: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalImageViewCreateInfo imageViewCreateInfo = {0};
@@ -330,15 +327,15 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create image view: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // create render finished semaphores
-        result = palCreateSemaphore(device, false, &renderFinishedSemaphores[i]);
+        result = palCreateSemaphore(device, PAL_FALSE, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         inFlightImages[i] = nullptr;
@@ -348,23 +345,23 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create command pool: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        result = palCreateSemaphore(device, false, &imageAvailableSemaphores[i]);
+        result = palCreateSemaphore(device, PAL_FALSE, &imageAvailableSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
-        result = palCreateFence(device, true, &inFlightFences[i]);
+        result = palCreateFence(device, PAL_TRUE, &inFlightFences[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create fence: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palAllocateCommandBuffer(
@@ -376,7 +373,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to allocate command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
     }
 
@@ -397,7 +394,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create vertex buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC; // will send
@@ -405,7 +402,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create staging buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get buffer memory requirement and allocate memory
@@ -416,14 +413,14 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // we need to check if the memory type we want are supported
@@ -439,7 +436,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palAllocateMemory(
@@ -452,7 +449,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // bind memory
@@ -460,14 +457,14 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palBindBufferMemory(stagingBuffer, stagingBufferMemory, 0);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // map the staging buffer and upload the vertices
@@ -476,18 +473,18 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to map buffer memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     memcpy(ptr, vertices, sizeof(vertices));
     palUnmapBufferMemory(stagingBuffer);
 
     PalFence* tmpFence = nullptr;
-    result = palCreateFence(device, false, &tmpFence);
+    result = palCreateFence(device, PAL_FALSE, &tmpFence);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fence: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // use the first command buffer to upload the copy
@@ -498,7 +495,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to begin command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalBufferCopyInfo copyInfo = {0};
@@ -508,7 +505,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalShaderStage vertexShaderStage[] = { PAL_SHADER_STAGE_VERTEX };
@@ -524,14 +521,14 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to end command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalCommandBufferSubmitInfo submitInfo = {0};
@@ -541,7 +538,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to submit command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create shaders
@@ -581,13 +578,13 @@ PalBool triangleTest()
         // read file
         if (!readFile(sources[i], nullptr, &bytecodeSize)) {
             palLog(nullptr, "Failed to read shader file");
-            return false;
+            return PAL_FALSE;
         }
 
         bytecode = palAllocate(nullptr, bytecodeSize, 0);
         if (!bytecode) {
             palLog(nullptr, "Failed to allocate memory");
-            return false;
+            return PAL_FALSE;
         }
 
         readFile(sources[i], bytecode, &bytecodeSize);
@@ -601,7 +598,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create shader: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         palFree(nullptr, bytecode);
@@ -613,7 +610,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline layout: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalRenderingLayoutInfo renderingLayoutInfo = {0};
@@ -667,7 +664,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create graphics pipeline: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     for (int i = 0; i < 2; i++) {
@@ -679,7 +676,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // the vertices have been copied
@@ -689,7 +686,7 @@ PalBool triangleTest()
 
     // main loop
     uint32_t currentFrame = 0;
-    PalBool running = true;
+    PalBool running = PAL_TRUE;
 
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;
@@ -703,7 +700,7 @@ PalBool triangleTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -711,7 +708,7 @@ PalBool triangleTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -722,7 +719,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to wait fence: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // get next swapchain image
@@ -736,7 +733,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get next swapchain image: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         if (inFlightImages[imageIndex] != nullptr) {
@@ -744,7 +741,7 @@ PalBool triangleTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
-                return false;
+                return PAL_FALSE;
             }
         }
 
@@ -754,18 +751,18 @@ PalBool triangleTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
         } else {
             // recreate since we dont support fence resetting
             palDestroyFence(inFlightFences[currentFrame]);
 
-            result = palCreateFence(device, false, &inFlightFences[currentFrame]);
+            result = palCreateFence(device, PAL_FALSE, &inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
-                return false;
+                return PAL_FALSE;
             }
         }
 
@@ -774,14 +771,14 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to reset command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdBegin(cmdBuffers[currentFrame], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // change the state of the image view to make it renderable
@@ -806,7 +803,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         PalClearValue clearValue;
@@ -830,7 +827,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // bind pipeline
@@ -838,7 +835,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // set viewport and scissors
@@ -846,14 +843,14 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set viewport: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set scissors: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // bind vertex buffer
@@ -868,21 +865,21 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind vertex buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdDraw(cmdBuffers[currentFrame], 3, 1, 0, 0);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw command: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdEndRendering(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end rendering: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // change the state of the image view to make it presentable
@@ -898,14 +895,14 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // submit command buffer
@@ -919,7 +916,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to submit command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // present
@@ -930,7 +927,7 @@ PalBool triangleTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to present swapchain: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -940,7 +937,7 @@ PalBool triangleTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for queue: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     palDestroyPipeline(pipeline);
@@ -974,5 +971,5 @@ PalBool triangleTest()
     palDestroyWindow(window);
     palShutdownVideo();
     palDestroyEventDriver(eventDriver);
-    return true;
+    return PAL_TRUE;
 }

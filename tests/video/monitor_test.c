@@ -10,23 +10,21 @@ PalBool monitorTest()
     // initialize the video system
     PalResult result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // get the number of connected monitors
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors: %s", error);
-        return false;
+        logResult(result, "Failed to get query monitors");
+        return PAL_FALSE;
     }
 
     // if count == 0, we fail
     if (count == 0) {
         palLog(nullptr, "No monitor connected");
-        return false;
+        return PAL_FALSE;
     }
 
     palLog(nullptr, "Monitor Count: %d", count);
@@ -36,15 +34,14 @@ PalBool monitorTest()
     monitors = palAllocate(nullptr, sizeof(PalMonitor*) * count, 0);
     if (!monitors) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     // get the handle of the connected monitors
     result = palEnumerateMonitors(&count, monitors);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors: %s", error);
-        return false;
+        logResult(result, "Failed to get query monitors");
+        return PAL_FALSE;
     }
 
     // get monitor info for every monitor and log the information
@@ -52,10 +49,8 @@ PalBool monitorTest()
         PalMonitor* monitor = monitors[i];
         result = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get monitor info: %s", error);
-            palFree(nullptr, monitors);
-            return false;
+            logResult(result, "Failed to get monitor info");
+            return PAL_FALSE;
         }
 
         // log monitor info
@@ -101,5 +96,5 @@ PalBool monitorTest()
     // free monitors array
     palFree(nullptr, monitors);
 
-    return true;
+    return PAL_TRUE;
 }

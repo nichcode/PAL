@@ -153,6 +153,10 @@ palJoinThread(thread, &retval);
 
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
 
+- **Video:** **palGetWindowHandleInfo()** now takes an info parameter.
+- **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.
+- **Video:** **palGetMouseWheelDelta()** now takes floats instead of uint32_t.
+
 ### Removed
 - **Core:** Removed **PAL_RESULT_NULL_POINTER** result code.
 - **Core:** Removed **PAL_RESULT_INVALID_ALLOCATOR** result code.
@@ -176,7 +180,11 @@ palJoinThread(thread, &retval);
 - **Core:** Removed **PAL_RESULT_INVALID_GL_CONTEXT** result code.
 - **Core:** Removed **PAL_RESULT_INVALID_FBCONFIG_BACKEND** result code.
 
-- **Video:** Removed **palGetVideoFeaturesEx** functions.
+- **Video:** Removed **palGetVideoFeaturesEx** function.
+- **Video:** Removed **palGetWindowHandleInfoEx** function.
+- **Video:** Removed **palGetRawMouseWheelDelta** function.
+
+
 
 ### Tests
 

@@ -1,24 +1,8 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 // ==================================================
@@ -276,7 +260,7 @@ static inline PalBool checkExtension(
 
         where = strstr(start, extension);
         if (!where) {
-            return false;
+            return PAL_FALSE;
         }
 
         // the extension was found, we find the terminator by adding the sizeof
@@ -284,7 +268,7 @@ static inline PalBool checkExtension(
         terminator = where + extensionLen;
         if (where == start || *(where - 1) == ' ') {
             if (*terminator == ' ' || *terminator == '\0') {
-                return true;
+                return PAL_TRUE;
             }
         }
 
@@ -296,7 +280,7 @@ static ContextData* getFreeContextData()
 {
     for (int i = 0; i < s_GL.maxContextData; ++i) {
         if (!s_GL.contextData[i].used) {
-            s_GL.contextData[i].used = true;
+            s_GL.contextData[i].used = PAL_TRUE;
             return &s_GL.contextData[i];
         }
     }
@@ -314,7 +298,7 @@ static ContextData* getFreeContextData()
         s_GL.contextData = data;
         s_GL.maxContextData = count;
 
-        s_GL.contextData[freeIndex].used = true;
+        s_GL.contextData[freeIndex].used = PAL_TRUE;
         return &s_GL.contextData[freeIndex];
     }
     return nullptr;
@@ -333,7 +317,7 @@ static void freeContextData(PalGLContext* context)
 {
     for (int i = 0; i < s_GL.maxContextData; ++i) {
         if (s_GL.contextData[i].used && s_GL.contextData[i].context == context) {
-            s_GL.contextData[i].used = false;
+            s_GL.contextData[i].used = PAL_FALSE;
         }
     }
 }
@@ -639,7 +623,7 @@ PalResult PAL_CALL palInitGL(const PalAllocator* allocator)
     s_GL.eglDestroySurface(tmpDisplay, surface);
 
     s_GL.allocator = allocator;
-    s_GL.initialized = true;
+    s_GL.initialized = PAL_TRUE;
 
     if (tmpDisplay != display) {
         // tmpDisplay is a seperate display
@@ -663,7 +647,7 @@ void PAL_CALL palShutdownGL()
     }
 
     dlclose(s_GL.handle);
-    s_GL.initialized = false;
+    s_GL.initialized = PAL_FALSE;
 }
 
 const PalGLInfo* PAL_CALL palGetGLInfo()
@@ -776,17 +760,17 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
             fbConfig->samples = samples;
 
             // True for EGL_WINDOW_BIT
-            fbConfig->doubleBuffer = true;
-            fbConfig->stereo = false;
+            fbConfig->doubleBuffer = PAL_TRUE;
+            fbConfig->stereo = PAL_FALSE;
 
             if (s_GL.info.extensions & PAL_GL_EXTENSION_COLORSPACE_SRGB) {
                 // since EGL does not have a bit to check SRGB support
                 // we check if all the color bits are greater than or equal to 8
                 if (fbConfig->redBits >= 8 && fbConfig->greenBits >= 8 && fbConfig->blueBits >= 8) {
-                    fbConfig->sRGB = true;
+                    fbConfig->sRGB = PAL_TRUE;
                 }
             } else {
-                fbConfig->sRGB = false;
+                fbConfig->sRGB = PAL_FALSE;
             }
         }
         configCount++;
@@ -1013,7 +997,7 @@ PalResult PAL_CALL palCreateGLContext(
     // set no error
     if (info->noError) {
         attribs[index++] = EGL_CONTEXT_OPENGL_NO_ERROR_KHR;
-        attribs[index++] = true;
+        attribs[index++] = PAL_TRUE;
     }
 
     // release
@@ -1103,7 +1087,7 @@ void PAL_CALL palDestroyGLContext(PalGLContext* context)
 
             s_GL.eglDestroyContext(s_GL.display, (EGLContext)context);
             s_GL.eglDestroySurface(s_GL.display, data->surface);
-            data->used = false;
+            data->used = PAL_FALSE;
         }
     }
 }

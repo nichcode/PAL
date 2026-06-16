@@ -62,9 +62,8 @@ PalBool indirectDrawTest()
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
@@ -72,27 +71,25 @@ PalBool indirectDrawTest()
 
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     PalWindowCreateInfo windowCreateInfo = {0};
     windowCreateInfo.height = WINDOW_HEIGHT;
     windowCreateInfo.width = WINDOW_WIDTH;
-    windowCreateInfo.show = true;
+    windowCreateInfo.show = PAL_TRUE;
     windowCreateInfo.title = "Indirect Draw Window";
 
-    PalVideoFeatures64 videoFeatures = palGetVideoFeaturesEx();
-    if (!(videoFeatures & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+    PalVideoFeatures videoFeatures = palGetVideoFeatures();
+    if (!(videoFeatures & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         windowCreateInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
     }
 
     result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     PalWindowHandleInfo winHandle = palGetWindowHandleInfo(window);
@@ -107,7 +104,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get platform information: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     if (platformInfo.apiType == PAL_PLATFORM_API_WAYLAND) {
@@ -129,7 +126,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // enumerate all available adapters
@@ -138,12 +135,12 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     if (adapterCount == 0) {
         palLog(nullptr, "No adapters found");
-        return false;
+        return PAL_FALSE;
     }
     palLog(nullptr, "Adapter count: %d", adapterCount);
 
@@ -151,14 +148,14 @@ PalBool indirectDrawTest()
     adapters = palAllocate(nullptr, sizeof(PalAdapter*) * adapterCount, 0);
     if (!adapters) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalAdapterCapabilities caps = {0};
@@ -171,7 +168,7 @@ PalBool indirectDrawTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter capabilities: %s", error);
             palFree(nullptr, adapters);
-            return false;
+            return PAL_FALSE;
         }
 
         if (caps.maxGraphicsQueues == 0) {
@@ -190,7 +187,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter info: %s", error);
-            return false;
+            return PAL_FALSE;
         }   
 
         // we prefer spirv first if an adapter supports multiple shader formats
@@ -216,7 +213,7 @@ PalBool indirectDrawTest()
     palFree(nullptr, adapters);
     if (!adapter) {
         palLog(nullptr, "Failed to find a required adapter");
-        return false;
+        return PAL_FALSE;
     }
 
     // create a device
@@ -230,7 +227,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create surface
@@ -238,17 +235,17 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create surface: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create a graphics command queue and check if its supports presenting to the surface
-    PalBool foundQueue = false;
+    PalBool foundQueue = PAL_FALSE;
     for (int i = 0; i < caps.maxGraphicsQueues; i++) {
         result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create queue: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         if (!palCanQueuePresent(queue, surface)) {
@@ -256,14 +253,14 @@ PalBool indirectDrawTest()
             queue = nullptr;
         }  else {
             // found a queue
-            foundQueue = true;
+            foundQueue = PAL_TRUE;
             break;
         }
     }
 
     if (!foundQueue) {
         palLog(nullptr, "Failed to find a queue that can present to the surface");
-        return false;
+        return PAL_FALSE;
     }
 
     // create a swapchain with the graphics queue
@@ -272,11 +269,11 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get surface capabilities: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalSwapchainCreateInfo swapchainCreateInfo = {0};
-    swapchainCreateInfo.clipped = true;
+    swapchainCreateInfo.clipped = PAL_TRUE;
     swapchainCreateInfo.compositeAlpha = PAL_COMPOSITE_ALPHA_OPAQUE;
     swapchainCreateInfo.height = WINDOW_HEIGHT;
     swapchainCreateInfo.width = WINDOW_WIDTH;
@@ -300,7 +297,7 @@ PalBool indirectDrawTest()
         swapchainCreateInfo.imageCount++;
         if (surfaceCaps.maxImageCount < 2) {
             palLog(nullptr, "Surface does not support double buffers");
-            return false;
+            return PAL_FALSE;
         }
     }
 
@@ -308,7 +305,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create swapchain: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get all swapchain images and create image views for them
@@ -318,7 +315,7 @@ PalBool indirectDrawTest()
     renderFinishedSemaphores = palAllocate(nullptr, sizeof(PalSemaphore*) * imageCount, 0);
     if (!imageViews || !inFlightImages || !renderFinishedSemaphores) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     PalImageInfo imageInfo;
@@ -326,7 +323,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get image info: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalImageViewCreateInfo imageViewCreateInfo = {0};
@@ -349,15 +346,15 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create image view: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // create render finished semaphores
-        result = palCreateSemaphore(device, false, &renderFinishedSemaphores[i]);
+        result = palCreateSemaphore(device, PAL_FALSE, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         inFlightImages[i] = nullptr;
@@ -367,23 +364,23 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create command pool: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create synchronization objects and command buffers
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        result = palCreateSemaphore(device, false, &imageAvailableSemaphores[i]);
+        result = palCreateSemaphore(device, PAL_FALSE, &imageAvailableSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create semaphore: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
-        result = palCreateFence(device, true, &inFlightFences[i]);
+        result = palCreateFence(device, PAL_TRUE, &inFlightFences[i]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create fence: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palAllocateCommandBuffer(
@@ -395,7 +392,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to allocate command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
     }
 
@@ -420,7 +417,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // index buffer
@@ -431,7 +428,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // indirect buffer
@@ -442,7 +439,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // staging buffer for vertex, index and indirect buffer
@@ -466,7 +463,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get buffer memory requirement and allocate memory
@@ -480,7 +477,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get index buffer memory requirement
@@ -488,7 +485,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get indirect buffer memory requirement
@@ -496,7 +493,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get staging buffer memory requirement
@@ -504,7 +501,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // allocate memory for vertex buffer
@@ -518,7 +515,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // allocate memory for index buffer
@@ -532,7 +529,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // allocate memory for indirect buffer
@@ -546,7 +543,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palAllocateMemory(
@@ -559,7 +556,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // bind memory for vertex buffer
@@ -567,7 +564,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // bind memory for index buffer
@@ -575,7 +572,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // bind memory for indirect buffer
@@ -583,7 +580,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // bind memory for staging buffer
@@ -591,7 +588,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // map the staging buffer and upload the data
@@ -600,7 +597,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to map buffer memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // copy indirect data
@@ -623,11 +620,11 @@ PalBool indirectDrawTest()
     palUnmapBufferMemory(stagingBuffer);
 
     PalFence* fence = nullptr;
-    result = palCreateFence(device, false, &fence);
+    result = palCreateFence(device, PAL_FALSE, &fence);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fence: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // use the first command buffer to upload the copy
@@ -638,7 +635,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to begin command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalUsageStateInfo oldUsageStateInfo = {0};
@@ -659,7 +656,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdBufferBarrier(
@@ -671,7 +668,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // copy to vertex buffer
@@ -690,7 +687,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdBufferBarrier(
@@ -702,7 +699,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // copy to index buffer
@@ -719,7 +716,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdBufferBarrier(
@@ -731,14 +728,14 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to end command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalCommandBufferSubmitInfo submitInfo = {0};
@@ -748,7 +745,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to submit command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create shaders
@@ -788,13 +785,13 @@ PalBool indirectDrawTest()
         // read file
         if (!readFile(sources[i], nullptr, &bytecodeSize)) {
             palLog(nullptr, "Failed to read shader file");
-            return false;
+            return PAL_FALSE;
         }
 
         bytecode = palAllocate(nullptr, bytecodeSize, 0);
         if (!bytecode) {
             palLog(nullptr, "Failed to allocate memory");
-            return false;
+            return PAL_FALSE;
         }
 
         readFile(sources[i], bytecode, &bytecodeSize);
@@ -808,7 +805,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create shader: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         palFree(nullptr, bytecode);
@@ -820,7 +817,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline layout: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalRenderingLayoutInfo renderingLayoutInfo = {0};
@@ -874,7 +871,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create graphics pipeline: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     for (int i = 0; i < 2; i++) {
@@ -886,7 +883,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // the vertices have been copied
@@ -896,7 +893,7 @@ PalBool indirectDrawTest()
 
     // main loop
     uint32_t currentFrame = 0;
-    PalBool running = true;
+    PalBool running = PAL_TRUE;
 
     PalRect2D scissor = {0};
     scissor.height = WINDOW_HEIGHT;
@@ -910,7 +907,7 @@ PalBool indirectDrawTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -918,7 +915,7 @@ PalBool indirectDrawTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -929,7 +926,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to wait fence: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // get next swapchain image
@@ -943,7 +940,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get next swapchain image: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         if (inFlightImages[imageIndex] != nullptr) {
@@ -951,7 +948,7 @@ PalBool indirectDrawTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
-                return false;
+                return PAL_FALSE;
             }
         }
 
@@ -961,18 +958,18 @@ PalBool indirectDrawTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
         } else {
             // recreate since we dont support fence resetting
             palDestroyFence(inFlightFences[currentFrame]);
 
-            result = palCreateFence(device, false, &inFlightFences[currentFrame]);
+            result = palCreateFence(device, PAL_FALSE, &inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to wait fence: %s", error);
-                return false;
+                return PAL_FALSE;
             }
         }
 
@@ -981,14 +978,14 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to reset command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdBegin(cmdBuffers[currentFrame], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // change the state of the image view to make it renderable
@@ -1013,7 +1010,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         PalClearValue clearValue;
@@ -1037,7 +1034,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to begin rendering: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // bind pipeline
@@ -1045,7 +1042,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind pipeline: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // set viewport and scissors
@@ -1053,14 +1050,14 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set viewport: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set scissors: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // bind vertex buffer
@@ -1075,7 +1072,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind vertex buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // bind index buffer
@@ -1088,21 +1085,21 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to bind index buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdDrawIndexedIndirect(cmdBuffers[currentFrame], indirectBuffer, 1);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to issue draw indirect command: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdEndRendering(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end rendering: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // change the state of the image view to make it presentable
@@ -1118,14 +1115,14 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to set image view barrier: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to end command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // submit command buffer
@@ -1139,7 +1136,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to submit command buffer: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // present
@@ -1150,7 +1147,7 @@ PalBool indirectDrawTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to present swapchain: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -1160,7 +1157,7 @@ PalBool indirectDrawTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for queue: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     palDestroyPipeline(pipeline);
@@ -1199,5 +1196,5 @@ PalBool indirectDrawTest()
     palDestroyWindow(window);
     palShutdownVideo();
     palDestroyEventDriver(eventDriver);
-    return true;
+    return PAL_TRUE;
 }

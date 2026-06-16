@@ -8,9 +8,8 @@ PalBool openglTest()
     // initialize the video system and create a window
     PalResult result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // get the instance or display handle and pass it to the opengl system
@@ -22,7 +21,7 @@ PalBool openglTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize opengl: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get the icd info. max version, graphics driver etc
@@ -83,5 +82,5 @@ PalBool openglTest()
     // shutdown the video system
     palShutdownVideo();
 
-    return true;
+    return PAL_TRUE;
 }

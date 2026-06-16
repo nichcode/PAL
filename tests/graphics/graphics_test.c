@@ -9,7 +9,7 @@ PalBool graphicsTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // enumerate all available adapters
@@ -18,12 +18,12 @@ PalBool graphicsTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     if (count == 0) {
         palLog(nullptr, "No adapters found");
-        return false;
+        return PAL_FALSE;
     }
     palLog(nullptr, "Adapter count: %u", count);
 
@@ -33,14 +33,14 @@ PalBool graphicsTest()
     adapters = palAllocate(nullptr, sizeof(PalAdapter*) * count, 0);
     if (!adapters) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     result = palEnumerateAdapters(&count, adapters);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get information about all the adapters
@@ -54,7 +54,7 @@ PalBool graphicsTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter information: %s", error);
             palFree(nullptr, adapters);
-            return false;
+            return PAL_FALSE;
         }
 
         result = palGetAdapterCapabilities(adapter, &caps);
@@ -62,7 +62,7 @@ PalBool graphicsTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter capabilities: %s", error);
             palFree(nullptr, adapters);
-            return false;
+            return PAL_FALSE;
         }
 
         // create a device
@@ -102,7 +102,7 @@ PalBool graphicsTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to create device: %s", error);
             palFree(nullptr, adapters);
-            return false;
+            return PAL_FALSE;
         }
         
         uint32_t vramMb = (uint32_t)info.vram / (1024 * 1024);
@@ -295,7 +295,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get sampler anisotropy capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max anisotropy: %u", tmp.maxAnisotropy);
@@ -311,7 +311,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get multi viewport capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max count: %u", tmp.maxCount);
@@ -327,7 +327,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get ray tracing capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max recursion depth: %u", tmp.maxRecursionDepth);
@@ -349,7 +349,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get mesh shader capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max output primitives: %u", tmp.maxOutputPrimitives);
@@ -375,7 +375,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get FSR capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             palLog(nullptr, "   Min texel width: %u", tmp.minTexelWidth);
@@ -445,7 +445,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get descriptor indexing capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             if (tmp.sampledImageNonUniformIndexing) {
@@ -532,7 +532,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get multi view capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max view count: %u", tmp.maxViewCount);
@@ -547,7 +547,7 @@ PalBool graphicsTest()
             if (result != PAL_RESULT_SUCCESS) {
                 const char* error = palFormatResult(result);
                 palLog(nullptr, "Failed to get depth stencil capabilities: %s", error);
-                return false;
+                return PAL_FALSE;
             }
 
             if (tmp.independentResolve) {
@@ -718,5 +718,5 @@ PalBool graphicsTest()
 
     palFree(nullptr, adapters);
 
-    return true;
+    return PAL_TRUE;
 }

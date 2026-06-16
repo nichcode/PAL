@@ -38,7 +38,10 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     FILE* file = fopen("/etc/os-release", "r");
     if (!file) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     char line[256];

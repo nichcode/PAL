@@ -17,9 +17,8 @@ PalBool charEventTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // initialize the video system. We pass the event driver to recieve video
@@ -27,21 +26,20 @@ PalBool charEventTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // fill the create info struct
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.show = true;
+    createInfo.show = PAL_TRUE;
     createInfo.title = "Character Window";
 
     // check if we support decorated windows (title bar, close etc)
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+    PalVideoFeatures features = palGetVideoFeatures();
+    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
@@ -50,9 +48,8 @@ PalBool charEventTest()
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     // we only neeed PAL_EVENT_KEYCHAR and PAL_EVENT_WINDOW_CLOSE
@@ -60,7 +57,7 @@ PalBool charEventTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYCHAR, PAL_DISPATCH_POLL);
 
-    PalBool running = true;
+    PalBool running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -69,7 +66,7 @@ PalBool charEventTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -94,7 +91,7 @@ PalBool charEventTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -113,5 +110,5 @@ PalBool charEventTest()
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
 
-    return true;
+    return PAL_TRUE;
 }

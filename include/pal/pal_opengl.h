@@ -1,30 +1,13 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 /**
  * @defgroup pal_opengl Opengl
- * Opengl PAL functionality such as FBConfigs and contexts.
- *
+ * @ingroup pal_opengl
  * @{
  */
 
@@ -45,7 +28,6 @@ freely, subject to the following restrictions:
  * @brief Opaque handle to an opengl context.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef struct PalGLContext PalGLContext;
 
@@ -57,7 +39,6 @@ typedef struct PalGLContext PalGLContext;
  * consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef enum {
     PAL_GL_EXTENSION_CREATE_CONTEXT = (1ULL << 0), /**< Modern context.*/
@@ -80,7 +61,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef enum {
     PAL_GL_PROFILE_NONE,          /**< Default profile.*/
@@ -97,7 +77,6 @@ typedef enum {
  * for consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef enum {
     PAL_GL_CONTEXT_RESET_NONE,            /**< Default reset behaviour.*/
@@ -113,7 +92,6 @@ typedef enum {
  * `PAL_GL_RELEASE_BEHAVIOR_**` for consistency and API use.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef enum {
     PAL_GL_RELEASE_BEHAVIOR_NONE, /**< Default release behaviour..*/
@@ -125,7 +103,6 @@ typedef enum {
  * @brief Information about the opengl driver.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef struct {
     PalGLExtensions extensions;
@@ -141,7 +118,6 @@ typedef struct {
  * @brief Information about an opengl framebuffer.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef struct {
     PalBool doubleBuffer;
@@ -165,7 +141,6 @@ typedef struct {
  * holding native handles. The handles will not be copied.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef struct {
     void* display; /**< Can be nullptr depending on platform (eg. Windows).*/
@@ -179,7 +154,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 typedef struct {
     PalBool forward;                  /**< Forward compatible context.*/
@@ -213,7 +187,6 @@ typedef struct {
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palShutdownGL
  * @sa palGLSetInstance
  */
@@ -228,7 +201,6 @@ PAL_API PalResult PAL_CALL palInitGL(const PalAllocator* allocator);
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palInitGL
  */
 PAL_API void PAL_CALL palShutdownGL();
@@ -244,7 +216,6 @@ PAL_API void PAL_CALL palShutdownGL();
  * Thread safety: Thread-safe.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
 
@@ -272,7 +243,6 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palInitGL
  */
 PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
@@ -301,7 +271,6 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  * Thread safety: Thread safe.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
@@ -332,7 +301,6 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palDestroyGLContext
  */
 PAL_API PalResult PAL_CALL palCreateGLContext(
@@ -352,7 +320,6 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  * Thread safety: Thread safe if the `context` is per thread.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palCreateGLContext
  */
 PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
@@ -381,7 +348,6 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * current context at a time.
  *
  * @since 1.0
- * @ingroup pal_opengl
  */
 PAL_API PalResult PAL_CALL palMakeContextCurrent(
     PalGLWindow* glWindow,
@@ -399,7 +365,6 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  * Thread safety: Thread safe.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palInitGL
  */
 PAL_API void* PAL_CALL palGLGetProcAddress(const char* name);
@@ -420,7 +385,6 @@ PAL_API void* PAL_CALL palGLGetProcAddress(const char* name);
  * bound context.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palMakeContextCurrent
  */
 PAL_API PalResult PAL_CALL palSwapBuffers(
@@ -444,7 +408,6 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  * context.
  *
  * @since 1.0
- * @ingroup pal_opengl
  * @sa palMakeContextCurrent
  */
 PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
@@ -465,7 +428,6 @@ PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
  * @note The provided instance will not be freed by the opengl system.
  *
  * @since 1.3
- * @ingroup pal_opengl
  * @sa palInitGL
  */
 PAL_API void PAL_CALL palGLSetInstance(void* instance);
@@ -479,7 +441,6 @@ PAL_API void PAL_CALL palGLSetInstance(void* instance);
  * Thread safety: Thread safe.
  *
  * @since 1.3
- * @ingroup pal_opengl
  */
 PAL_API const char* PAL_CALL palGLGetBackend();
 

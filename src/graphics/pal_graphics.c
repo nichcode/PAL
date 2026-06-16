@@ -1,24 +1,8 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 // ==================================================
@@ -2128,7 +2112,7 @@ PalResult PAL_CALL palInitGraphics(
 #endif // _WIN32
 
     s_Graphics.allocator = allocator;
-    s_Graphics.initialized = true;
+    s_Graphics.initialized = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -2160,7 +2144,7 @@ void PAL_CALL palShutdownGraphics()
 #endif // _WIN32
 
     memset(&s_Graphics, 0, sizeof(s_Graphics));
-    s_Graphics.initialized = false;
+    s_Graphics.initialized = PAL_FALSE;
 }
 
 // ==================================================
@@ -2505,7 +2489,7 @@ PalBool PAL_CALL palCanQueuePresent(
     if (s_Graphics.initialized && queue) {
         return queue->backend->canQueuePresent(queue, surface);
     }
-    return false;
+    return PAL_FALSE;
 }
 
 PalResult PAL_CALL palWaitQueue(PalQueue* queue)
@@ -2550,7 +2534,7 @@ PalBool PAL_CALL palIsFormatSupported(
     PalFormat format)
 {
     if (!s_Graphics.initialized || !adapter) {
-        return false;
+        return PAL_FALSE;
     }
 
     return adapter->backend->isFormatSupported(adapter, format);
@@ -3016,7 +3000,7 @@ PalBool PAL_CALL palIsFenceSignaled(PalFence* fence)
     if (s_Graphics.initialized && fence) {
         return fence->backend->isFenceSignaled(fence);
     }
-    return false;
+    return PAL_FALSE;
 }
 
 // ==================================================
@@ -4546,11 +4530,11 @@ PalBool PAL_CALL palBuildWorkGroupInfo(
     PalWorkGroupInfo* infos)
 {
     if (!data) {
-        return false;
+        return PAL_FALSE;
     }
 
     if (*count == 0 && infos) {
-        return false;
+        return PAL_FALSE;
     }
 
     uint32_t workGroupCount[3];
@@ -4565,7 +4549,7 @@ PalBool PAL_CALL palBuildWorkGroupInfo(
         // total number of group build info on all axis
         *count = groupInfoCount[0] * groupInfoCount[1] * groupInfoCount[2];
         ;
-        return true;
+        return PAL_TRUE;
     }
 
     for (int i = 0; i < *count; i++) {
@@ -4587,5 +4571,5 @@ PalBool PAL_CALL palBuildWorkGroupInfo(
         }
     }
 
-    return true;
+    return PAL_TRUE;
 }

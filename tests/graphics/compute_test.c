@@ -49,7 +49,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to initialize graphics: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // enumerate all available adapters
@@ -58,12 +58,12 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     if (adapterCount == 0) {
         palLog(nullptr, "No adapters found");
-        return false;
+        return PAL_FALSE;
     }
     palLog(nullptr, "Adapter count: %d", adapterCount);
 
@@ -71,14 +71,14 @@ PalBool computeTest()
     adapters = palAllocate(nullptr, sizeof(PalAdapter*) * adapterCount, 0);
     if (!adapters) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get query adapters: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PalAdapterCapabilities caps = {0};
@@ -91,7 +91,7 @@ PalBool computeTest()
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter capabilities: %s", error);
             palFree(nullptr, adapters);
-            return false;
+            return PAL_FALSE;
         }
 
         if (caps.maxComputeQueues == 0) {
@@ -104,7 +104,7 @@ PalBool computeTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to get adapter info: %s", error);
-            return false;
+            return PAL_FALSE;
         }
 
         // we prefer spirv first if an adapter supports multiple shader formats
@@ -130,7 +130,7 @@ PalBool computeTest()
     palFree(nullptr, adapters);
     if (!adapter) {
         palLog(nullptr, "Failed to find a required adapter");
-        return false;
+        return PAL_FALSE;
     }
 
     // create a device
@@ -138,7 +138,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create device: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create a compute command queue
@@ -146,14 +146,14 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create queue: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create command pool: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palAllocateCommandBuffer(
@@ -165,7 +165,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create a compute shader
@@ -184,13 +184,13 @@ PalBool computeTest()
     // read file
     if (!readFile(source, nullptr, &bytecodeSize)) {
         palLog(nullptr, "Failed to read shader file");
-        return false;
+        return PAL_FALSE;
     }
 
     bytecode = palAllocate(nullptr, bytecodeSize, 0);
     if (!bytecode) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     readFile(source, bytecode, &bytecodeSize);
@@ -208,7 +208,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create compute shader: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     palFree(nullptr, bytecode);
@@ -223,7 +223,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_DST;
@@ -231,7 +231,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create staging buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // get buffer memory requirement and allocate memory
@@ -241,14 +241,14 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // we need to check if the memory type we want are supported
@@ -264,7 +264,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palAllocateMemory(
@@ -277,7 +277,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // bind memory
@@ -285,14 +285,14 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palBindBufferMemory(stagingBuffer, stagingBufferMemory, 0);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create descriptor set layout
@@ -316,7 +316,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create descriptor set layout: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create descriptor pool
@@ -333,7 +333,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create descriptor pool: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // allocate a single descriptor set from the descriptor pool
@@ -342,7 +342,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to allocate descriptor set: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // write the inital data to the descriptor set since its created empty
@@ -362,7 +362,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to update descriptor set: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // push constants
@@ -384,7 +384,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create pipeline layout: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // create a compute pipeline
@@ -396,17 +396,17 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create compute pipeline: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     palDestroyShader(shader);
 
     // create fence
-    result = palCreateFence(device, false, &fence);
+    result = palCreateFence(device, PAL_FALSE, &fence);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to create fence: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // record commands
@@ -414,7 +414,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to begin command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     PushConstant pushConstant = {0};
@@ -429,7 +429,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind pipeline: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdPushConstants(
@@ -443,14 +443,14 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to push constants: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to bind descriptor set: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // we will use a helper function to calculate the number of group count
@@ -475,13 +475,13 @@ PalBool computeTest()
     PalBool ret = palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
     if (!ret) {
         palLog(nullptr, "Failed to build work group info");
-        return false;
+        return PAL_FALSE;
     }
 
     workGroupInfos = palAllocate(nullptr, sizeof(PalWorkGroupInfo) * workGroupInfoCount, 0);
     if (!workGroupInfos) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, workGroupInfos);
@@ -499,7 +499,7 @@ PalBool computeTest()
         if (result != PAL_RESULT_SUCCESS) {
             const char* error = palFormatResult(result);
             palLog(nullptr, "Failed to dispatch: %s", error);
-            return false;
+            return PAL_FALSE;
         }
     }
     palFree(nullptr, workGroupInfos);
@@ -519,7 +519,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to set buffer barrier: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // now we copy from the GPU buffer into the staging buffer
@@ -530,14 +530,14 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to copy buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to end command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // submit the command buffer to the GPU
@@ -548,7 +548,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to submit command buffer: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // wait for the fence
@@ -556,7 +556,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to wait for fence: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // now our staging buffer has the contents of the GPU buffer
@@ -566,7 +566,7 @@ PalBool computeTest()
     if (result != PAL_RESULT_SUCCESS) {
         const char* error = palFormatResult(result);
         palLog(nullptr, "Failed to map buffer memory: %s", error);
-        return false;
+        return PAL_FALSE;
     }
 
     // write to a ppm output file
@@ -606,5 +606,5 @@ PalBool computeTest()
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();
-    return true;
+    return PAL_TRUE;
 }

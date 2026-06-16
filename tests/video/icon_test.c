@@ -11,7 +11,7 @@ PalBool iconTest()
     PalIcon* icon = nullptr;
     PalWindowCreateInfo createInfo = {0};
     PalIconCreateInfo iconCreateInfo = {0};
-    PalBool running = false;
+    PalBool running = PAL_FALSE;
 
     // event driver
     PalEventDriver* eventDriver = nullptr;
@@ -26,9 +26,8 @@ PalBool iconTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // initialize the video system. We pass the event driver to recieve video
@@ -36,18 +35,17 @@ PalBool iconTest()
     // video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // check for support
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE64_WINDOW_SET_ICON)) {
+    PalVideoFeatures features = palGetVideoFeatures();
+    if (!(features & PAL_VIDEO_FEATURE_WINDOW_SET_ICON)) {
         palLog(nullptr, "Setting icons feature not supported");
         palDestroyEventDriver(eventDriver);
         palShutdownVideo();
-        return false;
+        return PAL_FALSE;
     }
 
     // simple checkerboard RGBA pixel buffer
@@ -79,25 +77,23 @@ PalBool iconTest()
 
     result = palCreateIcon(&iconCreateInfo, &icon);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window icon: %s", error);
-        return false;
+        logResult(result, "Failed to create window icon");
+        return PAL_FALSE;
     }
 
     // fill the create info struct
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.show = true;
+    createInfo.show = PAL_TRUE;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Icon Window";
 
     // create the window with the create info struct
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     // set the dispatch mode for window close event to recieve it
@@ -109,12 +105,11 @@ PalBool iconTest()
     // set the icon
     result = palSetWindowIcon(window, icon);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set window icon: %s", error);
-        return false;
+        logResult(result, "Failed to set window icon");
+        return PAL_FALSE;
     }
 
-    running = true;
+    running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -123,7 +118,7 @@ PalBool iconTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -131,7 +126,7 @@ PalBool iconTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -151,5 +146,5 @@ PalBool iconTest()
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
 
-    return true;
+    return PAL_TRUE;
 }

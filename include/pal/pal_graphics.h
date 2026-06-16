@@ -1,30 +1,13 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 /**
  * @defgroup pal_graphics Graphics
- * Graphics PAL functionality such as Adapters, Device, Swapchains and more.
- *
+ * @ingroup pal_graphics
  * @{
  */
 
@@ -36,14 +19,12 @@ freely, subject to the following restrictions:
 /**
  * @brief The maximum name size of an adapter (GPU).
  * @since 1.4
- * @ingroup pal_graphics
  */
 #define PAL_ADAPTER_NAME_SIZE 128
 
 /**
  * @brief The maximum name size of a shader entry.
  * @since 1.4
- * @ingroup pal_graphics
  */
 #define PAL_SHADER_ENTRY_NAME_SIZE 32
 
@@ -53,28 +34,24 @@ freely, subject to the following restrictions:
 /**
  * @brief A Unused shader index. Used to make a shader index invalid.
  * @since 1.4
- * @ingroup pal_graphics
  */
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
 /**
  * @brief An encoding scheme for shader format target versions.
  * @since 1.4
- * @ingroup pal_graphics
  */
 #define PAL_MAKE_SHADER_TARGET(major, minor) ((uint32_t)((major) << 8) | (minor))
 
 /**
  * @brief Get the major of an encoded shader target.
  * @since 1.4
- * @ingroup pal_graphics
  */
 #define PAL_SHADER_TARGET_MAJOR(target) ((uint32_t)(target) >> 8);
 
 /**
  * @brief Get the minor of an encoded shader target.
  * @since 1.4
- * @ingroup pal_graphics
  */
 #define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF);
 
@@ -86,7 +63,6 @@ freely, subject to the following restrictions:
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef uint64_t PalAdapterFeatures;
 
@@ -135,7 +111,6 @@ typedef uint64_t PalAdapterFeatures;
  * @brief Opaque handle to an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalAdapter PalAdapter;
 
@@ -144,7 +119,6 @@ typedef struct PalAdapter PalAdapter;
  * @brief Opaque handle to a device. Devices are created from an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalDevice PalDevice;
 
@@ -153,7 +127,6 @@ typedef struct PalDevice PalDevice;
  * @brief Opaque handle to a device memory. This is not `CPU` memory.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalMemory PalMemory;
 
@@ -162,7 +135,6 @@ typedef struct PalMemory PalMemory;
  * @brief Opaque handle to a queue.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalQueue PalQueue;
 
@@ -171,7 +143,6 @@ typedef struct PalQueue PalQueue;
  * @brief Opaque handle to a surface.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalSurface PalSurface;
 
@@ -180,7 +151,6 @@ typedef struct PalSurface PalSurface;
  * @brief Opaque handle to a swapchain.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalSwapchain PalSwapchain;
 
@@ -189,7 +159,6 @@ typedef struct PalSwapchain PalSwapchain;
  * @brief Opaque handle to an image.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalImage PalImage;
 
@@ -198,7 +167,6 @@ typedef struct PalImage PalImage;
  * @brief Opaque handle to an image view.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalImageView PalImageView;
 
@@ -207,7 +175,6 @@ typedef struct PalImageView PalImageView;
  * @brief Opaque handle to a shader.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalShader PalShader;
 
@@ -216,7 +183,6 @@ typedef struct PalShader PalShader;
  * @brief Opaque handle to a buffer.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalBuffer PalBuffer;
 
@@ -225,7 +191,6 @@ typedef struct PalBuffer PalBuffer;
  * @brief Opaque handle to a fence.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalFence PalFence;
 
@@ -234,7 +199,6 @@ typedef struct PalFence PalFence;
  * @brief Opaque handle to a semaphore.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalSemaphore PalSemaphore;
 
@@ -243,7 +207,6 @@ typedef struct PalSemaphore PalSemaphore;
  * @brief Opaque handle to a command pool.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalCommandPool PalCommandPool;
 
@@ -252,7 +215,6 @@ typedef struct PalCommandPool PalCommandPool;
  * @brief Opaque handle to a command buffer.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalCommandBuffer PalCommandBuffer;
 
@@ -267,7 +229,6 @@ typedef struct PalCommandBuffer PalCommandBuffer;
  * descriptorBindings[2] = { sampled image, sampler }. The ordering must be correct.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
 
@@ -276,7 +237,6 @@ typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
  * @brief Opaque handle to a descriptor pool.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalDescriptorPool PalDescriptorPool;
 
@@ -285,7 +245,6 @@ typedef struct PalDescriptorPool PalDescriptorPool;
  * @brief Opaque handle to a descriptor set.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalDescriptorSet PalDescriptorSet;
 
@@ -294,7 +253,6 @@ typedef struct PalDescriptorSet PalDescriptorSet;
  * @brief Opaque handle to a sampler.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalSampler PalSampler;
 
@@ -303,7 +261,6 @@ typedef struct PalSampler PalSampler;
  * @brief Opaque handle to a pipeline layout.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalPipelineLayout PalPipelineLayout;
 
@@ -313,7 +270,6 @@ typedef struct PalPipelineLayout PalPipelineLayout;
  * (Graphics, Compute and Ray tracing).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalPipeline PalPipeline;
 
@@ -322,7 +278,6 @@ typedef struct PalPipeline PalPipeline;
  * @brief Opaque handle to a shader binding table.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalShaderBindingTable PalShaderBindingTable;
 
@@ -331,7 +286,6 @@ typedef struct PalShaderBindingTable PalShaderBindingTable;
  * @brief Opaque handle to an acceleration structure.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
@@ -340,7 +294,6 @@ typedef struct PalAccelerationStructure PalAccelerationStructure;
  * @brief Debugger messages severity types used to filter incoming messages.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum PalDebugMessageSeverity PalDebugMessageSeverity;
 
@@ -349,7 +302,6 @@ typedef enum PalDebugMessageSeverity PalDebugMessageSeverity;
  * @brief Debugger messages types used to filter incoming messages.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum PalDebugMessageType PalDebugMessageType;
 
@@ -358,7 +310,6 @@ typedef enum PalDebugMessageType PalDebugMessageType;
  * @brief Adapter address. Used to get adapter (GPU) address of mostly buffers.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef uint64_t PalDeviceAddress;
 
@@ -374,7 +325,6 @@ typedef uint64_t PalDeviceAddress;
  * @param msg Null-terminated UTF-8 debug message.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palInitGraphics
  */
 typedef void(PAL_CALL* PalDebugCallback)(
@@ -391,7 +341,6 @@ typedef void(PAL_CALL* PalDebugCallback)(
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_ADAPTER_TYPE_UNKNOWN,
@@ -413,7 +362,6 @@ typedef enum {
  * core graphics system. These are custom backends that can be use to extend the graphics systems.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_ADAPTER_API_TYPE_VULKAN,
@@ -434,7 +382,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_QUEUE_TYPE_GRAPHICS,
@@ -450,7 +397,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_PRESENT_MODE_FIFO, /**< V-Sync.*/
@@ -468,7 +414,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_COMPOSITE_ALPHA_OPAQUE, /**< Default behavior.*/
@@ -486,7 +431,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_FORMAT_UNDEFINED,
@@ -584,7 +528,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_IMAGE_USAGE_UNDEFINED = 0,
@@ -605,7 +548,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_SHADER_FORMAT_SPIRV = (1ULL << 0),
@@ -624,7 +566,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_LOAD_OP_LOAD,
@@ -640,7 +581,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_STORE_OP_STORE,
@@ -655,7 +595,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_MEMORY_TYPE_GPU_ONLY,
@@ -673,7 +612,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_IMAGE_TYPE_1D,
@@ -689,7 +627,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_IMAGE_ASPECT_COLOR,
@@ -706,7 +643,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_IMAGE_VIEW_TYPE_1D,
@@ -726,7 +662,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_FILTER_MODE_NEAREST,
@@ -741,7 +676,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_SAMPLER_MIPMAP_MODE_NEAREST,
@@ -756,7 +690,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_SAMPLER_ADDRESS_MODE_REPEAT,
@@ -773,7 +706,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
@@ -792,7 +724,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR,
@@ -811,7 +742,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND,
@@ -827,7 +757,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_SHADER_STAGE_UNDEFINED,
@@ -856,7 +785,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_SAMPLE_COUNT_1,
@@ -876,7 +804,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -895,7 +822,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_CULL_MODE_NONE,
@@ -911,7 +837,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_FRONT_FACE_CLOCKWISE,
@@ -926,7 +851,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_POLYGON_MODE_FILL,
@@ -942,7 +866,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_STENCIL_FACE_FRONT = (1ULL << 0),
@@ -958,7 +881,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_VERTEX_TYPE_UNDEFINED,
@@ -1010,7 +932,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_VERTEX_SEMANTIC_ID_POSITION,
@@ -1028,7 +949,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_COMMAND_BUFFER_TYPE_PRIMARY,
@@ -1043,7 +963,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX,
@@ -1058,7 +977,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_COMPARE_OP_NEVER,
@@ -1079,7 +997,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_STENCIL_OP_KEEP,
@@ -1100,7 +1017,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_BLEND_OP_ADD,
@@ -1118,7 +1034,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_BLEND_FACTOR_ZERO,
@@ -1148,7 +1063,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_COLOR_MASK_NONE = 0,
@@ -1167,7 +1081,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_RESOLVE_MODE_NONE = 0,
@@ -1186,7 +1099,6 @@ typedef enum {
  * consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_FRAGMENT_SHADING_RATE_1X1,
@@ -1208,7 +1120,6 @@ typedef enum {
  * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP,
@@ -1226,7 +1137,6 @@ typedef enum {
  * for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL,
@@ -1241,7 +1151,6 @@ typedef enum {
  * `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD,
@@ -1257,7 +1166,6 @@ typedef enum {
  * `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD = (1ULL << 0),
@@ -1274,7 +1182,6 @@ typedef enum {
  * `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE = (1ULL << 0),
@@ -1290,7 +1197,6 @@ typedef enum {
  * All geometry types follow the format `PAL_GEOMETRY_TYPE_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_GEOMETRY_TYPE_TRIANGLE,
@@ -1305,7 +1211,6 @@ typedef enum {
  * All geometry flags follow the format `PAL_GEOMETRY_FLAG_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_GEOMETRY_FLAG_OPAQUE = (1ULL << 0),
@@ -1319,7 +1224,6 @@ typedef enum {
  * All index types follow the format `PAL_INDEX_TYPE_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_INDEX_TYPE_UINT16,
@@ -1334,7 +1238,6 @@ typedef enum {
  * All buffer usages follow the format `PAL_BUFFER_USAGE_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_BUFFER_USAGE_VERTEX = (1ULL << 0),
@@ -1369,7 +1272,6 @@ enum PalDebugMessageType {
  * All usage states follow the format `PAL_USAGE_STATE_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_USAGE_STATE_UNDEFINED,
@@ -1404,7 +1306,6 @@ typedef enum {
  * All descriptor types follow the format `PAL_DESCRIPTOR_TYPE_**` for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -1423,7 +1324,6 @@ typedef enum {
  * for consistency and API use.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef enum {
     PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL,
@@ -1436,7 +1336,6 @@ typedef enum {
  * @brief Information about an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t vendorId;
@@ -1455,7 +1354,6 @@ typedef struct {
  * @brief Image capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxWidth;
@@ -1470,7 +1368,6 @@ typedef struct {
  * @brief Resource capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool sampledImageDynamicArrayIndexing;
@@ -1497,7 +1394,6 @@ typedef struct {
  * @brief Compute capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxWorkGroupInvocations;
@@ -1510,7 +1406,6 @@ typedef struct {
  * @brief Viewport capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxWidth;
@@ -1524,7 +1419,6 @@ typedef struct {
  * @brief Capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxComputeQueues;
@@ -1548,7 +1442,6 @@ typedef struct {
  * @brief Sampler anisotropy capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxAnisotropy;
@@ -1559,7 +1452,6 @@ typedef struct {
  * @brief Multi view capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxViewCount;
@@ -1570,7 +1462,6 @@ typedef struct {
  * @brief Multi viewport capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxCount;
@@ -1581,7 +1472,6 @@ typedef struct {
  * @brief Depth stencil capabilities of an adapter (GPU).
  * 
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool independentResolve;
@@ -1594,7 +1484,6 @@ typedef struct {
  * @brief Fragment shading rate capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
@@ -1610,7 +1499,6 @@ typedef struct {
  * @brief Mesh shader capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxOutputPrimitives;
@@ -1626,7 +1514,6 @@ typedef struct {
  * @brief Ray tracing capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t maxRecursionDepth;
@@ -1643,7 +1530,6 @@ typedef struct {
  * @brief Descriptor indexing capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool sampledImageNonUniformIndexing;
@@ -1673,7 +1559,6 @@ typedef struct {
  * @brief surface capabilities of an adapter (GPU).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool presentModes[PAL_PRESENT_MODE_MAX];
@@ -1696,7 +1581,6 @@ typedef struct {
  * holding native handles. The handles will not be copied.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalGraphicsWindowDisplayType displayType; /**< Will be used only on linux platform.*/
@@ -1710,7 +1594,6 @@ typedef struct {
  * count from the provided format.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalFormat format;
@@ -1723,7 +1606,6 @@ typedef struct {
  * @brief Information about an image. This can be a swapchain image.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t width;            /**< Width of the image in pixels.*/
@@ -1744,7 +1626,6 @@ typedef struct {
  * will be used with depth stencil attachments.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     float color[4]; /**< Color for color attachments only.*/
@@ -1759,7 +1640,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalLoadOp loadOp;
@@ -1781,7 +1661,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t shaderStageCount;
@@ -1794,7 +1673,6 @@ typedef struct {
  * @brief A viewport in pixels (float).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     float x;
@@ -1810,7 +1688,6 @@ typedef struct {
  * @brief A 2D rectangle in pixels.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     int32_t x;
@@ -1824,7 +1701,6 @@ typedef struct {
  * @brief Memory requirements for a resource (image, buffer etc).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool memoryTypes[PAL_MEMORY_TYPE_MAX];
@@ -1840,7 +1716,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint64_t waitValue;
@@ -1858,7 +1733,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint64_t timeout;     /**< Timeout in milliseconds.*/
@@ -1874,7 +1748,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t imageIndex; /**< Image index to present. Must be 0 and less than max images.*/
@@ -1889,7 +1762,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t viewCount; /**< If > 1 `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported.*/
@@ -1907,7 +1779,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t viewCount; /**< If > 1 `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported.*/
@@ -1926,7 +1797,6 @@ typedef struct {
  * vertices etc.Eg. an image of 800 x 600 will be [0] = 800, [1] = 600 and [2] = 1.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t workCount[3];
@@ -1939,7 +1809,6 @@ typedef struct {
  * @brief Information about compute or mesh(or task) dispatch data or a dispatch tile.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t workGroupBase[3];  /**< Offset per axis of a dispatch tile.*/
@@ -1953,7 +1822,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t vertexCount;
@@ -1969,7 +1837,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t indexCount;
@@ -1986,7 +1853,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t groupCountXOrWidth;  /**< Number of groups on the x axis or width.*/
@@ -2003,7 +1869,6 @@ typedef struct {
  * semanticID` which are (`POSITION`, `COLOR`, `TEXCOORD`, `NORMAL` and `TANGENT`).
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalVertexSemanticID semanticID;
@@ -2024,7 +1889,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalVertexLayoutType type;
@@ -2040,7 +1904,6 @@ typedef struct {
  * The debugger will not be initialized if PalGraphicsDebugger::callback is set and valid.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool denyGeneral;
@@ -2060,7 +1923,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableDepthClamp;
@@ -2080,7 +1942,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableSampleShading;
@@ -2097,7 +1958,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalStencilOp failOp;
@@ -2113,7 +1973,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableDepthTest;
@@ -2134,7 +1993,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableBlend;
@@ -2154,7 +2012,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalFragmentShadingRate rate;
@@ -2168,7 +2025,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t instanceId;
@@ -2184,7 +2040,6 @@ typedef struct {
  * @brief Acceleration structure build size.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t accelerationStructureSize;
@@ -2199,7 +2054,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalVertexType vertexType;
@@ -2218,7 +2072,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t stride;
@@ -2232,7 +2085,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalGeometryFlags flags;
@@ -2248,7 +2100,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalAccelerationStructureType type;
@@ -2270,7 +2121,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t descriptorCount;
@@ -2285,7 +2135,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t bindingCount;
@@ -2299,7 +2148,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t size; 
@@ -2315,7 +2163,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalImageView* imageView;
@@ -2328,7 +2175,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalSampler* sampler;
@@ -2341,7 +2187,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalAccelerationStructure* tlas;
@@ -2354,7 +2199,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t layoutBindingIndex; /**< Index into the descriptor set layout bindings.*/
@@ -2375,7 +2219,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint64_t offset;
@@ -2391,7 +2234,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t startMipLevel;
@@ -2408,7 +2250,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t size;
@@ -2423,7 +2264,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint64_t bufferOffset;
@@ -2448,7 +2288,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t dstMipLevel;
@@ -2477,7 +2316,6 @@ typedef struct {
  * The records array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t groupIndex; /**< Index into the shader groups used to create the ray tracing pipeline.*/
@@ -2492,7 +2330,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
@@ -2507,7 +2344,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t width;
@@ -2527,7 +2363,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalFormat format; /**< Must be compatible with the image format.*/
@@ -2542,7 +2377,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableCompare;
@@ -2568,7 +2402,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool clipped;
@@ -2588,7 +2421,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t entryCount;
@@ -2604,7 +2436,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBufferUsages usages;
@@ -2618,7 +2449,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalAccelerationStructureType type;
@@ -2632,10 +2462,9 @@ typedef struct {
  * @brief Creation parameters for a descriptor set layout.
  *
  * Uninitialized fields may result in undefined behavior. Set `enableDescriptorIndexing` to
- * true to enable descriptor indexing for the descriptor set layout.
+ * `PAL_TRUE` to enable descriptor indexing for the descriptor set layout.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableDescriptorIndexing;
@@ -2650,10 +2479,9 @@ typedef struct {
  * @brief Creation parameters for a descriptor pool.
  * 
  * Uninitialized fields may result in undefined behavior. Set `enableDescriptorIndexing` to
- * true to enable descriptor indexing for the descriptor pool.
+ * `PAL_TRUE` to enable descriptor indexing for the descriptor pool.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool enableDescriptorIndexing;
@@ -2669,7 +2497,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t descriptorSetLayoutCount;
@@ -2685,14 +2512,13 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalBool primitiveRestartEnable;
     uint32_t vertexLayoutCount;
     uint32_t colorBlendAttachmentCount;
     uint32_t shaderCount;
-    PalIndexType indexType;  /**< Will be used if `primitiveRestartEnable` is true.*/
+    PalIndexType indexType;  /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
     PalPrimitiveTopology topology;
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
@@ -2712,7 +2538,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalPipelineLayout* pipelineLayout;
@@ -2728,7 +2553,6 @@ typedef struct {
  * The shader group array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     PalRayTracingShaderGroupType type;
@@ -2750,7 +2574,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t shaderCount;
@@ -2770,7 +2593,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     uint32_t recordCount;
@@ -2785,7 +2607,6 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 typedef struct {
     /**
@@ -4091,7 +3912,6 @@ typedef struct {
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palInitGraphics
  * @sa palShutdownGraphics
  */
@@ -4121,7 +3941,6 @@ PAL_API PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backe
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palAddGraphicsBackend
  * @sa palShutdownGraphics
  */
@@ -4138,7 +3957,6 @@ PAL_API PalResult PAL_CALL palInitGraphics(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palInitGraphics
  */
 PAL_API void PAL_CALL palShutdownGraphics();
@@ -4173,7 +3991,6 @@ PAL_API void PAL_CALL palShutdownGraphics();
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palEnumerateAdapters(
     int32_t* count,
@@ -4193,7 +4010,6 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
  * Thread safety: Thread safe if `info` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palEnumerateAdapters
  */
 PAL_API PalResult PAL_CALL palGetAdapterInfo(
@@ -4214,7 +4030,6 @@ PAL_API PalResult PAL_CALL palGetAdapterInfo(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palEnumerateAdapters
  */
 PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
@@ -4233,7 +4048,6 @@ PAL_API PalResult PAL_CALL palGetAdapterCapabilities(
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palEnumerateAdapters
  */
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
@@ -4252,7 +4066,6 @@ PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palEnumerateAdapters
  */
 PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
@@ -4279,7 +4092,6 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  * Thread safety: Thread safe if `adapter` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyDevice
  */
 PAL_API PalResult PAL_CALL palCreateDevice(
@@ -4300,7 +4112,6 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateDevice
  */
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
@@ -4326,7 +4137,6 @@ PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
  * `outMemory` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palFreeMemory
  */
 PAL_API PalResult PAL_CALL palAllocateMemory(
@@ -4349,7 +4159,6 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  * `outMemory` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palAllocateMemory
  */
 PAL_API void PAL_CALL palFreeMemory(
@@ -4373,7 +4182,6 @@ PAL_API void PAL_CALL palFreeMemory(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalDevice* device,
@@ -4396,7 +4204,6 @@ PAL_API PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryMultiViewCapabilities(
     PalDevice* device,
@@ -4419,7 +4226,6 @@ PAL_API PalResult PAL_CALL palQueryMultiViewCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryMultiViewportCapabilities(
     PalDevice* device,
@@ -4442,7 +4248,6 @@ PAL_API PalResult PAL_CALL palQueryMultiViewportCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryDepthStencilCapabilities(
     PalDevice* device,
@@ -4465,7 +4270,6 @@ PAL_API PalResult PAL_CALL palQueryDepthStencilCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalDevice* device,
@@ -4488,7 +4292,6 @@ PAL_API PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryMeshShaderCapabilities(
     PalDevice* device,
@@ -4511,7 +4314,6 @@ PAL_API PalResult PAL_CALL palQueryMeshShaderCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
     PalDevice* device,
@@ -4534,7 +4336,6 @@ PAL_API PalResult PAL_CALL palQueryRayTracingCapabilities(
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
     PalDevice* device,
@@ -4564,7 +4365,6 @@ PAL_API PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyQueue
  */
 PAL_API PalResult PAL_CALL palCreateQueue(
@@ -4585,7 +4385,6 @@ PAL_API PalResult PAL_CALL palCreateQueue(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateQueue
  */
 PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
@@ -4598,12 +4397,11 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  * @param[in] queue Queue to query.
  * @param[in] surface Surface to check presentation support for.
  *
- * @return True if queue can present otherwise false if queue can not present.
+ * @return True if queue can present otherwise `PAL_FALSE` if queue can not present.
  *
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateQueue
  */
 PAL_API PalBool PAL_CALL palCanQueuePresent(
@@ -4626,7 +4424,6 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
  * Thread safety: Thread safe if `queue` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
@@ -4656,7 +4453,6 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * Thread safety: Thread safe if `outFormats` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palIsFormatSupported
  */
 PAL_API PalResult PAL_CALL palEnumerateFormats(
@@ -4676,12 +4472,11 @@ PAL_API PalResult PAL_CALL palEnumerateFormats(
  * @param[in] adapter Adapter to query format on.
  * @param[in] format Format to query support for.
  *
- * @return True if format is supported otherwise false if not supported.
+ * @return True if format is supported otherwise `PAL_FALSE` if not supported.
  *
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palQueryFormatImageUsages
  * @sa palQueryFormatImageViewUsages
  */
@@ -4702,7 +4497,6 @@ PAL_API PalBool PAL_CALL palIsFormatSupported(
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalAdapter* adapter,
@@ -4721,7 +4515,6 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
     PalAdapter* adapter,
@@ -4747,7 +4540,6 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyImage
  */
 PAL_API PalResult PAL_CALL palCreateImage(
@@ -4768,7 +4560,6 @@ PAL_API PalResult PAL_CALL palCreateImage(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateImage
  */
 PAL_API void PAL_CALL palDestroyImage(PalImage* image);
@@ -4788,7 +4579,6 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
  * Thread safety: Thread safe if `info` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateImage
  */
 PAL_API PalResult PAL_CALL palGetImageInfo(
@@ -4809,7 +4599,6 @@ PAL_API PalResult PAL_CALL palGetImageInfo(
  * Thread safety: Thread safe if `requirements` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
     PalImage* image,
@@ -4832,7 +4621,6 @@ PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
  * Thread safety: Thread safe if `requirements` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palGetImageMemoryRequirements
  */
 PAL_API PalResult PAL_CALL palBindImageMemory(
@@ -4864,7 +4652,6 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  * is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palUnmapImageMemory
  */
 PAL_API PalResult PAL_CALL palMapImageMemory(
@@ -4884,7 +4671,6 @@ PAL_API PalResult PAL_CALL palMapImageMemory(
  * Thread safety: Thread safe if `image` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palMapImageMemory
  */
 PAL_API void PAL_CALL palUnmapImageMemory(PalImage* image);
@@ -4913,7 +4699,6 @@ PAL_API void PAL_CALL palUnmapImageMemory(PalImage* image);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyImageView
  */
 PAL_API PalResult PAL_CALL palCreateImageView(
@@ -4935,7 +4720,6 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateImageView
  */
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
@@ -4958,7 +4742,6 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroySampler
  */
 PAL_API PalResult PAL_CALL palCreateSampler(
@@ -4979,7 +4762,6 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateSampler
  */
 PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
@@ -5002,7 +4784,6 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroySurface
  */
 PAL_API PalResult PAL_CALL palCreateSurface(
@@ -5023,7 +4804,6 @@ PAL_API PalResult PAL_CALL palCreateSurface(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateSurface
  */
 PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
@@ -5046,7 +4826,6 @@ PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
  * Thread safety: Thread safe if `caps` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palGetSurfaceCapabilities(
     PalDevice* device,
@@ -5074,7 +4853,6 @@ PAL_API PalResult PAL_CALL palGetSurfaceCapabilities(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroySwapchain
  */
 PAL_API PalResult PAL_CALL palCreateSwapchain(
@@ -5097,7 +4875,6 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateSwapchain
  */
 PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
@@ -5115,7 +4892,6 @@ PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palGetNextSwapchainImage
  */
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
@@ -5138,7 +4914,6 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  * Thread safety: Thread safe if `swapchain` externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palGetSwapchainImage
  */
 PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
@@ -5161,7 +4936,6 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
@@ -5185,7 +4959,6 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
  * Thread safety: Thread safe if `swapchain` externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palResizeSwapchain(
     PalSwapchain* swapchain,
@@ -5225,7 +4998,6 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * @note The shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyShader
  */
 PAL_API PalResult PAL_CALL palCreateShader(
@@ -5246,7 +5018,6 @@ PAL_API PalResult PAL_CALL palCreateShader(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateShader
  */
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
@@ -5267,7 +5038,6 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyFence
  */
 PAL_API PalResult PAL_CALL palCreateFence(
@@ -5288,7 +5058,6 @@ PAL_API PalResult PAL_CALL palCreateFence(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateFence
  */
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
@@ -5310,7 +5079,6 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
  * Thread safety: Thread safe if `fence` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palIsFenceSignaled
  */
 PAL_API PalResult PAL_CALL palWaitFence(
@@ -5333,7 +5101,6 @@ PAL_API PalResult PAL_CALL palWaitFence(
  * Thread safety: Thread safe if `fence` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palIsFenceSignaled
  */
 PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
@@ -5345,12 +5112,11 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
  *
  * @param[in] fence Fence to check.
  *
- * @return True if signaled otherwise false.
+ * @return True if signaled otherwise `PAL_FALSE`.
  *
  * Thread safety: Thread safe.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palResetFence
  * @sa palWaitFence
  */
@@ -5372,7 +5138,6 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroySemaphore
  */
 PAL_API PalResult PAL_CALL palCreateSemaphore(
@@ -5393,7 +5158,6 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateSemaphore
  */
 PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
@@ -5416,7 +5180,6 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  * Thread safety: Thread safe if `semaphore` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palSignalSemaphore
  * @sa palGetSemaphoreValue
  */
@@ -5443,7 +5206,6 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  * Thread safety: Thread safe if `queue` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palWaitSemaphore
  * @sa palGetSemaphoreValue
  */
@@ -5469,7 +5231,6 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * Thread safety: Thread safe if `semaphore` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palWaitSemaphore
  * @sa palSignalSemaphore
  */
@@ -5492,7 +5253,6 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyCommandPool
  */
 PAL_API PalResult PAL_CALL palCreateCommandPool(
@@ -5515,7 +5275,6 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateCommandPool
  */
 PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
@@ -5533,7 +5292,6 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
  * Thread safety: Thread safe if `pool` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
 
@@ -5553,7 +5311,6 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
  * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palFreeCommandBuffer
  */
 PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
@@ -5575,7 +5332,6 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palAllocateCommandBuffer
  */
 PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
@@ -5593,7 +5349,6 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -5613,7 +5368,6 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  * Thread safety: Thread safe if `queue` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
@@ -5633,7 +5387,6 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdEnd
  */
 PAL_API PalResult PAL_CALL palCmdBegin(
@@ -5653,7 +5406,6 @@ PAL_API PalResult PAL_CALL palCmdBegin(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdBegin
  */
 PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
@@ -5673,7 +5425,6 @@ PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
  * Thread safety: Thread safe if `primaryCmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
@@ -5697,7 +5448,6 @@ PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetFragmentShadingRate(
     PalCommandBuffer* cmdBuffer,
@@ -5724,7 +5474,6 @@ PAL_API PalResult PAL_CALL palCmdSetFragmentShadingRate(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palBuildWorkGroupInfo
  */
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
@@ -5756,7 +5505,6 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasks(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palBuildWorkGroupInfo
  */
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
@@ -5788,7 +5536,6 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palBuildWorkGroupInfo
  */
 PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
@@ -5815,7 +5562,6 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdBuildAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
@@ -5836,7 +5582,6 @@ PAL_API PalResult PAL_CALL palCmdBuildAccelerationStructure(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdBeginRendering(
     PalCommandBuffer* cmdBuffer,
@@ -5855,7 +5600,6 @@ PAL_API PalResult PAL_CALL palCmdBeginRendering(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
 
@@ -5879,7 +5623,6 @@ PAL_API PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdCopyBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -5904,7 +5647,6 @@ PAL_API PalResult PAL_CALL palCmdCopyBuffer(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdCopyBufferToImage(
     PalCommandBuffer* cmdBuffer,
@@ -5929,7 +5671,6 @@ PAL_API PalResult PAL_CALL palCmdCopyBufferToImage(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdCopyImage(
     PalCommandBuffer* cmdBuffer,
@@ -5954,7 +5695,6 @@ PAL_API PalResult PAL_CALL palCmdCopyImage(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -5977,7 +5717,6 @@ PAL_API PalResult PAL_CALL palCmdCopyImageToBuffer(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
@@ -5999,7 +5738,6 @@ PAL_API PalResult PAL_CALL palCmdBindPipeline(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetViewport(
     PalCommandBuffer* cmdBuffer,
@@ -6022,7 +5760,6 @@ PAL_API PalResult PAL_CALL palCmdSetViewport(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetScissors(
     PalCommandBuffer* cmdBuffer,
@@ -6049,7 +5786,6 @@ PAL_API PalResult PAL_CALL palCmdSetScissors(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
@@ -6076,7 +5812,6 @@ PAL_API PalResult PAL_CALL palCmdBindVertexBuffers(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdBindIndexBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -6103,7 +5838,6 @@ PAL_API PalResult PAL_CALL palCmdBindIndexBuffer(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDrawIndexed
  */
 PAL_API PalResult PAL_CALL palCmdDraw(
@@ -6135,7 +5869,6 @@ PAL_API PalResult PAL_CALL palCmdDraw(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDrawIndexedIndirect
  */
 PAL_API PalResult PAL_CALL palCmdDrawIndirect(
@@ -6166,7 +5899,6 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirect(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdDrawIndexedIndirectCount
  */
 PAL_API PalResult PAL_CALL palCmdDrawIndirectCount(
@@ -6195,7 +5927,6 @@ PAL_API PalResult PAL_CALL palCmdDrawIndirectCount(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDraw
  */
 PAL_API PalResult PAL_CALL palCmdDrawIndexed(
@@ -6228,7 +5959,6 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexed(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDrawIndirect
  */
 PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
@@ -6259,7 +5989,6 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirect(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdDrawIndirectCount
  */
 PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
@@ -6309,7 +6038,6 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdImageBarrier
  * @sa palCmdBufferBarrier
  */
@@ -6353,7 +6081,6 @@ PAL_API PalResult PAL_CALL palCmdAccelerationStructureBarrier(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdBufferBarrier
  */
@@ -6397,7 +6124,6 @@ PAL_API PalResult PAL_CALL palCmdImageBarrier(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdImageBarrier
  */
@@ -6425,7 +6151,6 @@ PAL_API PalResult PAL_CALL palCmdBufferBarrier(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palBuildWorkGroupInfo
  */
 PAL_API PalResult PAL_CALL palCmdDispatch(
@@ -6458,7 +6183,6 @@ PAL_API PalResult PAL_CALL palCmdDispatch(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palBuildWorkGroupInfo
  */
 PAL_API PalResult PAL_CALL palCmdDispatchBase(
@@ -6490,7 +6214,6 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palBuildWorkGroupInfo
  */
 PAL_API PalResult PAL_CALL palCmdDispatchIndirect(
@@ -6520,7 +6243,6 @@ PAL_API PalResult PAL_CALL palCmdDispatchIndirect(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdTraceRays(
     PalCommandBuffer* cmdBuffer,
@@ -6555,7 +6277,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
@@ -6580,7 +6301,6 @@ PAL_API PalResult PAL_CALL palCmdTraceRaysIndirect(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
@@ -6607,7 +6327,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  * @note A pipeline must be bound before this call.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
@@ -6634,7 +6353,6 @@ PAL_API PalResult PAL_CALL palCmdPushConstants(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetCullMode(
     PalCommandBuffer* cmdBuffer,
@@ -6657,7 +6375,6 @@ PAL_API PalResult PAL_CALL palCmdSetCullMode(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetFrontFace(
     PalCommandBuffer* cmdBuffer,
@@ -6680,7 +6397,6 @@ PAL_API PalResult PAL_CALL palCmdSetFrontFace(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetPrimitiveTopology(
     PalCommandBuffer* cmdBuffer,
@@ -6703,7 +6419,6 @@ PAL_API PalResult PAL_CALL palCmdSetPrimitiveTopology(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetDepthTestEnable(
     PalCommandBuffer* cmdBuffer,
@@ -6726,7 +6441,6 @@ PAL_API PalResult PAL_CALL palCmdSetDepthTestEnable(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetDepthWriteEnable(
     PalCommandBuffer* cmdBuffer,
@@ -6753,7 +6467,6 @@ PAL_API PalResult PAL_CALL palCmdSetDepthWriteEnable(
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palCmdSetStencilOp(
     PalCommandBuffer* cmdBuffer,
@@ -6786,7 +6499,6 @@ PAL_API PalResult PAL_CALL palCmdSetStencilOp(
  * `PAL_MEMORY_TYPE_GPU_ONLY`.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyAccelerationstructure
  */
 PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
@@ -6807,7 +6519,6 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateAccelerationstructure
  */
 PAL_API void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* as);
@@ -6833,7 +6544,6 @@ PAL_API void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* 
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
     PalDevice* device,
@@ -6866,7 +6576,6 @@ PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyBuffer
  */
 PAL_API PalResult PAL_CALL palCreateBuffer(
@@ -6887,7 +6596,6 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateBuffer
  */
 PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
@@ -6906,7 +6614,6 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
  * Thread safety: Thread safe if `requirements` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palGetBufferMemoryRequirements(
     PalBuffer* buffer,
@@ -6933,7 +6640,6 @@ PAL_API PalResult PAL_CALL palGetBufferMemoryRequirements(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
     PalDevice* device,
@@ -6969,7 +6675,6 @@ PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     PalDevice* device,
@@ -6996,7 +6701,6 @@ PAL_API PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palWriteToInstanceBuffer(
     PalDevice* device,
@@ -7022,7 +6726,6 @@ PAL_API PalResult PAL_CALL palWriteToInstanceBuffer(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
     PalDevice* device,
@@ -7048,7 +6751,6 @@ PAL_API PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
  * Thread safety: Thread safe if `requirements` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palGetBufferMemoryRequirements
  */
 PAL_API PalResult PAL_CALL palBindBufferMemory(
@@ -7080,7 +6782,6 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
  * is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palUnmapBufferMemory
  */
 PAL_API PalResult PAL_CALL palMapBufferMemory(
@@ -7100,7 +6801,6 @@ PAL_API PalResult PAL_CALL palMapBufferMemory(
  * Thread safety: Thread safe if `buffer` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palMapBufferMemory
  */
 PAL_API void PAL_CALL palUnmapBufferMemory(PalBuffer* buffer);
@@ -7118,7 +6818,6 @@ PAL_API void PAL_CALL palUnmapBufferMemory(PalBuffer* buffer);
  * Thread safety: Thread safe if `buffer` is per thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
 
@@ -7150,7 +6849,6 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyDescriptorSetLayout
  */
 PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
@@ -7171,7 +6869,6 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateDescriptorSetLayout
  */
 PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layout);
@@ -7197,7 +6894,6 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyDescriptorPool
  */
 PAL_API PalResult PAL_CALL palCreateDescriptorPool(
@@ -7218,7 +6914,6 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateDescriptorPool
  */
 PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
@@ -7236,7 +6931,6 @@ PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
  * Thread safety: Thread safe if `pool` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
 
@@ -7261,7 +6955,6 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
     PalDevice* device,
@@ -7293,7 +6986,6 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
     PalDevice* device,
@@ -7317,7 +7009,6 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyPipelineLayout
  */
 PAL_API PalResult PAL_CALL palCreatePipelineLayout(
@@ -7338,7 +7029,6 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreatePipelineLayout
  */
 PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
@@ -7359,7 +7049,6 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyPipeline
  */
 PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
@@ -7385,7 +7074,6 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  * @note The first entry of the compute shader will be used.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyPipeline
  */
 PAL_API PalResult PAL_CALL palCreateComputePipeline(
@@ -7414,7 +7102,6 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  * @note The shader group array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyPipeline
  */
 PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
@@ -7435,7 +7122,6 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateGraphicsPipeline
  * @sa palCreateComputePipeline
  * @sa palCreateRayTracingPipeline
@@ -7467,7 +7153,6 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  * @note The records array must be in this order [raygen][miss][hitgroup][callable]. 
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palDestroyShaderBindingTable
  */
 PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
@@ -7488,7 +7173,6 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  * externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCreateShaderBindingTable
  */
 PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
@@ -7512,7 +7196,6 @@ PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
  * Thread safety: Thread safe if `sbt` is externally synchronized.
  *
  * @since 1.4
- * @ingroup pal_graphics
  */
 PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
     PalShaderBindingTable* sbt, 
@@ -7528,7 +7211,7 @@ PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
  * write upto that limit.
  *
  * If the count is 0 and the PalWorkGroupInfo array is nullptr, the function fails
- * and returns `false`.
+ * and returns `PAL_FALSE`.
  *
  * This function works the maths for how many work groups to dispatch in each axis and how many
  * times it needs to be dispatch in order for the work to be done. It works well with
@@ -7538,12 +7221,11 @@ PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
  * @param[in, out] count Capacity of the PalWorkGroupInfo array.
  * @param[out] infos Pointer to an Array of PalWorkGroupInfo.
  *
- * @return True on success otherwise false.
+ * @return True on success otherwise `PAL_FALSE`.
  *
  * Thread safety: Must only be called from the main thread.
  *
  * @since 1.4
- * @ingroup pal_graphics
  * @sa palCmdDrawMeshTasks
  * @sa palCmdDrawMeshTasksIndirect
  * @sa palCmdDrawMeshTasksIndirectCount

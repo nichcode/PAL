@@ -679,7 +679,7 @@ void drawText(
     }
 }
 
-static PalWindowHandleInfoEx s_WinHandle;
+static PalWindowHandleInfo s_WinHandle;
 
 static void createDecoration()
 {
@@ -842,7 +842,7 @@ PalBool customDecorationTest()
     if (!s_Display) {
         // not on wayland
         palLog(nullptr, "Not on wayland platform");
-        return false;
+        return PAL_FALSE;
     }
 
     PalResult result;
@@ -854,9 +854,8 @@ PalBool customDecorationTest()
 
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
@@ -878,32 +877,35 @@ PalBool customDecorationTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     PalWindow* window = nullptr;
     PalWindowCreateInfo createInfo = {0};
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.show = true;
+    createInfo.show = PAL_TRUE;
     createInfo.style = PAL_WINDOW_STYLE_BORDERLESS;
     createInfo.title = WINDOW_TITLE;
 
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     // get native handles
-    s_WinHandle = palGetWindowHandleInfoEx(window);
+    result = palGetWindowHandleInfo(window, &s_WinHandle);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to get window handle info");
+        return PAL_FALSE;
+    }
+
     s_Decoration.driver = eventDriver;
     createDecoration();
 
-    PalBool running = true;
+    PalBool running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -912,7 +914,7 @@ PalBool customDecorationTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -920,7 +922,7 @@ PalBool customDecorationTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -952,14 +954,14 @@ PalBool customDecorationTest()
 
     closeDisplayWayland();
 
-    return true;
+    return PAL_TRUE;
 }
 
 #else
 #include "tests.h"
 PalBool customDecorationTest()
 {
-    return false;
+    return PAL_FALSE;
 }
 
 #endif // __linux__

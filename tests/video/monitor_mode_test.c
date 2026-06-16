@@ -11,23 +11,21 @@ PalBool monitorModeTest()
     // initialize the video system
     PalResult result = palInitVideo(nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     // get the number of connected monitors
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors: %s", error);
-        return false;
+        logResult(result, "Failed to get query monitors");
+        return PAL_FALSE;
     }
 
     // if count == 0, we fail
     if (count == 0) {
         palLog(nullptr, "No monitor connected");
-        return false;
+        return PAL_FALSE;
     }
 
     palLog(nullptr, "Monitor Count: %d", count);
@@ -37,15 +35,14 @@ PalBool monitorModeTest()
     monitors = palAllocate(nullptr, sizeof(PalMonitor*) * count, 0);
     if (!monitors) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     // get the handle of the connected monitors
     result = palEnumerateMonitors(&count, monitors);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query monitors: %s", error);
-        return false;
+        logResult(result, "Failed to get query monitors");
+        return PAL_FALSE;
     }
 
     // get monitor info for every monitor and log the information
@@ -53,10 +50,8 @@ PalBool monitorModeTest()
         PalMonitor* monitor = monitors[i];
         result = palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get monitor info: %s", error);
-            palFree(nullptr, monitors);
-            return false;
+            logResult(result, "Failed to get monitor info");
+            return PAL_FALSE;
         }
 
         // log monitor name
@@ -65,9 +60,8 @@ PalBool monitorModeTest()
         // get number of monitor modes
         result = palEnumerateMonitorModes(monitor, &modeCount, nullptr);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get query monitor modes: %s", error);
-            return false;
+            logResult(result, "Failed to get query monitor modes");
+            return PAL_FALSE;
         }
 
         palLog(nullptr, "Monitor Mode Count: %d", modeCount);
@@ -78,15 +72,14 @@ PalBool monitorModeTest()
         if (!modes) {
             palLog(nullptr, "Failed to allocate memory");
             palFree(nullptr, monitors);
-            return false;
+            return PAL_FALSE;
         }
 
         // get the monitor modes
         result = palEnumerateMonitorModes(monitor, &modeCount, modes);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get query monitor modes: %s", error);
-            return false;
+            logResult(result, "Failed to get query monitor modes");
+            return PAL_FALSE;
         }
 
         for (int32_t i = 0; i < modeCount; i++) {
@@ -105,9 +98,8 @@ PalBool monitorModeTest()
         PalMonitorMode current;
         result = palGetCurrentMonitorMode(monitor, &current);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get current monitor mode: %s", error);
-            return false;
+            logResult(result, "Failed to get current monitor mode");
+            return PAL_FALSE;
         }
 
         palLog(nullptr, "");
@@ -124,5 +116,5 @@ PalBool monitorModeTest()
     // free monitors array
     palFree(nullptr, monitors);
 
-    return true;
+    return PAL_TRUE;
 }

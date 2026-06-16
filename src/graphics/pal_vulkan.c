@@ -1,24 +1,8 @@
 
 /**
-
-Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
  */
 
 // ==================================================
@@ -2354,7 +2338,7 @@ static void fillBuildInfoVk(
             VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
             data = &tmp->geometry.instances;
             data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-            data->arrayOfPointers = false;
+            data->arrayOfPointers = PAL_FALSE;
 
             VkDeviceOrHostAddressConstKHR address = {0};
             address.deviceAddress = info->instanceBufferAddress;
@@ -2659,7 +2643,7 @@ static void commitShaderbindingTableUpdateVk(
     dependencyInfo.pBufferMemoryBarriers = &barrier;
 
     cmdBuffer->device->cmdPipelineBarrier(cmdBuffer->handle, &dependencyInfo);
-    sbt->isDirty = false;
+    sbt->isDirty = PAL_FALSE;
 }
 
 // ==================================================
@@ -3023,18 +3007,18 @@ PalResult PAL_CALL initGraphicsVk(
     // clang-format on
 
     // get version
-    PalBool versionFallback = false;
+    PalBool versionFallback = PAL_FALSE;
     uint32_t version = 0;
     if (s_Vk.enumerateInstanceVersion) {
         s_Vk.enumerateInstanceVersion(&version);
         if (version <= VK_API_VERSION_1_0) {
-            versionFallback = true;
+            versionFallback = PAL_TRUE;
         }
     }
 
     VkResult result;
     uint32_t layerCount = 0;
-    PalBool hasValidationLayer = false;
+    PalBool hasValidationLayer = PAL_FALSE;
     s_Vk.messenger = nullptr;
     s_Vk.allocator = allocator;
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {0};
@@ -3054,7 +3038,7 @@ PalResult PAL_CALL initGraphicsVk(
             for (int i = 0; i < layerCount; i++) {
                 const char* name = props[i].layerName;
                 if (strcmp(name, "VK_LAYER_KHRONOS_validation") == 0) {
-                    hasValidationLayer = true;
+                    hasValidationLayer = PAL_TRUE;
                     break;
                 }
             }
@@ -3106,33 +3090,33 @@ PalResult PAL_CALL initGraphicsVk(
         return PAL_RESULT_SUCCESS;
     }
 
-    PalBool hasXlib = false;
-    PalBool hasXcb = false;
-    PalBool hasWayland = false;
-    PalBool hasWin32 = false;
-    PalBool hasSurface = false;
-    PalBool hasExtDebug = false;
+    PalBool hasXlib = PAL_FALSE;
+    PalBool hasXcb = PAL_FALSE;
+    PalBool hasWayland = PAL_FALSE;
+    PalBool hasWin32 = PAL_FALSE;
+    PalBool hasSurface = PAL_FALSE;
+    PalBool hasExtDebug = PAL_FALSE;
     s_Vk.enumerateInstanceExtensionProperties(nullptr, &extCount, extensionProps);
 
     for (int i = 0; i < extCount; i++) {
         VkExtensionProperties* prop = &extensionProps[i];
         if (strcmp(prop->extensionName, "VK_KHR_xlib_surface") == 0) {
-            hasXlib = true;
+            hasXlib = PAL_TRUE;
 
         } else if (strcmp(prop->extensionName, "VK_KHR_xcb_surface") == 0) {
-            hasXcb = true;
+            hasXcb = PAL_TRUE;
 
         } else if (strcmp(prop->extensionName, "VK_KHR_wayland_surface") == 0) {
-            hasWayland = true;
+            hasWayland = PAL_TRUE;
 
         } else if (strcmp(prop->extensionName, "VK_KHR_win32_surface") == 0) {
-            hasWin32 = true;
+            hasWin32 = PAL_TRUE;
 
         } else if (strcmp(prop->extensionName, "VK_KHR_surface") == 0) {
-            hasSurface = true;
+            hasSurface = PAL_TRUE;
 
         } else if (strcmp(prop->extensionName, "VK_EXT_debug_utils") == 0) {
-            hasExtDebug = true;
+            hasExtDebug = PAL_TRUE;
         }
     }
     palFree(s_Vk.allocator, extensionProps);
@@ -3366,13 +3350,13 @@ PalResult PAL_CALL enumerateAdaptersVk(
                 return PAL_RESULT_OUT_OF_MEMORY;
             }
 
-            PalBool found = false;
+            PalBool found = PAL_FALSE;
             s_Vk.enumerateDeviceExtensionProperties(phyDevice, nullptr, &extCount, exts);
 
             for (int i = 0; i < extCount; i++) {
                 const char* ext = exts[i].extensionName;
                 if (strcmp(ext, "VK_KHR_dynamic_rendering") == 0) {
-                    found = true;
+                    found = PAL_TRUE;
                     break;
                 }
             }
@@ -3625,19 +3609,19 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     }
 
     // check extensions
-    PalBool rayTracing = false;
-    PalBool accelerationStructure = false;
-    PalBool meshShader = false;
-    PalBool fragmentRateShading = false;
-    PalBool timelineSemaphore = false;
-    PalBool descriptorIndexing = false;
-    PalBool shaderFloat16 = false;
-    PalBool multiiView = false;
-    PalBool dynamicstate = false;
-    PalBool bufferDeviceAddress = false;
-    PalBool shaderParameters = false;
-    PalBool nullDescriptors = false;
-    PalBool rayQuery = false;
+    PalBool rayTracing = PAL_FALSE;
+    PalBool accelerationStructure = PAL_FALSE;
+    PalBool meshShader = PAL_FALSE;
+    PalBool fragmentRateShading = PAL_FALSE;
+    PalBool timelineSemaphore = PAL_FALSE;
+    PalBool descriptorIndexing = PAL_FALSE;
+    PalBool shaderFloat16 = PAL_FALSE;
+    PalBool multiiView = PAL_FALSE;
+    PalBool dynamicstate = PAL_FALSE;
+    PalBool bufferDeviceAddress = PAL_FALSE;
+    PalBool shaderParameters = PAL_FALSE;
+    PalBool nullDescriptors = PAL_FALSE;
+    PalBool rayQuery = PAL_FALSE;
     s_Vk.enumerateDeviceExtensionProperties(phyDevice, nullptr, &extensionCount, extensionProps);
 
     // clang-format off
@@ -3645,34 +3629,34 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     for (int i = 0; i < extensionCount; i++) {
         VkExtensionProperties* props = &extensionProps[i];
         if (strcmp(props->extensionName, "VK_KHR_ray_tracing_pipeline") == 0) {
-            rayTracing = true;
+            rayTracing = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_KHR_acceleration_structure") == 0) {
-            accelerationStructure = true;
+            accelerationStructure = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_EXT_mesh_shader") == 0) {
-            meshShader = true;
+            meshShader = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_KHR_fragment_shading_rate") == 0) {
-            fragmentRateShading = true;
+            fragmentRateShading = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_EXT_descriptor_indexing") == 0) {
-            descriptorIndexing = true;
+            descriptorIndexing = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_KHR_swapchain") == 0) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_SWAPCHAIN;
 
         } else if (strcmp(props->extensionName, "VK_KHR_shader_float16_int8") == 0) {
-            shaderFloat16 = true;
+            shaderFloat16 = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_KHR_timeline_semaphore") == 0) {
-            timelineSemaphore = true;
+            timelineSemaphore = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_KHR_multiview") == 0) {
-            multiiView = true;
+            multiiView = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_EXT_extended_dynamic_state") == 0) {
-            dynamicstate = true;
+            dynamicstate = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_EXT_extended_dynamic_state2") == 0) {
             VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynState2 = {0};
@@ -3699,13 +3683,13 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
             adapterFeatures |= PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT;
 
         } else if (strcmp(props->extensionName, "VK_KHR_buffer_device_address") == 0) {
-            bufferDeviceAddress = true;
+            bufferDeviceAddress = PAL_TRUE;
 
         }  else if (strcmp(props->extensionName, "VK_KHR_shader_draw_parameters") == 0) {
-            shaderParameters = true;
+            shaderParameters = PAL_TRUE;
 
         } else if (strcmp(props->extensionName, "VK_EXT_robustness2") == 0) {
-            nullDescriptors = true;
+            nullDescriptors = PAL_TRUE;
         }
     }
 
@@ -4053,35 +4037,35 @@ PalResult PAL_CALL createDeviceVk(
 
     VkPhysicalDeviceFeatures coreFeatures = {0};
     if (features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY) {
-        coreFeatures.samplerAnisotropy = true;
+        coreFeatures.samplerAnisotropy = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING) {
-        coreFeatures.sampleRateShading = true;
+        coreFeatures.sampleRateShading = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_MULTI_VIEWPORT) {
-        coreFeatures.multiViewport = true;
+        coreFeatures.multiViewport = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER) {
-        coreFeatures.tessellationShader = true;
+        coreFeatures.tessellationShader = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER) {
-        coreFeatures.geometryShader = true;
+        coreFeatures.geometryShader = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_INT16) {
-        coreFeatures.shaderInt16 = true;
+        coreFeatures.shaderInt16 = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_INT64) {
-        coreFeatures.shaderInt64 = true;
+        coreFeatures.shaderInt64 = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_SHADER_FLOAT64) {
-        coreFeatures.shaderFloat64 = true;
+        coreFeatures.shaderFloat64 = PAL_TRUE;
     }
 
     // clang-format off
@@ -4145,8 +4129,8 @@ PalResult PAL_CALL createDeviceVk(
         extensions[extCount++] = "VK_KHR_synchronization2";
     }
 
-    dynamicRendering.dynamicRendering = true;
-    sync2.synchronization2 = true;
+    dynamicRendering.dynamicRendering = PAL_TRUE;
+    sync2.synchronization2 = PAL_TRUE;
 
     dynamicRendering.pNext = next;
     sync2.pNext = &dynamicRendering;
@@ -4164,7 +4148,7 @@ PalResult PAL_CALL createDeviceVk(
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_timeline_semaphore";
         }
-        timeline.timelineSemaphore = true;
+        timeline.timelineSemaphore = PAL_TRUE;
 
         timeline.pNext = next;
         next = &timeline;
@@ -4174,7 +4158,7 @@ PalResult PAL_CALL createDeviceVk(
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_shader_float16_int8";
         }
-        shader16.shaderFloat16 = true;
+        shader16.shaderFloat16 = PAL_TRUE;
 
         shader16.pNext = next;
         next = &shader16;
@@ -4184,8 +4168,8 @@ PalResult PAL_CALL createDeviceVk(
         extensions[extCount++] = "VK_KHR_ray_tracing_pipeline";
         extensions[extCount++] = "VK_KHR_acceleration_structure";
         extensions[extCount++] = "VK_KHR_deferred_host_operations";
-        ray.rayTracingPipeline = true;
-        acc.accelerationStructure = true;
+        ray.rayTracingPipeline = PAL_TRUE;
+        acc.accelerationStructure = PAL_TRUE;
 
         ray.pNext = next;
         acc.pNext = &ray;
@@ -4194,11 +4178,11 @@ PalResult PAL_CALL createDeviceVk(
 
     if (features & PAL_ADAPTER_FEATURE_MESH_SHADER) {
         extensions[extCount++] = "VK_EXT_mesh_shader";
-        mesh.meshShader = true;
-        mesh.taskShader = true;
+        mesh.meshShader = PAL_TRUE;
+        mesh.taskShader = PAL_TRUE;
 
         // mesh shader needs geometry feature for primitives
-        coreFeatures.geometryShader = true;
+        coreFeatures.geometryShader = PAL_TRUE;
 
         // msh draw indirect count
         if (features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT) {
@@ -4218,11 +4202,11 @@ PalResult PAL_CALL createDeviceVk(
     if ((features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE) ||
         (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT)) {
         extensions[extCount++] = "VK_KHR_fragment_shading_rate";
-        fsr.pipelineFragmentShadingRate = true;
+        fsr.pipelineFragmentShadingRate = PAL_TRUE;
 
         // fragment shading rate attachment needs this
         if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
-            fsr.attachmentFragmentShadingRate = true;
+            fsr.attachmentFragmentShadingRate = PAL_TRUE;
         }
 
         fsr.pNext = next;
@@ -4274,14 +4258,14 @@ PalResult PAL_CALL createDeviceVk(
             next = &descIndex;
         }
         
-        descIndex.descriptorBindingPartiallyBound = true;
+        descIndex.descriptorBindingPartiallyBound = PAL_TRUE;
     }
 
     if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_multiview";
         }
-        multiView.multiview = true;
+        multiView.multiview = PAL_TRUE;
 
         multiView.pNext = next;
         next = &multiView;
@@ -4293,7 +4277,7 @@ PalResult PAL_CALL createDeviceVk(
         if (props.apiVersion < VK_API_VERSION_1_3) {
             extensions[extCount++] = "VK_EXT_extended_dynamic_state";
         }
-        dynamicState.extendedDynamicState = true;
+        dynamicState.extendedDynamicState = PAL_TRUE;
 
         dynamicState.pNext = next;
         next = &dynamicState;
@@ -4303,7 +4287,7 @@ PalResult PAL_CALL createDeviceVk(
         features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE ||
         features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
         extensions[extCount++] = "VK_EXT_extended_dynamic_state2";
-        dynamicState2.extendedDynamicState2 = true;
+        dynamicState2.extendedDynamicState2 = PAL_TRUE;
 
         dynamicState2.pNext = next;
         next = &dynamicState2;
@@ -4313,7 +4297,7 @@ PalResult PAL_CALL createDeviceVk(
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_buffer_device_address";
         }
-        bufferAddress.bufferDeviceAddress = true;
+        bufferAddress.bufferDeviceAddress = PAL_TRUE;
 
         bufferAddress.pNext = next;
         next = &bufferAddress;
@@ -4323,7 +4307,7 @@ PalResult PAL_CALL createDeviceVk(
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_shader_draw_parameters";
         }
-        drawParameters.shaderDrawParameters = true;
+        drawParameters.shaderDrawParameters = PAL_TRUE;
 
         drawParameters.pNext = next;
         next = &drawParameters;
@@ -4331,7 +4315,7 @@ PalResult PAL_CALL createDeviceVk(
 
     if (features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS) {
         extensions[extCount++] = "VK_EXT_robustness2";
-        nullDescriptors.nullDescriptor = true;
+        nullDescriptors.nullDescriptor = PAL_TRUE;
 
         nullDescriptors.pNext = next;
         next = &nullDescriptors;
@@ -4889,36 +4873,36 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
 
     caps->independentResolve = props.independentResolve;
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
-        caps->depthResolves[PAL_RESOLVE_MODE_AVERAGE] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_AVERAGE] = PAL_TRUE;
     }
 
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) {
-        caps->depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = PAL_TRUE;
     }
 
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT_KHR) {
-        caps->depthResolves[PAL_RESOLVE_MODE_MIN] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_MIN] = PAL_TRUE;
     }
 
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
-        caps->depthResolves[PAL_RESOLVE_MODE_MAX] = true;
+        caps->depthResolves[PAL_RESOLVE_MODE_MAX] = PAL_TRUE;
     }
 
     // stencil
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
-        caps->stencilResolves[PAL_RESOLVE_MODE_AVERAGE] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_AVERAGE] = PAL_TRUE;
     }
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) {
-        caps->stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO] = PAL_TRUE;
     }
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MIN_BIT_KHR) {
-        caps->stencilResolves[PAL_RESOLVE_MODE_MIN] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_MIN] = PAL_TRUE;
     }
 
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
-        caps->stencilResolves[PAL_RESOLVE_MODE_MAX] = true;
+        caps->stencilResolves[PAL_RESOLVE_MODE_MAX] = PAL_TRUE;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -4949,16 +4933,16 @@ PalResult PAL_CALL queryFragmentShadingRateCapabilitiesVk(
         // check against the max size
         if (size.width <= props.maxFragmentSize.width ||
             size.height <= props.maxFragmentSize.height) {
-            caps->shadingRates[i] = true;
+            caps->shadingRates[i] = PAL_TRUE;
         }
     }
 
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP] = true;
-    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE] = true;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP] = PAL_TRUE;
+    caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE] = PAL_TRUE;
     if (props.fragmentShadingRateNonTrivialCombinerOps) {
-        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN] = true;
-        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX] = true;
-        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = true;
+        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN] = PAL_TRUE;
+        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX] = PAL_TRUE;
+        caps->combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL] = PAL_TRUE;
     }
 
     VkExtent2D size = props.minFragmentShadingRateAttachmentTexelSize;
@@ -5071,38 +5055,38 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
 
     // check sub feature for sampled image
     if (desc.shaderSampledImageArrayNonUniformIndexing) {
-        caps->sampledImageNonUniformIndexing = true;
+        caps->sampledImageNonUniformIndexing = PAL_TRUE;
     }
 
     if (desc.descriptorBindingSampledImageUpdateAfterBind) {
-        caps->sampledImageUpdateAfterBind = true;
+        caps->sampledImageUpdateAfterBind = PAL_TRUE;
     }
 
     // check sub feature for storage image
     if (desc.shaderStorageImageArrayNonUniformIndexing) {
-        caps->storageImageNonUniformIndexing = true;
+        caps->storageImageNonUniformIndexing = PAL_TRUE;
     }
 
     if (desc.descriptorBindingStorageImageUpdateAfterBind) {
-        caps->storageImageUpdateAfterBind = true;
+        caps->storageImageUpdateAfterBind = PAL_TRUE;
     }
 
     // check sub feature for storage buffer
     if (desc.shaderStorageBufferArrayNonUniformIndexing) {
-        caps->storageBufferNonUniformIndexing = true;
+        caps->storageBufferNonUniformIndexing = PAL_TRUE;
     }
 
     if (desc.descriptorBindingStorageBufferUpdateAfterBind) {
-        caps->storageBufferUpdateAfterBind = true;
+        caps->storageBufferUpdateAfterBind = PAL_TRUE;
     }
 
     // check sub feature for uniform buffer
     if (desc.shaderUniformBufferArrayNonUniformIndexing) {
-        caps->uniformBufferNonUniformIndexing = true;
+        caps->uniformBufferNonUniformIndexing = PAL_TRUE;
     }
 
     if (desc.descriptorBindingUniformBufferUpdateAfterBind) {
-        caps->uniformBufferUpdateAfterBind = true;
+        caps->uniformBufferUpdateAfterBind = PAL_TRUE;
     }
 
     caps->maxPerStageSampledImages = props.maxPerStageDescriptorUpdateAfterBindSampledImages;
@@ -5243,10 +5227,10 @@ PalBool PAL_CALL canQueuePresentVk(
     // check if the queue is a graphics queue before we check its family
     // index for presentation support.
     if (vkQueue->usage != VK_QUEUE_GRAPHICS_BIT) {
-        return false;
+        return PAL_FALSE;
     }
 
-    VkBool32 supported = false;
+    VkBool32 supported = PAL_FALSE;
     result = s_Vk.checkSurfaceSupport(
         phyQueue->phyDevice, 
         phyQueue->familyIndex, 
@@ -5254,10 +5238,10 @@ PalBool PAL_CALL canQueuePresentVk(
         &supported);
 
     if (result == VK_SUCCESS && supported) {
-        return true;
+        return PAL_TRUE;
     }
 
-    return false;
+    return PAL_FALSE;
 }
 
 // ==================================================
@@ -5308,9 +5292,9 @@ PalBool PAL_CALL isFormatSupportedVk(
     VkFormat fmt = formatToVk(format);
     s_Vk.getPhysicalDeviceFormatProperties(phyDevice, fmt, &props);
     if (props.optimalTilingFeatures != 0) {
-        return true;
+        return PAL_TRUE;
     }
-    return false;
+    return PAL_FALSE;
 }
 
 PalImageUsages PAL_CALL queryFormatImageUsagesVk(
@@ -5419,7 +5403,7 @@ PalResult PAL_CALL createImageVk(
         return resultFromVk(result);
     }
 
-    image->belongsToSwapchain = false;
+    image->belongsToSwapchain = PAL_FALSE;
     image->device = vkDevice;
     image->info.depthOrArraySize = info->depthOrArraySize;
     image->info.type = info->type;
@@ -5471,9 +5455,9 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
     requirements->size = (uint64_t)memReq.size;
     requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, 0);
 
-    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = PAL_FALSE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = PAL_FALSE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = PAL_FALSE;
 
     for (int i = 0; i < PAL_MEMORY_TYPE_MAX; i++) {
         requirements->memoryTypes[i] = (memReq.memoryTypeBits & device->memoryClassMask[i]) != 0;
@@ -5820,63 +5804,63 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
 
     // get supported composite alphas
     VkCompositeAlphaFlagsKHR alpha = surfaceCaps.supportedCompositeAlpha;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = true;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = false;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = false;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = PAL_TRUE;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = PAL_FALSE;
+    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = PAL_FALSE;
 
     if (alpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
-        caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = true;
+        caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = PAL_TRUE;
     }
 
     if (alpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
-        caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = true;
+        caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = PAL_TRUE;
     }
 
     // present modes
-    caps->presentModes[PAL_PRESENT_MODE_FIFO] = true;
-    caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = false;
-    caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = false;
+    caps->presentModes[PAL_PRESENT_MODE_FIFO] = PAL_TRUE;
+    caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = PAL_FALSE;
+    caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = PAL_FALSE;
 
     for (int i = 0; i < modeCount; i++) {
         if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-            caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = true;
+            caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = PAL_TRUE;
         }
 
         if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = true;
+            caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = PAL_TRUE;
         }
     }
 
     // get format and colorspace
-    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = false;
-    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = false;
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = false;
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = false;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = PAL_FALSE;
+    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = PAL_FALSE;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = PAL_FALSE;
+    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = PAL_FALSE;
 
     for (int i = 0; i < formatCount; i++) {
         VkSurfaceFormatKHR* fmt = &formats[i];
         if (fmt->format == VK_FORMAT_B8G8R8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = PAL_TRUE;
             }
 
         } else if (fmt->format == VK_FORMAT_B8G8R8A8_SRGB) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = true;
+                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = PAL_TRUE;
             }
 
         } else if (fmt->format == VK_FORMAT_R8G8B8A8_UNORM) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = true;
+                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = PAL_TRUE;
             }
 
         } else if (fmt->format == VK_FORMAT_R16G16B16A16_SFLOAT) {
             // find its supported colorspace
             if (fmt->colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT) {
-                caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = true;
+                caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = PAL_TRUE;
             }
         }
     }
@@ -6001,7 +5985,7 @@ PalResult PAL_CALL createSwapchainVk(
     // fill all images with the creatio info
     for (int i = 0; i < count; i++) {
         Image* image = &swapchain->images[i];
-        image->belongsToSwapchain = true;
+        image->belongsToSwapchain = PAL_TRUE;
         image->device = vkDevice;
         image->handle = images[i];
 
@@ -6319,7 +6303,7 @@ PalResult PAL_CALL waitFenceVk(
         }
     }
 
-    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, true, timeInNanoseconds);
+    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, PAL_TRUE, timeInNanoseconds);
     if (result != VK_SUCCESS) {
         return resultFromVk(result);
     }
@@ -6347,9 +6331,9 @@ PalBool PAL_CALL isFenceSignaledVk(PalFence* fence)
     Fence* vkFence = (Fence*)fence;
     VkResult result = s_Vk.isFenceSignaled(vkFence->device->handle, vkFence->handle);
     if (result == VK_SUCCESS) {
-        return true;
+        return PAL_TRUE;
     } else {
-        return false;
+        return PAL_FALSE;
     }
 }
 
@@ -6380,14 +6364,14 @@ PalResult PAL_CALL createSemaphoreVk(
     createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
     const void* next = nullptr;
-    semaphore->isTimeline = false;
+    semaphore->isTimeline = PAL_FALSE;
     if (enableTimeline && !hasTimeline) {
         return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
     }
 
     if (enableTimeline) {
         next = &timelineCreateInfo;
-        semaphore->isTimeline = true;   
+        semaphore->isTimeline = PAL_TRUE;   
     }
 
     createInfo.pNext = next;
@@ -6571,10 +6555,10 @@ PalResult PAL_CALL allocateCommandBufferVk(
     allocateInfo.commandPool = vkPool->handle;
 
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cmdBuffer->primary = true;
+    cmdBuffer->primary = PAL_TRUE;
     if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-        cmdBuffer->primary = false;
+        cmdBuffer->primary = PAL_FALSE;
     }
 
     result = s_Vk.allocateCommandBuffer(vkDevice->handle, &allocateInfo, &cmdBuffer->handle);
@@ -8311,9 +8295,9 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
     requirements->size = (uint64_t)memReq.size;
     requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, vkBuffer->usages);
 
-    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = false;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = false;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = false;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = PAL_FALSE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = PAL_FALSE;
+    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = PAL_FALSE;
 
     for (int i = 0; i < PAL_MEMORY_TYPE_MAX; i++) {
         requirements->memoryTypes[i] = (memReq.memoryTypeBits & device->memoryClassMask[i]) != 0;
@@ -9954,7 +9938,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     sbt->handleSize = groupHandleSize;
     sbt->pipeline = pipeline;
 
-    sbt->isDirty = true; // we need to copy from the staging to the gpu buffer
+    sbt->isDirty = PAL_TRUE; // we need to copy from the staging to the gpu buffer
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;
 }
@@ -10039,7 +10023,7 @@ PalResult PAL_CALL updateShaderBindingTableVk(
     }
 
     s_Vk.unmapMemory(vkDevice->handle, vkSbt->stagingBufferMemory);
-    vkSbt->isDirty = true;
+    vkSbt->isDirty = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 

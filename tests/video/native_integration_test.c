@@ -112,7 +112,7 @@ static XFreeFn s_XFree;
 static Atom s_NET_WM_NAME;
 static Atom s_UTF8_STRING;
 
-static PalBool s_OnWayland = false;
+static PalBool s_OnWayland = PAL_FALSE;
 static void* s_X11Lib;
 
 static void* s_WaylandLib;
@@ -121,7 +121,7 @@ static void* s_WaylandLib;
 
 static char s_TitleBuffer[32];
 
-void setWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
+void setWindowTitleX11(PalWindowHandleInfo* windowInfo)
 {
 #ifdef __linux__
     // load the procs
@@ -186,7 +186,7 @@ void setWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
 #endif // __linux__
 }
 
-void getWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
+void getWindowTitleX11(PalWindowHandleInfo* windowInfo)
 {
 #ifdef __linux__
     Display* display = (Display*)windowInfo->nativeDisplay;
@@ -227,7 +227,7 @@ void getWindowTitleX11(PalWindowHandleInfoEx* windowInfo)
 #endif // __linux__
 }
 
-void setWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
+void setWindowTitleWayland(PalWindowHandleInfo* windowInfo)
 {
 #ifdef __linux__
     s_WaylandLib = dlopen("libwayland-client.so.0", RTLD_LAZY);
@@ -252,7 +252,7 @@ void setWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
 #endif // __linux__
 }
 
-void getWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
+void getWindowTitleWayland(PalWindowHandleInfo* windowInfo)
 {
 #ifdef __linux__
     // wayland does not support getting window title
@@ -261,7 +261,7 @@ void getWindowTitleWayland(PalWindowHandleInfoEx* windowInfo)
 #endif // __linux__
 }
 
-void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
+void setWindowTitleWin32(PalWindowHandleInfo* windowInfo)
 {
 #ifdef _WIN32
     const char* title = "Hello from native Win32 API";
@@ -269,14 +269,14 @@ void setWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
 #endif // _WIN32
 }
 
-void getWindowTitleWin32(PalWindowHandleInfoEx* windowInfo)
+void getWindowTitleWin32(PalWindowHandleInfo* windowInfo)
 {
 #ifdef _WIN32
     GetWindowTextA((HWND)windowInfo->nativeWindow, s_TitleBuffer, sizeof(s_TitleBuffer));
 #endif // _WIN32
 }
 
-void setWindowTitle(PalWindowHandleInfoEx* windowInfo)
+void setWindowTitle(PalWindowHandleInfo* windowInfo)
 {
 #ifdef _WIN32
     setWindowTitleWin32(windowInfo);
@@ -285,9 +285,9 @@ void setWindowTitle(PalWindowHandleInfoEx* windowInfo)
     const char* session = getenv("XDG_SESSION_TYPE");
     if (session) {
         if (strcmp(session, "wayland") == 0) {
-            s_OnWayland = true;
+            s_OnWayland = PAL_TRUE;
         } else {
-            s_OnWayland = false;
+            s_OnWayland = PAL_FALSE;
         }
     }
 
@@ -299,7 +299,7 @@ void setWindowTitle(PalWindowHandleInfoEx* windowInfo)
 #endif // _WIN32
 }
 
-void getWindowTitle(PalWindowHandleInfoEx* windowInfo)
+void getWindowTitle(PalWindowHandleInfo* windowInfo)
 {
 #ifdef _WIN32
     getWindowTitleWin32(windowInfo);
@@ -325,9 +325,8 @@ PalBool nativeIntegrationTest()
     // create the event driver
     result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create event driver: %s", error);
-        return false;
+        logResult(result, "Failed to create event driver");
+        return PAL_FALSE;
     }
 
     // initialize the video system. We pass the event driver to recieve video
@@ -335,9 +334,8 @@ PalBool nativeIntegrationTest()
     // be valid till the video system is shutdown
     result = palInitVideo(nullptr, eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize video: %s", error);
-        return false;
+        logResult(result, "Failed to initialize video");
+        return PAL_FALSE;
     }
 
     PalWindow* window = nullptr;
@@ -345,13 +343,13 @@ PalBool nativeIntegrationTest()
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
-    createInfo.show = true;
+    createInfo.show = PAL_TRUE;
     createInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
     createInfo.title = "Native Integration Test";
 
     // check if we support decorated windows (title bar, close etc)
-    PalVideoFeatures64 features = palGetVideoFeaturesEx();
-    if (!(features & PAL_VIDEO_FEATURE64_DECORATED_WINDOW)) {
+    PalVideoFeatures features = palGetVideoFeatures();
+    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         // if we dont support, we need to create a borderless window
         // and create the decorations ourselves
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
@@ -359,9 +357,8 @@ PalBool nativeIntegrationTest()
 
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create window: %s", error);
-        return false;
+        logResult(result, "Failed to create window");
+        return PAL_FALSE;
     }
 
     // we set window close to poll
@@ -369,8 +366,12 @@ PalBool nativeIntegrationTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // set the window title using native APIs
-    PalWindowHandleInfoEx windowInfo = {0};
-    windowInfo = palGetWindowHandleInfoEx(window);
+    PalWindowHandleInfo windowInfo = {0};
+    result = palGetWindowHandleInfo(window, &windowInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to get window handle info");
+        return PAL_FALSE;
+    }
 
     palLog(nullptr, "Window title: %s", createInfo.title);
     palLog(nullptr, "Setting window title with native API");
@@ -391,7 +392,7 @@ PalBool nativeIntegrationTest()
     // using native API like wl_proxy_set_user_data, XContext and
     // SetWindowLongPtr(GWLP_USERDATA) can be used freely
 
-    PalBool running = true;
+    PalBool running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -400,7 +401,7 @@ PalBool nativeIntegrationTest()
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
                 case PAL_EVENT_WINDOW_CLOSE: {
-                    running = false;
+                    running = PAL_FALSE;
                     break;
                 }
 
@@ -408,7 +409,7 @@ PalBool nativeIntegrationTest()
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = false;
+                        running = PAL_FALSE;
                     }
                     break;
                 }
@@ -425,5 +426,5 @@ PalBool nativeIntegrationTest()
     // destroy the event driver
     palDestroyEventDriver(eventDriver);
 
-    return true;
+    return PAL_TRUE;
 }
