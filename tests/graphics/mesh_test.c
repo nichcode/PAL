@@ -52,7 +52,7 @@ PalBool meshTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
-    result = palInitVideo(nullptr, eventDriver);
+    result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;

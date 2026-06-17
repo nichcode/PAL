@@ -119,7 +119,7 @@ static const struct wl_interface* surfaceInterface;
 static const struct wl_interface* bufferInterface;
 static const struct wl_interface* subsurfaceInterface;
 
-static inline void* wlRegistryBind(
+static inline void* registryBind(
     struct wl_registry* wl_registry,
     uint32_t name,
     const struct wl_interface* interface,
@@ -296,7 +296,7 @@ static inline void surfaceDamageBuffer(
         height);
 }
 
-static inline void wlSubcompositorDestroy(struct wl_subcompositor* wl_subcompositor)
+static inline void subcompositorDestroy(struct wl_subcompositor* wl_subcompositor)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_subcompositor,
@@ -306,7 +306,7 @@ static inline void wlSubcompositorDestroy(struct wl_subcompositor* wl_subcomposi
         WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline struct wl_subsurface* wlSubcompositorGetSubsurface(
+static inline struct wl_subsurface* subcompositorGetSubsurface(
     struct wl_subcompositor* wl_subcompositor,
     struct wl_surface* surface,
     struct wl_surface* parent)
@@ -325,7 +325,7 @@ static inline struct wl_subsurface* wlSubcompositorGetSubsurface(
     return (struct wl_subsurface*)id;
 }
 
-static inline void wlSubsurfaceDestroy(struct wl_subsurface* wl_subsurface)
+static inline void subsurfaceDestroy(struct wl_subsurface* wl_subsurface)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_subsurface,
@@ -335,7 +335,7 @@ static inline void wlSubsurfaceDestroy(struct wl_subsurface* wl_subsurface)
         WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline void wlSubsurfaceSetPosition(
+static inline void subsurfaceSetPosition(
     struct wl_subsurface* wl_subsurface,
     int32_t x,
     int32_t y)
@@ -350,7 +350,7 @@ static inline void wlSubsurfaceSetPosition(
         y);
 }
 
-static inline void wlSubsurfaceSetDesync(struct wl_subsurface* wl_subsurface)
+static inline void subsurfaceSetDesync(struct wl_subsurface* wl_subsurface)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_subsurface,
@@ -368,16 +368,16 @@ static void globalHandle(
     uint32_t version)
 {
     if (strcmp(interface, "wl_seat") == 0) {
-        s_Seat = wlRegistryBind(registry, name, seatInterface, 5);
+        s_Seat = registryBind(registry, name, seatInterface, 5);
 
     } else if (strcmp(interface, "wl_compositor") == 0) {
-        s_Compositor = wlRegistryBind(registry, name, compositorInterface, 4);
+        s_Compositor = registryBind(registry, name, compositorInterface, 4);
 
     } else if (strcmp(interface, "wl_subcompositor") == 0) {
-        s_Subcompositor = wlRegistryBind(registry, name, subCompositorInterface, 1);
+        s_Subcompositor = registryBind(registry, name, subCompositorInterface, 1);
 
     } else if (strcmp(interface, "wl_shm") == 0) {
-        s_Shm = wlRegistryBind(registry, name, shmInterface, 1);
+        s_Shm = registryBind(registry, name, shmInterface, 1);
     }
 }
 
@@ -499,7 +499,7 @@ static void closeDisplayWayland()
         s_wl_proxy_destroy((struct wl_proxy*)s_Compositor);
         s_wl_proxy_destroy((struct wl_proxy*)s_Shm);
         s_wl_proxy_destroy((struct wl_proxy*)s_Seat);
-        wlSubcompositorDestroy(s_Subcompositor);
+        subcompositorDestroy(s_Subcompositor);
     }
 
     s_wl_display_disconnect((struct wl_display*)s_Display);
@@ -689,7 +689,7 @@ static void createDecoration()
         return;
     }
 
-    s_Decoration.subsurface = wlSubcompositorGetSubsurface(
+    s_Decoration.subsurface = subcompositorGetSubsurface(
         s_Subcompositor,
         s_Decoration.surface,
         (struct wl_surface*)s_WinHandle.nativeWindow);
@@ -700,8 +700,8 @@ static void createDecoration()
     }
 
     // make it soo that the decoration updates independently of the window
-    wlSubsurfaceSetDesync(s_Decoration.subsurface);
-    wlSubsurfaceSetPosition(s_Decoration.subsurface, 0, 0);
+    subsurfaceSetDesync(s_Decoration.subsurface);
+    subsurfaceSetPosition(s_Decoration.subsurface, 0, 0);
 
     // create decoration shm buffer
     int width = 640;
@@ -776,7 +776,7 @@ static void createDecoration()
 
 static void destroyDecoration()
 {
-    wlSubsurfaceDestroy(s_Decoration.subsurface);
+    subsurfaceDestroy(s_Decoration.subsurface);
     surfaceDestroy(s_Decoration.surface);
     bufferDestroy(s_Decoration.buffer);
     munmap((void*)s_Decoration.pixels, s_Decoration.size);
@@ -845,14 +845,16 @@ PalBool customDecorationTest()
         return PAL_FALSE;
     }
 
-    PalResult result;
-
-    // create an event driver
-    PalEventDriver* eventDriver = nullptr;
+    // fill the event driver create info
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
-    eventDriverCreateInfo.callback = onEvent;
+    eventDriverCreateInfo.allocator = nullptr; // default allocator
+    eventDriverCreateInfo.callback = nullptr;  // no callback dispatch
+    eventDriverCreateInfo.queue = nullptr;     // default queue
+    eventDriverCreateInfo.userData = nullptr;  // null
 
-    result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
+    // create the event driver
+    PalEventDriver* eventDriver = nullptr;
+    PalResult result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create event driver");
         return PAL_FALSE;
@@ -868,14 +870,11 @@ PalBool customDecorationTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_MOVE, PAL_DISPATCH_CALLBACK);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_MONITOR_DPI_CHANGED, PAL_DISPATCH_CALLBACK);
 
-    // tell the video system to use out instance rather
-    // than creating a new one
-    palSetPreferredInstance((void*)s_Display);
-
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
     // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
+    // tell the video system to use out instance rather than creating a new one
+    result = palInitVideo(nullptr, eventDriver, (void*)s_Display);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;
@@ -961,6 +960,7 @@ PalBool customDecorationTest()
 #include "tests.h"
 PalBool customDecorationTest()
 {
+    palLog(nullptr, "Custom decoration not supported");
     return PAL_FALSE;
 }
 

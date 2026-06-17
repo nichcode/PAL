@@ -4,18 +4,15 @@
 
 PalBool monitorModeTest()
 {
-    PalMonitorInfo info;
-    int32_t count = 0;
-    int32_t modeCount = 0;
-
     // initialize the video system
-    PalResult result = palInitVideo(nullptr, nullptr);
+    PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;
     }
 
     // get the number of connected monitors
+    int32_t count = 0;
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get query monitors");
@@ -46,6 +43,7 @@ PalBool monitorModeTest()
     }
 
     // get monitor info for every monitor and log the information
+    PalMonitorInfo info = {0};
     for (int32_t i = 0; i < count; i++) {
         PalMonitor* monitor = monitors[i];
         result = palGetMonitorInfo(monitor, &info);
@@ -58,6 +56,7 @@ PalBool monitorModeTest()
         palLog(nullptr, "Monitor Name: %s", info.name);
 
         // get number of monitor modes
+        int32_t modeCount = 0;
         result = palEnumerateMonitorModes(monitor, &modeCount, nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             logResult(result, "Failed to get query monitor modes");

@@ -599,11 +599,17 @@ typedef struct {
  * The allocator will not not copied, therefore the pointer must remain valid
  * until the video system is shutdown. The event driver must be valid to recieve
  * video events.
+ * 
+ * If `preferredInstance` is nullptr, the video system creates one and control its lifetime.
+ * The provided instance will not be freed by the video system.
+ * `Linux`: This is the Display associated with the connection. 
+ * `Windows`: This is the HINSTANCE of the process.
  *
  * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
  * default.
  * @param[in] eventDriver Optional user-provided event driver. This is needed to
  * push video events. Set to nullptr to use default.
+ * @param[in] preferredInstance User-provided instance (eg. HINSTANCE). Can be nullptr.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -612,11 +618,11 @@ typedef struct {
  *
  * @since 1.0
  * @sa palShutdownVideo
- * @sa palSetPreferredInstance
  */
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    PalEventDriver* eventDriver);
+    PalEventDriver* eventDriver,
+    void* preferredInstance);
 
 /**
  * @brief Shutdown the video system.
@@ -1798,26 +1804,6 @@ PAL_API PalResult PAL_CALL palAttachWindow(
 PAL_API PalResult PAL_CALL palDetachWindow(
     PalWindow* window,
     void** outWindowHandle);
-
-/**
- * @brief Set the preferred instance the video system should use.
- *
- * Must be called before palInitVideo(). This will be ignored
- * if the video system is already initialized.
- * If there is no preferred instance set, the video system creates one.
- *
- * On Linux: This is the Display associated with the connection.
-
- * On Windows: This is the HINSTANCE of the process.
- *
- * Thread safety: Must be called from the main thread.
- *
- * @note The provided instance will not be freed by the video system.
- *
- * @since 1.3
- * @sa palInitVideo
- */
-PAL_API void PAL_CALL palSetPreferredInstance(void* instance);
 
 /** @} */ // end of pal_video group
 

@@ -315,15 +315,17 @@ void getWindowTitle(PalWindowHandleInfo* windowInfo)
 PalBool nativeIntegrationTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
-    
-    PalResult result;
 
-    // event driver
-    PalEventDriver* eventDriver = nullptr;
+    // fill the event driver create info
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
+    eventDriverCreateInfo.allocator = nullptr; // default allocator
+    eventDriverCreateInfo.callback = nullptr;  // no callback dispatch
+    eventDriverCreateInfo.queue = nullptr;     // default queue
+    eventDriverCreateInfo.userData = nullptr;  // null
 
     // create the event driver
-    result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
+    PalEventDriver* eventDriver = nullptr;
+    PalResult result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create event driver");
         return PAL_FALSE;
@@ -332,7 +334,7 @@ PalBool nativeIntegrationTest()
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
     // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
+    result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;

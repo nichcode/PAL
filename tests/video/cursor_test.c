@@ -5,26 +5,17 @@
 PalBool cursorTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
-    
-    PalResult result;
-    PalWindow* window = nullptr;
-    PalCursor* cursor = nullptr;
-    PalWindowCreateInfo createInfo = {0};
-    PalCursorCreateInfo cursorCreateInfo = {0};
-    PalBool running = PAL_FALSE;
-
-    // event driver
-    PalEventDriver* eventDriver = nullptr;
-    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
     // fill the event driver create info
+    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     eventDriverCreateInfo.allocator = nullptr; // default allocator
     eventDriverCreateInfo.callback = nullptr;  // for callback dispatch
     eventDriverCreateInfo.queue = nullptr;     // default queue
     eventDriverCreateInfo.userData = nullptr;  // null
 
     // create the event driver
-    result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
+    PalEventDriver* eventDriver = nullptr;
+    PalResult result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create event driver");
         return PAL_FALSE;
@@ -33,7 +24,7 @@ PalBool cursorTest()
     // initialize the video system. We pass the event driver to recieve video
     // related events the video does not copy this, this must be valid till the
     // video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
+    result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;
@@ -71,19 +62,22 @@ PalBool cursorTest()
     }
 
     // create cursor
+    PalCursorCreateInfo cursorCreateInfo = {0};
     cursorCreateInfo.width = 32;
     cursorCreateInfo.height = 32;
     cursorCreateInfo.xHotspot = 0;
     cursorCreateInfo.yHotspot = 0;
     cursorCreateInfo.pixels = pixels;
 
+    PalCursor* cursor = nullptr;
     result = palCreateCursor(&cursorCreateInfo, &cursor);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create window cursor");
         return PAL_FALSE;
     }
-
+    
     // fill the create info struct
+    PalWindowCreateInfo createInfo = {0};
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
@@ -99,6 +93,7 @@ PalBool cursorTest()
     }
 
     // create the window with the create info struct
+    PalWindow* window = nullptr;
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create window");
@@ -106,15 +101,13 @@ PalBool cursorTest()
     }
 
     // set the dispatch mode for window close event to recieve it
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE,
-                            PAL_DISPATCH_POLL); // polling
-
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
 
     // set the cursor
     palSetWindowCursor(window, cursor);
 
-    running = PAL_TRUE;
+    PalBool running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();

@@ -39,13 +39,13 @@ int main(int argc, char** argv)
     // registerTest(attachWindowTest, "Attach Window Test");
     // registerTest(charEventTest, "Char Event Test");
     // registerTest(nativeIntegrationTest, "Native Integration Test");
-    // registerTest(nativeInstanceTest, "Native Instance Test");
+    registerTest(nativeInstanceTest, "Native Instance Test");
     // registerTest(customDecorationTest, "Custom Decoration Test");
 #endif // PAL_HAS_VIDEO_MODULE
 
     // This test can run without video system so long as your have a valid
     // window
-#if PAL_HAS_OPENGL_MODULE == 1&& PAL_HAS_VIDEO_MODULE == 1
+#if PAL_HAS_OPENGL_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1
     // registerTest(openglTest, "Opengl Test");
     // registerTest(openglFBConfigTest, "Opengl FBConfig Test");
     // registerTest(openglContextTest, "Context Test");

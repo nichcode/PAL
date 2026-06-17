@@ -103,7 +103,7 @@ typedef struct {
     WindowData* windowData;
 } VideoWin32;
 
-extern VideoWin32 s_Video = {0};
+extern VideoWin32 s_Video;
 
 #endif // _WIN32
 #endif // _PAL_VIDEO_WIN32_H

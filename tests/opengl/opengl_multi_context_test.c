@@ -37,7 +37,7 @@ PalBool openglMultiContextTest()
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
     // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, eventDriver);
+    result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;

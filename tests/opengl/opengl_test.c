@@ -6,7 +6,7 @@
 PalBool openglTest()
 {
     // initialize the video system and create a window
-    PalResult result = palInitVideo(nullptr, nullptr);
+    PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;

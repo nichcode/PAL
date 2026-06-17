@@ -384,7 +384,8 @@ static void createScancodeTable()
 
 PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    PalEventDriver* eventDriver)
+    PalEventDriver* eventDriver,
+    void* preferredInstance)
 {
     if (s_Video.initialized) {
         return PAL_RESULT_SUCCESS;
@@ -418,6 +419,11 @@ PalResult PAL_CALL palInitVideo(
             PAL_RESULT_OUT_OF_MEMORY, 
             PAL_RESULT_SOURCE_LINUX, 
             errno);
+    }
+
+    // user provided instance
+    if (preferredInstance) {
+        s_Video.platformInstance = preferredInstance;
     }
 
     s_Video.className = "PAL";
@@ -1473,13 +1479,6 @@ PalResult PAL_CALL palDetachWindow(
     }
 
     return s_Video.backend->detachWindow(window, outWindowHandle);
-}
-
-void PAL_CALL palSetPreferredInstance(void* instance)
-{
-    if (!s_Video.initialized && instance) {
-        s_Video.platformInstance = instance;
-    }
 }
 
 #endif // __linux__

@@ -4,18 +4,14 @@
 
 PalBool videoTest()
 {
-    palLog(nullptr, "Press Escape or click close button to close Test");
-    
-    PalResult result;
-
     // initialize the video system
-    result = palInitVideo(nullptr, nullptr);
+    PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;
     }
 
-    // get supported features. Now uses extended function
+    // get supported features
     PalVideoFeatures features = palGetVideoFeatures();
     palLog(nullptr, "Supported Video Features:");
     if (features & PAL_VIDEO_FEATURE_HIGH_DPI) {

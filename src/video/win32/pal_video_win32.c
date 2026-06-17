@@ -46,6 +46,7 @@ static PendingEvent s_Event;
 static BYTE s_RawBuffer[4096] = {0};
 static Mouse s_Mouse = {0};
 static Keyboard s_Keyboard = {0};
+VideoWin32 s_Video = {0};
 
 LRESULT CALLBACK videoProc(
     HWND hwnd,
@@ -287,7 +288,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
                     event.type = PAL_EVENT_MOUSE_WHEEL;
-                    event.data = palPackInt32(delta, 0);
+                    event.data = palPackFloat(s_Mouse.WheelX, 0);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -305,7 +306,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_NONE) {
                     PalEvent event = {0};
                     event.type = PAL_EVENT_MOUSE_WHEEL;
-                    event.data = palPackInt32(0, delta);
+                    event.data = palPackFloat(0, s_Mouse.WheelY);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -351,6 +352,9 @@ LRESULT CALLBACK videoProc(
                 s_Mouse.dx += mouse->lLastX;
                 s_Mouse.dy += mouse->lLastY;
 
+                float dx = (float)s_Mouse.dx;
+                float dy = (float)s_Mouse.dy;
+
                 if (s_Video.eventDriver) {
                     PalEventDriver* driver = s_Video.eventDriver;
                     PalEventType type = PAL_EVENT_MOUSE_DELTA;
@@ -358,7 +362,7 @@ LRESULT CALLBACK videoProc(
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = type;
-                        event.data = palPackInt32(s_Mouse.dx, s_Mouse.dy);
+                        event.data = palPackFloat(dx, dy);
                         palPushEvent(driver, &event);
                     }
                 }
@@ -757,7 +761,8 @@ static void createScancodeTable()
 
 PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    PalEventDriver* eventDriver)
+    PalEventDriver* eventDriver,
+    void* preferredInstance)
 {
     if (s_Video.initialized) {
         return PAL_RESULT_SUCCESS;
@@ -774,8 +779,10 @@ PalResult PAL_CALL palInitVideo(
     s_Video.windowData =
         palAllocate(s_Video.allocator, sizeof(WindowData) * s_Video.maxWindowData, 0);
 
-    // get the instance
-    if (!s_Video.instance) {
+    // user provided instance
+    if (preferredInstance) {
+        s_Video.instance = preferredInstance;
+    } else {
         s_Video.instance = GetModuleHandleW(nullptr);
     }
 
@@ -1098,13 +1105,6 @@ void PAL_CALL palGetMouseWheelDelta(
 
     if (dy) {
         *dy = (float)s_Mouse.WheelY;
-    }
-}
-
-void PAL_CALL palSetPreferredInstance(void* instance)
-{
-    if (!s_Video.initialized && instance) {
-        s_Video.instance = instance;
     }
 }
 
