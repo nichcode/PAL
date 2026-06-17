@@ -710,9 +710,6 @@ PAL_API PalResult PAL_CALL palSetFBConfig(
  * array is less than the number of connected monitors, PAL will write upto that
  * limit.
  *
- * If the count is 0 and the PalMonitor array is nullptr, the function fails
- * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
- *
  * The monitor handles must not be freed by the user, they are managed by the
  * platform (OS). Users are required to cache this, and call this function again
  * if monitors are added or removed.
@@ -788,9 +785,6 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  * PalMonitorMode array and passed in the count and the allocated array. If the
  * count of the array is less than the number of supported monitor display
  * modes, PAL will write upto that limit.
- *
- * If the count is 0 and the PalMonitorMode array is nullptr, the function fails
- * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  *
  * @param[in] monitor Monitor to query display modes on.
  * @param[in, out] count Capacity of the PalMonitorMode array.

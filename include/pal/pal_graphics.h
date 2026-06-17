@@ -3975,9 +3975,6 @@ PAL_API void PAL_CALL palShutdownGraphics();
  * Allocate memory for the PalAdapter array and passed in the count and the allocated array. If
  * the count of the array is less than the number of adapters, PAL will write upto that limit.
  *
- * If the count is 0 and the PalAdapter array is nullptr, the function fails
- * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
- *
  * The adapter handles must not be freed by the user, they are managed by the
  * graphics system. Users are required to cache this, and call this function again
  * if adapters are added or removed which is rare except for virtual ones.
@@ -4439,9 +4436,6 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * Call this function first with PalFormatInfo array set to nullptr to get the number of formats.
  * Allocate memory for the PalFormatInfo array and passed in the count and the allocated array. If
  * the count of the array is less than the number of formats, PAL will write upto that limit.
- *
- * If the count is 0 and the PalFormatInfo array is nullptr, the function fails
- * and returns `PAL_RESULT_INSUFFICIENT_BUFFER`.
  *
  * @param[in] adapter Adapter to query formats on.
  * @param[in, out] count Capacity of the PalFormatInfo array.

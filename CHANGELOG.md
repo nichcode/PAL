@@ -152,6 +152,8 @@ palJoinThread(thread, &retval);
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
 
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
+- **Video:** **palInitGL()** now takes a instance parameter.
+- **Opengl:** rename **PalGLRelease** to **PalGLReleaseBehavior**.
 
 - **Video:** **palGetWindowHandleInfo()** now takes an info parameter.
 - **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.
@@ -181,10 +183,11 @@ palJoinThread(thread, &retval);
 - **Core:** Removed **PAL_RESULT_INVALID_GL_CONTEXT** result code.
 - **Core:** Removed **PAL_RESULT_INVALID_FBCONFIG_BACKEND** result code.
 
+- **Opengl:** Removed **palGLSetInstance** function.
+
 - **Video:** Removed **palGetVideoFeaturesEx** function.
 - **Video:** Removed **palGetWindowHandleInfoEx** function.
 - **Video:** Removed **palGetRawMouseWheelDelta** function.
-
 - **Video:** Removed **palSetPreferredInstance** function.
 
 ### Tests
