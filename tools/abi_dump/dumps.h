@@ -23,5 +23,6 @@ static const char* s_PassedString = "PASSED";
 void coreABIDump();
 void eventABIDump();
 void threadABIDump();
+void systemABIDump();
 
 #endif // _DUMPS_H

@@ -616,7 +616,7 @@ typedef struct {
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palShutdownVideo
  */
 PAL_API PalResult PAL_CALL palInitVideo(

@@ -85,6 +85,10 @@ int main(int argc, char** argv)
         threadABIDump();
     }
 
+    if (dumpSystem) {
+        systemABIDump();
+    }
+
     if (dumpVersion) {
         palLog(nullptr, "PAL ABI dump %s", VERSION);
     }
