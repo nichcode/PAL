@@ -24,5 +24,6 @@ void coreABIDump();
 void eventABIDump();
 void threadABIDump();
 void systemABIDump();
+void videoABIDump();
 
 #endif // _DUMPS_H

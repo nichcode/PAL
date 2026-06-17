@@ -89,6 +89,10 @@ int main(int argc, char** argv)
         systemABIDump();
     }
 
+    if (dumpVideo) {
+        videoABIDump();
+    }
+
     if (dumpVersion) {
         palLog(nullptr, "PAL ABI dump %s", VERSION);
     }
