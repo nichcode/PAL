@@ -6,7 +6,7 @@
  */
 
 #ifdef _WIN32
-#include "pal_thread_common_win32.h"
+#include "pal_thread_win32.h"
 #include "pal_shared.h"
 
 PalResult PAL_CALL palCreateMutex(

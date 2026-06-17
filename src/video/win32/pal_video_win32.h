@@ -5,9 +5,9 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
+#ifndef _PAL_VIDEO_WIN32_H
+#define _PAL_VIDEO_WIN32_H
 #ifdef _WIN32
-#ifndef _PAL_VIDEO_COMMON_WIN32_H
-#define _PAL_VIDEO_COMMON_WIN32_H
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -103,7 +103,7 @@ typedef struct {
     WindowData* windowData;
 } VideoWin32;
 
-static VideoWin32 s_Video = {0};
+extern VideoWin32 s_Video = {0};
 
-#endif // _PAL_VIDEO_COMMON_WIN32_H
 #endif // _WIN32
+#endif // _PAL_VIDEO_WIN32_H

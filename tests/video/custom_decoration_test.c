@@ -140,7 +140,7 @@ static inline void* wlRegistryBind(
     return (void*)id;
 }
 
-static inline int wlRegistryAddListener(
+static inline int registryAddListener(
     struct wl_registry* wl_registry,
     const struct wl_registry_listener* listener,
     void* data)
@@ -148,7 +148,7 @@ static inline int wlRegistryAddListener(
     return s_wl_proxy_add_listener((struct wl_proxy*)wl_registry, (void (**)(void))listener, data);
 }
 
-static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_display)
+static inline struct wl_registry* displayGetRegistry(struct wl_display* wl_display)
 {
     struct wl_proxy* registry;
     registry = s_wl_proxy_marshal_flags(
@@ -162,7 +162,7 @@ static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_dis
     return (struct wl_registry*)registry;
 }
 
-static inline struct wl_surface* wlCompositorCreateSurface(struct wl_compositor* wl_compositor)
+static inline struct wl_surface* compositorCreateSurface(struct wl_compositor* wl_compositor)
 {
     struct wl_proxy* id;
     id = s_wl_proxy_marshal_flags(
@@ -176,7 +176,7 @@ static inline struct wl_surface* wlCompositorCreateSurface(struct wl_compositor*
     return (struct wl_surface*)id;
 }
 
-static inline void wlSurfaceCommit(struct wl_surface* wl_surface)
+static inline void surfaceCommit(struct wl_surface* wl_surface)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_surface,
@@ -186,7 +186,7 @@ static inline void wlSurfaceCommit(struct wl_surface* wl_surface)
         0);
 }
 
-static inline void wlSurfaceDestroy(struct wl_surface* wl_surface)
+static inline void surfaceDestroy(struct wl_surface* wl_surface)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_surface,
@@ -196,7 +196,7 @@ static inline void wlSurfaceDestroy(struct wl_surface* wl_surface)
         WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline struct wl_shm_pool* wlShmCreatePool(
+static inline struct wl_shm_pool* shmCreatePool(
     struct wl_shm* wl_shm,
     int32_t fd,
     int32_t size)
@@ -215,7 +215,7 @@ static inline struct wl_shm_pool* wlShmCreatePool(
     return (struct wl_shm_pool*)id;
 }
 
-static inline void wlShmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
+static inline void shmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_shm_pool,
@@ -225,7 +225,7 @@ static inline void wlShmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
         WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline struct wl_buffer* wlShmPoolCreateBuffer(
+static inline struct wl_buffer* shmPoolCreateBuffer(
     struct wl_shm_pool* wl_shm_pool,
     int32_t offset,
     int32_t width,
@@ -250,7 +250,7 @@ static inline struct wl_buffer* wlShmPoolCreateBuffer(
     return (struct wl_buffer*)id;
 }
 
-static inline void wlBufferDestroy(struct wl_buffer* wl_buffer)
+static inline void bufferDestroy(struct wl_buffer* wl_buffer)
 {
     s_wl_proxy_marshal_flags(
         (struct wl_proxy*)wl_buffer,
@@ -260,7 +260,7 @@ static inline void wlBufferDestroy(struct wl_buffer* wl_buffer)
         WL_MARSHAL_FLAG_DESTROY);
 }
 
-static inline void wlSurfaceAttach(
+static inline void surfaceAttach(
     struct wl_surface* wl_surface,
     struct wl_buffer* buffer,
     int32_t x,
@@ -277,7 +277,7 @@ static inline void wlSurfaceAttach(
         y);
 }
 
-static inline void wlSurfaceDamageBuffer(
+static inline void surfaceDamageBuffer(
     struct wl_surface* wl_surface,
     int32_t x,
     int32_t y,
@@ -481,8 +481,8 @@ static void openDisplayWayland()
 
     struct wl_display* display = s_wl_display_connect(nullptr);
     if (display) {
-        struct wl_registry* registry = wlDisplayGetRegistry(display);
-        wlRegistryAddListener(registry, &s_RegistryListener, nullptr);
+        struct wl_registry* registry = displayGetRegistry(display);
+        registryAddListener(registry, &s_RegistryListener, nullptr);
         s_wl_display_roundtrip(display);
         s_Display = display;
     }
@@ -545,17 +545,17 @@ static struct wl_buffer* createShmBuffer(
         return nullptr;
     }
 
-    pool = wlShmCreatePool(s_Shm, fd, size);
+    pool = shmCreatePool(s_Shm, fd, size);
     if (!pool) {
         return nullptr;
     }
 
-    buffer = wlShmPoolCreateBuffer(pool, 0, width, height, stride, 1);
+    buffer = shmPoolCreateBuffer(pool, 0, width, height, stride, 1);
     if (!buffer) {
         return nullptr;
     }
 
-    wlShmPoolDestroy(pool);
+    shmPoolDestroy(pool);
 
     *outPixels = (uint32_t*)data;
     *outFd = fd;
@@ -683,7 +683,7 @@ static PalWindowHandleInfo s_WinHandle;
 
 static void createDecoration()
 {
-    s_Decoration.surface = wlCompositorCreateSurface(s_Compositor);
+    s_Decoration.surface = compositorCreateSurface(s_Compositor);
     if (!s_Decoration.surface) {
         palLog(nullptr, "Failed to create wayland surface");
         return;
@@ -753,12 +753,12 @@ static void createDecoration()
         TITLEBAR_HEIGHT / 2, // half of the size of the title bar
         0x0033AAAA);
 
-    wlSurfaceAttach(s_Decoration.surface, s_Decoration.buffer, 0, 0);
-    wlSurfaceDamageBuffer(s_Decoration.surface, 0, 0, width, TITLEBAR_HEIGHT);
-    wlSurfaceCommit(s_Decoration.surface);
+    surfaceAttach(s_Decoration.surface, s_Decoration.buffer, 0, 0);
+    surfaceDamageBuffer(s_Decoration.surface, 0, 0, width, TITLEBAR_HEIGHT);
+    surfaceCommit(s_Decoration.surface);
 
     // wayland requires the main surface to be committed as well
-    wlSurfaceCommit(s_WinHandle.nativeWindow);
+    surfaceCommit(s_WinHandle.nativeWindow);
 
     // draw window title
     // this example does not support unicode characters
@@ -777,8 +777,8 @@ static void createDecoration()
 static void destroyDecoration()
 {
     wlSubsurfaceDestroy(s_Decoration.subsurface);
-    wlSurfaceDestroy(s_Decoration.surface);
-    wlBufferDestroy(s_Decoration.buffer);
+    surfaceDestroy(s_Decoration.surface);
+    bufferDestroy(s_Decoration.buffer);
     munmap((void*)s_Decoration.pixels, s_Decoration.size);
     close(s_Decoration.fd);
 }

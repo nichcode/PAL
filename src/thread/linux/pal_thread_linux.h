@@ -5,9 +5,9 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
+#ifndef _PAL_THREAD_LINUX_H
+#define _PAL_THREAD_LINUX_H
 #ifdef __linux__
-#ifndef _PAL_THREAD_COMMON_LINUX_H
-#define _PAL_THREAD_COMMON_LINUX_H
 
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_thread.h"
@@ -25,5 +25,5 @@ struct PalMutex {
     pthread_mutex_t handle;
 };
 
-#endif // _PAL_THREAD_COMMON_LINUX_H
 #endif // __linux__
+#endif // _PAL_THREAD_LINUX_H

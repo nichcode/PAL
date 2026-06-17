@@ -20,7 +20,7 @@
 #endif // UNICODE
 
 #include "core/pal_format.h"
-#include "core/pal_result_common.h"
+#include "core/pal_result.h"
 #include <string.h>
 #include <windows.h>
 

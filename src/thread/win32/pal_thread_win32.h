@@ -5,9 +5,9 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
+#ifndef _PAL_THREAD_WIN32_H
+#define _PAL_THREAD_WIN32_H
 #ifdef _WIN32
-#ifndef _PAL_THREAD_COMMON_WIN32_H
-#define _PAL_THREAD_COMMON_WIN32_H
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -35,5 +35,5 @@ struct PalCondVar {
     CONDITION_VARIABLE cv;
 };
 
-#endif // _PAL_THREAD_COMMON_WIN32_H
 #endif // _WIN32
+#endif // _PAL_THREAD_WIN32_H

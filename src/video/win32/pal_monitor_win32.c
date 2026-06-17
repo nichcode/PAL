@@ -6,7 +6,7 @@
  */
 
 #ifdef _WIN32
-#include "pal_video_common_win32.h"
+#include "pal_video_win32.h"
 #include "pal_shared.h"
 
 #define MONITOR_DPI 0

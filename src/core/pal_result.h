@@ -5,10 +5,11 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifndef _PAL_RESULT_COMMON_H
-#define _PAL_RESULT_COMMON_H
+#ifndef _PAL_RESULT_H
+#define _PAL_RESULT_H
 
 #include "pal_shared.h"
+#include "pal_format.h"
 
 static inline uint16_t getResultCode(PalResult result)
 {
@@ -149,4 +150,4 @@ static void formatResultMsg(PalResult result, char* buffer, char* msg)
         description);
 }
 
-#endif // _PAL_RESULT_COMMON_H
+#endif // _PAL_RESULT_H

@@ -84,24 +84,7 @@ project "PAL"
     end
 
     if (PAL_BUILD_VIDEO_MODULE) then
-        filter {"system:windows", "configurations:*"}
-            files { 
-                "src/video/win32/pal_cursor_win32.c",
-                "src/video/win32/pal_icon_win32.c",
-                "src/video/win32/pal_monitor_win32.c",
-                "src/video/win32/pal_window_win32.c",
-                "src/video/win32/pal_video_win32.c"
-            }
-
-        filter {"system:linux", "configurations:*"}
-            files {
-                "src/video/linux/pal_cursor_linux.c",
-                "src/video/linux/pal_icon_linux.c",
-                "src/video/linux/pal_monitor_linux.c",
-                "src/video/linux/pal_window_linux.c",
-                "src/video/linux/pal_video_linux.c"
-            }
-
+        if (os.target() == "linux") then
             -- check for wayland support. This is cross compiler
             local waylandPaths = {
                 "/usr/include/wayland-client.h",
@@ -145,7 +128,36 @@ project "PAL"
             else
                 defines { "PAL_HAS_X11_BACKEND=0" }
             end
+        end
 
+        filter {"system:windows", "configurations:*"}
+            files { 
+                "src/video/win32/pal_cursor_win32.c",
+                "src/video/win32/pal_icon_win32.c",
+                "src/video/win32/pal_monitor_win32.c",
+                "src/video/win32/pal_window_win32.c",
+                "src/video/win32/pal_video_win32.c"
+            }
+
+        filter {"system:linux", "configurations:*"}
+            files {
+                -- X11
+                "src/video/linux/x11/pal_cursor_x11.c",
+                "src/video/linux/x11/pal_icon_x11.c",
+                "src/video/linux/x11/pal_monitor_x11.c",
+                "src/video/linux/x11/pal_window_x11.c",
+                "src/video/linux/x11/pal_video_x11.c",
+
+                -- Wayland
+                "src/video/linux/wayland/pal_cursor_wayland.c",
+                "src/video/linux/wayland/pal_icon_wayland.c",
+                "src/video/linux/wayland/pal_monitor_wayland.c",
+                "src/video/linux/wayland/pal_window_wayland.c",
+                "src/video/linux/wayland/pal_video_wayland.c",
+
+                "src/video/linux/pal_video_linux.c"
+            }
+            
         filter {}
     end
 

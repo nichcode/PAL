@@ -6,7 +6,7 @@
  */
 
 #ifdef __linux__
-#include "pal_thread_common_linux.h"
+#include "pal_thread_linux.h"
 #include "pal_shared.h"
 
 PalResult PAL_CALL palCreateMutex(

@@ -8,7 +8,7 @@
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
 #include "core/pal_format.h"
-#include "core/pal_result_common.h"
+#include "core/pal_result.h"
 #include <string.h>
 
 uint16_t PAL_CALL palGetResultCode(PalResult result)

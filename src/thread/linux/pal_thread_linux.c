@@ -7,7 +7,7 @@
 
 #ifdef __linux__
 #define _GNU_SOURCE
-#include "pal_thread_common_linux.h"
+#include "pal_thread_linux.h"
 #include "pal_shared.h"
 #include <sys/resource.h>
 #include <unistd.h>
