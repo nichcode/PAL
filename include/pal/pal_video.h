@@ -582,6 +582,8 @@ typedef struct {
     PalWindowStyle style;    /**< Window style.*/
     const char* title;       /**< Title in UTF-8 encoding.*/
     PalMonitor* monitor;     /**< Set to nullptr to use primary monitor.*/
+    const char* appName;     /**< If nullptr, `PAL` will be used.*/
+    const char* instanceName;  /**< If nullptr, `title` will be used.*/
     uint32_t width;          /**< Width in pixels.*/
     uint32_t height;         /**< Width in pixels.*/
     PalBool show;            /**< Show after creation.*/

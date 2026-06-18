@@ -153,6 +153,7 @@ project "PAL"
                 "src/video/linux/wayland/pal_icon_wayland.c",
                 "src/video/linux/wayland/pal_monitor_wayland.c",
                 "src/video/linux/wayland/pal_window_wayland.c",
+                "src/video/linux/wayland/pal_wayland_protocols.c",
                 "src/video/linux/wayland/pal_video_wayland.c",
 
                 "src/video/linux/pal_video_linux.c"

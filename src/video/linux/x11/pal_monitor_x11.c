@@ -12,7 +12,7 @@
 #include "pal_shared.h"
 #include <math.h>
 
-static PalResult xEnumerateMonitors(
+PalResult xEnumerateMonitors(
     int32_t* count,
     PalMonitor** outMonitors)
 {
@@ -39,7 +39,7 @@ static PalResult xEnumerateMonitors(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
+PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
 {
     RROutput primary = s_X11.getOutputPrimary(s_X11.display, s_X11.root);
     if (primary) {
@@ -53,7 +53,7 @@ static PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
         errno);
 }
 
-static PalResult xGetMonitorInfo(
+PalResult xGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
@@ -160,7 +160,7 @@ static PalResult xGetMonitorInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult xEnumerateMonitorModes(
+PalResult xEnumerateMonitorModes(
     PalMonitor* monitor,
     int32_t* count,
     PalMonitorMode* modes)
@@ -225,7 +225,7 @@ static PalResult xEnumerateMonitorModes(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult xGetCurrentMonitorMode(
+PalResult xGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
@@ -283,7 +283,7 @@ static PalResult xGetCurrentMonitorMode(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult xSetMonitorMode(
+PalResult xSetMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
@@ -353,7 +353,7 @@ static PalResult xSetMonitorMode(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult xValidateMonitorMode(
+PalResult xValidateMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
@@ -363,7 +363,7 @@ static PalResult xValidateMonitorMode(
         errno);
 }
 
-static PalResult xSetMonitorOrientation(
+PalResult xSetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation)
 {

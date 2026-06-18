@@ -208,6 +208,27 @@ typedef struct {
 } Wayland;
 
 extern Wayland s_Wl;
+extern struct wl_registry_listener s_RegistryListener;
+extern struct wl_output_listener s_OutputListener;
+extern struct wl_output_listener s_DefaultModeListener;
+
+extern struct wl_surface_listener s_SurfaceListener;
+extern struct wl_pointer_listener s_PointerListener;
+extern struct wl_keyboard_listener s_KeyboardListener;
+extern struct zxdg_toplevel_decoration_v1_listener s_DecorationListener;
+
+extern struct wl_seat_listener s_SeatListener;
+extern struct xdg_wm_base_listener s_WmBaseListener;
+extern struct xdg_surface_listener s_XdgSurfaceListener;
+extern struct xdg_toplevel_listener s_XdgToplevelListener;
+
+void setupProtocols();
+
+struct wl_buffer* createShmBuffer(
+    int width,
+    int height,
+    const uint8_t* pixels,
+    PalBool cursor);
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // __linux__

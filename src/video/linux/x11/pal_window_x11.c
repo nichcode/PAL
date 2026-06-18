@@ -10,6 +10,9 @@
 
 #include "pal_x11.h"
 #include "pal_shared.h"
+#include <stdlib.h>
+#include <math.h>
+#include <unistd.h>
 
 static int xErrorHandler(
     Display*,
@@ -20,7 +23,7 @@ static int xErrorHandler(
     return 0;
 }
 
-static PalResult xCreateWindow(
+PalResult xCreateWindow(
     const PalWindowCreateInfo* info,
     PalWindow** outWindow)
 {
@@ -216,8 +219,8 @@ static PalResult xCreateWindow(
     // set class property
     XClassHint* hints = s_X11.allocClassHint();
     if (hints) {
-        const char* resName = getenv("RESOURCE_NAME");
-        const char* resClass = getenv("RESOURCE_CLASS");
+        const char* resName = info->instanceName;
+        const char* resClass = info->appName;
 
         if (!resName || strlen(resName) == 0) {
             resName = info->title;
@@ -360,7 +363,7 @@ static PalResult xCreateWindow(
             }
         }
 
-        xSendWMEvent(
+        sendWMEvent(
             window,
             s_X11Atoms._NET_WM_STATE,
             s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT,
@@ -428,7 +431,7 @@ static PalResult xCreateWindow(
     return PAL_RESULT_SUCCESS;
 }
 
-static void xDestroyWindow(PalWindow* window)
+void xDestroyWindow(PalWindow* window)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     WindowData* data = nullptr;
@@ -489,7 +492,7 @@ PalResult xMaximizeWindow(PalWindow* window)
             errno);
     }
 
-    xSendWMEvent(
+    sendWMEvent(
         xWin,
         s_X11Atoms._NET_WM_STATE,
         s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT,
@@ -521,7 +524,7 @@ PalResult xRestoreWindow(PalWindow* window)
 
     // since we have no fixed way to restore the window
     // we just restore from minimized and maximized state
-    xSendWMEvent(
+    sendWMEvent(
         xWin,
         s_X11Atoms._NET_WM_STATE,
         s_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT,
@@ -592,7 +595,7 @@ PalResult xFlashWindow(
 
     // check if modern flashing is supported
     if (s_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS) {
-        xSendWMEvent(
+        sendWMEvent(
             xWin,
             s_X11Atoms._NET_WM_STATE,
             s_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS,
@@ -869,7 +872,7 @@ PalResult xGetWindowHandleInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-static PalResult xSetWindowOpacity(
+PalResult xSetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
@@ -1015,7 +1018,7 @@ PalResult xSetFocusWindow(PalWindow* window)
     }
 
     if (s_X11Atoms._NET_ACTIVE_WINDOW) {
-        xSendWMEvent(xWin, s_X11Atoms._NET_ACTIVE_WINDOW, CurrentTime, 0, 0, 0,
+        sendWMEvent(xWin, s_X11Atoms._NET_ACTIVE_WINDOW, CurrentTime, 0, 0, 0,
                      PAL_TRUE); // 1
 
     } else {

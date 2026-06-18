@@ -324,17 +324,19 @@ static void windowInfoDump()
 
 static void windowDump()
 {
-    uint32_t xSize = 48;
+    uint32_t xSize = 64;
     uint32_t xAlign = 8;
     uint32_t xOffset1 = 0;
     uint32_t xOffset2 = 8;
     uint32_t xOffset3 = 16;
     uint32_t xOffset4 = 24;
-    uint32_t xOffset5 = 28;
-    uint32_t xOffset6 = 32;
-    uint32_t xOffset7 = 36;
-    uint32_t xOffset8 = 40;
-    uint32_t xOffset9 = 44;
+    uint32_t xOffset5 = 32;
+    uint32_t xOffset6 = 40;
+    uint32_t xOffset7 = 44;
+    uint32_t xOffset8 = 48;
+    uint32_t xOffset9 = 52;
+    uint32_t xOffset10 = 56;
+    uint32_t xOffset11 = 60;
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalWindowCreateInfo);
@@ -342,12 +344,14 @@ static void windowDump()
     uint32_t yOffset1 = offsetof(PalWindowCreateInfo, style);
     uint32_t yOffset2 = offsetof(PalWindowCreateInfo, title);
     uint32_t yOffset3 = offsetof(PalWindowCreateInfo, monitor);
-    uint32_t yOffset4 = offsetof(PalWindowCreateInfo, width);
-    uint32_t yOffset5 = offsetof(PalWindowCreateInfo, height);
-    uint32_t yOffset6 = offsetof(PalWindowCreateInfo, show);
-    uint32_t yOffset7 = offsetof(PalWindowCreateInfo, maximized);
-    uint32_t yOffset8 = offsetof(PalWindowCreateInfo, minimized);
-    uint32_t yOffset9 = offsetof(PalWindowCreateInfo, center);
+    uint32_t yOffset4 = offsetof(PalWindowCreateInfo, appName);
+    uint32_t yOffset5 = offsetof(PalWindowCreateInfo, instanceName);
+    uint32_t yOffset6 = offsetof(PalWindowCreateInfo, width);
+    uint32_t yOffset7 = offsetof(PalWindowCreateInfo, height);
+    uint32_t yOffset8 = offsetof(PalWindowCreateInfo, show);
+    uint32_t yOffset9 = offsetof(PalWindowCreateInfo, maximized);
+    uint32_t yOffset10 = offsetof(PalWindowCreateInfo, minimized);
+    uint32_t yOffset11 = offsetof(PalWindowCreateInfo, center);
     uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
     const char* result = s_FailedString;
@@ -363,6 +367,8 @@ static void windowDump()
         xOffset7 == yOffset7      &&
         xOffset8 == yOffset8      &&
         xOffset9 == yOffset9      &&
+        xOffset10 == yOffset10    &&
+        xOffset11 == yOffset11    &&
         xPadding == yPadding) {
         result = s_PassedString;
     }
@@ -379,12 +385,14 @@ static void windowDump()
     palLog(nullptr, "style @        %u            %u", xOffset1, yOffset1);
     palLog(nullptr, "title @        %u            %u", xOffset2, yOffset2);
     palLog(nullptr, "monitor @      %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "width @        %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "height @       %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "show @         %u           %u", xOffset6, yOffset6);
-    palLog(nullptr, "maximized @    %u           %u", xOffset7, yOffset7);
-    palLog(nullptr, "minimized @    %u           %u", xOffset8, yOffset8);
-    palLog(nullptr, "center @       %u           %u", xOffset9, yOffset9);
+    palLog(nullptr, "appName @      %u           %u", xOffset4, yOffset4);
+    palLog(nullptr, "instanceName @ %u           %u", xOffset5, yOffset5);
+    palLog(nullptr, "width @        %u           %u", xOffset6, yOffset6);
+    palLog(nullptr, "height @       %u           %u", xOffset7, yOffset7);
+    palLog(nullptr, "show @         %u           %u", xOffset8, yOffset8);
+    palLog(nullptr, "maximized @    %u           %u", xOffset9, yOffset9);
+    palLog(nullptr, "minimized @    %u           %u", xOffset10, yOffset10);
+    palLog(nullptr, "center @       %u           %u", xOffset11, yOffset11);
     palLog(nullptr, "===========================================");
 
     palLog(nullptr, "Status: %s", result);

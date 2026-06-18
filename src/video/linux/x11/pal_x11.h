@@ -558,6 +558,21 @@ typedef struct {
 extern X11 s_X11;
 extern X11Atoms s_X11Atoms;
 
+RRMode findMode(
+    XRRScreenResources* resources,
+    const PalMonitorMode* mode);
+
+void sendWMEvent(
+    Window window,
+    Atom type,
+    long a,
+    long b,
+    long c,
+    long d,
+    PalBool add);
+
+PalResult xGetPrimaryMonitor(PalMonitor**);
+
 #endif // PAL_HAS_X11_BACKEND
 #endif // __linux__
 #endif // _PAL_X11_H

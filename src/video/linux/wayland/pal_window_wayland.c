@@ -8,21 +8,10 @@
 #ifdef __linux__
 #if PAL_HAS_WAYLAND_BACKEND == 1
 
-#include "pal_wayland_helper.h"
+#include "pal_wayland.h"
+#include "pal_wayland_protocols.h"
 #include "pal_shared.h"
 #include <stdlib.h>
-
-static const struct xdg_surface_listener xdgSurfaceListener = {
-    .configure = xdgSurfaceHandleConfigure};
-
-static const struct xdg_toplevel_listener xdgToplevelListener = {
-    .configure = xdgToplevelHandleConfigure,
-    .close = xdgToplevelHandleClose,
-    .configure_bounds = nullptr,
-    .wm_capabilities = nullptr};
-
-static struct zxdg_toplevel_decoration_v1_listener decorationListener = {
-    .configure = zxdgDecorationHandleConfigure};
 
 PalResult wlCreateWindow(
     const PalWindowCreateInfo* info,
@@ -73,27 +62,33 @@ PalResult wlCreateWindow(
     data->focused = PAL_FALSE;
 
     // create surface
-    surface = compositorCreateSurface(s_Wl.compositor);
+    surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!surface) {
-        palSetLastPlatformError(errno);
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
-    surfaceAddListener(surface, &surfaceListener, data);
+    wlSurfaceAddListener(surface, &s_SurfaceListener, data);
     xdgSurface = xdgWmBaseGetXdgSurface(s_Wl.xdgBase, surface);
     if (!xdgSurface) {
-        palSetLastPlatformError(errno);
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     xdgToplevel = xdgSurfaceGetToplevel(xdgSurface);
     if (!xdgSurface) {
-        palSetLastPlatformError(errno);
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     // set APP id
-    const char* appID = getenv("RESOURCE_CLASS");
+    const char* appID = info->appName;
     if (!appID || strlen(appID) == 0) {
         appID = s_Video.className;
     }
@@ -106,28 +101,28 @@ PalResult wlCreateWindow(
     xdgToplevelSetTitle(xdgToplevel, title);
     xdgToplevelSetAppId(xdgToplevel, appID);
 
-    xdgToplevelAddListener(xdgToplevel, &xdgToplevelListener, data);
-    xdgSurfaceAddListener(xdgSurface, &xdgSurfaceListener, data);
+    xdgToplevelAddListener(xdgToplevel, &s_XdgToplevelListener, data);
+    xdgSurfaceAddListener(xdgSurface, &s_XdgSurfaceListener, data);
 
     // decorated window
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         struct zxdg_toplevel_decoration_v1* decoration = nullptr;
         decoration = zxdgGetToplevelDecoration(s_Wl.decorationManager, xdgToplevel);
-        zxdgToplevelDecorationV1AddListener(decoration, &decorationListener, surface);
+        zxdgToplevelDecorationV1AddListener(decoration, &s_DecorationListener, surface);
         zxdgToplevelDecorationV1SetMode(decoration, 2);
         data->decoration = decoration;
     }
 
     data->skipState = PAL_TRUE;
     data->skipConfigure = PAL_TRUE;
-    surfaceCommit(surface);
+    wlSurfaceCommit(surface);
     s_Wl.displayRoundtrip(s_Wl.display);
 
     if (info->maximized && info->show) {
         // we need the maximized size the compositor will use
         // and use that to create the buffer
         xdgToplevelSetMaximized(xdgToplevel);
-        surfaceCommit(surface);
+        wlSurfaceCommit(surface);
         s_Wl.displayRoundtrip(s_Wl.display);
         data->state = PAL_WINDOW_STATE_MAXIMIZED;
 
@@ -147,15 +142,17 @@ PalResult wlCreateWindow(
     // This is just a requeest, the compositor might ignore it
     if (info->minimized) {
         xdgToplevelSetMinimized(xdgToplevel);
-        surfaceCommit(surface);
+        wlSurfaceCommit(surface);
         data->state = PAL_WINDOW_STATE_MINIMIZED;
     }
 
     if (s_Wl.eglFBConfig) {
         data->eglWindow = s_Wl.eglWindowCreate(surface, data->w, data->h);
         if (!data->eglWindow) {
-            palSetLastPlatformError(errno);
-            return PAL_RESULT_PLATFORM_FAILURE;
+            return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
         }
 
     } else {
@@ -163,22 +160,24 @@ PalResult wlCreateWindow(
         struct wl_buffer* buffer = nullptr;
         buffer = createShmBuffer(data->w, data->h, nullptr, PAL_FALSE);
         if (!buffer) {
-            palSetLastPlatformError(errno);
-            return PAL_RESULT_PLATFORM_FAILURE;
+            return palMakeResult(
+            PAL_RESULT_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
         }
 
-        surfaceAttach(surface, buffer, 0, 0);
-        surfaceDamageBuffer(surface, 0, 0, data->w, data->h);
-        surfaceCommit(surface);
+        wlSurfaceAttach(surface, buffer, 0, 0);
+        wlSurfaceDamageBuffer(surface, 0, 0, data->w, data->h);
+        wlSurfaceCommit(surface);
         data->buffer = buffer;
     }
 
-    struct wl_region* region = compositorCreateRegion(s_Wl.compositor);
+    struct wl_region* region = wlCompositorCreateRegion(s_Wl.compositor);
     if (region) {
-        regionAdd(region, 0, 0, data->w, data->h);
-        surfaceSetOpaqueRegion(surface, region);
-        regionDestroy(region);
-        surfaceCommit(surface);
+        wlRegionAdd(region, 0, 0, data->w, data->h);
+        wlSurfaceSetOpaqueRegion(surface, region);
+        wlRegionDestroy(region);
+        wlSurfaceCommit(surface);
     }
 
     s_Wl.displayRoundtrip(s_Wl.display);
@@ -223,12 +222,12 @@ void wlDestroyWindow(PalWindow* window)
     if (data->eglWindow) {
         s_Wl.eglWindowDestroy(data->eglWindow);
     } else {
-        bufferDestroy(data->buffer);
+        wlBufferDestroy(data->buffer);
     }
 
     xdgToplevelDestroy(data->xdgToplevel);
     xdgSurfaceDestroy(data->xdgSurface);
-    surfaceDestroy((struct wl_surface*)window);
+    wlSurfaceDestroy((struct wl_surface*)window);
     data->used = PAL_FALSE;
 }
 
@@ -469,7 +468,7 @@ PalResult wlSetWindowSize(
 
     xdgToplevelSetMinSize(data->xdgToplevel, width, height);
     xdgToplevelSetMaxSize(data->xdgToplevel, width, height);
-    surfaceCommit((struct wl_surface*)window);
+    wlSurfaceCommit((struct wl_surface*)window);
     return PAL_RESULT_SUCCESS;
 }
 

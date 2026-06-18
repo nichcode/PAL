@@ -110,7 +110,7 @@ static inline void* wlRegistryBind(
     return (void*)id;
 }
 
-static inline int registryAddListener(
+static inline int wlRegistryAddListener(
     struct wl_registry* wl_registry,
     const struct wl_registry_listener* listener,
     void* data)
@@ -118,7 +118,7 @@ static inline int registryAddListener(
     return s_wl_proxy_add_listener((struct wl_proxy*)wl_registry, (void (**)(void))listener, data);
 }
 
-static inline struct wl_registry* displayGetRegistry(struct wl_display* wl_display)
+static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_display)
 {
     struct wl_proxy* registry;
     registry = s_wl_proxy_marshal_flags(
@@ -239,8 +239,8 @@ void* openDisplayWayland()
     registryInterface = dlsym(s_LibWayland, "wl_registry_interface");
     struct wl_display* display = s_wl_display_connect(nullptr);
     if (display) {
-        s_Registry = displayGetRegistry(display);
-        registryAddListener(s_Registry, &s_RegistryListener, nullptr);
+        s_Registry = wlDisplayGetRegistry(display);
+        wlRegistryAddListener(s_Registry, &s_RegistryListener, nullptr);
         s_wl_display_roundtrip(display);
     }
 

@@ -159,6 +159,7 @@ palJoinThread(thread, &retval);
 - **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.
 - **Video:** **palGetMouseWheelDelta()** now takes floats instead of uint32_t.
 - **Video:** **palInitVideo()** now takes a preferredInstance parameter.
+- **Video:** **PalWindowCreateInfo()** now takes `appName` and `instanceName` optional fields.
 
 ### Removed
 - **Core:** Removed **PAL_RESULT_NULL_POINTER** result code.

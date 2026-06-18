@@ -53,7 +53,6 @@ local function generateVscodeProperties()
         end
 
         for _, define in ipairs(prj.defines or {}) do
-            print(define)
             table.insert(prjDefines, define)
         end
     end

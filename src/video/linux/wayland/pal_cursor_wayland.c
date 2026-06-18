@@ -8,7 +8,8 @@
 #ifdef __linux__
 #if PAL_HAS_WAYLAND_BACKEND == 1
 
-#include "pal_wayland_helper.h"
+#include "pal_wayland.h"
+#include "pal_wayland_protocols.h"
 #include "pal_shared.h"
 
 PalResult wlCreateCursor(
@@ -24,7 +25,7 @@ PalResult wlCreateCursor(
             errno);
     }
 
-    cursor->surface = compositorCreateSurface(s_Wl.compositor);
+    cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!cursor->surface) {
         return palMakeResult(
             PAL_RESULT_PLATFORM_FAILURE, 
@@ -40,8 +41,8 @@ PalResult wlCreateCursor(
             errno);
     }
 
-    surfaceAttach(cursor->surface, cursor->buffer, 0, 0);
-    surfaceCommit(cursor->surface);
+    wlSurfaceAttach(cursor->surface, cursor->buffer, 0, 0);
+    wlSurfaceCommit(cursor->surface);
     cursor->hotspotX = info->xHotspot;
     cursor->hotspotY = info->yHotspot;
 
@@ -99,7 +100,7 @@ PalResult wlCreateCursorFrom(
             errno);
     }
 
-    cursor->surface = compositorCreateSurface(s_Wl.compositor);
+    cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!cursor->surface) {
         return palMakeResult(
             PAL_RESULT_PLATFORM_FAILURE, 
@@ -108,8 +109,8 @@ PalResult wlCreateCursorFrom(
     }
 
     cursor->buffer = s_Wl.cursorImageGetBuffer(wlCursor->images[0]);
-    surfaceAttach(cursor->surface, cursor->buffer, 0, 0);
-    surfaceCommit(cursor->surface);
+    wlSurfaceAttach(cursor->surface, cursor->buffer, 0, 0);
+    wlSurfaceCommit(cursor->surface);
     cursor->hotspotX = wlCursor->images[0]->hotspot_x;
     cursor->hotspotY = wlCursor->images[0]->hotspot_y;
 
@@ -120,8 +121,8 @@ PalResult wlCreateCursorFrom(
 void wlDestroyCursor(PalCursor* cursor)
 {
     WaylandCursor* waylandCursor = (WaylandCursor*)cursor;
-    bufferDestroy(waylandCursor->buffer);
-    surfaceDestroy(waylandCursor->surface);
+    wlBufferDestroy(waylandCursor->buffer);
+    wlSurfaceDestroy(waylandCursor->surface);
     palFree(s_Video.allocator, waylandCursor);
 }
 

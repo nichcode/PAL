@@ -116,7 +116,7 @@ static PalResult eglXBackend(int index)
     return PAL_RESULT_SUCCESS;
 }
 
-static RRMode findMode(
+RRMode findMode(
     XRRScreenResources* resources,
     const PalMonitorMode* mode)
 {
@@ -357,7 +357,7 @@ static int getWindowMonitorDPI(WindowData* data)
     }
 }
 
-static void sendWMEvent(
+void sendWMEvent(
     Window window,
     Atom type,
     long a,
@@ -440,7 +440,7 @@ static void createKeycodeTable()
     s_Keyboard.keycodes[XK_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-static PalResult xInitVideo()
+PalResult xInitVideo()
 {
     // load X11 library
     s_X11.handle = dlopen("libX11.so", RTLD_LAZY);
@@ -836,7 +836,7 @@ static PalResult xInitVideo()
     return PAL_RESULT_SUCCESS;
 }
 
-static void xShutdownVideo()
+void xShutdownVideo()
 {
     s_X11.closeIM(s_X11.im);
     if (!s_Video.platformInstance) {
@@ -873,7 +873,7 @@ PalResult xSetFBConfig(
     }
 }
 
-static void xUpdateVideo()
+void xUpdateVideo()
 {
     XEvent event;
     PalDispatchMode mode = PAL_DISPATCH_NONE;
