@@ -1125,7 +1125,10 @@ PalResult eglWlBackend(const int index)
     EGLint configSize = sizeof(EGLConfig) * numConfigs;
     EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
     if (!eglConfigs) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return palMakeResult(
+            PAL_RESULT_OUT_OF_MEMORY, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);

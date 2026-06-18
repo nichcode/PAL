@@ -84,7 +84,6 @@
 #define PAL_CONFIG_BACKEND_EGL 1
 #define PAL_CONFIG_BACKEND_GLX 2
 #define PAL_CONFIG_BACKEND_WGL 3
-#define PAL_CONFIG_BACKEND_GLES 4
 
 #define PAL_SCANCODE_UNKNOWN 0
 #define PAL_SCANCODE_A 1
@@ -584,6 +583,8 @@ typedef struct {
     PalMonitor* monitor;     /**< Set to nullptr to use primary monitor.*/
     const char* appName;     /**< If nullptr, `PAL` will be used.*/
     const char* instanceName;  /**< If nullptr, `title` will be used.*/
+    PalFBConfigBackend fbConfigBackend;
+    int32_t fbConfigId;
     uint32_t width;          /**< Width in pixels.*/
     uint32_t height;         /**< Width in pixels.*/
     PalBool show;            /**< Show after creation.*/
@@ -666,40 +667,6 @@ PAL_API void PAL_CALL palUpdateVideo();
  * @sa palInitVideo
  */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
-
-/**
- * @brief Set the FBConfig for the video system.
- *
- * The video system must be initialized before this call.
- * The provided FBConfig will be used for all created windows after this call.
- * The `index` is the loop index from the drivers
- * supported FBConfigs.
- *
- * The `backend` is used to tell the video system, the source of the index.
- * Examples: PAL_CONFIG_BACKEND_EGL tells the video system, we got this loop
- * index from EGL. This will enable the video system to find your FBConfig.
- *
- * Example Flow:
- * Enumerate and select your FBConfig using any backend(EGL, GLX, WGL, etc)
- * and just let the video system know which one you used.
- *
- * If the backend passed is not the same as the one used,
- * the video system might still get a FBConfig but it will not be the
- * one requested.
- *
- * @param[in] index The FBConfig driver index.
- * @param[in] backend The FBConfig backend or source.
- *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Must be called from the main thread.
- *
- * @since 1.1
- */
-PAL_API PalResult PAL_CALL palSetFBConfig(
-    const int index,
-    PalFBConfigBackend backend);
 
 /**
  * @brief Return a list of all connected monitors.
@@ -901,6 +868,18 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * @brief Create a window.
  *
  * The video system must be initialized before this call.
+ * 
+ * `PalWindowCreateInfo::fbConfigId` is the loop index from the drivers supported FBConfigs.
+ * `PalWindowCreateInfo::fbConfigBackend` is used to tell the video system the source of
+ * `PalWindowCreateInfo::fbConfigId`.
+ *
+ * Example Flow:
+ * Enumerate and select your FBConfig using any backend(EGL, GLX, WGL)
+ * and just let the video system know which one you used.
+ *
+ * If the backend passed is not the same as the one used,
+ * the video system might still get a FBConfig but it will not be the
+ * one requested.
  *
  * @param[in] info Pointer to a PalWindowCreateInfo struct that specifies
  * parameters. Must not be nullptr.
@@ -921,7 +900,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  *
  * - Creating hidden window is not supported. It will be ignored.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalResult PAL_CALL palCreateWindow(
     const PalWindowCreateInfo* info,

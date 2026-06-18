@@ -81,7 +81,6 @@ typedef struct {
 
 typedef struct {
     PalBool initialized;
-    int32_t pixelFormat;
     int32_t maxWindowData;
     PalVideoFeatures features;
     const PalAllocator* allocator;

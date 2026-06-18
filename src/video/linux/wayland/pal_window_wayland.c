@@ -54,7 +54,10 @@ PalResult wlCreateWindow(
 
     WindowData* data = getFreeWindowData();
     if (!data) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return palMakeResult(
+            PAL_RESULT_OUT_OF_MEMORY, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
     }
 
     memset(data, 0, sizeof(WindowData));

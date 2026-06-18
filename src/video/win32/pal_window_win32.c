@@ -171,7 +171,17 @@ PalResult PAL_CALL palCreateWindow(
     }
 
     // set the pixel format is set
-    if (s_Video.pixelFormat) {
+    if (info->fbConfigId) {
+        // clang-format off
+        if (info->fbConfigBackend == PAL_CONFIG_BACKEND_EGL  ||
+            info->fbConfigBackend == PAL_CONFIG_BACKEND_GLX) {
+            return palMakeResult(
+                PAL_RESULT_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WINDOWS, 
+                GetLastError());
+        }
+        // clang-format on
+
         HDC hdc = GetDC(handle);
         // since we have the pixel format already
         // we ask the OS (platform) to fill the pfd struct for us from that
@@ -179,7 +189,7 @@ PalResult PAL_CALL palCreateWindow(
         PIXELFORMATDESCRIPTOR pfd;
         if (!s_Video.describePixelFormat(
                 hdc,
-                s_Video.pixelFormat,
+                info->fbConfigId,
                 sizeof(PIXELFORMATDESCRIPTOR),
                 &pfd)) {
             return palMakeResult(
@@ -188,7 +198,7 @@ PalResult PAL_CALL palCreateWindow(
                 GetLastError());
         }
 
-        s_Video.setPixelFormat(hdc, s_Video.pixelFormat, &pfd);
+        s_Video.setPixelFormat(hdc, info->fbConfigBackend, &pfd);
         ReleaseDC(handle, hdc);
     }
 

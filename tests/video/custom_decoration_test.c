@@ -1,5 +1,7 @@
 
-#if defined(__linux__)
+#include "pal/pal_core.h"
+
+#ifdef __linux__
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L // for linux
 #include "pal/pal_video.h"
@@ -837,11 +839,7 @@ static void PAL_CALL onEvent(
 
 PalBool customDecorationTest()
 {
-#ifndef __linux__
-    palLog(nullptr, "Custom decoration not supported");
-    return PAL_FALSE;
-#endif // __linux__
-
+#ifdef __linux__
     palLog(nullptr, "Press Escape or click close button to close Test");
     palLog(nullptr, "This only implements close and window movement for simplicity");
     
@@ -961,4 +959,9 @@ PalBool customDecorationTest()
     closeDisplayWayland();
 
     return PAL_TRUE;
+
+#else 
+    palLog(nullptr, "Custom decoration not supported");
+    return PAL_FALSE;
+#endif // __linux__
 }

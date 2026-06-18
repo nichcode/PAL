@@ -936,7 +936,6 @@ PalResult PAL_CALL palInitVideo(
     s_Video.initialized = PAL_TRUE;
     s_Video.allocator = allocator;
     s_Video.eventDriver = eventDriver;
-    s_Video.pixelFormat = 0;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1014,40 +1013,6 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     }
 
     return s_Video.features;
-}
-
-PalResult PAL_CALL palSetFBConfig(
-    const int index,
-    PalFBConfigBackend backend)
-{
-    // Win32 uses only WGL and WGL index starts from 1
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    // clang-format off
-    if (backend == PAL_CONFIG_BACKEND_EGL  || 
-        backend == PAL_CONFIG_BACKEND_GLES ||
-        backend == PAL_CONFIG_BACKEND_GLX) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-    // clang-format on
-
-    if (index >= 1) {
-        s_Video.pixelFormat = index;
-        return PAL_RESULT_SUCCESS;
-    }
-
-    return palMakeResult(
-        PAL_RESULT_INVALID_ARGUMENT, 
-        PAL_RESULT_SOURCE_WINDOWS, 
-        GetLastError());
 }
 
 const PalBool* PAL_CALL palGetKeycodeState()

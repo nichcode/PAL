@@ -159,7 +159,8 @@ palJoinThread(thread, &retval);
 - **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.
 - **Video:** **palGetMouseWheelDelta()** now takes floats instead of uint32_t.
 - **Video:** **palInitVideo()** now takes a preferredInstance parameter.
-- **Video:** **PalWindowCreateInfo()** now takes `appName` and `instanceName` optional fields.
+- **Video:** **PalWindowCreateInfo** now has `appName`, `instanceName`, `fbConfigBackend` and 
+`fbConfigId` fields.
 
 ### Removed
 - **Core:** Removed **PAL_RESULT_NULL_POINTER** result code.
@@ -190,6 +191,7 @@ palJoinThread(thread, &retval);
 - **Video:** Removed **palGetWindowHandleInfoEx** function.
 - **Video:** Removed **palGetRawMouseWheelDelta** function.
 - **Video:** Removed **palSetPreferredInstance** function.
+- **Video:** Removed **palSetFBConfig** function.
 
 ### Tests
 
