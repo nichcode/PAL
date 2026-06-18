@@ -235,7 +235,6 @@ typedef struct {
     WindowData* windowData;
     MonitorData* monitorData;
     const char* className;
-    void* platformInstance;
     void* display;
 } VideoLinux;
 

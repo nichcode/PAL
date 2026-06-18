@@ -1354,12 +1354,12 @@ PalResult wlInitVideo()
     setupProtocols();
 
     // check if user supplied their own display
-    if (s_Video.platformInstance) {
-        s_Wl.display = (struct wl_display*)s_Video.platformInstance;
+    if (s_Video.display) {
+        s_Wl.display = (struct wl_display*)s_Video.display;
 
     } else {
         s_Wl.display = s_Wl.displayConnect(nullptr);
-        s_Video.platformInstance = nullptr;
+        s_Video.display = nullptr;
     }
 
     if (!s_Wl.display) {
@@ -1425,15 +1425,15 @@ void wlShutdownVideo()
         s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.seat);
     }
 
-    if (!s_Video.platformInstance) {
+    if (!s_Video.display) {
         // opened by PAL
         s_Wl.displayDisconnect(s_Wl.display);
-    }
 
-    dlclose(s_Wl.libCursor);
-    dlclose(s_Wl.xkbCommon);
-    dlclose(s_Wl.libWaylandEgl);
-    dlclose(s_Wl.handle);
+        dlclose(s_Wl.libCursor);
+        dlclose(s_Wl.xkbCommon);
+        dlclose(s_Wl.libWaylandEgl);
+        dlclose(s_Wl.handle);
+    }
 
     memset(&s_Wl, 0, sizeof(Wayland));
 }

@@ -206,7 +206,7 @@ PalResult PAL_CALL palInitVideo(
 
     // user provided instance
     if (preferredInstance) {
-        s_Video.platformInstance = preferredInstance;
+        s_Video.display = preferredInstance;
     }
 
     s_Video.className = "PAL";
@@ -274,10 +274,9 @@ void PAL_CALL palShutdownVideo()
             dlclose(s_Egl.handle);
         }
 
-        s_Video.platformInstance = nullptr;
-        s_Video.display = nullptr;
         memset(&s_Keyboard, 0, sizeof(Keyboard));
         memset(&s_Mouse, 0, sizeof(Mouse));
+        memset(&s_Video, 0, sizeof(VideoLinux));
         s_Video.initialized = PAL_FALSE;
     }
 }

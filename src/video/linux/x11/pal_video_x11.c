@@ -768,12 +768,12 @@ PalResult xInitVideo()
     // clang-format on
 
     // X11 server
-    if (s_Video.platformInstance) {
-        s_X11.display = (Display*)s_Video.platformInstance;
+    if (s_Video.display) {
+        s_X11.display = (Display*)s_Video.display;
 
     } else {
         s_X11.display = s_X11.openDisplay(nullptr);
-        s_Video.platformInstance = nullptr;
+        s_Video.display = nullptr;
     }
 
     if (!s_X11.display) {
@@ -839,18 +839,19 @@ PalResult xInitVideo()
 void xShutdownVideo()
 {
     s_X11.closeIM(s_X11.im);
-    if (!s_Video.platformInstance) {
+    if (!s_Video.display) {
         // opened by PAL
         s_X11.closeDisplay(s_X11.display);
-    }
 
-    dlclose(s_X11.handle);
-    dlclose(s_X11.xrandr);
-    dlclose(s_X11.libCursor);
+        dlclose(s_X11.handle);
+        dlclose(s_X11.xrandr);
+        dlclose(s_X11.libCursor);
 
-    if (s_X11.glxHandle) {
-        dlclose(s_X11.glxHandle);
+        if (s_X11.glxHandle) {
+            dlclose(s_X11.glxHandle);
+        }
     }
+    
     memset(&s_X11, 0, sizeof(X11));
     memset(&s_X11Atoms, 0, sizeof(X11Atoms));
 }
@@ -1128,7 +1129,7 @@ void xUpdateVideo()
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = type;
-                        event.data = palPackInt32(dx, dy);
+                        event.data = palPackFloat((float)dx, (float)dy);
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }
@@ -1199,7 +1200,7 @@ void xUpdateVideo()
                     if (mode != PAL_DISPATCH_NONE) {
                         PalEvent event = {0};
                         event.type = PAL_EVENT_MOUSE_WHEEL;
-                        event.data = palPackInt32(scrollX, scrollY);
+                        event.data = palPackFloat((float)scrollX, (float)scrollY);
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
                     }

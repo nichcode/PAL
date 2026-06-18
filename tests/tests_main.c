@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_THREAD_MODULE
 
 #if PAL_HAS_VIDEO_MODULE == 1
-    registerTest(videoTest, "Video Test");
+    // registerTest(videoTest, "Video Test");
     // registerTest(monitorTest, "Monitor Test");
     // registerTest(monitorModeTest, "Monitor Mode Test");
     // registerTest(windowTest, "Window Test");
@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     // registerTest(attachWindowTest, "Attach Window Test");
     // registerTest(charEventTest, "Char Event Test");
     // registerTest(nativeIntegrationTest, "Native Integration Test");
-    // registerTest(nativeInstanceTest, "Native Instance Test");
+    registerTest(nativeInstanceTest, "Native Instance Test");
     // registerTest(customDecorationTest, "Custom Decoration Test");
 #endif // PAL_HAS_VIDEO_MODULE
 
