@@ -50,6 +50,13 @@
 #define PAL_GL_RELEASE_BEHAVIOR_NONE 0
 #define PAL_GL_RELEASE_BEHAVIOR_FLUSH 1
 
+#define PAL_GL_BACKEND_EGL 0
+#define PAL_GL_BACKEND_GLX 1
+#define PAL_GL_BACKEND_WGL 2
+
+#define PAL_GL_API_OPENGL 0
+#define PAL_GL_API_OPENGL_ES 1
+
 /**
  * @struct PalGLContext
  * @brief Opaque handle to an opengl context.
@@ -101,6 +108,26 @@ typedef uint32_t PalGLContextReset;
  * @since 2.0
  */
 typedef uint32_t PalGLReleaseBehavior;
+
+/**
+ * @typedef PalGLBackend
+ * @brief Opengl backend. This is not a bitmask.
+ *
+ * All opengl backends follow the format `PAL_GL_BACKEND_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalGLBackend;
+
+/**
+ * @typedef PalGLAPI
+ * @brief Opengl api. This is not a bitmask.
+ *
+ * All opengl apis follow the format `PAL_GL_API_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalGLAPI;
 
 /**
  * @struct PalGLInfo
@@ -186,11 +213,14 @@ typedef struct {
  * palShutdownGL() is called.
  * `Linux`: This is the Display associated with the connection. 
  * `Windows`: This is the HINSTANCE of the process.
- *
- * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
- * default.
+ * 
  * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay). 
  * Must not be nullptr.
+ * @param[in] backend The backend to use. (eg. PAL_GL_BACKEND_WGL).
+ * @param[in] api The backend api to use. (eg. PAL_GL_API_OPENGL). Some apis are not compatible
+ * with some backends.
+ * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
+ * default.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -201,8 +231,10 @@ typedef struct {
  * @sa palShutdownGL
  */
 PAL_API PalResult PAL_CALL palInitGL(
-    const PalAllocator* allocator, 
-    void* instance);
+    void* instance,
+    PalGLBackend backend,
+    PalGLAPI api,
+    const PalAllocator* allocator);
 
 /**
  * @brief Shutdown the opengl system.
@@ -370,7 +402,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  * @since 1.0
  * @sa palInitGL
  */
-PAL_API void* PAL_CALL palGLGetProcAddress(const char* name);
+PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
 
 /**
  * @brief Present the contents of the back buffer of the provided context to
@@ -419,13 +451,23 @@ PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
  * @brief Get the backend of the opengl system.
  *
  * The opengl system must be initialized before this call.
- * Possible values are `wgl`, `glx`, `gles`, `egl`.
  *
  * Thread safety: Thread safe.
  *
- * @since 1.3
+ * @since 2.0
  */
-PAL_API const char* PAL_CALL palGLGetBackend();
+PAL_API PalGLBackend PAL_CALL palGetGLBackend();
+
+/**
+ * @brief Get the api of the opengl system.
+ *
+ * The opengl system must be initialized before this call.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+PAL_API PalGLAPI PAL_CALL palGetGLAPI();
 
 /** @} */ // end of pal_opengl group
 

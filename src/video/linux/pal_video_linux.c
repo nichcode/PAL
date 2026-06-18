@@ -6,9 +6,8 @@
  */
 
 #ifdef __linux__
-#include "pal_video_linux.h"
-#include "pal_shared.h"
 #include "pal_backends_linux.h"
+#include "pal_shared.h"
 #include <dlfcn.h>
 #include <stdlib.h>
 

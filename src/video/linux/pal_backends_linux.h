@@ -8,7 +8,7 @@
 #define _PAL_BACKENDS_LINUX_H
 #ifdef __linux__
 
-#include "pal/pal_video.h"
+#include "pal_video_linux.h"
 
 // ==================================================
 // X11

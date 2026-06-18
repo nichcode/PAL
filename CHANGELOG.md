@@ -133,6 +133,8 @@ palJoinThread(thread, &retval);
 
 - **Graphics:** Added **Graphics System To PAL**.
 
+palGetGLAPI
+
 ### Changed
 - **All systems:** All enum types have been changed to defines and explicit width types.
 
@@ -152,8 +154,11 @@ palJoinThread(thread, &retval);
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
 
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
-- **Video:** **palInitGL()** now takes a instance parameter.
+- **Opengl:** **palInitGL()** now takes a instance parameter.
 - **Opengl:** rename **PalGLRelease** to **PalGLReleaseBehavior**.
+- **Opengl:** rename **palGLGetProcAddress()** to **palGetGLProcAddress()**.
+- **Opengl:** rename **palGLGetBackend()** to **palGetGLBackend()**.
+- **Opengl:** **palGetGLBackend()** now returns a **PalGLBackend**.
 
 - **Video:** **palGetWindowHandleInfo()** now takes an info parameter.
 - **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.

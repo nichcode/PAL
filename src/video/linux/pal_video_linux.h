@@ -119,7 +119,6 @@ typedef struct {
     // clang-format off
     void (*shutdownVideo)();
     void (*updateVideo)();
-    PalResult (*setFBConfig)(const int, PalFBConfigBackend);
     PalResult (*enumerateMonitors)(int32_t*, PalMonitor**);
     PalResult (*getPrimaryMonitor)(PalMonitor**);
     PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
