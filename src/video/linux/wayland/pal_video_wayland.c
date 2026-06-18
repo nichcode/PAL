@@ -1094,49 +1094,6 @@ void zxdgDecorationHandleConfigure(
     }
 }
 
-PalResult eglWlBackend(const int index)
-{
-    // user choose EGL FBConfig backend
-    if (!s_Egl.handle) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    EGLDisplay display = EGL_NO_DISPLAY;
-    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
-
-    if (display == EGL_NO_DISPLAY) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    EGLint numConfigs = 0;
-    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    EGLint configSize = sizeof(EGLConfig) * numConfigs;
-    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
-    if (!eglConfigs) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    s_Wl.eglFBConfig = eglConfigs[index];
-
-    return PAL_RESULT_SUCCESS;
-}
-
 static void createKeycodeTable()
 {
     // Tis is for only printable and text input keys
@@ -1439,21 +1396,6 @@ void wlShutdownVideo()
     }
 
     memset(&s_Wl, 0, sizeof(Wayland));
-}
-
-PalResult wlSetFBConfig(
-    const int index,
-    PalFBConfigBackend backend)
-{
-    if (backend == PAL_CONFIG_BACKEND_GLES || backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
-        return eglWlBackend(index);
-
-    } else {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
 }
 
 void wlUpdateVideo()

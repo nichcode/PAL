@@ -201,7 +201,6 @@ typedef struct {
     wl_cursor_theme_get_cursor_fn cursorThemeGetCursor;
     wl_cursor_image_get_buffer_fn cursorImageGetBuffer;
 
-    EGLConfig eglFBConfig;
     wl_egl_window_create_fn eglWindowCreate;
     wl_egl_window_destroy_fn eglWindowDestroy;
     wl_egl_window_resize_fn eglWindowResize;

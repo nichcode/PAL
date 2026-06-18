@@ -13,6 +13,29 @@
 #include "pal_shared.h"
 #include <stdlib.h>
 
+EGLConfig eglWlBackend(const int fbConfigId)
+{
+    EGLDisplay display = EGL_NO_DISPLAY;
+    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
+    if (display == EGL_NO_DISPLAY) {
+        return nullptr;
+    }
+
+    EGLint numConfigs = 0;
+    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+        return nullptr;
+    }
+
+    EGLint configSize = sizeof(EGLConfig) * numConfigs;
+    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
+    if (!eglConfigs) {
+        return nullptr;
+    }
+
+    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
+    return eglConfigs[fbConfigId];
+}
+
 PalResult wlCreateWindow(
     const PalWindowCreateInfo* info,
     PalWindow** outWindow)
@@ -149,7 +172,25 @@ PalResult wlCreateWindow(
         data->state = PAL_WINDOW_STATE_MINIMIZED;
     }
 
-    if (s_Wl.eglFBConfig) {
+    // user provided a config id
+    if (info->fbConfigId) {
+        PalFBConfigBackend backend = info->fbConfigBackend;
+        EGLConfig config = nullptr;
+
+        if (backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+            backend = PAL_CONFIG_BACKEND_EGL;
+        }
+
+        if (backend == PAL_CONFIG_BACKEND_EGL) {
+            config = eglWlBackend(info->fbConfigId);
+
+        } else {
+            return palMakeResult(
+                PAL_RESULT_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
+        }
+
         data->eglWindow = s_Wl.eglWindowCreate(surface, data->w, data->h);
         if (!data->eglWindow) {
             return palMakeResult(

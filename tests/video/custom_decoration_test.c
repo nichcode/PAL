@@ -1,6 +1,4 @@
 
-#include "pal/pal_core.h"
-
 #ifdef __linux__
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L // for linux
@@ -835,6 +833,8 @@ static void PAL_CALL onEvent(
     }
 }
 
+#else
+#include "pal/pal_core.h"
 #endif // __linux__
 
 PalBool customDecorationTest()

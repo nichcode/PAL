@@ -16,106 +16,6 @@
 X11 s_X11 = {0};
 X11Atoms s_X11Atoms = {0};
 
-static PalResult glxBackend(const int index)
-{
-    // user choose GLX FBConfig backend
-    if (!s_X11.glxHandle) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    int count = 0;
-    GLXFBConfig* configs = s_X11.glxGetFBConfigs(s_X11.display, s_X11.screen, &count);
-    GLXFBConfig fbConfig = configs[index];
-    if (!fbConfig) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    // get a matching visual
-    XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(s_X11.display, fbConfig);
-    if (!visualInfo) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    s_X11.visualInfo = visualInfo;
-    return PAL_RESULT_SUCCESS;
-}
-
-static PalResult eglXBackend(int index)
-{
-    // user choose EGL FBConfig backend
-    if (!s_Egl.handle) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    EGLDisplay display = EGL_NO_DISPLAY;
-    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
-    if (display == EGL_NO_DISPLAY) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    EGLint numConfigs = 0;
-    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    EGLint configSize = sizeof(EGLConfig) * numConfigs;
-    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
-    if (!eglConfigs) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    EGLConfig config = eglConfigs[index];
-
-    // we get a visual info from the config
-    EGLint visualID;
-    s_Egl.eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
-    if (visualID == 0) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    int numVisuals = 0;
-    XVisualInfo tmp;
-    tmp.visualid = visualID;
-
-    // get a matching visual info
-    XVisualInfo* visualInfo = s_X11.getVisualInfo(s_X11.display, VisualIDMask, &tmp, &numVisuals);
-    if (!visualInfo) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    s_X11.visualInfo = visualInfo;
-    palFree(s_Video.allocator, eglConfigs);
-    return PAL_RESULT_SUCCESS;
-}
-
 RRMode findMode(
     XRRScreenResources* resources,
     const PalMonitorMode* mode)
@@ -854,24 +754,6 @@ void xShutdownVideo()
     
     memset(&s_X11, 0, sizeof(X11));
     memset(&s_X11Atoms, 0, sizeof(X11Atoms));
-}
-
-PalResult xSetFBConfig(
-    const int index,
-    PalFBConfigBackend backend)
-{
-    if (backend == PAL_CONFIG_BACKEND_GLX) {
-        return glxBackend(index);
-
-    } else if (backend == PAL_CONFIG_BACKEND_EGL || backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
-        return eglXBackend(index);
-
-    } else {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
 }
 
 void xUpdateVideo()

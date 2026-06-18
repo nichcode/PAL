@@ -23,6 +23,67 @@ static int xErrorHandler(
     return 0;
 }
 
+static XVisualInfo* glxBackend(const int fbConfigId)
+{
+    int count = 0;
+    GLXFBConfig* configs = s_X11.glxGetFBConfigs(s_X11.display, s_X11.screen, &count);
+    GLXFBConfig fbConfig = configs[fbConfigId];
+    if (!fbConfig) {
+        return nullptr;
+    }
+
+    // get a matching visual
+    XVisualInfo* visualInfo = s_X11.glxGetVisualFromFBConfig(s_X11.display, fbConfig);
+    if (!visualInfo) {
+        return nullptr;
+    }
+
+    return visualInfo;
+}
+
+static XVisualInfo* eglXBackend(int fbConfigId)
+{
+    EGLDisplay display = EGL_NO_DISPLAY;
+    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
+    if (display == EGL_NO_DISPLAY) {
+        return nullptr;
+    }
+
+    EGLint numConfigs = 0;
+    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+        return nullptr;
+    }
+
+    EGLint configSize = sizeof(EGLConfig) * numConfigs;
+    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
+    if (!eglConfigs) {
+        return nullptr;
+    }
+
+    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
+    EGLConfig config = eglConfigs[fbConfigId];
+
+    // we get a visual info from the config
+    EGLint visualID;
+    s_Egl.eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
+    if (visualID == 0) {
+        return nullptr;
+    }
+
+    int numVisuals = 0;
+    XVisualInfo tmp;
+    tmp.visualid = visualID;
+
+    // get a matching visual info
+    XVisualInfo* visualInfo = s_X11.getVisualInfo(s_X11.display, VisualIDMask, &tmp, &numVisuals);
+    if (!visualInfo) {
+        return nullptr;
+    }
+
+    palFree(s_Video.allocator, eglConfigs);
+    return visualInfo;
+}
+
 PalResult xCreateWindow(
     const PalWindowCreateInfo* info,
     PalWindow** outWindow)
@@ -45,9 +106,31 @@ PalResult xCreateWindow(
     unsigned long bgPixel = 0;
     unsigned long borderPixel = 0;
 
-    if (s_X11.visualInfo) {
-        visual = s_X11.visualInfo->visual;
-        depth = s_X11.visualInfo->depth;
+    // user provided a config id
+    if (info->fbConfigId) {
+        PalFBConfigBackend backend = info->fbConfigBackend;
+        XVisualInfo* visualInfo = nullptr;
+
+        if (backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
+            backend = PAL_CONFIG_BACKEND_GLX;
+        }
+
+        if (info->fbConfigBackend == PAL_CONFIG_BACKEND_GLX) {
+            visualInfo = glxBackend(info->fbConfigId);
+
+        } else if (info->fbConfigBackend == PAL_CONFIG_BACKEND_EGL) {
+            visualInfo = eglXBackend(info->fbConfigId);
+
+        } else {
+            return palMakeResult(
+                PAL_RESULT_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
+        }
+
+        // create a colormap from the visual info
+        visual = visualInfo->visual;
+        depth = visualInfo->depth;
         bgPixel = 0;
         borderPixel = 0;
         colormap = s_X11.createColormap(s_X11.display, s_X11.root, visual, AllocNone);

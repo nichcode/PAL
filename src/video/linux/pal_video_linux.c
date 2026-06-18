@@ -296,28 +296,6 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
     return s_Video.features;
 }
 
-PalResult PAL_CALL palSetFBConfig(
-    const int index,
-    PalFBConfigBackend backend)
-{
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    // X11 and wayland can only used GLX and EGL
-    if (backend == PAL_CONFIG_BACKEND_WGL) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    return s_Video.backend->setFBConfig(index, backend);
-}
-
 PalResult PAL_CALL palEnumerateMonitors(
     int32_t* count,
     PalMonitor** outMonitors)

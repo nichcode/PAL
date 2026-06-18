@@ -18,7 +18,6 @@ PalResult xInitVideo();
 void xShutdownVideo();
 void xUpdateVideo();
 
-PalResult xSetFBConfig(const int, PalFBConfigBackend);
 PalResult xEnumerateMonitors(int32_t*, PalMonitor**);
 PalResult xGetPrimaryMonitor(PalMonitor**);
 PalResult xGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
@@ -71,7 +70,6 @@ PalResult xDetachWindow(PalWindow*, void**);
 static Backend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
-    .setFBConfig = xSetFBConfig,
     .enumerateMonitors = xEnumerateMonitors,
     .getMonitorInfo = xGetMonitorInfo,
     .getPrimaryMonitor = xGetPrimaryMonitor,
@@ -129,7 +127,6 @@ PalResult wlInitVideo();
 void wlShutdownVideo();
 void wlUpdateVideo();
 
-PalResult wlSetFBConfig(const int, PalFBConfigBackend);
 PalResult wlEnumerateMonitors(int32_t*, PalMonitor**);
 PalResult wlGetPrimaryMonitor(PalMonitor**);
 PalResult wlGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
@@ -182,7 +179,6 @@ PalResult wlDetachWindow(PalWindow*, void**);
 static Backend s_wlBackend = {
     .shutdownVideo = wlShutdownVideo,
     .updateVideo = wlUpdateVideo,
-    .setFBConfig = wlSetFBConfig,
     .enumerateMonitors = wlEnumerateMonitors,
     .getMonitorInfo = wlGetMonitorInfo,
     .getPrimaryMonitor = wlGetPrimaryMonitor,

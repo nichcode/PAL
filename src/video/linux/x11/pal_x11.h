@@ -466,7 +466,6 @@ typedef struct {
     Display* display;
     Window root;
     XContext dataID;
-    XVisualInfo* visualInfo;
 
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
