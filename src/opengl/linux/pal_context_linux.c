@@ -365,4 +365,56 @@ PalResult PAL_CALL palMakeContextCurrent(
     return PAL_RESULT_SUCCESS;
 }
 
+PalResult PAL_CALL palSwapBuffers(
+    PalGLWindow* glWindow,
+    PalGLContext* context)
+{
+    if (!s_GL.initialized) {
+        palMakeResult(
+            PAL_RESULT_NOT_INITIALIZED, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
+    }
+
+    if (!context || !glWindow) {
+        palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
+    }
+
+    ContextData* data = findContextData(context);
+    if (!data) {
+        palMakeResult(
+            PAL_RESULT_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_LINUX, 
+            errno);
+    }
+
+    if (!s_GL.eglSwapBuffers(s_GL.display, data->surface)) {
+        EGLint error = s_GL.eglGetError();
+        if (error == EGL_BAD_CONTEXT) {
+            palMakeResult(
+                PAL_RESULT_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
+
+        } else if (error == EGL_BAD_SURFACE) {
+            // since we always create a window surface
+            palMakeResult(
+                PAL_RESULT_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
+
+        } else {
+            palMakeResult(
+                PAL_RESULT_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_LINUX, 
+                errno);
+        }
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
 #endif // __linux__

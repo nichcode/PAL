@@ -45,7 +45,6 @@ typedef struct {
 
 static void* PAL_CALL eventDriverWorker(void* arg)
 {
-    PalResult result;
     SharedState* shared = (SharedState*)arg;
     if (!shared) {
         palLog(nullptr, "Failed to get thread arg");
@@ -53,7 +52,7 @@ static void* PAL_CALL eventDriverWorker(void* arg)
     }
 
     PalEventDriverCreateInfo createInfo = {0};
-    result = palCreateEventDriver(&createInfo, &shared->videoEventDriver);
+    PalResult result = palCreateEventDriver(&createInfo, &shared->videoEventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create event driver");
         return nullptr;
@@ -81,7 +80,6 @@ static void* PAL_CALL eventDriverWorker(void* arg)
 
 static void* PAL_CALL rendererWorkder(void* arg)
 {
-    PalResult result;
     SharedState* shared = (SharedState*)arg;
     if (!shared) {
         palLog(nullptr, "Failed to get thread arg");
@@ -89,7 +87,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
     }
 
     // make the context current on the renderer thread
-    result = palMakeContextCurrent(&shared->window, shared->context);
+    PalResult result = palMakeContextCurrent(&shared->window, shared->context);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to make opengl context current");
         return PAL_FALSE;
@@ -129,7 +127,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
                 case PAL_EVENT_WINDOW_SIZE: {
                     uint32_t width, height;
                     palUnpackUint32(event.data, &width, &height);
-                    palLog(nullptr, "Video driver sent a resize event (%d, %d)", width, height);
+                    palLog(nullptr, "Video event driver sent a resize event (%d, %d)", width, height);
 
                     glViewport(0, 0, width, height);
                     // we can optionally send back a user event
@@ -179,6 +177,7 @@ PalBool multiThreadOpenGlTest()
         palLog(nullptr, "Failed to allocate shared state");
         return PAL_FALSE;
     }
+    memset(shared, 0, sizeof(SharedState));
 
     // create a thread that creates two event drivers
     PalThreadCreateInfo threadCreateInfo = {0};
@@ -196,7 +195,11 @@ PalBool multiThreadOpenGlTest()
     // if not we wait for it
     if (!shared->driverCreated) {
         // this will be detached automatically when done
-        palJoinThread(eventDriverThread, nullptr);
+        result = palJoinThread(eventDriverThread, nullptr);
+        if (result != PAL_RESULT_SUCCESS) {
+            logResult(result, "Failed to join thread");
+            return PAL_FALSE;
+        }
 
     } else {
         palDetachThread(eventDriverThread); // we dont need it anymore
@@ -402,7 +405,11 @@ PalBool multiThreadOpenGlTest()
 
     // we wait for the render thread to finish with
     // the current frame and destroy the context
-    palJoinThread(rendererThread, nullptr);
+    result = palJoinThread(rendererThread, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to join thread");
+        return PAL_FALSE;
+    }
 
     palDestroyGLContext(shared->context);
     palShutdownGL();

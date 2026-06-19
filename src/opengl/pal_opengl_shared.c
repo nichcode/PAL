@@ -6,7 +6,36 @@
  */
 
 #include "pal/pal_opengl.h"
+#include "pal_opengl_shared.h"
 #include <stdlib.h>
+
+PalBool checkString(
+    const char* string,
+    const char* strings)
+{
+    const char* start = strings;
+    size_t stringLen = strlen(string);
+
+    for (;;) {
+        const char* where = nullptr;
+        const char* terminator = nullptr;
+
+        where = strstr(start, string);
+        if (!where) {
+            return PAL_FALSE;
+        }
+
+        // the string was found, we find the terminator by adding the sizeof the strings
+        terminator = where + stringLen;
+        if (where == start || *(where - 1) == ' ') {
+            if (*terminator == ' ' || *terminator == '\0') {
+                return PAL_TRUE;
+            }
+        }
+
+        start = terminator;
+    }
+}
 
 const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,

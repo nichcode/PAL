@@ -156,7 +156,7 @@ palJoinThread(thread, &retval);
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
 - **Opengl:** **palInitGL()** now takes an api and instance parameter.
 - **Opengl:** rename **PalGLRelease** to **PalGLReleaseBehavior**.
-- **Opengl:** rename **palGetGLProcAddress()** to **palGetGLProcAddress()**.
+- **Opengl:** rename **palGLGetProcAddress()** to **palGetGLProcAddress()**.
 
 - **Video:** **palGetWindowHandleInfo()** now takes an info parameter.
 - **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.

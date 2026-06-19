@@ -9,6 +9,7 @@
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #include "pal_opengl_linux.h"
+#include "opengl/pal_opengl_shared.h"
 #include "pal_shared.h"
 
 #include <dlfcn.h>
@@ -20,34 +21,6 @@
 
 GLLinux s_GL = {0};
 static PalBool s_SupportedAPIs[2] = {0};
-
-static inline PalBool checkString(
-    const char* string,
-    const char* strings)
-{
-    const char* start = strings;
-    size_t stringLen = strlen(string);
-
-    for (;;) {
-        const char* where = nullptr;
-        const char* terminator = nullptr;
-
-        where = strstr(start, string);
-        if (!where) {
-            return PAL_FALSE;
-        }
-
-        // the string was found, we find the terminator by adding the sizeof the strings
-        terminator = where + stringLen;
-        if (where == start || *(where - 1) == ' ') {
-            if (*terminator == ' ' || *terminator == '\0') {
-                return PAL_TRUE;
-            }
-        }
-
-        start = terminator;
-    }
-}
 
 ContextData* getFreeContextData()
 {
@@ -600,58 +573,6 @@ void* PAL_CALL palGetGLProcAddress(const char* name)
     }
 
     return s_GL.eglGetProcAddress(name);
-}
-
-PalResult PAL_CALL palSwapBuffers(
-    PalGLWindow* glWindow,
-    PalGLContext* context)
-{
-    if (!s_GL.initialized) {
-        palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    if (!context || !glWindow) {
-        palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    ContextData* data = findContextData(context);
-    if (!data) {
-        palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    if (!s_GL.eglSwapBuffers(s_GL.display, data->surface)) {
-        EGLint error = s_GL.eglGetError();
-        if (error == EGL_BAD_CONTEXT) {
-            palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
-
-        } else if (error == EGL_BAD_SURFACE) {
-            // since we always create a window surface
-            palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
-
-        } else {
-            palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
-        }
-    }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL palSetSwapInterval(int32_t interval)

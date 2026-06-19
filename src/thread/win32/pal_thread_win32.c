@@ -110,11 +110,12 @@ PalResult PAL_CALL palJoinThread(
     }
 
     DWORD wait = WaitForSingleObject((HANDLE)thread, INFINITE);
-    if (wait == WAIT_OBJECT_0 && retval) {
-        uintptr_t ret;
-        GetExitCodeThread((HANDLE)thread, (LPDWORD)&ret);
-        *retval = (void*)ret;
-
+    if (wait == WAIT_OBJECT_0) {
+        if (retval) {
+            uintptr_t ret;
+            GetExitCodeThread((HANDLE)thread, (LPDWORD)&ret);
+            *retval = (void*)ret;
+        }
         // thread is done destroy the HANDLE
         CloseHandle((HANDLE)thread);
 

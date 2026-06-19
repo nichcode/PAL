@@ -198,7 +198,7 @@ PalResult PAL_CALL palCreateWindow(
                 GetLastError());
         }
 
-        s_Video.setPixelFormat(hdc, info->fbConfigBackend, &pfd);
+        s_Video.setPixelFormat(hdc, info->fbConfigIndex, &pfd);
         ReleaseDC(handle, hdc);
     }
 
