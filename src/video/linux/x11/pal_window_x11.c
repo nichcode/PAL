@@ -112,13 +112,10 @@ PalResult xCreateWindow(
         XVisualInfo* visualInfo = nullptr;
 
         if (backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
-            backend = PAL_CONFIG_BACKEND_GLX;
+            backend = PAL_CONFIG_BACKEND_EGL;
         }
 
-        if (info->fbConfigBackend == PAL_CONFIG_BACKEND_GLX) {
-            visualInfo = glxBackend(info->fbConfigIndex);
-
-        } else if (info->fbConfigBackend == PAL_CONFIG_BACKEND_EGL) {
+        if (backend == PAL_CONFIG_BACKEND_EGL) {
             visualInfo = eglXBackend(info->fbConfigIndex);
 
         } else {
