@@ -23,11 +23,11 @@ static int xErrorHandler(
     return 0;
 }
 
-static XVisualInfo* glxBackend(const int fbConfigId)
+static XVisualInfo* glxBackend(const int fbConfigIndex)
 {
     int count = 0;
     GLXFBConfig* configs = s_X11.glxGetFBConfigs(s_X11.display, s_X11.screen, &count);
-    GLXFBConfig fbConfig = configs[fbConfigId];
+    GLXFBConfig fbConfig = configs[fbConfigIndex];
     if (!fbConfig) {
         return nullptr;
     }
@@ -41,7 +41,7 @@ static XVisualInfo* glxBackend(const int fbConfigId)
     return visualInfo;
 }
 
-static XVisualInfo* eglXBackend(int fbConfigId)
+static XVisualInfo* eglXBackend(int fbConfigIndex)
 {
     EGLDisplay display = EGL_NO_DISPLAY;
     display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
@@ -61,7 +61,7 @@ static XVisualInfo* eglXBackend(int fbConfigId)
     }
 
     s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    EGLConfig config = eglConfigs[fbConfigId];
+    EGLConfig config = eglConfigs[fbConfigIndex];
 
     // we get a visual info from the config
     EGLint visualID;
@@ -107,7 +107,7 @@ PalResult xCreateWindow(
     unsigned long borderPixel = 0;
 
     // user provided a config id
-    if (info->fbConfigId) {
+    if (info->fbConfigIndex) {
         PalFBConfigBackend backend = info->fbConfigBackend;
         XVisualInfo* visualInfo = nullptr;
 
@@ -116,10 +116,10 @@ PalResult xCreateWindow(
         }
 
         if (info->fbConfigBackend == PAL_CONFIG_BACKEND_GLX) {
-            visualInfo = glxBackend(info->fbConfigId);
+            visualInfo = glxBackend(info->fbConfigIndex);
 
         } else if (info->fbConfigBackend == PAL_CONFIG_BACKEND_EGL) {
-            visualInfo = eglXBackend(info->fbConfigId);
+            visualInfo = eglXBackend(info->fbConfigIndex);
 
         } else {
             return palMakeResult(

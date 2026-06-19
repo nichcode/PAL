@@ -13,7 +13,7 @@
 #include "pal_shared.h"
 #include <stdlib.h>
 
-EGLConfig eglWlBackend(const int fbConfigId)
+EGLConfig eglWlBackend(const int fbConfigIndex)
 {
     EGLDisplay display = EGL_NO_DISPLAY;
     display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
@@ -33,7 +33,7 @@ EGLConfig eglWlBackend(const int fbConfigId)
     }
 
     s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    return eglConfigs[fbConfigId];
+    return eglConfigs[fbConfigIndex];
 }
 
 PalResult wlCreateWindow(
@@ -173,7 +173,7 @@ PalResult wlCreateWindow(
     }
 
     // user provided a config id
-    if (info->fbConfigId) {
+    if (info->fbConfigIndex) {
         PalFBConfigBackend backend = info->fbConfigBackend;
         EGLConfig config = nullptr;
 
@@ -182,7 +182,7 @@ PalResult wlCreateWindow(
         }
 
         if (backend == PAL_CONFIG_BACKEND_EGL) {
-            config = eglWlBackend(info->fbConfigId);
+            config = eglWlBackend(info->fbConfigIndex);
 
         } else {
             return palMakeResult(

@@ -139,6 +139,8 @@ typedef struct {
     PalGLExtensions extensions;
     uint32_t major;
     uint32_t minor;
+    PalGLBackend backend;
+    PalGLAPI api;
     char vendor[PAL_GL_VENDOR_NAME_SIZE];
     char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE];
     char version[PAL_GL_VERSION_NAME_SIZE];
@@ -214,11 +216,10 @@ typedef struct {
  * `Linux`: This is the Display associated with the connection. 
  * `Windows`: This is the HINSTANCE of the process.
  * 
+ * @param[in] api The api to use. (eg. PAL_GL_API_OPENGL). Call palGetSupportedGLAPIs() to check
+ * if an api is supported on `instance`.
  * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay). 
  * Must not be nullptr.
- * @param[in] backend The backend to use. (eg. PAL_GL_BACKEND_WGL).
- * @param[in] api The backend api to use. (eg. PAL_GL_API_OPENGL). Some apis are not compatible
- * with some backends.
  * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
  * default.
  *
@@ -231,9 +232,8 @@ typedef struct {
  * @sa palShutdownGL
  */
 PAL_API PalResult PAL_CALL palInitGL(
-    void* instance,
-    PalGLBackend backend,
     PalGLAPI api,
+    void* instance,
     const PalAllocator* allocator);
 
 /**
@@ -448,27 +448,18 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
 PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
 
 /**
- * @brief Get the backend of the opengl system.
+ * @brief Get supported opengl APIs
+ * 
+ * @param[in] instance The instance (eg. HINSTANCE or XDisplay).
  *
- * The opengl system must be initialized before this call.
+ * @return An array of bools or nullptr on failure.
  *
- * Thread safety: Thread safe.
- *
- * @since 2.0
- */
-PAL_API PalGLBackend PAL_CALL palGetGLBackend();
-
-/**
- * @brief Get the api of the opengl system.
- *
- * The opengl system must be initialized before this call.
- *
- * Thread safety: Thread safe.
+ * Thread safety: Must only be called from the main thread.
  *
  * @since 2.0
  */
-PAL_API PalGLAPI PAL_CALL palGetGLAPI();
+PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance);
 
-/** @} */ // end of pal_opengl group
+/** @} */
 
 #endif // _PAL_OPENGL_H

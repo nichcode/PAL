@@ -14,24 +14,35 @@ PalBool openglFBConfigTest()
         return PAL_FALSE;
     }
 
-    // get the instance or display handle and pass it to the opengl system
-    // This must be called before the opengl system is initialized
-    palGLSetInstance(palGetInstance());
+    // check if opengl API is supported or fallback to opengl es
+    PalGLAPI openglAPI;
+    void* videoInstance = palGetInstance();
+    const PalBool* supportedAPIs = palGetSupportedGLAPIs(videoInstance);
+    if (supportedAPIs) {
+        if (supportedAPIs[PAL_GL_API_OPENGL]) {
+            openglAPI = PAL_GL_API_OPENGL;
 
-    // initialize the opengl system
-    result = palInitGL(nullptr);
+        } else {
+            openglAPI = PAL_GL_API_OPENGL_ES;
+        }
+
+    } else {
+        palLog(nullptr, "Failed to get supported opengl apis");
+        return PAL_FALSE;
+    }
+
+    // initialize the opengl system. This loads the icd.
+    result = palInitGL(openglAPI, videoInstance, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize opengl: %s", error);
+        logResult(result, "Failed to initialize opengl");
         return PAL_FALSE;
     }
 
     // enumerate supported opengl framebuffer configs
     int32_t fbCount = 0;
-    result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
+    result = palEnumerateGLFBConfigs(&fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
+        logResult(result, "Failed to query GL FBConfigs");
         return PAL_FALSE;
     }
 
@@ -49,11 +60,9 @@ PalBool openglFBConfigTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    result = palEnumerateGLFBConfigs(nullptr, &fbCount, fbConfigs);
+    result = palEnumerateGLFBConfigs(&fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
-        palFree(nullptr, fbConfigs);
+        logResult(result, "Failed to query GL FBConfigs");
         return PAL_FALSE;
     }
 

@@ -163,11 +163,19 @@ project "PAL"
     end
 
     if (PAL_BUILD_OPENGL_MODULE) then
+        files { "src/opengl/pal_opengl_shared.c" }
+
         filter {"system:windows", "configurations:*"}
-            files { "src/opengl/pal_opengl_win32.c" }
+            files { 
+                "src/opengl/win32/pal_context_win32.c",
+                "src/opengl/win32/pal_opengl_win32.c"
+            }
 
         filter {"system:linux", "configurations:*"}
-            files { "src/opengl/pal_opengl_linux.c" }
+            files { 
+                "src/opengl/linux/pal_context_linux.c",
+                "src/opengl/linux/pal_opengl_linux.c"
+            }
 
         filter {}
     end

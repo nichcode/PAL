@@ -584,7 +584,7 @@ typedef struct {
     const char* appName;     /**< If nullptr, `PAL` will be used.*/
     const char* instanceName;  /**< If nullptr, `title` will be used.*/
     PalFBConfigBackend fbConfigBackend;
-    int32_t fbConfigId;
+    int32_t fbConfigIndex;
     uint32_t width;          /**< Width in pixels.*/
     uint32_t height;         /**< Width in pixels.*/
     PalBool show;            /**< Show after creation.*/
@@ -869,9 +869,9 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  *
  * The video system must be initialized before this call.
  * 
- * `PalWindowCreateInfo::fbConfigId` is the loop index from the drivers supported FBConfigs.
+ * `PalWindowCreateInfo::fbConfigIndex` is the loop index from the drivers supported FBConfigs.
  * `PalWindowCreateInfo::fbConfigBackend` is used to tell the video system the source of
- * `PalWindowCreateInfo::fbConfigId`.
+ * `PalWindowCreateInfo::fbConfigIndex`.
  *
  * Example Flow:
  * Enumerate and select your FBConfig using any backend(EGL, GLX, WGL)

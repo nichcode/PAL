@@ -171,7 +171,7 @@ PalResult PAL_CALL palCreateWindow(
     }
 
     // set the pixel format is set
-    if (info->fbConfigId) {
+    if (info->fbConfigIndex) {
         // clang-format off
         if (info->fbConfigBackend == PAL_CONFIG_BACKEND_EGL  ||
             info->fbConfigBackend == PAL_CONFIG_BACKEND_GLX) {
@@ -189,7 +189,7 @@ PalResult PAL_CALL palCreateWindow(
         PIXELFORMATDESCRIPTOR pfd;
         if (!s_Video.describePixelFormat(
                 hdc,
-                info->fbConfigId,
+                info->fbConfigIndex,
                 sizeof(PIXELFORMATDESCRIPTOR),
                 &pfd)) {
             return palMakeResult(

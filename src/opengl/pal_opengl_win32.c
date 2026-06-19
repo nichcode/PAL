@@ -966,7 +966,7 @@ PalResult PAL_CALL palMakeContextCurrent(
     return PAL_RESULT_SUCCESS;
 }
 
-void* PAL_CALL palGLGetProcAddress(const char* name)
+void* PAL_CALL palGetGLProcAddress(const char* name)
 {
     if (!s_Wgl.initialized) {
         return nullptr;

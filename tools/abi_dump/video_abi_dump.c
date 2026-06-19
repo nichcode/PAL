@@ -349,7 +349,7 @@ static void windowDump()
     uint32_t yOffset4 = offsetof(PalWindowCreateInfo, appName);
     uint32_t yOffset5 = offsetof(PalWindowCreateInfo, instanceName);
     uint32_t yOffset6 = offsetof(PalWindowCreateInfo, fbConfigBackend);
-    uint32_t yOffset7 = offsetof(PalWindowCreateInfo, fbConfigId);
+    uint32_t yOffset7 = offsetof(PalWindowCreateInfo, fbConfigIndex);
     uint32_t yOffset8 = offsetof(PalWindowCreateInfo, width);
     uint32_t yOffset9 = offsetof(PalWindowCreateInfo, height);
     uint32_t yOffset10 = offsetof(PalWindowCreateInfo, show);
@@ -394,7 +394,7 @@ static void windowDump()
     palLog(nullptr, "appName @          %u           %u", xOffset4, yOffset4);
     palLog(nullptr, "instanceName @     %u           %u", xOffset5, yOffset5);
     palLog(nullptr, "fbConfigBackend @  %u           %u", xOffset6, yOffset6);
-    palLog(nullptr, "fbConfigId @       %u           %u", xOffset7, yOffset7);
+    palLog(nullptr, "fbConfigIndex @       %u           %u", xOffset7, yOffset7);
     palLog(nullptr, "width @            %u           %u", xOffset8, yOffset8);
     palLog(nullptr, "height @           %u           %u", xOffset9, yOffset9);
     palLog(nullptr, "show @             %u           %u", xOffset10, yOffset10);

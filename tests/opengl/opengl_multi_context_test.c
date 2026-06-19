@@ -17,18 +17,17 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask); // use GL typedefs
 PalBool openglMultiContextTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
-    PalResult result;
-    PalEventDriver* eventDriver = nullptr;
-    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
 
     // fill the event driver create info
+    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     eventDriverCreateInfo.allocator = nullptr; // default allocator
     eventDriverCreateInfo.callback = nullptr;  // for callback dispatch
     eventDriverCreateInfo.queue = nullptr;     // default queue
     eventDriverCreateInfo.userData = nullptr;  // null
 
     // create the event driver
-    result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
+    PalEventDriver* eventDriver = nullptr;
+    PalResult result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create event driver");
         return PAL_FALSE;
@@ -43,31 +42,35 @@ PalBool openglMultiContextTest()
         return PAL_FALSE;
     }
 
-    // get the instance or display handle and pass it to the opengl system
-    // This must be called before the opengl system is initialized
-    palGLSetInstance(palGetInstance());
+    // check if opengl API is supported or fallback to opengl es
+    PalGLAPI openglAPI;
+    void* videoInstance = palGetInstance();
+    const PalBool* supportedAPIs = palGetSupportedGLAPIs(videoInstance);
+    if (supportedAPIs) {
+        if (supportedAPIs[PAL_GL_API_OPENGL]) {
+            openglAPI = PAL_GL_API_OPENGL;
 
-    // initialize the opengl system
-    result = palInitGL(nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize opengl: %s", error);
+        } else {
+            openglAPI = PAL_GL_API_OPENGL_ES;
+        }
+
+    } else {
+        palLog(nullptr, "Failed to get supported opengl apis");
         return PAL_FALSE;
     }
 
-    PalWindow* window = nullptr;
-    PalGLContext* context = nullptr;
-    PalWindowCreateInfo createInfo = {0};
-    PalGLContextCreateInfo contextCreateInfo = {0};
-    int32_t fbCount = 0;
-    PalBool running = PAL_FALSE;
-
-    // enumerate supported opengl framebuffer configs
-    // glWindow must be nullptr
-    result = palEnumerateGLFBConfigs(nullptr, &fbCount, nullptr);
+    // initialize the opengl system. This loads the icd.
+    result = palInitGL(openglAPI, videoInstance, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
+        logResult(result, "Failed to initialize opengl");
+        return PAL_FALSE;
+    }
+    
+    // enumerate supported opengl framebuffer configs
+    int32_t fbCount = 0;
+    result = palEnumerateGLFBConfigs(&fbCount, nullptr);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to query GL FBConfigs");
         return PAL_FALSE;
     }
 
@@ -85,12 +88,9 @@ PalBool openglMultiContextTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    // glWindow must be nullptr
-    result = palEnumerateGLFBConfigs(nullptr, &fbCount, fbConfigs);
+    result = palEnumerateGLFBConfigs(&fbCount, fbConfigs);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to query GL FBConfigs: %s", error);
-        palFree(nullptr, fbConfigs);
+        logResult(result, "Failed to query GL FBConfigs");
         return PAL_FALSE;
     }
 
@@ -129,40 +129,7 @@ PalBool openglMultiContextTest()
     palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
     palLog(nullptr, "");
 
-    // set the FBConfig that will be used by PAL video system
-    // to create windows. this must be set before creating a window
-    // for this example, we set the closest we desired.
-    // If pal_opengl and pal_video will be used together,
-    // then its recommended to use PAL_CONFIG_BACKEND_PAL_OPENGL
-
-    // NOTE: If PAL video system will not be used,
-    // users need to call the direct OS call to achieve this.
-    result = palSetFBConfig(closest->index, PAL_CONFIG_BACKEND_PAL_OPENGL);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set GL FBConfig: %s", error);
-        return PAL_FALSE;
-    }
-
-    // if not using pal_opengl with pal_video
-    // we get the backend string from the opengl system and
-    // get the backend from it
-    // Possible values are `wgl`, `glx`, `gles`, `egl`.
-    // PalFBConfigBackend backend;
-    // const char* glBackendString = palGLGetBackend();
-    // if (strcmp(glBackendString, "wgl") == 0) {
-    //     backend = PAL_CONFIG_BACKEND_WGL;
-
-    // } else if (strcmp(glBackendString, "glx") == 0) {
-    //     backend = PAL_CONFIG_BACKEND_GLX;
-
-    // } else if (strcmp(glBackendString, "gles") == 0) {
-    //     backend = PAL_CONFIG_BACKEND_GLES;
-
-    // } else if (strcmp(glBackendString, "egl") == 0) {
-    //     backend = PAL_CONFIG_BACKEND_EGL;
-    // }
-
+    PalWindowCreateInfo createInfo = {0};
     createInfo.monitor = nullptr; // use default monitor
     createInfo.height = 480;
     createInfo.width = 640;
@@ -178,7 +145,13 @@ PalBool openglMultiContextTest()
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
     }
 
+    // set the backend and the fbConfig. We use PAL_CONFIG_BACKEND_PAL_OPENGL
+    // because we are using both pal_video and pal_opengl
+    createInfo.fbConfigBackend = PAL_CONFIG_BACKEND_PAL_OPENGL;
+    createInfo.fbConfigIndex = closest->index;
+    
     // create the window with the create info struct
+    PalWindow* window = nullptr;
     result = palCreateWindow(&createInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create window");
@@ -216,6 +189,7 @@ PalBool openglMultiContextTest()
     const PalGLInfo* info = palGetGLInfo();
 
     // fill the context create info with the closest FBConfig
+    PalGLContextCreateInfo contextCreateInfo = {0};
     contextCreateInfo.debug = PAL_TRUE;        // debug context
     contextCreateInfo.fbConfig = closest;  // we use the closest to what we want
     contextCreateInfo.major = info->major; // context major
@@ -240,20 +214,17 @@ PalBool openglMultiContextTest()
     }
 
     // create the opengl context with the context create info
+    PalGLContext* context = nullptr;
     result = palCreateGLContext(&contextCreateInfo, &context);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create opengl context: %s", error);
-        palFree(nullptr, fbConfigs);
+        logResult(result, "Failed to create opengl context");
         return PAL_FALSE;
     }
 
     // make the context current and optionally set vsync if supported
     result = palMakeContextCurrent(&glWindow, context);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to make opengl context current: %s", error);
-        palFree(nullptr, fbConfigs);
+        logResult(result, "Failed to make opengl context current");
         return PAL_FALSE;
     }
 
@@ -265,13 +236,13 @@ PalBool openglMultiContextTest()
     // load function procs
     PFNGLCLEARCOLORPROC glClearColor = nullptr;
     PFNGLCLEARPROC glClear = nullptr;
-    glClearColor = (PFNGLCLEARCOLORPROC)palGLGetProcAddress("glClearColor");
-    glClear = (PFNGLCLEARPROC)palGLGetProcAddress("glClear");
+    glClearColor = (PFNGLCLEARCOLORPROC)palGetGLProcAddress("glClearColor");
+    glClear = (PFNGLCLEARPROC)palGetGLProcAddress("glClear");
 
     // set clear color
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-    running = PAL_TRUE;
+    PalBool running = PAL_TRUE;
     while (running) {
         // update the video system to push video events
         palUpdateVideo();
@@ -301,9 +272,7 @@ PalBool openglMultiContextTest()
         // swap buffers
         result = palSwapBuffers(&glWindow, context);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to swap buffers: %s", error);
-            palFree(nullptr, fbConfigs);
+            logResult(result, "Failed to swap buffers");
             return PAL_FALSE;
         }
     }
@@ -316,18 +285,14 @@ PalBool openglMultiContextTest()
     context = nullptr;
     result = palCreateGLContext(&contextCreateInfo, &context);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create opengl context: %s", error);
-        palFree(nullptr, fbConfigs);
+        logResult(result, "Failed to create opengl context");
         return PAL_FALSE;
     }
 
     // make the context current on this thread
     result = palMakeContextCurrent(&glWindow, context);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to make opengl context current: %s", error);
-        palFree(nullptr, fbConfigs);
+        logResult(result, "Failed to make opengl context current");
         return PAL_FALSE;
     }
 
@@ -358,9 +323,7 @@ PalBool openglMultiContextTest()
         glClear(0x00004000); // GL_COLOR_BUFFER_BIT
         result = palSwapBuffers(&glWindow, context);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to swap buffers: %s", error);
-            palFree(nullptr, fbConfigs);
+            logResult(result, "Failed to swap buffers");
             return PAL_FALSE;
         }
     }

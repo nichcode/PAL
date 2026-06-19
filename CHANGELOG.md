@@ -133,7 +133,7 @@ palJoinThread(thread, &retval);
 
 - **Graphics:** Added **Graphics System To PAL**.
 
-palGetGLAPI
+- **Opengl:** Added **palGetSupportedGLAPIs()**.
 
 ### Changed
 - **All systems:** All enum types have been changed to defines and explicit width types.
@@ -154,18 +154,16 @@ palGetGLAPI
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
 
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
-- **Opengl:** **palInitGL()** now takes a instance parameter.
+- **Opengl:** **palInitGL()** now takes an api and instance parameter.
 - **Opengl:** rename **PalGLRelease** to **PalGLReleaseBehavior**.
-- **Opengl:** rename **palGLGetProcAddress()** to **palGetGLProcAddress()**.
-- **Opengl:** rename **palGLGetBackend()** to **palGetGLBackend()**.
-- **Opengl:** **palGetGLBackend()** now returns a **PalGLBackend**.
+- **Opengl:** rename **palGetGLProcAddress()** to **palGetGLProcAddress()**.
 
 - **Video:** **palGetWindowHandleInfo()** now takes an info parameter.
 - **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.
 - **Video:** **palGetMouseWheelDelta()** now takes floats instead of uint32_t.
 - **Video:** **palInitVideo()** now takes a preferredInstance parameter.
 - **Video:** **PalWindowCreateInfo** now has `appName`, `instanceName`, `fbConfigBackend` and 
-`fbConfigId` fields.
+`fbConfigIndex` fields.
 
 ### Removed
 - **Core:** Removed **PAL_RESULT_NULL_POINTER** result code.
@@ -191,6 +189,7 @@ palGetGLAPI
 - **Core:** Removed **PAL_RESULT_INVALID_FBCONFIG_BACKEND** result code.
 
 - **Opengl:** Removed **palGLSetInstance** function.
+- **Opengl:** Removed **palGLGetBackend** function.
 
 - **Video:** Removed **palGetVideoFeaturesEx** function.
 - **Video:** Removed **palGetWindowHandleInfoEx** function.

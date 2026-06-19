@@ -5,22 +5,34 @@
 
 PalBool openglTest()
 {
-    // initialize the video system and create a window
+    // initialize the video system
     PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
         return PAL_FALSE;
     }
 
-    // get the instance or display handle and pass it to the opengl system
-    // This must be called before the opengl system is initialized
-    palGLSetInstance(palGetInstance());
+    // check if opengl API is supported or fallback to opengl es
+    PalGLAPI openglAPI;
+    void* videoInstance = palGetInstance();
+    const PalBool* supportedAPIs = palGetSupportedGLAPIs(videoInstance);
+    if (supportedAPIs) {
+        if (supportedAPIs[PAL_GL_API_OPENGL]) {
+            openglAPI = PAL_GL_API_OPENGL;
+
+        } else {
+            openglAPI = PAL_GL_API_OPENGL_ES;
+        }
+
+    } else {
+        palLog(nullptr, "Failed to get supported opengl apis");
+        return PAL_FALSE;
+    }
 
     // initialize the opengl system. This loads the icd.
-    result = palInitGL(nullptr);
+    result = palInitGL(openglAPI, videoInstance, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize opengl: %s", error);
+        logResult(result, "Failed to initialize opengl");
         return PAL_FALSE;
     }
 
