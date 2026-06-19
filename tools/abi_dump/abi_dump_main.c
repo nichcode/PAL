@@ -97,6 +97,10 @@ int main(int argc, char** argv)
         videoABIDump(verbose);
     }
 
+    if (dumpOpengl) {
+        openglABIDump(verbose);
+    }
+
     if (dumpVersion) {
         palLog(nullptr, "PAL ABI dump %s", VERSION);
     }
