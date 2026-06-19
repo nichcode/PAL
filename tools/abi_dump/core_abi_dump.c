@@ -7,7 +7,7 @@
 
 #include "dumps.h"
 
-static void versionDump()
+static void versionDump(PalBool verbose)
 {
     uint32_t xSize = 12;
     uint32_t xAlign = 4;
@@ -35,24 +35,26 @@ static void versionDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalVersion");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field         Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalVersion");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field         Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size          %u          %u", xSize, ySize);
-    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
-    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-    palLog(nullptr, "major @       %u           %u", xOffset1, yOffset1);
-    palLog(nullptr, "minor @       %u           %u", xOffset2, yOffset2);
-    palLog(nullptr, "build @       %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size          %u          %u", xSize, ySize);
+        palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+        palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
+        palLog(nullptr, "major @       %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "minor @       %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "build @       %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void allocatorDump()
+static void allocatorDump(PalBool verbose)
 {
     uint32_t xSize = 24;
     uint32_t xAlign = 8;
@@ -80,24 +82,26 @@ static void allocatorDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalAllocator");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field         Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalAllocator");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field         Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size          %u          %u", xSize, ySize);
-    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
-    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-    palLog(nullptr, "allocate @    %u           %u", xOffset1, yOffset1);
-    palLog(nullptr, "free @        %u           %u", xOffset2, yOffset2);
-    palLog(nullptr, "userData @    %u          %u", xOffset3, yOffset3);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size          %u          %u", xSize, ySize);
+        palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+        palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
+        palLog(nullptr, "allocate @    %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "free @        %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "userData @    %u          %u", xOffset3, yOffset3);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void loggerDump()
+static void loggerDump(PalBool verbose)
 {
     uint32_t xSize = 16;
     uint32_t xAlign = 8;
@@ -122,23 +126,25 @@ static void loggerDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalLogger");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field         Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalLogger");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field         Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size          %u          %u", xSize, ySize);
-    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
-    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-    palLog(nullptr, "allocate @    %u           %u", xOffset1, yOffset1);
-    palLog(nullptr, "userData @    %u           %u", xOffset2, yOffset2);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size          %u          %u", xSize, ySize);
+        palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+        palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
+        palLog(nullptr, "allocate @    %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "userData @    %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-void coreABIDump()
+void coreABIDump(PalBool verbose)
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -146,7 +152,7 @@ void coreABIDump()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    versionDump();
-    allocatorDump();
-    loggerDump();
+    versionDump(verbose);
+    allocatorDump(verbose);
+    loggerDump(verbose);
 }

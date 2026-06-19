@@ -8,7 +8,7 @@
 #include "dumps.h"
 #include "pal/pal_system.h"
 
-static void platformDump()
+static void platformDump(PalBool verbose)
 {
     uint32_t xSize = 60;
     uint32_t xAlign = 4;
@@ -45,27 +45,29 @@ static void platformDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalPlatformInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field          Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalPlatformInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field          Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size           %u           %u", xSize, ySize);
-    palLog(nullptr, "align          %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding        %u            %u", xPadding, yPadding);
-    palLog(nullptr, "type @         %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "apiType @      %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "totalMemory @  %u            %u", xOffset3, yOffset3);
-    palLog(nullptr, "totalRAM @     %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "version @      %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "name @         %u           %u", xOffset6, yOffset6);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size           %u           %u", xSize, ySize);
+        palLog(nullptr, "align          %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding        %u            %u", xPadding, yPadding);
+        palLog(nullptr, "type @         %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "apiType @      %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "totalMemory @  %u            %u", xOffset3, yOffset3);
+        palLog(nullptr, "totalRAM @     %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "version @      %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "name @         %u           %u", xOffset6, yOffset6);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void cpuDump()
+static void cpuDump(PalBool verbose)
 {
     uint32_t xSize = 112;
     uint32_t xAlign = 8;
@@ -111,30 +113,32 @@ static void cpuDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalCPUInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field                   Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalCPUInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field                   Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size                    %u          %u", xSize, ySize);
-    palLog(nullptr, "align                   %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding                 %u            %u", xPadding, yPadding);
-    palLog(nullptr, "features @              %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "architecture @          %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "numCores @              %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "cacheL1 @               %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "cacheL2 @               %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "cacheL3 @               %u           %u", xOffset6, yOffset6);
-    palLog(nullptr, "numLogicalProcessors @  %u           %u", xOffset7, yOffset7);
-    palLog(nullptr, "vendor @                %u           %u", xOffset8, yOffset8);
-    palLog(nullptr, "model @                 %u           %u", xOffset9, yOffset9);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size                    %u          %u", xSize, ySize);
+        palLog(nullptr, "align                   %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding                 %u            %u", xPadding, yPadding);
+        palLog(nullptr, "features @              %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "architecture @          %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "numCores @              %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "cacheL1 @               %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "cacheL2 @               %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "cacheL3 @               %u           %u", xOffset6, yOffset6);
+        palLog(nullptr, "numLogicalProcessors @  %u           %u", xOffset7, yOffset7);
+        palLog(nullptr, "vendor @                %u           %u", xOffset8, yOffset8);
+        palLog(nullptr, "model @                 %u           %u", xOffset9, yOffset9);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-void systemABIDump()
+void systemABIDump(PalBool verbose)
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -142,6 +146,6 @@ void systemABIDump()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    platformDump();
-    cpuDump(); 
+    platformDump(verbose);
+    cpuDump(verbose); 
 }

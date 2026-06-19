@@ -8,7 +8,7 @@
 #include "dumps.h"
 #include "pal/pal_event.h"
 
-static void eventDump()
+static void eventDump(PalBool verbose)
 {
     uint32_t xSize = 32;
     uint32_t xAlign = 8;
@@ -39,25 +39,27 @@ static void eventDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalEvent");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field         Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalEvent");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field         Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size          %u          %u", xSize, ySize);
-    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
-    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-    palLog(nullptr, "userId @      %u           %u", xOffset1, yOffset1);
-    palLog(nullptr, "data @        %u           %u", xOffset2, yOffset2);
-    palLog(nullptr, "data2 @       %u          %u", xOffset3, yOffset3);
-    palLog(nullptr, "type @        %u          %u", xOffset4, yOffset4);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size          %u          %u", xSize, ySize);
+        palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+        palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
+        palLog(nullptr, "userId @      %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "data @        %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "data2 @       %u          %u", xOffset3, yOffset3);
+        palLog(nullptr, "type @        %u          %u", xOffset4, yOffset4);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void eventQueueDump()
+static void eventQueueDump(PalBool verbose)
 {
     uint32_t xSize = 24;
     uint32_t xAlign = 8;
@@ -85,24 +87,26 @@ static void eventQueueDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalEventQueue");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field         Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalEventQueue");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field         Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size          %u          %u", xSize, ySize);
-    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
-    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-    palLog(nullptr, "push @        %u           %u", xOffset1, yOffset1);
-    palLog(nullptr, "poll @        %u           %u", xOffset2, yOffset2);
-    palLog(nullptr, "userData @    %u          %u", xOffset3, yOffset3);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size          %u          %u", xSize, ySize);
+        palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+        palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
+        palLog(nullptr, "push @        %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "poll @        %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "userData @    %u          %u", xOffset3, yOffset3);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void eventCreateInfoDump()
+static void eventCreateInfoDump(PalBool verbose)
 {
     uint32_t xSize = 32;
     uint32_t xAlign = 8;
@@ -133,25 +137,27 @@ static void eventCreateInfoDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalEventDriverCreateInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field         Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalEventDriverCreateInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field         Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size          %u          %u", xSize, ySize);
-    palLog(nullptr, "align         %u           %u", xAlign, yAlign);
-    palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-    palLog(nullptr, "allocator @   %u           %u", xOffset1, yOffset1);
-    palLog(nullptr, "queue @       %u           %u", xOffset2, yOffset2);
-    palLog(nullptr, "callback @    %u          %u", xOffset3, yOffset3);
-    palLog(nullptr, "userData @    %u          %u", xOffset4, yOffset4);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size          %u          %u", xSize, ySize);
+        palLog(nullptr, "align         %u           %u", xAlign, yAlign);
+        palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
+        palLog(nullptr, "allocator @   %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "queue @       %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "callback @    %u          %u", xOffset3, yOffset3);
+        palLog(nullptr, "userData @    %u          %u", xOffset4, yOffset4);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-void eventABIDump()
+void eventABIDump(PalBool verbose)
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -159,7 +165,7 @@ void eventABIDump()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    eventDump();
-    eventQueueDump();
-    eventCreateInfoDump();
+    eventDump(verbose);
+    eventQueueDump(verbose);
+    eventCreateInfoDump(verbose);
 }

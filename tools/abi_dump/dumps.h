@@ -20,10 +20,10 @@ static const char* s_PassedString = "PASSED";
 #define PAL_ALIGNOF(type) __alignof__(type)
 #endif // _MSC_VER
 
-void coreABIDump();
-void eventABIDump();
-void threadABIDump();
-void systemABIDump();
-void videoABIDump();
+void coreABIDump(PalBool verbose);
+void eventABIDump(PalBool verbose);
+void threadABIDump(PalBool verbose);
+void systemABIDump(PalBool verbose);
+void videoABIDump(PalBool verbose);
 
 #endif // _DUMPS_H

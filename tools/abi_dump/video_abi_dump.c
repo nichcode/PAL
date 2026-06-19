@@ -8,7 +8,7 @@
 #include "dumps.h"
 #include "pal/pal_video.h"
 
-static void monitorDump()
+static void monitorDump(PalBool verbose)
 {
     uint32_t xSize = 64;
     uint32_t xAlign = 4;
@@ -54,30 +54,32 @@ static void monitorDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalMonitorInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field          Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalMonitorInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field          Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size           %u           %u", xSize, ySize);
-    palLog(nullptr, "align          %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding        %u            %u", xPadding, yPadding);
-    palLog(nullptr, "x @            %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "y @            %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "width @        %u            %u", xOffset3, yOffset3);
-    palLog(nullptr, "height @       %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "dpi @          %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "refreshRate @  %u           %u", xOffset6, yOffset6);
-    palLog(nullptr, "orientation @  %u           %u", xOffset7, yOffset7);
-    palLog(nullptr, "primary @      %u           %u", xOffset8, yOffset8);
-    palLog(nullptr, "name @         %u           %u", xOffset9, yOffset9);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size           %u           %u", xSize, ySize);
+        palLog(nullptr, "align          %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding        %u            %u", xPadding, yPadding);
+        palLog(nullptr, "x @            %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "y @            %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "width @        %u            %u", xOffset3, yOffset3);
+        palLog(nullptr, "height @       %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "dpi @          %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "refreshRate @  %u           %u", xOffset6, yOffset6);
+        palLog(nullptr, "orientation @  %u           %u", xOffset7, yOffset7);
+        palLog(nullptr, "primary @      %u           %u", xOffset8, yOffset8);
+        palLog(nullptr, "name @         %u           %u", xOffset9, yOffset9);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void monitorModeDump()
+static void monitorModeDump(PalBool verbose)
 {
     uint32_t xSize = 16;
     uint32_t xAlign = 4;
@@ -108,25 +110,27 @@ static void monitorModeDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalMonitorMode");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field           Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalMonitorMode");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field           Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size            %u           %u", xSize, ySize);
-    palLog(nullptr, "align           %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding         %u            %u", xPadding, yPadding);
-    palLog(nullptr, "bpp @           %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "refreshRate @   %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "width @         %u            %u", xOffset3, yOffset3);
-    palLog(nullptr, "height @        %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size            %u           %u", xSize, ySize);
+        palLog(nullptr, "align           %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding         %u            %u", xPadding, yPadding);
+        palLog(nullptr, "bpp @           %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "refreshRate @   %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "width @         %u            %u", xOffset3, yOffset3);
+        palLog(nullptr, "height @        %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void flashDump()
+static void flashDump(PalBool verbose)
 {
     uint32_t xSize = 16;
     uint32_t xAlign = 8;
@@ -154,24 +158,26 @@ static void flashDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalFlashInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field        Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalFlashInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field        Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size         %u           %u", xSize, ySize);
-    palLog(nullptr, "align        %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
-    palLog(nullptr, "flags @      %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "interval @   %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "count @      %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size         %u           %u", xSize, ySize);
+        palLog(nullptr, "align        %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
+        palLog(nullptr, "flags @      %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "interval @   %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "count @      %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void iconDump()
+static void iconDump(PalBool verbose)
 {
     uint32_t xSize = 16;
     uint32_t xAlign = 8;
@@ -199,24 +205,26 @@ static void iconDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalIconCreateInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field        Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalIconCreateInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field        Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size         %u           %u", xSize, ySize);
-    palLog(nullptr, "align        %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
-    palLog(nullptr, "pixels @     %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "width @      %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "height @     %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size         %u           %u", xSize, ySize);
+        palLog(nullptr, "align        %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
+        palLog(nullptr, "pixels @     %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "width @      %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "height @     %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void cursorDump()
+static void cursorDump(PalBool verbose)
 {
     uint32_t xSize = 24;
     uint32_t xAlign = 8;
@@ -250,26 +258,28 @@ static void cursorDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalCursorCreateInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field        Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalCursorCreateInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field        Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size         %u           %u", xSize, ySize);
-    palLog(nullptr, "align        %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
-    palLog(nullptr, "pixels @     %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "width @      %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "height @     %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "xHotspot @   %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "yHotspot @   %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size         %u           %u", xSize, ySize);
+        palLog(nullptr, "align        %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
+        palLog(nullptr, "pixels @     %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "width @      %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "height @     %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "xHotspot @   %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "yHotspot @   %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void windowInfoDump()
+static void windowInfoDump(PalBool verbose)
 {
     uint32_t xSize = 40;
     uint32_t xAlign = 8;
@@ -303,26 +313,28 @@ static void windowInfoDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalWindowHandleInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field             Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalWindowHandleInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field             Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size              %u           %u", xSize, ySize);
-    palLog(nullptr, "align             %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding           %u            %u", xPadding, yPadding);
-    palLog(nullptr, "nativeDisplay @   %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "nativeWindow @    %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "nativeHandle1 @   %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "nativeHandle2 @   %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "nativeHandle3 @   %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size              %u           %u", xSize, ySize);
+        palLog(nullptr, "align             %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding           %u            %u", xPadding, yPadding);
+        palLog(nullptr, "nativeDisplay @   %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "nativeWindow @    %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "nativeHandle1 @   %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "nativeHandle2 @   %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "nativeHandle3 @   %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-static void windowDump()
+static void windowDump(PalBool verbose)
 {
     uint32_t xSize = 72;
     uint32_t xAlign = 8;
@@ -380,34 +392,36 @@ static void windowDump()
     }
     // clang-format on
 
-    palLog(nullptr, "PalWindowCreateInfo");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Field            Expected     Actual");
-    palLog(nullptr, "===========================================");
+    palLog(nullptr, "struct: PalWindowCreateInfo");
+    if (verbose) {
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Field              Expected     Actual");
+        palLog(nullptr, "===========================================");
 
-    palLog(nullptr, "size               %u           %u", xSize, ySize);
-    palLog(nullptr, "align              %u            %u", xAlign, yAlign);
-    palLog(nullptr, "padding            %u            %u", xPadding, yPadding);
-    palLog(nullptr, "style @            %u            %u", xOffset1, yOffset1);
-    palLog(nullptr, "title @            %u            %u", xOffset2, yOffset2);
-    palLog(nullptr, "monitor @          %u           %u", xOffset3, yOffset3);
-    palLog(nullptr, "appName @          %u           %u", xOffset4, yOffset4);
-    palLog(nullptr, "instanceName @     %u           %u", xOffset5, yOffset5);
-    palLog(nullptr, "fbConfigBackend @  %u           %u", xOffset6, yOffset6);
-    palLog(nullptr, "fbConfigIndex @       %u           %u", xOffset7, yOffset7);
-    palLog(nullptr, "width @            %u           %u", xOffset8, yOffset8);
-    palLog(nullptr, "height @           %u           %u", xOffset9, yOffset9);
-    palLog(nullptr, "show @             %u           %u", xOffset10, yOffset10);
-    palLog(nullptr, "maximized @        %u           %u", xOffset11, yOffset11);
-    palLog(nullptr, "minimized @        %u           %u", xOffset12, yOffset12);
-    palLog(nullptr, "center @           %u           %u", xOffset13, yOffset13);
-    palLog(nullptr, "===========================================");
+        palLog(nullptr, "size               %u           %u", xSize, ySize);
+        palLog(nullptr, "align              %u            %u", xAlign, yAlign);
+        palLog(nullptr, "padding            %u            %u", xPadding, yPadding);
+        palLog(nullptr, "style @            %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "title @            %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "monitor @          %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "appName @          %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "instanceName @     %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "fbConfigBackend @  %u           %u", xOffset6, yOffset6);
+        palLog(nullptr, "fbConfigIndex @    %u           %u", xOffset7, yOffset7);
+        palLog(nullptr, "width @            %u           %u", xOffset8, yOffset8);
+        palLog(nullptr, "height @           %u           %u", xOffset9, yOffset9);
+        palLog(nullptr, "show @             %u           %u", xOffset10, yOffset10);
+        palLog(nullptr, "maximized @        %u           %u", xOffset11, yOffset11);
+        palLog(nullptr, "minimized @        %u           %u", xOffset12, yOffset12);
+        palLog(nullptr, "center @           %u           %u", xOffset13, yOffset13);
+        palLog(nullptr, "===========================================");
+    }
 
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 }
 
-void videoABIDump()
+void videoABIDump(PalBool verbose)
 {
     palLog(nullptr, "");
     palLog(nullptr, "===========================================");
@@ -415,11 +429,11 @@ void videoABIDump()
     palLog(nullptr, "===========================================");
     palLog(nullptr, "");
 
-    monitorDump();
-    monitorModeDump();
-    flashDump();
-    iconDump();
-    cursorDump();
-    windowInfoDump();
-    windowDump();
+    monitorDump(verbose);
+    monitorModeDump(verbose);
+    flashDump(verbose);
+    iconDump(verbose);
+    cursorDump(verbose);
+    windowInfoDump(verbose);
+    windowDump(verbose);
 }

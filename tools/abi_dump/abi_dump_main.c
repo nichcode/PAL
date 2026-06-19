@@ -29,6 +29,7 @@ int main(int argc, char** argv)
     PalBool dumpVideo = PAL_FALSE;
     PalBool dumpVersion = PAL_FALSE;
     PalBool dumpHelp = PAL_FALSE;
+    PalBool verbose = PAL_FALSE;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--all") == 0) {
@@ -60,6 +61,9 @@ int main(int argc, char** argv)
 
         } else if (strcmp(argv[i], "--help") == 0) {
             dumpHelp = PAL_TRUE;
+
+        } else if (strcmp(argv[i], "--verbose") == 0) {
+            verbose = PAL_TRUE;
         }
     }
 
@@ -74,23 +78,23 @@ int main(int argc, char** argv)
     }
 
     if (dumpCore) {
-        coreABIDump();
+        coreABIDump(verbose);
     }
 
     if (dumpEvent) {
-        eventABIDump();
+        eventABIDump(verbose);
     }
 
     if (dumpThread) {
-        threadABIDump();
+        threadABIDump(verbose);
     }
 
     if (dumpSystem) {
-        systemABIDump();
+        systemABIDump(verbose);
     }
 
     if (dumpVideo) {
-        videoABIDump();
+        videoABIDump(verbose);
     }
 
     if (dumpVersion) {
@@ -101,15 +105,16 @@ int main(int argc, char** argv)
         palLog(nullptr, "USAGE: %s [options]", EXE_NAME);
         palLog(nullptr, "Options:");
         palLog(nullptr, "  --help          Display available options");
-        palLog(nullptr, "  --version       Display ABI dump version information");
-        palLog(nullptr, "  --all           Display all PAL structs ABI information");
-        palLog(nullptr, "  --core          Display PAL core structs ABI information");
-        palLog(nullptr, "  --event         Display PAL event structs ABI information");
-        palLog(nullptr, "  --graphics      Display PAL graphics structs ABI information");
-        palLog(nullptr, "  --opengl        Display PAL opengl structs ABI information");
-        palLog(nullptr, "  --system        Display PAL system structs ABI information");
-        palLog(nullptr, "  --thread        Display PAL thread structs ABI information");
-        palLog(nullptr, "  --video         Display PAL video structs ABI information");
+        palLog(nullptr, "  --version       Display version");
+        palLog(nullptr, "  --verbose       Display ABI dump information");
+        palLog(nullptr, "  --all           Check ABI for all PAL structs");
+        palLog(nullptr, "  --core          Check ABI for core PAL structs");
+        palLog(nullptr, "  --event         Check ABI for event PAL structs");
+        palLog(nullptr, "  --graphics      Check ABI for graphics PAL structs");
+        palLog(nullptr, "  --opengl        Check ABI for opengl PAL structs");
+        palLog(nullptr, "  --system        Check ABI for system PAL structs");
+        palLog(nullptr, "  --thread        Check ABI for thread PAL structs");
+        palLog(nullptr, "  --video         Check ABI for video PAL structs");
     }
 
     return 0;
