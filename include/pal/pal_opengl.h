@@ -23,10 +23,6 @@
 #define PAL_GL_APIENTRY
 #endif // _WIN32
 
-#define PAL_GL_VENDOR_NAME_SIZE 32
-#define PAL_GL_VERSION_NAME_SIZE 64
-#define PAL_GL_GRAPHICS_CARD_NAME_SIZE 64
-
 #define PAL_GL_EXTENSION_CREATE_CONTEXT (1ULL << 0)
 #define PAL_GL_EXTENSION_CONTEXT_PROFILE (1ULL << 1)
 #define PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 (1ULL << 2)
@@ -72,7 +68,7 @@ typedef struct PalGLContext PalGLContext;
  * All opengl extensions follow the format `PAL_GL_EXTENSION_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalGLExtensions;
 
@@ -83,7 +79,7 @@ typedef uint64_t PalGLExtensions;
  * All opengl profiles follow the format `PAL_GL_PROFILE_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalGLProfile;
 
@@ -94,7 +90,7 @@ typedef uint32_t PalGLProfile;
  * All context reset behavior follow the format `PAL_GL_CONTEXT_RESET_**`
  * for consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalGLContextReset;
 
@@ -105,7 +101,7 @@ typedef uint32_t PalGLContextReset;
  * All opengl context release behavior follow the format
  * `PAL_GL_RELEASE_BEHAVIOR_**` for consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalGLReleaseBehavior;
 
@@ -133,7 +129,7 @@ typedef uint32_t PalGLAPI;
  * @struct PalGLInfo
  * @brief Information about the opengl driver.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     PalGLExtensions extensions;
@@ -141,16 +137,16 @@ typedef struct {
     uint32_t minor;
     PalGLBackend backend;
     PalGLAPI api;
-    char vendor[PAL_GL_VENDOR_NAME_SIZE];
-    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE];
-    char version[PAL_GL_VERSION_NAME_SIZE];
+    char vendor[32];
+    char graphicsCard[64];
+    char version[64];
 } PalGLInfo;
 
 /**
  * @struct PalGLFBConfig
  * @brief Information about an opengl framebuffer.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     PalBool doubleBuffer;
@@ -186,7 +182,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     const PalGLWindow* window;
@@ -228,7 +224,7 @@ typedef struct {
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since 1.0
  * @sa palShutdownGL
  */
 PAL_API PalResult PAL_CALL palInitGL(
@@ -282,7 +278,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since 1.0
  * @sa palInitGL
  */
 PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
