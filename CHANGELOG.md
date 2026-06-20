@@ -123,33 +123,104 @@ palJoinThread(thread, &retval);
 
 ## [2.0.0] - 2026-01-00
 
+### Core
+Added
+- Added `PalBool` type.
+- Added `palGetResultCode()` to get the result code from a result value.
+- Added `PAL_RESULT_SUCCESS` define.
+- Added `PAL_RESULT_INVALID_ARGUMENT` define.
+- Added `PAL_RESULT_OUT_OF_MEMORY` define.
+- Added `PAL_RESULT_PLATFORM_FAILURE` define.
+- Added `PAL_RESULT_TIMEOUT` define.
+- Added `PAL_RESULT_INVALID_HANDLE` define.
+- Added `PAL_RESULT_FEATURE_NOT_SUPPORTED` define.
+- Added `PAL_RESULT_NOT_INITIALIZED` define.
+- Added `PAL_RESULT_INVALID_OPERATION` define.
+- Added `PAL_RESULT_DEVICE_LOST` define.
+- Added `PAL_RESULT_OUT_OF_DATE` define.
+- Added `PAL_TRUE` define.
+- Added `PAL_FALSE` define.
+
+Changed
+- `PalResult` is now a `uint64_t` instead of an enum.
+- Replaced `Int8` with `int8_t`.
+- Replaced `Int16` with `int16_t`.
+- Replaced `Int32` with `int32_t`.
+- Replaced `Int64` with `int64_t`.
+- Replaced `IntPtr` with `intptr_t`.
+- Replaced `Uint8` with `uint8_t`.
+- Replaced `Uint16` with `uint16_t`.
+- Replaced `Uint32` with `uint32_t`.
+- Replaced `Uint64` with `uint64_t`.
+- Replaced `UintPtr` with `uintptr_t`.
+- `palFormatResult()` now takes two more additional parameters.
+- `palGetVersion()` now returns `void` and takes an output parameter.
+
+Removed
+- `PalResult` enum.
+- `Int8` type.
+- `Int16` type.
+- `Int32` type.
+- `Int64` type.
+- `IntPtr` type.
+- `Uint8` type.
+- `Uint16` type.
+- `Uint32` type.
+- `Uint64` type.
+- `UintPtr` type.
+- `PAL_RESULT_SUCCESS` enum value.
+- `PAL_RESULT_INVALID_ARGUMENT` enum value.
+- `PAL_RESULT_OUT_OF_MEMORY` enum value.
+- `PAL_RESULT_PLATFORM_FAILURE` enum value.
+- `PAL_RESULT_TIMEOUT` enum value.
+- `PAL_RESULT_INVALID_OPERATION` enum value.
+- `PAL_RESULT_NULL_POINTER` enum value.
+- `PAL_RESULT_INVALID_ALLOCATOR` enum value.
+- `PAL_RESULT_ACCESS_DENIED` enum value.
+- `PAL_RESULT_INSUFFICIENT_BUFFER` enum value.
+- `PAL_RESULT_INVALID_THREAD` enum value.
+- `PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED` enum value.
+- `PAL_RESULT_VIDEO_NOT_INITIALIZED` enum value.
+- `PAL_RESULT_INVALID_MONITOR` enum value.
+- `PAL_RESULT_INVALID_MONITOR_MODE` enum value.
+- `PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED` enum value.
+- `PAL_RESULT_INVALID_KEYCODE` enum value.
+- `PAL_RESULT_INVALID_SCANCODE` enum value.
+- `PAL_RESULT_INVALID_MOUSE_BUTTON` enum value.
+- `PAL_RESULT_GL_NOT_INITIALIZED` enum value.
+- `PAL_RESULT_INVALID_GL_WINDOW` enum value.
+- `PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED` enum value.
+- `PAL_RESULT_INVALID_GL_FBCONFIG` enum value.
+- `PAL_RESULT_INVALID_GL_VERSION` enum value.
+- `PAL_RESULT_INVALID_GL_PROFILE` enum value.
+- `PAL_RESULT_INVALID_GL_CONTEXT` enum value.
+- `PAL_RESULT_INVALID_FBCONFIG_BACKEND` enum value.
+
+### Video
+Added
+
+Changed
+
+Removed
+
+### Opengl
+Added
+
+Changed
+
+Removed
+
+### Thread
+Added
+
+Changed
+
+Removed
+
 ### Features
-- **Core:** Added **PAL_RESULT_INVALID_HANDLE** result code.
-- **Core:** Added **PAL_RESULT_FEATURE_NOT_SUPPORTED** result code.
-- **Core:** Added **PAL_RESULT_NOT_INITIALIZED** result code.
-- **Core:** Added **PAL_RESULT_DEVICE_LOST** result code.
-- **Core:** Added **PAL_RESULT_OUT_OF_DATE** result code.
-- **Core:** Added **palGetResultCode()**.
-
-- **Graphics:** Added **Graphics System To PAL**.
-
 - **Opengl:** Added **palGetSupportedGLAPIs()**.
 
 ### Changed
-- **All systems:** All enum types have been changed to defines and explicit width types.
-
-- **Core:** Rename **Int8** to **int8_t**.
-- **Core:** Rename **Int16** to **int16_t**.
-- **Core:** Rename **Int32** to **int32_t**.
-- **Core:** Rename **Int64** to **int64_t**.
-- **Core:** Rename **IntPtr** to **intptr_t**.
-- **Core:** Rename **Uint8** to **uint8_t**.
-- **Core:** Rename **Uint16** to **uint16_t**.
-- **Core:** Rename **Uint32** to **uint32_t**.
-- **Core:** Rename **Uint64** to **uint64_t**.
-- **Core:** Rename **UintPtr** to **uintptr_t**.
-- **Core:** **palFormatResult()** now takes two additional parameters.
-- **Core:** **palGetVersion()** now takes a parameter and returns nothing.
 
 - **Thread:** **palJoinThread()** now takes a void** for retval parameter.
 
@@ -166,27 +237,7 @@ palJoinThread(thread, &retval);
 `fbConfigIndex` fields.
 
 ### Removed
-- **Core:** Removed **PAL_RESULT_NULL_POINTER** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_ALLOCATOR** result code.
-- **Core:** Removed **PAL_RESULT_ACCESS_DENIED** result code.
-- **Core:** Removed **PAL_RESULT_INSUFFICIENT_BUFFER** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_THREAD** result code.
-- **Core:** Removed **PAL_RESULT_THREAD_FEATURE_NOT_SUPPORTED** result code.
-- **Core:** Removed **PAL_RESULT_VIDEO_NOT_INITIALIZED** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_MONITOR** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_MONITOR_MODE** result code.
-- **Core:** Removed **PAL_RESULT_VIDEO_FEATURE_NOT_SUPPORTED** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_KEYCODE** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_SCANCODE** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_MOUSE_BUTTON** result code.
-- **Core:** Removed **PAL_RESULT_GL_NOT_INITIALIZED** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_GL_WINDOW** result code.
-- **Core:** Removed **PAL_RESULT_GL_EXTENSION_NOT_SUPPORTED** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_GL_FBCONFIG** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_GL_VERSION** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_GL_PROFILE** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_GL_CONTEXT** result code.
-- **Core:** Removed **PAL_RESULT_INVALID_FBCONFIG_BACKEND** result code.
+
 
 - **Opengl:** Removed **palGLSetInstance** function.
 - **Opengl:** Removed **palGLGetBackend** function.

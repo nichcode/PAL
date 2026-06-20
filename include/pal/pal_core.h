@@ -95,7 +95,7 @@ typedef uint32_t PalBool;
  *
  * All result codes follow the format `PAL_RESULT_**` for consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalResult;
 
@@ -212,7 +212,7 @@ PAL_API uint16_t PAL_CALL palGetResultCode(PalResult result);
  *
  * Thread safety: Thread safe if buffer is per thread.
  *
- * @since 2.0
+ * @since 1.0
  */
 PAL_API void PAL_CALL palFormatResult(
     PalResult result, 
@@ -226,7 +226,7 @@ PAL_API void PAL_CALL palFormatResult(
  *
  * Thread safety: Thread safe if version is per thread.
  *
- * @since 2.0
+ * @since 1.0
  * @sa palGetVersionString
  */
 PAL_API void PAL_CALL palGetVersion(PalVersion* version);
