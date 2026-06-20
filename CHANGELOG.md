@@ -125,34 +125,35 @@ palJoinThread(thread, &retval);
 
 ### Core
 Added
-- Added `PalBool` type.
-- Added `palGetResultCode()` to get the result code from a result value.
-- Added `PAL_RESULT_SUCCESS` define.
-- Added `PAL_RESULT_INVALID_ARGUMENT` define.
-- Added `PAL_RESULT_OUT_OF_MEMORY` define.
-- Added `PAL_RESULT_PLATFORM_FAILURE` define.
-- Added `PAL_RESULT_TIMEOUT` define.
-- Added `PAL_RESULT_INVALID_HANDLE` define.
-- Added `PAL_RESULT_FEATURE_NOT_SUPPORTED` define.
-- Added `PAL_RESULT_NOT_INITIALIZED` define.
-- Added `PAL_RESULT_INVALID_OPERATION` define.
-- Added `PAL_RESULT_DEVICE_LOST` define.
-- Added `PAL_RESULT_OUT_OF_DATE` define.
-- Added `PAL_TRUE` define.
-- Added `PAL_FALSE` define.
+- `PalBool` type.
+- `palGetResultCode()` to get the result code from a result value.
+- `PAL_RESULT_SUCCESS` define.
+- `PAL_RESULT_INVALID_ARGUMENT` define.
+- `PAL_RESULT_OUT_OF_MEMORY` define.
+- `PAL_RESULT_PLATFORM_FAILURE` define.
+- `PAL_RESULT_TIMEOUT` define.
+- `PAL_RESULT_INVALID_HANDLE` define.
+- `PAL_RESULT_FEATURE_NOT_SUPPORTED` define.
+- `PAL_RESULT_NOT_INITIALIZED` define.
+- `PAL_RESULT_INVALID_OPERATION` define.
+- `PAL_RESULT_DEVICE_LOST` define.
+- `PAL_RESULT_OUT_OF_DATE` define.
+- `PAL_RESULT_MAX` define.
+- `PAL_TRUE` define.
+- `PAL_FALSE` define.
 
 Changed
-- `PalResult` is now a `uint64_t` instead of an enum.
-- Replaced `Int8` with `int8_t`.
-- Replaced `Int16` with `int16_t`.
-- Replaced `Int32` with `int32_t`.
-- Replaced `Int64` with `int64_t`.
-- Replaced `IntPtr` with `intptr_t`.
-- Replaced `Uint8` with `uint8_t`.
-- Replaced `Uint16` with `uint16_t`.
-- Replaced `Uint32` with `uint32_t`.
-- Replaced `Uint64` with `uint64_t`.
-- Replaced `UintPtr` with `uintptr_t`.
+- `PalResult` is now `uint64_t`.
+- `Int8` is now `int8_t`.
+- `Int16` is now `int16_t`.
+- `Int32` is now `int32_t`.
+- `Int64` is now `int64_t`.
+- `IntPtr` is now `intptr_t`.
+- `Uint8` is now `uint8_t`.
+- `Uint16` is now `uint16_t`.
+- `Uint32` is now `uint32_t`.
+- `Uint64` is now `uint64_t`.
+- `UintPtr` is now `uintptr_t`.
 - `palFormatResult()` now takes two more additional parameters.
 - `palGetVersion()` now returns `void` and takes an output parameter.
 
@@ -196,12 +197,70 @@ Removed
 - `PAL_RESULT_INVALID_GL_CONTEXT` enum value.
 - `PAL_RESULT_INVALID_FBCONFIG_BACKEND` enum value.
 
-### Video
+### Event
 Added
+- Added `PAL_EVENT_WINDOW_CLOSE` define.
+- Added `PAL_EVENT_WINDOW_SIZE` define.
+- Added `PAL_EVENT_WINDOW_MOVE` define.
+- Added `PAL_EVENT_WINDOW_STATE` define.
+- Added `PAL_EVENT_WINDOW_FOCUS` define.
+- Added `PAL_EVENT_WINDOW_VISIBILITY` define.
+- Added `PAL_EVENT_WINDOW_MODAL_BEGIN` define.
+- Added `PAL_EVENT_WINDOW_MODAL_END` define.
+- Added `PAL_EVENT_MONITOR_DPI_CHANGED` define.
+- Added `PAL_EVENT_MONITOR_LIST_CHANGED` define.
+- Added `PAL_EVENT_KEYDOWN` define.
+- Added `PAL_EVENT_KEYREPEAT` define.
+- Added `PAL_EVENT_KEYUP` define.
+- Added `PAL_EVENT_MOUSE_BUTTONDOWN` define.
+- Added `PAL_EVENT_MOUSE_BUTTONUP` define.
+- Added `PAL_EVENT_MOUSE_MOVE` define.
+- Added `PAL_EVENT_MOUSE_DELTA` define.
+- Added `PAL_EVENT_MOUSE_WHEEL` define.
+- Added `PAL_EVENT_USER` define.
+- Added `PAL_EVENT_KEYCHAR` define.
+- Added `PAL_EVENT_WINDOW_DECORATION_MODE` define.
+- Added `PAL_EVENT_MAX` define.
+- Added `PAL_DISPATCH_NONE` define.
+- Added `PAL_DISPATCH_CALLBACK` define.
+- Added `PAL_DISPATCH_POLL` define.
+- Added `PAL_DISPATCH_MAX` define.
+- Added `PAL_DECORATION_MODE_CLIENT_SIDE` define.
+- Added `PAL_DECORATION_MODE_CLIENT_SIDE` define.
 
 Changed
+- `PalEventType` is now a `uint64_t`.
 
 Removed
+- `PalEventType` enum.
+- `PAL_EVENT_WINDOW_CLOSE` enum value.
+- `PAL_EVENT_WINDOW_SIZE` enum value.
+- `PAL_EVENT_WINDOW_MOVE` enum value.
+- `PAL_EVENT_WINDOW_STATE` enum value.
+- `PAL_EVENT_WINDOW_FOCUS` enum value.
+- `PAL_EVENT_WINDOW_VISIBILITY` enum value.
+- `PAL_EVENT_WINDOW_MODAL_BEGIN` enum value.
+- `PAL_EVENT_WINDOW_MODAL_END` enum value.
+- `PAL_EVENT_MONITOR_DPI_CHANGED` enum value.
+- `PAL_EVENT_MONITOR_LIST_CHANGED` enum value.
+- `PAL_EVENT_KEYDOWN` enum value.
+- `PAL_EVENT_KEYREPEAT` enum value.
+- `PAL_EVENT_KEYUP` enum value.
+- `PAL_EVENT_MOUSE_BUTTONDOWN` enum value.
+- `PAL_EVENT_MOUSE_BUTTONUP` enum value.
+- `PAL_EVENT_MOUSE_MOVE` enum value.
+- `PAL_EVENT_MOUSE_DELTA` enum value.
+- `PAL_EVENT_MOUSE_WHEEL` enum value.
+- `PAL_EVENT_USER` enum value.
+- `PAL_EVENT_KEYCHAR` enum value.
+- `PAL_EVENT_WINDOW_DECORATION_MODE` enum value.
+- `PAL_EVENT_MAX` enum value.
+- `PAL_DISPATCH_NONE` enum value.
+- `PAL_DISPATCH_CALLBACK` enum value.
+- `PAL_DISPATCH_POLL` enum value.
+- `PAL_DISPATCH_MAX` enum value.
+- `PAL_DECORATION_MODE_CLIENT_SIDE` enum value.
+- `PAL_DECORATION_MODE_CLIENT_SIDE` enum value.
 
 ### Opengl
 Added

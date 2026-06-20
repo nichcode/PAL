@@ -220,22 +220,10 @@
 
 #define PAL_EVENT_MAX 21
 
-/**
- * No dispatch.
- */
 #define PAL_DISPATCH_NONE 0
-
-/**
- * Dispatch to event callback.
- */
 #define PAL_DISPATCH_CALLBACK 1
-
-/**
- * Dispatch to event queue.
- */
 #define PAL_DISPATCH_POLL 2
-
-#define PAL_DISPATCH_MAX
+#define PAL_DISPATCH_MAX 3
 
 /**
  * @struct PalEventDriver
@@ -260,7 +248,7 @@ typedef struct PalEvent PalEvent;
  * All decoration types follow the format `PAL_DECORATION_MODE_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.3
  */
 typedef uint32_t PalDecorationMode;
 
@@ -271,7 +259,7 @@ typedef uint32_t PalDecorationMode;
  * All event types follow the format `PAL_EVENT_**` for consistency and
  * API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalEventType;
 
@@ -282,7 +270,7 @@ typedef uint64_t PalEventType;
  * All dispatch modes follow the format `PAL_DISPATCH_**` for consistency
  * and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalDispatchMode;
 

@@ -70,6 +70,7 @@
 #define PAL_RESULT_INVALID_OPERATION 8
 #define PAL_RESULT_DEVICE_LOST 9
 #define PAL_RESULT_OUT_OF_DATE 10
+#define PAL_RESULT_MAX 11
 
 /**
  * @typedef PalBool
