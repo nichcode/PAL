@@ -251,11 +251,11 @@
 #define PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10 3 /**< HDR.*/
 #define PAL_SURFACE_FORMAT_COUNT 4
 
-#define PAL_WINDOW_INSTANCE_TYPE_WAYLAND 0
-#define PAL_WINDOW_INSTANCE_TYPE_X11 1
-#define PAL_WINDOW_INSTANCE_TYPE_XCB 2
-#define PAL_WINDOW_INSTANCE_TYPE_WIN32 3
-#define PAL_WINDOW_INSTANCE_TYPE_COUNT 4
+#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_WAYLAND 0
+#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_X11 1
+#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_XCB 2
+#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_WIN32 3
+#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_COUNT 4
 
 #define PAL_SHADER_STAGE_UNDEFINED 0
 #define PAL_SHADER_STAGE_VERTEX 1
@@ -281,7 +281,7 @@
 #define PAL_SAMPLE_COUNT_16 4
 #define PAL_SAMPLE_COUNT_32 5
 #define PAL_SAMPLE_COUNT_64 6
-#define PAL_SAMPLE_COUNT 7
+#define PAL_SAMPLE_COUNT_COUNT 7 /**< Name redundancy is intentionally consistent.*/
 
 #define PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST 0
 #define PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 1
@@ -426,6 +426,93 @@
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX 3
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL 4
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_COUNT 5
+
+#define PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL 0
+#define PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL 1
+#define PAL_ACCELERATION_STRUCTURE_TYPE_COUNT 2
+
+#define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD 0
+#define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE 1
+#define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_COUNT 2
+
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD (1ULL << 0)
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE (1ULL << 1)
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY (1ULL << 2)
+
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE (1ULL << 0)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE (1ULL << 1)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE (1ULL << 2)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1ULL << 3)
+
+#define PAL_GEOMETRY_TYPE_TRIANGLE 0
+#define PAL_GEOMETRY_TYPE_AABBS 1
+#define PAL_GEOMETRY_TYPE_COUNT 2
+
+#define PAL_GEOMETRY_FLAG_OPAQUE (1ULL << 0)
+#define PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT (1ULL << 1)
+
+#define PAL_INDEX_TYPE_UINT16 0
+#define PAL_INDEX_TYPE_UINT32 1
+#define PAL_INDEX_TYPE_COUNT 2
+
+#define PAL_BUFFER_USAGE_VERTEX (1ULL << 0)
+#define PAL_BUFFER_USAGE_INDEX (1ULL << 1)
+#define PAL_BUFFER_USAGE_UNIFORM (1ULL << 2)
+#define PAL_BUFFER_USAGE_STORAGE (1ULL << 3)
+#define PAL_BUFFER_USAGE_TRANSFER_SRC (1ULL << 4)
+#define PAL_BUFFER_USAGE_TRANSFER_DST (1ULL << 5)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE (1ULL << 6)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH (1ULL << 7)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT (1ULL << 8)
+#define PAL_BUFFER_USAGE_DEVICE_ADDRESS (1ULL << 9)
+#define PAL_BUFFER_USAGE_INDIRECT (1ULL << 10)
+
+#define PAL_DEBUG_MESSAGE_SEVERITY_INFO 0
+#define PAL_DEBUG_MESSAGE_SEVERITY_WARNING 1
+#define PAL_DEBUG_MESSAGE_SEVERITY_ERROR 2
+#define PAL_DEBUG_MESSAGE_SEVERITY_COUNT 3
+
+#define PAL_DEBUG_MESSAGE_TYPE_GENERAL 0
+#define PAL_DEBUG_MESSAGE_TYPE_VALIDATION 1
+#define PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE 2
+#define PAL_DEBUG_MESSAGE_TYPE_COUNT 3
+
+#define PAL_USAGE_STATE_UNDEFINED 0
+#define PAL_USAGE_STATE_PRESENT 1
+#define PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE 2
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ 3
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE 4
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ 5
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE 6
+#define PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ 7
+#define PAL_USAGE_STATE_TRANSFER_READ 8
+#define PAL_USAGE_STATE_TRANSFER_WRITE 9
+#define PAL_USAGE_STATE_VERTEX_READ 10
+#define PAL_USAGE_STATE_INDEX_READ 11
+#define PAL_USAGE_STATE_INDIRECT_READ 12
+#define PAL_USAGE_STATE_UNIFORM_READ 13
+#define PAL_USAGE_STATE_SHADER_READ 14
+#define PAL_USAGE_STATE_SHADER_WRITE 15
+#define PAL_USAGE_STATE_STORAGE_READ 16
+#define PAL_USAGE_STATE_STORAGE_WRITE 17
+#define PAL_USAGE_STATE_HOST_READ 18
+#define PAL_USAGE_STATE_HOST_WRITE 19
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ 20
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE 21
+#define PAL_USAGE_STATE_COUNT 22
+
+#define PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER 0
+#define PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
+#define PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE 2
+#define PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE 3
+#define PAL_DESCRIPTOR_TYPE_SAMPLER 4
+#define PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE 5
+#define PAL_DESCRIPTOR_TYPE_COUNT 6
+
+#define PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL 0
+#define PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT 1
+#define PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT 2
+#define PAL_RAY_TRACING_SHADER_GROUP_TYPE_COUNT 3
 
 /**
  * @struct PalAdapter
@@ -865,15 +952,15 @@ typedef uint32_t PalBorderColor;
 typedef uint32_t PalSurfaceFormat;
 
 /**
- * @typedef PalGraphicsWindowDisplayType
+ * @typedef PalGraphicsWindowInstanceType
  * @brief Display types for a graphics window.
  *
- * All graphics window display types follow the format `PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_**` for
+ * All graphics window display types follow the format `PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_**` for
  * consistency and API use.
  *
  * @since 2.0
  */
-typedef uint32_t PalGraphicsWindowDisplayType;
+typedef uint32_t PalGraphicsWindowInstanceType;
 
 /**
  * @typedef PalShaderStage
@@ -1089,6 +1176,125 @@ typedef uint32_t PalFragmentShadingRate;
 typedef uint32_t PalFragmentShadingRateCombinerOp;
 
 /**
+ * @typedef PalAccelerationStructureType
+ * @brief Acceleration structure types.
+ *
+ * All acceleration structure types follow the format `PAL_ACCELERATION_STRUCTURE_TYPE_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalAccelerationStructureType;
+
+/**
+ * @typedef PalAccelerationStructureBuildMode
+ * @brief Acceleration structure build modes.
+ *
+ * All acceleration structure build modes follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalAccelerationStructureBuildMode;
+
+/**
+ * @typedef PalAccelerationStructureBuildHints
+ * @brief Acceleration structure build hints. Multiple hints can be OR'ed together using 
+ * bitwise OR operator (`|`). Hints can be ignored by the driver.
+ *
+ * All acceleration structure build hints follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint64_t PalAccelerationStructureBuildHints;
+
+/**
+ * @typedef PalAccelerationStructureInstanceFlags
+ * @brief Acceleration structure instance flags. Multiple flags can be OR'ed together using 
+ * bitwise OR operator (`|`). Not all combinations are valid.
+ *
+ * All acceleration structure instance flags follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint64_t PalAccelerationStructureInstanceFlags;
+
+/**
+ * @typedef PalGeometryType
+ * @brief Geometry types.
+ *
+ * All geometry types follow the format `PAL_GEOMETRY_TYPE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalGeometryType;
+
+/**
+ * @typedef PalGeometryFlags
+ * @brief Geometry flags. Multiple flags can be OR'ed together using 
+ * bitwise OR operator (`|`). Not all combinations are valid.
+ *
+ * All geometry flags follow the format `PAL_GEOMETRY_FLAG_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint64_t PalGeometryFlags;
+
+/**
+ * @typedef PalIndexType
+ * @brief Index types.
+ *
+ * All index types follow the format `PAL_INDEX_TYPE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalIndexType;
+
+/**
+ * @typedef PalBufferUsages
+ * @brief Buffer usages. Multiple buffer usages can be OR'ed together using bitwise
+ * OR operator (`|`).
+ *
+ * All buffer usages follow the format `PAL_BUFFER_USAGE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint64_t PalBufferUsages;
+
+/**
+ * @typedef PalUsageState
+ * @brief Usage states.
+ *
+ * All usage states follow the format `PAL_USAGE_STATE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalUsageState;
+
+/**
+ * @typedef PalDescriptorType
+ * @brief Descriptor types.
+ *
+ * All descriptor types follow the format `PAL_DESCRIPTOR_TYPE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalDescriptorType;
+
+/**
+ * @typedef PalRayTracingShaderGroupType
+ * @brief Ray tracing shader group types.
+ *
+ * All ray tracing shader group types follow the format `PAL_RAY_TRACING_SHADER_GROUP_TYPE_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalRayTracingShaderGroupType;
+
+/**
  * @typedef PalDebugCallback
  * @brief Function pointer type used for debug callbacks.
  *
@@ -1109,221 +1315,19 @@ typedef void(PAL_CALL* PalDebugCallback)(
     const char* msg);
 
 /**
- * @typedef PalAccelerationStructureType
- * @brief Acceleration structure types.
- *
- * All acceleration structure types follow the format `PAL_ACCELERATION_STRUCTURE_TYPE_**`
- * for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL,
-    PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL
-} PalAccelerationStructureType;
-
-/**
- * @typedef PalAccelerationStructureBuildMode
- * @brief Acceleration structure build modes.
- *
- * All acceleration structure build modes follow the format 
- * `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD,
-    PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE
-} PalAccelerationStructureBuildMode;
-
-/**
- * @typedef PalAccelerationStructureBuildHints
- * @brief Acceleration structure build hints. Multiple hints can be OR'ed together using 
- * bitwise OR operator (`|`). Hints can be ignored by the driver.
- *
- * All acceleration structure build hints follow the format 
- * `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD = (1ULL << 0),
-    PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE = (1ULL << 1),
-    PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY = (1ULL << 2)
-} PalAccelerationStructureBuildHints;
-
-/**
- * @typedef PalAccelerationStructureInstanceFlags
- * @brief Acceleration structure instance flags. Multiple flags can be OR'ed together using 
- * bitwise OR operator (`|`). Not all combinations are valid.
- *
- * All acceleration structure instance flags follow the format 
- * `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE = (1ULL << 0),
-    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE = (1ULL << 1),
-    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE = (1ULL << 2),
-    PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE = (1ULL << 3)
-} PalAccelerationStructureInstanceFlags;
-
-/**
- * @typedef PalGeometryType
- * @brief Geometry types.
- *
- * All geometry types follow the format `PAL_GEOMETRY_TYPE_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_GEOMETRY_TYPE_TRIANGLE,
-    PAL_GEOMETRY_TYPE_AABBS
-} PalGeometryType;
-
-/**
- * @typedef PalGeometryFlags
- * @brief Geometry flags. Multiple flags can be OR'ed together using 
- * bitwise OR operator (`|`). Not all combinations are valid.
- *
- * All geometry flags follow the format `PAL_GEOMETRY_FLAG_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_GEOMETRY_FLAG_OPAQUE = (1ULL << 0),
-    PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT = (1ULL << 1)
-} PalGeometryFlags;
-
-/**
- * @typedef PalIndexType
- * @brief Index types.
- *
- * All index types follow the format `PAL_INDEX_TYPE_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_INDEX_TYPE_UINT16,
-    PAL_INDEX_TYPE_UINT32
-} PalIndexType;
-
-/**
- * @typedef PalBufferUsages
- * @brief Buffer usages. Multiple buffer usages can be OR'ed together using bitwise
- * OR operator (`|`).
- *
- * All buffer usages follow the format `PAL_BUFFER_USAGE_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_BUFFER_USAGE_VERTEX = (1ULL << 0),
-    PAL_BUFFER_USAGE_INDEX = (1ULL << 1),
-    PAL_BUFFER_USAGE_UNIFORM = (1ULL << 2),
-    PAL_BUFFER_USAGE_STORAGE = (1ULL << 3),
-    PAL_BUFFER_USAGE_TRANSFER_SRC = (1ULL << 4),
-    PAL_BUFFER_USAGE_TRANSFER_DST = (1ULL << 5),
-    PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE = (1ULL << 6),
-    PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH = (1ULL << 7),
-    PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT = (1ULL << 8),
-    PAL_BUFFER_USAGE_DEVICE_ADDRESS = (1ULL << 9),
-    PAL_BUFFER_USAGE_INDIRECT = (1ULL << 10)
-} PalBufferUsages;
-
-enum PalDebugMessageSeverity {
-    PAL_DEBUG_MESSAGE_SEVERITY_INFO,
-    PAL_DEBUG_MESSAGE_SEVERITY_WARNING,
-    PAL_DEBUG_MESSAGE_SEVERITY_ERROR
-};
-
-enum PalDebugMessageType {
-    PAL_DEBUG_MESSAGE_TYPE_GENERAL,
-    PAL_DEBUG_MESSAGE_TYPE_VALIDATION,
-    PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE
-};
-
-/**
- * @typedef PalUsageState
- * @brief Usage states.
- *
- * All usage states follow the format `PAL_USAGE_STATE_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_USAGE_STATE_UNDEFINED,
-
-    PAL_USAGE_STATE_PRESENT,
-    PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE,
-    PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ,
-    PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE,
-    PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ,
-    PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE,
-    PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ,
-    PAL_USAGE_STATE_TRANSFER_READ,
-    PAL_USAGE_STATE_TRANSFER_WRITE,
-    PAL_USAGE_STATE_VERTEX_READ,
-    PAL_USAGE_STATE_INDEX_READ,
-    PAL_USAGE_STATE_INDIRECT_READ,
-    PAL_USAGE_STATE_UNIFORM_READ,
-    PAL_USAGE_STATE_SHADER_READ,
-    PAL_USAGE_STATE_SHADER_WRITE,
-    PAL_USAGE_STATE_STORAGE_READ,
-    PAL_USAGE_STATE_STORAGE_WRITE,
-    PAL_USAGE_STATE_HOST_READ,
-    PAL_USAGE_STATE_HOST_WRITE,
-    PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ,
-    PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE
-} PalUsageState;
-
-/**
- * @typedef PalDescriptorType
- * @brief Descriptor types.
- *
- * All descriptor types follow the format `PAL_DESCRIPTOR_TYPE_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-    PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-    PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-    PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-    PAL_DESCRIPTOR_TYPE_SAMPLER,
-    PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE
-} PalDescriptorType;
-
-/**
- * @typedef PalRayTracingShaderGroupType
- * @brief Ray tracing shader group types.
- *
- * All ray tracing shader group types follow the format `PAL_RAY_TRACING_SHADER_GROUP_TYPE_**`
- * for consistency and API use.
- *
- * @since 2.0
- */
-typedef enum {
-    PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL,
-    PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT,
-    PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT
-} PalRayTracingShaderGroupType;
-
-/**
  * @struct PalAdapterInfo
  * @brief Information about an adapter (GPU).
  *
  * @since 2.0
  */
 typedef struct {
+    PalShaderFormats shaderFormats; /**< Supported shader formats mask (eg. Spirv, DXIL, ect).*/
+    uint64_t vram;
+    uint64_t sharedMemory;
     uint32_t vendorId;
     uint32_t deviceId;
     PalAdapterType type;            /**< Discrete, Integrated, etc.*/
     PalAdapterApiType apiType;      /**< Vulkan, D3D12, etc.*/
-    PalShaderFormats shaderFormats; /**< Supported shader formats mask (eg. Spirv, DXIL, ect).*/
-    uint64_t vram;
-    uint64_t sharedMemory;
     char name[PAL_ADAPTER_NAME_SIZE];
     char backendName[PAL_ADAPTER_NAME_SIZE]; /**< Adapter backend name (eg. `PAL`, `Custom`).*/
 } PalAdapterInfo;
@@ -1453,9 +1457,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    uint64_t supportedDepthResolveModes;
+    uint64_t supportedStencilResolveModes;
     PalBool independentResolve;
-    PalBool depthResolves[PAL_MAX_RESOLVE_MODES];
-    PalBool stencilResolves[PAL_MAX_RESOLVE_MODES];
+    PalBool independentResolveNone; /**< If PAL_TRUE, depth or stencil can be NONE while the other is resolved.*/
 } PalDepthStencilCapabilities;
 
 /**
@@ -1465,12 +1470,12 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool shadingRates[PAL_FRAGMENT_SHADING_RATE_MAX];
+    uint64_t supportedShadingRates;
+    uint64_t supportedCombinerOps;
     uint32_t minTexelWidth;
     uint32_t minTexelHeight;
     uint32_t maxTexelWidth;
     uint32_t maxTexelHeight;
-    PalBool combinerOps[PAL_MAX_COMBINER_OPS];
 } PalFragmentShadingRateCapabilities;
 
 /**
@@ -1540,9 +1545,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool presentModes[PAL_PRESENT_MODE_MAX];
-    PalBool compositeAlphas[PAL_COMPOSITE_ALPHA_MAX];
-    PalBool formats[PAL_SURFACE_FORMAT_MAX];
+    uint64_t supportedPresentModes;
+    uint64_t supportedCompositeAlphas;
+    uint64_t supportedFormats;
     uint32_t minImageCount;
     uint32_t maxImageCount;
     uint32_t minImageWidth;
@@ -1550,6 +1555,7 @@ typedef struct {
     uint32_t maxImageWidth;
     uint32_t maxImageHeight;
     uint32_t maxImageArrayLayers;
+    PalBool supportsDisabledClipping;
 } PalSurfaceCapabilities;
 
 /**
@@ -1562,8 +1568,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalGraphicsWindowDisplayType displayType; /**< Will be used only on linux platform.*/
-    void* display; /**< Can be nullptr depending on platform (eg. Windows).*/
+    PalGraphicsWindowInstanceType instanceType;
+    void* instance; /**< Must not be nullptr. (HINSTANCE on Win32 or wl_display on Wayland)*/
     void* window;  /**< Must not be nullptr.*/
 } PalGraphicsWindow;
 
@@ -1575,8 +1581,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalFormat format;
     PalImageUsages usages;
+    PalFormat format;
     PalSampleCount sampleCount; /**< Maximum supported multisample count.*/
 } PalFormatInfo;
 
@@ -1587,6 +1593,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalImageUsages usages;
     uint32_t width;            /**< Width of the image in pixels.*/
     uint32_t height;           /**< Height of the image in pixels.*/
     uint32_t depthOrArraySize; /**< Depth for 3D image and array size for 2D image.*/
@@ -1594,8 +1601,7 @@ typedef struct {
     PalSampleCount sampleCount;
     PalImageType type; /**< 1D, 2D, 3D.*/
     PalFormat format;
-    PalImageUsages usages;
-} PalImageInfo;
+} PalImageInfo; // TODO:
 
 /**
  * @struct PalClearValue
@@ -1621,6 +1627,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalImageView* imageView;        /**< Image view. Must not be nullptr.*/
+    PalImageView* resolveImageView; /**< Optional resolve image view.*/
     PalLoadOp loadOp;
     PalStoreOp storeOp;
     PalLoadOp stencilLoadOp;
@@ -1628,8 +1636,6 @@ typedef struct {
     PalResolveMode resolveMode;     /**< Used if resolveImageView is set.*/
     uint32_t texelWidth;              /**< Texel width for fragment shading rate attachment.*/
     uint32_t texelHeight;             /**< Texel height for fragment shading rate attachment.*/
-    PalImageView* imageView;        /**< Image view. Must not be nullptr.*/
-    PalImageView* resolveImageView; /**< Optional resolve image view.*/
     PalClearValue clearValue;
 } PalAttachmentDesc;
 
@@ -1642,9 +1648,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalShaderStage* shaderStages;
     uint32_t shaderStageCount;
     PalUsageState usageState;
-    PalShaderStage* shaderStages;
 } PalUsageStateInfo;
 
 /**
@@ -1682,7 +1688,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool memoryTypes[PAL_MEMORY_TYPE_MAX];
+    uint64_t supportedMemoryTypes;
     uint64_t memoryMask;
     uint64_t size;
     uint64_t alignment;
@@ -1729,7 +1735,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t imageIndex; /**< Image index to present. Must be 0 and less than max images.*/
+    uint64_t imageIndex; /**< Image index to present. Must be 0 and less than max images.*/
     uint64_t waitValue;
     PalSemaphore* waitSemaphore;
 } PalSwapchainPresentInfo;
@@ -1743,11 +1749,11 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t viewCount; /**< If > 1 `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported.*/
-    uint32_t colorAttachentCount;
     PalAttachmentDesc* colorAttachments;
     PalAttachmentDesc* depthStencilAttachment;
     PalAttachmentDesc* fragmentShadingRateAttachment;
+    uint32_t viewCount;
+    uint32_t colorAttachentCount;
 } PalRenderingInfo;
 
 /**
@@ -1760,12 +1766,12 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t viewCount; /**< If > 1 `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported.*/
-    uint32_t colorAttachentCount;
+    PalFormat* colorAttachmentsFormat;
+    uint64_t colorAttachentCount;
+    uint32_t viewCount;
     PalSampleCount multisampleCount;
     PalFormat depthStencilAttachmentFormat;
     PalFormat fragmentShadingRateAttachmentFormat;
-    PalFormat* colorAttachmentsFormat;
 } PalRenderingLayoutInfo;
 
 /**
@@ -1850,9 +1856,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    const char* semanticName;
     PalVertexSemanticID semanticID;
     PalVertexType type;
-    const char* semanticName;
 } PalVertexAttribute;
 
 /**
@@ -1870,10 +1876,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalVertexAttribute* attributes;
+    uint64_t attributeCount;
     PalVertexLayoutType type;
     uint32_t binding;
-    uint32_t attributeCount;
-    PalVertexAttribute* attributes;
 } PalVertexLayout;
 
 /**
@@ -1885,14 +1891,14 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    void* userData;
+    PalDebugCallback callback;
     PalBool denyGeneral;
     PalBool denyValidation;
     PalBool denyPerformance;
     PalBool denyInfoSeverity;
     PalBool denyWarningSeverity;
     PalBool denyErrorSeverity;
-    void* userData;
-    PalDebugCallback callback;
 } PalGraphicsDebugger;
 
 /**
@@ -1923,10 +1929,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    uint64_t sampleMask;
     PalBool enableSampleShading;
     PalBool enableAlphaToCoverage;
     PalSampleCount sampleCount;
-    uint64_t sampleMask;
     float minSampleShading;
 } PalMultisampleState;
 
@@ -1974,15 +1980,15 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool enableBlend;
     PalColorMask colorWriteMask;
+    PalBool enableBlend;
     PalBlendFactor srcColorBlendFactor;
     PalBlendFactor dstColorBlendFactor;
     PalBlendOp colorBlendOp;
     PalBlendFactor srcAlphaBlendFactor;
     PalBlendFactor dstAlphaBlendFactor;
     PalBlendOp alphaBlendOp;
-} PalColorBlendAttachment;
+} PalColorBlendAttachment; // TODO:
 
 /**
  * @struct PalFragmentShadingRateState
@@ -2006,13 +2012,13 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalAccelerationStructure* blas;
+    PalAccelerationStructureInstanceFlags flags;
     uint32_t instanceId;
     uint32_t mask;
     uint32_t hitGroupOffset;
-    PalAccelerationStructureInstanceFlags flags;
-    PalAccelerationStructure* blas;
     float transform[12];            /**< row major (3x4).*/
-} PalAccelerationStructureInstance;
+} PalAccelerationStructureInstance; // TODO:
 
 /**
  * @struct PalAccelerationStructureBuildSize
@@ -2035,14 +2041,14 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalDeviceAddress vertexBufferAddress;
+    PalDeviceAddress indexBufferAddress;
     PalVertexType vertexType;
     PalIndexType indexType;
     uint32_t vertexStride;
     uint32_t indexCount;
     uint32_t vertexCount;
-    PalDeviceAddress vertexBufferAddress;
-    PalDeviceAddress indexBufferAddress;
-} PalGeometryDataTriangle;
+} PalGeometryDataTriangle; // TODO:
 
 /**
  * @struct PalGeometryDataAABBS
@@ -2053,9 +2059,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t stride;
     PalDeviceAddress bufferAddress;
-} PalGeometryDataAABBS;
+    uint32_t stride;
+} PalGeometryDataAABBS; // TODO:
 
 /**
  * @struct PalGeometry
@@ -2066,10 +2072,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    void* data; /**< Pointer to geometry data. This will be casted based on the geometry type.*/
     PalGeometryFlags flags;
     uint32_t primitiveCount;
     PalGeometryType type;
-    void* data; /**< Pointer to geometry data. This will be casted based on the geometry type.*/
 } PalGeometry;
 
 /**
@@ -2081,16 +2087,16 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalAccelerationStructureType type;
-    uint32_t geometryCount;
-    uint32_t instanceCount;
-    PalAccelerationStructureBuildHints buildHints;
-    PalAccelerationStructureBuildMode buildMode;
-    PalDeviceAddress scratchBufferAddress;
-    PalDeviceAddress instanceBufferAddress;
     PalAccelerationStructure* dst;
     PalAccelerationStructure* src;
     PalGeometry* geometries;
+    PalDeviceAddress scratchBufferAddress;
+    PalDeviceAddress instanceBufferAddress;
+    PalAccelerationStructureBuildHints buildHints;
+    PalAccelerationStructureType type;
+    PalAccelerationStructureBuildMode buildMode;
+    uint32_t geometryCount;
+    uint32_t instanceCount;
 } PalAccelerationStructureBuildInfo;
 
 /**
@@ -2129,10 +2135,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalBuffer* buffer;
+    uint64_t offset; /**< Offset in bytes. If structured, will be divided by `stride`.*/
     uint32_t size; 
     uint32_t stride; /**< For structured buffers. Will be ignored if not supported. 0 for default.*/
-    uint64_t offset; /**< Offset in bytes. If structured, will be divided by `stride`.*/
-    PalBuffer* buffer;
 } PalDescriptorBufferInfo;
 
 /**
@@ -2180,15 +2186,15 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t layoutBindingIndex; /**< Index into the descriptor set layout bindings.*/
-    uint32_t arrayElement;
-    uint32_t descriptorCount; 
-    PalDescriptorType descriptorType;
     PalDescriptorSet* descriptorSet;
     PalDescriptorBufferInfo* bufferInfos;
     PalDescriptorImageViewInfo* imageViewInfos;
     PalDescriptorSamplerInfo* samplerInfos;
     PalDescriptorTLASInfo* tlasInfos;
+    PalDescriptorType descriptorType;
+    uint32_t layoutBindingIndex; /**< Index into the descriptor set layout bindings.*/
+    uint32_t arrayElement;
+    uint32_t descriptorCount; 
 } PalDescriptorSetWriteInfo;
 
 /**
@@ -2200,10 +2206,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalShaderStage* shaderStages;
     uint64_t offset;
     uint64_t size;
-    uint32_t shaderStageCount;
-    PalShaderStage* shaderStages;
+    uint64_t shaderStageCount;
 } PalPushConstantRange;
 
 /**
@@ -2215,11 +2221,11 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalImageAspect aspect; /**< Must be compatible with the image format.*/
     uint32_t startMipLevel;
     uint32_t mipLevelCount;
     uint32_t startArrayLayer;
     uint32_t layerArrayCount;
-    PalImageAspect aspect; /**< Must be compatible with the image format.*/
 } PalImageSubresourceRange;
 
 /**
@@ -2231,7 +2237,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t size;
+    uint64_t size;
     uint64_t dstOffset;
     uint64_t srcOffset;
 } PalBufferCopyInfo;
@@ -2297,9 +2303,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    void* localData;
     uint32_t groupIndex; /**< Index into the shader groups used to create the ray tracing pipeline.*/
     uint32_t localDataSize; /**< Must not be greater than the data size of the group.*/
-    void* localData;
 } PalShaderBindingTableRecordInfo;
 
 /**
@@ -2311,9 +2317,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
-    PalShaderStage stage;
     const char* entryName;
+    PalShaderStage stage;
+    uint32_t patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
 } PalShaderEntryInfo;
 
 /**
@@ -2325,6 +2331,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalImageUsages usages;
     uint32_t width;
     uint32_t height;
     uint32_t depthOrArraySize;
@@ -2332,8 +2339,7 @@ typedef struct {
     PalSampleCount sampleCount;
     PalImageType type;
     PalFormat format;
-    PalImageUsages usages;
-} PalImageCreateInfo;
+} PalImageCreateInfo; // TODO:
 
 /**
  * @struct PalImageCreateInfo
@@ -2359,7 +2365,7 @@ typedef struct {
  */
 typedef struct {
     PalBool enableCompare;
-    PalBool enableAnisotropy; /**< `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported.*/
+    PalBool enableAnisotropy;
     float mipLodBias;
     float minLod;
     float maxLod;
@@ -2402,10 +2408,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t entryCount;
-    uint64_t bytecodeSize;
     void* bytecode;
     PalShaderEntryInfo* entries;
+    uint64_t bytecodeSize;
+    uint64_t entryCount;
 } PalShaderCreateInfo;
 
 /**
@@ -2430,11 +2436,11 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalAccelerationStructureType type;
     PalBuffer* buffer;
     uint64_t offset;
     uint64_t size;
-} PalAccelerationStructureCreateInfo;
+    PalAccelerationStructureType type;
+} PalAccelerationStructureCreateInfo; // TODO:
 
 /**
  * @struct PalDescriptorSetLayoutCreateInfo
@@ -2446,12 +2452,12 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalShaderStage* shaderStages;
+    PalDescriptorSetLayoutBinding* bindings;
     PalBool enableDescriptorIndexing;
     uint32_t bindingCount;
     uint32_t shaderStageCount;
-    PalShaderStage* shaderStages;
-    PalDescriptorSetLayoutBinding* bindings;
-} PalDescriptorSetLayoutCreateInfo;
+} PalDescriptorSetLayoutCreateInfo; // TODO:
 
 /**
  * @struct PalDescriptorPoolCreateInfo
@@ -2463,11 +2469,11 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalDescriptorPoolBindingSize* bindingSizes;
     PalBool enableDescriptorIndexing;
     uint32_t maxDescriptorSets;
     uint32_t maxDescriptorBindingSizes;
-    PalDescriptorPoolBindingSize* bindingSizes;
-} PalDescriptorPoolCreateInfo;
+} PalDescriptorPoolCreateInfo; // TODO:
 
 /**
  * @struct PalPipelineLayoutCreateInfo
@@ -2478,10 +2484,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t descriptorSetLayoutCount;
-    uint32_t pushConstantRangeCount;
     PalDescriptorSetLayout** descriptorSetLayouts;
     PalPushConstantRange* pushConstantRanges;
+    uint32_t descriptorSetLayoutCount;
+    uint32_t pushConstantRangeCount;
 } PalPipelineLayoutCreateInfo;
 
 /**
@@ -2493,12 +2499,6 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool primitiveRestartEnable;
-    uint32_t vertexLayoutCount;
-    uint32_t colorBlendAttachmentCount;
-    uint32_t shaderCount;
-    PalIndexType indexType;  /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
-    PalPrimitiveTopology topology;
     PalPipelineLayout* pipelineLayout;
     PalShader** shaders;
     PalVertexLayout* vertexLayouts;
@@ -2508,6 +2508,12 @@ typedef struct {
     PalDepthStencilState* depthStencilState;
     PalFragmentShadingRateState* fragmentShadingRateState;
     PalRenderingLayoutInfo* renderingLayout;
+    PalBool primitiveRestartEnable;
+    uint32_t vertexLayoutCount;
+    uint32_t colorBlendAttachmentCount;
+    uint32_t shaderCount;
+    PalIndexType indexType;  /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
+    PalPrimitiveTopology topology;
 } PalGraphicsPipelineCreateInfo;
 
 /**
@@ -2555,15 +2561,15 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalPipelineLayout* pipelineLayout;
+    PalRayTracingShaderGroupCreateInfo* shaderGroups;
+    PalShader** shaders;
     uint32_t shaderCount;
     uint32_t shaderGroupCount;
     uint32_t maxRecursionDepth;
     uint32_t maxAttributeSize;
     uint32_t maxPayloadSize;
-    PalPipelineLayout* pipelineLayout;
-    PalRayTracingShaderGroupCreateInfo* shaderGroups;
-    PalShader** shaders;
-} PalRayTracingPipelineCreateInfo;
+} PalRayTracingPipelineCreateInfo; // TODO:
 
 /**
  * @struct PalShaderBindingTableCreateInfo
@@ -2574,9 +2580,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t recordCount;
     PalShaderBindingTableRecordInfo* records;
     PalPipeline* rayTracingPipeline;
+    uint64_t recordCount;
 } PalShaderBindingTableCreateInfo;
 
 /**
