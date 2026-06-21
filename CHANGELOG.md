@@ -1,15 +1,20 @@
 
+<!-- ===========================================================-->
+<!-- PAL V2.0.0 -->
+<!-- =========================================================== -->
+
 ## 2.0.0
 
 ### Features
 
+- Added a graphics system API (`pal_graphics.h`).
 - Added `palGetResultCode()` to get the result code from a result value.
+- Added `palGetSupportedGLAPIs()` to check supported opengl api types.
 - Added new `PalResult` values:
   - `PAL_RESULT_INVALID_HANDLE`
   - `PAL_RESULT_FEATURE_NOT_SUPPORTED`
   - `PAL_RESULT_NOT_INITIALIZED`
   - `PAL_RESULT_OUT_OF_DATE`
-  - `PAL_RESULT_MAX`
 - Added type `PalGLBackend` with values:
   - `PAL_GL_BACKEND_EGL`
   - `PAL_GL_BACKEND_GLX`
@@ -17,10 +22,12 @@
 - Added type `PalGLAPI` with values:
   - `PAL_GL_API_OPENGL`
   - `PAL_GL_API_OPENGL_ES`
+- Added `_COUNT` constants to all type groups (eg. `PAL_EVENT_COUNT`).
+- Added `PAL_GL_GRAPHICS_CARD_NAME_SIZE`,`PAL_GL_VENDOR_NAME_SIZE` and `PAL_GL_VERSION_NAME_SIZE` constants.
 
 ### Changes
 
-- Converted `PalResult` from an enum type to `uint64_t` and the values to constants.
+- Converted all enum types to fixed-width integer types and their values to standalone constants (eg. `PalResult` to `uint64_t`).
 - Removed all previous `PalResult` values except:
   - `PAL_RESULT_SUCCESS`
   - `PAL_RESULT_INVALID_ARGUMENT`
@@ -30,89 +37,36 @@
   - `PAL_RESULT_INVALID_OPERATION`.
   - `PAL_RESULT_DEVICE_LOST`.
 - Removed `UintXX` and `IntXX` types in favor of standard `uintXX_t` and `intXX_t`.
+- Removed `_MAX` constants from all type groups (eg. `PAL_EVENT_MAX`).
 - Replaced standard `bool` type and `true`/`false` constants with `PalBool` type and `PAL_TRUE`/`PAL_FALSE`.
 - `palGetVersion()` now returns `void` and takes a pointer to the struct.
 - `palFormatResult()` now takes two additional parameters.
-- Converted `PalEventType` from an enum type to `uint64_t` and the values to constants.
-- Converted `PalGLExtensions` from an enum type to `uint64_t` and the values to constants.
-- Converted `PalGLProfile` from an enum type to `uint32_t` and the values to constants.
-- Converted `PalGLContextReset` from an enum type to `uint32_t` and the values to constants.
-- Converted `PalGLReleaseBehavior` from an enum type to `uint32_t` and the values to constants.
+- Renamed `PalGLRelease` to `PalGLReleaseBehavior`.
+- Renamed `palGLGetProcAddress()` to `palGetGLProcAddress()`.
+- `palInitGL()` now takes two additional parameters.
+- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` parameter.
+- `palInitVideo()` now takes an additional parameter.
+- `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`.
+- `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`.
+- `palJoinThread()` now takes `retval` paramters as `void**`.
+- Removed `palGLSetInstance()` function.
+- Removed `palGLGetBackend()` function.
+- Removed `palGetVideoFeaturesEx()` function and `PalVideoFeatures64` enum.
+- Removed `palGetWindowHandleInfoEx()` function and `PalWindowHandleInfoEX` struct.
+- Removed `palGetRawMouseWheelDelta()` function.
+- Removed `palSetPreferredInstance()` function.
+- Removed `palSetFBConfig()` function.
+- Removed `PAL_CONFIG_BACKEND_GLES`.
+- `palGetWindowHandleInfo()` now returns `PalResult` and takes a pointer to the struct.
+- `PalGLInfo` now has `backend` and `api` fields.
+- Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`.
+- Renamed `display` to `instance` in `PalGLWindow`.
+- `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields.
+- `PalWindowCreateInfo` now has `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
 
-### Opengl
-Added
-
-Changed
-
-
-typedef struct {
-    PalGLExtensions extensions;
-    uint32_t major;
-    uint32_t minor;
-    PalGLBackend backend;
-    PalGLAPI api;
-    char vendor[PAL_GL_VENDOR_NAME_SIZE];
-    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE];
-    char version[PAL_GL_VERSION_NAME_SIZE];
-} PalGLInfo;
-
-PAL_API PalResult PAL_CALL palInitGL(
-    PalGLAPI api,
-    void* instance,
-    const PalAllocator* allocator);
-
-    PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
-    int32_t* count,
-    PalGLFBConfig* configs);
-
-PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance);
-
-Removed
-
-### Features
-- **Opengl:** Added **palGetSupportedGLAPIs()**.
-
-### Changed
-
-- **Thread:** **palJoinThread()** now takes a void** for retval parameter.
-
-- **Opengl:** **palEnumerateGLFBConfigs()** now does not take glWindow parameter anymore.
-- **Opengl:** **palInitGL()** now takes an api and instance parameter.
-- **Opengl:** rename **PalGLRelease** to **PalGLReleaseBehavior**.
-- **Opengl:** rename **palGLGetProcAddress()** to **palGetGLProcAddress()**.
-
-- **Video:** **palGetWindowHandleInfo()** now takes an info parameter.
-- **Video:** **palGetMouseDelta()** now takes floats instead of uint32_t.
-- **Video:** **palGetMouseWheelDelta()** now takes floats instead of uint32_t.
-- **Video:** **palInitVideo()** now takes a preferredInstance parameter.
-- **Video:** **PalWindowCreateInfo** now has `appName`, `instanceName`, `fbConfigBackend` and 
-`fbConfigIndex` fields.
-
-### Removed
-
-
-- **Opengl:** Removed **palGLSetInstance** function.
-- **Opengl:** Removed **palGLGetBackend** function.
-
-- **Video:** Removed **palGetVideoFeaturesEx** function.
-- **Video:** Removed **palGetWindowHandleInfoEx** function.
-- **Video:** Removed **palGetRawMouseWheelDelta** function.
-- **Video:** Removed **palSetPreferredInstance** function.
-- **Video:** Removed **palSetFBConfig** function.
-
-### Tests
-
-- Added grapics example: see **graphics_test.c**
-- Added clear color example: see **clear_color_test.c**
-- Added vertex shader/buffer triangle example: see **triangle_test.c**
-- Added mesh example: see **mesh_test.c**
-- Added compute example: see **compute_test.c**
-- Added ray tracing example: see **ray_tracing_test.c**
-- Added texture rendering example: see **texture_test.c**
-
-### Notes
-- API or ABI changes
-
+<!-- =========================================================== -->
+<!-- PAL V1.3.0 -->
+<!-- =========================================================== -->
 
 ## [1.3.0] - 2025-11-21
 
@@ -165,6 +119,9 @@ void* retval;
 palJoinThread(thread, &retval);
 ```
 
+<!-- =========================================================== -->
+<!-- PAL V1.2.0 -->
+<!-- =========================================================== -->
 
 ## [1.2.0] - 2025-10-22
 
@@ -188,6 +145,10 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 ### Notes
 - No API or ABI changes - existing code remains compatible.
 - Safe upgrade from **v1.1.0** - just rebuild your project after updating.
+
+<!-- =========================================================== -->
+<!-- PAL V1.1.0 -->
+<!-- =========================================================== -->
 
 ## [1.1.0] - 2025-10-17
 
@@ -220,6 +181,10 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 - Linux video support currently targets **X11** only: **Wayland** is planned for future releases.
 - Safe upgrade from **v1.0.1** - just rebuild your project after updating.
 
+<!-- =========================================================== -->
+<!-- PAL V1.0.1 -->
+<!-- =========================================================== -->
+
 ## [1.0.1] - 2025-10-01
 
 **Bugfix release** - improve C/C++ interop and build integration
@@ -232,6 +197,10 @@ reflecting its role as the primary explicit foundation for OS and graphics abstr
 ### Notes
 - No API or ABI changes
 - Safe upgrade from **v1.0** - just rebuild your project after updating.
+
+<!-- =========================================================== -->
+<!-- PAL V1.0.0 -->
+<!-- =========================================================== -->
 
 ## [1.0.0] - 2025-09-27
 - Initial stable release of PAL.

@@ -23,6 +23,10 @@
 #define PAL_GL_APIENTRY
 #endif // _WIN32
 
+#define PAL_GL_VENDOR_NAME_SIZE 32
+#define PAL_GL_GRAPHICS_CARD_NAME_SIZE 64
+#define PAL_GL_VERSION_NAME_SIZE 64
+
 #define PAL_GL_EXTENSION_CREATE_CONTEXT (1ULL << 0)
 #define PAL_GL_EXTENSION_CONTEXT_PROFILE (1ULL << 1)
 #define PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 (1ULL << 2)
@@ -38,20 +42,25 @@
 #define PAL_GL_PROFILE_CORE 1          
 #define PAL_GL_PROFILE_COMPATIBILITY 2
 #define PAL_GL_PROFILE_ES 3
+#define PAL_GL_PROFILE_COUNT 4
 
 #define PAL_GL_CONTEXT_RESET_NONE 0
 #define PAL_GL_CONTEXT_RESET_NO_NOTIFICATION 1
 #define PAL_GL_CONTEXT_RESET_LOSE_CONTEXT 2
+#define PAL_GL_CONTEXT_RESET_COUNT 3
 
 #define PAL_GL_RELEASE_BEHAVIOR_NONE 0
 #define PAL_GL_RELEASE_BEHAVIOR_FLUSH 1
+#define PAL_GL_RELEASE_BEHAVIOR_COUNT 2
 
 #define PAL_GL_BACKEND_EGL 0
 #define PAL_GL_BACKEND_GLX 1
 #define PAL_GL_BACKEND_WGL 2
+#define PAL_GL_BACKEND_COUNT 3
 
 #define PAL_GL_API_OPENGL 0
 #define PAL_GL_API_OPENGL_ES 1
+#define PAL_GL_API_COUNT 2
 
 /**
  * @struct PalGLContext
@@ -137,9 +146,9 @@ typedef struct {
     uint32_t minor;
     PalGLBackend backend;
     PalGLAPI api;
-    char vendor[32];
-    char graphicsCard[64];
-    char version[64];
+    char vendor[PAL_GL_VENDOR_NAME_SIZE];
+    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE];
+    char version[PAL_GL_VERSION_NAME_SIZE];
 } PalGLInfo;
 
 /**
@@ -172,7 +181,7 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    void* display; /**< Can be nullptr depending on platform (eg. Windows).*/
+    void* instance; /**< Must not be nullptr. (HINSTANCE on Win32 or wl_display on Wayland)*/
     void* window;  /**< Must not be nullptr. (egl_wl_window on Wayland)*/
 } PalGLWindow;
 

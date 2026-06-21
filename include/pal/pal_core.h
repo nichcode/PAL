@@ -70,13 +70,11 @@
 #define PAL_RESULT_INVALID_OPERATION 8
 #define PAL_RESULT_DEVICE_LOST 9
 #define PAL_RESULT_OUT_OF_DATE 10
-#define PAL_RESULT_MAX 11
+#define PAL_RESULT_COUNT 11
 
 /**
  * @typedef PalBool
  * @brief Must be `PAL_TRUE` or `PAL_FALSE`.
- * 
- * @since 2.0
  */
 typedef uint32_t PalBool;
 

@@ -18,6 +18,7 @@
 
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
+#define PAL_DECORATION_MODE_COUNT 2
 
 /**
  * event.data2 : window
@@ -218,12 +219,12 @@
  */
 #define PAL_EVENT_WINDOW_DECORATION_MODE 20
 
-#define PAL_EVENT_MAX 21
+#define PAL_EVENT_COUNT 21
 
 #define PAL_DISPATCH_NONE 0
 #define PAL_DISPATCH_CALLBACK 1
 #define PAL_DISPATCH_POLL 2
-#define PAL_DISPATCH_MAX 3
+#define PAL_DISPATCH_COUNT 3
 
 /**
  * @struct PalEventDriver

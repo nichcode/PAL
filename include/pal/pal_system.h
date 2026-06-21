@@ -24,6 +24,7 @@
 #define PAL_CPU_ARCH_X86_64 2
 #define PAL_CPU_ARCH_ARM 3
 #define PAL_CPU_ARCH_ARM64 4
+#define PAL_CPU_ARCH_COUNT 5
 
 #define PAL_CPU_FEATURE_SSE (1ULL << 0)
 #define PAL_CPU_FEATURE_SSE2 (1ULL << 1)
@@ -43,6 +44,7 @@
 #define PAL_PLATFORM_MACOS 2
 #define PAL_PLATFORM_ANDROID 3
 #define PAL_PLATFORM_IOS 4
+#define PAL_PLATFORM_COUNT 5
 
 #define PAL_PLATFORM_API_WIN32 0
 #define PAL_PLATFORM_API_WAYLAND 1
@@ -51,6 +53,7 @@
 #define PAL_PLATFORM_API_ANDRIOD 4
 #define PAL_PLATFORM_API_UIKIT 5
 #define PAL_PLATFORM_API_HEADLESS 6
+#define PAL_PLATFORM_API_COUNT 7
 
 /**
  * @typedef PalCpuArch
@@ -59,7 +62,7 @@
  * All CPU achitectures follow the format `PAL_CPU_ARCH_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalCpuArch;
 
@@ -70,7 +73,7 @@ typedef uint32_t PalCpuArch;
  * All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalCpuFeatures;
 
@@ -84,7 +87,7 @@ typedef uint64_t PalCpuFeatures;
  * All platform types follow the format `PAL_PLATFORM_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalPlatformType;
 
@@ -98,7 +101,7 @@ typedef uint32_t PalPlatformType;
  * All platform API types follow the format `PAL_PLATFORM_API_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalPlatformApiType;
 
@@ -106,7 +109,7 @@ typedef uint32_t PalPlatformApiType;
  * @struct PalPlatformInfo
  * @brief Information about a platform (OS).
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     PalPlatformType type;
@@ -121,7 +124,7 @@ typedef struct {
  * @struct PalCPUInfo
  * @brief Information about a CPU.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     PalCpuFeatures features;

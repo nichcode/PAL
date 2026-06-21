@@ -63,6 +63,7 @@
 #define PAL_ORIENTATION_PORTRAIT 1
 #define PAL_ORIENTATION_LANDSCAPE_FLIPPED 2
 #define PAL_ORIENTATION_PORTRAIT_FLIPPED 3
+#define PAL_ORIENTATION_COUNT 4
 
 #define PAL_WINDOW_STYLE_RESIZABLE (1ULL << 0)
 #define PAL_WINDOW_STYLE_TRANSPARENT (1ULL << 1)
@@ -75,6 +76,7 @@
 #define PAL_WINDOW_STATE_MAXIMIZED 0
 #define PAL_WINDOW_STATE_MINIMIZED 1
 #define PAL_WINDOW_STATE_RESTORED 2
+#define PAL_WINDOW_STATE_COUNT 3
 
 #define PAL_FLASH_STOP 0                 /**< Stop flashing.*/
 #define PAL_FLASH_CAPTION (1ULL << 0)    /**< Flash the titlebar of the window.*/
@@ -84,6 +86,7 @@
 #define PAL_CONFIG_BACKEND_EGL 1
 #define PAL_CONFIG_BACKEND_GLX 2
 #define PAL_CONFIG_BACKEND_WGL 3
+#define PAL_CONFIG_BACKEND_COUNT 4
 
 #define PAL_SCANCODE_UNKNOWN 0
 #define PAL_SCANCODE_A 1
@@ -198,8 +201,7 @@
 #define PAL_SCANCODE_RBRACKET 103
 #define PAL_SCANCODE_LSUPER 104
 #define PAL_SCANCODE_RSUPER 105
-
-#define PAL_SCANCODE_MAX 106
+#define PAL_SCANCODE_COUNT 106
 
 #define PAL_KEYCODE_UNKNOWN 0
 #define PAL_KEYCODE_A 1
@@ -314,8 +316,7 @@
 #define PAL_KEYCODE_RBRACKET 103
 #define PAL_KEYCODE_LSUPER 104
 #define PAL_KEYCODE_RSUPER 105
-
-#define PAL_KEYCODE_MAX 106
+#define PAL_KEYCODE_COUNT 106
 
 #define PAL_MOUSE_BUTTON_UNKNOWN 0
 #define PAL_MOUSE_BUTTON_LEFT 1
@@ -323,16 +324,14 @@
 #define PAL_MOUSE_BUTTON_MIDDLE 3
 #define PAL_MOUSE_BUTTON_X1 4
 #define PAL_MOUSE_BUTTON_X2 5
-
-#define PAL_MOUSE_BUTTON_MAX 6
+#define PAL_MOUSE_BUTTON_COUNT 6
 
 #define PAL_CURSOR_ARROW 0
 #define PAL_CURSOR_HAND 1
 #define PAL_CURSOR_CROSS 2
 #define PAL_CURSOR_IBEAM 3
 #define PAL_CURSOR_WAIT 4
-
-#define PAL_CURSOR_MAX 5
+#define PAL_CURSOR_COUNT 5
 
 /**
  * @struct PalMonitor
@@ -373,7 +372,7 @@ typedef struct PalCursor PalCursor;
  * All video features follow the format `PAL_VIDEO_FEATURE_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalVideoFeatures;
 
@@ -384,7 +383,7 @@ typedef uint64_t PalVideoFeatures;
  * All orientation types follow the format `PAL_ORIENTATION_**` for consistency
  * and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalOrientation;
 
@@ -396,7 +395,7 @@ typedef uint32_t PalOrientation;
  * All window flags follow the format `PAL_WINDOW_STYLE_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalWindowStyle;
 
@@ -407,7 +406,7 @@ typedef uint64_t PalWindowStyle;
  * All window states follow the format `PAL_WINDOW_STATE_**` for consistency and
  * API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalWindowState;
 
@@ -421,7 +420,7 @@ typedef uint32_t PalWindowState;
  * All flash flags follow the format `PAL_FLASH_**` for consistency and
  * API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalFlashFlag;
 
@@ -432,7 +431,7 @@ typedef uint64_t PalFlashFlag;
  * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalFBConfigBackend;
 
@@ -443,7 +442,7 @@ typedef uint32_t PalFBConfigBackend;
  * All scancodes follow the format `PAL_SCANCODE_**` for consistency and
  * API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalScancode;
 
@@ -454,7 +453,7 @@ typedef uint32_t PalScancode;
  * All keycodes follow the format `PAL_KEYCODE_**` for consistency and API
  * use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalKeycode;
 
@@ -465,7 +464,7 @@ typedef uint32_t PalKeycode;
  * All mouse buttons follow the format `PAL_MOUSE_BUTTON_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalMouseButton;
 
@@ -476,7 +475,7 @@ typedef uint32_t PalMouseButton;
  * All cursor types follow the format `PAL_CURSOR_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalCursorType;
 
@@ -484,7 +483,7 @@ typedef uint32_t PalCursorType;
  * @struct PalMonitorInfo
  * @brief Information about a monitor.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     int32_t x;       /**< X position in pixels.*/
@@ -517,7 +516,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     PalFlashFlag flags;   /**< See PalFlashFlag.*/
@@ -531,7 +530,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
@@ -545,7 +544,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
@@ -559,10 +558,10 @@ typedef struct {
  * @struct PalWindowHandleInfo
  * @brief Information about a window handle.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
-    void* nativeDisplay; /**< The platform (OS) display or instance.*/
+    void* nativeInstance; /**< The platform (OS) display or instance.*/
     void* nativeWindow;  /**< The window platform (OS) handle.*/
     void* nativeHandle1; /**< Extra window handle (xdgSurface)*/
     void* nativeHandle2; /**< Extra window handle (xdgToplevel)*/
@@ -575,7 +574,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef struct {
     PalWindowStyle style;    /**< Window style.*/
@@ -619,7 +618,7 @@ typedef struct {
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since 1.0
  * @sa palShutdownVideo
  */
 PAL_API PalResult PAL_CALL palInitVideo(
@@ -900,7 +899,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  *
  * - Creating hidden window is not supported. It will be ignored.
  *
- * @since 2.0
+ * @since 1.0
  */
 PAL_API PalResult PAL_CALL palCreateWindow(
     const PalWindowCreateInfo* info,
@@ -1190,7 +1189,7 @@ PAL_API PalResult PAL_CALL palGetWindowState(
  *
  * The returned pointer must not be freed. The state is updated when
  * palUpdateVideo() is called. The array must be index with PalKeycodes and
- * not exceed `PAL_KEYCODE_MAX`.
+ * not exceed `PAL_KEYCODE_COUNT`.
  *
  * @return A pointer to the keycodes array on success or nullptr on failure.
  *
@@ -1208,7 +1207,7 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  *
  * The returned pointer must not be freed. The state is updated when
  * palUpdateVideo() is called. The array must be index with PalScancodes and
- * not exceed PAL_SCANCODE_MAX.
+ * not exceed PAL_SCANCODE_COUNT.
  *
  * @return A pointer to the scancodes array on success or nullptr on failure.
  *
@@ -1225,7 +1224,7 @@ PAL_API const PalBool* PAL_CALL palGetScancodeState();
  *
  * The returned pointer must not be freed. The state is updated when
  * palUpdateVideo() is called. The array must be index with PalMouseButton and
- * not exceed `PAL_MOUSE_BUTTON_MAX`.
+ * not exceed `PAL_MOUSE_BUTTON_COUNT`.
  *
  * @return A pointer to the mouse button array on success or nullptr on failure.
  *
@@ -1249,7 +1248,7 @@ PAL_API const PalBool* PAL_CALL palGetMouseState();
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
- * @since 2.0
+ * @since 1.0
  */
 PAL_API void PAL_CALL palGetMouseDelta(
     float* dx,
@@ -1267,7 +1266,7 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
- * @since 2.0
+ * @since 1.0
  */
 PAL_API void PAL_CALL palGetMouseWheelDelta(
     float* dx,
@@ -1320,7 +1319,7 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  *
  * Thread safety: Thread-safe.
  *
- * @since 2.0
+ * @since 1.0
  */
 PAL_API PalResult PAL_CALL palGetWindowHandleInfo(
     PalWindow* window, 

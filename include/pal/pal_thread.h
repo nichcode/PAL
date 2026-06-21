@@ -24,6 +24,7 @@
 #define PAL_THREAD_PRIORITY_LOW 0
 #define PAL_THREAD_PRIORITY_NORMAL 1
 #define PAL_THREAD_PRIORITY_HIGH 2
+#define PAL_THREAD_PRIORITY_COUNT 3
 
 /**
  * @struct PalThread
@@ -64,7 +65,7 @@ typedef struct PalCondVar PalCondVar;
  * All thread features follow the format `PAL_THREAD_FEATURE_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint64_t PalThreadFeatures;
 
@@ -75,7 +76,7 @@ typedef uint64_t PalThreadFeatures;
  * All thread priority types follow the format `PAL_THREAD_PRIORITY_**` for
  * consistency and API use.
  *
- * @since 2.0
+ * @since 1.0
  */
 typedef uint32_t PalThreadPriority;
 
@@ -162,7 +163,7 @@ PAL_API PalResult PAL_CALL palCreateThread(
  *
  * Thread safety: Thread safe if `retval` is per thread.
  *
- * @since 2.0
+ * @since 1.0
  */
 PAL_API PalResult PAL_CALL palJoinThread(
     PalThread* thread,
