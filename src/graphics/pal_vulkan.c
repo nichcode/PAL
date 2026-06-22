@@ -5448,6 +5448,8 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
         return PAL_RESULT_INVALID_OPERATION;
     }
 
+    // TODO: support only GPU memory
+
     Device* device = vkImage->device;
     VkMemoryRequirements memReq = {0};
     s_Vk.getImageMemoryRequirements(device->handle, vkImage->handle, &memReq);
@@ -5492,25 +5494,12 @@ PalResult PAL_CALL mapImageMemoryVk(
     uint64_t size,
     void** outPtr)
 {
-    VkResult result;
-    Image* vkImage = (Image*)image;
-    Device* device = vkImage->device;
-
-    if (vkImage->memory->type == PAL_MEMORY_TYPE_GPU_ONLY) {
-        return PAL_RESULT_MEMORY_MAP_FAILED;
-    }
-
-    result = s_Vk.mapMemory(device->handle, vkImage->memory->handle, offset, size, 0, outPtr);
-    if (result != VK_SUCCESS) {
-        return resultFromVk(result);
-    }
-    return PAL_RESULT_SUCCESS;
+    return PAL_RESULT_INVALID_OPERATION;
 }
 
 void PAL_CALL unmapImageMemoryVk(PalImage* image)
 {
-    Image* vkImage = (Image*)image;
-    s_Vk.unmapMemory(vkImage->device->handle, vkImage->memory->handle);
+    // do nothing.
 }
 
 // ==================================================

@@ -62,7 +62,8 @@
 - Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`.
 - Renamed `display` to `instance` in `PalGLWindow`.
 - `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields.
-- `PalWindowCreateInfo` now has `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
+- `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
+- Removed `maximized` and `minimized` in `PalWindowCreateInfo`.
 
 <!-- =========================================================== -->
 <!-- PAL V1.3.0 -->

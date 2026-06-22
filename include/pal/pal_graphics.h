@@ -17,6 +17,7 @@
 #include "pal_core.h"
 
 #define PAL_ADAPTER_NAME_SIZE 128
+#define PAL_ADAPTER_BACKEND_NAME_SIZE 32
 #define PAL_SHADER_ENTRY_NAME_SIZE 32
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
@@ -177,17 +178,17 @@
 #define PAL_FORMAT_COUNT 81
 
 #define PAL_IMAGE_USAGE_UNDEFINED 0
-#define PAL_IMAGE_USAGE_COLOR_ATTACHEMENT (1ULL << 0)
-#define PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT (1ULL << 1)
-#define PAL_IMAGE_USAGE_TRANSFER_SRC (1ULL << 2)
-#define PAL_IMAGE_USAGE_TRANSFER_DST (1ULL << 3)
-#define PAL_IMAGE_USAGE_STORAGE (1ULL << 4)
-#define PAL_IMAGE_USAGE_SAMPLED (1ULL << 5)
+#define PAL_IMAGE_USAGE_COLOR_ATTACHEMENT (1U << 0)
+#define PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT (1U << 1)
+#define PAL_IMAGE_USAGE_TRANSFER_SRC (1U << 2)
+#define PAL_IMAGE_USAGE_TRANSFER_DST (1U << 3)
+#define PAL_IMAGE_USAGE_STORAGE (1U << 4)
+#define PAL_IMAGE_USAGE_SAMPLED (1U << 5)
 
-#define PAL_SHADER_FORMAT_SPIRV (1ULL << 0)
-#define PAL_SHADER_FORMAT_DXIL (1ULL << 1)
-#define PAL_SHADER_FORMAT_MSL (1ULL << 2)
-#define PAL_SHADER_FORMAT_CUSTOM (1ULL << 3)
+#define PAL_SHADER_FORMAT_SPIRV (1U << 0)
+#define PAL_SHADER_FORMAT_DXIL (1U << 1)
+#define PAL_SHADER_FORMAT_MSL (1U << 2)
+#define PAL_SHADER_FORMAT_CUSTOM (1U << 3)
 
 #define PAL_LOAD_OP_LOAD 0
 #define PAL_LOAD_OP_CLEAR 1
@@ -251,11 +252,11 @@
 #define PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10 3 /**< HDR.*/
 #define PAL_SURFACE_FORMAT_COUNT 4
 
-#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_WAYLAND 0
-#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_X11 1
-#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_XCB 2
-#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_WIN32 3
-#define PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_COUNT 4
+#define PAL_WINDOW_INSTANCE_TYPE_WAYLAND 0
+#define PAL_WINDOW_INSTANCE_TYPE_X11 1
+#define PAL_WINDOW_INSTANCE_TYPE_XCB 2
+#define PAL_WINDOW_INSTANCE_TYPE_WIN32 3
+#define PAL_WINDOW_INSTANCE_TYPE_COUNT 4
 
 #define PAL_SHADER_STAGE_UNDEFINED 0
 #define PAL_SHADER_STAGE_VERTEX 1
@@ -304,8 +305,8 @@
 #define PAL_POLYGON_MODE_LINE 1
 #define PAL_POLYGON_MODE_COUNT 2
 
-#define PAL_STENCIL_FACE_FRONT (1ULL << 0)
-#define PAL_STENCIL_FACE_BACK (1ULL << 1)
+#define PAL_STENCIL_FACE_FRONT (1U << 0)
+#define PAL_STENCIL_FACE_BACK (1U << 1)
 #define PAL_STENCIL_FACE_BOTH (PAL_STENCIL_FACE_FRONT | PAL_STENCIL_FACE_BACK)
 
 #define PAL_VERTEX_TYPE_UNDEFINED 0
@@ -399,10 +400,10 @@
 #define PAL_BLEND_FACTOR_COUNT 13
 
 #define PAL_COLOR_MASK_NONE 0
-#define PAL_COLOR_MASK_RED (1ULL << 0)
-#define PAL_COLOR_MASK_GREEN (1ULL << 1)
-#define PAL_COLOR_MASK_BLUE (1ULL << 2)
-#define PAL_COLOR_MASK_ALPHA (1ULL << 3)
+#define PAL_COLOR_MASK_RED (1U << 0)
+#define PAL_COLOR_MASK_GREEN (1U << 1)
+#define PAL_COLOR_MASK_BLUE (1U << 2)
+#define PAL_COLOR_MASK_ALPHA (1U << 3)
 
 #define PAL_RESOLVE_MODE_NONE 0
 #define PAL_RESOLVE_MODE_SAMPLE_ZERO 1
@@ -435,37 +436,37 @@
 #define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE 1
 #define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_COUNT 2
 
-#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD (1ULL << 0)
-#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE (1ULL << 1)
-#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY (1ULL << 2)
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD (1U << 0)
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE (1U << 1)
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY (1U << 2)
 
-#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE (1ULL << 0)
-#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE (1ULL << 1)
-#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE (1ULL << 2)
-#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1ULL << 3)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE (1U << 0)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE (1U << 1)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CU_DISABLE (1U << 2)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1U << 3)
 
 #define PAL_GEOMETRY_TYPE_TRIANGLE 0
 #define PAL_GEOMETRY_TYPE_AABBS 1
 #define PAL_GEOMETRY_TYPE_COUNT 2
 
-#define PAL_GEOMETRY_FLAG_OPAQUE (1ULL << 0)
-#define PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT (1ULL << 1)
+#define PAL_GEOMETRY_FLAG_OPAQUE (1U << 0)
+#define PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT (1U << 1)
 
 #define PAL_INDEX_TYPE_UINT16 0
 #define PAL_INDEX_TYPE_UINT32 1
 #define PAL_INDEX_TYPE_COUNT 2
 
-#define PAL_BUFFER_USAGE_VERTEX (1ULL << 0)
-#define PAL_BUFFER_USAGE_INDEX (1ULL << 1)
-#define PAL_BUFFER_USAGE_UNIFORM (1ULL << 2)
-#define PAL_BUFFER_USAGE_STORAGE (1ULL << 3)
-#define PAL_BUFFER_USAGE_TRANSFER_SRC (1ULL << 4)
-#define PAL_BUFFER_USAGE_TRANSFER_DST (1ULL << 5)
-#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE (1ULL << 6)
-#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH (1ULL << 7)
-#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT (1ULL << 8)
-#define PAL_BUFFER_USAGE_DEVICE_ADDRESS (1ULL << 9)
-#define PAL_BUFFER_USAGE_INDIRECT (1ULL << 10)
+#define PAL_BUFFER_USAGE_VERTEX (1U << 0)
+#define PAL_BUFFER_USAGE_INDEX (1U << 1)
+#define PAL_BUFFER_USAGE_UNIFORM (1U << 2)
+#define PAL_BUFFER_USAGE_STORAGE (1U << 3)
+#define PAL_BUFFER_USAGE_TRANSFER_SRC (1U << 4)
+#define PAL_BUFFER_USAGE_TRANSFER_DST (1U << 5)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE (1U << 6)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH (1U << 7)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT (1U << 8)
+#define PAL_BUFFER_USAGE_DEVICE_ADDRESS (1U << 9)
+#define PAL_BUFFER_USAGE_INDIRECT (1U << 10)
 
 #define PAL_DEBUG_MESSAGE_SEVERITY_INFO 0
 #define PAL_DEBUG_MESSAGE_SEVERITY_WARNING 1
@@ -508,6 +509,14 @@
 #define PAL_DESCRIPTOR_TYPE_SAMPLER 4
 #define PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE 5
 #define PAL_DESCRIPTOR_TYPE_COUNT 6
+
+#define PAL_DESCRIPTOR_INDEXING_FLAG_NONE 0
+#define PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND (1U << 0)
+#define PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND (1U << 1)
+#define PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING (1U << 2)
+
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE (1U << 1)
+#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY (1U << 2)
 
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL 0
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT 1
@@ -817,7 +826,7 @@ typedef uint32_t PalFormat;
  *
  * @since 2.0
  */
-typedef uint64_t PalImageUsages;
+typedef uint32_t PalImageUsages;
 
 /**
  * @typedef PalShaderFormats
@@ -828,7 +837,7 @@ typedef uint64_t PalImageUsages;
  *
  * @since 2.0
  */
-typedef uint64_t PalShaderFormats;
+typedef uint32_t PalShaderFormats;
 
 /**
  * @typedef PalLoadOp
@@ -952,15 +961,15 @@ typedef uint32_t PalBorderColor;
 typedef uint32_t PalSurfaceFormat;
 
 /**
- * @typedef PalGraphicsWindowInstanceType
- * @brief Display types for a graphics window.
+ * @typedef WindowInstanceType
+ * @brief Display types for a window.
  *
- * All graphics window display types follow the format `PAL_GRAPHICS_WINDOW_INSTANCE_TYPE_**` for
+ * All window display types follow the format `PAL_WINDOW_INSTANCE_TYPE_**` for
  * consistency and API use.
  *
  * @since 2.0
  */
-typedef uint32_t PalGraphicsWindowInstanceType;
+typedef uint32_t PalWindowInstanceType;
 
 /**
  * @typedef PalShaderStage
@@ -1038,7 +1047,7 @@ typedef uint32_t PalPolygonMode;
  *
  * @since 2.0
  */
-typedef uint64_t PalStencilFaceFlags;
+typedef uint32_t PalStencilFaceFlags;
 
 /**
  * @typedef PalVertexType
@@ -1140,7 +1149,7 @@ typedef uint32_t PalBlendFactor;
  *
  * @since 2.0
  */
-typedef uint64_t PalColorMask;
+typedef uint32_t PalColorMask;
 
 /**
  * @typedef PalResolveMode
@@ -1207,7 +1216,7 @@ typedef uint32_t PalAccelerationStructureBuildMode;
  *
  * @since 2.0
  */
-typedef uint64_t PalAccelerationStructureBuildHints;
+typedef uint32_t PalAccelerationStructureBuildHints;
 
 /**
  * @typedef PalAccelerationStructureInstanceFlags
@@ -1219,7 +1228,7 @@ typedef uint64_t PalAccelerationStructureBuildHints;
  *
  * @since 2.0
  */
-typedef uint64_t PalAccelerationStructureInstanceFlags;
+typedef uint32_t PalAccelerationStructureInstanceFlags;
 
 /**
  * @typedef PalGeometryType
@@ -1240,7 +1249,7 @@ typedef uint32_t PalGeometryType;
  *
  * @since 2.0
  */
-typedef uint64_t PalGeometryFlags;
+typedef uint32_t PalGeometryFlags;
 
 /**
  * @typedef PalIndexType
@@ -1261,7 +1270,7 @@ typedef uint32_t PalIndexType;
  *
  * @since 2.0
  */
-typedef uint64_t PalBufferUsages;
+typedef uint32_t PalBufferUsages;
 
 /**
  * @typedef PalUsageState
@@ -1295,6 +1304,17 @@ typedef uint32_t PalDescriptorType;
 typedef uint32_t PalRayTracingShaderGroupType;
 
 /**
+ * @typedef PalDescriptorIndexingFlags
+ * @brief Descriptor indexing subfeature flags.
+ *
+ * All descriptor indexing flags follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalDescriptorIndexingFlags;
+
+/**
  * @typedef PalDebugCallback
  * @brief Function pointer type used for debug callbacks.
  *
@@ -1321,15 +1341,16 @@ typedef void(PAL_CALL* PalDebugCallback)(
  * @since 2.0
  */
 typedef struct {
-    PalShaderFormats shaderFormats; /**< Supported shader formats mask (eg. Spirv, DXIL, ect).*/
     uint64_t vram;
     uint64_t sharedMemory;
     uint32_t vendorId;
     uint32_t deviceId;
+    uint32_t driverVersion;
+    PalShaderFormats shaderFormats; /**< Supported shader formats mask (eg. Spirv, DXIL, ect).*/
     PalAdapterType type;            /**< Discrete, Integrated, etc.*/
     PalAdapterApiType apiType;      /**< Vulkan, D3D12, etc.*/
     char name[PAL_ADAPTER_NAME_SIZE];
-    char backendName[PAL_ADAPTER_NAME_SIZE]; /**< Adapter backend name (eg. `PAL`, `Custom`).*/
+    char backendName[PAL_ADAPTER_BACKEND_NAME_SIZE]; /**< Adapter backend name (eg. `PAL`, `Custom`).*/
 } PalAdapterInfo;
 
 /**
@@ -1353,10 +1374,6 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool sampledImageDynamicArrayIndexing;
-    PalBool storageImageDynamicArrayIndexing;
-    PalBool storageBufferDynamicArrayIndexing;
-    PalBool uniformBufferDynamicArrayIndexing;
     uint32_t maxPerStageSampledImages;
     uint32_t maxPerSetSampledImages;
     uint32_t maxPerStageStorageImages;
@@ -1457,10 +1474,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t supportedDepthResolveModes;
-    uint64_t supportedStencilResolveModes;
-    PalBool independentResolve;
-    PalBool independentResolveNone; /**< If PAL_TRUE, depth or stencil can be NONE while the other is resolved.*/
+    uint32_t supportedDepthResolveModes;
+    uint32_t supportedStencilResolveModes;
+    PalBool supportsIndependentResolve;
+    PalBool supportsIndependentResolveNone; /**< If PAL_TRUE, depth or stencil can be NONE while the other is resolved.*/
 } PalDepthStencilCapabilities;
 
 /**
@@ -1470,8 +1487,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t supportedShadingRates;
-    uint64_t supportedCombinerOps;
+    uint32_t supportedShadingRates;
+    uint32_t supportedCombinerOps;
     uint32_t minTexelWidth;
     uint32_t minTexelHeight;
     uint32_t maxTexelWidth;
@@ -1516,14 +1533,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool sampledImageNonUniformIndexing;
-    PalBool sampledImageUpdateAfterBind;
-    PalBool storageImageNonUniformIndexing;
-    PalBool storageImageUpdateAfterBind;
-    PalBool storageBufferNonUniformIndexing;
-    PalBool storageBufferUpdateAfterBind;
-    PalBool uniformBufferNonUniformIndexing;
-    PalBool uniformBufferUpdateAfterBind;
+    PalDescriptorIndexingFlags flags;
     uint32_t maxPerStageSampledImages;
     uint32_t maxPerSetSampledImages;
     uint32_t maxPerStageStorageImages;
@@ -1545,9 +1555,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t supportedPresentModes;
-    uint64_t supportedCompositeAlphas;
-    uint64_t supportedFormats;
+    uint32_t supportedPresentModes;
+    uint32_t supportedCompositeAlphas;
+    uint32_t supportedFormats;
     uint32_t minImageCount;
     uint32_t maxImageCount;
     uint32_t minImageWidth;
@@ -1555,23 +1565,7 @@ typedef struct {
     uint32_t maxImageWidth;
     uint32_t maxImageHeight;
     uint32_t maxImageArrayLayers;
-    PalBool supportsDisabledClipping;
 } PalSurfaceCapabilities;
-
-/**
- * @struct PalGraphicsWindow
- * @brief Information about a graphics window.
- *
- * This can be allocated statically or dynamically since its used for
- * holding native handles. The handles will not be copied.
- *
- * @since 2.0
- */
-typedef struct {
-    PalGraphicsWindowInstanceType instanceType;
-    void* instance; /**< Must not be nullptr. (HINSTANCE on Win32 or wl_display on Wayland)*/
-    void* window;  /**< Must not be nullptr.*/
-} PalGraphicsWindow;
 
 /**
  * @struct PalFormatInfo
@@ -1596,12 +1590,13 @@ typedef struct {
     PalImageUsages usages;
     uint32_t width;            /**< Width of the image in pixels.*/
     uint32_t height;           /**< Height of the image in pixels.*/
-    uint32_t depthOrArraySize; /**< Depth for 3D image and array size for 2D image.*/
+    uint32_t depth;           /**< Depth of the image in pixels.*/
+    uint32_t arrayLayerCount;
     uint32_t mipLevelCount;
     PalSampleCount sampleCount;
     PalImageType type; /**< 1D, 2D, 3D.*/
     PalFormat format;
-} PalImageInfo; // TODO:
+} PalImageInfo;
 
 /**
  * @struct PalClearValue
@@ -1633,25 +1628,12 @@ typedef struct {
     PalStoreOp storeOp;
     PalLoadOp stencilLoadOp;
     PalStoreOp stencilStoreOp;
-    PalResolveMode resolveMode;     /**< Used if resolveImageView is set.*/
+    PalResolveMode resolveMode;            /**< Used if resolveImageView is set.*/
+    PalResolveMode stencilResolveMode;     /**< Used if resolveImageView is set.*/
     uint32_t texelWidth;              /**< Texel width for fragment shading rate attachment.*/
     uint32_t texelHeight;             /**< Texel height for fragment shading rate attachment.*/
     PalClearValue clearValue;
 } PalAttachmentDesc;
-
-/**
- * @struct PalUsageStateInfo
- * @brief Information about resource usage state. This is used with barrier commands.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since 2.0
- */
-typedef struct {
-    PalShaderStage* shaderStages;
-    uint32_t shaderStageCount;
-    PalUsageState usageState;
-} PalUsageStateInfo;
 
 /**
  * @struct PalViewport
@@ -1688,10 +1670,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t supportedMemoryTypes;
-    uint64_t memoryMask;
     uint64_t size;
     uint64_t alignment;
+    uint32_t supportedMemoryTypes;
+    uint32_t memoryMask;
 } PalMemoryRequirements;
 
 /**
@@ -1849,14 +1831,11 @@ typedef struct {
  * @struct PalVertexAttribute
  * @brief Vertex attribute.
  *
- * Uninitialized fields may result in undefined behavior. `semanticName` Must not include the index
- * (eg. "position" or "myown"). Set to nullptr to use the default that will be derived from `
- * semanticID` which are (`POSITION`, `COLOR`, `TEXCOORD`, `NORMAL` and `TANGENT`).
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since 2.0
  */
 typedef struct {
-    const char* semanticName;
     PalVertexSemanticID semanticID;
     PalVertexType type;
 } PalVertexAttribute;
@@ -1988,7 +1967,7 @@ typedef struct {
     PalBlendFactor srcAlphaBlendFactor;
     PalBlendFactor dstAlphaBlendFactor;
     PalBlendOp alphaBlendOp;
-} PalColorBlendAttachment; // TODO:
+} PalColorBlendAttachment;
 
 /**
  * @struct PalFragmentShadingRateState
@@ -2014,11 +1993,11 @@ typedef struct {
 typedef struct {
     PalAccelerationStructure* blas;
     PalAccelerationStructureInstanceFlags flags;
-    uint32_t instanceId;
     uint32_t mask;
+    uint32_t instanceId;
     uint32_t hitGroupOffset;
     float transform[12];            /**< row major (3x4).*/
-} PalAccelerationStructureInstance; // TODO:
+} PalAccelerationStructureInstance;
 
 /**
  * @struct PalAccelerationStructureBuildSize
@@ -2027,9 +2006,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t accelerationStructureSize;
-    uint32_t scratchBufferSize;         
-    uint32_t updateScratchBufferSize;   
+    uint64_t accelerationStructureSize;
+    uint64_t scratchBufferSize;         
+    uint64_t updateScratchBufferSize;   
 } PalAccelerationStructureBuildSize;
 
 /**
@@ -2043,12 +2022,12 @@ typedef struct {
 typedef struct {
     PalDeviceAddress vertexBufferAddress;
     PalDeviceAddress indexBufferAddress;
+    PalDeviceAddress transformBufferAddress;
     PalVertexType vertexType;
     PalIndexType indexType;
-    uint32_t vertexStride;
-    uint32_t indexCount;
     uint32_t vertexCount;
-} PalGeometryDataTriangle; // TODO:
+    uint32_t vertexStride;
+} PalGeometryDataTriangle;
 
 /**
  * @struct PalGeometryDataAABBS
@@ -2060,8 +2039,8 @@ typedef struct {
  */
 typedef struct {
     PalDeviceAddress bufferAddress;
-    uint32_t stride;
-} PalGeometryDataAABBS; // TODO:
+    uint64_t stride;
+} PalGeometryDataAABBS;
 
 /**
  * @struct PalGeometry
@@ -2073,8 +2052,8 @@ typedef struct {
  */
 typedef struct {
     void* data; /**< Pointer to geometry data. This will be casted based on the geometry type.*/
+    uint64_t primitiveCount;
     PalGeometryFlags flags;
-    uint32_t primitiveCount;
     PalGeometryType type;
 } PalGeometry;
 
@@ -2095,8 +2074,7 @@ typedef struct {
     PalAccelerationStructureBuildHints buildHints;
     PalAccelerationStructureType type;
     PalAccelerationStructureBuildMode buildMode;
-    uint32_t geometryCount;
-    uint32_t instanceCount;
+    uint32_t count;
 } PalAccelerationStructureBuildInfo;
 
 /**
@@ -2137,8 +2115,8 @@ typedef struct {
 typedef struct {
     PalBuffer* buffer;
     uint64_t offset; /**< Offset in bytes. If structured, will be divided by `stride`.*/
-    uint32_t size; 
-    uint32_t stride; /**< For structured buffers. Will be ignored if not supported. 0 for default.*/
+    uint64_t size; 
+    uint64_t stride; /**< For structured buffers. Will be ignored if not supported. 0 for default.*/
 } PalDescriptorBufferInfo;
 
 /**
@@ -2206,10 +2184,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalShaderStage* shaderStages;
-    uint64_t offset;
-    uint64_t size;
-    uint64_t shaderStageCount;
+    uint32_t offset;
+    uint32_t size;
 } PalPushConstantRange;
 
 /**
@@ -2251,6 +2227,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalImageAspect imageAspect;
     uint64_t bufferOffset;
     uint32_t bufferRowLength;
     uint32_t bufferImageHeight;
@@ -2263,7 +2240,6 @@ typedef struct {
     uint32_t imageWidth;
     uint32_t imageHeight;
     uint32_t imageDepth;
-    PalImageAspect imageAspect;
 } PalBufferImageCopyInfo;
 
 /**
@@ -2275,6 +2251,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
+    PalImageAspect aspect;
     uint32_t dstMipLevel;
     uint32_t srcMipLevel;
     uint32_t dstStartArrayLayer;
@@ -2289,7 +2266,6 @@ typedef struct {
     uint32_t width;
     uint32_t height;
     uint32_t depth;
-    PalImageAspect aspect;
 } PalImageCopyInfo;
 
 /**
@@ -2334,12 +2310,13 @@ typedef struct {
     PalImageUsages usages;
     uint32_t width;
     uint32_t height;
-    uint32_t depthOrArraySize;
+    uint32_t depth;
+    uint32_t arrayLayerCount;
     uint32_t mipLevelCount;
     PalSampleCount sampleCount;
     PalImageType type;
     PalFormat format;
-} PalImageCreateInfo; // TODO:
+} PalImageCreateInfo;
 
 /**
  * @struct PalImageCreateInfo
@@ -2410,8 +2387,8 @@ typedef struct {
 typedef struct {
     void* bytecode;
     PalShaderEntryInfo* entries;
-    uint64_t bytecodeSize;
-    uint64_t entryCount;
+    uint32_t bytecodeSize;
+    uint32_t entryCount;
 } PalShaderCreateInfo;
 
 /**
@@ -2440,40 +2417,36 @@ typedef struct {
     uint64_t offset;
     uint64_t size;
     PalAccelerationStructureType type;
-} PalAccelerationStructureCreateInfo; // TODO:
+} PalAccelerationStructureCreateInfo;
 
 /**
  * @struct PalDescriptorSetLayoutCreateInfo
  * @brief Creation parameters for a descriptor set layout.
  *
- * Uninitialized fields may result in undefined behavior. Set `enableDescriptorIndexing` to
- * `PAL_TRUE` to enable descriptor indexing for the descriptor set layout.
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since 2.0
  */
 typedef struct {
-    PalShaderStage* shaderStages;
     PalDescriptorSetLayoutBinding* bindings;
-    PalBool enableDescriptorIndexing;
+    PalDescriptorIndexingFlags descriptorIndexingFlags;
     uint32_t bindingCount;
-    uint32_t shaderStageCount;
-} PalDescriptorSetLayoutCreateInfo; // TODO:
+} PalDescriptorSetLayoutCreateInfo;
 
 /**
  * @struct PalDescriptorPoolCreateInfo
  * @brief Creation parameters for a descriptor pool.
  * 
- * Uninitialized fields may result in undefined behavior. Set `enableDescriptorIndexing` to
- * `PAL_TRUE` to enable descriptor indexing for the descriptor pool.
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since 2.0
  */
 typedef struct {
     PalDescriptorPoolBindingSize* bindingSizes;
-    PalBool enableDescriptorIndexing;
+    uint64_t bindingSizeCount;
     uint32_t maxDescriptorSets;
-    uint32_t maxDescriptorBindingSizes;
-} PalDescriptorPoolCreateInfo; // TODO:
+    PalDescriptorIndexingFlags descriptorIndexingFlags;
+} PalDescriptorPoolCreateInfo;
 
 /**
  * @struct PalPipelineLayoutCreateInfo
@@ -2564,12 +2537,12 @@ typedef struct {
     PalPipelineLayout* pipelineLayout;
     PalRayTracingShaderGroupCreateInfo* shaderGroups;
     PalShader** shaders;
+    uint64_t shaderGroupCount;
     uint32_t shaderCount;
-    uint32_t shaderGroupCount;
     uint32_t maxRecursionDepth;
     uint32_t maxAttributeSize;
     uint32_t maxPayloadSize;
-} PalRayTracingPipelineCreateInfo; // TODO:
+} PalRayTracingPipelineCreateInfo;
 
 /**
  * @struct PalShaderBindingTableCreateInfo
@@ -2930,7 +2903,9 @@ typedef struct {
      */
     PalResult (PAL_CALL *createSurface)(
         PalDevice* device,
-        PalGraphicsWindow* window,
+        void* window,
+        void* windowInstance,
+        PalWindowInstanceType instanceType,
         PalSurface** outSurface);
 
     /**
@@ -3430,8 +3405,8 @@ typedef struct {
     PalResult (PAL_CALL *cmdAccelerationStructureBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalAccelerationStructure* as,
-        PalUsageStateInfo* oldUsageStateInfo,
-        PalUsageStateInfo* newUsageStateInfo);
+        PalUsageState oldUsageState,
+        PalUsageState newUsageState);
 
     /**
      * Backend implementation of ::palCmdImageBarrier.
@@ -3442,8 +3417,8 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalImage* image,
         PalImageSubresourceRange* subresourceRange,
-        PalUsageStateInfo* oldUsageStateInfo,
-        PalUsageStateInfo* newUsageStateInfo);
+        PalUsageState oldUsageState,
+        PalUsageState newUsageState);
 
     /**
      * Backend implementation of ::palCmdBufferBarrier.
@@ -3453,8 +3428,8 @@ typedef struct {
     PalResult (PAL_CALL *cmdBufferBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
-        PalUsageStateInfo* oldUsageStateInfo,
-        PalUsageStateInfo* newUsageStateInfo);
+        PalUsageState oldUsageState,
+        PalUsageState newUsageState);
 
     /**
      * Backend implementation of ::palCmdDispatch.
@@ -4755,6 +4730,8 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  *
  * @param[in] device Device that creates the surface.
  * @param[in] window Window to create the surface for.
+ * @param[in] windowInstance The instance of the window.
+ * @param[in] instanceType The instance type of the window.
  * @param[out] outSurface Pointer to a PalSurface to recieve the created surface.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4767,7 +4744,9 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  */
 PAL_API PalResult PAL_CALL palCreateSurface(
     PalDevice* device,
-    PalGraphicsWindow* window,
+    void* window,
+    void* windowInstance,
+    PalWindowInstanceType instanceType,
     PalSurface** outSurface);
 
 /**
@@ -5753,7 +5732,6 @@ PAL_API PalResult PAL_CALL palCmdSetScissors(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] firstSlot Index of the first vertex buffer binding slot.
  * @param[in] count Number of vertex buffers to bind.
- * @param[in] strides Pointer to an array of strides for each vertex buffer.
  * @param[in] buffers Pointer to an array of vertex buffers.
  * @param[in] offsets Pointer to an array of offsets in bytes into each vertex buffer.
  *
@@ -5983,9 +5961,9 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  * this function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  * 
  * The graphics system must be initialized before this call. This function defines a
- * dependency between `oldUsageStateInfo` and `newUsageStateInfo`. It ensures that all
- * operations performed under `oldUsageStateInfo` are completed and visible before the acceleration
- * structure is accessed under `newUsageStateInfo`.
+ * dependency between `oldUsageState` and `newUsageState`. It ensures that all
+ * operations performed under `oldUsageState` are completed and visible before the acceleration
+ * structure is accessed under `newUsageState`.
  * 
  * This function does not modify the acceleration structure, it only exforces execution ordering 
  * and acceleration structure memory visibility.
@@ -5998,16 +5976,16 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
  * To make sure BLAS builds before TLAS access it and TLAS does not use scratch buffer
  * whilst BLAS is buidling,
  * we put a barrier to transition the BLAS to ensure it has finished building and the scratch
- * buffer is not being used. This is expressed with oldUsageStateInfo.usageState being 
+ * buffer is not being used. This is expressed with `oldUsageState` being 
  * `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE`.
  * 
- * newUsageStateInfo.usageState should be the new usage state we want after the BLAS 
- * has finished wbuilding which is `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ`.
+ * `newUsageState` should be the new usage state we want after the BLAS 
+ * has finished building which is `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] as Acceleration structure to set barrier on.
- * @param[in] oldUsageStateInfo Pointer to a PalUsageStateInfo specifying the old usage state.
- * @param[in] newUsageStateInfo Pointer to a PalUsageStateInfo specifying the new usage state.
+ * @param[in] oldUsageState The old usage state.
+ * @param[in] newUsageState The new usage state.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6023,16 +6001,16 @@ PAL_API PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
 PAL_API PalResult PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructure* as,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
 
 /**
  * @brief Transition an image from one usage state to another.
  *
  * The graphics system must be initialized before this call. This function defines a
- * dependency between `oldUsageStateInfo` and `newUsageStateInfo`. It ensures that all
- * operations performed under `oldUsageStateInfo` are completed and visible before the image 
- * is accessed under `newUsageStateInfo`.
+ * dependency between `oldUsageState` and `newUsageState`. It ensures that all
+ * operations performed under `oldUsageState` are completed and visible before the image 
+ * is accessed under `newUsageState`.
  * 
  * This function does not modify the image, it only exforces execution ordering and image memory 
  * visibility.
@@ -6041,18 +6019,17 @@ PAL_API PalResult PAL_CALL palCmdAccelerationStructureBarrier(
  * 
  * To make sure the an image is ready for presenting after a render pass,
  * we put a barrier to transition the image to ensure the render pass has finished writing
- * to the image. This is expressed with oldUsageStateInfo.usageState being 
- * `PAL_USAGE_STATE_COLOR_ATTACHMENT` or `PAL_USAGE_STATE_COLOR_ATTACHMENT` or both set 
- * after each other.
+ * to the image. This is expressed with `oldUsageState` being 
+ * `PAL_USAGE_STATE_COLOR_ATTACHMENT`.
  * 
- * newUsageStateInfo.usageState should be the new usage state we want after the render pass 
+ * `newUsageState` should be the new usage state we want after the render pass 
  * has finished which is `PAL_USAGE_STATE_PRESENT`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] image Image to set barrier on.
  * @param[in] subresourceRange Subresource range of the image.
- * @param[in] oldUsageStateInfo Pointer to a PalUsageStateInfo specifying the old usage state.
- * @param[in] newUsageStateInfo Pointer to a PalUsageStateInfo specifying the new usage state.
+ * @param[in] oldUsageStateInfo The old usage state.
+ * @param[in] newUsageStateInfo The new usage state.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6067,16 +6044,16 @@ PAL_API PalResult PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
 
 /**
  * @brief Transition a buffer from one usage state to another.
  *
  * The graphics system must be initialized before this call. This function defines a
- * dependency between `oldUsageStateInfo` and `newUsageStateInfo`. It ensures that all
- * operations performed under `oldUsageStateInfo` are completed and visible before the buffer 
- * is accessed under `newUsageStateInfo`.
+ * dependency between `oldUsageState` and `newUsageState`. It ensures that all
+ * operations performed under `oldUsageState` are completed and visible before the buffer 
+ * is accessed under `newUsageState`.
  * 
  * This function does not modify the buffer, it only exforces execution ordering and buffer memory 
  * visibility.
@@ -6085,17 +6062,15 @@ PAL_API PalResult PAL_CALL palCmdImageBarrier(
  * 
  * To read back data from a buffer that will be written to by a shader,
  * we put a barrier to transition the buffer to ensurethe shader has finished writing to the 
- * buffer. This is expressed with oldUsageStateInfo.usageState being `PAL_USAGE_STATE_SHADER_WRITE`
- * and optional oldUsageStateInfo.shaderStage set to the shader stage that we will be doing the 
- * writing.
+ * buffer. This is expressed with `oldUsageState` being `PAL_USAGE_STATE_SHADER_WRITE`.
  * 
- * newUsageStateInfo.usageState should be the new usage state we want after the write 
+ * `newUsageState` should be the new usage state we want after the write 
  * has finished which is`PAL_USAGE_STATE_TRANSFER_READ`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer to set barrier on.
- * @param[in] oldUsageStateInfo Pointer to a PalUsageStateInfo specifying the old usage state.
- * @param[in] newUsageStateInfo Pointer to a PalUsageStateInfo specifying the new usage state.
+ * @param[in] oldUsageStateInfo The old usage state.
+ * @param[in] newUsageStateInfo The new usage state.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6109,8 +6084,8 @@ PAL_API PalResult PAL_CALL palCmdImageBarrier(
 PAL_API PalResult PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState);
 
 /**
  * @brief Dispatch compute shader workgroups.
@@ -6805,11 +6780,6 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  *
  * The graphics system must be initialized before this call.
  * 
- * Set PalDescriptorSetLayoutCreateInfo::enableDescriptorIndexing to true to enable
- * descriptor indexing on the descriptor set layout. `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING`
- * must be supported and enabled when creating the device if not, this function will fail and 
- * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
- * 
  * This defines the layout, ordering and the number of descriptors a descriptor set uses.
  * 
  * The layouts should reflect the exact layout of the shaders. Eg. 
@@ -6856,11 +6826,6 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  * @brief Create a descriptor pool to allocate descriptor sets.
  *
  * The graphics system must be initialized before this call.
- * 
- * Set PalDescriptorPoolCreateInfo::enableDescriptorIndexing to true to enable
- * descriptor indexing on the descriptor pool. `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING`
- * must be supported and enabled when creating the device if not, this function will fail and 
- * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] device Device that creates the descriptor pool.
  * @param[in] info Pointer to a PalDescriptorPoolCreateInfo struct that specifies parameters.
@@ -6947,11 +6912,6 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  * The graphics system must be initialized before this call.
  * 
  * If the write info has no valid resource handle, then `PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS`
- * must be supported and enabled when creating the device if not, this function will fail and 
- * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
- *
- * Set PalDescriptorPoolCreateInfo::enableDescriptorIndexing to true to enable
- * descriptor indexing on the descriptor pool. `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING`
  * must be supported and enabled when creating the device if not, this function will fail and 
  * return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *

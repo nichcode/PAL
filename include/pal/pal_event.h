@@ -262,7 +262,7 @@ typedef uint32_t PalDecorationMode;
  *
  * @since 1.0
  */
-typedef uint64_t PalEventType;
+typedef uint32_t PalEventType;
 
 /**
  * @typedef PalDispatchMode
@@ -273,7 +273,7 @@ typedef uint64_t PalEventType;
  *
  * @since 1.0
  */
-typedef uint64_t PalDispatchMode;
+typedef uint32_t PalDispatchMode;
 
 /**
  * @typedef PalEventCallback
@@ -322,9 +322,9 @@ typedef PalBool(PAL_CALL* PalPollFn)(
     PalEvent* outEvent);
 
 struct PalEvent {
-    int64_t userId; /**< You can have user events upto int64_t max.*/
     int64_t data;   /**< First data payload.*/
     int64_t data2;  /**< Second data payload.*/
+    int32_t userId; /**< You can have user events upto int32_t max.*/
     PalEventType type;
 };
 

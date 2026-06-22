@@ -3682,7 +3682,7 @@ PalResult PAL_CALL mapImageMemoryD3D12(
     uint64_t size,
     void** outPtr)
 {
-    return PAL_RESULT_MEMORY_MAP_FAILED;
+    return PAL_RESULT_INVALID_OPERATION;
 }
 
 void PAL_CALL unmapImageMemoryD3D12(PalImage* image)

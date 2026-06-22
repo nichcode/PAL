@@ -244,8 +244,6 @@ PalResult wlCreateWindow(
     // to a surface without taking control from users
     // we might implement a simple hash map to do that
     // but at the moment a linear search is fine
-    // FIXME: Implement a window hash map
-
     data->skipState = PAL_FALSE;
     data->skipConfigure = PAL_FALSE;
     *outWindow = data->window;

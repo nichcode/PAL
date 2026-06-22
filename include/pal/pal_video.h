@@ -65,22 +65,22 @@
 #define PAL_ORIENTATION_PORTRAIT_FLIPPED 3
 #define PAL_ORIENTATION_COUNT 4
 
-#define PAL_WINDOW_STYLE_RESIZABLE (1ULL << 0)
-#define PAL_WINDOW_STYLE_TRANSPARENT (1ULL << 1)
-#define PAL_WINDOW_STYLE_TOPMOST (1ULL << 2)
-#define PAL_WINDOW_STYLE_NO_MINIMIZEBOX (1ULL << 3)
-#define PAL_WINDOW_STYLE_NO_MAXIMIZEBOX (1ULL << 4)
-#define PAL_WINDOW_STYLE_TOOL (1ULL << 5)
-#define PAL_WINDOW_STYLE_BORDERLESS (1ULL << 6)
+#define PAL_WINDOW_STYLE_RESIZABLE (1U << 0)
+#define PAL_WINDOW_STYLE_TRANSPARENT (1U << 1)
+#define PAL_WINDOW_STYLE_TOPMOST (1U << 2)
+#define PAL_WINDOW_STYLE_NO_MINIMIZEBOX (1U << 3)
+#define PAL_WINDOW_STYLE_NO_MAXIMIZEBOX (1U << 4)
+#define PAL_WINDOW_STYLE_TOOL (1U << 5)
+#define PAL_WINDOW_STYLE_BORDERLESS (1U << 6)
 
 #define PAL_WINDOW_STATE_MAXIMIZED 0
 #define PAL_WINDOW_STATE_MINIMIZED 1
 #define PAL_WINDOW_STATE_RESTORED 2
 #define PAL_WINDOW_STATE_COUNT 3
 
-#define PAL_FLASH_STOP 0                 /**< Stop flashing.*/
-#define PAL_FLASH_CAPTION (1ULL << 0)    /**< Flash the titlebar of the window.*/
-#define PAL_FLASH_TRAY (1ULL << 1)       /**< Flash the icon of the window.*/
+#define PAL_FLASH_STOP 0               /**< Stop flashing.*/
+#define PAL_FLASH_CAPTION (1U << 0)    /**< Flash the titlebar of the window.*/
+#define PAL_FLASH_TRAY (1U << 1)       /**< Flash the icon of the window.*/
 
 #define PAL_CONFIG_BACKEND_PAL_OPENGL 0 /**< Use PAL opengl module backend.*/
 #define PAL_CONFIG_BACKEND_EGL 1
@@ -397,7 +397,7 @@ typedef uint32_t PalOrientation;
  *
  * @since 1.0
  */
-typedef uint64_t PalWindowStyle;
+typedef uint32_t PalWindowStyle;
 
 /**
  * @typedef PalWindowState
@@ -422,7 +422,7 @@ typedef uint32_t PalWindowState;
  *
  * @since 1.0
  */
-typedef uint64_t PalFlashFlag;
+typedef uint32_t PalFlashFlag;
 
 /**
  * @typedef PalFBConfigBackend
@@ -519,7 +519,7 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalFlashFlag flags;   /**< See PalFlashFlag.*/
+    PalFlashFlag flags;
     uint32_t interval;    /**< In milliseconds. Set to 0 for default.*/
     uint32_t count;       /**< Set to 0 to flash until focused or cancelled.*/
 } PalFlashInfo;
@@ -577,7 +577,6 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalWindowStyle style;    /**< Window style.*/
     const char* title;       /**< Title in UTF-8 encoding.*/
     PalMonitor* monitor;     /**< Set to nullptr to use primary monitor.*/
     const char* appName;     /**< If nullptr, `PAL` will be used.*/
@@ -587,8 +586,8 @@ typedef struct {
     uint32_t width;          /**< Width in pixels.*/
     uint32_t height;         /**< Width in pixels.*/
     PalBool show;            /**< Show after creation.*/
-    PalBool maximized;       /**< Maximize after creation.*/
-    PalBool minimized;       /**< Minimze after creation.*/
+    PalWindowStyle style;    /**< Window style.*/
+    PalWindowState state;
     PalBool center;          /**< Center after creation.*/
 } PalWindowCreateInfo;
 
