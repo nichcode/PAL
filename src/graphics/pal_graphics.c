@@ -5,20 +5,34 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-// ==================================================
-// Includes
-// ==================================================
+#include "pal_backends_graphics.h"
+#include "pal_shared.h"
 
-#include "pal/pal_graphics.h"
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
 
-// ==================================================
-// Typedefs, enums and structs
-// ==================================================
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
 
-#define MAX_BACKENDS 18 // 16 for users
+// set unicode
+#ifndef UNICODE
+#define UNICODE
+#endif // UNICODE
+
+#include <windows.h>
+#define PLATFORM_SOURCE PAL_RESULT_SOURCE_WINDOWS
+#elif defined(__linux__)
+#include <errno.h>
+#define PLATFORM_SOURCE PAL_RESULT_SOURCE_LINUX
+#endif // _WIN32
+
+#define MAX_BACKENDS (PAL_MAX_CUSTOM_BACKENDS + 2)
 #define PAL_HANDLE(name)                                                                           \
     struct name {                                                                                  \
-        const PalGraphicsBackend* backend;                                                         \
+        const PalGraphicsVtable* backend;                                                          \
     };
 
 PAL_HANDLE(PalAdapter)
@@ -47,7 +61,7 @@ PAL_HANDLE(PalShaderBindingTable)
 typedef struct {
     int32_t count;
     int32_t startIndex;
-    const PalGraphicsBackend* base;
+    PalGraphicsVtable base;
 } BackendData;
 
 typedef struct {
@@ -55,13 +69,9 @@ typedef struct {
     int32_t backendCount;
     const PalAllocator* allocator;
     BackendData backends[MAX_BACKENDS];
-} GraphicsLinux;
+} Graphics;
 
-static GraphicsLinux s_Graphics = {0};
-
-// ==================================================
-// Internal API
-// ==================================================
+static Graphics s_Graphics = {0};
 
 static inline uint32_t _ceil(
     uint32_t a,
@@ -77,1992 +87,419 @@ static inline uint32_t _min(
     return (a < b) ? a : b;
 }
 
-// ==================================================
-// Vulkan API
-// ==================================================
-
-#if PAL_HAS_VULKAN_BACKEND
-
-// ==================================================
-// Adapter
-// ==================================================
-
-PalResult PAL_CALL initGraphicsVk(
-    const PalGraphicsDebugger* debugger,
-    const PalAllocator* allocator);
-
-void PAL_CALL shutdownGraphicsVk();
-
-PalResult PAL_CALL enumerateAdaptersVk(
-    int32_t* count,
-    PalAdapter** outAdapters);
-
-PalResult PAL_CALL getAdapterInfoVk(
-    PalAdapter* adapter,
-    PalAdapterInfo* info);
-
-PalResult PAL_CALL getAdapterCapabilitiesVk(
-    PalAdapter* adapter,
-    PalAdapterCapabilities* caps);
-
-PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter);
-
-uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
-    PalAdapter* adapter, 
-    PalShaderFormats shaderFormat);
-
-// ==================================================
-// Device
-// ==================================================
-
-PalResult PAL_CALL createDeviceVk(
-    PalAdapter* adapter,
-    PalAdapterFeatures features,
-    PalDevice** outDevice);
-
-void PAL_CALL destroyDeviceVk(PalDevice* device);
-
-PalResult PAL_CALL waitDeviceVk(PalDevice* device);
-
-// ==================================================
-// Memory
-// ==================================================
-
-PalResult PAL_CALL allocateMemoryVk(
-    PalDevice* device,
-    PalMemoryType type,
-    uint64_t memoryMask,
-    uint64_t size,
-    PalMemory** outMemory);
-
-void PAL_CALL freeMemoryVk(
-    PalDevice* device,
-    PalMemory* memory);
-
-// ==================================================
-// Extended Adapter Features
-// ==================================================
-
-PalResult PAL_CALL querySamplerAnisotropyCapabilitiesVk(
-    PalDevice* device,
-    PalSamplerAnisotropyCapabilities* caps);
-
-PalResult PAL_CALL queryMultiViewCapabilitiesVk(
-    PalDevice* device,
-    PalMultiViewCapabilities* caps);
-
-PalResult PAL_CALL queryMultiViewportCapabilitiesVk(
-    PalDevice* device,
-    PalMultiViewportCapabilities* caps);
-
-PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
-    PalDevice* device,
-    PalDepthStencilCapabilities* caps);
-
-PalResult PAL_CALL queryFragmentShadingRateCapabilitiesVk(
-    PalDevice* device,
-    PalFragmentShadingRateCapabilities* caps);
-
-PalResult PAL_CALL queryMeshShaderCapabilitiesVk(
-    PalDevice* device,
-    PalMeshShaderCapabilities* caps);
-
-PalResult PAL_CALL queryRayTracingCapabilitiesVk(
-    PalDevice* device,
-    PalRayTracingCapabilities* caps);
-
-PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
-    PalDevice* device,
-    PalDescriptorIndexingCapabilities* caps);
-
-// ==================================================
-// Queue
-// ==================================================
-
-PalResult PAL_CALL createQueueVk(
-    PalDevice* device,
-    PalQueueType type,
-    PalQueue** outQueue);
-
-void PAL_CALL destroyQueueVk(PalQueue* queue);
-
-PalResult PAL_CALL waitQueueVk(PalQueue* queue);
-
-PalBool PAL_CALL canQueuePresentVk(
-    PalQueue* queue,
-    PalSurface* surface);
-
-// ==================================================
-// Formats
-// ==================================================
-
-PalResult PAL_CALL enumerateFormatsVk(
-    PalAdapter* adapter,
-    int32_t* count,
-    PalFormatInfo* outFormats);
-
-PalBool PAL_CALL isFormatSupportedVk(
-    PalAdapter* adapter,
-    PalFormat format);
-
-PalImageUsages PAL_CALL queryFormatImageUsagesVk(
-    PalAdapter* adapter,
-    PalFormat format);
-
-PalSampleCount PAL_CALL queryFormatSampleCountVk(
-    PalAdapter* adapter,
-    PalFormat format);
-
-// ==================================================
-// Image
-// ==================================================
-
-PalResult PAL_CALL createImageVk(
-    PalDevice* device,
-    const PalImageCreateInfo* info,
-    PalImage** outImage);
-
-void PAL_CALL destroyImageVk(PalImage* image);
-
-PalResult PAL_CALL getImageInfoVk(
-    PalImage* image,
-    PalImageInfo* info);
-
-PalResult PAL_CALL getImageMemoryRequirementsVk(
-    PalImage* image,
-    PalMemoryRequirements* requirements);
-
-PalResult PAL_CALL bindImageMemoryVk(
-    PalImage* image,
-    PalMemory* memory,
-    uint64_t offset);
-
-PalResult PAL_CALL mapImageMemoryVk(
-    PalImage* image,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr);
-
-void PAL_CALL unmapImageMemoryVk(PalImage* image);
-
-// ==================================================
-// Image View
-// ==================================================
-
-PalResult PAL_CALL createImageViewVk(
-    PalDevice* device,
-    PalImage* image,
-    const PalImageViewCreateInfo* info,
-    PalImageView** outImageView);
-
-void PAL_CALL destroyImageViewVk(PalImageView* imageView);
-
-// ==================================================
-// Sampler
-// ==================================================
-
-PalResult PAL_CALL createSamplerVk(
-    PalDevice* device,
-    const PalSamplerCreateInfo* info,
-    PalSampler** outSampler);
-
-void PAL_CALL destroySamplerVk(PalSampler* sampler);
-
-// ==================================================
-// Surface
-// ==================================================
-
-PalResult PAL_CALL createSurfaceVk(
-    PalDevice* device,
-    PalGraphicsWindow* window,
-    PalSurface** outSurface);
-
-void PAL_CALL destroySurfaceVk(PalSurface* surface);
-
-PalResult PAL_CALL getSurfaceCapabilitiesVk(
-    PalDevice* device,
-    PalSurface* surface,
-    PalSurfaceCapabilities* caps);
-
-// ==================================================
-// Swapchain
-// ==================================================
-
-PalResult PAL_CALL createSwapchainVk(
-    PalDevice* device,
-    PalQueue* queue,
-    PalSurface* surface,
-    const PalSwapchainCreateInfo* info,
-    PalSwapchain** outSwapchain);
-
-void PAL_CALL destroySwapchainVk(PalSwapchain* swapchain);
-
-PalImage* PAL_CALL getSwapchainImageVk(
-    PalSwapchain* swapchain,
-    int32_t index);
-
-PalResult PAL_CALL getNextSwapchainImageVk(
-    PalSwapchain* swapchain,
-    PalSwapchainNextImageInfo* info,
-    uint32_t* outIndex);
-
-PalResult PAL_CALL presentSwapchainVk(
-    PalSwapchain* swapchain,
-    PalSwapchainPresentInfo* info);
-
-PalResult PAL_CALL resizeSwapchainVk(
-    PalSwapchain* swapchain,
-    uint32_t newWidth,
-    uint32_t newHeight);
-
-// ==================================================
-// Shader
-// ==================================================
-
-PalResult PAL_CALL createShaderVk(
-    PalDevice* device,
-    const PalShaderCreateInfo* info,
-    PalShader** outShader);
-
-void PAL_CALL destroyShaderVk(PalShader* shader);
-
-// ==================================================
-// Fence
-// ==================================================
-
-PalResult PAL_CALL createFenceVk(
-    PalDevice* device,
-    PalBool signaled,
-    PalFence** outFence);
-
-void PAL_CALL destroyFenceVk(PalFence* fence);
-
-PalResult PAL_CALL waitFenceVk(
-    PalFence* fence,
-    uint64_t timeout);
-
-PalResult PAL_CALL resetFenceVk(PalFence* fence);
-
-PalBool PAL_CALL isFenceSignaledVk(PalFence* fence);
-
-// ==================================================
-// Semaphore
-// ==================================================
-
-PalResult PAL_CALL createSemaphoreVk(
-    PalDevice* device,
-    PalBool enableTimeline,
-    PalSemaphore** outSemaphore);
-
-void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore);
-
-PalResult PAL_CALL waitSemaphoreVk(
-    PalSemaphore* semaphore,
-    uint64_t value,
-    uint64_t timeout);
-
-PalResult PAL_CALL signalSemaphoreVk(
-    PalSemaphore* semaphore,
-    PalQueue* queue,
-    uint64_t value);
-
-PalResult PAL_CALL getSemaphoreValueVk(
-    PalSemaphore* semaphore,
-    uint64_t* outValue);
-
-// ==================================================
-// Command Pool And Buffer
-// ==================================================
-
-PalResult PAL_CALL createCommandPoolVk(
-    PalDevice* device,
-    PalQueue* queue,
-    PalCommandPool** outPool);
-
-void PAL_CALL destroyCommandPoolVk(PalCommandPool* pool);
-
-PalResult PAL_CALL resetCommandPoolVk(PalCommandPool* pool);
-
-PalResult PAL_CALL allocateCommandBufferVk(
-    PalDevice* device,
-    PalCommandPool* pool,
-    PalCommandBufferType type,
-    PalCommandBuffer** outCmdBuffer);
-
-void PAL_CALL freeCommandBufferVk(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL submitCommandBufferVk(
-    PalQueue* queue,
-    PalCommandBufferSubmitInfo* info);
-
-// ==================================================
-// Command Recording
-// ==================================================
-
-PalResult PAL_CALL cmdBeginVk(
-    PalCommandBuffer* cmdBuffer,
-    PalRenderingLayoutInfo* info);
-
-PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL cmdExecuteCommandBufferVk(
-    PalCommandBuffer* primaryCmdBuffer,
-    PalCommandBuffer* secondaryCmdBuffer);
-
-PalResult PAL_CALL cmdSetFragmentShadingRateVk(
-    PalCommandBuffer* cmdBuffer,
-    PalFragmentShadingRateState* state);
-
-PalResult PAL_CALL cmdDrawMeshTasksVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
-PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint32_t drawCount);
-
-PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBuffer* countBuffer,
-    uint32_t maxDrawCount);
-
-PalResult PAL_CALL cmdBuildAccelerationStructureVk(
-    PalCommandBuffer* cmdBuffer,
-    PalAccelerationStructureBuildInfo* info);
-
-PalResult PAL_CALL cmdBeginRenderingVk(
-    PalCommandBuffer* cmdBuffer,
-    PalRenderingInfo* info);
-
-PalResult PAL_CALL cmdEndRenderingVk(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL cmdCopyBufferVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* dst,
-    PalBuffer* src,
-    PalBufferCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdCopyBufferToImageVk(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* dstImage,
-    PalBuffer* srcBuffer,
-    PalBufferImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdCopyImageVk(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* dst,
-    PalImage* src,
-    PalImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdCopyImageToBufferVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* dstBuffer,
-    PalImage* srcImage,
-    PalBufferImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdBindPipelineVk(
-    PalCommandBuffer* cmdBuffer,
-    PalPipeline* pipeline);
-
-PalResult PAL_CALL cmdSetViewportVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t count,
-    PalViewport* viewports);
-
-PalResult PAL_CALL cmdSetScissorsVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t count,
-    PalRect2D* scissors);
-
-PalResult PAL_CALL cmdBindVertexBuffersVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t firstSlot,
-    uint32_t count,
-    PalBuffer** buffers,
-    uint64_t* offsets);
-
-PalResult PAL_CALL cmdBindIndexBufferVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint64_t offset,
-    PalIndexType type);
-
-PalResult PAL_CALL cmdDrawVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t vertexCount,
-    uint32_t instanceCount,
-    uint32_t firstVertex,
-    uint32_t firstInstance);
-
-PalResult PAL_CALL cmdDrawIndirectVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint32_t count);
-
-PalResult PAL_CALL cmdDrawIndirectCountVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBuffer* countBuffer,
-    uint32_t maxDrawCount);
-
-PalResult PAL_CALL cmdDrawIndexedVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t indexCount,
-    uint32_t instanceCount,
-    uint32_t firstIndex,
-    int32_t vertexOffset,
-    uint32_t firstInstance);
-
-PalResult PAL_CALL cmdDrawIndexedIndirectVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint32_t count);
-
-PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBuffer* countBuffer,
-    uint32_t maxDrawCount);
-
-PalResult PAL_CALL cmdAccelerationStructureBarrierVk(
-    PalCommandBuffer* cmdBuffer,
-    PalAccelerationStructure* as,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
-
-PalResult PAL_CALL cmdImageBarrierVk(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* image,
-    PalImageSubresourceRange* subresourceRange,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
-
-PalResult PAL_CALL cmdBufferBarrierVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
-
-PalResult PAL_CALL cmdDispatchVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
-PalResult PAL_CALL cmdDispatchBaseVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t baseGroupX,
-    uint32_t baseGroupY,
-    uint32_t baseGroupZ,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
-PalResult PAL_CALL cmdDispatchIndirectVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer);
-
-PalResult PAL_CALL cmdTraceRaysVk(
-    PalCommandBuffer* cmdBuffer,
-    PalShaderBindingTable* sbt,
-    uint32_t raygenIndex,
-    uint32_t width,
-    uint32_t height,
-    uint32_t depth);
-
-PalResult PAL_CALL cmdTraceRaysIndirectVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t raygenIndex,
-    PalShaderBindingTable* sbt,
-    PalBuffer* buffer);
-
-PalResult PAL_CALL cmdBindDescriptorSetVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t setIndex,
-    PalDescriptorSet* set);
-
-PalResult PAL_CALL cmdPushConstantsVk(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t shaderStageCount,
-    PalShaderStage* shaderStages,
-    uint32_t offset,
-    uint32_t size,
-    const void* value);
-
-PalResult PAL_CALL cmdSetCullModeVk(
-    PalCommandBuffer* cmdBuffer,
-    PalCullMode cullMode);
-
-PalResult PAL_CALL cmdSetFrontFaceVk(
-    PalCommandBuffer* cmdBuffer,
-    PalFrontFace frontFace);
-
-PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
-    PalCommandBuffer* cmdBuffer,
-    PalPrimitiveTopology topology);
-
-PalResult PAL_CALL cmdSetDepthTestEnableVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBool enable);
-
-PalResult PAL_CALL cmdSetDepthWriteEnableVk(
-    PalCommandBuffer* cmdBuffer,
-    PalBool enable);
-
-PalResult PAL_CALL cmdSetStencilOpVk(
-    PalCommandBuffer* cmdBuffer,
-    PalStencilFaceFlags faceMask,
-    PalStencilOp failOp,
-    PalStencilOp passOp,
-    PalStencilOp depthFailOp,
-    PalCompareOp compareOp);
-
-// ==================================================
-// Acceleration Structure
-// ==================================================
-
-PalResult PAL_CALL createAccelerationstructureVk(
-    PalDevice* device,
-    const PalAccelerationStructureCreateInfo* info,
-    PalAccelerationStructure** outAs);
-
-void PAL_CALL destroyAccelerationstructureVk(PalAccelerationStructure* as);
-
-PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
-    PalDevice* device,
-    PalAccelerationStructureBuildInfo* info,
-    PalAccelerationStructureBuildSize* size);
-
-// ==================================================
-// Buffer
-// ==================================================
-
-PalResult PAL_CALL createBufferVk(
-    PalDevice* device,
-    const PalBufferCreateInfo* info,
-    PalBuffer** outBuffer);
-
-void PAL_CALL destroyBufferVk(PalBuffer* buffer);
-
-PalResult PAL_CALL getBufferMemoryRequirementsVk(
-    PalBuffer* buffer,
-    PalMemoryRequirements* requirements);
-
-PalResult PAL_CALL computeInstanceBufferRequirementsVk(
-    PalDevice* device,
-    uint32_t instanceCount,
-    uint64_t* outSize);
-
-PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
-    PalDevice* device,
-    PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo,
-    uint32_t* outBufferRowLength,
-    uint32_t* outBufferImageHeight,
-    uint64_t* outSize);
-
-PalResult PAL_CALL writeToInstanceBufferVk(
-    PalDevice* device,
-    void* ptr,
-    PalAccelerationStructureInstance* instances,
-    uint32_t instanceCount);
-
-PalResult PAL_CALL writeToImageCopyStagingBufferVk(
-    PalDevice* device,
-    void* ptr,
-    void* srcData,
-    PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL bindBufferMemoryVk(
-    PalBuffer* buffer,
-    PalMemory* memory,
-    uint64_t offset);
-
-PalResult PAL_CALL mapBufferMemoryVk(
-    PalBuffer* buffer,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr);
-
-void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer);
-
-PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer* buffer);
-
-// ==================================================
-// Descriptor Pool, Set and Layout
-// ==================================================
-
-PalResult PAL_CALL createDescriptorSetLayoutVk(
-    PalDevice* device,
-    const PalDescriptorSetLayoutCreateInfo* info,
-    PalDescriptorSetLayout** outLayout);
-
-void PAL_CALL destroyDescriptorSetLayoutVk(PalDescriptorSetLayout* layout);
-
-PalResult PAL_CALL createDescriptorPoolVk(
-    PalDevice* device,
-    const PalDescriptorPoolCreateInfo* info,
-    PalDescriptorPool** outPool);
-
-void PAL_CALL destroyDescriptorPoolVk(PalDescriptorPool* pool);
-
-PalResult PAL_CALL resetDescriptorPoolVk(PalDescriptorPool* pool);
-
-PalResult PAL_CALL allocateDescriptorSetVk(
-    PalDevice* device,
-    PalDescriptorPool* pool,
-    PalDescriptorSetLayout* layout,
-    PalDescriptorSet** outSet);
-
-PalResult PAL_CALL updateDescriptorSetVk(
-    PalDevice* device,
-    uint32_t count,
-    PalDescriptorSetWriteInfo* infos);
-
-// ==================================================
-// Pipeline Layout
-// ==================================================
-
-PalResult PAL_CALL createPipelineLayoutVk(
-    PalDevice* device,
-    const PalPipelineLayoutCreateInfo* info,
-    PalPipelineLayout** outLayout);
-
-void PAL_CALL destroyPipelineLayoutVk(PalPipelineLayout* layout);
-
-// ==================================================
-// Pipeline
-// ==================================================
-
-PalResult PAL_CALL createGraphicsPipelineVk(
-    PalDevice* device,
-    const PalGraphicsPipelineCreateInfo* info,
-    PalPipeline** outPipeline);
-
-PalResult PAL_CALL createComputePipelineVk(
-    PalDevice* device,
-    const PalComputePipelineCreateInfo* info,
-    PalPipeline** outPipeline);
-
-PalResult PAL_CALL createRayTracingPipelineVk(
-    PalDevice* device,
-    const PalRayTracingPipelineCreateInfo* info,
-    PalPipeline** outPipeline);
-
-void PAL_CALL destroyPipelineVk(PalPipeline* pipeline);
-
-// ==================================================
-// Shader Binding Table
-// ==================================================
-
-PalResult PAL_CALL createShaderBindingTableVk(
-    PalDevice* device,
-    const PalShaderBindingTableCreateInfo* info,
-    PalShaderBindingTable** outSbt);
-
-void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt);
-
-PalResult PAL_CALL updateShaderBindingTableVk(
-    PalShaderBindingTable* sbt, 
-    uint32_t count,
-    PalShaderBindingTableRecordInfo* infos);
-
-static PalGraphicsBackend s_VkBackend = {
-    // adapter
-    .enumerateAdapters = enumerateAdaptersVk,
-    .getAdapterInfo = getAdapterInfoVk,
-    .getAdapterCapabilities = getAdapterCapabilitiesVk,
-    .getAdapterFeatures = getAdapterFeaturesVk,
-    .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetVk,
-
-    // device
-    .createDevice = createDeviceVk,
-    .destroyDevice = destroyDeviceVk,
-
-    // memory
-    .allocateMemory = allocateMemoryVk,
-    .freeMemory = freeMemoryVk,
-
-    // extended adapter features
-    .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesVk,
-    .queryMultiViewCapabilities = queryMultiViewCapabilitiesVk,
-    .queryMultiViewportCapabilities = queryMultiViewportCapabilitiesVk,
-    .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesVk,
-    .queryFragmentShadingRateCapabilities = queryFragmentShadingRateCapabilitiesVk,
-    .queryMeshShaderCapabilities = queryMeshShaderCapabilitiesVk,
-    .queryRayTracingCapabilities = queryRayTracingCapabilitiesVk,
-    .queryDescriptorIndexingCapabilities = queryDescriptorIndexingCapabilitiesVk,
-
-    // queue
-    .createQueue = createQueueVk,
-    .destroyQueue = destroyQueueVk,
-    .waitQueue = waitQueueVk,
-    .canQueuePresent = canQueuePresentVk,
-
-    // format
-    .enumerateFormats = enumerateFormatsVk,
-    .isFormatSupported = isFormatSupportedVk,
-    .queryFormatImageUsages = queryFormatImageUsagesVk,
-    .queryFormatSampleCount = queryFormatSampleCountVk,
-
-    // image
-    .createImage = createImageVk,
-    .destroyImage = destroyImageVk,
-    .getImageInfo = getImageInfoVk,
-    .getImageMemoryRequirements = getImageMemoryRequirementsVk,
-    .bindImageMemory = bindImageMemoryVk,
-    .mapImageMemory = mapImageMemoryVk,
-    .unmapImageMemory = unmapImageMemoryVk,
-
-    // image view
-    .createImageView = createImageViewVk,
-    .destroyImageView = destroyImageViewVk,
-
-    // sampler
-    .createSampler = createSamplerVk,
-    .destroySampler = destroySamplerVk,
-
-    // surface
-    .createSurface = createSurfaceVk,
-    .destroySurface = destroySurfaceVk,
-    .getSurfaceCapabilities = getSurfaceCapabilitiesVk,
-
-    // swapchain
-    .createSwapchain = createSwapchainVk,
-    .destroySwapchain = destroySwapchainVk,
-    .getSwapchainImage = getSwapchainImageVk,
-    .getNextSwapchainImage = getNextSwapchainImageVk,
-    .presentSwapchain = presentSwapchainVk,
-    .resizeSwapchain = resizeSwapchainVk,
-
-    // shader
-    .createShader = createShaderVk,
-    .destroyShader = destroyShaderVk,
-
-    // fence
-    .createFence = createFenceVk,
-    .destroyFence = destroyFenceVk,
-    .waitFence = waitFenceVk,
-    .resetFence = resetFenceVk,
-    .isFenceSignaled = isFenceSignaledVk,
-
-    // semaphore
-    .createSemaphore = createSemaphoreVk,
-    .destroySemaphore = destroySemaphoreVk,
-    .waitSemaphore = waitSemaphoreVk,
-    .signalSemaphore = signalSemaphoreVk,
-    .getSemaphoreValue = getSemaphoreValueVk,
-
-    // command pool and command buffer
-    .createCommandPool = createCommandPoolVk,
-    .destroyCommandPool = destroyCommandPoolVk,
-    .resetCommandPool = resetCommandPoolVk,
-    .allocateCommandBuffer = allocateCommandBufferVk,
-    .freeCommandBuffer = freeCommandBufferVk,
-    .resetCommandBuffer = resetCommandBufferVk,
-    .submitCommandBuffer = submitCommandBufferVk,
-
-    // command recording
-    .cmdBegin = cmdBeginVk,
-    .cmdEnd = cmdEndVk,
-    .cmdExecuteCommandBuffer = cmdExecuteCommandBufferVk,
-    .cmdSetFragmentShadingRate = cmdSetFragmentShadingRateVk,
-    .cmdDrawMeshTasks = cmdDrawMeshTasksVk,
-    .cmdDrawMeshTasksIndirect = cmdDrawMeshTasksIndirectVk,
-    .cmdDrawMeshTasksIndirectCount = cmdDrawMeshTasksIndirectCountVk,
-    .cmdBuildAccelerationStructure = cmdBuildAccelerationStructureVk,
-    .cmdBeginRendering = cmdBeginRenderingVk,
-    .cmdEndRendering = cmdEndRenderingVk,
-    .cmdCopyBuffer = cmdCopyBufferVk,
-    .cmdCopyBufferToImage = cmdCopyBufferToImageVk,
-    .cmdCopyImage = cmdCopyImageVk,
-    .cmdCopyImageToBuffer = cmdCopyImageToBufferVk,
-    .cmdBindPipeline = cmdBindPipelineVk,
-    .cmdSetViewport = cmdSetViewportVk,
-    .cmdSetScissors = cmdSetScissorsVk,
-    .cmdBindVertexBuffers = cmdBindVertexBuffersVk,
-    .cmdBindIndexBuffer = cmdBindIndexBufferVk,
-    .cmdDraw = cmdDrawVk,
-    .cmdDrawIndirect = cmdDrawIndirectVk,
-    .cmdDrawIndirectCount = cmdDrawIndirectCountVk,
-    .cmdDrawIndexed = cmdDrawIndexedVk,
-    .cmdDrawIndexedIndirect = cmdDrawIndexedIndirectVk,
-    .cmdDrawIndexedIndirectCount = cmdDrawIndexedIndirectCountVk,
-    .cmdAccelerationStructureBarrier = cmdAccelerationStructureBarrierVk,
-    .cmdImageBarrier = cmdImageBarrierVk,
-    .cmdBufferBarrier = cmdBufferBarrierVk,
-    .cmdDispatch = cmdDispatchVk,
-    .cmdDispatchBase = cmdDispatchBaseVk,
-    .cmdDispatchIndirect = cmdDispatchIndirectVk,
-    .cmdTraceRays = cmdTraceRaysVk,
-    .cmdTraceRaysIndirect = cmdTraceRaysIndirectVk,
-    .cmdBindDescriptorSet = cmdBindDescriptorSetVk,
-    .cmdPushConstants = cmdPushConstantsVk,
-    .cmdSetCullMode = cmdSetCullModeVk,
-    .cmdSetFrontFace = cmdSetFrontFaceVk,
-    .cmdSetPrimitiveTopology = cmdSetPrimitiveTopologyVk,
-    .cmdSetDepthTestEnable = cmdSetDepthTestEnableVk,
-    .cmdSetDepthWriteEnable = cmdSetDepthWriteEnableVk,
-    .cmdSetStencilOp = cmdSetStencilOpVk,
-
-    // acceleration structure
-    .createAccelerationstructure = createAccelerationstructureVk,
-    .destroyAccelerationstructure = destroyAccelerationstructureVk,
-    .getAccelerationStructureBuildSize = getAccelerationStructureBuildSizeVk,
-
-    // buffer
-    .createBuffer = createBufferVk,
-    .destroyBuffer = destroyBufferVk,
-    .getBufferMemoryRequirements = getBufferMemoryRequirementsVk,
-    .computeInstanceBufferRequirements = computeInstanceBufferRequirementsVk,
-    .computeImageCopyStagingBufferRequirements = computeImageCopyStagingBufferRequirementsVk,
-    .writeToInstanceBuffer = writeToInstanceBufferVk,
-    .writeToImageCopyStagingBuffer = writeToImageCopyStagingBufferVk,
-    .bindBufferMemory = bindBufferMemoryVk,
-    .getBufferDeviceAddress = getBufferDeviceAddressVk,
-    .mapBufferMemory = mapBufferMemoryVk,
-    .unmapBufferMemory = unmapBufferMemoryVk,
-
-    // descriptor set layout, descriptor pool and descriptor set
-    .createDescriptorSetLayout = createDescriptorSetLayoutVk,
-    .destroyDescriptorSetLayout = destroyDescriptorSetLayoutVk,
-    .createDescriptorPool = createDescriptorPoolVk,
-    .destroyDescriptorPool = destroyDescriptorPoolVk,
-    .resetDescriptorPool = resetDescriptorPoolVk,
-    .allocateDescriptorSet = allocateDescriptorSetVk,
-    .updateDescriptorSet = updateDescriptorSetVk,
-
-    // pipeline layout
-    .createPipelineLayout = createPipelineLayoutVk,
-    .destroyPipelineLayout = destroyPipelineLayoutVk,
-
-    // pipeline
-    .createGraphicsPipeline = createGraphicsPipelineVk,
-    .createComputePipeline = createComputePipelineVk,
-    .createRayTracingPipeline = createRayTracingPipelineVk,
-    .destroyPipeline = destroyPipelineVk,
-
-    // shader binding table
-    .createShaderBindingTable = createShaderBindingTableVk,
-    .destroyShaderBindingTable = destroyShaderBindingTableVk,
-    .updateShaderBindingTable = updateShaderBindingTableVk};
-
-#endif // PAL_HAS_VULKAN_BACKEND
-
-// ==================================================
-// D3D12 API
-// ==================================================
-
-#if PAL_HAS_D3D12_BACKEND
-
-// ==================================================
-// Adapter
-// ==================================================
-
-PalResult PAL_CALL initGraphicsD3D12(
-    const PalGraphicsDebugger* debugger,
-    const PalAllocator* allocator);
-
-void PAL_CALL shutdownGraphicsD3D12();
-
-PalResult PAL_CALL enumerateAdaptersD3D12(
-    int32_t* count,
-    PalAdapter** outAdapters);
-
-PalResult PAL_CALL getAdapterInfoD3D12(
-    PalAdapter* adapter,
-    PalAdapterInfo* info);
-
-PalResult PAL_CALL getAdapterCapabilitiesD3D12(
-    PalAdapter* adapter,
-    PalAdapterCapabilities* caps);
-
-PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter);
-
-uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
-    PalAdapter* adapter, 
-    PalShaderFormats shaderFormat);
-
-// ==================================================
-// Device
-// ==================================================
-
-PalResult PAL_CALL createDeviceD3D12(
-    PalAdapter* adapter,
-    PalAdapterFeatures features,
-    PalDevice** outDevice);
-
-void PAL_CALL destroyDeviceD3D12(PalDevice* device);
-
-PalResult PAL_CALL waitDeviceD3D12(PalDevice* device);
-
-// ==================================================
-// Memory
-// ==================================================
-
-PalResult PAL_CALL allocateMemoryD3D12(
-    PalDevice* device,
-    PalMemoryType type,
-    uint64_t memoryMask,
-    uint64_t size,
-    PalMemory** outMemory);
-
-void PAL_CALL freeMemoryD3D12(
-    PalDevice* device,
-    PalMemory* memory);
-
-// ==================================================
-// Extended Adapter Features
-// ==================================================
-
-PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
-    PalDevice* device,
-    PalSamplerAnisotropyCapabilities* caps);
-
-PalResult PAL_CALL queryMultiViewCapabilitiesD3D12(
-    PalDevice* device,
-    PalMultiViewCapabilities* caps);
-
-PalResult PAL_CALL queryMultiViewportCapabilitiesD3D12(
-    PalDevice* device,
-    PalMultiViewportCapabilities* caps);
-
-PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
-    PalDevice* device,
-    PalDepthStencilCapabilities* caps);
-
-PalResult PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
-    PalDevice* device,
-    PalFragmentShadingRateCapabilities* caps);
-
-PalResult PAL_CALL queryMeshShaderCapabilitiesD3D12(
-    PalDevice* device,
-    PalMeshShaderCapabilities* caps);
-
-PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
-    PalDevice* device,
-    PalRayTracingCapabilities* caps);
-
-PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
-    PalDevice* device,
-    PalDescriptorIndexingCapabilities* caps);
-
-// ==================================================
-// Queue
-// ==================================================
-
-PalResult PAL_CALL createQueueD3D12(
-    PalDevice* device,
-    PalQueueType type,
-    PalQueue** outQueue);
-
-void PAL_CALL destroyQueueD3D12(PalQueue* queue);
-
-PalResult PAL_CALL waitQueueD3D12(PalQueue* queue);
-
-PalBool PAL_CALL canQueuePresentD3D12(
-    PalQueue* queue,
-    PalSurface* surface);
-
-// ==================================================
-// Formats
-// ==================================================
-
-PalResult PAL_CALL enumerateFormatsD3D12(
-    PalAdapter* adapter,
-    int32_t* count,
-    PalFormatInfo* outFormats);
-
-PalBool PAL_CALL isFormatSupportedD3D12(
-    PalAdapter* adapter,
-    PalFormat format);
-
-PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
-    PalAdapter* adapter,
-    PalFormat format);
-
-PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
-    PalAdapter* adapter,
-    PalFormat format);
-
-// ==================================================
-// Image
-// ==================================================
-
-PalResult PAL_CALL createImageD3D12(
-    PalDevice* device,
-    const PalImageCreateInfo* info,
-    PalImage** outImage);
-
-void PAL_CALL destroyImageD3D12(PalImage* image);
-
-PalResult PAL_CALL getImageInfoD3D12(
-    PalImage* image,
-    PalImageInfo* info);
-
-PalResult PAL_CALL getImageMemoryRequirementsD3D12(
-    PalImage* image,
-    PalMemoryRequirements* requirements);
-
-PalResult PAL_CALL bindImageMemoryD3D12(
-    PalImage* image,
-    PalMemory* memory,
-    uint64_t offset);
-
-PalResult PAL_CALL mapImageMemoryD3D12(
-    PalImage* image,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr);
-
-void PAL_CALL unmapImageMemoryD3D12(PalImage* image);
-
-// ==================================================
-// Image View
-// ==================================================
-
-PalResult PAL_CALL createImageViewD3D12(
-    PalDevice* device,
-    PalImage* image,
-    const PalImageViewCreateInfo* info,
-    PalImageView** outImageView);
-
-void PAL_CALL destroyImageViewD3D12(PalImageView* imageView);
-
-// ==================================================
-// Sampler
-// ==================================================
-
-PalResult PAL_CALL createSamplerD3D12(
-    PalDevice* device,
-    const PalSamplerCreateInfo* info,
-    PalSampler** outSampler);
-
-void PAL_CALL destroySamplerD3D12(PalSampler* sampler);
-
-// ==================================================
-// Surface
-// ==================================================
-
-PalResult PAL_CALL createSurfaceD3D12(
-    PalDevice* device,
-    PalGraphicsWindow* window,
-    PalSurface** outSurface);
-
-void PAL_CALL destroySurfaceD3D12(PalSurface* surface);
-
-PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
-    PalDevice* device,
-    PalSurface* surface,
-    PalSurfaceCapabilities* caps);
-
-// ==================================================
-// Swapchain
-// ==================================================
-
-PalResult PAL_CALL createSwapchainD3D12(
-    PalDevice* device,
-    PalQueue* queue,
-    PalSurface* surface,
-    const PalSwapchainCreateInfo* info,
-    PalSwapchain** outSwapchain);
-
-void PAL_CALL destroySwapchainD3D12(PalSwapchain* swapchain);
-
-PalImage* PAL_CALL getSwapchainImageD3D12(
-    PalSwapchain* swapchain,
-    int32_t index);
-
-PalResult PAL_CALL getNextSwapchainImageD3D12(
-    PalSwapchain* swapchain,
-    PalSwapchainNextImageInfo* info,
-    uint32_t* outIndex);
-
-PalResult PAL_CALL presentSwapchainD3D12(
-    PalSwapchain* swapchain,
-    PalSwapchainPresentInfo* info);
-
-PalResult PAL_CALL resizeSwapchainD3D12(
-    PalSwapchain* swapchain,
-    uint32_t newWidth,
-    uint32_t newHeight);
-
-// ==================================================
-// Shader
-// ==================================================
-
-PalResult PAL_CALL createShaderD3D12(
-    PalDevice* device,
-    const PalShaderCreateInfo* info,
-    PalShader** outShader);
-
-void PAL_CALL destroyShaderD3D12(PalShader* shader);
-
-// ==================================================
-// Fence
-// ==================================================
-
-PalResult PAL_CALL createFenceD3D12(
-    PalDevice* device,
-    PalBool signaled,
-    PalFence** outFence);
-
-void PAL_CALL destroyFenceD3D12(PalFence* fence);
-
-PalResult PAL_CALL waitFenceD3D12(
-    PalFence* fence,
-    uint64_t timeout);
-
-PalResult PAL_CALL resetFenceD3D12(PalFence* fence);
-
-PalBool PAL_CALL isFenceSignaledD3D12(PalFence* fence);
-
-// ==================================================
-// Semaphore
-// ==================================================
-
-PalResult PAL_CALL createSemaphoreD3D12(
-    PalDevice* device,
-    PalBool enableTimeline,
-    PalSemaphore** outSemaphore);
-
-void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore);
-
-PalResult PAL_CALL waitSemaphoreD3D12(
-    PalSemaphore* semaphore,
-    uint64_t value,
-    uint64_t timeout);
-
-PalResult PAL_CALL signalSemaphoreD3D12(
-    PalSemaphore* semaphore,
-    PalQueue* queue,
-    uint64_t value);
-
-PalResult PAL_CALL getSemaphoreValueD3D12(
-    PalSemaphore* semaphore,
-    uint64_t* outValue);
-
-// ==================================================
-// Command Pool And Buffer
-// ==================================================
-
-PalResult PAL_CALL createCommandPoolD3D12(
-    PalDevice* device,
-    PalQueue* queue,
-    PalCommandPool** outPool);
-
-void PAL_CALL destroyCommandPoolD3D12(PalCommandPool* pool);
-
-PalResult PAL_CALL resetCommandPoolD3D12(PalCommandPool* pool);
-
-PalResult PAL_CALL allocateCommandBufferD3D12(
-    PalDevice* device,
-    PalCommandPool* pool,
-    PalCommandBufferType type,
-    PalCommandBuffer** outCmdBuffer);
-
-void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL submitCommandBufferD3D12(
-    PalQueue* queue,
-    PalCommandBufferSubmitInfo* info);
-
-// ==================================================
-// Command Recording
-// ==================================================
-
-PalResult PAL_CALL cmdBeginD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalRenderingLayoutInfo* info);
-
-PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL cmdExecuteCommandBufferD3D12(
-    PalCommandBuffer* primaryCmdBuffer,
-    PalCommandBuffer* secondaryCmdBuffer);
-
-PalResult PAL_CALL cmdSetFragmentShadingRateD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalFragmentShadingRateState* state);
-
-PalResult PAL_CALL cmdDrawMeshTasksD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
-PalResult PAL_CALL cmdDrawMeshTasksIndirectD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint32_t drawCount);
-
-PalResult PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBuffer* countBuffer,
-    uint32_t maxDrawCount);
-
-PalResult PAL_CALL cmdBuildAccelerationStructureD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalAccelerationStructureBuildInfo* info);
-
-PalResult PAL_CALL cmdBeginRenderingD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalRenderingInfo* info);
-
-PalResult PAL_CALL cmdEndRenderingD3D12(PalCommandBuffer* cmdBuffer);
-
-PalResult PAL_CALL cmdCopyBufferD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* dst,
-    PalBuffer* src,
-    PalBufferCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdCopyBufferToImageD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* dstImage,
-    PalBuffer* srcBuffer,
-    PalBufferImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdCopyImageD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* dst,
-    PalImage* src,
-    PalImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdCopyImageToBufferD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* dstBuffer,
-    PalImage* srcImage,
-    PalBufferImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL cmdBindPipelineD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalPipeline* pipeline);
-
-PalResult PAL_CALL cmdSetViewportD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t count,
-    PalViewport* viewports);
-
-PalResult PAL_CALL cmdSetScissorsD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t count,
-    PalRect2D* scissors);
-
-PalResult PAL_CALL cmdBindVertexBuffersD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t firstSlot,
-    uint32_t count,
-    PalBuffer** buffers,
-    uint64_t* offsets);
-
-PalResult PAL_CALL cmdBindIndexBufferD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint64_t offset,
-    PalIndexType type);
-
-PalResult PAL_CALL cmdDrawD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t vertexCount,
-    uint32_t instanceCount,
-    uint32_t firstVertex,
-    uint32_t firstInstance);
-
-PalResult PAL_CALL cmdDrawIndirectD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint32_t count);
-
-PalResult PAL_CALL cmdDrawIndirectCountD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBuffer* countBuffer,
-    uint32_t maxDrawCount);
-
-PalResult PAL_CALL cmdDrawIndexedD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t indexCount,
-    uint32_t instanceCount,
-    uint32_t firstIndex,
-    int32_t vertexOffset,
-    uint32_t firstInstance);
-
-PalResult PAL_CALL cmdDrawIndexedIndirectD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    uint32_t count);
-
-PalResult PAL_CALL cmdDrawIndexedIndirectCountD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBuffer* countBuffer,
-    uint32_t maxDrawCount);
-
-PalResult PAL_CALL cmdAccelerationStructureBarrierD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalAccelerationStructure* as,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
-
-PalResult PAL_CALL cmdImageBarrierD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* image,
-    PalImageSubresourceRange* subresourceRange,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
-
-PalResult PAL_CALL cmdBufferBarrierD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo);
-
-PalResult PAL_CALL cmdDispatchD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
-PalResult PAL_CALL cmdDispatchBaseD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t baseGroupX,
-    uint32_t baseGroupY,
-    uint32_t baseGroupZ,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
-PalResult PAL_CALL cmdDispatchIndirectD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer);
-
-PalResult PAL_CALL cmdTraceRaysD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalShaderBindingTable* sbt,
-    uint32_t raygenIndex,
-    uint32_t width,
-    uint32_t height,
-    uint32_t depth);
-
-PalResult PAL_CALL cmdTraceRaysIndirectD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t raygenIndex,
-    PalShaderBindingTable* sbt,
-    PalBuffer* buffer);
-
-PalResult PAL_CALL cmdBindDescriptorSetD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t setIndex,
-    PalDescriptorSet* set);
-
-PalResult PAL_CALL cmdPushConstantsD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t shaderStageCount,
-    PalShaderStage* shaderStages,
-    uint32_t offset,
-    uint32_t size,
-    const void* value);
-
-PalResult PAL_CALL cmdSetCullModeD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalCullMode cullMode);
-
-PalResult PAL_CALL cmdSetFrontFaceD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalFrontFace frontFace);
-
-PalResult PAL_CALL cmdSetPrimitiveTopologyD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalPrimitiveTopology topology);
-
-PalResult PAL_CALL cmdSetDepthTestEnableD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBool enable);
-
-PalResult PAL_CALL cmdSetDepthWriteEnableD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBool enable);
-
-PalResult PAL_CALL cmdSetStencilOpD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalStencilFaceFlags faceMask,
-    PalStencilOp failOp,
-    PalStencilOp passOp,
-    PalStencilOp depthFailOp,
-    PalCompareOp compareOp);
-
-// ==================================================
-// Acceleration Structure
-// ==================================================
-
-PalResult PAL_CALL createAccelerationstructureD3D12(
-    PalDevice* device,
-    const PalAccelerationStructureCreateInfo* info,
-    PalAccelerationStructure** outAs);
-
-void PAL_CALL destroyAccelerationstructureD3D12(PalAccelerationStructure* as);
-
-PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
-    PalDevice* device,
-    PalAccelerationStructureBuildInfo* info,
-    PalAccelerationStructureBuildSize* size);
-
-// ==================================================
-// Buffer
-// ==================================================
-
-PalResult PAL_CALL createBufferD3D12(
-    PalDevice* device,
-    const PalBufferCreateInfo* info,
-    PalBuffer** outBuffer);
-
-void PAL_CALL destroyBufferD3D12(PalBuffer* buffer);
-
-PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
-    PalBuffer* buffer,
-    PalMemoryRequirements* requirements);
-
-PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
-    PalDevice* device,
-    uint32_t instanceCount,
-    uint64_t* outSize);
-
-PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
-    PalDevice* device,
-    PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo,
-    uint32_t* outBufferRowLength,
-    uint32_t* outBufferImageHeight,
-    uint64_t* outSize);
-
-PalResult PAL_CALL writeToInstanceBufferD3D12(
-    PalDevice* device,
-    void* ptr,
-    PalAccelerationStructureInstance* instances,
-    uint32_t instanceCount);
-
-PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
-    PalDevice* device,
-    void* ptr,
-    void* srcData,
-    PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo);
-
-PalResult PAL_CALL bindBufferMemoryD3D12(
-    PalBuffer* buffer,
-    PalMemory* memory,
-    uint64_t offset);
-
-PalResult PAL_CALL mapBufferMemoryD3D12(
-    PalBuffer* buffer,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr);
-
-void PAL_CALL unmapBufferMemoryD3D12(PalBuffer* buffer);
-
-PalDeviceAddress PAL_CALL getBufferDeviceAddressD3D12(PalBuffer* buffer);
-
-// ==================================================
-// Descriptor Pool, Set and Layout
-// ==================================================
-
-PalResult PAL_CALL createDescriptorSetLayoutD3D12(
-    PalDevice* device,
-    const PalDescriptorSetLayoutCreateInfo* info,
-    PalDescriptorSetLayout** outLayout);
-
-void PAL_CALL destroyDescriptorSetLayoutD3D12(PalDescriptorSetLayout* layout);
-
-PalResult PAL_CALL createDescriptorPoolD3D12(
-    PalDevice* device,
-    const PalDescriptorPoolCreateInfo* info,
-    PalDescriptorPool** outPool);
-
-void PAL_CALL destroyDescriptorPoolD3D12(PalDescriptorPool* pool);
-
-PalResult PAL_CALL resetDescriptorPoolD3D12(PalDescriptorPool* pool);
-
-PalResult PAL_CALL allocateDescriptorSetD3D12(
-    PalDevice* device,
-    PalDescriptorPool* pool,
-    PalDescriptorSetLayout* layout,
-    PalDescriptorSet** outSet);
-
-PalResult PAL_CALL updateDescriptorSetD3D12(
-    PalDevice* device,
-    uint32_t count,
-    PalDescriptorSetWriteInfo* infos);
-
-// ==================================================
-// Pipeline Layout
-// ==================================================
-
-PalResult PAL_CALL createPipelineLayoutD3D12(
-    PalDevice* device,
-    const PalPipelineLayoutCreateInfo* info,
-    PalPipelineLayout** outLayout);
-
-void PAL_CALL destroyPipelineLayoutD3D12(PalPipelineLayout* layout);
-
-// ==================================================
-// Pipeline
-// ==================================================
-
-PalResult PAL_CALL createGraphicsPipelineD3D12(
-    PalDevice* device,
-    const PalGraphicsPipelineCreateInfo* info,
-    PalPipeline** outPipeline);
-
-PalResult PAL_CALL createComputePipelineD3D12(
-    PalDevice* device,
-    const PalComputePipelineCreateInfo* info,
-    PalPipeline** outPipeline);
-
-PalResult PAL_CALL createRayTracingPipelineD3D12(
-    PalDevice* device,
-    const PalRayTracingPipelineCreateInfo* info,
-    PalPipeline** outPipeline);
-
-void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline);
-
-// ==================================================
-// Shader Binding Table
-// ==================================================
-
-PalResult PAL_CALL createShaderBindingTableD3D12(
-    PalDevice* device,
-    const PalShaderBindingTableCreateInfo* info,
-    PalShaderBindingTable** outSbt);
-
-void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt);
-
-PalResult PAL_CALL updateShaderBindingTableD3D12(
-    PalShaderBindingTable* sbt, 
-    uint32_t count,
-    PalShaderBindingTableRecordInfo* infos);
-
-static PalGraphicsBackend s_D3D12Backend = {
-    // adapter
-    .enumerateAdapters = enumerateAdaptersD3D12,
-    .getAdapterInfo = getAdapterInfoD3D12,
-    .getAdapterCapabilities = getAdapterCapabilitiesD3D12,
-    .getAdapterFeatures = getAdapterFeaturesD3D12,
-    .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetD3D12,
-
-    // device
-    .createDevice = createDeviceD3D12,
-    .destroyDevice = destroyDeviceD3D12,
-
-    // memory
-    .allocateMemory = allocateMemoryD3D12,
-    .freeMemory = freeMemoryD3D12,
-
-    // extended adapter features
-    .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesD3D12,
-    .queryMultiViewCapabilities = queryMultiViewCapabilitiesD3D12,
-    .queryMultiViewportCapabilities = queryMultiViewportCapabilitiesD3D12,
-    .queryDepthStencilCapabilities = queryDepthStencilCapabilitiesD3D12,
-    .queryFragmentShadingRateCapabilities = queryFragmentShadingRateCapabilitiesD3D12,
-    .queryMeshShaderCapabilities = queryMeshShaderCapabilitiesD3D12,
-    .queryRayTracingCapabilities = queryRayTracingCapabilitiesD3D12,
-    .queryDescriptorIndexingCapabilities = queryDescriptorIndexingCapabilitiesD3D12,
-
-    // queue
-    .createQueue = createQueueD3D12,
-    .destroyQueue = destroyQueueD3D12,
-    .waitQueue = waitQueueD3D12,
-    .canQueuePresent = canQueuePresentD3D12,
-
-    // format
-    .enumerateFormats = enumerateFormatsD3D12,
-    .isFormatSupported = isFormatSupportedD3D12,
-    .queryFormatImageUsages = queryFormatImageUsagesD3D12,
-    .queryFormatSampleCount = queryFormatSampleCountD3D12,
-
-    // image
-    .createImage = createImageD3D12,
-    .destroyImage = destroyImageD3D12,
-    .getImageInfo = getImageInfoD3D12,
-    .getImageMemoryRequirements = getImageMemoryRequirementsD3D12,
-    .bindImageMemory = bindImageMemoryD3D12,
-    .mapImageMemory = mapImageMemoryD3D12,
-    .unmapImageMemory = unmapImageMemoryD3D12,
-
-    // image view
-    .createImageView = createImageViewD3D12,
-    .destroyImageView = destroyImageViewD3D12,
-
-    // sampler
-    .createSampler = createSamplerD3D12,
-    .destroySampler = destroySamplerD3D12,
-
-    // surface
-    .createSurface = createSurfaceD3D12,
-    .destroySurface = destroySurfaceD3D12,
-    .getSurfaceCapabilities = getSurfaceCapabilitiesD3D12,
-
-    // swapchain
-    .createSwapchain = createSwapchainD3D12,
-    .destroySwapchain = destroySwapchainD3D12,
-    .getSwapchainImage = getSwapchainImageD3D12,
-    .getNextSwapchainImage = getNextSwapchainImageD3D12,
-    .presentSwapchain = presentSwapchainD3D12,
-    .resizeSwapchain = resizeSwapchainD3D12,
-
-    // shader
-    .createShader = createShaderD3D12,
-    .destroyShader = destroyShaderD3D12,
-
-    // fence
-    .createFence = createFenceD3D12,
-    .destroyFence = destroyFenceD3D12,
-    .waitFence = waitFenceD3D12,
-    .resetFence = resetFenceD3D12,
-    .isFenceSignaled = isFenceSignaledD3D12,
-
-    // semaphore
-    .createSemaphore = createSemaphoreD3D12,
-    .destroySemaphore = destroySemaphoreD3D12,
-    .waitSemaphore = waitSemaphoreD3D12,
-    .signalSemaphore = signalSemaphoreD3D12,
-    .getSemaphoreValue = getSemaphoreValueD3D12,
-
-    // command pool and command buffer
-    .createCommandPool = createCommandPoolD3D12,
-    .destroyCommandPool = destroyCommandPoolD3D12,
-    .resetCommandPool = resetCommandPoolD3D12,
-    .allocateCommandBuffer = allocateCommandBufferD3D12,
-    .freeCommandBuffer = freeCommandBufferD3D12,
-    .resetCommandBuffer = resetCommandBufferD3D12,
-    .submitCommandBuffer = submitCommandBufferD3D12,
-
-    // command recording
-    .cmdBegin = cmdBeginD3D12,
-    .cmdEnd = cmdEndD3D12,
-    .cmdExecuteCommandBuffer = cmdExecuteCommandBufferD3D12,
-    .cmdSetFragmentShadingRate = cmdSetFragmentShadingRateD3D12,
-    .cmdDrawMeshTasks = cmdDrawMeshTasksD3D12,
-    .cmdDrawMeshTasksIndirect = cmdDrawMeshTasksIndirectD3D12,
-    .cmdDrawMeshTasksIndirectCount = cmdDrawMeshTasksIndirectCountD3D12,
-    .cmdBuildAccelerationStructure = cmdBuildAccelerationStructureD3D12,
-    .cmdBeginRendering = cmdBeginRenderingD3D12,
-    .cmdEndRendering = cmdEndRenderingD3D12,
-    .cmdCopyBuffer = cmdCopyBufferD3D12,
-    .cmdCopyBufferToImage = cmdCopyBufferToImageD3D12,
-    .cmdCopyImage = cmdCopyImageD3D12,
-    .cmdCopyImageToBuffer = cmdCopyImageToBufferD3D12,
-    .cmdBindPipeline = cmdBindPipelineD3D12,
-    .cmdSetViewport = cmdSetViewportD3D12,
-    .cmdSetScissors = cmdSetScissorsD3D12,
-    .cmdBindVertexBuffers = cmdBindVertexBuffersD3D12,
-    .cmdBindIndexBuffer = cmdBindIndexBufferD3D12,
-    .cmdDraw = cmdDrawD3D12,
-    .cmdDrawIndirect = cmdDrawIndirectD3D12,
-    .cmdDrawIndirectCount = cmdDrawIndirectCountD3D12,
-    .cmdDrawIndexed = cmdDrawIndexedD3D12,
-    .cmdDrawIndexedIndirect = cmdDrawIndexedIndirectD3D12,
-    .cmdDrawIndexedIndirectCount = cmdDrawIndexedIndirectCountD3D12,
-    .cmdAccelerationStructureBarrier = cmdAccelerationStructureBarrierD3D12,
-    .cmdImageBarrier = cmdImageBarrierD3D12,
-    .cmdBufferBarrier = cmdBufferBarrierD3D12,
-    .cmdDispatch = cmdDispatchD3D12,
-    .cmdDispatchBase = cmdDispatchBaseD3D12,
-    .cmdDispatchIndirect = cmdDispatchIndirectD3D12,
-    .cmdTraceRays = cmdTraceRaysD3D12,
-    .cmdTraceRaysIndirect = cmdTraceRaysIndirectD3D12,
-    .cmdBindDescriptorSet = cmdBindDescriptorSetD3D12,
-    .cmdPushConstants = cmdPushConstantsD3D12,
-    .cmdSetCullMode = cmdSetCullModeD3D12,
-    .cmdSetFrontFace = cmdSetFrontFaceD3D12,
-    .cmdSetPrimitiveTopology = cmdSetPrimitiveTopologyD3D12,
-    .cmdSetDepthTestEnable = cmdSetDepthTestEnableD3D12,
-    .cmdSetDepthWriteEnable = cmdSetDepthWriteEnableD3D12,
-    .cmdSetStencilOp = cmdSetStencilOpD3D12,
-
-    // acceleration structure
-    .createAccelerationstructure = createAccelerationstructureD3D12,
-    .destroyAccelerationstructure = destroyAccelerationstructureD3D12,
-    .getAccelerationStructureBuildSize = getAccelerationStructureBuildSizeD3D12,
-
-    // buffer
-    .createBuffer = createBufferD3D12,
-    .destroyBuffer = destroyBufferD3D12,
-    .getBufferMemoryRequirements = getBufferMemoryRequirementsD3D12,
-    .computeInstanceBufferRequirements = computeInstanceBufferRequirementsD3D12,
-    .computeImageCopyStagingBufferRequirements = computeImageCopyStagingBufferRequirementsD3D12,
-    .writeToInstanceBuffer = writeToInstanceBufferD3D12,
-    .writeToImageCopyStagingBuffer = writeToImageCopyStagingBufferD3D12,
-    .bindBufferMemory = bindBufferMemoryD3D12,
-    .getBufferDeviceAddress = getBufferDeviceAddressD3D12,
-    .mapBufferMemory = mapBufferMemoryD3D12,
-    .unmapBufferMemory = unmapBufferMemoryD3D12,
-
-    // descriptor set layout, descriptor pool and descriptor set
-    .createDescriptorSetLayout = createDescriptorSetLayoutD3D12,
-    .destroyDescriptorSetLayout = destroyDescriptorSetLayoutD3D12,
-    .createDescriptorPool = createDescriptorPoolD3D12,
-    .destroyDescriptorPool = destroyDescriptorPoolD3D12,
-    .resetDescriptorPool = resetDescriptorPoolD3D12,
-    .allocateDescriptorSet = allocateDescriptorSetD3D12,
-    .updateDescriptorSet = updateDescriptorSetD3D12,
-
-    // pipeline layout
-    .createPipelineLayout = createPipelineLayoutD3D12,
-    .destroyPipelineLayout = destroyPipelineLayoutD3D12,
-
-    // pipeline
-    .createGraphicsPipeline = createGraphicsPipelineD3D12,
-    .createComputePipeline = createComputePipelineD3D12,
-    .createRayTracingPipeline = createRayTracingPipelineD3D12,
-    .destroyPipeline = destroyPipelineD3D12,
-
-    // shader binding tables
-    .createShaderBindingTable = createShaderBindingTableD3D12,
-    .destroyShaderBindingTable = destroyShaderBindingTableD3D12,
-    .updateShaderBindingTable = updateShaderBindingTableD3D12};
-
-#endif // PAL_HAS_D3D12_BACKEND
-
-// ==================================================
-// Metal API
-// ==================================================
-
-// ==================================================
-// Public API
-// ==================================================
-
-PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend)
+static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
 {
-    if (s_Graphics.initialized) {
-        return PAL_RESULT_INVALID_BACKEND;
-    }
-
-#ifdef _WIN32
-    // we reserve two slots for vulkan and d3d12
-    if (s_Graphics.backendCount == MAX_BACKENDS - 2) {
-        return PAL_RESULT_INVALID_BACKEND;
-    }
-#else
-    // we reserve one slot for vulkan or metal depending on platform
-    if (s_Graphics.backendCount == MAX_BACKENDS - 1) {
-        return PAL_RESULT_INVALID_BACKEND;
-    }
-#endif // _WIN32
-
-    // check if all the function pointers are set
     // clang-format off
-    // adapter
-    if (!backend->enumerateAdapters                     ||
-        !backend->getAdapterInfo                        ||
-        !backend->getAdapterCapabilities                ||
-        !backend->getAdapterFeatures                    ||
-        !backend->getHighestSupportedShaderTarget       ||
+    if (!vtable1->enumerateAdapters                             ||
+        !vtable1->getAdapterInfo                                ||
+        !vtable1->getAdapterCapabilities                        ||
+        !vtable1->getAdapterFeatures                            ||
+        !vtable1->getHighestSupportedShaderTarget               ||
 
         // device
-        !backend->createDevice                          ||
-        !backend->destroyDevice                         ||
+        !vtable1->createDevice                                  ||
+        !vtable1->destroyDevice                                 ||
 
         // memory
-        !backend->allocateMemory                        ||
-        !backend->freeMemory                            ||
+        !vtable1->allocateMemory                                ||
+        !vtable1->freeMemory                                    ||
 
         // extended adapter features
-        !backend->querySamplerAnisotropyCapabilities    ||
-        !backend->queryMultiViewCapabilities            ||
-        !backend->queryMultiViewportCapabilities        ||
-        !backend->queryDepthStencilCapabilities         ||
-        !backend->queryFragmentShadingRateCapabilities  ||
-        !backend->queryMeshShaderCapabilities           ||
-        !backend->queryRayTracingCapabilities           ||
-        !backend->queryDescriptorIndexingCapabilities   ||
+        !vtable1->querySamplerAnisotropyCapabilities            ||
+        !vtable1->queryMultiViewCapabilities                    ||
+        !vtable1->queryMultiViewportCapabilities                ||
+        !vtable1->queryDepthStencilCapabilities                 ||
+        !vtable1->queryFragmentShadingRateCapabilities          ||
+        !vtable1->queryMeshShaderCapabilities                   ||
+        !vtable1->queryRayTracingCapabilities                   ||
+        !vtable1->queryDescriptorIndexingCapabilities           ||
 
         // queue
-        !backend->createQueue                           ||
-        !backend->destroyQueue                          ||
-        !backend->waitQueue                             ||
-        !backend->canQueuePresent                       ||
+        !vtable1->createQueue                                   ||
+        !vtable1->destroyQueue                                  ||
+        !vtable1->waitQueue                                     ||
+        !vtable1->canQueuePresent                               ||
 
         // formats
-        !backend->enumerateFormats                      ||
-        !backend->isFormatSupported                     ||
-        !backend->queryFormatImageUsages                ||
-        !backend->queryFormatSampleCount                ||
+        !vtable1->enumerateFormats                              ||
+        !vtable1->isFormatSupported                             ||
+        !vtable1->queryFormatImageUsages                        ||
+        !vtable1->queryFormatSampleCount                        ||
 
         // image
-        !backend->createImage                           ||
-        !backend->destroyImage                          ||
-        !backend->getImageInfo                          ||
-        !backend->getImageMemoryRequirements            ||
-        !backend->bindImageMemory                       ||
-        !backend->mapImageMemory                        ||
-        !backend->unmapImageMemory                      ||
+        !vtable1->createImage                                   ||
+        !vtable1->destroyImage                                  ||
+        !vtable1->getImageInfo                                  ||
+        !vtable1->getImageMemoryRequirements                    ||
+        !vtable1->bindImageMemory                               ||
+        !vtable1->mapImageMemory                                ||
+        !vtable1->unmapImageMemory                              ||
 
         // image view
-        !backend->createImageView                       ||
-        !backend->destroyImageView                      ||
+        !vtable1->createImageView                               ||
+        !vtable1->destroyImageView                              ||
 
         // sampler
-        !backend->createSampler                         ||
-        !backend->destroySampler                        ||
+        !vtable1->createSampler                                 ||
+        !vtable1->destroySampler                                ||
 
         // surface
-        !backend->createSurface                         ||
-        !backend->destroySurface                        ||
-        !backend->getSurfaceCapabilities                ||
+        !vtable1->createSurface                                 ||
+        !vtable1->destroySurface                                ||
+        !vtable1->getSurfaceCapabilities                        ||
 
         // swapchain
-        !backend->createSwapchain                       ||
-        !backend->destroySwapchain                      ||
-        !backend->getSwapchainImage                     ||
-        !backend->getNextSwapchainImage                 ||
-        !backend->presentSwapchain                      ||
-        !backend->resizeSwapchain                       ||
+        !vtable1->createSwapchain                               ||
+        !vtable1->destroySwapchain                              ||
+        !vtable1->getSwapchainImage                             ||
+        !vtable1->getNextSwapchainImage                         ||
+        !vtable1->presentSwapchain                              ||
+        !vtable1->resizeSwapchain                               ||
 
         // shader
-        !backend->createShader                          ||
-        !backend->destroyShader                         ||
+        !vtable1->createShader                                  ||
+        !vtable1->destroyShader                                 ||
 
         // fence
-        !backend->createFence                           ||
-        !backend->destroyFence                          ||
-        !backend->waitFence                             ||
-        !backend->resetFence                            ||
-        !backend->isFenceSignaled                       ||
+        !vtable1->createFence                                   ||
+        !vtable1->destroyFence                                  ||
+        !vtable1->waitFence                                     ||
+        !vtable1->resetFence                                    ||
+        !vtable1->isFenceSignaled                               ||
 
         // semaphore
-        !backend->createSemaphore                       ||
-        !backend->destroySemaphore                      ||
-        !backend->waitSemaphore                         ||
-        !backend->signalSemaphore                       ||
-        !backend->getSemaphoreValue                     ||
+        !vtable1->createSemaphore                               ||
+        !vtable1->destroySemaphore                              ||
+        !vtable1->waitSemaphore                                 ||
+        !vtable1->signalSemaphore                               ||
+        !vtable1->getSemaphoreValue                             ||
 
         // command pool and command buffer
-        !backend->createCommandPool                     ||
-        !backend->destroyCommandPool                    ||
-        !backend->resetCommandPool                      ||
-        !backend->allocateCommandBuffer                 ||
-        !backend->freeCommandBuffer                     ||
-        !backend->submitCommandBuffer                   ||
+        !vtable1->createCommandPool                             ||
+        !vtable1->destroyCommandPool                            ||
+        !vtable1->resetCommandPool                              ||
+        !vtable1->allocateCommandBuffer                         ||
+        !vtable1->freeCommandBuffer                             ||
+        !vtable1->submitCommandBuffer                           ||
 
         // command recording
-        !backend->cmdBegin                              ||
-        !backend->cmdEnd                                ||
-        !backend->resetCommandBuffer                    ||
-        !backend->cmdExecuteCommandBuffer               ||
-        !backend->cmdSetFragmentShadingRate             ||
-        !backend->cmdDrawMeshTasks                      ||
-        !backend->cmdDrawMeshTasksIndirect              ||
-        !backend->cmdDrawMeshTasksIndirectCount         ||
-        !backend->cmdBuildAccelerationStructure         ||
-        !backend->cmdBeginRendering                     ||
-        !backend->cmdEndRendering                       ||
-        !backend->cmdCopyBuffer                         ||
-        !backend->cmdCopyBufferToImage                  ||
-        !backend->cmdCopyImage                          ||
-        !backend->cmdCopyImageToBuffer                  ||
-        !backend->cmdBindPipeline                       ||
-        !backend->cmdSetViewport                        ||
-        !backend->cmdSetScissors                        ||
-        !backend->cmdBindVertexBuffers                  ||
-        !backend->cmdBindIndexBuffer                    ||
-        !backend->cmdDraw                               ||
-        !backend->cmdDrawIndirect                       ||
-        !backend->cmdDrawIndirectCount                  ||
-        !backend->cmdDrawIndexed                        ||
-        !backend->cmdDrawIndexedIndirect                ||
-        !backend->cmdDrawIndexedIndirectCount           ||
-        !backend->cmdAccelerationStructureBarrier       ||
-        !backend->cmdImageBarrier                       ||
-        !backend->cmdBufferBarrier                      ||
-        !backend->cmdDispatch                           ||
-        !backend->cmdDispatchBase                       ||
-        !backend->cmdDispatchIndirect                   ||
-        !backend->cmdTraceRays                          ||
-        !backend->cmdTraceRaysIndirect                  ||
-        !backend->cmdBindDescriptorSet                  ||
-        !backend->cmdPushConstants                      ||
-        !backend->cmdSetCullMode                        ||
-        !backend->cmdSetFrontFace                       ||
-        !backend->cmdSetPrimitiveTopology               ||
-        !backend->cmdSetDepthTestEnable                 ||
-        !backend->cmdSetDepthWriteEnable                ||
-        !backend->cmdSetStencilOp                       ||
+        !vtable1->cmdBegin                                      ||
+        !vtable1->cmdEnd                                        ||
+        !vtable1->resetCommandBuffer                            ||
+        !vtable1->cmdExecuteCommandBuffer                       ||
+        !vtable1->cmdSetFragmentShadingRate                     ||
+        !vtable1->cmdDrawMeshTasks                              ||
+        !vtable1->cmdDrawMeshTasksIndirect                      ||
+        !vtable1->cmdDrawMeshTasksIndirectCount                 ||
+        !vtable1->cmdBuildAccelerationStructure                 ||
+        !vtable1->cmdBeginRendering                             ||
+        !vtable1->cmdEndRendering                               ||
+        !vtable1->cmdCopyBuffer                                 ||
+        !vtable1->cmdCopyBufferToImage                          ||
+        !vtable1->cmdCopyImage                                  ||
+        !vtable1->cmdCopyImageToBuffer                          ||
+        !vtable1->cmdBindPipeline                               ||
+        !vtable1->cmdSetViewport                                ||
+        !vtable1->cmdSetScissors                                ||
+        !vtable1->cmdBindVertexBuffers                          ||
+        !vtable1->cmdBindIndexBuffer                            ||
+        !vtable1->cmdDraw                                       ||
+        !vtable1->cmdDrawIndirect                               ||
+        !vtable1->cmdDrawIndirectCount                          ||
+        !vtable1->cmdDrawIndexed                                ||
+        !vtable1->cmdDrawIndexedIndirect                        ||
+        !vtable1->cmdDrawIndexedIndirectCount                   ||
+        !vtable1->cmdAccelerationStructureBarrier               ||
+        !vtable1->cmdImageBarrier                               ||
+        !vtable1->cmdBufferBarrier                              ||
+        !vtable1->cmdDispatch                                   ||
+        !vtable1->cmdDispatchBase                               ||
+        !vtable1->cmdDispatchIndirect                           ||
+        !vtable1->cmdTraceRays                                  ||
+        !vtable1->cmdTraceRaysIndirect                          ||
+        !vtable1->cmdBindDescriptorSet                          ||
+        !vtable1->cmdPushConstants                              ||
+        !vtable1->cmdSetCullMode                                ||
+        !vtable1->cmdSetFrontFace                               ||
+        !vtable1->cmdSetPrimitiveTopology                       ||
+        !vtable1->cmdSetDepthTestEnable                         ||
+        !vtable1->cmdSetDepthWriteEnable                        ||
+        !vtable1->cmdSetStencilOp                               ||
 
         // acceleration structure
-        !backend->createAccelerationstructure           ||
-        !backend->destroyAccelerationstructure          ||
-        !backend->getAccelerationStructureBuildSize     ||
+        !vtable1->createAccelerationstructure                   ||
+        !vtable1->destroyAccelerationstructure                  ||
+        !vtable1->getAccelerationStructureBuildSize             ||
 
         // buffer
-        !backend->createBuffer                          ||
-        !backend->destroyBuffer                         ||
-        !backend->getBufferMemoryRequirements           ||
-        !backend->computeInstanceBufferRequirements     ||
-        !backend->computeImageCopyStagingBufferRequirements     ||
-        !backend->writeToInstanceBuffer                 ||
-        !backend->writeToImageCopyStagingBuffer         ||
-        !backend->bindBufferMemory                      ||
-        !backend->getBufferDeviceAddress                ||
-        !backend->mapBufferMemory                       ||
-        !backend->unmapBufferMemory                     ||
+        !vtable1->createBuffer                                  ||
+        !vtable1->destroyBuffer                                 ||
+        !vtable1->getBufferMemoryRequirements                   ||
+        !vtable1->computeInstanceBufferRequirements             ||
+        !vtable1->computeImageCopyStagingBufferRequirements     ||
+        !vtable1->writeToInstanceBuffer                         ||
+        !vtable1->writeToImageCopyStagingBuffer                 ||
+        !vtable1->bindBufferMemory                              ||
+        !vtable1->getBufferDeviceAddress                        ||
+        !vtable1->mapBufferMemory                               ||
+        !vtable1->unmapBufferMemory                             ||
 
-        // descriptor set layout, descriptor pool and descriptor set
-        !backend->createDescriptorSetLayout             ||
-        !backend->destroyDescriptorSetLayout            ||
-        !backend->createDescriptorPool                  ||
-        !backend->destroyDescriptorPool                 ||
-        !backend->resetDescriptorPool                   ||
-        !backend->allocateDescriptorSet                 ||
-        !backend->updateDescriptorSet                   ||
+        // descriptors
+        !vtable1->createDescriptorSetLayout                     ||
+        !vtable1->destroyDescriptorSetLayout                    ||
+        !vtable1->createDescriptorPool                          ||
+        !vtable1->destroyDescriptorPool                         ||
+        !vtable1->resetDescriptorPool                           ||
+        !vtable1->allocateDescriptorSet                         ||
+        !vtable1->updateDescriptorSet                           ||
 
         // pipeline layout
-        !backend->createPipelineLayout                  ||
-        !backend->destroyPipelineLayout                 ||
+        !vtable1->createPipelineLayout                          ||
+        !vtable1->destroyPipelineLayout                         ||
 
         // pipeline
-        !backend->createGraphicsPipeline                ||
-        !backend->createComputePipeline                 ||
-        !backend->createRayTracingPipeline              ||
-        !backend->destroyPipeline                       ||
+        !vtable1->createGraphicsPipeline                        ||
+        !vtable1->createComputePipeline                         ||
+        !vtable1->createRayTracingPipeline                      ||
+        !vtable1->destroyPipeline                               ||
 
         // shader binding table
-        !backend->createShaderBindingTable              ||
-        !backend->destroyShaderBindingTable             ||
-        !backend->updateShaderBindingTable) {
-        return PAL_RESULT_INVALID_BACKEND;
+        !vtable1->createShaderBindingTable                      ||
+        !vtable1->destroyShaderBindingTable                     ||
+        !vtable1->updateShaderBindingTable) {
+        return PAL_FALSE;
     }
     // clang-format on
+    return PAL_TRUE;
+}
 
-    BackendData* attached = &s_Graphics.backends[s_Graphics.backendCount++];
-    attached->base = backend;
-    attached->startIndex = 0;
-    attached->count = 0;
+static void populateVtableVersion1(
+    PalGraphicsVtable* vtable,
+    const PalGraphicsBackendVtable1* vtable1)
+{
+    // clang-format off
+    vtable->enumerateAdapters = vtable1->enumerateAdapters;
+    vtable->getAdapterInfo = vtable1->getAdapterInfo;
+    vtable->getAdapterCapabilities = vtable1->getAdapterCapabilities;
+    vtable->getAdapterFeatures = vtable1->getAdapterFeatures;
+    vtable->getHighestSupportedShaderTarget = vtable1->getHighestSupportedShaderTarget;
 
-    return PAL_RESULT_SUCCESS;
+    // device
+    vtable->createDevice = vtable1->createDevice;
+    vtable->destroyDevice = vtable1->destroyDevice;
+
+    // memory
+    vtable->allocateMemory = vtable1->allocateMemory;
+    vtable->freeMemory = vtable1->freeMemory;
+
+    // extended adapter features
+    vtable->querySamplerAnisotropyCapabilities = vtable1->querySamplerAnisotropyCapabilities;
+    vtable->queryMultiViewCapabilities = vtable1->queryMultiViewCapabilities;
+    vtable->queryMultiViewportCapabilities = vtable1->queryMultiViewportCapabilities;
+    vtable->queryDepthStencilCapabilities = vtable1->queryDepthStencilCapabilities;
+    vtable->queryFragmentShadingRateCapabilities = vtable1->queryFragmentShadingRateCapabilities;
+    vtable->queryMeshShaderCapabilities = vtable1->queryMeshShaderCapabilities;
+    vtable->queryRayTracingCapabilities = vtable1->queryRayTracingCapabilities;
+    vtable->queryDescriptorIndexingCapabilities = vtable1->queryDescriptorIndexingCapabilities;
+
+    // queue
+    vtable->createQueue = vtable1->createQueue;
+    vtable->destroyQueue = vtable1->destroyQueue;
+    vtable->waitQueue = vtable1->waitQueue;
+    vtable->canQueuePresent = vtable1->canQueuePresent;
+
+    // formats
+    vtable->enumerateFormats = vtable1->enumerateFormats;
+    vtable->isFormatSupported = vtable1->isFormatSupported;
+    vtable->queryFormatImageUsages = vtable1->queryFormatImageUsages;
+    vtable->queryFormatSampleCount = vtable1->queryFormatSampleCount;
+
+    // image
+    vtable->createImage = vtable1->createImage;
+    vtable->destroyImage = vtable1->destroyImage;
+    vtable->getImageInfo = vtable1->getImageInfo;
+    vtable->getImageMemoryRequirements = vtable1->getImageMemoryRequirements;
+    vtable->bindImageMemory = vtable1->bindImageMemory;
+    vtable->mapImageMemory = vtable1->mapImageMemory;
+    vtable->unmapImageMemory = vtable1->unmapImageMemory;
+
+    // image view
+    vtable->createImageView = vtable1->createImageView;
+    vtable->destroyImageView = vtable1->destroyImageView;
+
+    // sampler
+    vtable->createSampler = vtable1->createSampler;
+    vtable->destroySampler = vtable1->destroySampler;
+
+    // surface
+    vtable->createSurface = vtable1->createSurface;
+    vtable->destroySurface = vtable1->destroySurface;
+    vtable->getSurfaceCapabilities = vtable1->getSurfaceCapabilities;
+
+    // swapchain
+    vtable->createSwapchain = vtable1->createSwapchain;
+    vtable->destroySwapchain = vtable1->destroySwapchain;
+    vtable->getSwapchainImage = vtable1->getSwapchainImage;
+    vtable->getNextSwapchainImage = vtable1->getNextSwapchainImage;
+    vtable->presentSwapchain = vtable1->presentSwapchain;
+    vtable->resizeSwapchain = vtable1->resizeSwapchain;
+
+    // shader
+    vtable->createShader = vtable1->createShader;
+    vtable->destroyShader = vtable1->destroyShader;
+
+    // fence
+    vtable->createFence = vtable1->createFence;
+    vtable->destroyFence = vtable1->destroyFence;
+    vtable->waitFence = vtable1->waitFence;
+    vtable->resetFence = vtable1->resetFence;
+    vtable->isFenceSignaled = vtable1->isFenceSignaled;
+
+    // semaphore
+    vtable->createSemaphore = vtable1->createSemaphore;
+    vtable->destroySemaphore = vtable1->destroySemaphore;
+    vtable->waitSemaphore = vtable1->waitSemaphore;
+    vtable->signalSemaphore = vtable1->signalSemaphore;
+    vtable->getSemaphoreValue = vtable1->getSemaphoreValue;
+
+    // command pool and command buffer
+    vtable->createCommandPool = vtable1->createCommandPool;
+    vtable->destroyCommandPool = vtable1->destroyCommandPool;
+    vtable->resetCommandPool = vtable1->resetCommandPool;
+    vtable->allocateCommandBuffer = vtable1->allocateCommandBuffer;
+    vtable->freeCommandBuffer = vtable1->freeCommandBuffer;
+    vtable->submitCommandBuffer = vtable1->submitCommandBuffer;
+
+    // command recording
+    vtable->cmdBegin = vtable1->cmdBegin;
+    vtable->cmdEnd = vtable1->cmdEnd;
+    vtable->resetCommandBuffer = vtable1->resetCommandBuffer;
+    vtable->cmdExecuteCommandBuffer = vtable1->cmdExecuteCommandBuffer;
+    vtable->cmdSetFragmentShadingRate = vtable1->cmdSetFragmentShadingRate;
+    vtable->cmdDrawMeshTasks = vtable1->cmdDrawMeshTasks;
+    vtable->cmdDrawMeshTasksIndirect = vtable1->cmdDrawMeshTasksIndirect;
+    vtable->cmdDrawMeshTasksIndirectCount = vtable1->cmdDrawMeshTasksIndirectCount;
+    vtable->cmdBuildAccelerationStructure = vtable1->cmdBuildAccelerationStructure;
+    vtable->cmdBeginRendering = vtable1->cmdBeginRendering;
+    vtable->cmdEndRendering = vtable1->cmdEndRendering;
+    vtable->cmdCopyBuffer = vtable1->cmdCopyBuffer;
+    vtable->cmdCopyBufferToImage = vtable1->cmdCopyBufferToImage;
+    vtable->cmdCopyImage = vtable1->cmdCopyImage;
+    vtable->cmdCopyImageToBuffer = vtable1->cmdCopyImageToBuffer;
+    vtable->cmdBindPipeline = vtable1->cmdBindPipeline;
+    vtable->cmdSetViewport = vtable1->cmdSetViewport;
+    vtable->cmdSetScissors = vtable1->cmdSetScissors;
+    vtable->cmdBindVertexBuffers = vtable1->cmdBindVertexBuffers;
+    vtable->cmdBindIndexBuffer = vtable1->cmdBindIndexBuffer;
+    vtable->cmdDraw = vtable1->cmdDraw;
+    vtable->cmdDrawIndirect = vtable1->cmdDrawIndirect;
+    vtable->cmdDrawIndirectCount = vtable1->cmdDrawIndirectCount;
+    vtable->cmdDrawIndexed = vtable1->cmdDrawIndexed;
+    vtable->cmdDrawIndexedIndirect = vtable1->cmdDrawIndexedIndirect;
+    vtable->cmdDrawIndexedIndirectCount = vtable1->cmdDrawIndexedIndirectCount;
+    vtable->cmdAccelerationStructureBarrier = vtable1->cmdAccelerationStructureBarrier;
+    vtable->cmdImageBarrier = vtable1->cmdImageBarrier;
+    vtable->cmdBufferBarrier = vtable1->cmdBufferBarrier;
+    vtable->cmdDispatch = vtable1->cmdDispatch;
+    vtable->cmdDispatchBase = vtable1->cmdDispatchBase;
+    vtable->cmdDispatchIndirect = vtable1->cmdDispatchIndirect;
+    vtable->cmdTraceRays = vtable1->cmdTraceRays;
+    vtable->cmdTraceRaysIndirect = vtable1->cmdTraceRaysIndirect;
+    vtable->cmdBindDescriptorSet = vtable1->cmdBindDescriptorSet;
+    vtable->cmdPushConstants = vtable1->cmdPushConstants;
+    vtable->cmdSetCullMode = vtable1->cmdSetCullMode;
+    vtable->cmdSetFrontFace = vtable1->cmdSetFrontFace;
+    vtable->cmdSetPrimitiveTopology = vtable1->cmdSetPrimitiveTopology;
+    vtable->cmdSetDepthTestEnable = vtable1->cmdSetDepthTestEnable;
+    vtable->cmdSetDepthWriteEnable = vtable1->cmdSetDepthWriteEnable;
+    vtable->cmdSetStencilOp = vtable1->cmdSetStencilOp;
+
+    // acceleration structure
+    vtable->createAccelerationstructure = vtable1->createAccelerationstructure;
+    vtable->destroyAccelerationstructure = vtable1->destroyAccelerationstructure;
+    vtable->getAccelerationStructureBuildSize = vtable1->getAccelerationStructureBuildSize;
+
+    // buffer
+    vtable->createBuffer = vtable1->createBuffer;
+    vtable->destroyBuffer = vtable1->destroyBuffer;
+    vtable->getBufferMemoryRequirements = vtable1->getBufferMemoryRequirements;
+    vtable->computeInstanceBufferRequirements = vtable1->computeInstanceBufferRequirements;
+    vtable->computeImageCopyStagingBufferRequirements = vtable1->computeImageCopyStagingBufferRequirements;
+    vtable->writeToInstanceBuffer = vtable1->writeToInstanceBuffer;
+
+    vtable->writeToImageCopyStagingBuffer = vtable1->writeToImageCopyStagingBuffer;
+    vtable->bindBufferMemory = vtable1->bindBufferMemory;
+    vtable->getBufferDeviceAddress = vtable1->getBufferDeviceAddress;
+    vtable->mapBufferMemory = vtable1->mapBufferMemory;
+    vtable->unmapBufferMemory = vtable1->unmapBufferMemory;
+
+    // descriptors
+    vtable->createDescriptorSetLayout = vtable1->createDescriptorSetLayout;
+    vtable->destroyDescriptorSetLayout = vtable1->destroyDescriptorSetLayout;
+    vtable->createDescriptorPool = vtable1->createDescriptorPool;
+    vtable->destroyDescriptorPool = vtable1->destroyDescriptorPool;
+    vtable->resetDescriptorPool = vtable1->resetDescriptorPool;
+    vtable->allocateDescriptorSet = vtable1->allocateDescriptorSet;
+    vtable->updateDescriptorSet = vtable1->updateDescriptorSet;
+
+    // pipeline layout
+    vtable->createPipelineLayout = vtable1->createPipelineLayout;
+    vtable->destroyPipelineLayout = vtable1->destroyPipelineLayout;
+
+    // pipeline
+    vtable->createGraphicsPipeline = vtable1->createGraphicsPipeline;
+    vtable->createComputePipeline = vtable1->createComputePipeline;
+    vtable->createRayTracingPipeline = vtable1->createRayTracingPipeline;
+    vtable->destroyPipeline = vtable1->destroyPipeline;
+
+    // shader binding table
+    vtable->createShaderBindingTable = vtable1->createShaderBindingTable;
+    vtable->destroyShaderBindingTable = vtable1->destroyShaderBindingTable;
+    vtable->updateShaderBindingTable = vtable1->updateShaderBindingTable;
+    // clang-format on
+}
+
+static void addBackend(PalGraphicsBackendInfo* backendInfo)
+{
+    BackendData* backendData = &s_Graphics.backends[s_Graphics.backendCount++];
+    backendData->startIndex = 0;
+    backendData->count = 0;
+
+    // populate our internal vtable
+    if (backendInfo->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1) {
+        // validate that all version 1 pointers are set
+        const PalGraphicsBackendVtable1* vtable1 = (PalGraphicsBackendVtable1*)backendInfo->vtable;
+        validateVtableVersion1(vtable1);
+
+        memset(&backendData->base, 0, sizeof(PalGraphicsVtable));
+        populateVtableVersion1(&backendData->base, vtable1);
+    }
+}
+
+static inline uint32_t getLastErrorCode()
+{
+#ifdef _WIN32
+    return (uint32_t)GetLastError();
+#elif defined(__linux__)
+    return (uint32_t)errno;
+#endif // _WIN32
 }
 
 PalResult PAL_CALL palInitGraphics(
     const PalGraphicsDebugger* debugger,
-    const PalAllocator* allocator)
+    const PalAllocator* allocator,
+    uint32_t customBackendCount,
+    const PalGraphicsBackendInfo* customBackends)
 {
     if (s_Graphics.initialized) {
         return PAL_RESULT_SUCCESS;
     }
 
     if (allocator && (!allocator->allocate || !allocator->free)) {
-        return PAL_RESULT_INVALID_ALLOCATOR;
+        return palMakeResult(
+            PAL_RESULT_INVALID_ARGUMENT, 
+            PLATFORM_SOURCE, 
+            getLastErrorCode());
     }
 
     PalResult result;
@@ -2157,15 +594,11 @@ PalResult PAL_CALL palEnumerateAdapters(
 {
     // enumerate all adapters for both custom and PAL backends
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!count) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (*count == 0 && outAdapters) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    if (!count || *count == 0 && outAdapters) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -2179,7 +612,7 @@ PalResult PAL_CALL palEnumerateAdapters(
             // offset into the array so all backends write at the correct index
             PalAdapter** adapters = &outAdapters[backend->startIndex];
             _count = backend->count;
-            result = backend->base->enumerateAdapters(&_count, adapters);
+            result = backend->base.enumerateAdapters(&_count, adapters);
             // break if a backend fails
             if (result != PAL_RESULT_SUCCESS) {
                 return result;
@@ -2187,11 +620,11 @@ PalResult PAL_CALL palEnumerateAdapters(
 
             for (int j = 0; j < _count; j++) {
                 PalAdapter* tmp = adapters[j];
-                adapters[j]->backend = backend->base;
+                adapters[j]->backend = &backend->base;
             }
 
         } else {
-            result = backend->base->enumerateAdapters(&_count, nullptr);
+            result = backend->base.enumerateAdapters(&_count, nullptr);
             // break if a backend fails
             if (result != PAL_RESULT_SUCCESS) {
                 return result;
@@ -2215,11 +648,11 @@ PalResult PAL_CALL palGetAdapterInfo(
     PalAdapterInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!adapter || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return adapter->backend->getAdapterInfo(adapter, info);
@@ -2230,11 +663,11 @@ PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapterCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!adapter || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return adapter->backend->getAdapterCapabilities(adapter, caps);
@@ -2250,7 +683,7 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
 }
 
 uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
-    PalAdapter* adapter, 
+    PalAdapter* adapter,
     PalShaderFormats shaderFormat)
 {
     if (!s_Graphics.initialized || !adapter) {
@@ -2269,11 +702,11 @@ PalResult PAL_CALL palCreateDevice(
     PalDevice** outDevice)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!outDevice) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalDevice* device = nullptr;
@@ -2303,11 +736,11 @@ PalResult PAL_CALL palAllocateMemory(
     PalMemory** outMemory)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!outMemory || !device) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->allocateMemory(device, type, memoryMask, size, outMemory);
@@ -2331,11 +764,11 @@ PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalSamplerAnisotropyCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->querySamplerAnisotropyCapabilities(device, caps);
@@ -2346,11 +779,11 @@ PalResult PAL_CALL palQueryMultiViewCapabilities(
     PalMultiViewCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryMultiViewCapabilities(device, caps);
@@ -2361,11 +794,11 @@ PalResult PAL_CALL palQueryMultiViewportCapabilities(
     PalMultiViewportCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryMultiViewportCapabilities(device, caps);
@@ -2376,11 +809,11 @@ PalResult PAL_CALL palQueryDepthStencilCapabilities(
     PalDepthStencilCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryDepthStencilCapabilities(device, caps);
@@ -2391,11 +824,11 @@ PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalFragmentShadingRateCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryFragmentShadingRateCapabilities(device, caps);
@@ -2406,11 +839,11 @@ PalResult PAL_CALL palQueryMeshShaderCapabilities(
     PalMeshShaderCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryMeshShaderCapabilities(device, caps);
@@ -2421,11 +854,11 @@ PalResult PAL_CALL palQueryRayTracingCapabilities(
     PalRayTracingCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryRayTracingCapabilities(device, caps);
@@ -2436,11 +869,11 @@ PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
     PalDescriptorIndexingCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->queryDescriptorIndexingCapabilities(device, caps);
@@ -2456,11 +889,11 @@ PalResult PAL_CALL palCreateQueue(
     PalQueue** outQueue)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !outQueue) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalQueue* queue = nullptr;
@@ -2495,11 +928,11 @@ PalBool PAL_CALL palCanQueuePresent(
 PalResult PAL_CALL palWaitQueue(PalQueue* queue)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!queue) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return queue->backend->waitQueue(queue);
@@ -2515,15 +948,11 @@ PalResult PAL_CALL palEnumerateFormats(
     PalFormatInfo* outFormats)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!adapter || !count) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (*count == 0 && outFormats) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    if (!adapter || !count || *count == 0 && outFormats) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return adapter->backend->enumerateFormats(adapter, count, outFormats);
@@ -2572,11 +1001,11 @@ PalResult PAL_CALL palCreateImage(
     PalImage** outImage)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outImage) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalImage* image = nullptr;
@@ -2603,11 +1032,11 @@ PalResult PAL_CALL palGetImageInfo(
     PalImageInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!image || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return image->backend->getImageInfo(image, info);
@@ -2618,11 +1047,11 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
     PalMemoryRequirements* requirements)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!image) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return image->backend->getImageMemoryRequirements(image, requirements);
@@ -2634,11 +1063,11 @@ PalResult PAL_CALL palBindImageMemory(
     uint64_t offset)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!image || !memory) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return image->backend->bindImageMemory(image, memory, offset);
@@ -2651,11 +1080,11 @@ PalResult PAL_CALL palMapImageMemory(
     void** outPtr)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!image) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return image->backend->mapImageMemory(image, offset, size, outPtr);
@@ -2679,11 +1108,11 @@ PalResult PAL_CALL palCreateImageView(
     PalImageView** outImageView)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !image || !info || !outImageView) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalImageView* imageView = nullptr;
@@ -2715,11 +1144,11 @@ PalResult PAL_CALL palCreateSampler(
     PalSampler** outSampler)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outSampler) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalSampler* sampler = nullptr;
@@ -2747,20 +1176,22 @@ void PAL_CALL palDestroySampler(PalSampler* sampler)
 
 PalResult PAL_CALL palCreateSurface(
     PalDevice* device,
-    PalGraphicsWindow* window,
+    void* window,
+    void* windowInstance,
+    PalWindowInstanceType instanceType,
     PalSurface** outSurface)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !window || !outSurface) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalSurface* surface = nullptr;
     PalResult result;
-    result = device->backend->createSurface(device, window, &surface);
+    result = device->backend->createSurface(device, window, windowInstance, instanceType, &surface);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -2783,11 +1214,11 @@ PalResult PAL_CALL palGetSurfaceCapabilities(
     PalSurfaceCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !surface || !caps) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->getSurfaceCapabilities(device, surface, caps);
@@ -2805,11 +1236,11 @@ PalResult PAL_CALL palCreateSwapchain(
     PalSwapchain** outSwapchain)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !queue || !surface || !info || !outSwapchain) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -2854,11 +1285,11 @@ PalResult PAL_CALL palGetNextSwapchainImage(
     uint32_t* outIndex)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!swapchain || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return swapchain->backend->getNextSwapchainImage(swapchain, info, outIndex);
@@ -2869,11 +1300,11 @@ PalResult PAL_CALL palPresentSwapchain(
     PalSwapchainPresentInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!swapchain || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return swapchain->backend->presentSwapchain(swapchain, info);
@@ -2885,11 +1316,11 @@ PalResult PAL_CALL palResizeSwapchain(
     uint32_t newHeight)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!swapchain) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return swapchain->backend->resizeSwapchain(swapchain, newWidth, newHeight);
@@ -2905,11 +1336,11 @@ PalResult PAL_CALL palCreateShader(
     PalShader** outShader)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outShader) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalShader* shader = nullptr;
@@ -2941,11 +1372,11 @@ PalResult PAL_CALL palCreateFence(
     PalFence** outFence)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !outFence) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalFence* fence = nullptr;
@@ -2972,11 +1403,11 @@ PalResult PAL_CALL palWaitFence(
     uint64_t timeout)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!fence) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return fence->backend->waitFence(fence, timeout);
@@ -2985,11 +1416,11 @@ PalResult PAL_CALL palWaitFence(
 PalResult PAL_CALL palResetFence(PalFence* fence)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!fence) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return fence->backend->resetFence(fence);
@@ -3013,11 +1444,11 @@ PalResult PAL_CALL palCreateSemaphore(
     PalSemaphore** outSemaphore)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !outSemaphore) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalSemaphore* semaphore = nullptr;
@@ -3045,11 +1476,11 @@ PalResult PAL_CALL palWaitSemaphore(
     uint64_t timeout)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!semaphore) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return semaphore->backend->waitSemaphore(semaphore, value, timeout);
@@ -3061,11 +1492,11 @@ PalResult PAL_CALL palSignalSemaphore(
     uint64_t value)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!semaphore || !queue) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return semaphore->backend->signalSemaphore(semaphore, queue, value);
@@ -3076,11 +1507,11 @@ PalResult PAL_CALL palGetSemaphoreValue(
     uint64_t* outValue)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!semaphore || !outValue) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return semaphore->backend->getSemaphoreValue(semaphore, outValue);
@@ -3096,11 +1527,11 @@ PalResult PAL_CALL palCreateCommandPool(
     PalCommandPool** outPool)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !queue || !outPool) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalCommandPool* pool = nullptr;
@@ -3125,11 +1556,11 @@ void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!pool) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return pool->backend->resetCommandPool(pool);
@@ -3142,11 +1573,11 @@ PalResult PAL_CALL palAllocateCommandBuffer(
     PalCommandBuffer** outCmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !pool || !outCmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalCommandBuffer* cmdBuffer = nullptr;
@@ -3171,11 +1602,11 @@ void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer)
 PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->resetCommandBuffer(cmdBuffer);
@@ -3186,11 +1617,11 @@ PalResult PAL_CALL palSubmitCommandBuffer(
     PalCommandBufferSubmitInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!queue || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return queue->backend->submitCommandBuffer(queue, info);
@@ -3205,11 +1636,11 @@ PalResult PAL_CALL palCmdBegin(
     PalRenderingLayoutInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdBegin(cmdBuffer, info);
@@ -3218,11 +1649,11 @@ PalResult PAL_CALL palCmdBegin(
 PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdEnd(cmdBuffer);
@@ -3233,11 +1664,11 @@ PalResult PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* secondaryCmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!primaryCmdBuffer || !secondaryCmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return primaryCmdBuffer->backend->cmdExecuteCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
@@ -3248,11 +1679,11 @@ PalResult PAL_CALL palCmdSetFragmentShadingRate(
     PalFragmentShadingRateState* state)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !state) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetFragmentShadingRate(cmdBuffer, state);
@@ -3265,11 +1696,11 @@ PalResult PAL_CALL palCmdDrawMeshTasks(
     uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDrawMeshTasks(cmdBuffer, groupCountX, groupCountY, groupCountZ);
@@ -3281,11 +1712,11 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     uint32_t drawCount)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, drawCount);
@@ -3298,18 +1729,15 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer || !countBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdDrawMeshTasksIndirectCount(
-        cmdBuffer,
-        buffer,
-        countBuffer,
-        maxDrawCount);
+    return cmdBuffer->backend
+        ->cmdDrawMeshTasksIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
 PalResult PAL_CALL palCmdBuildAccelerationStructure(
@@ -3317,15 +1745,15 @@ PalResult PAL_CALL palCmdBuildAccelerationStructure(
     PalAccelerationStructureBuildInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (!info->dst || info->scratchBufferAddress == 0) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdBuildAccelerationStructure(cmdBuffer, info);
@@ -3336,11 +1764,11 @@ PalResult PAL_CALL palCmdBeginRendering(
     PalRenderingInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdBeginRendering(cmdBuffer, info);
@@ -3349,11 +1777,11 @@ PalResult PAL_CALL palCmdBeginRendering(
 PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdEndRendering(cmdBuffer);
@@ -3366,11 +1794,11 @@ PalResult PAL_CALL palCmdCopyBuffer(
     PalBufferCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !dst || !src || !copyInfo) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdCopyBuffer(cmdBuffer, dst, src, copyInfo);
@@ -3383,18 +1811,14 @@ PalResult PAL_CALL palCmdCopyBufferToImage(
     PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !dstImage || !srcBuffer || !copyInfo) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdCopyBufferToImage(
-        cmdBuffer, 
-        dstImage, 
-        srcBuffer,
-        copyInfo);
+    return cmdBuffer->backend->cmdCopyBufferToImage(cmdBuffer, dstImage, srcBuffer, copyInfo);
 }
 
 PalResult PAL_CALL palCmdCopyImage(
@@ -3404,20 +1828,16 @@ PalResult PAL_CALL palCmdCopyImage(
     PalImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !dst || !src || !copyInfo) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdCopyImage(
-        cmdBuffer, 
-        dst, 
-        src,
-        copyInfo);
+    return cmdBuffer->backend->cmdCopyImage(cmdBuffer, dst, src, copyInfo);
 }
-   
+
 PalResult PAL_CALL palCmdCopyImageToBuffer(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
@@ -3425,18 +1845,14 @@ PalResult PAL_CALL palCmdCopyImageToBuffer(
     PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !dstBuffer || !srcImage || !copyInfo) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdCopyImageToBuffer(
-        cmdBuffer, 
-        dstBuffer, 
-        srcImage,
-        copyInfo);
+    return cmdBuffer->backend->cmdCopyImageToBuffer(cmdBuffer, dstBuffer, srcImage, copyInfo);
 }
 
 PalResult PAL_CALL palCmdBindPipeline(
@@ -3444,11 +1860,11 @@ PalResult PAL_CALL palCmdBindPipeline(
     PalPipeline* pipeline)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !pipeline) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdBindPipeline(cmdBuffer, pipeline);
@@ -3460,11 +1876,11 @@ PalResult PAL_CALL palCmdSetViewport(
     PalViewport* viewports)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !viewports || !count) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetViewport(cmdBuffer, count, viewports);
@@ -3476,11 +1892,11 @@ PalResult PAL_CALL palCmdSetScissors(
     PalRect2D* scissors)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !scissors || !count) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetScissors(cmdBuffer, count, scissors);
@@ -3494,19 +1910,14 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
     uint64_t* offsets)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffers || !offsets) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdBindVertexBuffers(
-        cmdBuffer, 
-        firstSlot, 
-        count, 
-        buffers, 
-        offsets);
+    return cmdBuffer->backend->cmdBindVertexBuffers(cmdBuffer, firstSlot, count, buffers, offsets);
 }
 
 PalResult PAL_CALL palCmdBindIndexBuffer(
@@ -3516,11 +1927,11 @@ PalResult PAL_CALL palCmdBindIndexBuffer(
     PalIndexType type)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdBindIndexBuffer(cmdBuffer, buffer, offset, type);
@@ -3534,11 +1945,11 @@ PalResult PAL_CALL palCmdDraw(
     uint32_t firstInstance)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend
@@ -3551,11 +1962,11 @@ PalResult PAL_CALL palCmdDrawIndirect(
     uint32_t count)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDrawIndirect(cmdBuffer, buffer, count);
@@ -3568,18 +1979,14 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
     uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer || !countBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdDrawIndirectCount(
-        cmdBuffer,
-        buffer,
-        countBuffer,
-        maxDrawCount);
+    return cmdBuffer->backend->cmdDrawIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
 PalResult PAL_CALL palCmdDrawIndexed(
@@ -3591,11 +1998,11 @@ PalResult PAL_CALL palCmdDrawIndexed(
     uint32_t firstInstance)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDrawIndexed(
@@ -3613,11 +2020,11 @@ PalResult PAL_CALL palCmdDrawIndexedIndirect(
     uint32_t count)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDrawIndexedIndirect(cmdBuffer, buffer, count);
@@ -3630,80 +2037,70 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer || !countBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdDrawIndexedIndirectCount(
-        cmdBuffer,
-        buffer,
-        countBuffer,
-        maxDrawCount);
+    return cmdBuffer->backend
+        ->cmdDrawIndexedIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
 PalResult PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructure* as,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo)
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!cmdBuffer || !as || !oldUsageStateInfo || !newUsageStateInfo) {
-        return PAL_RESULT_NULL_POINTER;
+    if (!cmdBuffer || !as) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdAccelerationStructureBarrier(
-        cmdBuffer, 
-        as,
-        oldUsageStateInfo, 
-        newUsageStateInfo);
+    return cmdBuffer->backend
+        ->cmdAccelerationStructureBarrier(cmdBuffer, as, oldUsageState, newUsageState);
 }
 
 PalResult PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo)
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!cmdBuffer || !image ||!subresourceRange || !oldUsageStateInfo || !newUsageStateInfo) {
-        return PAL_RESULT_NULL_POINTER;
+    if (!cmdBuffer || !image || !subresourceRange) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdImageBarrier(
-        cmdBuffer, 
-        image, 
-        subresourceRange, 
-        oldUsageStateInfo, 
-        newUsageStateInfo);
+    return cmdBuffer->backend
+        ->cmdImageBarrier(cmdBuffer, image, subresourceRange, oldUsageState, newUsageState);
 }
 
 PalResult PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageStateInfo* oldUsageStateInfo,
-    PalUsageStateInfo* newUsageStateInfo)
+    PalUsageState oldUsageState,
+    PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!cmdBuffer || !buffer || !oldUsageStateInfo || !newUsageStateInfo) {
-        return PAL_RESULT_NULL_POINTER;
+    if (!cmdBuffer || !buffer) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend
-        ->cmdBufferBarrier(cmdBuffer, buffer, oldUsageStateInfo, newUsageStateInfo);
+        ->cmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
 }
 
 PalResult PAL_CALL palCmdDispatch(
@@ -3713,11 +2110,11 @@ PalResult PAL_CALL palCmdDispatch(
     uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
@@ -3733,11 +2130,11 @@ PalResult PAL_CALL palCmdDispatchBase(
     uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDispatchBase(
@@ -3755,11 +2152,11 @@ PalResult PAL_CALL palCmdDispatchIndirect(
     PalBuffer* buffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdDispatchIndirect(cmdBuffer, buffer);
@@ -3774,11 +2171,11 @@ PalResult PAL_CALL palCmdTraceRays(
     uint32_t depth)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !sbt) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdTraceRays(cmdBuffer, sbt, raygenIndex, width, height, depth);
@@ -3791,11 +2188,11 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalBuffer* buffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !sbt || !buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, buffer);
@@ -3807,17 +2204,14 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
     PalDescriptorSet* set)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !set) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdBindDescriptorSet(
-        cmdBuffer, 
-        setIndex, 
-        set);
+    return cmdBuffer->backend->cmdBindDescriptorSet(cmdBuffer, setIndex, set);
 }
 
 PalResult PAL_CALL palCmdPushConstants(
@@ -3829,11 +2223,11 @@ PalResult PAL_CALL palCmdPushConstants(
     const void* value)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer || !shaderStages || !value) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     // clang-format off
@@ -3852,11 +2246,11 @@ PalResult PAL_CALL palCmdSetCullMode(
     PalCullMode cullMode)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetCullMode(cmdBuffer, cullMode);
@@ -3867,11 +2261,11 @@ PalResult PAL_CALL palCmdSetFrontFace(
     PalFrontFace frontFace)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetFrontFace(cmdBuffer, frontFace);
@@ -3882,11 +2276,11 @@ PalResult PAL_CALL palCmdSetPrimitiveTopology(
     PalPrimitiveTopology topology)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetPrimitiveTopology(cmdBuffer, topology);
@@ -3897,11 +2291,11 @@ PalResult PAL_CALL palCmdSetDepthTestEnable(
     PalBool enable)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetDepthTestEnable(cmdBuffer, enable);
@@ -3912,11 +2306,11 @@ PalResult PAL_CALL palCmdSetDepthWriteEnable(
     PalBool enable)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return cmdBuffer->backend->cmdSetDepthWriteEnable(cmdBuffer, enable);
@@ -3931,20 +2325,15 @@ PalResult PAL_CALL palCmdSetStencilOp(
     PalCompareOp compareOp)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!cmdBuffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return cmdBuffer->backend->cmdSetStencilOp(
-        cmdBuffer, 
-        faceMask, 
-        failOp, 
-        passOp, 
-        depthFailOp, 
-        compareOp);
+    return cmdBuffer->backend
+        ->cmdSetStencilOp(cmdBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
 // ==================================================
@@ -3957,15 +2346,15 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     PalAccelerationStructure** outAs)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outAs) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (!info->buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -3993,11 +2382,11 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
     PalAccelerationStructureBuildSize* size)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !size) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->getAccelerationStructureBuildSize(device, info, size);
@@ -4013,11 +2402,11 @@ PalResult PAL_CALL palCreateBuffer(
     PalBuffer** outBuffer)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4044,11 +2433,11 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
     PalMemoryRequirements* requirements)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return buffer->backend->getBufferMemoryRequirements(buffer, requirements);
@@ -4060,17 +2449,14 @@ PalResult PAL_CALL palComputeInstanceBufferRequirements(
     uint64_t* outSize)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !outSize) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
-    return device->backend->computeInstanceBufferRequirements(
-        device, 
-        instanceCount, 
-        outSize);
+    return device->backend->computeInstanceBufferRequirements(device, instanceCount, outSize);
 }
 
 PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
@@ -4082,11 +2468,11 @@ PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     uint64_t* outSize)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !outBufferRowLength || !outBufferImageHeight || !outSize) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (copyInfo->bufferRowLength < copyInfo->imageWidth && copyInfo->bufferRowLength) {
@@ -4098,9 +2484,9 @@ PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     }
 
     return device->backend->computeImageCopyStagingBufferRequirements(
-        device, 
+        device,
         imageFormat,
-        copyInfo, 
+        copyInfo,
         outBufferRowLength,
         outBufferImageHeight,
         outSize);
@@ -4113,11 +2499,11 @@ PalResult PAL_CALL palWriteToInstanceBuffer(
     uint32_t instanceCount)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !ptr || !instances || instanceCount == 0) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     // since all tlas have backend pointer, we use the first one
@@ -4132,11 +2518,11 @@ PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
     PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !ptr || !srcData || !copyInfo) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (copyInfo->bufferRowLength < copyInfo->imageWidth && copyInfo->bufferRowLength) {
@@ -4147,12 +2533,8 @@ PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
         return PAL_RESULT_INVALID_ARGUMENT;
     }
 
-    return device->backend->writeToImageCopyStagingBuffer(
-        device, 
-        ptr, 
-        srcData, 
-        imageFormat,
-        copyInfo);
+    return device->backend
+        ->writeToImageCopyStagingBuffer(device, ptr, srcData, imageFormat, copyInfo);
 }
 
 PalResult PAL_CALL palBindBufferMemory(
@@ -4161,11 +2543,11 @@ PalResult PAL_CALL palBindBufferMemory(
     uint64_t offset)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!buffer || !memory) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return buffer->backend->bindBufferMemory(buffer, memory, offset);
@@ -4178,11 +2560,11 @@ PalResult PAL_CALL palMapBufferMemory(
     void** outPtr)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!buffer) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return buffer->backend->mapBufferMemory(buffer, offset, size, outPtr);
@@ -4213,11 +2595,11 @@ PalResult PAL_CALL palCreateDescriptorSetLayout(
     PalDescriptorSetLayout** outLayout)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outLayout) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4245,11 +2627,11 @@ PalResult PAL_CALL palCreateDescriptorPool(
     PalDescriptorPool** outPool)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outPool) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (!info->maxDescriptorSets) {
@@ -4278,11 +2660,11 @@ void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool)
 PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!pool) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return pool->backend->resetDescriptorPool(pool);
@@ -4295,11 +2677,11 @@ PalResult PAL_CALL palAllocateDescriptorSet(
     PalDescriptorSet** outSet)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !pool || !layout || !outSet) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4320,15 +2702,11 @@ PalResult PAL_CALL palUpdateDescriptorSet(
     PalDescriptorSetWriteInfo* infos)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!device || !infos) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (count == 0 && infos) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    if (!device || !infos || count == 0 && infos) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return device->backend->updateDescriptorSet(device, count, infos);
@@ -4344,11 +2722,11 @@ PalResult PAL_CALL palCreatePipelineLayout(
     PalPipelineLayout** outLayout)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outLayout) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4380,15 +2758,15 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     PalPipeline** outPipeline)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outPipeline) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (!info->renderingLayout) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4409,11 +2787,11 @@ PalResult PAL_CALL palCreateComputePipeline(
     PalPipeline** outPipeline)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outPipeline) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4434,11 +2812,11 @@ PalResult PAL_CALL palCreateRayTracingPipeline(
     PalPipeline** outPipeline)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outPipeline) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4470,15 +2848,15 @@ PalResult PAL_CALL palCreateShaderBindingTable(
     PalShaderBindingTable** outSbt)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
     if (!device || !info || !outSbt) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     if (!info->rayTracingPipeline) {
-        return PAL_RESULT_NULL_POINTER;
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     PalResult result;
@@ -4501,20 +2879,16 @@ void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt)
 }
 
 PalResult PAL_CALL palUpdateShaderBindingTable(
-    PalShaderBindingTable* sbt, 
+    PalShaderBindingTable* sbt,
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
     if (!s_Graphics.initialized) {
-        return PAL_RESULT_GRAPHICS_NOT_INITIALIZED;
+        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
     }
 
-    if (!sbt || !infos) {
-        return PAL_RESULT_NULL_POINTER;
-    }
-
-    if (count == 0 && infos) {
-        return PAL_RESULT_INSUFFICIENT_BUFFER;
+    if (!sbt || !infos || count == 0 && infos) {
+        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
     }
 
     return sbt->backend->updateShaderBindingTable(sbt, count, infos);

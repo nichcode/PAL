@@ -21,6 +21,9 @@
 #define PAL_SHADER_ENTRY_NAME_SIZE 32
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
+#define PAL_BACKEND_KEY ((void*)(uintptr_t)0x50414C48414E4453)
+#define PAL_MAX_CUSTOM_BACKENDS 16
+
 #define PAL_MAKE_SHADER_TARGET(major, minor) ((uint32_t)((major) << 8) | (minor))
 #define PAL_SHADER_TARGET_MAJOR(target) ((uint32_t)(target) >> 8);
 #define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF);
@@ -445,6 +448,8 @@
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CU_DISABLE (1U << 2)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1U << 3)
 
+#define ePAL_ACCELERATION_STRUCTURE_CREATE_FLAG_NONE 0
+
 #define PAL_GEOMETRY_TYPE_TRIANGLE 0
 #define PAL_GEOMETRY_TYPE_AABBS 1
 #define PAL_GEOMETRY_TYPE_COUNT 2
@@ -522,6 +527,18 @@
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT 1
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT 2
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_COUNT 3
+
+#define PAL_BUFFER_MEMORY_USAGE_MANUAL 0
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY 1
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD 2
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK 3
+#define PAL_BUFFER_MEMORY_USAGE_COUNT 4
+
+#define PAL_IMAGE_MEMORY_USAGE_MANUAL 0
+#define PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY 1
+#define PAL_IMAGE_MEMORY_USAGE_COUNT 2
+
+#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
 
 /**
  * @struct PalAdapter
@@ -1196,6 +1213,18 @@ typedef uint32_t PalFragmentShadingRateCombinerOp;
 typedef uint32_t PalAccelerationStructureType;
 
 /**
+ * @typedef PalAccelerationStructureCreateFlags
+ * @brief Acceleration structure create flags. Multiple hints can be OR'ed together using 
+ * bitwise OR operator (`|`).
+ *
+ * All acceleration structure create flags follow the format `PAL_ACCELERATION_STRUCTURE_CREATE_FLAG_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalAccelerationStructureCreateFlags;
+
+/**
  * @typedef PalAccelerationStructureBuildMode
  * @brief Acceleration structure build modes.
  *
@@ -1313,6 +1342,39 @@ typedef uint32_t PalRayTracingShaderGroupType;
  * @since 2.0
  */
 typedef uint32_t PalDescriptorIndexingFlags;
+
+/**
+ * @typedef PalBufferMemoryUsage
+ * @brief Buffer memory usages.
+ *
+ * All buffer memory usages follow the format `PAL_BUFFER_MEMORY_USAGE_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalBufferMemoryUsage;
+
+/**
+ * @typedef PalImageMemoryUsage
+ * @brief Image memory usages.
+ *
+ * All image memory usages follow the format `PAL_IMAGE_MEMORY_USAGE_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalImageMemoryUsage;
+
+/**
+ * @typedef PalGraphicsBackendVtableVersion
+ * @brief Graphics backend vtable versions.
+ *
+ * All graphics backend vtable versions follow the format `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalGraphicsBackendVtableVersion;
 
 /**
  * @typedef PalDebugCallback
@@ -2316,6 +2378,7 @@ typedef struct {
     PalSampleCount sampleCount;
     PalImageType type;
     PalFormat format;
+    PalImageMemoryUsage memoryUsage;
 } PalImageCreateInfo;
 
 /**
@@ -2400,8 +2463,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBufferUsages usages;
     uint64_t size;
+    PalBufferUsages usages;
+    PalBufferMemoryUsage memoryUsage;
 } PalBufferCreateInfo;
 
 /**
@@ -2417,6 +2481,7 @@ typedef struct {
     uint64_t offset;
     uint64_t size;
     PalAccelerationStructureType type;
+    PalAccelerationStructureCreateFlags createFlags;
 } PalAccelerationStructureCreateInfo;
 
 /**
@@ -2559,10 +2624,31 @@ typedef struct {
 } PalShaderBindingTableCreateInfo;
 
 /**
- * @struct PalGraphicsBackend
- * @brief Dispatch table for PAL graphics system backends.
+ * @struct PalGraphicsBackendRegistrationInfo
+ * @brief Registration info of a graphics backend.
  *
  * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 2.0
+ */
+typedef struct {
+    const void* vtable;
+    PalGraphicsBackendVtableVersion version;
+} PalGraphicsBackendInfo;
+
+/**
+ * @struct PalGraphicsBackendVtable1
+ * @brief Version 1 dispatch table for PAL graphics system backends.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * All backend handle implementation (eg. struct CustomBuffer) must reserve its first field as
+ * a `void*` and set it to `PAL_BACKEND_KEY` at the handles creation function pointer
+ * (eg. createBufferCustom). This will be validated at the handle creation function 
+ * (eg. palCreateBuffer).
+ * 
+ * Pal trust thee backend author to not overwrite or use the reserve space. It is used by the
+ * graphics layer.
  *
  * @since 2.0
  */
@@ -3846,54 +3932,28 @@ typedef struct {
         PalShaderBindingTable* sbt, 
         uint32_t count,
         PalShaderBindingTableRecordInfo* infos);
-} PalGraphicsBackend;
-
-/**
- * @brief Add a custom graphics backend to the graphics system.
- *
- * The graphics system must not be initialized before this call. If already initialized,
- * the system should be shutdown and re-initialized after this call.
- * The graphics system supports 16 custom backends.
- *
- * The `backend` dispatch table must have its function pointers all set even if a
- * function will not be used. If a feature is not supported by the backend,
- * `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED` must be returned by the appropriate function.
- * If any of the function pointers are not set, this function will fail and
- * `PAL_RESULT_INVALID_BACKEND` will be returned.
- *
- * The backend will not not copied, therefore the pointer must remain valid
- * until the graphics system is shutdown.
- *
- * @param[in] backend Pointer to the backend dispatch table to add.
- *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Must only be called from the main thread.
- *
- * @since 2.0
- * @sa palInitGraphics
- * @sa palShutdownGraphics
- */
-PAL_API PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backend);
+} PalGraphicsBackendVtable1;
 
 /**
  * @brief Initialize the graphics system.
  *
- * Any custom backends added with palAddGraphicsBackend() will be registered with the
- * graphics system. The graphics system must be shutdown with palShutdownGraphics() when no longer
- * needed.
- *
- * The debugger and allocator will not not copied, therefore the pointers must remain valid
+ * The debugger, allocator and custom backends will not not copied, therefore the pointers must remain valid
  * until the graphics system is shutdown. Set the debugger or PalGraphicsDebugger::callback to
  * nullptr to disable debugging and validation layers.
  * 
  * If `debugger` is not nullptr and there is no debug layers, this function will not fail but 
  * debugging will be disabled.
+ * 
+ * All backends must have their vtable functions fully set according to the version requirements.
+ * If a feature is not supported by a backend, `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED` must be 
+ * returned by the appropriate function. This is validated at initialization and will fail and return
+ * `PAL_RESULT_INVALID_ARGUMENT`.
  *
  * @param[in] debugger Optional debugger. Set to nullptr to disable debugging and validation
  * layers.
  * @param[in] allocator Optional user-provided allocator. Set to nullptr to use default.
+ * @param[in] customBackendCount The number of custom backends in `customBackends`.
+ * @param[in] customBackends Pointer to an array of custom backends.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -3901,12 +3961,13 @@ PAL_API PalResult PAL_CALL palAddGraphicsBackend(const PalGraphicsBackend* backe
  * Thread safety: Must only be called from the main thread.
  *
  * @since 2.0
- * @sa palAddGraphicsBackend
  * @sa palShutdownGraphics
  */
 PAL_API PalResult PAL_CALL palInitGraphics(
     const PalGraphicsDebugger* debugger,
-    const PalAllocator* allocator);
+    const PalAllocator* allocator,
+    uint32_t customBackendCount,
+    const PalGraphicsBackendInfo* customBackends);
 
 /**
  * @brief Shutdown the graphics system.
