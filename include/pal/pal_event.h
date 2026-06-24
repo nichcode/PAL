@@ -244,7 +244,7 @@ typedef struct PalEvent PalEvent;
 
 /**
  * @typedef PalDecorationMode
- * @brief Decoration types. This is not a bitmask enum.
+ * @brief Decoration types.
  *
  * All decoration types follow the format `PAL_DECORATION_MODE_**` for
  * consistency and API use.
@@ -255,7 +255,7 @@ typedef uint32_t PalDecorationMode;
 
 /**
  * @typedef PalEventType
- * @brief Event types. This is not a bitmask enum.
+ * @brief Event types.
  *
  * All event types follow the format `PAL_EVENT_**` for consistency and
  * API use.
@@ -266,7 +266,7 @@ typedef uint32_t PalEventType;
 
 /**
  * @typedef PalDispatchMode
- * @brief Dispatch types for an event. This is not a bitmask enum.
+ * @brief Dispatch types for an event.
  *
  * All dispatch modes follow the format `PAL_DISPATCH_**` for consistency
  * and API use.
@@ -322,10 +322,10 @@ typedef PalBool(PAL_CALL* PalPollFn)(
     PalEvent* outEvent);
 
 struct PalEvent {
-    int64_t data;   /**< First data payload.*/
-    int64_t data2;  /**< Second data payload.*/
-    int32_t userId; /**< You can have user events upto int32_t max.*/
-    PalEventType type;
+    int64_t data;      /**< First data payload.*/
+    int64_t data2;     /**< Second data payload.*/
+    int32_t userId;    /**< You can have user events upto int32_t max.*/
+    PalEventType type; /**< (eg. `PAL_EVENT_WINDOW_MOVE`).*/
 };
 
 /**
@@ -337,8 +337,8 @@ struct PalEvent {
  * @since 1.0
  */
 typedef struct {
-    PalPushFn push;
-    PalPollFn poll;
+    PalPushFn push; /**< Push function pointer. Must not be nullptr.*/
+    PalPollFn poll; /**< Poll function pointer. Must not be nullptr.*/
     void* userData; /**< Optional user-provided data. Can be nullptr.*/
 } PalEventQueue;
 
@@ -417,7 +417,7 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @param[in] type Event type to set dispatch mode for.
  * @param[in] mode Dispatch mode to use.
  *
- * Thread safety: Thread if multiple threads are not
+ * Thread safety: Thread safe if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
@@ -437,7 +437,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @return The dispatch mode on success or `PAL_DISPATCH_NONE` on failure.
  *
- * Thread safety: Thread if multiple threads are not
+ * Thread safety: Thread safe if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
  * @since 1.0
@@ -464,7 +464,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] event Pointer to the event to push.
  *
- * Thread safety: Thread if the provided event queue is thread
+ * Thread safety: Thread safe if the provided event queue is thread
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.
  *
@@ -490,7 +490,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be
  * valid.
  *
- * Thread safety: Thread if the provided event queue is thread
+ * Thread safety: Thread safe if the provided event queue is thread
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.
  *

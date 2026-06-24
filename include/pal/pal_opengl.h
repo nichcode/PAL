@@ -38,8 +38,8 @@
 #define PAL_GL_EXTENSION_FLUSH_CONTROL (1ULL << 8)
 #define PAL_GL_EXTENSION_COLORSPACE_SRGB (1ULL << 9)
 
-#define PAL_GL_PROFILE_NONE 0          
-#define PAL_GL_PROFILE_CORE 1          
+#define PAL_GL_PROFILE_NONE 0
+#define PAL_GL_PROFILE_CORE 1
 #define PAL_GL_PROFILE_COMPATIBILITY 2
 #define PAL_GL_PROFILE_ES 3
 #define PAL_GL_PROFILE_COUNT 4
@@ -141,14 +141,14 @@ typedef uint32_t PalGLAPI;
  * @since 1.0
  */
 typedef struct {
-    PalGLExtensions extensions;
-    uint32_t major;
-    uint32_t minor;
-    PalGLBackend backend;
-    PalGLAPI api;
-    char vendor[PAL_GL_VENDOR_NAME_SIZE];
-    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE];
-    char version[PAL_GL_VERSION_NAME_SIZE];
+    PalGLExtensions extensions;                        /**< Supported extensions.*/
+    uint32_t major;                                    /**< Version major.*/
+    uint32_t minor;                                    /**< Version minor.*/
+    PalGLBackend backend;                              /**< (eg. `PAL_GL_BACKEND_WGL`).*/
+    PalGLAPI api;                                      /**< (eg. `PAL_GL_API_OPENGL_ES`).*/
+    char vendor[PAL_GL_VENDOR_NAME_SIZE];              /**< Graphics card vendor name.*/
+    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE]; /**< Graphics card name.*/
+    char version[PAL_GL_VERSION_NAME_SIZE];            /**< Graphics card version string.*/
 } PalGLInfo;
 
 /**
@@ -158,17 +158,17 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalBool doubleBuffer;
-    PalBool stereo;
-    PalBool sRGB;
-    uint16_t index;
-    uint16_t redBits;
-    uint16_t greenBits;
-    uint16_t blueBits;
-    uint16_t alphaBits;
-    uint16_t depthBits;
-    uint16_t stencilBits;
-    uint16_t samples;
+    PalBool doubleBuffer; /**< If `PAL_TRUE` double buffering is supported.*/
+    PalBool stereo;       /**< If `PAL_TRUE` stereo is supported.*/
+    PalBool sRGB;         /**< If `PAL_TRUE` SRGB colorspace is supported.*/
+    uint16_t index;       /**< Driver index or id.*/
+    uint16_t redBits;     /**< Number of bits in the red channel.*/
+    uint16_t greenBits;   /**< Number of bits in the green channel.*/
+    uint16_t blueBits;    /**< Number of bits in the blue channel.*/
+    uint16_t alphaBits;   /**< Number of bits in the alpha channel.*/
+    uint16_t depthBits;   /**< Number of depth buffer bits.*/
+    uint16_t stencilBits; /**< Number of stencil buffer bits.*/
+    uint16_t samples;     /**< Number of samples.*/
 } PalGLFBConfig;
 
 /**
@@ -182,7 +182,7 @@ typedef struct {
  */
 typedef struct {
     void* instance; /**< Must not be nullptr. (HINSTANCE on Win32 or wl_display on Wayland)*/
-    void* window;  /**< Must not be nullptr. (egl_wl_window on Wayland)*/
+    void* window;   /**< Must not be nullptr. (egl_wl_window on Wayland)*/
 } PalGLWindow;
 
 /**
@@ -194,17 +194,17 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    const PalGLWindow* window;
-    const PalGLFBConfig* fbConfig;
-    PalGLContext* shareContext;
-    PalGLProfile profile;
-    PalGLContextReset reset;
-    PalGLReleaseBehavior release;
-    PalBool forward;
-    PalBool noError;
-    PalBool debug;
-    uint32_t major;
-    uint32_t minor;
+    const PalGLWindow* window;     /**< Window to create context for. Must not be nullptr.*/
+    const PalGLFBConfig* fbConfig; /**< The framebuffer config to use. Must not be nullptr.*/
+    PalGLContext* shareContext;    /**< Can be nullptr.*/
+    PalGLProfile profile;          /**< (eg. `PAL_GL_PROFILE_CORE`).*/
+    PalGLContextReset reset;       /**< (eg. `PAL_GL_CONTEXT_RESET_LOSE_CONTEXT`).*/
+    PalGLReleaseBehavior release;  /**< (eg. `PAL_GL_RELEASE_BEHAVIOR_FLUSH`).*/
+    PalBool forward;               /**< Create a forward compatible context.*/
+    PalBool noError;               /**< Create a no error context.*/
+    PalBool debug;                 /**< Create a debug context.*/
+    uint32_t major;                /**< Must not be greater than what the driver supports.*/
+    uint32_t minor;                /**< Must not be greater than what the driver supports.*/
 } PalGLContextCreateInfo;
 
 /**
@@ -215,15 +215,15 @@ typedef struct {
  *
  * The allocator will not not copied, therefore the pointer must remain valid
  * until the opengl system is shutdown.
- * 
+ *
  * `instance` must not be nullptr and will not be freed by the opengl system. It must be valid until
  * palShutdownGL() is called.
- * `Linux`: This is the Display associated with the connection. 
+ * `Linux`: This is the Display associated with the connection.
  * `Windows`: This is the HINSTANCE of the process.
- * 
- * @param[in] api The api to use. (eg. PAL_GL_API_OPENGL). Call palGetSupportedGLAPIs() to check
+ *
+ * @param[in] api The api to use. (eg. `PAL_GL_API_OPENGL`). Call `palGetSupportedGLAPIs()` to check
  * if an api is supported on `instance`.
- * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay). 
+ * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay).
  * Must not be nullptr.
  * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
  * default.
@@ -454,7 +454,7 @@ PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
 
 /**
  * @brief Get supported opengl APIs
- * 
+ *
  * @param[in] instance The instance (eg. HINSTANCE or XDisplay).
  *
  * @return An array of bools or nullptr on failure.

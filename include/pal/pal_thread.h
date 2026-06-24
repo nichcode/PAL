@@ -113,9 +113,9 @@ typedef void (*PaTlsDestructorFn)(void* userData);
  * @since 1.0
  */
 typedef struct {
-    uint64_t stackSize;              /**< Set to 0 to use default*/
+    uint64_t stackSize;            /**< Set to 0 to use default*/
     const PalAllocator* allocator; /**< Set to nullptr to use default.*/
-    PalThreadFn entry;             /**< Thread entry function*/
+    PalThreadFn entry;             /**< Thread entry function. Must not be nullptr*/
     void* arg;                     /**< Optional user-provided data. Can be nullptr.*/
 } PalThreadCreateInfo;
 

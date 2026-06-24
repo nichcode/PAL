@@ -73,14 +73,15 @@
 #define PAL_WINDOW_STYLE_TOOL (1U << 5)
 #define PAL_WINDOW_STYLE_BORDERLESS (1U << 6)
 
-#define PAL_WINDOW_STATE_MAXIMIZED 0
-#define PAL_WINDOW_STATE_MINIMIZED 1
-#define PAL_WINDOW_STATE_RESTORED 2
-#define PAL_WINDOW_STATE_COUNT 3
+#define PAL_WINDOW_STATE_NORMAL 0
+#define PAL_WINDOW_STATE_MAXIMIZED 1
+#define PAL_WINDOW_STATE_MINIMIZED 2
+#define PAL_WINDOW_STATE_RESTORED 3
+#define PAL_WINDOW_STATE_COUNT 4
 
-#define PAL_FLASH_STOP 0               /**< Stop flashing.*/
-#define PAL_FLASH_CAPTION (1U << 0)    /**< Flash the titlebar of the window.*/
-#define PAL_FLASH_TRAY (1U << 1)       /**< Flash the icon of the window.*/
+#define PAL_FLASH_STOP 0            /**< Stop flashing.*/
+#define PAL_FLASH_CAPTION (1U << 0) /**< Flash the titlebar of the window.*/
+#define PAL_FLASH_TRAY (1U << 1)    /**< Flash the icon of the window.*/
 
 #define PAL_CONFIG_BACKEND_PAL_OPENGL 0 /**< Use PAL opengl module backend.*/
 #define PAL_CONFIG_BACKEND_EGL 1
@@ -486,15 +487,15 @@ typedef uint32_t PalCursorType;
  * @since 1.0
  */
 typedef struct {
-    int32_t x;       /**< X position in pixels.*/
-    int32_t y;       /**< Y position in pixels.*/
-    uint32_t width;  /**< Width in pixels.*/
-    uint32_t height; /**< Height in pixels.*/
-    uint32_t dpi;
-    uint32_t refreshRate;
-    PalOrientation orientation;
-    PalBool primary; /**< True if this is the primary monitor.*/
-    char name[PAL_MONITOR_NAME_SIZE];
+    int32_t x;                        /**< X position in pixels.*/
+    int32_t y;                        /**< Y position in pixels.*/
+    uint32_t width;                   /**< Width in pixels.*/
+    uint32_t height;                  /**< Height in pixels.*/
+    uint32_t dpi;                     /**< Display dots per inch.*/
+    uint32_t refreshRate;             /**< Refresh rate in Hz.*/
+    PalOrientation orientation;       /**< (eg. `PAL_ORIENTATION_LANDSCAPE`).*/
+    PalBool primary;                  /**< `PAL_TRUE` if this is the primary monitor.*/
+    char name[PAL_MONITOR_NAME_SIZE]; /**< Name of the monitor.*/
 } PalMonitorInfo;
 
 /**
@@ -504,10 +505,10 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    uint32_t bpp; /**< Bits per pixel.*/
-    uint32_t refreshRate;
-    uint32_t width;  /**< Width in pixels.*/
-    uint32_t height; /**< Height in pixels.*/
+    uint32_t bpp;         /**< Bits per pixel.*/
+    uint32_t refreshRate; /**< Refresh rate in Hz.*/
+    uint32_t width;       /**< Width in pixels.*/
+    uint32_t height;      /**< Height in pixels.*/
 } PalMonitorMode;
 
 /**
@@ -519,9 +520,9 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalFlashFlag flags;
-    uint32_t interval;    /**< In milliseconds. Set to 0 for default.*/
-    uint32_t count;       /**< Set to 0 to flash until focused or cancelled.*/
+    PalFlashFlag flags; /**< (eg. `PAL_FLASH_CAPTION`).*/
+    uint32_t interval;  /**< In milliseconds. Set to 0 for default.*/
+    uint32_t count;     /**< Set to 0 to flash until focused or cancelled.*/
 } PalFlashInfo;
 
 /**
@@ -562,10 +563,10 @@ typedef struct {
  */
 typedef struct {
     void* nativeInstance; /**< The platform (OS) display or instance.*/
-    void* nativeWindow;  /**< The window platform (OS) handle.*/
-    void* nativeHandle1; /**< Extra window handle (xdgSurface)*/
-    void* nativeHandle2; /**< Extra window handle (xdgToplevel)*/
-    void* nativeHandle3; /**< Extra window handle (wl_egl_window)*/
+    void* nativeWindow;   /**< The window platform (OS) handle.*/
+    void* nativeHandle1;  /**< Extra window handle (xdgSurface)*/
+    void* nativeHandle2;  /**< Extra window handle (xdgToplevel)*/
+    void* nativeHandle3;  /**< Extra window handle (wl_egl_window)*/
 } PalWindowHandleInfo;
 
 /**
@@ -577,18 +578,18 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    const char* title;       /**< Title in UTF-8 encoding.*/
-    PalMonitor* monitor;     /**< Set to nullptr to use primary monitor.*/
-    const char* appName;     /**< If nullptr, `PAL` will be used.*/
-    const char* instanceName;  /**< If nullptr, `title` will be used.*/
-    PalFBConfigBackend fbConfigBackend;
-    int32_t fbConfigIndex;
-    uint32_t width;          /**< Width in pixels.*/
-    uint32_t height;         /**< Width in pixels.*/
-    PalBool show;            /**< Show after creation.*/
-    PalWindowStyle style;    /**< Window style.*/
-    PalWindowState state;
-    PalBool center;          /**< Center after creation.*/
+    const char* title;                  /**< Title in UTF-8 encoding.*/
+    PalMonitor* monitor;                /**< Set to nullptr to use primary monitor.*/
+    const char* appName;                /**< If nullptr, `PAL` will be used.*/
+    const char* instanceName;           /**< If nullptr, `title` will be used.*/
+    PalFBConfigBackend fbConfigBackend; /**< Will be used if `fbConfigIndex` is not 0.*/
+    int32_t fbConfigIndex;              /**< Set to 0 to create the window with no pixel format.*/
+    uint32_t width;                     /**< Width in pixels.*/
+    uint32_t height;                    /**< Width in pixels.*/
+    PalBool show;                       /**< Show after creation.*/
+    PalWindowStyle style;               /**< Window style.*/
+    PalWindowState state;               /**< (eg. `PAL_WINDOW_STATE_MAXIMIZED`).*/
+    PalBool center;                     /**< Center after creation.*/
 } PalWindowCreateInfo;
 
 /**
@@ -600,10 +601,10 @@ typedef struct {
  * The allocator will not not copied, therefore the pointer must remain valid
  * until the video system is shutdown. The event driver must be valid to recieve
  * video events.
- * 
+ *
  * If `preferredInstance` is nullptr, the video system creates one and control its lifetime.
  * The provided instance will not be freed by the video system.
- * `Linux`: This is the Display associated with the connection. 
+ * `Linux`: This is the Display associated with the connection.
  * `Windows`: This is the HINSTANCE of the process.
  *
  * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
@@ -866,7 +867,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * @brief Create a window.
  *
  * The video system must be initialized before this call.
- * 
+ *
  * `PalWindowCreateInfo::fbConfigIndex` is the loop index from the drivers supported FBConfigs.
  * `PalWindowCreateInfo::fbConfigBackend` is used to tell the video system the source of
  * `PalWindowCreateInfo::fbConfigIndex`.
@@ -1306,8 +1307,8 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  * @brief Get the native handle of the provided window.
  *
  * The video system must be initialized before this call.
- * 
- * On Wayland: `::nativeHandle1`, `::nativeHandle2` and `::nativeHandle3` 
+ *
+ * On Wayland: `::nativeHandle1`, `::nativeHandle2` and `::nativeHandle3`
  * are `xdg_surface`, `xdg_toplevel` and `wl_egl_window` respectively if available.
  *
  * @param[in] window Pointer to the window.
@@ -1321,7 +1322,7 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  * @since 1.0
  */
 PAL_API PalResult PAL_CALL palGetWindowHandleInfo(
-    PalWindow* window, 
+    PalWindow* window,
     PalWindowHandleInfo* info);
 
 /**

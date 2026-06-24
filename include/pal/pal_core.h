@@ -81,15 +81,15 @@ typedef uint32_t PalBool;
 /**
  * @typedef PalResult
  * @brief Value returned by most PAL functions.
- * 
+ *
  * Non-success results (eg. `PAL_RESULT_INVALID_HANDLE`) may contain
  * additional information for debugging and logging purposes. For checking specific
- * result codes, call `palGetResultCode()` to get the code from the result value. 
- * 
- * Example: 
- * 
+ * result codes, call `palGetResultCode()` to get the code from the result value.
+ *
+ * Example:
+ *
  * uint16_t resultCode = palGetResultCode(result);
- * 
+ *
  * if (resultCode == `PAL_RESULT_INVALID_DEVICE_LOST`) {}.
  *
  * All result codes follow the format `PAL_RESULT_**` for consistency and API use.
@@ -102,9 +102,9 @@ typedef uint64_t PalResult;
  * @typedef PalAllocateFn
  * @brief Function pointer type used for memory allocations.
  *
- * @param[in] userData Optional pointer to user data passed from ::PalAllocator. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be nullptr.
  * @param[in] size Number of bytes to allocate. Must not be 0.
- * @param[in] alignment Must be power of two. Set to 0 to use default (16).
+ * @param[in] alignment Must be power of two. Set to 0 to use default.
  *
  * @return Pointer to the allocated memory on success or nullptr on failure.
  *
@@ -120,7 +120,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @typedef PalFreeFn
  * @brief Function pointer type used for memory deallocations.
  *
- * @param[in] userData Optional pointer to user data passed from ::PalAllocator. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be nullptr.
  * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must return safely if
  * pointer is nullptr.
  *
@@ -163,12 +163,14 @@ typedef struct {
  *
  * Provides user-defined memory allocation and free functions.
  *
+ * Uninitialized fields may result in undefined behavior.
+ *
  * @since 1.0
  */
 typedef struct {
-    PalAllocateFn allocate;
-    PalFreeFn free;
-    void* userData; /**< Optional user-provided data. Can be nullptr.*/
+    PalAllocateFn allocate; /**< Allocate function pointer. Must not be nullptr.*/
+    PalFreeFn free;         /**< Free function pointer. Must not be nullptr.*/
+    void* userData;         /**< Optional user-provided data. Can be nullptr.*/
 } PalAllocator;
 
 /**
@@ -177,19 +179,21 @@ typedef struct {
  *
  * Provides a callback and user data for handling log messages.
  *
+ * Uninitialized fields may result in undefined behavior.
+ *
  * @since 1.0
  */
 typedef struct {
-    PalLogCallback callback;
-    void* userData; /** Optional user-provided data. Can be nullptr.*/
+    PalLogCallback callback; /**< Callback function pointer. Must not be nullptr.*/
+    void* userData;          /** Optional user-provided data. Can be nullptr.*/
 } PalLogger;
 
 /**
  * Get the result code from the result value.
- * 
+ *
  * `PAL_RESULT_SUCCESS` code can be compared with the result value without comparing the
- * result code. 
- * 
+ * result code.
+ *
  * @param result The result value.
  *
  * @return The result code from the result value.
@@ -202,7 +206,7 @@ PAL_API uint16_t PAL_CALL palGetResultCode(PalResult result);
 
 /**
  * Convert a result value to a human-readable string.
- * 
+ *
  * This returns a null-terminated string. The string is truncated if `bufferSize` is insufficient.
  *
  * @param result The PalResult value to format.
@@ -214,13 +218,13 @@ PAL_API uint16_t PAL_CALL palGetResultCode(PalResult result);
  * @since 1.0
  */
 PAL_API void PAL_CALL palFormatResult(
-    PalResult result, 
+    PalResult result,
     uint64_t bufferSize,
     char* buffer);
 
 /**
  * Retrieve the PAL version number.
- * 
+ *
  * @param version Pointer to PalVersion struct to fill.
  *
  * Thread safety: Thread safe if version is per thread.
@@ -243,15 +247,15 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
 PAL_API const char* PAL_CALL palGetVersionString();
 
 /**
- * Allocate memory using the provided allocator.
+ * Allocate memory using a custom or default allocator.
  *
  * @param allocator The allocator to use. Set to nullptr to use default.
  * @param size Number of bytes to allocate.
- * @param alignment Alignment in bytes. Must be a power of two.
+ * @param alignment Alignment in bytes. Must be a power of two. Set to 0 to use default.
  *
  * @return Pointer to allocated memory on success, or nullptr on failure.
  *
- * Thread safety: Thread safe only if the provided allocator is thread safe. The default allocator
+ * Thread safety: Thread safe if the provided allocator is thread safe. The default allocator
  * is thread safe.
  *
  * @since 1.0
@@ -270,7 +274,7 @@ PAL_API void* PAL_CALL palAllocate(
  * @param ptr Pointer to memory to free. If nullptr, the function returns
  * silently.
  *
- * Thread safety: Thread safe only if the provided allocator is thread
+ * Thread safety: Thread safe if the provided allocator is thread
  * safe. The default allocator is thread safe.
  *
  * @since 1.0
@@ -431,7 +435,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: Thread-safe if @c outLow and @c outHigh are
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are
  * thread local.
  *
  * @since 1.0
@@ -472,7 +476,7 @@ static inline void* PAL_CALL palUnpackPointer(int64_t data)
  * @param[out] outLow Low value of the 64-bit signed integer.
  * @param[out] outHigh High value of the 64-bit signed integer.
  *
- * Thread safety: Thread-safe if @c outLow and @c outHigh are
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are
  * thread local.
  *
  * @since 1.3

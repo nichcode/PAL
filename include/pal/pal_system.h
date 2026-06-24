@@ -112,11 +112,11 @@ typedef uint32_t PalPlatformApiType;
  * @since 1.0
  */
 typedef struct {
-    PalPlatformType type;
-    PalPlatformApiType apiType;
-    uint32_t totalMemory; /**< Total Disk space (memory) in GB.*/
-    uint32_t totalRAM;    /**< Total CPU RAM (memory) in MB.*/
-    PalVersion version;
+    PalPlatformType type;              /**< (eg. `PAL_PLATFORM_WINDOWS`).*/
+    PalPlatformApiType apiType;        /**< (eg. `PAL_PLATFORM_API_WIN32`).*/
+    uint32_t totalMemory;              /**< Total Disk space (memory) in GB.*/
+    uint32_t totalRAM;                 /**< Total CPU RAM (memory) in MB.*/
+    PalVersion version;                /**< Platform version.*/
     char name[PAL_PLATFORM_NAME_SIZE]; /**< (eg. Windows 11.22000).*/
 } PalPlatformInfo;
 
@@ -127,13 +127,13 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalCpuFeatures features;
-    PalCpuArch architecture;
-    uint32_t numCores;
-    uint32_t cacheL1;              /**< L1 cache in KB.*/
-    uint32_t cacheL2;              /**< L2 cache in KB.*/
-    uint32_t cacheL3;              /**< L3 cache in KB.*/
-    uint32_t numLogicalProcessors; /**< Number of CPUs.*/
+    PalCpuFeatures features;               /**< Supported CPU features (instructions).*/
+    PalCpuArch architecture;               /**< (eg. `PAL_CPU_ARCH_X86_64`).*/
+    uint32_t numCores;                     /**< Number of cores.*/
+    uint32_t cacheL1;                      /**< L1 cache in KB.*/
+    uint32_t cacheL2;                      /**< L2 cache in KB.*/
+    uint32_t cacheL3;                      /**< L3 cache in KB.*/
+    uint32_t numLogicalProcessors;         /**< Number of CPUs.*/
     char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name.*/
     char model[PAL_CPU_MODEL_NAME_SIZE];   /**< CPU modal name.*/
 } PalCPUInfo;
