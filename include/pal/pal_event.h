@@ -26,7 +26,7 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_CLOSE 0
+#define PAL_EVENT_TYPE_WINDOW_CLOSE 0
 
 /**
  * event.data : lower 32 bits = width, upper 32 bits = height
@@ -37,7 +37,7 @@
  * - palUnpackUint32()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_SIZE 1
+#define PAL_EVENT_TYPE_WINDOW_SIZE 1
 
 /**
  * event.data : lower 32 bits = x, upper 32 bits = y
@@ -48,7 +48,7 @@
  * - palUnpackInt32()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_MOVE 2
+#define PAL_EVENT_TYPE_WINDOW_MOVE 2
 
 /**
  * event.data : state(minimized, maximized, restored).
@@ -58,7 +58,7 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_STATE 3
+#define PAL_EVENT_TYPE_WINDOW_STATE 3
 
 /**
  * event.data : `PAL_TRUE` for focus gained or `PAL_FALSE` for focus lost.
@@ -68,7 +68,7 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_FOCUS 4
+#define PAL_EVENT_TYPE_WINDOW_FOCUS 4
 
 /**
  * event.data : `PAL_TRUE` for visible or `PAL_FALSE` for hidden.
@@ -78,38 +78,27 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_VISIBILITY 5
+#define PAL_EVENT_TYPE_WINDOW_VISIBILITY 5
 
 /**
  * event.data2 : window
  */
-#define PAL_EVENT_WINDOW_MODAL_BEGIN 6
+#define PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN 6
 
 /**
  * event.data2 : window
  */
-#define PAL_EVENT_WINDOW_MODAL_END 7
+#define PAL_EVENT_TYPE_WINDOW_MODAL_END 7
 
 /**
  * event.data2 : window
  */
-#define PAL_EVENT_MONITOR_DPI_CHANGED 8
+#define PAL_EVENT_TYPE_MONITOR_DPI_CHANGED 8
 
 /**
  * event.data2 : window
  */
-#define PAL_EVENT_MONITOR_LIST_CHANGED 9
-
-/**
- * event.data : lower 32 bits = keycode, upper 32 bits = scancode
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackUint32()
- * - palUnpackPointer()
- */
-#define PAL_EVENT_KEYDOWN 10
+#define PAL_EVENT_TYPE_MONITOR_LIST_CHANGED 9
 
 /**
  * event.data : lower 32 bits = keycode, upper 32 bits = scancode
@@ -120,7 +109,7 @@
  * - palUnpackUint32()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_KEYREPEAT 11
+#define PAL_EVENT_TYPE_KEYDOWN 10
 
 /**
  * event.data : lower 32 bits = keycode, upper 32 bits = scancode
@@ -131,7 +120,18 @@
  * - palUnpackUint32()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_KEYUP 12
+#define PAL_EVENT_TYPE_KEYREPEAT 11
+
+/**
+ * event.data : lower 32 bits = keycode, upper 32 bits = scancode
+ *
+ * event.data2 : window
+ *
+ * Use inline helpers:
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ */
+#define PAL_EVENT_TYPE_KEYUP 12
 
 /**
  * event.data : lower 32 bits = button, upper 32 bits = serial
@@ -141,7 +141,7 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_MOUSE_BUTTONDOWN 13
+#define PAL_EVENT_TYPE_MOUSE_BUTTONDOWN 13
 
 /**
  * event.data : lower 32 bits = button, upper 32 bits = serial
@@ -151,7 +151,7 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_MOUSE_BUTTONUP 14
+#define PAL_EVENT_TYPE_MOUSE_BUTTONUP 14
 
 /**
  * event.data : lower 32 bits = x, upper 32 bits = y
@@ -162,7 +162,7 @@
  * - palUnpackInt32()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_MOUSE_MOVE 15
+#define PAL_EVENT_TYPE_MOUSE_MOVE 15
 
 /**
  * event.data : lower 32 bits = dx, upper 32 bits = dy
@@ -173,7 +173,7 @@
  * - palUnpackFloat()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_MOUSE_DELTA 16
+#define PAL_EVENT_TYPE_MOUSE_DELTA 16
 
 /**
  * event.data : lower 32 bits = dx, upper 32 bits = dy
@@ -184,7 +184,7 @@
  * - palUnpackFloat()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_MOUSE_WHEEL 17
+#define PAL_EVENT_TYPE_MOUSE_WHEEL 17
 
 /**
  * event.userId : User event ID or type.
@@ -197,7 +197,7 @@
  * - palUnpackUint32()
  * - palUnpackPointer()
  */
-#define PAL_EVENT_USER 18
+#define PAL_EVENT_TYPE_USER 18
 
 /**
  * event.data : codepoint
@@ -207,7 +207,7 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_KEYCHAR 19
+#define PAL_EVENT_TYPE_KEYCHAR 19
 
 /**
  * event.data : negotiated decorations mode
@@ -217,14 +217,14 @@
  * Use inline helpers:
  * - palUnpackPointer()
  */
-#define PAL_EVENT_WINDOW_DECORATION_MODE 20
+#define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20
 
-#define PAL_EVENT_COUNT 21
+#define PAL_EVENT_TYPE_COUNT 21
 
-#define PAL_DISPATCH_NONE 0
-#define PAL_DISPATCH_CALLBACK 1
-#define PAL_DISPATCH_POLL 2
-#define PAL_DISPATCH_COUNT 3
+#define PAL_DISPATCH_MODE_NONE 0
+#define PAL_DISPATCH_MODE_CALLBACK 1
+#define PAL_DISPATCH_MODE_POLL 2
+#define PAL_DISPATCH_MODE_COUNT 3
 
 /**
  * @struct PalEventDriver
@@ -257,7 +257,7 @@ typedef uint32_t PalDecorationMode;
  * @typedef PalEventType
  * @brief Event types.
  *
- * All event types follow the format `PAL_EVENT_**` for consistency and
+ * All event types follow the format `PAL_EVENT_TYPE_**` for consistency and
  * API use.
  *
  * @since 1.0
@@ -266,9 +266,9 @@ typedef uint32_t PalEventType;
 
 /**
  * @typedef PalDispatchMode
- * @brief Dispatch types for an event.
+ * @brief Dispatch modes for an event.
  *
- * All dispatch modes follow the format `PAL_DISPATCH_**` for consistency
+ * All dispatch modes follow the format `PAL_DISPATCH_MODE_**` for consistency
  * and API use.
  *
  * @since 1.0
@@ -325,7 +325,7 @@ struct PalEvent {
     int64_t data;      /**< First data payload.*/
     int64_t data2;     /**< Second data payload.*/
     int32_t userId;    /**< You can have user events upto int32_t max.*/
-    PalEventType type; /**< (eg. `PAL_EVENT_WINDOW_MOVE`).*/
+    PalEventType type; /**< (eg. `PAL_EVENT_TYPE_WINDOW_MOVE`).*/
 };
 
 /**
@@ -407,9 +407,9 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * If the provided event driver is invalid or nullptr, this function returns
  * silently.
  *
- * If the dispatch mode is `PAL_DISPATCH_POLL`, the event will be dispatched
+ * If the dispatch mode is `PAL_DISPATCH_MODE_POLL`, the event will be dispatched
  * into the event drivers event queue. If the dispatch mode is
- * `PAL_DISPATCH_CALLBACK` and the event driver has a valid callback function,
+ * `PAL_DISPATCH_MODE_CALLBACK` and the event driver has a valid callback function,
  * the event will be dispatched to the callback function of the event driver
  * otherwise the event will be discarded.
  *
@@ -435,7 +435,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] type The event type.
  *
- * @return The dispatch mode on success or `PAL_DISPATCH_NONE` on failure.
+ * @return The dispatch mode on success or `PAL_DISPATCH_MODE_NONE` on failure.
  *
  * Thread safety: Thread safe if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
@@ -454,10 +454,10 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * If the provided event driver is invalid or nullptr, this function returns
  * silently.
  *
- * If the dispatch mode for the event is `PAL_DISPATCH_POLL`, the event will be
+ * If the dispatch mode for the event is `PAL_DISPATCH_MODE_POLL`, the event will be
  * pushed to the event queue.
  *
- * If dispatch mode is `PAL_DISPATCH_CALLBACK` and the event driver has a valid
+ * If dispatch mode is `PAL_DISPATCH_MODE_CALLBACK` and the event driver has a valid
  * event callback, the callback will be called otherwise the event will be
  * discarded.
  *

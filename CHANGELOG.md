@@ -22,7 +22,7 @@
 - Added type `PalGLAPI` with values:
   - `PAL_GL_API_OPENGL`
   - `PAL_GL_API_OPENGL_ES`
-- Added `_COUNT` constants to all type groups (eg. `PAL_EVENT_COUNT`).
+- Added `_COUNT` constants to all type groups (eg. `PAL_EVENT_TYPE_COUNT`).
 - Added `PAL_GL_GRAPHICS_CARD_NAME_SIZE`,`PAL_GL_VENDOR_NAME_SIZE` and `PAL_GL_VERSION_NAME_SIZE` constants.
 
 ### Changes
@@ -43,6 +43,8 @@
 - `palFormatResult()` now takes two additional parameters.
 - Renamed `PalGLRelease` to `PalGLReleaseBehavior`.
 - Renamed `palGLGetProcAddress()` to `palGetGLProcAddress()`.
+- Renamed event type constants from `PAL_EVENT_**` to `PAL_EVENT_TYPE_**`.
+- Renamed dispatch mode constants from `PAL_DISPATCH_**` to `PAL_DISPATCH_MODE_**`.
 - `palInitGL()` now takes two additional parameters.
 - `palEnumerateGLFBConfigs()` no longer takes the `glWindow` parameter.
 - `palInitVideo()` now takes an additional parameter.

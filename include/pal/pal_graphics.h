@@ -1374,7 +1374,7 @@ typedef uint32_t PalImageMemoryUsage;
  *
  * @since 2.0
  */
-typedef uint32_t PalGraphicsBackendVtableVersion;
+typedef uint64_t PalGraphicsBackendVtableVersion;
 
 /**
  * @typedef PalDebugCallback
@@ -2433,14 +2433,14 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBool clipped;
-    uint32_t width;
-    uint32_t height;
-    uint32_t imageCount;
-    uint32_t imageArrayLayerCount;
-    PalPresentMode presentMode;
-    PalCompositeAplha compositeAlpha;
-    PalSurfaceFormat format;
+    PalBool clipped;                  /**< `PAL_TRUE` to discard pixels that are not visible.*/
+    uint32_t width;                   /**< Width in pixels.*/
+    uint32_t height;                  /**< Height in pixels.*/
+    uint32_t imageCount;              /**< Number of images or back buffers.*/
+    uint32_t imageArrayLayerCount;    /**< Number of array layers.*/
+    PalPresentMode presentMode;       /**< (eg. `PAL_PRESENT_MODE_FIFO`).*/
+    PalCompositeAplha compositeAlpha; /**< (eg. `PAL_COMPOSITE_ALPHA_OPAQUE`).*/
+    PalSurfaceFormat format;          /**< (eg. `PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR`).*/
 } PalSwapchainCreateInfo;
 
 /**
@@ -2452,10 +2452,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    void* bytecode;
-    PalShaderEntryInfo* entries;
-    uint32_t bytecodeSize;
-    uint32_t entryCount;
+    void* bytecode;              /**< Pointer to the shader bytecode.*/
+    PalShaderEntryInfo* entries; /**< Shader entries.*/
+    uint32_t bytecodeSize;       /**< Size of `bytecode` in bytes.*/
+    uint32_t entryCount;         /**< Number of shader entries.*/
 } PalShaderCreateInfo;
 
 /**
@@ -2467,9 +2467,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t size;
-    PalBufferUsages usages;
-    PalBufferMemoryUsage memoryUsage;
+    uint64_t size;                    /**< Size in bytes.*/
+    PalBufferUsages usages;           /**< (eg. `PAL_BUFFER_USAGE_VERTEX`).*/
+    PalBufferMemoryUsage memoryUsage; /**< See `PalBufferMemoryUsage`.*/
 } PalBufferCreateInfo;
 
 /**
@@ -2481,11 +2481,11 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalBuffer* buffer;
-    uint64_t offset;
-    uint64_t size;
-    PalAccelerationStructureType type;
-    PalAccelerationStructureCreateFlags createFlags;
+    PalBuffer* buffer;                 /**< Acceleration structure buffer.*/
+    uint64_t offset;                   /**< Size in bytes.*/
+    uint64_t size;                     /**< Offset in bytes.*/
+    PalAccelerationStructureType type; /**< (eg. `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`).*/
+    PalAccelerationStructureCreateFlags createFlags; /**< Set to 0 for default.*/
 } PalAccelerationStructureCreateInfo;
 
 /**
@@ -2497,9 +2497,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalDescriptorSetLayoutBinding* bindings;
-    PalDescriptorIndexingFlags descriptorIndexingFlags;
-    uint32_t bindingCount;
+    PalDescriptorSetLayoutBinding* bindings;            /**< Bindings.*/
+    PalDescriptorIndexingFlags descriptorIndexingFlags; /**< See `PalDescriptorIndexingFlags`.*/
+    uint32_t bindingCount;                              /**< Number of bindings.*/
 } PalDescriptorSetLayoutCreateInfo;
 
 /**
@@ -2511,10 +2511,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalDescriptorPoolBindingSize* bindingSizes;
-    uint64_t bindingSizeCount;
-    uint32_t maxDescriptorSets;
-    PalDescriptorIndexingFlags descriptorIndexingFlags;
+    PalDescriptorPoolBindingSize* bindingSizes; /**< Binding sizes.*/
+    uint64_t bindingSizeCount;                  /**< Number of bindings sizes.*/
+    uint32_t maxDescriptorSets; /**< Maximum number of descriptor sets that can be allocated.*/
+    PalDescriptorIndexingFlags descriptorIndexingFlags; /**< See `PalDescriptorIndexingFlags`.*/
 } PalDescriptorPoolCreateInfo;
 
 /**
@@ -2526,10 +2526,10 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalDescriptorSetLayout** descriptorSetLayouts;
-    PalPushConstantRange* pushConstantRanges;
-    uint32_t descriptorSetLayoutCount;
-    uint32_t pushConstantRangeCount;
+    PalDescriptorSetLayout** descriptorSetLayouts; /**< Descriptor set layouts.*/
+    PalPushConstantRange* pushConstantRanges;      /**< Push constant ranges.*/
+    uint32_t descriptorSetLayoutCount;             /**< Number of descriptor set layouts.*/
+    uint32_t pushConstantRangeCount;               /**< Number of push constant ranges.*/
 } PalPipelineLayoutCreateInfo;
 
 /**
@@ -2541,19 +2541,19 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalPipelineLayout* pipelineLayout;
-    PalShader** shaders;
-    PalVertexLayout* vertexLayouts;
-    PalColorBlendAttachment* colorBlendAttachments;
-    PalRasterizerState* rasterizerState;
-    PalMultisampleState* multisampleState;
-    PalDepthStencilState* depthStencilState;
-    PalFragmentShadingRateState* fragmentShadingRateState;
-    PalRenderingLayoutInfo* renderingLayout;
-    PalBool primitiveRestartEnable;
-    uint32_t vertexLayoutCount;
-    uint32_t colorBlendAttachmentCount;
-    uint32_t shaderCount;
+    PalPipelineLayout* pipelineLayout;                     /**< Pipeline layout.*/
+    PalShader** shaders;                                   /**< Shaders.*/
+    PalVertexLayout* vertexLayouts;                        /**< Vertex layouts.*/
+    PalColorBlendAttachment* colorBlendAttachments;        /**< Color blend attachments.*/
+    PalRasterizerState* rasterizerState;                   /**< Rasterizer state.*/
+    PalMultisampleState* multisampleState;                 /**< Multisample state.*/
+    PalDepthStencilState* depthStencilState;               /**< Depth stencil state.*/
+    PalFragmentShadingRateState* fragmentShadingRateState; /**< Fragment shading rate state.*/
+    PalRenderingLayoutInfo* renderingLayout;               /**< Rendering layout.*/
+    PalBool primitiveRestartEnable; /**< `PAL_TRUE` to enable primitive restart for indexed draw.*/
+    uint32_t vertexLayoutCount;     /**< Number of vertex layouts.*/
+    uint32_t colorBlendAttachmentCount; /**< Number of color attachments.*/
+    uint32_t shaderCount;               /**< Number of shaders.*/
     PalIndexType indexType; /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
     PalPrimitiveTopology topology;
 } PalGraphicsPipelineCreateInfo;
@@ -2567,8 +2567,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalPipelineLayout* pipelineLayout;
-    PalShader* computeShader;
+    PalPipelineLayout* pipelineLayout; /**< Pipeline layout.*/
+    PalShader* computeShader;          /**< Compute shader.*/
 } PalComputePipelineCreateInfo;
 
 /**
@@ -2582,15 +2582,15 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalRayTracingShaderGroupType type;
-    uint32_t anyHitShaderIndex;
-    uint32_t anyHitShaderEntryIndex;
-    uint32_t closestHitShaderIndex;
-    uint32_t closestHitShaderEntryIndex;
-    uint32_t generalShaderIndex;
-    uint32_t generalShaderEntryIndex;
-    uint32_t intersectionShaderIndex;
-    uint32_t intersectionShaderEntryIndex;
+    PalRayTracingShaderGroupType type;     /**< (eg. `PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL`).*/
+    uint32_t anyHitShaderIndex;            /**< Index of the anyhit shader.*/
+    uint32_t anyHitShaderEntryIndex;       /**< Index of the anyhit shader entry.*/
+    uint32_t closestHitShaderIndex;        /**< Index of the closest hit shader.*/
+    uint32_t closestHitShaderEntryIndex;   /**< Index of the closest hit shader entry.*/
+    uint32_t generalShaderIndex;           /**< Index of the general shader.*/
+    uint32_t generalShaderEntryIndex;      /**< Index of the general shader entry.*/
+    uint32_t intersectionShaderIndex;      /**< Index of the intersection shader.*/
+    uint32_t intersectionShaderEntryIndex; /**< Index of the intersection shader entry.*/
     uint32_t maxDataSize; /**< Size of extra data associated with the shader group.*/
 } PalRayTracingShaderGroupCreateInfo;
 
@@ -2603,14 +2603,14 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalPipelineLayout* pipelineLayout;
-    PalRayTracingShaderGroupCreateInfo* shaderGroups;
-    PalShader** shaders;
-    uint64_t shaderGroupCount;
-    uint32_t shaderCount;
-    uint32_t maxRecursionDepth;
-    uint32_t maxAttributeSize;
-    uint32_t maxPayloadSize;
+    PalPipelineLayout* pipelineLayout;                /**< Pipeline layout.*/
+    PalRayTracingShaderGroupCreateInfo* shaderGroups; /**< Shader groups.*/
+    PalShader** shaders;                              /**< Shaders.*/
+    uint64_t shaderGroupCount;                        /**< Number of shader groups.*/
+    uint32_t shaderCount;                             /**< Number of shaders.*/
+    uint32_t maxRecursionDepth;                       /**< Max number of ray recursion.*/
+    uint32_t maxAttributeSize;                        /**< Max attributes size in bytes.*/
+    uint32_t maxPayloadSize;                          /**< Max payload size in bytes.*/
 } PalRayTracingPipelineCreateInfo;
 
 /**
@@ -2622,9 +2622,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalShaderBindingTableRecordInfo* records;
-    PalPipeline* rayTracingPipeline;
-    uint64_t recordCount;
+    PalShaderBindingTableRecordInfo* records; /**< Shader binding table records.*/
+    PalPipeline* rayTracingPipeline;          /**< Ray tracing pipeline.*/
+    uint64_t recordCount;                     /**< Number of shader binding table records.*/
 } PalShaderBindingTableCreateInfo;
 
 /**
@@ -2636,8 +2636,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    const void* vtable;
-    PalGraphicsBackendVtableVersion version;
+    const void* vtable;                      /**< Pointer to the backend vtable.*/
+    PalGraphicsBackendVtableVersion version; /**< (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`).*/
 } PalGraphicsBackendInfo;
 
 /**
