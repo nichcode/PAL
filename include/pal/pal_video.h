@@ -79,15 +79,15 @@
 #define PAL_WINDOW_STATE_RESTORED 3
 #define PAL_WINDOW_STATE_COUNT 4
 
-#define PAL_FLASH_STOP 0            /**< Stop flashing.*/
-#define PAL_FLASH_CAPTION (1U << 0) /**< Flash the titlebar of the window.*/
-#define PAL_FLASH_TRAY (1U << 1)    /**< Flash the icon of the window.*/
+#define PAL_FLASH_FLAG_STOP 0            /**< Stop flashing.*/
+#define PAL_FLASH_FLAG_CAPTION (1U << 0) /**< Flash the titlebar of the window.*/
+#define PAL_FLASH_FLAG_TRAY (1U << 1)    /**< Flash the icon of the window.*/
 
-#define PAL_CONFIG_BACKEND_PAL_OPENGL 0 /**< Use PAL opengl module backend.*/
-#define PAL_CONFIG_BACKEND_EGL 1
-#define PAL_CONFIG_BACKEND_GLX 2
-#define PAL_CONFIG_BACKEND_WGL 3
-#define PAL_CONFIG_BACKEND_COUNT 4
+#define PAL_FBCONFIG_BACKEND_PAL_OPENGL 0 /**< Use PAL opengl module backend.*/
+#define PAL_FBCONFIG_BACKEND_EGL 1
+#define PAL_FBCONFIG_BACKEND_GLX 2
+#define PAL_FBCONFIG_BACKEND_WGL 3
+#define PAL_FBCONFIG_BACKEND_COUNT 4
 
 #define PAL_SCANCODE_UNKNOWN 0
 #define PAL_SCANCODE_A 1
@@ -116,7 +116,6 @@
 #define PAL_SCANCODE_X 24
 #define PAL_SCANCODE_Y 25
 #define PAL_SCANCODE_Z 26
-
 #define PAL_SCANCODE_0 27
 #define PAL_SCANCODE_1 28
 #define PAL_SCANCODE_2 29
@@ -127,7 +126,6 @@
 #define PAL_SCANCODE_7 34
 #define PAL_SCANCODE_8 35
 #define PAL_SCANCODE_9 36
-
 #define PAL_SCANCODE_F1 37
 #define PAL_SCANCODE_F2 38
 #define PAL_SCANCODE_F3 39
@@ -140,7 +138,6 @@
 #define PAL_SCANCODE_F10 46
 #define PAL_SCANCODE_F11 47
 #define PAL_SCANCODE_F12 48
-
 #define PAL_SCANCODE_ESCAPE 49
 #define PAL_SCANCODE_ENTER 50
 #define PAL_SCANCODE_TAB 51
@@ -155,19 +152,16 @@
 #define PAL_SCANCODE_RCTRL 60
 #define PAL_SCANCODE_LALT 61
 #define PAL_SCANCODE_RALT 62
-
 #define PAL_SCANCODE_LEFT 63
 #define PAL_SCANCODE_RIGHT 64
 #define PAL_SCANCODE_UP 65
 #define PAL_SCANCODE_DOWN 66
-
 #define PAL_SCANCODE_INSERT 67
 #define PAL_SCANCODE_DELETE 68
 #define PAL_SCANCODE_HOME 69
 #define PAL_SCANCODE_END 70
 #define PAL_SCANCODE_PAGEUP 71
 #define PAL_SCANCODE_PAGEDOWN 72
-
 #define PAL_SCANCODE_KP_0 73
 #define PAL_SCANCODE_KP_1 74
 #define PAL_SCANCODE_KP_2 75
@@ -185,7 +179,6 @@
 #define PAL_SCANCODE_KP_DIVIDE 87
 #define PAL_SCANCODE_KP_DECIMAL 88
 #define PAL_SCANCODE_KP_EQUAL 89
-
 #define PAL_SCANCODE_PRINTSCREEN 90
 #define PAL_SCANCODE_PAUSE 91
 #define PAL_SCANCODE_MENU 92
@@ -231,7 +224,6 @@
 #define PAL_KEYCODE_X 24
 #define PAL_KEYCODE_Y 25
 #define PAL_KEYCODE_Z 26
-
 #define PAL_KEYCODE_0 27
 #define PAL_KEYCODE_1 28
 #define PAL_KEYCODE_2 29
@@ -242,7 +234,6 @@
 #define PAL_KEYCODE_7 34
 #define PAL_KEYCODE_8 35
 #define PAL_KEYCODE_9 36
-
 #define PAL_KEYCODE_F1 37
 #define PAL_KEYCODE_F2 38
 #define PAL_KEYCODE_F3 39
@@ -255,7 +246,6 @@
 #define PAL_KEYCODE_F10 46
 #define PAL_KEYCODE_F11 47
 #define PAL_KEYCODE_F12 48
-
 #define PAL_KEYCODE_ESCAPE 49
 #define PAL_KEYCODE_ENTER 50
 #define PAL_KEYCODE_TAB 51
@@ -270,19 +260,16 @@
 #define PAL_KEYCODE_RCTRL 60
 #define PAL_KEYCODE_LALT 61
 #define PAL_KEYCODE_RALT 62
-
 #define PAL_KEYCODE_LEFT 63
 #define PAL_KEYCODE_RIGHT 64
 #define PAL_KEYCODE_UP 65
 #define PAL_KEYCODE_DOWN 66
-
 #define PAL_KEYCODE_INSERT 67
 #define PAL_KEYCODE_DELETE 68
 #define PAL_KEYCODE_HOME 69
 #define PAL_KEYCODE_END 70
 #define PAL_KEYCODE_PAGEUP 71
 #define PAL_KEYCODE_PAGEDOWN 72
-
 #define PAL_KEYCODE_KP_0 73
 #define PAL_KEYCODE_KP_1 74
 #define PAL_KEYCODE_KP_2 75
@@ -300,7 +287,6 @@
 #define PAL_KEYCODE_KP_DIVIDE 87
 #define PAL_KEYCODE_KP_DECIMAL 88
 #define PAL_KEYCODE_KP_EQUAL 89
-
 #define PAL_KEYCODE_PRINTSCREEN 90
 #define PAL_KEYCODE_PAUSE 91
 #define PAL_KEYCODE_MENU 92
@@ -327,12 +313,12 @@
 #define PAL_MOUSE_BUTTON_X2 5
 #define PAL_MOUSE_BUTTON_COUNT 6
 
-#define PAL_CURSOR_ARROW 0
-#define PAL_CURSOR_HAND 1
-#define PAL_CURSOR_CROSS 2
-#define PAL_CURSOR_IBEAM 3
-#define PAL_CURSOR_WAIT 4
-#define PAL_CURSOR_COUNT 5
+#define PAL_CURSOR_TYPE_ARROW 0
+#define PAL_CURSOR_TYPE_HAND 1
+#define PAL_CURSOR_TYPE_CROSS 2
+#define PAL_CURSOR_TYPE_IBEAM 3
+#define PAL_CURSOR_TYPE_WAIT 4
+#define PAL_CURSOR_TYPE_COUNT 5
 
 /**
  * @struct PalMonitor
@@ -412,24 +398,24 @@ typedef uint32_t PalWindowStyle;
 typedef uint32_t PalWindowState;
 
 /**
- * @typedef PalFlashFlag
+ * @typedef PalFlashFlags
  * @brief Flash flags. Multiple flash flags can be OR'ed together using bitwise
  * OR operator (`|`).
  *
- * `PAL_FLASH_STOP` is not a bit and must not be combined with other bits.
+ * `PAL_FLASH_FLAG_STOP` is not a bit and must not be combined with other bits.
  *
- * All flash flags follow the format `PAL_FLASH_**` for consistency and
+ * All flash flags follow the format `PAL_FLASH_FLAG_**` for consistency and
  * API use.
  *
  * @since 1.0
  */
-typedef uint32_t PalFlashFlag;
+typedef uint32_t PalFlashFlags;
 
 /**
  * @typedef PalFBConfigBackend
  * @brief Represents the backend of a FBConfig.
  *
- * All FBConfig backends follow the format `PAL_CONFIG_BACKEND**` for
+ * All FBConfig backends follow the format `PAL_FBCONFIG_BACKEND_**` for
  * consistency and API use.
  *
  * @since 1.0
@@ -473,7 +459,7 @@ typedef uint32_t PalMouseButton;
  * @typedef PalCursorType
  * @brief System cursor types.
  *
- * All cursor types follow the format `PAL_CURSOR_**` for
+ * All cursor types follow the format `PAL_CURSOR_TYPE_**` for
  * consistency and API use.
  *
  * @since 1.0
@@ -520,7 +506,7 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalFlashFlag flags; /**< (eg. `PAL_FLASH_CAPTION`).*/
+    PalFlashFlags flags; /**< (eg. `PAL_FLASH_FLAG_CAPTION`).*/
     uint32_t interval;  /**< In milliseconds. Set to 0 for default.*/
     uint32_t count;     /**< Set to 0 to flash until focused or cancelled.*/
 } PalFlashInfo;
@@ -1027,10 +1013,10 @@ PAL_API PalResult PAL_CALL palHideWindow(PalWindow* window);
  *
  * The video system must be initialized before this call.
  *
- * If `PAL_FLASH_CAPTION` is used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must
+ * If `PAL_FLASH_FLAG_CAPTION` is used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must
  * be supported.
  *
- * If `PAL_FLASH_TRAY` is used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be
+ * If `PAL_FLASH_FLAG_TRAY` is used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be
  * supported.
  *
  * @param[in] window Pointer to the window.
@@ -1779,6 +1765,6 @@ PAL_API PalResult PAL_CALL palDetachWindow(
     PalWindow* window,
     void** outWindowHandle);
 
-/** @} */ // end of pal_video group
+/** @} */
 
 #endif // _PAL_VIDEO_H

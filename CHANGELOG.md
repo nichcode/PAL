@@ -45,6 +45,12 @@
 - Renamed `palGLGetProcAddress()` to `palGetGLProcAddress()`.
 - Renamed event type constants from `PAL_EVENT_**` to `PAL_EVENT_TYPE_**`.
 - Renamed dispatch mode constants from `PAL_DISPATCH_**` to `PAL_DISPATCH_MODE_**`.
+- Renamed platform type constants from `PAL_PLATFORM_**` to `PAL_PLATFORM_TYPE_**`.
+- Renamed platform api type constants from `PAL_PLATFORM_API_**` to `PAL_PLATFORM_API_TYPE_**`.
+- Renamed cursor type constants from `PAL_CURSOR_**` to `PAL_CURSOR_TYPE_**`.
+- Renamed flash flag constants from `PAL_FLASH_**` to `PAL_FLASH_FLAG_**`.
+- Renamed fbConfig backend type constants from `PAL_CONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`.
+- Renamed `PalFlashFlag` to `PalFlashFlags`.
 - `palInitGL()` now takes two additional parameters.
 - `palEnumerateGLFBConfigs()` no longer takes the `glWindow` parameter.
 - `palInitVideo()` now takes an additional parameter.

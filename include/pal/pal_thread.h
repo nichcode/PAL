@@ -16,10 +16,10 @@
 
 #include "pal_core.h"
 
-#define PAL_THREAD_FEATURE_STACK_SIZE (1ULL << 0)
-#define PAL_THREAD_FEATURE_PRIORITY (1ULL << 1)
-#define PAL_THREAD_FEATURE_AFFINITY (1ULL << 2)
-#define PAL_THREAD_FEATURE_NAME (1ULL << 3)
+#define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0)
+#define PAL_THREAD_FEATURE_PRIORITY (1U << 1)
+#define PAL_THREAD_FEATURE_AFFINITY (1U << 2)
+#define PAL_THREAD_FEATURE_NAME (1U << 3)
 
 #define PAL_THREAD_PRIORITY_LOW 0
 #define PAL_THREAD_PRIORITY_NORMAL 1
@@ -67,7 +67,7 @@ typedef struct PalCondVar PalCondVar;
  *
  * @since 1.0
  */
-typedef uint64_t PalThreadFeatures;
+typedef uint32_t PalThreadFeatures;
 
 /**
  * @typedef PalThreadPriority

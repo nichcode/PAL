@@ -308,9 +308,9 @@
 #define PAL_POLYGON_MODE_LINE 1
 #define PAL_POLYGON_MODE_COUNT 2
 
-#define PAL_STENCIL_FACE_FRONT (1U << 0)
-#define PAL_STENCIL_FACE_BACK (1U << 1)
-#define PAL_STENCIL_FACE_BOTH (PAL_STENCIL_FACE_FRONT | PAL_STENCIL_FACE_BACK)
+#define PAL_STENCIL_FACE_FLAG_FRONT (1U << 0)
+#define PAL_STENCIL_FACE_FLAG_BACK (1U << 1)
+#define PAL_STENCIL_FACE_FLAG_BOTH (PAL_STENCIL_FACE_FLAG_FRONT | PAL_STENCIL_FACE_FLAG_BACK)
 
 #define PAL_VERTEX_TYPE_UNDEFINED 0
 #define PAL_VERTEX_TYPE_INT32 1           /**< int32_t.*/
@@ -1059,7 +1059,7 @@ typedef uint32_t PalPolygonMode;
  * @brief Stencil face flags. Multiple stencil face flags can be OR'ed together using bitwise
  * OR operator (`|`).
  *
- * All tencil face flags follow the format `PAL_STENCIL_FACE_**` for
+ * All tencil face flags follow the format `PAL_STENCIL_FACE_FLAG_**` for
  * consistency and API use.
  *
  * @since 2.0
@@ -4748,7 +4748,7 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  * @brief Create a sampler.
  *
  * The graphics system must be initialized before this call.
- * Samplers are immutable so any paramter used to create it cannot will be fixed after
+ * Samplers are immutable so any parameter used to create it cannot will be fixed after
  * creation.
  *
  * @param[in] device Device that creates the sampler.
@@ -7223,11 +7223,11 @@ PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
  * times it needs to be dispatch in order for the work to be done. It works well with
  * palCmdDispatchBase() since its also gives the base for each work group.
  *
- * @param[in] data Pointer to a PalWorkGroupBuildData with paramters.
+ * @param[in] data Pointer to a PalWorkGroupBuildData with parameters.
  * @param[in, out] count Capacity of the PalWorkGroupInfo array.
  * @param[out] infos Pointer to an Array of PalWorkGroupInfo.
  *
- * @return True on success otherwise `PAL_FALSE`.
+ * @return `PAL_TRUE` on success otherwise `PAL_FALSE`.
  *
  * Thread safety: Must only be called from the main thread.
  *
@@ -7243,6 +7243,34 @@ PAL_API PalBool PAL_CALL palBuildWorkGroupInfo(
     int32_t* count,
     PalWorkGroupInfo* info);
 
-/** @} */ // end of pal_graphics group
+/**
+ * @brief Check if a constant is supported in a mask.
+ * 
+ * This function is used to check all masks in `supported_**` format in most of the capabilities
+ * query structs. 
+ * 
+ * Example:
+ * 
+ * To check if `PAL_PRESENT_MODE_IMMEDIATE` is supported after querying `PalSurfaceCapabilities` 
+ * capabilities of a surface, PalSurfaceCapabilities::supportedPresentModes should be the `mask` 
+ * parameter and `PAL_PRESENT_MODE_IMMEDIATE` as the value parameter.
+ *
+ * @param[in] mask The supported mask.
+ * @param[in, out] value The value to check in the supported mask.
+ *
+ * @return `PAL_TRUE` on success otherwise `PAL_FALSE`.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+static inline PalBool PAL_CALL palIsSupported(
+    uint32_t mask,
+    uint32_t value)
+{
+    return (mask & (1ULL << value)) != 0;
+}
+
+/** @} */
 
 #endif // _PAL_GRAPHICS_H

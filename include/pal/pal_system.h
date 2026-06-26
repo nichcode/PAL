@@ -39,21 +39,21 @@
 #define PAL_CPU_FEATURE_BMI1 (1ULL << 10)
 #define PAL_CPU_FEATURE_BMI2 (1ULL << 11)
 
-#define PAL_PLATFORM_WINDOWS 0
-#define PAL_PLATFORM_LINUX 1
-#define PAL_PLATFORM_MACOS 2
-#define PAL_PLATFORM_ANDROID 3
-#define PAL_PLATFORM_IOS 4
-#define PAL_PLATFORM_COUNT 5
+#define PAL_PLATFORM_TYPE_WINDOWS 0
+#define PAL_PLATFORM_TYPE_LINUX 1
+#define PAL_PLATFORM_TYPE_MACOS 2
+#define PAL_PLATFORM_TYPE_ANDROID 3
+#define PAL_PLATFORM_TYPE_IOS 4
+#define PAL_PLATFORM_TYPE_COUNT 5
 
-#define PAL_PLATFORM_API_WIN32 0
-#define PAL_PLATFORM_API_WAYLAND 1
-#define PAL_PLATFORM_API_X11 2
-#define PAL_PLATFORM_API_COCOA 3
-#define PAL_PLATFORM_API_ANDRIOD 4
-#define PAL_PLATFORM_API_UIKIT 5
-#define PAL_PLATFORM_API_HEADLESS 6
-#define PAL_PLATFORM_API_COUNT 7
+#define PAL_PLATFORM_API_TYPE_WIN32 0
+#define PAL_PLATFORM_API_TYPE_WAYLAND 1
+#define PAL_PLATFORM_API_TYPE_X11 2
+#define PAL_PLATFORM_API_TYPE_COCOA 3
+#define PAL_PLATFORM_API_TYPE_ANDRIOD 4
+#define PAL_PLATFORM_API_TYPE_UIKIT 5
+#define PAL_PLATFORM_API_TYPE_HEADLESS 6
+#define PAL_PLATFORM_API_TYPE_COUNT 7
 
 /**
  * @typedef PalCpuArch
@@ -84,7 +84,7 @@ typedef uint64_t PalCpuFeatures;
  * This is the family name (eg. This does not show if its Windows 7 or Windows 8
  * etc).
  *
- * All platform types follow the format `PAL_PLATFORM_**` for
+ * All platform types follow the format `PAL_PLATFORM_TYPE_**` for
  * consistency and API use.
  *
  * @since 1.0
@@ -98,7 +98,7 @@ typedef uint32_t PalPlatformType;
  * This is the API the playform uses. Most platforms support only one (eg.
  * Windows).
  *
- * All platform API types follow the format `PAL_PLATFORM_API_**` for
+ * All platform API types follow the format `PAL_PLATFORM_API_TYPE_**` for
  * consistency and API use.
  *
  * @since 1.0
@@ -112,8 +112,8 @@ typedef uint32_t PalPlatformApiType;
  * @since 1.0
  */
 typedef struct {
-    PalPlatformType type;              /**< (eg. `PAL_PLATFORM_WINDOWS`).*/
-    PalPlatformApiType apiType;        /**< (eg. `PAL_PLATFORM_API_WIN32`).*/
+    PalPlatformType type;              /**< (eg. `PAL_PLATFORM_TYPE_WINDOWS`).*/
+    PalPlatformApiType apiType;        /**< (eg. `PAL_PLATFORM_API_TYPE_WIN32`).*/
     uint32_t totalMemory;              /**< Total Disk space (memory) in GB.*/
     uint32_t totalRAM;                 /**< Total CPU RAM (memory) in MB.*/
     PalVersion version;                /**< Platform version.*/
