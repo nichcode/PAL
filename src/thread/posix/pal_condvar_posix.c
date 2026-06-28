@@ -5,36 +5,28 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
-#include "pal_thread_linux.h"
-#include "pal_shared.h"
+#include "pal_posix.h"
+
+#if _PAL_ON_POSIX
+#include "pal_thread_posix.h"
 
 PalResult PAL_CALL palCreateCondVar(
     const PalAllocator* allocator,
     PalCondVar** outCondVar)
 {
     if (!outCondVar) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (allocator) {
         if (!allocator->allocate && !allocator->free) {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
 
     PalCondVar* condVar = palAllocate(allocator, sizeof(PalCondVar), 0);
     if (!condVar) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     pthread_cond_init(&condVar->handle, nullptr);
@@ -56,10 +48,7 @@ PalResult PAL_CALL palWaitCondVar(
     PalMutex* mutex)
 {
     if (!condVar || !mutex) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     int ret = pthread_cond_wait(&condVar->handle, &mutex->handle);
@@ -67,16 +56,10 @@ PalResult PAL_CALL palWaitCondVar(
         return PAL_RESULT_SUCCESS;
 
     } else if (ret == ETIMEDOUT) {
-        return palMakeResult(
-            PAL_RESULT_TIMEOUT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_TIMEOUT, PAL_RESULT_SOURCE_POSIX, errno);
 
     } else {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 }
 
@@ -86,10 +69,7 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     uint64_t milliseconds)
 {
     if (!condVar || !mutex) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     struct timespec ts;
@@ -103,10 +83,7 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     }
 
     if (pthread_cond_timedwait(&condVar->handle, &mutex->handle, &ts) != 0) {
-        return palMakeResult(
-            PAL_RESULT_TIMEOUT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_TIMEOUT, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -126,4 +103,4 @@ void PAL_CALL palBroadcastCondVar(PalCondVar* condVar)
     }
 }
 
-#endif // __linux__
+#endif // _PAL_ON_POSIX

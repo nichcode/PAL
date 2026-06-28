@@ -74,10 +74,10 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files { 
-                "src/thread/linux/pal_condvar_linux.c",
-                "src/thread/linux/pal_mutex_linux.c",
-                "src/thread/linux/pal_tls_linux.c",
-                "src/thread/linux/pal_thread_linux.c"
+                "src/thread/posix/pal_condvar_posix.c",
+                "src/thread/posix/pal_mutex_posix.c",
+                "src/thread/posix/pal_tls_posix.c",
+                "src/thread/posix/pal_thread_posix.c"
             }
 
         filter {}

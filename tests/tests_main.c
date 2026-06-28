@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     // registerTest(threadTest, "Thread Test");
     // registerTest(tlsTest, "TLS Test");
     // registerTest(mutexTest, "Mutex Test");
-    // registerTest(condvarTest, "Condvar Test");
+    registerTest(condvarTest, "Condvar Test");
 #endif // PAL_HAS_THREAD_MODULE
 
 #if PAL_HAS_VIDEO_MODULE == 1

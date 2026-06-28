@@ -5,36 +5,28 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
-#include "pal_thread_linux.h"
-#include "pal_shared.h"
+#include "pal_posix.h"
+
+#if _PAL_ON_POSIX
+#include "pal_thread_posix.h"
 
 PalResult PAL_CALL palCreateMutex(
     const PalAllocator* allocator,
     PalMutex** outMutex)
 {
     if (!outMutex) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (allocator) {
         if (!allocator->allocate && !allocator->free) {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
 
     PalMutex* mutex = palAllocate(allocator, sizeof(PalMutex), 0);
     if (!mutex) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     pthread_mutex_init(&mutex->handle, nullptr);
@@ -65,4 +57,4 @@ void PAL_CALL palUnlockMutex(PalMutex* mutex)
     }
 }
 
-#endif // __linux__
+#endif // _PAL_ON_POSIX

@@ -7,7 +7,9 @@
 
 #ifndef _PAL_THREAD_LINUX_H
 #define _PAL_THREAD_LINUX_H
-#ifdef __linux__
+
+#include "pal_posix.h"
+#if _PAL_ON_POSIX
 
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_thread.h"
@@ -25,5 +27,5 @@ struct PalMutex {
     pthread_mutex_t handle;
 };
 
-#endif // __linux__
+#endif // _PAL_ON_POSIX
 #endif // _PAL_THREAD_LINUX_H
