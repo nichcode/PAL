@@ -58,19 +58,30 @@
 #define PAL_TRUE 1
 #define PAL_FALSE 0
 #define PAL_INFINITE UINT32_MAX
-
 #define PAL_RESULT_SUCCESS 0
-#define PAL_RESULT_INVALID_ARGUMENT 1
-#define PAL_RESULT_OUT_OF_MEMORY 2
-#define PAL_RESULT_PLATFORM_FAILURE 3
-#define PAL_RESULT_TIMEOUT 4
-#define PAL_RESULT_INVALID_HANDLE 5
-#define PAL_RESULT_FEATURE_NOT_SUPPORTED 6
-#define PAL_RESULT_NOT_INITIALIZED 7
-#define PAL_RESULT_INVALID_OPERATION 8
-#define PAL_RESULT_DEVICE_LOST 9
-#define PAL_RESULT_OUT_OF_DATE 10
-#define PAL_RESULT_COUNT 11
+
+#define PAL_RESULT_CODE_INVALID_ARGUMENT 1
+#define PAL_RESULT_CODE_OUT_OF_MEMORY 2
+#define PAL_RESULT_CODE_PLATFORM_FAILURE 3
+#define PAL_RESULT_CODE_TIMEOUT 4
+#define PAL_RESULT_CODE_INVALID_HANDLE 5
+#define PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED 6
+#define PAL_RESULT_CODE_NOT_INITIALIZED 7
+#define PAL_RESULT_CODE_INVALID_OPERATION 8
+#define PAL_RESULT_CODE_DEVICE_LOST 9
+#define PAL_RESULT_CODE_OUT_OF_DATE 10
+
+#define PAL_RESULT_CODE_COUNT 11
+
+#define PAL_RESULT_SOURCE_NONE 0
+#define PAL_RESULT_SOURCE_WIN32 1
+#define PAL_RESULT_SOURCE_POSIX 2
+#define PAL_RESULT_SOURCE_EGL 3
+#define PAL_RESULT_SOURCE_VULKAN 4
+#define PAL_RESULT_SOURCE_DIRECTX12 5
+#define PAL_RESULT_SOURCE_METAL 6
+
+#define PAL_RESULT_SOURCE_COUNT 7
 
 /**
  * @typedef PalBool
@@ -81,22 +92,47 @@ typedef uint32_t PalBool;
 /**
  * @typedef PalResult
  * @brief Value returned by most PAL functions.
- *
- * Non-success results (eg. `PAL_RESULT_INVALID_HANDLE`) may contain
- * additional information for debugging and logging purposes. For checking specific
- * result codes, call `palGetResultCode()` to get the code from the result value.
- *
- * Example:
- *
- * uint16_t resultCode = palGetResultCode(result);
- *
- * if (resultCode == `PAL_RESULT_INVALID_DEVICE_LOST`) {}.
- *
- * All result codes follow the format `PAL_RESULT_**` for consistency and API use.
+ * 
+ * `PalResult` constains the PAL result code (eg. `PAL_RESULT_CODE_INVALID_HANDLE`), the native 
+ * source (eg. `PAL_RESULT_SOURCE_POSIX`) and the native code itself. 
+ * The native code and the source are optional and both can be zero if not provided.
+ * 
+ * Only `PAL_RESULT_SUCCESS` is guarantee to be checked directly with the result value.
+ * To check specific result codes for fast path error handling,
+ * Call `palGetResultCode(result)` to get the PAL result code from the result value.
+ * 
+ * Call `palGetResultSource(result)` and `palGetResultNativeCode(result)` to get the native 
+ * source and native code. The native source shows where the native code was retrieved from.
+ * Example: `PAL_RESULT_SOURCE_WIN32` means the native code was retrieved from win32 
+ * (`GetLastError()`).
  *
  * @since 1.0
  */
 typedef uint64_t PalResult;
+
+/**
+ * @typedef PalResultCode
+ * @brief Result codes that are extracted from `PalResult`.
+ * 
+ * `palGetResultCode(result)` to get the result code from a result value.
+ * 
+ * All result codes follow the format `PAL_RESULT_CODE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint16_t PalResultCode;
+
+/**
+ * @typedef PalResultSource
+ * @brief Result sources that are extracted from `PalResult`.
+ * 
+ * `palGetResultSource(result)` to get the result source from a result value.
+ * 
+ * All result sources follow the format `PAL_RESULT_SOURCE_**` for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint16_t PalResultSource;
 
 /**
  * @typedef PalAllocateFn
@@ -187,22 +223,6 @@ typedef struct {
     PalLogCallback callback; /**< Callback function pointer. Must not be nullptr.*/
     void* userData;          /** Optional user-provided data. Can be nullptr.*/
 } PalLogger;
-
-/**
- * Get the result code from the result value.
- *
- * `PAL_RESULT_SUCCESS` code can be compared with the result value without comparing the
- * result code.
- *
- * @param result The result value.
- *
- * @return The result code from the result value.
- *
- * Thread safety: Thread safe.
- *
- * @since 2.0
- */
-PAL_API uint16_t PAL_CALL palGetResultCode(PalResult result);
 
 /**
  * Convert a result value to a human-readable string.
@@ -326,6 +346,75 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter();
  * @sa palGetPerformanceCounter
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency();
+
+/**
+ * Get the result code from the result value.
+ *
+ * @param result The result value.
+ *
+ * @return The result code from the result value.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+static inline PalResultCode PAL_CALL palGetResultCode(PalResult result)
+{
+    return (uint16_t)(result & 0xFFFFU);
+}
+
+/**
+ * Get the result source from the result value.
+ *
+ * @param result The result value.
+ *
+ * @return The result source from the result value.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+static inline PalResultSource PAL_CALL palGetResultSource(PalResult result)
+{
+    return (uint16_t)((result >> 16) & 0xFFFFu);
+}
+
+/**
+ * Get the result native code from the result value.
+ *
+ * @param result The result value.
+ *
+ * @return The result native code from the result value.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
+{
+    return (uint32_t)(result >> 32);
+}
+
+/**
+ * Create a `PalResult` value.
+ *
+ * @param code The result code.
+ * @param source The result source.
+ * @param nativeCode The result native code.
+ *
+ * @return The created `PalResult` value.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+static inline PalResult PAL_CALL palMakeResult(
+    PalResultCode code,
+    PalResultSource source,
+    uint32_t nativeCode)
+{
+    return ((uint64_t)nativeCode << 32) | ((uint64_t)source << 16) | (uint64_t)code;
+}
 
 /**
  * @brief Combine two 32-bit unsigned integers into a single 64-bit signed

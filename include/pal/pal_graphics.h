@@ -252,7 +252,7 @@
 #define PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR 0
 #define PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR 1
 #define PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR 2
-#define PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10 3 /**< HDR.*/
+#define PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10 3
 #define PAL_SURFACE_FORMAT_COUNT 4
 
 #define PAL_WINDOW_INSTANCE_TYPE_WAYLAND 0
@@ -313,36 +313,36 @@
 #define PAL_STENCIL_FACE_FLAG_BOTH (PAL_STENCIL_FACE_FLAG_FRONT | PAL_STENCIL_FACE_FLAG_BACK)
 
 #define PAL_VERTEX_TYPE_UNDEFINED 0
-#define PAL_VERTEX_TYPE_INT32 1           /**< int32_t.*/
-#define PAL_VERTEX_TYPE_INT32_2 2         /**< int32_t vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_INT32_3 3         /**< int32_t vec3 or array[3].*/
-#define PAL_VERTEX_TYPE_INT32_4 4         /**< int32_t vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_UINT32 5          /**< uint32_t.*/
-#define PAL_VERTEX_TYPE_UINT32_2 6        /**< uint32_t vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_UINT32_3 7        /**< uint32_t vec3 or array[3].*/
-#define PAL_VERTEX_TYPE_UINT32_4 8        /**< uint32_t vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_INT8_2 9          /**< int8_t vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_INT8_4 10         /**< int8_t vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_UINT8_2 11        /**< uint8_t vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_UINT8_4 12        /**< uint8_t vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_INT8_2NORM 13     /**< int8_t vec2 or array[2] normalized.*/
-#define PAL_VERTEX_TYPE_INT8_4NORM 14     /**< int8_t vec4 or array[4] normalized.*/
-#define PAL_VERTEX_TYPE_UINT8_2NORM 15    /**< uint8_t vec2 or array[2] normalized.*/
-#define PAL_VERTEX_TYPE_UINT8_4NORM 16    /**< uint8_t vec4 or array[4] normalized.*/
-#define PAL_VERTEX_TYPE_INT16_2 17        /**< int16_t vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_INT16_4 18        /**< int16_t vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_UINT16_2 19       /**< uint16_t vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_UINT16_4 20       /**< uint16_t vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_INT16_2NORM 21    /**< int16_t vec2 or array[2] normalized.*/
-#define PAL_VERTEX_TYPE_INT16_4NORM 22    /**< int16_t vec4 or array[4] normalized.*/
-#define PAL_VERTEX_TYPE_UINT16_2NORM 23   /**< uint16_t vec2 or array[2] normalized.*/
-#define PAL_VERTEX_TYPE_UINT16_4NORM 24   /**< uint16_t vec4 or array[4] normalized.*/
-#define PAL_VERTEX_TYPE_FLOAT 25          /**< float*/
-#define PAL_VERTEX_TYPE_FLOAT2 26         /**< float vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_FLOAT3 27         /**< float vec3 or array[3].*/
-#define PAL_VERTEX_TYPE_FLOAT4 28         /**< float vec4 or array[4].*/
-#define PAL_VERTEX_TYPE_HALF_FLOAT16_2 29 /**< float16 vec2 or array[2].*/
-#define PAL_VERTEX_TYPE_HALF_FLOAT16_4 30 /**< float16 vec4 or array[4].*/
+#define PAL_VERTEX_TYPE_INT32 1          
+#define PAL_VERTEX_TYPE_INT32_2 2        
+#define PAL_VERTEX_TYPE_INT32_3 3        
+#define PAL_VERTEX_TYPE_INT32_4 4        
+#define PAL_VERTEX_TYPE_UINT32 5         
+#define PAL_VERTEX_TYPE_UINT32_2 6       
+#define PAL_VERTEX_TYPE_UINT32_3 7       
+#define PAL_VERTEX_TYPE_UINT32_4 8       
+#define PAL_VERTEX_TYPE_INT8_2 9         
+#define PAL_VERTEX_TYPE_INT8_4 10        
+#define PAL_VERTEX_TYPE_UINT8_2 11       
+#define PAL_VERTEX_TYPE_UINT8_4 12       
+#define PAL_VERTEX_TYPE_INT8_2NORM 13    
+#define PAL_VERTEX_TYPE_INT8_4NORM 14    
+#define PAL_VERTEX_TYPE_UINT8_2NORM 15   
+#define PAL_VERTEX_TYPE_UINT8_4NORM 16   
+#define PAL_VERTEX_TYPE_INT16_2 17       
+#define PAL_VERTEX_TYPE_INT16_4 18       
+#define PAL_VERTEX_TYPE_UINT16_2 19      
+#define PAL_VERTEX_TYPE_UINT16_4 20      
+#define PAL_VERTEX_TYPE_INT16_2NORM 21   
+#define PAL_VERTEX_TYPE_INT16_4NORM 22   
+#define PAL_VERTEX_TYPE_UINT16_2NORM 23  
+#define PAL_VERTEX_TYPE_UINT16_4NORM 24  
+#define PAL_VERTEX_TYPE_FLOAT 25         
+#define PAL_VERTEX_TYPE_FLOAT2 26        
+#define PAL_VERTEX_TYPE_FLOAT3 27        
+#define PAL_VERTEX_TYPE_FLOAT4 28        
+#define PAL_VERTEX_TYPE_HALF_FLOAT16_2 29
+#define PAL_VERTEX_TYPE_HALF_FLOAT16_4 30
 #define PAL_VERTEX_TYPE_COUNT 31
 
 #define PAL_VERTEX_SEMANTIC_ID_POSITION 0
@@ -1335,6 +1335,18 @@ typedef uint32_t PalRayTracingShaderGroupType;
 /**
  * @typedef PalDescriptorIndexingFlags
  * @brief Descriptor indexing subfeature flags.
+ * 
+ * These flags show the capabilities of the descriptor indexing feature. Each flag determines 
+ * the operations that are allowed.
+ * 
+ * `PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND`: Descriptors in a descriptor set can be updated 
+ * after the descriptor set been bound in a command buffer.
+ * 
+ * `PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND`: Unused descriptors can be left uninitialized if
+ * a shader never accesses them.
+ * 
+ * `PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING`: Different threads can access different 
+ * descriptors.
  *
  * All descriptor indexing flags follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_**`
  * for consistency and API use.
@@ -1346,6 +1358,19 @@ typedef uint32_t PalDescriptorIndexingFlags;
 /**
  * @typedef PalBufferMemoryUsage
  * @brief Buffer memory usages.
+ * 
+ * `PAL_BUFFER_MEMORY_USAGE_MANUAL`: PAL does not allocate memory for the buffer. Users are required
+ * to get the required size and allocate memory for the buffer after the buffer has been created. 
+ * The lifetime of the memory is the responsibility of the user.
+ * 
+ * `PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY`: PAL allocates gpu only memory and manages the memory
+ * for the user. This is ideal if a custom allocator will not be used by the user.
+ * 
+ * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD`: PAL allocates cpu upload memory and manages the 
+ * memory for the user. This is ideal if a custom allocator will not be used by the user.
+ * 
+ * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK`: PAL allocates cpu readback memory and manages the 
+ * memory for the user. This is ideal if a custom allocator will not be used by the user.
  *
  * All buffer memory usages follow the format `PAL_BUFFER_MEMORY_USAGE_**`
  * for consistency and API use.
@@ -1357,6 +1382,13 @@ typedef uint32_t PalBufferMemoryUsage;
 /**
  * @typedef PalImageMemoryUsage
  * @brief Image memory usages.
+ * 
+ * `PAL_IMAGE_MEMORY_USAGE_MANUAL`: PAL does not allocate memory for the image. Users are required
+ * to get the required size and allocate memory for the image after the image has been created. 
+ * The lifetime of the memory is the responsibility of the user.
+ * 
+ * `PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY`: PAL allocates gpu only memory and manages the memory
+ * for the user. This is ideal if a custom allocator will not be used by the user.
  *
  * All image memory usages follow the format `PAL_IMAGE_MEMORY_USAGE_**`
  * for consistency and API use.
@@ -2137,9 +2169,9 @@ typedef struct {
     PalGeometry* geometries;                /**< BLAS geometries. nullptr for TLAS*/
     PalDeviceAddress scratchBufferAddress;  /**< Address of scratch buffer.*/
     PalDeviceAddress instanceBufferAddress; /**< Address of instance buffer. nullptr for BLAS.*/
-    PalAccelerationStructureBuildHints buildHints; /**< See `PalAccelerationStructureBuildHints`.*/
+    PalAccelerationStructureBuildHints buildHints; /**< Might be ignored by driver.*/
     PalAccelerationStructureType type; /**< (eg. `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`).*/
-    PalAccelerationStructureBuildMode buildMode; /**< See `PalAccelerationStructureBuildMode`.*/
+    PalAccelerationStructureBuildMode buildMode; /**< Build or update.*/
     uint32_t count; /**< Number of elements in `geometries` or `instanceBufferAddress`.*/
 } PalAccelerationStructureBuildInfo;
 
@@ -4375,7 +4407,7 @@ PAL_API PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
  * Creating more queues than the supported will fail and return `PAL_RESULT_OUT_OF_QUEUE`.
  *
  * Not all graphics queues support presentation. Create a graphics queue and then check if
- * its support presentation for the provided surface. see palCanQueuePresent(). Any graphics
+ * its support presentation for the provided surface. see `palCanQueuePresent()`. Any graphics
  * queue supports offscreen rendering.
  *
  * @param[in] device Device that creates the queue.

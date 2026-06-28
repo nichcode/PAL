@@ -9,12 +9,28 @@
 
 - Added a graphics system API (`pal_graphics.h`).
 - Added `palGetResultCode()` to get the result code from a result value.
+- Added `palGetResultSource()` to get the result source from a result value.
+- Added `palGetResultNativeCode()` to get the result native code from a result value.
 - Added `palGetSupportedGLAPIs()` to check supported opengl api types.
-- Added new `PalResult` values:
-  - `PAL_RESULT_INVALID_HANDLE`
-  - `PAL_RESULT_FEATURE_NOT_SUPPORTED`
-  - `PAL_RESULT_NOT_INITIALIZED`
-  - `PAL_RESULT_OUT_OF_DATE`
+- Added type `PalResultCode` with values:
+  - `PAL_RESULT_CODE_INVALID_ARGUMENT`
+  - `PAL_RESULT_CODE_OUT_OF_MEMORY`
+  - `PAL_RESULT_CODE_PLATFORM_FAILURE`
+  - `PAL_RESULT_CODE_TIMEOUT`
+  - `PAL_RESULT_CODE_INVALID_HANDLE`
+  - `PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED`
+  - `PAL_RESULT_CODE_NOT_INITIALIZED`
+  - `PAL_RESULT_CODE_INVALID_OPERATION`
+  - `PAL_RESULT_CODE_DEVICE_LOST`
+  - `PAL_RESULT_CODE_OUT_OF_DATE`
+- Added type `PalResultSource` with values:
+  - `PAL_RESULT_SOURCE_NONE`
+  - `PAL_RESULT_SOURCE_WIN32`
+  - `PAL_RESULT_SOURCE_POSIX`
+  - `PAL_RESULT_SOURCE_EGL`
+  - `PAL_RESULT_SOURCE_VULKAN`
+  - `PAL_RESULT_SOURCE_DIRECTX12`
+  - `PAL_RESULT_SOURCE_METAL`
 - Added type `PalGLBackend` with values:
   - `PAL_GL_BACKEND_EGL`
   - `PAL_GL_BACKEND_GLX`
@@ -28,14 +44,7 @@
 ### Changes
 
 - Converted all enum types to fixed-width integer types and their values to standalone constants (eg. `PalResult` to `uint64_t`).
-- Removed all previous `PalResult` values except:
-  - `PAL_RESULT_SUCCESS`
-  - `PAL_RESULT_INVALID_ARGUMENT`
-  - `PAL_RESULT_PLATFORM_FAILURE`
-  - `PAL_RESULT_OUT_OF_MEMORY`
-  - `PAL_RESULT_TIMEOUT`
-  - `PAL_RESULT_INVALID_OPERATION`.
-  - `PAL_RESULT_DEVICE_LOST`.
+- Removed all previous `PalResult` values except: `PAL_RESULT_SUCCESS`
 - Removed `UintXX` and `IntXX` types in favor of standard `uintXX_t` and `intXX_t`.
 - Removed `_MAX` constants from all type groups (eg. `PAL_EVENT_MAX`).
 - Replaced standard `bool` type and `true`/`false` constants with `PalBool` type and `PAL_TRUE`/`PAL_FALSE`.
