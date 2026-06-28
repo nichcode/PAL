@@ -25,8 +25,8 @@ project "PAL"
         "src/core/pal_version.c",
 
         -- event
-        "src/event/pal_default_queue.c",
-        "src/event/pal_event.c"
+        -- "src/event/pal_default_queue.c",
+        -- "src/event/pal_event.c"
     }
 
     filter {"system:windows", "configurations:*"}
@@ -39,10 +39,10 @@ project "PAL"
 
     filter {"system:linux", "configurations:*"}
         files { 
-            "src/core/linux/pal_log_linux.c",
-            "src/core/linux/pal_memory_linux.c",
-            "src/core/linux/pal_result_linux.c",
-            "src/core/linux/pal_time_linux.c"
+            "src/core/posix/pal_log_posix.c",
+            "src/core/posix/pal_memory_posix.c",
+            "src/core/posix/pal_result_posix.c",
+            "src/core/posix/pal_time_posix.c"
         }
 
     filter {}

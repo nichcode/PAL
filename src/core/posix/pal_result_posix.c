@@ -5,16 +5,13 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
+#include "pal_posix.h"
+
+#if _PAL_ON_POSIX
 #define _POSIX_C_SOURCE 200112L
 #include "core/pal_format.h"
 #include "core/pal_result.h"
 #include <string.h>
-
-uint16_t PAL_CALL palGetResultCode(PalResult result)
-{
-    getResultCode(result);
-}
 
 void PAL_CALL palFormatResult(
     PalResult result, 
@@ -22,7 +19,7 @@ void PAL_CALL palFormatResult(
     char* buffer)
 {
     char tmpBuffer[256];
-    uint32_t nativeCode = getResultNativeCode(result);
+    uint32_t nativeCode = palGetResultNativeCode(result);
     if (nativeCode != 0) {
         strerror_r(nativeCode, tmpBuffer, 256);
         formatResultMsg(result, buffer, tmpBuffer);
@@ -32,4 +29,4 @@ void PAL_CALL palFormatResult(
     }
 }
 
-#endif // __linux__
+#endif // _PAL_ON_POSIX

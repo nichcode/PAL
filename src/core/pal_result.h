@@ -10,7 +10,7 @@
 
 #include "pal_format.h"
 
-static const char* PAL_CALL resultCodeToString(PalResult result)
+static const char* resultCodeToString(PalResult result)
 {
     PalResultCode code = palGetResultCode(result);
     switch (code) {
@@ -48,7 +48,7 @@ static const char* PAL_CALL resultCodeToString(PalResult result)
     return "";
 }
 
-static const char* PAL_CALL resultCodeToDescription(PalResult result)
+static const char* resultCodeToDescription(PalResult result)
 {
     PalResultCode code = palGetResultCode(result);
     switch (code) {
@@ -86,7 +86,7 @@ static const char* PAL_CALL resultCodeToDescription(PalResult result)
     return nullptr;
 }
 
-static const char* PAL_CALL resultSourceToString(PalResult result)
+static const char* resultSourceToString(PalResult result)
 {
     PalResultSource source = palGetResultSource(result);
     switch (source) {

@@ -5,7 +5,9 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
+#include "pal_posix.h"
+
+#if _PAL_ON_POSIX
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_core.h"
 #include <stdlib.h>
@@ -45,4 +47,4 @@ void PAL_CALL palFree(
     }
 }
 
-#endif // __linux__
+#endif // _PAL_ON_POSIX

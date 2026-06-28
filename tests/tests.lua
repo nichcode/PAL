@@ -14,8 +14,8 @@ project "tests"
         "core/time_test.c",
 
         -- event
-        "event/user_event_test.c",
-        "event/event_test.c"
+        -- "event/user_event_test.c",
+        -- "event/event_test.c"
     }
 
     if (PAL_BUILD_SYSTEM_MODULE) then

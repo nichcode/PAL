@@ -164,7 +164,7 @@ static void windowDump(PalBool verbose)
 
     uint32_t ySize = sizeof(PalGLWindow);
     uint32_t yAlign = PAL_ALIGNOF(PalGLWindow);
-    uint32_t yOffset1 = offsetof(PalGLWindow, display);
+    uint32_t yOffset1 = offsetof(PalGLWindow, instance);
     uint32_t yOffset2 = offsetof(PalGLWindow, window);
     uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
@@ -188,7 +188,7 @@ static void windowDump(PalBool verbose)
         palLog(nullptr, "size        %u           %u", xSize, ySize);
         palLog(nullptr, "align       %u            %u", xAlign, yAlign);
         palLog(nullptr, "padding     %u            %u", xPadding, yPadding);
-        palLog(nullptr, "display @   %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "instance @  %u            %u", xOffset1, yOffset1);
         palLog(nullptr, "window @    %u            %u", xOffset2, yOffset2);
         palLog(nullptr, "===========================================");
     }

@@ -24,18 +24,13 @@
 #include <string.h>
 #include <windows.h>
 
-uint16_t PAL_CALL palGetResultCode(PalResult result)
-{
-    getResultCode(result);
-}
-
 void PAL_CALL palFormatResult(
     PalResult result, 
     uint64_t bufferSize, 
     char* buffer)
 {
     char tmpBuffer[256];
-    uint32_t nativeCode = getResultNativeCode(result);
+    uint32_t nativeCode = palGetResultNativeCode(result);
     if (nativeCode != 0) {
         FormatMessageA(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,

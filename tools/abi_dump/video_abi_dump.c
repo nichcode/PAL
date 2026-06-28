@@ -292,7 +292,7 @@ static void windowInfoDump(PalBool verbose)
 
     uint32_t ySize = sizeof(PalWindowHandleInfo);
     uint32_t yAlign = PAL_ALIGNOF(PalWindowHandleInfo);
-    uint32_t yOffset1 = offsetof(PalWindowHandleInfo, nativeDisplay);
+    uint32_t yOffset1 = offsetof(PalWindowHandleInfo, nativeInstance);
     uint32_t yOffset2 = offsetof(PalWindowHandleInfo, nativeWindow);
     uint32_t yOffset3 = offsetof(PalWindowHandleInfo, nativeHandle1);
     uint32_t yOffset4 = offsetof(PalWindowHandleInfo, nativeHandle2);
@@ -322,7 +322,7 @@ static void windowInfoDump(PalBool verbose)
         palLog(nullptr, "size              %u           %u", xSize, ySize);
         palLog(nullptr, "align             %u            %u", xAlign, yAlign);
         palLog(nullptr, "padding           %u            %u", xPadding, yPadding);
-        palLog(nullptr, "nativeDisplay @   %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "nativeInstance @  %u            %u", xOffset1, yOffset1);
         palLog(nullptr, "nativeWindow @    %u            %u", xOffset2, yOffset2);
         palLog(nullptr, "nativeHandle1 @   %u           %u", xOffset3, yOffset3);
         palLog(nullptr, "nativeHandle2 @   %u           %u", xOffset4, yOffset4);
@@ -365,8 +365,6 @@ static void windowDump(PalBool verbose)
     uint32_t yOffset8 = offsetof(PalWindowCreateInfo, width);
     uint32_t yOffset9 = offsetof(PalWindowCreateInfo, height);
     uint32_t yOffset10 = offsetof(PalWindowCreateInfo, show);
-    uint32_t yOffset11 = offsetof(PalWindowCreateInfo, maximized);
-    uint32_t yOffset12 = offsetof(PalWindowCreateInfo, minimized);
     uint32_t yOffset13 = offsetof(PalWindowCreateInfo, center);
     uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
@@ -384,8 +382,6 @@ static void windowDump(PalBool verbose)
         xOffset8 == yOffset8      &&
         xOffset9 == yOffset9      &&
         xOffset10 == yOffset10    &&
-        xOffset11 == yOffset11    &&
-        xOffset12 == yOffset12    &&
         xOffset13 == yOffset13    &&
         xPadding == yPadding) {
         result = s_PassedString;
@@ -411,8 +407,6 @@ static void windowDump(PalBool verbose)
         palLog(nullptr, "width @            %u           %u", xOffset8, yOffset8);
         palLog(nullptr, "height @           %u           %u", xOffset9, yOffset9);
         palLog(nullptr, "show @             %u           %u", xOffset10, yOffset10);
-        palLog(nullptr, "maximized @        %u           %u", xOffset11, yOffset11);
-        palLog(nullptr, "minimized @        %u           %u", xOffset12, yOffset12);
         palLog(nullptr, "center @           %u           %u", xOffset13, yOffset13);
         palLog(nullptr, "===========================================");
     }
