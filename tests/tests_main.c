@@ -8,7 +8,7 @@ int main(int argc, char** argv)
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core
-    // registerTest(loggerTest, "Logger Test");
+    registerTest(loggerTest, "Logger Test");
     // registerTest(timeTest, "Time Test");
 
     // event

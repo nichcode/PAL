@@ -1412,7 +1412,7 @@ typedef uint64_t PalGraphicsBackendVtableVersion;
  * @typedef PalDebugCallback
  * @brief Function pointer type used for debug callbacks.
  *
- * @param userData Optional pointer to user data passed from ::PalGraphicsDebugger. Can be nullptr.
+ * @param userData Optional pointer to user data passed from ::PalGraphicsDebugger. Can be `nullptr`.
  * @param severity Severity of the message. (`PAL_DEBUG_MESSAGE_SEVERITY_INFO`,
  * `PAL_DEBUG_MESSAGE_SEVERITY_WARNING` and `PAL_DEBUG_MESSAGE_SEVERITY_ERROR`).
  * @param type Type of the message. (`PAL_DEBUG_MESSAGE_TYPE_GENERAL`,
@@ -1721,8 +1721,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalImageView* imageView;           /**< Image view. Must not be nullptr.*/
-    PalImageView* resolveImageView;    /**< Resolve image view. Can be nullptr.*/
+    PalImageView* imageView;           /**< Image view. Must not be `nullptr`.*/
+    PalImageView* resolveImageView;    /**< Resolve image view. Can be `nullptr`.*/
     PalLoadOp loadOp;                  /**< (eg. `PAL_LOAD_OP_CLEAR`).*/
     PalStoreOp storeOp;                /**< (eg. `PAL_STORE_OP_STORE`).*/
     PalLoadOp stencilLoadOp;           /**< (eg. `PAL_LOAD_OP_DONT_CARE`).*/
@@ -1968,7 +1968,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    void* userData;              /**< Optional user provided data. Can be nullptr.*/
+    void* userData;              /**< Optional user provided data. Can be `nullptr`.*/
     PalDebugCallback callback;   /**< Debug callback function.*/
     PalBool denyGeneral;         /**< Do not recieve general messages.*/
     PalBool denyValidation;      /**< Do not recieve validation messages.*/
@@ -2006,7 +2006,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t sampleMask;           /**< Set to nullptr to use default.*/
+    uint64_t sampleMask;           /**< Set to `nullptr` to use default.*/
     PalBool enableSampleShading;   /**< `PAL_TRUE` to enable sample shading.*/
     PalBool enableAlphaToCoverage; /**< `PAL_TRUE` to enable alpha to coverage.*/
     PalSampleCount sampleCount;    /**< (eg. `PAL_SAMPLE_COUNT_4`).*/
@@ -2166,9 +2166,9 @@ typedef struct {
 typedef struct {
     PalAccelerationStructure* dst;          /**< Destination aceleration structure.*/
     PalAccelerationStructure* src;          /**< Source aceleration structure. Used for updates.*/
-    PalGeometry* geometries;                /**< BLAS geometries. nullptr for TLAS*/
+    PalGeometry* geometries;                /**< BLAS geometries. `nullptr` for TLAS*/
     PalDeviceAddress scratchBufferAddress;  /**< Address of scratch buffer.*/
-    PalDeviceAddress instanceBufferAddress; /**< Address of instance buffer. nullptr for BLAS.*/
+    PalDeviceAddress instanceBufferAddress; /**< Address of instance buffer. `nullptr` for BLAS.*/
     PalAccelerationStructureBuildHints buildHints; /**< Might be ignored by driver.*/
     PalAccelerationStructureType type; /**< (eg. `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`).*/
     PalAccelerationStructureBuildMode buildMode; /**< Build or update.*/
@@ -2377,7 +2377,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    void* localData;        /**< Must not be nullptr if `localDataSize` is not 0.*/
+    void* localData;        /**< Must not be `nullptr` if `localDataSize` is not 0.*/
     uint32_t groupIndex;    /**< Index into the shader groups used to create the pipeline.*/
     uint32_t localDataSize; /**< Must not be greater than the data size of the group.*/
 } PalShaderBindingTableRecordInfo;
@@ -2391,7 +2391,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    const char* entryName;       /**< Must not be nullptr.*/
+    const char* entryName;       /**< Must not be `nullptr`.*/
     PalShaderStage stage;        /**< (eg. `PAL_SHADER_STAGE_VERTEX`).*/
     uint32_t patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
 } PalShaderEntryInfo;
@@ -3976,9 +3976,9 @@ typedef struct {
  *
  * The debugger, allocator and custom backends will not not copied, therefore the pointers must
  * remain valid until the graphics system is shutdown. Set the debugger or
- * PalGraphicsDebugger::callback to nullptr to disable debugging and validation layers.
+ * PalGraphicsDebugger::callback to `nullptr` to disable debugging and validation layers.
  *
- * If `debugger` is not nullptr and there is no debug layers, this function will not fail but
+ * If `debugger` is not `nullptr` and there is no debug layers, this function will not fail but
  * debugging will be disabled.
  *
  * All backends must have their vtable functions fully set according to the version requirements.
@@ -3986,9 +3986,9 @@ typedef struct {
  * returned by the appropriate function. This is validated at initialization and will fail and
  * return `PAL_RESULT_INVALID_ARGUMENT`.
  *
- * @param[in] debugger Optional debugger. Set to nullptr to disable debugging and validation
+ * @param[in] debugger Optional debugger. Set to `nullptr` to disable debugging and validation
  * layers.
- * @param[in] allocator Optional user-provided allocator. Set to nullptr to use default.
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use default.
  * @param[in] customBackendCount The number of custom backends in `customBackends`.
  * @param[in] customBackends Pointer to an array of custom backends.
  *
@@ -4029,7 +4029,7 @@ PAL_API void PAL_CALL palShutdownGraphics();
  * of them in the list. Use PalAdapterInfo::backendName to differentiate between custom and
  * internal backend. the backend name for internal backend is `PAL`.
  *
- * Call this function first with PalAdapter array set to nullptr to get the number of adapters.
+ * Call this function first with PalAdapter array set to `nullptr` to get the number of adapters.
  * Allocate memory for the PalAdapter array and passed in the count and the allocated array. If
  * the count of the array is less than the number of adapters, PAL will write upto that limit.
  *
@@ -4139,7 +4139,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  *
  * @param[in] adapter Adapter that creates the device.
  * @param[in] features Adapter features to enable. Must be supported.
- * @param[out] outDevice Pointer to a PalDevice to recieve the created device. Must not be nullptr.
+ * @param[out] outDevice Pointer to a PalDevice to recieve the created device. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -4158,7 +4158,7 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  * @brief Destroy a device.
  *
  * The graphics system must be initialized before this call.
- * If the provided device is invalid or nullptr, this function returns
+ * If the provided device is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] device Pointer to the device to destroy.
@@ -4205,7 +4205,7 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  * @brief Free GPU memory allocated by palAllocateMemory.
  *
  * The graphics system must be initialized before this call.
- * If `memory` is nullptr, this function will return silently.
+ * If `memory` is `nullptr`, this function will return silently.
  *
  * @param[in] device Pointer to device to free memory on.
  * @param[in] memory Pointer to memory to free.
@@ -4431,7 +4431,7 @@ PAL_API PalResult PAL_CALL palCreateQueue(
  * @brief Destroy a queue.
  *
  * The graphics system must be initialized before this call.
- * If the provided queue is invalid or nullptr, this function returns
+ * If the provided queue is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] queue Queue to destroy.
@@ -4491,7 +4491,7 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * associated with the format. This is a handy way of selecting a format based on the image
  * usages. Use palIsFormatSupported() to check for a specific format.
  *
- * Call this function first with PalFormatInfo array set to nullptr to get the number of formats.
+ * Call this function first with PalFormatInfo array set to `nullptr` to get the number of formats.
  * Allocate memory for the PalFormatInfo array and passed in the count and the allocated array. If
  * the count of the array is less than the number of formats, PAL will write upto that limit.
  *
@@ -4583,7 +4583,7 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  *
  * @param[in] device Device that creates the image.
  * @param[in] info Pointer to a PalImageCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outImage Pointer to a PalImage to recieve the created image.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4603,7 +4603,7 @@ PAL_API PalResult PAL_CALL palCreateImage(
  * @brief Destroy an image.
  *
  * The graphics system must be initialized before this call.
- * If the provided image is invalid or nullptr, this function returns
+ * If the provided image is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] image Image to destroy.
@@ -4664,7 +4664,7 @@ PAL_API PalResult PAL_CALL palGetImageMemoryRequirements(
  * Get the requirements with palGetImageMemoryRequirements().
  *
  * @param[in] image Image to bind memory to.
- * @param[in] memory Memory to bind. Must not be nullptr.
+ * @param[in] memory Memory to bind. Must not be `nullptr`.
  * @param[in] offset Starting point within the memory.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4742,7 +4742,7 @@ PAL_API void PAL_CALL palUnmapImageMemory(PalImage* image);
  * @param[in] device Device that creates the image view.
  * @param[in] image Image to create the image view with.
  * @param[in] info Pointer to a PalImageViewCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outImageView Pointer to a PalImageView to recieve the created image view.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4763,7 +4763,7 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  * @brief Destroy an image view.
  *
  * The graphics system must be initialized before this call.
- * If the provided image view is invalid or nullptr, this function returns
+ * If the provided image view is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] imageView Image view to destroy.
@@ -4785,7 +4785,7 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  *
  * @param[in] device Device that creates the sampler.
  * @param[in] info Pointer to a PalSamplerCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outSampler Pointer to a PalSampler to recieve the created sampler.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4805,7 +4805,7 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  * @brief Destroy a sampler.
  *
  * The graphics system must be initialized before this call.
- * If the provided sampler is invalid or nullptr, this function returns
+ * If the provided sampler is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] sampler Sampler to destroy.
@@ -4851,7 +4851,7 @@ PAL_API PalResult PAL_CALL palCreateSurface(
  * @brief Destroy a surface.
  *
  * The graphics system must be initialized before this call.
- * If the provided surface is invalid or nullptr, this function returns
+ * If the provided surface is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] surface Surface to destroy.
@@ -4900,7 +4900,7 @@ PAL_API PalResult PAL_CALL palGetSurfaceCapabilities(
  * @param[in] queue Queue to create swapchain with. This must be a graphics queue.
  * @param[in] surface Surface to create swapchain with.
  * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outSwapchain Pointer to a PalSwapchain to recieve the created swapchain.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4922,7 +4922,7 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
  * @brief Destroy a swapchain.
  *
  * The graphics system must be initialized before this call.
- * If the provided swapchain is invalid or nullptr, this function returns
+ * If the provided swapchain is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] swapchain Swapchain to destroy.
@@ -4943,7 +4943,7 @@ PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
  * @param[in] swapchain Swapchain to get image from.
  * @param[in] index Index of image in the list. Must not be greater than the image count.
  *
- * @return A pointer to the image on success otherwise nullptr on failure.
+ * @return A pointer to the image on success otherwise `nullptr` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -4961,7 +4961,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  *
  * @param[in] swapchain Swapchain to get image index from.
  * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outIndex Pointer to a uint32_t to recieve the next image index.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4984,7 +4984,7 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  *
  * @param[in] swapchain Swapchain to present.
  * @param[in] info Pointer to a PalSwapchainPresentInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5043,7 +5043,7 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  *
  * @param[in] device Device that creates the shader.
  * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outShader Pointer to a PalShader to recieve the created shader.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -5065,7 +5065,7 @@ PAL_API PalResult PAL_CALL palCreateShader(
  * @brief Destroy a shader.
  *
  * The graphics system must be initialized before this call.
- * If the provided shader is invalid or nullptr, this function returns
+ * If the provided shader is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] shader Shader to destroy.
@@ -5105,7 +5105,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
  * @brief Destroy a fence.
  *
  * The graphics system must be initialized before this call.
- * If the provided fence is invalid or nullptr, this function returns
+ * If the provided fence is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] fence Fence to destroy.
@@ -5205,7 +5205,7 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  * @brief Destroy a semaphore.
  *
  * The graphics system must be initialized before this call.
- * If the provided semaphore is invalid or nullptr, this function returns
+ * If the provided semaphore is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] semaphore Semaphore to destroy.
@@ -5320,7 +5320,7 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  * @brief Destroy a command pool.
  *
  * The graphics system must be initialized before this call.
- * If the provided command pool is invalid or nullptr, this function returns
+ * If the provided command pool is invalid or `nullptr`, this function returns
  * silently.
  *
  * Destroying a command pool frees all command buffers automatically.
@@ -5379,7 +5379,7 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
  * @brief Free an allocated command buffer.
  *
  * The graphics system must be initialized before this call.
- * If the provided command buffer is invalid or nullptr, this function returns
+ * If the provided command buffer is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] cmdBuffer Command buffer to free.
@@ -5416,7 +5416,7 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  *
  * @param[in] queue Queue to execute the command buffer.
  * @param[in] info Pointer to a PalCommandBufferSubmitInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5496,7 +5496,7 @@ PAL_API PalResult PAL_CALL palCmdExecuteCommandBuffer(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] state Pointer to a PalFragmentShadingRateState struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5610,7 +5610,7 @@ PAL_API PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5630,7 +5630,7 @@ PAL_API PalResult PAL_CALL palCmdBuildAccelerationStructure(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalRenderingInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5668,10 +5668,10 @@ PAL_API PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  * @param[in] dst Destination buffer.
  * @param[in] src Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferCopyInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * Pointer to a PalImageCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5695,7 +5695,7 @@ PAL_API PalResult PAL_CALL palCmdCopyBuffer(
  * @param[in] dstImage Destination image.
  * @param[in] srcBuffer Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5719,7 +5719,7 @@ PAL_API PalResult PAL_CALL palCmdCopyBufferToImage(
  * @param[in] dst Destination image.
  * @param[in] src Source image.
  * @param[in] copyInfo Pointer to a PalImageCopyInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5743,7 +5743,7 @@ PAL_API PalResult PAL_CALL palCmdCopyImage(
  * @param[in] dstBuffer Destination buffer.
  * @param[in] srcImage Source image.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6255,7 +6255,7 @@ PAL_API PalResult PAL_CALL palCmdDispatchBase(
  * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be nullptr.
+ * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6315,7 +6315,7 @@ PAL_API PalResult PAL_CALL palCmdTraceRays(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] raygenIndex Index of the raygen shader to execute.
  * @param[in] sbt The shader binding table to use.
- * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be nullptr.
+ * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6538,7 +6538,7 @@ PAL_API PalResult PAL_CALL palCmdSetStencilOp(
  *
  * @param[in] device Device that creates the acceleration structure.
  * @param[in] info Pointer to a PalAccelerationStructureCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outAs Pointer to a PalAccelerationStructure to recieve the created acceleration
  * structure.
  *
@@ -6562,7 +6562,7 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  * @brief Destroy an acceleration structure.
  *
  * The graphics system must be initialized before this call.
- * If the provided acceleration structure is invalid or nullptr, this function returns
+ * If the provided acceleration structure is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] as Acceleration structure to destroy.
@@ -6580,14 +6580,14 @@ PAL_API void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* 
  *
  * The graphics system must be initialized before this call.
  * PalAccelerationStructureBuildInfo::dst, PalAccelerationStructureBuildInfo::scratchBufferAddress
- * and PalAccelerationStructureBuildInfo::src must be set to nullptr.
+ * and PalAccelerationStructureBuildInfo::src must be set to `nullptr`.
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if not, this
  * function will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] device Device to query.
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] size Pointer to a PalAccelerationStructureBuildSize to recieve the build size.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6619,7 +6619,7 @@ PAL_API PalResult PAL_CALL palGetAccelerationStructureBuildSize(
  *
  * @param[in] device Device that creates the buffer.
  * @param[in] info Pointer to a PalBufferCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outBuffer Pointer to a PalBuffer to recieve the created buffer.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6639,7 +6639,7 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
  * @brief Destroy a buffer.
  *
  * The graphics system must be initialized before this call.
- * If the provided buffer is invalid or nullptr, this function returns
+ * If the provided buffer is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] buffer buffer to destroy.
@@ -6716,7 +6716,7 @@ PAL_API PalResult PAL_CALL palComputeInstanceBufferRequirements(
  * @param[in] device Device to compute image copy staging buffer requirements with.
  * @param[in] imageFormat Destination image format.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outBufferRowLength Pointer to a uint32_t to recieve the required buffer row length.
  * @param[out] outBufferImageHeight Pointer to a uint32_t to recieve the required buffer imag
  * height.
@@ -6771,7 +6771,7 @@ PAL_API PalResult PAL_CALL palWriteToInstanceBuffer(
  * @param[out] srcData Pointer to the CPU visible memory with the data.
  * @param[in] imageFormat Destination image format.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6795,7 +6795,7 @@ PAL_API PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
  * Get the requirements with palGetBufferMemoryRequirements().
  *
  * @param[in] buffer Buffer to bind memory to.
- * @param[in] memory Memory to bind. Must not be nullptr.
+ * @param[in] memory Memory to bind. Must not be `nullptr`.
  * @param[in] offset Starting point within the memory.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6887,7 +6887,7 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  *
  * @param[in] device Device that creates the descriptor set layout.
  * @param[in] info Pointer to a PalDescriptorSetLayoutCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outLayout Pointer to a PalDescriptorSetLayout to recieve the created descriptor
  * set layout.
  *
@@ -6908,7 +6908,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
  * @brief Destroy a descriptor set layout.
  *
  * The graphics system must be initialized before this call.
- * If the provided descriptor set layout is invalid or nullptr, this function returns
+ * If the provided descriptor set layout is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] layout Descriptor set layout to destroy.
@@ -6928,7 +6928,7 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  *
  * @param[in] device Device that creates the descriptor pool.
  * @param[in] info Pointer to a PalDescriptorPoolCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outPool Pointer to a PalDescriptorPool to recieve the created descriptor pool.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6948,7 +6948,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
  * @brief Destroy a descriptor pool.
  *
  * The graphics system must be initialized before this call.
- * If the provided descriptor pool is invalid or nullptr, this function returns
+ * If the provided descriptor pool is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] pool Descriptor pool to destroy.
@@ -7038,7 +7038,7 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  *
  * @param[in] device Device that creates the pipeline layout.
  * @param[in] info Pointer to a PalPipelineLayoutCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outLayout Pointer to a PalPipelineLayout to recieve the created pipeline layout.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -7058,7 +7058,7 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  * @brief Destroy a pipeline layout.
  *
  * The graphics system must be initialized before this call.
- * If the provided pipeline layout is invalid or nullptr, this function returns
+ * If the provided pipeline layout is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] layout Pipeline layout to destroy.
@@ -7078,7 +7078,7 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  *
  * @param[in] device Device that creates the graphics pipeline.
  * @param[in] info Pointer to a PalGraphicsPipelineCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outPipeline Pointer to a PalPipeline to recieve the created buffer.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -7101,7 +7101,7 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  *
  * @param[in] device Device that creates the compute pipeline.
  * @param[in] info Pointer to a PalComputePipelineCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outPipeline Pointer to a PalPipeline to recieve the created buffer.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -7129,7 +7129,7 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  *
  * @param[in] device Device that creates the ray tracing pipeline.
  * @param[in] info Pointer to a PalRayTracingPipelineCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outPipeline Pointer to a PalPipeline to recieve the created buffer.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -7151,7 +7151,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  * @brief Destroy a pipeline.
  *
  * The graphics system must be initialized before this call.
- * If the provided pipeline is invalid or nullptr, this function returns
+ * If the provided pipeline is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] pipeline Pipeline to destroy.
@@ -7179,7 +7179,7 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  *
  * @param[in] device Device that creates the shader binding table.
  * @param[in] info Pointer to a PalShaderBindingTableCreateInfo struct that specifies parameters.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  * @param[out] outSbt Pointer to a PalShaderBindingTable to recieve the created shader binding
  * table.
  *
@@ -7202,7 +7202,7 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  * @brief Destroy a shader binding table.
  *
  * The graphics system must be initialized before this call.
- * If the provided shader binding table is invalid or nullptr, this function returns
+ * If the provided shader binding table is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] sbt Shader binding table to destroy.
@@ -7243,12 +7243,12 @@ PAL_API PalResult PAL_CALL palUpdateShaderBindingTable(
 /**
  * @brief Build work group info(s) from work inputs specified in pixels, vertices etc.
  *
- * Call this function first with PalWorkGroupInfo array set to nullptr to get the number of work
+ * Call this function first with PalWorkGroupInfo array set to `nullptr` to get the number of work
  * group infos. Allocate memory for the PalWorkGroupInfo array and passed in the count and the
  * allocated array. If the count of the array is less than the number of work group infos, PAL will
  * write upto that limit.
  *
- * If the count is 0 and the PalWorkGroupInfo array is nullptr, the function fails
+ * If the count is 0 and the PalWorkGroupInfo array is `nullptr`, the function fails
  * and returns `PAL_FALSE`.
  *
  * This function works the maths for how many work groups to dispatch in each axis and how many

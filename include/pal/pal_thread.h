@@ -84,7 +84,7 @@ typedef uint32_t PalThreadPriority;
  * @typedef PalThreadFn
  * @brief Function pointer type used for thread entry function.
  *
- * @param[in] arg Optional pointer to user data. Can be nullptr.
+ * @param[in] arg Optional pointer to user data. Can be `nullptr`.
  *
  * @return The return value of the thread as a pointer.
  *
@@ -96,9 +96,9 @@ typedef void* (*PalThreadFn)(void* arg);
  * @typedef PaTlsDestructorFn
  * @brief Function pointer type used for TLS.
  *
- * This is called when the TLS is destroyed and its value is not nullptr.
+ * This is called when the TLS is destroyed and its value is not `nullptr`.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  *
  * @since 1.0
  */
@@ -114,9 +114,9 @@ typedef void (*PaTlsDestructorFn)(void* userData);
  */
 typedef struct {
     uint64_t stackSize;            /**< Set to 0 to use default*/
-    const PalAllocator* allocator; /**< Set to nullptr to use default.*/
-    PalThreadFn entry;             /**< Thread entry function. Must not be nullptr*/
-    void* arg;                     /**< Optional user-provided data. Can be nullptr.*/
+    const PalAllocator* allocator; /**< Set to `nullptr` to use default.*/
+    PalThreadFn entry;             /**< Thread entry function. Must not be `nullptr`*/
+    void* arg;                     /**< Optional user-provided data. Can be `nullptr`.*/
 } PalThreadCreateInfo;
 
 /**
@@ -131,9 +131,9 @@ typedef struct {
  * until the entry function has finished executing or its detached.
  *
  * @param[in] info Pointer to a PalThreadCreateInfo struct that specifies
- * parameters. Must not be nullptr.
+ * parameters. Must not be `nullptr`.
  * @param[out] outThread Pointer to a PalThread to recieve the created
- * thread.  Must not be nullptr.
+ * thread.  Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -174,7 +174,7 @@ PAL_API PalResult PAL_CALL palJoinThread(
  *
  * Must be called when the thread is done executing.
  * After this call, the thread cannot be attached or used anymore.
- * If the thread is invalid or nullptr, this function returns silently.
+ * If the thread is invalid or `nullptr`, this function returns silently.
  *
  * This must not be called on a thread that has been attached.
  *
@@ -210,7 +210,7 @@ PAL_API void PAL_CALL palYield();
 /**
  * @brief Get the current executing thread.
  *
- * @return The current thread on success or nullptr on failure.
+ * @return The current thread on success or `nullptr` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -266,7 +266,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @brief Get the name of the provided thread.
  *
  * `PAL_THREAD_FEATURE_NAME` must be supported.
- * fails. Set the buffer to nullptr to get the size of the thread name in bytes.
+ * fails. Set the buffer to `nullptr` to get the size of the thread name in bytes.
  *
  * If the size of the provided buffer is less than the actual size of thread
  * name, PAL will write upto that limit.
@@ -276,7 +276,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @param[in] bufferSize Size of the provided buffer in bytes.
  * @param[out] outSize The actual size of the thread name in bytes.
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the name.
- * Can be nullptr.
+ * Can be `nullptr`.
  *
  * Thread safety: Thread safe.
  *
@@ -379,7 +379,7 @@ PAL_API PalResult PAL_CALL palSetThreadName(
  * the TLS has a valid value.
  *
  * @param[in] destructor Pointer to the TLS destructor function. Can be
- * nullptr.
+ * `nullptr`.
  *
  * @return The TLS on success or 0 on failure.
  *
@@ -407,7 +407,7 @@ PAL_API void PAL_CALL palDestroyTLS(PalTLSId id);
  *
  * @param[in] id The TLS to query value.
  *
- * @return the value on success or nullptr on failure.
+ * @return the value on success or `nullptr` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -434,10 +434,10 @@ PAL_API void PAL_CALL palSetTLS(
 /**
  * @brief Create a mutex.
  *
- * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use
  * default.
  * @param[out] outMutex Pointer to a PalMutex to recieve the created mutex.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -497,7 +497,7 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
 /**
  * @brief Create a condition variable.
  *
- * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use
  * default.
  * @param[out] outCondVar Pointer to a PalCondVar to recieve the created
  * condition variable.

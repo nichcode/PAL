@@ -181,8 +181,8 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    void* instance; /**< Must not be nullptr. (HINSTANCE on Win32 or wl_display on Wayland)*/
-    void* window;   /**< Must not be nullptr. (egl_wl_window on Wayland)*/
+    void* instance; /**< Must not be `nullptr`. (HINSTANCE on Win32 or wl_display on Wayland)*/
+    void* window;   /**< Must not be `nullptr`. (egl_wl_window on Wayland)*/
 } PalGLWindow;
 
 /**
@@ -194,9 +194,9 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    const PalGLWindow* window;     /**< Window to create context for. Must not be nullptr.*/
-    const PalGLFBConfig* fbConfig; /**< The framebuffer config to use. Must not be nullptr.*/
-    PalGLContext* shareContext;    /**< Can be nullptr.*/
+    const PalGLWindow* window;     /**< Window to create context for. Must not be `nullptr`.*/
+    const PalGLFBConfig* fbConfig; /**< The framebuffer config to use. Must not be `nullptr`.*/
+    PalGLContext* shareContext;    /**< Can be `nullptr`.*/
     PalGLProfile profile;          /**< (eg. `PAL_GL_PROFILE_CORE`).*/
     PalGLContextReset reset;       /**< (eg. `PAL_GL_CONTEXT_RESET_LOSE_CONTEXT`).*/
     PalGLReleaseBehavior release;  /**< (eg. `PAL_GL_RELEASE_BEHAVIOR_FLUSH`).*/
@@ -216,7 +216,7 @@ typedef struct {
  * The allocator will not not copied, therefore the pointer must remain valid
  * until the opengl system is shutdown.
  *
- * `instance` must not be nullptr and will not be freed by the opengl system. It must be valid until
+ * `instance` must not be `nullptr` and will not be freed by the opengl system. It must be valid until
  * palShutdownGL() is called.
  * `Linux`: This is the Display associated with the connection.
  * `Windows`: This is the HINSTANCE of the process.
@@ -224,8 +224,8 @@ typedef struct {
  * @param[in] api The api to use. (eg. `PAL_GL_API_OPENGL`). Call `palGetSupportedGLAPIs()` to check
  * if an api is supported on `instance`.
  * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay).
- * Must not be nullptr.
- * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
+ * Must not be `nullptr`.
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use
  * default.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -260,7 +260,7 @@ PAL_API void PAL_CALL palShutdownGL();
  * The opengl system must be initialized before this call. The returned
  * PalGLInfo pointer must not be freed.
  *
- * @return A pointer to a PalGLInfo on success or nullptr on failure.
+ * @return A pointer to a PalGLInfo on success or `nullptr` on failure.
  *
  * Thread safety: Thread-safe.
  *
@@ -273,7 +273,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  *
  * The opengl system must be initialized before this call.
  *
- * Call this function first with PalGLFBConfig array set to nullptr to get the
+ * Call this function first with PalGLFBConfig array set to `nullptr` to get the
  * number of supported PalGLFBConfig. Allocate memory for the PalGLFBConfig
  * array and passed in the count and the allocated array. If the count of the
  * array is less than the number of supported PalGLFBConfigs, PAL will write
@@ -303,14 +303,14 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  *
  * The count must be the number of PalGLFBConfig in the
  * array of PalGLFBConfig. If the count is less than or equal to 0 or the
- * desired PalGLFBConfig or the PalGLFBConfig array is nullptr, this function
- * fails and returns nullptr.
+ * desired PalGLFBConfig or the PalGLFBConfig array is `nullptr`, this function
+ * fails and returns `nullptr`.
  *
  * @param[in] configs Pointer to the array of PalGLFBConfig.
  * @param[in] count Capacity of the PalGLFBConfig array.
  * @param[in] desired The desired PalGLFBConfig.
  *
- * @return The closest PalGLFBConfig on success or nullptr on failure.
+ * @return The closest PalGLFBConfig on success or `nullptr` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -335,9 +335,9 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * not the wl_surface.
  *
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
- * parameters. Must not be nullptr.
+ * parameters. Must not be `nullptr`.
  * @param[out] outContext Pointer to a PalGLContext to recieve the created
- * context. Must not be nullptr.
+ * context. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -356,7 +356,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * The opengl system must be initialized before this call.
  *
- * If the provided context is invalid or nullptr, this function returns
+ * If the provided context is invalid or `nullptr`, this function returns
  * silently. The context must not be current in any thread before this call.
  *
  * @param[in] context Pointer to the context to destroy.
@@ -400,7 +400,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  *
  * @param[in] name UTF-8 string for the function name.
  *
- * @return the pointer to the function on success or nullptr on failure.
+ * @return the pointer to the function on success or `nullptr` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -457,7 +457,7 @@ PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
  *
  * @param[in] instance The instance (eg. HINSTANCE or XDisplay).
  *
- * @return An array of bools or nullptr on failure.
+ * @return An array of bools or `nullptr` on failure.
  *
  * Thread safety: Must only be called from the main thread.
  *

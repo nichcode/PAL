@@ -279,7 +279,7 @@ typedef uint32_t PalDispatchMode;
  * @typedef PalEventCallback
  * @brief Function pointer type used for event callbacks.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] event Pointer to the event.
  *
  * @since 1.0
@@ -293,7 +293,7 @@ typedef void(PAL_CALL* PalEventCallback)(
  * @typedef PalPushFn
  * @brief Function pointer type used for pushing events into event queues.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] event Pointer to the event to push.
  *
  * @since 1.0
@@ -311,7 +311,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * If the queue is not empty and the event was retrieved, this should return
  * `PAL_TRUE`.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[out] event Pointer to the PalEvent to recieve the event.
  *
  * @since 1.0
@@ -337,9 +337,9 @@ struct PalEvent {
  * @since 1.0
  */
 typedef struct {
-    PalPushFn push; /**< Push function pointer. Must not be nullptr.*/
-    PalPollFn poll; /**< Poll function pointer. Must not be nullptr.*/
-    void* userData; /**< Optional user-provided data. Can be nullptr.*/
+    PalPushFn push; /**< Push function pointer. Must not be `nullptr`.*/
+    PalPollFn poll; /**< Poll function pointer. Must not be `nullptr`.*/
+    void* userData; /**< Optional user-provided data. Can be `nullptr`.*/
 } PalEventQueue;
 
 /**
@@ -351,10 +351,10 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    const PalAllocator* allocator; /**< Set to nullptr to use default.*/
-    PalEventQueue* queue;          /**< Set to nullptr to use default.*/
-    PalEventCallback callback;     /**< Can be nullptr.*/
-    void* userData;                /**< Optional user-provided data. Can be nullptr.*/
+    const PalAllocator* allocator; /**< Set to `nullptr` to use default.*/
+    PalEventQueue* queue;          /**< Set to `nullptr` to use default.*/
+    PalEventCallback callback;     /**< Can be `nullptr`.*/
+    void* userData;                /**< Optional user-provided data. Can be `nullptr`.*/
 } PalEventDriverCreateInfo;
 
 /**
@@ -366,9 +366,9 @@ typedef struct {
  * longer needed.
  *
  * @param[in] info Pointer to a PalEventDriverCreateInfo struct that specifies
- * parameters. Must not be nullptr.
+ * parameters. Must not be `nullptr`.
  * @param[out] outEventDriver Pointer to a PalEventDriver to recieve the created
- * event driver. Must not be nullptr.
+ * event driver. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -387,7 +387,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
 /**
  * @brief Destroy the provided event driver.
  *
- * If the provided event driver is invalid or nullptr, this function returns
+ * If the provided event driver is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] eventDriver Pointer to the event driver to destroy.
@@ -404,7 +404,7 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @brief Set the dispatch mode for an event type with the provided event
  * driver.
  *
- * If the provided event driver is invalid or nullptr, this function returns
+ * If the provided event driver is invalid or `nullptr`, this function returns
  * silently.
  *
  * If the dispatch mode is `PAL_DISPATCH_MODE_POLL`, the event will be dispatched
@@ -451,7 +451,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * @brief Push an event into the queue or callback function of the provided
  * event driver.
  *
- * If the provided event driver is invalid or nullptr, this function returns
+ * If the provided event driver is invalid or `nullptr`, this function returns
  * silently.
  *
  * If the dispatch mode for the event is `PAL_DISPATCH_MODE_POLL`, the event will be
@@ -479,7 +479,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @brief Retrieve the next available event from the queue of the provided event
  * driver.
  *
- * If the provided event driver is invalid or nullptr, this function returns
+ * If the provided event driver is invalid or `nullptr`, this function returns
  * silently.
  *
  * This function retrieves the next pending event from the queue of the

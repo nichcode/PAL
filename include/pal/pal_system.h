@@ -155,7 +155,7 @@ PAL_API PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 /**
  * @brief Get CPU information.
  *
- * @param[in] allocator Optional user provided allocator. Set to nullptr to
+ * @param[in] allocator Optional user provided allocator. Set to `nullptr` to
  * use default.
  * @param[out] info Pointer to a PalCPUInfo to receive the CPU info.
  *

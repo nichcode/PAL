@@ -565,9 +565,9 @@ typedef struct {
  */
 typedef struct {
     const char* title;                  /**< Title in UTF-8 encoding.*/
-    PalMonitor* monitor;                /**< Set to nullptr to use primary monitor.*/
-    const char* appName;                /**< If nullptr, `PAL` will be used.*/
-    const char* instanceName;           /**< If nullptr, `title` will be used.*/
+    PalMonitor* monitor;                /**< Set to `nullptr` to use primary monitor.*/
+    const char* appName;                /**< If `nullptr`, `PAL` will be used.*/
+    const char* instanceName;           /**< If `nullptr`, `title` will be used.*/
     PalFBConfigBackend fbConfigBackend; /**< Will be used if `fbConfigIndex` is not 0.*/
     int32_t fbConfigIndex;              /**< Set to 0 to create the window with no pixel format.*/
     uint32_t width;                     /**< Width in pixels.*/
@@ -588,16 +588,16 @@ typedef struct {
  * until the video system is shutdown. The event driver must be valid to recieve
  * video events.
  *
- * If `preferredInstance` is nullptr, the video system creates one and control its lifetime.
+ * If `preferredInstance` is `nullptr`, the video system creates one and control its lifetime.
  * The provided instance will not be freed by the video system.
  * `Linux`: This is the Display associated with the connection.
  * `Windows`: This is the HINSTANCE of the process.
  *
- * @param[in] allocator Optional user-provided allocator. Set to nullptr to use
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use
  * default.
  * @param[in] eventDriver Optional user-provided event driver. This is needed to
- * push video events. Set to nullptr to use default.
- * @param[in] preferredInstance User-provided instance (eg. HINSTANCE). Can be nullptr.
+ * push video events. Set to `nullptr` to use default.
+ * @param[in] preferredInstance User-provided instance (eg. HINSTANCE). Can be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -658,7 +658,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  *
  * The video system must be initialized before this call.
  *
- * Call this function first with PalMonitor array set to nullptr to get the
+ * Call this function first with PalMonitor array set to `nullptr` to get the
  * number of connected monitors. Allocate memory for the PalMonitor
  * array and passed in the count and the allocated array. If the count of the
  * array is less than the number of connected monitors, PAL will write upto that
@@ -734,7 +734,7 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  *
  * The video system must be initialized before this call.
  *
- * Call this function first with PalMonitorMode array set to nullptr to get the
+ * Call this function first with PalMonitorMode array set to `nullptr` to get the
  * number of supported monitor display modes. Allocate memory for the
  * PalMonitorMode array and passed in the count and the allocated array. If the
  * count of the array is less than the number of supported monitor display
@@ -867,9 +867,9 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * one requested.
  *
  * @param[in] info Pointer to a PalWindowCreateInfo struct that specifies
- * parameters. Must not be nullptr.
+ * parameters. Must not be `nullptr`.
  * @param[out] outWindow Pointer to a PalWindow to recieve the created
- * window. Must not be nullptr.
+ * window. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -895,7 +895,7 @@ PAL_API PalResult PAL_CALL palCreateWindow(
  * @brief Destroy the provided window.
  *
  * The video system must be initialized before this call.
- * If the provided window is invalid or nullptr, this function returns
+ * If the provided window is invalid or `nullptr`, this function returns
  * silently. This only destroys windows created by PAL.
  *
  * @param[in] window Pointer to the window to destroy.
@@ -1080,7 +1080,7 @@ PAL_API PalResult PAL_CALL palGetWindowMonitor(
  * The video system must be initialized before this call.
  * `PAL_VIDEO_FEATURE_WINDOW_GET_TITLE` must be supported.
  *
- * Set the buffer to nullptr to get the size of the window name in bytes.
+ * Set the buffer to `nullptr` to get the size of the window name in bytes.
  * If the size of the provided buffer is less than the actual size of window
  * title, PAL will write upto that limit.
  *
@@ -1088,7 +1088,7 @@ PAL_API PalResult PAL_CALL palGetWindowMonitor(
  * @param[in] bufferSize Size of the provided buffer in bytes.
  * @param[out] outSize The actual size of the window title in bytes.
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the title.
- * Can be nullptr.
+ * Can be `nullptr`.
  *
  * Thread safety: Must only be called from the main thread.
  *
@@ -1108,8 +1108,8 @@ PAL_API PalResult PAL_CALL palGetWindowTitle(
  * `PAL_VIDEO_FEATURE_WINDOW_GET_POS` must be supported.
  *
  * @param[in] window Pointer to the window.
- * @param[out] x Pointer to recieve the window x position. Can be nullptr.
- * @param[out] y Pointer to recieve the window y position. Can be nullptr.
+ * @param[out] x Pointer to recieve the window x position. Can be `nullptr`.
+ * @param[out] y Pointer to recieve the window y position. Can be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1131,8 +1131,8 @@ PAL_API PalResult PAL_CALL palGetWindowPos(
  * `PAL_VIDEO_FEATURE_WINDOW_GET_SIZE` must be supported.
  *
  * @param[in] window Pointer to the window.
- * @param[out] width Pointer to recieve the width. Can be nullptr.
- * @param[out] height Pointer to recieve the height. Can be nullptr.
+ * @param[out] width Pointer to recieve the width. Can be `nullptr`.
+ * @param[out] height Pointer to recieve the height. Can be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1177,7 +1177,7 @@ PAL_API PalResult PAL_CALL palGetWindowState(
  * palUpdateVideo() is called. The array must be index with PalKeycodes and
  * not exceed `PAL_KEYCODE_COUNT`.
  *
- * @return A pointer to the keycodes array on success or nullptr on failure.
+ * @return A pointer to the keycodes array on success or `nullptr` on failure.
  *
  * Thread safety: Thread-safe.
  *
@@ -1195,7 +1195,7 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  * palUpdateVideo() is called. The array must be index with PalScancodes and
  * not exceed PAL_SCANCODE_COUNT.
  *
- * @return A pointer to the scancodes array on success or nullptr on failure.
+ * @return A pointer to the scancodes array on success or `nullptr` on failure.
  *
  * Thread safety: Thread-safe.
  *
@@ -1212,7 +1212,7 @@ PAL_API const PalBool* PAL_CALL palGetScancodeState();
  * palUpdateVideo() is called. The array must be index with PalMouseButton and
  * not exceed `PAL_MOUSE_BUTTON_COUNT`.
  *
- * @return A pointer to the mouse button array on success or nullptr on failure.
+ * @return A pointer to the mouse button array on success or `nullptr` on failure.
  *
  * @Thread safety: Thread-safe.
  *
@@ -1227,9 +1227,9 @@ PAL_API const PalBool* PAL_CALL palGetMouseState();
  * The relative movement will be updated when palUpdateVideo() is called.
  *
  * @param[in] dx Pointer to recieve the mouse relative movement x. Can be
- * nullptr.
+ * `nullptr`.
  * @param[in] dy Pointer to recieve the mouse relative movement y. Can be
- * nullptr.
+ * `nullptr`.
  *
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
@@ -1246,8 +1246,8 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * The video system must be initialized before this call.
  * The wheel delta will be updated when palUpdateVideo() is called.
  *
- * @param[in] dx Pointer to recieve the mouse wheel delta x. Can be nullptr.
- * @param[in] dy Pointer to recieve the mouse wheel delta y. Can be nullptr.
+ * @param[in] dx Pointer to recieve the mouse wheel delta x. Can be `nullptr`.
+ * @param[in] dy Pointer to recieve the mouse wheel delta y. Can be `nullptr`.
  *
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
@@ -1280,7 +1280,7 @@ PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
  * The video system must be initialized before this call.
  * `PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS` must be supported.
  *
- * @return The current input-focused window on success or nullptr on
+ * @return The current input-focused window on success or `nullptr` on
  * failure.
  *
  * Thread safety: Must only be called from the main thread.
@@ -1448,9 +1448,9 @@ PAL_API PalResult PAL_CALL palSetFocusWindow(PalWindow* window);
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] info Pointer to a PalIconCreateInfo struct that specifies
- * parameters. Must not be nullptr.
+ * parameters. Must not be `nullptr`.
  * @param[out] outIcon Pointer to a PalIcon to recieve the created
- * icon. Must not be nullptr.
+ * icon. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1469,7 +1469,7 @@ PAL_API PalResult PAL_CALL palCreateIcon(
  *
  * The video system must be initialized before this call.
  *
- * If the provided icon is invalid or nullptr, this function returns
+ * If the provided icon is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] icon Pointer to the icon to destroy.
@@ -1488,7 +1488,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported.
  *
  * @param[in] window Pointer to the window.
- * @param[in] icon Pointer to the icon. Set to nullptr to revert.
+ * @param[in] icon Pointer to the icon. Set to `nullptr` to revert.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1507,9 +1507,9 @@ PAL_API PalResult PAL_CALL palSetWindowIcon(
  * The video system must be initialized before this call.
  *
  * @param[in] info Pointer to a PalCursorCreateInfo struct that specifies
- * parameters. Must not be nullptr.
+ * parameters. Must not be `nullptr`.
  * @param[out] outCursor Pointer to a PalCursor to recieve the created
- * cursor. Must not be nullptr.
+ * cursor. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1528,9 +1528,9 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  *
  * The video system must be initialized before this call.
  *
- * @param[in] type The system cursor type to create. Must not be nullptr.
+ * @param[in] type The system cursor type to create. Must not be `nullptr`.
  * @param[out] outCursor Pointer to a PalCursor to recieve the created
- * cursor. Must not be nullptr.
+ * cursor. Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1549,7 +1549,7 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  *
  * The video system must be initialized before this call.
  *
- * If the provided icon is invalid or nullptr, this function returns
+ * If the provided icon is invalid or `nullptr`, this function returns
  * silently.
  *
  * @param[in] cursor Pointer to the cursor to destroy.
@@ -1611,9 +1611,9 @@ PAL_API PalResult PAL_CALL palClipCursor(
  *
  * @param[in] window Pointer to the window.
  * @param[out] x Pointer to recieve the x position. Can be
- * nullptr.
+ * `nullptr`.
  * @param[out] y Pointer to recieve the y position. Can be
- * nullptr.
+ * `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1656,7 +1656,7 @@ PAL_API PalResult PAL_CALL palSetCursorPos(
  * The video system must be initialized before this call.
  *
  * @param[in] window Pointer to the window.
- * @param[in] cursor Pointer to the cursor. Set to nullptr to revert.
+ * @param[in] cursor Pointer to the cursor. Set to `nullptr` to revert.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1681,7 +1681,7 @@ PAL_API PalResult PAL_CALL palSetWindowCursor(
 
  * On Windows: This is the HINSTANCE of the process.
  *
- * @return The instance or display on success or nullptr on failure.
+ * @return The instance or display on success or `nullptr` on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -1715,7 +1715,7 @@ PAL_API void* PAL_CALL palGetInstance();
  *
  * @param[in] windowHandle Pointer to the foreign or native window.
  * @param[out] outWindow Pointer to a PalWindow to recieve the attached window.
- * Must not be nullptr.
+ * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1749,9 +1749,9 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * Give back the PalWindow returned at palAttachWindow()
  * and get back your native window.
  *
- * @param[in] window Pointer to the PalWindow to detach. Must not be nullptr.
+ * @param[in] window Pointer to the PalWindow to detach. Must not be `nullptr`.
  * @param[out] outWindowHandle Pointer to recieve the native window. Can be
- * nullptr.
+ * `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.

@@ -138,11 +138,11 @@ typedef uint16_t PalResultSource;
  * @typedef PalAllocateFn
  * @brief Function pointer type used for memory allocations.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] size Number of bytes to allocate. Must not be 0.
  * @param[in] alignment Must be power of two. Set to 0 to use default.
  *
- * @return Pointer to the allocated memory on success or nullptr on failure.
+ * @return Pointer to the allocated memory on success or `nullptr` on failure.
  *
  * @since 1.0
  * @sa PalFreeFn
@@ -156,9 +156,9 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @typedef PalFreeFn
  * @brief Function pointer type used for memory deallocations.
  *
- * @param[in] userData Optional pointer to user data. Can be nullptr.
+ * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must return safely if
- * pointer is nullptr.
+ * pointer is `nullptr`.
  *
  * @since 1.0
  * @sa PalAllocateFn
@@ -171,7 +171,7 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @typedef PalLogCallback
  * @brief Function pointer type used for log callbacks.
  *
- * @param userData Optional pointer to user data passed from ::PalLogger. Can be nullptr.
+ * @param userData Optional pointer to user data passed from ::PalLogger. Can be `nullptr`.
  * @param msg Null-terminated UTF-8 log message.
  *
  * @since 1.0
@@ -204,9 +204,9 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalAllocateFn allocate; /**< Allocate function pointer. Must not be nullptr.*/
-    PalFreeFn free;         /**< Free function pointer. Must not be nullptr.*/
-    void* userData;         /**< Optional user-provided data. Can be nullptr.*/
+    PalAllocateFn allocate; /**< Allocate function pointer. Must not be `nullptr`.*/
+    PalFreeFn free;         /**< Free function pointer. Must not be `nullptr`.*/
+    void* userData;         /**< Optional user-provided data. Can be `nullptr`.*/
 } PalAllocator;
 
 /**
@@ -220,8 +220,8 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalLogCallback callback; /**< Callback function pointer. Must not be nullptr.*/
-    void* userData;          /** Optional user-provided data. Can be nullptr.*/
+    PalLogCallback callback; /**< Callback function pointer. Must not be `nullptr`.*/
+    void* userData;          /** Optional user-provided data. Can be `nullptr`.*/
 } PalLogger;
 
 /**
@@ -269,11 +269,11 @@ PAL_API const char* PAL_CALL palGetVersionString();
 /**
  * Allocate memory using a custom or default allocator.
  *
- * @param allocator The allocator to use. Set to nullptr to use default.
+ * @param allocator The allocator to use. Set to `nullptr` to use default.
  * @param size Number of bytes to allocate.
  * @param alignment Alignment in bytes. Must be a power of two. Set to 0 to use default.
  *
- * @return Pointer to allocated memory on success, or nullptr on failure.
+ * @return Pointer to allocated memory on success, or `nullptr` on failure.
  *
  * Thread safety: Thread safe if the provided allocator is thread safe. The default allocator
  * is thread safe.
@@ -289,9 +289,9 @@ PAL_API void* PAL_CALL palAllocate(
 /**
  * Free memory allocated by palAllocate.
  *
- * @param allocator The allocator used to allocate the memory. Set to nullptr to
+ * @param allocator The allocator used to allocate the memory. Set to `nullptr` to
  * use default.
- * @param ptr Pointer to memory to free. If nullptr, the function returns
+ * @param ptr Pointer to memory to free. If `nullptr`, the function returns
  * silently.
  *
  * Thread safety: Thread safe if the provided allocator is thread
@@ -307,7 +307,7 @@ PAL_API void PAL_CALL palFree(
 /**
  * Log a formatted message.
  *
- * @param logger Logger instance. Set to nullptr to use default logger.
+ * @param logger Logger instance. Set to `nullptr` to use default logger.
  * @param fmt printf-style format string.
  * @param ... Arguments for the format string.
  *
