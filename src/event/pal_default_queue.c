@@ -8,8 +8,8 @@
 #include "pal_default_queue.h"
 
 typedef struct {
-    uint8_t head;
-    uint8_t tail;
+    uint32_t head;
+    uint32_t tail;
     PalEvent data[MAX_EVENTS];
 } QueueData;
 

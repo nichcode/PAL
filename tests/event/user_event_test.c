@@ -38,7 +38,7 @@ PalBool userEventTest()
         return PAL_FALSE;
     }
 
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_USER, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_USER, PAL_DISPATCH_MODE_POLL);
 
     // create and set the frequency and start time for time related calculations
     MyTimer timer;
@@ -53,7 +53,7 @@ PalBool userEventTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_USER: {
+                case PAL_EVENT_TYPE_USER: {
                     // a user event. USe another switch to check which event
                     // using the user Id
                     switch (event.userId) {
@@ -84,7 +84,7 @@ PalBool userEventTest()
         if (timePassed > 5.0) {
             PalEvent event = {0};
             event.userId = USER_PRINT_EVENT_ID;
-            event.type = PAL_EVENT_USER;
+            event.type = PAL_EVENT_TYPE_USER;
             palPushEvent(eventDriver, &event);
         }
 
@@ -92,7 +92,7 @@ PalBool userEventTest()
         if (timePassed > 10.0) {
             PalEvent event = {0};
             event.userId = USER_CLOSE_EVENT_ID;
-            event.type = PAL_EVENT_USER;
+            event.type = PAL_EVENT_TYPE_USER;
             palPushEvent(eventDriver, &event);
         }
     }

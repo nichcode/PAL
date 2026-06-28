@@ -42,12 +42,12 @@ static inline PalBool eventDispatchTest(PalBool poll)
     }
 
     // set dispatch mode
-    PalDispatchMode mode = PAL_DISPATCH_CALLBACK;
+    PalDispatchMode mode = PAL_DISPATCH_MODE_CALLBACK;
     if (poll) {
-        mode = PAL_DISPATCH_POLL;
+        mode = PAL_DISPATCH_MODE_POLL;
     }
 
-    for (uint32_t e = 0; e < PAL_EVENT_MAX; e++) {
+    for (uint32_t e = 0; e < PAL_EVENT_TYPE_COUNT; e++) {
         palSetEventDispatchMode(driver, e, mode);
     }
 
@@ -55,7 +55,7 @@ static inline PalBool eventDispatchTest(PalBool poll)
     while (counter < MAX_EVENTS) {
         // push all types of event up to max
         for (int32_t i = 0; i < MAX_EVENTS; i++) {
-            PalEventType type = i % PAL_EVENT_MAX;
+            PalEventType type = i % PAL_EVENT_TYPE_COUNT;
             PalEvent event = {0};
             event.type = type;
             palPushEvent(driver, &event);

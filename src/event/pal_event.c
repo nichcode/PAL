@@ -6,38 +6,7 @@
  */
 
 #include "pal_default_queue.h"
-#include "pal_shared.h"
 #include <string.h>
-
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif // WIN32_LEAN_AND_MEAN
-
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif // NOMINMAX
-
-// set unicode
-#ifndef UNICODE
-#define UNICODE
-#endif // UNICODE
-
-#include <windows.h>
-#define PLATFORM_SOURCE PAL_RESULT_SOURCE_WINDOWS
-#elif defined(__linux__)
-#include <errno.h>
-#define PLATFORM_SOURCE PAL_RESULT_SOURCE_LINUX
-#endif // _WIN32
-
-static inline uint32_t getLastErrorCode()
-{
-#ifdef _WIN32
-    return (uint32_t)GetLastError();
-#elif defined(__linux__)
-    return (uint32_t)errno;
-#endif // _WIN32
-}
 
 struct PalEventDriver {
     PalBool freeQueue;
@@ -53,28 +22,19 @@ PalResult PAL_CALL palCreateEventDriver(
     PalEventDriver** outEventDriver)
 {
     if (!info || !outEventDriver) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PLATFORM_SOURCE, 
-            getLastErrorCode());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (info->allocator) {
         if (!info->allocator->allocate && !info->allocator->free) {
-            return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PLATFORM_SOURCE, 
-            getLastErrorCode());
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
 
     PalEventDriver* driver = nullptr;
     driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
     if (!driver) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PLATFORM_SOURCE, 
-            getLastErrorCode());
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     memset(driver, 0, sizeof(PalEventDriver));
@@ -92,10 +52,7 @@ PalResult PAL_CALL palCreateEventDriver(
         PalEventQueue* queue = createDefaultEventQueue(info->allocator);
         if (!queue) {
             palFree(info->allocator, driver);
-            return palMakeResult(
-                PAL_RESULT_OUT_OF_MEMORY, 
-                PLATFORM_SOURCE, 
-                getLastErrorCode());
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
         }
 
         driver->queue = queue;
@@ -136,7 +93,7 @@ PalDispatchMode PAL_CALL palGetEventDispatchMode(
     PalEventType type)
 {
     if (!eventDriver) {
-        return PAL_DISPATCH_NONE;
+        return PAL_DISPATCH_MODE_NONE;
     }
     return eventDriver->modes[type];
 }
@@ -151,14 +108,14 @@ void PAL_CALL palPushEvent(
 
     // get the event mode
     PalDispatchMode mode = eventDriver->modes[event->type];
-    if (mode == PAL_DISPATCH_CALLBACK) {
+    if (mode == PAL_DISPATCH_MODE_CALLBACK) {
         if (eventDriver->callback) {
             eventDriver->callback(eventDriver->userData, event);
         }
         return; // we have dispatched the event
     }
 
-    if (mode == PAL_DISPATCH_POLL) {
+    if (mode == PAL_DISPATCH_MODE_POLL) {
         eventDriver->queue->push(eventDriver->queue, event);
     }
 }

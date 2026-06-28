@@ -10,19 +10,19 @@
 
 static void eventDump(PalBool verbose)
 {
-    uint32_t xSize = 32;
+    uint32_t xSize = 24;
     uint32_t xAlign = 8;
     uint32_t xOffset1 = 0;
     uint32_t xOffset2 = 8;
     uint32_t xOffset3 = 16;
-    uint32_t xOffset4 = 24;
+    uint32_t xOffset4 = 20;
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEvent);
     uint32_t yAlign = PAL_ALIGNOF(PalEvent);
-    uint32_t yOffset1 = offsetof(PalEvent, userId);
-    uint32_t yOffset2 = offsetof(PalEvent, data);
-    uint32_t yOffset3 = offsetof(PalEvent, data2);
+    uint32_t yOffset1 = offsetof(PalEvent, data);
+    uint32_t yOffset2 = offsetof(PalEvent, data2);
+    uint32_t yOffset3 = offsetof(PalEvent, userId);
     uint32_t yOffset4 = offsetof(PalEvent, type);
     uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
@@ -48,9 +48,9 @@ static void eventDump(PalBool verbose)
         palLog(nullptr, "size          %u          %u", xSize, ySize);
         palLog(nullptr, "align         %u           %u", xAlign, yAlign);
         palLog(nullptr, "padding       %u           %u", xPadding, yPadding);
-        palLog(nullptr, "userId @      %u           %u", xOffset1, yOffset1);
-        palLog(nullptr, "data @        %u           %u", xOffset2, yOffset2);
-        palLog(nullptr, "data2 @       %u          %u", xOffset3, yOffset3);
+        palLog(nullptr, "data @        %u           %u", xOffset1, yOffset1);
+        palLog(nullptr, "data2 @       %u           %u", xOffset2, yOffset2);
+        palLog(nullptr, "userId @      %u          %u", xOffset3, yOffset3);
         palLog(nullptr, "type @        %u          %u", xOffset4, yOffset4);
         palLog(nullptr, "===========================================");
     }
