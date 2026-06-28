@@ -9,7 +9,7 @@ PAL_BUILD_TEST_APPLICATION = true
 PAL_BUILD_ABI_DUMP = true
 
 -- build system module
-PAL_BUILD_SYSTEM_MODULE = false
+PAL_BUILD_SYSTEM_MODULE = true
 
 -- build thread module
 PAL_BUILD_THREAD_MODULE = false

@@ -6,7 +6,6 @@
 
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
-#include "pal_shared.h"
 #include "pal/pal_system.h"
 #include <errno.h>
 #include <stdio.h>
@@ -17,31 +16,25 @@
 PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {
     if (!info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    info->type = PAL_PLATFORM_LINUX;
+    info->type = PAL_PLATFORM_TYPE_LINUX;
     const char* session = getenv("XDG_SESSION_TYPE");
     if (session) {
         if (strcmp(session, "wayland") == 0) {
-            info->apiType = PAL_PLATFORM_API_WAYLAND;
+            info->apiType = PAL_PLATFORM_API_TYPE_WAYLAND;
         } else {
-            info->apiType = PAL_PLATFORM_API_X11;
+            info->apiType = PAL_PLATFORM_API_TYPE_X11;
         }
     } else {
         // default
-        info->apiType = PAL_PLATFORM_API_X11;
+        info->apiType = PAL_PLATFORM_API_TYPE_X11;
     }
 
     FILE* file = fopen("/etc/os-release", "r");
     if (!file) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     char line[256];
@@ -69,10 +62,7 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     struct statvfs stats;
     if (statvfs("/", &stats) != 0) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     uint64_t size = (stats.f_blocks * stats.f_frsize) / (1024 * 1024 * 1024);

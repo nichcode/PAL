@@ -5,19 +5,19 @@
 static inline const char* platformToString(PalPlatformType type)
 {
     switch (type) {
-        case PAL_PLATFORM_WINDOWS:
+        case PAL_PLATFORM_TYPE_WINDOWS:
             return "Windows";
 
-        case PAL_PLATFORM_LINUX:
+        case PAL_PLATFORM_TYPE_LINUX:
             return "Linux";
 
-        case PAL_PLATFORM_MACOS:
+        case PAL_PLATFORM_TYPE_MACOS:
             return "MacOs";
 
-        case PAL_PLATFORM_ANDROID:
+        case PAL_PLATFORM_TYPE_ANDROID:
             return "Android";
 
-        case PAL_PLATFORM_IOS:
+        case PAL_PLATFORM_TYPE_IOS:
             return "Ios";
     }
     return nullptr;
@@ -26,13 +26,13 @@ static inline const char* platformToString(PalPlatformType type)
 static inline const char* platformApiToString(PalPlatformApiType type)
 {
     switch (type) {
-        case PAL_PLATFORM_API_WIN32:
+        case PAL_PLATFORM_API_TYPE_WIN32:
             return "Win32";
 
-        case PAL_PLATFORM_API_X11:
+        case PAL_PLATFORM_API_TYPE_X11:
             return "X11";
 
-        case PAL_PLATFORM_API_WAYLAND:
+        case PAL_PLATFORM_API_TYPE_WAYLAND:
             return "Wayland";
     }
     return nullptr;
