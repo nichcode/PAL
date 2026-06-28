@@ -5,11 +5,8 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_X11_BACKEND == 1
-
 #include "pal_x11.h"
-#include "pal_shared.h"
 
 PalResult xCreateIcon(
     const PalIconCreateInfo* info,
@@ -17,13 +14,9 @@ PalResult xCreateIcon(
 {
     uint64_t totalPixels = 2 + (uint64_t)(info->width * info->height);
     uint64_t totalBytes = sizeof(unsigned long) * totalPixels;
-
-    unsigned long* icon = palAllocate(s_Video.allocator, totalBytes, 0);
+    unsigned long* icon = palAllocate(s_X11.allocator, totalBytes, 0);
     if (!icon) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     // store width and height and populate data with icon pixels
@@ -53,7 +46,7 @@ PalResult xCreateIcon(
 void xDestroyIcon(PalIcon* icon)
 {
     if (icon) {
-        palFree(s_Video.allocator, icon);
+        palFree(s_X11.allocator, icon);
     }
 }
 
@@ -65,10 +58,7 @@ PalResult xSetWindowIcon(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&winData);
     if (!winData) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
@@ -88,4 +78,3 @@ PalResult xSetWindowIcon(
 }
 
 #endif // PAL_HAS_X11_BACKEND
-#endif // __linux__

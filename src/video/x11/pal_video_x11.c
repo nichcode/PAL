@@ -5,16 +5,40 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_X11_BACKEND == 1
-
 #include "pal_x11.h"
-#include "pal_shared.h"
 #include <dlfcn.h>
 #include <math.h>
+#include <errno.h>
+
+#define NULL_BUTTON_SERIAL 0xffffffffU
+
+typedef struct {
+    int32_t lastX;
+    int32_t lastY;
+    int32_t dx;
+    int32_t dy;
+    int32_t WheelX;
+    int32_t WheelY;
+    PalBool state[PAL_MOUSE_BUTTON_COUNT];
+} Mouse;
+
+typedef struct {
+    PalBool scancodeState[PAL_SCANCODE_COUNT];
+    PalBool keycodeState[PAL_KEYCODE_COUNT];
+    int scancodes[512];
+    int keycodes[256];
+} Keyboard;
 
 X11 s_X11 = {0};
 X11Atoms s_X11Atoms = {0};
+static Mouse s_Mouse = {0};
+static Keyboard s_Keyboard = {0};
+
+static void resetMonitorData()
+{
+    memset(s_X11.monitorData, 0, s_X11.maxMonitorData * sizeof(MonitorData));
+}
 
 RRMode findMode(
     XRRScreenResources* resources,
@@ -22,7 +46,6 @@ RRMode findMode(
 {
     for (int i = 0; i < resources->nmode; ++i) {
         XRRModeInfo* info = &resources->modes[i];
-
         double tmp = (double)info->hTotal * (double)info->vTotal;
         double rate = (double)info->dotClock / tmp;
 
@@ -142,7 +165,7 @@ static void checkFeatures()
     features |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
     features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
-    s_Video.features = features;
+    s_X11.features = features;
     s_X11.free(supportedAtoms);
 }
 
@@ -199,7 +222,7 @@ static void cacheMonitors()
             // get monitor data and update info
             PalMonitor* monitor = TO_PAL_HANDLE(PalMonitor, output);
             MonitorData* data = nullptr;
-            data = getFreeMonitorData();
+            data = xGetFreeMonitorData();
             if (!data) {
                 return;
             }
@@ -242,13 +265,13 @@ static int getWindowMonitorDPI(WindowData* data)
     int winX = data->x + data->w / 2;
     int winY = data->y + data->w / 2;
     // get the DPI from our cached monitor
-    for (int i = 0; i < s_Video.maxMonitorData; i++) {
-        if (!s_Video.monitorData->used) {
+    for (int i = 0; i < s_X11.maxMonitorData; i++) {
+        if (!s_X11.monitorData->used) {
             continue;
         }
 
         // we found a monitor, check the monitor bounds with the window
-        MonitorData* info = &s_Video.monitorData[i];
+        MonitorData* info = &s_X11.monitorData[i];
         if (winX >= info->x && winX < info->x + info->w && winY >= info->y &&
             winY < info->y + info->h) {
             // found monitor
@@ -289,6 +312,129 @@ void sendWMEvent(
         False,
         SubstructureNotifyMask | SubstructureRedirectMask,
         &e);
+}
+
+static void createScancodeTable()
+{
+    // Letters
+    s_Keyboard.scancodes[0x01E] = PAL_SCANCODE_A;
+    s_Keyboard.scancodes[0x030] = PAL_SCANCODE_B;
+    s_Keyboard.scancodes[0x02E] = PAL_SCANCODE_C;
+    s_Keyboard.scancodes[0x020] = PAL_SCANCODE_D;
+    s_Keyboard.scancodes[0x012] = PAL_SCANCODE_E;
+    s_Keyboard.scancodes[0x021] = PAL_SCANCODE_F;
+    s_Keyboard.scancodes[0x022] = PAL_SCANCODE_G;
+    s_Keyboard.scancodes[0x023] = PAL_SCANCODE_H;
+    s_Keyboard.scancodes[0x017] = PAL_SCANCODE_I;
+    s_Keyboard.scancodes[0x024] = PAL_SCANCODE_J;
+    s_Keyboard.scancodes[0x025] = PAL_SCANCODE_K;
+    s_Keyboard.scancodes[0x026] = PAL_SCANCODE_L;
+    s_Keyboard.scancodes[0x032] = PAL_SCANCODE_M;
+    s_Keyboard.scancodes[0x031] = PAL_SCANCODE_N;
+    s_Keyboard.scancodes[0x018] = PAL_SCANCODE_O;
+    s_Keyboard.scancodes[0x019] = PAL_SCANCODE_P;
+    s_Keyboard.scancodes[0x010] = PAL_SCANCODE_Q;
+    s_Keyboard.scancodes[0x013] = PAL_SCANCODE_R;
+    s_Keyboard.scancodes[0x01F] = PAL_SCANCODE_S;
+    s_Keyboard.scancodes[0x014] = PAL_SCANCODE_T;
+    s_Keyboard.scancodes[0x016] = PAL_SCANCODE_U;
+    s_Keyboard.scancodes[0x02F] = PAL_SCANCODE_V;
+    s_Keyboard.scancodes[0x011] = PAL_SCANCODE_W;
+    s_Keyboard.scancodes[0x02D] = PAL_SCANCODE_X;
+    s_Keyboard.scancodes[0x015] = PAL_SCANCODE_Y;
+    s_Keyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
+
+    // Numbers (top row)
+    s_Keyboard.scancodes[0x00B] = PAL_SCANCODE_0;
+    s_Keyboard.scancodes[0x002] = PAL_SCANCODE_1;
+    s_Keyboard.scancodes[0x003] = PAL_SCANCODE_2;
+    s_Keyboard.scancodes[0x004] = PAL_SCANCODE_3;
+    s_Keyboard.scancodes[0x005] = PAL_SCANCODE_4;
+    s_Keyboard.scancodes[0x006] = PAL_SCANCODE_5;
+    s_Keyboard.scancodes[0x007] = PAL_SCANCODE_6;
+    s_Keyboard.scancodes[0x008] = PAL_SCANCODE_7;
+    s_Keyboard.scancodes[0x009] = PAL_SCANCODE_8;
+    s_Keyboard.scancodes[0x00A] = PAL_SCANCODE_9;
+
+    // Function
+    s_Keyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
+    s_Keyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
+    s_Keyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
+    s_Keyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
+    s_Keyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
+    s_Keyboard.scancodes[0x040] = PAL_SCANCODE_F6;
+    s_Keyboard.scancodes[0x041] = PAL_SCANCODE_F7;
+    s_Keyboard.scancodes[0x042] = PAL_SCANCODE_F8;
+    s_Keyboard.scancodes[0x043] = PAL_SCANCODE_F9;
+    s_Keyboard.scancodes[0x044] = PAL_SCANCODE_F10;
+    s_Keyboard.scancodes[0x057] = PAL_SCANCODE_F11;
+    s_Keyboard.scancodes[0x058] = PAL_SCANCODE_F12;
+
+    // Control
+    s_Keyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
+    s_Keyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
+    s_Keyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
+    s_Keyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
+    s_Keyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
+    s_Keyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
+    s_Keyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
+    s_Keyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
+    s_Keyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
+    s_Keyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
+    s_Keyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
+    s_Keyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
+    s_Keyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
+    s_Keyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
+
+    // Arrows
+    s_Keyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
+    s_Keyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_UP;
+    s_Keyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
+
+    // Navigation
+    s_Keyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
+    s_Keyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_END;
+    s_Keyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
+    s_Keyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
+
+    // Keypad
+    s_Keyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
+    s_Keyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
+    s_Keyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
+    s_Keyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
+    s_Keyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
+    s_Keyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
+    s_Keyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
+    s_Keyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
+    s_Keyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
+    s_Keyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
+    s_Keyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
+    s_Keyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
+    s_Keyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
+    s_Keyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
+    s_Keyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
+    s_Keyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
+
+    // Misc
+    s_Keyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
+    s_Keyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
+    s_Keyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
+    s_Keyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
+    s_Keyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
+    s_Keyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
+    s_Keyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
+    s_Keyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
+    s_Keyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
+    s_Keyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
+    s_Keyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
+    s_Keyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
+    s_Keyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
+    s_Keyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
+    s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
 }
 
 static void createKeycodeTable()
@@ -340,27 +486,116 @@ static void createKeycodeTable()
     s_Keyboard.keycodes[XK_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-PalResult xInitVideo()
+MonitorData* xGetFreeMonitorData()
 {
-    // load X11 library
+    for (int i = 0; i < s_X11.maxMonitorData; ++i) {
+        if (!s_X11.monitorData[i].used) {
+            s_X11.monitorData[i].used = PAL_TRUE;
+            return &s_X11.monitorData[i];
+        }
+    }
+
+    // resize the data array
+    // this will almost not reach here since most setups are 1-4 monitors
+    MonitorData* data = nullptr;
+    int count = s_X11.maxMonitorData * 2; // double the size
+    int freeIndex = s_X11.maxMonitorData + 1;
+    data = palAllocate(s_X11.allocator, sizeof(MonitorData) * count, 0);
+    if (data) {
+        memcpy(
+            data,
+            s_X11.monitorData,
+            s_X11.maxMonitorData * sizeof(MonitorData));
+
+        palFree(s_X11.allocator, s_X11.monitorData);
+        s_X11.monitorData = data;
+        s_X11.maxWindowData = count;
+
+        s_X11.monitorData[freeIndex].used = PAL_TRUE;
+        return &s_X11.monitorData[freeIndex];
+    }
+    return nullptr;
+}
+
+MonitorData* xFindMonitorData(PalMonitor* monitor)
+{
+    for (int i = 0; i < s_X11.maxMonitorData; ++i) {
+        if (s_X11.monitorData[i].used &&
+            s_X11.monitorData[i].monitor == monitor) {
+            return &s_X11.monitorData[i];
+        }
+    }
+    return nullptr;
+}
+
+void xFreeMonitorData(PalMonitor* monitor)
+{
+    for (int i = 0; i < s_X11.maxMonitorData; ++i) {
+        if (s_X11.monitorData[i].used &&
+            s_X11.monitorData[i].monitor == monitor) {
+            s_X11.monitorData[i].used = PAL_FALSE;
+        }
+    }
+}
+
+WindowData* xGetFreeWindowData()
+{
+    for (int i = 0; i < s_X11.maxWindowData; ++i) {
+        if (!s_X11.windowData[i].used) {
+            s_X11.windowData[i].used = PAL_TRUE;
+            return &s_X11.windowData[i];
+        }
+    }
+
+    // resize the data array
+    // It is rare for a user to create and manage
+    // 32 windows at the same time
+    WindowData* data = nullptr;
+    int count = s_X11.maxWindowData * 2; // double the size
+    int freeIndex = s_X11.maxWindowData + 1;
+    data = palAllocate(s_X11.allocator, sizeof(WindowData) * count, 0);
+    if (data) {
+        memcpy(
+            data,
+            s_X11.windowData,
+            s_X11.maxWindowData * sizeof(WindowData));
+
+        palFree(s_X11.allocator, s_X11.windowData);
+        s_X11.windowData = data;
+        s_X11.maxWindowData = count;
+
+        s_X11.windowData[freeIndex].used = PAL_TRUE;
+        return &s_X11.windowData[freeIndex];
+    }
+    return nullptr;
+}
+
+WindowData* xFindWindowData(PalWindow* window)
+{
+    for (int i = 0; i < s_X11.maxWindowData; ++i) {
+        if (s_X11.windowData[i].used &&
+            s_X11.windowData[i].window == window) {
+            return &s_X11.windowData[i];
+        }
+    }
+    return nullptr;
+}
+
+PalResult xInitVideo(
+    const PalAllocator* allocator, 
+    PalEventDriver* eventDriver, 
+    void* preferredInstance)
+{
+    // load X11 dependencies
     s_X11.handle = dlopen("libX11.so", RTLD_LAZY);
-    if (!s_X11.handle) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    // libXCursor is needed
     s_X11.libCursor = dlopen("libXcursor.so", RTLD_LAZY);
-    if (!s_X11.libCursor) {
+    if (!s_X11.handle || !s_X11.libCursor) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_POSIX, 
             errno);
     }
 
-    // Xrandr is needed
     s_X11.xrandr = dlopen("libXrandr.so.2", RTLD_LAZY);
     if (!s_X11.xrandr) {
         s_X11.xrandr = dlopen("libXrandr.so", RTLD_LAZY);
@@ -667,30 +902,31 @@ PalResult xInitVideo()
         "Xutf8LookupString");
     // clang-format on
 
+    s_X11.maxMonitorData = 16; // initial size
+    s_X11.maxWindowData = 32;  // initial size
+    s_X11.windowData = palAllocate(s_X11.allocator, sizeof(WindowData) * s_X11.maxWindowData, 0);
+    s_X11.monitorData = palAllocate(s_X11.allocator,sizeof(MonitorData) * s_X11.maxMonitorData, 0);
+    if (!s_X11.monitorData || !s_X11.windowData) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
     // X11 server
-    if (s_Video.display) {
-        s_X11.display = (Display*)s_Video.display;
+    if (preferredInstance) {
+        s_X11.display = (Display*)preferredInstance;
 
     } else {
         s_X11.display = s_X11.openDisplay(nullptr);
-        s_Video.display = nullptr;
-    }
-
-    if (!s_X11.display) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        if (!s_X11.display) {
+            return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        }
     }
 
     s_X11.root = DefaultRootWindow(s_X11.display);
     s_X11.screen = DefaultScreen(s_X11.display);
-
     checkFeatures();
 
     // subscribe for monitor events
     s_X11.selectRRInput(s_X11.display, s_X11.root, RRScreenChangeNotifyMask | RRNotify);
-
     int eventBase, errorBase = 0;
     s_X11.queryRRExtension(s_X11.display, &eventBase, &errorBase);
     s_X11.rrEventBase = eventBase;
@@ -701,9 +937,6 @@ PalResult xInitVideo()
 
     s_X11.monitorCount = 0;
     cacheMonitors();
-
-    // since X11 supports both EGL and GLX
-    // we try to load them and resolve the needed functions
 
     // we load GLX
     s_X11.glxHandle = dlopen("libGL.so.1", RTLD_LAZY);
@@ -716,7 +949,24 @@ PalResult xInitVideo()
             (GLXGetVisualFromFBConfigFn)load("glXGetVisualFromFBConfig");
     }
 
+    // load EGL
+    s_Egl.handle = dlopen("libEGL.so", RTLD_LAZY);
+    if (s_Egl.handle) {
+        eglGetProcAddressFn load = nullptr;
+        load = (eglGetProcAddressFn)dlsym(s_Egl.handle, "eglGetProcAddress");
+
+        s_Egl.eglInitialize = (eglInitializeFn)load("eglInitialize");
+        s_Egl.eglTerminate = (eglTerminateFn)load("eglTerminate");
+        s_Egl.eglGetDisplay = (eglGetDisplayFn)load("eglGetDisplay");
+        s_Egl.eglChooseConfig = (eglChooseConfigFn)load("eglChooseConfig");
+        s_Egl.eglGetError = (eglGetErrorFn)load("eglGetError");
+        s_Egl.eglBindAPI = (eglBindAPIFn)load("eglBindAPI");
+        s_Egl.eglGetConfigs = (eglGetConfigsFn)load("eglGetConfigs");
+        s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
+    }
+
     createKeycodeTable();
+    createScancodeTable();
 
     // disable auto key repeats
     int supported;
@@ -726,30 +976,34 @@ PalResult xInitVideo()
     s_X11.setLocaleModifiers("");
     s_X11.im = s_X11.openIM(s_X11.display, nullptr, nullptr, nullptr);
     if (s_X11.im == None) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    s_Video.display = (void*)s_X11.display;
+    s_X11.allocator = allocator;
+    s_X11.eventDriver = eventDriver;
     return PAL_RESULT_SUCCESS;
 }
 
 void xShutdownVideo()
 {
     s_X11.closeIM(s_X11.im);
-    if (!s_Video.display) {
+    if (!s_X11.display) {
         // opened by PAL
         s_X11.closeDisplay(s_X11.display);
 
         dlclose(s_X11.handle);
         dlclose(s_X11.xrandr);
         dlclose(s_X11.libCursor);
+    }
 
-        if (s_X11.glxHandle) {
-            dlclose(s_X11.glxHandle);
-        }
+    palFree(s_X11.allocator, s_X11.windowData);
+    palFree(s_X11.allocator, s_X11.monitorData);
+    if (s_Egl.handle) {
+        dlclose(s_Egl.handle);
+    }
+
+    if (s_X11.glxHandle) {
+        dlclose(s_X11.glxHandle);
     }
     
     memset(&s_X11, 0, sizeof(X11));
@@ -759,7 +1013,7 @@ void xShutdownVideo()
 void xUpdateVideo()
 {
     XEvent event;
-    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
     while (s_X11.pending(s_X11.display)) {
         s_X11.nextEvent(s_X11.display, &event);
 
@@ -777,11 +1031,11 @@ void xUpdateVideo()
                 // check for window close
                 Atom windowClose = event.xclient.data.l[0];
                 if (windowClose == s_X11Atoms.WM_DELETE_WINDOW) {
-                    if (s_Video.eventDriver) {
-                        PalEventDriver* driver = s_Video.eventDriver;
-                        PalEventType type = PAL_EVENT_WINDOW_CLOSE;
+                    if (s_X11.eventDriver) {
+                        PalEventDriver* driver = s_X11.eventDriver;
+                        PalEventType type = PAL_EVENT_TYPE_WINDOW_CLOSE;
                         mode = palGetEventDispatchMode(driver, type);
-                        if (mode != PAL_DISPATCH_NONE) {
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
                             PalEvent event = {0};
                             event.type = type;
                             event.data2 = palPackPointer(window);
@@ -806,18 +1060,18 @@ void xUpdateVideo()
                 }
 
                 // real configure event
-                if (s_Video.eventDriver) {
+                if (s_X11.eventDriver) {
                     // check if its a resize event
                     if (data->w != event.xconfigure.width || data->h != event.xconfigure.height) {
                         data->w = event.xconfigure.width;
                         data->h = event.xconfigure.height;
 
                         // push a resize event
-                        PalEventDriver* driver = s_Video.eventDriver;
-                        PalEventType type = PAL_EVENT_WINDOW_SIZE;
+                        PalEventDriver* driver = s_X11.eventDriver;
+                        PalEventType type = PAL_EVENT_TYPE_WINDOW_SIZE;
                         mode = palGetEventDispatchMode(driver, type);
 
-                        if (mode != PAL_DISPATCH_NONE) {
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
                             PalEvent event = {0};
                             event.type = type;
                             event.data = palPackUint32(data->w, data->h);
@@ -841,11 +1095,11 @@ void xUpdateVideo()
                         data->y = event.xconfigure.y;
 
                         // push a move event
-                        PalEventDriver* driver = s_Video.eventDriver;
-                        PalEventType type = PAL_EVENT_WINDOW_MOVE;
+                        PalEventDriver* driver = s_X11.eventDriver;
+                        PalEventType type = PAL_EVENT_TYPE_WINDOW_MOVE;
                         mode = palGetEventDispatchMode(driver, type);
 
-                        if (mode != PAL_DISPATCH_NONE) {
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
                             PalEvent event = {0};
                             event.type = type;
                             event.data = palPackInt32(data->x, data->y);
@@ -864,10 +1118,10 @@ void xUpdateVideo()
                             data->dpi = monitorDPI;
 
                             // push a DPI event
-                            type = PAL_EVENT_MONITOR_DPI_CHANGED;
+                            type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
                             mode = palGetEventDispatchMode(driver, type);
 
-                            if (mode != PAL_DISPATCH_NONE) {
+                            if (mode != PAL_DISPATCH_MODE_NONE) {
                                 PalEvent event = {0};
                                 event.type = type;
                                 event.data = monitorDPI;
@@ -882,17 +1136,17 @@ void xUpdateVideo()
 
             case FocusIn: {
                 // window has gained focus
-                if (s_Video.eventDriver) {
+                if (s_X11.eventDriver) {
                     int mode = event.xfocus.mode;
                     if (mode == NotifyGrab || mode == NotifyUngrab) {
                         // ignore dragging and popup focus events
                         break;
                     }
 
-                    PalEventDriver* driver = s_Video.eventDriver;
-                    PalEventType type = PAL_EVENT_WINDOW_FOCUS;
+                    PalEventDriver* driver = s_X11.eventDriver;
+                    PalEventType type = PAL_EVENT_TYPE_WINDOW_FOCUS;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = PAL_TRUE;
@@ -905,17 +1159,17 @@ void xUpdateVideo()
 
             case FocusOut: {
                 // window has lost focus
-                if (s_Video.eventDriver) {
+                if (s_X11.eventDriver) {
                     int mode = event.xfocus.mode;
                     if (mode == NotifyGrab || mode == NotifyUngrab) {
                         // ignore dragging and popup focus events
                         break;
                     }
 
-                    PalEventDriver* driver = s_Video.eventDriver;
-                    PalEventType type = PAL_EVENT_WINDOW_FOCUS;
+                    PalEventDriver* driver = s_X11.eventDriver;
+                    PalEventType type = PAL_EVENT_TYPE_WINDOW_FOCUS;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = PAL_FALSE;
@@ -941,11 +1195,11 @@ void xUpdateVideo()
                         }
 
                         // push event
-                        PalEventDriver* driver = s_Video.eventDriver;
-                        PalEventType type = PAL_EVENT_WINDOW_STATE;
+                        PalEventDriver* driver = s_X11.eventDriver;
+                        PalEventType type = PAL_EVENT_TYPE_WINDOW_STATE;
                         mode = palGetEventDispatchMode(driver, type);
 
-                        if (mode != PAL_DISPATCH_NONE) {
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
                             PalEvent event = {0};
                             event.type = type;
                             event.data = data->state;
@@ -971,11 +1225,11 @@ void xUpdateVideo()
 
                 if (oldCount != s_X11.monitorCount) {
                     // a monitor has been added or removed
-                    if (s_Video.eventDriver) {
-                        PalEventDriver* driver = s_Video.eventDriver;
-                        PalEventType type = PAL_EVENT_MONITOR_LIST_CHANGED;
+                    if (s_X11.eventDriver) {
+                        PalEventDriver* driver = s_X11.eventDriver;
+                        PalEventType type = PAL_EVENT_TYPE_MONITOR_LIST_CHANGED;
                         mode = palGetEventDispatchMode(driver, type);
-                        if (mode != PAL_DISPATCH_NONE) {
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
                             PalEvent event = {0};
                             event.type = type;
                             event.data2 = palPackPointer(window);
@@ -993,11 +1247,11 @@ void xUpdateVideo()
                 const int dx = x - s_Mouse.lastX;
                 const int dy = y - s_Mouse.lastY;
 
-                if (s_Video.eventDriver) {
-                    PalEventDriver* driver = s_Video.eventDriver;
-                    PalEventType type = PAL_EVENT_MOUSE_MOVE;
+                if (s_X11.eventDriver) {
+                    PalEventDriver* driver = s_X11.eventDriver;
+                    PalEventType type = PAL_EVENT_TYPE_MOUSE_MOVE;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackInt32(x, y);
@@ -1006,9 +1260,9 @@ void xUpdateVideo()
                     }
 
                     // push a mouse delta event
-                    type = PAL_EVENT_MOUSE_DELTA;
+                    type = PAL_EVENT_TYPE_MOUSE_DELTA;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackFloat((float)dx, (float)dy);
@@ -1040,16 +1294,16 @@ void xUpdateVideo()
                 }
 
                 s_Mouse.state[button] = pressed;
-                if (s_Video.eventDriver && button != 0) {
-                    PalEventDriver* driver = s_Video.eventDriver;
+                if (s_X11.eventDriver && button != 0) {
+                    PalEventDriver* driver = s_X11.eventDriver;
                     if (pressed) {
-                        type = PAL_EVENT_MOUSE_BUTTONDOWN;
+                        type = PAL_EVENT_TYPE_MOUSE_BUTTONDOWN;
                     } else {
-                        type = PAL_EVENT_MOUSE_BUTTONUP;
+                        type = PAL_EVENT_TYPE_MOUSE_BUTTONUP;
                     }
 
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackUint32(button, NULL_BUTTON_SERIAL);
@@ -1076,12 +1330,12 @@ void xUpdateVideo()
 
                 s_Mouse.WheelX = scrollX;
                 s_Mouse.WheelY = scrollY;
-                if (s_Video.eventDriver && (scrollX || scrollY)) {
-                    PalEventDriver* driver = s_Video.eventDriver;
-                    mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
-                    if (mode != PAL_DISPATCH_NONE) {
+                if (s_X11.eventDriver && (scrollX || scrollY)) {
+                    PalEventDriver* driver = s_X11.eventDriver;
+                    mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_MOUSE_WHEEL);
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
-                        event.type = PAL_EVENT_MOUSE_WHEEL;
+                        event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
                         event.data = palPackFloat((float)scrollX, (float)scrollY);
                         event.data2 = palPackPointer(window);
                         palPushEvent(driver, &event);
@@ -1141,18 +1395,18 @@ void xUpdateVideo()
 
                 if (pressed) {
                     if (repeat) {
-                        type = PAL_EVENT_KEYREPEAT;
+                        type = PAL_EVENT_TYPE_KEYREPEAT;
                     } else {
-                        type = PAL_EVENT_KEYDOWN;
+                        type = PAL_EVENT_TYPE_KEYDOWN;
                     }
                 } else {
-                    type = PAL_EVENT_KEYUP;
+                    type = PAL_EVENT_TYPE_KEYUP;
                 }
 
-                if (s_Video.eventDriver) {
-                    PalEventDriver* driver = s_Video.eventDriver;
+                if (s_X11.eventDriver) {
+                    PalEventDriver* driver = s_X11.eventDriver;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackUint32(keycode, scancode);
@@ -1161,9 +1415,9 @@ void xUpdateVideo()
                     }
 
                     // check for char event if enabled
-                    type = PAL_EVENT_KEYCHAR;
+                    type = PAL_EVENT_TYPE_KEYCHAR;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode == PAL_DISPATCH_NONE) {
+                    if (mode == PAL_DISPATCH_MODE_NONE) {
                         break;
                     }
 
@@ -1223,10 +1477,55 @@ void xUpdateVideo()
     s_X11.flush(s_X11.display);
 }
 
+PalVideoFeatures xGetVideoFeatures()
+{
+    return s_X11.features;
+}
+
+const PalBool* xGetKeycodeState()
+{
+    return s_Keyboard.keycodeState;
+}
+
+const PalBool* xGetScancodeState()
+{
+    return s_Keyboard.scancodeState;
+}
+
+const PalBool* xGetMouseState()
+{
+    return s_Mouse.state;
+}
+
+void xGetMouseDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)s_Mouse.dx;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.dy;
+    }
+}
+
+void xGetMouseWheelDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)s_Mouse.WheelX;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.WheelY;
+    }
+}
+
 void* xGetInstance()
 {
     return (void*)s_X11.display;
 }
 
 #endif // PAL_HAS_X11_BACKEND
-#endif // __linux__

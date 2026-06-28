@@ -5,11 +5,8 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_WAYLAND_BACKEND == 1
-
 #include "pal_wayland.h"
-#include "pal_shared.h"
 
 PalResult wlEnumerateMonitors(
     int32_t* count,
@@ -17,11 +14,11 @@ PalResult wlEnumerateMonitors(
 {
     if (outMonitors) {
         int index = 0;
-        int maxCount = s_Video.maxMonitorData;
+        int maxCount = s_Wl.maxMonitorData;
         for (int i = 0; i < maxCount && index < *count; i++) {
-            if (s_Video.monitorData[i].used) {
+            if (s_Wl.monitorData[i].used) {
                 // found a monitor
-                PalMonitor* monitor = s_Video.monitorData[index].monitor;
+                PalMonitor* monitor = s_Wl.monitorData[index].monitor;
                 outMonitors[index++] = monitor;
             }
         }
@@ -36,22 +33,16 @@ PalResult wlEnumerateMonitors(
 
 PalResult wlGetPrimaryMonitor(PalMonitor** outMonitor)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
-    MonitorData* monitorData = findMonitorData(monitor);
+    MonitorData* monitorData = wlFindMonitorData(monitor);
     if (!monitorData) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     info->dpi = monitorData->dpi;
@@ -73,12 +64,9 @@ PalResult wlEnumerateMonitorModes(
     int32_t* count,
     PalMonitorMode* modes)
 {
-    MonitorData* monitorData = findMonitorData(monitor);
+    MonitorData* monitorData = wlFindMonitorData(monitor);
     if (!monitorData) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (modes && *count > 0) {
@@ -100,12 +88,9 @@ PalResult wlGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    MonitorData* monitorData = findMonitorData(monitor);
+    MonitorData* monitorData = wlFindMonitorData(monitor);
     if (!monitorData) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // this is the same as the current mode
@@ -121,31 +106,21 @@ PalResult wlSetMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlValidateMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND
-#endif // __linux__

@@ -7,10 +7,14 @@
 
 #ifndef _PAL_X11_H
 #define _PAL_X11_H
-#ifdef __linux__
+
 #if PAL_HAS_X11_BACKEND == 1
 
-#include "video/linux/pal_video_linux.h"
+#define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
+#define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
+
+#include "pal/pal_video.h"
+#include "video/pal_video_egl.h"
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xcursor/Xcursor.h>
@@ -451,6 +455,33 @@ typedef struct {
 } X11Atoms;
 
 typedef struct {
+    PalBool skipConfigure;
+    PalBool skipState;
+    PalBool used;
+    PalBool isAttached;
+    PalBool skipIfAttached;
+    int x;
+    int y;
+    uint32_t w;
+    int dpi;
+    uint32_t h;
+    PalWindowState state;
+    PalWindow* window;
+    void* ic;
+    unsigned long colormap;
+} WindowData;
+
+typedef struct {
+    PalBool used;
+    int dpi;
+    int x;
+    int y;
+    uint32_t w;
+    uint32_t h;
+    PalMonitor* monitor;
+} MonitorData;
+
+typedef struct {
     PalBool error;
     PalBool skipScreenEvent;
     int bpp;
@@ -467,6 +498,14 @@ typedef struct {
     Window root;
     XContext dataID;
 
+    int32_t maxWindowData;
+    int32_t maxMonitorData;
+    PalVideoFeatures features;
+    const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
+    WindowData* windowData;
+    MonitorData* monitorData;
+   
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
     XGetWindowAttributesFn getWindowAttributes;
@@ -571,7 +610,11 @@ void sendWMEvent(
     PalBool add);
 
 PalResult xGetPrimaryMonitor(PalMonitor**);
+MonitorData* xGetFreeMonitorData();
+MonitorData* xFindMonitorData(PalMonitor* monitor);
+void xFreeMonitorData(PalMonitor* monitor);
+WindowData* xGetFreeWindowData();
+WindowData* xFindWindowData(PalWindow* window);
 
 #endif // PAL_HAS_X11_BACKEND
-#endif // __linux__
 #endif // _PAL_X11_H

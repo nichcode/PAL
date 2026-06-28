@@ -5,11 +5,8 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_X11_BACKEND == 1
-
 #include "pal_x11.h"
-#include "pal_shared.h"
 #include <math.h>
 
 PalResult xEnumerateMonitors(
@@ -46,11 +43,7 @@ PalResult xGetPrimaryMonitor(PalMonitor** outMonitor)
         *outMonitor = TO_PAL_HANDLE(PalMonitor, primary);
         return PAL_RESULT_SUCCESS;
     }
-
-    return palMakeResult(
-        PAL_RESULT_PLATFORM_FAILURE, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_PLATFORM_FAILURE;
 }
 
 PalResult xGetMonitorInfo(
@@ -58,32 +51,23 @@ PalResult xGetMonitorInfo(
     PalMonitorInfo* info)
 {
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
-    XRROutputInfo* outputInfo =
-        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
-
+    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
     if (!outputInfo) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (outputInfo->connection != RR_Connected) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
-    strcpy(info->name, outputInfo->name);
-
     // check if its primary monitor
+    strcpy(info->name, outputInfo->name);
     RROutput primary = s_X11.getOutputPrimary(s_X11.display, s_X11.root);
-
     if (monitor == TO_PAL_HANDLE(PalMonitor, primary)) {
         info->primary = PAL_TRUE;
     } else {
@@ -152,7 +136,6 @@ PalResult xGetMonitorInfo(
     }
 
     info->dpi = (uint32_t)(closest * 96.0f);
-
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
@@ -170,25 +153,18 @@ PalResult xEnumerateMonitorModes(
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
     // get the monitor info
-    XRROutputInfo* outputInfo =
-        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
-
+    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
     if (!outputInfo) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (outputInfo->connection != RR_Connected) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // get supported display modes
@@ -221,7 +197,6 @@ PalResult xEnumerateMonitorModes(
 
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -232,30 +207,23 @@ PalResult xGetCurrentMonitorMode(
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
     // get the monitor info
-    XRROutputInfo* outputInfo =
-        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
+    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
+    XRROutputInfo* outputInfo =s_X11.getOutputInfo(s_X11.display, resources, output);
 
     if (!outputInfo) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (outputInfo->connection != RR_Connected) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // get the current display mode
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
-
     // find the display mode
     XRRModeInfo* info = nullptr;
     for (int i = 0; i < resources->nmode; ++i) {
@@ -290,25 +258,19 @@ PalResult xSetMonitorMode(
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
     // get the monitor info
-    XRROutputInfo* outputInfo =
-        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
+    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
 
     if (!outputInfo) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (outputInfo->connection != RR_Connected) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // find the monitor display mode
@@ -316,17 +278,11 @@ PalResult xSetMonitorMode(
     if (displayMode == None) {
         s_X11.freeOutputInfo(outputInfo);
         s_X11.freeScreenResources(resources);
-
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // apply the display mode
     XRRCrtcInfo* crtc = s_X11.getCrtcInfo(s_X11.display, resources, outputInfo->crtc);
-
-    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
     int ret = s_X11.setCrtcConfig(
         s_X11.display,
         resources,
@@ -342,12 +298,8 @@ PalResult xSetMonitorMode(
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
-
     if (ret != Success) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -357,10 +309,7 @@ PalResult xValidateMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult xSetMonitorOrientation(
@@ -370,25 +319,18 @@ PalResult xSetMonitorOrientation(
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 
     // get the monitor info
-    XRROutputInfo* outputInfo =
-        s_X11.getOutputInfo(s_X11.display, resources, FROM_PAL_HANDLE(RROutput, monitor));
-
+    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
+    XRROutputInfo* outputInfo = s_X11.getOutputInfo(s_X11.display, resources, output);
     if (!outputInfo) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (outputInfo->connection != RR_Connected) {
         // invalid monitor
         s_X11.freeScreenResources(resources);
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // get the current display mode
@@ -419,13 +361,9 @@ PalResult xSetMonitorOrientation(
     }
 
     if (!(crtc->rotations & rotation)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_OPERATION, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    RROutput output = FROM_PAL_HANDLE(RROutput, monitor);
     int ret = s_X11.setCrtcConfig(
         s_X11.display,
         resources,
@@ -441,16 +379,11 @@ PalResult xSetMonitorOrientation(
     s_X11.freeCrtcInfo(crtc);
     s_X11.freeOutputInfo(outputInfo);
     s_X11.freeScreenResources(resources);
-
     if (ret != Success) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_X11_BACKEND
-#endif // __linux__

@@ -101,8 +101,8 @@ PalBool cursorTest()
     }
 
     // set the dispatch mode for window close event to recieve it
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     // set the cursor
     palSetWindowCursor(window, cursor);
@@ -115,12 +115,12 @@ PalBool cursorTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {

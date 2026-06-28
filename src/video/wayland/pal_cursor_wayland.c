@@ -5,40 +5,29 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_WAYLAND_BACKEND == 1
-
 #include "pal_wayland.h"
 #include "pal_wayland_protocols.h"
-#include "pal_shared.h"
+#include <errno.h>
 
 PalResult wlCreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** outCursor)
 {
     WaylandCursor* cursor = nullptr;
-    cursor = palAllocate(s_Video.allocator, sizeof(WaylandCursor), 0);
+    cursor = palAllocate(s_Wl.allocator, sizeof(WaylandCursor), 0);
     if (!cursor) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!cursor->surface) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     cursor->buffer = createShmBuffer(info->width, info->height, info->pixels, PAL_TRUE);
     if (!cursor->buffer) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     wlSurfaceAttach(cursor->surface, cursor->buffer, 0, 0);
@@ -56,27 +45,27 @@ PalResult wlCreateCursorFrom(
 {
     const char* cursorType = nullptr;
     switch (type) {
-        case PAL_CURSOR_ARROW: {
+        case PAL_CURSOR_TYPE_ARROW: {
             cursorType = "left_ptr";
             break;
         }
 
-        case PAL_CURSOR_HAND: {
+        case PAL_CURSOR_TYPE_HAND: {
             cursorType = "hand1";
             break;
         }
 
-        case PAL_CURSOR_CROSS: {
+        case PAL_CURSOR_TYPE_CROSS: {
             cursorType = "crosshair";
             break;
         }
 
-        case PAL_CURSOR_IBEAM: {
+        case PAL_CURSOR_TYPE_IBEAM: {
             cursorType = "text";
             break;
         }
 
-        case PAL_CURSOR_WAIT: {
+        case PAL_CURSOR_TYPE_WAIT: {
             cursorType = "wait";
             break;
         }
@@ -85,27 +74,18 @@ PalResult wlCreateCursorFrom(
     struct wl_cursor* wlCursor = nullptr;
     wlCursor = s_Wl.cursorThemeGetCursor(s_Wl.cursorTheme, cursorType);
     if (!wlCursor) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     WaylandCursor* cursor = nullptr;
-    cursor = palAllocate(s_Video.allocator, sizeof(WaylandCursor), 0);
+    cursor = palAllocate(s_Wl.allocator, sizeof(WaylandCursor), 0);
     if (!cursor) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     cursor->surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!cursor->surface) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     cursor->buffer = s_Wl.cursorImageGetBuffer(wlCursor->images[0]);
@@ -123,7 +103,7 @@ void wlDestroyCursor(PalCursor* cursor)
     WaylandCursor* waylandCursor = (WaylandCursor*)cursor;
     wlBufferDestroy(waylandCursor->buffer);
     wlSurfaceDestroy(waylandCursor->surface);
-    palFree(s_Video.allocator, waylandCursor);
+    palFree(s_Wl.allocator, waylandCursor);
 }
 
 void wlShowCursor(PalBool show)
@@ -136,11 +116,8 @@ PalResult wlClipCursor(
     PalWindow* window,
     PalBool clip)
 {
-    if (!(s_Video.features & PAL_VIDEO_FEATURE_CLIP_CURSOR)) {
-        return palMakeResult(
-            PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+    if (!(s_Wl.features & PAL_VIDEO_FEATURE_CLIP_CURSOR)) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     return PAL_RESULT_SUCCESS;
@@ -151,10 +128,7 @@ PalResult wlGetCursorPos(
     int32_t* x,
     int32_t* y)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetCursorPos(
@@ -162,22 +136,16 @@ PalResult wlSetCursorPos(
     int32_t x,
     int32_t y)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     data->cursor = cursor;
@@ -185,4 +153,3 @@ PalResult wlSetWindowCursor(
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND
-#endif // __linux__

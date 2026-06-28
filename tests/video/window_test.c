@@ -110,31 +110,31 @@ static void PAL_CALL onEvent(
     void* userData,
     const PalEvent* event)
 {
-    if (event->type == PAL_EVENT_WINDOW_SIZE) {
+    if (event->type == PAL_EVENT_TYPE_WINDOW_SIZE) {
         onWindowResize(event);
 
-    } else if (event->type == PAL_EVENT_WINDOW_MOVE) {
+    } else if (event->type == PAL_EVENT_TYPE_WINDOW_MOVE) {
         onWindowMove(event);
 
-    } else if (event->type == PAL_EVENT_WINDOW_VISIBILITY) {
+    } else if (event->type == PAL_EVENT_TYPE_WINDOW_VISIBILITY) {
         onWindowVisibility(event);
 
-    } else if (event->type == PAL_EVENT_WINDOW_FOCUS) {
+    } else if (event->type == PAL_EVENT_TYPE_WINDOW_FOCUS) {
         onWindowFocus(event);
 
-    } else if (event->type == PAL_EVENT_WINDOW_STATE) {
+    } else if (event->type == PAL_EVENT_TYPE_WINDOW_STATE) {
         onWindowState(event);
 
-    } else if (event->type == PAL_EVENT_WINDOW_MODAL_BEGIN) {
+    } else if (event->type == PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN) {
         onWindowModalBegin(event);
 
-    } else if (event->type == PAL_EVENT_WINDOW_MODAL_END) {
+    } else if (event->type == PAL_EVENT_TYPE_WINDOW_MODAL_END) {
         onWindowModalEnd(event);
 
-    } else if (event->type == PAL_EVENT_MONITOR_DPI_CHANGED) {
+    } else if (event->type == PAL_EVENT_TYPE_MONITOR_DPI_CHANGED) {
         onMonitorDPI(event);
 
-    } else if (event->type == PAL_EVENT_MONITOR_LIST_CHANGED) {
+    } else if (event->type == PAL_EVENT_TYPE_MONITOR_LIST_CHANGED) {
         onMonitorList(event);
 
     } else {
@@ -161,27 +161,27 @@ PalBool windowTest()
         return PAL_FALSE;
     }
 
-    PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
+    PalDispatchMode dispatchMode = PAL_DISPATCH_MODE_NONE;
 #if DISPATCH_MODE_POLL
-    dispatchMode = PAL_DISPATCH_POLL;
+    dispatchMode = PAL_DISPATCH_MODE_POLL;
 #else
-    dispatchMode = PAL_DISPATCH_CALLBACK;
+    dispatchMode = PAL_DISPATCH_MODE_CALLBACK;
 #endif // DISPATCH_MODE_POLL
 
     // set dispatch mode for all events.
-    for (uint32_t e = 0; e < PAL_EVENT_KEYDOWN; e++) {
+    for (uint32_t e = 0; e < PAL_EVENT_TYPE_KEYDOWN; e++) {
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     // we set callback mode for modal begin and end. Since we want to capture
     // that instantly
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_BEGIN, PAL_DISPATCH_CALLBACK);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_MODAL_END, PAL_DISPATCH_CALLBACK);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_DECORATION_MODE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN, PAL_DISPATCH_MODE_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_MODAL_END, PAL_DISPATCH_MODE_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_DECORATION_MODE, PAL_DISPATCH_MODE_POLL);
 
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
@@ -271,47 +271,47 @@ PalBool windowTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_SIZE: {
+                case PAL_EVENT_TYPE_WINDOW_SIZE: {
                     onWindowResize(&event);
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_MOVE: {
+                case PAL_EVENT_TYPE_WINDOW_MOVE: {
                     onWindowMove(&event);
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_VISIBILITY: {
+                case PAL_EVENT_TYPE_WINDOW_VISIBILITY: {
                     onWindowVisibility(&event);
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_STATE: {
+                case PAL_EVENT_TYPE_WINDOW_STATE: {
                     onWindowState(&event);
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_FOCUS: {
+                case PAL_EVENT_TYPE_WINDOW_FOCUS: {
                     onWindowFocus(&event);
                     break;
                 }
 
-                case PAL_EVENT_MONITOR_DPI_CHANGED: {
+                case PAL_EVENT_TYPE_MONITOR_DPI_CHANGED: {
                     onMonitorDPI(&event);
                     break;
                 }
 
-                case PAL_EVENT_MONITOR_LIST_CHANGED: {
+                case PAL_EVENT_TYPE_MONITOR_LIST_CHANGED: {
                     onMonitorList(&event);
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
@@ -320,7 +320,7 @@ PalBool windowTest()
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_DECORATION_MODE: {
+                case PAL_EVENT_TYPE_WINDOW_DECORATION_MODE: {
                     if (event.data == PAL_DECORATION_MODE_CLIENT_SIDE) {
                         palLog(nullptr, "Window Decoration Mode: Client Side");
                     } else {

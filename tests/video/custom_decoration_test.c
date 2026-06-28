@@ -787,7 +787,7 @@ static void PAL_CALL onEvent(
     void* userData,
     const PalEvent* event)
 {
-    if (event->type == PAL_EVENT_MOUSE_BUTTONDOWN) {
+    if (event->type == PAL_EVENT_TYPE_MOUSE_BUTTONDOWN) {
         uint32_t button, serial;
         palUnpackUint32(event->data, &button, &serial);
 
@@ -817,18 +817,18 @@ static void PAL_CALL onEvent(
 
                 PalEvent event = {0};
                 event.data2 = palPackPointer(s_WinHandle.nativeWindow);
-                event.type = PAL_EVENT_WINDOW_CLOSE;
+                event.type = PAL_EVENT_TYPE_WINDOW_CLOSE;
                 palPushEvent(s_Decoration.driver, &event);
             }
         }
 
-    } else if (event->type == PAL_EVENT_MOUSE_MOVE) {
+    } else if (event->type == PAL_EVENT_TYPE_MOUSE_MOVE) {
         int32_t x, y;
         palUnpackInt32(event->data, &x, &y);
         s_Decoration.mouseX = x;
         s_Decoration.mouseY = y;
 
-    } else if (event->type == PAL_EVENT_MONITOR_DPI_CHANGED) {
+    } else if (event->type == PAL_EVENT_TYPE_MONITOR_DPI_CHANGED) {
         palLog(nullptr, "Monitor DPI: %d", event->data);
     }
 }
@@ -865,15 +865,15 @@ PalBool customDecorationTest()
         return PAL_FALSE;
     }
 
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_DECORATION_MODE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_DECORATION_MODE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
-    // we use PAL_DISPATCH_CALLBACK for the mouse button to get
+    // we use PAL_DISPATCH_MODE_CALLBACK for the mouse button to get
     // real time events which we then use for moving and resizing
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_BUTTONDOWN, PAL_DISPATCH_CALLBACK);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_MOUSE_MOVE, PAL_DISPATCH_CALLBACK);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_MONITOR_DPI_CHANGED, PAL_DISPATCH_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_MOUSE_BUTTONDOWN, PAL_DISPATCH_MODE_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_MOUSE_MOVE, PAL_DISPATCH_MODE_CALLBACK);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_MONITOR_DPI_CHANGED, PAL_DISPATCH_MODE_CALLBACK);
 
     // initialize the video system. We pass the event driver to recieve video
     // related events the video system does not copy the event driver, it must
@@ -917,12 +917,12 @@ PalBool customDecorationTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
@@ -931,7 +931,7 @@ PalBool customDecorationTest()
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_DECORATION_MODE: {
+                case PAL_EVENT_TYPE_WINDOW_DECORATION_MODE: {
                     if (event.data == PAL_DECORATION_MODE_CLIENT_SIDE) {
                         palLog(nullptr, "Window Decoration Mode: Client Side");
 

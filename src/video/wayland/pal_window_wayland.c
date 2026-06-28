@@ -5,13 +5,11 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_WAYLAND_BACKEND == 1
-
 #include "pal_wayland.h"
 #include "pal_wayland_protocols.h"
-#include "pal_shared.h"
 #include <stdlib.h>
+#include <errno.h>
 
 EGLConfig eglWlBackend(const int fbConfigIndex)
 {
@@ -27,7 +25,7 @@ EGLConfig eglWlBackend(const int fbConfigIndex)
     }
 
     EGLint configSize = sizeof(EGLConfig) * numConfigs;
-    EGLConfig* eglConfigs = palAllocate(s_Video.allocator, configSize, 0);
+    EGLConfig* eglConfigs = palAllocate(s_Wl.allocator, configSize, 0);
     if (!eglConfigs) {
         return nullptr;
     }
@@ -45,42 +43,27 @@ PalResult wlCreateWindow(
     struct xdg_toplevel* xdgToplevel = nullptr;
 
     if (info->style & PAL_WINDOW_STYLE_TOPMOST) {
-        return palMakeResult(
-            PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     if (info->style & PAL_WINDOW_STYLE_TRANSPARENT) {
-        return palMakeResult(
-            PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     if (info->style & PAL_WINDOW_STYLE_TOOL) {
-        return palMakeResult(
-            PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         if (!s_Wl.decorationManager) {
             // user wants decorated window but its not supported
-            return palMakeResult(
-                PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
+            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
     }
 
-    WindowData* data = getFreeWindowData();
+    WindowData* data = wlGetFreeWindowData();
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     memset(data, 0, sizeof(WindowData));
@@ -90,33 +73,24 @@ PalResult wlCreateWindow(
     // create surface
     surface = wlCompositorCreateSurface(s_Wl.compositor);
     if (!surface) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     wlSurfaceAddListener(surface, &s_SurfaceListener, data);
     xdgSurface = xdgWmBaseGetXdgSurface(s_Wl.xdgBase, surface);
     if (!xdgSurface) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     xdgToplevel = xdgSurfaceGetToplevel(xdgSurface);
     if (!xdgSurface) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     // set APP id
     const char* appID = info->appName;
     if (!appID || strlen(appID) == 0) {
-        appID = s_Video.className;
+        appID = "PAL";
     }
 
     const char* title = info->title;
@@ -144,7 +118,7 @@ PalResult wlCreateWindow(
     wlSurfaceCommit(surface);
     s_Wl.displayRoundtrip(s_Wl.display);
 
-    if (info->maximized && info->show) {
+    if (info->state == PAL_WINDOW_STATE_MAXIMIZED && info->show) {
         // we need the maximized size the compositor will use
         // and use that to create the buffer
         xdgToplevelSetMaximized(xdgToplevel);
@@ -166,7 +140,7 @@ PalResult wlCreateWindow(
 
     // minimize
     // This is just a requeest, the compositor might ignore it
-    if (info->minimized) {
+    if (info->state == PAL_WINDOW_STATE_MINIMIZED) {
         xdgToplevelSetMinimized(xdgToplevel);
         wlSurfaceCommit(surface);
         data->state = PAL_WINDOW_STATE_MINIMIZED;
@@ -177,26 +151,22 @@ PalResult wlCreateWindow(
         PalFBConfigBackend backend = info->fbConfigBackend;
         EGLConfig config = nullptr;
 
-        if (backend == PAL_CONFIG_BACKEND_PAL_OPENGL) {
-            backend = PAL_CONFIG_BACKEND_EGL;
+        if (backend == PAL_FBCONFIG_BACKEND_PAL_OPENGL) {
+            backend = PAL_FBCONFIG_BACKEND_EGL;
         }
 
-        if (backend == PAL_CONFIG_BACKEND_EGL) {
+        if (backend == PAL_FBCONFIG_BACKEND_EGL) {
             config = eglWlBackend(info->fbConfigIndex);
-
         } else {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_LINUX, 
-                errno);
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
 
         data->eglWindow = s_Wl.eglWindowCreate(surface, data->w, data->h);
         if (!data->eglWindow) {
             return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_EGL, 
+                s_Egl.eglGetError());
         }
 
     } else {
@@ -204,10 +174,7 @@ PalResult wlCreateWindow(
         struct wl_buffer* buffer = nullptr;
         buffer = createShmBuffer(data->w, data->h, nullptr, PAL_FALSE);
         if (!buffer) {
-            return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
         }
 
         wlSurfaceAttach(surface, buffer, 0, 0);
@@ -225,13 +192,13 @@ PalResult wlCreateWindow(
     }
 
     s_Wl.displayRoundtrip(s_Wl.display);
-    if (!s_Wl.decorationManager && s_Video.eventDriver) {
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
-        PalEventType type = PAL_EVENT_WINDOW_DECORATION_MODE;
+    if (!s_Wl.decorationManager && s_Wl.eventDriver) {
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+        PalEventType type = PAL_EVENT_TYPE_WINDOW_DECORATION_MODE;
         mode = palGetEventDispatchMode(driver, type);
 
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data = PAL_DECORATION_MODE_CLIENT_SIDE;
@@ -252,7 +219,7 @@ PalResult wlCreateWindow(
 
 void wlDestroyWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data || (data && data->isAttached)) {
         return;
     }
@@ -275,12 +242,9 @@ void wlDestroyWindow(PalWindow* window)
 
 PalResult wlMinimizeWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     xdgToplevelSetMinimized(data->xdgToplevel);
@@ -289,12 +253,9 @@ PalResult wlMinimizeWindow(PalWindow* window)
 
 PalResult wlMaximizeWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     xdgToplevelSetMaximized(data->xdgToplevel);
@@ -303,12 +264,9 @@ PalResult wlMaximizeWindow(PalWindow* window)
 
 PalResult wlRestoreWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     // we can only restore from a maximized state
@@ -318,48 +276,33 @@ PalResult wlRestoreWindow(PalWindow* window)
 
 PalResult wlShowWindow(PalWindow* window)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlHideWindow(PalWindow* window)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlFlashWindow(
     PalWindow* window,
     const PalFlashInfo* info)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowMonitor(
     PalWindow* window,
     PalMonitor** outMonitor)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowTitle(
@@ -368,10 +311,7 @@ PalResult wlGetWindowTitle(
     uint64_t* outSize,
     char* outBuffer)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowPos(
@@ -379,10 +319,7 @@ PalResult wlGetWindowPos(
     int32_t* x,
     int32_t* y)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowSize(
@@ -390,20 +327,14 @@ PalResult wlGetWindowSize(
     uint32_t* width,
     uint32_t* height)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlGetWindowState(
     PalWindow* window,
     PalWindowState* outState)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalBool wlIsWindowVisible(PalWindow* window)
@@ -421,23 +352,13 @@ PalResult wlGetWindowHandleInfo(
     PalWindow* window, 
     PalWindowHandleInfo* info)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
     if (!window || !info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (data) {
-        info->nativeDisplay = (void*)s_Wl.display;
+        info->nativeInstance = (void*)s_Wl.display;
         info->nativeWindow = (void*)window;
         info->nativeHandle1 = data->xdgSurface;
         info->nativeHandle2 = data->xdgToplevel;
@@ -451,32 +372,23 @@ PalResult wlSetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetWindowStyle(
     PalWindow* window,
     PalWindowStyle style)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetWindowTitle(
     PalWindow* window,
     const char* title)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     xdgToplevelSetTitle(data->xdgToplevel, title);
@@ -489,10 +401,7 @@ PalResult wlSetWindowPos(
     int32_t x,
     int32_t y)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlSetWindowSize(
@@ -500,12 +409,9 @@ PalResult wlSetWindowSize(
     uint32_t width,
     uint32_t height)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     xdgToplevelSetMinSize(data->xdgToplevel, width, height);
@@ -516,31 +422,21 @@ PalResult wlSetWindowSize(
 
 PalResult wlSetFocusWindow(PalWindow* window)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlAttachWindow(
     void* windowHandle,
     PalWindow** outWindow)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult wlDetachWindow(
     PalWindow* window,
     void** outWindowHandle)
 {
-    return palMakeResult(
-        PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-        PAL_RESULT_SOURCE_LINUX, 
-        errno);
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND
-#endif // __linux__

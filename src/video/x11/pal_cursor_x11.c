@@ -5,11 +5,8 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_X11_BACKEND == 1
-
 #include "pal_x11.h"
-#include "pal_shared.h"
 
 PalResult xCreateCursor(
     const PalCursorCreateInfo* info,
@@ -36,10 +33,7 @@ PalResult xCreateCursor(
 
     Cursor cursor = s_X11.cursorImageLoadCursor(s_X11.display, image);
     if (!cursor) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     s_X11.cursorImageDestroy(image);
@@ -54,27 +48,27 @@ PalResult xCreateCursorFrom(
     int shape;
     Cursor cursor;
     switch (type) {
-        case PAL_CURSOR_ARROW: {
+        case PAL_CURSOR_TYPE_ARROW: {
             shape = XC_left_ptr;
             break;
         }
 
-        case PAL_CURSOR_HAND: {
+        case PAL_CURSOR_TYPE_HAND: {
             shape = XC_hand2;
             break;
         }
 
-        case PAL_CURSOR_CROSS: {
+        case PAL_CURSOR_TYPE_CROSS: {
             shape = XC_cross;
             break;
         }
 
-        case PAL_CURSOR_IBEAM: {
+        case PAL_CURSOR_TYPE_IBEAM: {
             shape = XC_xterm;
             break;
         }
 
-        case PAL_CURSOR_WAIT: {
+        case PAL_CURSOR_TYPE_WAIT: {
             shape = XC_watch;
             break;
         }
@@ -103,10 +97,7 @@ PalResult xClipCursor(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     if (clip) {
@@ -136,17 +127,13 @@ PalResult xGetCursorPos(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
-    Window root, rootChild;
+    Window root, child;
     int rootX, rootY, winX, winY;
     unsigned int mask;
-    s_X11.queryPointer(s_X11.display, xWin, &root, &rootChild, &rootX, &rootY, &winX, &winY, &mask);
-
+    s_X11.queryPointer(s_X11.display, xWin, &root, &child, &rootX, &rootY, &winX, &winY, &mask);
     if (x) {
         *x = winX;
     }
@@ -166,14 +153,10 @@ PalResult xSetCursorPos(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     s_X11.warpPointer(s_X11.display, None, xWin, 0, 0, 0, 0, x, y);
-
     s_X11.flush(s_X11.display);
     return PAL_RESULT_SUCCESS;
 }
@@ -185,10 +168,7 @@ PalResult xSetWindowCursor(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     Window xCursor = FROM_PAL_HANDLE(Cursor, cursor);
@@ -204,4 +184,3 @@ PalResult xSetWindowCursor(
 }
 
 #endif // PAL_HAS_X11_BACKEND
-#endif // __linux__

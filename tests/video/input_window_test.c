@@ -4,7 +4,7 @@
 
 #define DISPATCH_MODE_POLL 0
 
-static const char* s_KeyNames[PAL_KEYCODE_MAX] = {
+static const char* s_KeyNames[PAL_KEYCODE_COUNT] = {
 
     [PAL_KEYCODE_UNKNOWN] = "Unknown",
 
@@ -131,7 +131,7 @@ static const char* s_KeyNames[PAL_KEYCODE_MAX] = {
     [PAL_KEYCODE_RSUPER] = "RightSuper",
 };
 
-static const char* s_ScancodeNames[PAL_SCANCODE_MAX] = {
+static const char* s_ScancodeNames[PAL_SCANCODE_COUNT] = {
 
     [PAL_SCANCODE_UNKNOWN] = "Unknown",
 
@@ -256,7 +256,7 @@ static const char* s_ScancodeNames[PAL_SCANCODE_MAX] = {
     [PAL_SCANCODE_LSUPER] = "LeftSuper",
     [PAL_SCANCODE_RSUPER] = "RightSuper"};
 
-static const char* s_MouseButtonNames[PAL_MOUSE_BUTTON_MAX] = {
+static const char* s_MouseButtonNames[PAL_MOUSE_BUTTON_COUNT] = {
 
     [PAL_MOUSE_BUTTON_UNKNOWN] = "Unknown",
 
@@ -365,28 +365,28 @@ static void PAL_CALL onEvent(
     void* userData,
     const PalEvent* event)
 {
-    if (event->type == PAL_EVENT_KEYDOWN) {
+    if (event->type == PAL_EVENT_TYPE_KEYDOWN) {
         onKeydown(event);
 
-    } else if (event->type == PAL_EVENT_KEYREPEAT) {
+    } else if (event->type == PAL_EVENT_TYPE_KEYREPEAT) {
         onKeyrepeat(event);
 
-    } else if (event->type == PAL_EVENT_KEYUP) {
+    } else if (event->type == PAL_EVENT_TYPE_KEYUP) {
         onKeyup(event);
 
-    } else if (event->type == PAL_EVENT_MOUSE_BUTTONDOWN) {
+    } else if (event->type == PAL_EVENT_TYPE_MOUSE_BUTTONDOWN) {
         onMouseButtondown(event);
 
-    } else if (event->type == PAL_EVENT_MOUSE_BUTTONUP) {
+    } else if (event->type == PAL_EVENT_TYPE_MOUSE_BUTTONUP) {
         onMouseButtonup(event);
 
-    } else if (event->type == PAL_EVENT_MOUSE_MOVE) {
+    } else if (event->type == PAL_EVENT_TYPE_MOUSE_MOVE) {
         onMouseMove(event);
 
-    } else if (event->type == PAL_EVENT_MOUSE_DELTA) {
+    } else if (event->type == PAL_EVENT_TYPE_MOUSE_DELTA) {
         onMouseDelta(event);
 
-    } else if (event->type == PAL_EVENT_MOUSE_WHEEL) {
+    } else if (event->type == PAL_EVENT_TYPE_MOUSE_WHEEL) {
         onMouseWheel(event);
     }
 }
@@ -445,17 +445,17 @@ PalBool inputWindowTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
 
-    PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
+    PalDispatchMode dispatchMode = PAL_DISPATCH_MODE_NONE;
 #if DISPATCH_MODE_POLL
-    dispatchMode = PAL_DISPATCH_POLL;
+    dispatchMode = PAL_DISPATCH_MODE_POLL;
 #else
-    dispatchMode = PAL_DISPATCH_CALLBACK;
+    dispatchMode = PAL_DISPATCH_MODE_CALLBACK;
 #endif // DISPATCH_MODE_POLL
 
     // set dispatch mode for all events.
-    for (uint32_t e = PAL_EVENT_KEYDOWN; e < PAL_EVENT_USER; e++) {
+    for (uint32_t e = PAL_EVENT_TYPE_KEYDOWN; e < PAL_EVENT_TYPE_USER; e++) {
         palSetEventDispatchMode(eventDriver, e, dispatchMode);
     }
 
@@ -467,47 +467,47 @@ PalBool inputWindowTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     s_Running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     onKeydown(&event);
                     break;
                 }
 
-                case PAL_EVENT_KEYREPEAT: {
+                case PAL_EVENT_TYPE_KEYREPEAT: {
                     onKeyrepeat(&event);
                     break;
                 }
 
-                case PAL_EVENT_KEYUP: {
+                case PAL_EVENT_TYPE_KEYUP: {
                     onKeyup(&event);
                     break;
                 }
 
-                case PAL_EVENT_MOUSE_BUTTONDOWN: {
+                case PAL_EVENT_TYPE_MOUSE_BUTTONDOWN: {
                     onMouseButtondown(&event);
                     break;
                 }
 
-                case PAL_EVENT_MOUSE_BUTTONUP: {
+                case PAL_EVENT_TYPE_MOUSE_BUTTONUP: {
                     onMouseButtonup(&event);
                     break;
                 }
 
-                case PAL_EVENT_MOUSE_MOVE: {
+                case PAL_EVENT_TYPE_MOUSE_MOVE: {
                     onMouseMove(&event);
                     break;
                 }
 
-                case PAL_EVENT_MOUSE_DELTA: {
+                case PAL_EVENT_TYPE_MOUSE_DELTA: {
                     onMouseDelta(&event);
                     break;
                 }
 
-                case PAL_EVENT_MOUSE_WHEEL: {
+                case PAL_EVENT_TYPE_MOUSE_WHEEL: {
                     onMouseWheel(&event);
                     break;
                 }

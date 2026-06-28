@@ -12,10 +12,10 @@ PAL_BUILD_ABI_DUMP = true
 PAL_BUILD_SYSTEM_MODULE = false
 
 -- build thread module
-PAL_BUILD_THREAD_MODULE = true
+PAL_BUILD_THREAD_MODULE = false
 
 -- build video module
-PAL_BUILD_VIDEO_MODULE = false
+PAL_BUILD_VIDEO_MODULE = true
 
 -- build opengl module
 PAL_BUILD_OPENGL_MODULE = false

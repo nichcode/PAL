@@ -27,8 +27,8 @@ typedef struct {
 
 typedef struct {
     int32_t pendingHighSurrogate;
-    PalBool scancodeState[PAL_SCANCODE_MAX];
-    PalBool keycodeState[PAL_KEYCODE_MAX];
+    PalBool scancodeState[PAL_SCANCODE_COUNT];
+    PalBool keycodeState[PAL_KEYCODE_COUNT];
     int scancodes[512];
     int keycodes[256];
 } Keyboard;
@@ -39,7 +39,7 @@ typedef struct {
     int32_t dy;
     int32_t WheelX;
     int32_t WheelY;
-    PalBool state[PAL_MOUSE_BUTTON_MAX];
+    PalBool state[PAL_MOUSE_BUTTON_COUNT];
 } Mouse;
 
 static PendingEvent s_Event;
@@ -1003,73 +1003,6 @@ void PAL_CALL palUpdateVideo()
         event.data2 = palPackPointer(s_Event.window);
         palPushEvent(s_Video.eventDriver, &event);
         s_Event.pendingMove = PAL_FALSE;
-    }
-}
-
-PalVideoFeatures PAL_CALL palGetVideoFeatures()
-{
-    if (!s_Video.initialized) {
-        return 0;
-    }
-
-    return s_Video.features;
-}
-
-const PalBool* PAL_CALL palGetKeycodeState()
-{
-    if (!s_Video.initialized) {
-        return nullptr;
-    }
-    return s_Keyboard.keycodeState;
-}
-
-const PalBool* PAL_CALL palGetScancodeState()
-{
-    if (!s_Video.initialized) {
-        return nullptr;
-    }
-    return s_Keyboard.scancodeState;
-}
-
-const PalBool* PAL_CALL palGetMouseState()
-{
-    if (!s_Video.initialized) {
-        return nullptr;
-    }
-    return s_Mouse.state;
-}
-
-void PAL_CALL palGetMouseDelta(
-    float* dx,
-    float* dy)
-{
-    if (!s_Video.initialized) {
-        return;
-    }
-
-    if (dx) {
-        *dx = (float)s_Mouse.dx;
-    }
-
-    if (dy) {
-        *dy = (float)s_Mouse.dy;
-    }
-}
-
-void PAL_CALL palGetMouseWheelDelta(
-    float* dx,
-    float* dy)
-{
-    if (!s_Video.initialized) {
-        return;
-    }
-
-    if (dx) {
-        *dx = (float)s_Mouse.WheelX;
-    }
-
-    if (dy) {
-        *dy = (float)s_Mouse.WheelY;
     }
 }
 

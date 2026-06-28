@@ -7,9 +7,8 @@
 
 #ifndef _PAL_WAYLAND_PROTOCOLS_H
 #define _PAL_WAYLAND_PROTOCOLS_H
-#ifdef __linux__
-#if PAL_HAS_WAYLAND_BACKEND == 1
 
+#if PAL_HAS_WAYLAND_BACKEND == 1
 #include "pal_wayland.h"
 
 // ==================================================
@@ -676,5 +675,4 @@ static inline void zxdgToplevelDecorationV1SetMode(
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND
-#endif // __linux__
 #endif // _PAL_WAYLAND_PROTOCOLS_H

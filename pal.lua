@@ -141,22 +141,22 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files {
+                "src/video/pal_video.c",
+
                 -- X11
-                "src/video/linux/x11/pal_cursor_x11.c",
-                "src/video/linux/x11/pal_icon_x11.c",
-                "src/video/linux/x11/pal_monitor_x11.c",
-                "src/video/linux/x11/pal_window_x11.c",
-                "src/video/linux/x11/pal_video_x11.c",
+                "src/video/x11/pal_cursor_x11.c",
+                "src/video/x11/pal_icon_x11.c",
+                "src/video/x11/pal_monitor_x11.c",
+                "src/video/x11/pal_window_x11.c",
+                "src/video/x11/pal_video_x11.c",
 
                 -- Wayland
-                "src/video/linux/wayland/pal_cursor_wayland.c",
-                "src/video/linux/wayland/pal_icon_wayland.c",
-                "src/video/linux/wayland/pal_monitor_wayland.c",
-                "src/video/linux/wayland/pal_window_wayland.c",
-                "src/video/linux/wayland/pal_wayland_protocols.c",
-                "src/video/linux/wayland/pal_video_wayland.c",
-
-                "src/video/linux/pal_video_linux.c"
+                "src/video/wayland/pal_cursor_wayland.c",
+                "src/video/wayland/pal_icon_wayland.c",
+                "src/video/wayland/pal_monitor_wayland.c",
+                "src/video/wayland/pal_window_wayland.c",
+                "src/video/wayland/pal_wayland_protocols.c",
+                "src/video/wayland/pal_video_wayland.c"
             }
             
         filter {}

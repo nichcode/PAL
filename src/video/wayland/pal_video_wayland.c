@@ -5,17 +5,48 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifdef __linux__
 #if PAL_HAS_WAYLAND_BACKEND == 1
-
+#define _POSIX_C_SOURCE 200112L
+#define _GNU_SOURCE
 #include "pal_wayland.h"
 #include "pal_wayland_protocols.h"
-#include "pal_shared.h"
+#include "video/pal_video_egl.h"
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
+
+typedef struct {
+    PalBool pendingScroll;
+    int32_t lastX;
+    int32_t lastY;
+    int32_t dx;
+    int32_t dy;
+    int32_t WheelX;
+    int32_t WheelY;
+    PalBool state[PAL_MOUSE_BUTTON_COUNT];
+    double tmpScrollX;
+    double tmpScrollY;
+    double accumScrollX;
+    double accumScrollY;
+} Mouse;
+
+typedef struct {
+    PalBool scancodeState[PAL_SCANCODE_COUNT];
+    PalBool keycodeState[PAL_KEYCODE_COUNT];
+    int repeatRate;
+    int repeatDelay;
+    int repeatKey;
+    int repeatScancode;
+    int scancodes[512];
+    int keycodes[256];
+    uint64_t timer;
+    uint64_t frequency;
+} Keyboard;
 
 Wayland s_Wl = {0};
+static Mouse s_Mouse = {0};
+static Keyboard s_Keyboard = {0};
 
 // ==================================================
 // Helpers
@@ -99,6 +130,279 @@ struct wl_buffer* createShmBuffer(
     return buffer;
 }
 
+static void createScancodeTable()
+{
+    // Letters
+    s_Keyboard.scancodes[0x01E] = PAL_SCANCODE_A;
+    s_Keyboard.scancodes[0x030] = PAL_SCANCODE_B;
+    s_Keyboard.scancodes[0x02E] = PAL_SCANCODE_C;
+    s_Keyboard.scancodes[0x020] = PAL_SCANCODE_D;
+    s_Keyboard.scancodes[0x012] = PAL_SCANCODE_E;
+    s_Keyboard.scancodes[0x021] = PAL_SCANCODE_F;
+    s_Keyboard.scancodes[0x022] = PAL_SCANCODE_G;
+    s_Keyboard.scancodes[0x023] = PAL_SCANCODE_H;
+    s_Keyboard.scancodes[0x017] = PAL_SCANCODE_I;
+    s_Keyboard.scancodes[0x024] = PAL_SCANCODE_J;
+    s_Keyboard.scancodes[0x025] = PAL_SCANCODE_K;
+    s_Keyboard.scancodes[0x026] = PAL_SCANCODE_L;
+    s_Keyboard.scancodes[0x032] = PAL_SCANCODE_M;
+    s_Keyboard.scancodes[0x031] = PAL_SCANCODE_N;
+    s_Keyboard.scancodes[0x018] = PAL_SCANCODE_O;
+    s_Keyboard.scancodes[0x019] = PAL_SCANCODE_P;
+    s_Keyboard.scancodes[0x010] = PAL_SCANCODE_Q;
+    s_Keyboard.scancodes[0x013] = PAL_SCANCODE_R;
+    s_Keyboard.scancodes[0x01F] = PAL_SCANCODE_S;
+    s_Keyboard.scancodes[0x014] = PAL_SCANCODE_T;
+    s_Keyboard.scancodes[0x016] = PAL_SCANCODE_U;
+    s_Keyboard.scancodes[0x02F] = PAL_SCANCODE_V;
+    s_Keyboard.scancodes[0x011] = PAL_SCANCODE_W;
+    s_Keyboard.scancodes[0x02D] = PAL_SCANCODE_X;
+    s_Keyboard.scancodes[0x015] = PAL_SCANCODE_Y;
+    s_Keyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
+
+    // Numbers (top row)
+    s_Keyboard.scancodes[0x00B] = PAL_SCANCODE_0;
+    s_Keyboard.scancodes[0x002] = PAL_SCANCODE_1;
+    s_Keyboard.scancodes[0x003] = PAL_SCANCODE_2;
+    s_Keyboard.scancodes[0x004] = PAL_SCANCODE_3;
+    s_Keyboard.scancodes[0x005] = PAL_SCANCODE_4;
+    s_Keyboard.scancodes[0x006] = PAL_SCANCODE_5;
+    s_Keyboard.scancodes[0x007] = PAL_SCANCODE_6;
+    s_Keyboard.scancodes[0x008] = PAL_SCANCODE_7;
+    s_Keyboard.scancodes[0x009] = PAL_SCANCODE_8;
+    s_Keyboard.scancodes[0x00A] = PAL_SCANCODE_9;
+
+    // Function
+    s_Keyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
+    s_Keyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
+    s_Keyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
+    s_Keyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
+    s_Keyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
+    s_Keyboard.scancodes[0x040] = PAL_SCANCODE_F6;
+    s_Keyboard.scancodes[0x041] = PAL_SCANCODE_F7;
+    s_Keyboard.scancodes[0x042] = PAL_SCANCODE_F8;
+    s_Keyboard.scancodes[0x043] = PAL_SCANCODE_F9;
+    s_Keyboard.scancodes[0x044] = PAL_SCANCODE_F10;
+    s_Keyboard.scancodes[0x057] = PAL_SCANCODE_F11;
+    s_Keyboard.scancodes[0x058] = PAL_SCANCODE_F12;
+
+    // Control
+    s_Keyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
+    s_Keyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
+    s_Keyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
+    s_Keyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
+    s_Keyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
+    s_Keyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
+    s_Keyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
+    s_Keyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
+    s_Keyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
+    s_Keyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
+    s_Keyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
+    s_Keyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
+    s_Keyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
+    s_Keyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
+
+    // Arrows
+    s_Keyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
+    s_Keyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_UP;
+    s_Keyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
+
+    // Navigation
+    s_Keyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
+    s_Keyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
+    s_Keyboard.scancodes[0x067] = PAL_SCANCODE_END;
+    s_Keyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
+    s_Keyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
+
+    // Keypad
+    s_Keyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
+    s_Keyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
+    s_Keyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
+    s_Keyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
+    s_Keyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
+    s_Keyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
+    s_Keyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
+    s_Keyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
+    s_Keyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
+    s_Keyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
+    s_Keyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
+    s_Keyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
+    s_Keyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
+    s_Keyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
+    s_Keyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
+    s_Keyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
+
+    // Misc
+    s_Keyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
+    s_Keyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
+    s_Keyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
+    s_Keyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
+    s_Keyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
+    s_Keyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
+    s_Keyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
+    s_Keyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
+    s_Keyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
+    s_Keyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
+    s_Keyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
+    s_Keyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
+    s_Keyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
+    s_Keyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
+    s_Keyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
+    s_Keyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
+}
+
+static void createKeycodeTable()
+{
+    // Tis is for only printable and text input keys
+
+    // Letters
+    s_Keyboard.keycodes[XKB_KEY_a] = PAL_KEYCODE_A;
+    s_Keyboard.keycodes[XKB_KEY_b] = PAL_KEYCODE_B;
+    s_Keyboard.keycodes[XKB_KEY_c] = PAL_KEYCODE_C;
+    s_Keyboard.keycodes[XKB_KEY_d] = PAL_KEYCODE_D;
+    s_Keyboard.keycodes[XKB_KEY_e] = PAL_KEYCODE_E;
+    s_Keyboard.keycodes[XKB_KEY_f] = PAL_KEYCODE_F;
+    s_Keyboard.keycodes[XKB_KEY_g] = PAL_KEYCODE_G;
+    s_Keyboard.keycodes[XKB_KEY_h] = PAL_KEYCODE_H;
+    s_Keyboard.keycodes[XKB_KEY_i] = PAL_KEYCODE_I;
+    s_Keyboard.keycodes[XKB_KEY_j] = PAL_KEYCODE_J;
+    s_Keyboard.keycodes[XKB_KEY_k] = PAL_KEYCODE_K;
+    s_Keyboard.keycodes[XKB_KEY_l] = PAL_KEYCODE_L;
+    s_Keyboard.keycodes[XKB_KEY_m] = PAL_KEYCODE_M;
+    s_Keyboard.keycodes[XKB_KEY_n] = PAL_KEYCODE_N;
+    s_Keyboard.keycodes[XKB_KEY_o] = PAL_KEYCODE_O;
+    s_Keyboard.keycodes[XKB_KEY_p] = PAL_KEYCODE_P;
+    s_Keyboard.keycodes[XKB_KEY_q] = PAL_KEYCODE_Q;
+    s_Keyboard.keycodes[XKB_KEY_r] = PAL_KEYCODE_R;
+    s_Keyboard.keycodes[XKB_KEY_s] = PAL_KEYCODE_S;
+    s_Keyboard.keycodes[XKB_KEY_t] = PAL_KEYCODE_T;
+    s_Keyboard.keycodes[XKB_KEY_u] = PAL_KEYCODE_U;
+    s_Keyboard.keycodes[XKB_KEY_v] = PAL_KEYCODE_V;
+    s_Keyboard.keycodes[XKB_KEY_w] = PAL_KEYCODE_W;
+    s_Keyboard.keycodes[XKB_KEY_x] = PAL_KEYCODE_X;
+    s_Keyboard.keycodes[XKB_KEY_y] = PAL_KEYCODE_Y;
+    s_Keyboard.keycodes[XKB_KEY_z] = PAL_KEYCODE_Z;
+
+    // Control
+    s_Keyboard.keycodes[XKB_KEY_space] = PAL_KEYCODE_SPACE;
+
+    // Misc
+    s_Keyboard.keycodes[XKB_KEY_apostrophe] = PAL_KEYCODE_APOSTROPHE;
+    s_Keyboard.keycodes[XKB_KEY_backslash] = PAL_KEYCODE_BACKSLASH;
+    s_Keyboard.keycodes[XKB_KEY_comma] = PAL_KEYCODE_COMMA;
+    s_Keyboard.keycodes[XKB_KEY_equal] = PAL_KEYCODE_EQUAL;
+    s_Keyboard.keycodes[XKB_KEY_grave] = PAL_KEYCODE_GRAVEACCENT;
+    s_Keyboard.keycodes[XKB_KEY_minus] = PAL_KEYCODE_SUBTRACT;
+    s_Keyboard.keycodes[XKB_KEY_period] = PAL_KEYCODE_PERIOD;
+    s_Keyboard.keycodes[XKB_KEY_semicolon] = PAL_KEYCODE_SEMICOLON;
+    s_Keyboard.keycodes[XKB_KEY_slash] = PAL_KEYCODE_SLASH;
+    s_Keyboard.keycodes[XKB_KEY_bracketleft] = PAL_KEYCODE_LBRACKET;
+    s_Keyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
+}
+
+MonitorData* wlGetFreeMonitorData()
+{
+    for (int i = 0; i < s_Wl.maxMonitorData; ++i) {
+        if (!s_Wl.monitorData[i].used) {
+            s_Wl.monitorData[i].used = PAL_TRUE;
+            return &s_Wl.monitorData[i];
+        }
+    }
+
+    // resize the data array
+    // this will almost not reach here since most setups are 1-4 monitors
+    MonitorData* data = nullptr;
+    int count = s_Wl.maxMonitorData * 2; // double the size
+    int freeIndex = s_Wl.maxMonitorData + 1;
+    data = palAllocate(s_Wl.allocator, sizeof(MonitorData) * count, 0);
+    if (data) {
+        memcpy(
+            data,
+            s_Wl.monitorData,
+            s_Wl.maxMonitorData * sizeof(MonitorData));
+
+        palFree(s_Wl.allocator, s_Wl.monitorData);
+        s_Wl.monitorData = data;
+        s_Wl.maxWindowData = count;
+
+        s_Wl.monitorData[freeIndex].used = PAL_TRUE;
+        return &s_Wl.monitorData[freeIndex];
+    }
+    return nullptr;
+}
+
+MonitorData* wlFindMonitorData(PalMonitor* monitor)
+{
+    for (int i = 0; i < s_Wl.maxMonitorData; ++i) {
+        if (s_Wl.monitorData[i].used &&
+            s_Wl.monitorData[i].monitor == monitor) {
+            return &s_Wl.monitorData[i];
+        }
+    }
+    return nullptr;
+}
+
+void wlFreeMonitorData(PalMonitor* monitor)
+{
+    for (int i = 0; i < s_Wl.maxMonitorData; ++i) {
+        if (s_Wl.monitorData[i].used &&
+            s_Wl.monitorData[i].monitor == monitor) {
+            s_Wl.monitorData[i].used = PAL_FALSE;
+        }
+    }
+}
+
+WindowData* wlGetFreeWindowData()
+{
+    for (int i = 0; i < s_Wl.maxWindowData; ++i) {
+        if (!s_Wl.windowData[i].used) {
+            s_Wl.windowData[i].used = PAL_TRUE;
+            return &s_Wl.windowData[i];
+        }
+    }
+
+    // resize the data array
+    // It is rare for a user to create and manage
+    // 32 windows at the same time
+    WindowData* data = nullptr;
+    int count = s_Wl.maxWindowData * 2; // double the size
+    int freeIndex = s_Wl.maxWindowData + 1;
+    data = palAllocate(s_Wl.allocator, sizeof(WindowData) * count, 0);
+    if (data) {
+        memcpy(
+            data,
+            s_Wl.windowData,
+            s_Wl.maxWindowData * sizeof(WindowData));
+
+        palFree(s_Wl.allocator, s_Wl.windowData);
+        s_Wl.windowData = data;
+        s_Wl.maxWindowData = count;
+
+        s_Wl.windowData[freeIndex].used = PAL_TRUE;
+        return &s_Wl.windowData[freeIndex];
+    }
+    return nullptr;
+}
+
+WindowData* wlFindWindowData(PalWindow* window)
+{
+    for (int i = 0; i < s_Wl.maxWindowData; ++i) {
+        if (s_Wl.windowData[i].used &&
+            s_Wl.windowData[i].window == window) {
+            return &s_Wl.windowData[i];
+        }
+    }
+    return nullptr;
+}
+
+static inline uint64_t getCurrentTime()
+{
+    uint64_t now = palGetPerformanceCounter();
+    return (now * 1000) / s_Keyboard.frequency;
+}
+
 // ==================================================
 // Registry
 // ==================================================
@@ -124,7 +428,7 @@ static void globalHandle(
         features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
         features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
-        s_Video.features = features;
+        s_Wl.features = features;
         s_Wl.checkFeatures = PAL_FALSE;
     }
 
@@ -148,13 +452,13 @@ static void globalHandle(
         s_Wl.decorationManager =
             wlRegistryBind(registry, name, &zxdg_decoration_manager_v1_interface, 1);
 
-        s_Video.features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+        s_Wl.features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
 
     } else if (strcmp(interface, "wl_output") == 0) {
         // wayland does not let use query monitors directly
         // so we enumerate and store at init and update the
         // cache when a monitor is added or removed
-        MonitorData* monitorData = getFreeMonitorData();
+        MonitorData* monitorData = wlGetFreeMonitorData();
         if (!monitorData) {
             return;
         }
@@ -174,9 +478,9 @@ static void globalRemove(
     struct wl_registry* registry,
     uint32_t name)
 {
-    for (int i = 0; i < s_Video.maxMonitorData; ++i) {
-        if (s_Video.monitorData[i].used && s_Video.monitorData[i].wlName == name) {
-            MonitorData* data = &s_Video.monitorData[i];
+    for (int i = 0; i < s_Wl.maxMonitorData; ++i) {
+        if (s_Wl.monitorData[i].used && s_Wl.monitorData[i].wlName == name) {
+            MonitorData* data = &s_Wl.monitorData[i];
             data->used = PAL_FALSE;
             s_Wl.proxyDestroy((struct wl_proxy*)data->monitor);
             s_Wl.monitorCount--;
@@ -281,7 +585,7 @@ static void surfaceHandleEnter(
     struct wl_output* output)
 {
     WindowData* data = userData;
-    MonitorData* monitorData = findMonitorData((PalMonitor*)output);
+    MonitorData* monitorData = wlFindMonitorData((PalMonitor*)output);
     if (!monitorData) {
         return;
     }
@@ -324,15 +628,15 @@ static void surfaceHandleEnter(
 
     // the code below should be skipped if users are not 
     // interested in DPI changed events
-    PalDispatchMode mode = PAL_DISPATCH_NONE;
-    PalEventType type = PAL_EVENT_MONITOR_DPI_CHANGED;
-    if (!s_Video.eventDriver) {
+    PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+    PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
+    if (!s_Wl.eventDriver) {
         return;
     }
 
-    PalEventDriver* driver = s_Video.eventDriver;
+    PalEventDriver* driver = s_Wl.eventDriver;
     mode = palGetEventDispatchMode(driver, type);
-    if (mode == PAL_DISPATCH_NONE) {
+    if (mode == PAL_DISPATCH_MODE_NONE) {
         return;
     }
 
@@ -368,7 +672,7 @@ static void surfaceHandleLeave(
 {
     // remove the monitor from our span monitor list
     WindowData* data = userData;
-    MonitorData* monitorData = findMonitorData((PalMonitor*)output);
+    MonitorData* monitorData = wlFindMonitorData((PalMonitor*)output);
     if (!monitorData) {
         return;
     }
@@ -397,7 +701,7 @@ static void pointerHandleEnter(
     wl_fixed_t surface_x,
     wl_fixed_t surface_y)
 {
-    WindowData* data = findWindowData((PalWindow*)surface);
+    WindowData* data = wlFindWindowData((PalWindow*)surface);
     if (!data) {
         return;
     }
@@ -440,14 +744,14 @@ static void pointerHandleMotion(
     const int dx = x - s_Mouse.lastX;
     const int dy = y - s_Mouse.lastY;
 
-    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
     PalWindow* window = (PalWindow*)s_Wl.pointerSurface;
-    if (s_Video.eventDriver && window) {
+    if (s_Wl.eventDriver && window) {
         // we only push a mouse move only if we are on a window
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalEventType type = PAL_EVENT_MOUSE_MOVE;
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalEventType type = PAL_EVENT_TYPE_MOUSE_MOVE;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data = palPackInt32(x, y);
@@ -456,9 +760,9 @@ static void pointerHandleMotion(
         }
 
         // push a mouse delta event
-        type = PAL_EVENT_MOUSE_DELTA;
+        type = PAL_EVENT_TYPE_MOUSE_DELTA;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data = palPackFloat((float)dx, (float)dy);
@@ -492,7 +796,7 @@ static void pointerHandleButton(
     
     PalBool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
     PalMouseButton _button = 0;
-    PalEventType type = PAL_EVENT_MOUSE_BUTTONUP;
+    PalEventType type = PAL_EVENT_TYPE_MOUSE_BUTTONUP;
 
     if (button == BTN_LEFT) {
         _button = PAL_MOUSE_BUTTON_LEFT;
@@ -511,15 +815,15 @@ static void pointerHandleButton(
     }
 
     if (pressed) {
-        type = PAL_EVENT_MOUSE_BUTTONDOWN;
+        type = PAL_EVENT_TYPE_MOUSE_BUTTONDOWN;
     }
 
     s_Mouse.state[_button] = pressed;
-    if (s_Video.eventDriver) {
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
+    if (s_Wl.eventDriver) {
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
 
@@ -591,12 +895,12 @@ static void pointerHandleFrame(
 
     const int dx = (int)s_Mouse.accumScrollX;
     const int dy = (int)s_Mouse.accumScrollY;
-    if (s_Video.eventDriver) {
-        PalEventType type = PAL_EVENT_MOUSE_WHEEL;
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
+    if (s_Wl.eventDriver) {
+        PalEventType type = PAL_EVENT_TYPE_MOUSE_WHEEL;
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data = palPackFloat((float)dx, (float)dy);
@@ -725,8 +1029,8 @@ static void keyboardHandleKey(
     PalScancode scancode = 0;
     PalKeycode keycode = 0;
     PalBool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
-    PalEventType type = PAL_EVENT_KEYUP;
-    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    PalEventType type = PAL_EVENT_TYPE_KEYUP;
+    PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
     xkb_keysym_t keySym = s_Wl.xkbStateKeyGetOneSym(s_Wl.state, key + 8);
 
     // special handling
@@ -779,7 +1083,7 @@ static void keyboardHandleKey(
             s_Keyboard.repeatKey = 0;
         }
 
-        type = PAL_EVENT_KEYDOWN;
+        type = PAL_EVENT_TYPE_KEYDOWN;
 
     } else {
         // key release
@@ -788,10 +1092,10 @@ static void keyboardHandleKey(
         }
     }
 
-    if (s_Video.eventDriver) {
-        PalEventDriver* driver = s_Video.eventDriver;
+    if (s_Wl.eventDriver) {
+        PalEventDriver* driver = s_Wl.eventDriver;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data = palPackUint32(keycode, scancode);
@@ -800,9 +1104,9 @@ static void keyboardHandleKey(
         }
 
         // check for char event if enabled
-        type = PAL_EVENT_KEYCHAR;
+        type = PAL_EVENT_TYPE_KEYCHAR;
         mode = palGetEventDispatchMode(driver, type);
-        if (mode == PAL_DISPATCH_NONE) {
+        if (mode == PAL_DISPATCH_MODE_NONE) {
             return;
         }
 
@@ -920,15 +1224,13 @@ static void xdgSurfaceHandleConfigure(
             } else {
                 // create a new buffer with the new size
                 struct wl_buffer* buffer = nullptr;
-                buffer =
-                    createShmBuffer(winData->w, winData->h, nullptr, PAL_FALSE);
+                buffer = createShmBuffer(winData->w, winData->h, nullptr, PAL_FALSE);
                 if (!buffer) {
                     return;
                 }
 
                 struct wl_surface* _surface = nullptr;
                 _surface = (struct wl_surface*)winData->window;
-
                 wlSurfaceAttach(_surface, buffer, 0, 0);
                 wlSurfaceDamageBuffer(_surface, 0, 0, winData->w, winData->h);
                 wlSurfaceCommit(_surface);
@@ -939,16 +1241,16 @@ static void xdgSurfaceHandleConfigure(
             }
 
             // push a window resize event
-            if (s_Video.eventDriver) {
-                PalEventType type = PAL_EVENT_WINDOW_SIZE;
-                PalDispatchMode mode = PAL_DISPATCH_NONE;
-                mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Wl.eventDriver) {
+                PalEventType type = PAL_EVENT_TYPE_WINDOW_SIZE;
+                PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+                mode = palGetEventDispatchMode(s_Wl.eventDriver, type);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data = palPackUint32(winData->w, winData->h);
                     event.data2 = palPackPointer(winData->window);
-                    palPushEvent(s_Video.eventDriver, &event);
+                    palPushEvent(s_Wl.eventDriver, &event);
                 }
             }
 
@@ -965,16 +1267,16 @@ static void xdgSurfaceHandleConfigure(
         // push a window state event
         // we dont recreate buffers over here
         // since we already create the buffer with the new size
-        if (s_Video.eventDriver) {
-            PalEventType type = PAL_EVENT_WINDOW_STATE;
-            PalDispatchMode mode = PAL_DISPATCH_NONE;
-            mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-            if (mode != PAL_DISPATCH_NONE) {
+        if (s_Wl.eventDriver) {
+            PalEventType type = PAL_EVENT_TYPE_WINDOW_STATE;
+            PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+            mode = palGetEventDispatchMode(s_Wl.eventDriver, type);
+            if (mode != PAL_DISPATCH_MODE_NONE) {
                 PalEvent event = {0};
                 event.type = type;
                 event.data = winData->state;
                 event.data2 = palPackPointer(winData->window);
-                palPushEvent(s_Video.eventDriver, &event);
+                palPushEvent(s_Wl.eventDriver, &event);
             }
         }
 
@@ -1029,13 +1331,13 @@ static void xdgToplevelHandleConfigure(
         return;
     }
 
-    if (s_Video.eventDriver) {
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
-        PalEventType type = PAL_EVENT_WINDOW_FOCUS;
+    if (s_Wl.eventDriver) {
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+        PalEventType type = PAL_EVENT_TYPE_WINDOW_FOCUS;
         mode = palGetEventDispatchMode(driver, type);
 
-        if (mode != PAL_DISPATCH_NONE) {
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data = winData->focused;
@@ -1050,15 +1352,15 @@ static void xdgToplevelHandleClose(
     struct xdg_toplevel* toplevel)
 {
     WindowData* winData = (WindowData*)data;
-    if (s_Video.eventDriver) {
-        PalEventType type = PAL_EVENT_WINDOW_CLOSE;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
-        mode = palGetEventDispatchMode(s_Video.eventDriver, type);
-        if (mode != PAL_DISPATCH_NONE) {
+    if (s_Wl.eventDriver) {
+        PalEventType type = PAL_EVENT_TYPE_WINDOW_CLOSE;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+        mode = palGetEventDispatchMode(s_Wl.eventDriver, type);
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data2 = palPackPointer(winData->window);
-            palPushEvent(s_Video.eventDriver, &event);
+            palPushEvent(s_Wl.eventDriver, &event);
         }
     }
 }
@@ -1072,13 +1374,13 @@ void zxdgDecorationHandleConfigure(
     struct zxdg_toplevel_decoration_v1* dec,
     uint32_t mode)
 {
-    if (s_Video.eventDriver) {
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalDispatchMode dispatchMode = PAL_DISPATCH_NONE;
-        PalEventType type = PAL_EVENT_WINDOW_DECORATION_MODE;
+    if (s_Wl.eventDriver) {
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalDispatchMode dispatchMode = PAL_DISPATCH_MODE_NONE;
+        PalEventType type = PAL_EVENT_TYPE_WINDOW_DECORATION_MODE;
         dispatchMode = palGetEventDispatchMode(driver, type);
 
-        if (dispatchMode != PAL_DISPATCH_NONE) {
+        if (dispatchMode != PAL_DISPATCH_MODE_NONE) {
             PalDecorationMode decorMode = PAL_DECORATION_MODE_SERVER_SIDE;
             if (mode == 0 || mode == 1) {
                 // client side decoration
@@ -1094,56 +1396,10 @@ void zxdgDecorationHandleConfigure(
     }
 }
 
-static void createKeycodeTable()
-{
-    // Tis is for only printable and text input keys
-
-    // Letters
-    s_Keyboard.keycodes[XKB_KEY_a] = PAL_KEYCODE_A;
-    s_Keyboard.keycodes[XKB_KEY_b] = PAL_KEYCODE_B;
-    s_Keyboard.keycodes[XKB_KEY_c] = PAL_KEYCODE_C;
-    s_Keyboard.keycodes[XKB_KEY_d] = PAL_KEYCODE_D;
-    s_Keyboard.keycodes[XKB_KEY_e] = PAL_KEYCODE_E;
-    s_Keyboard.keycodes[XKB_KEY_f] = PAL_KEYCODE_F;
-    s_Keyboard.keycodes[XKB_KEY_g] = PAL_KEYCODE_G;
-    s_Keyboard.keycodes[XKB_KEY_h] = PAL_KEYCODE_H;
-    s_Keyboard.keycodes[XKB_KEY_i] = PAL_KEYCODE_I;
-    s_Keyboard.keycodes[XKB_KEY_j] = PAL_KEYCODE_J;
-    s_Keyboard.keycodes[XKB_KEY_k] = PAL_KEYCODE_K;
-    s_Keyboard.keycodes[XKB_KEY_l] = PAL_KEYCODE_L;
-    s_Keyboard.keycodes[XKB_KEY_m] = PAL_KEYCODE_M;
-    s_Keyboard.keycodes[XKB_KEY_n] = PAL_KEYCODE_N;
-    s_Keyboard.keycodes[XKB_KEY_o] = PAL_KEYCODE_O;
-    s_Keyboard.keycodes[XKB_KEY_p] = PAL_KEYCODE_P;
-    s_Keyboard.keycodes[XKB_KEY_q] = PAL_KEYCODE_Q;
-    s_Keyboard.keycodes[XKB_KEY_r] = PAL_KEYCODE_R;
-    s_Keyboard.keycodes[XKB_KEY_s] = PAL_KEYCODE_S;
-    s_Keyboard.keycodes[XKB_KEY_t] = PAL_KEYCODE_T;
-    s_Keyboard.keycodes[XKB_KEY_u] = PAL_KEYCODE_U;
-    s_Keyboard.keycodes[XKB_KEY_v] = PAL_KEYCODE_V;
-    s_Keyboard.keycodes[XKB_KEY_w] = PAL_KEYCODE_W;
-    s_Keyboard.keycodes[XKB_KEY_x] = PAL_KEYCODE_X;
-    s_Keyboard.keycodes[XKB_KEY_y] = PAL_KEYCODE_Y;
-    s_Keyboard.keycodes[XKB_KEY_z] = PAL_KEYCODE_Z;
-
-    // Control
-    s_Keyboard.keycodes[XKB_KEY_space] = PAL_KEYCODE_SPACE;
-
-    // Misc
-    s_Keyboard.keycodes[XKB_KEY_apostrophe] = PAL_KEYCODE_APOSTROPHE;
-    s_Keyboard.keycodes[XKB_KEY_backslash] = PAL_KEYCODE_BACKSLASH;
-    s_Keyboard.keycodes[XKB_KEY_comma] = PAL_KEYCODE_COMMA;
-    s_Keyboard.keycodes[XKB_KEY_equal] = PAL_KEYCODE_EQUAL;
-    s_Keyboard.keycodes[XKB_KEY_grave] = PAL_KEYCODE_GRAVEACCENT;
-    s_Keyboard.keycodes[XKB_KEY_minus] = PAL_KEYCODE_SUBTRACT;
-    s_Keyboard.keycodes[XKB_KEY_period] = PAL_KEYCODE_PERIOD;
-    s_Keyboard.keycodes[XKB_KEY_semicolon] = PAL_KEYCODE_SEMICOLON;
-    s_Keyboard.keycodes[XKB_KEY_slash] = PAL_KEYCODE_SLASH;
-    s_Keyboard.keycodes[XKB_KEY_bracketleft] = PAL_KEYCODE_LBRACKET;
-    s_Keyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
-}
-
-PalResult wlInitVideo()
+PalResult wlInitVideo(
+    const PalAllocator* allocator, 
+    PalEventDriver* eventDriver, 
+    void* preferredInstance)
 {
     // load wayland libray
     s_Wl.handle = dlopen("libwayland-client.so.0", RTLD_LAZY);
@@ -1157,8 +1413,8 @@ PalResult wlInitVideo()
         !s_Wl.libCursor ||
         !s_Wl.libWaylandEgl) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_POSIX, 
             errno);
     }
 
@@ -1308,28 +1564,31 @@ PalResult wlInitVideo()
         "wl_egl_window_resize");
     // clang-format on
 
+    s_Wl.maxMonitorData = 16; // initial size
+    s_Wl.maxWindowData = 32;  // initial size
+    s_Wl.windowData = palAllocate(s_Wl.allocator, sizeof(WindowData) * s_Wl.maxWindowData, 0);
+    s_Wl.monitorData = palAllocate(s_Wl.allocator,sizeof(MonitorData) * s_Wl.maxMonitorData,0);
+    if (!s_Wl.monitorData || !s_Wl.windowData) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
     // initialize wayland
     s_Wl.checkFeatures = PAL_TRUE;
     s_Wl.monitorCount = 0;
     setupProtocols();
 
     // check if user supplied their own display
-    if (s_Video.display) {
-        s_Wl.display = (struct wl_display*)s_Video.display;
+    if (preferredInstance) {
+        s_Wl.display = (struct wl_display*)preferredInstance;
 
     } else {
         s_Wl.display = s_Wl.displayConnect(nullptr);
-        s_Video.display = nullptr;
+        if (!s_Wl.display) {
+            return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        }
     }
 
-    if (!s_Wl.display) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
-    }
-
-    s_Video.display = (void*)s_Wl.display;
+    s_Wl.display = (void*)s_Wl.display;
     s_Wl.registry = wlDisplayGetRegistry(s_Wl.display);
     wlRegistryAddListener(s_Wl.registry, &s_RegistryListener, nullptr);
     s_Wl.displayRoundtrip(s_Wl.display);
@@ -1338,33 +1597,42 @@ PalResult wlInitVideo()
     s_Wl.displayRoundtrip(s_Wl.display);
 
     if (!s_Wl.compositor || !s_Wl.xdgBase || !s_Wl.shm) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     // create an input context
     s_Wl.inputContext = s_Wl.xkbContextNew(XKB_CONTEXT_NO_FLAGS);
     if (!s_Wl.inputContext) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
     // get the current theme
     s_Wl.cursorTheme = s_Wl.cursorThemeLoad(nullptr, 32, s_Wl.shm);
     if (!s_Wl.cursorTheme) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_LINUX, 
-            errno);
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+    }
+
+    // load EGL
+    s_Egl.handle = dlopen("libEGL.so", RTLD_LAZY);
+    if (s_Egl.handle) {
+        eglGetProcAddressFn load = nullptr;
+        load = (eglGetProcAddressFn)dlsym(s_Egl.handle, "eglGetProcAddress");
+
+        s_Egl.eglInitialize = (eglInitializeFn)load("eglInitialize");
+        s_Egl.eglTerminate = (eglTerminateFn)load("eglTerminate");
+        s_Egl.eglGetDisplay = (eglGetDisplayFn)load("eglGetDisplay");
+        s_Egl.eglChooseConfig = (eglChooseConfigFn)load("eglChooseConfig");
+        s_Egl.eglGetError = (eglGetErrorFn)load("eglGetError");
+        s_Egl.eglBindAPI = (eglBindAPIFn)load("eglBindAPI");
+        s_Egl.eglGetConfigs = (eglGetConfigsFn)load("eglGetConfigs");
+        s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
     }
 
     createKeycodeTable();
+    createScancodeTable();
 
-    s_Video.display = (void*)s_Wl.display;
+    s_Wl.allocator = allocator;
+    s_Wl.eventDriver = eventDriver;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -1385,7 +1653,7 @@ void wlShutdownVideo()
         s_Wl.proxyDestroy((struct wl_proxy*)s_Wl.seat);
     }
 
-    if (!s_Video.display) {
+    if (!s_Wl.display) {
         // opened by PAL
         s_Wl.displayDisconnect(s_Wl.display);
 
@@ -1393,6 +1661,12 @@ void wlShutdownVideo()
         dlclose(s_Wl.xkbCommon);
         dlclose(s_Wl.libWaylandEgl);
         dlclose(s_Wl.handle);
+    }
+
+    palFree(s_Wl.allocator, s_Wl.windowData);
+    palFree(s_Wl.allocator, s_Wl.monitorData);
+    if (s_Egl.handle) {
+        dlclose(s_Egl.handle);
     }
 
     memset(&s_Wl, 0, sizeof(Wayland));
@@ -1406,11 +1680,11 @@ void wlUpdateVideo()
 
     // push key repeats
     // we only do this if the user wants key repeat events
-    if (s_Keyboard.repeatKey != 0 && s_Video.eventDriver) {
-        PalEventDriver* driver = s_Video.eventDriver;
-        PalDispatchMode mode = PAL_DISPATCH_NONE;
-        mode = palGetEventDispatchMode(driver, PAL_EVENT_KEYREPEAT);
-        if (mode != PAL_DISPATCH_NONE) {
+    if (s_Keyboard.repeatKey != 0 && s_Wl.eventDriver) {
+        PalEventDriver* driver = s_Wl.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+        mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_KEYREPEAT);
+        if (mode != PAL_DISPATCH_MODE_NONE) {
             // get now time and check with the key repeat time
             uint64_t now = getCurrentTime();
             if (now >= s_Keyboard.timer) {
@@ -1419,7 +1693,7 @@ void wlUpdateVideo()
                 PalScancode scancode = s_Keyboard.repeatScancode;
 
                 PalEvent event = {0};
-                event.type = PAL_EVENT_KEYREPEAT;
+                event.type = PAL_EVENT_TYPE_KEYREPEAT;
                 event.data = palPackUint32(key, scancode);
                 event.data2 = palPackPointer(window);
                 palPushEvent(driver, &event);
@@ -1445,6 +1719,52 @@ void wlUpdateVideo()
 
     // dispatch events that were read
     s_Wl.dispatchPending(s_Wl.display);
+}
+
+PalVideoFeatures wlGetVideoFeatures()
+{
+    return s_Wl.features;
+}
+
+const PalBool* wlGetKeycodeState()
+{
+    return s_Keyboard.keycodeState;
+}
+
+const PalBool* wlGetScancodeState()
+{
+    return s_Keyboard.scancodeState;
+}
+
+const PalBool* wlGetMouseState()
+{
+    return s_Mouse.state;
+}
+
+void wlGetMouseDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)s_Mouse.dx;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.dy;
+    }
+}
+
+void wlGetMouseWheelDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)s_Mouse.WheelX;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.WheelY;
+    }
 }
 
 void* wlGetInstance()
@@ -1524,4 +1844,3 @@ struct xdg_toplevel_listener s_XdgToplevelListener = {
 };
 
 #endif // PAL_HAS_WAYLAND_BACKEND
-#endif // __linux__

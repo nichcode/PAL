@@ -7,10 +7,13 @@
 
 #ifndef _PAL_WAYLAND_H
 #define _PAL_WAYLAND_H
-#ifdef __linux__
+
 #if PAL_HAS_WAYLAND_BACKEND == 1
 
-#include "video/linux/pal_video_linux.h"
+#define MAX_SPAN_MONITORS 4
+
+#include "pal/pal_video.h"
+#include "video/pal_video_egl.h"
 #include <wayland-client.h>
 #include <wayland-util.h>
 #include <wayland-cursor.h>
@@ -132,8 +135,62 @@ typedef struct {
 } WaylandCursor;
 
 typedef struct {
+    void* monitor;
+    int dpi;
+} SpanMonitor;
+
+typedef struct {
+    PalBool used;
+    int dpi;
+    int x;
+    int y;
+    uint32_t w;
+    uint32_t h;
+    uint32_t refreshRate;
+    uint32_t wlName;
+    PalOrientation orientation;
+    PalMonitor* monitor;
+    PalMonitorMode mode; // wayland only sends current
+    char name[32];
+} MonitorData;
+
+typedef struct {
+    PalBool skipConfigure;
+    PalBool skipState;
+    PalBool used;
+    PalBool isAttached;
+    PalBool skipIfAttached;
+    PalBool focused;
+    PalBool pushConfigureEvent;
+    PalBool pushStateEvent;
+    int x;
+    int y;
+    uint32_t w;
+    uint32_t h;
+    int dpi;
+    int monitorCount;
+    PalWindowState state;
+    PalWindow* window;
+    
+    struct xdg_surface* xdgSurface;
+    struct xdg_toplevel* xdgToplevel;
+    struct wl_buffer* buffer;
+    struct zxdg_toplevel_decoration_v1* decoration;
+    void* cursor;
+    struct wl_egl_window* eglWindow;
+    SpanMonitor monitors[MAX_SPAN_MONITORS];
+} WindowData;
+
+typedef struct {
     PalBool checkFeatures;
     int monitorCount;
+    int32_t maxWindowData;
+    int32_t maxMonitorData;
+    PalVideoFeatures features;
+    const PalAllocator* allocator;
+    PalEventDriver* eventDriver;
+    WindowData* windowData;
+    MonitorData* monitorData;
 
     void* handle;
     void* xkbCommon;
@@ -229,6 +286,11 @@ struct wl_buffer* createShmBuffer(
     const uint8_t* pixels,
     PalBool cursor);
 
+MonitorData* wlGetFreeMonitorData();
+MonitorData* wlFindMonitorData(PalMonitor* monitor);
+void wlFreeMonitorData(PalMonitor* monitor);
+WindowData* wlGetFreeWindowData();
+WindowData* wlFindWindowData(PalWindow* window);
+
 #endif // PAL_HAS_WAYLAND_BACKEND
-#endif // __linux__
 #endif // _PAL_WAYLAND_H

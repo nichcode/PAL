@@ -160,7 +160,7 @@ void setWindowTitleX11(PalWindowHandleInfo* windowInfo)
         "XFree");
     // clang-format on
 
-    Display* display = (Display*)windowInfo->nativeDisplay;
+    Display* display = (Display*)windowInfo->nativeInstance;
     Window window = (Window)(uintptr_t)windowInfo->nativeWindow;
 
     s_NET_WM_NAME = s_XInternAtom(display, "_NET_WM_NAME", False);
@@ -189,7 +189,7 @@ void setWindowTitleX11(PalWindowHandleInfo* windowInfo)
 void getWindowTitleX11(PalWindowHandleInfo* windowInfo)
 {
 #ifdef __linux__
-    Display* display = (Display*)windowInfo->nativeDisplay;
+    Display* display = (Display*)windowInfo->nativeInstance;
     Window window = (Window)(uintptr_t)windowInfo->nativeWindow;
 
     if (s_NET_WM_NAME) {
@@ -243,7 +243,7 @@ void setWindowTitleWayland(PalWindowHandleInfo* windowInfo)
 
     struct xdg_toplevel* toplevel = nullptr;
     struct wl_display* display = nullptr;
-    display = (struct wl_display*)windowInfo->nativeDisplay;
+    display = (struct wl_display*)windowInfo->nativeInstance;
     toplevel = (struct xdg_toplevel*)windowInfo->nativeHandle2;
 
     xdgToplevelSetTitle(toplevel, "Hello from native Wayland API");
@@ -364,8 +364,8 @@ PalBool nativeIntegrationTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     // set the window title using native APIs
     PalWindowHandleInfo windowInfo = {0};
@@ -402,12 +402,12 @@ PalBool nativeIntegrationTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {

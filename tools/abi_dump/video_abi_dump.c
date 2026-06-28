@@ -132,11 +132,11 @@ static void monitorModeDump(PalBool verbose)
 
 static void flashDump(PalBool verbose)
 {
-    uint32_t xSize = 16;
-    uint32_t xAlign = 8;
+    uint32_t xSize = 12;
+    uint32_t xAlign = 4;
     uint32_t xOffset1 = 0;
-    uint32_t xOffset2 = 8;
-    uint32_t xOffset3 = 12;
+    uint32_t xOffset2 = 4;
+    uint32_t xOffset3 = 8;
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalFlashInfo);
@@ -169,7 +169,7 @@ static void flashDump(PalBool verbose)
         palLog(nullptr, "padding      %u            %u", xPadding, yPadding);
         palLog(nullptr, "flags @      %u            %u", xOffset1, yOffset1);
         palLog(nullptr, "interval @   %u            %u", xOffset2, yOffset2);
-        palLog(nullptr, "count @      %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "count @      %u            %u", xOffset3, yOffset3);
         palLog(nullptr, "===========================================");
     }
 
@@ -336,36 +336,36 @@ static void windowInfoDump(PalBool verbose)
 
 static void windowDump(PalBool verbose)
 {
-    uint32_t xSize = 72;
+    uint32_t xSize = 64;
     uint32_t xAlign = 8;
     uint32_t xOffset1 = 0;
     uint32_t xOffset2 = 8;
     uint32_t xOffset3 = 16;
     uint32_t xOffset4 = 24;
     uint32_t xOffset5 = 32;
-    uint32_t xOffset6 = 40;
-    uint32_t xOffset7 = 44;
-    uint32_t xOffset8 = 48;
-    uint32_t xOffset9 = 52;
-    uint32_t xOffset10 = 56;
-    uint32_t xOffset11 = 60;
-    uint32_t xOffset12 = 64;
-    uint32_t xOffset13 = 68;
+    uint32_t xOffset6 = 36;
+    uint32_t xOffset7 = 40;
+    uint32_t xOffset8 = 44;
+    uint32_t xOffset9 = 48;
+    uint32_t xOffset10 = 52;
+    uint32_t xOffset11 = 56;
+    uint32_t xOffset12 = 60;
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalWindowCreateInfo);
     uint32_t yAlign = PAL_ALIGNOF(PalWindowCreateInfo);
-    uint32_t yOffset1 = offsetof(PalWindowCreateInfo, style);
-    uint32_t yOffset2 = offsetof(PalWindowCreateInfo, title);
-    uint32_t yOffset3 = offsetof(PalWindowCreateInfo, monitor);
-    uint32_t yOffset4 = offsetof(PalWindowCreateInfo, appName);
-    uint32_t yOffset5 = offsetof(PalWindowCreateInfo, instanceName);
-    uint32_t yOffset6 = offsetof(PalWindowCreateInfo, fbConfigBackend);
-    uint32_t yOffset7 = offsetof(PalWindowCreateInfo, fbConfigIndex);
-    uint32_t yOffset8 = offsetof(PalWindowCreateInfo, width);
-    uint32_t yOffset9 = offsetof(PalWindowCreateInfo, height);
-    uint32_t yOffset10 = offsetof(PalWindowCreateInfo, show);
-    uint32_t yOffset13 = offsetof(PalWindowCreateInfo, center);
+    uint32_t yOffset1 = offsetof(PalWindowCreateInfo, title);
+    uint32_t yOffset2 = offsetof(PalWindowCreateInfo, monitor);
+    uint32_t yOffset3 = offsetof(PalWindowCreateInfo, appName);
+    uint32_t yOffset4 = offsetof(PalWindowCreateInfo, instanceName);
+    uint32_t yOffset5 = offsetof(PalWindowCreateInfo, fbConfigBackend);
+    uint32_t yOffset6 = offsetof(PalWindowCreateInfo, fbConfigIndex);
+    uint32_t yOffset7 = offsetof(PalWindowCreateInfo, width);
+    uint32_t yOffset8 = offsetof(PalWindowCreateInfo, height);
+    uint32_t yOffset9 = offsetof(PalWindowCreateInfo, show);
+    uint32_t yOffset10 = offsetof(PalWindowCreateInfo, style);
+    uint32_t yOffset11 = offsetof(PalWindowCreateInfo, state);
+    uint32_t yOffset12 = offsetof(PalWindowCreateInfo, center);
     uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
 
     const char* result = s_FailedString;
@@ -382,7 +382,8 @@ static void windowDump(PalBool verbose)
         xOffset8 == yOffset8      &&
         xOffset9 == yOffset9      &&
         xOffset10 == yOffset10    &&
-        xOffset13 == yOffset13    &&
+        xOffset11 == yOffset11    &&
+        xOffset12 == yOffset12    &&
         xPadding == yPadding) {
         result = s_PassedString;
     }
@@ -397,17 +398,18 @@ static void windowDump(PalBool verbose)
         palLog(nullptr, "size               %u           %u", xSize, ySize);
         palLog(nullptr, "align              %u            %u", xAlign, yAlign);
         palLog(nullptr, "padding            %u            %u", xPadding, yPadding);
-        palLog(nullptr, "style @            %u            %u", xOffset1, yOffset1);
-        palLog(nullptr, "title @            %u            %u", xOffset2, yOffset2);
-        palLog(nullptr, "monitor @          %u           %u", xOffset3, yOffset3);
-        palLog(nullptr, "appName @          %u           %u", xOffset4, yOffset4);
-        palLog(nullptr, "instanceName @     %u           %u", xOffset5, yOffset5);
-        palLog(nullptr, "fbConfigBackend @  %u           %u", xOffset6, yOffset6);
-        palLog(nullptr, "fbConfigIndex @    %u           %u", xOffset7, yOffset7);
-        palLog(nullptr, "width @            %u           %u", xOffset8, yOffset8);
-        palLog(nullptr, "height @           %u           %u", xOffset9, yOffset9);
-        palLog(nullptr, "show @             %u           %u", xOffset10, yOffset10);
-        palLog(nullptr, "center @           %u           %u", xOffset13, yOffset13);
+        palLog(nullptr, "title @            %u            %u", xOffset1, yOffset1);
+        palLog(nullptr, "monitor @          %u            %u", xOffset2, yOffset2);
+        palLog(nullptr, "appName @          %u           %u", xOffset3, yOffset3);
+        palLog(nullptr, "instanceName @     %u           %u", xOffset4, yOffset4);
+        palLog(nullptr, "fbConfigBackend @  %u           %u", xOffset5, yOffset5);
+        palLog(nullptr, "fbConfigIndex @    %u           %u", xOffset6, yOffset6);
+        palLog(nullptr, "width @            %u           %u", xOffset7, yOffset7);
+        palLog(nullptr, "height @           %u           %u", xOffset8, yOffset8);
+        palLog(nullptr, "show @             %u           %u", xOffset9, yOffset9);
+        palLog(nullptr, "style @            %u           %u", xOffset10, yOffset10);
+        palLog(nullptr, "state @            %u           %u", xOffset11, yOffset11);
+        palLog(nullptr, "center @           %u           %u", xOffset12, yOffset12);
         palLog(nullptr, "===========================================");
     }
 
