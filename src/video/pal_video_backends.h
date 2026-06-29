@@ -4,8 +4,8 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifndef _PAL_BACKENDS_LINUX_H
-#define _PAL_BACKENDS_LINUX_H
+#ifndef _PAL_VIDEO_BACKENDS_H
+#define _PAL_VIDEO_BACKENDS_H
 
 #include "pal/pal_video.h"
 
@@ -68,7 +68,7 @@ typedef struct {
     PalResult (*detachWindow)(PalWindow*, void**);
     void* (*getInstance)();
     // clang-format on
-} Backend;
+} VideoBackend;
 
 // ==================================================
 // WIN32
@@ -134,7 +134,7 @@ PalResult win32AttachWindow(void*, PalWindow**);
 PalResult win32DetachWindow(PalWindow*, void**);
 void* win32GetInstance();
 
-static Backend s_Win32Backend = {
+static VideoBackend s_Win32Backend = {
     .shutdownVideo = win32ShutdownVideo,
     .updateVideo = win32UpdateVideo,
     .getVideoFeatures = win32GetVideoFeatures,
@@ -258,7 +258,7 @@ PalResult xAttachWindow(void*, PalWindow**);
 PalResult xDetachWindow(PalWindow*, void**);
 void* xGetInstance();
 
-static Backend s_XBackend = {
+static VideoBackend s_XBackend = {
     .shutdownVideo = xShutdownVideo,
     .updateVideo = xUpdateVideo,
     .getVideoFeatures = xGetVideoFeatures,
@@ -383,7 +383,7 @@ PalResult wlAttachWindow(void*, PalWindow**);
 PalResult wlDetachWindow(PalWindow*, void**);
 void* wlGetInstance();
 
-static Backend s_wlBackend = {
+static VideoBackend s_wlBackend = {
     .shutdownVideo = wlShutdownVideo,
     .updateVideo = wlUpdateVideo,
     .getVideoFeatures = wlGetVideoFeatures,
@@ -443,4 +443,4 @@ static Backend s_wlBackend = {
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 
-#endif // _PAL_BACKENDS_LINUX_H
+#endif // _PAL_VIDEO_BACKENDS_H

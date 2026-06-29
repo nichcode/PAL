@@ -11,10 +11,10 @@
 
 typedef struct {
     PalBool initialized;
-    const Backend* backend;
+    const VideoBackend* backend;
 } Video;
 
-EGL s_Egl = {0};
+VideoEGL s_VideoEgl = {0};
 static Video s_Video = {0};
 
 static int compareModes(

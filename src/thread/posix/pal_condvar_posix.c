@@ -5,9 +5,9 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal_posix.h"
+#include "pal_platform.h"
 
-#if _PAL_ON_POSIX
+#if _PAL_HAS_POSIX
 #include "pal_thread_posix.h"
 
 PalResult PAL_CALL palCreateCondVar(
@@ -103,4 +103,4 @@ void PAL_CALL palBroadcastCondVar(PalCondVar* condVar)
     }
 }
 
-#endif // _PAL_ON_POSIX
+#endif // _PAL_HAS_POSIX

@@ -145,9 +145,9 @@ PalBool openglContextTest()
         createInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
     }
 
-    // set the backend and the fbConfig. We use PAL_CONFIG_BACKEND_PAL_OPENGL
+    // set the backend and the fbConfig. We use PAL_FBCONFIG_BACKEND_PAL_OPENGL
     // because we are using both pal_video and pal_opengl
-    createInfo.fbConfigBackend = PAL_CONFIG_BACKEND_PAL_OPENGL;
+    createInfo.fbConfigBackend = PAL_FBCONFIG_BACKEND_PAL_OPENGL;
     createInfo.fbConfigIndex = closest->index;
 
     // create the window with the create info struct
@@ -159,8 +159,8 @@ PalBool openglContextTest()
     }
 
     // we set window close to poll
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     // get window handle. You can use any window from any library
     // so long as you can get the window handle and display (if on X11, wayland)
@@ -174,7 +174,7 @@ PalBool openglContextTest()
 
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
-    glWindow.display = winHandle.nativeDisplay;
+    glWindow.instance = winHandle.nativeInstance;
 
     // On Wayland the window is the wl_egl_window
     if (winHandle.nativeHandle3) {
@@ -250,12 +250,12 @@ PalBool openglContextTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {

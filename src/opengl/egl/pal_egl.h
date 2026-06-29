@@ -5,12 +5,10 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifndef _PAL_OPENGL_LINUX_H
-#define _PAL_OPENGL_LINUX_H
-#ifdef __linux__
-
 #include "pal/pal_opengl.h"
-#include <errno.h>
+
+#ifndef _PAL_EGL_H
+#define _PAL_EGL_H
 
 #ifndef GL_VENDOR
 #define GL_VENDOR 0x1F00
@@ -180,9 +178,9 @@ typedef EGLSurface (*eglCreateWindowSurfaceFn)(
     const EGLint*);
 
 typedef const GLubyte* (*glGetStringFn)(GLenum);
-typedef void(PAL_GL_APIENTRY* glClearFn)(uint32_t);
+typedef void(*glClearFn)(uint32_t);
 
-typedef void(PAL_GL_APIENTRY* glClearColorFn)(
+typedef void(*glClearColorFn)(
     float,
     float,
     float,
@@ -195,30 +193,29 @@ typedef struct {
 } ContextData;
 
 typedef struct {
-    PalBool initialized;
     int32_t maxContextData;
     EGLenum apiType;
     int apiTypeBit;
     const PalAllocator* allocator;
 
-    eglGetProcAddressFn eglGetProcAddress;
-    eglCreateContextFn eglCreateContext;
-    eglDestroyContextFn eglDestroyContext;
-    eglMakeCurrentFn eglMakeCurrent;
-    eglSwapBuffersFn eglSwapBuffers;
-    eglSwapIntervalFn eglSwapInterval;
-    eglInitializeFn eglInitialize;
-    eglTerminateFn eglTerminate;
-    eglGetDisplayFn eglGetDisplay;
-    eglDestroySurfaceFn eglDestroySurface;
-    eglCreatePbufferSurfaceFn eglCreatePbufferSurface;
-    eglChooseConfigFn eglChooseConfig;
-    eglGetConfigAttribFn eglGetConfigAttrib;
-    eglGetErrorFn eglGetError;
-    eglBindAPIFn eglBindAPI;
-    eglQueryStringFn eglQueryString;
-    eglGetConfigsFn eglGetConfigs;
-    eglCreateWindowSurfaceFn eglCreateWindowSurface;
+    eglGetProcAddressFn getProcAddress;
+    eglCreateContextFn createContext;
+    eglDestroyContextFn destroyContext;
+    eglMakeCurrentFn makeCurrent;
+    eglSwapBuffersFn swapBuffers;
+    eglSwapIntervalFn swapInterval;
+    eglInitializeFn initialize;
+    eglTerminateFn terminate;
+    eglGetDisplayFn getDisplay;
+    eglDestroySurfaceFn destroySurface;
+    eglCreatePbufferSurfaceFn createPbufferSurface;
+    eglChooseConfigFn chooseConfig;
+    eglGetConfigAttribFn getConfigAttrib;
+    eglGetErrorFn getError;
+    eglBindAPIFn bindAPI;
+    eglQueryStringFn queryString;
+    eglGetConfigsFn getConfigs;
+    eglCreateWindowSurfaceFn createWindowSurface;
 
     glGetStringFn glGetString;
     glClearColorFn glClearColor;
@@ -229,13 +226,8 @@ typedef struct {
     ContextData* contextData;
     EGLDisplay display;
     PalGLInfo info;
-} GLLinux;
+} EGL;
 
-extern GLLinux s_GL;
+extern EGL s_Egl;
 
-ContextData* getFreeContextData();
-ContextData* findContextData(PalGLContext* context);
-void freeContextData(PalGLContext* context);
-
-#endif // __linux__
-#endif // _PAL_OPENGL_LINUX_H
+#endif // _PAL_EGL_H

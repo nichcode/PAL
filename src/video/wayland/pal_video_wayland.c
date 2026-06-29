@@ -1613,19 +1613,19 @@ PalResult wlInitVideo(
     }
 
     // load EGL
-    s_Egl.handle = dlopen("libEGL.so", RTLD_LAZY);
-    if (s_Egl.handle) {
+    s_VideoEgl.handle = dlopen("libEGL.so", RTLD_LAZY);
+    if (s_VideoEgl.handle) {
         eglGetProcAddressFn load = nullptr;
-        load = (eglGetProcAddressFn)dlsym(s_Egl.handle, "eglGetProcAddress");
+        load = (eglGetProcAddressFn)dlsym(s_VideoEgl.handle, "eglGetProcAddress");
 
-        s_Egl.eglInitialize = (eglInitializeFn)load("eglInitialize");
-        s_Egl.eglTerminate = (eglTerminateFn)load("eglTerminate");
-        s_Egl.eglGetDisplay = (eglGetDisplayFn)load("eglGetDisplay");
-        s_Egl.eglChooseConfig = (eglChooseConfigFn)load("eglChooseConfig");
-        s_Egl.eglGetError = (eglGetErrorFn)load("eglGetError");
-        s_Egl.eglBindAPI = (eglBindAPIFn)load("eglBindAPI");
-        s_Egl.eglGetConfigs = (eglGetConfigsFn)load("eglGetConfigs");
-        s_Egl.eglGetConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
+        s_VideoEgl.initialize = (eglInitializeFn)load("eglInitialize");
+        s_VideoEgl.terminate = (eglTerminateFn)load("eglTerminate");
+        s_VideoEgl.getDisplay = (eglGetDisplayFn)load("eglGetDisplay");
+        s_VideoEgl.chooseConfig = (eglChooseConfigFn)load("eglChooseConfig");
+        s_VideoEgl.getError = (eglGetErrorFn)load("eglGetError");
+        s_VideoEgl.bindAPI = (eglBindAPIFn)load("eglBindAPI");
+        s_VideoEgl.getConfigs = (eglGetConfigsFn)load("eglGetConfigs");
+        s_VideoEgl.getConfigAttrib = (eglGetConfigAttribFn)load("eglGetConfigAttrib");
     }
 
     createKeycodeTable();
@@ -1665,8 +1665,8 @@ void wlShutdownVideo()
 
     palFree(s_Wl.allocator, s_Wl.windowData);
     palFree(s_Wl.allocator, s_Wl.monitorData);
-    if (s_Egl.handle) {
-        dlclose(s_Egl.handle);
+    if (s_VideoEgl.handle) {
+        dlclose(s_VideoEgl.handle);
     }
 
     memset(&s_Wl, 0, sizeof(Wayland));

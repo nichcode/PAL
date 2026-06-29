@@ -5,9 +5,9 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal_posix.h"
+#include "pal_platform.h"
 
-#if _PAL_ON_POSIX
+#if _PAL_HAS_POSIX
 #include "pal/pal_thread.h"
 #include <pthread.h>
 
@@ -37,4 +37,4 @@ void PAL_CALL palSetTLS(
     pthread_setspecific((pthread_key_t)id, data);
 }
 
-#endif // _PAL_ON_POSIX
+#endif // _PAL_HAS_POSIX

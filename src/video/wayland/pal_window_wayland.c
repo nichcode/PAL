@@ -14,13 +14,13 @@
 EGLConfig eglWlBackend(const int fbConfigIndex)
 {
     EGLDisplay display = EGL_NO_DISPLAY;
-    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_Wl.display);
+    display = s_VideoEgl.getDisplay((EGLNativeDisplayType)s_Wl.display);
     if (display == EGL_NO_DISPLAY) {
         return nullptr;
     }
 
     EGLint numConfigs = 0;
-    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+    if (!s_VideoEgl.getConfigs(display, nullptr, 0, &numConfigs)) {
         return nullptr;
     }
 
@@ -30,7 +30,7 @@ EGLConfig eglWlBackend(const int fbConfigIndex)
         return nullptr;
     }
 
-    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
+    s_VideoEgl.getConfigs(display, eglConfigs, numConfigs, &numConfigs);
     return eglConfigs[fbConfigIndex];
 }
 
@@ -166,7 +166,7 @@ PalResult wlCreateWindow(
             return palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE, 
                 PAL_RESULT_SOURCE_EGL, 
-                s_Egl.eglGetError());
+                s_VideoEgl.getError());
         }
 
     } else {

@@ -840,15 +840,15 @@ static void PAL_CALL onEvent(
 PalBool customDecorationTest()
 {
 #ifdef __linux__
-    palLog(nullptr, "Press Escape or click close button to close Test");
-    palLog(nullptr, "This only implements close and window movement for simplicity");
-    
     openDisplayWayland();
     if (!s_Display) {
         // not on wayland
         palLog(nullptr, "Not on wayland platform");
         return PAL_FALSE;
     }
+
+    palLog(nullptr, "Press Escape or click close button to close Test");
+    palLog(nullptr, "This only implements close and window movement for simplicity");
 
     // fill the event driver create info
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};

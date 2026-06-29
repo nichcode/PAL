@@ -66,16 +66,16 @@ typedef EGLBoolean (*eglGetConfigsFn)(
 
 typedef struct {
     void* handle;
-    eglInitializeFn eglInitialize;
-    eglTerminateFn eglTerminate;
-    eglGetDisplayFn eglGetDisplay;
-    eglChooseConfigFn eglChooseConfig;
-    eglGetConfigAttribFn eglGetConfigAttrib;
-    eglGetErrorFn eglGetError;
-    eglBindAPIFn eglBindAPI;
-    eglGetConfigsFn eglGetConfigs;
-} EGL;
+    eglInitializeFn initialize;
+    eglTerminateFn terminate;
+    eglGetDisplayFn getDisplay;
+    eglChooseConfigFn chooseConfig;
+    eglGetConfigAttribFn getConfigAttrib;
+    eglGetErrorFn getError;
+    eglBindAPIFn bindAPI;
+    eglGetConfigsFn getConfigs;
+} VideoEGL;
 
-extern EGL s_Egl;
+extern VideoEGL s_VideoEgl;
 
 #endif // _PAL_VIDEO_EGL_H

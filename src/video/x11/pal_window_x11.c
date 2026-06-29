@@ -42,13 +42,13 @@ static XVisualInfo* glxBackend(const int fbConfigIndex)
 static XVisualInfo* eglXBackend(int fbConfigIndex)
 {
     EGLDisplay display = EGL_NO_DISPLAY;
-    display = s_Egl.eglGetDisplay((EGLNativeDisplayType)s_X11.display);
+    display = s_VideoEgl.getDisplay((EGLNativeDisplayType)s_X11.display);
     if (display == EGL_NO_DISPLAY) {
         return nullptr;
     }
 
     EGLint numConfigs = 0;
-    if (!s_Egl.eglGetConfigs(display, nullptr, 0, &numConfigs)) {
+    if (!s_VideoEgl.getConfigs(display, nullptr, 0, &numConfigs)) {
         return nullptr;
     }
 
@@ -58,12 +58,12 @@ static XVisualInfo* eglXBackend(int fbConfigIndex)
         return nullptr;
     }
 
-    s_Egl.eglGetConfigs(display, eglConfigs, numConfigs, &numConfigs);
+    s_VideoEgl.getConfigs(display, eglConfigs, numConfigs, &numConfigs);
     EGLConfig config = eglConfigs[fbConfigIndex];
 
     // we get a visual info from the config
     EGLint visualID;
-    s_Egl.eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
+    s_VideoEgl.getConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
     if (visualID == 0) {
         return nullptr;
     }

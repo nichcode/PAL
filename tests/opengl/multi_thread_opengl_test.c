@@ -66,12 +66,26 @@ static void* PAL_CALL eventDriverWorker(void* arg)
     }
 
     // set dispatch modes. opengl needs only window resize
-    palSetEventDispatchMode(shared->openglEventDriver, PAL_EVENT_WINDOW_SIZE, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(
+        shared->openglEventDriver, 
+        PAL_EVENT_TYPE_WINDOW_SIZE, 
+        PAL_DISPATCH_MODE_POLL);
 
     // video needs window close and resize
-    palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_WINDOW_SIZE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(shared->videoEventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(
+        shared->videoEventDriver, 
+        PAL_EVENT_TYPE_WINDOW_CLOSE, 
+        PAL_DISPATCH_MODE_POLL);
+
+    palSetEventDispatchMode(
+        shared->videoEventDriver, 
+        PAL_EVENT_TYPE_WINDOW_SIZE, 
+        PAL_DISPATCH_MODE_POLL);
+
+    palSetEventDispatchMode(
+        shared->videoEventDriver, 
+        PAL_EVENT_TYPE_KEYDOWN, 
+        PAL_DISPATCH_MODE_POLL);
 
     // we are done
     shared->driverCreated = PAL_TRUE;
@@ -124,7 +138,7 @@ static void* PAL_CALL rendererWorkder(void* arg)
         PalEvent event;
         while (palPollEvent(shared->openglEventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_SIZE: {
+                case PAL_EVENT_TYPE_WINDOW_SIZE: {
                     uint32_t width, height;
                     palUnpackUint32(event.data, &width, &height);
                     palLog(nullptr, "Video event driver sent a resize event (%d, %d)", width, height);
@@ -298,9 +312,9 @@ PalBool multiThreadOpenGlTest()
         windowCreateInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
     }
 
-    // set the backend and the fbConfig. We use PAL_CONFIG_BACKEND_PAL_OPENGL
+    // set the backend and the fbConfig. We use PAL_FBCONFIG_BACKEND_PAL_OPENGL
     // because we are using both pal_video and pal_opengl
-    windowCreateInfo.fbConfigBackend = PAL_CONFIG_BACKEND_PAL_OPENGL;
+    windowCreateInfo.fbConfigBackend = PAL_FBCONFIG_BACKEND_PAL_OPENGL;
     windowCreateInfo.fbConfigIndex = closest->index;
 
     PalWindow* window = nullptr;
@@ -321,7 +335,7 @@ PalBool multiThreadOpenGlTest()
         return PAL_FALSE;
     }
 
-    shared->window.display = winHandle.nativeDisplay;
+    shared->window.instance = winHandle.nativeInstance;
     // On Wayland the window is the wl_egl_window
     if (winHandle.nativeHandle3) {
         // the window has a valid wl_egl_window
@@ -380,12 +394,12 @@ PalBool multiThreadOpenGlTest()
         PalEvent event;
         while (palPollEvent(shared->videoEventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     shared->running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
@@ -394,7 +408,7 @@ PalBool multiThreadOpenGlTest()
                     break;
                 }
 
-                case PAL_EVENT_WINDOW_SIZE: {
+                case PAL_EVENT_TYPE_WINDOW_SIZE: {
                     // tell the opengl driver about our size change
                     palPushEvent(shared->openglEventDriver, &event);
                     break;

@@ -84,6 +84,8 @@ project "PAL"
     end
 
     if (PAL_BUILD_VIDEO_MODULE) then
+        files { "src/video/pal_video.c" }
+
         if (os.target() == "linux") then
             -- check for wayland support. This is cross compiler
             local waylandPaths = {
@@ -141,8 +143,6 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files {
-                "src/video/pal_video.c",
-
                 -- X11
                 "src/video/x11/pal_cursor_x11.c",
                 "src/video/x11/pal_icon_x11.c",
@@ -163,7 +163,7 @@ project "PAL"
     end
 
     if (PAL_BUILD_OPENGL_MODULE) then
-        files { "src/opengl/pal_opengl_shared.c" }
+        files { "src/opengl/pal_opengl.c" }
 
         filter {"system:windows", "configurations:*"}
             files { 
@@ -173,8 +173,8 @@ project "PAL"
 
         filter {"system:linux", "configurations:*"}
             files { 
-                "src/opengl/linux/pal_context_linux.c",
-                "src/opengl/linux/pal_opengl_linux.c"
+                "src/opengl/egl/pal_context_egl.c",
+                "src/opengl/egl/pal_egl.c"
             }
 
         filter {}

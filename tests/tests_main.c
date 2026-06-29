@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     // registerTest(threadTest, "Thread Test");
     // registerTest(tlsTest, "TLS Test");
     // registerTest(mutexTest, "Mutex Test");
-    registerTest(condvarTest, "Condvar Test");
+    // registerTest(condvarTest, "Condvar Test");
 #endif // PAL_HAS_THREAD_MODULE
 
 #if PAL_HAS_VIDEO_MODULE == 1
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     // registerTest(charEventTest, "Char Event Test");
     // registerTest(nativeIntegrationTest, "Native Integration Test");
     // registerTest(nativeInstanceTest, "Native Instance Test");
-    registerTest(customDecorationTest, "Custom Decoration Test");
+    // registerTest(customDecorationTest, "Custom Decoration Test");
 #endif // PAL_HAS_VIDEO_MODULE
 
     // This test can run without video system so long as your have a valid window

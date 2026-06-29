@@ -5,12 +5,12 @@
  Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal_posix.h"
+#include "pal_platform.h"
 #ifdef __linux__
 #define _GNU_SOURCE
 #endif // __linux__
 
-#if _PAL_ON_POSIX
+#if _PAL_HAS_POSIX
 #include "pal_thread_posix.h"
 #include <sys/resource.h>
 #include <unistd.h>
@@ -281,4 +281,4 @@ PalResult PAL_CALL palSetThreadName(
     return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
-#endif // _PAL_ON_POSIX
+#endif // _PAL_HAS_POSIX
