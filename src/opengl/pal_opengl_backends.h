@@ -11,8 +11,8 @@
 #include "pal_platform.h"
 #include "pal/pal_opengl.h"
 
+// clang-format off
 typedef struct {
-    // clang-format off
     void (*shutdownGL)();
     const PalGLInfo* (*getGLInfo)();
     PalResult (*enumerateGLFBConfigs)(int32_t*, PalGLFBConfig*);
@@ -23,7 +23,6 @@ typedef struct {
     PalResult (*swapBuffers)(PalGLWindow*, PalGLContext*);
     PalResult (*setSwapInterval)(int32_t);
     const PalBool* (*GetSupportedGLAPIs)(void*);
-    // clang-format on
 } OpenglBackend;
 
 // ==================================================
@@ -85,6 +84,8 @@ static OpenglBackend s_EglBackend = {
     .swapBuffers = eglSwapBuffers,
     .setSwapInterval = eglSetSwapInterval,
     .GetSupportedGLAPIs = eglGetSupportedGLAPIs};
+
+// clang-format on
 
 #endif // _PAL_HAS_EGL
 

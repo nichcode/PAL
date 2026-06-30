@@ -1571,7 +1571,7 @@ typedef struct {
     uint32_t supportedDepthResolveModes;   /**< Masks of supported depth resolve modes.*/
     uint32_t supportedStencilResolveModes; /**< Masks of supported stencil resolve modes.*/
 
-    /** If `PAL_TRUE`, depth/stencil can have seperate resolve modes.*/
+    /** If `PAL_TRUE`, depth and stencil can have seperate resolve modes.*/
     PalBool supportsIndependentResolve;
 
     /**If `PAL_TRUE`, depth/stencil can be `PAL_RESOLVE_MODE_NONE` while the other is resolved.*/

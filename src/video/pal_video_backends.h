@@ -9,8 +9,8 @@
 
 #include "pal/pal_video.h"
 
+// clang-format off
 typedef struct {
-    // clang-format off
     void (*shutdownVideo)();
     void (*updateVideo)();
     PalVideoFeatures (*getVideoFeatures)();
@@ -67,7 +67,6 @@ typedef struct {
     PalResult (*attachWindow)(void*, PalWindow**);
     PalResult (*detachWindow)(PalWindow*, void**);
     void* (*getInstance)();
-    // clang-format on
 } VideoBackend;
 
 // ==================================================
@@ -440,6 +439,8 @@ static VideoBackend s_wlBackend = {
     .attachWindow = wlAttachWindow,
     .getInstance = wlGetInstance,
     .detachWindow = wlDetachWindow};
+
+// clang-format on
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 

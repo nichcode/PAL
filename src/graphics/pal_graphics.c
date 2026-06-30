@@ -5,29 +5,7 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal_backends_graphics.h"
-#include "pal_shared.h"
-
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif // WIN32_LEAN_AND_MEAN
-
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif // NOMINMAX
-
-// set unicode
-#ifndef UNICODE
-#define UNICODE
-#endif // UNICODE
-
-#include <windows.h>
-#define PLATFORM_SOURCE PAL_RESULT_SOURCE_WINDOWS
-#elif defined(__linux__)
-#include <errno.h>
-#define PLATFORM_SOURCE PAL_RESULT_SOURCE_LINUX
-#endif // _WIN32
+#include "pal_graphics_backends.h"
 
 #define MAX_BACKENDS (PAL_MAX_CUSTOM_BACKENDS + 2)
 #define PAL_HANDLE(name)                                                                           \
@@ -476,15 +454,6 @@ static void addBackend(PalGraphicsBackendInfo* backendInfo)
     }
 }
 
-static inline uint32_t getLastErrorCode()
-{
-#ifdef _WIN32
-    return (uint32_t)GetLastError();
-#elif defined(__linux__)
-    return (uint32_t)errno;
-#endif // _WIN32
-}
-
 PalResult PAL_CALL palInitGraphics(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator,
@@ -495,11 +464,12 @@ PalResult PAL_CALL palInitGraphics(
         return PAL_RESULT_SUCCESS;
     }
 
+    if (customBackendCount == 0) {
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+    }
+
     if (allocator && (!allocator->allocate || !allocator->free)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PLATFORM_SOURCE, 
-            getLastErrorCode());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -594,11 +564,11 @@ PalResult PAL_CALL palEnumerateAdapters(
 {
     // enumerate all adapters for both custom and PAL backends
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!count || *count == 0 && outAdapters) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -648,11 +618,11 @@ PalResult PAL_CALL palGetAdapterInfo(
     PalAdapterInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!adapter || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return adapter->backend->getAdapterInfo(adapter, info);
@@ -663,11 +633,11 @@ PalResult PAL_CALL palGetAdapterCapabilities(
     PalAdapterCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!adapter || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return adapter->backend->getAdapterCapabilities(adapter, caps);
@@ -678,7 +648,6 @@ PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
     if (!s_Graphics.initialized || !adapter) {
         return 0;
     }
-
     return adapter->backend->getAdapterFeatures(adapter);
 }
 
@@ -702,11 +671,11 @@ PalResult PAL_CALL palCreateDevice(
     PalDevice** outDevice)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!outDevice) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalDevice* device = nullptr;
@@ -736,11 +705,11 @@ PalResult PAL_CALL palAllocateMemory(
     PalMemory** outMemory)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!outMemory || !device) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->allocateMemory(device, type, memoryMask, size, outMemory);
@@ -764,11 +733,11 @@ PalResult PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalSamplerAnisotropyCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->querySamplerAnisotropyCapabilities(device, caps);
@@ -779,11 +748,11 @@ PalResult PAL_CALL palQueryMultiViewCapabilities(
     PalMultiViewCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryMultiViewCapabilities(device, caps);
@@ -794,11 +763,11 @@ PalResult PAL_CALL palQueryMultiViewportCapabilities(
     PalMultiViewportCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryMultiViewportCapabilities(device, caps);
@@ -809,11 +778,11 @@ PalResult PAL_CALL palQueryDepthStencilCapabilities(
     PalDepthStencilCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryDepthStencilCapabilities(device, caps);
@@ -824,11 +793,11 @@ PalResult PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalFragmentShadingRateCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryFragmentShadingRateCapabilities(device, caps);
@@ -839,11 +808,11 @@ PalResult PAL_CALL palQueryMeshShaderCapabilities(
     PalMeshShaderCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryMeshShaderCapabilities(device, caps);
@@ -854,11 +823,11 @@ PalResult PAL_CALL palQueryRayTracingCapabilities(
     PalRayTracingCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryRayTracingCapabilities(device, caps);
@@ -869,11 +838,11 @@ PalResult PAL_CALL palQueryDescriptorIndexingCapabilities(
     PalDescriptorIndexingCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->queryDescriptorIndexingCapabilities(device, caps);
@@ -889,11 +858,11 @@ PalResult PAL_CALL palCreateQueue(
     PalQueue** outQueue)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !outQueue) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalQueue* queue = nullptr;
@@ -928,11 +897,11 @@ PalBool PAL_CALL palCanQueuePresent(
 PalResult PAL_CALL palWaitQueue(PalQueue* queue)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!queue) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return queue->backend->waitQueue(queue);
@@ -948,11 +917,11 @@ PalResult PAL_CALL palEnumerateFormats(
     PalFormatInfo* outFormats)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!adapter || !count || *count == 0 && outFormats) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return adapter->backend->enumerateFormats(adapter, count, outFormats);
@@ -1001,11 +970,11 @@ PalResult PAL_CALL palCreateImage(
     PalImage** outImage)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outImage) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalImage* image = nullptr;
@@ -1032,11 +1001,11 @@ PalResult PAL_CALL palGetImageInfo(
     PalImageInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!image || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return image->backend->getImageInfo(image, info);
@@ -1047,11 +1016,11 @@ PalResult PAL_CALL palGetImageMemoryRequirements(
     PalMemoryRequirements* requirements)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!image) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return image->backend->getImageMemoryRequirements(image, requirements);
@@ -1063,11 +1032,11 @@ PalResult PAL_CALL palBindImageMemory(
     uint64_t offset)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!image || !memory) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return image->backend->bindImageMemory(image, memory, offset);
@@ -1080,11 +1049,11 @@ PalResult PAL_CALL palMapImageMemory(
     void** outPtr)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!image) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return image->backend->mapImageMemory(image, offset, size, outPtr);
@@ -1108,11 +1077,11 @@ PalResult PAL_CALL palCreateImageView(
     PalImageView** outImageView)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !image || !info || !outImageView) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalImageView* imageView = nullptr;
@@ -1144,11 +1113,11 @@ PalResult PAL_CALL palCreateSampler(
     PalSampler** outSampler)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outSampler) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalSampler* sampler = nullptr;
@@ -1182,11 +1151,11 @@ PalResult PAL_CALL palCreateSurface(
     PalSurface** outSurface)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !window || !outSurface) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalSurface* surface = nullptr;
@@ -1214,11 +1183,11 @@ PalResult PAL_CALL palGetSurfaceCapabilities(
     PalSurfaceCapabilities* caps)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !surface || !caps) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->getSurfaceCapabilities(device, surface, caps);
@@ -1236,11 +1205,11 @@ PalResult PAL_CALL palCreateSwapchain(
     PalSwapchain** outSwapchain)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !queue || !surface || !info || !outSwapchain) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -1285,11 +1254,11 @@ PalResult PAL_CALL palGetNextSwapchainImage(
     uint32_t* outIndex)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!swapchain || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return swapchain->backend->getNextSwapchainImage(swapchain, info, outIndex);
@@ -1300,11 +1269,11 @@ PalResult PAL_CALL palPresentSwapchain(
     PalSwapchainPresentInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!swapchain || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return swapchain->backend->presentSwapchain(swapchain, info);
@@ -1316,11 +1285,11 @@ PalResult PAL_CALL palResizeSwapchain(
     uint32_t newHeight)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!swapchain) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return swapchain->backend->resizeSwapchain(swapchain, newWidth, newHeight);
@@ -1336,11 +1305,11 @@ PalResult PAL_CALL palCreateShader(
     PalShader** outShader)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outShader) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalShader* shader = nullptr;
@@ -1372,11 +1341,11 @@ PalResult PAL_CALL palCreateFence(
     PalFence** outFence)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !outFence) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalFence* fence = nullptr;
@@ -1403,11 +1372,11 @@ PalResult PAL_CALL palWaitFence(
     uint64_t timeout)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!fence) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return fence->backend->waitFence(fence, timeout);
@@ -1416,11 +1385,11 @@ PalResult PAL_CALL palWaitFence(
 PalResult PAL_CALL palResetFence(PalFence* fence)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!fence) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return fence->backend->resetFence(fence);
@@ -1444,11 +1413,11 @@ PalResult PAL_CALL palCreateSemaphore(
     PalSemaphore** outSemaphore)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !outSemaphore) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalSemaphore* semaphore = nullptr;
@@ -1476,11 +1445,11 @@ PalResult PAL_CALL palWaitSemaphore(
     uint64_t timeout)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!semaphore) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return semaphore->backend->waitSemaphore(semaphore, value, timeout);
@@ -1492,11 +1461,11 @@ PalResult PAL_CALL palSignalSemaphore(
     uint64_t value)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!semaphore || !queue) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return semaphore->backend->signalSemaphore(semaphore, queue, value);
@@ -1507,11 +1476,11 @@ PalResult PAL_CALL palGetSemaphoreValue(
     uint64_t* outValue)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!semaphore || !outValue) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return semaphore->backend->getSemaphoreValue(semaphore, outValue);
@@ -1527,11 +1496,11 @@ PalResult PAL_CALL palCreateCommandPool(
     PalCommandPool** outPool)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !queue || !outPool) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalCommandPool* pool = nullptr;
@@ -1556,11 +1525,11 @@ void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!pool) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return pool->backend->resetCommandPool(pool);
@@ -1573,11 +1542,11 @@ PalResult PAL_CALL palAllocateCommandBuffer(
     PalCommandBuffer** outCmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !pool || !outCmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalCommandBuffer* cmdBuffer = nullptr;
@@ -1602,11 +1571,11 @@ void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer)
 PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->resetCommandBuffer(cmdBuffer);
@@ -1617,11 +1586,11 @@ PalResult PAL_CALL palSubmitCommandBuffer(
     PalCommandBufferSubmitInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!queue || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return queue->backend->submitCommandBuffer(queue, info);
@@ -1636,11 +1605,11 @@ PalResult PAL_CALL palCmdBegin(
     PalRenderingLayoutInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBegin(cmdBuffer, info);
@@ -1649,11 +1618,11 @@ PalResult PAL_CALL palCmdBegin(
 PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdEnd(cmdBuffer);
@@ -1664,11 +1633,11 @@ PalResult PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* secondaryCmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!primaryCmdBuffer || !secondaryCmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return primaryCmdBuffer->backend->cmdExecuteCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
@@ -1679,11 +1648,11 @@ PalResult PAL_CALL palCmdSetFragmentShadingRate(
     PalFragmentShadingRateState* state)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !state) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetFragmentShadingRate(cmdBuffer, state);
@@ -1696,11 +1665,11 @@ PalResult PAL_CALL palCmdDrawMeshTasks(
     uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDrawMeshTasks(cmdBuffer, groupCountX, groupCountY, groupCountZ);
@@ -1712,11 +1681,11 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirect(
     uint32_t drawCount)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, drawCount);
@@ -1729,11 +1698,11 @@ PalResult PAL_CALL palCmdDrawMeshTasksIndirectCount(
     uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer || !countBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -1745,15 +1714,15 @@ PalResult PAL_CALL palCmdBuildAccelerationStructure(
     PalAccelerationStructureBuildInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+    if (!cmdBuffer || !info) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (!info->dst || info->scratchBufferAddress == 0) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBuildAccelerationStructure(cmdBuffer, info);
@@ -1764,11 +1733,11 @@ PalResult PAL_CALL palCmdBeginRendering(
     PalRenderingInfo* info)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBeginRendering(cmdBuffer, info);
@@ -1777,11 +1746,11 @@ PalResult PAL_CALL palCmdBeginRendering(
 PalResult PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdEndRendering(cmdBuffer);
@@ -1794,11 +1763,11 @@ PalResult PAL_CALL palCmdCopyBuffer(
     PalBufferCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !dst || !src || !copyInfo) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdCopyBuffer(cmdBuffer, dst, src, copyInfo);
@@ -1811,11 +1780,11 @@ PalResult PAL_CALL palCmdCopyBufferToImage(
     PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !dstImage || !srcBuffer || !copyInfo) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdCopyBufferToImage(cmdBuffer, dstImage, srcBuffer, copyInfo);
@@ -1828,11 +1797,11 @@ PalResult PAL_CALL palCmdCopyImage(
     PalImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !dst || !src || !copyInfo) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdCopyImage(cmdBuffer, dst, src, copyInfo);
@@ -1845,11 +1814,11 @@ PalResult PAL_CALL palCmdCopyImageToBuffer(
     PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !dstBuffer || !srcImage || !copyInfo) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdCopyImageToBuffer(cmdBuffer, dstBuffer, srcImage, copyInfo);
@@ -1860,11 +1829,11 @@ PalResult PAL_CALL palCmdBindPipeline(
     PalPipeline* pipeline)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !pipeline) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBindPipeline(cmdBuffer, pipeline);
@@ -1876,11 +1845,11 @@ PalResult PAL_CALL palCmdSetViewport(
     PalViewport* viewports)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !viewports || !count) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetViewport(cmdBuffer, count, viewports);
@@ -1892,11 +1861,11 @@ PalResult PAL_CALL palCmdSetScissors(
     PalRect2D* scissors)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !scissors || !count) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetScissors(cmdBuffer, count, scissors);
@@ -1910,11 +1879,11 @@ PalResult PAL_CALL palCmdBindVertexBuffers(
     uint64_t* offsets)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffers || !offsets) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBindVertexBuffers(cmdBuffer, firstSlot, count, buffers, offsets);
@@ -1927,11 +1896,11 @@ PalResult PAL_CALL palCmdBindIndexBuffer(
     PalIndexType type)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBindIndexBuffer(cmdBuffer, buffer, offset, type);
@@ -1945,11 +1914,11 @@ PalResult PAL_CALL palCmdDraw(
     uint32_t firstInstance)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -1962,11 +1931,11 @@ PalResult PAL_CALL palCmdDrawIndirect(
     uint32_t count)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDrawIndirect(cmdBuffer, buffer, count);
@@ -1979,11 +1948,11 @@ PalResult PAL_CALL palCmdDrawIndirectCount(
     uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer || !countBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDrawIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
@@ -1998,11 +1967,11 @@ PalResult PAL_CALL palCmdDrawIndexed(
     uint32_t firstInstance)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDrawIndexed(
@@ -2020,11 +1989,11 @@ PalResult PAL_CALL palCmdDrawIndexedIndirect(
     uint32_t count)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDrawIndexedIndirect(cmdBuffer, buffer, count);
@@ -2037,11 +2006,11 @@ PalResult PAL_CALL palCmdDrawIndexedIndirectCount(
     uint32_t maxDrawCount)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer || !countBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -2055,11 +2024,11 @@ PalResult PAL_CALL palCmdAccelerationStructureBarrier(
     PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !as) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -2074,11 +2043,11 @@ PalResult PAL_CALL palCmdImageBarrier(
     PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !image || !subresourceRange) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -2092,11 +2061,11 @@ PalResult PAL_CALL palCmdBufferBarrier(
     PalUsageState newUsageState)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -2110,11 +2079,11 @@ PalResult PAL_CALL palCmdDispatch(
     uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
@@ -2130,11 +2099,11 @@ PalResult PAL_CALL palCmdDispatchBase(
     uint32_t groupCountZ)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDispatchBase(
@@ -2152,11 +2121,11 @@ PalResult PAL_CALL palCmdDispatchIndirect(
     PalBuffer* buffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdDispatchIndirect(cmdBuffer, buffer);
@@ -2171,11 +2140,11 @@ PalResult PAL_CALL palCmdTraceRays(
     uint32_t depth)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !sbt) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdTraceRays(cmdBuffer, sbt, raygenIndex, width, height, depth);
@@ -2188,11 +2157,11 @@ PalResult PAL_CALL palCmdTraceRaysIndirect(
     PalBuffer* buffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !sbt || !buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, buffer);
@@ -2204,11 +2173,11 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
     PalDescriptorSet* set)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer || !set) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdBindDescriptorSet(cmdBuffer, setIndex, set);
@@ -2216,29 +2185,19 @@ PalResult PAL_CALL palCmdBindDescriptorSet(
 
 PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
-    uint32_t shaderStageCount,
-    PalShaderStage* shaderStages,
     uint32_t offset,
     uint32_t size,
     const void* value)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
-    if (!cmdBuffer || !shaderStages || !value) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+    if (!cmdBuffer || !value) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    // clang-format off
-    return cmdBuffer->backend->cmdPushConstants(
-        cmdBuffer, 
-        shaderStageCount, 
-        shaderStages, 
-        offset, 
-        size, 
-        value);
-    // clang-format on
+    return cmdBuffer->backend->cmdPushConstants(cmdBuffer, offset, size, value);
 }
 
 PalResult PAL_CALL palCmdSetCullMode(
@@ -2246,11 +2205,11 @@ PalResult PAL_CALL palCmdSetCullMode(
     PalCullMode cullMode)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetCullMode(cmdBuffer, cullMode);
@@ -2261,11 +2220,11 @@ PalResult PAL_CALL palCmdSetFrontFace(
     PalFrontFace frontFace)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetFrontFace(cmdBuffer, frontFace);
@@ -2276,11 +2235,11 @@ PalResult PAL_CALL palCmdSetPrimitiveTopology(
     PalPrimitiveTopology topology)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetPrimitiveTopology(cmdBuffer, topology);
@@ -2291,11 +2250,11 @@ PalResult PAL_CALL palCmdSetDepthTestEnable(
     PalBool enable)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetDepthTestEnable(cmdBuffer, enable);
@@ -2306,11 +2265,11 @@ PalResult PAL_CALL palCmdSetDepthWriteEnable(
     PalBool enable)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend->cmdSetDepthWriteEnable(cmdBuffer, enable);
@@ -2325,11 +2284,11 @@ PalResult PAL_CALL palCmdSetStencilOp(
     PalCompareOp compareOp)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!cmdBuffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return cmdBuffer->backend
@@ -2346,15 +2305,15 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     PalAccelerationStructure** outAs)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outAs) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (!info->buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2382,11 +2341,11 @@ PalResult PAL_CALL palGetAccelerationStructureBuildSize(
     PalAccelerationStructureBuildSize* size)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !size) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->getAccelerationStructureBuildSize(device, info, size);
@@ -2402,11 +2361,11 @@ PalResult PAL_CALL palCreateBuffer(
     PalBuffer** outBuffer)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2433,11 +2392,11 @@ PalResult PAL_CALL palGetBufferMemoryRequirements(
     PalMemoryRequirements* requirements)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return buffer->backend->getBufferMemoryRequirements(buffer, requirements);
@@ -2449,11 +2408,11 @@ PalResult PAL_CALL palComputeInstanceBufferRequirements(
     uint64_t* outSize)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !outSize) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->computeInstanceBufferRequirements(device, instanceCount, outSize);
@@ -2468,19 +2427,19 @@ PalResult PAL_CALL palComputeImageCopyStagingBufferRequirements(
     uint64_t* outSize)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !outBufferRowLength || !outBufferImageHeight || !outSize) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (copyInfo->bufferRowLength < copyInfo->imageWidth && copyInfo->bufferRowLength) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (copyInfo->bufferImageHeight < copyInfo->imageHeight && copyInfo->bufferImageHeight) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->computeImageCopyStagingBufferRequirements(
@@ -2499,11 +2458,11 @@ PalResult PAL_CALL palWriteToInstanceBuffer(
     uint32_t instanceCount)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !ptr || !instances || instanceCount == 0) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     // since all tlas have backend pointer, we use the first one
@@ -2518,19 +2477,19 @@ PalResult PAL_CALL palWriteToImageCopyStagingBuffer(
     PalBufferImageCopyInfo* copyInfo)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !ptr || !srcData || !copyInfo) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (copyInfo->bufferRowLength < copyInfo->imageWidth && copyInfo->bufferRowLength) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (copyInfo->bufferImageHeight < copyInfo->imageHeight && copyInfo->bufferImageHeight) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend
@@ -2543,11 +2502,11 @@ PalResult PAL_CALL palBindBufferMemory(
     uint64_t offset)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!buffer || !memory) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return buffer->backend->bindBufferMemory(buffer, memory, offset);
@@ -2560,11 +2519,11 @@ PalResult PAL_CALL palMapBufferMemory(
     void** outPtr)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!buffer) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return buffer->backend->mapBufferMemory(buffer, offset, size, outPtr);
@@ -2595,11 +2554,11 @@ PalResult PAL_CALL palCreateDescriptorSetLayout(
     PalDescriptorSetLayout** outLayout)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outLayout) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2627,15 +2586,15 @@ PalResult PAL_CALL palCreateDescriptorPool(
     PalDescriptorPool** outPool)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outPool) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (!info->maxDescriptorSets) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2660,11 +2619,11 @@ void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool)
 PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!pool) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return pool->backend->resetDescriptorPool(pool);
@@ -2677,11 +2636,11 @@ PalResult PAL_CALL palAllocateDescriptorSet(
     PalDescriptorSet** outSet)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !pool || !layout || !outSet) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2702,11 +2661,11 @@ PalResult PAL_CALL palUpdateDescriptorSet(
     PalDescriptorSetWriteInfo* infos)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !infos || count == 0 && infos) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return device->backend->updateDescriptorSet(device, count, infos);
@@ -2722,11 +2681,11 @@ PalResult PAL_CALL palCreatePipelineLayout(
     PalPipelineLayout** outLayout)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outLayout) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2758,15 +2717,15 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     PalPipeline** outPipeline)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outPipeline) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (!info->renderingLayout) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2787,11 +2746,11 @@ PalResult PAL_CALL palCreateComputePipeline(
     PalPipeline** outPipeline)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outPipeline) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2812,11 +2771,11 @@ PalResult PAL_CALL palCreateRayTracingPipeline(
     PalPipeline** outPipeline)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outPipeline) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2848,15 +2807,15 @@ PalResult PAL_CALL palCreateShaderBindingTable(
     PalShaderBindingTable** outSbt)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!device || !info || !outSbt) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (!info->rayTracingPipeline) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     PalResult result;
@@ -2884,11 +2843,11 @@ PalResult PAL_CALL palUpdateShaderBindingTable(
     PalShaderBindingTableRecordInfo* infos)
 {
     if (!s_Graphics.initialized) {
-        return palMakeResult(PAL_RESULT_NOT_INITIALIZED, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
     if (!sbt || !infos || count == 0 && infos) {
-        return palMakeResult(PAL_RESULT_INVALID_ARGUMENT, PLATFORM_SOURCE, 0);
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     return sbt->backend->updateShaderBindingTable(sbt, count, infos);
