@@ -31,17 +31,17 @@ typedef struct {
 // ==================================================
 
 #ifdef _WIN32
-PalResult wglInitGL(PalGLAPI api, void* instance, const PalAllocator* allocator);
+PalResult wglInitGL(PalGLAPI, void*, const PalAllocator*);
 void wglShutdownGL();
 const PalGLInfo* wglGetGLInfo();
-PalResult wglEnumerateGLFBConfigs(int32_t* count, PalGLFBConfig* configs);
-PalResult wglCreateGLContext(const PalGLContextCreateInfo* info, PalGLContext** outContext);
-void wglDestroyGLContext(PalGLContext* context);
-PalResult wglMakeContextCurrent(PalGLWindow* glWindow, PalGLContext* context);
-void* wglGetGLProcAddress(const char* name);
-PalResult wglSwapBuffers(PalGLWindow* glWindow, PalGLContext* context);
-PalResult wglSetSwapInterval(int32_t interval);
-const PalBool* wglGetSupportedGLAPIs(void* instance);
+PalResult wglEnumerateGLFBConfigs(int32_t*, PalGLFBConfig*);
+PalResult wglCreateGLContext(const PalGLContextCreateInfo*, PalGLContext**);
+void wglDestroyGLContext(PalGLContext*);
+PalResult wglMakeContextCurrent(PalGLWindow*, PalGLContext*);
+void* wglGetGLProcAddress(const char*);
+PalResult wglSwapBuffers(PalGLWindow*, PalGLContext*);
+PalResult wglSetSwapInterval(int32_t);
+const PalBool* wglGetSupportedGLAPIs(void*);
 
 static OpenglBackend s_WglBackend = {
     .shutdownGL = wglShutdownGL,
@@ -62,17 +62,17 @@ static OpenglBackend s_WglBackend = {
 // ==================================================
 
 #if _PAL_HAS_EGL
-PalResult eglInitGL(PalGLAPI api, void* instance, const PalAllocator* allocator);
+PalResult eglInitGL(PalGLAPI, void*, const PalAllocator*);
 void eglShutdownGL();
 const PalGLInfo* eglGetGLInfo();
-PalResult eglEnumerateGLFBConfigs(int32_t* count, PalGLFBConfig* configs);
-PalResult eglCreateGLContext(const PalGLContextCreateInfo* info, PalGLContext** outContext);
-void eglDestroyGLContext(PalGLContext* context);
-PalResult eglMakeContextCurrent(PalGLWindow* glWindow, PalGLContext* context);
-void* eglGetGLProcAddress(const char* name);
-PalResult eglSwapBuffers(PalGLWindow* glWindow, PalGLContext* context);
-PalResult eglSetSwapInterval(int32_t interval);
-const PalBool* eglGetSupportedGLAPIs(void* instance);
+PalResult eglEnumerateGLFBConfigs(int32_t*, PalGLFBConfig*);
+PalResult eglCreateGLContext(const PalGLContextCreateInfo*, PalGLContext**);
+void eglDestroyGLContext(PalGLContext*);
+PalResult eglMakeContextCurrent(PalGLWindow*, PalGLContext*);
+void* eglGetGLProcAddress(const char*);
+PalResult eglSwapBuffers(PalGLWindow*, PalGLContext*);
+PalResult eglSetSwapInterval(int32_t);
+const PalBool* eglGetSupportedGLAPIs(void*);
 
 static OpenglBackend s_EglBackend = {
     .shutdownGL = eglShutdownGL,
