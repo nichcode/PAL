@@ -7,26 +7,11 @@
 
 #ifdef _WIN32
 #include "pal_video_win32.h"
-#include "pal_shared.h"
 
-PalResult PAL_CALL palCreateCursor(
+PalResult win32CreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** outCursor)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!info || !outCursor) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     // describe the icon pixels
     BITMAPV5HEADER bitInfo = {0};
     bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
@@ -46,16 +31,21 @@ PalResult PAL_CALL palCreateCursor(
     void* dibPixels = nullptr;
 
     // create dib section
-    HBITMAP bitmap = nullptr;
-    bitmap =
-        s_Video
-            .createDIBSection(hdc, (BITMAPINFO*)&bitInfo, DIB_RGB_COLORS, &dibPixels, nullptr, 0);
+    // clang-format off
+    HBITMAP bitmap = s_Win32.createDIBSection(
+        hdc, 
+        (BITMAPINFO*)&bitInfo, 
+        DIB_RGB_COLORS, 
+        &dibPixels, 
+        nullptr, 
+        0);
+    // clang-format on
 
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     ReleaseDC(nullptr, hdc);
@@ -93,59 +83,45 @@ PalResult PAL_CALL palCreateCursor(
     // create the cursor with the iconinfo
     HCURSOR cursor = CreateIconIndirect(&iconInfo);
     if (!cursor) {
-        s_Video.deleteObject(bitmap);
+        s_Win32.deleteObject(bitmap);
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
-    s_Video.deleteObject(bitmap);
+    s_Win32.deleteObject(bitmap);
     *outCursor = (PalCursor*)cursor;
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palCreateCursorFrom(
+PalResult win32CreateCursorFrom(
     PalCursorType type,
     PalCursor** outCursor)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!outCursor) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     HCURSOR cursor = nullptr;
     switch (type) {
-        case PAL_CURSOR_ARROW: {
+        case PAL_CURSOR_TYPE_ARROW: {
             cursor = LoadCursorW(nullptr, IDC_ARROW);
             break;
         }
 
-        case PAL_CURSOR_HAND: {
+        case PAL_CURSOR_TYPE_HAND: {
             cursor = LoadCursorW(nullptr, IDC_HAND);
             break;
         }
 
-        case PAL_CURSOR_CROSS: {
+        case PAL_CURSOR_TYPE_CROSS: {
             cursor = LoadCursorW(nullptr, IDC_CROSS);
             break;
         }
 
-        case PAL_CURSOR_IBEAM: {
+        case PAL_CURSOR_TYPE_IBEAM: {
             cursor = LoadCursorW(nullptr, IDC_IBEAM);
             break;
         }
 
-        case PAL_CURSOR_WAIT: {
+        case PAL_CURSOR_TYPE_WAIT: {
             cursor = LoadCursorW(nullptr, IDC_WAIT);
             break;
         }
@@ -153,8 +129,8 @@ PalResult PAL_CALL palCreateCursorFrom(
 
     if (!cursor) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -162,44 +138,26 @@ PalResult PAL_CALL palCreateCursorFrom(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyCursor(PalCursor* cursor)
+void win32DestroyCursor(PalCursor* cursor)
 {
-    if (s_Video.initialized && cursor) {
-        DestroyCursor((HCURSOR)cursor);
-    }
+    DestroyCursor((HCURSOR)cursor);
 }
 
-void PAL_CALL palShowCursor(PalBool show)
+void win32ShowCursor(PalBool show)
 {
-    if (s_Video.initialized) {
-        ShowCursor(show);
-    }
+    ShowCursor(show);
 }
 
-PalResult PAL_CALL palClipCursor(
+PalResult win32ClipCursor(
     PalWindow* window,
     PalBool clip)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (clip) {
         RECT rect;
         if (!GetClientRect((HWND)window, &rect)) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 GetLastError());
         }
 
@@ -219,25 +177,11 @@ PalResult PAL_CALL palClipCursor(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetCursorPos(
+PalResult win32GetCursorPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     POINT pos;
     GetCursorPos(&pos);
     if (ScreenToClient((HWND)window, &pos)) {
@@ -253,36 +197,22 @@ PalResult PAL_CALL palGetCursorPos(
 
     } else {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 }
 
-PalResult PAL_CALL palSetCursorPos(
+PalResult win32SetCursorPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     POINT pos = {x, y};
     if (!ClientToScreen((HWND)window, &pos)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -290,7 +220,7 @@ PalResult PAL_CALL palSetCursorPos(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetWindowCursor(
+PalResult win32SetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
@@ -299,8 +229,8 @@ PalResult PAL_CALL palSetWindowCursor(
         WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
         if (!data) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 GetLastError());
         }
 
@@ -311,21 +241,21 @@ PalResult PAL_CALL palSetWindowCursor(
 
         } else if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
 
     } else {
         return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_ARGUMENT, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 }

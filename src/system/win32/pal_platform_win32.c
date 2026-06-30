@@ -20,7 +20,6 @@
 #endif // UNICODE
 
 #include "pal/pal_system.h"
-#include "pal_shared.h"
 #include <string.h>
 #include <windows.h>
 
@@ -74,20 +73,17 @@ static inline PalBool isVersionWin32(
 PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {
     if (!info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    info->apiType = PAL_PLATFORM_API_WIN32;
-    info->type = PAL_PLATFORM_WINDOWS;
+    info->apiType = PAL_PLATFORM_API_TYPE_WIN32;
+    info->type = PAL_PLATFORM_TYPE_WINDOWS;
 
     // get windows build, version and combine them
     if (!getVersionWin32(&info->version)) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 

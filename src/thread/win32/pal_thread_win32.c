@@ -7,7 +7,6 @@
 
 #ifdef _WIN32
 #include "pal_thread_win32.h"
-#include "pal_shared.h"
 
 typedef HRESULT(WINAPI* SetThreadDescriptionFn)(
     HANDLE,
@@ -36,28 +35,19 @@ PalResult PAL_CALL palCreateThread(
     PalThread** outThread)
 {
     if (!info || !outThread) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (info->allocator) {
         if (!info->allocator->allocate && !info->allocator->free) {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
-                GetLastError());
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
 
     // create thread
     ThreadData* data = palAllocate(info->allocator, sizeof(ThreadData), 0);
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     data->arg = info->arg;
@@ -70,26 +60,26 @@ PalResult PAL_CALL palCreateThread(
         DWORD error = GetLastError();
         if (error == ERROR_NOT_ENOUGH_MEMORY) {
             return palMakeResult(
-                PAL_RESULT_OUT_OF_MEMORY, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_OUT_OF_MEMORY, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else if (error == ERROR_INVALID_PARAMETER) {
             return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else if (error == ERROR_ACCESS_DENIED) {
             return palMakeResult(
-                PAL_RESULT_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_OPERATION, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -103,10 +93,7 @@ PalResult PAL_CALL palJoinThread(
     void** retval)
 {
     if (!thread) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     DWORD wait = WaitForSingleObject((HANDLE)thread, INFINITE);
@@ -121,8 +108,8 @@ PalResult PAL_CALL palJoinThread(
 
     } else if (wait == WAIT_FAILED) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -216,10 +203,7 @@ PalResult PAL_CALL palGetThreadName(
     char* outBuffer)
 {
     if (!thread) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
@@ -231,19 +215,15 @@ PalResult PAL_CALL palGetThreadName(
 
     if (!getThreadDescription) {
         // not supported
-        return palMakeResult(
-            PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     wchar_t* buffer = nullptr;
     HRESULT hr = getThreadDescription((HANDLE)thread, &buffer);
-
     if (!SUCCEEDED(hr)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             hr);
     }
 
@@ -268,10 +248,7 @@ PalResult PAL_CALL palSetThreadPriority(
     PalThreadPriority priority)
 {
     if (!thread) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     int _priority = 0;
@@ -293,20 +270,20 @@ PalResult PAL_CALL palSetThreadPriority(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else if (error == ERROR_ACCESS_DENIED) {
             return palMakeResult(
-                PAL_RESULT_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_OPERATION, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -319,30 +296,21 @@ PalResult PAL_CALL palSetThreadAffinity(
     uint64_t mask)
 {
     if (!thread) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (!SetThreadAffinityMask((HANDLE)thread, mask)) {
         DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
+        if (error == ERROR_INVALID_HANDLE || error == ERROR_INVALID_PARAMETER) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
-                error);
-
-        } else if (error == ERROR_INVALID_PARAMETER) {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -355,10 +323,7 @@ PalResult PAL_CALL palSetThreadName(
     const char* name)
 {
     if (!thread || !name) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
@@ -370,10 +335,7 @@ PalResult PAL_CALL palSetThreadName(
 
     if (!setThreadDescription) {
         // not supported
-        return palMakeResult(
-            PAL_RESULT_FEATURE_NOT_SUPPORTED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     wchar_t buffer[128] = {0};
@@ -386,26 +348,26 @@ PalResult PAL_CALL palSetThreadName(
     } else {
         if (hr == E_INVALIDARG) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 hr);
 
         } else if (hr == E_OUTOFMEMORY) {
             return palMakeResult(
-                PAL_RESULT_OUT_OF_MEMORY, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_OUT_OF_MEMORY, 
+                PAL_RESULT_SOURCE_WIN32, 
                 hr);
 
         } else if (hr == E_ACCESSDENIED) {
             return palMakeResult(
-                PAL_RESULT_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_OPERATION, 
+                PAL_RESULT_SOURCE_WIN32, 
                 hr);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 hr);
         }
     }

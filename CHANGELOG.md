@@ -58,7 +58,7 @@
 - Renamed platform api type constants from `PAL_PLATFORM_API_**` to `PAL_PLATFORM_API_TYPE_**`.
 - Renamed cursor type constants from `PAL_CURSOR_**` to `PAL_CURSOR_TYPE_**`.
 - Renamed flash flag constants from `PAL_FLASH_**` to `PAL_FLASH_FLAG_**`.
-- Renamed fbConfig backend type constants from `PAL_CONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`.
+- Renamed fbConfig backend type constants from `PAL_FBCONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`.
 - Renamed `PalFlashFlag` to `PalFlashFlags`.
 - `palInitGL()` now takes two additional parameters.
 - `palEnumerateGLFBConfigs()` no longer takes the `glWindow` parameter.
@@ -73,7 +73,7 @@
 - Removed `palGetRawMouseWheelDelta()` function.
 - Removed `palSetPreferredInstance()` function.
 - Removed `palSetFBConfig()` function.
-- Removed `PAL_CONFIG_BACKEND_GLES`.
+- Removed `PAL_FBCONFIG_BACKEND_GLES`.
 - `palGetWindowHandleInfo()` now returns `PalResult` and takes a pointer to the struct.
 - `PalGLInfo` now has `backend` and `api` fields.
 - Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`.
@@ -93,7 +93,7 @@
 - **Video:** Added **palGetVideoFeaturesEx()** to check old and extended supported features.
 - **Video:** Added **palGetWindowHandleInfoEx()** to get extended window handles.
 - **Video:** Added **palGetRawMouseWheelDelta()** to get raw mouse wheel delta.
-- **Video:** Added **PAL_CONFIG_BACKEND_GLES** to `PalFBConfigBackend` enum.
+- **Video:** Added **PAL_FBCONFIG_BACKEND_GLES** to `PalFBConfigBackend` enum.
 - **Video:** Added **palSetPreferredInstance()** to set the native instance or display PAL video should use rather than creating a new one.
 
 - **Core:** Added **palPackFloat()** to combine two floats into a single int64_t integer.

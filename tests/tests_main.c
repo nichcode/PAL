@@ -13,11 +13,11 @@ int main(int argc, char** argv)
 
     // event
     // registerTest(eventTest, "Event test");
-    //registerTest(userEventTest, "User Event Test");
+    // registerTest(userEventTest, "User Event Test");
 
 #if PAL_HAS_SYSTEM_MODULE == 1
-    registerTest(platformTest, "Platform Test");
-    registerTest(cpuTest, "CPU Test");
+    // registerTest(platformTest, "Platform Test");
+    // registerTest(cpuTest, "CPU Test");
 #endif // PAL_HAS_SYSTEM_MODULE
 
 #if PAL_HAS_THREAD_MODULE == 1

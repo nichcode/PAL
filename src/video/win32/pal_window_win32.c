@@ -7,14 +7,13 @@
 
 #ifdef _WIN32
 #include "pal_video_win32.h"
-#include "pal_shared.h"
 
 static WindowData* getFreeWindowData()
 {
-    for (int i = 0; i < s_Video.maxWindowData; ++i) {
-        if (!s_Video.windowData[i].used) {
-            s_Video.windowData[i].used = PAL_TRUE;
-            return &s_Video.windowData[i];
+    for (int i = 0; i < s_Win32.maxWindowData; ++i) {
+        if (!s_Win32.windowData[i].used) {
+            s_Win32.windowData[i].used = PAL_TRUE;
+            return &s_Win32.windowData[i];
         }
     }
 
@@ -22,46 +21,29 @@ static WindowData* getFreeWindowData()
     // It is rare for a user to create and manage
     // 32 windows at the same time
     WindowData* data = nullptr;
-    int count = s_Video.maxWindowData * 2; // double the size
-    int freeIndex = s_Video.maxWindowData + 1;
-    data = palAllocate(s_Video.allocator, sizeof(WindowData) * count, 0);
+    int count = s_Win32.maxWindowData * 2; // double the size
+    int freeIndex = s_Win32.maxWindowData + 1;
+    data = palAllocate(s_Win32.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(data, s_Video.windowData, s_Video.maxWindowData * sizeof(WindowData));
+        memcpy(data, s_Win32.windowData, s_Win32.maxWindowData * sizeof(WindowData));
 
-        palFree(s_Video.allocator, s_Video.windowData);
-        s_Video.windowData = data;
-        s_Video.maxWindowData = count;
+        palFree(s_Win32.allocator, s_Win32.windowData);
+        s_Win32.windowData = data;
+        s_Win32.maxWindowData = count;
 
-        s_Video.windowData[freeIndex].used = PAL_TRUE;
-        return &s_Video.windowData[freeIndex];
+        s_Win32.windowData[freeIndex].used = PAL_TRUE;
+        return &s_Win32.windowData[freeIndex];
     }
     return nullptr;
 }
 
-PalResult PAL_CALL palCreateWindow(
+PalResult win32CreateWindow(
     const PalWindowCreateInfo* info,
     PalWindow** outWindow)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!info || !outWindow) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     WindowData* data = getFreeWindowData();
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     HWND handle = nullptr;
@@ -114,8 +96,8 @@ PalResult PAL_CALL palCreateWindow(
         monitor = (PalMonitor*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
         if (!monitor) {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 GetLastError());
         }
     }
@@ -160,24 +142,24 @@ PalResult PAL_CALL palCreateWindow(
         rect.bottom - rect.top,
         nullptr,
         nullptr,
-        s_Video.instance,
+        s_Win32.instance,
         nullptr);
 
     if (!handle) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
     // set the pixel format is set
     if (info->fbConfigIndex) {
         // clang-format off
-        if (info->fbConfigBackend == PAL_CONFIG_BACKEND_EGL  ||
-            info->fbConfigBackend == PAL_CONFIG_BACKEND_GLX) {
+        if (info->fbConfigBackend == PAL_FBCONFIG_BACKEND_EGL  ||
+            info->fbConfigBackend == PAL_FBCONFIG_BACKEND_GLX) {
             return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 GetLastError());
         }
         // clang-format on
@@ -187,31 +169,31 @@ PalResult PAL_CALL palCreateWindow(
         // we ask the OS (platform) to fill the pfd struct for us from that
         // index
         PIXELFORMATDESCRIPTOR pfd;
-        if (!s_Video.describePixelFormat(
+        if (!s_Win32.describePixelFormat(
                 hdc,
                 info->fbConfigIndex,
                 sizeof(PIXELFORMATDESCRIPTOR),
                 &pfd)) {
             return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 GetLastError());
         }
 
-        s_Video.setPixelFormat(hdc, info->fbConfigIndex, &pfd);
+        s_Win32.setPixelFormat(hdc, info->fbConfigIndex, &pfd);
         ReleaseDC(handle, hdc);
     }
 
     // show, maximize and minimize
     int32_t showFlag = SW_HIDE;
     // maximize
-    if (info->maximized) {
+    if (info->state == PAL_WINDOW_STATE_MAXIMIZED) {
         showFlag = SW_MAXIMIZE;
         data->state = PAL_WINDOW_STATE_MAXIMIZED;
     }
 
     // minimized
-    if (info->minimized) {
+    if (info->state == PAL_WINDOW_STATE_MINIMIZED) {
         showFlag = SW_MINIMIZE;
         data->state = PAL_WINDOW_STATE_MINIMIZED;
     }
@@ -252,172 +234,86 @@ PalResult PAL_CALL palCreateWindow(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyWindow(PalWindow* window)
+void win32DestroyWindow(PalWindow* window)
 {
-    if (s_Video.initialized && window) {
-        WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
-        // destroy only PAL created window
-        if (data->isAttached) {
-            return;
-        }
-
-        DestroyWindow((HWND)window);
-        data->used = PAL_FALSE;
+    WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
+    // destroy only PAL created window
+    if (data->isAttached) {
+        return;
     }
+
+    DestroyWindow((HWND)window);
+    data->used = PAL_FALSE;
 }
 
-PalResult PAL_CALL palMinimizeWindow(PalWindow* window)
+PalResult win32MinimizeWindow(PalWindow* window)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!ShowWindow((HWND)window, SW_MINIMIZE)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palMaximizeWindow(PalWindow* window)
+PalResult win32MaximizeWindow(PalWindow* window)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!ShowWindow((HWND)window, SW_MAXIMIZE)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palRestoreWindow(PalWindow* window)
+PalResult win32RestoreWindow(PalWindow* window)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!ShowWindow((HWND)window, SW_RESTORE)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palShowWindow(PalWindow* window)
+PalResult win32ShowWindow(PalWindow* window)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!ShowWindow((HWND)window, SW_SHOW)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palHideWindow(PalWindow* window)
+PalResult win32HideWindow(PalWindow* window)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!ShowWindow((HWND)window, SW_HIDE)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palFlashWindow(
+PalResult win32FlashWindow(
     PalWindow* window,
     const PalFlashInfo* info)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     DWORD flags = 0;
-    if (info->flags == PAL_FLASH_STOP) {
+    if (info->flags == PAL_FLASH_FLAG_STOP) {
         flags = FLASHW_STOP;
 
     } else {
-        if (info->flags & PAL_FLASH_CAPTION) {
+        if (info->flags & PAL_FLASH_FLAG_CAPTION) {
             flags |= FLASHW_CAPTION;
         }
-        if (info->flags & PAL_FLASH_TRAY) {
+        if (info->flags & PAL_FLASH_FLAG_TRAY) {
             flags |= FLASHW_TRAY;
             flags |= FLASHW_TIMERNOFG;
         }
@@ -435,14 +331,14 @@ PalResult PAL_CALL palFlashWindow(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -450,32 +346,18 @@ PalResult PAL_CALL palFlashWindow(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowStyle(
+PalResult win32GetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !outStyle) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     PalWindowStyle windowStyle = 0;
     DWORD style = (DWORD)GetWindowLongPtrW((HWND)window, GWL_STYLE);
     DWORD exStyle = (DWORD)GetWindowLongPtrW((HWND)window, GWL_EXSTYLE);
 
     if (!style) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -522,38 +404,24 @@ PalResult PAL_CALL palGetWindowStyle(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowMonitor(
+PalResult win32GetWindowMonitor(
     PalWindow* window,
     PalMonitor** outMonitor)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !outMonitor) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     HMONITOR monitor = nullptr;
     monitor = MonitorFromWindow((HWND)window, MONITOR_DEFAULTTONEAREST);
     if (!monitor) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -562,31 +430,17 @@ PalResult PAL_CALL palGetWindowMonitor(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowTitle(
+PalResult win32GetWindowTitle(
     PalWindow* window,
     uint64_t bufferSize,
     uint64_t* outSize,
     char* outBuffer)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !outBuffer) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     wchar_t buffer[WINDOW_NAME_SIZE];
     if (GetWindowTextW((HWND)window, buffer, WINDOW_NAME_SIZE) == 0) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -605,30 +459,16 @@ PalResult PAL_CALL palGetWindowTitle(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowPos(
+PalResult win32GetWindowPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     RECT rect;
     if (!GetWindowRect((HWND)window, &rect)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -642,30 +482,16 @@ PalResult PAL_CALL palGetWindowPos(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowSize(
+PalResult win32GetWindowSize(
     PalWindow* window,
     uint32_t* width,
     uint32_t* height)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     RECT rect;
     if (!GetWindowRect((HWND)window, &rect)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -679,29 +505,15 @@ PalResult PAL_CALL palGetWindowSize(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetWindowState(
+PalResult win32GetWindowState(
     PalWindow* window,
     PalWindowState* outState)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !outState) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     WINDOWPLACEMENT wp = {0};
     if (!GetWindowPlacement((HWND)window, &wp)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -718,42 +530,21 @@ PalResult PAL_CALL palGetWindowState(
     return PAL_RESULT_SUCCESS;
 }
 
-PalBool PAL_CALL palIsWindowVisible(PalWindow* window)
+PalBool win32IsWindowVisible(PalWindow* window)
 {
-    if (!s_Video.initialized || !window) {
-        return PAL_FALSE;
-    }
-
     return IsWindowVisible((HWND)window);
 }
 
-PalWindow* PAL_CALL palGetFocusWindow()
+PalWindow* win32GetFocusWindow()
 {
-    if (!s_Video.initialized) {
-        return nullptr;
-    }
     return (PalWindow*)GetFocus();
 }
 
-PalResult PAL_CALL palGetWindowHandleInfo(
+PalResult win32GetWindowHandleInfo(
     PalWindow* window, 
     PalWindowHandleInfo* info)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    info->nativeDisplay = (void*)s_Video.instance;
+    info->nativeInstance = (void*)s_Win32.instance;
     info->nativeWindow = (void*)window;
     info->nativeHandle1 = nullptr;
     info->nativeHandle2 = nullptr;
@@ -762,24 +553,10 @@ PalResult PAL_CALL palGetWindowHandleInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetWindowOpacity(
+PalResult win32SetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (opacity < 0.0f) {
         opacity = 0.0f;
     }
@@ -793,20 +570,20 @@ PalResult PAL_CALL palSetWindowOpacity(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else if (error == ERROR_INVALID_PARAMETER) {
             return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -814,24 +591,10 @@ PalResult PAL_CALL palSetWindowOpacity(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetWindowStyle(
+PalResult win32SetWindowStyle(
     PalWindow* window,
     PalWindowStyle style)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     // convert our style to win32 styles and exStyles
     // all windows have this styles
     DWORD win32Style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
@@ -895,109 +658,73 @@ PalResult PAL_CALL palSetWindowStyle(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
 }
 
-PalResult PAL_CALL palSetWindowTitle(
+PalResult win32SetWindowTitle(
     PalWindow* window,
     const char* title)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window || !title) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     wchar_t buffer[WINDOW_NAME_SIZE];
     MultiByteToWideChar(CP_UTF8, 0, title, -1, buffer, 256);
 
     if (!SetWindowTextW((HWND)window, buffer)) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetWindowPos(
+PalResult win32SetWindowPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    PalBool success =
-        SetWindowPos((HWND)window, nullptr, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
+    PalBool success = SetWindowPos(
+        (HWND)window, 
+        nullptr, 
+        x, 
+        y, 
+        0, 
+        0, 
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
 
     if (!success) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetWindowSize(
+PalResult win32SetWindowSize(
     PalWindow* window,
     uint32_t width,
     uint32_t height)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     PalBool success = SetWindowPos(
         (HWND)window,
         HWND_TOP,
@@ -1011,90 +738,59 @@ PalResult PAL_CALL palSetWindowSize(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else if (error == ERROR_INVALID_PARAMETER) {
             return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetFocusWindow(PalWindow* window)
+PalResult win32SetFocusWindow(PalWindow* window)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!SetActiveWindow((HWND)window)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else if (error == ERROR_ACCESS_DENIED) {
             return palMakeResult(
-                PAL_RESULT_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_OPERATION, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palAttachWindow(
+PalResult win32AttachWindow(
     void* windowHandle,
     PalWindow** outWindow)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!windowHandle || !outWindow) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     WindowData* data = getFreeWindowData();
     if (!data) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     PalWindow* window = (PalWindow*)windowHandle;
@@ -1113,39 +809,22 @@ PalResult PAL_CALL palAttachWindow(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palDetachWindow(
+PalResult win32DetachWindow(
     PalWindow* window,
     void** outWindowHandle)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     WindowData* data = nullptr;
     data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
     if (!data) {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
     if (data->isAttached == PAL_FALSE) {
         // window is owned by PAL
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     data->used = PAL_FALSE;

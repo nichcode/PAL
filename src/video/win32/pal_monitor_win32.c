@@ -7,7 +7,6 @@
 
 #ifdef _WIN32
 #include "pal_video_win32.h"
-#include "pal_shared.h"
 
 #define MONITOR_DPI 0
 #define MAX_MODE_COUNT 128
@@ -77,27 +76,20 @@ static inline PalResult setMonitorMode(
     PalMonitorMode* mode,
     PalBool test)
 {
-    if (!monitor || !mode) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -125,8 +117,8 @@ static inline PalResult setMonitorMode(
 
     } else {
         return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_HANDLE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 }
@@ -162,24 +154,10 @@ static inline void addMonitorMode(
     *count += 1;
 }
 
-PalResult PAL_CALL palEnumerateMonitors(
+PalResult win32EnumerateMonitors(
     int32_t* count,
     PalMonitor** outMonitors)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!count || *count == 0 && outMonitors) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     MonitorData data;
     data.count = 0;
     data.monitors = outMonitors;
@@ -192,28 +170,14 @@ PalResult PAL_CALL palEnumerateMonitors(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor)
+PalResult win32GetPrimaryMonitor(PalMonitor** outMonitor)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!outMonitor) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     HMONITOR monitor = nullptr;
     monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
     if (!monitor) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -221,38 +185,24 @@ PalResult PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor)
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetMonitorInfo(
+PalResult win32GetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!monitor || !info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -273,8 +223,8 @@ PalResult PAL_CALL palGetMonitorInfo(
 
     // get dpi scale
     UINT dpiX, dpiY;
-    if (s_Video.getDpiForMonitor) {
-        s_Video.getDpiForMonitor((HMONITOR)monitor, MONITOR_DPI, &dpiX, &dpiY);
+    if (s_Win32.getDpiForMonitor) {
+        s_Win32.getDpiForMonitor((HMONITOR)monitor, MONITOR_DPI, &dpiX, &dpiY);
 
     } else {
         dpiX = 96;
@@ -295,25 +245,11 @@ PalResult PAL_CALL palGetMonitorInfo(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palEnumerateMonitorModes(
+PalResult win32EnumerateMonitorModes(
     PalMonitor* monitor,
     int32_t* count,
     PalMonitorMode* modes)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!monitor || !count || *count == 0 && modes) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     int32_t modeCount = 0;
     int32_t maxModes = 0;
     PalMonitorMode* monitorModes = nullptr;
@@ -324,14 +260,14 @@ PalResult PAL_CALL palEnumerateMonitorModes(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -339,12 +275,9 @@ PalResult PAL_CALL palEnumerateMonitorModes(
     if (!modes) {
         // allocate and store tmp monitor modesand check for the interested
         // fields.
-        monitorModes = palAllocate(s_Video.allocator, sizeof(PalMonitorMode) * MAX_MODE_COUNT, 0);
+        monitorModes = palAllocate(s_Win32.allocator, sizeof(PalMonitorMode) * MAX_MODE_COUNT, 0);
         if (!monitorModes) {
-            return palMakeResult(
-                PAL_RESULT_OUT_OF_MEMORY, 
-                PAL_RESULT_SOURCE_WINDOWS, 
-                GetLastError());
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
         }
 
         memset(monitorModes, 0, sizeof(PalMonitorMode) * MAX_MODE_COUNT);
@@ -373,44 +306,30 @@ PalResult PAL_CALL palEnumerateMonitorModes(
 
     if (!modes) {
         *count = modeCount;
-        palFree(s_Video.allocator, monitorModes);
+        palFree(s_Win32.allocator, monitorModes);
     }
 
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palGetCurrentMonitorMode(
+PalResult win32GetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!monitor || !mode) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -426,58 +345,27 @@ PalResult PAL_CALL palGetCurrentMonitorMode(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL palSetMonitorMode(
+PalResult win32SetMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     return setMonitorMode(monitor, mode, PAL_FALSE);
 }
 
-PalResult PAL_CALL palValidateMonitorMode(
+PalResult win32ValidateMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     return setMonitorMode(monitor, mode, PAL_TRUE);
 }
 
-PalResult PAL_CALL palSetMonitorOrientation(
+PalResult win32SetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!monitor) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     DWORD win32Orientation = orientationToin32(orientation);
     if (orientation == NULL_ORIENTATION) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_OPERATION, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
     MONITORINFOEXW mi = {0};
@@ -486,14 +374,14 @@ PalResult PAL_CALL palSetMonitorOrientation(
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
             return palMakeResult(
-                PAL_RESULT_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_INVALID_HANDLE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -527,8 +415,8 @@ PalResult PAL_CALL palSetMonitorOrientation(
 
     } else {
         return palMakeResult(
-            PAL_RESULT_INVALID_OPERATION, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_INVALID_OPERATION, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 }

@@ -167,8 +167,8 @@ project "PAL"
 
         filter {"system:windows", "configurations:*"}
             files { 
-                "src/opengl/win32/pal_context_win32.c",
-                "src/opengl/win32/pal_opengl_win32.c"
+                "src/opengl/wgl/pal_context_wgl.c",
+                "src/opengl/wgl/pal_wgl.c"
             }
 
         filter {"system:linux", "configurations:*"}

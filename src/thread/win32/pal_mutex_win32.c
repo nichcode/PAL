@@ -7,33 +7,26 @@
 
 #ifdef _WIN32
 #include "pal_thread_win32.h"
-#include "pal_shared.h"
 
 PalResult PAL_CALL palCreateMutex(
     const PalAllocator* allocator,
     PalMutex** outMutex)
 {
     if (!outMutex) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (allocator) {
         if (!allocator->allocate && !allocator->free) {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
-                GetLastError());
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
 
     PalMutex* mutex = palAllocate(allocator, sizeof(PalMutex), 0);
     if (!mutex) {
         return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 

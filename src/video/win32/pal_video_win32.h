@@ -80,7 +80,6 @@ typedef struct {
 } WindowData;
 
 typedef struct {
-    PalBool initialized;
     int32_t maxWindowData;
     PalVideoFeatures features;
     const PalAllocator* allocator;
@@ -102,7 +101,7 @@ typedef struct {
     WindowData* windowData;
 } VideoWin32;
 
-extern VideoWin32 s_Video;
+extern VideoWin32 s_Win32;
 
 #endif // _WIN32
 #endif // _PAL_VIDEO_WIN32_H

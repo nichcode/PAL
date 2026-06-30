@@ -5,10 +5,10 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#ifndef _PAL_OPENGL_WIN32_H
-#define _PAL_OPENGL_WIN32_H
-#ifdef _WIN32
+#ifndef _PAL_WGL_H
+#define _PAL_WGL_H
 
+#ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
@@ -36,7 +36,6 @@
 #endif // GL_VENDOR
 
 #ifndef WGL_NUMBER_PIXEL_FORMATS_ARB
-
 #define WGL_NUMBER_PIXEL_FORMATS_ARB 0x2000
 #define WGL_ACCELERATION_ARB 0x2003
 #define WGL_RED_BITS_ARB 0x2015
@@ -74,7 +73,6 @@
 #define WGL_CONTEXT_FLAGS_ARB 0x2094
 
 #define ERROR_INVALID_PROFILE_ARB 0x2096
-
 #endif // WGL_NUMBER_PIXEL_FORMATS_ARB
 
 typedef unsigned int GLenum;
@@ -156,20 +154,19 @@ typedef struct {
 } Gdi;
 
 typedef struct {
-    PalBool initialized;
-    wglGetProcAddressFn wglGetProcAddress;
-    wglCreateContextFn wglCreateContext;
-    wglDeleteContextFn wglDeleteContext;
-    wglMakeCurrentFn wglMakeCurrent;
-    wglShareListsFn wglShareLists;
+    wglGetProcAddressFn getProcAddress;
+    wglCreateContextFn createContext;
+    wglDeleteContextFn deleteContext;
+    wglMakeCurrentFn makeCurrent;
+    wglShareListsFn shareLists;
     glGetStringFn glGetString;
 
-    wglCreateContextAttribsARBFn wglCreateContextAttribsARB;
-    wglChoosePixelFormatARBFn wglChoosePixelFormatARB;
-    wglSwapIntervalEXTFn wglSwapIntervalEXT;
-    wglGetExtensionsStringEXTFn wglGetExtensionsStringEXT;
-    wglGetExtensionsStringARBFn wglGetExtensionsStringARB;
-    wglGetPixelFormatAttribivARBFn wglGetPixelFormatAttribivARB;
+    wglCreateContextAttribsARBFn createContextAttribsARB;
+    wglChoosePixelFormatARBFn choosePixelFormatARB;
+    wglSwapIntervalEXTFn swapIntervalEXT;
+    wglGetExtensionsStringEXTFn getExtensionsStringEXT;
+    wglGetExtensionsStringARBFn getExtensionsStringARB;
+    wglGetPixelFormatAttribivARBFn getPixelFormatAttribivARB;
 
     const PalAllocator* allocator;
     HINSTANCE opengl;
@@ -184,4 +181,4 @@ extern Gdi s_Gdi;
 extern Wgl s_Wgl;
 
 #endif // _WIN32
-#endif // _PAL_OPENGL_WIN32_H
+#endif // _PAL_WGL_H

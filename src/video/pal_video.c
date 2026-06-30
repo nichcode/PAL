@@ -208,6 +208,8 @@ PalResult PAL_CALL palEnumerateMonitorModes(
         // sort the modes so that they are highest to lowest
         qsort(modes, *count, sizeof(PalMonitorMode), compareModes);
     }
+
+    return result;
 }
 
 PalResult PAL_CALL palGetCurrentMonitorMode(

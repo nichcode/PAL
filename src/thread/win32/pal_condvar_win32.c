@@ -7,34 +7,24 @@
 
 #ifdef _WIN32
 #include "pal_thread_win32.h"
-#include "pal_shared.h"
 
 PalResult PAL_CALL palCreateCondVar(
     const PalAllocator* allocator,
     PalCondVar** outCondVar)
 {
     if (!outCondVar) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (allocator) {
         if (!allocator->allocate && !allocator->free) {
-            return palMakeResult(
-                PAL_RESULT_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
-                GetLastError());
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
 
     PalCondVar* condVar = palAllocate(allocator, sizeof(PalCondVar), 0);
     if (!condVar) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     InitializeConditionVariable(&condVar->cv);
@@ -55,10 +45,7 @@ PalResult PAL_CALL palWaitCondVar(
     PalMutex* mutex)
 {
     if (!condVar || !mutex) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, INFINITE);
@@ -66,14 +53,14 @@ PalResult PAL_CALL palWaitCondVar(
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
             return palMakeResult(
-                PAL_RESULT_TIMEOUT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_TIMEOUT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }
@@ -86,10 +73,7 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     uint64_t milliseconds)
 {
     if (!condVar || !mutex) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, (DWORD)milliseconds);
@@ -97,14 +81,14 @@ PalResult PAL_CALL palWaitCondVarTimeout(
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
             return palMakeResult(
-                PAL_RESULT_TIMEOUT, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_TIMEOUT, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
 
         } else {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 error);
         }
     }

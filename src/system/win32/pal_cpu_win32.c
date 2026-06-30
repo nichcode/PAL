@@ -20,7 +20,6 @@
 #endif // UNICODE
 
 #include "pal/pal_system.h"
-#include "pal_shared.h"
 #include <string.h>
 #include <windows.h>
 
@@ -48,18 +47,12 @@ PalResult PAL_CALL palGetCPUInfo(
     PalCPUInfo* info)
 {
     if (!info) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     // check invalid allocator
     if (allocator && (!allocator->allocate || !allocator->free)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     memset(info, 0, sizeof(PalCPUInfo));
@@ -118,22 +111,18 @@ PalResult PAL_CALL palGetCPUInfo(
     // get cpu info
     DWORD len = 0;
     GetLogicalProcessorInformationEx(RelationAll, nullptr, &len);
-
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = nullptr;
     buffer = palAllocate(allocator, len, 16);
     if (!buffer) {
-        return palMakeResult(
-            PAL_RESULT_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     BOOL ret = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
     if (!ret) {
         palFree(allocator, buffer);
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 

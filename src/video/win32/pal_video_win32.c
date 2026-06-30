@@ -7,7 +7,6 @@
 
 #ifdef _WIN32
 #include "pal_video_win32.h"
-#include "pal_shared.h"
 #include <windowsx.h>
 
 #define PROCESS_DPI_AWARE 2
@@ -34,7 +33,7 @@ typedef struct {
 } Keyboard;
 
 typedef struct {
-    PalBool push;
+    PalBool pushMouseDelta;
     int32_t dx;
     int32_t dy;
     int32_t WheelX;
@@ -42,11 +41,11 @@ typedef struct {
     PalBool state[PAL_MOUSE_BUTTON_COUNT];
 } Mouse;
 
-static PendingEvent s_Event;
+static PendingEvent s_Event = {0};
 static BYTE s_RawBuffer[4096] = {0};
 static Mouse s_Mouse = {0};
 static Keyboard s_Keyboard = {0};
-VideoWin32 s_Video = {0};
+VideoWin32 s_Win32 = {0};
 
 LRESULT CALLBACK videoProc(
     HWND hwnd,
@@ -61,15 +60,15 @@ LRESULT CALLBACK videoProc(
         return DefWindowProcW(hwnd, msg, wParam, lParam);
     }
 
-    PalDispatchMode mode = PAL_DISPATCH_NONE;
+    PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
     switch (msg) {
         case WM_CLOSE: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_CLOSE);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_WINDOW_CLOSE);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_WINDOW_CLOSE;
+                    event.type = PAL_EVENT_TYPE_WINDOW_CLOSE;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -78,20 +77,20 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_SIZE: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_SIZE);
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_WINDOW_SIZE);
                 uint32_t width = (uint32_t)LOWORD(lParam);
                 uint32_t height = (uint32_t)HIWORD(lParam);
 
-                if (mode == PAL_DISPATCH_CALLBACK) {
+                if (mode == PAL_DISPATCH_MODE_CALLBACK) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_WINDOW_SIZE;
+                    event.type = PAL_EVENT_TYPE_WINDOW_SIZE;
                     event.data = palPackUint32(width, height);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
 
-                } else if (mode == PAL_DISPATCH_POLL) {
+                } else if (mode == PAL_DISPATCH_MODE_POLL) {
                     s_Event.pendingResize = PAL_TRUE;
                     s_Event.width = width;
                     s_Event.height = height;
@@ -99,9 +98,9 @@ LRESULT CALLBACK videoProc(
                 }
 
                 // trigger state event
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_STATE);
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_WINDOW_STATE);
                 PalWindowState state = PAL_WINDOW_STATE_RESTORED;
-                if (mode == PAL_DISPATCH_NONE) {
+                if (mode == PAL_DISPATCH_MODE_NONE) {
                     return 0;
                 }
 
@@ -122,14 +121,14 @@ LRESULT CALLBACK videoProc(
                     return 0;
                 }
 
-                if (mode == PAL_DISPATCH_CALLBACK) {
+                if (mode == PAL_DISPATCH_MODE_CALLBACK) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_WINDOW_STATE;
+                    event.type = PAL_EVENT_TYPE_WINDOW_STATE;
                     event.data = state;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
 
-                } else if (mode == PAL_DISPATCH_POLL) {
+                } else if (mode == PAL_DISPATCH_MODE_POLL) {
                     s_Event.pendingState = PAL_TRUE;
                     s_Event.state = state;
                 }
@@ -140,15 +139,15 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_MOVE: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_MOVE);
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_WINDOW_MOVE);
                 int32_t x = GET_X_LPARAM(lParam);
                 int32_t y = GET_Y_LPARAM(lParam);
 
-                if (mode == PAL_DISPATCH_CALLBACK) {
+                if (mode == PAL_DISPATCH_MODE_CALLBACK) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_WINDOW_MOVE;
+                    event.type = PAL_EVENT_TYPE_WINDOW_MOVE;
                     event.data = palPackInt32(x, y);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
@@ -165,11 +164,11 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_SHOWWINDOW: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                PalEventType type = PAL_EVENT_WINDOW_VISIBILITY;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                PalEventType type = PAL_EVENT_TYPE_WINDOW_VISIBILITY;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data = (PalBool)wParam;
@@ -181,12 +180,12 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_SETFOCUS: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_FOCUS);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_WINDOW_FOCUS);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_WINDOW_FOCUS;
+                    event.type = PAL_EVENT_TYPE_WINDOW_FOCUS;
                     event.data = PAL_TRUE;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
@@ -196,12 +195,12 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_KILLFOCUS: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_WINDOW_FOCUS);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_WINDOW_FOCUS);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_WINDOW_FOCUS;
+                    event.type = PAL_EVENT_TYPE_WINDOW_FOCUS;
                     event.data = PAL_FALSE;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
@@ -211,12 +210,12 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_ENTERSIZEMOVE: {
-            s_Mouse.push = PAL_FALSE;
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                PalEventType type = PAL_EVENT_WINDOW_MODAL_BEGIN;
+            s_Mouse.pushMouseDelta = PAL_FALSE;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                PalEventType type = PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
@@ -227,12 +226,12 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_EXITSIZEMOVE: {
-            s_Mouse.push = PAL_TRUE;
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                PalEventType type = PAL_EVENT_WINDOW_MODAL_END;
+            s_Mouse.pushMouseDelta = PAL_TRUE;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                PalEventType type = PAL_EVENT_TYPE_WINDOW_MODAL_END;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
@@ -243,11 +242,11 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_DPICHANGED: {
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                PalEventType type = PAL_EVENT_MONITOR_DPI_CHANGED;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data = HIWORD(wParam);
@@ -264,11 +263,11 @@ LRESULT CALLBACK videoProc(
                 return 0;
             }
 
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                PalEventType type = PAL_EVENT_MONITOR_LIST_CHANGED;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                PalEventType type = PAL_EVENT_TYPE_MONITOR_LIST_CHANGED;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data2 = palPackPointer((PalWindow*)hwnd);
@@ -282,12 +281,12 @@ LRESULT CALLBACK videoProc(
             int32_t delta = GET_WHEEL_DELTA_WPARAM(wParam);
             s_Mouse.WheelX = delta / WHEEL_DELTA;
 
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_MOUSE_WHEEL);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_MOUSE_WHEEL;
+                    event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
                     event.data = palPackFloat(s_Mouse.WheelX, 0);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
@@ -300,12 +299,12 @@ LRESULT CALLBACK videoProc(
             int32_t delta = GET_WHEEL_DELTA_WPARAM(wParam);
             s_Mouse.WheelY = delta / WHEEL_DELTA;
 
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_WHEEL);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_MOUSE_WHEEL);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_MOUSE_WHEEL;
+                    event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
                     event.data = palPackFloat(0, s_Mouse.WheelY);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
@@ -318,12 +317,12 @@ LRESULT CALLBACK videoProc(
             const int32_t x = GET_X_LPARAM(lParam);
             const int32_t y = GET_Y_LPARAM(lParam);
 
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
-                mode = palGetEventDispatchMode(driver, PAL_EVENT_MOUSE_MOVE);
-                if (mode != PAL_DISPATCH_NONE) {
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
+                mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_MOUSE_MOVE);
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
-                    event.type = PAL_EVENT_MOUSE_MOVE;
+                    event.type = PAL_EVENT_TYPE_MOUSE_MOVE;
                     event.data = palPackInt32(x, y);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
@@ -348,18 +347,18 @@ LRESULT CALLBACK videoProc(
             RAWINPUT* raw = (RAWINPUT*)s_RawBuffer;
             RAWMOUSE* mouse = &raw->data.mouse;
             // push only if we are not rresizing or moving with the mouse
-            if (s_Mouse.push && (mouse->lLastX || mouse->lLastY)) {
+            if (s_Mouse.pushMouseDelta && (mouse->lLastX || mouse->lLastY)) {
                 s_Mouse.dx += mouse->lLastX;
                 s_Mouse.dy += mouse->lLastY;
 
                 float dx = (float)s_Mouse.dx;
                 float dy = (float)s_Mouse.dy;
 
-                if (s_Video.eventDriver) {
-                    PalEventDriver* driver = s_Video.eventDriver;
-                    PalEventType type = PAL_EVENT_MOUSE_DELTA;
+                if (s_Win32.eventDriver) {
+                    PalEventDriver* driver = s_Win32.eventDriver;
+                    PalEventType type = PAL_EVENT_TYPE_MOUSE_DELTA;
                     mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
                         event.type = type;
                         event.data = palPackFloat(dx, dy);
@@ -409,11 +408,11 @@ LRESULT CALLBACK videoProc(
                 msg == WM_MBUTTONDOWN ||
                 msg == WM_XBUTTONDOWN) {
                 pressed = PAL_TRUE;
-                type = PAL_EVENT_MOUSE_BUTTONDOWN;
+                type = PAL_EVENT_TYPE_MOUSE_BUTTONDOWN;
 
             } else {
                 pressed = PAL_FALSE;
-                type = PAL_EVENT_MOUSE_BUTTONUP;
+                type = PAL_EVENT_TYPE_MOUSE_BUTTONUP;
             }
             // clang-format on
 
@@ -426,10 +425,10 @@ LRESULT CALLBACK videoProc(
             }
 
             s_Mouse.state[button] = pressed;
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data = palPackUint32(button, NULL_BUTTON_SERIAL);
@@ -479,13 +478,13 @@ LRESULT CALLBACK videoProc(
             if (win32Keycode == VK_SNAPSHOT) {
                 // printscreen since the platform does not get us a keydown, we
                 // do that ourselves
-                if (s_Video.eventDriver) {
-                    PalEventDriver* driver = s_Video.eventDriver;
-                    mode = palGetEventDispatchMode(driver, PAL_EVENT_KEYDOWN);
+                if (s_Win32.eventDriver) {
+                    PalEventDriver* driver = s_Win32.eventDriver;
+                    mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_KEYDOWN);
                     keycode = PAL_KEYCODE_PRINTSCREEN;
-                    if (mode != PAL_DISPATCH_NONE) {
+                    if (mode != PAL_DISPATCH_MODE_NONE) {
                         PalEvent event = {0};
-                        event.type = PAL_EVENT_KEYDOWN;
+                        event.type = PAL_EVENT_TYPE_KEYDOWN;
                         event.data = palPackUint32(keycode, scancode);
                         event.data2 = palPackPointer((PalWindow*)hwnd);
                         palPushEvent(driver, &event);
@@ -500,21 +499,21 @@ LRESULT CALLBACK videoProc(
                 s_Keyboard.keycodeState[keycode] = PAL_TRUE;
                 s_Keyboard.scancodeState[scancode] = PAL_TRUE;
 
-                type = PAL_EVENT_KEYDOWN;
+                type = PAL_EVENT_TYPE_KEYDOWN;
                 if (repeat) {
-                    type = PAL_EVENT_KEYREPEAT;
+                    type = PAL_EVENT_TYPE_KEYREPEAT;
                 }
 
             } else {
                 s_Keyboard.keycodeState[keycode] = PAL_FALSE;
                 s_Keyboard.scancodeState[scancode] = PAL_FALSE;
-                type = PAL_EVENT_KEYUP;
+                type = PAL_EVENT_TYPE_KEYUP;
             }
 
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode != PAL_DISPATCH_NONE) {
+                if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data = palPackUint32(keycode, scancode);
@@ -535,7 +534,7 @@ LRESULT CALLBACK videoProc(
                     SetCursor(data->cursor);
                 } else {
                     // no cursor, use default
-                    SetCursor(s_Video.defaultCursor);
+                    SetCursor(s_Win32.defaultCursor);
                 }
                 return PAL_TRUE;
             }
@@ -543,12 +542,12 @@ LRESULT CALLBACK videoProc(
         }
 
         case WM_CHAR: {
-            PalEventType type = PAL_EVENT_KEYCHAR;
+            PalEventType type = PAL_EVENT_TYPE_KEYCHAR;
             uint32_t codepoint = 0;
-            if (s_Video.eventDriver) {
-                PalEventDriver* driver = s_Video.eventDriver;
+            if (s_Win32.eventDriver) {
+                PalEventDriver* driver = s_Win32.eventDriver;
                 mode = palGetEventDispatchMode(driver, type);
-                if (mode == PAL_DISPATCH_NONE) {
+                if (mode == PAL_DISPATCH_MODE_NONE) {
                     break;
                 }
             }
@@ -577,7 +576,7 @@ LRESULT CALLBACK videoProc(
             event.type = type;
             event.data = codepoint;
             event.data2 = palPackPointer((PalWindow*)hwnd);
-            palPushEvent(s_Video.eventDriver, &event);
+            palPushEvent(s_Win32.eventDriver, &event);
         }
     }
 
@@ -759,56 +758,44 @@ static void createScancodeTable()
     s_Keyboard.scancodes[0x15C] = PAL_SCANCODE_RSUPER;
 }
 
-PalResult PAL_CALL palInitVideo(
+PalResult win32InitVideo(
     const PalAllocator* allocator,
     PalEventDriver* eventDriver,
     void* preferredInstance)
 {
-    if (s_Video.initialized) {
-        return PAL_RESULT_SUCCESS;
-    }
-
-    if (allocator && (!allocator->allocate || !allocator->free)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    s_Video.maxWindowData = 32;
-    s_Video.windowData =
-        palAllocate(s_Video.allocator, sizeof(WindowData) * s_Video.maxWindowData, 0);
+    s_Win32.maxWindowData = 32;
+    s_Win32.windowData = palAllocate(s_Win32.allocator, sizeof(WindowData) * s_Win32.maxWindowData, 0);
 
     // user provided instance
     if (preferredInstance) {
-        s_Video.instance = preferredInstance;
+        s_Win32.instance = preferredInstance;
     } else {
-        s_Video.instance = GetModuleHandleW(nullptr);
+        s_Win32.instance = GetModuleHandleW(nullptr);
     }
 
     // load default cursor
-    s_Video.defaultCursor = LoadCursorW(NULL, IDC_ARROW);
+    s_Win32.defaultCursor = LoadCursorW(NULL, IDC_ARROW);
 
     // register class
     WNDCLASSEXW wc = {0};
     wc.cbSize = sizeof(WNDCLASSEXW);
-    wc.hCursor = s_Video.defaultCursor;
+    wc.hCursor = s_Win32.defaultCursor;
     wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
     wc.hIconSm = LoadIconW(NULL, IDI_APPLICATION);
-    wc.hInstance = s_Video.instance;
+    wc.hInstance = s_Win32.instance;
     wc.lpfnWndProc = videoProc;
     wc.lpszClassName = PAL_VIDEO_CLASS;
     wc.style = CS_OWNDC;
 
     if (!RegisterClassExW(&wc)) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
     // create hidden window
-    s_Video.hiddenWindow = CreateWindowExW(
+    s_Win32.hiddenWindow = CreateWindowExW(
         0,
         PAL_VIDEO_CLASS,
         L"HiddenWindow",
@@ -819,29 +806,29 @@ PalResult PAL_CALL palInitVideo(
         8,
         nullptr,
         nullptr,
-        s_Video.instance,
+        s_Win32.instance,
         nullptr);
 
-    if (!s_Video.hiddenWindow) {
+    if (!s_Win32.hiddenWindow) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
     // set a flag to check if the window has been created
-    SetPropW(s_Video.hiddenWindow, PAL_VIDEO_PROP, &s_Event);
+    SetPropW(s_Win32.hiddenWindow, PAL_VIDEO_PROP, &s_Event);
 
     // register raw input for mice to get delta
     RAWINPUTDEVICE rid = {0};
     rid.dwFlags = RIDEV_INPUTSINK;
-    rid.hwndTarget = s_Video.hiddenWindow;
+    rid.hwndTarget = s_Win32.hiddenWindow;
     rid.usUsage = 0x02;
     rid.usUsagePage = 0x01;
     if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -851,123 +838,114 @@ PalResult PAL_CALL palInitVideo(
 
     // load shared libraries
     // shcore
-    s_Video.shcore = LoadLibraryA("shcore.dll");
-    if (s_Video.shcore) {
-        s_Video.getDpiForMonitor =
-            (GetDpiForMonitorFn)GetProcAddress(s_Video.shcore, "GetDpiForMonitor");
+    s_Win32.shcore = LoadLibraryA("shcore.dll");
+    if (s_Win32.shcore) {
+        s_Win32.getDpiForMonitor =
+            (GetDpiForMonitorFn)GetProcAddress(s_Win32.shcore, "GetDpiForMonitor");
 
-        s_Video.setProcessAwareness =
-            (SetProcessAwarenessFn)GetProcAddress(s_Video.shcore, "SetProcessDpiAwareness");
+        s_Win32.setProcessAwareness =
+            (SetProcessAwarenessFn)GetProcAddress(s_Win32.shcore, "SetProcessDpiAwareness");
     }
 
     // clang-format off
     // gdi functios
-    s_Video.gdi = LoadLibraryA("gdi32.dll");
-    if (s_Video.gdi) {
-        s_Video.createDIBSection = (CreateDIBSectionFn)GetProcAddress(
-            s_Video.gdi,
+    s_Win32.gdi = LoadLibraryA("gdi32.dll");
+    if (s_Win32.gdi) {
+        s_Win32.createDIBSection = (CreateDIBSectionFn)GetProcAddress(
+            s_Win32.gdi,
             "CreateDIBSection");
 
-        s_Video.createBitmap = (CreateBitmapFn)GetProcAddress(
-            s_Video.gdi,
+        s_Win32.createBitmap = (CreateBitmapFn)GetProcAddress(
+            s_Win32.gdi,
             "CreateBitmap");
 
-        s_Video.deleteObject = (DeleteObjectFn)GetProcAddress(
-            s_Video.gdi,
+        s_Win32.deleteObject = (DeleteObjectFn)GetProcAddress(
+            s_Win32.gdi,
             "DeleteObject");
 
-        s_Video.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
-            s_Video.gdi,
+        s_Win32.describePixelFormat = (DescribePixelFormatFn)GetProcAddress(
+            s_Win32.gdi,
             "DescribePixelFormat");
 
-        s_Video.setPixelFormat = (SetPixelFormatFn)GetProcAddress(
-            s_Video.gdi,
+        s_Win32.setPixelFormat = (SetPixelFormatFn)GetProcAddress(
+            s_Win32.gdi,
             "SetPixelFormat");
     }
     // clang-format on
 
     // set features
-    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION;
-    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
-    s_Video.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_SET_MODE;
-    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_GET_MODE;
-    s_Video.features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_SIZE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_SIZE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_POS;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_POS;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_TITLE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
-    s_Video.features |= PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX;
-    s_Video.features |= PAL_VIDEO_FEATURE_NO_MINIMIZEBOX;
-    s_Video.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_STYLE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
-    s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
-    s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_ICON;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
+    s_Win32.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+    s_Win32.features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
+    s_Win32.features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MONITOR_SET_MODE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MONITOR_GET_MODE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_SIZE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_SIZE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_POS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_POS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_TITLE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX;
+    s_Win32.features |= PAL_VIDEO_FEATURE_NO_MINIMIZEBOX;
+    s_Win32.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_STYLE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_ICON;
 
-    s_Video.features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
-    s_Video.features |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
-    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
-    s_Video.features |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
-    s_Video.features |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
-    s_Video.features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+    s_Win32.features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
+    s_Win32.features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+    s_Win32.features |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
+    s_Win32.features |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
+    s_Win32.features |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
+    s_Win32.features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
-    if (s_Video.getDpiForMonitor && s_Video.setProcessAwareness) {
-        s_Video.features |= PAL_VIDEO_FEATURE_HIGH_DPI;
-        s_Video.setProcessAwareness(PROCESS_DPI_AWARE);
+    if (s_Win32.getDpiForMonitor && s_Win32.setProcessAwareness) {
+        s_Win32.features |= PAL_VIDEO_FEATURE_HIGH_DPI;
+        s_Win32.setProcessAwareness(PROCESS_DPI_AWARE);
     }
 
-    s_Video.initialized = PAL_TRUE;
-    s_Video.allocator = allocator;
-    s_Video.eventDriver = eventDriver;
+    s_Win32.allocator = allocator;
+    s_Win32.eventDriver = eventDriver;
+    s_Mouse.pushMouseDelta = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palShutdownVideo()
+void win32ShutdownVideo()
 {
-    if (!s_Video.initialized) {
-        return;
+    if (s_Win32.shcore) {
+        FreeLibrary(s_Win32.shcore);
     }
 
-    if (s_Video.shcore) {
-        FreeLibrary(s_Video.shcore);
-    }
+    FreeLibrary(s_Win32.gdi);
+    DestroyWindow(s_Win32.hiddenWindow);
+    UnregisterClassW(PAL_VIDEO_CLASS, s_Win32.instance);
+    palFree(s_Win32.allocator, s_Win32.windowData);
 
-    FreeLibrary(s_Video.gdi);
-    DestroyWindow(s_Video.hiddenWindow);
-    UnregisterClassW(PAL_VIDEO_CLASS, s_Video.instance);
-    palFree(s_Video.allocator, s_Video.windowData);
-
-    memset(&s_Video, 0, sizeof(VideoWin32));
+    memset(&s_Win32, 0, sizeof(VideoWin32));
     memset(&s_Keyboard, 0, sizeof(Keyboard));
     memset(&s_Mouse, 0, sizeof(Mouse));
 
-    s_Video.windowData = nullptr;
-    s_Video.initialized = PAL_FALSE;
+    s_Win32.windowData = nullptr;
 }
 
-void PAL_CALL palUpdateVideo()
+void win32UpdateVideo()
 {
-    if (!s_Video.initialized) {
-        return;
-    }
-
     s_Mouse.dx = 0;
     s_Mouse.dy = 0;
 
@@ -980,17 +958,17 @@ void PAL_CALL palUpdateVideo()
     // push pending move and reszie events
     if (s_Event.pendingResize) {
         PalEvent event = {0};
-        event.type = PAL_EVENT_WINDOW_SIZE;
+        event.type = PAL_EVENT_TYPE_WINDOW_SIZE;
         event.data = palPackUint32(s_Event.width, s_Event.height);
         event.data2 = palPackPointer(s_Event.window);
-        palPushEvent(s_Video.eventDriver, &event);
+        palPushEvent(s_Win32.eventDriver, &event);
 
         if (s_Event.pendingState) {
             PalEvent event = {0};
             event.data = s_Event.state;
             event.data2 = palPackPointer(s_Event.window);
-            event.type = PAL_EVENT_WINDOW_STATE;
-            palPushEvent(s_Video.eventDriver, &event);
+            event.type = PAL_EVENT_TYPE_WINDOW_STATE;
+            palPushEvent(s_Win32.eventDriver, &event);
             s_Event.pendingState = PAL_FALSE;
         }
 
@@ -998,21 +976,63 @@ void PAL_CALL palUpdateVideo()
 
     } else if (s_Event.pendingMove) {
         PalEvent event = {0};
-        event.type = PAL_EVENT_WINDOW_MOVE;
+        event.type = PAL_EVENT_TYPE_WINDOW_MOVE;
         event.data = palPackInt32(s_Event.x, s_Event.y);
         event.data2 = palPackPointer(s_Event.window);
-        palPushEvent(s_Video.eventDriver, &event);
+        palPushEvent(s_Win32.eventDriver, &event);
         s_Event.pendingMove = PAL_FALSE;
     }
 }
 
-void* PAL_CALL palGetInstance()
+PalVideoFeatures win32GetVideoFeatures()
 {
-    if (!s_Video.initialized) {
-        return nullptr;
+    return s_Win32.features;
+}
+
+const PalBool* win32GetKeycodeState()
+{
+    return s_Keyboard.keycodeState;
+}
+
+const PalBool* win32GetScancodeState()
+{
+    return s_Keyboard.scancodeState;
+}
+
+const PalBool* win32GetMouseState()
+{
+    return s_Mouse.state;
+}
+
+void win32GetMouseDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)s_Mouse.dx;
     }
 
-    return (void*)s_Video.instance;
+    if (dy) {
+        *dy = (float)s_Mouse.dy;
+    }
+}
+
+void win32GetMouseWheelDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)s_Mouse.WheelX;
+    }
+
+    if (dy) {
+        *dy = (float)s_Mouse.WheelY;
+    }
+}
+
+void* win32GetInstance()
+{
+    return (void*)s_Win32.instance;
 }
 
 #endif // _WIN32

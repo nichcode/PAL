@@ -6,9 +6,8 @@
  */
 
 #ifdef _WIN32
-#include "pal_opengl_win32.h"
+#include "pal_wgl.h"
 #include "opengl/pal_opengl_shared.h"
-#include "pal_shared.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,34 +15,13 @@ Gdi s_Gdi = {0};
 Wgl s_Wgl = {0};
 static PalBool s_SupportedAPIs[2] = {0};
 
-PalResult PAL_CALL palInitGL(
+PalResult wglInitGL(
     PalGLAPI api,
     void* instance,
     const PalAllocator* allocator)
 {
-    if (s_Wgl.initialized) {
-        return PAL_RESULT_SUCCESS;
-    }
-
-    if (!instance) {
-        palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (api != PAL_GL_API_OPENGL) {
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (allocator && (!allocator->allocate || !allocator->free)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     // register class
@@ -58,8 +36,8 @@ PalResult PAL_CALL palInitGL(
     // denied
     if (!RegisterClassExW(&wc)) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -80,8 +58,8 @@ PalResult PAL_CALL palInitGL(
 
     if (!s_Wgl.window) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -89,8 +67,8 @@ PalResult PAL_CALL palInitGL(
     s_Wgl.opengl = LoadLibraryA("opengl32.dll");
     if (!s_Gdi.handle || !s_Wgl.opengl) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
@@ -117,23 +95,23 @@ PalResult PAL_CALL palInitGL(
         "SwapBuffers");
 
     // load wgl function pointers
-    s_Wgl.wglGetProcAddress = (wglGetProcAddressFn)GetProcAddress(
+    s_Wgl.getProcAddress = (wglGetProcAddressFn)GetProcAddress(
         s_Wgl.opengl,
         "wglGetProcAddress");
 
-    s_Wgl.wglCreateContext = (wglCreateContextFn)GetProcAddress(
+    s_Wgl.createContext = (wglCreateContextFn)GetProcAddress(
         s_Wgl.opengl,
         "wglCreateContext");
 
-    s_Wgl.wglDeleteContext = (wglDeleteContextFn)GetProcAddress(
+    s_Wgl.deleteContext = (wglDeleteContextFn)GetProcAddress(
         s_Wgl.opengl,
         "wglDeleteContext");
 
-    s_Wgl.wglMakeCurrent = (wglMakeCurrentFn)GetProcAddress(
+    s_Wgl.makeCurrent = (wglMakeCurrentFn)GetProcAddress(
         s_Wgl.opengl,
         "wglMakeCurrent");
 
-    s_Wgl.wglShareLists = (wglShareListsFn)GetProcAddress(
+    s_Wgl.shareLists = (wglShareListsFn)GetProcAddress(
         s_Wgl.opengl,
         "wglShareLists");
 
@@ -141,22 +119,14 @@ PalResult PAL_CALL palInitGL(
         !s_Gdi.describePixelFormat   ||
         !s_Gdi.swapBuffers           ||
         !s_Gdi.setPixelFormat) {
-
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    if (!s_Wgl.wglGetProcAddress    ||
-        !s_Wgl.wglCreateContext     ||
-        !s_Wgl.wglDeleteContext     ||
-        !s_Wgl.wglMakeCurrent) {
-
-        return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+    if (!s_Wgl.getProcAddress    ||
+        !s_Wgl.createContext     ||
+        !s_Wgl.deleteContext     ||
+        !s_Wgl.makeCurrent) {
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
     // clang-format on
 
@@ -174,33 +144,33 @@ PalResult PAL_CALL palInitGL(
 
     int32_t pixelFormat = s_Gdi.choosePixelFormat(s_Wgl.hdc, &pfd);
     s_Gdi.setPixelFormat(s_Wgl.hdc, pixelFormat, &pfd);
-    s_Wgl.context = s_Wgl.wglCreateContext(s_Wgl.hdc);
+    s_Wgl.context = s_Wgl.createContext(s_Wgl.hdc);
 
-    if (!s_Wgl.wglMakeCurrent(s_Wgl.hdc, s_Wgl.context)) {
+    if (!s_Wgl.makeCurrent(s_Wgl.hdc, s_Wgl.context)) {
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
     // clang-format off
     // load wgl extension function pointers
-    s_Wgl.wglChoosePixelFormatARB = (wglChoosePixelFormatARBFn)s_Wgl.wglGetProcAddress(
+    s_Wgl.choosePixelFormatARB = (wglChoosePixelFormatARBFn)s_Wgl.getProcAddress(
         "wglChoosePixelFormatARB");
 
-    s_Wgl.wglGetPixelFormatAttribivARB = (wglGetPixelFormatAttribivARBFn)s_Wgl.wglGetProcAddress(
+    s_Wgl.getPixelFormatAttribivARB = (wglGetPixelFormatAttribivARBFn)s_Wgl.getProcAddress(
         "wglGetPixelFormatAttribivARB");
 
-    s_Wgl.wglCreateContextAttribsARB = (wglCreateContextAttribsARBFn)s_Wgl.wglGetProcAddress(
+    s_Wgl.createContextAttribsARB = (wglCreateContextAttribsARBFn)s_Wgl.getProcAddress(
         "wglCreateContextAttribsARB");
 
-    s_Wgl.wglSwapIntervalEXT = (wglSwapIntervalEXTFn)s_Wgl.wglGetProcAddress(
+    s_Wgl.swapIntervalEXT = (wglSwapIntervalEXTFn)s_Wgl.getProcAddress(
         "wglSwapIntervalEXT");
 
-    s_Wgl.wglGetExtensionsStringARB = (wglGetExtensionsStringARBFn)s_Wgl.wglGetProcAddress(
+    s_Wgl.getExtensionsStringARB = (wglGetExtensionsStringARBFn)s_Wgl.getProcAddress(
         "wglGetExtensionsStringARB");
 
-    s_Wgl.wglGetExtensionsStringEXT = (wglGetExtensionsStringEXTFn)s_Wgl.wglGetProcAddress(
+    s_Wgl.getExtensionsStringEXT = (wglGetExtensionsStringEXTFn)s_Wgl.getProcAddress(
         "wglGetExtensionsStringEXT");
 
     // load gl functions
@@ -226,11 +196,11 @@ PalResult PAL_CALL palInitGL(
 
     // check available extensions
     const char* extensions = nullptr;
-    if (s_Wgl.wglGetExtensionsStringARB) {
-        extensions = s_Wgl.wglGetExtensionsStringARB(s_Wgl.hdc);
+    if (s_Wgl.getExtensionsStringARB) {
+        extensions = s_Wgl.getExtensionsStringARB(s_Wgl.hdc);
 
-    } else if (s_Wgl.wglGetExtensionsStringEXT) {
-        extensions = s_Wgl.wglGetExtensionsStringEXT();
+    } else if (s_Wgl.getExtensionsStringEXT) {
+        extensions = s_Wgl.getExtensionsStringEXT();
     }
 
     if (extensions) {
@@ -305,18 +275,13 @@ PalResult PAL_CALL palInitGL(
 
     s_Wgl.info.api = PAL_GL_API_OPENGL;
     s_Wgl.info.backend = PAL_GL_BACKEND_WGL;
-    s_Wgl.initialized = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palShutdownGL()
+void wglShutdownGL()
 {
-    if (!s_Wgl.initialized) {
-        return;
-    }
-
-    s_Wgl.wglMakeCurrent(s_Wgl.hdc, nullptr);
-    s_Wgl.wglDeleteContext(s_Wgl.context);
+    s_Wgl.makeCurrent(s_Wgl.hdc, nullptr);
+    s_Wgl.deleteContext(s_Wgl.context);
     ReleaseDC(s_Wgl.window, s_Wgl.hdc);
     DestroyWindow(s_Wgl.window);
     UnregisterClassW(PAL_GL_CLASS, s_Wgl.instance);
@@ -325,35 +290,17 @@ void PAL_CALL palShutdownGL()
     FreeLibrary(s_Gdi.handle);
 
     memset(&s_Wgl, 0, sizeof(Wgl));
-    s_Wgl.initialized = PAL_FALSE;
 }
 
-const PalGLInfo* PAL_CALL palGetGLInfo()
+const PalGLInfo* wglGetGLInfo()
 {
-    if (!s_Wgl.initialized) {
-        return nullptr;
-    }
     return &s_Wgl.info;
 }
 
-PalResult PAL_CALL palEnumerateGLFBConfigs(
+PalResult wglEnumerateGLFBConfigs(
     int32_t* count,
     PalGLFBConfig* configs)
 {
-    if (!s_Wgl.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!count || *count == 0 && configs) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     int32_t configCount = 0;
     int32_t maxConfigCount = 0;
     int32_t nativeCount = 0;
@@ -364,12 +311,12 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     }
 
     // check if we support modern extention
-    if (s_Wgl.wglGetPixelFormatAttribivARB) {
+    if (s_Wgl.getPixelFormatAttribivARB) {
         // get framebuffer config with extensions
-        if (!s_Wgl.wglGetPixelFormatAttribivARB(s_Wgl.hdc, 0, 0, 1, &configAttrib, &nativeCount)) {
+        if (!s_Wgl.getPixelFormatAttribivARB(s_Wgl.hdc, 0, 0, 1, &configAttrib, &nativeCount)) {
             return palMakeResult(
-                PAL_RESULT_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WINDOWS, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
                 GetLastError());
         }
 
@@ -392,7 +339,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
         int32_t values[sizeof(attributes) / sizeof(attributes[0])];
         for (int32_t i = 1; i <= nativeCount; i++) {
-            if (!s_Wgl.wglGetPixelFormatAttribivARB(
+            if (!s_Wgl.getPixelFormatAttribivARB(
                     s_Wgl.hdc,
                     i,
                     0,
@@ -496,40 +443,26 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
     return PAL_RESULT_SUCCESS;
 }
 
-void* PAL_CALL palGetGLProcAddress(const char* name)
+void* wglGetGLProcAddress(const char* name)
 {
-    if (!s_Wgl.initialized) {
-        return nullptr;
-    }
-
-    void* proc = s_Wgl.wglGetProcAddress(name);
+    void* proc = s_Wgl.getProcAddress(name);
     if (!proc) {
         proc = (void*)GetProcAddress(s_Wgl.opengl, name);
     }
     return proc;
 }
 
-PalResult PAL_CALL palSetSwapInterval(int32_t interval)
+PalResult wglSetSwapInterval(int32_t interval)
 {
-    if (!s_Wgl.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+    if (!s_Wgl.swapIntervalEXT) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
-    if (!s_Wgl.wglSwapIntervalEXT) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    s_Wgl.wglSwapIntervalEXT(interval);
+    s_Wgl.swapIntervalEXT(interval);
     return PAL_RESULT_SUCCESS;
 }
 
-const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance)
+const PalBool* wglGetSupportedGLAPIs(void* instance)
 {
     if (!instance) {
         return nullptr;

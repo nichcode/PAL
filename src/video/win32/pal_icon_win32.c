@@ -7,26 +7,11 @@
 
 #ifdef _WIN32
 #include "pal_video_win32.h"
-#include "pal_shared.h"
 
-PalResult PAL_CALL palCreateIcon(
+PalResult win32CreateIcon(
     const PalIconCreateInfo* info,
     PalIcon** outIcon)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!info || !outIcon) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     // describe the icon pixels
     BITMAPV5HEADER bitInfo = {0};
     bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
@@ -46,14 +31,21 @@ PalResult PAL_CALL palCreateIcon(
     void* dibPixels = nullptr;
 
     // create dib section
-    HBITMAP bitmap = nullptr;
-    bitmap = s_Video.createDIBSection(hdc, (BITMAPINFO*)&bitInfo, DIB_RGB_COLORS, &dibPixels, nullptr, 0);
+    // clang-format off
+    HBITMAP bitmap = s_Win32.createDIBSection(
+        hdc, 
+        (BITMAPINFO*)&bitInfo, 
+        DIB_RGB_COLORS, 
+        &dibPixels, 
+        nullptr, 
+        0);
+    // clang-format on
 
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
     ReleaseDC(nullptr, hdc);
@@ -89,48 +81,29 @@ PalResult PAL_CALL palCreateIcon(
     // create the icon with the icon info
     HICON icon = CreateIconIndirect(&iconInfo);
     if (!icon) {
-        s_Video.deleteObject(bitmap);
+        s_Win32.deleteObject(bitmap);
         return palMakeResult(
-            PAL_RESULT_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }
 
-    s_Video.deleteObject(bitmap);
+    s_Win32.deleteObject(bitmap);
     *outIcon = (PalIcon*)icon;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyIcon(PalIcon* icon)
+void win32DestroyIcon(PalIcon* icon)
 {
-    if (s_Video.initialized && icon) {
-        DestroyIcon((HICON)icon);
-    }
+    DestroyIcon((HICON)icon);
 }
 
-PalResult PAL_CALL palSetWindowIcon(
+PalResult win32SetWindowIcon(
     PalWindow* window,
     PalIcon* icon)
 {
-    if (!s_Video.initialized) {
-        return palMakeResult(
-            PAL_RESULT_NOT_INITIALIZED, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
-    if (!window) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
-    }
-
     if (!IsWindow((HWND)window)) {
-        return palMakeResult(
-            PAL_RESULT_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WINDOWS, 
-            GetLastError());
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
     SendMessageW((HWND)window, WM_SETICON, ICON_BIG, (LPARAM)icon);
