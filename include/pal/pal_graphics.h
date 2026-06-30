@@ -445,7 +445,7 @@
 
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE (1U << 0)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE (1U << 1)
-#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CU_DISABLE (1U << 2)
+#define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE (1U << 2)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1U << 3)
 
 #define ePAL_ACCELERATION_STRUCTURE_CREATE_FLAG_NONE 0
@@ -537,6 +537,10 @@
 #define PAL_IMAGE_MEMORY_USAGE_MANUAL 0
 #define PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY 1
 #define PAL_IMAGE_MEMORY_USAGE_COUNT 2
+
+#define PAL_RENDERING_FLAG_NONE 0
+#define PAL_RENDERING_FLAG_SUSPENDING (1U << 0)
+#define PAL_RENDERING_FLAG_RESUMING (1U << 1)
 
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
 
@@ -1398,6 +1402,17 @@ typedef uint32_t PalBufferMemoryUsage;
 typedef uint32_t PalImageMemoryUsage;
 
 /**
+ * @typedef PalRenderingFlags
+ * @brief Rendering flags.
+ * 
+ * All rendering flags follow the format `PAL_RENDERING_FLAG_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalRenderingFlags;
+
+/**
  * @typedef PalGraphicsBackendVtableVersion
  * @brief Graphics backend vtable versions.
  *
@@ -1850,6 +1865,8 @@ typedef struct {
     PalFormat* colorAttachmentsFormat;             /**< Color attachments formats.*/
     uint32_t colorAttachentCount;                  /**< Number of color attachment formats.*/
     uint32_t viewCount;                            /**< View count. Set to 1 for default.*/
+    PalSampleCount sampleCount;                    /**< (eg. `PAL_SAMPLE_COUNT_4`).*/
+    PalRenderingFlags flags;                       /**< (eg. `PAL_RENDERING_FLAG_NONE`).*/
     PalFormat depthStencilAttachmentFormat;        /**< Depth/Stencil attachment format.*/
     PalFormat fragmentShadingRateAttachmentFormat; /**< Fragment shading rate attachment format.*/
 } PalRenderingLayoutInfo;
@@ -3628,8 +3645,6 @@ typedef struct {
      */
     PalResult(PAL_CALL* cmdPushConstants)(
         PalCommandBuffer* cmdBuffer,
-        uint32_t shaderStageCount,
-        PalShaderStage* shaderStages,
         uint32_t offset,
         uint32_t size,
         const void* value);
@@ -6365,8 +6380,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  * The graphics system must be initialized before this call.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] shaderStageCount Capacity of the PalShaderStage array.
- * @param[in] shaderStages Array of shader stages that can access the push constant.
  * @param[in] offset Offset in bytes into the push constant range.
  * @param[in] size Size of `value` in bytes.
  * @param[in] value Pointer to the push constant range data to write.
@@ -6382,8 +6395,6 @@ PAL_API PalResult PAL_CALL palCmdBindDescriptorSet(
  */
 PAL_API PalResult PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
-    uint32_t shaderStageCount,
-    PalShaderStage* shaderStages,
     uint32_t offset,
     uint32_t size,
     const void* value);
@@ -7300,7 +7311,7 @@ static inline PalBool PAL_CALL palIsSupported(
     uint32_t mask,
     uint32_t value)
 {
-    return (mask & (1ULL << value)) != 0;
+    return (mask & (1U << value)) != 0;
 }
 
 /** @} */
