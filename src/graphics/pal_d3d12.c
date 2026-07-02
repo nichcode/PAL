@@ -4199,7 +4199,7 @@ void PAL_CALL destroySwapchainD3D12(PalSwapchain* swapchain)
 
 PalImage* PAL_CALL getSwapchainImageD3D12(
     PalSwapchain* swapchain,
-    int32_t index)
+    uint32_t index)
 {
     Swapchain* d3dSwapchain = (Swapchain*)swapchain;
     if (index > d3dSwapchain->imageCount) {
@@ -4240,14 +4240,15 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
 
 PalResult PAL_CALL presentSwapchainD3D12(
     PalSwapchain* swapchain,
-    PalSwapchainPresentInfo* info)
+    uint32_t imageIndex, 
+    PalSemaphore* waitSemaphore)
 {
     HRESULT result;
     Swapchain* d3dSwapchain = (Swapchain*)swapchain;
     ID3D12CommandQueue* queue = d3dSwapchain->queue;
 
-    if (info->waitSemaphore) {
-        Semaphore* semaphore = (Semaphore*)info->waitSemaphore;
+    if (waitSemaphore) {
+        Semaphore* semaphore = (Semaphore*)waitSemaphore;
         if (semaphore->isTimeline) {
             queue->lpVtbl->Wait(queue, semaphore->handle, info->waitValue);
         } else {

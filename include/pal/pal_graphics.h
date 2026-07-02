@@ -1710,7 +1710,7 @@ typedef struct {
     PalSampleCount sampleCount;  /**< (eg. `PAL_SAMPLE_COUNT_8`).*/
     PalImageType type;           /**< (eg. `PAL_IMAGE_TYPE_2D`).*/
     PalFormat format;            /**< (eg. `PAL_FORMAT_R8G8B8A8_UNORM`).*/
-    PalBool belongsToSwapcchain; /**< If `PAL_TRUE`, the image belongs to a swapchain.*/
+    PalBool belongsToSwapchain; /**< If `PAL_TRUE`, the image belongs to a swapchain.*/
 } PalImageInfo;
 
 /**
@@ -1818,24 +1818,9 @@ typedef struct {
  */
 typedef struct {
     uint64_t timeout;              /**< Timeout in milliseconds.*/
-    uint64_t signalValue;          /**< Timeline semaphore value to signal.*/
     PalSemaphore* signalSemaphore; /**< Timeline semaphore value to signal.*/
     PalFence* fence;               /**< Fence to signal.*/
 } PalSwapchainNextImageInfo;
-
-/**
- * @struct PalSwapchainPresentInfo
- * @brief Present information of a swapchain.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since 2.0
- */
-typedef struct {
-    uint64_t imageIndex;         /**< Image index to present.*/
-    uint64_t waitValue;          /**< Timeline semaphore value to wait on.*/
-    PalSemaphore* waitSemaphore; /**< Wait semaphore.*/
-} PalSwapchainPresentInfo;
 
 /**
  * @struct PalRenderingInfo
@@ -3091,7 +3076,7 @@ typedef struct {
      */
     PalImage*(PAL_CALL* getSwapchainImage)(
         PalSwapchain* swapchain,
-        int32_t index);
+        uint32_t index);
 
     /**
      * Backend implementation of ::palGetNextSwapchainImage.
@@ -3110,7 +3095,8 @@ typedef struct {
      */
     PalResult(PAL_CALL* presentSwapchain)(
         PalSwapchain* swapchain,
-        PalSwapchainPresentInfo* info);
+        uint32_t imageIndex,
+        PalSemaphore* waitSemaphore);
 
     /**
      * Backend implementation of ::palResizeSwapchain.
@@ -4968,7 +4954,7 @@ PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
  */
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
-    int32_t index);
+    uint32_t index);
 
 /**
  * @brief Get the next available image from the swapchain image list.
@@ -4999,8 +4985,8 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  * The graphics system must be initialized before this call.
  *
  * @param[in] swapchain Swapchain to present.
- * @param[in] info Pointer to a PalSwapchainPresentInfo struct that specifies parameters.
- * Must not be `nullptr`.
+ * @param[in] imageIndex Swapchain image index to present.
+ * @param[in] waitSemaphore The semaphore to wait for.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5011,7 +4997,8 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  */
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
-    PalSwapchainPresentInfo* info);
+    uint32_t imageIndex,
+    PalSemaphore* waitSemaphore);
 
 /**
  * @brief Resize the provided swapchain.

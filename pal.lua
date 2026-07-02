@@ -233,20 +233,27 @@ project "PAL"
 
         -- base graphics file
         files { "src/graphics/pal_graphics.c" }
+        if (hasVulkan) then
+            files { 
+                "src/graphics/vulkan/pal_adapter_vulkan.c",
+                "src/graphics/vulkan/pal_as_vulkan.c",
+                "src/graphics/vulkan/pal_buffer_vulkan.c",
+                "src/graphics/vulkan/pal_command_pool_vulkan.c",
+                "src/graphics/vulkan/pal_commands_vulkan.c",
+                "src/graphics/vulkan/pal_descriptors_vulkan.c",
+                "src/graphics/vulkan/pal_device_vulkan.c",
+                "src/graphics/vulkan/pal_image_vulkan.c",
+                "src/graphics/vulkan/pal_pipeline_vulkan.c",
+                "src/graphics/vulkan/pal_sbt_vulkan.c",
+                "src/graphics/vulkan/pal_swapchain_vulkan.c",
+                "src/graphics/vulkan/pal_sync_vulkan.c",
+                "src/graphics/vulkan/pal_vulkan.c"
+            }
+        end
 
-        filter {"system:windows", "configurations:*"}
-            if (hasVulkan) then
-                files { "src/graphics/pal_vulkan.c" }
-            end
-
-            if (hasD3D12) then
-                files { "src/graphics/pal_d3d12.c" }
-            end
-
-        filter {"system:linux", "configurations:*"}
-            if (hasVulkan) then
-                files { "src/graphics/pal_vulkan.c" }
-            end
-            
-        filter {}
+        if (hasD3D12) then
+            files { 
+                -- "src/graphics/pal_d3d12.c" 
+            }
+        end
     end

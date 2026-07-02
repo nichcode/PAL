@@ -38,6 +38,114 @@ static VkImageUsageFlags imageUsageToVk(PalImageUsages usages)
     return flags;
 }
 
+static VkImageViewType imageViewTypeToVk(PalImageViewType type)
+{
+    switch (type) {
+        case PAL_IMAGE_VIEW_TYPE_1D:
+            return VK_IMAGE_VIEW_TYPE_1D;
+
+        case PAL_IMAGE_VIEW_TYPE_1D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+
+        case PAL_IMAGE_VIEW_TYPE_2D:
+            return VK_IMAGE_VIEW_TYPE_2D;
+
+        case PAL_IMAGE_VIEW_TYPE_2D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+
+        case PAL_IMAGE_VIEW_TYPE_3D:
+            return VK_IMAGE_VIEW_TYPE_3D;
+
+        case PAL_IMAGE_VIEW_TYPE_CUBE:
+            return VK_IMAGE_VIEW_TYPE_CUBE;
+
+        case PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    }
+
+    return VK_IMAGE_VIEW_TYPE_2D;
+}
+
+static VkFilter filterToVk(PalFilterMode mode)
+{
+    switch (mode) {
+        case PAL_FILTER_MODE_NEAREST: {
+            return VK_FILTER_NEAREST;
+        }
+
+        case PAL_FILTER_MODE_LINEAR: {
+            return VK_FILTER_LINEAR;
+        }
+    }
+    return VK_FILTER_NEAREST;
+}
+
+static VkSamplerMipmapMode mipmapModeToVk(PalSamplerMipmapMode mode)
+{
+    switch (mode) {
+        case PAL_SAMPLER_MIPMAP_MODE_NEAREST: {
+            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        }
+
+        case PAL_SAMPLER_MIPMAP_MODE_LINEAR: {
+            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        }
+    }
+    return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+}
+
+static VkSamplerAddressMode addressModeToVk(PalSamplerAddressMode mode)
+{
+    switch (mode) {
+        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        }
+
+        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+
+        }
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+        }
+        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        }
+    }
+    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+static VkBorderColor borderColorToVk(PalBorderColor color)
+{
+    switch (color) {
+        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK: {
+            return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK: {
+            return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK: {
+            return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK: {
+            return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        }
+
+        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE: {
+            return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        }
+
+        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE: {
+            return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+        }
+    }
+    return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+}
+
 PalResult PAL_CALL createImageVk(
     PalDevice* device,
     const PalImageCreateInfo* info,
@@ -126,7 +234,7 @@ PalResult PAL_CALL createImageVk(
     image->info.width = info->width;
     image->info.depth = info->depth;
     image->info.arrayLayerCount = info->arrayLayerCount;
-    image->info.belongsToSwapcchain = PAL_FALSE;
+    image->info.belongsToSwapchain = PAL_FALSE;
 
     image->reserved = PAL_BACKEND_KEY;
     *outImage = (PalImage*)image;
@@ -136,7 +244,7 @@ PalResult PAL_CALL createImageVk(
 void PAL_CALL destroyImageVk(PalImage* image)
 {
     ImageVk* vkImage = (ImageVk*)image;
-    if (vkImage->info.belongsToSwapcchain) {
+    if (vkImage->info.belongsToSwapchain) {
         return;
     }
 
@@ -163,7 +271,7 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
     PalMemoryRequirements* requirements)
 {
     ImageVk* vkImage = (ImageVk*)image;
-    if (vkImage->info.belongsToSwapcchain) {
+    if (vkImage->info.belongsToSwapchain) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
@@ -188,7 +296,7 @@ PalResult PAL_CALL bindImageMemoryVk(
     uint64_t offset)
 {
     ImageVk* vkImage = (ImageVk*)image;
-    if (vkImage->info.belongsToSwapcchain) {
+    if (vkImage->info.belongsToSwapchain) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 

@@ -8,6 +8,8 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
+#define max(a, b) (a > b) ? a : b
+
 static VkPipelineStageFlags2 pipelineStageToVk(VkShaderStageFlagBits stage)
 {
     switch (stage) {
@@ -118,28 +120,6 @@ static VkBlendFactor blendFactorToVk(PalBlendFactor op)
     return VK_BLEND_FACTOR_ZERO;
 }
 
-static VkFragmentShadingRateCombinerOpKHR combinerOpsToVk(PalFragmentShadingRateCombinerOp op)
-{
-    switch (op) {
-        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP:
-            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
-
-        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE:
-            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
-
-        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN:
-            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN_KHR;
-
-        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX:
-            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_KHR;
-
-        case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL:
-            return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
-    }
-
-    return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
-}
-
 static uint32_t getVertexTypeSizeVk(PalVertexType type)
 {
     // count x sizeof type returned as size
@@ -191,6 +171,103 @@ static uint32_t getVertexTypeSizeVk(PalVertexType type)
     }
 
     return 0;
+}
+
+static VkFormat vertexTypeToVk(PalVertexType type)
+{
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT32:
+            return VK_FORMAT_R32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_2:
+            return VK_FORMAT_R32G32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_3:
+            return VK_FORMAT_R32G32B32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_4:
+            return VK_FORMAT_R32G32B32A32_SINT;
+
+        case PAL_VERTEX_TYPE_UINT32:
+            return VK_FORMAT_R32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_2:
+            return VK_FORMAT_R32G32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_3:
+            return VK_FORMAT_R32G32B32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_4:
+            return VK_FORMAT_R32G32B32A32_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2:
+            return VK_FORMAT_R8G8_SINT;
+
+        case PAL_VERTEX_TYPE_INT8_4:
+            return VK_FORMAT_R8G8B8A8_SINT;
+
+        case PAL_VERTEX_TYPE_UINT8_2:
+            return VK_FORMAT_R8G8_UINT;
+
+        case PAL_VERTEX_TYPE_UINT8_4:
+            return VK_FORMAT_R8G8B8A8_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+            return VK_FORMAT_R8G8_SNORM;
+
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+            return VK_FORMAT_R8G8B8A8_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_2NORM:
+            return VK_FORMAT_R8G8_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+
+        case PAL_VERTEX_TYPE_INT16_2:
+            return VK_FORMAT_R16G16_SINT;
+
+        case PAL_VERTEX_TYPE_INT16_4:
+            return VK_FORMAT_R16G16B16A16_SINT;
+
+        case PAL_VERTEX_TYPE_UINT16_2:
+            return VK_FORMAT_R16G16_UINT;
+
+        case PAL_VERTEX_TYPE_UINT16_4:
+            return VK_FORMAT_R16G16B16A16_UINT;
+
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+            return VK_FORMAT_R16G16_SNORM;
+
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+            return VK_FORMAT_R16G16B16A16_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+            return VK_FORMAT_R16G16_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+            return VK_FORMAT_R16G16B16A16_UNORM;
+
+        case PAL_VERTEX_TYPE_FLOAT:
+            return VK_FORMAT_R32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT2:
+            return VK_FORMAT_R32G32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT3:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT4:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2:
+            return VK_FORMAT_R16G16_SFLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4:
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
+    }
+
+    return VK_FORMAT_UNDEFINED;
 }
 
 PalResult PAL_CALL createPipelineLayoutVk(
@@ -850,19 +927,19 @@ PalResult PAL_CALL createRayTracingPipelineVk(
             switch (entry->stage) {
                 case VK_SHADER_STAGE_RAYGEN_BIT_KHR: {
                     sbtInfo->raygenCount++;
-                    sbtInfo->raygenDataSize = maxVk(sbtInfo->raygenDataSize, tmp->maxDataSize);
+                    sbtInfo->raygenDataSize = max(sbtInfo->raygenDataSize, tmp->maxDataSize);
                     break;
                 }
 
                 case VK_SHADER_STAGE_MISS_BIT_KHR: {
                     sbtInfo->missCount++;
-                    sbtInfo->missDataSize = maxVk(sbtInfo->missDataSize, tmp->maxDataSize);
+                    sbtInfo->missDataSize = max(sbtInfo->missDataSize, tmp->maxDataSize);
                     break;
                 }
 
                 case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
                     sbtInfo->callableCount++;
-                    sbtInfo->callableDataSize = maxVk(sbtInfo->callableDataSize, tmp->maxDataSize);
+                    sbtInfo->callableDataSize = max(sbtInfo->callableDataSize, tmp->maxDataSize);
                     break;
                 }
             }
@@ -875,7 +952,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
         } else {
             sbtInfo->hitCount++;
-            sbtInfo->hitDataSize = maxVk(sbtInfo->hitDataSize, tmp->maxDataSize);
+            sbtInfo->hitDataSize = max(sbtInfo->hitDataSize, tmp->maxDataSize);
 
             group->generalShader = VK_SHADER_UNUSED_KHR;
             if (tmp->anyHitShaderIndex != PAL_UNUSED_SHADER_INDEX) {

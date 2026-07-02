@@ -70,21 +70,21 @@ project "tests"
     if (PAL_BUILD_GRAPHICS_MODULE) then
         files {
             "graphics/graphics_test.c",
-            "graphics/compute_test.c",
-            "graphics/ray_tracing_test.c",
-            "graphics/multi_descriptor_set_test.c"
+            -- "graphics/compute_test.c",
+            -- "graphics/ray_tracing_test.c",
+            -- "graphics/multi_descriptor_set_test.c"
         }
     end
 
     if (PAL_BUILD_GRAPHICS_MODULE and PAL_BUILD_VIDEO_MODULE) then
         files {
-            "graphics/clear_color_test.c",
-            "graphics/triangle_test.c",
-            "graphics/mesh_test.c",
-            "graphics/texture_test.c",
-            "graphics/geometry_test.c",
-            "graphics/indirect_draw_test.c",
-            "graphics/descriptor_indexing_test.c"
+            -- "graphics/clear_color_test.c",
+            -- "graphics/triangle_test.c",
+            -- "graphics/mesh_test.c",
+            -- "graphics/texture_test.c",
+            -- "graphics/geometry_test.c",
+            -- "graphics/indirect_draw_test.c",
+            -- "graphics/descriptor_indexing_test.c"
         }
     end
 

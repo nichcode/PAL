@@ -118,6 +118,7 @@ typedef struct {
 } AddressRegion;
 
 typedef struct {
+    VkPipelineStageFlags2 stage;
     VkAccessFlags2 access;
     VkImageLayout layout;
 } Barrier;
@@ -473,12 +474,8 @@ VkExtent2D getShadingRateSizeVk(PalFragmentShadingRate rate);
 
 VkFragmentShadingRateCombinerOpKHR combinerOpsToVk(PalFragmentShadingRateCombinerOp op);
 VkImageAspectFlags imageAspectToVk(PalImageAspect aspect);
-Barrier barrierToVk(PalUsageState state);
 VkStencilOp stencilOpToVk(PalStencilOp op);
 VkCompareOp compareOpToVk(PalCompareOp op);
-
-VkRenderingFlags renderingFlagToVk(PalRenderingFlags flags);
-VkFormat vertexTypeToVk(PalVertexType type);
 
 uint32_t findBestMemoryIndexVk(
     VkPhysicalDevice phyDevice,

@@ -55,9 +55,9 @@ typedef struct {
     PalResult (PAL_CALL *getSurfaceCapabilities)(PalDevice*, PalSurface*, PalSurfaceCapabilities*);
     PalResult (PAL_CALL *createSwapchain)(PalDevice*, PalQueue*, PalSurface*, const PalSwapchainCreateInfo*, PalSwapchain**);
     void (PAL_CALL *destroySwapchain)(PalSwapchain*);
-    PalImage* (PAL_CALL *getSwapchainImage)(PalSwapchain*, int32_t);
+    PalImage* (PAL_CALL *getSwapchainImage)(PalSwapchain*, uint32_t);
     PalResult (PAL_CALL *getNextSwapchainImage)(PalSwapchain*, PalSwapchainNextImageInfo*, uint32_t*);
-    PalResult (PAL_CALL *presentSwapchain)(PalSwapchain*, PalSwapchainPresentInfo*);
+    PalResult (PAL_CALL *presentSwapchain)(PalSwapchain*, uint32_t, PalSemaphore*);
     PalResult (PAL_CALL *resizeSwapchain)(PalSwapchain*, uint32_t, uint32_t);
     PalResult (PAL_CALL *createShader)(PalDevice*, const PalShaderCreateInfo*, PalShader**);
     void (PAL_CALL *destroyShader)(PalShader*);
@@ -208,8 +208,8 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(PalDevice*, PalSurface*, PalSurfaceC
 PalResult PAL_CALL createSwapchainVk(PalDevice*, PalQueue*, PalSurface*, const PalSwapchainCreateInfo*, PalSwapchain**);
 void PAL_CALL destroySwapchainVk(PalSwapchain*);
 PalImage* PAL_CALL getSwapchainImageVk(PalSwapchain*, uint32_t);
-PalResult PAL_CALL getNextSwapchainImageVk(PalSwapchain*, PalSwapchainNextImageInfo*, uint32_t);
-PalResult PAL_CALL presentSwapchainVk(PalSwapchain*, PalSwapchainPresentInfo*);
+PalResult PAL_CALL getNextSwapchainImageVk(PalSwapchain*, PalSwapchainNextImageInfo*, uint32_t*);
+PalResult PAL_CALL presentSwapchainVk(PalSwapchain*, uint32_t, PalSemaphore*);
 PalResult PAL_CALL resizeSwapchainVk(PalSwapchain*, uint32_t, uint32_t);
 PalResult PAL_CALL createShaderVk(PalDevice*, const PalShaderCreateInfo*, PalShader**);
 void PAL_CALL destroyShaderVk(PalShader*);
@@ -497,8 +497,8 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(PalDevice*, PalSurface*, PalSurfa
 PalResult PAL_CALL createSwapchainD3D12(PalDevice*, PalQueue*, PalSurface*, const PalSwapchainCreateInfo*, PalSwapchain**);
 void PAL_CALL destroySwapchainD3D12(PalSwapchain*);
 PalImage* PAL_CALL getSwapchainImageD3D12(PalSwapchain*, uint32_t);
-PalResult PAL_CALL getNextSwapchainImageD3D12(PalSwapchain*, PalSwapchainNextImageInfo*, uint32_t);
-PalResult PAL_CALL presentSwapchainD3D12(PalSwapchain*, PalSwapchainPresentInfo*);
+PalResult PAL_CALL getNextSwapchainImageD3D12(PalSwapchain*, PalSwapchainNextImageInfo*, uint32_t*);
+PalResult PAL_CALL presentSwapchainD3D12(PalSwapchain*, uint32_t, PalSemaphore*);
 PalResult PAL_CALL resizeSwapchainD3D12(PalSwapchain*, uint32_t, uint32_t);
 PalResult PAL_CALL createShaderD3D12(PalDevice*, const PalShaderCreateInfo*, PalShader**);
 void PAL_CALL destroyShaderD3D12(PalShader*);

@@ -477,15 +477,15 @@ PalResult PAL_CALL palInitGraphics(
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    // result = initGraphicsVk(debugger, allocator);
-    // if (result != PAL_RESULT_SUCCESS) {
-    //     return result;
-    // }
+    result = initGraphicsVk(debugger, allocator);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
 
-    // attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    // attachedBackend->base = &s_VkBackend;
-    // attachedBackend->startIndex = 0;
-    // attachedBackend->count = 0;
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base = s_VkBackend;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
@@ -496,7 +496,7 @@ PalResult PAL_CALL palInitGraphics(
     }
 
     attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base = &s_D3D12Backend;
+    attachedBackend->base = s_D3D12Backend;
     attachedBackend->startIndex = 0;
     attachedBackend->count = 0;
 #endif // PAL_HAS_D3D12_BACKEND
@@ -510,7 +510,7 @@ PalResult PAL_CALL palInitGraphics(
     }
 
     attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base = &s_VkBackend;
+    attachedBackend->base = s_VkBackend;
     attachedBackend->startIndex = 0;
     attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN_BACKEND
@@ -532,7 +532,7 @@ void PAL_CALL palShutdownGraphics()
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    // shutdownGraphicsVk();
+    shutdownGraphicsVk();
 #endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
@@ -1239,7 +1239,7 @@ void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 
 PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
-    int32_t index)
+    uint32_t index)
 {
     if (!s_Graphics.initialized || !swapchain || index < 0) {
         return nullptr;
@@ -1266,17 +1266,18 @@ PalResult PAL_CALL palGetNextSwapchainImage(
 
 PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
-    PalSwapchainPresentInfo* info)
+    uint32_t imageIndex,
+    PalSemaphore* waitSemaphore)
 {
     if (!s_Graphics.initialized) {
         return PAL_RESULT_CODE_NOT_INITIALIZED;
     }
 
-    if (!swapchain || !info) {
+    if (!swapchain) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    return swapchain->backend->presentSwapchain(swapchain, info);
+    return swapchain->backend->presentSwapchain(swapchain, imageIndex, waitSemaphore);
 }
 
 PalResult PAL_CALL palResizeSwapchain(

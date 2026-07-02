@@ -8,6 +8,31 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
+static VkDescriptorType descriptortypeToVk(PalDescriptorType type)
+{
+    switch (type) {
+        case PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+        case PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+        case PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+        case PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+        case PAL_DESCRIPTOR_TYPE_SAMPLER:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+
+        case PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE:
+            return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    }
+
+    return 0;
+}
+
 PalResult PAL_CALL createDescriptorSetLayoutVk(
     PalDevice* device,
     const PalDescriptorSetLayoutCreateInfo* info,
