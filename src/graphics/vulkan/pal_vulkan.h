@@ -12,6 +12,8 @@
 #include "pal/pal_graphics.h"
 #include <vulkan/vulkan_core.h>
 
+#define MAX_ATTACHMENTS 32
+
 typedef struct _XDisplay Display;
 typedef unsigned long Window;
 typedef struct xcb_connection_t xcb_connection_t;
@@ -136,6 +138,7 @@ typedef struct {
     VkDevice handle;
     PhysicalQueue* phyQueues;
     PFN_vkGetBufferDeviceAddress getBufferrAddress;
+    VkShaderStageFlags shaderStages;
     PFN_vkCmdDispatchBase cmdDispatchBase;
 
     // draw indirect
@@ -205,6 +208,7 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    PalBool isMemoryManaged;
     DeviceVk* device;
     MemoryVk* memory;
     VkImage handle;
@@ -328,7 +332,6 @@ typedef struct {
     void* reserved;
     VkPipelineBindPoint bindPoint;
     VkPipelineStageFlags2 stages;
-    VkShaderStageFlags shaderStages;
     DeviceVk* device;
     VkPipeline handle;
     VkPipelineLayout layout;
@@ -473,7 +476,9 @@ VkImageAspectFlags imageAspectToVk(PalImageAspect aspect);
 Barrier barrierToVk(PalUsageState state);
 VkStencilOp stencilOpToVk(PalStencilOp op);
 VkCompareOp compareOpToVk(PalCompareOp op);
+
 VkRenderingFlags renderingFlagToVk(PalRenderingFlags flags);
+VkFormat vertexTypeToVk(PalVertexType type);
 
 uint32_t findBestMemoryIndexVk(
     VkPhysicalDevice phyDevice,

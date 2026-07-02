@@ -8,4 +8,330 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
+static VkImageUsageFlags imageUsageToVk(PalImageUsages usages)
+{
+    VkImageUsageFlags flags = 0;
+    if (usages & PAL_IMAGE_USAGE_COLOR_ATTACHEMENT) {
+        flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) {
+        flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_TRANSFER_SRC) {
+        flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_TRANSFER_DST) {
+        flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_STORAGE) {
+        flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
+    if (usages & PAL_IMAGE_USAGE_SAMPLED) {
+        flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+
+    return flags;
+}
+
+PalResult PAL_CALL createImageVk(
+    PalDevice* device,
+    const PalImageCreateInfo* info,
+    PalImage** outImage)
+{
+    VkResult result;
+    ImageVk* image = nullptr;
+    DeviceVk* vkDevice = (DeviceVk*)device;
+
+    image = palAllocate(s_Vk.allocator, sizeof(ImageVk), 0);
+    if (!image) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    VkImageCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.extent.width = info->width;
+    createInfo.extent.height = info->height;
+    createInfo.extent.depth = info->depth;
+
+    createInfo.arrayLayers = info->arrayLayerCount; 
+    createInfo.mipLevels = info->mipLevelCount;
+    createInfo.format = formatToVk(info->format);
+    createInfo.samples = samplesToVk(info->sampleCount);
+    createInfo.usage = imageUsageToVk(info->usages);
+    
+    createInfo.imageType = VK_IMAGE_TYPE_2D;
+    if (info->type == PAL_IMAGE_TYPE_3D) {
+        createInfo.imageType = VK_IMAGE_TYPE_3D;
+
+    } else if (info->type == PAL_IMAGE_TYPE_1D) {
+        createInfo.imageType = VK_IMAGE_TYPE_1D;
+    }
+
+    result = s_Vk.createImage(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &image->handle);
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, image);
+        return makeResultVk(result);
+    }
+
+    image->memory = nullptr;
+    image->isMemoryManaged = PAL_FALSE;
+    if (info->memoryUsage != PAL_IMAGE_MEMORY_USAGE_MANUAL) {
+        PalMemoryType memoryType = PAL_MEMORY_TYPE_GPU_ONLY;
+
+        // allocate and manage memory
+        VkMemoryRequirements memReq = {0};
+        s_Vk.getImageMemoryRequirements(vkDevice->handle, image->handle, &memReq);
+
+        VkMemoryAllocateInfo allocateInfo = {0};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.allocationSize = (VkDeviceSize)memReq.size;
+
+        uint32_t memoryMask = vkDevice->memoryClassMask[memoryType] & memReq.memoryTypeBits;
+        uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, memoryMask);
+        if (!(memoryMask & (1u << memoryIndex))) {
+            return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        }
+
+        allocateInfo.memoryTypeIndex = memoryIndex;
+        VkDeviceMemory memory = nullptr;
+        result = s_Vk.allocateMemory(
+            vkDevice->handle, 
+            &allocateInfo, 
+            &s_Vk.vkAllocator, 
+            &memory);
+
+        if (result != VK_SUCCESS) {
+            return makeResultVk(result);
+        }
+
+        image->isMemoryManaged = PAL_TRUE;
+        image->memory = (MemoryVk*)memory;
+    }
+
+    image->device = vkDevice;
+    image->info.type = info->type;
+    image->info.format = info->format;
+    image->info.usages = info->usages;
+    image->info.height = info->height;
+    image->info.mipLevelCount = info->mipLevelCount;
+    image->info.sampleCount = info->sampleCount;
+    image->info.width = info->width;
+    image->info.depth = info->depth;
+    image->info.arrayLayerCount = info->arrayLayerCount;
+    image->info.belongsToSwapcchain = PAL_FALSE;
+
+    image->reserved = PAL_BACKEND_KEY;
+    *outImage = (PalImage*)image;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyImageVk(PalImage* image)
+{
+    ImageVk* vkImage = (ImageVk*)image;
+    if (vkImage->info.belongsToSwapcchain) {
+        return;
+    }
+
+    s_Vk.destroyImage(vkImage->device->handle, vkImage->handle, &s_Vk.vkAllocator);
+    if (vkImage->isMemoryManaged) {
+        VkDeviceMemory memory = (VkDeviceMemory)vkImage->memory;
+        s_Vk.freeMemory(vkImage->device->handle, memory, &s_Vk.vkAllocator);
+    }
+
+    palFree(s_Vk.allocator, vkImage);
+}
+
+PalResult PAL_CALL getImageInfoVk(
+    PalImage* image,
+    PalImageInfo* info)
+{
+    ImageVk* vkImage = (ImageVk*)image;
+    *info = vkImage->info;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL getImageMemoryRequirementsVk(
+    PalImage* image,
+    PalMemoryRequirements* requirements)
+{
+    ImageVk* vkImage = (ImageVk*)image;
+    if (vkImage->info.belongsToSwapcchain) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    DeviceVk* device = vkImage->device;
+    VkMemoryRequirements memReq = {0};
+    s_Vk.getImageMemoryRequirements(device->handle, vkImage->handle, &memReq);
+    requirements->alignment = (uint64_t)memReq.alignment;
+    requirements->size = (uint64_t)memReq.size;
+    requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, 0);
+    requirements->supportedMemoryTypes = 0;
+
+    if ((memReq.memoryTypeBits & device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY]) != 0) {
+        requirements->supportedMemoryTypes |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL bindImageMemoryVk(
+    PalImage* image,
+    PalMemory* memory,
+    uint64_t offset)
+{
+    ImageVk* vkImage = (ImageVk*)image;
+    if (vkImage->info.belongsToSwapcchain) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    if (vkImage->memory) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    MemoryVk* vkMemory = (MemoryVk*)memory;
+    s_Vk.bindImageMemory(vkImage->device->handle, vkImage->handle, vkMemory->handle, offset);
+    vkImage->memory = vkMemory;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL mapImageMemoryVk(
+    PalImage* image,
+    uint64_t offset,
+    uint64_t size,
+    void** outPtr)
+{
+    return PAL_RESULT_CODE_INVALID_OPERATION;
+}
+
+void PAL_CALL unmapImageMemoryVk(PalImage* image)
+{
+    // do nothing.
+}
+
+PalResult PAL_CALL createImageViewVk(
+    PalDevice* device,
+    PalImage* image,
+    const PalImageViewCreateInfo* info,
+    PalImageView** outImageView)
+{
+    VkResult result = VK_SUCCESS;
+    ImageViewVk* imageView = nullptr;
+    DeviceVk* vkDevice = (DeviceVk*)device;
+    ImageVk* vkImage = (ImageVk*)image;
+
+    if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
+            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+        }
+    }
+
+    imageView = palAllocate(s_Vk.allocator, sizeof(ImageViewVk), 0);
+    if (!imageView) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    VkImageViewCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.format = formatToVk(info->format);
+    createInfo.image = vkImage->handle;
+    createInfo.viewType = imageViewTypeToVk(info->type);
+
+    createInfo.subresourceRange.aspectMask = imageAspectToVk(info->subresourceRange.aspect);
+    createInfo.subresourceRange.baseArrayLayer = info->subresourceRange.startArrayLayer;
+    createInfo.subresourceRange.baseMipLevel = info->subresourceRange.startMipLevel;
+    createInfo.subresourceRange.levelCount = info->subresourceRange.mipLevelCount;
+    createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
+
+    result = s_Vk.createImageView(
+        vkDevice->handle,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &imageView->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, imageView);
+        return makeResultVk(result);
+    }
+
+    imageView->device = vkDevice;
+    imageView->image = vkImage;
+    imageView->layerCount = createInfo.subresourceRange.layerCount;
+    imageView->reserved = PAL_BACKEND_KEY;
+    *outImageView = (PalImageView*)imageView;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyImageViewVk(PalImageView* imageView)
+{
+    ImageViewVk* vkImageView = (ImageViewVk*)imageView;
+    s_Vk.destroyImageView(vkImageView->device->handle, vkImageView->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, vkImageView);
+}
+
+PalResult PAL_CALL createSamplerVk(
+    PalDevice* device,
+    const PalSamplerCreateInfo* info,
+    PalSampler** outSampler)
+{
+    VkResult result = VK_SUCCESS;
+    SamplerVk* sampler = nullptr;
+    DeviceVk* vkDevice = (DeviceVk*)device;
+
+    sampler = palAllocate(s_Vk.allocator, sizeof(SamplerVk), 0);
+    if (!sampler) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+    
+    VkSamplerCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    createInfo.anisotropyEnable = info->enableAnisotropy;
+    createInfo.compareEnable = info->enableCompare;
+
+    createInfo.mipLodBias = info->mipLodBias;
+    createInfo.minLod = info->minLod;
+    createInfo.maxLod = info->maxLod;
+    createInfo.maxAnisotropy = info->maxAnisotropy;
+    createInfo.compareOp = compareOpToVk(info->compareOp);
+
+    createInfo.minFilter = filterToVk(info->minFilterMode);
+    createInfo.magFilter = filterToVk(info->magFilterMode);
+    createInfo.mipmapMode = mipmapModeToVk(info->mipmapMode);
+
+    createInfo.addressModeU = addressModeToVk(info->addressModeU);
+    createInfo.addressModeV = addressModeToVk(info->addressModeV);
+    createInfo.addressModeW = addressModeToVk(info->addressModeW);
+    createInfo.borderColor = borderColorToVk(info->borderColor);
+
+    result = s_Vk.createSampler(
+        vkDevice->handle,
+        &createInfo,
+        &s_Vk.vkAllocator,
+        &sampler->handle);
+
+    if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, sampler);
+        return makeResultVk(result);
+    }
+
+    sampler->device = vkDevice;
+    sampler->reserved = PAL_BACKEND_KEY;
+    *outSampler = (PalSampler*)sampler;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroySamplerVk(PalSampler* sampler)
+{
+    SamplerVk* vkSampler = (SamplerVk*)sampler;
+    s_Vk.destroySampler(vkSampler->device->handle, vkSampler->handle, &s_Vk.vkAllocator);
+    palFree(s_Vk.allocator, vkSampler);
+}
+
 #endif // PAL_HAS_VULKAN_BACKEND

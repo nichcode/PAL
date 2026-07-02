@@ -8,8 +8,6 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
-#define MAX_ATTACHMENTS 32
-
 static void commitShaderbindingTableUpdate(
     CommandBufferVk* cmdBuffer, 
     ShaderBindingTableVk* sbt)
