@@ -481,6 +481,7 @@ uint32_t findBestMemoryIndexVk(
     VkPhysicalDevice phyDevice,
     uint32_t memoryMask);
 
+VkFormat vertexTypeToVk(PalVertexType type);
 void fillBuildInfoVk(
     uint32_t count,
     PalAccelerationStructureBuildInfo* info,

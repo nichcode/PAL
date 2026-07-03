@@ -1138,9 +1138,9 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     s_Vk.getPhysicalDeviceFeatures2(vkDevice->phyDevice, &features);
     s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
 
-    PalDescriptorIndexingFlags flags = 0;
+    caps->flags = 0;
     if (desc.descriptorBindingPartiallyBound) {
-        flags |= PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND;
+        caps->flags |= PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND;
     }
 
     // clang-format off
@@ -1149,14 +1149,14 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
         desc.descriptorBindingStorageImageUpdateAfterBind &&
         desc.descriptorBindingStorageBufferUpdateAfterBind &&
         desc.descriptorBindingUniformBufferUpdateAfterBind) {
-        flags |= PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
+        caps->flags |= PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
     }
 
     if (desc.shaderSampledImageArrayNonUniformIndexing && 
         desc.shaderStorageImageArrayNonUniformIndexing &&
         desc.shaderStorageBufferArrayNonUniformIndexing &&
         desc.shaderUniformBufferArrayNonUniformIndexing) {
-        flags |= PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING;
+        caps->flags |= PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING;
     }
     // clang-format on
 

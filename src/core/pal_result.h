@@ -109,7 +109,7 @@ static const char* resultSourceToString(PalResult result)
             return "METAL";
     }
 
-    return "";
+    return "NONE";
 }
 
 static void formatResultMsg(PalResult result, char* buffer, char* msg)

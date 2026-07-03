@@ -464,7 +464,7 @@ PalResult PAL_CALL palInitGraphics(
         return PAL_RESULT_SUCCESS;
     }
 
-    if (customBackendCount == 0) {
+    if (customBackendCount == 0 && customBackends) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 

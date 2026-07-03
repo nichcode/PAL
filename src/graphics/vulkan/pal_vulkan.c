@@ -533,6 +533,103 @@ uint32_t findBestMemoryIndexVk(
     return bestIndex;
 }
 
+VkFormat vertexTypeToVk(PalVertexType type)
+{
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT32:
+            return VK_FORMAT_R32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_2:
+            return VK_FORMAT_R32G32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_3:
+            return VK_FORMAT_R32G32B32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_4:
+            return VK_FORMAT_R32G32B32A32_SINT;
+
+        case PAL_VERTEX_TYPE_UINT32:
+            return VK_FORMAT_R32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_2:
+            return VK_FORMAT_R32G32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_3:
+            return VK_FORMAT_R32G32B32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_4:
+            return VK_FORMAT_R32G32B32A32_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2:
+            return VK_FORMAT_R8G8_SINT;
+
+        case PAL_VERTEX_TYPE_INT8_4:
+            return VK_FORMAT_R8G8B8A8_SINT;
+
+        case PAL_VERTEX_TYPE_UINT8_2:
+            return VK_FORMAT_R8G8_UINT;
+
+        case PAL_VERTEX_TYPE_UINT8_4:
+            return VK_FORMAT_R8G8B8A8_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+            return VK_FORMAT_R8G8_SNORM;
+
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+            return VK_FORMAT_R8G8B8A8_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_2NORM:
+            return VK_FORMAT_R8G8_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+
+        case PAL_VERTEX_TYPE_INT16_2:
+            return VK_FORMAT_R16G16_SINT;
+
+        case PAL_VERTEX_TYPE_INT16_4:
+            return VK_FORMAT_R16G16B16A16_SINT;
+
+        case PAL_VERTEX_TYPE_UINT16_2:
+            return VK_FORMAT_R16G16_UINT;
+
+        case PAL_VERTEX_TYPE_UINT16_4:
+            return VK_FORMAT_R16G16B16A16_UINT;
+
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+            return VK_FORMAT_R16G16_SNORM;
+
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+            return VK_FORMAT_R16G16B16A16_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+            return VK_FORMAT_R16G16_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+            return VK_FORMAT_R16G16B16A16_UNORM;
+
+        case PAL_VERTEX_TYPE_FLOAT:
+            return VK_FORMAT_R32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT2:
+            return VK_FORMAT_R32G32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT3:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT4:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2:
+            return VK_FORMAT_R16G16_SFLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4:
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
+    }
+
+    return VK_FORMAT_UNDEFINED;
+}
+
 void fillBuildInfoVk(
     uint32_t count,
     PalAccelerationStructureBuildInfo* info,
@@ -604,7 +701,7 @@ void fillBuildInfoVk(
 
             VkDeviceOrHostAddressConstKHR vertexAddress = {0};
             VkDeviceOrHostAddressConstKHR indexAddress = {0};
-            PalGeometryDataTriangle* tmpData = info->geometries[i].data;
+            const PalGeometryDataTriangle* tmpData = info->geometries[i].data;
 
             vertexAddress.deviceAddress = tmpData->vertexBufferAddress;
             data->vertexData = vertexAddress;
@@ -631,7 +728,7 @@ void fillBuildInfoVk(
             data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
 
             VkDeviceOrHostAddressConstKHR address = {0};
-            PalGeometryDataAABBS* tmpData = info->geometries[i].data;
+            const PalGeometryDataAABBS* tmpData = info->geometries[i].data;
             address.deviceAddress = tmpData->bufferAddress;
             data->data = address;
             data->stride = tmpData->stride;
@@ -676,6 +773,27 @@ void fillBuildInfoVk(
     buildInfo->scratchData = scratchData;
 }
 
+static void* alignedRealloc(
+    void* memory, 
+    uint64_t size, 
+    uint64_t alignment)
+{
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    return _aligned_realloc(memory, size, alignment);
+#else
+    return realloc(memory, size);
+#endif // _MSC_VER
+}
+
+static void alignedFree(void* ptr)
+{
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    _aligned_free(ptr);
+#else
+    free(ptr);
+#endif // _MSC_VER
+}
+
 static void* VKAPI_CALL allocateVk(
     void* pUserData,
     size_t size,
@@ -690,15 +808,6 @@ static void VKAPI_CALL freeVk(
     void* ptr)
 {
     palFree(s_Vk.allocator, ptr);
-}
-
-static void alignedFree(void* ptr)
-{
-#if defined(_MSC_VER) || defined(__MINGW32__)
-    _aligned_free(ptr);
-#else
-    free(ptr);
-#endif // _MSC_VER
 }
 
 static void* VKAPI_CALL reallocVk(

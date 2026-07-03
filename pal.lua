@@ -226,7 +226,7 @@ project "PAL"
                 d3d12Include
             }
 
-            defines { "PAL_HAS_D3D12_BACKEND=1" }
+            --defines { "PAL_HAS_D3D12_BACKEND=1" }
         else
             defines { "PAL_HAS_D3D12_BACKEND=0" }
         end

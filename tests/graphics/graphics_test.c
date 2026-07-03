@@ -5,10 +5,9 @@
 PalBool graphicsTest()
 {
     // initialize the graphics system
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize graphics: %s", error);
+        logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
     }
 
@@ -16,8 +15,7 @@ PalBool graphicsTest()
     int32_t count = 0;
     result = palEnumerateAdapters(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get query adapters");
         return PAL_FALSE;
     }
 
@@ -38,8 +36,7 @@ PalBool graphicsTest()
 
     result = palEnumerateAdapters(&count, adapters);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get query adapters");
         return PAL_FALSE;
     }
 
@@ -51,16 +48,14 @@ PalBool graphicsTest()
         PalAdapter* adapter = adapters[i];
         result = palGetAdapterInfo(adapter, &info);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter information: %s", error);
+            logResult(result, "Failed to get adapter information");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
 
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
+            logResult(result, "Failed to get adapter capabilities");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
@@ -99,8 +94,7 @@ PalBool graphicsTest()
 
         result = palCreateDevice(adapter, deviceFeatures, &device);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create device: %s", error);
+            logResult(result, "Failed to create device");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
@@ -190,35 +184,7 @@ PalBool graphicsTest()
         palLog(nullptr, "");
         palLog(nullptr, "  Resource Capabilities:");
         PalResourceCapabilities* resourceCaps = &caps.resourceCaps;
-
-        if (resourceCaps->sampledImageDynamicArrayIndexing) {
-            palLog(nullptr, "   Sampled image dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "   Sampled image dynamic array indexing: False");
-        }
-
-        if (resourceCaps->storageImageDynamicArrayIndexing) {
-            palLog(nullptr, "   Storage image dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "   Storage image dynamic array indexing: False");
-        }
-
-        if (resourceCaps->storageBufferDynamicArrayIndexing) {
-            palLog(nullptr, "   Storage buffer dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "   Storage buffer dynamic array indexing: False");
-        }
-
-        if (resourceCaps->uniformBufferDynamicArrayIndexing) {
-            palLog(nullptr, "   Uniform buffer dynamic array indexing: True");
-
-        } else {
-            palLog(nullptr, "   Uniform buffer dynamic array indexing: False");
-        }
-
+       
         // clang-format off
         palLog(nullptr, "   Max per stage sampled images: %u", resourceCaps->maxPerStageSampledImages);
         palLog(nullptr, "   Max per set sampled images: %u", resourceCaps->maxPerSetSampledImages);
@@ -293,13 +259,11 @@ PalBool graphicsTest()
             PalSamplerAnisotropyCapabilities tmp;
             result = palQuerySamplerAnisotropyCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get sampler anisotropy capabilities: %s", error);
+                logResult(result, "Failed to get sampler anisotropy capabilities");
                 return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max anisotropy: %u", tmp.maxAnisotropy);
-
             palLog(nullptr, "");
         }
 
@@ -309,13 +273,11 @@ PalBool graphicsTest()
             PalMultiViewportCapabilities tmp;
             result = palQueryMultiViewportCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get multi viewport capabilities: %s", error);
+                logResult(result, "Failed to get viewport capabilities");
                 return PAL_FALSE;
             }
 
             palLog(nullptr, "   Max count: %u", tmp.maxCount);
-
             palLog(nullptr, "");
         }
 
@@ -325,8 +287,7 @@ PalBool graphicsTest()
             PalRayTracingCapabilities tmp;
             result = palQueryRayTracingCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get ray tracing capabilities: %s", error);
+                logResult(result, "Failed to get ray tracing capabilities");
                 return PAL_FALSE;
             }
 
@@ -337,7 +298,6 @@ PalBool graphicsTest()
             palLog(nullptr, "   Max geometry count: %u", tmp.maxGeometryCount);
             palLog(nullptr, "   Max payload size: %u Bytes", tmp.maxPayloadSize);
             palLog(nullptr, "   Max dispatch invocations: %u", tmp.maxDispatchInvocations);
-
             palLog(nullptr, "");
         }
 
@@ -347,8 +307,7 @@ PalBool graphicsTest()
             PalMeshShaderCapabilities tmp;
             result = palQueryMeshShaderCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get mesh shader capabilities: %s", error);
+                logResult(result, "Failed to get mesh shader capabilities");
                 return PAL_FALSE;
             }
 
@@ -363,7 +322,6 @@ PalBool graphicsTest()
             palLog(nullptr, "   Max task work group count[0]: %u", tmp.maxTaskWorkGroupCount[0]);
             palLog(nullptr, "   Max task work group count[1]: %u", tmp.maxTaskWorkGroupCount[1]);
             palLog(nullptr, "   Max task work group count[2]: %u", tmp.maxTaskWorkGroupCount[2]);
-
             palLog(nullptr, "");
         }
 
@@ -373,8 +331,7 @@ PalBool graphicsTest()
             PalFragmentShadingRateCapabilities tmp;
             result = palQueryFragmentShadingRateCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get FSR capabilities: %s", error);
+                logResult(result, "Failed to get fragment shading rate capabilities");
                 return PAL_FALSE;
             }
 
@@ -383,56 +340,58 @@ PalBool graphicsTest()
             palLog(nullptr, "   Max texel width: %u", tmp.minTexelHeight);
             palLog(nullptr, "   Max texel height: %u", tmp.maxTexelHeight);
 
-            palLog(nullptr, "   Support Shading Rates:");
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_1X1]) {
+            palLog(nullptr, "   Supported Shading Rates:");
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_1X1)) {
                 palLog(nullptr, "    1 X 1");
             }
 
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_1X2]) {
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_1X2)) {
                 palLog(nullptr, "    1 X 2");
             }
 
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_2X1]) {
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_2X1)) {
                 palLog(nullptr, "    2 X 1");
             }
 
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_2X2]) {
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_2X2)) {
                 palLog(nullptr, "    2 X 2");
             }
 
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_2X4]) {
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_2X4)) {
                 palLog(nullptr, "    2 X 4");
             }
 
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_4X2]) {
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_4X2)) {
                 palLog(nullptr, "    4 X 2");
 
             }
 
-            if (tmp.shadingRates[PAL_FRAGMENT_SHADING_RATE_4X4]) {
+            if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_4X4)) {
                 palLog(nullptr, "    4 X 4");
             }
 
-            palLog(nullptr, "   Support Combiner operations:");
-            if (tmp.combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP]) {
+            palLog(nullptr, "   Supported Combiner operations:");
+            // clang-format off
+            if (palIsSupported(tmp.supportedCombinerOps, PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP)) {
                 palLog(nullptr, "    Keep");
             }
 
-            if (tmp.combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE]) {
+            if (palIsSupported(tmp.supportedCombinerOps, PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE)) {
                 palLog(nullptr, "    Replace");
             }
 
-            if (tmp.combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN]) {
+            if (palIsSupported(tmp.supportedCombinerOps, PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN)) {
                 palLog(nullptr, "    Min");
             }
 
-            if (tmp.combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX]) {
+            if (palIsSupported(tmp.supportedCombinerOps, PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX)) {
                 palLog(nullptr, "    Max");
             }
 
-            if (tmp.combinerOps[PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL]) {
+            if (palIsSupported(tmp.supportedCombinerOps, PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL)) {
                 palLog(nullptr, "    Mul");
             }
+            // clang-format on
 
             palLog(nullptr, "");
         }
@@ -443,65 +402,27 @@ PalBool graphicsTest()
             PalDescriptorIndexingCapabilities tmp;
             result = palQueryDescriptorIndexingCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get descriptor indexing capabilities: %s", error);
+                logResult(result, "Failed to get descriptor indexing capabilities");
                 return PAL_FALSE;
             }
 
-            if (tmp.sampledImageNonUniformIndexing) {
-                palLog(nullptr, "   Sampled image non uniform indexing: True");
-
+            palLog(nullptr, "   Supported flags:");
+            if (tmp.flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
+                palLog(nullptr, "    Update after bind: True");
             } else {
-                palLog(nullptr, "   Sampled image non uniform indexing: False");
+                palLog(nullptr, "    Update after bind: False");
             }
 
-            if (tmp.sampledImageUpdateAfterBind) {
-                palLog(nullptr, "   Sampled image update after bind: True");
-                
+            if (tmp.flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
+                palLog(nullptr, "    Partially bound: True");
             } else {
-                palLog(nullptr, "   Sampled image update after bind: False");
+                palLog(nullptr, "    Partially bound: False");
             }
 
-            if (tmp.storageImageNonUniformIndexing) {
-                palLog(nullptr, "   Storage image non uniform indexing: True");
-
+            if (tmp.flags & PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING) {
+                palLog(nullptr, "    Non uniform indexing: True");
             } else {
-                palLog(nullptr, "   Storage image non uniform indexing: False");
-            }
-
-            if (tmp.storageImageUpdateAfterBind) {
-                palLog(nullptr, "   Storage image update after bind: True");
-                
-            } else {
-                palLog(nullptr, "   Storage image update after bind: False");
-            }
-
-            if (tmp.storageBufferNonUniformIndexing) {
-                palLog(nullptr, "   Storage buffer non uniform indexing: True");
-
-            } else {
-                palLog(nullptr, "   Storage buffer non uniform indexing: False");
-            }
-
-            if (tmp.storageBufferUpdateAfterBind) {
-                palLog(nullptr, "   Storage buffer update after bind: True");
-                
-            } else {
-                palLog(nullptr, "   Storage buffer update after bind: False");
-            }
-
-            if (tmp.uniformBufferNonUniformIndexing) {
-                palLog(nullptr, "   Uniform buffer non uniform indexing: True");
-
-            } else {
-                palLog(nullptr, "   Uniform buffer non uniform indexing: False");
-            }
-
-            if (tmp.uniformBufferUpdateAfterBind) {
-                palLog(nullptr, "   Uniform buffer update after bind: True");
-                
-            } else {
-                palLog(nullptr, "   Uniform buffer update after bind: False");
+                palLog(nullptr, "    Non uniform indexing: False");
             }
 
             // clang-format off
@@ -530,8 +451,7 @@ PalBool graphicsTest()
             PalMultiViewCapabilities tmp;
             result = palQueryMultiViewCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get multi view capabilities: %s", error);
+                logResult(result, "Failed to get multi view capabilities");
                 return PAL_FALSE;
             }
 
@@ -545,48 +465,53 @@ PalBool graphicsTest()
             PalDepthStencilCapabilities tmp;
             result = palQueryDepthStencilCapabilities(device, &tmp);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to get depth stencil capabilities: %s", error);
+                logResult(result, "Failed to get depth stenci capabilities");
                 return PAL_FALSE;
             }
 
-            if (tmp.independentResolve) {
-                palLog(nullptr, "   Independent resource: True");
+            if (tmp.supportsIndependentResolve) {
+                palLog(nullptr, "   Independent resolve: True");
             } else {
-                palLog(nullptr, "   Independent resource: False");
+                palLog(nullptr, "   Independent resolve: False");
             }
 
-            palLog(nullptr, "   Supported Depth Resolves:");
-            if (tmp.depthResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO]) {
+            if (tmp.supportsIndependentResolveNone) {
+                palLog(nullptr, "   Independent resolve none: True");
+            } else {
+                palLog(nullptr, "   Independent resolve none: False");
+            }
+
+            palLog(nullptr, "   Supported depth resolves modes:");
+            if (palIsSupported(tmp.supportedDepthResolveModes, PAL_RESOLVE_MODE_SAMPLE_ZERO)) {
                 palLog(nullptr, "    Zero");
             }
 
-            if (tmp.depthResolves[PAL_RESOLVE_MODE_AVERAGE]) {
+            if (palIsSupported(tmp.supportedDepthResolveModes, PAL_RESOLVE_MODE_AVERAGE)) {
                 palLog(nullptr, "    Average");
             }
 
-            if (tmp.depthResolves[PAL_RESOLVE_MODE_MIN]) {
+            if (palIsSupported(tmp.supportedDepthResolveModes, PAL_RESOLVE_MODE_MIN)) {
                 palLog(nullptr, "    Min");
             }
 
-            if (tmp.depthResolves[PAL_RESOLVE_MODE_MAX]) {
+            if (palIsSupported(tmp.supportedDepthResolveModes, PAL_RESOLVE_MODE_MAX)) {
                 palLog(nullptr, "    Max");
             }
 
-            palLog(nullptr, "   Supported Stencil Resolves:");
-            if (tmp.stencilResolves[PAL_RESOLVE_MODE_SAMPLE_ZERO]) {
+            palLog(nullptr, "   Supported stencil resolve modes:");
+            if (palIsSupported(tmp.supportedStencilResolveModes, PAL_RESOLVE_MODE_SAMPLE_ZERO)) {
                 palLog(nullptr, "    Zero");
             }
 
-            if (tmp.stencilResolves[PAL_RESOLVE_MODE_AVERAGE]) {
+            if (palIsSupported(tmp.supportedStencilResolveModes, PAL_RESOLVE_MODE_AVERAGE)) {
                 palLog(nullptr, "    Average");
             }
 
-            if (tmp.stencilResolves[PAL_RESOLVE_MODE_MIN]) {
+            if (palIsSupported(tmp.supportedStencilResolveModes, PAL_RESOLVE_MODE_MIN)) {
                 palLog(nullptr, "    Min");
             }
 
-            if (tmp.stencilResolves[PAL_RESOLVE_MODE_MAX]) {
+            if (palIsSupported(tmp.supportedStencilResolveModes, PAL_RESOLVE_MODE_MAX)) {
                 palLog(nullptr, "    Max");
             }
 
