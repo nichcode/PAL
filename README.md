@@ -62,7 +62,7 @@ int main() {
         palUpdateVideo();
         PalEvent e;
         while (palPollEvent(driver, &e)) {
-            if (e.type == PAL_EVENT_WINDOW_CLOSE) return 0;
+            if (e.type == PAL_EVENT_TYPE_WINDOW_CLOSE) return 0;
         }
     }
 }

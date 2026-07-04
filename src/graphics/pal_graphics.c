@@ -110,8 +110,6 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         !vtable1->getImageInfo                                  ||
         !vtable1->getImageMemoryRequirements                    ||
         !vtable1->bindImageMemory                               ||
-        !vtable1->mapImageMemory                                ||
-        !vtable1->unmapImageMemory                              ||
 
         // image view
         !vtable1->createImageView                               ||
@@ -219,8 +217,8 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         !vtable1->writeToImageCopyStagingBuffer                 ||
         !vtable1->bindBufferMemory                              ||
         !vtable1->getBufferDeviceAddress                        ||
-        !vtable1->mapBufferMemory                               ||
-        !vtable1->unmapBufferMemory                             ||
+        !vtable1->mapBuffer                                     ||
+        !vtable1->unmapBuffer                                   ||
 
         // descriptors
         !vtable1->createDescriptorSetLayout                     ||
@@ -298,8 +296,6 @@ static void populateVtableVersion1(
     vtable->getImageInfo = vtable1->getImageInfo;
     vtable->getImageMemoryRequirements = vtable1->getImageMemoryRequirements;
     vtable->bindImageMemory = vtable1->bindImageMemory;
-    vtable->mapImageMemory = vtable1->mapImageMemory;
-    vtable->unmapImageMemory = vtable1->unmapImageMemory;
 
     // image view
     vtable->createImageView = vtable1->createImageView;
@@ -408,8 +404,8 @@ static void populateVtableVersion1(
     vtable->writeToImageCopyStagingBuffer = vtable1->writeToImageCopyStagingBuffer;
     vtable->bindBufferMemory = vtable1->bindBufferMemory;
     vtable->getBufferDeviceAddress = vtable1->getBufferDeviceAddress;
-    vtable->mapBufferMemory = vtable1->mapBufferMemory;
-    vtable->unmapBufferMemory = vtable1->unmapBufferMemory;
+    vtable->mapBuffer = vtable1->mapBuffer;
+    vtable->unmapBuffer = vtable1->unmapBuffer;
 
     // descriptors
     vtable->createDescriptorSetLayout = vtable1->createDescriptorSetLayout;
@@ -1040,30 +1036,6 @@ PalResult PAL_CALL palBindImageMemory(
     }
 
     return image->backend->bindImageMemory(image, memory, offset);
-}
-
-PalResult PAL_CALL palMapImageMemory(
-    PalImage* image,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr)
-{
-    if (!s_Graphics.initialized) {
-        return PAL_RESULT_CODE_NOT_INITIALIZED;
-    }
-
-    if (!image) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    return image->backend->mapImageMemory(image, offset, size, outPtr);
-}
-
-void PAL_CALL palUnmapImageMemory(PalImage* image)
-{
-    if (s_Graphics.initialized && image) {
-        image->backend->unmapImageMemory(image);
-    }
 }
 
 // ==================================================
@@ -2513,7 +2485,7 @@ PalResult PAL_CALL palBindBufferMemory(
     return buffer->backend->bindBufferMemory(buffer, memory, offset);
 }
 
-PalResult PAL_CALL palMapBufferMemory(
+PalResult PAL_CALL palMapBuffer(
     PalBuffer* buffer,
     uint64_t offset,
     uint64_t size,
@@ -2527,13 +2499,13 @@ PalResult PAL_CALL palMapBufferMemory(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    return buffer->backend->mapBufferMemory(buffer, offset, size, outPtr);
+    return buffer->backend->mapBuffer(buffer, offset, size, outPtr);
 }
 
-void PAL_CALL palUnmapBufferMemory(PalBuffer* buffer)
+void PAL_CALL palUnmapBuffer(PalBuffer* buffer)
 {
     if (s_Graphics.initialized && buffer) {
-        buffer->backend->unmapBufferMemory(buffer);
+        buffer->backend->unmapBuffer(buffer);
     }
 }
 

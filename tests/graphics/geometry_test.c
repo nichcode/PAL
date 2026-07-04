@@ -22,7 +22,6 @@ PalBool geometryTest()
     PalResult result;
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
-    PalGraphicsWindow gfxWindow;
 
     PalAdapter* adapter = nullptr;
     PalDevice* device = nullptr;
@@ -49,8 +48,8 @@ PalBool geometryTest()
         return PAL_FALSE;
     }
 
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
@@ -75,40 +74,43 @@ PalBool geometryTest()
         return PAL_FALSE;
     }
 
-    PalWindowHandleInfo winHandle = palGetWindowHandleInfo(window);
-    gfxWindow.display = winHandle.nativeDisplay;
-    gfxWindow.window = winHandle.nativeWindow;
-    
-    // using pal_system.h will be easy to know the underlying windowing API
-    // or use typedefs. We will use the pal_system module. This is needed
-    // for systems which multiple windowing APIs (linux).
-    PalPlatformInfo platformInfo = {0};
-    result = palGetPlatformInfo(&platformInfo);
+    // get window handle. You can use any window from any library
+    // so long as you can get the window handle and display (if on X11, wayland)
+    // If pal video system will not be used, there is no need to initialize it
+    PalWindowHandleInfo winHandle = {0};
+    result = palGetWindowHandleInfo(window, &winHandle);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get platform information: %s", error);
+        logResult(result, "Failed to get window handle info");
         return PAL_FALSE;
     }
 
-    if (platformInfo.apiType == PAL_PLATFORM_API_WAYLAND) {
-        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND;
+    // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
+    // We will use the pal_system module.
+    PalPlatformInfo platformInfo = {0};
+    result = palGetPlatformInfo(&platformInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to get platform information");
+        return PAL_FALSE;
+    }
 
-    } else if (platformInfo.apiType == PAL_PLATFORM_API_X11) {
-        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11;
+    PalWindowInstanceType windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_XCB;
+    if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WAYLAND) {
+        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_WAYLAND;
 
-    } else {
-        // automatically this is xcb
-        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB;
+    } else if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_X11) {
+        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_X11;
+
+    } else if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WIN32) {
+        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_WIN32;
     }
 
     PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    result = palInitGraphics(nullptr, nullptr);
+    result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize graphics: %s", error);
+        logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
     }
 
@@ -116,8 +118,7 @@ PalBool geometryTest()
     int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -136,8 +137,7 @@ PalBool geometryTest()
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -148,8 +148,7 @@ PalBool geometryTest()
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
+            logResult(result, "Failed to get adapter capabilities");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
@@ -168,8 +167,7 @@ PalBool geometryTest()
         // We want an adapter that supports spirv 1.0 or dxil 6.0
         result = palGetAdapterInfo(adapter, &adapterInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter info: %s", error);
+            logResult(result, "Failed to get adapter info");
             return PAL_FALSE;
         }   
 
@@ -208,16 +206,20 @@ PalBool geometryTest()
 
     result = palCreateDevice(adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create device: %s", error);
+        logResult(result, "Failed to create device");
         return PAL_FALSE;
     }
 
     // create surface
-    result = palCreateSurface(device, &gfxWindow, &surface);
+    result = palCreateSurface(
+        device, 
+        winHandle.nativeWindow, 
+        winHandle.nativeInstance, 
+        windowInstanceType, 
+        &surface);
+        
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create surface: %s", error);
+        logResult(result, "Failed to create surface");
         return PAL_FALSE;
     }
 
@@ -226,8 +228,7 @@ PalBool geometryTest()
     for (int i = 0; i < caps.maxGraphicsQueues; i++) {
         result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create queue: %s", error);
+            logResult(result, "Failed to create queue");
             return PAL_FALSE;
         }
 
@@ -250,8 +251,7 @@ PalBool geometryTest()
     PalSurfaceCapabilities surfaceCaps = {0};
     result = palGetSurfaceCapabilities(device, surface, &surfaceCaps);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get surface capabilities: %s", error);
+        logResult(result, "Failed to get surface capabilities");
         return PAL_FALSE;
     }
 
@@ -286,8 +286,7 @@ PalBool geometryTest()
 
     result = palCreateSwapchain(device, queue, surface, &swapchainCreateInfo, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create swapchain: %s", error);
+        logResult(result, "Failed to create swapchain");
         return PAL_FALSE;
     }
 
@@ -304,8 +303,7 @@ PalBool geometryTest()
     PalImageInfo imageInfo;
     result = palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get image info: %s", error);
+        logResult(result, "Failed to get image info");
         return PAL_FALSE;
     }
 
@@ -327,16 +325,14 @@ PalBool geometryTest()
 
         result = palCreateImageView(device, image, &imageViewCreateInfo, &imageViews[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create image view: %s", error);
+            logResult(result, "Failed to create image view");
             return PAL_FALSE;
         }
 
         // create render finished semaphores
         result = palCreateSemaphore(device, PAL_FALSE, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create semaphore: %s", error);
+            logResult(result, "Failed to create semaphore");
             return PAL_FALSE;
         }
 
@@ -345,8 +341,7 @@ PalBool geometryTest()
 
     result = palCreateCommandPool(device, queue, &cmdPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create command pool: %s", error);
+        logResult(result, "Failed to create command pool");
         return PAL_FALSE;
     }
 
@@ -354,15 +349,13 @@ PalBool geometryTest()
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         result = palCreateSemaphore(device, PAL_FALSE, &imageAvailableSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create semaphore: %s", error);
+            logResult(result, "Failed to create semaphore");
             return PAL_FALSE;
         }
 
         result = palCreateFence(device, PAL_TRUE, &inFlightFences[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create fence: %s", error);
+            logResult(result, "Failed to create fence");
             return PAL_FALSE;
         }
 
@@ -373,8 +366,7 @@ PalBool geometryTest()
             &cmdBuffers[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to allocate command buffer: %s", error);
+            logResult(result, "Failed to allocate command buffer");
             return PAL_FALSE;
         }
     }
@@ -440,8 +432,7 @@ PalBool geometryTest()
 
         result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create shader: %s", error);
+            logResult(result, "Failed to create shader");
             return PAL_FALSE;
         }
 
@@ -452,15 +443,14 @@ PalBool geometryTest()
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create pipeline layout: %s", error);
+        logResult(result, "Failed to create pipeline layout");
         return PAL_FALSE;
     }
 
     PalRenderingLayoutInfo renderingLayoutInfo = {0};
     renderingLayoutInfo.colorAttachentCount = 1;
     renderingLayoutInfo.colorAttachmentsFormat = &imageInfo.format;
-    renderingLayoutInfo.multisampleCount = PAL_SAMPLE_COUNT_1;
+    renderingLayoutInfo.sampleCount = PAL_SAMPLE_COUNT_1;
     renderingLayoutInfo.viewCount = 1;
 
     // create graphics pipeline
@@ -486,8 +476,7 @@ PalBool geometryTest()
 
     result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create graphics pipeline: %s", error);
+        logResult(result, "Failed to create pipeline");
         return PAL_FALSE;
     }
 
@@ -510,12 +499,12 @@ PalBool geometryTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
@@ -528,8 +517,7 @@ PalBool geometryTest()
 
         result = palWaitFence(inFlightFences[currentFrame], PAL_INFINITE);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to wait fence: %s", error);
+            logResult(result, "Failed to wait fence");
             return PAL_FALSE;
         }
 
@@ -542,16 +530,14 @@ PalBool geometryTest()
         uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get next swapchain image: %s", error);
+            logResult(result, "Failed to get next swapchain image");
             return PAL_FALSE;
         }
 
         if (inFlightImages[imageIndex] != nullptr) {
             result = palWaitFence(inFlightImages[imageIndex], PAL_INFINITE);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to wait fence: %s", error);
+                logResult(result, "Failed to wait fence");
                 return PAL_FALSE;
             }
         }
@@ -560,8 +546,7 @@ PalBool geometryTest()
         if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
             result = palResetFence(inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to wait fence: %s", error);
+                logResult(result, "Failed to wait fence");
                 return PAL_FALSE;
             }
 
@@ -571,8 +556,7 @@ PalBool geometryTest()
 
             result = palCreateFence(device, PAL_FALSE, &inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to wait fence: %s", error);
+                logResult(result, "Failed to wait fence");
                 return PAL_FALSE;
             }
         }
@@ -580,22 +564,19 @@ PalBool geometryTest()
         // reset the command buffer
         result = palResetCommandBuffer(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to reset command buffer: %s", error);
+            logResult(result, "Failed to reset command buffer");
             return PAL_FALSE;
         }
 
         result = palCmdBegin(cmdBuffers[currentFrame], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to begin command buffer: %s", error);
+            logResult(result, "Failed to begin command buffer");
             return PAL_FALSE;
         }
 
         // change the state of the image view to make it renderable
-        PalUsageStateInfo oldUsageStateInfo = {0};
-        PalUsageStateInfo newUsageStateInfo = {0};
-        newUsageStateInfo.usageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+        PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
+        PalUsageState newUsageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
 
         PalImageSubresourceRange imageRange = {0};
         imageRange.layerArrayCount = 1;
@@ -608,12 +589,11 @@ PalBool geometryTest()
             cmdBuffers[currentFrame],
             image,
             &imageRange,
-            &oldUsageStateInfo,
-            &newUsageStateInfo);
+            oldUsageState,
+            newUsageState);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set image view barrier: %s", error);
+            logResult(result, "Failed to set barrier");
             return PAL_FALSE;
         }
 
@@ -636,74 +616,65 @@ PalBool geometryTest()
 
         result = palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to begin rendering: %s", error);
+            logResult(result, "Failed to begin rendering");
             return PAL_FALSE;
         }
 
         // bind pipeline
         result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind pipeline: %s", error);
+            logResult(result, "Failed to bind pipeline");
             return PAL_FALSE;
         }
 
         // set viewport and scissors
         result = palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set viewport: %s", error);
+            logResult(result, "Failed to set viewport");
             return PAL_FALSE;
         }
 
         result = palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set scissors: %s", error);
+            logResult(result, "Failed to set scissor");
             return PAL_FALSE;
         }
             
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind vertex buffer: %s", error);
+            logResult(result, "Failed to bind vertex buffer");
             return PAL_FALSE;
         }
 
         result = palCmdDraw(cmdBuffers[currentFrame], 3, 1, 0, 0);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to issue draw command: %s", error);
+            logResult(result, "Failed to issue draw command");
             return PAL_FALSE;
         }
 
         result = palCmdEndRendering(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to end rendering: %s", error);
+            logResult(result, "Failed to end rendering");
             return PAL_FALSE;
         }
 
         // change the state of the image view to make it presentable
-        oldUsageStateInfo = newUsageStateInfo;
-        newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
+        oldUsageState = newUsageState;
+        newUsageState = PAL_USAGE_STATE_PRESENT;
         result = palCmdImageBarrier(
             cmdBuffers[currentFrame],
             image,
             &imageRange,
-            &oldUsageStateInfo,
-            &newUsageStateInfo);
+            oldUsageState,
+            newUsageState);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set image view barrier: %s", error);
+            logResult(result, "Failed to set barrier");
             return PAL_FALSE;
         }
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to end command buffer: %s", error);
+            logResult(result, "Failed to end command buffer");
             return PAL_FALSE;
         }
 
@@ -716,19 +687,14 @@ PalBool geometryTest()
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to submit command buffer: %s", error);
+            logResult(result, "Failed to submit command buffer");
             return PAL_FALSE;
         }
 
         // present
-        PalSwapchainPresentInfo presentInfo = {0};
-        presentInfo.imageIndex = imageIndex;
-        presentInfo.waitSemaphore = renderFinishedSemaphores[imageIndex];
-        result = palPresentSwapchain(swapchain, &presentInfo);
+        result = palPresentSwapchain(swapchain, imageIndex, renderFinishedSemaphores[imageIndex]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to present swapchain: %s", error);
+            logResult(result, "Failed to present swapchain");
             return PAL_FALSE;
         }
 
@@ -737,8 +703,7 @@ PalBool geometryTest()
 
     result = palWaitQueue(queue);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for queue: %s", error);
+        logResult(result, "Failed to wait queue");
         return PAL_FALSE;
     }
 

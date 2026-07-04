@@ -43,8 +43,6 @@ typedef struct {
     PalResult (PAL_CALL *getImageInfo)(PalImage*, PalImageInfo*);
     PalResult (PAL_CALL *getImageMemoryRequirements)(PalImage*, PalMemoryRequirements*);
     PalResult (PAL_CALL *bindImageMemory)(PalImage*, PalMemory*, uint64_t);
-    PalResult (PAL_CALL *mapImageMemory)(PalImage*, uint64_t, uint64_t, void**);
-    void (PAL_CALL *unmapImageMemory)(PalImage*);
     PalResult (PAL_CALL *createImageView)(PalDevice*, PalImage*, const PalImageViewCreateInfo*, PalImageView**);
     void (PAL_CALL *destroyImageView)(PalImageView*);
 
@@ -133,8 +131,8 @@ typedef struct {
     PalResult (PAL_CALL *writeToInstanceBuffer)(PalDevice*, void*, PalAccelerationStructureInstance*, uint32_t);
     PalResult (PAL_CALL *writeToImageCopyStagingBuffer)(PalDevice*, void*, void*, PalFormat, PalBufferImageCopyInfo*);
     PalResult (PAL_CALL *bindBufferMemory)(PalBuffer*, PalMemory*, uint64_t);
-    PalResult (PAL_CALL *mapBufferMemory)(PalBuffer*, uint64_t, uint64_t, void**);
-    void (PAL_CALL *unmapBufferMemory)(PalBuffer*);
+    PalResult (PAL_CALL *mapBuffer)(PalBuffer*, uint64_t, uint64_t, void**);
+    void (PAL_CALL *unmapBuffer)(PalBuffer*);
     PalDeviceAddress (PAL_CALL *getBufferDeviceAddress)(PalBuffer*);
 
     PalResult (PAL_CALL *createDescriptorSetLayout)(PalDevice*, const PalDescriptorSetLayoutCreateInfo*, PalDescriptorSetLayout**);
@@ -195,8 +193,6 @@ void PAL_CALL destroyImageVk(PalImage*);
 PalResult PAL_CALL getImageInfoVk(PalImage*, PalImageInfo*);
 PalResult PAL_CALL getImageMemoryRequirementsVk(PalImage*, PalMemoryRequirements*);
 PalResult PAL_CALL bindImageMemoryVk(PalImage*, PalMemory*, uint64_t);
-PalResult PAL_CALL mapImageMemoryVk(PalImage*, uint64_t, uint64_t, void**);
-void PAL_CALL unmapImageMemoryVk(PalImage*);
 PalResult PAL_CALL createImageViewVk(PalDevice*, PalImage*, const PalImageViewCreateInfo*, PalImageView**);
 void PAL_CALL destroyImageViewVk(PalImageView*);
 
@@ -285,8 +281,8 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(PalDevice*, PalFo
 PalResult PAL_CALL writeToInstanceBufferVk(PalDevice*, void*, PalAccelerationStructureInstance*, uint32_t);
 PalResult PAL_CALL writeToImageCopyStagingBufferVk(PalDevice*, void*, void*, PalFormat, PalBufferImageCopyInfo*);
 PalResult PAL_CALL bindBufferMemoryVk(PalBuffer*, PalMemory*, uint64_t);
-PalResult PAL_CALL mapBufferMemoryVk(PalBuffer*, uint64_t, uint64_t, void**);
-void PAL_CALL unmapBufferMemoryVk(PalBuffer*);
+PalResult PAL_CALL mapBufferVk(PalBuffer*, uint64_t, uint64_t, void**);
+void PAL_CALL unmapBufferVk(PalBuffer*);
 PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer*);
 PalResult PAL_CALL createDescriptorSetLayoutVk(PalDevice*, const PalDescriptorSetLayoutCreateInfo*, PalDescriptorSetLayout**);
 void PAL_CALL destroyDescriptorSetLayoutVk(PalDescriptorSetLayout*);
@@ -337,8 +333,6 @@ static PalGraphicsVtable s_VkBackend = {
     .getImageInfo = getImageInfoVk,
     .getImageMemoryRequirements = getImageMemoryRequirementsVk,
     .bindImageMemory = bindImageMemoryVk,
-    .mapImageMemory = mapImageMemoryVk,
-    .unmapImageMemory = unmapImageMemoryVk,
     .createImageView = createImageViewVk,
     .destroyImageView = destroyImageViewVk,
     .createSampler = createSamplerVk,
@@ -424,8 +418,8 @@ static PalGraphicsVtable s_VkBackend = {
     .writeToImageCopyStagingBuffer = writeToImageCopyStagingBufferVk,
     .bindBufferMemory = bindBufferMemoryVk,
     .getBufferDeviceAddress = getBufferDeviceAddressVk,
-    .mapBufferMemory = mapBufferMemoryVk,
-    .unmapBufferMemory = unmapBufferMemoryVk,
+    .mapBuffer = mapBufferVk,
+    .unmapBuffer = unmapBufferVk,
     .createDescriptorSetLayout = createDescriptorSetLayoutVk,
     .destroyDescriptorSetLayout = destroyDescriptorSetLayoutVk,
     .createDescriptorPool = createDescriptorPoolVk,
@@ -484,8 +478,6 @@ void PAL_CALL destroyImageD3D12(PalImage*);
 PalResult PAL_CALL getImageInfoD3D12(PalImage*, PalImageInfo*);
 PalResult PAL_CALL getImageMemoryRequirementsD3D12(PalImage*, PalMemoryRequirements*);
 PalResult PAL_CALL bindImageMemoryD3D12(PalImage*, PalMemory*, uint64_t);
-PalResult PAL_CALL mapImageMemoryD3D12(PalImage*, uint64_t, uint64_t, void**);
-void PAL_CALL unmapImageMemoryD3D12(PalImage*);
 PalResult PAL_CALL createImageViewD3D12(PalDevice*, PalImage*, const PalImageViewCreateInfo*, PalImageView**);
 void PAL_CALL destroyImageViewD3D12(PalImageView*);
 
@@ -574,8 +566,8 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(PalDevice*, Pa
 PalResult PAL_CALL writeToInstanceBufferD3D12(PalDevice*, void*, PalAccelerationStructureInstance*, uint32_t);
 PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(PalDevice*, void*, void*, PalFormat, PalBufferImageCopyInfo*);
 PalResult PAL_CALL bindBufferMemoryD3D12(PalBuffer*, PalMemory*, uint64_t);
-PalResult PAL_CALL mapBufferMemoryD3D12(PalBuffer*, uint64_t, uint64_t, void**);
-void PAL_CALL unmapBufferMemoryD3D12(PalBuffer*);
+PalResult PAL_CALL mapBufferD3D12(PalBuffer*, uint64_t, uint64_t, void**);
+void PAL_CALL unmapBufferD3D12(PalBuffer*);
 PalDeviceAddress PAL_CALL getBufferDeviceAddressD3D12(PalBuffer*);
 PalResult PAL_CALL createDescriptorSetLayoutD3D12(PalDevice*, const PalDescriptorSetLayoutCreateInfo*, PalDescriptorSetLayout**);
 void PAL_CALL destroyDescriptorSetLayoutD3D12(PalDescriptorSetLayout*);
@@ -626,8 +618,6 @@ static PalGraphicsVtable s_D3D12Backend = {
     .getImageInfo = getImageInfoD3D12,
     .getImageMemoryRequirements = getImageMemoryRequirementsD3D12,
     .bindImageMemory = bindImageMemoryD3D12,
-    .mapImageMemory = mapImageMemoryD3D12,
-    .unmapImageMemory = unmapImageMemoryD3D12,
     .createImageView = createImageViewD3D12,
     .destroyImageView = destroyImageViewD3D12,
     .createSampler = createSamplerD3D12,
@@ -713,8 +703,8 @@ static PalGraphicsVtable s_D3D12Backend = {
     .writeToImageCopyStagingBuffer = writeToImageCopyStagingBufferD3D12,
     .bindBufferMemory = bindBufferMemoryD3D12,
     .getBufferDeviceAddress = getBufferDeviceAddressD3D12,
-    .mapBufferMemory = mapBufferMemoryD3D12,
-    .unmapBufferMemory = unmapBufferMemoryD3D12,
+    .mapBuffer = mapBufferD3D12,
+    .unmapBuffer = unmapBufferD3D12,
     .createDescriptorSetLayout = createDescriptorSetLayoutD3D12,
     .destroyDescriptorSetLayout = destroyDescriptorSetLayoutD3D12,
     .createDescriptorPool = createDescriptorPoolD3D12,

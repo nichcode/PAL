@@ -52,7 +52,6 @@ PalBool textureTest()
     PalResult result;
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
-    PalGraphicsWindow gfxWindow;
 
     PalAdapter* adapter = nullptr;
     PalDevice* device = nullptr;
@@ -74,8 +73,6 @@ PalBool textureTest()
 
     PalBuffer* vertexBuffer = nullptr;
     PalBuffer* stagingBuffer = nullptr;
-    PalMemory* vertexBufferMemory = nullptr;
-    PalMemory* stagingBufferMemory = nullptr;
 
     PalDescriptorSetLayout* descriptorSetLayout = nullptr;
     PalDescriptorPool* descriptorPool = nullptr;
@@ -88,8 +85,8 @@ PalBool textureTest()
         return PAL_FALSE;
     }
 
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_WINDOW_CLOSE, PAL_DISPATCH_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_KEYDOWN, PAL_DISPATCH_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
@@ -114,40 +111,43 @@ PalBool textureTest()
         return PAL_FALSE;
     }
 
-    PalWindowHandleInfo winHandle = palGetWindowHandleInfo(window);
-    gfxWindow.display = winHandle.nativeDisplay;
-    gfxWindow.window = winHandle.nativeWindow;
-
-    // using pal_system.h will be easy to know the underlying windowing API
-    // or use typedefs. We will use the pal_system module. This is needed
-    // for systems which multiple windowing APIs (linux).
-    PalPlatformInfo platformInfo = {0};
-    result = palGetPlatformInfo(&platformInfo);
+    // get window handle. You can use any window from any library
+    // so long as you can get the window handle and display (if on X11, wayland)
+    // If pal video system will not be used, there is no need to initialize it
+    PalWindowHandleInfo winHandle = {0};
+    result = palGetWindowHandleInfo(window, &winHandle);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get platform information: %s", error);
+        logResult(result, "Failed to get window handle info");
         return PAL_FALSE;
     }
 
-    if (platformInfo.apiType == PAL_PLATFORM_API_WAYLAND) {
-        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_WAYLAND;
+    // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
+    // We will use the pal_system module.
+    PalPlatformInfo platformInfo = {0};
+    result = palGetPlatformInfo(&platformInfo);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to get platform information");
+        return PAL_FALSE;
+    }
 
-    } else if (platformInfo.apiType == PAL_PLATFORM_API_X11) {
-        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_X11;
+    PalWindowInstanceType windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_XCB;
+    if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WAYLAND) {
+        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_WAYLAND;
 
-    } else {
-        // automatically this is xcb
-        gfxWindow.displayType = PAL_GRAPHICS_WINDOW_DISPLAY_TYPE_XCB;
+    } else if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_X11) {
+        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_X11;
+
+    } else if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WIN32) {
+        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_WIN32;
     }
 
     PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    result = palInitGraphics(nullptr, nullptr);
+    result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize graphics: %s", error);
+        logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
     }
 
@@ -155,8 +155,7 @@ PalBool textureTest()
     int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -175,8 +174,7 @@ PalBool textureTest()
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -186,8 +184,7 @@ PalBool textureTest()
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
+            logResult(result, "Failed to get adapter capabilities");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
@@ -200,8 +197,7 @@ PalBool textureTest()
         // We want an adapter that supports spirv 1.0 or dxil 6.0
         result = palGetAdapterInfo(adapter, &adapterInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter info: %s", error);
+            logResult(result, "Failed to get adapter info");
             return PAL_FALSE;
         }
 
@@ -240,16 +236,20 @@ PalBool textureTest()
 
     result = palCreateDevice(adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create device: %s", error);
+        logResult(result, "Failed to create device");
         return PAL_FALSE;
     }
 
     // create surface
-    result = palCreateSurface(device, &gfxWindow, &surface);
+    result = palCreateSurface(
+        device, 
+        winHandle.nativeWindow, 
+        winHandle.nativeInstance, 
+        windowInstanceType, 
+        &surface);
+        
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create surface: %s", error);
+        logResult(result, "Failed to create surface");
         return PAL_FALSE;
     }
 
@@ -258,8 +258,7 @@ PalBool textureTest()
     for (int i = 0; i < caps.maxGraphicsQueues; i++) {
         result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create queue: %s", error);
+            logResult(result, "Failed to create queue");
             return PAL_FALSE;
         }
 
@@ -282,8 +281,7 @@ PalBool textureTest()
     PalSurfaceCapabilities surfaceCaps = {0};
     result = palGetSurfaceCapabilities(device, surface, &surfaceCaps);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get surface capabilities: %s", error);
+        logResult(result, "Failed to get surface capabilities");
         return PAL_FALSE;
     }
 
@@ -318,8 +316,7 @@ PalBool textureTest()
 
     result = palCreateSwapchain(device, queue, surface, &swapchainCreateInfo, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create swapchain: %s", error);
+        logResult(result, "Failed to create swapchain");
         return PAL_FALSE;
     }
 
@@ -336,8 +333,7 @@ PalBool textureTest()
     PalImageInfo imageInfo;
     result = palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get image info: %s", error);
+        logResult(result, "Failed to get image info");
         return PAL_FALSE;
     }
 
@@ -359,16 +355,14 @@ PalBool textureTest()
 
         result = palCreateImageView(device, image, &imageViewCreateInfo, &imageViews[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create image view: %s", error);
+            logResult(result, "Failed to create image view");
             return PAL_FALSE;
         }
 
         // create render finished semaphores
         result = palCreateSemaphore(device, PAL_FALSE, &renderFinishedSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create semaphore: %s", error);
+            logResult(result, "Failed to create semaphore");
             return PAL_FALSE;
         }
 
@@ -377,8 +371,7 @@ PalBool textureTest()
 
     result = palCreateCommandPool(device, queue, &cmdPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create command pool: %s", error);
+        logResult(result, "Failed to create command pool");
         return PAL_FALSE;
     }
 
@@ -386,15 +379,13 @@ PalBool textureTest()
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         result = palCreateSemaphore(device, PAL_FALSE, &imageAvailableSemaphores[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create semaphore: %s", error);
+            logResult(result, "Failed to create semaphore");
             return PAL_FALSE;
         }
 
         result = palCreateFence(device, PAL_TRUE, &inFlightFences[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create fence: %s", error);
+            logResult(result, "Failed to create fence");
             return PAL_FALSE;
         }
 
@@ -405,8 +396,7 @@ PalBool textureTest()
             &cmdBuffers[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to allocate command buffer: %s", error);
+            logResult(result, "Failed to allocate command buffer");
             return PAL_FALSE;
         }
     }
@@ -427,100 +417,37 @@ PalBool textureTest()
     bufferCreateInfo.size = sizeof(vertices);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_VERTEX;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_TRANSFER_DST; // will recieve
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
+
     result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create vertex buffer: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC; // will send
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
     result = palCreateBuffer(device, &bufferCreateInfo, &stagingBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create staging buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    // get buffer memory requirement and allocate memory
-    PalMemoryRequirements vertexBufferMemReq = {0};
-    PalMemoryRequirements stagingBufferMemReq = {0};
-
-    result = palGetBufferMemoryRequirements(vertexBuffer, &vertexBufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    // we need to check if the memory type we want are supported
-    // but almost every GPU supports a GPU only memory
-    // and CPU writable memory
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        vertexBufferMemReq.memoryMask,
-        vertexBufferMemReq.size,
-        &vertexBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_CPU_UPLOAD,
-        stagingBufferMemReq.memoryMask,
-        stagingBufferMemReq.size,
-        &stagingBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    // bind memory
-    result = palBindBufferMemory(vertexBuffer, vertexBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(stagingBuffer, stagingBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
     // map the staging buffer and upload the vertices
     void* ptr = nullptr;
-    result = palMapBufferMemory(stagingBuffer, 0, sizeof(vertices), &ptr);
+    result = palMapBuffer(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map buffer memory: %s", error);
+        logResult(result, "Failed to map memory");
         return PAL_FALSE;
     }
 
     memcpy(ptr, vertices, sizeof(vertices));
-    palUnmapBufferMemory(stagingBuffer);
+    palUnmapBuffer(stagingBuffer);
 
     PalFence* fence = nullptr;
     result = palCreateFence(device, PAL_FALSE, &fence);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create fence: %s", error);
+        logResult(result, "Failed to create fence");
         return PAL_FALSE;
     }
 
@@ -533,7 +460,8 @@ PalBool textureTest()
     // create image for the texture
     PalImage* checkerboard = nullptr;
     PalImageCreateInfo imageCreateInfo = {0};
-    imageCreateInfo.depthOrArraySize = 1;
+    imageCreateInfo.arrayLayerCount = 1;
+    imageCreateInfo.depth = 1;
     imageCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
     imageCreateInfo.mipLevelCount = 1; // simple
     imageCreateInfo.sampleCount = PAL_SAMPLE_COUNT_1; // simple
@@ -541,41 +469,11 @@ PalBool textureTest()
     imageCreateInfo.usages = PAL_IMAGE_USAGE_TRANSFER_DST | PAL_IMAGE_USAGE_SAMPLED;
     imageCreateInfo.width = TEXTURE_WIDTH;
     imageCreateInfo.height = TEXTURE_HEIGHT;
+    imageCreateInfo.memoryUsage = PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY;
 
     result = palCreateImage(device, &imageCreateInfo, &checkerboard);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create image: %s", error);
-        return PAL_FALSE;
-    }
-
-    // allocate memory for the image
-    PalMemoryRequirements imageMemReq = {0};
-    result = palGetImageMemoryRequirements(checkerboard, &imageMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get image memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    PalMemory* checkerboardMemory = nullptr;
-    result = palAllocateMemory(
-        device, 
-        PAL_MEMORY_TYPE_GPU_ONLY, 
-        imageMemReq.memoryMask, 
-        imageMemReq.size, 
-        &checkerboardMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindImageMemory(checkerboard, checkerboardMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind image memory: %s", error);
+        logResult(result, "Failed to create image");
         return PAL_FALSE;
     }
 
@@ -599,8 +497,7 @@ PalBool textureTest()
         &imageCopyStagingBufferSize);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to compute image copy staging buffer info: %s", error);
+        logResult(result, "Failed to compute buffer info");
         return PAL_FALSE;
     }
 
@@ -613,54 +510,24 @@ PalBool textureTest()
     PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
     imageStagingBufferCreateInfo.size = imageCopyStagingBufferSize;
     imageStagingBufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
 
     result = palCreateBuffer(device, &imageStagingBufferCreateInfo, &imageStagingBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create image staging buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    PalMemoryRequirements imageStagingBufferMemReq = {0};
-    result = palGetBufferMemoryRequirements(imageStagingBuffer, &imageStagingBufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get image staging buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    PalMemory* imageStagingBufferMemory = nullptr;
-    result = palAllocateMemory(
-        device, 
-        PAL_MEMORY_TYPE_CPU_UPLOAD, 
-        imageStagingBufferMemReq.memoryMask, 
-        imageStagingBufferMemReq.size, 
-        &imageStagingBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(imageStagingBuffer, imageStagingBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind image staging buffer memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
     // copy data
     void* data = nullptr;
-    result = palMapBufferMemory(
+    result = palMapBuffer(
         imageStagingBuffer,
         0, 
         imageStagingBufferCreateInfo.size, 
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map buffer memory: %s", error);
+        logResult(result, "Failed to map memory");
         return PAL_FALSE;
     }
 
@@ -673,12 +540,11 @@ PalBool textureTest()
         &bufferImageCopyInfo);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to write to image copy staging buffer: %s", error);
+        logResult(result, "Failed to write to buffer");
         return PAL_FALSE;
     }
 
-    palUnmapBufferMemory(imageStagingBuffer);
+    palUnmapBuffer(imageStagingBuffer);
 
     // use the first command buffer to upload the copy
     // and reset it when done
@@ -686,8 +552,7 @@ PalBool textureTest()
     // to see if we have to wait for the copy to be executed
     result = palCmdBegin(cmdBuffers[0], nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to begin command buffer: %s", error);
+        logResult(result, "Failed to begin command buffer");
         return PAL_FALSE;
     }
 
@@ -696,32 +561,23 @@ PalBool textureTest()
 
     result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &copyInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer: %s", error);
+        logResult(result, "Failed to copy buffer");
         return PAL_FALSE;
     }
 
-    PalShaderStage vertexShaderStage[] = { PAL_SHADER_STAGE_VERTEX };
-    PalUsageStateInfo oldUsageStateInfo = {0};
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    PalUsageState oldUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    PalUsageState newUsageState = PAL_USAGE_STATE_VERTEX_READ;
 
-    PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStageCount = 1;
-    newUsageStateInfo.shaderStages = vertexShaderStage;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_VERTEX_READ;
-
-    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, oldUsageState, newUsageState);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
     // copy image staging buffer to the checkerboard image
     // first the image must be in the correct layout
-    PalUsageStateInfo oldImageUsageState = {0};
-    PalUsageStateInfo newImageUsageState = {0};
-    newImageUsageState.usageState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    PalUsageState oldImageUsageState = PAL_USAGE_STATE_UNDEFINED;
+    PalUsageState newImageUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
 
     // set a barrier on the image to transition it into transfer dst state
     PalImageSubresourceRange checkerboardRange = {0};
@@ -738,8 +594,7 @@ PalBool textureTest()
         &newImageUsageState);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set image barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
@@ -750,18 +605,12 @@ PalBool textureTest()
         &bufferImageCopyInfo);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer to image: %s", error);
+        logResult(result, "Failed to copy buffer");
         return PAL_FALSE;
     }
 
-    // we should transition the image into a shader read state so we dont do that
-    // in the main loop
-    PalShaderStage fragmentShaderStage[] = { PAL_SHADER_STAGE_FRAGMENT };
     oldImageUsageState = newImageUsageState;
-    newImageUsageState.usageState = PAL_USAGE_STATE_SHADER_READ;
-    newImageUsageState.shaderStageCount = 1;
-    newImageUsageState.shaderStages = fragmentShaderStage; // fragment shader will read
+    newImageUsageState = PAL_USAGE_STATE_SHADER_READ;
 
     result = palCmdImageBarrier(
         cmdBuffers[0], 
@@ -771,15 +620,13 @@ PalBool textureTest()
         &newImageUsageState);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set image barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to end command buffer: %s", error);
+        logResult(result, "Failed to end command buffer");
         return PAL_FALSE;
     }
 
@@ -788,8 +635,7 @@ PalBool textureTest()
     submitInfo.fence = fence;
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to submit command buffer: %s", error);
+        logResult(result, "Failed to submit command buffer");
         return PAL_FALSE;
     }
 
@@ -808,8 +654,7 @@ PalBool textureTest()
         &checkerboardImageView);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create checkerboard image view: %s", error);
+        logResult(result, "Failed to create image view");
         return PAL_FALSE;
     }
 
@@ -833,8 +678,7 @@ PalBool textureTest()
         &sampler);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create sampler: %s", error);
+        logResult(result, "Failed to create sampler");
         return PAL_FALSE;
     }
 
@@ -893,8 +737,7 @@ PalBool textureTest()
 
         result = palCreateShader(device, &shaderCreateInfo, &shaders[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create shader: %s", error);
+            logResult(result, "Failed to create shader");
             return PAL_FALSE;
         }
 
@@ -913,18 +756,13 @@ PalBool textureTest()
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
 
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_FRAGMENT };
-    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
-    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
-
     result = palCreateDescriptorSetLayout(
         device,
         &descriptorSetLayoutcreateInfo,
         &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create descriptor set layout: %s", error);
+        logResult(result, "Failed to create descriptor set layout");
         return PAL_FALSE;
     }
 
@@ -938,13 +776,12 @@ PalBool textureTest()
 
     PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
-    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 2;
+    descriptorPoolCreateInfo.bindingSizeCount = 2;
     descriptorPoolCreateInfo.bindingSizes = storageBufferBindingsizes;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create descriptor pool: %s", error);
+        logResult(result, "Failed to create descriptor pool");
         return PAL_FALSE;
     }
 
@@ -952,8 +789,7 @@ PalBool textureTest()
     // using the layout we created above
     result = palAllocateDescriptorSet(device, descriptorPool, descriptorSetLayout, &descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate descriptor set: %s", error);
+        logResult(result, "Failed to allocate descriptor set");
         return PAL_FALSE;
     }
 
@@ -989,8 +825,7 @@ PalBool textureTest()
 
     result = palUpdateDescriptorSet(device, 2, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to update descriptor set: %s", error);
+        logResult(result, "Failed to update descriptor set");
         return PAL_FALSE;
     }
 
@@ -1001,15 +836,14 @@ PalBool textureTest()
 
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create pipeline layout: %s", error);
+        logResult(result, "Failed to create pipeline layout");
         return PAL_FALSE;
     }
 
     PalRenderingLayoutInfo renderingLayoutInfo = {0};
     renderingLayoutInfo.colorAttachentCount = 1;
     renderingLayoutInfo.colorAttachmentsFormat = &imageInfo.format;
-    renderingLayoutInfo.multisampleCount = PAL_SAMPLE_COUNT_1;
+    renderingLayoutInfo.sampleCount = PAL_SAMPLE_COUNT_1;
     renderingLayoutInfo.viewCount = 1;
 
     // create graphics pipeline
@@ -1019,12 +853,10 @@ PalBool textureTest()
 
     // position
     vertexAttributes[0].semanticID = PAL_VERTEX_SEMANTIC_ID_POSITION;
-    vertexAttributes[0].semanticName = nullptr; // use default
     vertexAttributes[0].type = PAL_VERTEX_TYPE_FLOAT2;
 
     // texture coordinates
     vertexAttributes[1].semanticID = PAL_VERTEX_SEMANTIC_ID_TEXCOORD;
-    vertexAttributes[1].semanticName = nullptr; // use default
     vertexAttributes[1].type = PAL_VERTEX_TYPE_FLOAT2;
 
     vertexLayout.attributeCount = 2;
@@ -1055,8 +887,7 @@ PalBool textureTest()
 
     result = palCreateGraphicsPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create graphics pipeline: %s", error);
+        logResult(result, "Failed to create pipeline");
         return PAL_FALSE;
     }
 
@@ -1067,19 +898,14 @@ PalBool textureTest()
     // wait for the vertices copy to be done
     result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for fence: %s", error);
+        logResult(result, "Failed to wait fence");
         return PAL_FALSE;
     }
 
     // the vertices have been copied
     palDestroyFence(fence);
     palDestroyBuffer(stagingBuffer);
-    palFreeMemory(device, stagingBufferMemory);
-
-    // we can destroy the image staging buffer
     palDestroyBuffer(imageStagingBuffer);
-    palFreeMemory(device, imageStagingBufferMemory);
 
     // main loop
     uint32_t currentFrame = 0;
@@ -1096,12 +922,12 @@ PalBool textureTest()
         PalEvent event;
         while (palPollEvent(eventDriver, &event)) {
             switch (event.type) {
-                case PAL_EVENT_WINDOW_CLOSE: {
+                case PAL_EVENT_TYPE_WINDOW_CLOSE: {
                     running = PAL_FALSE;
                     break;
                 }
 
-                case PAL_EVENT_KEYDOWN: {
+                case PAL_EVENT_TYPE_KEYDOWN: {
                     PalKeycode keycode = 0;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_ESCAPE) {
@@ -1114,8 +940,7 @@ PalBool textureTest()
 
         result = palWaitFence(inFlightFences[currentFrame], PAL_INFINITE);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to wait fence: %s", error);
+            logResult(result, "Failed to wait fence");
             return PAL_FALSE;
         }
 
@@ -1128,16 +953,14 @@ PalBool textureTest()
         uint32_t imageIndex = 0;
         result = palGetNextSwapchainImage(swapchain, &nextImageInfo, &imageIndex);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get next swapchain image: %s", error);
+            logResult(result, "Failed to get next swapchain image");
             return PAL_FALSE;
         }
 
         if (inFlightImages[imageIndex] != nullptr) {
             result = palWaitFence(inFlightImages[imageIndex], PAL_INFINITE);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to wait fence: %s", error);
+                logResult(result, "Failed to wait fence");
                 return PAL_FALSE;
             }
         }
@@ -1146,8 +969,7 @@ PalBool textureTest()
         if (adapterFeatures & PAL_ADAPTER_FEATURE_FENCE_RESET) {
             result = palResetFence(inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to wait fence: %s", error);
+                logResult(result, "Failed to wait fence");
                 return PAL_FALSE;
             }
 
@@ -1157,8 +979,7 @@ PalBool textureTest()
 
             result = palCreateFence(device, PAL_FALSE, &inFlightFences[currentFrame]);
             if (result != PAL_RESULT_SUCCESS) {
-                const char* error = palFormatResult(result);
-                palLog(nullptr, "Failed to wait fence: %s", error);
+                logResult(result, "Failed to wait fence");
                 return PAL_FALSE;
             }
         }
@@ -1166,22 +987,19 @@ PalBool textureTest()
         // reset the command buffer
         result = palResetCommandBuffer(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to reset command buffer: %s", error);
+            logResult(result, "Failed to reset command buffer");
             return PAL_FALSE;
         }
 
         result = palCmdBegin(cmdBuffers[currentFrame], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to begin command buffer: %s", error);
+            logResult(result, "Failed to begin command buffer");
             return PAL_FALSE;
         }
 
         // change the state of the image view to make it renderable
-        PalUsageStateInfo oldUsageStateInfo = {0};
-        PalUsageStateInfo newUsageStateInfo = {0};
-        newUsageStateInfo.usageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+        PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
+        PalUsageState newUsageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
 
         PalImageSubresourceRange imageRange = {0};
         imageRange.layerArrayCount = 1;
@@ -1194,12 +1012,11 @@ PalBool textureTest()
             cmdBuffers[currentFrame],
             image,
             &imageRange,
-            &oldUsageStateInfo,
-            &newUsageStateInfo);
+            oldUsageState,
+            newUsageState);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set image view barrier: %s", error);
+            logResult(result, "Failed to set barrier");
             return PAL_FALSE;
         }
 
@@ -1222,38 +1039,33 @@ PalBool textureTest()
 
         result = palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to begin rendering: %s", error);
+            logResult(result, "Failed to begin rendering");
             return PAL_FALSE;
         }
 
         // bind pipeline
         result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind pipeline: %s", error);
+            logResult(result, "Failed to bind pipeline");
             return PAL_FALSE;
         }
 
         result = palCmdBindDescriptorSet(cmdBuffers[currentFrame], 0, descriptorSet);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind descriptor set: %s", error);
+            logResult(result, "Failed to bind descriptor set");
             return PAL_FALSE;
         }
 
         // set viewport and scissors
         result = palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set viewport: %s", error);
+            logResult(result, "Failed to set viewport");
             return PAL_FALSE;
         }
 
         result = palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set scissors: %s", error);
+            logResult(result, "Failed to set scissor");
             return PAL_FALSE;
         }
 
@@ -1267,45 +1079,40 @@ PalBool textureTest()
             offset);
             
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind vertex buffer: %s", error);
+            logResult(result, "Failed to bind vertex buffer");
             return PAL_FALSE;
         }
 
         result = palCmdDraw(cmdBuffers[currentFrame], 6, 1, 0, 0);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to issue draw command: %s", error);
+            logResult(result, "Failed to issue draw command");
             return PAL_FALSE;
         }
 
         result = palCmdEndRendering(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to end rendering: %s", error);
+            logResult(result, "Failed to end rendering");
             return PAL_FALSE;
         }
 
         // change the state of the image view to make it presentable
-        oldUsageStateInfo = newUsageStateInfo;
-        newUsageStateInfo.usageState = PAL_USAGE_STATE_PRESENT;
+        oldUsageState = newUsageState;
+        newUsageState = PAL_USAGE_STATE_PRESENT;
         result = palCmdImageBarrier(
             cmdBuffers[currentFrame],
             image,
             &imageRange,
-            &oldUsageStateInfo,
-            &newUsageStateInfo);
+            oldUsageState,
+            newUsageState);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set image view barrier: %s", error);
+            logResult(result, "Failed to set barrier");
             return PAL_FALSE;
         }
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to end command buffer: %s", error);
+            logResult(result, "Failed to end command buffer");
             return PAL_FALSE;
         }
 
@@ -1318,19 +1125,14 @@ PalBool textureTest()
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to submit command buffer: %s", error);
+            logResult(result, "Failed to submit command buffer");
             return PAL_FALSE;
         }
 
         // present
-        PalSwapchainPresentInfo presentInfo = {0};
-        presentInfo.imageIndex = imageIndex;
-        presentInfo.waitSemaphore = renderFinishedSemaphores[imageIndex];
-        result = palPresentSwapchain(swapchain, &presentInfo);
+        result = palPresentSwapchain(swapchain, imageIndex, renderFinishedSemaphores[imageIndex]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to present swapchain: %s", error);
+            logResult(result, "Failed to present swapchain");
             return PAL_FALSE;
         }
 
@@ -1339,8 +1141,7 @@ PalBool textureTest()
 
     result = palWaitQueue(queue);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for queue: %s", error);
+        logResult(result, "Failed to wait queue");
         return PAL_FALSE;
     }
 
@@ -1364,10 +1165,7 @@ PalBool textureTest()
     palDestroySampler(sampler);
     palDestroyImageView(checkerboardImageView);
     palDestroyImage(checkerboard);
-    palFreeMemory(device, checkerboardMemory);
-
     palDestroyBuffer(vertexBuffer);
-    palFreeMemory(device, vertexBufferMemory);
 
     palDestroyCommandPool(cmdPool);
     palDestroySwapchain(swapchain);

@@ -641,19 +641,6 @@ PalResult PAL_CALL createDeviceVk(
         next = &descIndex;
     }
 
-    if (features & PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS) {
-        if (!(features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
-            if (props.apiVersion < VK_API_VERSION_1_2) {
-                extensions[extCount++] = "VK_EXT_descriptor_indexing";
-            }
-
-            descIndex.pNext = next;
-            next = &descIndex;
-        }
-        
-        descIndex.descriptorBindingPartiallyBound = PAL_TRUE;
-    }
-
     if (features & PAL_ADAPTER_FEATURE_MULTI_VIEW) {
         if (props.apiVersion < VK_API_VERSION_1_2) {
             extensions[extCount++] = "VK_KHR_multiview";

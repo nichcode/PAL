@@ -34,8 +34,6 @@ PalBool multiDescriptorSetTest()
 
     PalBuffer* buffers[3];
     PalBuffer* stagingBuffers[3];
-    PalMemory* bufferMemories[3];
-    PalMemory* stagingBufferMemories[3];
 
     PalDescriptorPool* descriptorPool = nullptr;
     PalDescriptorSetLayout* descriptorSetLayout;
@@ -49,10 +47,9 @@ PalBool multiDescriptorSetTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize graphics: %s", error);
+        logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
     }
 
@@ -60,8 +57,7 @@ PalBool multiDescriptorSetTest()
     int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -80,8 +76,7 @@ PalBool multiDescriptorSetTest()
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -92,8 +87,7 @@ PalBool multiDescriptorSetTest()
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
+            logResult(result, "Failed to get adapter capabilities");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
@@ -118,8 +112,7 @@ PalBool multiDescriptorSetTest()
         // We want an adapter that supports spirv 1.0 or dxil 6.0
         result = palGetAdapterInfo(adapter, &adapterInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter info: %s", error);
+            logResult(result, "Failed to get adapter info");
             return PAL_FALSE;
         }
 
@@ -152,23 +145,20 @@ PalBool multiDescriptorSetTest()
     // create a device
     result = palCreateDevice(adapter, 0, &device);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create device: %s", error);
+        logResult(result, "Failed to create device");
         return PAL_FALSE;
     }
 
     // create a compute command queue
     result = palCreateQueue(device, PAL_QUEUE_TYPE_COMPUTE, &queue);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create queue: %s", error);
+        logResult(result, "Failed to create queue");
         return PAL_FALSE;
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create command pool: %s", error);
+        logResult(result, "Failed to create command pool");
         return PAL_FALSE;
     }
 
@@ -179,8 +169,7 @@ PalBool multiDescriptorSetTest()
         &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate command buffer: %s", error);
+        logResult(result, "Failed to allocate command buffer");
         return PAL_FALSE;
     }
 
@@ -222,8 +211,7 @@ PalBool multiDescriptorSetTest()
 
     result = palCreateShader(device, &shaderCreateInfo, &shader);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create compute shader: %s", error);
+        logResult(result, "Failed to create shader");
         return PAL_FALSE;
     }
 
@@ -236,78 +224,18 @@ PalBool multiDescriptorSetTest()
 
     for (int i = 0; i < 3; i++) {
         bufferCreateInfo.usages = PAL_BUFFER_USAGE_STORAGE | PAL_BUFFER_USAGE_TRANSFER_SRC;
-
+        bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
         result = palCreateBuffer(device, &bufferCreateInfo, &buffers[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create buffer: %s", error);
+            logResult(result, "Failed to create buffer");
             return PAL_FALSE;
         }
 
         bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_DST;
+        bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK;
         result = palCreateBuffer(device, &bufferCreateInfo, &stagingBuffers[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to create buffer: %s", error);
-            return PAL_FALSE;
-        }
-
-        // get buffer memory requirement and allocate memory
-        PalMemoryRequirements memReq = {0};
-        PalMemoryRequirements stagingMemReq = {0};
-
-        result = palGetBufferMemoryRequirements(buffers[i], &memReq);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-            return PAL_FALSE;
-        }
-
-        result = palGetBufferMemoryRequirements(stagingBuffers[i], &stagingMemReq);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-            return PAL_FALSE;
-        }
-
-        result = palAllocateMemory(
-            device,
-            PAL_MEMORY_TYPE_GPU_ONLY,
-            memReq.memoryMask,
-            memReq.size,
-            &bufferMemories[i]);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-            return PAL_FALSE;
-        }
-
-        result = palAllocateMemory(
-            device,
-            PAL_MEMORY_TYPE_CPU_READBACK,
-            stagingMemReq.memoryMask,
-            stagingMemReq.size,
-            &stagingBufferMemories[i]);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-            return PAL_FALSE;
-        }
-
-        // bind memory
-        result = palBindBufferMemory(buffers[i], bufferMemories[i], 0);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind memory: %s", error);
-            return PAL_FALSE;
-        }
-
-        result = palBindBufferMemory(stagingBuffers[i], stagingBufferMemories[i], 0);
-        if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind memory: %s", error);
+            logResult(result, "Failed to create buffer");
             return PAL_FALSE;
         }
     }
@@ -321,18 +249,13 @@ PalBool multiDescriptorSetTest()
     descriptorSetLayoutcreateInfo.bindingCount = 1;
     descriptorSetLayoutcreateInfo.bindings = &descriptorBinding;
 
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_COMPUTE };
-    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
-    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
-
     result = palCreateDescriptorSetLayout(
         device,
         &descriptorSetLayoutcreateInfo,
         &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create descriptor set layout: %s", error);
+        logResult(result, "Failed to create descriptor set layout");
         return PAL_FALSE;
     }
 
@@ -343,13 +266,12 @@ PalBool multiDescriptorSetTest()
 
     PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
     descriptorPoolCreateInfo.maxDescriptorSets = 3;
-    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 1; // one binding type
+    descriptorPoolCreateInfo.bindingSizeCount = 1; // one binding type
     descriptorPoolCreateInfo.bindingSizes = &storageBufferBindingsize;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create descriptor pool: %s", error);
+        logResult(result, "Failed to create descriptor pool");
         return PAL_FALSE;
     }
 
@@ -362,8 +284,7 @@ PalBool multiDescriptorSetTest()
             &descriptorSets[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to allocate descriptor set: %s", error);
+            logResult(result, "Failed to allocate descriptor set");
             return PAL_FALSE;
         }
     }
@@ -393,8 +314,7 @@ PalBool multiDescriptorSetTest()
 
     result = palUpdateDescriptorSet(device, 3, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to update descriptor set: %s", error);
+        logResult(result, "Failed to update descriptor set");
         return PAL_FALSE;
     }
 
@@ -403,8 +323,6 @@ PalBool multiDescriptorSetTest()
     PalPushConstantRange pushConstantRange = {0};
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(PushConstant); // must match shader
-    pushConstantRange.shaderStageCount = 1;
-    pushConstantRange.shaderStages = shaderStages;
 
     // create pipeline layout
     // even if the descriptor set layout is identical, pipeline layout creation needs
@@ -422,8 +340,7 @@ PalBool multiDescriptorSetTest()
 
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create pipeline layout: %s", error);
+        logResult(result, "Failed to create pipeline layout");
         return PAL_FALSE;
     }
 
@@ -434,8 +351,7 @@ PalBool multiDescriptorSetTest()
 
     result = palCreateComputePipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create compute pipeline: %s", error);
+        logResult(result, "Failed to create pipeline");
         return PAL_FALSE;
     }
 
@@ -444,16 +360,14 @@ PalBool multiDescriptorSetTest()
     // create fence
     result = palCreateFence(device, PAL_FALSE, &fence);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create fence: %s", error);
+        logResult(result, "Failed to create fence");
         return PAL_FALSE;
     }
 
     // record commands
     result = palCmdBegin(cmdBuffer, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to begin command buffer: %s", error);
+        logResult(result, "Failed to begin command buffer");
         return PAL_FALSE;
     }
 
@@ -481,22 +395,18 @@ PalBool multiDescriptorSetTest()
 
     result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind pipeline: %s", error);
+        logResult(result, "Failed to bind pipeline");
         return PAL_FALSE;
     }
 
     result = palCmdPushConstants(
         cmdBuffer,
-        1,
-        shaderStages,
         0,
         sizeof(PushConstant),
         &pushConstant);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to push constants: %s", error);
+        logResult(result, "Failed to push constant");
         return PAL_FALSE;
     }
 
@@ -504,8 +414,7 @@ PalBool multiDescriptorSetTest()
     for (int i = 0; i < 3; i++) {
         result = palCmdBindDescriptorSet(cmdBuffer, i, descriptorSets[i]);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to bind descriptor set: %s", error);
+            logResult(result, "Failed to bind descriptor set");
             return PAL_FALSE;
         }
     }
@@ -554,34 +463,25 @@ PalBool multiDescriptorSetTest()
 
         result = palCmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to dispatch: %s", error);
+            logResult(result, "Failed to issue dispatch command");
             return PAL_FALSE;
         }
     }
     palFree(nullptr, workGroupInfos);
 
     // set a barrier so we only read from the buffer after the shader has written to it
-    PalUsageStateInfo oldUsageStateInfo = {0};
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
-    oldUsageStateInfo.shaderStageCount = 1;
-    oldUsageStateInfo.shaderStages = shaderStages;
-
-    PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStageCount = 0;
-    newUsageStateInfo.shaderStages = nullptr;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
+    PalUsageState oldUsageState = PAL_USAGE_STATE_SHADER_WRITE;
+    PalUsageState newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
 
     for (int i = 0; i < 3; i++) {
         result = palCmdBufferBarrier(
             cmdBuffer, 
             buffers[i], 
-            &oldUsageStateInfo, 
-            &newUsageStateInfo);
+            oldUsageState, 
+            newUsageState);
 
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to set buffer barrier: %s", error);
+            logResult(result, "Failed to set barrier");
             return PAL_FALSE;
         }
 
@@ -591,16 +491,14 @@ PalBool multiDescriptorSetTest()
 
         result = palCmdCopyBuffer(cmdBuffer, stagingBuffers[i], buffers[i], &copyInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to copy buffer: %s", error);
+            logResult(result, "Failed to copy buffer");
             return PAL_FALSE;
         }
     }
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to end command buffer: %s", error);
+        logResult(result, "Failed to end command buffer");
         return PAL_FALSE;
     }
 
@@ -610,16 +508,14 @@ PalBool multiDescriptorSetTest()
     submitInfo.fence = fence;
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to submit command buffer: %s", error);
+        logResult(result, "Failed to submit command buffer");
         return PAL_FALSE;
     }
 
     // wait for the fence
     result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for fence: %s", error);
+        logResult(result, "Failed to wait fence");
         return PAL_FALSE;
     }
 
@@ -632,10 +528,9 @@ PalBool multiDescriptorSetTest()
         // now our staging buffer has the contents of the GPU buffer
         // we map it and copy the contents to a ppm buffer and save it
         void* ptr = nullptr;
-        result = palMapBufferMemory(stagingBuffers[i], 0, bufferBytes, &ptr);
+        result = palMapBuffer(stagingBuffers[i], 0, bufferBytes, &ptr);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to map buffer memory: %s", error);
+            logResult(result, "Failed to map memory");
             return PAL_FALSE;
         }
 
@@ -657,7 +552,7 @@ PalBool multiDescriptorSetTest()
         }
 
         fclose(file);
-        palUnmapBufferMemory(stagingBuffers[i]);
+        palUnmapBuffer(stagingBuffers[i]);
     }
 
     palDestroyPipeline(pipeline);
@@ -670,10 +565,7 @@ PalBool multiDescriptorSetTest()
 
     for (int i = 0; i < 3; i++) {
         palDestroyBuffer(buffers[i]);
-        palFreeMemory(device, bufferMemories[i]);
-
         palDestroyBuffer(stagingBuffers[i]);
-        palFreeMemory(device, stagingBufferMemories[i]);
     }
 
     palDestroyFence(fence);

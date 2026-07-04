@@ -430,7 +430,7 @@ PalResult PAL_CALL bindBufferMemoryVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL mapBufferMemoryVk(
+PalResult PAL_CALL mapBufferVk(
     PalBuffer* buffer,
     uint64_t offset,
     uint64_t size,
@@ -451,7 +451,7 @@ PalResult PAL_CALL mapBufferMemoryVk(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL unmapBufferMemoryVk(PalBuffer* buffer)
+void PAL_CALL unmapBufferVk(PalBuffer* buffer)
 {
     BufferVk* vkBuffer = (BufferVk*)buffer;
     s_Vk.unmapMemory(vkBuffer->device->handle, vkBuffer->memory->handle);

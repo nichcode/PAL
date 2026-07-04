@@ -3,6 +3,7 @@
 #include "tests.h"
 
 #define BUFFER_SIZE 400
+#define max(a, b) (a > b) ? a : b
 
 typedef struct {
     float color[3]; // closest hit and miss color
@@ -15,13 +16,6 @@ static void PAL_CALL onGraphicsDebug(
     const char* msg)
 {
     palLog(nullptr, msg);
-}
-
-static inline uint32_t _max(
-    uint32_t a,
-    uint32_t b)
-{
-    return (a > b) ? a : b;
 }
 
 PalBool rayTracingTest()
@@ -42,14 +36,6 @@ PalBool rayTracingTest()
     PalBuffer* tlasBuffer = nullptr;
     PalBuffer* scratchBuffer = nullptr;
 
-    PalMemory* bufferMemory = nullptr;
-    PalMemory* stagingBufferMemory = nullptr;
-    PalMemory* vertexBufferMemory = nullptr;
-    PalMemory* instanceBufferMemory = nullptr;
-    PalMemory* blasBufferMemory = nullptr;
-    PalMemory* tlasBufferMemory = nullptr;
-    PalMemory* scratchBufferMemory = nullptr;
-
     PalDescriptorSetLayout* descriptorSetLayout = nullptr;
     PalDescriptorPool* descriptorPool = nullptr;
     PalDescriptorSet* descriptorSet = nullptr;
@@ -65,10 +51,9 @@ PalBool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to initialize graphics: %s", error);
+        logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
     }
 
@@ -76,8 +61,7 @@ PalBool rayTracingTest()
     int32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -96,8 +80,7 @@ PalBool rayTracingTest()
 
     result = palEnumerateAdapters(&adapterCount, adapters);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get query adapters: %s", error);
+        logResult(result, "Failed to get adapters");
         return PAL_FALSE;
     }
 
@@ -108,8 +91,7 @@ PalBool rayTracingTest()
         adapter = adapters[i];
         result = palGetAdapterCapabilities(adapter, &caps);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter capabilities: %s", error);
+            logResult(result, "Failed to get adapter capabilities");
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
@@ -134,8 +116,7 @@ PalBool rayTracingTest()
         // We want an adapter that supports spirv 1.4 or dxil 6.3
         result = palGetAdapterInfo(adapter, &adapterInfo);
         if (result != PAL_RESULT_SUCCESS) {
-            const char* error = palFormatResult(result);
-            palLog(nullptr, "Failed to get adapter info: %s", error);
+            logResult(result, "Failed to get adapter info");
             return PAL_FALSE;
         }
 
@@ -170,23 +151,20 @@ PalBool rayTracingTest()
     features |= PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS;
     result = palCreateDevice(adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create device: %s", error);
+        logResult(result, "Failed to create device");
         return PAL_FALSE;
     }
 
     // create a graphics command queue
     result = palCreateQueue(device, PAL_QUEUE_TYPE_GRAPHICS, &queue);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create queue: %s", error);
+        logResult(result, "Failed to create queue");
         return PAL_FALSE;
     }
 
     result = palCreateCommandPool(device, queue, &cmdPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create command pool: %s", error);
+        logResult(result, "Failed to create command pool");
         return PAL_FALSE;
     }
 
@@ -197,8 +175,7 @@ PalBool rayTracingTest()
         &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate command buffer: %s", error);
+        logResult(result, "Failed to allocate command buffer");
         return PAL_FALSE;
     }
 
@@ -249,8 +226,7 @@ PalBool rayTracingTest()
 
     result = palCreateShader(device, &shaderCreateInfo, &rayTracingShader);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create shader: %s", error);
+        logResult(result, "Failed to create shader");
         return PAL_FALSE;
     }
 
@@ -260,83 +236,21 @@ PalBool rayTracingTest()
     PalBufferCreateInfo bufferCreateInfo = {0};
     bufferCreateInfo.size = bufferBytes;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_STORAGE | PAL_BUFFER_USAGE_TRANSFER_SRC;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &buffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create buffer: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
     bufferCreateInfo.size = bufferBytes;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_DST;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &stagingBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create staging buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    // get buffer memory requirement and allocate memory
-    PalMemoryRequirements bufferMemReq = {0};
-    PalMemoryRequirements stagingBufferMemReq = {0};
-
-    result = palGetBufferMemoryRequirements(buffer, &bufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palGetBufferMemoryRequirements(stagingBuffer, &stagingBufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    // we need to check if the memory type we want are supported
-    // but almost every GPU supports a GPU only memory
-    // and CPU writable memory
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        bufferMemReq.memoryMask,
-        bufferMemReq.size,
-        &bufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_CPU_READBACK,
-        stagingBufferMemReq.memoryMask,
-        stagingBufferMemReq.size,
-        &stagingBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    // bind memory
-    result = palBindBufferMemory(buffer, bufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(stagingBuffer, stagingBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
@@ -349,56 +263,24 @@ PalBool rayTracingTest()
     bufferCreateInfo.size = sizeof(vertices);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &vertexBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create vertex buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    // we dont create a staging buffer to copy the vertices
-    // since we just need the buffer to create the acceleration structure
-    // its still recommended to create a staging buffer so the vertex buffer
-    // is GPU memory only
-    result = palGetBufferMemoryRequirements(vertexBuffer, &bufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_CPU_UPLOAD,
-        bufferMemReq.memoryMask,
-        bufferMemReq.size,
-        &vertexBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(vertexBuffer, vertexBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
     // copy vertices
     void* data = nullptr;
-    result = palMapBufferMemory(vertexBuffer, 0, sizeof(vertices), &data);
+    result = palMapBuffer(vertexBuffer, 0, sizeof(vertices), &data);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map buffer memory: %s", error);
+        logResult(result, "Failed to map memory");
         return PAL_FALSE;
     }
 
     memcpy(data, vertices, sizeof(vertices));
-    palUnmapBufferMemory(vertexBuffer);
+    palUnmapBuffer(vertexBuffer);
 
     // fill BLAS and triangle geometry
     PalDeviceAddress vertexBufferAddress = palGetBufferDeviceAddress(vertexBuffer);
@@ -415,7 +297,7 @@ PalBool rayTracingTest()
 
     PalAccelerationStructureBuildInfo blasBuildInfo = {0};
     blasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    blasBuildInfo.geometryCount = 1;
+    blasBuildInfo.count = 1;
     blasBuildInfo.geometries = &geometry;
     blasBuildInfo.buildHints = PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD;
     blasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
@@ -424,8 +306,7 @@ PalBool rayTracingTest()
     PalAccelerationStructureBuildSize buildSizes = {0};
     result = palGetAccelerationStructureBuildSize(device, &blasBuildInfo, &buildSizes);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get blas build sizes: %s", error);
+        logResult(result, "Failed to get accleration structure build size");
         return PAL_FALSE;
     }
 
@@ -433,38 +314,11 @@ PalBool rayTracingTest()
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &blasBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create blas buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palGetBufferMemoryRequirements(blasBuffer, &bufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        bufferMemReq.memoryMask,
-        bufferMemReq.size,
-        &blasBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(blasBuffer, blasBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
@@ -475,8 +329,7 @@ PalBool rayTracingTest()
 
     result = palCreateAccelerationstructure(device, &asCreateInfo, &blas);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create blas: %s", error);
+        logResult(result, "Failed to create acceleration structure");
         return PAL_FALSE;
     }
 
@@ -501,78 +354,48 @@ PalBool rayTracingTest()
         &instanceBufferSize);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to compute instance buffer requirement: %s", error);
+        logResult(result, "Failed to compute buffer requirement");
         return PAL_FALSE;
     }
 
     bufferCreateInfo.size = instanceBufferSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &instanceBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create instance buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palGetBufferMemoryRequirements(instanceBuffer, &bufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_CPU_UPLOAD,
-        bufferMemReq.memoryMask,
-        bufferMemReq.size,
-        &instanceBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(instanceBuffer, instanceBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
     // copy instance struct to the buffer
     data = nullptr;
-    result = palMapBufferMemory(
+    result = palMapBuffer(
         instanceBuffer,
         0,
         instanceBufferSize,
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map buffer memory: %s", error);
+        logResult(result, "Failed to map memory");
         return PAL_FALSE;
     }
 
     // we can not use a direct memcpy for instance buffers
     result = palWriteToInstanceBuffer(device, data, &asInstance, 1);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to write instances to instance buffer: %s", error);
+        logResult(result, "Failed to write to buffer");
         return PAL_FALSE;
     }
 
-    palUnmapBufferMemory(instanceBuffer);
+    palUnmapBuffer(instanceBuffer);
 
     // fill TLAS and instance geometry
     PalDeviceAddress instanceBufferAddress = palGetBufferDeviceAddress(instanceBuffer);
     PalAccelerationStructureBuildInfo tlasBuildInfo = {0};
     tlasBuildInfo.type = PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    tlasBuildInfo.instanceCount = 1;
+    tlasBuildInfo.count = 1;
     tlasBuildInfo.instanceBufferAddress = instanceBufferAddress;
     tlasBuildInfo.buildHints = PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD;
     tlasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
@@ -581,8 +404,7 @@ PalBool rayTracingTest()
     uint32_t blasScratchSize = buildSizes.scratchBufferSize;
     result = palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get tlas build sizes: %s", error);
+        logResult(result, "Failed to get accleration structure build size");
         return PAL_FALSE;
     }
 
@@ -590,38 +412,11 @@ PalBool rayTracingTest()
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &tlasBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create tlas buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palGetBufferMemoryRequirements(tlasBuffer, &bufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        bufferMemReq.memoryMask,
-        bufferMemReq.size,
-        &tlasBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(tlasBuffer, tlasBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
@@ -631,47 +426,19 @@ PalBool rayTracingTest()
 
     result = palCreateAccelerationstructure(device, &asCreateInfo, &tlas);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create tlas: %s", error);
+        logResult(result, "Failed to create acceleration structure");
         return PAL_FALSE;
     }
 
     // create scratch buffer
-    bufferCreateInfo.size = _max(buildSizes.scratchBufferSize, blasScratchSize);
+    bufferCreateInfo.size = max(buildSizes.scratchBufferSize, blasScratchSize);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &scratchBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create scratch buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palGetBufferMemoryRequirements(scratchBuffer, &bufferMemReq);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to get buffer memory requirement: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palAllocateMemory(
-        device,
-        PAL_MEMORY_TYPE_GPU_ONLY,
-        bufferMemReq.memoryMask,
-        bufferMemReq.size,
-        &scratchBufferMemory);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate memory for buffer: %s", error);
-        return PAL_FALSE;
-    }
-
-    result = palBindBufferMemory(scratchBuffer, scratchBufferMemory, 0);
-    if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind memory: %s", error);
+        logResult(result, "Failed to create buffer");
         return PAL_FALSE;
     }
 
@@ -687,18 +454,13 @@ PalBool rayTracingTest()
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
 
-    PalShaderStage shaderStages[] = { PAL_SHADER_STAGE_RAYGEN };
-    descriptorSetLayoutcreateInfo.shaderStageCount = 1;
-    descriptorSetLayoutcreateInfo.shaderStages = shaderStages;
-
     result = palCreateDescriptorSetLayout(
         device,
         &descriptorSetLayoutcreateInfo,
         &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create descriptor set layout: %s", error);
+        logResult(result, "Failed to create descriptor set layout");
         return PAL_FALSE;
     }
 
@@ -712,13 +474,12 @@ PalBool rayTracingTest()
 
     PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
-    descriptorPoolCreateInfo.maxDescriptorBindingSizes = 2; // two binding type
+    descriptorPoolCreateInfo.bindingSizeCount = 2; // two binding type
     descriptorPoolCreateInfo.bindingSizes = bindingSizes;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create descriptor pool: %s", error);
+        logResult(result, "Failed to create descriptor pool");
         return PAL_FALSE;
     }
 
@@ -726,8 +487,7 @@ PalBool rayTracingTest()
     // using the layout we created above
     result = palAllocateDescriptorSet(device, descriptorPool, descriptorSetLayout, &descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to allocate descriptor set: %s", error);
+        logResult(result, "Failed to allocate descriptor set");
         return PAL_FALSE;
     }
 
@@ -761,8 +521,7 @@ PalBool rayTracingTest()
 
     result = palUpdateDescriptorSet(device, 2, writeInfos);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to update descriptor set: %s", error);
+        logResult(result, "Failed to update descriptor set");
         return PAL_FALSE;
     }
 
@@ -773,8 +532,7 @@ PalBool rayTracingTest()
 
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create pipeline layout: %s", error);
+        logResult(result, "Failed to create pipeline layout");
         return PAL_FALSE;
     }
 
@@ -823,8 +581,7 @@ PalBool rayTracingTest()
 
     result = palCreateRayTracingPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create ray tracing pipeline: %s", error);
+        logResult(result, "Failed to create pipeline");
         return PAL_FALSE;
     }
 
@@ -866,38 +623,33 @@ PalBool rayTracingTest()
 
     result = palCreateShaderBindingTable(device, &sbtCreateInfo, &sbt);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create shader binding table: %s", error);
+        logResult(result, "Failed to create shader binding table");
         return PAL_FALSE;
     }
 
     // create fence
     result = palCreateFence(device, PAL_FALSE, &fence);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create fence: %s", error);
+        logResult(result, "Failed to create fence");
         return PAL_FALSE;
     }
 
     // record commands
     result = palCmdBegin(cmdBuffer, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to begin command buffer: %s", error);
+        logResult(result, "Failed to begin command buffer");
         return PAL_FALSE;
     }
 
     result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind pipeline: %s", error);
+        logResult(result, "Failed to bind pipeline");
         return PAL_FALSE;
     }
     
     result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind descriptor set: %s", error);
+        logResult(result, "Failed to bind descriptor set");
         return PAL_FALSE;
     }
 
@@ -911,75 +663,57 @@ PalBool rayTracingTest()
 
     result = palCmdBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to build blas: %s", error);
+        logResult(result, "Failed to build acceleration structure");
         return PAL_FALSE;
     }
 
     // make sure the BLAS builds before the TLAS. We need this barrier because
     // BLAS and TLAS share the same scratch buffer
-    PalUsageStateInfo oldAsUsageStateInfo = {0};
-    oldAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
-
-    PalUsageStateInfo newAsUsageStateInfo = {0};
-    newAsUsageStateInfo.usageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
+    PalUsageState oldAsUsageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
+    PalUsageState newAsUsageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
 
     result = palCmdAccelerationStructureBarrier(
         cmdBuffer, 
         blas, 
-        &oldAsUsageStateInfo, 
-        &newAsUsageStateInfo);
+        oldAsUsageState, 
+        newAsUsageState);
         
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set memory barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
     result = palCmdBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to build tlas: %s", error);
+        logResult(result, "Failed to build acceleration structure");
         return PAL_FALSE;
     }
-
-    newAsUsageStateInfo.shaderStageCount = 1;
-    newAsUsageStateInfo.shaderStages = shaderStages;
 
     // make sure the TLAS builds before the tracing
     result = palCmdAccelerationStructureBarrier(
         cmdBuffer, 
         tlas, 
-        &oldAsUsageStateInfo, 
-        &newAsUsageStateInfo);
+        oldAsUsageState, 
+        newAsUsageState);
 
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set memory barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
     result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to trace rays: %s", error);
+        logResult(result, "Failed to issue trace command");
         return PAL_FALSE;
     }
 
     // set a barrier so we only read from the buffer after the shader has written to it
-    PalUsageStateInfo oldUsageStateInfo = {0};
-    oldUsageStateInfo.shaderStageCount = 0;
-    oldUsageStateInfo.shaderStages = nullptr;
+    PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
+    PalUsageState newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
 
-    PalUsageStateInfo newUsageStateInfo = {0};
-    newUsageStateInfo.shaderStageCount = 0;
-    newUsageStateInfo.shaderStages = nullptr;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
-
-    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
@@ -989,15 +723,13 @@ PalBool rayTracingTest()
 
     result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer: %s", error);
+        logResult(result, "Failed to copy buffer");
         return PAL_FALSE;
     }
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to end command buffer: %s", error);
+        logResult(result, "Failed to end command buffer");
         return PAL_FALSE;
     }
 
@@ -1007,26 +739,23 @@ PalBool rayTracingTest()
     submitInfo.fence = fence;
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to submit command buffer: %s", error);
+        logResult(result, "Failed to submit command buffer");
         return PAL_FALSE;
     }
 
     // wait for the fence
     result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for fence: %s", error);
+        logResult(result, "Failed to wait fence");
         return PAL_FALSE;
     }
 
     // now our staging buffer has the contents of the GPU buffer
     // we map it and copy the contents to a ppm buffer and save it
     void* ptr = nullptr;
-    result = palMapBufferMemory(stagingBuffer, 0, bufferBytes, &ptr);
+    result = palMapBuffer(stagingBuffer, 0, bufferBytes, &ptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to map buffer memory: %s", error);
+        logResult(result, "Failed to map memory");
         return PAL_FALSE;
     }
 
@@ -1068,8 +797,7 @@ PalBool rayTracingTest()
     // update records
     result = palUpdateShaderBindingTable(sbt, 2, updateRecords);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to update shader binding table: %s", error);
+        logResult(result, "Failed to update shader binding table");
         return PAL_FALSE;
     }
 
@@ -1080,68 +808,54 @@ PalBool rayTracingTest()
 
     result = palCreateFence(device, PAL_FALSE, &fence);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to create fence: %s", error);
+        logResult(result, "Failed to create fence");
         return PAL_FALSE;
     }
 
     // record commands
     result = palCmdBegin(cmdBuffer, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to begin command buffer: %s", error);
+        logResult(result, "Failed to begin command buffer");
         return PAL_FALSE;
     }
 
     result = palCmdBindPipeline(cmdBuffer, pipeline);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind pipeline: %s", error);
+        logResult(result, "Failed to bind pipeline");
         return PAL_FALSE;
     }
     
     result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to bind descriptor set: %s", error);
+        logResult(result, "Failed to bind descriptor set");
         return PAL_FALSE;
     }
 
     // the previous trace transitioned the buffer to transfer read
     // we need it back to shader write before transfer read
-    oldUsageStateInfo.shaderStageCount = 0;
-    oldUsageStateInfo.shaderStages = nullptr;
-    oldUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
+    oldUsageState = PAL_USAGE_STATE_TRANSFER_READ;
+    newUsageState = PAL_USAGE_STATE_SHADER_WRITE;
 
-    newUsageStateInfo.shaderStageCount = 1;
-    newUsageStateInfo.shaderStages = shaderStages;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_SHADER_WRITE;
-
-    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
     result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to trace rays: %s", error);
+        logResult(result, "Failed to issue trace command");
         return PAL_FALSE;
     }
 
     // set a barrier to transition to transfer read so we can read from it after shader has 
     // written to it
-    oldUsageStateInfo = newUsageStateInfo;
-    newUsageStateInfo.shaderStageCount = 0;
-    newUsageStateInfo.shaderStages = nullptr;
-    newUsageStateInfo.usageState = PAL_USAGE_STATE_TRANSFER_READ;
+    oldUsageState = newUsageState;
+    newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
 
-    result = palCmdBufferBarrier(cmdBuffer, buffer, &oldUsageStateInfo, &newUsageStateInfo);
+    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to set buffer barrier: %s", error);
+        logResult(result, "Failed to set barrier");
         return PAL_FALSE;
     }
 
@@ -1149,15 +863,13 @@ PalBool rayTracingTest()
     copyInfo.size = bufferBytes;
     result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to copy buffer: %s", error);
+        logResult(result, "Failed to copy buffer");
         return PAL_FALSE;
     }
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to end command buffer: %s", error);
+        logResult(result, "Failed to end command buffer");
         return PAL_FALSE;
     }
 
@@ -1166,16 +878,14 @@ PalBool rayTracingTest()
     submitInfo.fence = fence;
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to submit command buffer: %s", error);
+        logResult(result, "Failed to submit command buffer");
         return PAL_FALSE;
     }
 
     // wait for the fence
     result = palWaitFence(fence, PAL_INFINITE);
     if (result != PAL_RESULT_SUCCESS) {
-        const char* error = palFormatResult(result);
-        palLog(nullptr, "Failed to wait for fence: %s", error);
+        logResult(result, "Failed to wait fence");
         return PAL_FALSE;
     }
 
@@ -1197,7 +907,7 @@ PalBool rayTracingTest()
     }
 
     fclose(file);
-    palUnmapBufferMemory(stagingBuffer);
+    palUnmapBuffer(stagingBuffer);
 
     palDestroyAccelerationstructure(blas);
     palDestroyAccelerationstructure(tlas);
@@ -1216,14 +926,6 @@ PalBool rayTracingTest()
     palDestroyBuffer(blasBuffer);
     palDestroyBuffer(tlasBuffer);
     palDestroyBuffer(scratchBuffer);
-
-    palFreeMemory(device, bufferMemory);
-    palFreeMemory(device, stagingBufferMemory);
-    palFreeMemory(device, vertexBufferMemory);
-    palFreeMemory(device, instanceBufferMemory);
-    palFreeMemory(device, blasBufferMemory);
-    palFreeMemory(device, tlasBufferMemory);
-    palFreeMemory(device, scratchBufferMemory);
 
     palFreeCommandBuffer(cmdBuffer);
     palDestroyCommandPool(cmdPool);

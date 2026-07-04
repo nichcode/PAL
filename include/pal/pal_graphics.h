@@ -64,9 +64,8 @@
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH (1ULL << 33)
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT (1ULL << 34)
 #define PAL_ADAPTER_FEATURE_DISPATCH_BASE (1ULL << 35)
-#define PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS (1ULL << 36)
-#define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS (1ULL << 37)
-#define PAL_ADAPTER_FEATURE_RAY_QUERY (1ULL << 38)
+#define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS (1ULL << 36)
+#define PAL_ADAPTER_FEATURE_RAY_QUERY (1ULL << 37)
 
 #define PAL_ADAPTER_TYPE_UNKNOWN 0
 #define PAL_ADAPTER_TYPE_DISCRETE 1
@@ -2534,7 +2533,7 @@ typedef struct {
  */
 typedef struct {
     PalDescriptorSetLayoutBinding* bindings;            /**< Bindings.*/
-    PalDescriptorIndexingFlags descriptorIndexingFlags; /**< See `PalDescriptorIndexingFlags`.*/
+    PalDescriptorIndexingFlags flags; /**< See `PalDescriptorIndexingFlags`.*/
     uint32_t bindingCount;                              /**< Number of bindings.*/
 } PalDescriptorSetLayoutCreateInfo;
 
@@ -2550,7 +2549,7 @@ typedef struct {
     PalDescriptorPoolBindingSize* bindingSizes; /**< Binding sizes.*/
     uint64_t bindingSizeCount;                  /**< Number of bindings sizes.*/
     uint32_t maxDescriptorSets; /**< Maximum number of descriptor sets that can be allocated.*/
-    PalDescriptorIndexingFlags descriptorIndexingFlags; /**< See `PalDescriptorIndexingFlags`.*/
+    PalDescriptorIndexingFlags flags; /**< See `PalDescriptorIndexingFlags`.*/
 } PalDescriptorPoolCreateInfo;
 
 /**
@@ -2968,24 +2967,6 @@ typedef struct {
         PalImage* image,
         PalMemory* memory,
         uint64_t offset);
-
-    /**
-     * Backend implementation of ::palMapImageMemory.
-     *
-     * Must obey the rules and semantics documented in palMapImageMemory().
-     */
-    PalResult(PAL_CALL* mapImageMemory)(
-        PalImage* image,
-        uint64_t offset,
-        uint64_t size,
-        void** outPtr);
-
-    /**
-     * Backend implementation of ::palUnmapImageMemory.
-     *
-     * Must obey the rules and semantics documented in palUnmapImageMemory().
-     */
-    void(PAL_CALL* unmapImageMemory)(PalImage* image);
 
     /**
      * Backend implementation of ::palCreateImageView.
@@ -3806,22 +3787,22 @@ typedef struct {
         uint64_t offset);
 
     /**
-     * Backend implementation of ::palMapBufferMemory.
+     * Backend implementation of ::palMapBuffer.
      *
-     * Must obey the rules and semantics documented in palMapBufferMemory().
+     * Must obey the rules and semantics documented in palMapBuffer().
      */
-    PalResult(PAL_CALL* mapBufferMemory)(
+    PalResult(PAL_CALL* mapBuffer)(
         PalBuffer* buffer,
         uint64_t offset,
         uint64_t size,
         void** outPtr);
 
     /**
-     * Backend implementation of ::palUnmapBufferMemory.
+     * Backend implementation of ::palUnmapBuffer.
      *
-     * Must obey the rules and semantics documented in palUnmapBufferMemory().
+     * Must obey the rules and semantics documented in palUnmapBuffer().
      */
-    void(PAL_CALL* unmapBufferMemory)(PalBuffer* buffer);
+    void(PAL_CALL* unmapBuffer)(PalBuffer* buffer);
 
     /**
      * Backend implementation of ::palGetBufferDeviceAddress.
@@ -4682,53 +4663,6 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
     PalImage* image,
     PalMemory* memory,
     uint64_t offset);
-
-/**
- * @brief Maps image to CPU visible address space.
- *
- * The graphics system must be initialized before this call. The image must have a valid
- * memory bound to it before this call.
- *
- * Only `PAL_MEMORY_TYPE_CPU_UPLOAD` and `PAL_MEMORY_TYPE_CPU_READBACK` can be mapped to
- * CPU visible space. Mapping `PAL_MEMORY_TYPE_GPU_ONLY` will fail and return
- * `PAL_RESULT_MEMORY_MAP_FAILED`.
- *
- * @param[in] image Pointer to image to map. Memory must be bound.
- * @param[in] offset Starting point within the image.
- * @param[in] size Number of bytes to map from the offset. `offset + size` must not be
- * greater than image size.
- * @param[out] outPtr Pointer to a void* to recieved the mapped memory.
- *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if `image` is externally synchronized.
- * Mapping with different offsets into the same image is thread safe as long as `image`
- * is externally synchronized.
- *
- * @since 2.0
- * @sa palUnmapImageMemory
- */
-PAL_API PalResult PAL_CALL palMapImageMemory(
-    PalImage* image,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr);
-
-/**
- * @brief Unmap image from CPU visible address space.
- *
- * The graphics system must be initialized before this call. The image must be mapped
- * before this call. After this call, the CPU pointer must not be used anymore.
- *
- * @param[in] image Pointer to image to unmap.
- *
- * Thread safety: Thread safe if `image` is externally synchronized.
- *
- * @since 2.0
- * @sa palMapImageMemory
- */
-PAL_API void PAL_CALL palUnmapImageMemory(PalImage* image);
 
 /**
  * @brief Create an image view.
@@ -6835,9 +6769,9 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
  * is externally synchronized.
  *
  * @since 2.0
- * @sa palUnmapBufferMemory
+ * @sa palUnmapBuffer
  */
-PAL_API PalResult PAL_CALL palMapBufferMemory(
+PAL_API PalResult PAL_CALL palMapBuffer(
     PalBuffer* buffer,
     uint64_t offset,
     uint64_t size,
@@ -6854,9 +6788,9 @@ PAL_API PalResult PAL_CALL palMapBufferMemory(
  * Thread safety: Thread safe if `buffer` is externally synchronized.
  *
  * @since 2.0
- * @sa palMapBufferMemory
+ * @sa palMapBuffer
  */
-PAL_API void PAL_CALL palUnmapBufferMemory(PalBuffer* buffer);
+PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
 
 /**
  * @brief Get the device address of the provided buffer.

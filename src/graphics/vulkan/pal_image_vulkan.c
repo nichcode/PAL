@@ -310,20 +310,6 @@ PalResult PAL_CALL bindImageMemoryVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL mapImageMemoryVk(
-    PalImage* image,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr)
-{
-    return PAL_RESULT_CODE_INVALID_OPERATION;
-}
-
-void PAL_CALL unmapImageMemoryVk(PalImage* image)
-{
-    // do nothing.
-}
-
 PalResult PAL_CALL createImageViewVk(
     PalDevice* device,
     PalImage* image,

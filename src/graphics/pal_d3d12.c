@@ -3676,20 +3676,6 @@ PalResult PAL_CALL bindImageMemoryD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL mapImageMemoryD3D12(
-    PalImage* image,
-    uint64_t offset,
-    uint64_t size,
-    void** outPtr)
-{
-    return PAL_RESULT_INVALID_OPERATION;
-}
-
-void PAL_CALL unmapImageMemoryD3D12(PalImage* image)
-{
-    // do nothing.
-}
-
 // ==================================================
 // Image View
 // ==================================================
@@ -6660,7 +6646,7 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL mapBufferMemoryD3D12(
+PalResult PAL_CALL mapBufferD3D12(
     PalBuffer* buffer,
     uint64_t offset,
     uint64_t size,
@@ -6678,7 +6664,7 @@ PalResult PAL_CALL mapBufferMemoryD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL unmapBufferMemoryD3D12(PalBuffer* buffer)
+void PAL_CALL unmapBufferD3D12(PalBuffer* buffer)
 {
     Buffer* d3dBuffer = (Buffer*)buffer;
     d3dBuffer->handle->lpVtbl->Unmap(d3dBuffer->handle, 0, nullptr);

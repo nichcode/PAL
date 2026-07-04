@@ -501,14 +501,8 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
         features.pNext = &desc;
 
         s_Vk.getPhysicalDeviceFeatures2(phyDevice, &features);
-        // core features we need
-        if (desc.runtimeDescriptorArray || 
-            desc.descriptorBindingUpdateUnusedWhilePending) {
+        if (desc.runtimeDescriptorArray) {
             adapterFeatures |= PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-        }
-
-        if (desc.descriptorBindingPartiallyBound) {
-            adapterFeatures |= PAL_ADAPTER_FEATURE_PARTIALLY_BOUND_DESCRIPTORS;
         }
     }
 

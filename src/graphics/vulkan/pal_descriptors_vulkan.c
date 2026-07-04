@@ -48,7 +48,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     flagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 
     PalBool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-    if (info->descriptorIndexingFlags != 0 && hasDescriptorIndexing) {
+    if (info->flags != 0 && hasDescriptorIndexing) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
@@ -58,7 +58,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    if (info->descriptorIndexingFlags != 0) {
+    if (info->flags != 0) {
         bindingFlags = palAllocate(s_Vk.allocator, sizeof(VkDescriptorBindingFlags) * count, 0);
         if (!bindingFlags) {
             return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -81,17 +81,17 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         binding->stageFlags = vkDevice->shaderStages;
 
         // set descriptor indexing flags
-        if (info->descriptorIndexingFlags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
+        if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
             bindingFlags[i] |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
             bindingFlags[i] |= VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
         }
 
-        if (info->descriptorIndexingFlags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
+        if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
             bindingFlags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
         }
     }
 
-    if (info->descriptorIndexingFlags != 0) {
+    if (info->flags != 0) {
         flagsCreateInfo.bindingCount = count;
         flagsCreateInfo.pBindingFlags = bindingFlags;
         createInfo.pNext = &flagsCreateInfo;
@@ -113,7 +113,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     palFree(s_Vk.allocator, bindings);
 
     layout->device = vkDevice;
-    layout->flags = info->descriptorIndexingFlags;
+    layout->flags = info->flags;
     layout->reserved = PAL_BACKEND_KEY;
     *outLayout = (PalDescriptorSetLayout*)layout;
     return PAL_RESULT_SUCCESS;
@@ -144,11 +144,11 @@ PalResult PAL_CALL createDescriptorPoolVk(
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 
     PalBool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-    if (info->descriptorIndexingFlags != 0 && hasDescriptorIndexing) {
+    if (info->flags != 0 && hasDescriptorIndexing) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
-    if (info->descriptorIndexingFlags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
+    if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
         createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
     }
 
@@ -182,7 +182,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
 
     palFree(s_Vk.allocator, poolSizes);
     pool->device = vkDevice;
-    pool->flags = info->descriptorIndexingFlags;
+    pool->flags = info->flags;
     pool->reserved = PAL_BACKEND_KEY;
     *outPool = (PalDescriptorPool*)pool;
     return PAL_RESULT_SUCCESS;
