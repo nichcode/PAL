@@ -2277,7 +2277,7 @@ typedef struct {
 } PalDescriptorSetWriteInfo;
 
 /**
- * @struct PalPushConstantRange
+ * @struct PalPushConstantInfo
  * @brief Push constant range.
  *
  * Uninitialized fields may result in undefined behavior.
@@ -2287,7 +2287,7 @@ typedef struct {
 typedef struct {
     uint32_t offset; /**< Offset in bytes.*/
     uint32_t size;   /**< Size in bytes.*/
-} PalPushConstantRange;
+} PalPushConstantInfo;
 
 /**
  * @struct PalImageSubresourceRange
@@ -2562,9 +2562,9 @@ typedef struct {
  */
 typedef struct {
     PalDescriptorSetLayout** descriptorSetLayouts; /**< Descriptor set layouts.*/
-    PalPushConstantRange* pushConstantRanges;      /**< Push constant ranges.*/
+    PalPushConstantInfo pushConstantInfo;          /**< Push constant info.*/
     uint32_t descriptorSetLayoutCount;             /**< Number of descriptor set layouts.*/
-    uint32_t pushConstantRangeCount;               /**< Number of push constant ranges.*/
+    PalBool usePushConstant;                       /**< `PAL_TRUE` to use push constant.*/
 } PalPipelineLayoutCreateInfo;
 
 /**

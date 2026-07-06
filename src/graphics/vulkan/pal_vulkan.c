@@ -631,25 +631,31 @@ VkFormat vertexTypeToVk(PalVertexType type)
 }
 
 void fillBuildInfoVk(
-    uint32_t count,
+    PalBool getBuildSize,
     PalAccelerationStructureBuildInfo* info,
-    uint32_t* maxPrimities,
     VkAccelerationStructureGeometryKHR* geometries,
-    VkAccelerationStructureKHR srcAs,
-    VkAccelerationStructureKHR dstAs,
-    VkAccelerationStructureBuildRangeInfoKHR* rangeInfos,
-    VkAccelerationStructureBuildGeometryInfoKHR* buildInfo)
+    VkAccelerationStructureBuildGeometryInfoKHR* outBuildInfo,
+    void* outData)
 {
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < info->count; i++) {
         // fill vulkan geometry struct
-        VkAccelerationStructureGeometryKHR* tmp = &geometries[i];
-        tmp->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-        tmp->flags = 0;
+        VkAccelerationStructureBuildRangeInfoKHR* range = nullptr;
+        uint32_t* maxPrimitives = nullptr;
+        VkAccelerationStructureGeometryKHR* geometry = &geometries[i];
 
+        if (getBuildSize) {
+            maxPrimitives = outData;
+        } else {
+            VkAccelerationStructureBuildRangeInfoKHR* tmp = outData;
+            range = &tmp[i];
+        }
+
+        geometry->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+        geometry->flags = 0;
         if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+            geometry->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
             VkAccelerationStructureGeometryInstancesDataKHR* data = nullptr;
-            data = &tmp->geometry.instances;
+            data = &geometry->geometry.instances;
             data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
             data->arrayOfPointers = PAL_FALSE;
 
@@ -657,74 +663,65 @@ void fillBuildInfoVk(
             address.deviceAddress = info->instanceBufferAddress;
             data->data = address;
 
-            if (maxPrimities) {
-                maxPrimities[i] = info->count;
-            }
-
-            // range info
-            if (rangeInfos) {
-                VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
-                rangeInfo->primitiveCount = info->count;
-                rangeInfo->firstVertex = 0;     // PAL does not allow setting this
-                rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
-                rangeInfo->transformOffset = 0; // PAL does not allow setting this
+            if (getBuildSize) {
+                maxPrimitives[i] = info->count;
+                
+            } else {
+                range->primitiveCount = info->count;
+                range->firstVertex = 0;     // PAL does not allow setting this
+                range->primitiveOffset = 0; // PAL does not allow setting this
+                range->transformOffset = 0; // PAL does not allow setting this
             }
             break;
 
         } else {
             if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
-                tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
+                geometry->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
             }
 
             if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
-                tmp->flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
+                geometry->flags |= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
             }
 
-            if (maxPrimities) {
-                maxPrimities[i] = info->geometries[i].primitiveCount;
-            }
-
-            // range info
-            if (rangeInfos) {
-                VkAccelerationStructureBuildRangeInfoKHR* rangeInfo = &rangeInfos[i];
-                rangeInfo->primitiveCount = info->geometries[i].primitiveCount;
-                rangeInfo->firstVertex = 0;     // PAL does not allow setting this
-                rangeInfo->primitiveOffset = 0; // PAL does not allow setting this
-                rangeInfo->transformOffset = 0; // PAL does not allow setting this
+            if (getBuildSize) {
+                maxPrimitives[i] = info->geometries[i].primitiveCount;
+                
+            } else {
+                range->primitiveCount = info->geometries[i].primitiveCount;
+                range->firstVertex = 0;     // PAL does not allow setting this
+                range->primitiveOffset = 0; // PAL does not allow setting this
+                range->transformOffset = 0; // PAL does not allow setting this
             }
         }
 
         if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-            VkAccelerationStructureGeometryTrianglesDataKHR* data = &tmp->geometry.triangles;
+            geometry->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+            VkAccelerationStructureGeometryTrianglesDataKHR* data = &geometry->geometry.triangles;
             data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-
-            VkDeviceOrHostAddressConstKHR vertexAddress = {0};
-            VkDeviceOrHostAddressConstKHR indexAddress = {0};
             const PalGeometryDataTriangle* tmpData = info->geometries[i].data;
 
-            vertexAddress.deviceAddress = tmpData->vertexBufferAddress;
-            data->vertexData = vertexAddress;
+            data->vertexData.deviceAddress = tmpData->vertexBufferAddress;
             data->maxVertex = tmpData->vertexCount - 1;
             data->vertexFormat = vertexTypeToVk(tmpData->vertexType);
             data->vertexStride = tmpData->vertexStride;
 
-            indexAddress.deviceAddress = tmpData->indexBufferAddress;
-            data->indexData = indexAddress;
+            data->transformData.deviceAddress = tmpData->transformBufferAddress;
+
+            data->indexData.deviceAddress = tmpData->indexBufferAddress;
             if (tmpData->indexType == PAL_INDEX_TYPE_UINT32) {
                 data->indexType = VK_INDEX_TYPE_UINT32;
+
             } else {
                 data->indexType = VK_INDEX_TYPE_UINT16;
             }
 
-            // set to none if there is no index buffer address
             if (!tmpData->indexBufferAddress) {
                 data->indexType = VK_INDEX_TYPE_NONE_KHR;
             }
 
         } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
-            tmp->geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
-            VkAccelerationStructureGeometryAabbsDataKHR* data = &tmp->geometry.aabbs;
+            geometry->geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+            VkAccelerationStructureGeometryAabbsDataKHR* data = &geometry->geometry.aabbs;
             data->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
 
             VkDeviceOrHostAddressConstKHR address = {0};
@@ -735,42 +732,54 @@ void fillBuildInfoVk(
         }
     }
 
-    buildInfo->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    outBuildInfo->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        buildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        outBuildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     } else {
-        buildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        outBuildInfo->type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     }
 
     // build mode
     if (info->buildMode == PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD) {
-        buildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        outBuildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     } else {
-        buildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+        outBuildInfo->mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
     }
 
     // build hints
-    buildInfo->flags = 0;
+    outBuildInfo->flags = 0;
     if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD) {
-        buildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+        outBuildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
     }
 
     if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE) {
-        buildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        outBuildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     }
 
     if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY) {
-        buildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
+        outBuildInfo->flags |= VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
     }
 
-    buildInfo->geometryCount = count;
-    buildInfo->srcAccelerationStructure = srcAs;
-    buildInfo->dstAccelerationStructure = dstAs;
-    buildInfo->pGeometries = geometries;
+    AccelerationStructureVk* dstAs = (AccelerationStructureVk*)info->dst;
+    AccelerationStructureVk* srcAs = (AccelerationStructureVk*)info->src;
+    VkAccelerationStructureKHR dstAsHandle = nullptr;
+    if (dstAs) {
+        dstAsHandle = dstAs->handle;
+    }
+
+    VkAccelerationStructureKHR srcAsHandle = nullptr;
+    if (srcAs) {
+        srcAsHandle = srcAs->handle;
+    }
+
+    outBuildInfo->geometryCount = info->count;
+    outBuildInfo->dstAccelerationStructure = dstAsHandle;
+    outBuildInfo->srcAccelerationStructure = srcAsHandle;
+    outBuildInfo->pGeometries = geometries;
 
     VkDeviceOrHostAddressKHR scratchData = {0};
     scratchData.deviceAddress = info->scratchBufferAddress;
-    buildInfo->scratchData = scratchData;
+    outBuildInfo->scratchData = scratchData;
 }
 
 static void* alignedRealloc(

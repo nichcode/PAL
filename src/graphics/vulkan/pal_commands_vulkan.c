@@ -421,68 +421,46 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    VkAccelerationStructureGeometryKHR* geometries = nullptr;
-    VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
-    AccelerationStructureVk* tmpAs = (AccelerationStructureVk*)info->src;
-    AccelerationStructureVk* dstAs = (AccelerationStructureVk*)info->dst;
-    VkAccelerationStructureKHR srcAs = nullptr;
-    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
-
     if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
-    // cache these for top level as
-    VkAccelerationStructureBuildRangeInfoKHR cachedRangeInfo = {0};
-    VkAccelerationStructureGeometryKHR cachedGeometries = {0};
-    uint32_t geometryCount = info->count;
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
-        geometryCount = 1;
-        rangeInfos = &cachedRangeInfo;
-        geometries = &cachedGeometries;
+    VkAccelerationStructureGeometryKHR* geometries = nullptr;
+    VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
+    const VkAccelerationStructureBuildRangeInfoKHR** tmpRangeInfos = nullptr;
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
+
+    tmpRangeInfos = palAllocate(s_Vk.allocator, sizeof(void*) * info->count, 0);
+    geometries = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkAccelerationStructureGeometryKHR) * info->count, 
+        0);
+
+    rangeInfos = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count, 
+        0);
+
+    if (!tmpRangeInfos || !rangeInfos || !geometries) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    if (tmpAs) {
-        srcAs = tmpAs->handle;
+    memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->count);
+    memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count);
+    fillBuildInfoVk(PAL_FALSE, info, geometries, &buildInfo, rangeInfos);
+
+    for (int i = 0; i < info->count; i++) {
+        tmpRangeInfos[i] = &rangeInfos[i];
     }
 
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        geometries = palAllocate(
-            s_Vk.allocator,
-            sizeof(VkAccelerationStructureGeometryKHR) * geometryCount,
-            0);
+    vkCmdBuffer->device->cmdBuildAccelerationStructures(
+        vkCmdBuffer->handle,
+        1, 
+        &buildInfo, 
+        tmpRangeInfos);
 
-        rangeInfos = palAllocate(
-            s_Vk.allocator,
-            sizeof(VkAccelerationStructureBuildRangeInfoKHR) * geometryCount,
-            0);
-
-        if (!rangeInfos || !geometries) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
-        }
-
-        memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * geometryCount);
-        memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * geometryCount);
-    }
-
-    fillBuildInfoVk(
-        geometryCount, 
-        info, 
-        nullptr, 
-        geometries, 
-        srcAs, 
-        dstAs->handle, 
-        rangeInfos, 
-        &buildInfo);
-
-    const VkAccelerationStructureBuildRangeInfoKHR* tmp[1];
-    tmp[0] = rangeInfos;
-    vkCmdBuffer->device->cmdBuildAccelerationStructures(vkCmdBuffer->handle, 1, &buildInfo, tmp);
-
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        palFree(s_Vk.allocator, geometries);
-        palFree(s_Vk.allocator, rangeInfos);
-    }
+    palFree(s_Vk.allocator, geometries);
+    palFree(s_Vk.allocator, rangeInfos);
     return PAL_RESULT_SUCCESS;
 }
 

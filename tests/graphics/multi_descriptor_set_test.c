@@ -318,12 +318,6 @@ PalBool multiDescriptorSetTest()
         return PAL_FALSE;
     }
 
-    // push constants
-    // size must be less than the max size from the adapter capabilities struct
-    PalPushConstantRange pushConstantRange = {0};
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(PushConstant); // must match shader
-
     // create pipeline layout
     // even if the descriptor set layout is identical, pipeline layout creation needs
     // a descriptor set layout per set (3)
@@ -334,9 +328,10 @@ PalBool multiDescriptorSetTest()
 
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     pipelineLayoutCreateInfo.descriptorSetLayoutCount = 3;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.descriptorSetLayouts = descriptorSetLayouts;
-    pipelineLayoutCreateInfo.pushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.usePushConstant = PAL_TRUE;
+    pipelineLayoutCreateInfo.pushConstantInfo.offset = 0;
+    pipelineLayoutCreateInfo.pushConstantInfo.size = sizeof(PushConstant); // must match shader
 
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {

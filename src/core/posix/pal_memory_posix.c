@@ -17,10 +17,6 @@ void* PAL_CALL palAllocate(
     uint64_t size,
     uint64_t alignment)
 {
-    if (size == 0) {
-        return nullptr;
-    }
-
     uint64_t align = alignment;
     if (align == 0) {
         align = 16; // default
@@ -39,11 +35,12 @@ void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr)
 {
-    if (allocator && allocator->free && ptr) {
-        allocator->free(allocator->userData, ptr);
-
-    } else {
-        free(ptr);
+    if (ptr) {
+        if (allocator && allocator->free) {
+            allocator->free(allocator->userData, ptr);
+        } else {
+            free(ptr);
+        }
     }
 }
 

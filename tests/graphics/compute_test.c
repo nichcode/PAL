@@ -43,7 +43,7 @@ PalBool computeTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr, 0, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
@@ -284,18 +284,13 @@ PalBool computeTest()
         return PAL_FALSE;
     }
 
-    // push constants
-    // size must be less than the max size from the adapter capabilities struct
-    PalPushConstantRange pushConstantRange = {0};
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(PushConstant); // must match shader
-
     // create pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     pipelineLayoutCreateInfo.descriptorSetLayoutCount = 1;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.descriptorSetLayouts = &descriptorSetLayout;
-    pipelineLayoutCreateInfo.pushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.usePushConstant = PAL_TRUE;
+    pipelineLayoutCreateInfo.pushConstantInfo.offset = 0;
+    pipelineLayoutCreateInfo.pushConstantInfo.size = sizeof(PushConstant); // must match shader
 
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
     if (result != PAL_RESULT_SUCCESS) {

@@ -482,15 +482,13 @@ uint32_t findBestMemoryIndexVk(
     uint32_t memoryMask);
 
 VkFormat vertexTypeToVk(PalVertexType type);
+
 void fillBuildInfoVk(
-    uint32_t count,
+    PalBool getBuildSize,
     PalAccelerationStructureBuildInfo* info,
-    uint32_t* maxPrimities,
     VkAccelerationStructureGeometryKHR* geometries,
-    VkAccelerationStructureKHR srcAs,
-    VkAccelerationStructureKHR dstAs,
-    VkAccelerationStructureBuildRangeInfoKHR* rangeInfos,
-    VkAccelerationStructureBuildGeometryInfoKHR* buildInfo);
+    VkAccelerationStructureBuildGeometryInfoKHR* outBuildInfo,
+    void* outData);
 
 #endif // PAL_HAS_VULKAN_BACKEND
 #endif // _PAL_VULKAN_H

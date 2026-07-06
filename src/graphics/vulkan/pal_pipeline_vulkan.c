@@ -181,16 +181,23 @@ PalResult PAL_CALL createPipelineLayoutVk(
     VkResult result;
     DeviceVk* vkDevice = (DeviceVk*)device;
     PipelineLayoutVk* layout = nullptr;
-    VkPushConstantRange* pushConstants = nullptr;
+    VkPushConstantRange pushConstantRange = {0};
     VkDescriptorSetLayout* descriptorLayouts = nullptr;
-    uint32_t pushConstantSize = sizeof(VkPushConstantRange) * info->pushConstantRangeCount;
-    uint32_t setLayoutSize = sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount;
-
+    
     layout = palAllocate(s_Vk.allocator, sizeof(PipelineLayoutVk), 0);
-    pushConstants = palAllocate(s_Vk.allocator, pushConstantSize, 0);
-    descriptorLayouts = palAllocate(s_Vk.allocator, setLayoutSize, 0);
-    if (!layout || !pushConstants || !descriptorLayouts) {
+    if (!layout) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    if (info->descriptorSetLayoutCount) {
+        descriptorLayouts = palAllocate(
+            s_Vk.allocator, 
+            sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount, 
+            0);
+
+        if (!descriptorLayouts) {
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        }
     }
 
     for (int i = 0; i < info->descriptorSetLayoutCount; i++) {
@@ -198,20 +205,18 @@ PalResult PAL_CALL createPipelineLayoutVk(
         descriptorLayouts[i] = tmp->handle;
     }
 
-    for (int i = 0; i < info->pushConstantRangeCount; i++) {
-        VkPushConstantRange* range = &pushConstants[i];
-        range->offset = info->pushConstantRanges[i].offset;
-        range->size = info->pushConstantRanges[i].size;
-        range->stageFlags = vkDevice->shaderStages;
-        range->offset = info->pushConstantRanges[i].offset;
-    }
-
     VkPipelineLayoutCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     createInfo.setLayoutCount = info->descriptorSetLayoutCount;
     createInfo.pSetLayouts = descriptorLayouts;
-    createInfo.pPushConstantRanges = pushConstants;
-    createInfo.pushConstantRangeCount = info->pushConstantRangeCount;
+
+    if (info->usePushConstant) {
+        pushConstantRange.size = info->pushConstantInfo.size;
+        pushConstantRange.stageFlags = vkDevice->shaderStages;
+        pushConstantRange.offset = info->pushConstantInfo.offset;
+        createInfo.pushConstantRangeCount = 1;
+        createInfo.pPushConstantRanges = &pushConstantRange;
+    }
 
     result = s_Vk.createPipelineLayout(
         vkDevice->handle,
@@ -219,15 +224,14 @@ PalResult PAL_CALL createPipelineLayoutVk(
         &s_Vk.vkAllocator,
         &layout->handle);
 
-    if (result != VK_SUCCESS) {
+    if (info->descriptorSetLayoutCount) {
         palFree(s_Vk.allocator, descriptorLayouts);
-        palFree(s_Vk.allocator, pushConstants);
+    }
+
+    if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, layout);
         return makeResultVk(result);
     }
-
-    palFree(s_Vk.allocator, descriptorLayouts);
-    palFree(s_Vk.allocator, pushConstants);
 
     layout->device = vkDevice;
     layout->reserved = PAL_BACKEND_KEY;
@@ -912,6 +916,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
+    pipeline->reserved = PAL_BACKEND_KEY;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }

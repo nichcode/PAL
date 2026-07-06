@@ -51,7 +51,8 @@ PalBool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr, 0, nullptr);
+    // PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
@@ -361,7 +362,7 @@ PalBool rayTracingTest()
     bufferCreateInfo.size = instanceBufferSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
     bufferCreateInfo.usages |= PAL_BUFFER_USAGE_DEVICE_ADDRESS;
-    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY;
+    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
 
     result = palCreateBuffer(device, &bufferCreateInfo, &instanceBuffer);
     if (result != PAL_RESULT_SUCCESS) {

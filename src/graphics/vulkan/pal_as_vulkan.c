@@ -76,53 +76,28 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
-    uint32_t* maxPrimities = nullptr;
-    VkAccelerationStructureGeometryKHR* geometries = nullptr;
     DeviceVk* vkDevice = (DeviceVk*)device;
-    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
-
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
-    // cache these for top level as
-    VkAccelerationStructureGeometryKHR cachedGeometries = {0};
-    uint32_t cachedPrimitives = 0;
-    uint32_t geometryCount = info->count;
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
-        geometryCount = 1;
-        geometries = &cachedGeometries;
-        maxPrimities = &cachedPrimitives;
+    VkAccelerationStructureGeometryKHR* geometries = nullptr;
+    uint32_t* maxPrimities = nullptr;
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
+    uint32_t geometriesSize = sizeof(VkAccelerationStructureGeometryKHR) * info->count;
+
+    geometries = palAllocate(s_Vk.allocator, geometriesSize, 0);
+    maxPrimities = palAllocate(s_Vk.allocator, sizeof(uint32_t) * info->count, 0);
+    if (!maxPrimities || !geometries) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        geometries = palAllocate(
-            s_Vk.allocator,
-            sizeof(VkAccelerationStructureGeometryKHR) * geometryCount,
-            0);
-
-        maxPrimities = palAllocate(s_Vk.allocator, sizeof(uint32_t) * geometryCount, 0);
-        if (!maxPrimities || !geometries) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
-        }
-
-        memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * geometryCount);
-        memset(maxPrimities, 0, sizeof(uint32_t) * geometryCount);
-    }
-
-    fillBuildInfoVk(
-        geometryCount, 
-        info, 
-        maxPrimities, 
-        geometries, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        &buildInfo);
-
+    memset(geometries, 0, geometriesSize);
+    memset(maxPrimities, 0, sizeof(uint32_t) * info->count);
+    fillBuildInfoVk(PAL_TRUE, info, geometries, &buildInfo, maxPrimities);
+    
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
     vkDevice->getAccelerationBuildsize(
         vkDevice->handle,
         VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
@@ -134,10 +109,8 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     size->scratchBufferSize = sizeInfo.buildScratchSize;
     size->updateScratchBufferSize = sizeInfo.updateScratchSize;
 
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        palFree(s_Vk.allocator, geometries);
-        palFree(s_Vk.allocator, maxPrimities);
-    }
+    palFree(s_Vk.allocator, geometries);
+    palFree(s_Vk.allocator, maxPrimities);
     return PAL_RESULT_SUCCESS;
 }
 

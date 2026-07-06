@@ -57,8 +57,8 @@ int main(int argc, char** argv)
 
 #if PAL_HAS_GRAPHICS_MODULE == 1
     // registerTest(graphicsTest, "Graphics Test");
-    registerTest(computeTest, "Compute Test");
-    // registerTest(rayTracingTest, "Ray Tracing Test");
+    // registerTest(computeTest, "Compute Test");
+    registerTest(rayTracingTest, "Ray Tracing Test");
     // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
 #endif // PAL_HAS_GRAPHICS_MODULE
 
