@@ -197,6 +197,7 @@ PalResult PAL_CALL createBufferVk(
     VkResult result;
     BufferVk* buffer = nullptr;
     DeviceVk* vkDevice = (DeviceVk*)device;
+    MemoryVk* memory = nullptr;
 
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
@@ -214,6 +215,13 @@ PalResult PAL_CALL createBufferVk(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
+    if (info->memoryUsage != PAL_BUFFER_MEMORY_USAGE_MANUAL) {
+        memory = palAllocate(s_Vk.allocator, sizeof(MemoryVk), 0);
+        if (!memory) {
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        }
+    }
+
     VkBufferCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -225,7 +233,6 @@ PalResult PAL_CALL createBufferVk(
         return makeResultVk(result);
     }
 
-    buffer->memory = nullptr;
     buffer->isMemoryManaged = PAL_FALSE;
     if (info->memoryUsage != PAL_BUFFER_MEMORY_USAGE_MANUAL) {
         PalMemoryType memoryType = PAL_MEMORY_TYPE_GPU_ONLY;
@@ -258,21 +265,25 @@ PalResult PAL_CALL createBufferVk(
             allocateInfo.pNext = &allocateFlagsInfo;
         }
 
-        VkDeviceMemory memory = nullptr;
         result = s_Vk.allocateMemory(
             vkDevice->handle, 
             &allocateInfo, 
             &s_Vk.vkAllocator, 
-            &memory);
+            &memory->handle);
 
         if (result != VK_SUCCESS) {
             return makeResultVk(result);
         }
 
+        result = s_Vk.bindBufferMemory(vkDevice->handle, buffer->handle, memory->handle, 0);
+        if (result != VK_SUCCESS) {
+            return makeResultVk(result);
+        }
+
         buffer->isMemoryManaged = PAL_TRUE;
-        buffer->memory = (MemoryVk*)memory;
     }
 
+    buffer->memory = memory;
     buffer->usages = info->usages;
     buffer->device = vkDevice;
     buffer->reserved = PAL_BACKEND_KEY;
@@ -284,10 +295,9 @@ void PAL_CALL destroyBufferVk(PalBuffer* buffer)
 {
     BufferVk* vkBuffer = (BufferVk*)buffer;
     s_Vk.destroyBuffer(vkBuffer->device->handle, vkBuffer->handle, &s_Vk.vkAllocator);
-
     if (vkBuffer->isMemoryManaged) {
-        VkDeviceMemory memory = (VkDeviceMemory)vkBuffer->memory;
-        s_Vk.freeMemory(vkBuffer->device->handle, memory, &s_Vk.vkAllocator);
+        s_Vk.freeMemory(vkBuffer->device->handle, vkBuffer->memory->handle, &s_Vk.vkAllocator);
+        palFree(s_Vk.allocator, vkBuffer->memory);
     }
     palFree(s_Vk.allocator, buffer);
 }

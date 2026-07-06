@@ -154,10 +154,18 @@ PalResult PAL_CALL createImageVk(
     VkResult result;
     ImageVk* image = nullptr;
     DeviceVk* vkDevice = (DeviceVk*)device;
+    MemoryVk* memory = nullptr;
 
     image = palAllocate(s_Vk.allocator, sizeof(ImageVk), 0);
     if (!image) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    if (info->memoryUsage != PAL_IMAGE_MEMORY_USAGE_MANUAL) {
+        memory = palAllocate(s_Vk.allocator, sizeof(MemoryVk), 0);
+        if (!memory) {
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        }
     }
 
     VkImageCreateInfo createInfo = {0};
@@ -189,7 +197,6 @@ PalResult PAL_CALL createImageVk(
         return makeResultVk(result);
     }
 
-    image->memory = nullptr;
     image->isMemoryManaged = PAL_FALSE;
     if (info->memoryUsage != PAL_IMAGE_MEMORY_USAGE_MANUAL) {
         PalMemoryType memoryType = PAL_MEMORY_TYPE_GPU_ONLY;
@@ -209,19 +216,22 @@ PalResult PAL_CALL createImageVk(
         }
 
         allocateInfo.memoryTypeIndex = memoryIndex;
-        VkDeviceMemory memory = nullptr;
         result = s_Vk.allocateMemory(
             vkDevice->handle, 
             &allocateInfo, 
             &s_Vk.vkAllocator, 
-            &memory);
+            &memory->handle);
 
         if (result != VK_SUCCESS) {
             return makeResultVk(result);
         }
 
+        result = s_Vk.bindImageMemory(vkDevice->handle, image->handle, memory->handle, 0);
+        if (result != VK_SUCCESS) {
+            return makeResultVk(result);
+        }
+
         image->isMemoryManaged = PAL_TRUE;
-        image->memory = (MemoryVk*)memory;
     }
 
     image->device = vkDevice;
@@ -236,6 +246,7 @@ PalResult PAL_CALL createImageVk(
     image->info.arrayLayerCount = info->arrayLayerCount;
     image->info.belongsToSwapchain = PAL_FALSE;
 
+    image->memory = memory;
     image->reserved = PAL_BACKEND_KEY;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
@@ -250,8 +261,8 @@ void PAL_CALL destroyImageVk(PalImage* image)
 
     s_Vk.destroyImage(vkImage->device->handle, vkImage->handle, &s_Vk.vkAllocator);
     if (vkImage->isMemoryManaged) {
-        VkDeviceMemory memory = (VkDeviceMemory)vkImage->memory;
-        s_Vk.freeMemory(vkImage->device->handle, memory, &s_Vk.vkAllocator);
+        s_Vk.freeMemory(vkImage->device->handle, vkImage->memory->handle, &s_Vk.vkAllocator);
+        palFree(s_Vk.allocator, vkImage->memory);
     }
 
     palFree(s_Vk.allocator, vkImage);

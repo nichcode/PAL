@@ -43,7 +43,7 @@ PalBool computeTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;

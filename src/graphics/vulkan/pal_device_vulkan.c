@@ -1383,5 +1383,4 @@ void PAL_CALL destroyShaderVk(PalShader* shader)
     palFree(s_Vk.allocator, vkShader);
 }
 
-
 #endif // PAL_HAS_VULKAN_BACKEND

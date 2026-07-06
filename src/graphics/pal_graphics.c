@@ -16,6 +16,7 @@
 PAL_HANDLE(PalAdapter)
 PAL_HANDLE(PalDevice)
 PAL_HANDLE(PalQueue)
+PAL_HANDLE(PalMemory)
 PAL_HANDLE(PalSwapchain)
 PAL_HANDLE(PalImage)
 PAL_HANDLE(PalImageView)
@@ -681,6 +682,10 @@ PalResult PAL_CALL palCreateDevice(
         return result;
     }
 
+    if (device->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     device->backend = adapter->backend;
     *outDevice = device;
     return PAL_RESULT_SUCCESS;
@@ -708,7 +713,20 @@ PalResult PAL_CALL palAllocateMemory(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    return device->backend->allocateMemory(device, type, memoryMask, size, outMemory);
+    PalMemory* memory = nullptr;
+    PalResult result;
+    result = device->backend->allocateMemory(device, type, memoryMask, size, &memory);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    if (memory->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
+    memory->backend = device->backend;
+    *outMemory = memory;
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palFreeMemory(
@@ -868,6 +886,10 @@ PalResult PAL_CALL palCreateQueue(
         return result;
     }
 
+    if (queue->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     queue->backend = device->backend;
     *outQueue = queue;
     return PAL_RESULT_SUCCESS;
@@ -980,6 +1002,10 @@ PalResult PAL_CALL palCreateImage(
         return result;
     }
 
+    if (image->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     image->backend = device->backend;
     *outImage = image;
     return PAL_RESULT_SUCCESS;
@@ -1063,6 +1089,10 @@ PalResult PAL_CALL palCreateImageView(
         return result;
     }
 
+    if (imageView->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     imageView->backend = device->backend;
     *outImageView = imageView;
     return PAL_RESULT_SUCCESS;
@@ -1097,6 +1127,10 @@ PalResult PAL_CALL palCreateSampler(
     result = device->backend->createSampler(device, info, &sampler);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (sampler->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     sampler->backend = device->backend;
@@ -1135,6 +1169,10 @@ PalResult PAL_CALL palCreateSurface(
     result = device->backend->createSurface(device, window, windowInstance, instanceType, &surface);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (surface->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     surface->backend = device->backend;
@@ -1189,6 +1227,10 @@ PalResult PAL_CALL palCreateSwapchain(
     result = device->backend->createSwapchain(device, queue, surface, info, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (swapchain->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     // set the backend for all swapchain images
@@ -1292,6 +1334,10 @@ PalResult PAL_CALL palCreateShader(
         return result;
     }
 
+    if (shader->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     shader->backend = device->backend;
     *outShader = shader;
     return PAL_RESULT_SUCCESS;
@@ -1326,6 +1372,10 @@ PalResult PAL_CALL palCreateFence(
     result = device->backend->createFence(device, signaled, &fence);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (fence->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     fence->backend = device->backend;
@@ -1398,6 +1448,10 @@ PalResult PAL_CALL palCreateSemaphore(
     result = device->backend->createSemaphore(device, enableTimeline, &semaphore);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (semaphore->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     semaphore->backend = device->backend;
@@ -1483,6 +1537,10 @@ PalResult PAL_CALL palCreateCommandPool(
         return result;
     }
 
+    if (pool->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     pool->backend = device->backend;
     *outPool = pool;
     return PAL_RESULT_SUCCESS;
@@ -1527,6 +1585,10 @@ PalResult PAL_CALL palAllocateCommandBuffer(
     result = device->backend->allocateCommandBuffer(device, pool, type, &cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (cmdBuffer->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     cmdBuffer->backend = device->backend;
@@ -2296,6 +2358,10 @@ PalResult PAL_CALL palCreateAccelerationstructure(
         return result;
     }
 
+    if (as->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     as->backend = device->backend;
     *outAs = as;
     return PAL_RESULT_SUCCESS;
@@ -2346,6 +2412,10 @@ PalResult PAL_CALL palCreateBuffer(
     result = device->backend->createBuffer(device, info, &buffer);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (buffer->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     buffer->backend = device->backend;
@@ -2541,6 +2611,10 @@ PalResult PAL_CALL palCreateDescriptorSetLayout(
         return result;
     }
 
+    if (layout->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     layout->backend = device->backend;
     *outLayout = layout;
     return PAL_RESULT_SUCCESS;
@@ -2575,6 +2649,10 @@ PalResult PAL_CALL palCreateDescriptorPool(
     result = device->backend->createDescriptorPool(device, info, &pool);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (pool->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     pool->backend = device->backend;
@@ -2623,6 +2701,10 @@ PalResult PAL_CALL palAllocateDescriptorSet(
         return result;
     }
 
+    if (set->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     set->backend = device->backend;
     *outSet = set;
     return PAL_RESULT_SUCCESS;
@@ -2668,6 +2750,10 @@ PalResult PAL_CALL palCreatePipelineLayout(
         return result;
     }
 
+    if (layout->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     layout->backend = device->backend;
     *outLayout = layout;
     return PAL_RESULT_SUCCESS;
@@ -2708,6 +2794,10 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
         return result;
     }
 
+    if (pipeline->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     pipeline->backend = device->backend;
     *outPipeline = pipeline;
     return PAL_RESULT_SUCCESS;
@@ -2733,6 +2823,10 @@ PalResult PAL_CALL palCreateComputePipeline(
         return result;
     }
 
+    if (pipeline->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
+    }
+
     pipeline->backend = device->backend;
     *outPipeline = pipeline;
     return PAL_RESULT_SUCCESS;
@@ -2756,6 +2850,10 @@ PalResult PAL_CALL palCreateRayTracingPipeline(
     result = device->backend->createRayTracingPipeline(device, info, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (pipeline->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     pipeline->backend = device->backend;
@@ -2796,6 +2894,10 @@ PalResult PAL_CALL palCreateShaderBindingTable(
     result = device->backend->createShaderBindingTable(device, info, &sbt);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (sbt->backend != PAL_BACKEND_KEY) {
+        return PAL_RESULT_CODE_INVALID_DRIVER;
     }
 
     sbt->backend = device->backend;
