@@ -51,8 +51,7 @@ PalBool rayTracingTest()
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
 
-    PalResult result = palInitGraphics(&debugger, nullptr, 0, nullptr);
-    // PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
@@ -276,7 +275,7 @@ PalBool rayTracingTest()
     void* data = nullptr;
     result = palMapBuffer(vertexBuffer, 0, sizeof(vertices), &data);
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
@@ -379,7 +378,7 @@ PalBool rayTracingTest()
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
@@ -756,7 +755,7 @@ PalBool rayTracingTest()
     void* ptr = nullptr;
     result = palMapBuffer(stagingBuffer, 0, bufferBytes, &ptr);
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 

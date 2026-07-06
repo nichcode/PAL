@@ -525,7 +525,7 @@ PalBool multiDescriptorSetTest()
         void* ptr = nullptr;
         result = palMapBuffer(stagingBuffers[i], 0, bufferBytes, &ptr);
         if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to map memory");
+            logResult(result, "Failed to map buffer");
             return PAL_FALSE;
         }
 

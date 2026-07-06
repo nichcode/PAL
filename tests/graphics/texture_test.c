@@ -437,7 +437,7 @@ PalBool textureTest()
     void* ptr = nullptr;
     result = palMapBuffer(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
@@ -510,7 +510,7 @@ PalBool textureTest()
     PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
     imageStagingBufferCreateInfo.size = imageCopyStagingBufferSize;
     imageStagingBufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC;
-    bufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
+    imageStagingBufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
 
     result = palCreateBuffer(device, &imageStagingBufferCreateInfo, &imageStagingBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -527,7 +527,7 @@ PalBool textureTest()
         &data);
 
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
@@ -590,8 +590,8 @@ PalBool textureTest()
         cmdBuffers[0], 
         checkerboard, 
         &checkerboardRange, 
-        &oldImageUsageState, 
-        &newImageUsageState);
+        oldImageUsageState, 
+        newImageUsageState);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to set barrier");
@@ -616,8 +616,8 @@ PalBool textureTest()
         cmdBuffers[0], 
         checkerboard, 
         &checkerboardRange, 
-        &oldImageUsageState, 
-        &newImageUsageState);
+        oldImageUsageState, 
+        newImageUsageState);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to set barrier");

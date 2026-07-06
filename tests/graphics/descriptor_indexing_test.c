@@ -462,7 +462,7 @@ PalBool descriptorIndexingTest()
     void* ptr = nullptr;
     result = palMapBuffer(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
@@ -553,7 +553,7 @@ PalBool descriptorIndexingTest()
             &data);
 
         if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to map memory");
+            logResult(result, "Failed to map buffer");
             return PAL_FALSE;
         }
 

@@ -231,6 +231,8 @@ PalResult PAL_CALL createImageVk(
             return makeResultVk(result);
         }
 
+        memory->type = memoryType;
+        memory->reserved = PAL_BACKEND_KEY;
         image->isMemoryManaged = PAL_TRUE;
     }
 

@@ -76,7 +76,7 @@ project "tests"
         }
     end
 
-    if (PAL_BUILD_GRAPHICS_MODULE and PAL_BUILD_VIDEO_MODULE) then
+    if (PAL_BUILD_GRAPHICS_MODULE and PAL_BUILD_VIDEO_MODULE and PAL_BUILD_SYSTEM_MODULE) then
         files {
             "graphics/clear_color_test.c",
             "graphics/triangle_test.c",

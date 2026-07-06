@@ -8,6 +8,7 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 #include "pal_platform.h"
+#include <stdlib.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

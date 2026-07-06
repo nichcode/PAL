@@ -280,6 +280,8 @@ PalResult PAL_CALL createBufferVk(
             return makeResultVk(result);
         }
 
+        memory->type = memoryType;
+        memory->reserved = PAL_BACKEND_KEY;
         buffer->isMemoryManaged = PAL_TRUE;
     }
 

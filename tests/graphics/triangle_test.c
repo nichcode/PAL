@@ -400,7 +400,7 @@ PalBool triangleTest()
     void* ptr = nullptr;
     result = palMapBuffer(stagingBuffer, 0, sizeof(vertices), &ptr);
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to map memory");
+        logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
@@ -436,7 +436,7 @@ PalBool triangleTest()
     PalUsageState oldUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
     PalUsageState newUsageState = PAL_USAGE_STATE_VERTEX_READ;
 
-    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &oldUsageState, &newUsageState);
+    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, oldUsageState, newUsageState);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to set barrier");
         return PAL_FALSE;

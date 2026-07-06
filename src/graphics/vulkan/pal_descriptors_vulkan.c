@@ -47,8 +47,12 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flagsCreateInfo = {0};
     flagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 
-    PalBool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-    if (info->flags != 0 && hasDescriptorIndexing) {
+    PalBool hasDescriptorIndexing = PAL_FALSE;
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        hasDescriptorIndexing = PAL_TRUE;
+    }
+
+    if (info->flags != 0 && !hasDescriptorIndexing) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
@@ -104,13 +108,11 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         &s_Vk.vkAllocator,
         &layout->handle);
 
+    palFree(s_Vk.allocator, bindings);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, layout);
-        palFree(s_Vk.allocator, bindings);
         return makeResultVk(result);
     }
-
-    palFree(s_Vk.allocator, bindings);
 
     layout->device = vkDevice;
     layout->flags = info->flags;
@@ -143,8 +145,12 @@ PalResult PAL_CALL createDescriptorPoolVk(
     VkDescriptorPoolCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 
-    PalBool hasDescriptorIndexing = vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING;
-    if (info->flags != 0 && hasDescriptorIndexing) {
+    PalBool hasDescriptorIndexing = PAL_FALSE;
+    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
+        hasDescriptorIndexing = PAL_TRUE;
+    }
+
+    if (info->flags != 0 && !hasDescriptorIndexing) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
@@ -174,13 +180,12 @@ PalResult PAL_CALL createDescriptorPoolVk(
         &s_Vk.vkAllocator,
         &pool->handle);
 
+    palFree(s_Vk.allocator, poolSizes);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, pool);
-        palFree(s_Vk.allocator, poolSizes);
         return makeResultVk(result);
     }
 
-    palFree(s_Vk.allocator, poolSizes);
     pool->device = vkDevice;
     pool->flags = info->flags;
     pool->reserved = PAL_BACKEND_KEY;

@@ -58,18 +58,18 @@ int main(int argc, char** argv)
 #if PAL_HAS_GRAPHICS_MODULE == 1
     // registerTest(graphicsTest, "Graphics Test");
     // registerTest(computeTest, "Compute Test");
-    registerTest(rayTracingTest, "Ray Tracing Test");
+    // registerTest(rayTracingTest, "Ray Tracing Test");
     // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
 #endif // PAL_HAS_GRAPHICS_MODULE
 
-#if PAL_HAS_GRAPHICS_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1
+#if PAL_HAS_GRAPHICS_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1 && PAL_HAS_SYSTEM_MODULE == 1
     // registerTest(clearColorTest, "Clear Color Test");
     // registerTest(triangleTest, "Triangle Test");
     // registerTest(meshTest, "Mesh Test");
     // registerTest(textureTest, "Texture Test");
     // registerTest(geometryTest, "Geometry Test");
     // registerTest(indirectDrawTest, "Indirect Draw Test");
-    // registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
+    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
 #endif //
 
     runTests();
