@@ -311,7 +311,7 @@ PalResult PAL_CALL createSwapchainVk(
     }
     vkDevice->getSwapchainImages(vkDevice->handle, swapchain->handle, &count, images);
 
-    // fill all images with the creatio info
+    // fill all images with the creation info
     for (int i = 0; i < count; i++) {
         ImageVk* image = &swapchain->images[i];
         image->device = vkDevice;

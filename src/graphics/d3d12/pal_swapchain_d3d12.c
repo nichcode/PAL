@@ -10,33 +10,36 @@
 
 PalResult PAL_CALL createSurfaceD3D12(
     PalDevice* device,
-    PalGraphicsWindow* window,
+    void* window,
+    void* windowInstance,
+    PalWindowInstanceType instanceType,
     PalSurface** outSurface)
 {
-    Device* d3d12Device = (Device*)device;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
-    Surface* surface = nullptr;
-    surface = palAllocate(s_D3D12.allocator, sizeof(Surface), 0);
+    SurfaceD3D12* surface = nullptr;
+    surface = palAllocate(s_D3D12.allocator, sizeof(SurfaceD3D12), 0);
     if (!surface) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     // validate if the window is valid
-    if (!IsWindow((HWND)window->window)) {
-        return PAL_RESULT_INVALID_GRAPHICS_WINDOW;
+    if (!IsWindow((HWND)window)) {
+        return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
-    surface->handle = window->window;
+    surface->handle = window;
+    surface->reserved = PAL_BACKEND_KEY;
     *outSurface = (PalSurface*)surface;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySurfaceD3D12(PalSurface* surface)
 {
-    Surface* d3dSurface = (Surface*)surface;
+    SurfaceD3D12* d3dSurface = (SurfaceD3D12*)surface;
     palFree(s_D3D12.allocator, d3dSurface);
 }
 
@@ -46,14 +49,14 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     PalSurfaceCapabilities* caps)
 {
     HRESULT result;
-    Surface* d3dSurface = (Surface*)surface;
-    Device* d3d12Device = (Device*)device;
+    SurfaceD3D12* d3dSurface = (SurfaceD3D12*)surface;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     PalBool supportHDR10 = PAL_FALSE;
     IDXGISwapChain1* swapchain1 = nullptr;
     IDXGISwapChain3* swapchain3 = nullptr;
 
     if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     DXGI_SWAP_CHAIN_DESC1 desc = {0};
@@ -77,10 +80,7 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
-        if (result == E_OUTOFMEMORY) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        }
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return makeResultD3D12(result);
     }
 
     swapchain1->lpVtbl->QueryInterface(swapchain1, &IID_Swapchain, (void**)&swapchain3);
@@ -104,21 +104,15 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
         &allowTearing,
         sizeof(allowTearing));
 
-    caps->presentModes[PAL_PRESENT_MODE_FIFO] = PAL_TRUE;
+    caps->minImageCount = 2;
+    caps->supportedPresentModes = (1u << PAL_PRESENT_MODE_FIFO);
     if (allowTearing) {
         caps->minImageCount = 3;
-        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = PAL_TRUE;
-        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = PAL_TRUE;
-
-    } else {
-        caps->minImageCount = 2;
-        caps->presentModes[PAL_PRESENT_MODE_IMMEDIATE] = PAL_FALSE;
-        caps->presentModes[PAL_PRESENT_MODE_MAILBOX] = PAL_FALSE;
+        caps->supportedPresentModes |= (1u << PAL_PRESENT_MODE_IMMEDIATE);
+        caps->supportedPresentModes |= (1u << PAL_PRESENT_MODE_MAILBOX);
     }
 
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_OPAQUE] = PAL_TRUE;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED] = PAL_FALSE;
-    caps->compositeAlphas[PAL_COMPOSITE_ALPHA_POST_MULTIPLIED] = PAL_FALSE;
+    caps->supportedCompositeAlphas |= (1u << PAL_COMPOSITE_ALPHA_OPAQUE);
 
     caps->maxImageCount = 8; // safe default
     caps->minImageWidth = 1;
@@ -128,19 +122,15 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     caps->maxImageArrayLayers = 1;
 
     // check support for the base format
+    caps->supportedFormats = 0;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = {0};
-    DXGI_FORMAT baseFormats[PAL_SURFACE_FORMAT_MAX];
+    DXGI_FORMAT baseFormats[PAL_SURFACE_FORMAT_COUNT];
     baseFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
     baseFormats[1] = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
     baseFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     baseFormats[3] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = PAL_FALSE;
-    caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = PAL_FALSE;
-    caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = PAL_FALSE;
-    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = PAL_FALSE;
-
-    for (int i = 0; i < PAL_SURFACE_FORMAT_MAX; i++) {
+    for (int i = 0; i < PAL_SURFACE_FORMAT_COUNT; i++) {
         formatSupport.Format = baseFormats[i];
         result = d3d12Device->handle->lpVtbl->CheckFeatureSupport(
             d3d12Device->handle,
@@ -150,21 +140,21 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
 
         if (SUCCEEDED(result) && (formatSupport.Support1 != 0 || formatSupport.Support2 != 0)) {
             if (baseFormats[i] == DXGI_FORMAT_B8G8R8A8_UNORM) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR] = PAL_TRUE;
+                caps->supportedFormats |= (1u << PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR);
             }
 
             if (baseFormats[i] == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
-                caps->formats[PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR] = PAL_TRUE;
+                caps->supportedFormats |= (1u << PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR);
             }
 
             if (baseFormats[i] == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
-                caps->formats[PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR] = PAL_TRUE;
+                caps->supportedFormats |= (1u << PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR);
             }
 
             if (baseFormats[i] == DXGI_FORMAT_R16G16B16A16_FLOAT) {
                 // check HDR10 color space
                 if (supportHDR10) {
-                    caps->formats[PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10] = PAL_TRUE;
+                    caps->supportedFormats |= (1u << PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10);
                 }
             }
         }
@@ -174,10 +164,6 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-// ==================================================
-// Swapchain
-// ==================================================
-
 PalResult PAL_CALL createSwapchainD3D12(
     PalDevice* device,
     PalQueue* queue,
@@ -186,35 +172,35 @@ PalResult PAL_CALL createSwapchainD3D12(
     PalSwapchain** outSwapchain)
 {
     HRESULT result;
-    Surface* d3dSurface = (Surface*)surface;
-    Device* d3d12Device = (Device*)device;
-    Queue* d3d12Queue = (Queue*)queue;
-    Swapchain* swapchain = nullptr;
+    SurfaceD3D12* d3dSurface = (SurfaceD3D12*)surface;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    QueueD3D12* d3d12Queue = (QueueD3D12*)queue;
+    SwapchainD3D12* swapchain = nullptr;
     PalBool isHDRColorspace = PAL_FALSE;
 
     if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
-        return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     if (d3d12Queue->type != PAL_QUEUE_TYPE_GRAPHICS) {
-        return PAL_RESULT_INVALID_QUEUE;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (info->compositeAlpha != PAL_COMPOSITE_ALPHA_OPAQUE) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (info->presentMode == PAL_PRESENT_MODE_MAILBOX && info->imageCount < 3) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
     if (info->imageCount > 8) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    swapchain = palAllocate(s_D3D12.allocator, sizeof(Swapchain), 0);
+    swapchain = palAllocate(s_D3D12.allocator, sizeof(SwapchainD3D12), 0);
     if (!swapchain) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     IDXGISwapChain1* swapchain1 = nullptr;
@@ -276,12 +262,7 @@ PalResult PAL_CALL createSwapchainD3D12(
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
-        if (result == E_OUTOFMEMORY) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        } else if (result == E_INVALIDARG) {
-            return PAL_RESULT_INVALID_ARGUMENT;
-        }
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return makeResultD3D12(result);
     }
 
     swapchain1->lpVtbl->QueryInterface(swapchain1, &IID_Swapchain, (void**)&swapchain->handle);
@@ -293,27 +274,29 @@ PalResult PAL_CALL createSwapchainD3D12(
             DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
     } else {
         swapchain->handle->lpVtbl->SetColorSpace1(
-            swapchain->handle, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+            swapchain->handle, 
+            DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
     }
 
     // get and cache swapchain images
     swapchain->images = nullptr;
-    swapchain->images = palAllocate(s_D3D12.allocator, sizeof(Image) * info->imageCount, 0);
+    swapchain->images = palAllocate(s_D3D12.allocator, sizeof(ImageD3D12) * info->imageCount, 0);
     if (!swapchain->imageCount) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    // fill all images with the creatio info
+    // fill all images with the creation info
     for (int i = 0; i < info->imageCount; i++) {
         ID3D12Resource* tmp = nullptr;
         swapchain->handle->lpVtbl->GetBuffer(swapchain->handle, i, &IID_Resource, (void**)&tmp);
 
-        Image* image = &swapchain->images[i];
-        image->belongsToSwapchain = PAL_TRUE;
+        ImageD3D12* image = &swapchain->images[i];
         image->device = d3d12Device;
         image->handle = tmp;
 
-        image->info.depthOrArraySize = 1; // always 1
+        image->info.belongsToSwapchain = PAL_TRUE;
+        image->info.depth = 1; // always 1
+        image->info.arrayLayerCount = 1; // always 1
         image->info.format = imageFormat;
         image->info.usages = PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
         image->info.height = info->height;
@@ -338,7 +321,7 @@ PalResult PAL_CALL createSwapchainD3D12(
 
 void PAL_CALL destroySwapchainD3D12(PalSwapchain* swapchain)
 {
-    Swapchain* d3dSwapchain = (Swapchain*)swapchain;
+    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
     d3dSwapchain->handle->lpVtbl->Release(d3dSwapchain->handle);
     palFree(s_D3D12.allocator, d3dSwapchain->images);
     palFree(s_D3D12.allocator, d3dSwapchain);
@@ -348,7 +331,7 @@ PalImage* PAL_CALL getSwapchainImageD3D12(
     PalSwapchain* swapchain,
     uint32_t index)
 {
-    Swapchain* d3dSwapchain = (Swapchain*)swapchain;
+    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
     if (index > d3dSwapchain->imageCount) {
         return nullptr;
     }
@@ -360,24 +343,29 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
     PalSwapchainNextImageInfo* info,
     uint32_t* outIndex)
 {
+    HRESULT result;
     uint32_t index = 0;
-    Swapchain* d3dSwapchain = (Swapchain*)swapchain;
+    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
     ID3D12CommandQueue* queue = d3dSwapchain->queue;
 
     index = d3dSwapchain->handle->lpVtbl->GetCurrentBackBufferIndex(d3dSwapchain->handle);
     if (info->fence) {
-        Fence* fence = (Fence*)info->fence;
+        FenceD3D12* fence = (FenceD3D12*)info->fence;
         fence->value++;
-        queue->lpVtbl->Signal(queue, fence->handle, fence->value);
+        result = queue->lpVtbl->Signal(queue, fence->handle, fence->value);
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dSwapchain->device);
+            return makeResultD3D12(result);
+        }
     }
 
     if (info->signalSemaphore) {
-        Semaphore* semaphore = (Semaphore*)info->signalSemaphore;
-        if (semaphore->isTimeline) {
-            queue->lpVtbl->Signal(queue, semaphore->handle, info->signalValue);
-        } else {
-            semaphore->value = 1;
-            queue->lpVtbl->Signal(queue, semaphore->handle, semaphore->value);
+        SemaphoreD3D12* semaphore = (SemaphoreD3D12*)info->signalSemaphore;
+        semaphore->value = 1;
+        result = queue->lpVtbl->Signal(queue, semaphore->handle, semaphore->value);
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dSwapchain->device);
+            return makeResultD3D12(result);
         }
     }
 
@@ -391,17 +379,22 @@ PalResult PAL_CALL presentSwapchainD3D12(
     PalSemaphore* waitSemaphore)
 {
     HRESULT result;
-    Swapchain* d3dSwapchain = (Swapchain*)swapchain;
+    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
     ID3D12CommandQueue* queue = d3dSwapchain->queue;
 
     if (waitSemaphore) {
-        Semaphore* semaphore = (Semaphore*)waitSemaphore;
-        if (semaphore->isTimeline) {
-            queue->lpVtbl->Wait(queue, semaphore->handle, info->waitValue);
-        } else {
-            queue->lpVtbl->Wait(queue, semaphore->handle, semaphore->value);
-            semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
-            semaphore->value = 0;
+        SemaphoreD3D12* semaphore = (SemaphoreD3D12*)waitSemaphore;
+        result = queue->lpVtbl->Wait(queue, semaphore->handle, semaphore->value);
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dSwapchain->device);
+            return makeResultD3D12(result);
+        }
+
+        semaphore->value = 0;
+        result = semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
+        if (FAILED(result)) {
+            pollMessagesD3D12(d3dSwapchain->device);
+            return makeResultD3D12(result);
         }
     }
 
@@ -413,7 +406,7 @@ PalResult PAL_CALL presentSwapchainD3D12(
     if (FAILED(result)) {
         pollMessagesD3D12(d3dSwapchain->device);
         if (result == DXGI_ERROR_DEVICE_REMOVED || result == DXGI_ERROR_DEVICE_RESET) {
-            return PAL_RESULT_DEVICE_LOST;
+            return makeResultD3D12(result);
         }
 
         // check if swapchain needs to be resize
@@ -423,13 +416,17 @@ PalResult PAL_CALL presentSwapchainD3D12(
         uint32_t h = windowRect.bottom - windowRect.top;
 
         if (!ret) {
-            return PAL_RESULT_SURFACE_LOST;
+            return palMakeResult(
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_WIN32, 
+                GetLastError());
         }
 
         if (w != d3dSwapchain->windowWidth || h != d3dSwapchain->windowHeight) {
-            return PAL_RESULT_SWAPCHAIN_OUT_OF_DATE;
+            return PAL_RESULT_CODE_OUT_OF_DATE;
         }
-        return PAL_RESULT_PLATFORM_FAILURE;
+
+        return makeResultD3D12(result);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -441,7 +438,7 @@ PalResult PAL_CALL resizeSwapchainD3D12(
     uint32_t newHeight)
 {
     HRESULT result;
-    Swapchain* d3dSwapchain = (Swapchain*)swapchain;
+    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
     result = d3dSwapchain->handle->lpVtbl->ResizeBuffers(
         d3dSwapchain->handle,
         d3dSwapchain->imageCount,
@@ -452,13 +449,10 @@ PalResult PAL_CALL resizeSwapchainD3D12(
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3dSwapchain->device);
-        if (result == E_INVALIDARG) {
-            return PAL_RESULT_INVALID_ARGUMENT;
-        }
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return makeResultD3D12(result);
     }
 
-    // fill all images with the creatio info
+    // fill all images with the creation info
     for (int i = 0; i < d3dSwapchain->imageCount; i++) {
         ID3D12Resource* tmp = nullptr;
         d3dSwapchain->handle->lpVtbl->GetBuffer(
@@ -467,7 +461,7 @@ PalResult PAL_CALL resizeSwapchainD3D12(
             &IID_Resource,
             (void**)&tmp);
 
-        Image* image = &d3dSwapchain->images[i];
+        ImageD3D12* image = &d3dSwapchain->images[i];
         image->handle = tmp;
         image->info.height = newHeight;
         image->info.width = newWidth;
@@ -475,9 +469,12 @@ PalResult PAL_CALL resizeSwapchainD3D12(
 
     // get and cache window size for swapchain out of date error
     RECT windowRect;
-    Surface* surface = d3dSwapchain->surface;
+    SurfaceD3D12* surface = d3dSwapchain->surface;
     if (!GetClientRect((HWND)surface->handle, &windowRect)) {
-        return PAL_RESULT_SURFACE_LOST;
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
+            GetLastError());
     }
 
     d3dSwapchain->windowWidth = windowRect.right - windowRect.left;
