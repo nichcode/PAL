@@ -226,7 +226,7 @@ project "PAL"
                 d3d12Include
             }
 
-            --defines { "PAL_HAS_D3D12_BACKEND=1" }
+            defines { "PAL_HAS_D3D12_BACKEND=1" }
         else
             defines { "PAL_HAS_D3D12_BACKEND=0" }
         end
@@ -253,7 +253,19 @@ project "PAL"
 
         if (hasD3D12) then
             files { 
-                -- "src/graphics/pal_d3d12.c" 
+                "src/graphics/d3d12/pal_adapter_d3d12.c",
+                "src/graphics/d3d12/pal_as_d3d12.c",
+                "src/graphics/d3d12/pal_buffer_d3d12.c",
+                "src/graphics/d3d12/pal_command_pool_d3d12.c",
+                "src/graphics/d3d12/pal_commands_d3d12.c",
+                "src/graphics/d3d12/pal_descriptors_d3d12.c",
+                "src/graphics/d3d12/pal_device_d3d12.c",
+                "src/graphics/d3d12/pal_image_d3d12.c",
+                "src/graphics/d3d12/pal_pipeline_d3d12.c",
+                "src/graphics/d3d12/pal_sbt_d3d12.c",
+                "src/graphics/d3d12/pal_swapchain_d3d12.c",
+                "src/graphics/d3d12/pal_sync_d3d12.c",
+                "src/graphics/d3d12/pal_d3d12.c"
             }
         end
     end

@@ -1,0 +1,95 @@
+
+/**
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
+ */
+
+#if PAL_HAS_D3D12_BACKEND
+#include "pal_d3d12.h"
+
+PalResult PAL_CALL createAccelerationstructureD3D12(
+    PalDevice* device,
+    const PalAccelerationStructureCreateInfo* info,
+    PalAccelerationStructure** outAs)
+{
+    HRESULT result;
+    AccelerationStructureD3D12* as = nullptr;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    BufferD3D12* d3dBuffer = (BufferD3D12*)info->buffer;
+
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    as = palAllocate(s_D3D12.allocator, sizeof(AccelerationStructureD3D12), 0);
+    if (!as) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    as->type = info->type;
+    as->handle = d3dBuffer->handle;
+    as->address = as->handle->lpVtbl->GetGPUVirtualAddress(as->handle);
+    as->address += info->offset;
+
+    as->reserved = PAL_BACKEND_KEY;
+    *outAs = (PalAccelerationStructure*)as;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyAccelerationstructureD3D12(PalAccelerationStructure* as)
+{
+    AccelerationStructureD3D12* d3dAs = (AccelerationStructureD3D12*)as;
+    palFree(s_D3D12.allocator, d3dAs);
+}
+
+PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
+    PalDevice* device,
+    PalAccelerationStructureBuildInfo* info,
+    PalAccelerationStructureBuildSize* size)
+{
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO sizeInfo = {0};
+    
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        D3D12_RAYTRACING_GEOMETRY_DESC* geometries = nullptr;
+        geometries = palAllocate(
+            s_D3D12.allocator,
+            sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count,
+            0);
+
+        if (!geometries) {
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        }
+
+        memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
+        fillBuildInfoD3D12(PAL_TRUE, info, geometries, &buildInfo);
+
+        ID3D12Device5_GetRaytracingAccelerationStructurePrebuildInfo(
+            d3d12Device->handle, 
+            &buildInfo.Inputs, 
+            &sizeInfo);
+
+        palFree(s_D3D12.allocator, geometries);
+
+    } else {
+        fillBuildInfoD3D12(PAL_TRUE, info, nullptr, &buildInfo);
+
+        ID3D12Device5_GetRaytracingAccelerationStructurePrebuildInfo(
+            d3d12Device->handle, 
+            &buildInfo.Inputs, 
+            &sizeInfo);
+    }
+
+    size->accelerationStructureSize = sizeInfo.ResultDataMaxSizeInBytes;
+    size->scratchBufferSize = sizeInfo.ScratchDataSizeInBytes;
+    size->updateScratchBufferSize = sizeInfo.UpdateScratchDataSizeInBytes;
+    return PAL_RESULT_SUCCESS;
+}
+
+#endif // PAL_HAS_D3D12_BACKEND

@@ -1,0 +1,236 @@
+
+/**
+    PAL - Prime Abstraction Layer
+    Copyright (C) 2025
+    Licensed under the Zlib license. See LICENSE file in root.
+ */
+
+#if PAL_HAS_D3D12_BACKEND
+#include "pal_d3d12.h"
+
+const IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
+
+PalResult PAL_CALL createFenceD3D12(
+    PalDevice* device,
+    PalBool signaled,
+    PalFence** outFence)
+{
+    HRESULT result;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    FenceD3D12* fence = nullptr;
+
+    fence = palAllocate(s_D3D12.allocator, sizeof(FenceD3D12), 0);
+    if (!fence) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    result = ID3D12Device5_CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, &fence->handle);
+    if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
+        palFree(s_D3D12.allocator, fence);
+        return makeResultD3D12(result);
+    }
+
+    // create event
+    fence->event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
+    if (!fence->event) {
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32, 
+            GetLastError());
+    }
+
+    fence->canReset = PAL_FALSE;
+    if (d3d12Device->features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
+        fence->canReset = PAL_TRUE;
+    }
+
+    fence->isTimeline = PAL_FALSE; // for sempaphores
+    fence->value = 0;
+    fence->reserved = PAL_BACKEND_KEY;
+    *outFence = (PalFence*)fence;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroyFenceD3D12(PalFence* fence)
+{
+    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
+    ID3D12Fence_Release(d3d12Fence->handle);
+    CloseHandle(d3d12Fence->event);
+    palFree(s_D3D12.allocator, d3d12Fence);
+}
+
+PalResult PAL_CALL waitFenceD3D12(
+    PalFence* fence,
+    uint64_t timeout)
+{
+    HRESULT result;
+    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
+    DWORD ret = 0;
+    uint64_t value = d3d12Fence->value;
+    HANDLE event = d3d12Fence->event;
+
+    if (ID3D12Fence_GetCompletedValue(d3d12Fence->handle) < value) {
+        result = ID3D12Fence_SetEventOnCompletion(d3d12Fence->handle, value, event);
+        if (FAILED(result)) {
+            return makeResultD3D12(result);
+        }
+
+        if (timeout == PAL_INFINITE) {
+            ret = WaitForSingleObject(event, INFINITE);
+        } else {
+            ret = WaitForSingleObject(event, (DWORD)timeout);
+        }
+    }
+
+    if (ret == WAIT_TIMEOUT) {
+        return PAL_RESULT_CODE_TIMEOUT;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL resetFenceD3D12(PalFence* fence)
+{
+    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
+    if (!d3d12Fence->canReset) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    ID3D12Fence_Signal(d3d12Fence->handle, 0);
+    d3d12Fence->value = 0;
+    return PAL_RESULT_SUCCESS;
+}
+
+PalBool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
+{
+    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
+    if (ID3D12Fence_GetCompletedValue(d3d12Fence->handle) == 0) {
+        return PAL_FALSE;
+    }
+    return PAL_TRUE;
+}
+
+PalResult PAL_CALL createSemaphoreD3D12(
+    PalDevice* device,
+    PalBool enableTimeline,
+    PalSemaphore** outSemaphore)
+{
+    HRESULT result;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    SemaphoreD3D12* semaphore = nullptr;
+
+    PalBool hasTimeline = PAL_FALSE;
+    if (d3d12Device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
+        hasTimeline = PAL_TRUE;
+    }
+
+    semaphore = palAllocate(s_D3D12.allocator, sizeof(SemaphoreD3D12), 0);
+    if (!semaphore) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    if (enableTimeline && !hasTimeline) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    if (enableTimeline) {
+        semaphore->isTimeline = PAL_TRUE;
+    }
+
+    result = ID3D12Device5_CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, &semaphore->handle);
+    if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
+        palFree(s_D3D12.allocator, semaphore);
+        return makeResultD3D12(result);
+    }
+
+    // create event
+    semaphore->event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
+    if (!semaphore->event) {
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32, 
+            GetLastError());
+    }
+
+    semaphore->canReset = PAL_FALSE;
+    semaphore->value = 0;
+    semaphore->reserved = PAL_BACKEND_KEY;
+    *outSemaphore = (PalSemaphore*)semaphore;
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore)
+{
+    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
+    ID3D12Fence_Release(d3d12Semaphore->handle);
+    CloseHandle(d3d12Semaphore->event);
+    palFree(s_D3D12.allocator, d3d12Semaphore);
+}
+
+PalResult PAL_CALL waitSemaphoreD3D12(
+    PalSemaphore* semaphore,
+    uint64_t value,
+    uint64_t timeout)
+{
+    HRESULT result;
+    DWORD ret = 0;
+    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
+    if (!d3d12Semaphore->isTimeline) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    HANDLE event = d3d12Semaphore->event;
+    if (ID3D12Fence_GetCompletedValue(d3d12Semaphore->handle) < value) {
+        result = ID3D12Fence_SetEventOnCompletion(d3d12Semaphore->handle, value, event);
+        if (FAILED(result)) {
+            return makeResultD3D12(result);
+        }
+
+        if (timeout == PAL_INFINITE) {
+            ret = WaitForSingleObject(event, INFINITE);
+        } else {
+            ret = WaitForSingleObject(event, (DWORD)timeout);
+        }
+    }
+
+    if (ret == WAIT_TIMEOUT) {
+        return PAL_RESULT_CODE_TIMEOUT;
+    }
+
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL signalSemaphoreD3D12(
+    PalSemaphore* semaphore,
+    PalQueue* queue,
+    uint64_t value)
+{
+    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
+    if (!d3d12Semaphore->isTimeline) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    HRESULT result = ID3D12Fence_Signal(d3d12Semaphore->handle, value);
+    if (FAILED(result)) {
+        return makeResultD3D12(result);
+    }
+    return PAL_RESULT_SUCCESS;
+}
+
+PalResult PAL_CALL getSemaphoreValueD3D12(
+    PalSemaphore* semaphore,
+    uint64_t* outValue)
+{
+    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
+    if (!d3d12Semaphore->isTimeline) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
+
+    UINT64 tmp = ID3D12Fence_GetCompletedValue(d3d12Semaphore->handle);
+    *outValue = tmp;
+    return PAL_RESULT_SUCCESS;
+}
+
+#endif // PAL_HAS_D3D12_BACKEND
