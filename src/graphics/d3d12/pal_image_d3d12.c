@@ -14,18 +14,18 @@ PalResult PAL_CALL createImageD3D12(
     PalImage** outImage)
 {
     HRESULT result;
-    Image* image = nullptr;
-    Device* d3d12Device = (Device*)device;
+    ImageD3D12* image = nullptr;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
 
-    image = palAllocate(s_D3D12.allocator, sizeof(Image), 0);
+    image = palAllocate(s_D3D12.allocator, sizeof(ImageD3D12), 0);
     if (!image) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    memset(image, 0, sizeof(Image));
+    memset(image, 0, sizeof(ImageD3D12));
     image->desc.Width = (UINT64)info->width;
     image->desc.Height = (UINT64)info->height;
-    image->desc.DepthOrArraySize = (UINT16)info->depthOrArraySize;
+    image->desc.DepthOrArraySize = (UINT16)info->arrayLayerCount;
     image->desc.MipLevels = (UINT16)info->mipLevelCount;
     image->desc.Format = formatToD3D12(info->format);
     image->desc.SampleDesc.Count = samplesToD3D12(info->sampleCount);
@@ -34,6 +34,7 @@ PalResult PAL_CALL createImageD3D12(
     image->desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     if (info->type == PAL_IMAGE_TYPE_3D) {
         image->desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        image->desc.DepthOrArraySize = (UINT16)info->depth;
 
     } else if (info->type == PAL_IMAGE_TYPE_1D) {
         image->desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
@@ -51,8 +52,31 @@ PalResult PAL_CALL createImageD3D12(
         image->desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    image->belongsToSwapchain = PAL_FALSE;
-    image->info.depthOrArraySize = info->depthOrArraySize;
+    image->isMemoryManaged = PAL_FALSE;
+    if (info->memoryUsage != PAL_IMAGE_MEMORY_USAGE_MANUAL) {
+        D3D12_HEAP_PROPERTIES heapProps = {0};
+        heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+        result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
+            d3d12Device->handle, 
+            &heapProps, 
+            0, 
+            &image->desc,
+            D3D12_RESOURCE_STATE_COMMON,
+            nullptr,
+            &IID_Resource,
+            (void**)&image->handle);
+
+        if (FAILED(result)) {
+            return makeResultD3D12(result);
+        }
+
+        image->isMemoryManaged = PAL_TRUE;
+    }
+
+    image->info.depth = info->depth;
+    image->info.arrayLayerCount = info->arrayLayerCount;
+    image->info.belongsToSwapchain = PAL_FALSE;
     image->info.type = info->type;
     image->info.format = info->format;
     image->info.usages = info->usages;
@@ -62,26 +86,26 @@ PalResult PAL_CALL createImageD3D12(
     image->info.width = info->width;
 
     image->device = d3d12Device;
+    image->reserved = PAL_BACKEND_KEY;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyImageD3D12(PalImage* image)
 {
-    Image* d3dImage = (Image*)image;
-    // check if memory has been attached to the image
-    if (d3dImage->handle) {
-        d3dImage->handle->lpVtbl->Release(d3dImage->handle);
+    ImageD3D12* d3d12Image = (ImageD3D12*)image;
+    if (d3d12Image->isMemoryManaged) {
+        d3d12Image->handle->lpVtbl->Release(d3d12Image->handle);
     }
-    palFree(s_D3D12.allocator, d3dImage);
+    palFree(s_D3D12.allocator, d3d12Image);
 }
 
 PalResult PAL_CALL getImageInfoD3D12(
     PalImage* image,
     PalImageInfo* info)
 {
-    Image* d3dImage = (Image*)image;
-    *info = d3dImage->info;
+    ImageD3D12* d3d12Image = (ImageD3D12*)image;
+    *info = d3d12Image->info;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -89,10 +113,10 @@ PalResult PAL_CALL getImageMemoryRequirementsD3D12(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
-    Image* d3dImage = (Image*)image;
-    ID3D12Device5* device = d3dImage->device->handle;
-    if (d3dImage->belongsToSwapchain) {
-        return PAL_RESULT_INVALID_OPERATION;
+    ImageD3D12* d3d12Image = (ImageD3D12*)image;
+    ID3D12Device5* device = d3d12Image->device->handle;
+    if (d3d12Image->info.belongsToSwapchain) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
@@ -102,13 +126,9 @@ PalResult PAL_CALL getImageMemoryRequirementsD3D12(
         &__ret,
         0,
         1,
-        &d3dImage->desc);
+        &d3d12Image->desc);
 
-    // d3d12 allows images to be used with only GPU only heap
-    requirements->memoryTypes[PAL_MEMORY_TYPE_GPU_ONLY] = PAL_TRUE;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_UPLOAD] = PAL_FALSE;
-    requirements->memoryTypes[PAL_MEMORY_TYPE_CPU_READBACK] = PAL_FALSE;
-
+    requirements->supportedMemoryTypes = (1u << PAL_MEMORY_TYPE_GPU_ONLY);
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
     return PAL_RESULT_SUCCESS;
@@ -120,10 +140,14 @@ PalResult PAL_CALL bindImageMemoryD3D12(
     uint64_t offset)
 {
     HRESULT result;
-    Image* d3dImage = (Image*)image;
-    ID3D12Device5* device = d3dImage->device->handle;
-    if (d3dImage->belongsToSwapchain) {
-        return PAL_RESULT_INVALID_OPERATION;
+    ImageD3D12* d3d12Image = (ImageD3D12*)image;
+    ID3D12Device5* device = d3d12Image->device->handle;
+    if (d3d12Image->info.belongsToSwapchain) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    if (d3d12Image->isMemoryManaged) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
     ID3D12Heap* mem = (ID3D12Heap*)memory;
@@ -131,28 +155,19 @@ PalResult PAL_CALL bindImageMemoryD3D12(
         device,
         mem,
         offset,
-        &d3dImage->desc,
+        &d3d12Image->desc,
         0,
         nullptr,
         &IID_Resource,
-        (void**)&d3dImage->handle);
+        (void**)&d3d12Image->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3dImage->device);
-        if (result == E_OUTOFMEMORY) {
-            return PAL_RESULT_OUT_OF_MEMORY;
-        } else if (result == E_INVALIDARG) {
-            return PAL_RESULT_INVALID_ARGUMENT;
-        }
-        return PAL_RESULT_PLATFORM_FAILURE;
+        pollMessagesD3D12(d3d12Image->device);
+        return makeResultD3D12(result);
     }
 
     return PAL_RESULT_SUCCESS;
 }
-
-// ==================================================
-// Image View
-// ==================================================
 
 PalResult PAL_CALL createImageViewD3D12(
     PalDevice* device,
@@ -161,24 +176,24 @@ PalResult PAL_CALL createImageViewD3D12(
     PalImageView** outImageView)
 {
     HRESULT result;
-    ImageView* imageView = nullptr;
-    Device* d3d12Device = (Device*)device;
-    Image* d3dImage = (Image*)image;
+    ImageViewD3D12* imageView = nullptr;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    ImageD3D12* d3d12Image = (ImageD3D12*)image;
 
     if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
-            return PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED;
+            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
     }
 
-    imageView = palAllocate(s_D3D12.allocator, sizeof(ImageView), 0);
+    imageView = palAllocate(s_D3D12.allocator, sizeof(ImageViewD3D12), 0);
     if (!imageView) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     imageView->heapIndex = UINT32_MAX;
-    PalBool hasRTV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-    PalBool hasDSV = (d3dImage->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    PalBool hasRTV = (d3d12Image->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+    PalBool hasDSV = (d3d12Image->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
     imageView->format = formatToD3D12(info->format);
     if (info->subresourceRange.aspect == PAL_IMAGE_ASPECT_COLOR && hasRTV) {
@@ -202,7 +217,7 @@ PalResult PAL_CALL createImageViewD3D12(
         imageView->heapIndex = index;
         d3d12Device->handle->lpVtbl->CreateRenderTargetView(
             d3d12Device->handle,
-            d3dImage->handle,
+            d3d12Image->handle,
             &desc,
             dst);
 
@@ -227,14 +242,14 @@ PalResult PAL_CALL createImageViewD3D12(
         imageView->heapIndex = index;
         d3d12Device->handle->lpVtbl->CreateDepthStencilView(
             d3d12Device->handle,
-            d3dImage->handle,
+            d3d12Image->handle,
             &desc,
             dst);
     }
 
     imageView->range = info->subresourceRange;
     imageView->type = info->type;
-    imageView->image = d3dImage;
+    imageView->image = d3d12Image;
 
     imageView->device = d3d12Device;
     *outImageView = (PalImageView*)imageView;
@@ -243,8 +258,8 @@ PalResult PAL_CALL createImageViewD3D12(
 
 void PAL_CALL destroyImageViewD3D12(PalImageView* imageView)
 {
-    ImageView* d3dImageView = (ImageView*)imageView;
-    Device* device = d3dImageView->device;
+    ImageViewD3D12* d3dImageView = (ImageViewD3D12*)imageView;
+    DeviceD3D12* device = d3dImageView->device;
     RTVHeapAllocator* allocator = nullptr;
 
     if (d3dImageView->heapIndex != UINT32_MAX) {
@@ -267,18 +282,18 @@ PalResult PAL_CALL createSamplerD3D12(
     const PalSamplerCreateInfo* info,
     PalSampler** outSampler)
 {
-    Device* d3d12Device = (Device*)device;
+    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     if (info->maxAnisotropy > d3d12Device->limits.maxAnisotropy) {
-        return PAL_RESULT_INVALID_ARGUMENT;
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    Sampler* sampler = nullptr;
-    sampler = palAllocate(s_D3D12.allocator, sizeof(Sampler), 0);
+    SamplerD3D12* sampler = nullptr;
+    sampler = palAllocate(s_D3D12.allocator, sizeof(SamplerD3D12), 0);
     if (!sampler) {
-        return PAL_RESULT_OUT_OF_MEMORY;
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    memset(sampler, 0, sizeof(Sampler));
+    memset(sampler, 0, sizeof(SamplerD3D12));
     sampler->desc.MaxLOD = info->maxLod;
     sampler->desc.MinLOD = info->minLod;
     sampler->desc.MipLODBias = info->mipLodBias;
@@ -309,7 +324,7 @@ PalResult PAL_CALL createSamplerD3D12(
 
 void PAL_CALL destroySamplerD3D12(PalSampler* sampler)
 {
-    Sampler* d3dSampler = (Sampler*)sampler;
+    SamplerD3D12* d3dSampler = (SamplerD3D12*)sampler;
     palFree(s_D3D12.allocator, d3dSampler);
 }
 

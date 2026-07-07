@@ -21,20 +21,6 @@
 
 #define MAX_MESSAGE_SIZE 4096
 
-#if INTPTR_MAX == INT64_MAX
-#define PTR_SIZE 8
-#else
-#define PTR_SIZE 4
-#endif // INTPTR_MAX
-
-#if defined(_MSC_VER)
-#define ALIGN_STREAM __declspec(align(PTR_SIZE))
-#elif defined(__GNUC__) || defined(__clang__)
-#define ALIGN_STREAM __attribute__((aligned(PTR_SIZE)))
-#else
- #define ALIGN_STREAM
-#endif // _MSC_VER
-
 // IIDS
 IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
 IID IID_Adapter = {0x3c8d99d1, 0x4fbf, 0x4181, 0xa8,0x2c, 0xaf,0x66,0xbf,0x7b,0xd2,0x4e};
@@ -57,87 +43,6 @@ IID IID_StateObject = {0x47016943, 0xfca8, 0x4594, 0x93,0xea, 0xaf,0x25,0x8b,0x5
 IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,0x04,0x0f,0xad};
 IID IID_StateObjectProps = {0xde5fa827, 0x9bf9, 0x4f26, 0x89,0xff, 0xd7,0xf5,0x6f,0xde,0x38,0x60};
 IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    ID3D12RootSignature* root;
-} RootSignatureStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_INPUT_LAYOUT_DESC desc;
-} InputLayoutStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology;
-} TopologyStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_INDEX_BUFFER_STRIP_CUT_VALUE value;
-} IBStripCutStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_RASTERIZER_DESC desc;
-} RasterizerStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    DXGI_SAMPLE_DESC desc;
-} SampleDescStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    UINT mask;
-} SampleMaskStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_DEPTH_STENCIL_DESC desc;
-} DepthStencilStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_BLEND_DESC desc;
-} BlendStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    struct D3D12_RT_FORMAT_ARRAY data;
-} RTVStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    DXGI_FORMAT format;
-} DSVStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_SHADER_BYTECODE desc;
-} ShaderStream;
-
-typedef ALIGN_STREAM struct {
-    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type;
-    D3D12_VIEW_INSTANCING_DESC desc;
-} ViewInstancingStream;
-
-typedef struct  {
-    RootSignatureStream layout;
-    InputLayoutStream inputLayout;
-    TopologyStream topology;
-    IBStripCutStream ibStripCut;
-    RasterizerStream rasterizer;
-    SampleDescStream sampleDesc;
-    SampleMaskStream sampleMask;
-    DepthStencilStream depthStencil;
-    BlendStream blend;
-    RTVStream RTV;
-    DSVStream DSV;
-    ViewInstancingStream viewInstancing;
-    ShaderStream shaders[7]; // 7 shader types for graphics pipeline
-} GraphicsPipelineStreamDesc;
 
 static D3D12 s_D3D12 = {0};
 

@@ -19,6 +19,9 @@
 #define MAX_DSV 512
 #define TEXTURE_PITCH 256
 #define MAX_ATTACHMENTS 8
+#define GRAPHICS_PIPELINE 1220
+#define COMPUTE_PIPELINE 1221
+#define RAY_TRACING_PIPELINE 1222
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -205,6 +208,7 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    PalBool isMemoryManaged;
     DeviceD3D12* device;
     ID3D12Resource* handle;
     PalImageInfo info;

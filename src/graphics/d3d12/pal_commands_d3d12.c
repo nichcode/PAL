@@ -9,9 +9,6 @@
 #include "pal_d3d12.h"
 
 #define align(v, a) (v + a - 1) & ~(a - 1)
-#define GRAPHICS_PIPELINE 1220
-#define COMPUTE_PIPELINE 1221
-#define RAY_TRACING_PIPELINE 1222
 
 static D3D12_RENDER_PASS_FLAGS renderingFlagToD3D12(PalRenderingFlags flags)
 {
@@ -994,7 +991,7 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
     PalUsageState newUsageState)
 {
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    ImageD3D12* d3dImage = (ImageD3D12*)image;
+    ImageD3D12* d3d12Image = (ImageD3D12*)image;
     D3D12_RESOURCE_STATES old, new;
     D3D12_RESOURCE_BARRIER barrier = {0};
 
@@ -1004,7 +1001,7 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
     // read/write barrier without transition
     if (old == new && old == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = d3dImage->handle;
+        barrier.UAV.pResource = d3d12Image->handle;
         d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
         return PAL_RESULT_SUCCESS;
     }
@@ -1020,14 +1017,14 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
 
     uint32_t startLevel = subresourceRange->startMipLevel;
     uint32_t startLayer = subresourceRange->startArrayLayer;
-    uint32_t maxLevels = d3dImage->info.mipLevelCount;
-    uint32_t maxLayers = d3dImage->info.arrayLayerCount;
+    uint32_t maxLevels = d3d12Image->info.mipLevelCount;
+    uint32_t maxLayers = d3d12Image->info.arrayLayerCount;
     uint32_t barrierCount = layerCount * levelCount * planeCount;
 
     if (startLevel == 0 && levelCount == maxLevels && startLayer == 0 && layerCount == maxLayers) {
         // full resource
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = d3dImage->handle;
+        barrier.Transition.pResource = d3d12Image->handle;
         barrier.Transition.StateBefore = old;
         barrier.Transition.StateAfter = new;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -1039,7 +1036,7 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
     if (layerCount == 1 && layerCount == 1 && planeCount == 1) {
         // single plane
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = d3dImage->handle;
+        barrier.Transition.pResource = d3d12Image->handle;
         barrier.Transition.StateBefore = old;
         barrier.Transition.StateAfter = new;
         barrier.Transition.Subresource = startLevel + startLayer * maxLevels;
@@ -1061,7 +1058,7 @@ PalResult PAL_CALL cmdImageBarrierD3D12(
 
                 D3D12_RESOURCE_BARRIER* tmp = &barriers[count++];
                 tmp->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                tmp->Transition.pResource = d3dImage->handle;
+                tmp->Transition.pResource = d3d12Image->handle;
                 tmp->Transition.StateBefore = old;
                 tmp->Transition.StateAfter = new;
                 tmp->Transition.Subresource = index;
