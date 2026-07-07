@@ -1745,8 +1745,6 @@ typedef struct {
     PalStoreOp stencilStoreOp;         /**< (eg. `PAL_STORE_OP_DONT_CARE`).*/
     PalResolveMode resolveMode;        /**< Used if resolveImageView is set.*/
     PalResolveMode stencilResolveMode; /**< Used if resolveImageView is set.*/
-    uint32_t texelWidth;               /**< Texel width for fragment shading rate attachment.*/
-    uint32_t texelHeight;              /**< Texel height for fragment shading rate attachment.*/
     PalClearValue clearValue;          /**< Clear value for color and depth/stencil attachments.*/
 } PalAttachmentDesc;
 
@@ -1832,9 +1830,14 @@ typedef struct {
  */
 typedef struct {
     PalAttachmentDesc* colorAttachments;              /**< Color attachments.*/
-    PalAttachmentDesc* depthStencilAttachment;        /**< Depth/Stencil attachment.*/
-    PalAttachmentDesc* fragmentShadingRateAttachment; /**< Fragment shading rate attachment.*/
+    PalAttachmentDesc* depthStencilAttachment;  /**< Depth/Stencil attachment.*/
+    PalImageView* fragmentShadingRateImageView;           /**< Fragment shading rate image view.*/
+    PalRect2D renderArea; /**< Rendering area of the attachments.*/
+    PalRenderingFlags flags; /**< (eg. `PAL_RENDERING_FLAG_NONE`).*/
+    uint32_t fragmentShadingRateTexelWidth;     /**< Texel width for fragment shading rate.*/
+    uint32_t fragmentShadingRateTexelHeight;    /**< Texel height for fragment shading rate.*/
     uint32_t viewCount;                               /**< View count. Set to 1 for default.*/
+    uint32_t arrayLayerCount;                   /**< Number of array layers for rendering.*/
     uint32_t colorAttachentCount;                     /**< Number of color attachments.*/
 } PalRenderingInfo;
 

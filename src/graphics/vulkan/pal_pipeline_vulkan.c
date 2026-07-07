@@ -648,8 +648,17 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
     // layout info
     VkFormat format = VK_FORMAT_UNDEFINED;
-    VkFormat colorAttachments[MAX_ATTACHMENTS];
+    VkFormat* colorAttachments = nullptr;
     PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
+
+    colorAttachments = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkFormat) * renderingLayout->colorAttachentCount, 
+        0);
+
+    if (!colorAttachments) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
 
     // color attachments
     for (int i = 0; i < renderingLayout->colorAttachentCount; i++) {
@@ -684,6 +693,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         return makeResultVk(result);
     }
 
+    palFree(s_Vk.allocator, colorAttachments);
     palFree(s_Vk.allocator, shaderStages);
     if (info->vertexLayoutCount) {
         palFree(s_Vk.allocator, bindingDescs);

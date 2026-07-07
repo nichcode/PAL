@@ -474,15 +474,16 @@ PalResult PAL_CALL palInitGraphics(
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    result = initGraphicsVk(debugger, allocator);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
+    // TODO:
+    // result = initGraphicsVk(debugger, allocator);
+    // if (result != PAL_RESULT_SUCCESS) {
+    //     return result;
+    // }
 
-    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base = s_VkBackend;
-    attachedBackend->startIndex = 0;
-    attachedBackend->count = 0;
+    // attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    // attachedBackend->base = s_VkBackend;
+    // attachedBackend->startIndex = 0;
+    // attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
@@ -529,7 +530,7 @@ void PAL_CALL palShutdownGraphics()
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    shutdownGraphicsVk();
+    //TODO: shutdownGraphicsVk();
 #endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12

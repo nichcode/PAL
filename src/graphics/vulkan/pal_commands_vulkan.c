@@ -8,8 +8,6 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
-#define min(a, b) (a < b) ? a : b
-
 static void commitShaderbindingTableUpdate(
     CommandBufferVk* cmdBuffer, 
     ShaderBindingTableVk* sbt)
@@ -259,7 +257,16 @@ PalResult PAL_CALL cmdBeginVk(
     layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
 
     VkFormat format = VK_FORMAT_UNDEFINED;
-    VkFormat colorAttachments[MAX_ATTACHMENTS];
+    VkFormat* colorAttachments = nullptr;
+    colorAttachments = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkFormat) * info->colorAttachentCount, 
+        0);
+
+    if (!colorAttachments) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
     if (!vkCmdBuffer->primary) {
         // secondary command buffer
         for (int i = 0; i < info->colorAttachentCount; i++) {
@@ -291,6 +298,7 @@ PalResult PAL_CALL cmdBeginVk(
         return makeResultVk(result);
     }
 
+    palFree(s_Vk.allocator, colorAttachments);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -474,7 +482,16 @@ PalResult PAL_CALL cmdBeginRenderingVk(
 
     VkRenderingAttachmentInfoKHR depthAttachment = {0};
     VkRenderingAttachmentInfoKHR stencilAttachment = {0};
-    VkRenderingAttachmentInfoKHR colorAttachments[MAX_ATTACHMENTS];
+    
+    VkRenderingAttachmentInfoKHR* colorAttachments = nullptr;
+    colorAttachments = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkRenderingAttachmentInfoKHR) * info->colorAttachentCount, 
+        0);
+
+    if (!colorAttachments) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
 
     VkRenderingAttachmentInfoKHR* attachment = nullptr;
     PalAttachmentDesc* desc = nullptr;
@@ -485,9 +502,6 @@ PalResult PAL_CALL cmdBeginRenderingVk(
     VkRenderingFragmentShadingRateAttachmentInfoKHR fsrInfo = {0};
     fsrInfo.sType = VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
 
-    uint32_t layerCount = UINT32_MAX;
-    uint32_t renderWidth = UINT32_MAX;
-    uint32_t renderHeight = UINT32_MAX;
     for (int i = 0; i < info->colorAttachentCount; i++) {
         attachment = &colorAttachments[i];
         desc = &info->colorAttachments[i];
@@ -532,17 +546,6 @@ PalResult PAL_CALL cmdBeginRenderingVk(
 
         attachment->resolveMode = resolveModeToVk(desc->resolveMode);
         attachment->imageLayout = layout;
-
-        // compute layer count and render area
-        layerCount = min(layerCount, imageView->layerCount);
-        renderWidth = min(renderWidth, imageView->image->info.width);
-        renderHeight = min(renderHeight, imageView->image->info.height);
-
-        if (resolveImageView) {
-            layerCount = min(layerCount, resolveImageView->layerCount);
-            renderWidth = min(renderWidth, resolveImageView->image->info.width);
-            renderHeight = min(renderHeight, resolveImageView->image->info.height);
-        }
     }
 
     rendering.colorAttachmentCount = info->colorAttachentCount;
@@ -623,44 +626,23 @@ PalResult PAL_CALL cmdBeginRenderingVk(
 
         rendering.pDepthAttachment = &depthAttachment;
         rendering.pStencilAttachment = &stencilAttachment;
-
-        // compute layer count and render area
-        layerCount = min(layerCount, imageView->layerCount);
-        renderWidth = min(renderWidth, imageView->image->info.width);
-        renderHeight = min(renderHeight, imageView->image->info.height);
-
-        if (resolveImageView) {
-            layerCount = min(layerCount, resolveImageView->layerCount);
-            renderWidth = min(renderWidth, resolveImageView->image->info.width);
-            renderHeight = min(renderHeight, resolveImageView->image->info.height);
-        }
     }
 
-    // fragment shading rate attachment
-    if (info->fragmentShadingRateAttachment) {
-        imageView = (ImageViewVk*)info->fragmentShadingRateAttachment->imageView;
+    // fragment shading rate
+    if (info->fragmentShadingRateImageView) {
+        imageView = (ImageViewVk*)info->fragmentShadingRateImageView;
         fsrInfo.imageView = imageView->handle;
-
-        fsrInfo.shadingRateAttachmentTexelSize.width =
-            info->fragmentShadingRateAttachment->texelWidth;
-
-        fsrInfo.shadingRateAttachmentTexelSize.height =
-            info->fragmentShadingRateAttachment->texelHeight;
-
+        fsrInfo.shadingRateAttachmentTexelSize.width = info->fragmentShadingRateTexelWidth;
+        fsrInfo.shadingRateAttachmentTexelSize.height = info->fragmentShadingRateTexelHeight;
         fsrInfo.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
         rendering.pNext = &fsrInfo;
-
-        // compute layer count and render area
-        layerCount = min(layerCount, imageView->layerCount);
-        renderWidth = min(renderWidth, imageView->image->info.width);
-        renderHeight = min(renderHeight, imageView->image->info.height);
     }
 
-    rendering.layerCount = layerCount;
-    rendering.renderArea.offset.x = 0;
-    rendering.renderArea.offset.y = 0;
-    rendering.renderArea.extent.width = renderWidth;
-    rendering.renderArea.extent.height = renderHeight;
+    rendering.layerCount = info->arrayLayerCount;
+    rendering.renderArea.offset.x = info->renderArea.x;
+    rendering.renderArea.offset.y = info->renderArea.y;
+    rendering.renderArea.extent.width = info->renderArea.width;
+    rendering.renderArea.extent.height = info->renderArea.height;
 
     if (info->viewCount == 1) {
         rendering.viewMask = 0;
@@ -668,7 +650,10 @@ PalResult PAL_CALL cmdBeginRenderingVk(
         rendering.viewMask = (1 << info->viewCount) - 1;
     }
 
+    rendering.flags = renderingFlagToVk(info->flags);
     vkCmdBuffer->device->cmdBeginRendering(vkCmdBuffer->handle, &rendering);
+
+    palFree(s_Vk.allocator, colorAttachments);
     return PAL_RESULT_SUCCESS;
 }
 

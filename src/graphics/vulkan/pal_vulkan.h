@@ -12,8 +12,6 @@
 #include "pal/pal_graphics.h"
 #include <vulkan/vulkan_core.h>
 
-#define MAX_ATTACHMENTS 32
-
 typedef struct _XDisplay Display;
 typedef unsigned long Window;
 typedef struct xcb_connection_t xcb_connection_t;

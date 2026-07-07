@@ -622,7 +622,7 @@ PalResult PAL_CALL createDeviceVk(
         extensions[extCount++] = "VK_KHR_fragment_shading_rate";
         fsr.pipelineFragmentShadingRate = PAL_TRUE;
 
-        // fragment shading rate attachment needs this
+        // fragment shading rate needs this
         if (features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
             fsr.attachmentFragmentShadingRate = PAL_TRUE;
         }

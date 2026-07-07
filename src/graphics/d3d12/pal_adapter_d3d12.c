@@ -8,6 +8,11 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
+// on older SDKs, D3D_FEATURE_LEVEL_12_2 is not defined
+#ifndef D3D_FEATURE_LEVEL_12_2
+#define D3D_FEATURE_LEVEL_12_2 0xc200
+#endif // D3D_FEATURE_LEVEL_12_2
+
 // From Agility SDK
 #ifndef D3D_SHADER_MODEL_6_8
 #define D3D_SHADER_MODEL_6_8 0x68
@@ -20,9 +25,6 @@
 #ifndef D3D_SHADER_MODEL_6_10
 #define D3D_SHADER_MODEL_6_10 0x6a
 #endif // D3D_SHADER_MODEL_6_10
-
-const IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
-const IID IID_Adapter = {0x3c8d99d1, 0x4fbf, 0x4181, 0xa8,0x2c, 0xaf,0x66,0xbf,0x7b,0xd2,0x4e};
 
 PalResult PAL_CALL enumerateAdaptersD3D12(
     int32_t* count,
@@ -46,10 +48,13 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         palFree(s_D3D12.allocator, s_D3D12.adapters);
     }
 
-    while (SUCCEEDED(IDXGIFactory6_EnumAdapters(s_D3D12.factory, adapterCount, &adapter))) {
+    while (SUCCEEDED(s_D3D12.factory->lpVtbl->EnumAdapters(
+        s_D3D12.factory, 
+        adapterCount, 
+        &adapter))) {
         if (outAdapters) {
             IDXGIAdapter4* tmp = nullptr;
-            if (SUCCEEDED(IDXGIAdapter_QueryInterface(adapter, &IID_Adapter, (void**)&tmp))) {
+            if (SUCCEEDED(adapter->lpVtbl->QueryInterface(adapter, &IID_Adapter, (void**)&tmp))) {
                 dxAdapters[adapterCount] = tmp;
             }
 
@@ -114,7 +119,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
         return makeResultD3D12(result);
     }
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_SHADER_MODEL, 
         &shaderModel, 
@@ -141,7 +146,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
         nullptr,
         nullptr);
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_ARCHITECTURE1, 
         &arch, 
@@ -253,38 +258,38 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {0};
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_D3D12_OPTIONS, 
         &options, 
         sizeof(options));
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_D3D12_OPTIONS3, 
         &options3, 
         sizeof(options3));
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_D3D12_OPTIONS5, 
         &options5, 
         sizeof(options5));
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_D3D12_OPTIONS6, 
         &options6, 
         sizeof(options6));
 
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_D3D12_OPTIONS7, 
         &options7, 
         sizeof(options7));
 
     shaderModel.HighestShaderModel = D3D_SHADER_MODEL_5_1;
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_SHADER_MODEL, 
         &shaderModel, 
@@ -401,7 +406,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
     D3D_SHADER_MODEL highestModel = D3D_SHADER_MODEL_5_1;
     for (int i = 0; i < 11; i++) {
         shaderModel.HighestShaderModel = models[i];
-        result = ID3D12Device_CheckFeatureSupport(
+        result = d3d12Adapter->tmpDevice->lpVtbl->CheckFeatureSupport(
             d3d12Adapter->tmpDevice, 
             D3D12_FEATURE_SHADER_MODEL, 
             &shaderModel, 
@@ -469,7 +474,7 @@ PalResult PAL_CALL enumerateFormatsD3D12(
         }
 
         support.Format = fmt;
-        result = ID3D12Device_CheckFeatureSupport(
+        result = device->lpVtbl->CheckFeatureSupport(
             device, 
             D3D12_FEATURE_FORMAT_SUPPORT, 
             &support, 
@@ -514,7 +519,7 @@ PalBool PAL_CALL isFormatSupportedD3D12(
     }
 
     support.Format = fmt;
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_FORMAT_SUPPORT, 
         &support, 
@@ -542,7 +547,7 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
     }
 
     support.Format = fmt;
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_FORMAT_SUPPORT, 
         &support, 
@@ -581,7 +586,7 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
     }
 
     support.Format = fmt;
-    result = ID3D12Device_CheckFeatureSupport(
+    result = device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_FORMAT_SUPPORT, 
         &support, 

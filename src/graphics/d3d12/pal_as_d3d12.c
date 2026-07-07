@@ -16,7 +16,7 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
     HRESULT result;
     AccelerationStructureD3D12* as = nullptr;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    BufferD3D12* d3dBuffer = (BufferD3D12*)info->buffer;
+    BufferD3D12* d3d12Buffer = (BufferD3D12*)info->buffer;
 
     if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
@@ -28,7 +28,7 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
     }
 
     as->type = info->type;
-    as->handle = d3dBuffer->handle;
+    as->handle = d3d12Buffer->handle;
     as->address = as->handle->lpVtbl->GetGPUVirtualAddress(as->handle);
     as->address += info->offset;
 
@@ -70,7 +70,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
         fillBuildInfoD3D12(PAL_TRUE, info, geometries, &buildInfo);
 
-        ID3D12Device5_GetRaytracingAccelerationStructurePrebuildInfo(
+        d3d12Device->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
             d3d12Device->handle, 
             &buildInfo.Inputs, 
             &sizeInfo);
@@ -80,7 +80,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
     } else {
         fillBuildInfoD3D12(PAL_TRUE, info, nullptr, &buildInfo);
 
-        ID3D12Device5_GetRaytracingAccelerationStructurePrebuildInfo(
+        d3d12Device->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
             d3d12Device->handle, 
             &buildInfo.Inputs, 
             &sizeInfo);

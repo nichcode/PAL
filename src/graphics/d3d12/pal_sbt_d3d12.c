@@ -10,11 +10,6 @@
 
 #define align(v, a) (v + a - 1) & ~(a - 1)
 
-// clang-format 
-const IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,0x04,0x0f,0xad};
-const IID IID_StateObjectProps = {0xde5fa827, 0x9bf9, 0x4f26, 0x89,0xff, 0xd7,0xf5,0x6f,0xde,0x38,0x60};
-// clang-format on
-
 PalResult PAL_CALL createShaderBindingTableD3D12(
     PalDevice* device,
     const PalShaderBindingTableCreateInfo* info,
@@ -78,7 +73,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     // create SBT buffer
     ID3D12StateObject* handle = pipeline->handle;
     ID3D12StateObjectProperties* props = NULL;
-    result = ID3D12StateObject_QueryInterface(handle, &IID_StateObjectProps, (void**)&props);
+    result = handle->lpVtbl->QueryInterface(handle, &IID_StateObjectProps, (void**)&props);
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
@@ -169,7 +164,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     bufferDesc.SampleDesc.Count = 1;
     bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-    result = ID3D12Device5_CreateCommittedResource(
+    result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
         d3d12Device->handle, 
         &heapProps, 
         0, 
@@ -185,7 +180,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
     // create staging buffer
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-    result = ID3D12Device5_CreateCommittedResource(
+    result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
         d3d12Device->handle, 
         &heapProps, 
         0, 
@@ -222,7 +217,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
             }
         }
 
-        void* handle = ID3D12StateObjectProperties_GetShaderIdentifier(props, tmp->entryName);
+        void* handle = props->lpVtbl->GetShaderIdentifier(props, tmp->entryName);
         if (stage == PAL_SHADER_STAGE_RAYGEN) {
             raygenHandles[raygenIndex++] = handle;
 
@@ -240,7 +235,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     // copy handles into the buffer
     offset = 0; // reuse variable
     void* ptr = nullptr;
-    result = ID3D12Resource_Map(sbt->stagingBuffer, 0, nullptr, &ptr);
+    result = sbt->stagingBuffer->lpVtbl->Map(sbt->stagingBuffer, 0, nullptr, &ptr);
     if (FAILED(result)) {
         return makeResultD3D12(result);
     }
@@ -296,8 +291,8 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         }
     }
 
-    ID3D12Resource_Unmap(sbt->stagingBuffer, 0, nullptr);
-    sbt->baseAddress = ID3D12Resource_GetGPUVirtualAddress(sbt->buffer);
+    sbt->stagingBuffer->lpVtbl->Unmap(sbt->stagingBuffer, 0, nullptr);
+    sbt->baseAddress = sbt->buffer->lpVtbl->GetGPUVirtualAddress(sbt->buffer);
 
     // raygen
     if (sbtInfo->raygenCount) {
@@ -343,7 +338,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         palFree(s_D3D12.allocator, callableHandles);
     }
 
-    ID3D12StateObjectProperties_Release(props);
+    props->lpVtbl->Release(props);
     sbt->handleSize = groupHandleSize;
     sbt->stagingBufferSize = bufferSize;
     sbt->pipeline = pipeline;
@@ -357,8 +352,8 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
 {
     ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
-    ID3D12Resource_Release(d3d12Sbt->buffer);
-    ID3D12Resource_Release(d3d12Sbt->stagingBuffer);
+    d3d12Sbt->buffer->lpVtbl->Release(d3d12Sbt->buffer);
+    d3d12Sbt->stagingBuffer->lpVtbl->Release(d3d12Sbt->stagingBuffer);
     palFree(s_D3D12.allocator, d3d12Sbt);
 }
 
@@ -373,7 +368,7 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
 
     void* data = nullptr;
-    result = ID3D12Resource_Map(d3d12Sbt->stagingBuffer, 0, nullptr, &data);
+    d3d12Sbt->stagingBuffer->lpVtbl->Map(d3d12Sbt->stagingBuffer, 0, nullptr, &data);
     if (FAILED(result)) {
         return makeResultD3D12(result);
     }
@@ -421,7 +416,7 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
         memcpy(dst + d3d12Sbt->handleSize, info->localData, info->localDataSize);
     }
 
-    ID3D12Resource_Unmap(d3d12Sbt->stagingBuffer, 0, nullptr);
+    d3d12Sbt->stagingBuffer->lpVtbl->Unmap(d3d12Sbt->stagingBuffer, 0, nullptr);
     d3d12Sbt->isDirty = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }

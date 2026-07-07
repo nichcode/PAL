@@ -9,7 +9,6 @@
 #define _PAL_D3D12_H
 
 #if PAL_HAS_D3D12_BACKEND
-#define COBJMACROS
 #include "pal/pal_graphics.h"
 #include <windows.h>
 #include <d3d12.h>
@@ -18,6 +17,8 @@
 
 #define MAX_RTV 1024
 #define MAX_DSV 512
+#define TEXTURE_PITCH 256
+#define MAX_ATTACHMENTS 8
 
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
@@ -187,8 +188,15 @@ typedef struct {
     uint32_t fenceValue;
     PalQueueType type;
     ID3D12Fence* fence;
+    HANDLE fenceEvent;
     ID3D12CommandQueue* handle;
 } QueueD3D12;
+
+typedef struct {
+    void* reserved;
+    PalMemoryType type;
+    ID3D12Heap* handle;
+} MemoryD3D12;
 
 typedef struct {
     void* reserved;
@@ -276,11 +284,9 @@ typedef struct {
 
 typedef struct {
     void* reserved;
-    PalBool supportsAddress;
-    PalBool canChangeState;
-    PalBool hasIndirect;
-    PalBool isAccelerationStructure;
-    PalBool isScratch;
+    PalBool isMemoryManaged;
+    PalBool canStateChange;
+    PalBufferUsages usages;
     uint64_t size;
     ID3D12Resource* handle;
     DeviceD3D12* device;
@@ -398,6 +404,31 @@ void getDescriptorTierLimitsD3D12(
     void* device, 
     PalResourceCapabilities* caps, 
     PalDescriptorIndexingCapabilities* descCaps);
+
+uint32_t getFormatSizeD3D12(PalFormat format);
+
+// IIDs
+extern IID IID_Device;
+extern IID IID_Adapter;
+extern IID IID_Factory;
+extern IID IID_DebugController;
+extern IID IID_DebugController1;
+extern IID IID_InfoQueue;
+extern IID IID_Heap;
+extern IID IID_Queue;
+extern IID IID_Swapchain;
+extern IID IID_CommandAllocator;
+extern IID IID_CommandList;
+extern IID IID_CommandList6;
+extern IID IID_CommandSignature;
+extern IID IID_DescriptorHeap;
+extern IID IID_RootSignature;
+extern IID IID_Device5;
+extern IID IID_PipelineState;
+extern IID IID_StateObject;
+extern IID IID_Resource;
+extern IID IID_StateObjectProps;
+extern IID IID_Fence;
 
 extern D3D12 s_D3D12;
 
