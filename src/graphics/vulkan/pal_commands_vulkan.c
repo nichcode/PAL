@@ -226,6 +226,7 @@ static VkRenderingFlags renderingFlagToVk(PalRenderingFlags flags)
 
 static VkResolveModeFlags resolveModeToVk(PalResolveMode mode)
 {
+    // TODO: fix
     switch (mode) {
         case PAL_RESOLVE_MODE_SAMPLE_ZERO:
             return VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;

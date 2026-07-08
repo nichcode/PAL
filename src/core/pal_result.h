@@ -108,7 +108,7 @@ static const char* resultSourceToString(PalResult result)
         case PAL_RESULT_SOURCE_VULKAN:
             return "VULKAN";
 
-        case PAL_RESULT_SOURCE_DIRECTX12:
+        case PAL_RESULT_SOURCE_D3D12:
             return "DIRECTX12";
 
         case PAL_RESULT_SOURCE_METAL:

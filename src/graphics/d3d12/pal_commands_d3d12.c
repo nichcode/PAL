@@ -28,6 +28,128 @@ static D3D12_RENDER_PASS_FLAGS renderingFlagToD3D12(PalRenderingFlags flags)
     return renderingFlags;
 }
 
+static D3D12_RESOURCE_STATES barrierToD3D12(PalUsageState state)
+{
+    switch (state) {
+        case PAL_USAGE_STATE_UNDEFINED: {
+            return D3D12_RESOURCE_STATE_COMMON;
+        }
+
+        case PAL_USAGE_STATE_PRESENT: {
+            return D3D12_RESOURCE_STATE_PRESENT;
+        }
+
+        case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE: {
+            return D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
+
+        case PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ:
+        case PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ: {
+            return D3D12_RESOURCE_STATE_DEPTH_READ;
+        }
+
+        case PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE:
+        case PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE: {
+            return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        }
+
+        case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ: {
+            return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
+        }
+
+        case PAL_USAGE_STATE_TRANSFER_READ: {
+            return D3D12_RESOURCE_STATE_COPY_SOURCE;
+        }
+
+        case PAL_USAGE_STATE_TRANSFER_WRITE:
+        case PAL_USAGE_STATE_HOST_READ: {
+            return D3D12_RESOURCE_STATE_COPY_DEST;
+        }
+
+        case PAL_USAGE_STATE_VERTEX_READ: {
+            return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+        }
+
+        case PAL_USAGE_STATE_INDEX_READ: {
+            return D3D12_RESOURCE_STATE_INDEX_BUFFER;
+        }
+
+        case PAL_USAGE_STATE_INDIRECT_READ: {
+            return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+        }
+
+        case PAL_USAGE_STATE_UNIFORM_READ: {
+            return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+        }
+
+        case PAL_USAGE_STATE_SHADER_READ: {
+            return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+        }
+
+        case PAL_USAGE_STATE_STORAGE_READ:
+        case PAL_USAGE_STATE_SHADER_WRITE:
+        case PAL_USAGE_STATE_STORAGE_WRITE: {
+            return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        }
+
+        case PAL_USAGE_STATE_HOST_WRITE: {
+            return D3D12_RESOURCE_STATE_GENERIC_READ;
+        }
+
+        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ:
+        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
+            return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        }
+    }
+
+    return D3D12_RESOURCE_STATE_COMMON;
+}
+
+static D3D12_RESOLVE_MODE resolveModeToD3D12(PalResolveMode mode)
+{
+    switch (mode) {
+        case PAL_RESOLVE_MODE_AVERAGE:
+            return D3D12_RESOLVE_MODE_AVERAGE;
+
+        case PAL_RESOLVE_MODE_MIN:
+            return D3D12_RESOLVE_MODE_MIN;
+
+        case PAL_RESOLVE_MODE_MAX:
+            return D3D12_RESOLVE_MODE_MAX;
+    }
+
+    return D3D12_RESOLVE_MODE_DECOMPRESS;
+}
+
+static void commitShaderbindingTableUpdateD3D12(
+    CommandBufferD3D12* cmdBuffer, 
+    ShaderBindingTableD3D12* sbt)
+{
+    if (!sbt->isDirty) {
+        return;
+    }
+
+    // begin upload buffer copy to gpu buffer
+    cmdBuffer->handle->lpVtbl->CopyBufferRegion(
+        cmdBuffer->handle,
+        sbt->buffer,
+        0,
+        sbt->stagingBuffer,
+        0,
+        sbt->stagingBufferSize);
+
+    // put a memory barrier
+    D3D12_RESOURCE_BARRIER barrier = {0};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.pResource = sbt->buffer;
+
+    cmdBuffer->handle->lpVtbl->ResourceBarrier(cmdBuffer->handle, 1, &barrier);
+    sbt->isDirty = PAL_FALSE;
+}
+
 PalResult PAL_CALL cmdBeginD3D12(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
@@ -240,7 +362,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     D3D12_RENDER_PASS_RENDER_TARGET_DESC colorAttachments[MAX_ATTACHMENTS];
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilAttachment = {0};
-    D3D12_CPU_DESCRIPTOR_HANDLE colorCpuHandle[MAX_ATTACHMENTS];
+    D3D12_CPU_DESCRIPTOR_HANDLE colorCpuHandles[MAX_ATTACHMENTS];
     D3D12_CPU_DESCRIPTOR_HANDLE depthStencilCpuHandle;
 
     PalAttachmentDesc* desc = nullptr;
@@ -257,7 +379,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
         RTVHeapAllocator* allocator = &imageView->device->rtvAllocator;
         uint32_t size = allocator->incrementSize;
         uint64_t base = allocator->baseOffset;
-        colorCpuHandle[i].ptr = getDescriptorHandleD3D12(imageView->heapIndex, size, base);
+        colorCpuHandles[i].ptr = getDescriptorHandleD3D12(imageView->heapIndex, size, base);
 
         attachment->BeginningAccess.Clear.ClearValue.Color[0] = desc->clearValue.color[0];
         attachment->BeginningAccess.Clear.ClearValue.Color[1] = desc->clearValue.color[1];
@@ -283,22 +405,22 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
             attachment->EndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
         }
 
-        attachment->cpuDescriptor = colorCpuHandle[i];
+        attachment->cpuDescriptor = colorCpuHandles[i];
         if (resolveImageView) {
             attachment->EndingAccess.Resolve.pDstResource = resolveImageView->image->handle;
             attachment->EndingAccess.Resolve.Format = formatToD3D12(resolveImageView->format);
-            attachment->EndingAccess.Resolve.ResolveMode = resolveModeToVk(desc->resolveMode);
+            attachment->EndingAccess.Resolve.ResolveMode = resolveModeToD3D12(desc->resolveMode);
             attachment->EndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE;
         }
     }
 
     // depth attachment
     if (info->depthStencilAttachment) {
-        desc = &info->depthStencilAttachment;
+        desc = info->depthStencilAttachment;
         imageView = (ImageViewD3D12*)desc->imageView;
         resolveImageView = (ImageViewD3D12*)desc->resolveImageView;
 
-        DSVHeapAllocator* allocator = &imageView->device->rtvAllocator;
+        DSVHeapAllocator* allocator = &imageView->device->dsvAllocator;
         uint32_t size = allocator->incrementSize;
         uint64_t base = allocator->baseOffset;
         depthStencilCpuHandle.ptr = getDescriptorHandleD3D12(imageView->heapIndex, size, base);
@@ -360,7 +482,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
         if (resolveImageView) {
             depthEnd->Resolve.pDstResource = resolveImageView->image->handle;
             depthEnd->Resolve.Format = formatToD3D12(resolveImageView->format);
-            depthEnd->Resolve.ResolveMode = resolveModeToVk(desc->resolveMode);
+            depthEnd->Resolve.ResolveMode = resolveModeToD3D12(desc->resolveMode);
             depthEnd->Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE;
 
             stencilEnd->Resolve.pDstResource = depthEnd->Resolve.pDstResource;
@@ -380,7 +502,7 @@ PalResult PAL_CALL cmdBeginRenderingD3D12(
     d3d12CmdBuffer->handle->lpVtbl->OMSetRenderTargets(
         d3d12CmdBuffer->handle,
         info->colorAttachentCount,
-        colorAttachments,
+        colorCpuHandles,
         PAL_FALSE,
         tmpCpuHandle);
 

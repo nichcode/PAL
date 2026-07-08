@@ -5,21 +5,8 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-// ==================================================
-// Includes
-// ==================================================
-
-#include "pal/pal_graphics.h"
-
 #if PAL_HAS_D3D12_BACKEND
-
-#ifdef _WIN32
-#include <windows.h>
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <d3d12sdklayers.h>
-
-#define MAX_MESSAGE_SIZE 4096
+#include "pal_d3d12.h"
 
 // IIDS
 IID IID_Device = {0xc4fec28f, 0x7966, 0x4e95, 0x9f,0x94, 0xf4,0x31,0xcb,0x56,0xc3,0xb8};
@@ -44,13 +31,45 @@ IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc,0x79, 0x5b,0x5c,0x98,0x04,0
 IID IID_StateObjectProps = {0xde5fa827, 0x9bf9, 0x4f26, 0x89,0xff, 0xd7,0xf5,0x6f,0xde,0x38,0x60};
 IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad,0xf6, 0xbe,0x5a,0x60,0xd9,0x5a,0x76};
 
-static D3D12 s_D3D12 = {0};
+D3D12 s_D3D12 = {0};
 
-// ==================================================
-// Helper Functions
-// ==================================================
+PalResult makeResultD3D12(HRESULT result)
+{
+    PalResultCode code = PAL_RESULT_CODE_PLATFORM_FAILURE;
+    switch (result) {
+        case E_NOTIMPL:
+        case DXGI_ERROR_UNSUPPORTED: {
+            code = PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+            break;
+        }
 
-static DXGI_FORMAT formatToD3D12(PalFormat format)
+        case E_OUTOFMEMORY: {
+            code = PAL_RESULT_CODE_OUT_OF_MEMORY;
+            break;
+        }
+
+        case E_ACCESSDENIED: {
+            code = PAL_RESULT_CODE_INVALID_OPERATION;
+            break;
+        }
+
+        case DXGI_ERROR_DEVICE_HUNG:
+        case DXGI_ERROR_DEVICE_REMOVED:
+        case DXGI_ERROR_DEVICE_RESET: {
+            code = PAL_RESULT_CODE_DEVICE_LOST;
+            break;
+        }
+
+        case E_INVALIDARG: {
+            code = PAL_RESULT_CODE_INVALID_ARGUMENT;
+            break;
+        }
+    }
+
+    return palMakeResult(code, PAL_RESULT_SOURCE_D3D12, (uint32_t)result);
+}
+
+DXGI_FORMAT formatToD3D12(PalFormat format)
 {
     switch (format) {
         case PAL_FORMAT_R8_UNORM:
@@ -297,27 +316,7 @@ static DXGI_FORMAT formatToD3D12(PalFormat format)
     return DXGI_FORMAT_UNKNOWN;
 }
 
-static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
-{
-    PalImageUsages usages = 0;
-    if (flags & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) {
-        usages |= PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
-    }
-
-    if (flags & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL) {
-        usages |= PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT;
-    }
-
-    if (flags & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
-        usages |= PAL_IMAGE_USAGE_SAMPLED;
-    }
-
-    usages |= PAL_IMAGE_USAGE_TRANSFER_DST;
-    usages |= PAL_IMAGE_USAGE_TRANSFER_SRC;
-    return usages;
-}
-
-static uint32_t samplesToD3D12(PalSampleCount count)
+uint32_t samplesToD3D12(PalSampleCount count)
 {
     switch (count) {
         case PAL_SAMPLE_COUNT_2:
@@ -342,7 +341,7 @@ static uint32_t samplesToD3D12(PalSampleCount count)
     return 1;
 }
 
-static D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op)
+D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op)
 {
     switch (op) {
         case PAL_COMPARE_OP_NEVER:
@@ -373,259 +372,7 @@ static D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op)
     return D3D12_COMPARISON_FUNC_NEVER;
 }
 
-static D3D12_STENCIL_OP stencilOpToD3D12(PalStencilOp op)
-{
-    switch (op) {
-        case PAL_STENCIL_OP_KEEP:
-            return D3D12_STENCIL_OP_KEEP;
-
-        case PAL_STENCIL_OP_ZERO:
-            return D3D12_STENCIL_OP_ZERO;
-
-        case PAL_STENCIL_OP_REPLACE:
-            return D3D12_STENCIL_OP_REPLACE;
-
-        case PAL_STENCIL_OP_INCREMENT_AND_CLAMP:
-            return D3D12_STENCIL_OP_INCR_SAT;
-
-        case PAL_STENCIL_OP_DECREMENT_AND_CLAMP:
-            return D3D12_STENCIL_OP_DECR_SAT;
-
-        case PAL_STENCIL_OP_INVERT:
-            return D3D12_STENCIL_OP_INVERT;
-
-        case PAL_STENCIL_OP_INCREMENT_AND_WRAP:
-            return D3D12_STENCIL_OP_INCR;
-
-        case PAL_STENCIL_OP_DECREMENT_AND_WRAP:
-            return D3D12_STENCIL_OP_DECR;
-    }
-
-    return D3D12_STENCIL_OP_KEEP;
-}
-
-static D3D12_BLEND_OP blendOpToD3D12(PalBlendOp op)
-{
-    switch (op) {
-        case PAL_BLEND_OP_ADD:
-            return D3D12_BLEND_OP_ADD;
-
-        case PAL_BLEND_OP_SUBTRACT:
-            return D3D12_BLEND_OP_SUBTRACT;
-
-        case PAL_BLEND_OP_REVERSE_SUBTRACT:
-            return D3D12_BLEND_OP_REV_SUBTRACT;
-
-        case PAL_BLEND_OP_MIN:
-            return D3D12_BLEND_OP_MIN;
-
-        case PAL_BLEND_OP_MAX:
-            return D3D12_BLEND_OP_MAX;
-    }
-
-    return D3D12_BLEND_OP_ADD;
-}
-
-static D3D12_BLEND blendFactorToD3D12(PalBlendFactor op)
-{
-    switch (op) {
-        case PAL_BLEND_FACTOR_ZERO:
-            return D3D12_BLEND_ZERO;
-
-        case PAL_BLEND_FACTOR_ONE:
-            return D3D12_BLEND_ONE;
-
-        case PAL_BLEND_FACTOR_SRC_COLOR:
-            return D3D12_BLEND_SRC_COLOR;
-
-        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_COLOR:
-            return D3D12_BLEND_INV_SRC_COLOR;
-
-        case PAL_BLEND_FACTOR_DST_COLOR:
-            return D3D12_BLEND_DEST_COLOR;
-
-        case PAL_BLEND_FACTOR_ONE_MINUX_DST_COLOR:
-            return D3D12_BLEND_INV_DEST_COLOR;
-
-        case PAL_BLEND_FACTOR_SRC_ALPHA:
-            return D3D12_BLEND_SRC_ALPHA;
-
-        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA:
-            return D3D12_BLEND_INV_SRC_ALPHA;
-
-        case PAL_BLEND_FACTOR_DST_ALPHA:
-            return D3D12_BLEND_DEST_ALPHA;
-
-        case PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:
-            return D3D12_BLEND_INV_DEST_ALPHA;
-
-        case PAL_BLEND_FACTOR_CONSTANT_COLOR:
-        case PAL_BLEND_FACTOR_CONSTANT_ALPHA:
-            return D3D12_BLEND_BLEND_FACTOR;
-
-        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR:
-        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
-            return D3D12_BLEND_INV_BLEND_FACTOR;
-    }
-
-    return D3D12_BLEND_ZERO;
-}
-
-static D3D12_FILTER filterToD3D12(
-    PalFilterMode minFilter,
-    PalFilterMode magFilter,
-    PalSamplerMipmapMode mode)
-{
-    // all the enums start with min so we start with min filter
-    switch (minFilter) {
-        case PAL_FILTER_MODE_NEAREST: {
-            switch (magFilter) {
-                case PAL_FILTER_MODE_NEAREST: {
-                    // min and mag are nearest. Check sampler mipmap mode
-                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
-                        return D3D12_FILTER_MIN_MAG_MIP_POINT; // sampler mode nearest
-                    } else {
-                        return D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR; // sampler mode linear
-                    }
-                }
-
-                case PAL_FILTER_MODE_LINEAR: {
-                    // min is nearest, mag is linear . Check sampler mipmap mode
-                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
-                        return D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT; // sampler mode nearest
-                    } else {
-                        return D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR; // sampler mode linear
-                    }
-                }
-            }
-        }
-
-        case PAL_FILTER_MODE_LINEAR: {
-            switch (magFilter) {
-                case PAL_FILTER_MODE_NEAREST: {
-                    // min is linear, mag is nearest. Check sampler mipmap mode
-                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
-                        return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT; // sampler mode nearest
-                    } else {
-                        return D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR; // sampler mode linear
-                    }
-                }
-
-                case PAL_FILTER_MODE_LINEAR: {
-                    // min and mag are linear. Check sampler mipmap mode
-                    if (mode == PAL_SAMPLER_MIPMAP_MODE_NEAREST) {
-                        return D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT; // sampler mode nearest
-                    } else {
-                        return D3D12_FILTER_MIN_MAG_MIP_LINEAR; // sampler mode linear
-                    }
-                }
-            }
-        }
-    }
-
-    return D3D12_FILTER_MIN_MAG_MIP_POINT;
-}
-
-static D3D12_TEXTURE_ADDRESS_MODE addressModeToD3D12(PalSamplerAddressMode mode)
-{
-    switch (mode) {
-        case PAL_SAMPLER_ADDRESS_MODE_REPEAT: {
-            return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        }
-
-        case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
-            return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
-
-        }
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
-            return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-
-        }
-        case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
-            return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-        }
-    }
-    return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-}
-
-static void borderColorToD3D12(PalBorderColor color, float outColor[4])
-{
-    switch (color) {
-        case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
-        case PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK: {
-            outColor[0] = 0.0f;
-            outColor[1] = 0.0f;
-            outColor[2] = 0.0f;
-            outColor[3] = 0.0f;
-            break;
-        }
-
-        case PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
-        case PAL_BORDER_COLOR_INT_OPAQUE_BLACK: {
-            outColor[0] = 0.0f;
-            outColor[1] = 0.0f;
-            outColor[2] = 0.0f;
-            outColor[3] = 1.0f;
-            break;
-        }
-
-        case PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
-        case PAL_BORDER_COLOR_INT_OPAQUE_WHITE: {
-            outColor[0] = 1.0f;
-            outColor[1] = 1.0f;
-            outColor[2] = 1.0f;
-            outColor[3] = 1.0f;
-            break;
-        }
-    }
-
-    outColor[0] = 0.0f;
-    outColor[1] = 0.0f;
-    outColor[2] = 0.0f;
-    outColor[3] = 0.0f;
-}
-
-static CommandBufferData* getFreeCmdBufferData(CommandPool* pool)
-{
-    for (int i = 0; i < pool->size; ++i) {
-        if (!pool->cmdBuffersData[i].used) {
-            pool->cmdBuffersData[i].used = PAL_TRUE;
-            return &pool->cmdBuffersData[i];
-        }
-    }
-
-    // resize the data array
-    CommandBufferData* data = nullptr;
-    int count = pool->size * 2; // double the size
-    int freeIndex = pool->size + 1;
-
-    data = palAllocate(s_D3D12.allocator, sizeof(CommandBufferData) * count, 0);
-    if (data) {
-        memcpy(data, pool->cmdBuffersData, pool->size * sizeof(CommandBufferData));
-
-        palFree(s_D3D12.allocator, pool->cmdBuffersData);
-        pool->cmdBuffersData = data;
-        pool->size = count;
-
-        pool->cmdBuffersData[freeIndex].used = PAL_TRUE;
-        return &pool->cmdBuffersData[freeIndex];
-    }
-    return nullptr;
-}
-
-static CommandBufferData* findCmdBufferData(
-    CommandPool* pool,
-    CommandBuffer* cmdBuffer)
-{
-    for (int i = 0; i < pool->size; ++i) {
-        if (pool->cmdBuffersData[i].used && pool->cmdBuffersData[i].cmdBuffer == cmdBuffer) {
-            return &pool->cmdBuffersData[i];
-        }
-    }
-    return nullptr;
-}
-
-static D3D12_SHADING_RATE_COMBINER combinerOpsToD3D12(PalFragmentShadingRateCombinerOp op)
+D3D12_SHADING_RATE_COMBINER combinerOpsToD3D12(PalFragmentShadingRateCombinerOp op)
 {
     switch (op) {
         case PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP:
@@ -647,7 +394,7 @@ static D3D12_SHADING_RATE_COMBINER combinerOpsToD3D12(PalFragmentShadingRateComb
     return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
 }
 
-static D3D12_SHADING_RATE shadingRateToD3D12(PalFragmentShadingRate rate)
+D3D12_SHADING_RATE shadingRateToD3D12(PalFragmentShadingRate rate)
 {
     switch (rate) {
         case PAL_FRAGMENT_SHADING_RATE_1X1:
@@ -675,207 +422,7 @@ static D3D12_SHADING_RATE shadingRateToD3D12(PalFragmentShadingRate rate)
     return D3D12_SHADING_RATE_1X1;
 }
 
-static DXGI_FORMAT vertexTypeToD3D12(PalVertexType type)
-{
-    switch (type) {
-        case PAL_VERTEX_TYPE_INT32:
-            return DXGI_FORMAT_R32_SINT;
-
-        case PAL_VERTEX_TYPE_INT32_2:
-            return DXGI_FORMAT_R32G32_SINT;
-
-        case PAL_VERTEX_TYPE_INT32_3:
-            return DXGI_FORMAT_R32G32B32_SINT;
-
-        case PAL_VERTEX_TYPE_INT32_4:
-            return DXGI_FORMAT_R32G32B32A32_SINT;
-
-        case PAL_VERTEX_TYPE_UINT32:
-            return DXGI_FORMAT_R32_UINT;
-
-        case PAL_VERTEX_TYPE_UINT32_2:
-            return DXGI_FORMAT_R32G32_UINT;
-
-        case PAL_VERTEX_TYPE_UINT32_3:
-            return DXGI_FORMAT_R32G32B32_UINT;
-
-        case PAL_VERTEX_TYPE_UINT32_4:
-            return DXGI_FORMAT_R32G32B32A32_UINT;
-
-        case PAL_VERTEX_TYPE_INT8_2:
-            return DXGI_FORMAT_R8G8_SINT;
-
-        case PAL_VERTEX_TYPE_INT8_4:
-            return DXGI_FORMAT_R8G8B8A8_SINT;
-
-        case PAL_VERTEX_TYPE_UINT8_2:
-            return DXGI_FORMAT_R8G8_UINT;
-
-        case PAL_VERTEX_TYPE_UINT8_4:
-            return DXGI_FORMAT_R8G8B8A8_UINT;
-
-        case PAL_VERTEX_TYPE_INT8_2NORM:
-            return DXGI_FORMAT_R8G8_SNORM;
-
-        case PAL_VERTEX_TYPE_INT8_4NORM:
-            return DXGI_FORMAT_R8G8B8A8_SNORM;
-
-        case PAL_VERTEX_TYPE_UINT8_2NORM:
-            return DXGI_FORMAT_R8G8_UNORM;
-
-        case PAL_VERTEX_TYPE_UINT8_4NORM:
-            return DXGI_FORMAT_R8G8B8A8_UNORM;
-
-        case PAL_VERTEX_TYPE_INT16_2:
-            return DXGI_FORMAT_R16G16_SINT;
-
-        case PAL_VERTEX_TYPE_INT16_4:
-            return DXGI_FORMAT_R16G16B16A16_SINT;
-
-        case PAL_VERTEX_TYPE_UINT16_2:
-            return DXGI_FORMAT_R16G16_UINT;
-
-        case PAL_VERTEX_TYPE_UINT16_4:
-            return DXGI_FORMAT_R16G16B16A16_UINT;
-
-        case PAL_VERTEX_TYPE_INT16_2NORM:
-            return DXGI_FORMAT_R16G16_SNORM;
-
-        case PAL_VERTEX_TYPE_INT16_4NORM:
-            return DXGI_FORMAT_R16G16B16A16_SNORM;
-
-        case PAL_VERTEX_TYPE_UINT16_2NORM:
-            return DXGI_FORMAT_R16G16_UNORM;
-
-        case PAL_VERTEX_TYPE_UINT16_4NORM:
-            return DXGI_FORMAT_R16G16B16A16_UNORM;
-
-        case PAL_VERTEX_TYPE_FLOAT:
-            return DXGI_FORMAT_R32_FLOAT;
-
-        case PAL_VERTEX_TYPE_FLOAT2:
-            return DXGI_FORMAT_R32G32_FLOAT;
-
-        case PAL_VERTEX_TYPE_FLOAT3:
-            return DXGI_FORMAT_R32G32B32_FLOAT;
-
-        case PAL_VERTEX_TYPE_FLOAT4:
-            return DXGI_FORMAT_R32G32B32A32_FLOAT;
-
-        case PAL_VERTEX_TYPE_HALF_FLOAT16_2:
-            return DXGI_FORMAT_R16G16_FLOAT;
-
-        case PAL_VERTEX_TYPE_HALF_FLOAT16_4:
-            return DXGI_FORMAT_R16G16B16A16_FLOAT;
-    }
-
-    return DXGI_FORMAT_UNKNOWN;
-}
-
-static PalBool fillBuildInfoD3D12(
-    PalAccelerationStructureBuildInfo* info,
-    D3D12_RAYTRACING_GEOMETRY_DESC* geometries,
-    D3D12_GPU_VIRTUAL_ADDRESS srcAs,
-    D3D12_GPU_VIRTUAL_ADDRESS dstAs,
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* buildInfo)
-{
-    static uint32_t maxInstanceCount = 1000000;
-    static uint32_t maxPrimitiveCount = 10000000;
-    static uint32_t maxGeometryCount = 100000;
-
-    if (info->geometryCount > maxGeometryCount) {
-        return PAL_FALSE;
-    }
-
-    if (info->instanceCount > maxInstanceCount) {
-        return PAL_FALSE;
-    }
-
-    for (int i = 0; i < info->geometryCount; i++) {
-        if (info->geometries[i].primitiveCount > maxPrimitiveCount) {
-            return PAL_FALSE;
-        }
-
-        D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
-        tmp->Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-        if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
-            tmp->Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
-        }
-
-        if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
-            tmp->Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-            PalGeometryDataTriangle* tmpData = info->geometries[i].data;
-
-            tmp->Triangles.VertexBuffer.StartAddress = tmpData->vertexBufferAddress;
-            tmp->Triangles.VertexBuffer.StrideInBytes = tmpData->vertexStride;
-            tmp->Triangles.VertexCount = tmpData->vertexCount;
-            tmp->Triangles.VertexFormat = vertexTypeToD3D12(tmpData->vertexType);
-
-            tmp->Triangles.IndexBuffer = tmpData->indexBufferAddress;
-            tmp->Triangles.IndexCount = tmpData->indexCount;
-            if (tmpData->indexType == PAL_INDEX_TYPE_UINT16) {
-                if (tmp->Triangles.IndexBuffer) {
-                    tmp->Triangles.IndexFormat = DXGI_FORMAT_R16_FLOAT;
-                }
-                
-            } else {
-                if (tmp->Triangles.IndexBuffer) {
-                    tmp->Triangles.IndexFormat = DXGI_FORMAT_R32_FLOAT;
-                }
-            }
-
-        } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
-            tmp->Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
-            PalGeometryDataAABBS* tmpData = info->geometries[i].data;
-
-            tmp->AABBs.AABBCount = info->geometries[i].primitiveCount;
-            tmp->AABBs.AABBs.StartAddress = tmpData->bufferAddress;
-            tmp->AABBs.AABBs.StrideInBytes = tmpData->stride;
-        }
-    }
-
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL) {
-        buildInfo->Inputs.NumDescs = info->instanceCount;
-        buildInfo->Inputs.InstanceDescs = info->instanceBufferAddress;
-    } else {
-        buildInfo->Inputs.NumDescs = info->geometryCount;
-        buildInfo->Inputs.pGeometryDescs = geometries;
-    }
-
-    buildInfo->Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
-        buildInfo->Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    } else {
-        buildInfo->Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    }
-
-    // build mode
-    buildInfo->Inputs.Flags = 0;
-    if (info->buildMode == PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE) {
-        buildInfo->Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
-    }
-
-    // build hints
-    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD) {
-        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
-    }
-
-    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE) {
-        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-    }
-
-    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY) {
-        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
-    }
-
-    buildInfo->SourceAccelerationStructureData = srcAs;
-    buildInfo->DestAccelerationStructureData = dstAs;
-    buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
-    
-    return PAL_TRUE;
-}
-
-static uint32_t getFormatSizeD3D12(PalFormat format)
+uint32_t getFormatSizeD3D12(PalFormat format)
 {
     switch (format) {
         case PAL_FORMAT_R8_UNORM:
@@ -984,102 +531,242 @@ static uint32_t getFormatSizeD3D12(PalFormat format)
     return 0;
 }
 
-static inline uint32_t alignD3D12(
-    uint32_t value,
-    uint32_t alignment)
+DXGI_FORMAT vertexTypeToD3D12(PalVertexType type)
 {
-    return (value + alignment - 1) & ~(alignment - 1);
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT32:
+            return DXGI_FORMAT_R32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_2:
+            return DXGI_FORMAT_R32G32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_3:
+            return DXGI_FORMAT_R32G32B32_SINT;
+
+        case PAL_VERTEX_TYPE_INT32_4:
+            return DXGI_FORMAT_R32G32B32A32_SINT;
+
+        case PAL_VERTEX_TYPE_UINT32:
+            return DXGI_FORMAT_R32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_2:
+            return DXGI_FORMAT_R32G32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_3:
+            return DXGI_FORMAT_R32G32B32_UINT;
+
+        case PAL_VERTEX_TYPE_UINT32_4:
+            return DXGI_FORMAT_R32G32B32A32_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2:
+            return DXGI_FORMAT_R8G8_SINT;
+
+        case PAL_VERTEX_TYPE_INT8_4:
+            return DXGI_FORMAT_R8G8B8A8_SINT;
+
+        case PAL_VERTEX_TYPE_UINT8_2:
+            return DXGI_FORMAT_R8G8_UINT;
+
+        case PAL_VERTEX_TYPE_UINT8_4:
+            return DXGI_FORMAT_R8G8B8A8_UINT;
+
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+            return DXGI_FORMAT_R8G8_SNORM;
+
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+            return DXGI_FORMAT_R8G8B8A8_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_2NORM:
+            return DXGI_FORMAT_R8G8_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        case PAL_VERTEX_TYPE_INT16_2:
+            return DXGI_FORMAT_R16G16_SINT;
+
+        case PAL_VERTEX_TYPE_INT16_4:
+            return DXGI_FORMAT_R16G16B16A16_SINT;
+
+        case PAL_VERTEX_TYPE_UINT16_2:
+            return DXGI_FORMAT_R16G16_UINT;
+
+        case PAL_VERTEX_TYPE_UINT16_4:
+            return DXGI_FORMAT_R16G16B16A16_UINT;
+
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+            return DXGI_FORMAT_R16G16_SNORM;
+
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+            return DXGI_FORMAT_R16G16B16A16_SNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+            return DXGI_FORMAT_R16G16_UNORM;
+
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+            return DXGI_FORMAT_R16G16B16A16_UNORM;
+
+        case PAL_VERTEX_TYPE_FLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT2:
+            return DXGI_FORMAT_R32G32_FLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT3:
+            return DXGI_FORMAT_R32G32B32_FLOAT;
+
+        case PAL_VERTEX_TYPE_FLOAT4:
+            return DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2:
+            return DXGI_FORMAT_R16G16_FLOAT;
+
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4:
+            return DXGI_FORMAT_R16G16B16A16_FLOAT;
+    }
+
+    return DXGI_FORMAT_UNKNOWN;
 }
 
-static D3D12_RESOURCE_STATES barrierToD3D12(
-    uint32_t stageCount,
-    PalUsageState state,
-    PalShaderStage* shaderStages)
+D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlagsToD3D12(PalAccelerationStructureInstanceFlags flags)
 {
-    switch (state) {
-        case PAL_USAGE_STATE_UNDEFINED: {
-            return D3D12_RESOURCE_STATE_COMMON;
+    D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlags = 0;
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE) {
+        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+    }
+
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE) {
+        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_NON_OPAQUE;
+    }
+
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE) {
+        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE;
+    }
+
+    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE) {
+        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE;
+    }
+
+    return instanceFlags;
+}
+
+void fillBuildInfoD3D12(
+    PalBool getBuildSize,
+    PalAccelerationStructureBuildInfo* info,
+    D3D12_RAYTRACING_GEOMETRY_DESC* geometries,
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* buildInfo)
+{
+    static uint32_t maxInstanceCount = 1000000;
+    static uint32_t maxPrimitiveCount = 10000000;
+    static uint32_t maxGeometryCount = 100000;
+
+    if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
+        if (info->count > maxGeometryCount) {
+            return;
         }
 
-        case PAL_USAGE_STATE_PRESENT: {
-            return D3D12_RESOURCE_STATE_PRESENT;
-        }
+        for (int i = 0; i < info->count; i++) {
+            if (info->geometries[i].primitiveCount > maxPrimitiveCount) {
+                return;
+            }
 
-        case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE: {
-            return D3D12_RESOURCE_STATE_RENDER_TARGET;
-        }
+            D3D12_RAYTRACING_GEOMETRY_DESC* tmp = &geometries[i];
+            tmp->Flags = 0;
+            if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT) {
+                tmp->Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
+            }
 
-        case PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ:
-        case PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ: {
-            return D3D12_RESOURCE_STATE_DEPTH_READ;
-        }
+            if (info->geometries[i].flags & PAL_GEOMETRY_FLAG_OPAQUE) {
+                tmp->Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+            }
 
-        case PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE:
-        case PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE: {
-            return D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        }
+            if (info->geometries[i].type == PAL_GEOMETRY_TYPE_TRIANGLE) {
+                tmp->Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+                const PalGeometryDataTriangle* tmpData = info->geometries[i].data;
 
-        case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ: {
-            return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
-        }
+                tmp->Triangles.VertexBuffer.StartAddress = tmpData->vertexBufferAddress;
+                tmp->Triangles.VertexBuffer.StrideInBytes = tmpData->vertexStride;
+                tmp->Triangles.VertexCount = tmpData->vertexCount;
+                tmp->Triangles.VertexFormat = vertexTypeToD3D12(tmpData->vertexType);
 
-        case PAL_USAGE_STATE_TRANSFER_READ: {
-            return D3D12_RESOURCE_STATE_COPY_SOURCE;
-        }
+                tmp->Triangles.Transform3x4 = tmpData->transformBufferAddress;
 
-        case PAL_USAGE_STATE_TRANSFER_WRITE:
-        case PAL_USAGE_STATE_HOST_READ: {
-            return D3D12_RESOURCE_STATE_COPY_DEST;
-        }
-
-        case PAL_USAGE_STATE_VERTEX_READ: {
-            return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-        }
-
-        case PAL_USAGE_STATE_INDEX_READ: {
-            return D3D12_RESOURCE_STATE_INDEX_BUFFER;
-        }
-
-        case PAL_USAGE_STATE_INDIRECT_READ: {
-            return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-        }
-
-        case PAL_USAGE_STATE_UNIFORM_READ: {
-            return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-        }
-
-        case PAL_USAGE_STATE_SHADER_READ: {
-            if (stageCount == 1) {
-                if (shaderStages[0] == PAL_SHADER_STAGE_FRAGMENT) {
-                    return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+                tmp->Triangles.IndexBuffer = tmpData->indexBufferAddress;
+                tmp->Triangles.IndexCount = info->geometries[i].primitiveCount * 3;
+                if (tmpData->indexType == PAL_INDEX_TYPE_UINT16) {
+                    if (tmp->Triangles.IndexBuffer) {
+                        tmp->Triangles.IndexFormat = DXGI_FORMAT_R16_FLOAT;
+                    }
+                    
                 } else {
-                    return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+                    if (tmp->Triangles.IndexBuffer) {
+                        tmp->Triangles.IndexFormat = DXGI_FORMAT_R32_FLOAT;
+                    }
                 }
-            } else {
-                return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+
+            } else if (info->geometries[i].type == PAL_GEOMETRY_TYPE_AABBS) {
+                tmp->Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
+                const PalGeometryDataAABBS* tmpData = info->geometries[i].data;
+
+                tmp->AABBs.AABBCount = info->geometries[i].primitiveCount;
+                tmp->AABBs.AABBs.StartAddress = tmpData->bufferAddress;
+                tmp->AABBs.AABBs.StrideInBytes = tmpData->stride;
             }
         }
 
-        case PAL_USAGE_STATE_STORAGE_READ:
-        case PAL_USAGE_STATE_SHADER_WRITE:
-        case PAL_USAGE_STATE_STORAGE_WRITE: {
-            return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        buildInfo->Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+        buildInfo->Inputs.NumDescs = info->count;
+        buildInfo->Inputs.pGeometryDescs = geometries;
+
+    } else {
+        if (info->count > maxInstanceCount) {
+            return;
         }
 
-        case PAL_USAGE_STATE_HOST_WRITE: {
-            return D3D12_RESOURCE_STATE_GENERIC_READ;
-        }
-
-        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ:
-        case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
-            return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-        }
+        buildInfo->Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        buildInfo->Inputs.NumDescs = info->count;
+        buildInfo->Inputs.InstanceDescs = info->instanceBufferAddress;
     }
 
-    return D3D12_RESOURCE_STATE_COMMON;
+    // build mode
+    buildInfo->Inputs.Flags = 0;
+    if (info->buildMode == PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE) {
+        buildInfo->Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+    }
+
+    // build hints
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD) {
+        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+    }
+
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE) {
+        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    }
+
+    if (info->buildHints & PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY) {
+        buildInfo->Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+    }
+
+    AccelerationStructureD3D12* dstAs = (AccelerationStructureD3D12*)info->dst;
+    AccelerationStructureD3D12* srcAs = (AccelerationStructureD3D12*)info->src;
+
+    D3D12_GPU_VIRTUAL_ADDRESS dstAsHandle = 0;
+    if (dstAs) {
+        dstAsHandle = dstAs->address;
+    }
+
+    D3D12_GPU_VIRTUAL_ADDRESS srcAsHandle = 0;
+    if (srcAs) {
+        srcAsHandle = srcAs->address;
+    }
+
+    buildInfo->Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    buildInfo->DestAccelerationStructureData = dstAsHandle;
+    buildInfo->SourceAccelerationStructureData = srcAsHandle;
+    buildInfo->ScratchAccelerationStructureData = info->scratchBufferAddress;
 }
 
-static void fillSubresourceD3D12(
+void fillSubresourceD3D12(
     PalImageViewType type,
     const PalImageSubresourceRange* range,
     D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc,
@@ -1220,7 +907,7 @@ static void fillSubresourceD3D12(
     }
 }
 
-static inline uint64_t getDescriptorHandleD3D12(
+uint64_t getDescriptorHandleD3D12(
     uint32_t index,
     uint32_t size,
     uint64_t baseOffset)
@@ -1228,199 +915,7 @@ static inline uint64_t getDescriptorHandleD3D12(
     return baseOffset + index * size;
 }
 
-static D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlagsToD3D12(
-    PalAccelerationStructureInstanceFlags flags)
-{
-    D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlags = 0;
-    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE) {
-        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_OPAQUE;
-    }
-
-    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE) {
-        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_NON_OPAQUE;
-    }
-
-    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE) {
-        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE;
-    }
-
-    if (flags & PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE) {
-        instanceFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE;
-    }
-
-    return instanceFlags;
-}
-
-static D3D_PRIMITIVE_TOPOLOGY getPatchTopology(uint32_t patch)
-{
-    switch (patch) {
-        case 1:
-            return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
-
-        case 2:
-            return D3D_PRIMITIVE_TOPOLOGY_2_CONTROL_POINT_PATCHLIST;
-
-        case 3:
-            return D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
-
-        case 4:
-            return D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST;
-
-        case 5:
-            return D3D_PRIMITIVE_TOPOLOGY_5_CONTROL_POINT_PATCHLIST;
-
-        case 6:
-            return D3D_PRIMITIVE_TOPOLOGY_6_CONTROL_POINT_PATCHLIST;
-
-        case 7:
-            return D3D_PRIMITIVE_TOPOLOGY_7_CONTROL_POINT_PATCHLIST;
-
-        case 8:
-            return D3D_PRIMITIVE_TOPOLOGY_8_CONTROL_POINT_PATCHLIST;
-
-        case 9:
-            return D3D_PRIMITIVE_TOPOLOGY_9_CONTROL_POINT_PATCHLIST;
-
-        case 10:
-            return D3D_PRIMITIVE_TOPOLOGY_10_CONTROL_POINT_PATCHLIST;
-
-        case 11:
-            return D3D_PRIMITIVE_TOPOLOGY_11_CONTROL_POINT_PATCHLIST;
-
-        case 12:
-            return D3D_PRIMITIVE_TOPOLOGY_12_CONTROL_POINT_PATCHLIST;
-
-        case 13:
-            return D3D_PRIMITIVE_TOPOLOGY_13_CONTROL_POINT_PATCHLIST;
-
-        case 14:
-            return D3D_PRIMITIVE_TOPOLOGY_14_CONTROL_POINT_PATCHLIST;
-
-        case 15:
-            return D3D_PRIMITIVE_TOPOLOGY_15_CONTROL_POINT_PATCHLIST;
-
-        case 16:
-            return D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST;
-
-        case 17:
-            return D3D_PRIMITIVE_TOPOLOGY_17_CONTROL_POINT_PATCHLIST;
-
-        case 18:
-            return D3D_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST;
-
-        case 19:
-            return D3D_PRIMITIVE_TOPOLOGY_19_CONTROL_POINT_PATCHLIST;
-
-        case 20:
-            return D3D_PRIMITIVE_TOPOLOGY_20_CONTROL_POINT_PATCHLIST;
-
-        case 21:
-            return D3D_PRIMITIVE_TOPOLOGY_21_CONTROL_POINT_PATCHLIST;
-
-        case 22:
-            return D3D_PRIMITIVE_TOPOLOGY_22_CONTROL_POINT_PATCHLIST;
-
-        case 23:
-            return D3D_PRIMITIVE_TOPOLOGY_23_CONTROL_POINT_PATCHLIST;
-
-        case 24:
-            return D3D_PRIMITIVE_TOPOLOGY_24_CONTROL_POINT_PATCHLIST;
-
-        case 25:
-            return D3D_PRIMITIVE_TOPOLOGY_25_CONTROL_POINT_PATCHLIST;
-
-        case 26:
-            return D3D_PRIMITIVE_TOPOLOGY_26_CONTROL_POINT_PATCHLIST;
-
-        case 27:
-            return D3D_PRIMITIVE_TOPOLOGY_27_CONTROL_POINT_PATCHLIST;
-
-        case 28:
-            return D3D_PRIMITIVE_TOPOLOGY_28_CONTROL_POINT_PATCHLIST;
-
-        case 29:
-            return D3D_PRIMITIVE_TOPOLOGY_29_CONTROL_POINT_PATCHLIST;
-
-        case 30:
-            return D3D_PRIMITIVE_TOPOLOGY_30_CONTROL_POINT_PATCHLIST;
-    }
-
-    return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
-}
-
-static uint32_t getVertexTypeSizeD3D12(PalVertexType type)
-{
-    // count x sizeof type returned as size
-    switch (type) {
-        case PAL_VERTEX_TYPE_INT8_2:
-        case PAL_VERTEX_TYPE_UINT8_2:
-        case PAL_VERTEX_TYPE_INT8_2NORM:
-        case PAL_VERTEX_TYPE_UINT8_2NORM: {
-            return 2;
-        }
-
-        case PAL_VERTEX_TYPE_INT32:
-        case PAL_VERTEX_TYPE_UINT32:
-        case PAL_VERTEX_TYPE_INT8_4:
-        case PAL_VERTEX_TYPE_INT8_4NORM:
-        case PAL_VERTEX_TYPE_UINT8_4:
-        case PAL_VERTEX_TYPE_UINT8_4NORM:
-        case PAL_VERTEX_TYPE_INT16_2NORM:
-        case PAL_VERTEX_TYPE_INT16_2:
-        case PAL_VERTEX_TYPE_UINT16_2:
-        case PAL_VERTEX_TYPE_UINT16_2NORM:
-        case PAL_VERTEX_TYPE_FLOAT:
-        case PAL_VERTEX_TYPE_HALF_FLOAT16_2: {
-            return 4;
-        }
-
-        case PAL_VERTEX_TYPE_INT32_2:
-        case PAL_VERTEX_TYPE_UINT32_2:
-        case PAL_VERTEX_TYPE_INT16_4:
-        case PAL_VERTEX_TYPE_UINT16_4:
-        case PAL_VERTEX_TYPE_UINT16_4NORM:
-        case PAL_VERTEX_TYPE_INT16_4NORM:
-        case PAL_VERTEX_TYPE_FLOAT2:
-        case PAL_VERTEX_TYPE_HALF_FLOAT16_4: {
-            return 8;
-        }
-
-        case PAL_VERTEX_TYPE_INT32_3:
-        case PAL_VERTEX_TYPE_UINT32_3:
-        case PAL_VERTEX_TYPE_FLOAT3: {
-            return 12;
-        }
-
-        case PAL_VERTEX_TYPE_INT32_4:
-        case PAL_VERTEX_TYPE_UINT32_4:
-        case PAL_VERTEX_TYPE_FLOAT4: {
-            return 16;
-        }
-    }
-
-    return 0;
-}
-
-static void convertToWcharD3D12(
-    const char* src,
-    wchar_t dst[PAL_SHADER_ENTRY_NAME_SIZE])
-{
-    int i = 0;
-    for (; i < PAL_SHADER_ENTRY_NAME_SIZE - 1 && src[i]; i++) {
-        dst[i] = (wchar_t)src[i];
-    }
-    dst[i] = L'\0';
-}
-
-static void getHitGroupNameD3D12(
-    uint32_t index,
-    wchar_t dst[PAL_SHADER_ENTRY_NAME_SIZE])
-{
-    wcscpy(dst, L"HitGroup");
-    _itow(index, dst + 8, 10);
-}
-
-static void pollMessagesD3D12(Device* device)
+void pollMessagesD3D12(DeviceD3D12* device)
 {
     ID3D12InfoQueue* queue = device->infoQueue;
     if (!queue) {
@@ -1491,57 +986,7 @@ static void pollMessagesD3D12(Device* device)
     queue->lpVtbl->ClearStoredMessages(queue);
 }
 
-static const char* semanticIDToStringD3D12(PalVertexSemanticID id)
-{
-    switch (id) {
-        case PAL_VERTEX_SEMANTIC_ID_POSITION:
-            return "POSITION";
-        
-        case PAL_VERTEX_SEMANTIC_ID_COLOR:
-            return "COLOR";
-
-        case PAL_VERTEX_SEMANTIC_ID_TEXCOORD:
-            return "TEXCOORD";
-
-        case PAL_VERTEX_SEMANTIC_ID_NORMAL:
-            return "NORMAL";
-
-        case PAL_VERTEX_SEMANTIC_ID_TANGENT:
-            return "TANGENT";
-    }
-    return nullptr;
-}
-
-static void commitShaderbindingTableUpdateD3D12(
-    CommandBuffer* cmdBuffer, 
-    ShaderBindingTable* sbt)
-{
-    if (!sbt->isDirty) {
-        return;
-    }
-
-    // begin upload buffer copy to gpu buffer
-    cmdBuffer->handle->lpVtbl->CopyBufferRegion(
-        cmdBuffer->handle,
-        sbt->buffer,
-        0,
-        sbt->stagingBuffer,
-        0,
-        sbt->stagingBufferSize);
-
-    // put a memory barrier
-    D3D12_RESOURCE_BARRIER barrier = {0};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.pResource = sbt->buffer;
-
-    cmdBuffer->handle->lpVtbl->ResourceBarrier(cmdBuffer->handle, 1, &barrier);
-    sbt->isDirty = PAL_FALSE;
-}
-
-static void getDescriptorTierLimitsD3D12(
+void getDescriptorTierLimitsD3D12(
     void* device, 
     PalResourceCapabilities* caps, 
     PalDescriptorIndexingCapabilities* descCaps)
@@ -1614,10 +1059,6 @@ static void getDescriptorTierLimitsD3D12(
     }
 }
 
-// ==================================================
-// Adapter
-// ==================================================
-
 PalResult PAL_CALL initGraphicsD3D12(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
@@ -1626,7 +1067,10 @@ PalResult PAL_CALL initGraphicsD3D12(
     s_D3D12.handle = LoadLibraryA("d3d12.dll");
     s_D3D12.dxgi = LoadLibraryA("dxgi.dll");
     if (!s_D3D12.handle || !s_D3D12.dxgi) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE, 
+            PAL_RESULT_SOURCE_WIN32, 
+            GetLastError());
     }
 
     // clang-format off
@@ -1709,7 +1153,7 @@ PalResult PAL_CALL initGraphicsD3D12(
     s_D3D12.adapterCount = 0;
     HRESULT result = s_D3D12.createDXGIFactory(0, &IID_Factory, (void**)&s_D3D12.factory);
     if (FAILED(result)) {
-        return PAL_RESULT_PLATFORM_FAILURE;
+        return makeResultD3D12(result);
     }
 
     s_D3D12.allocator = allocator;
@@ -1733,5 +1177,3 @@ void PAL_CALL shutdownGraphicsD3D12()
 }
 
 #endif // PAL_HAS_D3D12_BACKEND
-
-#endif // _WIN32

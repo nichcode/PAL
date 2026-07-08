@@ -8,6 +8,8 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
+#define align(v, a) (v + a - 1) & ~(a - 1)
+
 #if INTPTR_MAX == INT64_MAX
 #define PTR_SIZE 8
 #else
@@ -102,6 +104,283 @@ typedef struct  {
     ViewInstancingStream viewInstancing;
     ShaderStream shaders[7]; // 7 shader types for graphics pipeline
 } GraphicsPipelineStreamDesc;
+
+static D3D12_STENCIL_OP stencilOpToD3D12(PalStencilOp op)
+{
+    switch (op) {
+        case PAL_STENCIL_OP_KEEP:
+            return D3D12_STENCIL_OP_KEEP;
+
+        case PAL_STENCIL_OP_ZERO:
+            return D3D12_STENCIL_OP_ZERO;
+
+        case PAL_STENCIL_OP_REPLACE:
+            return D3D12_STENCIL_OP_REPLACE;
+
+        case PAL_STENCIL_OP_INCREMENT_AND_CLAMP:
+            return D3D12_STENCIL_OP_INCR_SAT;
+
+        case PAL_STENCIL_OP_DECREMENT_AND_CLAMP:
+            return D3D12_STENCIL_OP_DECR_SAT;
+
+        case PAL_STENCIL_OP_INVERT:
+            return D3D12_STENCIL_OP_INVERT;
+
+        case PAL_STENCIL_OP_INCREMENT_AND_WRAP:
+            return D3D12_STENCIL_OP_INCR;
+
+        case PAL_STENCIL_OP_DECREMENT_AND_WRAP:
+            return D3D12_STENCIL_OP_DECR;
+    }
+
+    return D3D12_STENCIL_OP_KEEP;
+}
+
+static D3D12_BLEND_OP blendOpToD3D12(PalBlendOp op)
+{
+    switch (op) {
+        case PAL_BLEND_OP_ADD:
+            return D3D12_BLEND_OP_ADD;
+
+        case PAL_BLEND_OP_SUBTRACT:
+            return D3D12_BLEND_OP_SUBTRACT;
+
+        case PAL_BLEND_OP_REVERSE_SUBTRACT:
+            return D3D12_BLEND_OP_REV_SUBTRACT;
+
+        case PAL_BLEND_OP_MIN:
+            return D3D12_BLEND_OP_MIN;
+
+        case PAL_BLEND_OP_MAX:
+            return D3D12_BLEND_OP_MAX;
+    }
+
+    return D3D12_BLEND_OP_ADD;
+}
+
+static D3D12_BLEND blendFactorToD3D12(PalBlendFactor op)
+{
+    switch (op) {
+        case PAL_BLEND_FACTOR_ZERO:
+            return D3D12_BLEND_ZERO;
+
+        case PAL_BLEND_FACTOR_ONE:
+            return D3D12_BLEND_ONE;
+
+        case PAL_BLEND_FACTOR_SRC_COLOR:
+            return D3D12_BLEND_SRC_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_COLOR:
+            return D3D12_BLEND_INV_SRC_COLOR;
+
+        case PAL_BLEND_FACTOR_DST_COLOR:
+            return D3D12_BLEND_DEST_COLOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_DST_COLOR:
+            return D3D12_BLEND_INV_DEST_COLOR;
+
+        case PAL_BLEND_FACTOR_SRC_ALPHA:
+            return D3D12_BLEND_SRC_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA:
+            return D3D12_BLEND_INV_SRC_ALPHA;
+
+        case PAL_BLEND_FACTOR_DST_ALPHA:
+            return D3D12_BLEND_DEST_ALPHA;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:
+            return D3D12_BLEND_INV_DEST_ALPHA;
+
+        case PAL_BLEND_FACTOR_CONSTANT_COLOR:
+        case PAL_BLEND_FACTOR_CONSTANT_ALPHA:
+            return D3D12_BLEND_BLEND_FACTOR;
+
+        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR:
+        case PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
+            return D3D12_BLEND_INV_BLEND_FACTOR;
+    }
+
+    return D3D12_BLEND_ZERO;
+}
+
+static D3D_PRIMITIVE_TOPOLOGY getPatchTopology(uint32_t patch)
+{
+    switch (patch) {
+        case 1:
+            return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+
+        case 2:
+            return D3D_PRIMITIVE_TOPOLOGY_2_CONTROL_POINT_PATCHLIST;
+
+        case 3:
+            return D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
+
+        case 4:
+            return D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST;
+
+        case 5:
+            return D3D_PRIMITIVE_TOPOLOGY_5_CONTROL_POINT_PATCHLIST;
+
+        case 6:
+            return D3D_PRIMITIVE_TOPOLOGY_6_CONTROL_POINT_PATCHLIST;
+
+        case 7:
+            return D3D_PRIMITIVE_TOPOLOGY_7_CONTROL_POINT_PATCHLIST;
+
+        case 8:
+            return D3D_PRIMITIVE_TOPOLOGY_8_CONTROL_POINT_PATCHLIST;
+
+        case 9:
+            return D3D_PRIMITIVE_TOPOLOGY_9_CONTROL_POINT_PATCHLIST;
+
+        case 10:
+            return D3D_PRIMITIVE_TOPOLOGY_10_CONTROL_POINT_PATCHLIST;
+
+        case 11:
+            return D3D_PRIMITIVE_TOPOLOGY_11_CONTROL_POINT_PATCHLIST;
+
+        case 12:
+            return D3D_PRIMITIVE_TOPOLOGY_12_CONTROL_POINT_PATCHLIST;
+
+        case 13:
+            return D3D_PRIMITIVE_TOPOLOGY_13_CONTROL_POINT_PATCHLIST;
+
+        case 14:
+            return D3D_PRIMITIVE_TOPOLOGY_14_CONTROL_POINT_PATCHLIST;
+
+        case 15:
+            return D3D_PRIMITIVE_TOPOLOGY_15_CONTROL_POINT_PATCHLIST;
+
+        case 16:
+            return D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST;
+
+        case 17:
+            return D3D_PRIMITIVE_TOPOLOGY_17_CONTROL_POINT_PATCHLIST;
+
+        case 18:
+            return D3D_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST;
+
+        case 19:
+            return D3D_PRIMITIVE_TOPOLOGY_19_CONTROL_POINT_PATCHLIST;
+
+        case 20:
+            return D3D_PRIMITIVE_TOPOLOGY_20_CONTROL_POINT_PATCHLIST;
+
+        case 21:
+            return D3D_PRIMITIVE_TOPOLOGY_21_CONTROL_POINT_PATCHLIST;
+
+        case 22:
+            return D3D_PRIMITIVE_TOPOLOGY_22_CONTROL_POINT_PATCHLIST;
+
+        case 23:
+            return D3D_PRIMITIVE_TOPOLOGY_23_CONTROL_POINT_PATCHLIST;
+
+        case 24:
+            return D3D_PRIMITIVE_TOPOLOGY_24_CONTROL_POINT_PATCHLIST;
+
+        case 25:
+            return D3D_PRIMITIVE_TOPOLOGY_25_CONTROL_POINT_PATCHLIST;
+
+        case 26:
+            return D3D_PRIMITIVE_TOPOLOGY_26_CONTROL_POINT_PATCHLIST;
+
+        case 27:
+            return D3D_PRIMITIVE_TOPOLOGY_27_CONTROL_POINT_PATCHLIST;
+
+        case 28:
+            return D3D_PRIMITIVE_TOPOLOGY_28_CONTROL_POINT_PATCHLIST;
+
+        case 29:
+            return D3D_PRIMITIVE_TOPOLOGY_29_CONTROL_POINT_PATCHLIST;
+
+        case 30:
+            return D3D_PRIMITIVE_TOPOLOGY_30_CONTROL_POINT_PATCHLIST;
+    }
+
+    return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST;
+}
+
+static uint32_t getVertexTypeSizeD3D12(PalVertexType type)
+{
+    // count x sizeof type returned as size
+    switch (type) {
+        case PAL_VERTEX_TYPE_INT8_2:
+        case PAL_VERTEX_TYPE_UINT8_2:
+        case PAL_VERTEX_TYPE_INT8_2NORM:
+        case PAL_VERTEX_TYPE_UINT8_2NORM: {
+            return 2;
+        }
+
+        case PAL_VERTEX_TYPE_INT32:
+        case PAL_VERTEX_TYPE_UINT32:
+        case PAL_VERTEX_TYPE_INT8_4:
+        case PAL_VERTEX_TYPE_INT8_4NORM:
+        case PAL_VERTEX_TYPE_UINT8_4:
+        case PAL_VERTEX_TYPE_UINT8_4NORM:
+        case PAL_VERTEX_TYPE_INT16_2NORM:
+        case PAL_VERTEX_TYPE_INT16_2:
+        case PAL_VERTEX_TYPE_UINT16_2:
+        case PAL_VERTEX_TYPE_UINT16_2NORM:
+        case PAL_VERTEX_TYPE_FLOAT:
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_2: {
+            return 4;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_2:
+        case PAL_VERTEX_TYPE_UINT32_2:
+        case PAL_VERTEX_TYPE_INT16_4:
+        case PAL_VERTEX_TYPE_UINT16_4:
+        case PAL_VERTEX_TYPE_UINT16_4NORM:
+        case PAL_VERTEX_TYPE_INT16_4NORM:
+        case PAL_VERTEX_TYPE_FLOAT2:
+        case PAL_VERTEX_TYPE_HALF_FLOAT16_4: {
+            return 8;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_3:
+        case PAL_VERTEX_TYPE_UINT32_3:
+        case PAL_VERTEX_TYPE_FLOAT3: {
+            return 12;
+        }
+
+        case PAL_VERTEX_TYPE_INT32_4:
+        case PAL_VERTEX_TYPE_UINT32_4:
+        case PAL_VERTEX_TYPE_FLOAT4: {
+            return 16;
+        }
+    }
+
+    return 0;
+}
+
+static void getHitGroupNameD3D12(
+    uint32_t index,
+    wchar_t dst[PAL_SHADER_ENTRY_NAME_SIZE])
+{
+    wcscpy(dst, L"HitGroup");
+    _itow(index, dst + 8, 10);
+}
+
+static const char* semanticIDToStringD3D12(PalVertexSemanticID id)
+{
+    switch (id) {
+        case PAL_VERTEX_SEMANTIC_ID_POSITION:
+            return "POSITION";
+        
+        case PAL_VERTEX_SEMANTIC_ID_COLOR:
+            return "COLOR";
+
+        case PAL_VERTEX_SEMANTIC_ID_TEXCOORD:
+            return "TEXCOORD";
+
+        case PAL_VERTEX_SEMANTIC_ID_NORMAL:
+            return "NORMAL";
+
+        case PAL_VERTEX_SEMANTIC_ID_TANGENT:
+            return "TANGENT";
+    }
+    return nullptr;
+}
 
 PalResult PAL_CALL createPipelineLayoutD3D12(
     PalDevice* device,
@@ -1084,7 +1363,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     if (localRootSize) {
         D3D12_ROOT_PARAMETER1 parameter = {0};
         parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        parameter.Constants.Num32BitValues = alignD3D12(localRootSize, 4) / 4;
+        parameter.Constants.Num32BitValues = align(localRootSize, 4) / 4;
         parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc = {0};

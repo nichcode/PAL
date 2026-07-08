@@ -8,6 +8,20 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
+PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter*);
+uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(PalAdapter*, PalShaderFormats);
+
+static void convertToWcharD3D12(
+    const char* src,
+    wchar_t dst[PAL_SHADER_ENTRY_NAME_SIZE])
+{
+    int i = 0;
+    for (; i < PAL_SHADER_ENTRY_NAME_SIZE - 1 && src[i]; i++) {
+        dst[i] = (wchar_t)src[i];
+    }
+    dst[i] = L'\0';
+}
+
 PalResult PAL_CALL createDeviceD3D12(
     PalAdapter* adapter,
     PalAdapterFeatures features,

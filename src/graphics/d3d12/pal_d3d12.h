@@ -127,30 +127,6 @@ typedef struct {
 } DescriptorHeapLimits;
 
 typedef struct {
-    uint32_t incrementSize;
-    uint32_t nextOffset;
-    uint64_t cpuBase;
-    uint64_t gpuBase;
-    ID3D12DescriptorHeap* handle;
-} DescriptorHeap;
-
-typedef struct {
-    uint32_t maxUniformBuffers;
-    uint32_t maxSampledImages;
-    uint32_t maxStorageBuffers;
-    uint32_t maxSamplers;
-    uint32_t maxStorageImages;
-    uint32_t maxAs;
-
-    uint32_t usedUniformBuffers;
-    uint32_t usedSampledImages;
-    uint32_t usedStorageBuffers;
-    uint32_t usedSamplers;
-    uint32_t usedStorageImages;
-    uint32_t usedAs;
-} DescriptorHeapLimits;
-
-typedef struct {
     PalDescriptorType type;
     D3D12_DESCRIPTOR_RANGE1 range;
 } DescriptorSetBinding;
@@ -396,7 +372,15 @@ typedef struct {
 PalResult makeResultD3D12(HRESULT result);
 void pollMessagesD3D12(DeviceD3D12* device);
 DXGI_FORMAT formatToD3D12(PalFormat format);
-PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags);
+D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op);
+
+D3D12_SHADING_RATE_COMBINER combinerOpsToD3D12(PalFragmentShadingRateCombinerOp op);
+D3D12_SHADING_RATE shadingRateToD3D12(PalFragmentShadingRate rate);
+uint32_t getFormatSizeD3D12(PalFormat format);
+DXGI_FORMAT vertexTypeToD3D12(PalVertexType type);
+
+D3D12_RAYTRACING_INSTANCE_FLAGS instanceFlagsToD3D12(PalAccelerationStructureInstanceFlags flags);
+uint32_t samplesToD3D12(PalSampleCount count);
 
 void fillBuildInfoD3D12(
     PalBool getBuildSize,
@@ -409,7 +393,18 @@ void getDescriptorTierLimitsD3D12(
     PalResourceCapabilities* caps, 
     PalDescriptorIndexingCapabilities* descCaps);
 
-uint32_t getFormatSizeD3D12(PalFormat format);
+void fillSubresourceD3D12(
+    PalImageViewType type,
+    const PalImageSubresourceRange* range,
+    D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc,
+    D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc,
+    D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc,
+    D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc);
+
+uint64_t getDescriptorHandleD3D12(
+    uint32_t index,
+    uint32_t size,
+    uint64_t baseOffset);
 
 // IIDs
 extern IID IID_Device;

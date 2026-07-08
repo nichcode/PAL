@@ -26,6 +26,26 @@
 #define D3D_SHADER_MODEL_6_10 0x6a
 #endif // D3D_SHADER_MODEL_6_10
 
+static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
+{
+    PalImageUsages usages = 0;
+    if (flags & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) {
+        usages |= PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
+    }
+
+    if (flags & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL) {
+        usages |= PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT;
+    }
+
+    if (flags & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) {
+        usages |= PAL_IMAGE_USAGE_SAMPLED;
+    }
+
+    usages |= PAL_IMAGE_USAGE_TRANSFER_DST;
+    usages |= PAL_IMAGE_USAGE_TRANSFER_SRC;
+    return usages;
+}
+
 PalResult PAL_CALL enumerateAdaptersD3D12(
     int32_t* count,
     PalAdapter** outAdapters)
@@ -114,7 +134,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
     shaderModel.HighestShaderModel = D3D_SHADER_MODEL_6_0;
 
-    HRESULT result = IDXGIAdapter4_GetDesc3(d3d12Adapter->handle, &desc);
+    HRESULT result = d3d12Adapter->handle->lpVtbl->GetDesc3(d3d12Adapter->handle, &desc);
     if (FAILED(result)) {
         return makeResultD3D12(result);
     }
@@ -609,7 +629,7 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
     uint32_t tmp = 0;
     for (int i = 0; i < 6; i++) {
         samples.SampleCount = sampleCounts[i];
-        result = ID3D12Device_CheckFeatureSupport(
+        result = device->lpVtbl->CheckFeatureSupport(
             device, 
             D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, 
             &samples, 

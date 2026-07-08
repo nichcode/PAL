@@ -26,8 +26,8 @@ PalResult PAL_CALL createFenceD3D12(
         d3d12Device->handle, 
         0, 
         0, 
-        &IID_Fence, 
-        &fence->handle);
+        &IID_Fence,
+        (void**)&fence->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
@@ -151,7 +151,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
         0, 
         0, 
         &IID_Fence, 
-        &semaphore->handle);
+        (void**)&semaphore->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);

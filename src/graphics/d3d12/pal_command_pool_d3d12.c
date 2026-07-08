@@ -8,6 +8,46 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
+static CommandBufferData* getFreeCmdBufferData(CommandPoolD3D12* pool)
+{
+    for (int i = 0; i < pool->size; ++i) {
+        if (!pool->cmdBuffersData[i].used) {
+            pool->cmdBuffersData[i].used = PAL_TRUE;
+            return &pool->cmdBuffersData[i];
+        }
+    }
+
+    // resize the data array
+    CommandBufferData* data = nullptr;
+    int count = pool->size * 2; // double the size
+    int freeIndex = pool->size + 1;
+
+    data = palAllocate(s_D3D12.allocator, sizeof(CommandBufferData) * count, 0);
+    if (data) {
+        memcpy(data, pool->cmdBuffersData, pool->size * sizeof(CommandBufferData));
+
+        palFree(s_D3D12.allocator, pool->cmdBuffersData);
+        pool->cmdBuffersData = data;
+        pool->size = count;
+
+        pool->cmdBuffersData[freeIndex].used = PAL_TRUE;
+        return &pool->cmdBuffersData[freeIndex];
+    }
+    return nullptr;
+}
+
+static CommandBufferData* findCmdBufferData(
+    CommandPoolD3D12* pool,
+    CommandBufferD3D12* cmdBuffer)
+{
+    for (int i = 0; i < pool->size; ++i) {
+        if (pool->cmdBuffersData[i].used && pool->cmdBuffersData[i].cmdBuffer == cmdBuffer) {
+            return &pool->cmdBuffersData[i];
+        }
+    }
+    return nullptr;
+}
+
 PalResult PAL_CALL createCommandPoolD3D12(
     PalDevice* device,
     PalQueue* queue,
@@ -109,6 +149,12 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
     memset(cmdBuffer, 0, sizeof(CommandBufferD3D12));
     cmdBuffer->primary = PAL_TRUE;
 
+    // add it to the command pool list
+    CommandBufferData* cmdData = getFreeCmdBufferData(cmdPool);
+    if (!cmdData) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
     D3D12_COMMAND_LIST_TYPE cmdBufferType = cmdPool->type;
     if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         cmdBufferType = D3D12_COMMAND_LIST_TYPE_BUNDLE;
@@ -201,6 +247,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
 
     cmdList->lpVtbl->Release(cmdList);
     cmdBuffer->handle->lpVtbl->Close(cmdBuffer->handle);
+    cmdData->cmdBuffer = cmdBuffer;
 
     cmdBuffer->pool = cmdPool;
     cmdBuffer->device = d3d12Device;
