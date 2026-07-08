@@ -52,11 +52,11 @@ int main(int argc, char** argv)
 #endif // PAL_HAS_OPENGL_MODULE
 
 #if PAL_HAS_OPENGL_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1 && PAL_HAS_THREAD_MODULE == 1
-    registerTest(multiThreadOpenGlTest, "Multi Thread Opengl Test");
+    // registerTest(multiThreadOpenGlTest, "Multi Thread Opengl Test");
 #endif
 
 #if PAL_HAS_GRAPHICS_MODULE == 1
-    // registerTest(graphicsTest, "Graphics Test");
+    registerTest(graphicsTest, "Graphics Test");
     // registerTest(computeTest, "Compute Test");
     // registerTest(rayTracingTest, "Ray Tracing Test");
     // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
     // registerTest(textureTest, "Texture Test");
     // registerTest(geometryTest, "Geometry Test");
     // registerTest(indirectDrawTest, "Indirect Draw Test");
-    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
+    // registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
 #endif //
 
     runTests();

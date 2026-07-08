@@ -284,6 +284,7 @@ PalResult PAL_CALL createDeviceD3D12(
 
     device->adapter = d3d12Adapter->handle;
     device->features = features;
+    device->reserved = PAL_BACKEND_KEY;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
 }
