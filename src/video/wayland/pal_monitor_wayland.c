@@ -9,7 +9,7 @@
 #include "pal_wayland.h"
 
 PalResult wlEnumerateMonitors(
-    int32_t* count,
+    uint32_t* count,
     PalMonitor** outMonitors)
 {
     if (outMonitors) {
@@ -61,7 +61,7 @@ PalResult wlGetMonitorInfo(
 
 PalResult wlEnumerateMonitorModes(
     PalMonitor* monitor,
-    int32_t* count,
+    uint32_t* count,
     PalMonitorMode* modes)
 {
     MonitorData* monitorData = wlFindMonitorData(monitor);

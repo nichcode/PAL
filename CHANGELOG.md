@@ -65,6 +65,8 @@
 - `palEnumerateGLFBConfigs()` no longer takes the `glWindow` parameter.
 - `palInitVideo()` now takes an additional parameter.
 - `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`.
+- `palEnumerateMonitors()` now takes `count` paramter as `uint32_t`.
+- `palEnumerateMonitorModes()` now takes `count` paramter as `uint32_t`.
 - `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`.
 - `palJoinThread()` now takes `retval` paramters as `void**`.
 - Removed `palGLSetInstance()` function.

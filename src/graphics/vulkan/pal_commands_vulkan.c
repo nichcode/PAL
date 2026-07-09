@@ -1316,7 +1316,7 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
     // we need to make sure the SBT is up to date
     commitShaderbindingTableUpdate(vkCmdBuffer, vkSbt);
 
-    // copy users buffer data into a tmp gpu buffer abd execute with it
+    // copy user buffer data into a tmp gpu buffer abd execute with it
     VkBufferCopy copyRegion = {0};
     copyRegion.size = sizeof(VkTraceRaysIndirectCommandKHR);
     s_Vk.cmdCopyBuffer(vkCmdBuffer->handle, vkBuffer->handle, vkCmdBuffer->buffer, 1, &copyRegion);

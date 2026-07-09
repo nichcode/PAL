@@ -304,7 +304,7 @@ void PAL_CALL destroyBufferVk(PalBuffer* buffer)
     palFree(s_Vk.allocator, buffer);
 }
 
-PalResult PAL_CALL getBufferMemoryRequirementsVk(
+void PAL_CALL getBufferMemoryRequirementsVk(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements)
 {
@@ -329,17 +329,11 @@ PalResult PAL_CALL getBufferMemoryRequirementsVk(
     if ((memReq.memoryTypeBits & device->memoryClassMask[PAL_MEMORY_TYPE_CPU_READBACK]) != 0) {
         requirements->supportedMemoryTypes |= (1u << PAL_MEMORY_TYPE_CPU_READBACK);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL computeInstanceBufferRequirementsVk(
-    PalDevice* device,
-    uint32_t instanceCount,
-    uint64_t* outSize)
+uint64_t PAL_CALL computeInstanceBufferRequirementsVk(uint32_t instanceCount)
 {
-    *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
-    return PAL_RESULT_SUCCESS;
+    return sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
 }
 
 PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(

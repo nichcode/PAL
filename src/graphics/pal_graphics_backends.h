@@ -13,8 +13,8 @@
 // clang-format off
 typedef struct {
     PalResult (PAL_CALL *enumerateAdapters)(int32_t*, PalAdapter**);
-    PalResult (PAL_CALL *getAdapterInfo)(PalAdapter*, PalAdapterInfo*);
-    PalResult (PAL_CALL *getAdapterCapabilities)(PalAdapter*, PalAdapterCapabilities*);
+    void (PAL_CALL *getAdapterInfo)(PalAdapter*, PalAdapterInfo*);
+    void (PAL_CALL *getAdapterCapabilities)(PalAdapter*, PalAdapterCapabilities*);
     PalAdapterFeatures (PAL_CALL *getAdapterFeatures)(PalAdapter*);
     uint32_t (PAL_CALL *getHighestSupportedShaderTarget)(PalAdapter*, PalShaderFormats);
     PalResult (PAL_CALL *createDevice)(PalAdapter*, PalAdapterFeatures, PalDevice**);
@@ -34,7 +34,7 @@ typedef struct {
     void (PAL_CALL *destroyQueue)(PalQueue*);
     PalBool (PAL_CALL *canQueuePresent)(PalQueue*, PalSurface*);
     PalResult (PAL_CALL *waitQueue)(PalQueue*);
-    PalResult (PAL_CALL *enumerateFormats)(PalAdapter*, int32_t*, PalFormatInfo*);
+    void (PAL_CALL *enumerateFormats)(PalAdapter*, int32_t*, PalFormatInfo*);
     PalBool (PAL_CALL *isFormatSupported)(PalAdapter*, PalFormat);
     PalImageUsages (PAL_CALL *queryFormatImageUsages)(PalAdapter*, PalFormat);
     PalSampleCount (PAL_CALL *queryFormatSampleCount)(PalAdapter*, PalFormat);
@@ -122,7 +122,7 @@ typedef struct {
 
     PalResult (PAL_CALL *createAccelerationstructure)(PalDevice*, const PalAccelerationStructureCreateInfo*, PalAccelerationStructure**);
     void (PAL_CALL *destroyAccelerationstructure)(PalAccelerationStructure*);
-    PalResult (PAL_CALL *getAccelerationStructureBuildSize)(PalDevice*, PalAccelerationStructureBuildInfo*, PalAccelerationStructureBuildSize*);
+    void (PAL_CALL *getAccelerationStructureBuildSize)(PalDevice*, PalAccelerationStructureBuildInfo*, PalAccelerationStructureBuildSize*);
     PalResult (PAL_CALL *createBuffer)(PalDevice*, const PalBufferCreateInfo*, PalBuffer**);
     void (PAL_CALL *destroyBuffer)(PalBuffer*);
     PalResult (PAL_CALL *getBufferMemoryRequirements)(PalBuffer*, PalMemoryRequirements*);
@@ -162,8 +162,8 @@ typedef struct {
 PalResult PAL_CALL initGraphicsVk(const PalGraphicsDebugger*, const PalAllocator*);
 void PAL_CALL shutdownGraphicsVk();
 PalResult PAL_CALL enumerateAdaptersVk(int32_t*, PalAdapter**);
-PalResult PAL_CALL getAdapterInfoVk(PalAdapter*, PalAdapterInfo*);
-PalResult PAL_CALL getAdapterCapabilitiesVk(PalAdapter*, PalAdapterCapabilities*);
+void PAL_CALL getAdapterInfoVk(PalAdapter*, PalAdapterInfo*);
+void PAL_CALL getAdapterCapabilitiesVk(PalAdapter*, PalAdapterCapabilities*);
 PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter*);
 uint32_t PAL_CALL getHighestSupportedShaderTargetVk(PalAdapter*, PalShaderFormats);
 PalResult PAL_CALL createDeviceVk(PalAdapter*, PalAdapterFeatures, PalDevice**);
@@ -184,7 +184,7 @@ PalResult PAL_CALL createQueueVk(PalDevice*, PalQueueType, PalQueue**);
 void PAL_CALL destroyQueueVk(PalQueue*);
 PalResult PAL_CALL waitQueueVk(PalQueue*);
 PalBool PAL_CALL canQueuePresentVk(PalQueue*, PalSurface*);
-PalResult PAL_CALL enumerateFormatsVk(PalAdapter*, int32_t*, PalFormatInfo*);
+void PAL_CALL enumerateFormatsVk(PalAdapter*, int32_t*, PalFormatInfo*);
 PalBool PAL_CALL isFormatSupportedVk(PalAdapter*, PalFormat);
 PalImageUsages PAL_CALL queryFormatImageUsagesVk(PalAdapter*, PalFormat);
 PalSampleCount PAL_CALL queryFormatSampleCountVk(PalAdapter*, PalFormat);
@@ -469,7 +469,7 @@ PalResult PAL_CALL createQueueD3D12(PalDevice*, PalQueueType, PalQueue**);
 void PAL_CALL destroyQueueD3D12(PalQueue*);
 PalResult PAL_CALL waitQueueD3D12(PalQueue*);
 PalBool PAL_CALL canQueuePresentD3D12(PalQueue*, PalSurface*);
-PalResult PAL_CALL enumerateFormatsD3D12(PalAdapter*, int32_t*, PalFormatInfo*);
+void PAL_CALL enumerateFormatsD3D12(PalAdapter*, int32_t*, PalFormatInfo*);
 PalBool PAL_CALL isFormatSupportedD3D12(PalAdapter*, PalFormat);
 PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(PalAdapter*, PalFormat);
 PalSampleCount PAL_CALL queryFormatSampleCountD3D12(PalAdapter*, PalFormat);

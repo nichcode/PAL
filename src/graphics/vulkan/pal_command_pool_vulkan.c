@@ -49,7 +49,11 @@ void PAL_CALL destroyCommandPoolVk(PalCommandPool* pool)
 PalResult PAL_CALL resetCommandPoolVk(PalCommandPool* pool)
 {
     CommandPoolVk* vkCmdPool = (CommandPoolVk*)pool;
-    s_Vk.resetCommandPool(vkCmdPool->device->handle, vkCmdPool->handle, 0);
+    VkResult result = s_Vk.resetCommandPool(vkCmdPool->device->handle, vkCmdPool->handle, 0);
+    if (result != VK_SUCCESS) {
+        return makeResultVk(result);
+    }
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -157,7 +161,11 @@ void PAL_CALL freeCommandBufferVk(PalCommandBuffer* cmdBuffer)
 PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    s_Vk.resetCommandBuffer(vkCmdBuffer->handle, 0);
+    VkResult result = s_Vk.resetCommandBuffer(vkCmdBuffer->handle, 0);
+    if (result != VK_SUCCESS) {
+        return makeResultVk(result);
+    }
+    
     return PAL_RESULT_SUCCESS;
 }
 

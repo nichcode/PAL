@@ -148,7 +148,7 @@ PalVideoFeatures PAL_CALL palGetVideoFeatures()
 }
 
 PalResult PAL_CALL palEnumerateMonitors(
-    int32_t* count,
+    uint32_t* count,
     PalMonitor** outMonitors)
 {
     if (!s_Video.initialized) {
@@ -192,7 +192,7 @@ PalResult PAL_CALL palGetMonitorInfo(
 
 PalResult PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
-    int32_t* count,
+    uint32_t* count,
     PalMonitorMode* modes)
 {
     if (!s_Video.initialized) {

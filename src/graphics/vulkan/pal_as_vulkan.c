@@ -71,14 +71,14 @@ void PAL_CALL destroyAccelerationstructureVk(PalAccelerationStructure* as)
     palFree(s_Vk.allocator, vkAs);
 }
 
-PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
+void PAL_CALL getAccelerationStructureBuildSizeVk(
     PalDevice* device,
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
     if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+        return;
     }
 
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
@@ -89,7 +89,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
     geometries = palAllocate(s_Vk.allocator, geometriesSize, 0);
     maxPrimities = palAllocate(s_Vk.allocator, sizeof(uint32_t) * info->count, 0);
     if (!maxPrimities || !geometries) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        return;
     }
 
     memset(geometries, 0, geometriesSize);
@@ -111,7 +111,6 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeVk(
 
     palFree(s_Vk.allocator, geometries);
     palFree(s_Vk.allocator, maxPrimities);
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

@@ -43,16 +43,12 @@ void PAL_CALL destroyAccelerationstructureD3D12(PalAccelerationStructure* as)
     palFree(s_D3D12.allocator, d3dAs);
 }
 
-PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
+void PAL_CALL getAccelerationStructureBuildSizeD3D12(
     PalDevice* device,
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO sizeInfo = {0};
     
@@ -64,7 +60,7 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
             0);
 
         if (!geometries) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+            return;
         }
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
@@ -89,7 +85,6 @@ PalResult PAL_CALL getAccelerationStructureBuildSizeD3D12(
     size->accelerationStructureSize = sizeInfo.ResultDataMaxSizeInBytes;
     size->scratchBufferSize = sizeInfo.ScratchDataSizeInBytes;
     size->updateScratchBufferSize = sizeInfo.UpdateScratchDataSizeInBytes;
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

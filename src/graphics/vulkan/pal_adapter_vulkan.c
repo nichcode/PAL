@@ -147,7 +147,7 @@ PalResult PAL_CALL enumerateAdaptersVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getAdapterInfoVk(
+void PAL_CALL getAdapterInfoVk(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
@@ -203,15 +203,12 @@ PalResult PAL_CALL getAdapterInfoVk(
             break;
         }
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getAdapterCapabilitiesVk(
+void PAL_CALL getAdapterCapabilitiesVk(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    VkResult result = VK_SUCCESS;
     AdapterVk* vkAdapter = (AdapterVk*)adapter;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
 
@@ -323,7 +320,6 @@ PalResult PAL_CALL getAdapterCapabilitiesVk(
     computeCaps->maxWorkGroupSize[2] = limits->maxComputeWorkGroupSize[2];
 
     palFree(s_Vk.allocator, queueProps);
-    return PAL_RESULT_SUCCESS;
 }
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
@@ -713,7 +709,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
     return 0;
 }
 
-PalResult PAL_CALL enumerateFormatsVk(
+void PAL_CALL enumerateFormatsVk(
     PalAdapter* adapter,
     int32_t* count,
     PalFormatInfo* outFormats)
@@ -743,7 +739,6 @@ PalResult PAL_CALL enumerateFormatsVk(
     if (!outFormats) {
         *count = fmtCount;
     }
-    return PAL_RESULT_SUCCESS;
 }
 
 PalBool PAL_CALL isFormatSupportedVk(

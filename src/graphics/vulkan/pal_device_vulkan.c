@@ -825,7 +825,7 @@ PalResult PAL_CALL allocateMemoryVk(
     DeviceVk* vkDevice = (DeviceVk*)device;
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocateInfo.allocationSize = (VkDeviceSize)size;
+    allocateInfo.allocationSize = size;
     VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
 
     memory = palAllocate(s_Vk.allocator, sizeof(MemoryVk), 0);

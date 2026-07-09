@@ -122,10 +122,11 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getAdapterInfoD3D12(
+void PAL_CALL getAdapterInfoD3D12(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
+    HRESULT result = 0;
     AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
     DXGI_ADAPTER_DESC3 desc;
     D3D12_FEATURE_DATA_ARCHITECTURE1 arch = {0};
@@ -133,11 +134,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
 
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
     shaderModel.HighestShaderModel = D3D_SHADER_MODEL_6_0;
-
-    HRESULT result = d3d12Adapter->handle->lpVtbl->GetDesc3(d3d12Adapter->handle, &desc);
-    if (FAILED(result)) {
-        return makeResultD3D12(result);
-    }
+    d3d12Adapter->handle->lpVtbl->GetDesc3(d3d12Adapter->handle, &desc);
 
     result = device->lpVtbl->CheckFeatureSupport(
         device, 
@@ -166,7 +163,7 @@ PalResult PAL_CALL getAdapterInfoD3D12(
         nullptr,
         nullptr);
 
-    result = device->lpVtbl->CheckFeatureSupport(
+    device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_ARCHITECTURE1, 
         &arch, 
@@ -189,19 +186,13 @@ PalResult PAL_CALL getAdapterInfoD3D12(
     } else if (desc.DedicatedVideoMemory == 0 && desc.DedicatedSystemMemory > 0) {
         info->vram = desc.DedicatedSystemMemory;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getAdapterCapabilitiesD3D12(
+void PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
     AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
-    if (!d3d12Adapter->handle) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     PalViewportCapabilities* viewportCaps = &caps->viewportCaps;
     PalImageCapabilities* imageCaps = &caps->imageCaps;
     PalResourceCapabilities* resourceCaps = &caps->resourceCaps;
@@ -260,8 +251,6 @@ PalResult PAL_CALL getAdapterCapabilitiesD3D12(
     computeCaps->maxWorkGroupSize[0] = D3D12_CS_THREAD_GROUP_MAX_X;
     computeCaps->maxWorkGroupSize[1] = D3D12_CS_THREAD_GROUP_MAX_Y;
     computeCaps->maxWorkGroupSize[2] = D3D12_CS_THREAD_GROUP_MAX_Z;
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
@@ -476,13 +465,12 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
     return 0;
 }
 
-PalResult PAL_CALL enumerateFormatsD3D12(
+void PAL_CALL enumerateFormatsD3D12(
     PalAdapter* adapter,
     int32_t* count,
     PalFormatInfo* outFormats)
 {
     int32_t fmtCount = 0;
-    HRESULT result;
     AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
     ID3D12Device* device = d3d12Adapter->tmpDevice;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
@@ -494,41 +482,37 @@ PalResult PAL_CALL enumerateFormatsD3D12(
         }
 
         support.Format = fmt;
-        result = device->lpVtbl->CheckFeatureSupport(
+        device->lpVtbl->CheckFeatureSupport(
             device, 
             D3D12_FEATURE_FORMAT_SUPPORT, 
             &support, 
             sizeof(support));
+            
+        if (support.Support1 == 0 && support.Support2 == 0) {
+            // format not supported
+            continue;
+        }
 
-        if (SUCCEEDED(result)) {
-            if (support.Support1 == 0 && support.Support2 == 0) {
-                // format not supported
-                continue;
+        if (outFormats) {
+            if (fmtCount < *count) {
+                PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
+                fmtInfo->format = (PalFormat)i;
+                fmtInfo->usages = ImageUsageFromD3D12(support.Support1);
             }
 
-            if (outFormats) {
-                if (fmtCount < *count) {
-                    PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
-                    fmtInfo->format = (PalFormat)i;
-                    fmtInfo->usages = ImageUsageFromD3D12(support.Support1);
-                }
-
-            } else {
-                fmtCount++;
-            }
+        } else {
+            fmtCount++;
         }
     }
     if (!outFormats) {
         *count = fmtCount;
     }
-    return PAL_RESULT_SUCCESS;
 }
 
 PalBool PAL_CALL isFormatSupportedD3D12(
     PalAdapter* adapter,
     PalFormat format)
 {
-    HRESULT result;
     AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
     ID3D12Device* device = d3d12Adapter->tmpDevice;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
@@ -539,13 +523,13 @@ PalBool PAL_CALL isFormatSupportedD3D12(
     }
 
     support.Format = fmt;
-    result = device->lpVtbl->CheckFeatureSupport(
+    device->lpVtbl->CheckFeatureSupport(
         device, 
         D3D12_FEATURE_FORMAT_SUPPORT, 
         &support, 
         sizeof(support));
 
-    if (FAILED(result) || (support.Support1 == 0 && support.Support2 == 0)) {
+    if (support.Support1 == 0 && support.Support2 == 0) {
         return PAL_FALSE;
     }
 

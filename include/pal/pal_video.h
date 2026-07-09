@@ -680,7 +680,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * @sa palGetPrimaryMonitor
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitors(
-    int32_t* count,
+    uint32_t* count,
     PalMonitor** outMonitors);
 
 /**
@@ -753,7 +753,7 @@ PAL_API PalResult PAL_CALL palGetMonitorInfo(
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
-    int32_t* count,
+    uint32_t* count,
     PalMonitorMode* modes);
 
 /**

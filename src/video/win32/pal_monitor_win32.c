@@ -155,7 +155,7 @@ static inline void addMonitorMode(
 }
 
 PalResult win32EnumerateMonitors(
-    int32_t* count,
+    uint32_t* count,
     PalMonitor** outMonitors)
 {
     MonitorData data;
@@ -247,7 +247,7 @@ PalResult win32GetMonitorInfo(
 
 PalResult win32EnumerateMonitorModes(
     PalMonitor* monitor,
-    int32_t* count,
+    uint32_t* count,
     PalMonitorMode* modes)
 {
     int32_t modeCount = 0;

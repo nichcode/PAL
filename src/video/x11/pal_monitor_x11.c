@@ -10,7 +10,7 @@
 #include <math.h>
 
 PalResult xEnumerateMonitors(
-    int32_t* count,
+    uint32_t* count,
     PalMonitor** outMonitors)
 {
     int _count = 0;
@@ -145,7 +145,7 @@ PalResult xGetMonitorInfo(
 
 PalResult xEnumerateMonitorModes(
     PalMonitor* monitor,
-    int32_t* count,
+    uint32_t* count,
     PalMonitorMode* modes)
 {
     int32_t modeCount = 0;
