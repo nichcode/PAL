@@ -733,6 +733,7 @@ PalResult PAL_CALL createShaderD3D12(
     shader->byteCode.BytecodeLength = info->bytecodeSize;
 
     shader->entryCount = info->entryCount;
+    shader->reserved = PAL_BACKEND_KEY;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }

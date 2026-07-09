@@ -10,7 +10,7 @@
 
 static CommandBufferData* getFreeCmdBufferData(CommandPoolD3D12* pool)
 {
-    for (int i = 0; i < pool->size; ++i) {
+    for (int i = 0; i < pool->size; i++) {
         if (!pool->cmdBuffersData[i].used) {
             pool->cmdBuffersData[i].used = PAL_TRUE;
             return &pool->cmdBuffersData[i];
@@ -40,7 +40,7 @@ static CommandBufferData* findCmdBufferData(
     CommandPoolD3D12* pool,
     CommandBufferD3D12* cmdBuffer)
 {
-    for (int i = 0; i < pool->size; ++i) {
+    for (int i = 0; i < pool->size; i++) {
         if (pool->cmdBuffersData[i].used && pool->cmdBuffersData[i].cmdBuffer == cmdBuffer) {
             return &pool->cmdBuffersData[i];
         }
@@ -73,6 +73,7 @@ PalResult PAL_CALL createCommandPoolD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
+    memset(pool->cmdBuffersData, 0, sizeof(CommandBufferData) * pool->size);
     switch (d3d12Queue->type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             pool->type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -102,7 +103,6 @@ void PAL_CALL destroyCommandPoolD3D12(PalCommandPool* pool)
         if (!cmdPool->cmdBuffersData[i].used) {
             continue;
         }
-
         CommandBufferD3D12* cmdBuffer = cmdPool->cmdBuffersData[i].cmdBuffer;
         cmdBuffer->handle->lpVtbl->Release(cmdBuffer->handle);
         cmdBuffer->allocator->lpVtbl->Release(cmdBuffer->allocator);
@@ -342,6 +342,7 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         }
     }
 
+    // pollMessagesD3D12(d3d12CmdBuffer->device);
     ID3D12CommandList* cmdLists[1] = { (ID3D12CommandList*)d3d12CmdBuffer->handle };
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
     

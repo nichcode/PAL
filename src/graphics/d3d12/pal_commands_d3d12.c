@@ -762,6 +762,10 @@ PalResult PAL_CALL cmdBindPipelineD3D12(
             d3d12CmdBuffer->handle,
             d3dPipeline->handle);
 
+        d3d12CmdBuffer->handle->lpVtbl->SetComputeRootSignature(
+            d3d12CmdBuffer->handle, 
+            d3dPipeline->layout->handle);
+
         if (d3dPipeline->type == GRAPHICS_PIPELINE) {
             d3d12CmdBuffer->handle->lpVtbl->IASetPrimitiveTopology(
                 d3d12CmdBuffer->handle,

@@ -10,6 +10,41 @@
 
 #define align(v, a) (v + a - 1) & ~(a - 1)
 
+static uint32_t getSupportedMemoryTypes(PalBufferUsages usages)
+{
+    uint32_t masks = 0;
+    masks |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
+    masks |= (1u << PAL_MEMORY_TYPE_CPU_UPLOAD);
+    masks |= (1u << PAL_MEMORY_TYPE_CPU_READBACK);
+
+    if (usages & PAL_BUFFER_USAGE_STORAGE) {
+        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
+        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
+        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
+        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
+        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
+        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_TRANSFER_DST) {
+        masks |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
+        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
+    }
+
+    if (usages & PAL_BUFFER_USAGE_TRANSFER_SRC) {
+        masks |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
+        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+    }
+
+    return masks;
+}
+
 PalResult PAL_CALL createBufferD3D12(
     PalDevice* device,
     const PalBufferCreateInfo* info,
@@ -63,14 +98,31 @@ PalResult PAL_CALL createBufferD3D12(
         D3D12_HEAP_PROPERTIES heapProps = {0};
         heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
         D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+        buffer->canStateChange = PAL_TRUE;
 
-        if (info->memoryUsage != PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD) {
+        uint32_t masks = getSupportedMemoryTypes(info->usages);
+        if (info->memoryUsage == PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY) {
+            if (!(masks & (1u << PAL_MEMORY_TYPE_GPU_ONLY))) {
+                return PAL_RESULT_CODE_INVALID_ARGUMENT;
+            }
+
+        } else if (info->memoryUsage == PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD) {
             heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
             state = D3D12_RESOURCE_STATE_GENERIC_READ;
+            buffer->canStateChange = PAL_FALSE;
 
-        } else if (info->memoryUsage != PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK) {
+            if (!(masks & (1u << PAL_MEMORY_TYPE_CPU_UPLOAD))) {
+                return PAL_RESULT_CODE_INVALID_ARGUMENT;
+            }
+
+        } else if (info->memoryUsage == PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK) {
             heapProps.Type = D3D12_HEAP_TYPE_READBACK;
             state = D3D12_RESOURCE_STATE_COPY_DEST;
+            buffer->canStateChange = PAL_FALSE;
+
+            if (!(masks & (1u << PAL_MEMORY_TYPE_CPU_READBACK))) {
+                return PAL_RESULT_CODE_INVALID_ARGUMENT;
+            }
         }
 
         result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
@@ -123,11 +175,7 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
         1,
         &d3d12Buffer->desc);
 
-    // d3d12 allows buffers to be used with all memory heap types
-    requirements->supportedMemoryTypes |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
-    requirements->supportedMemoryTypes |= (1u << PAL_MEMORY_TYPE_CPU_UPLOAD);
-    requirements->supportedMemoryTypes |= (1u << PAL_MEMORY_TYPE_CPU_READBACK);
-
+    requirements->supportedMemoryTypes = getSupportedMemoryTypes(d3d12Buffer->usages);
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
     return PAL_RESULT_SUCCESS;
