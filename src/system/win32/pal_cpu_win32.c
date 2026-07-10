@@ -42,19 +42,10 @@ static inline void cpuid(
 #endif // _MSC_VER
 }
 
-PalResult PAL_CALL palGetCPUInfo(
+void PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info)
 {
-    if (!info) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    // check invalid allocator
-    if (allocator && (!allocator->allocate || !allocator->free)) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     memset(info, 0, sizeof(PalCPUInfo));
 
     // get cpu vendor
@@ -114,16 +105,13 @@ PalResult PAL_CALL palGetCPUInfo(
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = nullptr;
     buffer = palAllocate(allocator, len, 16);
     if (!buffer) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        return;
     }
 
     BOOL ret = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
     if (!ret) {
         palFree(allocator, buffer);
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
+        return;
     }
 
     char* ptr = (char*)buffer;
@@ -211,7 +199,6 @@ PalResult PAL_CALL palGetCPUInfo(
     }
 
     info->features = features;
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // _WIN32

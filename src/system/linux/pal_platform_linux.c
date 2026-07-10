@@ -7,18 +7,13 @@
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_system.h"
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
 
-PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
+void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {
-    if (!info) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     info->type = PAL_PLATFORM_TYPE_LINUX;
     const char* session = getenv("XDG_SESSION_TYPE");
     if (session) {
@@ -34,7 +29,7 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     FILE* file = fopen("/etc/os-release", "r");
     if (!file) {
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
+        return;
     }
 
     char line[256];
@@ -62,12 +57,11 @@ PalResult PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 
     struct statvfs stats;
     if (statvfs("/", &stats) != 0) {
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
+        return;
     }
 
     uint64_t size = (stats.f_blocks * stats.f_frsize) / (1024 * 1024 * 1024);
     info->totalMemory = (uint32_t)size;
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // __linux__

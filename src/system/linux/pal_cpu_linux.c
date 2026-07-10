@@ -7,7 +7,6 @@
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
 #include "pal/pal_system.h"
-#include <errno.h>
 #include <stdio.h>
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -34,22 +33,13 @@ static uint32_t parseCache(const char* path)
     return cacheSize;
 }
 
-PalResult PAL_CALL palGetCPUInfo(
+void PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info)
 {
-    if (!info) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    // check invalid allocator
-    if (allocator && (!allocator->allocate || !allocator->free)) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     FILE* file = fopen("/proc/cpuinfo", "r");
     if (!file) {
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
+        return;
     }
 
     char line[1024];
@@ -128,7 +118,7 @@ PalResult PAL_CALL palGetCPUInfo(
     // get architecture
     struct utsname arch;
     if (uname(&arch) != 0) {
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
+        return;
     }
 
     if (strcmp(arch.machine, "x86_64") == 0) {
@@ -150,8 +140,6 @@ PalResult PAL_CALL palGetCPUInfo(
     if (strcmp(arch.machine, "aarch64") == 0) {
         info->architecture = PAL_CPU_ARCH_ARM64;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // __linux__
