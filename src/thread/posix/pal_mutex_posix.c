@@ -37,24 +37,18 @@ PalResult PAL_CALL palCreateMutex(
 
 void PAL_CALL palDestroyMutex(PalMutex* mutex)
 {
-    if (mutex) {
-        pthread_mutex_destroy(&mutex->handle);
-        palFree(mutex->allocator, mutex);
-    }
+    pthread_mutex_destroy(&mutex->handle);
+    palFree(mutex->allocator, mutex);
 }
 
 void PAL_CALL palLockMutex(PalMutex* mutex)
 {
-    if (mutex) {
-        pthread_mutex_lock(&mutex->handle);
-    }
+    pthread_mutex_lock(&mutex->handle);
 }
 
 void PAL_CALL palUnlockMutex(PalMutex* mutex)
 {
-    if (mutex) {
-        pthread_mutex_unlock(&mutex->handle);
-    }
+    pthread_mutex_unlock(&mutex->handle);
 }
 
 #endif // _PAL_HAS_POSIX

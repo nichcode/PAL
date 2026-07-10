@@ -15,13 +15,13 @@
 typedef struct {
     void (*shutdownGL)();
     const PalGLInfo* (*getGLInfo)();
-    PalResult (*enumerateGLFBConfigs)(int32_t*, PalGLFBConfig*);
+    PalResult (*enumerateGLFBConfigs)(uint32_t*, PalGLFBConfig*);
     PalResult (*createGLContext)(const PalGLContextCreateInfo*, PalGLContext**);
     void (*destroyGLContext)(PalGLContext* context);
     PalResult (*makeContextCurrent)(PalGLWindow*, PalGLContext*);
     void* (*getGLProcAddress)(const char*);
     PalResult (*swapBuffers)(PalGLWindow*, PalGLContext*);
-    PalResult (*setSwapInterval)(int32_t);
+    void (*setSwapInterval)(int32_t);
     const PalBool* (*GetSupportedGLAPIs)(void*);
 } OpenglBackend;
 
@@ -33,13 +33,13 @@ typedef struct {
 PalResult wglInitGL(PalGLAPI, void*, const PalAllocator*);
 void wglShutdownGL();
 const PalGLInfo* wglGetGLInfo();
-PalResult wglEnumerateGLFBConfigs(int32_t*, PalGLFBConfig*);
+PalResult wglEnumerateGLFBConfigs(uint32_t*, PalGLFBConfig*);
 PalResult wglCreateGLContext(const PalGLContextCreateInfo*, PalGLContext**);
 void wglDestroyGLContext(PalGLContext*);
 PalResult wglMakeContextCurrent(PalGLWindow*, PalGLContext*);
 void* wglGetGLProcAddress(const char*);
 PalResult wglSwapBuffers(PalGLWindow*, PalGLContext*);
-PalResult wglSetSwapInterval(int32_t);
+void wglSetSwapInterval(int32_t);
 const PalBool* wglGetSupportedGLAPIs(void*);
 
 static OpenglBackend s_WglBackend = {
@@ -64,13 +64,13 @@ static OpenglBackend s_WglBackend = {
 PalResult eglInitGL(PalGLAPI, void*, const PalAllocator*);
 void eglShutdownGL();
 const PalGLInfo* eglGetGLInfo();
-PalResult eglEnumerateGLFBConfigs(int32_t*, PalGLFBConfig*);
+PalResult eglEnumerateGLFBConfigs(uint32_t*, PalGLFBConfig*);
 PalResult eglCreateGLContext(const PalGLContextCreateInfo*, PalGLContext**);
 void eglDestroyGLContext(PalGLContext*);
 PalResult eglMakeContextCurrent(PalGLWindow*, PalGLContext*);
 void* eglGetGLProcAddress(const char*);
 PalResult eglSwapBuffers(PalGLWindow*, PalGLContext*);
-PalResult eglSetSwapInterval(int32_t);
+void eglSetSwapInterval(int32_t);
 const PalBool* eglGetSupportedGLAPIs(void*);
 
 static OpenglBackend s_EglBackend = {

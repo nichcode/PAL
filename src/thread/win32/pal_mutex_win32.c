@@ -38,24 +38,18 @@ PalResult PAL_CALL palCreateMutex(
 
 void PAL_CALL palDestroyMutex(PalMutex* mutex)
 {
-    if (mutex) {
-        DeleteCriticalSection(&mutex->sc);
-        palFree(mutex->allocator, mutex);
-    }
+    DeleteCriticalSection(&mutex->sc);
+    palFree(mutex->allocator, mutex);
 }
 
 void PAL_CALL palLockMutex(PalMutex* mutex)
 {
-    if (mutex) {
-        EnterCriticalSection(&mutex->sc);
-    }
+    EnterCriticalSection(&mutex->sc);
 }
 
 void PAL_CALL palUnlockMutex(PalMutex* mutex)
 {
-    if (mutex) {
-        LeaveCriticalSection(&mutex->sc);
-    }
+    LeaveCriticalSection(&mutex->sc);
 }
 
 #endif // _WIN32

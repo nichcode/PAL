@@ -309,13 +309,9 @@ const PalGLInfo* PAL_CALL eglGetGLInfo()
 }
 
 PalResult PAL_CALL eglEnumerateGLFBConfigs(
-    int32_t* count,
+    uint32_t* count,
     PalGLFBConfig* configs)
 {
-    if (!count || count == 0 && configs) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     int32_t configCount = 0;
     int32_t maxConfigCount = 0;
     if (configs) {
@@ -429,22 +425,13 @@ void* PAL_CALL eglGetGLProcAddress(const char* name)
     return s_Egl.getProcAddress(name);
 }
 
-PalResult PAL_CALL eglSetSwapInterval(int32_t interval)
+void PAL_CALL eglSetSwapInterval(int32_t interval)
 {
-    if (!s_Egl.swapInterval) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     s_Egl.swapInterval(s_Egl.display, interval);
-    return PAL_RESULT_SUCCESS;
 }
 
 const PalBool* PAL_CALL eglGetSupportedGLAPIs(void* instance)
 {
-    if (!instance) {
-        return nullptr;
-    }
-
     void* handle = dlopen("libEGL.so", RTLD_LAZY);
     if (!handle) {
         return nullptr;

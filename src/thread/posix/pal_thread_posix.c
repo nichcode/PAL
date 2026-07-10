@@ -58,10 +58,6 @@ PalResult PAL_CALL palJoinThread(
     PalThread* thread,
     void** retval)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     int ret = 0;
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     if (retval) {
@@ -80,9 +76,7 @@ PalResult PAL_CALL palJoinThread(
 
 void PAL_CALL palDetachThread(PalThread* thread)
 {
-    if (thread) {
-        pthread_detach(FROM_PAL_HANDLE(pthread_t, thread));
-    }
+    pthread_detach(FROM_PAL_HANDLE(pthread_t, thread));
 }
 
 void PAL_CALL palSleep(uint64_t milliseconds)
@@ -116,10 +110,6 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
 
 PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 {
-    if (!thread) {
-        return 0;
-    }
-
     int policy;
     struct sched_param param;
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
@@ -143,10 +133,6 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 
 uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
 {
-    if (!thread) {
-        return 0;
-    }
-
 #ifdef __linux__
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -186,10 +172,6 @@ PalResult PAL_CALL palSetThreadPriority(
     PalThread* thread,
     PalThreadPriority priority)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     switch (priority) {
         case PAL_THREAD_PRIORITY_LOW: {
             setpriority(PRIO_PROCESS, 0, 10);
@@ -222,10 +204,6 @@ PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
     uint64_t mask)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
 #ifdef __linux__
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -253,10 +231,6 @@ PalResult PAL_CALL palSetThreadName(
     PalThread* thread,
     const char* name)
 {
-    if (!thread || !name) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
 #ifdef __linux__
     pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
     int ret = pthread_setname_np(_thread, name);

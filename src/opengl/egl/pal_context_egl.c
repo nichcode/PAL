@@ -279,26 +279,18 @@ PalResult eglCreateGLContext(
 
 void eglDestroyGLContext(PalGLContext* context)
 {
-    if (context) {
-        ContextData* data = findContextData(context);
-        if (data) {
-            // make it not current if it was current
-            s_Egl.makeCurrent(s_Egl.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-            s_Egl.destroyContext(s_Egl.display, (EGLContext)context);
-            s_Egl.destroySurface(s_Egl.display, data->surface);
-            data->used = PAL_FALSE;
-        }
-    }
+    ContextData* data = findContextData(context);
+    // make it not current if it was current
+    s_Egl.makeCurrent(s_Egl.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    s_Egl.destroyContext(s_Egl.display, (EGLContext)context);
+    s_Egl.destroySurface(s_Egl.display, data->surface);
+    data->used = PAL_FALSE;
 }
 
 PalResult eglMakeContextCurrent(
     PalGLWindow* glWindow,
     PalGLContext* context)
 {
-    if ((!glWindow && context) || (glWindow && !context)) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     if (context && glWindow) {
         ContextData* data = findContextData(context);
         if (!data) {
@@ -331,10 +323,6 @@ PalResult eglSwapBuffers(
     PalGLWindow* glWindow,
     PalGLContext* context)
 {
-    if (!context || !glWindow) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     ContextData* data = findContextData(context);
     if (!data) {
         return PAL_RESULT_CODE_INVALID_HANDLE;

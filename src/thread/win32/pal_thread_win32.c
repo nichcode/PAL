@@ -92,10 +92,6 @@ PalResult PAL_CALL palJoinThread(
     PalThread* thread,
     void** retval)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     DWORD wait = WaitForSingleObject((HANDLE)thread, INFINITE);
     if (wait == WAIT_OBJECT_0) {
         if (retval) {
@@ -118,9 +114,7 @@ PalResult PAL_CALL palJoinThread(
 
 void PAL_CALL palDetachThread(PalThread* thread)
 {
-    if (thread) {
-        CloseHandle((HANDLE)thread);
-    }
+    CloseHandle((HANDLE)thread);
 }
 
 void PAL_CALL palSleep(uint64_t milliseconds)
@@ -159,10 +153,6 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
 
 PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 {
-    if (!thread) {
-        return 0;
-    }
-
     int priority = GetThreadPriority((HANDLE)thread);
     switch (priority) {
         case THREAD_PRIORITY_LOWEST:
@@ -183,10 +173,6 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
 
 uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
 {
-    if (!thread) {
-        return 0;
-    }
-
     DWORD_PTR mask = SetThreadAffinityMask((HANDLE)thread, ~0ull);
     if (mask == 0) {
         return 0;
@@ -226,10 +212,6 @@ PalResult PAL_CALL palSetThreadPriority(
     PalThread* thread,
     PalThreadPriority priority)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     int _priority = 0;
     switch (priority) {
         case PAL_THREAD_PRIORITY_LOW:
@@ -274,10 +256,6 @@ PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
     uint64_t mask)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     if (!SetThreadAffinityMask((HANDLE)thread, mask)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE || error == ERROR_INVALID_PARAMETER) {
@@ -301,25 +279,13 @@ PalResult PAL_CALL palSetThreadName(
     PalThread* thread,
     const char* name)
 {
-    if (!thread || !name) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
-    SetThreadDescriptionFn setThreadDescription = nullptr;
-    if (kernel32) {
-        setThreadDescription =
-            (SetThreadDescriptionFn)GetProcAddress(kernel32, "SetThreadDescription");
-    }
-
-    if (!setThreadDescription) {
-        // not supported
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
+    SetThreadDescriptionFn setThreadDesc = nullptr;
+    setThreadDesc = (SetThreadDescriptionFn)GetProcAddress(kernel32, "SetThreadDescription");
 
     wchar_t buffer[128] = {0};
     MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 128);
-    HRESULT hr = setThreadDescription((HANDLE)thread, buffer);
+    HRESULT hr = setThreadDesc((HANDLE)thread, buffer);
 
     if (SUCCEEDED(hr)) {
         return PAL_RESULT_SUCCESS;

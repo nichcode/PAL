@@ -298,7 +298,7 @@ const PalGLInfo* wglGetGLInfo()
 }
 
 PalResult wglEnumerateGLFBConfigs(
-    int32_t* count,
+    uint32_t* count,
     PalGLFBConfig* configs)
 {
     int32_t configCount = 0;
@@ -452,22 +452,13 @@ void* wglGetGLProcAddress(const char* name)
     return proc;
 }
 
-PalResult wglSetSwapInterval(int32_t interval)
+void wglSetSwapInterval(int32_t interval)
 {
-    if (!s_Wgl.swapIntervalEXT) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     s_Wgl.swapIntervalEXT(interval);
-    return PAL_RESULT_SUCCESS;
 }
 
 const PalBool* wglGetSupportedGLAPIs(void* instance)
 {
-    if (!instance) {
-        return nullptr;
-    }
-
     s_SupportedAPIs[PAL_GL_API_OPENGL] = PAL_TRUE;
     s_SupportedAPIs[PAL_GL_API_OPENGL_ES] = PAL_FALSE;
     return s_SupportedAPIs;

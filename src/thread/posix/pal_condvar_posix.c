@@ -37,20 +37,14 @@ PalResult PAL_CALL palCreateCondVar(
 
 void PAL_CALL palDestroyCondVar(PalCondVar* condVar)
 {
-    if (condVar) {
-        pthread_cond_destroy(&condVar->handle);
-        palFree(condVar->allocator, condVar);
-    }
+    pthread_cond_destroy(&condVar->handle);
+    palFree(condVar->allocator, condVar);
 }
 
 PalResult PAL_CALL palWaitCondVar(
     PalCondVar* condVar,
     PalMutex* mutex)
 {
-    if (!condVar || !mutex) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     int ret = pthread_cond_wait(&condVar->handle, &mutex->handle);
     if (ret == 0) {
         return PAL_RESULT_SUCCESS;
@@ -68,10 +62,6 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     PalMutex* mutex,
     uint64_t milliseconds)
 {
-    if (!condVar || !mutex) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += milliseconds / 1000;
@@ -91,16 +81,12 @@ PalResult PAL_CALL palWaitCondVarTimeout(
 
 void PAL_CALL palSignalCondVar(PalCondVar* condVar)
 {
-    if (condVar) {
-        pthread_cond_signal(&condVar->handle);
-    }
+    pthread_cond_signal(&condVar->handle);
 }
 
 void PAL_CALL palBroadcastCondVar(PalCondVar* condVar)
 {
-    if (condVar) {
-        pthread_cond_broadcast(&condVar->handle);
-    }
+    pthread_cond_broadcast(&condVar->handle);
 }
 
 #endif // _PAL_HAS_POSIX

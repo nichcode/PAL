@@ -87,12 +87,9 @@ void PAL_CALL palPushEvent(
     PalEventDriver* eventDriver,
     PalEvent* event)
 {
-    // get the event mode
     PalDispatchMode mode = eventDriver->modes[event->type];
     if (mode == PAL_DISPATCH_MODE_CALLBACK) {
-        if (eventDriver->callback) {
-            eventDriver->callback(eventDriver->userData, event);
-        }
+        eventDriver->callback(eventDriver->userData, event);
         return; // we have dispatched the event
     }
 

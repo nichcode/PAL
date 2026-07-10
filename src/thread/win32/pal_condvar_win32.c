@@ -35,19 +35,13 @@ PalResult PAL_CALL palCreateCondVar(
 
 void PAL_CALL palDestroyCondVar(PalCondVar* condVar)
 {
-    if (condVar) {
-        palFree(condVar->allocator, condVar);
-    }
+    palFree(condVar->allocator, condVar);
 }
 
 PalResult PAL_CALL palWaitCondVar(
     PalCondVar* condVar,
     PalMutex* mutex)
 {
-    if (!condVar || !mutex) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, INFINITE);
     if (!ret) {
         DWORD error = GetLastError();
@@ -72,10 +66,6 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     PalMutex* mutex,
     uint64_t milliseconds)
 {
-    if (!condVar || !mutex) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     BOOL ret = SleepConditionVariableCS(&condVar->cv, &mutex->sc, (DWORD)milliseconds);
     if (!ret) {
         DWORD error = GetLastError();
@@ -97,16 +87,12 @@ PalResult PAL_CALL palWaitCondVarTimeout(
 
 void PAL_CALL palSignalCondVar(PalCondVar* condVar)
 {
-    if (condVar) {
-        WakeConditionVariable(&condVar->cv);
-    }
+    WakeConditionVariable(&condVar->cv);
 }
 
 void PAL_CALL palBroadcastCondVar(PalCondVar* condVar)
 {
-    if (condVar) {
-        WakeAllConditionVariable(&condVar->cv);
-    }
+    WakeAllConditionVariable(&condVar->cv);
 }
 
 #endif // _WIN32

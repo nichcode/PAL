@@ -75,6 +75,19 @@ void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     info->apiType = PAL_PLATFORM_API_TYPE_WIN32;
     info->type = PAL_PLATFORM_TYPE_WINDOWS;
 
+    // get total disk memory (size) in GB
+    ULARGE_INTEGER free, total, available;
+    if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
+        info->totalMemory = (uint32_t)(total.QuadPart / (1024 * 1024 * 1024));
+    }
+
+    // get ram (size) in MB
+    MEMORYSTATUSEX status = {0};
+    status.dwLength = sizeof(MEMORYSTATUSEX);
+    if (GlobalMemoryStatusEx(&status)) {
+        info->totalRAM = (uint32_t)(status.ullTotalPhys / (1024 * 1024));
+    }
+
     // get windows build, version and combine them
     if (!getVersionWin32(&info->version)) {
         return;
@@ -116,19 +129,6 @@ void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     strcpy(info->name, name);
     if (build) {
         strcat(info->name, build);
-    }
-
-    // get total disk memory (size) in GB
-    ULARGE_INTEGER free, total, available;
-    if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory = (uint32_t)(total.QuadPart / (1024 * 1024 * 1024));
-    }
-
-    // get ram (size) in MB
-    MEMORYSTATUSEX status = {0};
-    status.dwLength = sizeof(MEMORYSTATUSEX);
-    if (GlobalMemoryStatusEx(&status)) {
-        info->totalRAM = (uint32_t)(status.ullTotalPhys / (1024 * 1024));
     }
 }
 

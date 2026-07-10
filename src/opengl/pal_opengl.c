@@ -83,7 +83,7 @@ const PalGLInfo* PAL_CALL palGetGLInfo()
 }
 
 PalResult PAL_CALL palEnumerateGLFBConfigs(
-    int32_t* count,
+    uint32_t* count,
     PalGLFBConfig* configs)
 {
     if (!count) {
@@ -95,7 +95,7 @@ PalResult PAL_CALL palEnumerateGLFBConfigs(
 
 const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
-    int32_t count,
+    uint32_t count,
     const PalGLFBConfig* desired)
 {
     int32_t score = 0;
@@ -176,9 +176,9 @@ PalResult PAL_CALL palSwapBuffers(
     return s_Backend->swapBuffers(glWindow, context);
 }
 
-PalResult PAL_CALL palSetSwapInterval(int32_t interval)
+void PAL_CALL palSetSwapInterval(int32_t interval)
 {
-    return s_Backend->setSwapInterval(interval);
+    s_Backend->setSwapInterval(interval);
 }
 
 const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance)

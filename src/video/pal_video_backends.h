@@ -14,11 +14,11 @@ typedef struct {
     void (*shutdownVideo)();
     void (*updateVideo)();
     PalVideoFeatures (*getVideoFeatures)();
-    PalResult (*enumerateMonitors)(int32_t*, PalMonitor**);
-    PalResult (*getPrimaryMonitor)(PalMonitor**);
-    PalResult (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
-    PalResult (*enumerateMonitorModes)(PalMonitor*, int32_t*, PalMonitorMode*);
-    PalResult (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
+    PalResult (*enumerateMonitors)(uint32_t*, PalMonitor**);
+    void (*getPrimaryMonitor)(PalMonitor**);
+    void (*getMonitorInfo)(PalMonitor*, PalMonitorInfo*);
+    void (*enumerateMonitorModes)(PalMonitor*, uint32_t*, PalMonitorMode*);
+    void (*getCurrentMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*setMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*validateMonitorMode)(PalMonitor*, PalMonitorMode*);
     PalResult (*setMonitorOrientation)(PalMonitor*, PalOrientation);
