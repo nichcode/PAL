@@ -96,11 +96,7 @@ PalBool iconTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     // set the icon
-    result = palSetWindowIcon(window, icon);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set window icon");
-        return PAL_FALSE;
-    }
+    palSetWindowIcon(window, icon);
 
     PalBool running = PAL_TRUE;
     while (running) {

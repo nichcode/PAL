@@ -250,7 +250,7 @@ PalResult win32EnumerateMonitorModes(
     uint32_t* count,
     PalMonitorMode* modes)
 {
-    int32_t modeCount = 0;
+    uint32_t modeCount = 0;
     int32_t maxModes = 0;
     PalMonitorMode* monitorModes = nullptr;
 

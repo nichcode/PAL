@@ -81,24 +81,14 @@ PalBool computeTest()
     PalAdapterInfo adapterInfo = {0};
     for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
-        result = palGetAdapterCapabilities(adapter, &caps);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter capabilities");
-            palFree(nullptr, adapters);
-            return PAL_FALSE;
-        }
-
+        palGetAdapterCapabilities(adapter, &caps);
         if (caps.maxComputeQueues == 0) {
             adapter = nullptr;
             continue;
         }
 
         // We want an adapter that supports spirv 1.0 or dxil 6.0
-        result = palGetAdapterInfo(adapter, &adapterInfo);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter info");
-            return PAL_FALSE;
-        }
+        palGetAdapterInfo(adapter, &adapterInfo);
 
         // we prefer spirv first if an adapter supports multiple shader formats
         uint32_t target = 0;
@@ -333,28 +323,9 @@ PalBool computeTest()
     pushConstant.color[2] = 0.0f;
     pushConstant.color[3] = 1.0f;
 
-    result = palCmdBindPipeline(cmdBuffer, pipeline);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to bind pipeline");
-        return PAL_FALSE;
-    }
-
-    result = palCmdPushConstants(
-        cmdBuffer,
-        0,
-        sizeof(PushConstant),
-        &pushConstant);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to push constants");
-        return PAL_FALSE;
-    }
-
-    result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to bind descriptor set");
-        return PAL_FALSE;
-    }
+    palCmdBindPipeline(cmdBuffer, pipeline);
+    palCmdPushConstants(cmdBuffer, 0, sizeof(PushConstant), &pushConstant);
+    palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
 
     // we will use a helper function to calculate the number of group count
     // we need on each axis. The workGroupSize on each axis must be less or equal
@@ -375,12 +346,8 @@ PalBool computeTest()
 
     uint32_t workGroupInfoCount = 0;
     PalWorkGroupInfo* workGroupInfos = nullptr;
-    PalBool ret = palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
-    if (!ret) {
-        palLog(nullptr, "Failed to build work group info");
-        return PAL_FALSE;
-    }
-
+    palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
+   
     workGroupInfos = palAllocate(nullptr, sizeof(PalWorkGroupInfo) * workGroupInfoCount, 0);
     if (!workGroupInfos) {
         palLog(nullptr, "Failed to allocate memory");
@@ -397,32 +364,19 @@ PalBool computeTest()
         uint32_t groupCountX = workGroupInfos[i].workGroupCount[0];
         uint32_t groupCountY = workGroupInfos[i].workGroupCount[1];
         uint32_t groupCountZ = workGroupInfos[i].workGroupCount[2];
-
-        result = palCmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to issue dispatch command");
-            return PAL_FALSE;
-        }
+        palCmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
     }
     palFree(nullptr, workGroupInfos);
 
     // set a barrier so we only read from the buffer after the shader has written to it
     PalUsageState oldUsageState = PAL_USAGE_STATE_SHADER_WRITE;
     PalUsageState newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
-    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
+    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
 
     // now we copy from the GPU buffer into the staging buffer
     PalBufferCopyInfo copyInfo = {0};
     copyInfo.size = bufferBytes;
-    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to copy buffer");
-        return PAL_FALSE;
-    }
+    palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {

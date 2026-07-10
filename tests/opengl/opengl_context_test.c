@@ -166,12 +166,8 @@ PalBool openglContextTest()
     // so long as you can get the window handle and display (if on X11, wayland)
     // If pal video system will not be used, there is no need to initialize it
     PalWindowHandleInfo winHandle = {0};
-    result = palGetWindowHandleInfo(window, &winHandle);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get window handle info");
-        return PAL_FALSE;
-    }
-
+    palGetWindowHandleInfo(window, &winHandle);
+    
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
     glWindow.instance = winHandle.nativeInstance;

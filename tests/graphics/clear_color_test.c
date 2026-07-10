@@ -74,20 +74,12 @@ PalBool clearColorTest()
     // so long as you can get the window handle and display (if on X11, wayland)
     // If pal video system will not be used, there is no need to initialize it
     PalWindowHandleInfo winHandle = {0};
-    result = palGetWindowHandleInfo(window, &winHandle);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get window handle info");
-        return PAL_FALSE;
-    }
+    palGetWindowHandleInfo(window, &winHandle);
 
     // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
     // We will use the pal_system module.
     PalPlatformInfo platformInfo = {0};
-    result = palGetPlatformInfo(&platformInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get platform information");
-        return PAL_FALSE;
-    }
+    palGetPlatformInfo(&platformInfo);
 
     PalWindowInstanceType windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_XCB;
     if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WAYLAND) {
@@ -141,13 +133,7 @@ PalBool clearColorTest()
     PalAdapterInfo adapterInfo = {0};
     for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
-        result = palGetAdapterCapabilities(adapter, &caps);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter capabilities");
-            palFree(nullptr, adapters);
-            return PAL_FALSE;
-        }
-
+        palGetAdapterCapabilities(adapter, &caps);
         if (caps.maxGraphicsQueues == 0) {
             adapter = nullptr;
             continue;
@@ -215,11 +201,7 @@ PalBool clearColorTest()
 
     // create a swapchain with the graphics queue
     PalSurfaceCapabilities surfaceCaps = {0};
-    result = palGetSurfaceCapabilities(device, surface, &surfaceCaps);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get surface capabilities");
-        return PAL_FALSE;
-    }
+    palGetSurfaceCapabilities(device, surface, &surfaceCaps);
 
     PalSwapchainCreateInfo swapchainCreateInfo = {0};
     swapchainCreateInfo.clipped = PAL_TRUE;
@@ -267,11 +249,7 @@ PalBool clearColorTest()
     }
 
     PalImageInfo imageInfo;
-    result = palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get image info");
-        return PAL_FALSE;
-    }
+    palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
 
     PalImageViewCreateInfo imageViewCreateInfo = {0};
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
@@ -433,17 +411,12 @@ PalBool clearColorTest()
         imageRange.startMipLevel = 0;
 
         PalImage* image = palGetSwapchainImage(swapchain, imageIndex);
-        result = palCmdImageBarrier(
+        palCmdImageBarrier(
             cmdBuffers[currentFrame],
             image,
             &imageRange,
             oldUsageState,
             newUsageState);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set barrier");
-            return PAL_FALSE;
-        }
 
         PalClearValue clearValue;
         clearValue.color[0] = 0.2f;
@@ -462,22 +435,13 @@ PalBool clearColorTest()
         renderingInfo.colorAttachentCount = 1;
         renderingInfo.colorAttachments = &colorAttachment;
 
-        result = palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to begin rendering");
-            return PAL_FALSE;
-        }
-
-        result = palCmdEndRendering(cmdBuffers[currentFrame]);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to end rendering");
-            return PAL_FALSE;
-        }
+        palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
+        palCmdEndRendering(cmdBuffers[currentFrame]);
 
         // change the state of the image view to make it presentable
         oldUsageState = newUsageState;
         newUsageState = PAL_USAGE_STATE_PRESENT;
-        result = palCmdImageBarrier(
+        palCmdImageBarrier(
             cmdBuffers[currentFrame],
             image,
             &imageRange,

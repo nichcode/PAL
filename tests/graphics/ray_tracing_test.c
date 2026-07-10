@@ -89,12 +89,7 @@ PalBool rayTracingTest()
     PalAdapterFeatures adapterFeatures = 0;
     for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
-        result = palGetAdapterCapabilities(adapter, &caps);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter capabilities");
-            palFree(nullptr, adapters);
-            return PAL_FALSE;
-        }
+        palGetAdapterCapabilities(adapter, &caps);
 
         // Ray tracing is generally implemented on the graphics queue
         if (caps.maxGraphicsQueues == 0) {
@@ -114,11 +109,7 @@ PalBool rayTracingTest()
         }
         
         // We want an adapter that supports spirv 1.4 or dxil 6.3
-        result = palGetAdapterInfo(adapter, &adapterInfo);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter info");
-            return PAL_FALSE;
-        }
+        palGetAdapterInfo(adapter, &adapterInfo);
 
         // we prefer spirv first if an adapter supports multiple shader formats
         uint32_t target = 0;
@@ -304,11 +295,7 @@ PalBool rayTracingTest()
 
     // get the build sizes for blas
     PalAccelerationStructureBuildSize buildSizes = {0};
-    result = palGetAccelerationStructureBuildSize(device, &blasBuildInfo, &buildSizes);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get accleration structure build size");
-        return PAL_FALSE;
-    }
+    palGetAccelerationStructureBuildSize(device, &blasBuildInfo, &buildSizes);
 
     // create the blas buffer and blas
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
@@ -402,12 +389,8 @@ PalBool rayTracingTest()
 
     // get the build sizes for tlas
     uint32_t blasScratchSize = buildSizes.scratchBufferSize;
-    result = palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get accleration structure build size");
-        return PAL_FALSE;
-    }
-
+    palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
+   
     // create the tlas buffer and tlas
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
@@ -641,18 +624,9 @@ PalBool rayTracingTest()
         return PAL_FALSE;
     }
 
-    result = palCmdBindPipeline(cmdBuffer, pipeline);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to bind pipeline");
-        return PAL_FALSE;
-    }
-    
-    result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to bind descriptor set");
-        return PAL_FALSE;
-    }
-
+    palCmdBindPipeline(cmdBuffer, pipeline);
+    palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
+   
     // build the blas and tlas infos
     PalDeviceAddress scratchBufferAddress = palGetBufferDeviceAddress(scratchBuffer);
     blasBuildInfo.dst = blas;
@@ -660,72 +634,26 @@ PalBool rayTracingTest()
 
     tlasBuildInfo.dst = tlas;
     tlasBuildInfo.scratchBufferAddress = scratchBufferAddress;
-
-    result = palCmdBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to build acceleration structure");
-        return PAL_FALSE;
-    }
+    palCmdBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
 
     // make sure the BLAS builds before the TLAS. We need this barrier because
     // BLAS and TLAS share the same scratch buffer
     PalUsageState oldAsUsageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
     PalUsageState newAsUsageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
-
-    result = palCmdAccelerationStructureBarrier(
-        cmdBuffer, 
-        blas, 
-        oldAsUsageState, 
-        newAsUsageState);
-        
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
-
-    result = palCmdBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to build acceleration structure");
-        return PAL_FALSE;
-    }
-
-    // make sure the TLAS builds before the tracing
-    result = palCmdAccelerationStructureBarrier(
-        cmdBuffer, 
-        tlas, 
-        oldAsUsageState, 
-        newAsUsageState);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
-
-    result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to issue trace command");
-        return PAL_FALSE;
-    }
+    palCmdAccelerationStructureBarrier(cmdBuffer, blas, oldAsUsageState, newAsUsageState);
+    palCmdBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
+    palCmdAccelerationStructureBarrier(cmdBuffer, tlas, oldAsUsageState, newAsUsageState);
+    palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
 
     // set a barrier so we only read from the buffer after the shader has written to it
     PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
     PalUsageState newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
-
-    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
-
+    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    
     // now we copy from the GPU buffer into the staging buffer
     PalBufferCopyInfo copyInfo = {0};
     copyInfo.size = bufferBytes;
-
-    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to copy buffer");
-        return PAL_FALSE;
-    }
+    palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -795,11 +723,7 @@ PalBool rayTracingTest()
     updateRecords[1] = records[2]; // closest hit
 
     // update records
-    result = palUpdateShaderBindingTable(sbt, 2, updateRecords);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to update shader binding table");
-        return PAL_FALSE;
-    }
+    palUpdateShaderBindingTable(sbt, 2, updateRecords);
 
     // we dont need to rebuild the blas or tlas
     // we just delete and create the fence again for simplicity
@@ -819,53 +743,25 @@ PalBool rayTracingTest()
         return PAL_FALSE;
     }
 
-    result = palCmdBindPipeline(cmdBuffer, pipeline);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to bind pipeline");
-        return PAL_FALSE;
-    }
-    
-    result = palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to bind descriptor set");
-        return PAL_FALSE;
-    }
+    palCmdBindPipeline(cmdBuffer, pipeline);
+    palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
 
     // the previous trace transitioned the buffer to transfer read
     // we need it back to shader write before transfer read
     oldUsageState = PAL_USAGE_STATE_TRANSFER_READ;
     newUsageState = PAL_USAGE_STATE_SHADER_WRITE;
+    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
 
-    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
-
-    result = palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to issue trace command");
-        return PAL_FALSE;
-    }
-
-    // set a barrier to transition to transfer read so we can read from it after shader has 
+    // set a barrier to transition to transfer read so we can read from it after shader has
     // written to it
     oldUsageState = newUsageState;
     newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
-
-    result = palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
+    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
 
     // now we copy from the GPU buffer into the staging buffer
     copyInfo.size = bufferBytes;
-    result = palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to copy buffer");
-        return PAL_FALSE;
-    }
+    palCmdCopyBuffer(cmdBuffer, stagingBuffer, buffer, &copyInfo);
 
     result = palCmdEnd(cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {

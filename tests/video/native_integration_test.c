@@ -369,11 +369,7 @@ PalBool nativeIntegrationTest()
 
     // set the window title using native APIs
     PalWindowHandleInfo windowInfo = {0};
-    result = palGetWindowHandleInfo(window, &windowInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get window handle info");
-        return PAL_FALSE;
-    }
+    palGetWindowHandleInfo(window, &windowInfo);
 
     palLog(nullptr, "Window title: %s", createInfo.title);
     palLog(nullptr, "Setting window title with native API");

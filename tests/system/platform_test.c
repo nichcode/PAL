@@ -44,12 +44,8 @@ PalBool platformTest()
     PalPlatformInfo platformInfo;
 
     // get the platform info. Users must cache this
-    result = palGetPlatformInfo(&platformInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get platform information");
-        return PAL_FALSE;
-    }
-
+    palGetPlatformInfo(&platformInfo);
+    
     palLog(nullptr, "Platform: %s", platformToString(platformInfo.type));
     palLog(nullptr, " Name: %s", platformInfo.name);
     palLog(nullptr, " API: %s", platformApiToString(platformInfo.apiType));

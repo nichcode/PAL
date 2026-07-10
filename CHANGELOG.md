@@ -82,7 +82,8 @@
 - `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
 - Removed `maximized` and `minimized` in `PalWindowCreateInfo`.
 
-- These function now returns `void` instead of `PalResult`:
+- These function now returns `void` instead of `PalResult` and does not do runtime 
+validation anymore: invalid arguments, feature not supported results in undefined behavior:
   - `palGetPlatformInfo()`
   - `palGetCPUInfo()`
   - `palGetThreadName()`

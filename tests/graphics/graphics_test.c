@@ -12,7 +12,7 @@ PalBool graphicsTest()
     }
 
     // enumerate all available adapters
-    int32_t count = 0;
+    uint32_t count = 0;
     result = palEnumerateAdapters(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get query adapters");
@@ -46,19 +46,8 @@ PalBool graphicsTest()
     PalAdapterFeatures features = 0;
     for (int32_t i = 0; i < count; i++) {
         PalAdapter* adapter = adapters[i];
-        result = palGetAdapterInfo(adapter, &info);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter information");
-            palFree(nullptr, adapters);
-            return PAL_FALSE;
-        }
-
-        result = palGetAdapterCapabilities(adapter, &caps);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter capabilities");
-            palFree(nullptr, adapters);
-            return PAL_FALSE;
-        }
+        palGetAdapterInfo(adapter, &info);
+        palGetAdapterCapabilities(adapter, &caps);
 
         // create a device
         features = palGetAdapterFeatures(adapter);
@@ -253,11 +242,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Sampler Anisotropy");
 
             PalSamplerAnisotropyCapabilities tmp;
-            result = palQuerySamplerAnisotropyCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get sampler anisotropy capabilities");
-                return PAL_FALSE;
-            }
+            palQuerySamplerAnisotropyCapabilities(device, &tmp);
 
             palLog(nullptr, "   Max anisotropy: %u", tmp.maxAnisotropy);
             palLog(nullptr, "");
@@ -267,11 +252,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Multi viewport");
 
             PalMultiViewportCapabilities tmp;
-            result = palQueryMultiViewportCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get viewport capabilities");
-                return PAL_FALSE;
-            }
+            palQueryMultiViewportCapabilities(device, &tmp);
 
             palLog(nullptr, "   Max count: %u", tmp.maxCount);
             palLog(nullptr, "");
@@ -281,11 +262,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Ray tracing");
 
             PalRayTracingCapabilities tmp;
-            result = palQueryRayTracingCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get ray tracing capabilities");
-                return PAL_FALSE;
-            }
+            palQueryRayTracingCapabilities(device, &tmp);
 
             palLog(nullptr, "   Max recursion depth: %u", tmp.maxRecursionDepth);
             palLog(nullptr, "   Max hit attribute size: %u Bytes", tmp.maxHitAttributeSize);
@@ -301,11 +278,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Mesh and task shader");
 
             PalMeshShaderCapabilities tmp;
-            result = palQueryMeshShaderCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get mesh shader capabilities");
-                return PAL_FALSE;
-            }
+            palQueryMeshShaderCapabilities(device, &tmp);
 
             palLog(nullptr, "   Max output primitives: %u", tmp.maxOutputPrimitives);
             palLog(nullptr, "   Max output vertices: %u", tmp.maxOutputVertices);
@@ -325,11 +298,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Fragment shading rate");
 
             PalFragmentShadingRateCapabilities tmp;
-            result = palQueryFragmentShadingRateCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get fragment shading rate capabilities");
-                return PAL_FALSE;
-            }
+            palQueryFragmentShadingRateCapabilities(device, &tmp);
 
             palLog(nullptr, "   Min texel width: %u", tmp.minTexelWidth);
             palLog(nullptr, "   Min texel height: %u", tmp.maxTexelWidth);
@@ -396,11 +365,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Descriptor indexing");
 
             PalDescriptorIndexingCapabilities tmp;
-            result = palQueryDescriptorIndexingCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get descriptor indexing capabilities");
-                return PAL_FALSE;
-            }
+            palQueryDescriptorIndexingCapabilities(device, &tmp);
 
             palLog(nullptr, "   Supported flags:");
             if (tmp.flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
@@ -445,11 +410,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Multiview");
 
             PalMultiViewCapabilities tmp;
-            result = palQueryMultiViewCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get multi view capabilities");
-                return PAL_FALSE;
-            }
+            palQueryMultiViewCapabilities(device, &tmp);
 
             palLog(nullptr, "   Max view count: %u", tmp.maxViewCount);
             palLog(nullptr, "");
@@ -459,11 +420,7 @@ PalBool graphicsTest()
             palLog(nullptr, "  Depth stencil resolve");
 
             PalDepthStencilCapabilities tmp;
-            result = palQueryDepthStencilCapabilities(device, &tmp);
-            if (result != PAL_RESULT_SUCCESS) {
-                logResult(result, "Failed to get depth stenci capabilities");
-                return PAL_FALSE;
-            }
+            palQueryDepthStencilCapabilities(device, &tmp);
 
             if (tmp.supportsIndependentResolve) {
                 palLog(nullptr, "   Independent resolve: True");

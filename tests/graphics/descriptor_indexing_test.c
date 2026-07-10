@@ -121,20 +121,12 @@ PalBool descriptorIndexingTest()
     // so long as you can get the window handle and display (if on X11, wayland)
     // If pal video system will not be used, there is no need to initialize it
     PalWindowHandleInfo winHandle = {0};
-    result = palGetWindowHandleInfo(window, &winHandle);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get window handle info");
-        return PAL_FALSE;
-    }
+    palGetWindowHandleInfo(window, &winHandle);
 
     // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
     // We will use the pal_system module.
     PalPlatformInfo platformInfo = {0};
-    result = palGetPlatformInfo(&platformInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get platform information");
-        return PAL_FALSE;
-    }
+    palGetPlatformInfo(&platformInfo);
 
     PalWindowInstanceType windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_XCB;
     if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WAYLAND) {
@@ -189,13 +181,7 @@ PalBool descriptorIndexingTest()
     PalAdapterFeatures adapterFeatures;
     for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
-        result = palGetAdapterCapabilities(adapter, &caps);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter capabilities");
-            palFree(nullptr, adapters);
-            return PAL_FALSE;
-        }
-
+        palGetAdapterCapabilities(adapter, &caps);
         if (caps.maxGraphicsQueues == 0) {
             adapter = nullptr;
             continue;
@@ -208,11 +194,7 @@ PalBool descriptorIndexingTest()
         }
 
         // We want an adapter that supports spirv 1.4 or dxil 6.0
-        result = palGetAdapterInfo(adapter, &adapterInfo);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get adapter info");
-            return PAL_FALSE;
-        }
+        palGetAdapterInfo(adapter, &adapterInfo);
 
         // we prefer spirv first if an adapter supports multiple shader formats
         uint32_t target = 0;
@@ -259,11 +241,7 @@ PalBool descriptorIndexingTest()
 
     // get descriptor indexing capabilities
     PalDescriptorIndexingCapabilities descriptorIndexingCaps = {0};
-    result = palQueryDescriptorIndexingCapabilities(device, &descriptorIndexingCaps);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get descriptor indexing capabilities");
-        return PAL_FALSE;
-    }
+    palQueryDescriptorIndexingCapabilities(device, &descriptorIndexingCaps);
 
     // create surface
     result = palCreateSurface(
@@ -304,11 +282,7 @@ PalBool descriptorIndexingTest()
 
     // create a swapchain with the graphics queue
     PalSurfaceCapabilities surfaceCaps = {0};
-    result = palGetSurfaceCapabilities(device, surface, &surfaceCaps);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get surface capabilities");
-        return PAL_FALSE;
-    }
+    palGetSurfaceCapabilities(device, surface, &surfaceCaps);
 
     PalSwapchainCreateInfo swapchainCreateInfo = {0};
     swapchainCreateInfo.clipped = PAL_TRUE;
@@ -356,11 +330,7 @@ PalBool descriptorIndexingTest()
     }
 
     PalImageInfo imageInfo;
-    result = palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get image info");
-        return PAL_FALSE;
-    }
+    palGetImageInfo(palGetSwapchainImage(swapchain, 0), &imageInfo);
 
     PalImageViewCreateInfo imageViewCreateInfo = {0};
     imageViewCreateInfo.type = PAL_IMAGE_VIEW_TYPE_2D;
@@ -504,26 +474,16 @@ PalBool descriptorIndexingTest()
     bufferImageCopyInfo.imageHeight = TEXTURE_HEIGHT;
     bufferImageCopyInfo.imageDepth = 1; // 2D image
 
-    uint64_t imageCopyStagingBufferSize = 0;
-    uint32_t bufferRowLength = 0;
-    uint32_t bufferImageHeight = 0;
-
-    result = palComputeImageCopyStagingBufferRequirements(
+    PalImageStagingRequirements stagingReq = {0};
+    palComputeImageStagingRequirements(
         device, 
-        imageCreateInfo.format, 
-        &bufferImageCopyInfo, 
-        &bufferRowLength, 
-        &bufferImageHeight,
-        &imageCopyStagingBufferSize);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to compute buffer info");
-        return PAL_FALSE;
-    }
+        imageCreateInfo.format,
+        &bufferImageCopyInfo,
+        &stagingReq);
 
     // update our copy with the required buffer row length and buffer image height
-    bufferImageCopyInfo.bufferRowLength = bufferRowLength;
-    bufferImageCopyInfo.bufferImageHeight = bufferImageHeight;
+    bufferImageCopyInfo.bufferRowLength = stagingReq.bufferRowLength;
+    bufferImageCopyInfo.bufferImageHeight = stagingReq.bufferImageHeight;
 
     // create staging buffers to transfer the data to the image
     uint32_t textureDatas[4][TEXTURE_WIDTH * TEXTURE_HEIGHT];
@@ -533,7 +493,7 @@ PalBool descriptorIndexingTest()
     createFlatTexture(textureDatas[3], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 255, 0);    
 
     PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
-    imageStagingBufferCreateInfo.size = imageCopyStagingBufferSize;
+    imageStagingBufferCreateInfo.size = stagingReq.bufferSize;
     imageStagingBufferCreateInfo.usages = PAL_BUFFER_USAGE_TRANSFER_SRC;
     imageStagingBufferCreateInfo.memoryUsage = PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD;
 
@@ -546,30 +506,19 @@ PalBool descriptorIndexingTest()
 
         // copy data
         void* data = nullptr;
-        result = palMapBuffer(
-            imageStagingBuffers[i],
-            0, 
-            imageCopyStagingBufferSize, 
-            &data);
-
+        result = palMapBuffer(imageStagingBuffers[i], 0, stagingReq.bufferSize, &data);
         if (result != PAL_RESULT_SUCCESS) {
             logResult(result, "Failed to map buffer");
             return PAL_FALSE;
         }
 
-        // write data to the mapped image copy staging buffer
-        result = palWriteToImageCopyStagingBuffer(
-            device, 
-            data, 
-            textureDatas[i],
+        palWriteImageStaging(
+            device,
             imageCreateInfo.format,
-            &bufferImageCopyInfo);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to write to buffer");
-            return PAL_FALSE;
-        }
-
+            &bufferImageCopyInfo,
+            textureDatas[i],
+            data);
+            
         palUnmapBuffer(imageStagingBuffers[i]);
     }
 
@@ -585,20 +534,11 @@ PalBool descriptorIndexingTest()
 
     PalBufferCopyInfo copyInfo = {0};
     copyInfo.size = sizeof(vertices);
-
-    result = palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &copyInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to copy buffer");
-        return PAL_FALSE;
-    }
+    palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &copyInfo);
 
     PalUsageState oldUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
     PalUsageState newUsageState = PAL_USAGE_STATE_VERTEX_READ;
-    result = palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, oldUsageState, newUsageState);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set barrier");
-        return PAL_FALSE;
-    }
+    palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, oldUsageState, newUsageState);
 
     // set a barrier on the image to transition it into transfer dst state
     PalImageSubresourceRange textureRange = {0};
@@ -610,42 +550,27 @@ PalBool descriptorIndexingTest()
     for (int i = 0; i < 4; i++) {
         PalUsageState oldImageUsageState = PAL_USAGE_STATE_UNDEFINED;
         PalUsageState newImageUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-        result = palCmdImageBarrier(
+        palCmdImageBarrier(
             cmdBuffers[0], 
             textures[i], 
             &textureRange, 
             oldImageUsageState, 
             newImageUsageState);
 
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set barrier");
-            return PAL_FALSE;
-        }
-
-        result = palCmdCopyBufferToImage(
+        palCmdCopyBufferToImage(
             cmdBuffers[0], 
             textures[i], 
             imageStagingBuffers[i], 
             &bufferImageCopyInfo);
 
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to copy buffer");
-            return PAL_FALSE;
-        }
-
         oldImageUsageState = newImageUsageState;
         newImageUsageState = PAL_USAGE_STATE_SHADER_READ;
-        result = palCmdImageBarrier(
+        palCmdImageBarrier(
             cmdBuffers[0], 
             textures[i], 
             &textureRange, 
             oldImageUsageState, 
             newImageUsageState);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set barrier");
-            return PAL_FALSE;
-        }
     }
 
     result = palCmdEnd(cmdBuffers[0]);
@@ -1107,17 +1032,12 @@ PalBool descriptorIndexingTest()
         imageRange.startMipLevel = 0;
 
         PalImage* image = palGetSwapchainImage(swapchain, imageIndex);
-        result = palCmdImageBarrier(
+        palCmdImageBarrier(
             cmdBuffers[currentFrame],
             image,
             &imageRange,
             oldUsageState,
             newUsageState);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set barrier");
-            return PAL_FALSE;
-        }
 
         PalClearValue clearValue;
         clearValue.color[0] = 0.2f;
@@ -1136,89 +1056,27 @@ PalBool descriptorIndexingTest()
         renderingInfo.colorAttachentCount = 1;
         renderingInfo.colorAttachments = &colorAttachment;
 
-        result = palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to begin rendering");
-            return PAL_FALSE;
-        }
-
-        // bind pipeline
-        result = palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to bind pipeline");
-            return PAL_FALSE;
-        }
-
-        result = palCmdPushConstants(
-            cmdBuffers[currentFrame],
-            0,
-            sizeof(PushConstant),
-            &pushConstant);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to push constants");
-            return PAL_FALSE;
-        }
-
-        result = palCmdBindDescriptorSet(cmdBuffers[currentFrame], 0, descriptorSet);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to push constants");
-            return PAL_FALSE;
-        }
-
-        // set viewport and scissors
-        result = palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set viewport");
-            return PAL_FALSE;
-        }
-
-        result = palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set scissor");
-            return PAL_FALSE;
-        }
-
-        // bind vertex buffer
+        palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
+        palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
+        palCmdPushConstants(cmdBuffers[currentFrame], 0, sizeof(PushConstant), &pushConstant);
+        palCmdBindDescriptorSet(cmdBuffers[currentFrame], 0, descriptorSet);
+        palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
+        palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
+       
         uint64_t offset[] = {0};
-        result = palCmdBindVertexBuffers(
-            cmdBuffers[currentFrame], 
-            0, 
-            1, 
-            &vertexBuffer, 
-            offset);
-            
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to bind vertex buffer");
-            return PAL_FALSE;
-        }
-
-        result = palCmdDraw(cmdBuffers[currentFrame], 6, 1, 0, 0);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to issue draw command");
-            return PAL_FALSE;
-        }
-
-        result = palCmdEndRendering(cmdBuffers[currentFrame]);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to end rendering");
-            return PAL_FALSE;
-        }
+        palCmdBindVertexBuffers(cmdBuffers[currentFrame], 0, 1, &vertexBuffer, offset);
+        palCmdDraw(cmdBuffers[currentFrame], 6, 1, 0, 0);
+        palCmdEndRendering(cmdBuffers[currentFrame]);
 
         // change the state of the image view to make it presentable
         oldUsageState = newUsageState;
         newUsageState = PAL_USAGE_STATE_PRESENT;
-        result = palCmdImageBarrier(
+        palCmdImageBarrier(
             cmdBuffers[currentFrame],
             image,
             &imageRange,
             oldUsageState,
             newUsageState);
-
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to set barrier");
-            return PAL_FALSE;
-        }
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {

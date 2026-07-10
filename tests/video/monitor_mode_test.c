@@ -12,7 +12,7 @@ PalBool monitorModeTest()
     }
 
     // get the number of connected monitors
-    int32_t count = 0;
+    uint32_t count = 0;
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get query monitors");
@@ -46,7 +46,7 @@ PalBool monitorModeTest()
     PalMonitorInfo info = {0};
     for (int32_t i = 0; i < count; i++) {
         PalMonitor* monitor = monitors[i];
-        result = palGetMonitorInfo(monitor, &info);
+        palGetMonitorInfo(monitor, &info);
         if (result != PAL_RESULT_SUCCESS) {
             logResult(result, "Failed to get monitor info");
             return PAL_FALSE;
@@ -56,12 +56,8 @@ PalBool monitorModeTest()
         palLog(nullptr, "Monitor Name: %s", info.name);
 
         // get number of monitor modes
-        int32_t modeCount = 0;
-        result = palEnumerateMonitorModes(monitor, &modeCount, nullptr);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get query monitor modes");
-            return PAL_FALSE;
-        }
+        uint32_t modeCount = 0;
+        palEnumerateMonitorModes(monitor, &modeCount, nullptr);
 
         palLog(nullptr, "Monitor Mode Count: %d", modeCount);
         // allocate an array of monitor modes or use a fixed array
@@ -75,11 +71,7 @@ PalBool monitorModeTest()
         }
 
         // get the monitor modes
-        result = palEnumerateMonitorModes(monitor, &modeCount, modes);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get query monitor modes");
-            return PAL_FALSE;
-        }
+        palEnumerateMonitorModes(monitor, &modeCount, modes);
 
         for (int32_t i = 0; i < modeCount; i++) {
             // log monitor mode
@@ -95,11 +87,7 @@ PalBool monitorModeTest()
 
         // get current monitor mode and log
         PalMonitorMode current;
-        result = palGetCurrentMonitorMode(monitor, &current);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get current monitor mode");
-            return PAL_FALSE;
-        }
+        palGetCurrentMonitorMode(monitor, &current);
 
         palLog(nullptr, "");
         palLog(nullptr, " Current Mode:");

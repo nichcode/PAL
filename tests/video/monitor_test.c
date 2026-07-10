@@ -12,7 +12,7 @@ PalBool monitorTest()
     }
 
     // get the number of connected monitors
-    int32_t count = 0;
+    uint32_t count = 0;
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get query monitors");
@@ -46,11 +46,7 @@ PalBool monitorTest()
     PalMonitorInfo info = {0};
     for (int32_t i = 0; i < count; i++) {
         PalMonitor* monitor = monitors[i];
-        result = palGetMonitorInfo(monitor, &info);
-        if (result != PAL_RESULT_SUCCESS) {
-            logResult(result, "Failed to get monitor info");
-            return PAL_FALSE;
-        }
+        palGetMonitorInfo(monitor, &info);
 
         // log monitor info
         palLog(nullptr, "Monitor Name: %s", info.name);

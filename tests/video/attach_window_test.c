@@ -273,13 +273,8 @@ PalBool attachWindowTest()
         return PAL_FALSE;
     }
 
-    // now that the window is attached, we can use PAL video API
-    // to manager it
-    result = palSetWindowTitle(myWindow, WINDOW_TITLE);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to set window title");
-        return PAL_FALSE;
-    }
+    // now that the window is attached, we can use PAL video API to manager it
+    palSetWindowTitle(myWindow, WINDOW_TITLE);
 
     PalBool running = PAL_TRUE;
     PalBool detached = PAL_FALSE;

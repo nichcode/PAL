@@ -900,12 +900,7 @@ PalBool customDecorationTest()
     }
 
     // get native handles
-    result = palGetWindowHandleInfo(window, &s_WinHandle);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get window handle info");
-        return PAL_FALSE;
-    }
-
+    palGetWindowHandleInfo(window, &s_WinHandle);
     s_Decoration.driver = eventDriver;
     createDecoration();
 

@@ -30,12 +30,7 @@ PalBool cpuTest()
     PalCPUInfo cpuInfo;
 
     // user defined allocator, set to override the default one or nullptr for default
-    result = palGetCPUInfo(nullptr, &cpuInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get cpu information");
-        return PAL_FALSE;
-    }
-
+    palGetCPUInfo(nullptr, &cpuInfo);
     const char* archString = cpuArchToString(cpuInfo.architecture);
     int32_t processors = cpuInfo.numLogicalProcessors;
 

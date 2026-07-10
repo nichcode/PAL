@@ -329,11 +329,7 @@ PalBool multiThreadOpenGlTest()
 
     // get the native handles of our created window
     PalWindowHandleInfo winHandle = {0};
-    result = palGetWindowHandleInfo(window, &winHandle);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to get window handle info");
-        return PAL_FALSE;
-    }
+    palGetWindowHandleInfo(window, &winHandle);
 
     shared->window.instance = winHandle.nativeInstance;
     // On Wayland the window is the wl_egl_window

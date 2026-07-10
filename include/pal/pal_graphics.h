@@ -1893,7 +1893,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t outSize; /**< Required buffer size.*/
+    uint64_t bufferSize; /**< Required buffer size.*/
     uint32_t bufferRowLength; /**< Required buffer row length.*/
     uint32_t bufferImageHeight; /**< Required buffer image height.*/
 } PalImageStagingRequirements;
@@ -6504,7 +6504,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
  * @since 2.0
  * @sa palComputeImageStagingRequirements
  */
-PAL_API void PAL_CALL palWriteToImageCopyStagingBuffer(
+PAL_API void PAL_CALL palWriteImageStaging(
     PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,

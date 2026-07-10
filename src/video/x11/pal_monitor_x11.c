@@ -148,7 +148,7 @@ PalResult xEnumerateMonitorModes(
     uint32_t* count,
     PalMonitorMode* modes)
 {
-    int32_t modeCount = 0;
+    uint32_t modeCount = 0;
     int maxModeCount = modes ? *count : 0;
     XRRScreenResources* resources = s_X11.getScreenResources(s_X11.display, s_X11.root);
 

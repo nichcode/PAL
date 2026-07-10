@@ -107,7 +107,7 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
     PalSurfaceCapabilities* caps)
 {
     int32_t formatCount = 0;
-    int32_t modeCount = 0;
+    uint32_t modeCount = 0;
     SurfaceVk* vkSurface = (SurfaceVk*)surface;
     VkSurfaceFormatKHR* formats = nullptr;
     VkPresentModeKHR* modes = nullptr;
@@ -299,7 +299,7 @@ PalResult PAL_CALL createSwapchainVk(
     }
 
     // get and cache all images
-    int32_t count = 0;
+    uint32_t count = 0;
     result = vkDevice->getSwapchainImages(vkDevice->handle, swapchain->handle, &count, nullptr);
 
     swapchain->images = palAllocate(s_Vk.allocator, sizeof(ImageVk) * count, 0);
