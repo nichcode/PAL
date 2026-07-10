@@ -19,11 +19,8 @@
   - `PAL_RESULT_CODE_TIMEOUT`
   - `PAL_RESULT_CODE_INVALID_HANDLE`
   - `PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED`
-  - `PAL_RESULT_CODE_NOT_INITIALIZED`
   - `PAL_RESULT_CODE_INVALID_OPERATION`
   - `PAL_RESULT_CODE_DEVICE_LOST`
-  - `PAL_RESULT_CODE_OUT_OF_DATE`
-  - `PAL_RESULT_CODE_INVALID_DRIVER`
 - Added type `PalResultSource` with values:
   - `PAL_RESULT_SOURCE_NONE`
   - `PAL_RESULT_SOURCE_WIN32`
@@ -62,7 +59,7 @@
 - Renamed fbConfig backend type constants from `PAL_FBCONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`.
 - Renamed `PalFlashFlag` to `PalFlashFlags`.
 - `palInitGL()` now takes two additional parameters.
-- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` parameter.
+- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` and `count` now as `uint32_t`
 - `palInitVideo()` now takes an additional parameter.
 - `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`.
 - `palEnumerateMonitors()` now takes `count` paramter as `uint32_t`.
@@ -84,6 +81,38 @@
 - `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields.
 - `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
 - Removed `maximized` and `minimized` in `PalWindowCreateInfo`.
+
+- These function now returns `void` instead of `PalResult`:
+  - `palGetPlatformInfo()`
+  - `palGetCPUInfo()`
+  - `palGetThreadName()`
+  - `palGetPrimaryMonitor()`
+  - `palGetMonitorInfo()`
+  - `palEnumerateMonitorModes()`
+  - `palMinimizeWindow()`
+  - `palMaximizeWindow()`
+  - `palRestoreWindow()`
+  - `palShowWindow()`
+  - `palHideWindow()`
+  - `palGetWindowStyle()`
+  - `palGetWindowMonitor()`
+  - `palGetWindowTitle()`
+  - `palGetWindowPos()`
+  - `palGetWindowSize()`
+  - `palGetWindowState()`
+  - `palGetWindowHandleInfo()`
+  - `palSetWindowStyle()`
+  - `palSetWindowTitle()`
+  - `palSetWindowPos()`
+  - `palSetWindowSize()`
+  - `palSetFocusWindow()`
+  - `palSetWindowIcon()`
+  - `palClipCursor()`
+  - `palGetCursorPos()`
+  - `palSetCursorPos()`
+  - `palSetWindowCursor()`
+  - `palSetWindowOpacity()`
+  - `palFlashWindow()`
 
 <!-- =========================================================== -->
 <!-- PAL V1.3.0 -->

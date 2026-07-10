@@ -234,7 +234,7 @@ PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
 /**
  * @brief Get the priority of the provided thread.
  *
- * `PAL_THREAD_FEATURE_PRIORITY` must be supported.
+ * `PAL_THREAD_FEATURE_PRIORITY` must be supported otherwise undefined behavior.
  *
  * @param[in] thread The thread to query priority for.
  *
@@ -249,8 +249,7 @@ PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
 /**
  * @brief Get the affinity of the provided thread.
  *
- * `PAL_THREAD_FEATURE_AFFINITY` must be supported. Thread affinity is the
- * number of CPU cores the thread is allowed to be executed on.
+ * `PAL_THREAD_FEATURE_AFFINITY` must be supported otherwise undefined behavior.
  *
  * @param[in] thread The thread to query affinity for.
  *
@@ -265,12 +264,11 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
 /**
  * @brief Get the name of the provided thread.
  *
- * `PAL_THREAD_FEATURE_NAME` must be supported.
- * fails. Set the buffer to `nullptr` to get the size of the thread name in bytes.
+ * `PAL_THREAD_FEATURE_NAME` must be supported otherwise undefined behavior.
+ * Set the buffer to `nullptr` to get the size of the thread name in bytes.
  *
  * If the size of the provided buffer is less than the actual size of thread
  * name, PAL will write upto that limit.
- *
  *
  * @param[in] thread The thread to query its name.
  * @param[in] bufferSize Size of the provided buffer in bytes.
@@ -289,7 +287,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @since 1.0
  * @sa palSetThreadName
  */
-PAL_API PalResult PAL_CALL palGetThreadName(
+PAL_API void PAL_CALL palGetThreadName(
     PalThread* thread,
     uint64_t bufferSize,
     uint64_t* outSize,
@@ -298,7 +296,7 @@ PAL_API PalResult PAL_CALL palGetThreadName(
 /**
  * @brief Set the priority of the provided thread.
  *
- * `PAL_THREAD_FEATURE_PRIORITY` must be supported.
+ * `PAL_THREAD_FEATURE_PRIORITY` must be supported otherwise undefined behavior.
  *
  * @param[in] thread The thread to set priority for.
  * @param[in] priority The new thread priority.
@@ -319,9 +317,7 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
 /**
  * @brief Set the affinity of the provided thread.
  *
- * `PAL_THREAD_FEATURE_AFFINITY` must be supported.
- * Thread affinity is the number of CPU cores the thread is allowed to be
- * executed on.
+ * `PAL_THREAD_FEATURE_AFFINITY` must be supported otherwise undefined behavior.
  *
  * To be safe, get the number of CPU cores and use that to build the CPU mask.
  * Example: we set a thread to the first and second CPU core.
@@ -347,7 +343,7 @@ PAL_API PalResult PAL_CALL palSetThreadAffinity(
 /**
  * @brief Set the name of the provided thread.
  *
- * `PAL_THREAD_FEATURE_NAME` must be supported.
+ * `PAL_THREAD_FEATURE_NAME` must be supported otherwise undefined behavior.
  * The thread name will be visible in debuggers and the Task Manager (Windows).
  *
  * @param[in] thread The thread

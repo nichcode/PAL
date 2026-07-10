@@ -20,8 +20,6 @@
 #define PAL_ADAPTER_BACKEND_NAME_SIZE 32
 #define PAL_SHADER_ENTRY_NAME_SIZE 32
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
-
-#define PAL_BACKEND_KEY ((void*)(uintptr_t)0x50414C48414E4453)
 #define PAL_MAX_CUSTOM_BACKENDS 16
 
 #define PAL_MAKE_SHADER_TARGET(major, minor) ((uint32_t)((major) << 8) | (minor))
@@ -2699,12 +2697,7 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior.
  *
  * All backend handle implementation (eg. struct CustomBuffer) must reserve its first field as
- * a `void*` and set it to `PAL_BACKEND_KEY` at the handles creation function pointer
- * (eg. createBufferCustom). This will be validated at the handle creation function
- * (eg. palCreateBuffer).
- *
- * Pal trust thee backend author to not overwrite or use the reserve space. It is used by the
- * graphics layer.
+ * a `void*`. This will be used by the graphics layer.
  *
  * @since 2.0
  */
@@ -3750,6 +3743,7 @@ typedef struct {
      * Must obey the rules and semantics documented in palComputeInstanceStagingSize().
      */
     void(PAL_CALL* computeInstanceStagingSize)(
+        PalDevice* device,
         uint32_t instanceCount, 
         uint64_t* outSize);
 
@@ -3759,6 +3753,7 @@ typedef struct {
      * Must obey the rules and semantics documented in palComputeImageStagingRequirements().
      */
     void(PAL_CALL* computeImageStagingRequirements)(
+        PalDevice* device,
         PalFormat imageFormat,
         const PalBufferImageCopyInfo* copyInfo,
         PalImageStagingRequirements* outRequirements);
@@ -3769,6 +3764,7 @@ typedef struct {
      * Must obey the rules and semantics documented in palWriteInstanceStaging().
      */
     void(PAL_CALL* writeInstanceStaging)(
+        PalDevice* device,
         uint32_t instanceCount,
         PalAccelerationStructureInstance* instances,
         void* ptr);
@@ -3779,6 +3775,7 @@ typedef struct {
      * Must obey the rules and semantics documented in palWriteImageStaging().
      */
     void(PAL_CALL* writeImageStaging)(
+        PalDevice* device,
         PalFormat imageFormat,
         PalBufferImageCopyInfo* copyInfo,
         void* srcData,
@@ -4192,7 +4189,6 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  * The graphics system must be initialized before this call.
  * If `memory` is `nullptr`, this function will return silently.
  *
- * @param[in] device Pointer to device to free memory on.
  * @param[in] memory Pointer to memory to free.
  *
  * Thread safety: Thread safe if `device` is externally synchronized and
@@ -4201,9 +4197,7 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  * @since 2.0
  * @sa palAllocateMemory
  */
-PAL_API void PAL_CALL palFreeMemory(
-    PalDevice* device,
-    PalMemory* memory);
+PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
 
 /**
  * @brief Get sampler anisotropy feature capabilites or limits about a device.
@@ -6432,6 +6426,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  * The graphics system must be initialized before this call. This does not allocate memory
  * for the buffer. This function must is required for all acceleration structure instance buffers.
  *
+ * @param[in] device The device to use.
  * @param[in] instanceCount Number of instances the instance buffer will hold.
  * @param[out] outSize Pointer to a uint64_t to recieve the required size.
  *
@@ -6441,6 +6436,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  * @sa palWriteInstanceStaging
  */
 PAL_API void PAL_CALL palComputeInstanceStagingSize(
+    PalDevice* device,
     uint32_t instanceCount, 
     uint64_t* outSize);
 
@@ -6455,6 +6451,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  * set those values to the required ones from `outRequirements`. 
  * If the driver supports the proivded, the values will be the same.
  *
+ * @param[in] device The device to use.
  * @param[in] imageFormat Destination image format.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * @param[out] outRequirements Pointer to a PalImageStagingRequirements to recieve the requirements
@@ -6465,6 +6462,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  * @sa palWriteImageStaging
  */
 PAL_API void PAL_CALL palComputeImageStagingRequirements(
+    PalDevice* device,
     PalFormat imageFormat,
     const PalBufferImageCopyInfo* copyInfo,
     PalImageStagingRequirements* outRequirements);
@@ -6474,6 +6472,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  *
  * The graphics system must be initialized before this call.
  *
+ * @param[in] device The device to use.
  * @param[in] instanceCount Number of instances.
  * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
@@ -6484,6 +6483,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  * @sa palComputeInstanceStagingSize
  */
 PAL_API void PAL_CALL palWriteInstanceStaging(
+    PalDevice* device,
     uint32_t instanceCount,
     PalAccelerationStructureInstance* instances,
     void* ptr);
@@ -6493,6 +6493,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
  *
  * The graphics system must be initialized before this call.
  *
+ * @param[in] device The device to use.
  * @param[in] imageFormat Destination image format.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * @param[out] srcData Pointer to the CPU visible memory with the data.
@@ -6504,6 +6505,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
  * @sa palComputeImageStagingRequirements
  */
 PAL_API void PAL_CALL palWriteToImageCopyStagingBuffer(
+    PalDevice* device,
     PalFormat imageFormat,
     PalBufferImageCopyInfo* copyInfo,
     void* srcData,
@@ -6975,8 +6977,6 @@ PAL_API void PAL_CALL palUpdateShaderBindingTable(
  * @param[in, out] count Capacity of the PalWorkGroupInfo array.
  * @param[out] infos Pointer to an Array of PalWorkGroupInfo.
  *
- * @return `PAL_TRUE` on success otherwise `PAL_FALSE`.
- *
  * Thread safety: Must only be called from the main thread.
  *
  * @since 2.0
@@ -6986,9 +6986,9 @@ PAL_API void PAL_CALL palUpdateShaderBindingTable(
  * @sa palCmdDispatch
  * @sa palCmdDispatchBase
  */
-PAL_API PalBool PAL_CALL palBuildWorkGroupInfo(
+PAL_API void PAL_CALL palBuildWorkGroupInfo(
     const PalWorkGroupBuildData* data,
-    int32_t* count,
+    uint32_t* count,
     PalWorkGroupInfo* info);
 
 /**

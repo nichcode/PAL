@@ -436,8 +436,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  *
  * The opengl system must be initialized before this call.
  * This affects the currently bound context on the calling thread.
- * `PAL_GL_EXTENSION_SWAP_CONTROL` must be supported. Set interval to 1 for
- * vsync.
+ * `PAL_GL_EXTENSION_SWAP_CONTROL` must be supported otherwise undefined behavoir.
  *
  * @param[in] interval The swap interval
  *
