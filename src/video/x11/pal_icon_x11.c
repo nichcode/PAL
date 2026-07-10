@@ -50,16 +50,13 @@ void xDestroyIcon(PalIcon* icon)
     }
 }
 
-PalResult xSetWindowIcon(
+void xSetWindowIcon(
     PalWindow* window,
     PalIcon* icon)
 {
     WindowData* winData = nullptr;
     Window xWin = FROM_PAL_HANDLE(Window, window);
     s_X11.findContext(s_X11.display, xWin, s_X11.dataID, (XPointer*)&winData);
-    if (!winData) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
 
     unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
     uint64_t totalPixels = 2 + iconData[0] * iconData[1];
@@ -74,7 +71,6 @@ PalResult xSetWindowIcon(
         (int)totalPixels);
 
     s_X11.flush(s_X11.display);
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_X11_BACKEND

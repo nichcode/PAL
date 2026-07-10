@@ -106,50 +106,12 @@ void wlDestroyCursor(PalCursor* cursor)
     palFree(s_Wl.allocator, waylandCursor);
 }
 
-void wlShowCursor(PalBool show)
-{
-    // not supported
-    return;
-}
-
-PalResult wlClipCursor(
-    PalWindow* window,
-    PalBool clip)
-{
-    if (!(s_Wl.features & PAL_VIDEO_FEATURE_CLIP_CURSOR)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    return PAL_RESULT_SUCCESS;
-}
-
-PalResult wlGetCursorPos(
-    PalWindow* window,
-    int32_t* x,
-    int32_t* y)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlSetCursorPos(
-    PalWindow* window,
-    int32_t x,
-    int32_t y)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlSetWindowCursor(
+void wlSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
     WindowData* data = wlFindWindowData(window);
-    if (!data) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     data->cursor = cursor;
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND

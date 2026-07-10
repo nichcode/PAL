@@ -90,16 +90,11 @@ void xShowCursor(PalBool show)
     return;
 }
 
-PalResult xClipCursor(
+void xClipCursor(
     PalWindow* window,
     PalBool clip)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     if (clip) {
         s_X11.grabPointer(
             s_X11.display,
@@ -115,21 +110,14 @@ PalResult xClipCursor(
     } else {
         s_X11.ungrabPointer(s_X11.display, CurrentTime);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetCursorPos(
+void xGetCursorPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     Window root, child;
     int rootX, rootY, winX, winY;
     unsigned int mask;
@@ -141,36 +129,24 @@ PalResult xGetCursorPos(
     if (y) {
         *y = winY;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xSetCursorPos(
+void xSetCursorPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_X11.warpPointer(s_X11.display, None, xWin, 0, 0, 0, 0, x, y);
     s_X11.flush(s_X11.display);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xSetWindowCursor(
+void xSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     Window xCursor = FROM_PAL_HANDLE(Cursor, cursor);
     if (xCursor) {
         s_X11.defineCursor(s_X11.display, xWin, xCursor);
@@ -180,7 +156,6 @@ PalResult xSetWindowCursor(
     }
 
     s_X11.flush(s_X11.display);
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_X11_BACKEND

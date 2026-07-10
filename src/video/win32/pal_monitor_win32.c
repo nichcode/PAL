@@ -139,7 +139,7 @@ static inline PalBool compareMonitorMode(
 static inline void addMonitorMode(
     PalMonitorMode* modes,
     const PalMonitorMode* mode,
-    int32_t* count)
+    uint32_t* count)
 {
     // check if we have a duplicate mode
     for (int32_t i = 0; i < *count; i++) {

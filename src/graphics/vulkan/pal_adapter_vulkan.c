@@ -62,7 +62,7 @@ static PalImageUsages ImageUsageFromVk(VkFormatFeatureFlags flags)
 }
 
 PalResult PAL_CALL enumerateAdaptersVk(
-    int32_t* count,
+    uint32_t* count,
     PalAdapter** outAdapters)
 {
     int deviceCount = 0;
@@ -711,7 +711,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
 
 void PAL_CALL enumerateFormatsVk(
     PalAdapter* adapter,
-    int32_t* count,
+    uint32_t* count,
     PalFormatInfo* outFormats)
 {
     int32_t fmtCount = 0;

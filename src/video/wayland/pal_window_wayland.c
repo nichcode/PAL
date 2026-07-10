@@ -240,101 +240,23 @@ void wlDestroyWindow(PalWindow* window)
     data->used = PAL_FALSE;
 }
 
-PalResult wlMinimizeWindow(PalWindow* window)
+void wlMinimizeWindow(PalWindow* window)
 {
     WindowData* data = wlFindWindowData(window);
-    if (!data) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     xdgToplevelSetMinimized(data->xdgToplevel);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult wlMaximizeWindow(PalWindow* window)
+void wlMaximizeWindow(PalWindow* window)
 {
     WindowData* data = wlFindWindowData(window);
-    if (!data) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     xdgToplevelSetMaximized(data->xdgToplevel);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult wlRestoreWindow(PalWindow* window)
+void wlRestoreWindow(PalWindow* window)
 {
     WindowData* data = wlFindWindowData(window);
-    if (!data) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     // we can only restore from a maximized state
     xdgToplevelUnsetMaximized(data->xdgToplevel);
-    return PAL_RESULT_SUCCESS;
-}
-
-PalResult wlShowWindow(PalWindow* window)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlHideWindow(PalWindow* window)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlFlashWindow(
-    PalWindow* window,
-    const PalFlashInfo* info)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlGetWindowStyle(
-    PalWindow* window,
-    PalWindowStyle* outStyle)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlGetWindowMonitor(
-    PalWindow* window,
-    PalMonitor** outMonitor)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlGetWindowTitle(
-    PalWindow* window,
-    uint64_t bufferSize,
-    uint64_t* outSize,
-    char* outBuffer)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlGetWindowPos(
-    PalWindow* window,
-    int32_t* x,
-    int32_t* y)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlGetWindowSize(
-    PalWindow* window,
-    uint32_t* width,
-    uint32_t* height)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlGetWindowState(
-    PalWindow* window,
-    PalWindowState* outState)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalBool wlIsWindowVisible(PalWindow* window)
@@ -342,101 +264,36 @@ PalBool wlIsWindowVisible(PalWindow* window)
     return PAL_FALSE;
 }
 
-PalWindow* wlGetFocusWindow()
-{
-    // Wayland does not let client query focused window
-    return nullptr;
-}
-
-PalResult wlGetWindowHandleInfo(
+void wlGetWindowHandleInfo(
     PalWindow* window, 
     PalWindowHandleInfo* info)
 {
-    if (!window || !info) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     WindowData* data = wlFindWindowData(window);
-    if (data) {
-        info->nativeInstance = (void*)s_Wl.display;
-        info->nativeWindow = (void*)window;
-        info->nativeHandle1 = data->xdgSurface;
-        info->nativeHandle2 = data->xdgToplevel;
-        info->nativeHandle3 = data->eglWindow;
-    }
-
-    return PAL_RESULT_SUCCESS;
+    info->nativeInstance = (void*)s_Wl.display;
+    info->nativeWindow = (void*)window;
+    info->nativeHandle1 = data->xdgSurface;
+    info->nativeHandle2 = data->xdgToplevel;
+    info->nativeHandle3 = data->eglWindow;
 }
 
-PalResult wlSetWindowOpacity(
-    PalWindow* window,
-    float opacity)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlSetWindowStyle(
-    PalWindow* window,
-    PalWindowStyle style)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlSetWindowTitle(
+void wlSetWindowTitle(
     PalWindow* window,
     const char* title)
 {
     WindowData* data = wlFindWindowData(window);
-    if (!data) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     xdgToplevelSetTitle(data->xdgToplevel, title);
     s_Wl.displayFlush(s_Wl.display);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult wlSetWindowPos(
-    PalWindow* window,
-    int32_t x,
-    int32_t y)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlSetWindowSize(
+void wlSetWindowSize(
     PalWindow* window,
     uint32_t width,
     uint32_t height)
 {
     WindowData* data = wlFindWindowData(window);
-    if (!data) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     xdgToplevelSetMinSize(data->xdgToplevel, width, height);
     xdgToplevelSetMaxSize(data->xdgToplevel, width, height);
     wlSurfaceCommit((struct wl_surface*)window);
-    return PAL_RESULT_SUCCESS;
-}
-
-PalResult wlSetFocusWindow(PalWindow* window)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlAttachWindow(
-    void* windowHandle,
-    PalWindow** outWindow)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult wlDetachWindow(
-    PalWindow* window,
-    void** outWindowHandle)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND

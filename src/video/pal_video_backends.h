@@ -25,18 +25,18 @@ typedef struct {
 
     PalResult (*createWindow)(const PalWindowCreateInfo*, PalWindow**);
     void (*destroyWindow)(PalWindow*);
-    PalResult (*maximizeWindow)(PalWindow*);
-    PalResult (*minimizeWindow)(PalWindow*);
-    PalResult (*restoreWindow)(PalWindow*);
-    PalResult (*showWindow)(PalWindow*);
-    PalResult (*hideWindow)(PalWindow*);
-    PalResult (*flashWindow)(PalWindow*, const PalFlashInfo*);
-    PalResult (*getWindowStyle)(PalWindow*, PalWindowStyle*);
-    PalResult (*getWindowMonitor)(PalWindow*, PalMonitor**);
-    PalResult (*getWindowTitle)(PalWindow*, uint64_t, uint64_t*, char*);
-    PalResult (*getWindowPos)(PalWindow*, int32_t*, int32_t*);
-    PalResult (*getWindowSize)(PalWindow*, uint32_t*, uint32_t*);
-    PalResult (*getWindowState)(PalWindow*, PalWindowState*);
+    void (*maximizeWindow)(PalWindow*);
+    void (*minimizeWindow)(PalWindow*);
+    void (*restoreWindow)(PalWindow*);
+    void (*showWindow)(PalWindow*);
+    void (*hideWindow)(PalWindow*);
+    void (*flashWindow)(PalWindow*, const PalFlashInfo*);
+    void (*getWindowStyle)(PalWindow*, PalWindowStyle*);
+    void (*getWindowMonitor)(PalWindow*, PalMonitor**);
+    void (*getWindowTitle)(PalWindow*, uint64_t, uint64_t*, char*);
+    void (*getWindowPos)(PalWindow*, int32_t*, int32_t*);
+    void (*getWindowSize)(PalWindow*, uint32_t*, uint32_t*);
+    void (*getWindowState)(PalWindow*, PalWindowState*);
     const PalBool* (*getKeycodeState)();
     const PalBool* (*getScancodeState)();
     const PalBool* (*getMouseState)();
@@ -44,26 +44,26 @@ typedef struct {
     void (*getMouseWheelDelta)(float*, float*);
     PalBool (*isWindowVisible)(PalWindow*);
     PalWindow* (*getFocusWindow)();
-    PalResult (*getWindowHandleInfo)(PalWindow*, PalWindowHandleInfo*);
-    PalResult (*setWindowOpacity)(PalWindow*, float);
-    PalResult (*setWindowStyle)(PalWindow*, PalWindowStyle);
-    PalResult (*setWindowTitle)(PalWindow*, const char*);
-    PalResult (*setWindowPos)(PalWindow*, int32_t, int32_t);
-    PalResult (*setWindowSize)(PalWindow*, uint32_t, uint32_t);
-    PalResult (*setFocusWindow)(PalWindow*);
+    void (*getWindowHandleInfo)(PalWindow*, PalWindowHandleInfo*);
+    void (*setWindowOpacity)(PalWindow*, float);
+    void (*setWindowStyle)(PalWindow*, PalWindowStyle);
+    void (*setWindowTitle)(PalWindow*, const char*);
+    void (*setWindowPos)(PalWindow*, int32_t, int32_t);
+    void (*setWindowSize)(PalWindow*, uint32_t, uint32_t);
+    void (*setFocusWindow)(PalWindow*);
 
     PalResult (*createIcon)(const PalIconCreateInfo*, PalIcon**);
     void (*destroyIcon)(PalIcon*);
-    PalResult (*setWindowIcon)(PalWindow*, PalIcon*);
+    void (*setWindowIcon)(PalWindow*, PalIcon*);
 
     PalResult (*createCursor)(const PalCursorCreateInfo*, PalCursor**);
     PalResult (*createCursorFrom)(PalCursorType, PalCursor**);
     void (*destroyCursor)(PalCursor*);
     void (*showCursor)(PalBool);
-    PalResult (*clipCursor)(PalWindow*, PalBool);
-    PalResult (*getCursorPos)(PalWindow*, int32_t*, int32_t*);
-    PalResult (*setCursorPos)(PalWindow*, int32_t, int32_t);
-    PalResult (*setWindowCursor)(PalWindow*, PalCursor*);
+    void (*clipCursor)(PalWindow*, PalBool);
+    void (*getCursorPos)(PalWindow*, int32_t*, int32_t*);
+    void (*setCursorPos)(PalWindow*, int32_t, int32_t);
+    void (*setWindowCursor)(PalWindow*, PalCursor*);
     PalResult (*attachWindow)(void*, PalWindow**);
     PalResult (*detachWindow)(PalWindow*, void**);
     void* (*getInstance)();
@@ -79,29 +79,29 @@ void win32ShutdownVideo();
 void win32UpdateVideo();
 PalVideoFeatures win32GetVideoFeatures();
 
-PalResult win32EnumerateMonitors(int32_t*, PalMonitor**);
-PalResult win32GetPrimaryMonitor(PalMonitor**);
-PalResult win32GetMonitorInfo(PalMonitor*, PalMonitorInfo*);
-PalResult win32EnumerateMonitorModes(PalMonitor*, int32_t*, PalMonitorMode*);
-PalResult win32GetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
+PalResult win32EnumerateMonitors(uint32_t*, PalMonitor**);
+void win32GetPrimaryMonitor(PalMonitor**);
+void win32GetMonitorInfo(PalMonitor*, PalMonitorInfo*);
+void win32EnumerateMonitorModes(PalMonitor*, uint32_t*, PalMonitorMode*);
+void win32GetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult win32SetMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult win32ValidateMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult win32SetMonitorOrientation(PalMonitor*, PalOrientation);
 
 PalResult win32CreateWindow(const PalWindowCreateInfo*, PalWindow**);
 void win32DestroyWindow(PalWindow*);
-PalResult win32MaximizeWindow(PalWindow*);
-PalResult win32MinimizeWindow(PalWindow*);
-PalResult win32RestoreWindow(PalWindow*);
-PalResult win32ShowWindow(PalWindow*);
-PalResult win32HideWindow(PalWindow*);
-PalResult win32FlashWindow(PalWindow*, const PalFlashInfo*);
-PalResult win32GetWindowStyle(PalWindow*, PalWindowStyle*);
-PalResult win32GetWindowMonitor(PalWindow*, PalMonitor**);
-PalResult win32GetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
-PalResult win32GetWindowPos(PalWindow*, int32_t*, int32_t*);
-PalResult win32GetWindowSize(PalWindow*, uint32_t*, uint32_t*);
-PalResult win32GetWindowState(PalWindow*, PalWindowState*);
+void win32MaximizeWindow(PalWindow*);
+void win32MinimizeWindow(PalWindow*);
+void win32RestoreWindow(PalWindow*);
+void win32ShowWindow(PalWindow*);
+void win32HideWindow(PalWindow*);
+void win32FlashWindow(PalWindow*, const PalFlashInfo*);
+void win32GetWindowStyle(PalWindow*, PalWindowStyle*);
+void win32GetWindowMonitor(PalWindow*, PalMonitor**);
+void win32GetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
+void win32GetWindowPos(PalWindow*, int32_t*, int32_t*);
+void win32GetWindowSize(PalWindow*, uint32_t*, uint32_t*);
+void win32GetWindowState(PalWindow*, PalWindowState*);
 const PalBool* win32GetKeycodeState();
 const PalBool* win32GetScancodeState();
 const PalBool* win32GetMouseState();
@@ -109,26 +109,26 @@ void win32GetMouseDelta(float*, float*);
 void win32GetMouseWheelDelta(float*, float*);
 PalBool win32IsWindowVisible(PalWindow*);
 PalWindow* win32GetFocusWindow();
-PalResult win32GetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
-PalResult win32SetWindowOpacity(PalWindow*, float);
-PalResult win32SetWindowStyle(PalWindow*, PalWindowStyle);
-PalResult win32SetWindowTitle(PalWindow*, const char*);
-PalResult win32SetWindowPos(PalWindow*, int32_t, int32_t);
-PalResult win32SetWindowSize(PalWindow*, uint32_t, uint32_t);
-PalResult win32SetFocusWindow(PalWindow*);
+void win32GetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
+void win32SetWindowOpacity(PalWindow*, float);
+void win32SetWindowStyle(PalWindow*, PalWindowStyle);
+void win32SetWindowTitle(PalWindow*, const char*);
+void win32SetWindowPos(PalWindow*, int32_t, int32_t);
+void win32SetWindowSize(PalWindow*, uint32_t, uint32_t);
+void win32SetFocusWindow(PalWindow*);
 
 PalResult win32CreateIcon(const PalIconCreateInfo*, PalIcon**);
 void win32DestroyIcon(PalIcon*);
-PalResult win32SetWindowIcon(PalWindow*, PalIcon*);
+void win32SetWindowIcon(PalWindow*, PalIcon*);
 
 PalResult win32CreateCursor(const PalCursorCreateInfo*, PalCursor**);
 PalResult win32CreateCursorFrom(PalCursorType, PalCursor**);
 void win32DestroyCursor(PalCursor*);
 void win32ShowCursor(PalBool);
-PalResult win32ClipCursor(PalWindow*, PalBool);
-PalResult win32GetCursorPos(PalWindow*, int32_t*, int32_t*);
-PalResult win32SetCursorPos(PalWindow*, int32_t, int32_t);
-PalResult win32SetWindowCursor(PalWindow*, PalCursor*);
+void win32ClipCursor(PalWindow*, PalBool);
+void win32GetCursorPos(PalWindow*, int32_t*, int32_t*);
+void win32SetCursorPos(PalWindow*, int32_t, int32_t);
+void win32SetWindowCursor(PalWindow*, PalCursor*);
 PalResult win32AttachWindow(void*, PalWindow**);
 PalResult win32DetachWindow(PalWindow*, void**);
 void* win32GetInstance();
@@ -203,29 +203,27 @@ void xShutdownVideo();
 void xUpdateVideo();
 PalVideoFeatures xGetVideoFeatures();
 
-PalResult xEnumerateMonitors(int32_t*, PalMonitor**);
-PalResult xGetPrimaryMonitor(PalMonitor**);
-PalResult xGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
-PalResult xEnumerateMonitorModes(PalMonitor*, int32_t*, PalMonitorMode*);
-PalResult xGetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
+PalResult xEnumerateMonitors(uint32_t*, PalMonitor**);
+void xGetPrimaryMonitor(PalMonitor**);
+void xGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
+void xEnumerateMonitorModes(PalMonitor*, uint32_t*, PalMonitorMode*);
+void xGetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult xSetMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult xValidateMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult xSetMonitorOrientation(PalMonitor*, PalOrientation);
 
 PalResult xCreateWindow(const PalWindowCreateInfo*, PalWindow**);
 void xDestroyWindow(PalWindow*);
-PalResult xMaximizeWindow(PalWindow*);
-PalResult xMinimizeWindow(PalWindow*);
-PalResult xRestoreWindow(PalWindow*);
-PalResult xShowWindow(PalWindow*);
-PalResult xHideWindow(PalWindow*);
-PalResult xFlashWindow(PalWindow*, const PalFlashInfo*);
-PalResult xGetWindowStyle(PalWindow*, PalWindowStyle*);
-PalResult xGetWindowMonitor(PalWindow*, PalMonitor**);
-PalResult xGetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
-PalResult xGetWindowPos(PalWindow*, int32_t*, int32_t*);
-PalResult xGetWindowSize(PalWindow*, uint32_t*, uint32_t*);
-PalResult xGetWindowState(PalWindow*, PalWindowState*);
+void xMaximizeWindow(PalWindow*);
+void xMinimizeWindow(PalWindow*);
+void xRestoreWindow(PalWindow*);
+void xShowWindow(PalWindow*);
+void xHideWindow(PalWindow*);
+void xFlashWindow(PalWindow*, const PalFlashInfo*);
+void xGetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
+void xGetWindowPos(PalWindow*, int32_t*, int32_t*);
+void xGetWindowSize(PalWindow*, uint32_t*, uint32_t*);
+void xGetWindowState(PalWindow*, PalWindowState*);
 const PalBool* xGetKeycodeState();
 const PalBool* xGetScancodeState();
 const PalBool* xGetMouseState();
@@ -233,26 +231,25 @@ void xGetMouseDelta(float*, float*);
 void xGetMouseWheelDelta(float*, float*);
 PalBool xIsWindowVisible(PalWindow*);
 PalWindow* xGetFocusWindow();
-PalResult xGetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
-PalResult xSetWindowOpacity(PalWindow*, float);
-PalResult xSetWindowStyle(PalWindow*, PalWindowStyle);
-PalResult xSetWindowTitle(PalWindow*, const char*);
-PalResult xSetWindowPos(PalWindow*, int32_t, int32_t);
-PalResult xSetWindowSize(PalWindow*, uint32_t, uint32_t);
-PalResult xSetFocusWindow(PalWindow*);
+void xGetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
+void xSetWindowOpacity(PalWindow*, float);
+void xSetWindowTitle(PalWindow*, const char*);
+void xSetWindowPos(PalWindow*, int32_t, int32_t);
+void xSetWindowSize(PalWindow*, uint32_t, uint32_t);
+void xSetFocusWindow(PalWindow*);
 
 PalResult xCreateIcon(const PalIconCreateInfo*, PalIcon**);
 void xDestroyIcon(PalIcon*);
-PalResult xSetWindowIcon(PalWindow*, PalIcon*);
+void xSetWindowIcon(PalWindow*, PalIcon*);
 
 PalResult xCreateCursor(const PalCursorCreateInfo*, PalCursor**);
 PalResult xCreateCursorFrom(PalCursorType, PalCursor**);
 void xDestroyCursor(PalCursor*);
 void xShowCursor(PalBool);
-PalResult xClipCursor(PalWindow*, PalBool);
-PalResult xGetCursorPos(PalWindow*, int32_t*, int32_t*);
-PalResult xSetCursorPos(PalWindow*, int32_t, int32_t);
-PalResult xSetWindowCursor(PalWindow*, PalCursor*);
+void xClipCursor(PalWindow*, PalBool);
+void xGetCursorPos(PalWindow*, int32_t*, int32_t*);
+void xSetCursorPos(PalWindow*, int32_t, int32_t);
+void xSetWindowCursor(PalWindow*, PalCursor*);
 PalResult xAttachWindow(void*, PalWindow**);
 PalResult xDetachWindow(PalWindow*, void**);
 void* xGetInstance();
@@ -278,8 +275,8 @@ static VideoBackend s_XBackend = {
     .showWindow = xShowWindow,
     .hideWindow = xHideWindow,
     .flashWindow = xFlashWindow,
-    .getWindowStyle = xGetWindowStyle,
-    .getWindowMonitor = xGetWindowMonitor,
+    .getWindowStyle = nullptr,
+    .getWindowMonitor = nullptr,
     .getWindowTitle = xGetWindowTitle,
     .getWindowPos = xGetWindowPos,
     .getWindowSize = xGetWindowSize,
@@ -293,7 +290,7 @@ static VideoBackend s_XBackend = {
     .getFocusWindow = xGetFocusWindow,
     .getWindowHandleInfo = xGetWindowHandleInfo,
     .setWindowOpacity = xSetWindowOpacity,
-    .setWindowStyle = xSetWindowStyle,
+    .setWindowStyle = nullptr,
     .setWindowTitle = xSetWindowTitle,
     .setWindowPos = xSetWindowPos,
     .setWindowSize = xSetWindowSize,
@@ -328,58 +325,36 @@ void wlUpdateVideo();
 void wlUpdateVideo();
 PalVideoFeatures wlGetVideoFeatures();
 
-PalResult wlEnumerateMonitors(int32_t*, PalMonitor**);
-PalResult wlGetPrimaryMonitor(PalMonitor**);
-PalResult wlGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
-PalResult wlEnumerateMonitorModes(PalMonitor*, int32_t*, PalMonitorMode*);
-PalResult wlGetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
+PalResult wlEnumerateMonitors(uint32_t*, PalMonitor**);
+void wlGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
+void wlEnumerateMonitorModes(PalMonitor*, uint32_t*, PalMonitorMode*);
+void wlGetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult wlSetMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult wlValidateMonitorMode(PalMonitor*, PalMonitorMode*);
 PalResult wlSetMonitorOrientation(PalMonitor*, PalOrientation);
 
 PalResult wlCreateWindow(const PalWindowCreateInfo*, PalWindow**);
 void wlDestroyWindow(PalWindow*);
-PalResult wlMaximizeWindow(PalWindow*);
-PalResult wlMinimizeWindow(PalWindow*);
-PalResult wlRestoreWindow(PalWindow*);
-PalResult wlShowWindow(PalWindow*);
-PalResult wlHideWindow(PalWindow*);
-PalResult wlFlashWindow(PalWindow*, const PalFlashInfo*);
-PalResult wlGetWindowStyle(PalWindow*, PalWindowStyle*);
-PalResult wlGetWindowMonitor(PalWindow*, PalMonitor**);
-PalResult wlGetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
-PalResult wlGetWindowPos(PalWindow*, int32_t*, int32_t*);
-PalResult wlGetWindowSize(PalWindow*, uint32_t*, uint32_t*);
-PalResult wlGetWindowState(PalWindow*, PalWindowState*);
+void wlMaximizeWindow(PalWindow*);
+void wlMinimizeWindow(PalWindow*);
+void wlRestoreWindow(PalWindow*);
 const PalBool* wlGetKeycodeState();
 const PalBool* wlGetScancodeState();
 const PalBool* wlGetMouseState();
 void wlGetMouseDelta(float*, float*);
 void wlGetMouseWheelDelta(float*, float*);
 PalBool wlIsWindowVisible(PalWindow*);
-PalWindow* wlGetFocusWindow();
-PalResult wlGetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
-PalResult wlSetWindowOpacity(PalWindow*, float);
-PalResult wlSetWindowStyle(PalWindow*, PalWindowStyle);
-PalResult wlSetWindowTitle(PalWindow*, const char*);
-PalResult wlSetWindowPos(PalWindow*, int32_t, int32_t);
-PalResult wlSetWindowSize(PalWindow*, uint32_t, uint32_t);
-PalResult wlSetFocusWindow(PalWindow*);
+void wlGetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
+void wlSetWindowTitle(PalWindow*, const char*);
+void wlSetWindowSize(PalWindow*, uint32_t, uint32_t);
 
 PalResult wlCreateIcon(const PalIconCreateInfo*, PalIcon**);
 void wlDestroyIcon(PalIcon*);
-PalResult wlSetWindowIcon(PalWindow*, PalIcon*);
 
 PalResult wlCreateCursor(const PalCursorCreateInfo*, PalCursor**);
 PalResult wlCreateCursorFrom(PalCursorType, PalCursor**);
 void wlDestroyCursor(PalCursor*);
-void wlShowCursor(PalBool);
-PalResult wlClipCursor(PalWindow*, PalBool);
-PalResult wlGetCursorPos(PalWindow*, int32_t*, int32_t*);
-PalResult wlSetCursorPos(PalWindow*, int32_t, int32_t);
-PalResult wlSetWindowCursor(PalWindow*, PalCursor*);
-PalResult wlAttachWindow(void*, PalWindow**);
-PalResult wlDetachWindow(PalWindow*, void**);
+void wlSetWindowCursor(PalWindow*, PalCursor*);
 void* wlGetInstance();
 
 static VideoBackend s_wlBackend = {
@@ -388,7 +363,7 @@ static VideoBackend s_wlBackend = {
     .getVideoFeatures = wlGetVideoFeatures,
     .enumerateMonitors = wlEnumerateMonitors,
     .getMonitorInfo = wlGetMonitorInfo,
-    .getPrimaryMonitor = wlGetPrimaryMonitor,
+    .getPrimaryMonitor = nullptr,
     .enumerateMonitorModes = wlEnumerateMonitorModes,
     .getCurrentMonitorMode = wlGetCurrentMonitorMode,
     .setMonitorMode = wlSetMonitorMode,
@@ -400,45 +375,45 @@ static VideoBackend s_wlBackend = {
     .maximizeWindow = wlMaximizeWindow,
     .minimizeWindow = wlMinimizeWindow,
     .restoreWindow = wlRestoreWindow,
-    .showWindow = wlShowWindow,
-    .hideWindow = wlHideWindow,
-    .flashWindow = wlFlashWindow,
-    .getWindowStyle = wlGetWindowStyle,
-    .getWindowMonitor = wlGetWindowMonitor,
-    .getWindowTitle = wlGetWindowTitle,
-    .getWindowPos = wlGetWindowPos,
-    .getWindowSize = wlGetWindowSize,
-    .getWindowState = wlGetWindowState,
+    .showWindow = nullptr,
+    .hideWindow = nullptr,
+    .flashWindow = nullptr,
+    .getWindowStyle = nullptr,
+    .getWindowMonitor = nullptr,
+    .getWindowTitle = nullptr,
+    .getWindowPos = nullptr,
+    .getWindowSize = nullptr,
+    .getWindowState = nullptr,
     .getKeycodeState = wlGetKeycodeState,
     .getScancodeState = wlGetScancodeState,
     .getMouseState = wlGetMouseState,
     .getMouseDelta = wlGetMouseDelta,
     .getMouseWheelDelta = wlGetMouseWheelDelta,
     .isWindowVisible = wlIsWindowVisible,
-    .getFocusWindow = wlGetFocusWindow,
+    .getFocusWindow = nullptr,
     .getWindowHandleInfo = wlGetWindowHandleInfo,
-    .setWindowOpacity = wlSetWindowOpacity,
-    .setWindowStyle = wlSetWindowStyle,
+    .setWindowOpacity = nullptr,
+    .setWindowStyle = nullptr,
     .setWindowTitle = wlSetWindowTitle,
-    .setWindowPos = wlSetWindowPos,
+    .setWindowPos = nullptr,
     .setWindowSize = wlSetWindowSize,
-    .setFocusWindow = wlSetFocusWindow,
+    .setFocusWindow = nullptr,
 
     .createIcon = wlCreateIcon,
     .destroyIcon = wlDestroyIcon,
-    .setWindowIcon = wlSetWindowIcon,
+    .setWindowIcon = nullptr,
 
     .createCursor = wlCreateCursor,
     .createCursorFrom = wlCreateCursorFrom,
     .destroyCursor = wlDestroyCursor,
-    .showCursor = wlShowCursor,
-    .clipCursor = wlClipCursor,
-    .getCursorPos = wlGetCursorPos,
-    .setCursorPos = wlSetCursorPos,
+    .showCursor = nullptr,
+    .clipCursor = nullptr,
+    .getCursorPos = nullptr,
+    .setCursorPos = nullptr,
     .setWindowCursor = wlSetWindowCursor,
-    .attachWindow = wlAttachWindow,
+    .attachWindow = nullptr,
     .getInstance = wlGetInstance,
-    .detachWindow = wlDetachWindow};
+    .detachWindow = nullptr};
 
 // clang-format on
 

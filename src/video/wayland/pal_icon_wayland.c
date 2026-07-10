@@ -20,11 +20,4 @@ void wlDestroyIcon(PalIcon* icon)
     return;
 }
 
-PalResult wlSetWindowIcon(
-    PalWindow* window,
-    PalIcon* icon)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
 #endif // PAL_HAS_WAYLAND_BACKEND

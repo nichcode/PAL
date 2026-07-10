@@ -47,7 +47,7 @@ static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
 }
 
 PalResult PAL_CALL enumerateAdaptersD3D12(
-    int32_t* count,
+    uint32_t* count,
     PalAdapter** outAdapters)
 {
     uint32_t adapterCount = 0;
@@ -467,7 +467,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
 
 void PAL_CALL enumerateFormatsD3D12(
     PalAdapter* adapter,
-    int32_t* count,
+    uint32_t* count,
     PalFormatInfo* outFormats)
 {
     int32_t fmtCount = 0;

@@ -291,7 +291,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * @sa palInitGL
  */
 PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
-    int32_t* count,
+    uint32_t* count,
     PalGLFBConfig* configs);
 
 /**

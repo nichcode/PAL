@@ -82,6 +82,8 @@ static XVisualInfo* eglXBackend(int fbConfigIndex)
     return visualInfo;
 }
 
+void xGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
+
 PalResult xCreateWindow(
     const PalWindowCreateInfo* info,
     PalWindow** outWindow)
@@ -158,11 +160,7 @@ PalResult xCreateWindow(
 
     if (monitor) {
         // get monitor info
-        PalResult result = palGetMonitorInfo(monitor, &monitorInfo);
-        if (result != PAL_RESULT_SUCCESS) {
-            return result;
-        }
-
+        xGetMonitorInfo(monitor, &monitorInfo);
         monitorX = monitorInfo.x;
         monitorY = monitorInfo.y;
         monitorW = monitorInfo.width;
@@ -497,34 +495,15 @@ void xDestroyWindow(PalWindow* window)
     data->used = PAL_FALSE;
 }
 
-PalResult xMinimizeWindow(PalWindow* window)
+void xMinimizeWindow(PalWindow* window)
 {
-    if (!(s_X11.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_X11.iconifyWindow(s_X11.display, xWin, s_X11.screen);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xMaximizeWindow(PalWindow* window)
+void xMaximizeWindow(PalWindow* window)
 {
-    if (!(s_X11.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     sendWMEvent(
         xWin,
         s_X11Atoms._NET_WM_STATE,
@@ -533,22 +512,11 @@ PalResult xMaximizeWindow(PalWindow* window)
         1,
         0,
         PAL_TRUE); // _NET_WM_STATE_ADD
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xRestoreWindow(PalWindow* window)
+void xRestoreWindow(PalWindow* window)
 {
-    if (!(s_X11.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     // since we have no fixed way to restore the window
     // we just restore from minimized and maximized state
     sendWMEvent(
@@ -561,48 +529,25 @@ PalResult xRestoreWindow(PalWindow* window)
         PAL_FALSE); // _NET_WM_STATE_REMOVE
 
     s_X11.mapRaised(s_X11.display, xWin);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xShowWindow(PalWindow* window)
+void xShowWindow(PalWindow* window)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_X11.mapWindow(s_X11.display, xWin);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xHideWindow(PalWindow* window)
+void xHideWindow(PalWindow* window)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_X11.unmapWindow(s_X11.display, xWin);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xFlashWindow(
+void xFlashWindow(
     PalWindow* window,
     const PalFlashInfo* info)
 {
-    if (info->flags & PAL_FLASH_FLAG_CAPTION) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     PalBool add = PAL_FALSE;
     if (info->flags & PAL_FLASH_FLAG_TRAY) {
         add = PAL_TRUE;
@@ -625,10 +570,7 @@ PalResult xFlashWindow(
         if (!hints) {
             hints = s_X11.allocWMHints();
             if (!hints) {
-                return palMakeResult(
-                    PAL_RESULT_CODE_OUT_OF_MEMORY, 
-                    PAL_RESULT_SOURCE_POSIX, 
-                    errno);
+                return;
             }
 
             if (add) {
@@ -640,41 +582,15 @@ PalResult xFlashWindow(
             s_X11.free(hints);
         }
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetWindowStyle(
-    PalWindow* window,
-    PalWindowStyle* outStyle)
-{
-    // Window Manager quirks
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult xGetWindowMonitor(
-    PalWindow* window,
-    PalMonitor** outMonitor)
-{
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult xGetWindowTitle(
+void xGetWindowTitle(
     PalWindow* window,
     uint64_t bufferSize,
     uint64_t* outSize,
     char* outBuffer)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
-    if (!outBuffer || bufferSize <= 0) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     if (s_X11Atoms.unicodeTitle) {
         Atom type;
         int format;
@@ -716,11 +632,9 @@ PalResult xGetWindowTitle(
         }
         s_X11.free(text.value);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetWindowPos(
+void xGetWindowPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
@@ -728,7 +642,7 @@ PalResult xGetWindowPos(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
+        return;
     }
 
     if (x) {
@@ -738,11 +652,9 @@ PalResult xGetWindowPos(
     if (y) {
         *y = attr.y;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetWindowSize(
+void xGetWindowSize(
     PalWindow* window,
     uint32_t* width,
     uint32_t* height)
@@ -750,7 +662,7 @@ PalResult xGetWindowSize(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     XWindowAttributes attr;
     if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
+        return;
     }
 
     if (width) {
@@ -760,20 +672,13 @@ PalResult xGetWindowSize(
     if (height) {
         *height = attr.height;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xGetWindowState(
+void xGetWindowState(
     PalWindow* window,
     PalWindowState* outState)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     Atom type;
     int format;
     unsigned long count, bytesAfter;
@@ -809,7 +714,6 @@ PalResult xGetWindowState(
 
     s_X11.free(props);
     *outState = state;
-    return PAL_RESULT_SUCCESS;
 }
 
 PalBool xIsWindowVisible(PalWindow* window)
@@ -829,37 +733,28 @@ PalWindow* xGetFocusWindow()
     int tmp;
     s_X11.getInputFocus(s_X11.display, &window, &tmp);
     Window xWin = FROM_PAL_HANDLE(Window, window);
-
     if (xWin == s_X11.root) {
         return nullptr;
     }
     return TO_PAL_HANDLE(PalWindow, window);
 }
 
-PalResult xGetWindowHandleInfo(
+void xGetWindowHandleInfo(
     PalWindow* window, 
     PalWindowHandleInfo* info)
 {
-    if (!window || !info) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     info->nativeInstance = (void*)s_X11.display;
     info->nativeWindow = (void*)window;
     info->nativeHandle1 = nullptr;
     info->nativeHandle2 = nullptr;
     info->nativeHandle3 = nullptr;
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xSetWindowOpacity(
+void xSetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
-    XErrorHandler old = s_X11.setErrorHandler(xErrorHandler);
     unsigned long value = (unsigned long)(opacity * 0xFFFFFFFFUL + 0.5f);
-
     s_X11.changeProperty(
         s_X11.display,
         FROM_PAL_HANDLE(Window, window),
@@ -870,34 +765,14 @@ PalResult xSetWindowOpacity(
         (unsigned char*)&value,
         1);
 
-    s_X11.sync(s_X11.display, False);
-    s_X11.setErrorHandler(old);
-    if (s_X11.error) {
-        // technically, this is the only error that can occur
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
-    return PAL_RESULT_SUCCESS;
+    s_X11.flush(s_X11.display);
 }
 
-PalResult xSetWindowStyle(
-    PalWindow* window,
-    PalWindowStyle style)
-{
-    // Window Manager quirks
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-}
-
-PalResult xSetWindowTitle(
+void xSetWindowTitle(
     PalWindow* window,
     const char* title)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     if (s_X11Atoms.unicodeTitle) {
         s_X11.changeProperty(
             s_X11.display,
@@ -914,36 +789,24 @@ PalResult xSetWindowTitle(
     }
 
     s_X11.flush(s_X11.display);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xSetWindowPos(
+void xSetWindowPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_X11.moveWindow(s_X11.display, xWin, x, y);
     s_X11.flush(s_X11.display);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xSetWindowSize(
+void xSetWindowSize(
     PalWindow* window,
     uint32_t width,
     uint32_t height)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     // X11 does not allow users resize programaticaly
     // if the window is not resizable.
     // so we hack it by making the window resizable and resizing
@@ -969,24 +832,16 @@ PalResult xSetWindowSize(
     }
 
     s_X11.flush(s_X11.display);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult xSetFocusWindow(PalWindow* window)
+void xSetFocusWindow(PalWindow* window)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!s_X11.getWindowAttributes(s_X11.display, xWin, &attr)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     if (s_X11Atoms._NET_ACTIVE_WINDOW) {
         sendWMEvent(xWin, s_X11Atoms._NET_ACTIVE_WINDOW, CurrentTime, 0, 0, 0, PAL_TRUE); // 1
     } else {
         s_X11.setInputFocus(s_X11.display, xWin, RevertToParent, CurrentTime);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult xAttachWindow(
