@@ -22,7 +22,7 @@ void* PAL_CALL palAllocate(
         align = 16; // default
     }
 
-    if (allocator && allocator->allocate) {
+    if (allocator) {
         return allocator->allocate(allocator->userData, size, align);
     }
 
@@ -33,12 +33,10 @@ void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr)
 {
-    if (ptr) {
-        if (allocator && allocator->free) {
-            allocator->free(allocator->userData, ptr);
-        } else {
-            _aligned_free(ptr);
-        }
+    if (allocator) {
+        allocator->free(allocator->userData, ptr);
+    } else {
+        _aligned_free(ptr);
     }
 }
 

@@ -9,12 +9,7 @@
 #include "pal_opengl_backends.h"
 #include <stdlib.h>
 
-typedef struct {
-    PalBool initialized;
-    const OpenglBackend* backend;
-} Opengl;
-
-static Opengl s_Gl = {0};
+static OpenglBackend* s_Backend = nullptr;
 
 PalBool checkString(
     const char* string,
@@ -49,15 +44,7 @@ PalResult PAL_CALL palInitGL(
     void* instance,
     const PalAllocator* allocator)
 {
-    if (s_Gl.initialized) {
-        return PAL_RESULT_SUCCESS;
-    }
-
     if (!instance) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    if (allocator && (!allocator->allocate || !allocator->free)) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -67,7 +54,7 @@ PalResult PAL_CALL palInitGL(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
-    s_Gl.backend = &s_WglBackend;
+    s_Backend = &s_WglBackend;
 #endif // _WIN32
 
 #if _PAL_HAS_EGL
@@ -75,47 +62,35 @@ PalResult PAL_CALL palInitGL(
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
-    s_Gl.backend = &s_EglBackend;
+    s_Backend = &s_EglBackend;
 #endif // _PAL_HAS_EGL
 
     // check if we found a backend
-    if (!s_Gl.backend) {
+    if (!s_Backend) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
-
-    s_Gl.initialized = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palShutdownGL()
 {
-    if (s_Gl.initialized) {
-        s_Gl.backend->shutdownGL();
-        s_Gl.initialized = PAL_FALSE;
-    }
+    s_Backend->shutdownGL();
 }
 
 const PalGLInfo* PAL_CALL palGetGLInfo()
 {
-    if (s_Gl.initialized) {
-        return s_Gl.backend->getGLInfo();
-    }
-    return nullptr;
+    return s_Backend->getGLInfo();
 }
 
 PalResult PAL_CALL palEnumerateGLFBConfigs(
     int32_t* count,
     PalGLFBConfig* configs)
 {
-    if (!s_Gl.initialized) {
-        return PAL_RESULT_CODE_NOT_INITIALIZED;
-    }
-
-    if (!count || *count == 0 && configs) {
+    if (!count) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    return s_Gl.backend->enumerateGLFBConfigs(count, configs);
+    return s_Backend->enumerateGLFBConfigs(count, configs);
 }
 
 const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
@@ -123,14 +98,6 @@ const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     int32_t count,
     const PalGLFBConfig* desired)
 {
-    if (!configs || !desired) {
-        return nullptr;
-    }
-
-    if (count == 0) {
-        return nullptr;
-    }
-
     int32_t score = 0;
     int32_t bestScore = 0x7FFFFFFF;
     PalGLFBConfig* best = nullptr;
@@ -178,78 +145,47 @@ PalResult PAL_CALL palCreateGLContext(
     const PalGLContextCreateInfo* info,
     PalGLContext** outContext)
 {
-    if (!s_Gl.initialized) {
-        return PAL_RESULT_CODE_NOT_INITIALIZED;
-    }
-
     if (!info || !outContext) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    return s_Gl.backend->createGLContext(info, outContext);
+    return s_Backend->createGLContext(info, outContext);
 }
 
 void PAL_CALL palDestroyGLContext(PalGLContext* context)
 {
-    if (s_Gl.initialized && context) {
-        s_Gl.backend->destroyGLContext(context);
-    }
+    s_Backend->destroyGLContext(context);
 }
 
 PalResult PAL_CALL palMakeContextCurrent(
     PalGLWindow* glWindow,
     PalGLContext* context)
 {
-    if (!s_Gl.initialized) {
-        return PAL_RESULT_CODE_NOT_INITIALIZED;
-    }
-
-    if (!glWindow || !context) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    return s_Gl.backend->makeContextCurrent(glWindow, context);
+    return s_Backend->makeContextCurrent(glWindow, context);
 }
 
 void* PAL_CALL palGetGLProcAddress(const char* name)
 {
-    if (s_Gl.initialized && name) {
-        return s_Gl.backend->getGLProcAddress(name);
-    }
-    return nullptr;
+    return s_Backend->getGLProcAddress(name);
 }
 
 PalResult PAL_CALL palSwapBuffers(
     PalGLWindow* glWindow,
     PalGLContext* context)
 {
-    if (!s_Gl.initialized) {
-        return PAL_RESULT_CODE_NOT_INITIALIZED;
-    }
-
-    if (!glWindow || !context) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    return s_Gl.backend->swapBuffers(glWindow, context);
+    return s_Backend->swapBuffers(glWindow, context);
 }
 
 PalResult PAL_CALL palSetSwapInterval(int32_t interval)
 {
-    if (!s_Gl.initialized) {
-        return PAL_RESULT_CODE_NOT_INITIALIZED;
-    }
-    return s_Gl.backend->setSwapInterval(interval);
+    return s_Backend->setSwapInterval(interval);
 }
 
 const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance)
 {
-    if (instance) {
 #if _PAL_HAS_EGL
         return eglGetSupportedGLAPIs(instance);
 #elif defined(_WIN32)
         return wglGetSupportedGLAPIs(instance);
 #endif // _PAL_HAS_EGL
-    }
-    return nullptr;
 }

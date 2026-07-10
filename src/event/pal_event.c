@@ -25,12 +25,6 @@ PalResult PAL_CALL palCreateEventDriver(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (info->allocator) {
-        if (!info->allocator->allocate && !info->allocator->free) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
-    }
-
     PalEventDriver* driver = nullptr;
     driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
     if (!driver) {
@@ -67,10 +61,6 @@ PalResult PAL_CALL palCreateEventDriver(
 
 void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver)
 {
-    if (!eventDriver) {
-        return;
-    }
-
     const PalAllocator* allocator = eventDriver->allocator;
     if (eventDriver->freeQueue) {
         destroyDefaultEventQueue(allocator, eventDriver->queue);
@@ -83,18 +73,13 @@ void PAL_CALL palSetEventDispatchMode(
     PalEventType type,
     PalDispatchMode mode)
 {
-    if (eventDriver) {
-        eventDriver->modes[type] = mode;
-    }
+    eventDriver->modes[type] = mode;
 }
 
 PalDispatchMode PAL_CALL palGetEventDispatchMode(
     PalEventDriver* eventDriver,
     PalEventType type)
 {
-    if (!eventDriver) {
-        return PAL_DISPATCH_MODE_NONE;
-    }
     return eventDriver->modes[type];
 }
 
@@ -102,10 +87,6 @@ void PAL_CALL palPushEvent(
     PalEventDriver* eventDriver,
     PalEvent* event)
 {
-    if (!eventDriver || !event) {
-        return;
-    }
-
     // get the event mode
     PalDispatchMode mode = eventDriver->modes[event->type];
     if (mode == PAL_DISPATCH_MODE_CALLBACK) {
@@ -124,9 +105,5 @@ PalBool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
     PalEvent* outEvent)
 {
-    if (!eventDriver || !outEvent) {
-        return PAL_FALSE;
-    }
-
     return eventDriver->queue->poll(eventDriver->queue, outEvent);
 }

@@ -472,6 +472,10 @@ PalResult PAL_CALL palEnumerateAdapters(
     uint32_t* count,
     PalAdapter** outAdapters)
 {
+    if (!count) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     // enumerate all adapters for both custom and PAL backends
     PalResult result = 0;
     int totalCount = 0;
@@ -550,6 +554,10 @@ PalResult PAL_CALL palCreateDevice(
     PalAdapterFeatures features,
     PalDevice** outDevice)
 {
+    if (!adapter || !outDevice) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalDevice* device = nullptr;
     PalResult result;
     result = adapter->backend->createDevice(adapter, features, &device);
@@ -574,6 +582,10 @@ PalResult PAL_CALL palAllocateMemory(
     uint64_t size,
     PalMemory** outMemory)
 {
+    if (!device || !outMemory) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalMemory* memory = nullptr;
     PalResult result;
     result = device->backend->allocateMemory(device, type, memoryMask, size, &memory);
@@ -660,6 +672,10 @@ PalResult PAL_CALL palCreateQueue(
     PalQueueType type,
     PalQueue** outQueue)
 {
+    if (!device || !outQueue) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalQueue* queue = nullptr;
     PalResult result;
     result = device->backend->createQueue(device, type, &queue);
@@ -731,6 +747,10 @@ PalResult PAL_CALL palCreateImage(
     const PalImageCreateInfo* info,
     PalImage** outImage)
 {
+    if (!device || !info || !outImage) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalImage* image = nullptr;
     PalResult result;
     result = device->backend->createImage(device, info, &image);
@@ -780,6 +800,10 @@ PalResult PAL_CALL palCreateImageView(
     const PalImageViewCreateInfo* info,
     PalImageView** outImageView)
 {
+    if (!device || !image || !info || !outImageView) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalImageView* imageView = nullptr;
     PalResult result;
     result = device->backend->createImageView(device, image, info, &imageView);
@@ -806,6 +830,10 @@ PalResult PAL_CALL palCreateSampler(
     const PalSamplerCreateInfo* info,
     PalSampler** outSampler)
 {
+    if (!device || !info || !outSampler) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalSampler* sampler = nullptr;
     PalResult result;
     result = device->backend->createSampler(device, info, &sampler);
@@ -834,6 +862,10 @@ PalResult PAL_CALL palCreateSurface(
     PalWindowInstanceType instanceType,
     PalSurface** outSurface)
 {
+    if (!device || !window || !windowInstance || !outSurface) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalSurface* surface = nullptr;
     PalResult ret;
     ret = device->backend->createSurface(device, window, windowInstance, instanceType, &surface);
@@ -870,6 +902,10 @@ PalResult PAL_CALL palCreateSwapchain(
     const PalSwapchainCreateInfo* info,
     PalSwapchain** outSwapchain)
 {
+    if (!device || !queue || !surface || !info || !outSwapchain) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalSwapchain* swapchain = nullptr;
     result = device->backend->createSwapchain(device, queue, surface, info, &swapchain);
@@ -933,6 +969,10 @@ PalResult PAL_CALL palCreateShader(
     const PalShaderCreateInfo* info,
     PalShader** outShader)
 {
+    if (!device || !info || !outShader) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalShader* shader = nullptr;
     PalResult result;
     result = device->backend->createShader(device, info, &shader);
@@ -959,6 +999,10 @@ PalResult PAL_CALL palCreateFence(
     PalBool signaled,
     PalFence** outFence)
 {
+    if (!device || !outFence) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalFence* fence = nullptr;
     PalResult result;
     result = device->backend->createFence(device, signaled, &fence);
@@ -1002,6 +1046,10 @@ PalResult PAL_CALL palCreateSemaphore(
     PalBool enableTimeline,
     PalSemaphore** outSemaphore)
 {
+    if (!device || !outSemaphore) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalSemaphore* semaphore = nullptr;
     PalResult result;
     result = device->backend->createSemaphore(device, enableTimeline, &semaphore);
@@ -1051,6 +1099,10 @@ PalResult PAL_CALL palCreateCommandPool(
     PalQueue* queue,
     PalCommandPool** outPool)
 {
+    if (!device || !queue || !outPool) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalCommandPool* pool = nullptr;
     PalResult result;
     result = device->backend->createCommandPool(device, queue, &pool);
@@ -1079,6 +1131,10 @@ PalResult PAL_CALL palAllocateCommandBuffer(
     PalCommandBufferType type,
     PalCommandBuffer** outCmdBuffer)
 {
+    if (!device || !pool || !outCmdBuffer) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalCommandBuffer* cmdBuffer = nullptr;
     PalResult result;
     result = device->backend->allocateCommandBuffer(device, pool, type, &cmdBuffer);
@@ -1496,6 +1552,10 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     const PalAccelerationStructureCreateInfo* info,
     PalAccelerationStructure** outAs)
 {
+    if (!device || !info || !outAs) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalAccelerationStructure* as = nullptr;
     result = device->backend->createAccelerationstructure(device, info, &as);
@@ -1530,6 +1590,10 @@ PalResult PAL_CALL palCreateBuffer(
     const PalBufferCreateInfo* info,
     PalBuffer** outBuffer)
 {
+    if (!device || !info || !outBuffer) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalBuffer* buffer = nullptr;
     result = device->backend->createBuffer(device, info, &buffer);
@@ -1630,6 +1694,10 @@ PalResult PAL_CALL palCreateDescriptorSetLayout(
     const PalDescriptorSetLayoutCreateInfo* info,
     PalDescriptorSetLayout** outLayout)
 {
+    if (!device || !info || !outLayout) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalDescriptorSetLayout* layout = nullptr;
     result = device->backend->createDescriptorSetLayout(device, info, &layout);
@@ -1652,6 +1720,10 @@ PalResult PAL_CALL palCreateDescriptorPool(
     const PalDescriptorPoolCreateInfo* info,
     PalDescriptorPool** outPool)
 {
+    if (!device || !info || !outPool) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalDescriptorPool* pool = nullptr;
     result = device->backend->createDescriptorPool(device, info, &pool);
@@ -1680,6 +1752,10 @@ PalResult PAL_CALL palAllocateDescriptorSet(
     PalDescriptorSetLayout* layout,
     PalDescriptorSet** outSet)
 {
+    if (!device || !pool || !layout || !outSet) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalDescriptorSet* set = nullptr;
     result = device->backend->allocateDescriptorSet(device, pool, layout, &set);
@@ -1709,6 +1785,10 @@ PalResult PAL_CALL palCreatePipelineLayout(
     const PalPipelineLayoutCreateInfo* info,
     PalPipelineLayout** outLayout)
 {
+    if (!device || !info || !outLayout) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalPipelineLayout* layout = nullptr;
     result = device->backend->createPipelineLayout(device, info, &layout);
@@ -1735,6 +1815,10 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
     const PalGraphicsPipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    if (!device || !info || !outPipeline) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalPipeline* pipeline = nullptr;
     result = device->backend->createGraphicsPipeline(device, info, &pipeline);
@@ -1752,6 +1836,10 @@ PalResult PAL_CALL palCreateComputePipeline(
     const PalComputePipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    if (!device || !info || !outPipeline) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalPipeline* pipeline = nullptr;
     result = device->backend->createComputePipeline(device, info, &pipeline);
@@ -1769,6 +1857,10 @@ PalResult PAL_CALL palCreateRayTracingPipeline(
     const PalRayTracingPipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
+    if (!device || !info || !outPipeline) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalPipeline* pipeline = nullptr;
     result = device->backend->createRayTracingPipeline(device, info, &pipeline);
@@ -1795,6 +1887,10 @@ PalResult PAL_CALL palCreateShaderBindingTable(
     const PalShaderBindingTableCreateInfo* info,
     PalShaderBindingTable** outSbt)
 {
+    if (!device || !info || !outSbt) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
     PalResult result;
     PalShaderBindingTable* sbt = nullptr;
     result = device->backend->createShaderBindingTable(device, info, &sbt);

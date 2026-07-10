@@ -14,11 +14,9 @@
 
 void PAL_CALL palGetVersion(PalVersion* version)
 {
-    if (version) {
-        version->major = PAL_VERSION_MAJOR;
-        version->minor = PAL_VERSION_MINOR;
-        version->build = PAL_VERSION_BUILD;
-    }
+    version->major = PAL_VERSION_MAJOR;
+    version->minor = PAL_VERSION_MINOR;
+    version->build = PAL_VERSION_BUILD;
 }
 
 const char* PAL_CALL palGetVersionString()

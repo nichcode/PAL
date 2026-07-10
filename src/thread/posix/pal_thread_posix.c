@@ -167,29 +167,19 @@ uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
     return 0;
 }
 
-PalResult PAL_CALL palGetThreadName(
+void PAL_CALL palGetThreadName(
     PalThread* thread,
     uint64_t bufferSize,
     uint64_t* outSize,
     char* outBuffer)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
 #ifdef __linux__
     // see if user provided a buffer and write to it
     if (outBuffer && bufferSize > 0) {
         pthread_t _thread = FROM_PAL_HANDLE(pthread_t, thread);
-        if (pthread_getname_np(_thread, outBuffer, bufferSize) != 0) {
-            return palMakeResult(PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_POSIX, errno);
-        }
+        pthread_getname_np(_thread, outBuffer, bufferSize);
     }
-
-    return PAL_RESULT_SUCCESS;
 #endif // __linux__
-
-    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 
 PalResult PAL_CALL palSetThreadPriority(

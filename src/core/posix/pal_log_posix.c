@@ -43,10 +43,6 @@ void PAL_CALL palLog(
     const char* fmt,
     ...)
 {
-    if (!fmt) {
-        return;
-    }
-
     LogTLSData* data = pthread_getspecific(s_TLSID);
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);

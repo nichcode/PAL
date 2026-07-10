@@ -31,21 +31,16 @@ void PAL_CALL palFormatResult(
 {
     char tmpBuffer[256];
     uint32_t nativeCode = palGetResultNativeCode(result);
-    if (nativeCode != 0) {
-        FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            nullptr,
-            nativeCode,
-            0,
-            tmpBuffer,
-            256,
-            nullptr);
+    FormatMessageA(
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        nativeCode,
+        0,
+        tmpBuffer,
+        256,
+        nullptr);
 
-        formatResultMsg(result, buffer, tmpBuffer);
-
-    } else {
-        formatResultMsg(result, buffer, nullptr);
-    }
+    formatResultMsg(result, buffer, tmpBuffer);
 }
 
 #endif // _WIN32

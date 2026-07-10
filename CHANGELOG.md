@@ -90,6 +90,7 @@ validation anymore: invalid arguments, feature not supported results in undefine
   - `palGetPrimaryMonitor()`
   - `palGetMonitorInfo()`
   - `palEnumerateMonitorModes()`
+  - `palGetCurrentMonitorMode()`
   - `palMinimizeWindow()`
   - `palMaximizeWindow()`
   - `palRestoreWindow()`

@@ -47,10 +47,6 @@ void PAL_CALL palLog(
     const char* fmt,
     ...)
 {
-    if (!fmt) {
-        return;
-    }
-
     LogTLSData* data = FlsGetValue((DWORD)s_TlsID);
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);
@@ -95,10 +91,6 @@ void PAL_CALL palLog(
         // write to console
         HANDLE console = GetStdHandle(STD_ERROR_HANDLE);
         int len = MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, nullptr, 0);
-        if (!len) {
-            return;
-        }
-
         MultiByteToWideChar(CP_UTF8, 0, data->buffer, -1, data->wideBuffer, len);
         if (console) {
             WriteConsoleW(console, data->wideBuffer, (DWORD)len - 1, NULL, 0);

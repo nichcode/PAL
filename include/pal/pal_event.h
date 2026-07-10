@@ -366,9 +366,9 @@ typedef struct {
  * longer needed.
  *
  * @param[in] info Pointer to a PalEventDriverCreateInfo struct that specifies
- * parameters. Must not be `nullptr`.
+ * parameters.
  * @param[out] outEventDriver Pointer to a PalEventDriver to recieve the created
- * event driver. Must not be `nullptr`.
+ * event driver.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.

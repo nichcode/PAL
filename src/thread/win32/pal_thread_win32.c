@@ -196,37 +196,18 @@ uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
     return mask;
 }
 
-PalResult PAL_CALL palGetThreadName(
+void PAL_CALL palGetThreadName(
     PalThread* thread,
     uint64_t bufferSize,
     uint64_t* outSize,
     char* outBuffer)
 {
-    if (!thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
-    GetThreadDescriptionFn getThreadDescription = nullptr;
-    if (kernel32) {
-        getThreadDescription =
-            (GetThreadDescriptionFn)GetProcAddress(kernel32, "GetThreadDescription");
-    }
-
-    if (!getThreadDescription) {
-        // not supported
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
+    GetThreadDescriptionFn getThreadDesc = nullptr;
+    getThreadDesc = (GetThreadDescriptionFn)GetProcAddress(kernel32, "GetThreadDescription");
 
     wchar_t* buffer = nullptr;
-    HRESULT hr = getThreadDescription((HANDLE)thread, &buffer);
-    if (!SUCCEEDED(hr)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            hr);
-    }
-
+    getThreadDesc((HANDLE)thread, &buffer);
     int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
     if (outSize) {
         *outSize = len - 1;
@@ -239,8 +220,6 @@ PalResult PAL_CALL palGetThreadName(
         outBuffer[write < len - 1 ? write : len - 1] = '\0';
         LocalFree(buffer);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL palSetThreadPriority(
