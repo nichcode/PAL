@@ -135,8 +135,8 @@ typedef uint16_t PalResultSource;
  * @brief Function pointer type used for memory allocations.
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
- * @param[in] size Number of bytes to allocate. Must not be 0.
- * @param[in] alignment Must be power of two. Set to 0 to use default.
+ * @param[in] size Number of bytes to allocate.
+ * @param[in] alignment Must be power of two. Set to 0 to use implementation-defined default.
  *
  * @return Pointer to the allocated memory on success or `nullptr` on failure.
  *
@@ -153,8 +153,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @brief Function pointer type used for memory deallocations.
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
- * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must return safely if
- * pointer is `nullptr`.
+ * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must not be `nullptr`
  *
  * @since 1.0
  * @sa PalAllocateFn
@@ -267,7 +266,7 @@ PAL_API const char* PAL_CALL palGetVersionString();
  *
  * @param allocator The allocator to use. Set to `nullptr` to use default.
  * @param size Number of bytes to allocate.
- * @param alignment Alignment in bytes. Must be a power of two. Set to 0 to use default.
+ * @param alignment Must be power of two. Set to 0 to use implementation-defined default.
  *
  * @return Pointer to allocated memory on success, or `nullptr` on failure.
  *
@@ -287,8 +286,7 @@ PAL_API void* PAL_CALL palAllocate(
  *
  * @param allocator The allocator used to allocate the memory. Set to `nullptr` to
  * use default.
- * @param ptr Pointer to memory to free. If `nullptr`, the function returns
- * silently.
+ * @param ptr Pointer to memory to free. Must not be `nullptr`.
  *
  * Thread safety: Thread safe if the provided allocator is thread
  * safe. The default allocator is thread safe.

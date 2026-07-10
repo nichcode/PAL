@@ -312,7 +312,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * `PAL_TRUE`.
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
- * @param[out] event Pointer to the PalEvent to recieve the event.
+ * @param[out] outEvent Pointer to the PalEvent to recieve the event.
  *
  * @since 1.0
  * @sa PalPushFn
@@ -362,7 +362,7 @@ typedef struct {
  *
  * The allocator field in the provided PalEventDriverCreateInfo struct will not
  * be copied, therefore the pointer must remain valid until the event driver is
- * destroyed. Destroy the event driver with palDestroyEventDriver() when no
+ * destroyed. Destroy the event driver with `palDestroyEventDriver()` when no
  * longer needed.
  *
  * @param[in] info Pointer to a PalEventDriverCreateInfo struct that specifies
@@ -387,9 +387,6 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
 /**
  * @brief Destroy the provided event driver.
  *
- * If the provided event driver is invalid or `nullptr`, this function returns
- * silently.
- *
  * @param[in] eventDriver Pointer to the event driver to destroy.
  *
  * Thread safety: Thread safe if the allocator used to create
@@ -404,14 +401,10 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @brief Set the dispatch mode for an event type with the provided event
  * driver.
  *
- * If the provided event driver is invalid or `nullptr`, this function returns
- * silently.
- *
  * If the dispatch mode is `PAL_DISPATCH_MODE_POLL`, the event will be dispatched
  * into the event drivers event queue. If the dispatch mode is
- * `PAL_DISPATCH_MODE_CALLBACK` and the event driver has a valid callback function,
- * the event will be dispatched to the callback function of the event driver
- * otherwise the event will be discarded.
+ * `PAL_DISPATCH_MODE_CALLBACK`, the event driver must have a valid callback function otherwise
+ * undefined behavior.
  *
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] type Event type to set dispatch mode for.
@@ -451,15 +444,11 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * @brief Push an event into the queue or callback function of the provided
  * event driver.
  *
- * If the provided event driver is invalid or `nullptr`, this function returns
- * silently.
- *
  * If the dispatch mode for the event is `PAL_DISPATCH_MODE_POLL`, the event will be
  * pushed to the event queue.
  *
- * If dispatch mode is `PAL_DISPATCH_MODE_CALLBACK` and the event driver has a valid
- * event callback, the callback will be called otherwise the event will be
- * discarded.
+ * If dispatch mode is `PAL_DISPATCH_MODE_CALLBACK`, the event driver must have a valid callback
+ * function otherwise undefined behavior.
  *
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] event Pointer to the event to push.
@@ -478,9 +467,6 @@ PAL_API void PAL_CALL palPushEvent(
 /**
  * @brief Retrieve the next available event from the queue of the provided event
  * driver.
- *
- * If the provided event driver is invalid or `nullptr`, this function returns
- * silently.
  *
  * This function retrieves the next pending event from the queue of the
  * provided event driver without blocking. If no events are available, it

@@ -355,9 +355,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  * @brief Destroy the provided opengl context.
  *
  * The opengl system must be initialized before this call.
- *
- * If the provided context is invalid or `nullptr`, this function returns
- * silently. The context must not be current in any thread before this call.
+ * The context must not be current in any thread before this call.
  *
  * @param[in] context Pointer to the context to destroy.
  *

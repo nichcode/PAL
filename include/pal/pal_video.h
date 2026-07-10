@@ -669,7 +669,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  * if monitors are added or removed.
  *
  * @param[in, out] count Capacity of the PalMonitor array.
- * @param[out] monitors User allocated array of PalMonitor.
+ * @param[out] outMonitors User allocated array of PalMonitor.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -883,8 +883,7 @@ PAL_API PalResult PAL_CALL palCreateWindow(
  * @brief Destroy the provided window.
  *
  * The video system must be initialized before this call.
- * If the provided window is invalid or `nullptr`, this function returns
- * silently. This only destroys windows created by PAL.
+ * This only destroys windows created by PAL.
  *
  * @param[in] window Pointer to the window to destroy.
  *
@@ -1403,9 +1402,6 @@ PAL_API PalResult PAL_CALL palCreateIcon(
  *
  * The video system must be initialized before this call.
  *
- * If the provided icon is invalid or `nullptr`, this function returns
- * silently.
- *
  * @param[in] icon Pointer to the icon to destroy.
  *
  * Thread safety: Must be called from the main thread.
@@ -1479,9 +1475,6 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  * @brief Destroy the provided cursor.
  *
  * The video system must be initialized before this call.
- *
- * If the provided icon is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] cursor Pointer to the cursor to destroy.
  *

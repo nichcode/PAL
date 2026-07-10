@@ -4140,8 +4140,6 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  * @brief Destroy a device.
  *
  * The graphics system must be initialized before this call.
- * If the provided device is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] device Pointer to the device to destroy.
  *
@@ -4386,8 +4384,6 @@ PAL_API PalResult PAL_CALL palCreateQueue(
  * @brief Destroy a queue.
  *
  * The graphics system must be initialized before this call.
- * If the provided queue is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] queue Queue to destroy.
  *
@@ -4555,8 +4551,6 @@ PAL_API PalResult PAL_CALL palCreateImage(
  * @brief Destroy an image.
  *
  * The graphics system must be initialized before this call.
- * If the provided image is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] image Image to destroy.
  *
@@ -4663,8 +4657,6 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  * @brief Destroy an image view.
  *
  * The graphics system must be initialized before this call.
- * If the provided image view is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] imageView Image view to destroy.
  *
@@ -4705,8 +4697,6 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  * @brief Destroy a sampler.
  *
  * The graphics system must be initialized before this call.
- * If the provided sampler is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] sampler Sampler to destroy.
  *
@@ -4751,8 +4741,6 @@ PAL_API PalResult PAL_CALL palCreateSurface(
  * @brief Destroy a surface.
  *
  * The graphics system must be initialized before this call.
- * If the provided surface is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] surface Surface to destroy.
  *
@@ -4819,8 +4807,6 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
  * @brief Destroy a swapchain.
  *
  * The graphics system must be initialized before this call.
- * If the provided swapchain is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] swapchain Swapchain to destroy.
  *
@@ -4963,8 +4949,6 @@ PAL_API PalResult PAL_CALL palCreateShader(
  * @brief Destroy a shader.
  *
  * The graphics system must be initialized before this call.
- * If the provided shader is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] shader Shader to destroy.
  *
@@ -5003,8 +4987,6 @@ PAL_API PalResult PAL_CALL palCreateFence(
  * @brief Destroy a fence.
  *
  * The graphics system must be initialized before this call.
- * If the provided fence is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] fence Fence to destroy.
  *
@@ -5103,8 +5085,6 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  * @brief Destroy a semaphore.
  *
  * The graphics system must be initialized before this call.
- * If the provided semaphore is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] semaphore Semaphore to destroy.
  *
@@ -5212,9 +5192,6 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  * @brief Destroy a command pool.
  *
  * The graphics system must be initialized before this call.
- * If the provided command pool is invalid or `nullptr`, this function returns
- * silently.
- *
  * Destroying a command pool frees all command buffers automatically.
  *
  * @param[in] pool Command pool to destroy.
@@ -5271,8 +5248,6 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
  * @brief Free an allocated command buffer.
  *
  * The graphics system must be initialized before this call.
- * If the provided command buffer is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] cmdBuffer Command buffer to free.
  *
@@ -6319,8 +6294,6 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  * @brief Destroy an acceleration structure.
  *
  * The graphics system must be initialized before this call.
- * If the provided acceleration structure is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] as Acceleration structure to destroy.
  *
@@ -6391,8 +6364,6 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
  * @brief Destroy a buffer.
  *
  * The graphics system must be initialized before this call.
- * If the provided buffer is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] buffer buffer to destroy.
  *
@@ -6632,8 +6603,6 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
  * @brief Destroy a descriptor set layout.
  *
  * The graphics system must be initialized before this call.
- * If the provided descriptor set layout is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] layout Descriptor set layout to destroy.
  *
@@ -6672,8 +6641,6 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
  * @brief Destroy a descriptor pool.
  *
  * The graphics system must be initialized before this call.
- * If the provided descriptor pool is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] pool Descriptor pool to destroy.
  *
@@ -6781,8 +6748,6 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  * @brief Destroy a pipeline layout.
  *
  * The graphics system must be initialized before this call.
- * If the provided pipeline layout is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] layout Pipeline layout to destroy.
  *
@@ -6873,9 +6838,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  * @brief Destroy a pipeline.
  *
  * The graphics system must be initialized before this call.
- * If the provided pipeline is invalid or `nullptr`, this function returns
- * silently.
- *
+ * 
  * @param[in] pipeline Pipeline to destroy.
  *
  * Thread safety: Thread safe if the device used to create the pipeline is
@@ -6923,8 +6886,6 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  * @brief Destroy a shader binding table.
  *
  * The graphics system must be initialized before this call.
- * If the provided shader binding table is invalid or `nullptr`, this function returns
- * silently.
  *
  * @param[in] sbt Shader binding table to destroy.
  *
