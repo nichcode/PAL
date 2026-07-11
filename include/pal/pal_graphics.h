@@ -1735,7 +1735,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalImageView* imageView;           /**< Image view. Must not be `nullptr`.*/
+    PalImageView* imageView;           /**< Image view.*/
     PalImageView* resolveImageView;    /**< Resolve image view. Can be `nullptr`.*/
     PalLoadOp loadOp;                  /**< (eg. `PAL_LOAD_OP_CLEAR`).*/
     PalStoreOp storeOp;                /**< (eg. `PAL_STORE_OP_STORE`).*/
@@ -2409,7 +2409,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    const char* entryName;       /**< Must not be `nullptr`.*/
+    const char* entryName;       /**< Shader stage entry name.*/
     PalShaderStage stage;        /**< (eg. `PAL_SHADER_STAGE_VERTEX`).*/
     uint32_t patchControlPoints; /**< For tessellation shaders. Will be ignored by other stages.*/
 } PalShaderEntryInfo;
@@ -4121,7 +4121,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  *
  * @param[in] adapter Adapter that creates the device.
  * @param[in] features Adapter features to enable. Must be supported.
- * @param[out] outDevice Pointer to a PalDevice to recieve the created device. Must not be `nullptr`.
+ * @param[out] outDevice Pointer to a PalDevice to recieve the created device.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -4531,7 +4531,6 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  *
  * @param[in] device Device that creates the image.
  * @param[in] info Pointer to a PalImageCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outImage Pointer to a PalImage to recieve the created image.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4604,7 +4603,7 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
  * Get the requirements with palGetImageMemoryRequirements().
  *
  * @param[in] image Image to bind memory to.
- * @param[in] memory Memory to bind. Must not be `nullptr`.
+ * @param[in] memory Memory to bind.
  * @param[in] offset Starting point within the memory.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4636,7 +4635,6 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  * @param[in] device Device that creates the image view.
  * @param[in] image Image to create the image view with.
  * @param[in] info Pointer to a PalImageViewCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outImageView Pointer to a PalImageView to recieve the created image view.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4677,7 +4675,6 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  *
  * @param[in] device Device that creates the sampler.
  * @param[in] info Pointer to a PalSamplerCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outSampler Pointer to a PalSampler to recieve the created sampler.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4785,7 +4782,6 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
  * @param[in] queue Queue to create swapchain with. This must be a graphics queue.
  * @param[in] surface Surface to create swapchain with.
  * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outSwapchain Pointer to a PalSwapchain to recieve the created swapchain.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4844,7 +4840,6 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  *
  * @param[in] swapchain Swapchain to get image index from.
  * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outIndex Pointer to a uint32_t to recieve the next image index.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -4927,7 +4922,6 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  *
  * @param[in] device Device that creates the shader.
  * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outShader Pointer to a PalShader to recieve the created shader.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -5283,7 +5277,6 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  *
  * @param[in] queue Queue to execute the command buffer.
  * @param[in] info Pointer to a PalCommandBufferSubmitInfo struct that specifies parameters.
- * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -5473,7 +5466,6 @@ PAL_API void PAL_CALL palCmdBuildAccelerationStructure(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalRenderingInfo struct that specifies parameters.
- * Must not be `nullptr`.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5505,10 +5497,6 @@ PAL_API void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  * @param[in] dst Destination buffer.
  * @param[in] src Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferCopyInfo struct that specifies parameters.
- * Must not be `nullptr`.
- *
- * Pointer to a PalImageCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5529,7 +5517,6 @@ PAL_API void PAL_CALL palCmdCopyBuffer(
  * @param[in] dstImage Destination image.
  * @param[in] srcBuffer Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * Must not be `nullptr`.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5550,7 +5537,6 @@ PAL_API void PAL_CALL palCmdCopyBufferToImage(
  * @param[in] dst Destination image.
  * @param[in] src Source image.
  * @param[in] copyInfo Pointer to a PalImageCopyInfo struct that specifies parameters.
- * Must not be `nullptr`.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5571,7 +5557,6 @@ PAL_API void PAL_CALL palCmdCopyImage(
  * @param[in] dstBuffer Destination buffer.
  * @param[in] srcImage Source image.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * Must not be `nullptr`.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -6029,7 +6014,7 @@ PAL_API void PAL_CALL palCmdDispatchBase(
  * Otherwise behavior is undefined.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
- * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be `nullptr`.
+ * @param[in] buffer Buffer containing the PalDispatchIndirectData struct.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -6083,7 +6068,7 @@ PAL_API void PAL_CALL palCmdTraceRays(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] raygenIndex Index of the raygen shader to execute.
  * @param[in] sbt The shader binding table to use.
- * @param[in] buffer Buffer containing the PalDispatchIndirectData struct. Must not be `nullptr`.
+ * @param[in] buffer Buffer containing the PalDispatchIndirectData struct.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -6490,7 +6475,7 @@ PAL_API void PAL_CALL palWriteImageStaging(
  * Get the requirements with palGetBufferMemoryRequirements().
  *
  * @param[in] buffer Buffer to bind memory to.
- * @param[in] memory Memory to bind. Must not be `nullptr`.
+ * @param[in] memory Memory to bind.
  * @param[in] offset Starting point within the memory.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6582,9 +6567,7 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  *
  * @param[in] device Device that creates the descriptor set layout.
  * @param[in] info Pointer to a PalDescriptorSetLayoutCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
- * @param[out] outLayout Pointer to a PalDescriptorSetLayout to recieve the created descriptor
- * set layout.
+ * @param[out] outLayout Pointer to a PalDescriptorSetLayout to recieve the created layout.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -6621,7 +6604,6 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  *
  * @param[in] device Device that creates the descriptor pool.
  * @param[in] info Pointer to a PalDescriptorPoolCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outPool Pointer to a PalDescriptorPool to recieve the created descriptor pool.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6728,7 +6710,6 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  *
  * @param[in] device Device that creates the pipeline layout.
  * @param[in] info Pointer to a PalPipelineLayoutCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outLayout Pointer to a PalPipelineLayout to recieve the created pipeline layout.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6766,7 +6747,6 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  *
  * @param[in] device Device that creates the graphics pipeline.
  * @param[in] info Pointer to a PalGraphicsPipelineCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outPipeline Pointer to a PalPipeline to recieve the created buffer.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
@@ -6789,7 +6769,6 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  *
  * @param[in] device Device that creates the compute pipeline.
  * @param[in] info Pointer to a PalComputePipelineCreateInfo struct that specifies parameters.
- * Must not be `nullptr`.
  * @param[out] outPipeline Pointer to a PalPipeline to recieve the created buffer.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on

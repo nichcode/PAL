@@ -130,10 +130,8 @@ typedef struct {
  * The created thread starts executing from the entry function. The thread runs
  * until the entry function has finished executing or its detached.
  *
- * @param[in] info Pointer to a PalThreadCreateInfo struct that specifies
- * parameters. Must not be `nullptr`.
- * @param[out] outThread Pointer to a PalThread to recieve the created
- * thread.  Must not be `nullptr`.
+ * @param[in] info Pointer to a PalThreadCreateInfo struct that specifies parameters.
+ * @param[out] outThread Pointer to a PalThread to recieve the created thread.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -430,10 +428,8 @@ PAL_API void PAL_CALL palSetTLS(
 /**
  * @brief Create a mutex.
  *
- * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use
- * default.
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use default.
  * @param[out] outMutex Pointer to a PalMutex to recieve the created mutex.
- * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.

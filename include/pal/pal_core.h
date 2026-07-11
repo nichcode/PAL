@@ -153,7 +153,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @brief Function pointer type used for memory deallocations.
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
- * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn. Must not be `nullptr`
+ * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn.
  *
  * @since 1.0
  * @sa PalAllocateFn
@@ -199,8 +199,8 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalAllocateFn allocate; /**< Allocate function pointer. Must not be `nullptr`.*/
-    PalFreeFn free;         /**< Free function pointer. Must not be `nullptr`.*/
+    PalAllocateFn allocate; /**< Allocate function pointer.*/
+    PalFreeFn free;         /**< Free function pointer.*/
     void* userData;         /**< Optional user-provided data. Can be `nullptr`.*/
 } PalAllocator;
 
@@ -215,7 +215,7 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    PalLogCallback callback; /**< Callback function pointer. Must not be `nullptr`.*/
+    PalLogCallback callback; /**< Callback function pointer.*/
     void* userData;          /** Optional user-provided data. Can be `nullptr`.*/
 } PalLogger;
 
@@ -284,9 +284,8 @@ PAL_API void* PAL_CALL palAllocate(
 /**
  * Free memory allocated by palAllocate.
  *
- * @param allocator The allocator used to allocate the memory. Set to `nullptr` to
- * use default.
- * @param ptr Pointer to memory to free. Must not be `nullptr`.
+ * @param allocator The allocator used to allocate the memory. Set to `nullptr` to use default.
+ * @param ptr Pointer to memory to free.
  *
  * Thread safety: Thread safe if the provided allocator is thread
  * safe. The default allocator is thread safe.

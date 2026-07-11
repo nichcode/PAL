@@ -41,13 +41,31 @@
 
 ### Changes
 
+- `palGetVersion()` now returns `void` and takes a pointer to the struct.
+- `palFormatResult()` now takes two additional parameters
 - Converted all enum types to fixed-width integer types and their values to standalone constants (eg. `PalResult` to `uint64_t`).
 - Removed all previous `PalResult` values except: `PAL_RESULT_SUCCESS`
+- Removed `palGLSetInstance()` function.
+- Removed `palGLGetBackend()` function.
+- Removed `palGetVideoFeaturesEx()` function and `PalVideoFeatures64` enum.
+- Removed `palGetWindowHandleInfoEx()` function and `PalWindowHandleInfoEX` struct.
+- Removed `palGetRawMouseWheelDelta()` function.
+- Removed `palSetPreferredInstance()` function.
+- Removed `palSetFBConfig()` function.
+- Removed `PAL_FBCONFIG_BACKEND_GLES`.
+- `palInitGL()` now takes two additional parameters.
+- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` and `count` now as `uint32_t`
+- `palInitVideo()` now takes an additional parameter.
+- `palGetWindowHandleInfo()` now returns `PalResult` and takes a pointer to the struct.
+- `PalGLInfo` now has `backend` and `api` fields.
+- Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`.
+- Renamed `display` to `instance` in `PalGLWindow`.
+- `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields.
+- `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
+- Removed `maximized` and `minimized` in `PalWindowCreateInfo`.
 - Removed `UintXX` and `IntXX` types in favor of standard `uintXX_t` and `intXX_t`.
 - Removed `_MAX` constants from all type groups (eg. `PAL_EVENT_MAX`).
 - Replaced standard `bool` type and `true`/`false` constants with `PalBool` type and `PAL_TRUE`/`PAL_FALSE`.
-- `palGetVersion()` now returns `void` and takes a pointer to the struct.
-- `palFormatResult()` now takes two additional parameters.
 - Renamed `PalGLRelease` to `PalGLReleaseBehavior`.
 - Renamed `palGLGetProcAddress()` to `palGetGLProcAddress()`.
 - Renamed event type constants from `PAL_EVENT_**` to `PAL_EVENT_TYPE_**`.
@@ -58,30 +76,12 @@
 - Renamed flash flag constants from `PAL_FLASH_**` to `PAL_FLASH_FLAG_**`.
 - Renamed fbConfig backend type constants from `PAL_FBCONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`.
 - Renamed `PalFlashFlag` to `PalFlashFlags`.
-- `palInitGL()` now takes two additional parameters.
-- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` and `count` now as `uint32_t`
-- `palInitVideo()` now takes an additional parameter.
 - `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`.
 - `palEnumerateMonitors()` now takes `count` paramter as `uint32_t`.
 - `palEnumerateMonitorModes()` now takes `count` paramter as `uint32_t`.
+- `palGetClosestGLFBConfig()` now takes `count` paramter as `uint32_t`.
 - `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`.
 - `palJoinThread()` now takes `retval` paramters as `void**`.
-- Removed `palGLSetInstance()` function.
-- Removed `palGLGetBackend()` function.
-- Removed `palGetVideoFeaturesEx()` function and `PalVideoFeatures64` enum.
-- Removed `palGetWindowHandleInfoEx()` function and `PalWindowHandleInfoEX` struct.
-- Removed `palGetRawMouseWheelDelta()` function.
-- Removed `palSetPreferredInstance()` function.
-- Removed `palSetFBConfig()` function.
-- Removed `PAL_FBCONFIG_BACKEND_GLES`.
-- `palGetWindowHandleInfo()` now returns `PalResult` and takes a pointer to the struct.
-- `PalGLInfo` now has `backend` and `api` fields.
-- Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`.
-- Renamed `display` to `instance` in `PalGLWindow`.
-- `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields.
-- `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
-- Removed `maximized` and `minimized` in `PalWindowCreateInfo`.
-
 - These function now returns `void` instead of `PalResult` and does not do runtime 
 validation anymore: invalid arguments, feature not supported results in undefined behavior:
   - `palGetPlatformInfo()`
@@ -115,6 +115,7 @@ validation anymore: invalid arguments, feature not supported results in undefine
   - `palSetWindowCursor()`
   - `palSetWindowOpacity()`
   - `palFlashWindow()`
+  - `palSetSwapInterval()`
 
 <!-- =========================================================== -->
 <!-- PAL V1.3.0 -->

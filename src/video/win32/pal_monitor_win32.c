@@ -10,7 +10,6 @@
 
 #define MONITOR_DPI 0
 #define MAX_MODE_COUNT 128
-#define NULL_ORIENTATION 5
 
 typedef struct {
     int32_t count;
@@ -68,7 +67,7 @@ static inline DWORD orientationToin32(PalOrientation orientation)
         case PAL_ORIENTATION_PORTRAIT_FLIPPED:
             return DMDO_270;
     }
-    return NULL_ORIENTATION;
+    return 0;
 }
 
 static inline PalResult setMonitorMode(
@@ -170,43 +169,19 @@ PalResult win32EnumerateMonitors(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetPrimaryMonitor(PalMonitor** outMonitor)
+void win32GetPrimaryMonitor(PalMonitor** outMonitor)
 {
-    HMONITOR monitor = nullptr;
-    monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
-    if (!monitor) {
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
+    HMONITOR monitor = MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
     *outMonitor = (PalMonitor*)monitor;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetMonitorInfo(
+void win32GetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-
+    GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi);
     info->x = mi.rcMonitor.left;
     info->y = mi.rcMonitor.top;
     info->width = mi.rcMonitor.right - mi.rcMonitor.left;
@@ -241,11 +216,9 @@ PalResult win32GetMonitorInfo(
     if (primary == (HMONITOR)monitor) {
         info->primary = PAL_TRUE;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32EnumerateMonitorModes(
+void win32EnumerateMonitorModes(
     PalMonitor* monitor,
     uint32_t* count,
     PalMonitorMode* modes)
@@ -256,28 +229,13 @@ PalResult win32EnumerateMonitorModes(
 
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-
+    GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi);
     if (!modes) {
         // allocate and store tmp monitor modesand check for the interested
         // fields.
         monitorModes = palAllocate(s_Win32.allocator, sizeof(PalMonitorMode) * MAX_MODE_COUNT, 0);
         if (!monitorModes) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+            return;
         }
 
         memset(monitorModes, 0, sizeof(PalMonitorMode) * MAX_MODE_COUNT);
@@ -308,31 +266,15 @@ PalResult win32EnumerateMonitorModes(
         *count = modeCount;
         palFree(s_Win32.allocator, monitorModes);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetCurrentMonitorMode(
+void win32GetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
+    GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi);
 
     DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
@@ -341,8 +283,6 @@ PalResult win32GetCurrentMonitorMode(
     mode->height = devMode.dmPelsHeight;
     mode->refreshRate = devMode.dmDisplayFrequency;
     mode->bpp = devMode.dmBitsPerPel;
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult win32SetMonitorMode(
@@ -364,27 +304,9 @@ PalResult win32SetMonitorOrientation(
     PalOrientation orientation)
 {
     DWORD win32Orientation = orientationToin32(orientation);
-    if (orientation == NULL_ORIENTATION) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
-    }
-
     MONITORINFOEXW mi = {0};
     mi.cbSize = sizeof(MONITORINFOEXW);
-    if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
+    GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi);
 
     DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
@@ -408,14 +330,13 @@ PalResult win32SetMonitorOrientation(
 
     devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYORIENTATION;
     devMode.dmDisplayOrientation = win32Orientation;
-
     ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, CDS_RESET, NULL);
     if (result == DISP_CHANGE_SUCCESSFUL) {
         return PAL_RESULT_SUCCESS;
 
     } else {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_OPERATION, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
             PAL_RESULT_SOURCE_WIN32, 
             GetLastError());
     }

@@ -181,8 +181,8 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    void* instance; /**< Must not be `nullptr`. (HINSTANCE on Win32 or wl_display on Wayland)*/
-    void* window;   /**< Must not be `nullptr`. (egl_wl_window on Wayland)*/
+    void* instance; /**< (HINSTANCE on Win32 or wl_display on Wayland)*/
+    void* window;   /**< (egl_wl_window on Wayland)*/
 } PalGLWindow;
 
 /**
@@ -194,8 +194,8 @@ typedef struct {
  * @since 1.0
  */
 typedef struct {
-    const PalGLWindow* window;     /**< Window to create context for. Must not be `nullptr`.*/
-    const PalGLFBConfig* fbConfig; /**< The framebuffer config to use. Must not be `nullptr`.*/
+    const PalGLWindow* window;     /**< Window to create context for.*/
+    const PalGLFBConfig* fbConfig; /**< The framebuffer config to use.*/
     PalGLContext* shareContext;    /**< Can be `nullptr`.*/
     PalGLProfile profile;          /**< (eg. `PAL_GL_PROFILE_CORE`).*/
     PalGLContextReset reset;       /**< (eg. `PAL_GL_CONTEXT_RESET_LOSE_CONTEXT`).*/
@@ -210,8 +210,8 @@ typedef struct {
 /**
  * @brief Initialize the opengl system.
  *
- * This must be called before any opengl function. The opengl system must be
- * shutdown with palShutdownGL() when no longer needed.
+ * This must be called before any opengl function. Call `palGetSupportedGLAPIs()` to check
+ * if `api` is supported on `instance`.
  *
  * The allocator will not not copied, therefore the pointer must remain valid
  * until the opengl system is shutdown.
@@ -221,12 +221,9 @@ typedef struct {
  * `Linux`: This is the Display associated with the connection.
  * `Windows`: This is the HINSTANCE of the process.
  *
- * @param[in] api The api to use. (eg. `PAL_GL_API_OPENGL`). Call `palGetSupportedGLAPIs()` to check
- * if an api is supported on `instance`.
+ * @param[in] api The api to use. (eg. `PAL_GL_API_OPENGL`).
  * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay).
- * Must not be `nullptr`.
- * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use
- * default.
+ * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use default.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -301,11 +298,6 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  * The opengl system must be initialized before this call.
  * This function uses missing and score system to get the closest PalGLFBConfig.
  *
- * The count must be the number of PalGLFBConfig in the
- * array of PalGLFBConfig. If the count is less than or equal to 0 or the
- * desired PalGLFBConfig or the PalGLFBConfig array is `nullptr`, this function
- * fails and returns `nullptr`.
- *
  * @param[in] configs Pointer to the array of PalGLFBConfig.
  * @param[in] count Capacity of the PalGLFBConfig array.
  * @param[in] desired The desired PalGLFBConfig.
@@ -318,7 +310,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  */
 PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
-    int32_t count,
+    uint32_t count,
     const PalGLFBConfig* desired);
 
 /**
@@ -334,10 +326,8 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * On Wayland: PalGLContextCreateInfo::PalGLWindow::window is the wl_egl_window
  * not the wl_surface.
  *
- * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies
- * parameters. Must not be `nullptr`.
- * @param[out] outContext Pointer to a PalGLContext to recieve the created
- * context. Must not be `nullptr`.
+ * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies parameters.
+ * @param[out] outContext Pointer to a PalGLContext to recieve the created context.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -438,16 +428,13 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  *
  * @param[in] interval The swap interval
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
  * Thread safety: Must only be called from a thread with a bound
  * context.
  *
  * @since 1.0
  * @sa palMakeContextCurrent
  */
-PAL_API PalResult PAL_CALL palSetSwapInterval(int32_t interval);
+PAL_API void PAL_CALL palSetSwapInterval(int32_t interval);
 
 /**
  * @brief Get supported opengl APIs

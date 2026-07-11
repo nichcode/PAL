@@ -98,17 +98,12 @@ void win32DestroyIcon(PalIcon* icon)
     DestroyIcon((HICON)icon);
 }
 
-PalResult win32SetWindowIcon(
+void win32SetWindowIcon(
     PalWindow* window,
     PalIcon* icon)
 {
-    if (!IsWindow((HWND)window)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     SendMessageW((HWND)window, WM_SETICON, ICON_BIG, (LPARAM)icon);
     SendMessageW((HWND)window, WM_SETICON, ICON_SMALL, (LPARAM)icon);
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // _WIN32

@@ -102,13 +102,8 @@ PalResult win32CreateWindow(
         }
     }
 
-    // get monitor info
-    PalResult result = palGetMonitorInfo(monitor, &monitorInfo);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-
     // compose position.
+    palGetMonitorInfo(monitor, &monitorInfo);
     int32_t x, y = 0;
     // the position and size must be scaled with the dpi before this call
     if (info->center) {
@@ -246,62 +241,32 @@ void win32DestroyWindow(PalWindow* window)
     data->used = PAL_FALSE;
 }
 
-PalResult win32MinimizeWindow(PalWindow* window)
+void win32MinimizeWindow(PalWindow* window)
 {
-    if (!ShowWindow((HWND)window, SW_MINIMIZE)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-    return PAL_RESULT_SUCCESS;
+    ShowWindow((HWND)window, SW_MINIMIZE);
 }
 
-PalResult win32MaximizeWindow(PalWindow* window)
+void win32MaximizeWindow(PalWindow* window)
 {
-    if (!ShowWindow((HWND)window, SW_MAXIMIZE)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-    return PAL_RESULT_SUCCESS;
+    ShowWindow((HWND)window, SW_MAXIMIZE);
 }
 
-PalResult win32RestoreWindow(PalWindow* window)
+void win32RestoreWindow(PalWindow* window)
 {
-    if (!ShowWindow((HWND)window, SW_RESTORE)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-    return PAL_RESULT_SUCCESS;
+    ShowWindow((HWND)window, SW_RESTORE);
 }
 
-PalResult win32ShowWindow(PalWindow* window)
+void win32ShowWindow(PalWindow* window)
 {
-    if (!ShowWindow((HWND)window, SW_SHOW)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-    return PAL_RESULT_SUCCESS;
+    ShowWindow((HWND)window, SW_SHOW);
 }
 
-PalResult win32HideWindow(PalWindow* window)
+void win32HideWindow(PalWindow* window)
 {
-    if (!ShowWindow((HWND)window, SW_HIDE)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-    return PAL_RESULT_SUCCESS;
+    ShowWindow((HWND)window, SW_HIDE);
 }
 
-PalResult win32FlashWindow(
+void win32FlashWindow(
     PalWindow* window,
     const PalFlashInfo* info)
 {
@@ -325,41 +290,16 @@ PalResult win32FlashWindow(
     flashInfo.dwTimeout = info->interval;
     flashInfo.hwnd = (HWND)window;
     flashInfo.uCount = info->count;
-
-    PalBool success = FlashWindowEx(&flashInfo);
-    if (!success) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-
-    return PAL_RESULT_SUCCESS;
+    FlashWindowEx(&flashInfo);
 }
 
-PalResult win32GetWindowStyle(
+void win32GetWindowStyle(
     PalWindow* window,
     PalWindowStyle* outStyle)
 {
     PalWindowStyle windowStyle = 0;
     DWORD style = (DWORD)GetWindowLongPtrW((HWND)window, GWL_STYLE);
     DWORD exStyle = (DWORD)GetWindowLongPtrW((HWND)window, GWL_EXSTYLE);
-
-    if (!style) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
 
     // check if we can resize
     if (style & WS_THICKFRAME) {
@@ -401,49 +341,24 @@ PalResult win32GetWindowStyle(
     }
 
     *outStyle = windowStyle;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetWindowMonitor(
+void win32GetWindowMonitor(
     PalWindow* window,
     PalMonitor** outMonitor)
 {
-    HMONITOR monitor = nullptr;
-    monitor = MonitorFromWindow((HWND)window, MONITOR_DEFAULTTONEAREST);
-    if (!monitor) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-
+    HMONITOR monitor = MonitorFromWindow((HWND)window, MONITOR_DEFAULTTONEAREST);
     *outMonitor = (PalMonitor*)monitor;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetWindowTitle(
+void win32GetWindowTitle(
     PalWindow* window,
     uint64_t bufferSize,
     uint64_t* outSize,
     char* outBuffer)
 {
     wchar_t buffer[WINDOW_NAME_SIZE];
-    if (GetWindowTextW((HWND)window, buffer, WINDOW_NAME_SIZE) == 0) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
+    GetWindowTextW((HWND)window, buffer, WINDOW_NAME_SIZE);
     int len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, nullptr, 0, 0, 0);
     if (outSize) {
         *outSize = len - 1;
@@ -455,23 +370,15 @@ PalResult win32GetWindowTitle(
         WideCharToMultiByte(CP_UTF8, 0, buffer, -1, outBuffer, write + 1, 0, 0);
         outBuffer[write < len - 1 ? write : len - 1] = '\0';
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetWindowPos(
+void win32GetWindowPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
 {
     RECT rect;
-    if (!GetWindowRect((HWND)window, &rect)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
+    GetWindowRect((HWND)window, &rect);
     if (x) {
         *x = rect.left;
     }
@@ -479,22 +386,15 @@ PalResult win32GetWindowPos(
     if (y) {
         *y = rect.top;
     }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetWindowSize(
+void win32GetWindowSize(
     PalWindow* window,
     uint32_t* width,
     uint32_t* height)
 {
     RECT rect;
-    if (!GetWindowRect((HWND)window, &rect)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
+    GetWindowRect((HWND)window, &rect);
     if (width) {
         *width = rect.right - rect.left;
     }
@@ -502,21 +402,14 @@ PalResult win32GetWindowSize(
     if (height) {
         *height = rect.bottom - rect.top;
     }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetWindowState(
+void win32GetWindowState(
     PalWindow* window,
     PalWindowState* outState)
 {
     WINDOWPLACEMENT wp = {0};
-    if (!GetWindowPlacement((HWND)window, &wp)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
+    GetWindowPlacement((HWND)window, &wp);
     if (wp.showCmd == SW_MINIMIZE) {
         *outState = PAL_WINDOW_STATE_MINIMIZED;
 
@@ -526,8 +419,6 @@ PalResult win32GetWindowState(
     } else if (wp.showCmd == SW_RESTORE || wp.showCmd == SW_NORMAL) {
         *outState = PAL_WINDOW_STATE_RESTORED;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalBool win32IsWindowVisible(PalWindow* window)
@@ -540,7 +431,7 @@ PalWindow* win32GetFocusWindow()
     return (PalWindow*)GetFocus();
 }
 
-PalResult win32GetWindowHandleInfo(
+void win32GetWindowHandleInfo(
     PalWindow* window, 
     PalWindowHandleInfo* info)
 {
@@ -549,54 +440,20 @@ PalResult win32GetWindowHandleInfo(
     info->nativeHandle1 = nullptr;
     info->nativeHandle2 = nullptr;
     info->nativeHandle3 = nullptr;
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32SetWindowOpacity(
+void win32SetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
-    if (opacity < 0.0f) {
-        opacity = 0.0f;
-    }
-
-    if (opacity > 1.0f) {
-        opacity = 1.0f;
-    }
-
-    PalBool ret = SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);
-    if (!ret) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else if (error == ERROR_INVALID_PARAMETER) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-
-    return PAL_RESULT_SUCCESS;
+    SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);   
 }
 
-PalResult win32SetWindowStyle(
+void win32SetWindowStyle(
     PalWindow* window,
     PalWindowStyle style)
 {
-    // convert our style to win32 styles and exStyles
-    // all windows have this styles
+    // convert our style to win32 styles and exStyles all windows have this styles
     DWORD win32Style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
     DWORD exStyle = 0;
 
@@ -642,7 +499,7 @@ PalResult win32SetWindowStyle(
     SetWindowLongPtrW(hwnd, GWL_EXSTYLE, exStyle);
 
     // force a frame update
-    PalBool success = SetWindowPos(
+    SetWindowPos(
         hwnd,
         nullptr,
         0,
@@ -650,50 +507,23 @@ PalResult win32SetWindowStyle(
         0,
         0,
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-
-    if (success) {
-        return PAL_RESULT_SUCCESS;
-
-    } else {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
 }
 
-PalResult win32SetWindowTitle(
+void win32SetWindowTitle(
     PalWindow* window,
     const char* title)
 {
     wchar_t buffer[WINDOW_NAME_SIZE];
     MultiByteToWideChar(CP_UTF8, 0, title, -1, buffer, 256);
-
-    if (!SetWindowTextW((HWND)window, buffer)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
-    return PAL_RESULT_SUCCESS;
+    SetWindowTextW((HWND)window, buffer);
 }
 
-PalResult win32SetWindowPos(
+void win32SetWindowPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
 {
-    PalBool success = SetWindowPos(
+    SetWindowPos(
         (HWND)window, 
         nullptr, 
         x, 
@@ -701,87 +531,26 @@ PalResult win32SetWindowPos(
         0, 
         0, 
         SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
-
-    if (!success) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32SetWindowSize(
+void win32SetWindowSize(
     PalWindow* window,
     uint32_t width,
     uint32_t height)
 {
-    PalBool success = SetWindowPos(
+    SetWindowPos(
         (HWND)window,
         HWND_TOP,
         0,
         0,
         width,
         height,
-        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER);
-
-    if (!success) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else if (error == ERROR_INVALID_PARAMETER) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-    return PAL_RESULT_SUCCESS;
+        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER);   
 }
 
-PalResult win32SetFocusWindow(PalWindow* window)
+void win32SetFocusWindow(PalWindow* window)
 {
-    if (!SetActiveWindow((HWND)window)) {
-        DWORD error = GetLastError();
-        if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else if (error == ERROR_ACCESS_DENIED) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-    }
-    return PAL_RESULT_SUCCESS;
+    SetActiveWindow((HWND)window);
 }
 
 PalResult win32AttachWindow(

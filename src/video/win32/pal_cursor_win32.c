@@ -148,19 +148,13 @@ void win32ShowCursor(PalBool show)
     ShowCursor(show);
 }
 
-PalResult win32ClipCursor(
+void win32ClipCursor(
     PalWindow* window,
     PalBool clip)
 {
     if (clip) {
         RECT rect;
-        if (!GetClientRect((HWND)window, &rect)) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                GetLastError());
-        }
-
+        GetClientRect((HWND)window, &rect);
         POINT tmp = {rect.left, rect.top};
         POINT tmp2 = {rect.right, rect.bottom};
 
@@ -173,91 +167,41 @@ PalResult win32ClipCursor(
     } else {
         ClipCursor(nullptr);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32GetCursorPos(
+void win32GetCursorPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
 {
     POINT pos;
     GetCursorPos(&pos);
-    if (ScreenToClient((HWND)window, &pos)) {
-        if (x) {
-            *x = pos.x;
-        }
+    ScreenToClient((HWND)window, &pos);
+    if (x) {
+        *x = pos.x;
+    }
 
-        if (y) {
-            *y = pos.y;
-        }
-
-        return PAL_RESULT_SUCCESS;
-
-    } else {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
+    if (y) {
+        *y = pos.y;
     }
 }
 
-PalResult win32SetCursorPos(
+void win32SetCursorPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
 {
     POINT pos = {x, y};
-    if (!ClientToScreen((HWND)window, &pos)) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
-
+    ClientToScreen((HWND)window, &pos);
     SetCursorPos(pos.x, pos.y);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult win32SetWindowCursor(
+void win32SetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
-    if (window) {
-        SetLastError(0);
-        WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
-        if (!data) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                GetLastError());
-        }
-
-        data->cursor = (HCURSOR)cursor;
-        DWORD error = GetLastError();
-        if (error == 0) {
-            return PAL_RESULT_SUCCESS;
-
-        } else if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-        }
-
-    } else {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
-    }
+    WindowData* data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
+    data->cursor = (HCURSOR)cursor;
 }
 
 #endif // _WIN32

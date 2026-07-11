@@ -32,20 +32,11 @@ static const char* resultCodeToString(PalResult result)
         case PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED:
             return "PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED";
 
-        case PAL_RESULT_CODE_NOT_INITIALIZED:
-            return "PAL_RESULT_CODE_NOT_INITIALIZED";
-
         case PAL_RESULT_CODE_INVALID_OPERATION:
             return "PAL_RESULT_CODE_INVALID_OPERATION";
 
         case PAL_RESULT_CODE_DEVICE_LOST:
             return "PAL_RESULT_CODE_DEVICE_LOST";
-
-        case PAL_RESULT_CODE_OUT_OF_DATE:
-            return "PAL_RESULT_CODE_OUT_OF_DATE";
-
-        case PAL_RESULT_CODE_INVALID_DRIVER:
-            return "PAL_RESULT_CODE_INVALID_DRIVER";
     }
 
     return "";
@@ -73,20 +64,11 @@ static const char* resultCodeToDescription(PalResult result)
         case PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED:
             return "Feature not supported";
 
-        case PAL_RESULT_CODE_NOT_INITIALIZED:
-            return "Not initialized";
-
         case PAL_RESULT_CODE_INVALID_OPERATION:
             return "Invalid operation";
 
         case PAL_RESULT_CODE_DEVICE_LOST:
             return "Device lost";
-
-        case PAL_RESULT_CODE_OUT_OF_DATE:
-            return "Out of date";
-
-        case PAL_RESULT_CODE_INVALID_DRIVER:
-            return "Invalid driver";
     }
 
     return nullptr;

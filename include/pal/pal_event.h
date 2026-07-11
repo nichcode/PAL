@@ -337,8 +337,8 @@ struct PalEvent {
  * @since 1.0
  */
 typedef struct {
-    PalPushFn push; /**< Push function pointer. Must not be `nullptr`.*/
-    PalPollFn poll; /**< Poll function pointer. Must not be `nullptr`.*/
+    PalPushFn push; /**< Push function pointer.*/
+    PalPollFn poll; /**< Poll function pointer.*/
     void* userData; /**< Optional user-provided data. Can be `nullptr`.*/
 } PalEventQueue;
 

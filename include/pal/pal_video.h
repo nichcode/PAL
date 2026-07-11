@@ -854,10 +854,8 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * the video system might still get a FBConfig but it will not be the
  * one requested.
  *
- * @param[in] info Pointer to a PalWindowCreateInfo struct that specifies
- * parameters. Must not be `nullptr`.
- * @param[out] outWindow Pointer to a PalWindow to recieve the created
- * window. Must not be `nullptr`.
+ * @param[in] info Pointer to a PalWindowCreateInfo struct that specifies parameters.
+ * @param[out] outWindow Pointer to a PalWindow to recieve the created window.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1380,10 +1378,8 @@ PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
  * The video system must be initialized before this call.
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported otherwise undefined behavior.
  *
- * @param[in] info Pointer to a PalIconCreateInfo struct that specifies
- * parameters. Must not be `nullptr`.
- * @param[out] outIcon Pointer to a PalIcon to recieve the created
- * icon. Must not be `nullptr`.
+ * @param[in] info Pointer to a PalIconCreateInfo struct that specifies parameters.
+ * @param[out] outIcon Pointer to a PalIcon to recieve the created icon.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1433,10 +1429,8 @@ PAL_API void PAL_CALL palSetWindowIcon(
  *
  * The video system must be initialized before this call.
  *
- * @param[in] info Pointer to a PalCursorCreateInfo struct that specifies
- * parameters. Must not be `nullptr`.
- * @param[out] outCursor Pointer to a PalCursor to recieve the created
- * cursor. Must not be `nullptr`.
+ * @param[in] info Pointer to a PalCursorCreateInfo struct that specifies parameters.
+ * @param[out] outCursor Pointer to a PalCursor to recieve the created cursor.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1455,9 +1449,8 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  *
  * The video system must be initialized before this call.
  *
- * @param[in] type The system cursor type to create. Must not be `nullptr`.
- * @param[out] outCursor Pointer to a PalCursor to recieve the created
- * cursor. Must not be `nullptr`.
+ * @param[in] type The system cursor type to create.
+ * @param[out] outCursor Pointer to a PalCursor to recieve the created cursor.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1627,7 +1620,6 @@ PAL_API void* PAL_CALL palGetInstance();
  *
  * @param[in] windowHandle Pointer to the foreign or native window.
  * @param[out] outWindow Pointer to a PalWindow to recieve the attached window.
- * Must not be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
@@ -1661,9 +1653,8 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * Give back the PalWindow returned at palAttachWindow()
  * and get back your native window.
  *
- * @param[in] window Pointer to the PalWindow to detach. Must not be `nullptr`.
- * @param[out] outWindowHandle Pointer to recieve the native window. Can be
- * `nullptr`.
+ * @param[in] window Pointer to the PalWindow to detach.
+ * @param[out] outWindowHandle Pointer to recieve the native window. Can be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
