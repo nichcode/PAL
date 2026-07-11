@@ -75,7 +75,6 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     ID3D12StateObjectProperties* props = NULL;
     result = handle->lpVtbl->QueryInterface(handle, &IID_StateObjectProps, (void**)&props);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 

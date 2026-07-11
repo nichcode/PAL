@@ -169,7 +169,6 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->allocator);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -185,7 +184,6 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdList);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -282,7 +280,6 @@ PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     result = d3d12CmdBuffer->allocator->lpVtbl->Reset(d3d12CmdBuffer->allocator);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
@@ -292,13 +289,11 @@ PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
         nullptr);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
     result = d3d12CmdBuffer->handle->lpVtbl->Close(d3d12CmdBuffer->handle);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
@@ -321,20 +316,17 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         if (semaphore->isTimeline) {
             ret = queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, info->waitValue);
             if (FAILED(ret)) {
-                pollMessagesD3D12(d3d12CmdBuffer->device);
                 return makeResultD3D12(ret);
             }
 
         } else {
             queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, semaphore->value);
             if (FAILED(ret)) {
-                pollMessagesD3D12(d3d12CmdBuffer->device);
                 return makeResultD3D12(ret);
             }
 
             semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
             if (FAILED(ret)) {
-                pollMessagesD3D12(d3d12CmdBuffer->device);
                 return makeResultD3D12(ret);
             }
 
@@ -342,14 +334,11 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         }
     }
 
-    // pollMessagesD3D12(d3d12CmdBuffer->device);
     ID3D12CommandList* cmdLists[1] = { (ID3D12CommandList*)d3d12CmdBuffer->handle };
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
-    
     d3d12Queue->fenceValue++;
     ret = queueHandle->lpVtbl->Signal(queueHandle, d3d12Queue->fence, d3d12Queue->fenceValue);
     if (FAILED(ret)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(ret);
     }
 
@@ -358,7 +347,6 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         fence->value++;
         ret = queueHandle->lpVtbl->Signal(queueHandle, fence->handle, fence->value);
         if (FAILED(ret)) {
-            pollMessagesD3D12(d3d12CmdBuffer->device);
             return makeResultD3D12(ret);
         }
     }
@@ -368,14 +356,12 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         if (semaphore->isTimeline) {
             ret = queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, info->signalValue);
             if (FAILED(ret)) {
-                pollMessagesD3D12(d3d12CmdBuffer->device);
                 return makeResultD3D12(ret);
             }
         } else {
             semaphore->value = 1;
             ret = queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, semaphore->value);
             if (FAILED(ret)) {
-                pollMessagesD3D12(d3d12CmdBuffer->device);
                 return makeResultD3D12(ret);
             }
         }

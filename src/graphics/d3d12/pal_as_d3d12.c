@@ -17,7 +17,6 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
     AccelerationStructureD3D12* as = nullptr;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     BufferD3D12* d3d12Buffer = (BufferD3D12*)info->buffer;
-
     if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
@@ -31,8 +30,6 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
     as->handle = d3d12Buffer->handle;
     as->address = as->handle->lpVtbl->GetGPUVirtualAddress(as->handle);
     as->address += info->offset;
-
-    as->reserved = PAL_BACKEND_KEY;
     *outAs = (PalAccelerationStructure*)as;
     return PAL_RESULT_SUCCESS;
 }

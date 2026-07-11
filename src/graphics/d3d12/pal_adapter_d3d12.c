@@ -26,7 +26,7 @@
 #define D3D_SHADER_MODEL_6_10 0x6a
 #endif // D3D_SHADER_MODEL_6_10
 
-static PalImageUsages ImageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
+static PalImageUsages imageUsageFromD3D12(D3D12_FORMAT_SUPPORT1 flags)
 {
     PalImageUsages usages = 0;
     if (flags & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) {
@@ -110,7 +110,6 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
             tmp->handle = dxAdapters[i];
             tmp->tmpDevice = devices[i];
             tmp->level = deviceLevels[i];
-            tmp->reserved = PAL_BACKEND_KEY;
             outAdapters[i] = (PalAdapter*)tmp;
         }
         s_D3D12.adapterCount = *count;
@@ -497,7 +496,7 @@ void PAL_CALL enumerateFormatsD3D12(
             if (fmtCount < *count) {
                 PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
                 fmtInfo->format = (PalFormat)i;
-                fmtInfo->usages = ImageUsageFromD3D12(support.Support1);
+                fmtInfo->usages = imageUsageFromD3D12(support.Support1);
             }
 
         } else {
@@ -566,7 +565,7 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
         return 0;
     }
 
-    PalImageUsages usages = ImageUsageFromD3D12(support.Support1);
+    PalImageUsages usages = imageUsageFromD3D12(support.Support1);
     if (support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE ||
         support.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) {
         usages |= PAL_IMAGE_USAGE_STORAGE;

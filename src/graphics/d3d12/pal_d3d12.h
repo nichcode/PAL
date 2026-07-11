@@ -23,6 +23,11 @@
 #define COMPUTE_PIPELINE 1221
 #define RAY_TRACING_PIPELINE 1222
 
+#define DESC_TYPE_RTV 0
+#define DESC_TYPE_DSV 1
+#define DESC_TYPE_SRV 2
+#define DESC_TYPE_UAV 3
+
 typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
     REFIID,
@@ -147,14 +152,14 @@ typedef struct {
 typedef struct {
     void* reserved;
     uint32_t shaderModel;
-    PalAdapterFeatures features;
+    DWORD debugCookie;
     IDXGIAdapter4* adapter;
     ID3D12CommandSignature* meshSignature;
     ID3D12CommandSignature* drawIndexedSignature;
     ID3D12CommandSignature* drawSignature;
     ID3D12CommandSignature* dispatchSignature;
     ID3D12CommandSignature* raySignature;
-    ID3D12InfoQueue* infoQueue;
+    ID3D12InfoQueue1* infoQueue;
     ID3D12CommandQueue* queue;
     ID3D12Device5* handle;
     RTVHeapAllocator rtvAllocator;
@@ -185,7 +190,6 @@ typedef struct {
 typedef struct {
     void* reserved;
     PalBool isMemoryManaged;
-    DeviceD3D12* device;
     ID3D12Resource* handle;
     PalImageInfo info;
     D3D12_RESOURCE_DESC desc;
@@ -197,7 +201,6 @@ typedef struct {
     PalImageViewType type;
     DXGI_FORMAT format;
     ImageD3D12* image;
-    DeviceD3D12* device;
     PalImageSubresourceRange range;
 } ImageViewD3D12;
 
@@ -217,7 +220,6 @@ typedef struct {
     DXGI_FEATURE presentFlags;
     SurfaceD3D12* surface;
     ImageD3D12* images;
-    DeviceD3D12* device;
     ID3D12CommandQueue* queue;
     IDXGISwapChain3* handle;
 } SwapchainD3D12;
@@ -242,7 +244,6 @@ typedef struct {
     void* reserved;
     PalBool primary;
     void* pool; // CommandPool
-    DeviceD3D12* device;
     ID3D12Resource* stagingBuffer;
     ID3D12Resource* buffer;
     ID3D12CommandAllocator* allocator;
@@ -269,7 +270,6 @@ typedef struct {
     PalBufferUsages usages;
     uint64_t size;
     ID3D12Resource* handle;
-    DeviceD3D12* device;
     D3D12_RESOURCE_DESC desc;
 } BufferD3D12;
 
@@ -370,7 +370,6 @@ typedef struct {
 } D3D12;
 
 PalResult makeResultD3D12(HRESULT result);
-void pollMessagesD3D12(DeviceD3D12* device);
 DXGI_FORMAT formatToD3D12(PalFormat format);
 D3D12_COMPARISON_FUNC compareOpToD3D12(PalCompareOp op);
 
@@ -394,12 +393,10 @@ void getDescriptorTierLimitsD3D12(
     PalDescriptorIndexingCapabilities* descCaps);
 
 void fillSubresourceD3D12(
+    uint32_t descType,
     PalImageViewType type,
     const PalImageSubresourceRange* range,
-    D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc,
-    D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc,
-    D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc,
-    D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc);
+    void* desc);
 
 uint64_t getDescriptorHandleD3D12(
     uint32_t index,
@@ -412,7 +409,7 @@ extern IID IID_Adapter;
 extern IID IID_Factory;
 extern IID IID_DebugController;
 extern IID IID_DebugController1;
-extern IID IID_InfoQueue;
+extern IID IID_InfoQueue1;
 extern IID IID_Heap;
 extern IID IID_Queue;
 extern IID IID_Swapchain;

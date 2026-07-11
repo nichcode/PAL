@@ -260,7 +260,6 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             (void**)&heap->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(d3d12Device);
             return makeResultD3D12(result);
         }
 

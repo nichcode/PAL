@@ -14,7 +14,7 @@ IID IID_Adapter = {0x3c8d99d1, 0x4fbf, 0x4181, 0xa8,0x2c, 0xaf,0x66,0xbf,0x7b,0x
 IID IID_Factory = {0xc1b6694f, 0xff09, 0x44a9, 0xb0,0x3c, 0x77,0x90,0x0a,0x0a,0x1d,0x17};
 IID IID_DebugController = {0x344488b7, 0x6846, 0x474b, 0xb9,0x89, 0xf0,0x27,0x44,0x82,0x45,0xe0};
 IID IID_DebugController1 = {0xaffaa4ca, 0x63fe, 0x4d8e, 0xb8,0xad, 0x15,0x90,0x00,0xaf,0x43,0x04};
-IID IID_InfoQueue = {0x0742a90b, 0xc387, 0x483f, 0xb9,0x46, 0x30,0xa7,0xe4,0xe6,0x14,0x58};
+IID IID_InfoQueue1 = {0x2852dd88, 0xb484, 0x4c0c, 0xb6,0xb1, 0x67,0x16,0x85,0x00,0xe6,0x00};
 IID IID_Heap = {0x6b3b2502, 0x6e51, 0x45b3, 0x90,0xee, 0x98,0x84,0x26,0x5e,0x8d,0xf3};
 IID IID_Queue = {0x0ec870a6, 0x5d7e, 0x4c22, 0x8c,0xfc, 0x5b,0xaa,0xe0,0x76,0x16,0xed};
 IID IID_Swapchain = {0x94d99bdb, 0xf1f8, 0x4ab0, 0xb2,0x36, 0x7d,0xa0,0x17,0x0e,0xda,0xb1};
@@ -767,12 +767,10 @@ void fillBuildInfoD3D12(
 }
 
 void fillSubresourceD3D12(
+    uint32_t descType,
     PalImageViewType type,
     const PalImageSubresourceRange* range,
-    D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc,
-    D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc,
-    D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc,
-    D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc)
+    void* desc)
 {
     if (rtvDesc) {
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
@@ -915,77 +913,6 @@ uint64_t getDescriptorHandleD3D12(
     return baseOffset + index * size;
 }
 
-void pollMessagesD3D12(DeviceD3D12* device)
-{
-    ID3D12InfoQueue* queue = device->infoQueue;
-    if (!queue) {
-        return;
-    }
-
-    UINT64 messageCount = queue->lpVtbl->GetNumStoredMessages(queue);
-    for (int i = 0; i < messageCount; i++) {
-        SIZE_T size = 0;
-        queue->lpVtbl->GetMessage(queue, i, nullptr, &size);
-
-        uint8_t* buffer = palAllocate(s_D3D12.allocator, size, 0);
-        if (!buffer) {
-            return;
-        }
-
-        queue->lpVtbl->GetMessage(queue, i, (D3D12_MESSAGE*)buffer, &size);
-        const char* message = ((D3D12_MESSAGE*)buffer)->pDescription;
-        D3D12_MESSAGE_CATEGORY category = ((D3D12_MESSAGE*)buffer)->Category;
-        D3D12_MESSAGE_SEVERITY severity = ((D3D12_MESSAGE*)buffer)->Severity;
-
-        PalDebugMessageSeverity msgSeverity = 0;
-        PalDebugMessageType msgType = 0;
-        switch (category) {
-            case D3D12_MESSAGE_CATEGORY_INITIALIZATION:
-            case D3D12_MESSAGE_CATEGORY_CLEANUP:
-            case D3D12_MESSAGE_CATEGORY_COMPILATION: {
-                msgType = PAL_DEBUG_MESSAGE_TYPE_GENERAL;
-                break;
-            }
-
-            case D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION:
-            case D3D12_MESSAGE_CATEGORY_EXECUTION:
-            case D3D12_MESSAGE_CATEGORY_SHADER: {
-                msgType = PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE;
-                break;
-            }
-
-            case D3D12_MESSAGE_CATEGORY_STATE_CREATION:
-            case D3D12_MESSAGE_CATEGORY_STATE_GETTING:
-            case D3D12_MESSAGE_CATEGORY_STATE_SETTING: {
-                msgType = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
-                break;
-            }
-        }
-
-        switch (severity) {
-            case D3D12_MESSAGE_SEVERITY_INFO: {
-                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
-                break;
-            }
-
-            case D3D12_MESSAGE_SEVERITY_WARNING: {
-                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
-                break;
-            }
-
-            case D3D12_MESSAGE_SEVERITY_ERROR:
-            case D3D12_MESSAGE_SEVERITY_CORRUPTION: {
-                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
-                break;
-            }
-        }
-
-        s_D3D12.debugCallback(s_D3D12.debugUserData, msgSeverity, msgType, message);
-        palFree(s_D3D12.allocator, buffer);
-    }
-    queue->lpVtbl->ClearStoredMessages(queue);
-}
-
 void getDescriptorTierLimitsD3D12(
     void* device, 
     PalResourceCapabilities* caps, 
@@ -1086,7 +1013,7 @@ PalResult PAL_CALL initGraphicsD3D12(
         s_D3D12.handle,
         "D3D12SerializeVersionedRootSignature");
 
-    if (debugger && debugger->callback) {
+    if (debugger) {
         s_D3D12.getDebugInterface = (PFN_D3D12_GET_DEBUG_INTERFACE)GetProcAddress(
             s_D3D12.handle,
             "D3D12GetDebugInterface");
@@ -1129,10 +1056,6 @@ PalResult PAL_CALL initGraphicsD3D12(
                 }
 
                 // message severities
-                if (!debugger->denyInfoSeverity) {
-                    s_D3D12.severities[s_D3D12.severityCount++] = D3D12_MESSAGE_SEVERITY_INFO;
-                }
-
                 if (!debugger->denyWarningSeverity) {
                     s_D3D12.severities[s_D3D12.severityCount++] = D3D12_MESSAGE_SEVERITY_WARNING;
                 }

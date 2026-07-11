@@ -53,7 +53,6 @@ PalResult PAL_CALL createBufferD3D12(
     HRESULT result;
     BufferD3D12* buffer = nullptr;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-
     if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
@@ -145,7 +144,6 @@ PalResult PAL_CALL createBufferD3D12(
     buffer->usages = info->usages;
     buffer->device = d3d12Device;
     buffer->size = info->size;
-    buffer->reserved = PAL_BACKEND_KEY;
     *outBuffer = (PalBuffer*)buffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -310,7 +308,6 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
         (void**)&d3d12Buffer->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Buffer->device);
         return makeResultD3D12(result);
     }
 
@@ -328,7 +325,6 @@ PalResult PAL_CALL mapBufferD3D12(
     void* ptr = nullptr;
     HRESULT result = d3d12Buffer->handle->lpVtbl->Map(d3d12Buffer->handle, 0, nullptr, &ptr);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Buffer->device);
         return makeResultD3D12(result);
     }
 

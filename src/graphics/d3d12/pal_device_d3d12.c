@@ -22,6 +22,54 @@ static void convertToWcharD3D12(
     dst[i] = L'\0';
 }
 
+static void __stdcall debugCallbackD3D12(
+    D3D12_MESSAGE_CATEGORY category, 
+    D3D12_MESSAGE_SEVERITY severity, 
+    D3D12_MESSAGE_ID id, 
+    const char *description,
+    void *context)
+{
+    PalDebugMessageSeverity msgSeverity = 0;
+    PalDebugMessageType msgType = 0;
+    switch (category) {
+        case D3D12_MESSAGE_CATEGORY_INITIALIZATION:
+        case D3D12_MESSAGE_CATEGORY_CLEANUP:
+        case D3D12_MESSAGE_CATEGORY_COMPILATION: {
+            msgType = PAL_DEBUG_MESSAGE_TYPE_GENERAL;
+            break;
+        }
+
+        case D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION:
+        case D3D12_MESSAGE_CATEGORY_EXECUTION:
+        case D3D12_MESSAGE_CATEGORY_SHADER: {
+            msgType = PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE;
+            break;
+        }
+
+        case D3D12_MESSAGE_CATEGORY_STATE_CREATION:
+        case D3D12_MESSAGE_CATEGORY_STATE_GETTING:
+        case D3D12_MESSAGE_CATEGORY_STATE_SETTING: {
+            msgType = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
+            break;
+        }
+    }
+
+    switch (severity) {
+        case D3D12_MESSAGE_SEVERITY_WARNING: {
+            msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
+            break;
+        }
+
+        case D3D12_MESSAGE_SEVERITY_ERROR:
+        case D3D12_MESSAGE_SEVERITY_CORRUPTION: {
+            msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
+            break;
+        }
+    }
+
+    s_D3D12.debugCallback(s_D3D12.debugUserData, msgSeverity, msgType, description);
+}
+
 PalResult PAL_CALL createDeviceD3D12(
     PalAdapter* adapter,
     PalAdapterFeatures features,
@@ -49,7 +97,6 @@ PalResult PAL_CALL createDeviceD3D12(
 
     // get and cache highest shader model
     device->shaderModel = getHighestSupportedShaderTargetD3D12(adapter, PAL_SHADER_FORMAT_DXIL);
-
     result = s_D3D12.createDevice(
         (IUnknown*)d3d12Adapter->handle,
         d3d12Adapter->level,
@@ -70,11 +117,47 @@ PalResult PAL_CALL createDeviceD3D12(
     if (s_D3D12.debugLayer) {
         result = device->handle->lpVtbl->QueryInterface(
             device->handle,
-            &IID_InfoQueue,
+            &IID_InfoQueue1,
             (void**)&device->infoQueue);
 
         if (SUCCEEDED(result)) {
-            D3D12_MESSAGE_ID denyIDs[] = { D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE };
+            D3D12_MESSAGE_ID denyIDs[] = { 
+                D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
+                D3D12_MESSAGE_ID_LIVE_OBJECT_SUMMARY,
+                D3D12_MESSAGE_ID_LIVE_DEVICE,
+                D3D12_MESSAGE_ID_LIVE_COMMANDQUEUE,
+                D3D12_MESSAGE_ID_LIVE_COMMANDALLOCATOR,
+                D3D12_MESSAGE_ID_LIVE_PIPELINESTATE,
+                D3D12_MESSAGE_ID_LIVE_COMMANDLIST12,
+                D3D12_MESSAGE_ID_LIVE_RESOURCE,
+                D3D12_MESSAGE_ID_LIVE_DESCRIPTORHEAP,
+                D3D12_MESSAGE_ID_LIVE_ROOTSIGNATURE,
+                D3D12_MESSAGE_ID_LIVE_LIBRARY,
+                D3D12_MESSAGE_ID_LIVE_HEAP,
+                D3D12_MESSAGE_ID_LIVE_MONITOREDFENCE,
+                D3D12_MESSAGE_ID_LIVE_QUERYHEAP,
+                D3D12_MESSAGE_ID_LIVE_COMMANDSIGNATURE,
+                D3D12_MESSAGE_ID_LIVE_COMMANDPOOL,
+                D3D12_MESSAGE_ID_LIVE_SWAPCHAIN
+            };
+
+            device->infoQueue->lpVtbl->SetBreakOnSeverity(
+                device->infoQueue, 
+                D3D12_MESSAGE_SEVERITY_ERROR, 
+                TRUE);
+
+            device->infoQueue->lpVtbl->SetBreakOnSeverity(
+                device->infoQueue, 
+                D3D12_MESSAGE_SEVERITY_CORRUPTION, 
+                TRUE);
+
+            device->infoQueue->lpVtbl->RegisterMessageCallback(
+                device->infoQueue, 
+                debugCallbackD3D12, 
+                D3D12_MESSAGE_CALLBACK_FLAG_NONE, 
+                nullptr, 
+                &device->debugCookie);
+
             D3D12_INFO_QUEUE_FILTER filter = {0};
             filter.AllowList.NumSeverities = s_D3D12.severityCount;
             filter.AllowList.pSeverityList = s_D3D12.severities;
@@ -82,7 +165,6 @@ PalResult PAL_CALL createDeviceD3D12(
             filter.AllowList.pCategoryList = s_D3D12.categories;
             filter.DenyList.NumIDs = 1;
             filter.DenyList.pIDList = denyIDs;
-
             device->infoQueue->lpVtbl->PushStorageFilter(device->infoQueue, &filter);
         }
     }
@@ -283,8 +365,6 @@ PalResult PAL_CALL createDeviceD3D12(
     }
 
     device->adapter = d3d12Adapter->handle;
-    device->features = features;
-    device->reserved = PAL_BACKEND_KEY;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
 }
@@ -317,7 +397,12 @@ void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 
     d3d12Device->queue->lpVtbl->Release(d3d12Device->queue);
     d3d12Device->handle->lpVtbl->Release(d3d12Device->handle);
+
     if (d3d12Device->infoQueue) {
+        d3d12Device->infoQueue->lpVtbl->UnregisterMessageCallback(
+            d3d12Device->infoQueue, 
+            d3d12Device->debugCookie);
+
         d3d12Device->infoQueue->lpVtbl->Release(d3d12Device->infoQueue);
     }
 
@@ -358,7 +443,6 @@ PalResult PAL_CALL allocateMemoryD3D12(
         (void**)&memory->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -599,7 +683,6 @@ PalResult PAL_CALL createQueueD3D12(
         (void**)&queue->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         palFree(s_D3D12.allocator, queue);
         return makeResultD3D12(result);
     }
@@ -613,7 +696,6 @@ PalResult PAL_CALL createQueueD3D12(
         (void**)&queue->fence);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         palFree(s_D3D12.allocator, queue);
         return makeResultD3D12(result);
     }

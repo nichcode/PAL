@@ -276,7 +276,6 @@ PalResult PAL_CALL bindImageMemoryD3D12(
         (void**)&d3d12Image->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Image->device);
         return makeResultD3D12(result);
     }
 

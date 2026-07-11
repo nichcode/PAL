@@ -3964,8 +3964,8 @@ typedef struct {
  * @brief Initialize the graphics system.
  *
  * The debugger, allocator and custom backends will not not copied, therefore the pointers must
- * remain valid until the graphics system is shutdown. Set the debugger or
- * PalGraphicsDebugger::callback to `nullptr` to disable debugging and validation layers.
+ * remain valid until the graphics system is shutdown. Set the debugger to `nullptr` to disable 
+ * debugging and validation layers.
  *
  * If `debugger` is not `nullptr` and there is no debug layers, this function will not fail but
  * debugging will be disabled.

@@ -79,7 +79,6 @@ PalResult PAL_CALL getSurfaceCapabilitiesD3D12(
         &swapchain1);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -261,7 +260,6 @@ PalResult PAL_CALL createSwapchainD3D12(
         &swapchain1);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -354,7 +352,6 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
         fence->value++;
         result = queue->lpVtbl->Signal(queue, fence->handle, fence->value);
         if (FAILED(result)) {
-            pollMessagesD3D12(d3dSwapchain->device);
             return makeResultD3D12(result);
         }
     }
@@ -364,7 +361,6 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
         semaphore->value = 1;
         result = queue->lpVtbl->Signal(queue, semaphore->handle, semaphore->value);
         if (FAILED(result)) {
-            pollMessagesD3D12(d3dSwapchain->device);
             return makeResultD3D12(result);
         }
     }
@@ -386,14 +382,12 @@ PalResult PAL_CALL presentSwapchainD3D12(
         SemaphoreD3D12* semaphore = (SemaphoreD3D12*)waitSemaphore;
         result = queue->lpVtbl->Wait(queue, semaphore->handle, semaphore->value);
         if (FAILED(result)) {
-            pollMessagesD3D12(d3dSwapchain->device);
             return makeResultD3D12(result);
         }
 
         semaphore->value = 0;
         result = semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
         if (FAILED(result)) {
-            pollMessagesD3D12(d3dSwapchain->device);
             return makeResultD3D12(result);
         }
     }
@@ -404,7 +398,6 @@ PalResult PAL_CALL presentSwapchainD3D12(
         d3dSwapchain->presentFlags);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3dSwapchain->device);
         if (result == DXGI_ERROR_DEVICE_REMOVED || result == DXGI_ERROR_DEVICE_RESET) {
             return makeResultD3D12(result);
         }
@@ -448,7 +441,6 @@ PalResult PAL_CALL resizeSwapchainD3D12(
         d3dSwapchain->flags);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3dSwapchain->device);
         return makeResultD3D12(result);
     }
 
