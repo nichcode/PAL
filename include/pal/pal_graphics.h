@@ -3197,9 +3197,7 @@ typedef struct {
      *
      * Must obey the rules and semantics documented in palGetSemaphoreValue().
      */
-    PalResult(PAL_CALL* getSemaphoreValue)(
-        PalSemaphore* semaphore,
-        uint64_t* outValue);
+    uint64_t(PAL_CALL* getSemaphoreValue)(PalSemaphore* semaphore);
 
     /**
      * Backend implementation of ::palCreateCommandPool.
@@ -3756,7 +3754,7 @@ typedef struct {
         PalDevice* device,
         PalFormat imageFormat,
         const PalBufferImageCopyInfo* copyInfo,
-        PalImageStagingRequirements* outRequirements);
+        PalImageStagingRequirements* requirements);
 
     /**
      * Backend implementation of ::palWriteInstanceStaging.
@@ -5142,13 +5140,11 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * @brief Get the value of a semaphore.
  *
  * The graphics system must be initialized before this call.
- The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
+ * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to get its value.
- * @param[out] outValue Pointer to a uint64_t to receive the semaphore value.
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
+ * @return the timeline value.
  *
  * Thread safety: Thread safe if `semaphore` is externally synchronized.
  *
@@ -5156,9 +5152,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * @sa palWaitSemaphore
  * @sa palSignalSemaphore
  */
-PAL_API PalResult PAL_CALL palGetSemaphoreValue(
-    PalSemaphore* semaphore,
-    uint64_t* outValue);
+PAL_API uint64_t PAL_CALL palGetSemaphoreValue(PalSemaphore* semaphore);
 
 /**
  * @brief Create a command pool from a device.
@@ -6404,13 +6398,13 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  * 
  * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight` 
  * are hints. The driver might used it defaults if the requested is not supported. After this call,
- * set those values to the required ones from `outRequirements`. 
+ * set those values to the required ones from `requirements`. 
  * If the driver supports the proivded, the values will be the same.
  *
  * @param[in] device The device to use.
  * @param[in] imageFormat Destination image format.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * @param[out] outRequirements Pointer to a PalImageStagingRequirements to recieve the requirements
+ * @param[out] requirements Pointer to a PalImageStagingRequirements to recieve the requirements
  *
  * Thread safety: Thread safe.
  *
@@ -6421,7 +6415,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
     PalDevice* device,
     PalFormat imageFormat,
     const PalBufferImageCopyInfo* copyInfo,
-    PalImageStagingRequirements* outRequirements);
+    PalImageStagingRequirements* requirements);
 
 /**
  * @brief Write data to an instance staging buffer.

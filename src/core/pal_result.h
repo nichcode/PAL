@@ -37,6 +37,9 @@ static const char* resultCodeToString(PalResult result)
 
         case PAL_RESULT_CODE_DEVICE_LOST:
             return "PAL_RESULT_CODE_DEVICE_LOST";
+
+        case PAL_RESULT_CODE_OUT_OF_DATE:
+            return "PAL_RESULT_CODE_OUT_OF_DATE";
     }
 
     return "";
@@ -69,6 +72,9 @@ static const char* resultCodeToDescription(PalResult result)
 
         case PAL_RESULT_CODE_DEVICE_LOST:
             return "Device lost";
+
+        case PAL_RESULT_CODE_OUT_OF_DATE:
+            return "Out of date";
     }
 
     return nullptr;

@@ -69,7 +69,7 @@ typedef struct {
     void (PAL_CALL *destroySemaphore)(PalSemaphore*);
     PalResult (PAL_CALL *waitSemaphore)(PalSemaphore*, uint64_t, uint64_t);
     PalResult (PAL_CALL *signalSemaphore)(PalSemaphore*, PalQueue*, uint64_t);
-    PalResult (PAL_CALL *getSemaphoreValue)(PalSemaphore*, uint64_t*);
+    uint64_t (PAL_CALL *getSemaphoreValue)(PalSemaphore*);
     PalResult (PAL_CALL *createCommandPool)(PalDevice*, PalQueue*, PalCommandPool**);
     void (PAL_CALL *destroyCommandPool)(PalCommandPool*);
     PalResult (PAL_CALL *resetCommandPool)(PalCommandPool*);
@@ -504,7 +504,7 @@ PalResult PAL_CALL createSemaphoreD3D12(PalDevice*, PalBool, PalSemaphore**);
 void PAL_CALL destroySemaphoreD3D12(PalSemaphore*);
 PalResult PAL_CALL waitSemaphoreD3D12(PalSemaphore*, uint64_t, uint64_t);
 PalResult PAL_CALL signalSemaphoreD3D12(PalSemaphore*, PalQueue*, uint64_t);
-PalResult PAL_CALL getSemaphoreValueD3D12(PalSemaphore*, uint64_t*);
+uint64_t PAL_CALL getSemaphoreValueD3D12(PalSemaphore*);
 PalResult PAL_CALL createCommandPoolD3D12(PalDevice*, PalQueue*, PalCommandPool**);
 void PAL_CALL destroyCommandPoolD3D12(PalCommandPool*);
 PalResult PAL_CALL resetCommandPoolD3D12(PalCommandPool*);
@@ -542,18 +542,11 @@ void PAL_CALL cmdAccelerationStructureBarrierD3D12(PalCommandBuffer*, PalAcceler
 void PAL_CALL cmdImageBarrierD3D12(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalUsageState, PalUsageState);
 void PAL_CALL cmdBufferBarrierD3D12(PalCommandBuffer*, PalBuffer*, PalUsageState, PalUsageState);
 void PAL_CALL cmdDispatchD3D12(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
-void PAL_CALL cmdDispatchBaseD3D12(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 void PAL_CALL cmdDispatchIndirectD3D12(PalCommandBuffer*, PalBuffer*);
 void PAL_CALL cmdTraceRaysD3D12(PalCommandBuffer*, PalShaderBindingTable*, uint32_t, uint32_t, uint32_t, uint32_t);
 void PAL_CALL cmdTraceRaysIndirectD3D12(PalCommandBuffer*, uint32_t, PalShaderBindingTable*, PalBuffer*);
 void PAL_CALL cmdBindDescriptorSetD3D12(PalCommandBuffer*, uint32_t, PalDescriptorSet*);
 void PAL_CALL cmdPushConstantsD3D12(PalCommandBuffer*, uint32_t, uint32_t, const void*);
-void PAL_CALL cmdSetCullModeD3D12(PalCommandBuffer*, PalCullMode);
-void PAL_CALL cmdSetFrontFaceD3D12(PalCommandBuffer*, PalFrontFace);
-void PAL_CALL cmdSetPrimitiveTopologyD3D12(PalCommandBuffer*, PalPrimitiveTopology);
-void PAL_CALL cmdSetDepthTestEnableD3D12(PalCommandBuffer*, PalBool);
-void PAL_CALL cmdSetDepthWriteEnableD3D12(PalCommandBuffer*, PalBool);
-void PAL_CALL cmdSetStencilOpD3D12(PalCommandBuffer*, PalStencilFaceFlags, PalStencilOp, PalStencilOp, PalStencilOp, PalCompareOp);
 
 PalResult PAL_CALL createAccelerationstructureD3D12(PalDevice*, const PalAccelerationStructureCreateInfo*, PalAccelerationStructure**);
 void PAL_CALL destroyAccelerationstructureD3D12(PalAccelerationStructure*);
@@ -679,18 +672,18 @@ static PalGraphicsVtable s_D3D12Backend = {
     .cmdImageBarrier = cmdImageBarrierD3D12,
     .cmdBufferBarrier = cmdBufferBarrierD3D12,
     .cmdDispatch = cmdDispatchD3D12,
-    .cmdDispatchBase = cmdDispatchBaseD3D12,
+    .cmdDispatchBase = nullptr,
     .cmdDispatchIndirect = cmdDispatchIndirectD3D12,
     .cmdTraceRays = cmdTraceRaysD3D12,
     .cmdTraceRaysIndirect = cmdTraceRaysIndirectD3D12,
     .cmdBindDescriptorSet = cmdBindDescriptorSetD3D12,
     .cmdPushConstants = cmdPushConstantsD3D12,
-    .cmdSetCullMode = cmdSetCullModeD3D12,
-    .cmdSetFrontFace = cmdSetFrontFaceD3D12,
-    .cmdSetPrimitiveTopology = cmdSetPrimitiveTopologyD3D12,
-    .cmdSetDepthTestEnable = cmdSetDepthTestEnableD3D12,
-    .cmdSetDepthWriteEnable = cmdSetDepthWriteEnableD3D12,
-    .cmdSetStencilOp = cmdSetStencilOpD3D12,
+    .cmdSetCullMode = nullptr,
+    .cmdSetFrontFace = nullptr,
+    .cmdSetPrimitiveTopology = nullptr,
+    .cmdSetDepthTestEnable = nullptr,
+    .cmdSetDepthWriteEnable = nullptr,
+    .cmdSetStencilOp = nullptr,
     .createAccelerationstructure = createAccelerationstructureD3D12,
     .destroyAccelerationstructure = destroyAccelerationstructureD3D12,
     .getAccelerationStructureBuildSize = getAccelerationStructureBuildSizeD3D12,

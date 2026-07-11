@@ -199,8 +199,7 @@ PalResult PAL_CALL createImageD3D12(
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
 
-    image->device = d3d12Device;
-    image->reserved = PAL_BACKEND_KEY;
+    image->device = d3d12Device->handle;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
 }
@@ -214,24 +213,20 @@ void PAL_CALL destroyImageD3D12(PalImage* image)
     palFree(s_D3D12.allocator, d3d12Image);
 }
 
-PalResult PAL_CALL getImageInfoD3D12(
+void PAL_CALL getImageInfoD3D12(
     PalImage* image,
     PalImageInfo* info)
 {
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
     *info = d3d12Image->info;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getImageMemoryRequirementsD3D12(
+void PAL_CALL getImageMemoryRequirementsD3D12(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
-    ID3D12Device5* device = d3d12Image->device->handle;
-    if (d3d12Image->info.belongsToSwapchain) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
-    }
+    ID3D12Device5* device = d3d12Image->device;
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
@@ -245,7 +240,6 @@ PalResult PAL_CALL getImageMemoryRequirementsD3D12(
     requirements->supportedMemoryTypes = (1u << PAL_MEMORY_TYPE_GPU_ONLY);
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL bindImageMemoryD3D12(
@@ -255,7 +249,7 @@ PalResult PAL_CALL bindImageMemoryD3D12(
 {
     HRESULT result;
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
-    ID3D12Device5* device = d3d12Image->device->handle;
+    ID3D12Device5* device = d3d12Image->device;
     if (d3d12Image->info.belongsToSwapchain) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
@@ -293,12 +287,6 @@ PalResult PAL_CALL createImageViewD3D12(
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
 
-    if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-        if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
-            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-        }
-    }
-
     imageView = palAllocate(s_D3D12.allocator, sizeof(ImageViewD3D12), 0);
     if (!imageView) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -319,14 +307,7 @@ PalResult PAL_CALL createImageViewD3D12(
 
         D3D12_RENDER_TARGET_VIEW_DESC desc = {0};
         desc.Format = imageView->format;
-        fillSubresourceD3D12(
-            info->type, 
-            &info->subresourceRange, 
-            &desc, 
-            nullptr, 
-            nullptr, 
-            nullptr);
-
+        fillSubresourceD3D12(DESC_TYPE_RTV, info->type, &info->subresourceRange, &desc);
         imageView->heapIndex = index;
         d3d12Device->handle->lpVtbl->CreateRenderTargetView(
             d3d12Device->handle,
@@ -344,14 +325,7 @@ PalResult PAL_CALL createImageViewD3D12(
 
         D3D12_DEPTH_STENCIL_VIEW_DESC desc = {0};
         desc.Format = imageView->format;
-        fillSubresourceD3D12(
-            info->type, 
-            &info->subresourceRange, 
-            nullptr, 
-            &desc, 
-            nullptr, 
-            nullptr);
-
+        fillSubresourceD3D12(DESC_TYPE_DSV, info->type, &info->subresourceRange, &desc);
         imageView->heapIndex = index;
         d3d12Device->handle->lpVtbl->CreateDepthStencilView(
             d3d12Device->handle,

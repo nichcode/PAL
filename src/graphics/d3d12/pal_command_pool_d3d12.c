@@ -91,7 +91,6 @@ PalResult PAL_CALL createCommandPoolD3D12(
         }
     }
 
-    pool->reserved = PAL_BACKEND_KEY;
     *outPool = (PalCommandPool*)pool;
     return PAL_RESULT_SUCCESS;
 }
@@ -187,51 +186,49 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         return makeResultD3D12(result);
     }
 
-    // we need a tmp staging and gpu buffer if ray tracing is enabled
-    if (d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        D3D12_HEAP_PROPERTIES heapProps = {0};
-        heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
-        heapProps.VisibleNodeMask = 1;
-        heapProps.CreationNodeMask = 1;
+    // create a tmp gpu buffer
+    D3D12_HEAP_PROPERTIES heapProps = {0};
+    heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+    heapProps.VisibleNodeMask = 1;
+    heapProps.CreationNodeMask = 1;
 
-        D3D12_RESOURCE_DESC bufferDesc = {0};
-        bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-        bufferDesc.Width = sizeof(D3D12_DISPATCH_RAYS_DESC);
-        bufferDesc.Height = 1;
-        bufferDesc.DepthOrArraySize = 1;
-        bufferDesc.MipLevels = 1;
-        bufferDesc.SampleDesc.Count = 1;
-        bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    D3D12_RESOURCE_DESC bufferDesc = {0};
+    bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufferDesc.Width = sizeof(D3D12_DISPATCH_RAYS_DESC);
+    bufferDesc.Height = 1;
+    bufferDesc.DepthOrArraySize = 1;
+    bufferDesc.MipLevels = 1;
+    bufferDesc.SampleDesc.Count = 1;
+    bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-        result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-            d3d12Device->handle,
-            &heapProps,
-            0,
-            &bufferDesc,
-            D3D12_RESOURCE_STATE_COMMON,
-            nullptr,
-            &IID_Resource, 
-            (void**)&cmdBuffer->buffer);
+    result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
+        d3d12Device->handle,
+        &heapProps,
+        0,
+        &bufferDesc,
+        D3D12_RESOURCE_STATE_COMMON,
+        nullptr,
+        &IID_Resource, 
+        (void**)&cmdBuffer->buffer);
 
-        if (FAILED(result)) {
-            return makeResultD3D12(result);
-        }
+    if (FAILED(result)) {
+        return makeResultD3D12(result);
+    }
 
-        // create staging buffer
-        heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-        result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-            d3d12Device->handle,
-            &heapProps,
-            0,
-            &bufferDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            &IID_Resource, 
-            (void**)&cmdBuffer->stagingBuffer);
+    // create staging buffer
+    heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+    result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
+        d3d12Device->handle,
+        &heapProps,
+        0,
+        &bufferDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        &IID_Resource, 
+        (void**)&cmdBuffer->stagingBuffer);
 
-        if (FAILED(result)) {
-            return makeResultD3D12(result);
-        }
+    if (FAILED(result)) {
+        return makeResultD3D12(result);
     }
 
     result = cmdList->lpVtbl->QueryInterface(
@@ -247,9 +244,8 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
     cmdBuffer->handle->lpVtbl->Close(cmdBuffer->handle);
     cmdData->cmdBuffer = cmdBuffer;
 
-    cmdBuffer->pool = cmdPool;
     cmdBuffer->device = d3d12Device;
-    cmdBuffer->reserved = PAL_BACKEND_KEY;
+    cmdBuffer->pool = cmdPool;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -262,11 +258,8 @@ void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
     if (data) {
         d3d12CmdBuffer->handle->lpVtbl->Release(d3d12CmdBuffer->handle);
         d3d12CmdBuffer->allocator->lpVtbl->Release(d3d12CmdBuffer->allocator);
-
-        if (d3d12CmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-            d3d12CmdBuffer->buffer->lpVtbl->Release(d3d12CmdBuffer->buffer);
-            d3d12CmdBuffer->stagingBuffer->lpVtbl->Release(d3d12CmdBuffer->stagingBuffer);
-        }
+        d3d12CmdBuffer->buffer->lpVtbl->Release(d3d12CmdBuffer->buffer);
+        d3d12CmdBuffer->stagingBuffer->lpVtbl->Release(d3d12CmdBuffer->stagingBuffer);
 
         palFree(s_D3D12.allocator, cmdBuffer);
         data->cmdBuffer = nullptr;

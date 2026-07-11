@@ -53,17 +53,7 @@ PalResult PAL_CALL createBufferD3D12(
     HRESULT result;
     BufferD3D12* buffer = nullptr;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
-        if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-        }
-
-    } else if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
-        if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
-            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-        }
-    }
-
+    
     buffer = palAllocate(s_D3D12.allocator, sizeof(BufferD3D12), 0);
     if (!buffer) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -142,7 +132,6 @@ PalResult PAL_CALL createBufferD3D12(
     }
 
     buffer->usages = info->usages;
-    buffer->device = d3d12Device;
     buffer->size = info->size;
     *outBuffer = (PalBuffer*)buffer;
     return PAL_RESULT_SUCCESS;
@@ -157,12 +146,12 @@ void PAL_CALL destroyBufferD3D12(PalBuffer* buffer)
     palFree(s_D3D12.allocator, d3d12Buffer);
 }
 
-PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
+void PAL_CALL getBufferMemoryRequirementsD3D12(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements)
 {
     BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    ID3D12Device5* device = d3d12Buffer->device->handle;
+    ID3D12Device5* device = d3d12Buffer->device;
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
@@ -176,47 +165,41 @@ PalResult PAL_CALL getBufferMemoryRequirementsD3D12(
     requirements->supportedMemoryTypes = getSupportedMemoryTypes(d3d12Buffer->usages);
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL computeInstanceBufferRequirementsD3D12(
+void PAL_CALL computeInstanceStagingSizeD3D12(
     PalDevice* device,
     uint32_t instanceCount,
     uint64_t* outSize)
 {
     *outSize = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instanceCount;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL computeImageCopyStagingBufferRequirementsD3D12(
+void PAL_CALL computeImageStagingRequirementsD3D12(
     PalDevice* device,
     PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo,
-    uint32_t* outBufferRowLength,
-    uint32_t* outBufferImageHeight,
-    uint64_t* outSize)
+    const PalBufferImageCopyInfo* copyInfo,
+    PalImageStagingRequirements* requirements)
 {
     uint32_t imageFormatSize = getFormatSizeD3D12(imageFormat);
     uint32_t rowPitch = align((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     uint32_t bufferImageHeight = 0;
-
     if (copyInfo->bufferImageHeight) {
         bufferImageHeight = copyInfo->bufferImageHeight;
     } else {
         bufferImageHeight = copyInfo->imageHeight;
     }
 
-    *outBufferRowLength = rowPitch;
-    *outBufferImageHeight = bufferImageHeight;
-    *outSize = (uint64_t)rowPitch * bufferImageHeight * copyInfo->imageDepth;
-    return PAL_RESULT_SUCCESS;
+    requirements->bufferRowLength = rowPitch;
+    requirements->bufferImageHeight = bufferImageHeight;
+    requirements->bufferSize = (uint64_t)rowPitch * bufferImageHeight * copyInfo->imageDepth;
 }
 
-PalResult PAL_CALL writeToInstanceBufferD3D12(
+void PAL_CALL writeInstanceStagingD3D12(
     PalDevice* device,
-    void* ptr,
+    uint32_t instanceCount,
     PalAccelerationStructureInstance* instances,
-    uint32_t instanceCount)
+    void* ptr)
 {
     D3D12_RAYTRACING_INSTANCE_DESC* data = ptr;
     for (int i = 0; i < instanceCount; i++) {
@@ -231,15 +214,14 @@ PalResult PAL_CALL writeToInstanceBufferD3D12(
         dst->Flags = instanceFlagsToD3D12(src->flags);
         memcpy(dst->Transform, src->transform, sizeof(float) * 12);
     }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
+void PAL_CALL writeImageStagingD3D12(
     PalDevice* device,
-    void* ptr,
-    void* srcData,
     PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo)
+    PalBufferImageCopyInfo* copyInfo,
+    void* srcData,
+    void* ptr)
 {
     uint32_t imageFormatSize = getFormatSizeD3D12(imageFormat);
     uint32_t srcRowPitch = copyInfo->imageWidth * imageFormatSize;
@@ -259,8 +241,6 @@ PalResult PAL_CALL writeToImageCopyStagingBufferD3D12(
                 srcRowPitch);
         }
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL bindBufferMemoryD3D12(
@@ -270,9 +250,8 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
 {
     HRESULT result;
     BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    ID3D12Device5* device = d3d12Buffer->device->handle;
+    ID3D12Device5* device = d3d12Buffer->device;
     MemoryD3D12* d3d12Memory = (MemoryD3D12*)memory;
-
     if (d3d12Buffer->isMemoryManaged) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
@@ -320,7 +299,6 @@ PalResult PAL_CALL mapBufferD3D12(
     uint64_t size,
     void** outPtr)
 {
-
     BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
     void* ptr = nullptr;
     HRESULT result = d3d12Buffer->handle->lpVtbl->Map(d3d12Buffer->handle, 0, nullptr, &ptr);

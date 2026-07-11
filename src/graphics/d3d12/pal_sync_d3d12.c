@@ -44,13 +44,12 @@ PalResult PAL_CALL createFenceD3D12(
     }
 
     fence->canReset = PAL_FALSE;
-    if (d3d12Device->features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
+    if (d3d12Device->canFenceReset) {
         fence->canReset = PAL_TRUE;
     }
 
     fence->isTimeline = PAL_FALSE; // for sempaphores
     fence->value = 0;
-    fence->reserved = PAL_BACKEND_KEY;
     *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
 }
@@ -100,10 +99,6 @@ PalResult PAL_CALL waitFenceD3D12(
 PalResult PAL_CALL resetFenceD3D12(PalFence* fence)
 {
     FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
-    if (!d3d12Fence->canReset) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     d3d12Fence->handle->lpVtbl->Signal(d3d12Fence->handle, 0);
     d3d12Fence->value = 0;
     return PAL_RESULT_SUCCESS;
@@ -127,18 +122,9 @@ PalResult PAL_CALL createSemaphoreD3D12(
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     SemaphoreD3D12* semaphore = nullptr;
 
-    PalBool hasTimeline = PAL_FALSE;
-    if (d3d12Device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-        hasTimeline = PAL_TRUE;
-    }
-
     semaphore = palAllocate(s_D3D12.allocator, sizeof(SemaphoreD3D12), 0);
     if (!semaphore) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
-    }
-
-    if (enableTimeline && !hasTimeline) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     if (enableTimeline) {
@@ -168,7 +154,6 @@ PalResult PAL_CALL createSemaphoreD3D12(
 
     semaphore->canReset = PAL_FALSE;
     semaphore->value = 0;
-    semaphore->reserved = PAL_BACKEND_KEY;
     *outSemaphore = (PalSemaphore*)semaphore;
     return PAL_RESULT_SUCCESS;
 }
@@ -189,9 +174,6 @@ PalResult PAL_CALL waitSemaphoreD3D12(
     HRESULT result;
     DWORD ret = 0;
     SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    if (!d3d12Semaphore->isTimeline) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     HANDLE event = d3d12Semaphore->event;
     if (d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle) < value) {
@@ -224,29 +206,18 @@ PalResult PAL_CALL signalSemaphoreD3D12(
     uint64_t value)
 {
     SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    if (!d3d12Semaphore->isTimeline) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     HRESULT result = d3d12Semaphore->handle->lpVtbl->Signal(d3d12Semaphore->handle, value);
     if (FAILED(result)) {
         return makeResultD3D12(result);
     }
+
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getSemaphoreValueD3D12(
-    PalSemaphore* semaphore,
-    uint64_t* outValue)
+uint64_t PAL_CALL getSemaphoreValueD3D12(PalSemaphore* semaphore)
 {
     SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    if (!d3d12Semaphore->isTimeline) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    UINT64 tmp = d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle);
-    *outValue = tmp;
-    return PAL_RESULT_SUCCESS;
+    return d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle);
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

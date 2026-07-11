@@ -217,9 +217,7 @@ PalResult PAL_CALL signalSemaphoreVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getSemaphoreValueVk(
-    PalSemaphore* semaphore,
-    uint64_t* outValue)
+uint64_t PAL_CALL getSemaphoreValueVk(PalSemaphore* semaphore)
 {
     SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
     if (!vkSemaphore->isTimeline) {

@@ -1083,11 +1083,9 @@ PalResult PAL_CALL palSignalSemaphore(
     return semaphore->backend->signalSemaphore(semaphore, queue, value);
 }
 
-PalResult PAL_CALL palGetSemaphoreValue(
-    PalSemaphore* semaphore,
-    uint64_t* outValue)
+uint64_t PAL_CALL palGetSemaphoreValue(PalSemaphore* semaphore)
 {
-    return semaphore->backend->getSemaphoreValue(semaphore, outValue);
+    return semaphore->backend->getSemaphoreValue(semaphore);
 }
 
 // ==================================================
@@ -1630,13 +1628,13 @@ void PAL_CALL palComputeImageStagingRequirements(
     PalDevice* device,
     PalFormat imageFormat,
     const PalBufferImageCopyInfo* copyInfo,
-    PalImageStagingRequirements* outRequirements)
+    PalImageStagingRequirements* requirements)
 {
     device->backend->computeImageStagingRequirements(
         device,
         imageFormat,
         copyInfo,
-        outRequirements);
+        requirements);
 }
 
 void PAL_CALL palWriteInstanceStaging(

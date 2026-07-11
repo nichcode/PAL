@@ -573,7 +573,6 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     }
     blob->lpVtbl->Release(blob);
 
-    layout->reserved = PAL_BACKEND_KEY;
     *outLayout = (PalPipelineLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
@@ -1042,7 +1041,6 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     pipeline->layout = layout;
     pipeline->shaderExports = nullptr;
     pipeline->localRootSignature = nullptr;
-    pipeline->reserved = PAL_BACKEND_KEY;
 
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -1083,7 +1081,6 @@ PalResult PAL_CALL createComputePipelineD3D12(
     pipeline->layout = layout;
     pipeline->shaderExports = nullptr;
     pipeline->localRootSignature = nullptr;
-    pipeline->reserved = PAL_BACKEND_KEY;
 
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -1098,10 +1095,6 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     PipelineLayoutD3D12* layout = (PipelineLayoutD3D12*)info->pipelineLayout;
     PipelineD3D12* pipeline = nullptr;
-
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     if (info->maxAttributeSize > d3d12Device->limits.maxHitAttributeSize) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
@@ -1426,7 +1419,6 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     pipeline->strides = nullptr;
     pipeline->hasFsr = PAL_FALSE;
     pipeline->layout = layout;
-    pipeline->reserved = PAL_BACKEND_KEY;
 
     pipeline->sbtInfo = sbtInfo;
     *outPipeline = (PalPipeline*)pipeline;

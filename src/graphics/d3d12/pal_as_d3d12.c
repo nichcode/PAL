@@ -17,10 +17,7 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
     AccelerationStructureD3D12* as = nullptr;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     BufferD3D12* d3d12Buffer = (BufferD3D12*)info->buffer;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
+    
     as = palAllocate(s_D3D12.allocator, sizeof(AccelerationStructureD3D12), 0);
     if (!as) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;

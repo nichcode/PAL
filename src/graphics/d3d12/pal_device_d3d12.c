@@ -364,6 +364,10 @@ PalResult PAL_CALL createDeviceD3D12(
         limits->maxDescriptorAccelerationStructures = 4;
     }
 
+    if (features & PAL_ADAPTER_FEATURE_FENCE_RESET) {
+        device->canFenceReset = PAL_TRUE;
+    }
+
     device->adapter = d3d12Adapter->handle;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
@@ -427,7 +431,6 @@ PalResult PAL_CALL allocateMemoryD3D12(
 
     D3D12_HEAP_DESC desc = {0};
     desc.SizeInBytes = size;
-
     desc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
     if (type == PAL_MEMORY_TYPE_CPU_READBACK) {
         desc.Properties.Type = D3D12_HEAP_TYPE_READBACK;
@@ -447,7 +450,6 @@ PalResult PAL_CALL allocateMemoryD3D12(
     }
 
     memory->type = type;
-    memory->reserved = PAL_BACKEND_KEY;
     *outMemory = (PalMemory*)memory;
     return PAL_RESULT_SUCCESS;
 }
@@ -461,54 +463,31 @@ void PAL_CALL freeMemoryD3D12(
     palFree(s_D3D12.allocator, d3d12Memory);
 }
 
-PalResult PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
+void PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     caps->maxAnisotropy = 16; // default on most d3d12 hardwares
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryMultiViewCapabilitiesD3D12(
+void PAL_CALL queryMultiViewCapabilitiesD3D12(
     PalDevice* device,
     PalMultiViewCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     caps->maxViewCount = D3D12_MAX_VIEW_INSTANCE_COUNT;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryMultiViewportCapabilitiesD3D12(
+void PAL_CALL queryMultiViewportCapabilitiesD3D12(
     PalDevice* device,
     PalMultiViewportCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     caps->maxCount = D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
+void PAL_CALL queryDepthStencilCapabilitiesD3D12(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     // depth resolve modes
     caps->supportedDepthResolveModes |= (1u << PAL_RESOLVE_MODE_AVERAGE);
     caps->supportedDepthResolveModes |= (1u << PAL_RESOLVE_MODE_MIN);
@@ -520,21 +499,14 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesD3D12(
 
     caps->supportsIndependentResolve = PAL_FALSE;
     caps->supportsIndependentResolveNone = PAL_FALSE;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
+void PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps)
 {
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    // these are supported if fragment shading rate feature is
-    caps->supportedShadingRates  = 0;
-    caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_1X1);
+    caps->supportedShadingRates = (1u << PAL_FRAGMENT_SHADING_RATE_1X1);
     caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_1X2);
     caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_2X1);
     caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_2X2);
@@ -564,19 +536,12 @@ PalResult PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
     caps->minTexelHeight = 1; // safe default
     caps->maxTexelWidth = options.ShadingRateImageTileSize;
     caps->maxTexelHeight = options.ShadingRateImageTileSize;
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryMeshShaderCapabilitiesD3D12(
+void PAL_CALL queryMeshShaderCapabilitiesD3D12(
     PalDevice* device,
     PalMeshShaderCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     // these are not exposed by d3d12. We use the offical mesh shader spec
     caps->maxOutputPrimitives = 256;
     caps->maxOutputVertices = 256;
@@ -590,18 +555,12 @@ PalResult PAL_CALL queryMeshShaderCapabilitiesD3D12(
     caps->maxTaskWorkGroupCount[0] = 65535;
     caps->maxTaskWorkGroupCount[1] = 65535;
     caps->maxTaskWorkGroupCount[2] = 65535;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
+void PAL_CALL queryRayTracingCapabilitiesD3D12(
     PalDevice* device,
     PalRayTracingCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     // these are safe defaults. D3d12 does not expose them.
     caps->maxRecursionDepth = 31;
     caps->maxHitAttributeSize = 32;
@@ -610,23 +569,16 @@ PalResult PAL_CALL queryRayTracingCapabilitiesD3D12(
     caps->maxGeometryCount = 100000;
     caps->maxPayloadSize = 64;
     caps->maxDispatchInvocations = 16000000;
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
+void PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     PalDevice* device,
     PalDescriptorIndexingCapabilities* caps)
 {
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     caps->flags = PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING;
     caps->flags |= PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
     getDescriptorTierLimitsD3D12(d3d12Device->handle, nullptr, caps);
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL createQueueD3D12(
@@ -642,7 +594,6 @@ PalResult PAL_CALL createQueueD3D12(
     switch (type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-
             if (!d3d12Device->limits.freeComputeQueues) {
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
@@ -652,7 +603,6 @@ PalResult PAL_CALL createQueueD3D12(
 
         case PAL_QUEUE_TYPE_GRAPHICS: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
             if (!d3d12Device->limits.freeGraphicsQueues) {
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
@@ -662,7 +612,6 @@ PalResult PAL_CALL createQueueD3D12(
 
         case PAL_QUEUE_TYPE_COPY: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-
             if (!d3d12Device->limits.freeCopyQueues) {
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
@@ -711,7 +660,6 @@ PalResult PAL_CALL createQueueD3D12(
 
     queue->fenceValue = 0;
     queue->type = type;
-    queue->reserved = PAL_BACKEND_KEY;
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
 }
@@ -774,37 +722,6 @@ PalResult PAL_CALL createShaderD3D12(
 
     for (int i = 0; i < info->entryCount; i++) {
         ShaderEntry* entry = &shader->entries[i];
-
-        // clang-format off
-        if (info->entries[i].stage == PAL_SHADER_STAGE_MESH || 
-            info->entries[i].stage == PAL_SHADER_STAGE_TASK) {
-            if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-
-        } else if (info->entries[i].stage == PAL_SHADER_STAGE_GEOMETRY) {
-            if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-
-        } else if (info->entries[i].stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL || 
-                info->entries[i].stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
-            if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-
-        } else if (info->entries[i].stage == PAL_SHADER_STAGE_RAYGEN ||
-                info->entries[i].stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
-                info->entries[i].stage == PAL_SHADER_STAGE_ANY_HIT ||
-                info->entries[i].stage == PAL_SHADER_STAGE_MISS ||
-                info->entries[i].stage == PAL_SHADER_STAGE_INTERSECTION ||
-                info->entries[i].stage == PAL_SHADER_STAGE_CALLABLE) {
-            if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-        }
-        // clang-format on
-
         convertToWcharD3D12(info->entries[i].entryName, entry->entryName);
         entry->patchControlPoints = info->entries[i].patchControlPoints;
         entry->stage = info->entries[i].stage; 
@@ -815,7 +732,6 @@ PalResult PAL_CALL createShaderD3D12(
     shader->byteCode.BytecodeLength = info->bytecodeSize;
 
     shader->entryCount = info->entryCount;
-    shader->reserved = PAL_BACKEND_KEY;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }

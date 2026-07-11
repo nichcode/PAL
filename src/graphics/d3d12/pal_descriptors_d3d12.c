@@ -19,15 +19,6 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     DescriptorSetBinding* bindings = nullptr;
     uint32_t count = info->bindingCount;
 
-    PalBool hasDescriptorIndexing = PAL_FALSE;
-    if (d3d12Device->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        hasDescriptorIndexing = PAL_TRUE;
-    }
-
-    if (info->flags != 0 && !hasDescriptorIndexing) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     // partially bound is not supported
     if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
@@ -163,7 +154,6 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     layout->bindingCount = info->bindingCount;
     layout->samplerCount = samplerCount;
     layout->bindings = bindings;
-    layout->reserved = PAL_BACKEND_KEY;
     *outLayout = (PalDescriptorSetLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
@@ -183,15 +173,6 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
     HRESULT result;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
     DescriptorPoolD3D12* pool = nullptr;
-
-    PalBool hasDescriptorIndexing = PAL_FALSE;
-    if (d3d12Device->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        hasDescriptorIndexing = PAL_TRUE;
-    }
-
-    if (info->flags != 0 && !hasDescriptorIndexing) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     // partially bound is not supported
     if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
@@ -324,7 +305,6 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
 
     pool->flags = info->flags;
     pool->maxSets = info->maxDescriptorSets;
-    pool->reserved = PAL_BACKEND_KEY;
     *outPool = (PalDescriptorPool*)pool;
     return PAL_RESULT_SUCCESS;
 }
@@ -377,13 +357,6 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     uint32_t uniformBufferCount = 0;
     uint32_t sampledImageCount = 0;
     uint32_t tlasCount = 0;
-
-    PalBool isPoolValid = d3d12Pool->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
-    PalBool isLayoutValid = d3d12Layout->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
-    if (isPoolValid != isLayoutValid) {
-        // we check if both are true or false
-        return PAL_RESULT_CODE_INVALID_OPERATION;
-    }
 
     // get requirements for the sets using the provided layout
     for (int i = 0; i < d3d12Layout->bindingCount; i++) {
@@ -459,7 +432,6 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     limits->usedStorageBuffers += storageBufferCount;
     limits->usedUniformBuffers += uniformBufferCount;
 
-    set->reserved = PAL_BACKEND_KEY;
     *outSet = (PalDescriptorSet*)set;
     return PAL_RESULT_SUCCESS;
 }
@@ -504,10 +476,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     d3d12Device->handle->lpVtbl->CreateSampler(d3d12Device->handle, &sampler->desc, dst);
 
                 } else {
-                    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
-
                     D3D12_SAMPLER_DESC desc = {0};
                     desc.MaxAnisotropy = 1;
                     desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -529,11 +497,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     AccelerationStructureD3D12* tlas = nullptr;
                     tlas = (AccelerationStructureD3D12*)info->tlasInfos[j].tlas;
                     desc.RaytracingAccelerationStructure.Location = tlas->address;
-
-                } else {
-                    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
                 }
 
                 d3d12Device->handle->lpVtbl->CreateShaderResourceView(
@@ -558,10 +521,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     handle = imageView->image->handle;
 
                 } else {
-                    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
-
                     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
                     type = PAL_IMAGE_VIEW_TYPE_2D;
                     range.mipLevelCount = 1;
@@ -569,14 +528,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     range.aspect = PAL_IMAGE_ASPECT_COLOR;
                 }
 
-                fillSubresourceD3D12(
-                    type,
-                    &range,
-                    nullptr,
-                    nullptr,
-                    &desc,
-                    nullptr);
-
+                fillSubresourceD3D12(DESC_TYPE_SRV, type, &range, &desc);
                 d3d12Device->handle->lpVtbl->CreateShaderResourceView(
                     d3d12Device->handle,
                     handle,
@@ -597,10 +549,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     handle = imageView->image->handle;
 
                 } else {
-                    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
-
                     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
                     type = PAL_IMAGE_VIEW_TYPE_2D;
                     range.mipLevelCount = 1;
@@ -608,14 +556,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     range.aspect = PAL_IMAGE_ASPECT_COLOR;
                 }
 
-                fillSubresourceD3D12(
-                    type,
-                    &range,
-                    nullptr,
-                    nullptr,
-                    nullptr,
-                    &desc);
-
+                fillSubresourceD3D12(DESC_TYPE_UAV, type, &range, &desc);
                 d3d12Device->handle->lpVtbl->CreateUnorderedAccessView(
                     d3d12Device->handle,
                     handle,
@@ -633,11 +574,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.SizeInBytes = bufferInfo->size;
                     address = buffer->handle->lpVtbl->GetGPUVirtualAddress(buffer->handle);
                     desc.BufferLocation = address + bufferInfo->offset;
-
-                } else {
-                    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
                 }
 
                 d3d12Device->handle->lpVtbl->CreateConstantBufferView(
@@ -667,11 +603,6 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     handle = buffer->handle;
                     desc.Buffer.FirstElement = bufferInfo->offset / stride;
                     desc.Buffer.NumElements = bufferInfo->size / stride;
-
-                } else {
-                    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
                 }            
 
                 d3d12Device->handle->lpVtbl->CreateUnorderedAccessView(

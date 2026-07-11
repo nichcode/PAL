@@ -21,10 +21,6 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     PipelineD3D12* pipeline = (PipelineD3D12*)info->rayTracingPipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
 
-    if (!(d3d12Device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     uint32_t totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
     totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
     if (info->recordCount != totalGroups) {
@@ -290,7 +286,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         }
     }
 
-    sbt->stagingBuffer->lpVtbl->Unmap(sbt->stagingBuffer, 0, nullptr);
+    sbt->stagingPtr = ptr;
     sbt->baseAddress = sbt->buffer->lpVtbl->GetGPUVirtualAddress(sbt->buffer);
 
     // raygen
@@ -342,7 +338,6 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     sbt->stagingBufferSize = bufferSize;
     sbt->pipeline = pipeline;
 
-    sbt->reserved = PAL_BACKEND_KEY;
     sbt->isDirty = PAL_TRUE; // we need to copy from the staging to the gpu buffer
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;
@@ -356,21 +351,14 @@ void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
     palFree(s_D3D12.allocator, d3d12Sbt);
 }
 
-PalResult PAL_CALL updateShaderBindingTableD3D12(
+void PAL_CALL updateShaderBindingTableD3D12(
     PalShaderBindingTable* sbt, 
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
-    HRESULT result;
     ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
     PipelineD3D12* pipeline = d3d12Sbt->pipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
-
-    void* data = nullptr;
-    d3d12Sbt->stagingBuffer->lpVtbl->Map(d3d12Sbt->stagingBuffer, 0, nullptr, &data);
-    if (FAILED(result)) {
-        return makeResultD3D12(result);
-    }
 
     uint64_t stride = 0;
     uint64_t offset = 0;
@@ -378,10 +366,7 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
 
     for (int i = 0; i < count; i++) {
         PalShaderBindingTableRecordInfo* info = &infos[i];
-        if (!info->localDataSize) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
-
+       
         // find the group the record belongs to
         uint32_t index = info->groupIndex;
         if (index < sbtInfo->raygenCount) {
@@ -411,13 +396,11 @@ PalResult PAL_CALL updateShaderBindingTableD3D12(
 
         // write payload
         uint32_t localIndex = index - startIndex;
-        uint8_t* dst = (uint8_t*)data + offset + (localIndex * stride);
+        uint8_t* dst = (uint8_t*)d3d12Sbt->stagingPtr + offset + (localIndex * stride);
         memcpy(dst + d3d12Sbt->handleSize, info->localData, info->localDataSize);
     }
 
-    d3d12Sbt->stagingBuffer->lpVtbl->Unmap(d3d12Sbt->stagingBuffer, 0, nullptr);
     d3d12Sbt->isDirty = PAL_TRUE;
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

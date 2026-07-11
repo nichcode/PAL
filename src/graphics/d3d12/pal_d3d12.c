@@ -772,7 +772,9 @@ void fillSubresourceD3D12(
     const PalImageSubresourceRange* range,
     void* desc)
 {
-    if (rtvDesc) {
+    if (descType == DESC_TYPE_RTV) {
+        D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc = desc;
+
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
             rtvDesc->Texture1D.MipSlice = range->startMipLevel;
             rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
@@ -799,9 +801,10 @@ void fillSubresourceD3D12(
             rtvDesc->Texture3D.WSize = range->layerArrayCount;
             rtvDesc->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
         }
-        return;
 
-    } else if (dsvDesc) {
+    } else if (descType == DESC_TYPE_DSV) {
+        D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc = desc;
+
         if (range->aspect == PAL_IMAGE_ASPECT_DEPTH) {
             dsvDesc->Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
         } else if (range->aspect == PAL_IMAGE_ASPECT_STENCIL) {
@@ -828,9 +831,10 @@ void fillSubresourceD3D12(
             dsvDesc->Texture2DArray.ArraySize = range->layerArrayCount;
             dsvDesc->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
         }
-        return;
 
-    } else if (srvDesc) {
+    } else if (descType == DESC_TYPE_SRV) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc = desc;
+
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
             srvDesc->Texture1D.MipLevels = range->mipLevelCount;
             srvDesc->Texture1D.MostDetailedMip = range->startMipLevel;
@@ -872,9 +876,10 @@ void fillSubresourceD3D12(
             srvDesc->TextureCubeArray.NumCubes = range->layerArrayCount;
             srvDesc->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
         }
-        return;
 
-    } else if (uavDesc) {
+    } else if (descType == DESC_TYPE_UAV) {
+        D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc = desc;
+
         if (type == PAL_IMAGE_VIEW_TYPE_1D) {
             uavDesc->Texture1D.MipSlice = range->startMipLevel;
             uavDesc->ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;

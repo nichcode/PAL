@@ -153,6 +153,7 @@ typedef struct {
     void* reserved;
     uint32_t shaderModel;
     DWORD debugCookie;
+    PalBool canFenceReset;
     IDXGIAdapter4* adapter;
     ID3D12CommandSignature* meshSignature;
     ID3D12CommandSignature* drawIndexedSignature;
@@ -190,6 +191,7 @@ typedef struct {
 typedef struct {
     void* reserved;
     PalBool isMemoryManaged;
+    ID3D12Device5* device;
     ID3D12Resource* handle;
     PalImageInfo info;
     D3D12_RESOURCE_DESC desc;
@@ -201,6 +203,7 @@ typedef struct {
     PalImageViewType type;
     DXGI_FORMAT format;
     ImageD3D12* image;
+    DeviceD3D12* device;
     PalImageSubresourceRange range;
 } ImageViewD3D12;
 
@@ -248,6 +251,7 @@ typedef struct {
     ID3D12Resource* buffer;
     ID3D12CommandAllocator* allocator;
     void* pipeline;
+    DeviceD3D12* device;
     ID3D12GraphicsCommandList6* handle;
 } CommandBufferD3D12;
 
@@ -270,6 +274,7 @@ typedef struct {
     PalBufferUsages usages;
     uint64_t size;
     ID3D12Resource* handle;
+    ID3D12Device5* device;
     D3D12_RESOURCE_DESC desc;
 } BufferD3D12;
 
@@ -304,6 +309,7 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    void* stagingPtr;
     PalBool isDirty;
     uint32_t stagingBufferSize;
     uint32_t handleSize;
