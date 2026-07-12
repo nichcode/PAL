@@ -47,15 +47,6 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flagsCreateInfo = {0};
     flagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 
-    PalBool hasDescriptorIndexing = PAL_FALSE;
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        hasDescriptorIndexing = PAL_TRUE;
-    }
-
-    if (info->flags != 0 && !hasDescriptorIndexing) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     layout = palAllocate(s_Vk.allocator, sizeof(DescriptorSetLayoutVk), 0);
     bindings = palAllocate(s_Vk.allocator, sizeof(VkDescriptorSetLayoutBinding) * count, 0);
     if (!layout || !bindings) {
@@ -116,7 +107,6 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
 
     layout->device = vkDevice;
     layout->flags = info->flags;
-    layout->reserved = PAL_BACKEND_KEY;
     *outLayout = (PalDescriptorSetLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
@@ -144,15 +134,6 @@ PalResult PAL_CALL createDescriptorPoolVk(
     uint32_t bindingSizeCount = info->bindingSizeCount;
     VkDescriptorPoolCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-
-    PalBool hasDescriptorIndexing = PAL_FALSE;
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING) {
-        hasDescriptorIndexing = PAL_TRUE;
-    }
-
-    if (info->flags != 0 && !hasDescriptorIndexing) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
         createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
@@ -188,7 +169,6 @@ PalResult PAL_CALL createDescriptorPoolVk(
 
     pool->device = vkDevice;
     pool->flags = info->flags;
-    pool->reserved = PAL_BACKEND_KEY;
     *outPool = (PalDescriptorPool*)pool;
     return PAL_RESULT_SUCCESS;
 }
@@ -219,13 +199,6 @@ PalResult PAL_CALL allocateDescriptorSetVk(
     DescriptorSetLayoutVk* vkLayout = (DescriptorSetLayoutVk*)layout;
     DescriptorSetVk* set = nullptr;
 
-    PalBool isPoolValid = vkPool->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
-    PalBool isLayoutValid = vkLayout->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
-    if (isPoolValid != isLayoutValid) {
-        // we check if both are true or false
-        return PAL_RESULT_CODE_INVALID_OPERATION;
-    }
-
     set = palAllocate(s_Vk.allocator, sizeof(DescriptorSetVk), 0);
     if (!set) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -245,7 +218,6 @@ PalResult PAL_CALL allocateDescriptorSetVk(
 
     set->pool = vkPool;
     set->device = vkDevice;
-    set->reserved = PAL_BACKEND_KEY;
     *outSet = (PalDescriptorSet*)set;
     return PAL_RESULT_SUCCESS;
 }
@@ -350,11 +322,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
                     bufferInfo->buffer = vkBuffer->handle;
                     bufferInfo->offset = tmp->offset;
                     bufferInfo->range = tmp->size;
-
-                } else  {
-                    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
                 }
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
@@ -362,11 +329,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
                     PalDescriptorTLASInfo* tmp = &info->tlasInfos[j];
                     AccelerationStructureVk* as = (AccelerationStructureVk*)tmp->tlas;
                     tlas[tlasCount + j] = as->handle;
-
-                } else {
-                    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                    }
                 }
 
             } else {
@@ -378,11 +340,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
                         SamplerVk* vkSampler = (SamplerVk*)tmp->sampler;
                         imageInfo->sampler = vkSampler->handle;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-                    }  else {
-                        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                        }
                     }    
 
                 } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
@@ -393,11 +350,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
                         imageInfo->sampler = nullptr;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                         imageInfo->imageView = vkImageView->handle;
-
-                    } else {
-                        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                        }
                     }
 
                 } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
@@ -408,11 +360,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
                         imageInfo->sampler = nullptr;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                         imageInfo->imageView = vkImageView->handle;
-
-                    } else {
-                        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS)) {
-                            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-                        }
                     }
                 }
             }

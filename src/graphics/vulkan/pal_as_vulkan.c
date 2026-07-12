@@ -18,10 +18,6 @@ PalResult PAL_CALL createAccelerationstructureVk(
     DeviceVk* vkDevice = (DeviceVk*)device;
     BufferVk* buffer = (BufferVk*)info->buffer;
     
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     as = palAllocate(s_Vk.allocator, sizeof(AccelerationStructureVk), 0);
     if (!as) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -55,7 +51,6 @@ PalResult PAL_CALL createAccelerationstructureVk(
     as->address = vkDevice->getAccelerationDeviceAddress(vkDevice->handle, &addressInfo);
 
     as->device = vkDevice;
-    as->reserved = PAL_BACKEND_KEY;
     *outAs = (PalAccelerationStructure*)as;
     return PAL_RESULT_SUCCESS;
 }
@@ -77,10 +72,6 @@ void PAL_CALL getAccelerationStructureBuildSizeVk(
     PalAccelerationStructureBuildSize* size)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return;
-    }
-
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     uint32_t* maxPrimities = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};

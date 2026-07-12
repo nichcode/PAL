@@ -621,7 +621,7 @@ void xGetWindowTitle(
     } else {
         XTextProperty text;
         if (!s_X11.getWMName(s_X11.display, xWin, &text)) {
-            return PAL_RESULT_CODE_INVALID_HANDLE;
+            return;
         }
 
         if (bufferSize >= text.nitems) {

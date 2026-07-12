@@ -89,7 +89,6 @@ PalResult PAL_CALL createSurfaceVk(
 
     surface->device = vkDevice;
     surface->handle = tmp;
-    surface->reserved = PAL_BACKEND_KEY;
     *outSurface = (PalSurface*)surface;
     return PAL_RESULT_SUCCESS;
 }
@@ -101,7 +100,7 @@ void PAL_CALL destroySurfaceVk(PalSurface* surface)
     palFree(s_Vk.allocator, vkSurface);
 }
 
-PalResult PAL_CALL getSurfaceCapabilitiesVk(
+void PAL_CALL getSurfaceCapabilitiesVk(
     PalDevice* device,
     PalSurface* surface,
     PalSurfaceCapabilities* caps)
@@ -114,9 +113,6 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
 
     DeviceVk* vkDevice = (DeviceVk*)device;
     VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkDevice->phyDevice;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     memset(caps, 0, sizeof(PalSurfaceCapabilities));
     s_Vk.getSurfacePresentModes(phyDevice, vkSurface->handle, &modeCount, nullptr);
@@ -125,7 +121,7 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
     modes = palAllocate(s_Vk.allocator, sizeof(VkPresentModeKHR) * modeCount, 0);
     formats = palAllocate(s_Vk.allocator, sizeof(VkSurfaceFormatKHR) * formatCount, 0);
     if (!modes || !formats) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        return;
     }
 
     s_Vk.getSurfacePresentModes(phyDevice, vkSurface->handle, &modeCount, modes);
@@ -200,7 +196,6 @@ PalResult PAL_CALL getSurfaceCapabilitiesVk(
 
     palFree(s_Vk.allocator, formats);
     palFree(s_Vk.allocator, modes);
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL createSwapchainVk(
@@ -218,10 +213,6 @@ PalResult PAL_CALL createSwapchainVk(
     QueueVk* vkQueue = (QueueVk*)queue;
     PhysicalQueue* phyQueue = vkQueue->phyQueue;
     SurfaceVk* vkSurface = (SurfaceVk*)surface;
-
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SWAPCHAIN)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     // check if the queue is a graphics queue before we check its family
     // index for presentation support.
@@ -333,7 +324,6 @@ PalResult PAL_CALL createSwapchainVk(
     swapchain->device = vkDevice;
     swapchain->queue = vkQueue;
     swapchain->imageCount = count;
-    swapchain->reserved = PAL_BACKEND_KEY;
     *outSwapchain = (PalSwapchain*)swapchain;
     return PAL_RESULT_SUCCESS;
 }
@@ -355,9 +345,6 @@ PalImage* PAL_CALL getSwapchainImageVk(
     uint32_t index)
 {
     SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;
-    if (index > vkSwapchain->imageCount) {
-        return nullptr;
-    }
     return (PalImage*)&vkSwapchain->images[index];
 }
 

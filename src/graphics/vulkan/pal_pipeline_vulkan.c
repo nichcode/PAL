@@ -10,45 +10,6 @@
 
 #define max(a, b) (a > b) ? a : b
 
-static VkPipelineStageFlags2 pipelineStageToVk(VkShaderStageFlagBits stage)
-{
-    switch (stage) {
-        case VK_SHADER_STAGE_VERTEX_BIT:
-            return VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
-
-        case VK_SHADER_STAGE_FRAGMENT_BIT:
-            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-
-        case VK_SHADER_STAGE_COMPUTE_BIT:
-            return VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-
-        case VK_SHADER_STAGE_GEOMETRY_BIT:
-            return VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
-
-        case VK_SHADER_STAGE_MESH_BIT_EXT:
-            return VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT;
-
-        case VK_SHADER_STAGE_TASK_BIT_EXT:
-            return VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT;
-
-        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            return VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT;
-
-        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            return VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT;
-
-        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
-        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
-        case VK_SHADER_STAGE_MISS_BIT_KHR:
-        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
-        case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
-            return VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
-        }
-    }
-    return 0;
-}
-
 static VkBlendOp blendOpToVk(PalBlendOp op)
 {
     switch (op) {
@@ -234,7 +195,6 @@ PalResult PAL_CALL createPipelineLayoutVk(
     }
 
     layout->device = vkDevice;
-    layout->reserved = PAL_BACKEND_KEY;
     *outLayout = (PalPipelineLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
@@ -323,7 +283,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 
     // shaders
     uint32_t stageIndex = 0;
-    pipeline->stages = VK_PIPELINE_STAGE_2_NONE;
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stageCount);
     for (int i = 0; i < info->shaderCount; i++) {
         ShaderVk* tmp = (ShaderVk*)info->shaders[i];
@@ -346,7 +305,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
             stageInfo->module = tmp->handle;
             stageInfo->pName = entry->entryName;
             stageInfo->stage = entry->stage;
-            pipeline->stages |= pipelineStageToVk(entry->stage);
         }
     }
 
@@ -707,7 +665,6 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
-    pipeline->reserved = PAL_BACKEND_KEY;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -752,8 +709,6 @@ PalResult PAL_CALL createComputePipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
-    pipeline->stages = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-    pipeline->reserved = PAL_BACKEND_KEY;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -769,10 +724,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     PipelineVk* pipeline = nullptr;
     VkPipelineShaderStageCreateInfo* shaderStages = nullptr; 
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
-
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     if (info->maxPayloadSize > vkDevice->limits.maxPayloadSize) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
@@ -807,7 +758,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
     // shaders
     uint32_t stageIndex = 0;
-    pipeline->stages = VK_PIPELINE_STAGE_2_NONE;
     memset(shaderStages, 0, sizeof(VkPipelineShaderStageCreateInfo) * stageCount);
     for (int i = 0; i < info->shaderCount; i++) {
         ShaderVk* tmp = (ShaderVk*)info->shaders[i];
@@ -820,7 +770,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
             stageInfo->module = tmp->handle;
             stageInfo->pName = entry->entryName;
             stageInfo->stage = entry->stage;
-            pipeline->stages |= pipelineStageToVk(entry->stage);
         }
     }
 
@@ -926,7 +875,6 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     pipeline->device = vkDevice;
     pipeline->layout = layout->handle;
-    pipeline->reserved = PAL_BACKEND_KEY;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }

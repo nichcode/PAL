@@ -454,9 +454,7 @@ PalResult PAL_CALL allocateMemoryD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL freeMemoryD3D12(
-    PalDevice* device,
-    PalMemory* memory)
+void PAL_CALL freeMemoryD3D12(PalMemory* memory)
 {
     MemoryD3D12* d3d12Memory = (MemoryD3D12*)memory;
     d3d12Memory->handle->lpVtbl->Release(d3d12Memory->handle);

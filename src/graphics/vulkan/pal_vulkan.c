@@ -783,6 +783,92 @@ void fillBuildInfoVk(
     outBuildInfo->scratchData = scratchData;
 }
 
+VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages)
+{
+    if (stages == PAL_PIPELINE_STAGE_NONE) {
+        return VK_PIPELINE_STAGE_2_NONE;
+    }
+
+    VkPipelineStageFlags2 vkStages = 0;
+    if (stages & PAL_PIPELINE_STAGE_VERTEX_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_FRAGMENT_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_COMPUTE_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_GEOMETRY_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_RAY_TRACING_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_TASK_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_MESH_SHADER) {
+        vkStages |= VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_VERTEX_INPUT) {
+        vkStages |= VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_INDEX_INPUT) {
+        vkStages |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_EARLY_DEPTH_STENCIL) {
+        vkStages |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_LATE_DEPTH_STENCIL) {
+        vkStages |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_TRANSFER) {
+        vkStages |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_HOST) {
+        vkStages |= VK_PIPELINE_STAGE_2_HOST_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_COLOR_ATTACHMENT) {
+        vkStages |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT) {
+        vkStages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_INDIRECT_INPUT) {
+        vkStages |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    }
+
+    if (stages & PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD) {
+        vkStages |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    }
+
+    return vkStages;
+}
+
 static void* alignedRealloc(
     void* memory, 
     uint64_t size, 

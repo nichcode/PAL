@@ -35,7 +35,6 @@ PalResult PAL_CALL createFenceVk(
     }
 
     fence->device = vkDevice;
-    fence->reserved = PAL_BACKEND_KEY;
     *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
 }
@@ -53,16 +52,16 @@ PalResult PAL_CALL waitFenceVk(
 {
     FenceVk* vkFence = (FenceVk*)fence;
     VkResult result;
-    uint64_t timeInNanoseconds = 0;
+    uint64_t timeInNano = 0;
     if (timeout) {
         if (timeout == PAL_INFINITE) {
-            timeInNanoseconds = UINT64_MAX;
+            timeInNano = UINT64_MAX;
         } else {
-            timeInNanoseconds = timeout * 1000000;
+            timeInNano = timeout * 1000000;
         }
     }
 
-    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, PAL_TRUE, timeInNanoseconds);
+    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, PAL_TRUE, timeInNano);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -73,10 +72,6 @@ PalResult PAL_CALL waitFenceVk(
 PalResult PAL_CALL resetFenceVk(PalFence* fence)
 {
     FenceVk* vkFence = (FenceVk*)fence;
-    if (!(vkFence->device->features & PAL_ADAPTER_FEATURE_FENCE_RESET)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkResult result = s_Vk.resetFence(vkFence->device->handle, 1, &vkFence->handle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -105,7 +100,6 @@ PalResult PAL_CALL createSemaphoreVk(
     VkResult result;
     SemaphoreVk* semaphore = nullptr;
     DeviceVk* vkDevice = (DeviceVk*)device;
-    PalBool hasTimeline = vkDevice->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE;
 
     semaphore = palAllocate(s_Vk.allocator, sizeof(SemaphoreVk), 0);
     if (!semaphore) {
@@ -121,10 +115,6 @@ PalResult PAL_CALL createSemaphoreVk(
 
     const void* next = nullptr;
     semaphore->isTimeline = PAL_FALSE;
-    if (enableTimeline && !hasTimeline) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     if (enableTimeline) {
         next = &timelineCreateInfo;
         semaphore->isTimeline = PAL_TRUE;   
@@ -143,7 +133,6 @@ PalResult PAL_CALL createSemaphoreVk(
     }
 
     semaphore->device = vkDevice;
-    semaphore->reserved = PAL_BACKEND_KEY;
     *outSemaphore = (PalSemaphore*)semaphore;
     return PAL_RESULT_SUCCESS;
 }
@@ -161,7 +150,7 @@ PalResult PAL_CALL waitSemaphoreVk(
     uint64_t timeout)
 {
     VkResult result;
-    uint64_t timeInNanoseconds = 0;
+    uint64_t timeInNano = 0;
     SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
     if (!vkSemaphore->isTimeline) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
@@ -169,9 +158,9 @@ PalResult PAL_CALL waitSemaphoreVk(
 
     if (timeout) {
         if (timeout == PAL_INFINITE) {
-            timeInNanoseconds = UINT64_MAX;
+            timeInNano = UINT64_MAX;
         } else {
-            timeInNanoseconds = timeout * 1000000;
+            timeInNano = timeout * 1000000;
         }
     }
 
@@ -184,7 +173,7 @@ PalResult PAL_CALL waitSemaphoreVk(
     result = vkSemaphore->device->waitSemaphore(
         vkSemaphore->device->handle, 
         &waitInfo, 
-        timeInNanoseconds);
+        timeInNano);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -217,17 +206,13 @@ PalResult PAL_CALL signalSemaphoreVk(
     return PAL_RESULT_SUCCESS;
 }
 
-uint64_t PAL_CALL getSemaphoreValueVk(PalSemaphore* semaphore)
+PalResult PAL_CALL getSemaphoreValueVk(PalSemaphore* semaphore, uint64_t* value)
 {
     SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
-    if (!vkSemaphore->isTimeline) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkResult result = vkSemaphore->device->getSemaphoreValue(
         vkSemaphore->device->handle,
         vkSemaphore->handle,
-        outValue);
+        value);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);

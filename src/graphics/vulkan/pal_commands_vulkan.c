@@ -8,6 +8,11 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
+typedef struct {
+    VkAccessFlags2 access;
+    VkImageLayout layout;
+} BarrierInfo;
+
 static void commitShaderbindingTableUpdate(
     CommandBufferVk* cmdBuffer, 
     ShaderBindingTableVk* sbt)
@@ -44,163 +49,137 @@ static void commitShaderbindingTableUpdate(
     sbt->isDirty = PAL_FALSE;
 }
 
-static Barrier barrierToVk(PalUsageState state)
+static BarrierInfo barrierToVk(PalUsageState state)
 {
-    Barrier barrier = {0};
+    BarrierInfo barrier = {0};
     switch (state) {
         case PAL_USAGE_STATE_PRESENT: {
-            barrier.stage = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR;
             barrier.access = 0;
             barrier.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             return barrier;
         }
 
         case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE: {
-            barrier.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
             barrier.access = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
-            barrier.stage |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE: {
-            barrier.stage = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
-            barrier.stage |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
-            barrier.stage |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE: {
-            barrier.stage = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR;
-            barrier.stage |= VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
             barrier.access = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
             barrier.access = VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
             return barrier;
         }
 
         case PAL_USAGE_STATE_TRANSFER_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
             barrier.access = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_TRANSFER_WRITE: {
-            barrier.stage = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
             barrier.access = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_VERTEX_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR;
             barrier.access = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_INDEX_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR;
             barrier.access = VK_ACCESS_2_INDEX_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_INDIRECT_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR;
             barrier.access = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_UNIFORM_READ: {
-            barrier.stage = 0;
             barrier.access = VK_ACCESS_2_UNIFORM_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_SHADER_READ: {
-            barrier.stage = 0;
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_SHADER_WRITE: {
-            barrier.stage = 0;
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_STORAGE_READ: {
-            barrier.stage = 0;
             barrier.access = VK_ACCESS_2_SHADER_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_STORAGE_WRITE: {
-            barrier.stage = 0;
             barrier.access = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_GENERAL;
             return barrier;
         }
 
         case PAL_USAGE_STATE_HOST_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_HOST_BIT_KHR;
             barrier.access = VK_ACCESS_2_HOST_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_HOST_WRITE: {
-            barrier.stage = VK_PIPELINE_STAGE_2_HOST_BIT_KHR;
             barrier.access = VK_ACCESS_2_HOST_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ: {
-            barrier.stage = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
             barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
 
         case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
-            barrier.stage = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
             barrier.access = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
             barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             return barrier;
         }
     }
 
-    barrier.stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
     barrier.access = 0;
     barrier.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     return barrier;
@@ -226,19 +205,18 @@ static VkRenderingFlags renderingFlagToVk(PalRenderingFlags flags)
 
 static VkResolveModeFlags resolveModeToVk(PalResolveMode mode)
 {
-    // TODO: fix
     switch (mode) {
         case PAL_RESOLVE_MODE_SAMPLE_ZERO:
             return VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
 
         case PAL_RESOLVE_MODE_AVERAGE:
-            return VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
+            return VK_RESOLVE_MODE_AVERAGE_BIT_KHR;
 
         case PAL_RESOLVE_MODE_MIN:
-            return VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
+            return VK_RESOLVE_MODE_MIN_BIT_KHR;
 
         case PAL_RESOLVE_MODE_MAX:
-            return VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
+            return VK_RESOLVE_MODE_MAX_BIT_KHR;
     }
 
     return VK_RESOLVE_MODE_NONE_KHR;
@@ -257,19 +235,21 @@ PalResult PAL_CALL cmdBeginVk(
     VkCommandBufferInheritanceRenderingInfoKHR layout = {0};
     layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
 
+    vkCmdBuffer->allocator.offset = 0; // reset
     VkFormat format = VK_FORMAT_UNDEFINED;
     VkFormat* colorAttachments = nullptr;
-    colorAttachments = palAllocate(
-        s_Vk.allocator, 
-        sizeof(VkFormat) * info->colorAttachentCount, 
-        0);
-
-    if (!colorAttachments) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
-    }
 
     if (!vkCmdBuffer->primary) {
         // secondary command buffer
+        colorAttachments = palLinearAlloc(
+            &vkCmdBuffer->allocator, 
+            sizeof(VkFormat) * info->colorAttachentCount, 
+            0);
+
+        if (!colorAttachments) {
+            return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        }
+
         for (int i = 0; i < info->colorAttachentCount; i++) {
             format = formatToVk(info->colorAttachmentsFormat[i]);
             colorAttachments[i] = format;
@@ -298,8 +278,6 @@ PalResult PAL_CALL cmdBeginVk(
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
-
-    palFree(s_Vk.allocator, colorAttachments);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -324,16 +302,12 @@ PalResult PAL_CALL cmdExecuteCommandBufferVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetFragmentShadingRateVk(
+void PAL_CALL cmdSetFragmentShadingRateVk(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkExtent2D size = getShadingRateSizeVk(state->rate);
     VkFragmentShadingRateCombinerOpKHR combinerOps[2];
     for (int i = 0; i < 2; i++) {
@@ -341,10 +315,9 @@ PalResult PAL_CALL cmdSetFragmentShadingRateVk(
     }
 
     device->cmdSetFragmentShadingRate(vkCmdBuffer->handle, &size, combinerOps);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawMeshTasksVk(
+void PAL_CALL cmdDrawMeshTasksVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t groupCountX,
     uint32_t groupCountY,
@@ -352,15 +325,10 @@ PalResult PAL_CALL cmdDrawMeshTasksVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     device->cmdDrawMeshTask(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
+void PAL_CALL cmdDrawMeshTasksIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     uint32_t drawCount)
@@ -369,14 +337,6 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
     DeviceVk* device = vkCmdBuffer->device;
     BufferVk* vkBuffer = (BufferVk*)buffer;
 
-    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirect(
         vkCmdBuffer->handle, 
@@ -384,11 +344,9 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectVk(
         0, 
         drawCount,
         stride);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
+void PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
@@ -399,18 +357,6 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     BufferVk* vkBuffer = (BufferVk*)buffer;
     BufferVk* vkCountBuffer = (BufferVk*)countBuffer;
 
-    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
-    if (!(vkCountBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirectCount(
         vkCmdBuffer->handle,
@@ -420,38 +366,37 @@ PalResult PAL_CALL cmdDrawMeshTasksIndirectCountVk(
         0,
         maxDrawCount,
         stride);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBuildAccelerationStructureVk(
+void PAL_CALL cmdBuildAccelerationStructureVk(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
+    
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
     const VkAccelerationStructureBuildRangeInfoKHR** tmpRangeInfos = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
-    tmpRangeInfos = palAllocate(s_Vk.allocator, sizeof(void*) * info->count, 0);
-    geometries = palAllocate(
-        s_Vk.allocator, 
+    tmpRangeInfos = palLinearAlloc(
+        &vkCmdBuffer->allocator, 
+        sizeof(void*) * info->count, 
+        0);
+
+    geometries = palLinearAlloc(
+        &vkCmdBuffer->allocator, 
         sizeof(VkAccelerationStructureGeometryKHR) * info->count, 
         0);
 
-    rangeInfos = palAllocate(
-        s_Vk.allocator, 
+    rangeInfos = palLinearAlloc(
+        &vkCmdBuffer->allocator, 
         sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count, 
         0);
 
     if (!tmpRangeInfos || !rangeInfos || !geometries) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        return;
     }
 
     memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->count);
@@ -467,13 +412,9 @@ PalResult PAL_CALL cmdBuildAccelerationStructureVk(
         1, 
         &buildInfo, 
         tmpRangeInfos);
-
-    palFree(s_Vk.allocator, geometries);
-    palFree(s_Vk.allocator, rangeInfos);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBeginRenderingVk(
+void PAL_CALL cmdBeginRenderingVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info)
 {
@@ -485,13 +426,13 @@ PalResult PAL_CALL cmdBeginRenderingVk(
     VkRenderingAttachmentInfoKHR stencilAttachment = {0};
     
     VkRenderingAttachmentInfoKHR* colorAttachments = nullptr;
-    colorAttachments = palAllocate(
-        s_Vk.allocator, 
+    colorAttachments = palLinearAlloc(
+        &vkCmdBuffer->allocator, 
         sizeof(VkRenderingAttachmentInfoKHR) * info->colorAttachentCount, 
         0);
 
     if (!colorAttachments) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+        return;
     }
 
     VkRenderingAttachmentInfoKHR* attachment = nullptr;
@@ -653,19 +594,15 @@ PalResult PAL_CALL cmdBeginRenderingVk(
 
     rendering.flags = renderingFlagToVk(info->flags);
     vkCmdBuffer->device->cmdBeginRendering(vkCmdBuffer->handle, &rendering);
-
-    palFree(s_Vk.allocator, colorAttachments);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdEndRenderingVk(PalCommandBuffer* cmdBuffer)
+void PAL_CALL cmdEndRenderingVk(PalCommandBuffer* cmdBuffer)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     vkCmdBuffer->device->cmdEndRendering(vkCmdBuffer->handle);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdCopyBufferVk(
+void PAL_CALL cmdCopyBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dst,
     PalBuffer* src,
@@ -680,11 +617,9 @@ PalResult PAL_CALL cmdCopyBufferVk(
     copyRegion.dstOffset = copyInfo->dstOffset;
     copyRegion.srcOffset = copyInfo->srcOffset;
     s_Vk.cmdCopyBuffer(vkCmdBuffer->handle, srcBuffer->handle, dstBuffer->handle, 1, &copyRegion);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdCopyBufferToImageVk(
+void PAL_CALL cmdCopyBufferToImageVk(
     PalCommandBuffer* cmdBuffer,
     PalImage* dstImage,
     PalBuffer* srcBuffer,
@@ -719,11 +654,9 @@ PalResult PAL_CALL cmdCopyBufferToImageVk(
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &copyRegion);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdCopyImageVk(
+void PAL_CALL cmdCopyImageVk(
     PalCommandBuffer* cmdBuffer,
     PalImage* dst,
     PalImage* src,
@@ -764,11 +697,9 @@ PalResult PAL_CALL cmdCopyImageVk(
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &copyRegion);
-
-    return PAL_RESULT_SUCCESS;
 }
    
-PalResult PAL_CALL cmdCopyImageToBufferVk(
+void PAL_CALL cmdCopyImageToBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
     PalImage* srcImage,
@@ -803,40 +734,26 @@ PalResult PAL_CALL cmdCopyImageToBufferVk(
         dst->handle,
         1,
         &copyRegion);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBindPipelineVk(
+void PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     PipelineVk* vkPipeline = (PipelineVk*)pipeline;
     s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
-
     vkCmdBuffer->pipeline = vkPipeline;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetViewportVk(
+void PAL_CALL cmdSetViewportVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t count,
     PalViewport* viewports)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkViewport cachedViewport;
     VkViewport* vkViewports = nullptr;
-    if (count > 1) {
-        vkViewports = palAllocate(s_Vk.allocator, sizeof(VkViewport) * count, 0);
-        if (!vkViewports) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
-        }
-
-    } else {
-        vkViewports = &cachedViewport;
-    }
-
+    vkViewports = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(VkViewport) * count, 0);
     for (int i = 0; i < count; i++) {
         VkViewport* tmp = &vkViewports[i];
         tmp->x = viewports[i].x;
@@ -848,30 +765,16 @@ PalResult PAL_CALL cmdSetViewportVk(
     }
 
     s_Vk.cmdSetViewports(vkCmdBuffer->handle, 0, count, vkViewports);
-    if (count > 1) {
-        palFree(s_Vk.allocator, vkViewports);
-    }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetScissorsVk(
+void PAL_CALL cmdSetScissorsVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t count,
     PalRect2D* scissors)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkRect2D cachedScissor;
     VkRect2D* vkScissors = nullptr;
-    if (count > 1) {
-        vkScissors = palAllocate(s_Vk.allocator, sizeof(VkRect2D) * count, 0);
-        if (!vkScissors) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
-        }
-
-    } else {
-        vkScissors = &cachedScissor;
-    }
-
+    vkScissors = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(VkRect2D) * count, 0);
     for (int i = 0; i < count; i++) {
         VkRect2D* tmp = &vkScissors[i];
         tmp->offset.x = scissors[i].x;
@@ -881,13 +784,9 @@ PalResult PAL_CALL cmdSetScissorsVk(
     }
 
     s_Vk.cmdSetScissors(vkCmdBuffer->handle, 0, count, vkScissors);
-    if (count > 1) {
-        palFree(s_Vk.allocator, vkScissors);
-    }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBindVertexBuffersVk(
+void PAL_CALL cmdBindVertexBuffersVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t firstSlot,
     uint32_t count,
@@ -895,31 +794,17 @@ PalResult PAL_CALL cmdBindVertexBuffersVk(
     uint64_t* offsets)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkBuffer cachedbuffer = nullptr;
     VkBuffer* vkBuffers = nullptr;
-    if (count > 1) {
-        vkBuffers = palAllocate(s_Vk.allocator, sizeof(VkBuffer) * count, 0);
-        if (!vkBuffers) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
-        }
-
-    } else {
-        vkBuffers = &cachedbuffer;
-    }
-
+    vkBuffers = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(VkBuffer) * count, 0);
     for (int i = 0; i < count; i++) {
         BufferVk* tmp = (BufferVk*)buffers[i];
         vkBuffers[i] = tmp->handle;
     }
 
     s_Vk.cmdBindVertexBuffers(vkCmdBuffer->handle, firstSlot, count, vkBuffers, offsets);
-    if (count > 1) {
-        palFree(s_Vk.allocator, vkBuffers);
-    }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBindIndexBufferVk(
+void PAL_CALL cmdBindIndexBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     uint64_t offset,
@@ -933,10 +818,9 @@ PalResult PAL_CALL cmdBindIndexBufferVk(
     }
 
     s_Vk.cmdBindIndexBuffer(vkCmdBuffer->handle, vkBuffer->handle, offset, bufferType);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawVk(
+void PAL_CALL cmdDrawVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t vertexCount,
     uint32_t instanceCount,
@@ -945,10 +829,9 @@ PalResult PAL_CALL cmdDrawVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     s_Vk.cmdDraw(vkCmdBuffer->handle, vertexCount, instanceCount, firstVertex, firstInstance);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawIndirectVk(
+void PAL_CALL cmdDrawIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     uint32_t count)
@@ -956,20 +839,10 @@ PalResult PAL_CALL cmdDrawIndirectVk(
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     BufferVk* vkBuffer = (BufferVk*)buffer;
     uint32_t stride = sizeof(VkDrawIndirectCommand);
-
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_Vk.cmdDrawIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, count, stride);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawIndirectCountVk(
+void PAL_CALL cmdDrawIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
@@ -980,18 +853,6 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
     BufferVk* vkCountBuffer = (BufferVk*)countBuffer;
     DeviceVk* device = vkCmdBuffer->device;
 
-    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
-    if (!(vkCountBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     uint32_t stride = sizeof(VkDrawIndirectCommand);
     device->cmdDrawIndirectCount(
         vkCmdBuffer->handle,
@@ -1001,11 +862,9 @@ PalResult PAL_CALL cmdDrawIndirectCountVk(
         0,
         maxDrawCount,
         stride);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawIndexedVk(
+void PAL_CALL cmdDrawIndexedVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t indexCount,
     uint32_t instanceCount,
@@ -1021,11 +880,9 @@ PalResult PAL_CALL cmdDrawIndexedVk(
         firstIndex,
         vertexOffset,
         firstInstance);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawIndexedIndirectVk(
+void PAL_CALL cmdDrawIndexedIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     uint32_t count)
@@ -1033,20 +890,10 @@ PalResult PAL_CALL cmdDrawIndexedIndirectVk(
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     BufferVk* vkBuffer = (BufferVk*)buffer;
     uint32_t stride = sizeof(VkDrawIndexedIndirectCommand);
-
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_Vk.cmdDrawIndexedIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, count, stride);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
+void PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBuffer* countBuffer,
@@ -1057,18 +904,6 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
     BufferVk* vkCountBuffer = (BufferVk*)countBuffer;
     DeviceVk* device = vkCmdBuffer->device;
 
-    if (!(device->features & PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
-    if (!(vkCountBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     uint32_t stride = sizeof(VkDrawIndexedIndirectCommand);
     device->cmdDrawIndexedIndirectCount(
         vkCmdBuffer->handle,
@@ -1078,68 +913,52 @@ PalResult PAL_CALL cmdDrawIndexedIndirectCountVk(
         0,
         maxDrawCount,
         stride);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdAccelerationStructureBarrierVk(
+void PAL_CALL cmdAccelerationStructureBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructure* as,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     PipelineVk* pipeline = vkCmdBuffer->pipeline;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
-    Barrier old = barrierToVk(oldUsageState);
-    Barrier new = barrierToVk(oldUsageState);
 
-    barrier.srcStageMask = old.stage;
+    BarrierInfo old = barrierToVk(info->oldState);
+    BarrierInfo new = barrierToVk(info->newState);
+
+    barrier.srcStageMask = pipelineStagesToVk(info->srcStages);
     barrier.srcAccessMask = old.access;
-    barrier.dstStageMask = new.stage;
+    barrier.dstStageMask = pipelineStagesToVk(info->dstStages);
     barrier.dstAccessMask = new.access;
 
     VkDependencyInfo dependencyInfo = {0};
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.memoryBarrierCount = 1;
     dependencyInfo.pMemoryBarriers = &barrier;
-
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdImageBarrierVk(
+void PAL_CALL cmdImageBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     PipelineVk* pipeline = vkCmdBuffer->pipeline;
     ImageVk* vkImage = (ImageVk*)image;
     VkImageMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
-    Barrier old = barrierToVk(oldUsageState);
-    Barrier new = barrierToVk(oldUsageState);
 
-    if (old.stage == 0) {
-        old.stage = pipeline->stages;
-    }
+    BarrierInfo old = barrierToVk(info->oldState);
+    BarrierInfo new = barrierToVk(info->newState);
 
-    if (new.stage == 0) {
-        new.stage = pipeline->stages;
-    }
-
-    barrier.srcStageMask = old.stage;
+    barrier.srcStageMask = pipelineStagesToVk(info->srcStages);
     barrier.srcAccessMask = old.access;
     barrier.oldLayout = old.layout;
-    barrier.dstStageMask = new.stage;
+    barrier.dstStageMask = pipelineStagesToVk(info->dstStages);
     barrier.dstAccessMask = new.access;
     barrier.newLayout = new.layout;
 
@@ -1154,36 +973,26 @@ PalResult PAL_CALL cmdImageBarrierVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.imageMemoryBarrierCount = 1;
     dependencyInfo.pImageMemoryBarriers = &barrier;
-
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBufferBarrierVk(
+void PAL_CALL cmdBufferBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     PipelineVk* pipeline = vkCmdBuffer->pipeline;
     BufferVk* vkBuffer = (BufferVk*)buffer;
     VkBufferMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
-    Barrier old = barrierToVk(oldUsageState);
-    Barrier new = barrierToVk(oldUsageState);
 
-    if (old.stage == 0) {
-        old.stage = pipeline->stages;
-    }
+    BarrierInfo old = barrierToVk(info->oldState);
+    BarrierInfo new = barrierToVk(info->newState);
 
-    if (new.stage == 0) {
-        new.stage = pipeline->stages;
-    }
-
-    barrier.srcStageMask = old.stage;
+    barrier.srcStageMask = pipelineStagesToVk(info->srcStages);
     barrier.srcAccessMask = old.access;
-    barrier.dstStageMask = new.stage;
+    barrier.dstStageMask = pipelineStagesToVk(info->dstStages);
     barrier.dstAccessMask = new.access;
 
     barrier.buffer = vkBuffer->handle;
@@ -1194,12 +1003,10 @@ PalResult PAL_CALL cmdBufferBarrierVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.bufferMemoryBarrierCount = 1;
     dependencyInfo.pBufferMemoryBarriers = &barrier;
-
     vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDispatchVk(
+void PAL_CALL cmdDispatchVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t groupCountX,
     uint32_t groupCountY,
@@ -1207,10 +1014,9 @@ PalResult PAL_CALL cmdDispatchVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     s_Vk.cmdDispatch(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDispatchBaseVk(
+void PAL_CALL cmdDispatchBaseVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t baseGroupX,
     uint32_t baseGroupY,
@@ -1221,10 +1027,7 @@ PalResult PAL_CALL cmdDispatchBaseVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_DISPATCH_BASE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
+   
     device->cmdDispatchBase(
         vkCmdBuffer->handle,
         baseGroupX,
@@ -1233,29 +1036,18 @@ PalResult PAL_CALL cmdDispatchBaseVk(
         groupCountX,
         groupCountY,
         groupCountZ);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdDispatchIndirectVk(
+void PAL_CALL cmdDispatchIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     BufferVk* vkBuffer = (BufferVk*)buffer;
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
-
     s_Vk.cmdDispatchIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdTraceRaysVk(
+void PAL_CALL cmdTraceRaysVk(
     PalCommandBuffer* cmdBuffer,
     PalShaderBindingTable* sbt,
     uint32_t raygenIndex,
@@ -1266,10 +1058,6 @@ PalResult PAL_CALL cmdTraceRaysVk(
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
     ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
-
-    if (!(device->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     VkStridedDeviceAddressRegionKHR raygenAddress = {0};
     raygenAddress.size = vkSbt->raygen.region.size;
@@ -1288,11 +1076,9 @@ PalResult PAL_CALL cmdTraceRaysVk(
         width,
         height,
         depth);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdTraceRaysIndirectVk(
+void PAL_CALL cmdTraceRaysIndirectVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t raygenIndex,
     PalShaderBindingTable* sbt,
@@ -1301,14 +1087,6 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
     BufferVk* vkBuffer = (BufferVk*)buffer;
-
-    if (!(vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_INDIRECT)) {
-        return PAL_RESULT_CODE_INVALID_HANDLE;
-    }
 
     PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
     vkSbt->raygen.region.deviceAddress = address;
@@ -1352,11 +1130,9 @@ PalResult PAL_CALL cmdTraceRaysIndirectVk(
         &vkSbt->hit.region,
         &vkSbt->callable.region,
         bufAddress);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdBindDescriptorSetVk(
+void PAL_CALL cmdBindDescriptorSetVk(
     PalCommandBuffer* cmdBuffer,
     uint32_t setIndex,
     PalDescriptorSet* set)
@@ -1374,11 +1150,9 @@ PalResult PAL_CALL cmdBindDescriptorSetVk(
         &vkSet->handle,
         0,
         nullptr);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdPushConstantsVk(
+void PAL_CALL cmdPushConstantsVk(
     PalCommandBuffer* cmdBuffer,
     uint64_t offset,
     uint64_t size,
@@ -1394,20 +1168,14 @@ PalResult PAL_CALL cmdPushConstantsVk(
         offset, 
         size, 
         value);
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetCullModeVk(
+void PAL_CALL cmdSetCullModeVk(
     PalCommandBuffer* cmdBuffer,
     PalCullMode cullMode)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     VkCullModeFlags vkCullMode = 0;
     switch (cullMode) {
@@ -1422,19 +1190,14 @@ PalResult PAL_CALL cmdSetCullModeVk(
     }
     
     device->cmdSetCullMode(vkCmdBuffer->handle, vkCullMode);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetFrontFaceVk(
+void PAL_CALL cmdSetFrontFaceVk(
     PalCommandBuffer* cmdBuffer,
     PalFrontFace frontFace)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
 
     VkFrontFace vkFrontFace = 0;
     switch (frontFace) {
@@ -1446,19 +1209,15 @@ PalResult PAL_CALL cmdSetFrontFaceVk(
     }
 
     device->cmdSetFrontFace(vkCmdBuffer->handle, vkFrontFace);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
+void PAL_CALL cmdSetPrimitiveTopologyVk(
     PalCommandBuffer* cmdBuffer,
     PalPrimitiveTopology topology)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
+  
     VkPrimitiveTopology vkTopology = 0;
     switch (topology) {
         case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
@@ -1488,38 +1247,27 @@ PalResult PAL_CALL cmdSetPrimitiveTopologyVk(
     }
 
     device->cmdSetPrimitiveTopology(vkCmdBuffer->handle, vkTopology);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetDepthTestEnableVk(
+void PAL_CALL cmdSetDepthTestEnableVk(
     PalCommandBuffer* cmdBuffer,
     PalBool enable)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-    
     device->cmdSetDepthTestEnable(vkCmdBuffer->handle, enable);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetDepthWriteEnableVk(
+void PAL_CALL cmdSetDepthWriteEnableVk(
     PalCommandBuffer* cmdBuffer,
     PalBool enable)
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-    
     device->cmdSetDepthWriteEnable(vkCmdBuffer->handle, enable);
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL cmdSetStencilOpVk(
+void PAL_CALL cmdSetStencilOpVk(
     PalCommandBuffer* cmdBuffer,
     PalStencilFaceFlags faceMask,
     PalStencilOp failOp,
@@ -1529,10 +1277,6 @@ PalResult PAL_CALL cmdSetStencilOpVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    if (!(device->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkStencilFaceFlags faceFlags = 0;
     if (faceMask & PAL_STENCIL_FACE_FLAG_BACK) {
         faceFlags |= VK_STENCIL_FACE_BACK_BIT;
@@ -1554,8 +1298,6 @@ PalResult PAL_CALL cmdSetStencilOpVk(
         passOp, 
         depthFailOp, 
         compareOp);
-
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

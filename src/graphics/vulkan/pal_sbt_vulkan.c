@@ -21,10 +21,6 @@ PalResult PAL_CALL createShaderBindingTableVk(
     PipelineVk* pipeline = (PipelineVk*)info->rayTracingPipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
 
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     uint32_t totalGroups = sbtInfo->raygenCount + sbtInfo->hitCount;
     totalGroups += sbtInfo->missCount + sbtInfo->callableCount;
     if (info->recordCount != totalGroups) {
@@ -276,8 +272,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
         }
     }
 
-    s_Vk.unmapMemory(vkDevice->handle, sbt->stagingBufferMemory);
-
+    sbt->stagingPtr = ptr;
     // cache SBT fields and offsets address
     // we know the layout so we can prepare the strided address before we copy to the gpu buffer
     VkBufferDeviceAddressInfo bufferAddressInfo = {0};
@@ -319,7 +314,6 @@ PalResult PAL_CALL createShaderBindingTableVk(
     sbt->pipeline = pipeline;
 
     sbt->isDirty = PAL_TRUE; // we need to copy from the staging to the gpu buffer
-    sbt->reserved = PAL_BACKEND_KEY;
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;
 }
@@ -328,6 +322,8 @@ void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt)
 {
     ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
     DeviceVk* device = vkSbt->device;
+    s_Vk.unmapMemory(device->handle, vkSbt->stagingBufferMemory);
+
     s_Vk.destroyBuffer(device->handle, vkSbt->buffer, &s_Vk.vkAllocator);
     s_Vk.destroyBuffer(device->handle, vkSbt->stagingBuffer, &s_Vk.vkAllocator);
     s_Vk.freeMemory(device->handle, vkSbt->bufferMemory, &s_Vk.vkAllocator);
@@ -335,29 +331,15 @@ void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt)
     palFree(s_Vk.allocator, vkSbt);
 }
 
-PalResult PAL_CALL updateShaderBindingTableVk(
+void PAL_CALL updateShaderBindingTableVk(
     PalShaderBindingTable* sbt, 
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
-    VkResult result;
     ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
     DeviceVk* vkDevice = vkSbt->device;
     PipelineVk* pipeline = vkSbt->pipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
-
-    void* data = nullptr;
-    result = s_Vk.mapMemory(
-        vkDevice->handle, 
-        vkSbt->stagingBufferMemory, 
-        0, 
-        VK_WHOLE_SIZE, 
-        0, 
-        &data);
-
-    if (result != VK_SUCCESS) {
-        return makeResultVk(result);
-    }
 
     uint32_t stride = 0;
     uint32_t offset = 0;
@@ -365,9 +347,6 @@ PalResult PAL_CALL updateShaderBindingTableVk(
 
     for (int i = 0; i < count; i++) {
         PalShaderBindingTableRecordInfo* info = &infos[i];
-        if (!info->localDataSize) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
 
         // find the group the record belongs to
         uint32_t index = info->groupIndex;
@@ -398,13 +377,11 @@ PalResult PAL_CALL updateShaderBindingTableVk(
 
         // write payload
         uint32_t localIndex = index - startIndex;
-        uint8_t* dst = (uint8_t*)data + offset + (localIndex * stride);
+        uint8_t* dst = (uint8_t*)vkSbt->stagingPtr + offset + (localIndex * stride);
         memcpy(dst + vkSbt->handleSize, info->localData, info->localDataSize);
     }
 
-    s_Vk.unmapMemory(vkDevice->handle, vkSbt->stagingBufferMemory);
     vkSbt->isDirty = PAL_TRUE;
-    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

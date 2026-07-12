@@ -69,7 +69,7 @@ typedef struct {
     void (PAL_CALL *destroySemaphore)(PalSemaphore*);
     PalResult (PAL_CALL *waitSemaphore)(PalSemaphore*, uint64_t, uint64_t);
     PalResult (PAL_CALL *signalSemaphore)(PalSemaphore*, PalQueue*, uint64_t);
-    uint64_t (PAL_CALL *getSemaphoreValue)(PalSemaphore*);
+    PalResult (PAL_CALL *getSemaphoreValue)(PalSemaphore*, uint64_t*);
     PalResult (PAL_CALL *createCommandPool)(PalDevice*, PalQueue*, PalCommandPool**);
     void (PAL_CALL *destroyCommandPool)(PalCommandPool*);
     PalResult (PAL_CALL *resetCommandPool)(PalCommandPool*);
@@ -103,9 +103,9 @@ typedef struct {
     void (PAL_CALL *cmdDrawIndexed)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
     void (PAL_CALL *cmdDrawIndexedIndirect)(PalCommandBuffer*, PalBuffer*, uint32_t);
     void (PAL_CALL *cmdDrawIndexedIndirectCount)(PalCommandBuffer*, PalBuffer*, PalBuffer*, uint32_t);
-    void (PAL_CALL *cmdAccelerationStructureBarrier)(PalCommandBuffer*, PalAccelerationStructure*, PalUsageState, PalUsageState);
-    void (PAL_CALL *cmdImageBarrier)(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalUsageState, PalUsageState);
-    void (PAL_CALL *cmdBufferBarrier)(PalCommandBuffer*, PalBuffer*, PalUsageState, PalUsageState);
+    void (PAL_CALL *cmdAccelerationStructureBarrier)(PalCommandBuffer*, PalAccelerationStructure*, PalBarrierInfo*);
+    void (PAL_CALL *cmdImageBarrier)(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalBarrierInfo*);
+    void (PAL_CALL *cmdBufferBarrier)(PalCommandBuffer*, PalBuffer*, PalBarrierInfo*);
     void (PAL_CALL *cmdDispatch)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
     void (PAL_CALL *cmdDispatchBase)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
     void (PAL_CALL *cmdDispatchIndirect)(PalCommandBuffer*, PalBuffer*);
@@ -253,9 +253,9 @@ void PAL_CALL cmdDrawIndirectCountVk(PalCommandBuffer*, PalBuffer*, PalBuffer*, 
 void PAL_CALL cmdDrawIndexedVk(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
 void PAL_CALL cmdDrawIndexedIndirectVk(PalCommandBuffer*, PalBuffer*, uint32_t);
 void PAL_CALL cmdDrawIndexedIndirectCountVk(PalCommandBuffer*, PalBuffer*, PalBuffer*, uint32_t);
-void PAL_CALL cmdAccelerationStructureBarrierVk(PalCommandBuffer*, PalAccelerationStructure*, PalUsageState, PalUsageState);
-void PAL_CALL cmdImageBarrierVk(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalUsageState, PalUsageState);
-void PAL_CALL cmdBufferBarrierVk(PalCommandBuffer*, PalBuffer*, PalUsageState, PalUsageState);
+void PAL_CALL cmdAccelerationStructureBarrierVk(PalCommandBuffer*, PalAccelerationStructure*, PalBarrierInfo*);
+void PAL_CALL cmdImageBarrierVk(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalBarrierInfo*);
+void PAL_CALL cmdBufferBarrierVk(PalCommandBuffer*, PalBuffer*, PalBarrierInfo*);
 void PAL_CALL cmdDispatchVk(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
 void PAL_CALL cmdDispatchBaseVk(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 void PAL_CALL cmdDispatchIndirectVk(PalCommandBuffer*, PalBuffer*);
@@ -272,7 +272,7 @@ void PAL_CALL cmdSetStencilOpVk(PalCommandBuffer*, PalStencilFaceFlags, PalStenc
 
 PalResult PAL_CALL createAccelerationstructureVk(PalDevice*, const PalAccelerationStructureCreateInfo*, PalAccelerationStructure**);
 void PAL_CALL destroyAccelerationstructureVk(PalAccelerationStructure*);
-PalResult PAL_CALL getAccelerationStructureBuildSizeVk(PalDevice*, PalAccelerationStructureBuildInfo*, PalAccelerationStructureBuildSize*);
+void PAL_CALL getAccelerationStructureBuildSizeVk(PalDevice*, PalAccelerationStructureBuildInfo*, PalAccelerationStructureBuildSize*);
 PalResult PAL_CALL createBufferVk(PalDevice*, const PalBufferCreateInfo*, PalBuffer**);
 void PAL_CALL destroyBufferVk(PalBuffer*);
 void PAL_CALL getBufferMemoryRequirementsVk(PalBuffer*, PalMemoryRequirements*);
@@ -504,7 +504,7 @@ PalResult PAL_CALL createSemaphoreD3D12(PalDevice*, PalBool, PalSemaphore**);
 void PAL_CALL destroySemaphoreD3D12(PalSemaphore*);
 PalResult PAL_CALL waitSemaphoreD3D12(PalSemaphore*, uint64_t, uint64_t);
 PalResult PAL_CALL signalSemaphoreD3D12(PalSemaphore*, PalQueue*, uint64_t);
-uint64_t PAL_CALL getSemaphoreValueD3D12(PalSemaphore*);
+PalResult PAL_CALL getSemaphoreValueD3D12(PalSemaphore*, uint64_t*);
 PalResult PAL_CALL createCommandPoolD3D12(PalDevice*, PalQueue*, PalCommandPool**);
 void PAL_CALL destroyCommandPoolD3D12(PalCommandPool*);
 PalResult PAL_CALL resetCommandPoolD3D12(PalCommandPool*);
@@ -538,9 +538,9 @@ void PAL_CALL cmdDrawIndirectCountD3D12(PalCommandBuffer*, PalBuffer*, PalBuffer
 void PAL_CALL cmdDrawIndexedD3D12(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
 void PAL_CALL cmdDrawIndexedIndirectD3D12(PalCommandBuffer*, PalBuffer*, uint32_t);
 void PAL_CALL cmdDrawIndexedIndirectCountD3D12(PalCommandBuffer*, PalBuffer*, PalBuffer*, uint32_t);
-void PAL_CALL cmdAccelerationStructureBarrierD3D12(PalCommandBuffer*, PalAccelerationStructure*, PalUsageState, PalUsageState);
-void PAL_CALL cmdImageBarrierD3D12(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalUsageState, PalUsageState);
-void PAL_CALL cmdBufferBarrierD3D12(PalCommandBuffer*, PalBuffer*, PalUsageState, PalUsageState);
+void PAL_CALL cmdAccelerationStructureBarrierD3D12(PalCommandBuffer*, PalAccelerationStructure*, PalBarrierInfo*);
+void PAL_CALL cmdImageBarrierD3D12(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalBarrierInfo*);
+void PAL_CALL cmdBufferBarrierD3D12(PalCommandBuffer*, PalBuffer*, PalBarrierInfo*);
 void PAL_CALL cmdDispatchD3D12(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
 void PAL_CALL cmdDispatchIndirectD3D12(PalCommandBuffer*, PalBuffer*);
 void PAL_CALL cmdTraceRaysD3D12(PalCommandBuffer*, PalShaderBindingTable*, uint32_t, uint32_t, uint32_t, uint32_t);

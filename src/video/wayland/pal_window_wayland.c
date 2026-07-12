@@ -237,6 +237,7 @@ void wlDestroyWindow(PalWindow* window)
     xdgToplevelDestroy(data->xdgToplevel);
     xdgSurfaceDestroy(data->xdgSurface);
     wlSurfaceDestroy((struct wl_surface*)window);
+    s_Wl.displayFlush(s_Wl.display);
     data->used = PAL_FALSE;
 }
 

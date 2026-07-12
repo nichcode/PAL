@@ -927,8 +927,7 @@ void PAL_CALL cmdDrawIndexedIndirectCountD3D12(
 void PAL_CALL cmdAccelerationStructureBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructure* as,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     AccelerationStructureD3D12* d3dAs = (AccelerationStructureD3D12*)as;
@@ -942,8 +941,7 @@ void PAL_CALL cmdImageBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
     // TODO: use a temp or arena buffer
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
@@ -1027,8 +1025,7 @@ void PAL_CALL cmdImageBarrierD3D12(
 void PAL_CALL cmdBufferBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;

@@ -31,7 +31,7 @@ static PalSampleCount samplesFromVk(VkSampleCountFlags count)
     return PAL_SAMPLE_COUNT_1;
 }
 
-static PalImageUsages ImageUsageFromVk(VkFormatFeatureFlags flags)
+static PalImageUsages imageUsageFromVk(VkFormatFeatureFlags flags)
 {
     PalImageUsages usages = 0;
     if (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
@@ -728,7 +728,7 @@ void PAL_CALL enumerateFormatsVk(
                 if (fmtCount < *count) {
                     PalFormatInfo* fmtInfo = &outFormats[fmtCount++];
                     fmtInfo->format = (PalFormat)i;
-                    fmtInfo->usages = ImageUsageFromVk(props.optimalTilingFeatures);
+                    fmtInfo->usages = imageUsageFromVk(props.optimalTilingFeatures);
                 }
 
             } else {
@@ -771,7 +771,7 @@ PalImageUsages PAL_CALL queryFormatImageUsagesVk(
         return PAL_IMAGE_USAGE_UNDEFINED;
     }
 
-    return ImageUsageFromVk(props.optimalTilingFeatures);
+    return imageUsageFromVk(props.optimalTilingFeatures);
 }
 
 PalSampleCount PAL_CALL queryFormatSampleCountVk(
@@ -790,7 +790,7 @@ PalSampleCount PAL_CALL queryFormatSampleCountVk(
     }
 
     VkImageUsageFlags vkImageUsage = 0;
-    PalImageUsages imageUsages = ImageUsageFromVk(props.optimalTilingFeatures);
+    PalImageUsages imageUsages = imageUsageFromVk(props.optimalTilingFeatures);
     PalBool isDepth = (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) != 0;
     if (isDepth) {
         vkImageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;

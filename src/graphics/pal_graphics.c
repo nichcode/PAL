@@ -392,7 +392,7 @@ PalResult PAL_CALL palInitGraphics(
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    // TODO:
+    // TODO: uncomment
     // result = initGraphicsVk(debugger, allocator);
     // if (result != PAL_RESULT_SUCCESS) {
     //     return result;
@@ -1083,9 +1083,11 @@ PalResult PAL_CALL palSignalSemaphore(
     return semaphore->backend->signalSemaphore(semaphore, queue, value);
 }
 
-uint64_t PAL_CALL palGetSemaphoreValue(PalSemaphore* semaphore)
+PalResult PAL_CALL palGetSemaphoreValue(
+    PalSemaphore* semaphore, 
+    uint64_t* value)
 {
-    return semaphore->backend->getSemaphoreValue(semaphore);
+    return semaphore->backend->getSemaphoreValue(semaphore, value);
 }
 
 // ==================================================
@@ -1383,38 +1385,26 @@ void PAL_CALL palCmdDrawIndexedIndirectCount(
 void PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructure* as,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
-    cmdBuffer->backend->cmdAccelerationStructureBarrier(
-        cmdBuffer, 
-        as, 
-        oldUsageState, 
-        newUsageState);
+    cmdBuffer->backend->cmdAccelerationStructureBarrier(cmdBuffer, as, info);
 }
 
 void PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
-    cmdBuffer->backend->cmdImageBarrier(
-        cmdBuffer, 
-        image, 
-        subresourceRange, 
-        oldUsageState, 
-        newUsageState);
+    cmdBuffer->backend->cmdImageBarrier(cmdBuffer, image, subresourceRange, info);
 }
 
 void PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState)
+    PalBarrierInfo* info)
 {
-    cmdBuffer->backend->cmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    cmdBuffer->backend->cmdBufferBarrier(cmdBuffer, buffer, info);
 }
 
 void PAL_CALL palCmdDispatch(

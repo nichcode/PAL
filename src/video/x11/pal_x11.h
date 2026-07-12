@@ -609,7 +609,7 @@ void sendWMEvent(
     long d,
     PalBool add);
 
-PalResult xGetPrimaryMonitor(PalMonitor**);
+void xGetPrimaryMonitor(PalMonitor**);
 MonitorData* xGetFreeMonitorData();
 MonitorData* xFindMonitorData(PalMonitor* monitor);
 void xFreeMonitorData(PalMonitor* monitor);

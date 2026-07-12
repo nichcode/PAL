@@ -23,7 +23,12 @@ static void* palLinearAlloc(
     uint64_t size, 
     uint64_t alignment)
 {
-    uint64_t offset = align(allocator->offset, alignment);
+    uint64_t defAlign = alignment;
+    if (alignment == 0) {
+        defAlign = 16;
+    }
+
+    uint64_t offset = align(allocator->offset, defAlign);
     if (offset + size > allocator->size) {
         // allocate a bigger block
         void* block = palAllocate(nullptr, allocator->size * 2, 0);

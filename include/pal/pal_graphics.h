@@ -541,6 +541,27 @@
 #define PAL_RENDERING_FLAG_SUSPENDING (1U << 0)
 #define PAL_RENDERING_FLAG_RESUMING (1U << 1)
 
+#define PAL_PIPELINE_STAGE_NONE 0
+#define PAL_PIPELINE_STAGE_VERTEX_SHADER (1U << 1)
+#define PAL_PIPELINE_STAGE_FRAGMENT_SHADER (1U << 2)
+#define PAL_PIPELINE_STAGE_COMPUTE_SHADER (1U << 3)
+#define PAL_PIPELINE_STAGE_GEOMETRY_SHADER (1U << 4)
+#define PAL_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER (1U << 5)
+#define PAL_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER (1U << 6)
+#define PAL_PIPELINE_STAGE_RAY_TRACING_SHADER (1U << 7)
+#define PAL_PIPELINE_STAGE_TASK_SHADER (1U << 8)
+#define PAL_PIPELINE_STAGE_MESH_SHADER (1U << 9)
+#define PAL_PIPELINE_STAGE_VERTEX_INPUT (1U << 10)
+#define PAL_PIPELINE_STAGE_INDEX_INPUT (1U << 11)
+#define PAL_PIPELINE_STAGE_EARLY_DEPTH_STENCIL (1U << 12)
+#define PAL_PIPELINE_STAGE_LATE_DEPTH_STENCIL (1U << 13)
+#define PAL_PIPELINE_STAGE_TRANSFER (1U << 14)
+#define PAL_PIPELINE_STAGE_HOST (1U << 15)
+#define PAL_PIPELINE_STAGE_COLOR_ATTACHMENT (1U << 16)
+#define PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT (1U << 17)
+#define PAL_PIPELINE_STAGE_INDIRECT_INPUT (1U << 18)
+#define PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD (1U << 19)
+
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
 
 /**
@@ -1412,6 +1433,18 @@ typedef uint32_t PalImageMemoryUsage;
 typedef uint32_t PalRenderingFlags;
 
 /**
+ * @typedef PalPipelineStages
+ * @brief Pipeline stages. Multiple pipeline usages can be OR'ed together using bitwise
+ * OR operator (`|`).
+ * 
+ * All pipeline stages follow the format `PAL_PIPELINE_STAGE_**`
+ * for consistency and API use.
+ *
+ * @since 2.0
+ */
+typedef uint32_t PalPipelineStages;
+
+/**
  * @typedef PalGraphicsBackendVtableVersion
  * @brief Graphics backend vtable versions.
  *
@@ -1802,6 +1835,8 @@ typedef struct {
     PalSemaphore* waitSemaphore;   /**< Wait semaphore.*/
     PalSemaphore* signalSemaphore; /**< Signal semaphore.*/
     PalFence* fence;               /**< Fence to signal.*/
+    PalPipelineStages waitStages;  /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
+    PalPipelineStages signalStages; /**< (eg. `PAL_PIPELINE_STAGE_NONE`).*/
 } PalCommandBufferSubmitInfo;
 
 /**
@@ -2290,6 +2325,21 @@ typedef struct {
     uint32_t arrayElement;       /**< First index within the descriptor set layout bindings.*/
     uint32_t descriptorCount;    /**< Number of descriptors to write.*/
 } PalDescriptorSetWriteInfo;
+
+/**
+ * @struct PalBarrierInfo
+ * @brief Information about a barrier.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 2.0
+ */
+typedef struct {
+    PalUsageState oldState; /**< (eg. `PAL_USAGE_STATE_COLOR_ATTACHMENT`).*/
+    PalUsageState newState; /**< (eg. `PAL_USAGE_STATE_PRESENT`).*/
+    PalPipelineStages srcStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
+    PalPipelineStages dstStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_OUTPUT`).*/
+} PalBarrierInfo;
 
 /**
  * @struct PalPushConstantInfo
@@ -3197,7 +3247,9 @@ typedef struct {
      *
      * Must obey the rules and semantics documented in palGetSemaphoreValue().
      */
-    uint64_t(PAL_CALL* getSemaphoreValue)(PalSemaphore* semaphore);
+    PalResult(PAL_CALL* getSemaphoreValue)(
+        PalSemaphore* semaphore, 
+        uint64_t* value);
 
     /**
      * Backend implementation of ::palCreateCommandPool.
@@ -3519,8 +3571,7 @@ typedef struct {
     void(PAL_CALL* cmdAccelerationStructureBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalAccelerationStructure* as,
-        PalUsageState oldUsageState,
-        PalUsageState newUsageState);
+        PalBarrierInfo* info);
 
     /**
      * Backend implementation of ::palCmdImageBarrier.
@@ -3531,8 +3582,7 @@ typedef struct {
         PalCommandBuffer* cmdBuffer,
         PalImage* image,
         PalImageSubresourceRange* subresourceRange,
-        PalUsageState oldUsageState,
-        PalUsageState newUsageState);
+        PalBarrierInfo* info);
 
     /**
      * Backend implementation of ::palCmdBufferBarrier.
@@ -3542,8 +3592,7 @@ typedef struct {
     void(PAL_CALL* cmdBufferBarrier)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
-        PalUsageState oldUsageState,
-        PalUsageState newUsageState);
+        PalBarrierInfo* info);
 
     /**
      * Backend implementation of ::palCmdDispatch.
@@ -5143,8 +5192,10 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to get its value.
+ * @param[out] value The semaphore value.
  *
- * @return the timeline value.
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
  *
  * Thread safety: Thread safe if `semaphore` is externally synchronized.
  *
@@ -5152,7 +5203,9 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * @sa palWaitSemaphore
  * @sa palSignalSemaphore
  */
-PAL_API uint64_t PAL_CALL palGetSemaphoreValue(PalSemaphore* semaphore);
+PAL_API PalResult PAL_CALL palGetSemaphoreValue(
+    PalSemaphore* semaphore, 
+    uint64_t* value);
 
 /**
  * @brief Create a command pool from a device.
@@ -5180,7 +5233,8 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  * @brief Destroy a command pool.
  *
  * The graphics system must be initialized before this call.
- * Destroying a command pool frees all command buffers automatically.
+ * All command buffers allocated from the pool must be freed before this call, 
+ * otherwise undefined behavior.
  *
  * @param[in] pool Command pool to destroy.
  *
@@ -5850,8 +5904,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] as Acceleration structure to set barrier on.
- * @param[in] oldUsageState The old usage state.
- * @param[in] newUsageState The new usage state.
+ * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5864,8 +5917,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
 PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructure* as,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalBarrierInfo* info);
 
 /**
  * @brief Transition an image from one usage state to another.
@@ -5891,8 +5943,7 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] image Image to set barrier on.
  * @param[in] subresourceRange Subresource range of the image.
- * @param[in] oldUsageStateInfo The old usage state.
- * @param[in] newUsageStateInfo The new usage state.
+ * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5904,8 +5955,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalBarrierInfo* info);
 
 /**
  * @brief Transition a buffer from one usage state to another.
@@ -5929,8 +5979,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer to set barrier on.
- * @param[in] oldUsageStateInfo The old usage state.
- * @param[in] newUsageStateInfo The new usage state.
+ * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
@@ -5941,8 +5990,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
 PAL_API void PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
-    PalUsageState oldUsageState,
-    PalUsageState newUsageState);
+    PalBarrierInfo* info);
 
 /**
  * @brief Dispatch compute shader workgroups.

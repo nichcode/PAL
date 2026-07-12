@@ -257,7 +257,6 @@ void getWindowTitleWayland(PalWindowHandleInfo* windowInfo)
 #ifdef __linux__
     // wayland does not support getting window title
     // so we just return the title we set through wayland
-    dlclose(s_WaylandLib);
 #endif // __linux__
 }
 
@@ -376,13 +375,19 @@ PalBool nativeIntegrationTest()
     setWindowTitle(&windowInfo);
 
     palLog(nullptr, "Getting window title with PAL API");
-    palGetWindowTitle(window, sizeof(s_TitleBuffer), nullptr, s_TitleBuffer);
+    if (features & PAL_VIDEO_FEATURE_WINDOW_GET_TITLE) {
+        palGetWindowTitle(window, sizeof(s_TitleBuffer), nullptr, s_TitleBuffer);
+    } else {
+        memset(s_TitleBuffer, 0, sizeof(s_TitleBuffer));
+    }
     palLog(nullptr, "Window title: %s", s_TitleBuffer);
 
     // set the title with PAL and retreive it with the native API
     palLog(nullptr, "Setting window title with PAL API");
-    palSetWindowTitle(window, "Hello from PAL API");
-
+    if (features & PAL_VIDEO_FEATURE_WINDOW_SET_TITLE) {
+        palSetWindowTitle(window, "Hello from PAL API");
+    }
+    
     palLog(nullptr, "Getting window title with native API");
     getWindowTitle(&windowInfo);
     palLog(nullptr, "Window title: %s", s_TitleBuffer);

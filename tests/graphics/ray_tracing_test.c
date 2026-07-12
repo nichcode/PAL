@@ -335,15 +335,7 @@ PalBool rayTracingTest()
     memcpy(asInstance.transform, transform, sizeof(float) * 12);
 
     uint64_t instanceBufferSize = 0;
-    result = palComputeInstanceBufferRequirements(
-        device, 
-        1,
-        &instanceBufferSize);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to compute buffer requirement");
-        return PAL_FALSE;
-    }
+    palComputeInstanceStagingSize(device, 1, &instanceBufferSize);
 
     bufferCreateInfo.size = instanceBufferSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
@@ -370,12 +362,7 @@ PalBool rayTracingTest()
     }
 
     // we can not use a direct memcpy for instance buffers
-    result = palWriteToInstanceBuffer(device, data, &asInstance, 1);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to write to buffer");
-        return PAL_FALSE;
-    }
-
+    palWriteInstanceStaging(device, 1, &asInstance, data);
     palUnmapBuffer(instanceBuffer);
 
     // fill TLAS and instance geometry
@@ -636,19 +623,29 @@ PalBool rayTracingTest()
     tlasBuildInfo.scratchBufferAddress = scratchBufferAddress;
     palCmdBuildAccelerationStructure(cmdBuffer, &blasBuildInfo);
 
-    // make sure the BLAS builds before the TLAS. We need this barrier because
-    // BLAS and TLAS share the same scratch buffer
-    PalUsageState oldAsUsageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
-    PalUsageState newAsUsageState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
-    palCmdAccelerationStructureBarrier(cmdBuffer, blas, oldAsUsageState, newAsUsageState);
+    // make sure the BLAS builds before the TLAS.
+    PalBarrierInfo barrierInfo = {0};
+    barrierInfo.oldState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
+    barrierInfo.newState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD;
+
+    palCmdAccelerationStructureBarrier(cmdBuffer, blas, &barrierInfo);
     palCmdBuildAccelerationStructure(cmdBuffer, &tlasBuildInfo);
-    palCmdAccelerationStructureBarrier(cmdBuffer, tlas, oldAsUsageState, newAsUsageState);
+
+    barrierInfo.oldState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE;
+    barrierInfo.newState = PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+    palCmdAccelerationStructureBarrier(cmdBuffer, tlas, &barrierInfo);
     palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
 
     // set a barrier so we only read from the buffer after the shader has written to it
-    PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
-    PalUsageState newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
-    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    barrierInfo.oldState = PAL_USAGE_STATE_SHADER_WRITE;
+    barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
+    palCmdBufferBarrier(cmdBuffer, buffer, &barrierInfo);
     
     // now we copy from the GPU buffer into the staging buffer
     PalBufferCopyInfo copyInfo = {0};
@@ -665,6 +662,8 @@ PalBool rayTracingTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
+    submitInfo.waitStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+    
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
@@ -747,17 +746,20 @@ PalBool rayTracingTest()
     palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
 
     // the previous trace transitioned the buffer to transfer read
-    // we need it back to shader write before transfer read
-    oldUsageState = PAL_USAGE_STATE_TRANSFER_READ;
-    newUsageState = PAL_USAGE_STATE_SHADER_WRITE;
-    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
+    barrierInfo.newState = PAL_USAGE_STATE_SHADER_WRITE;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+    palCmdBufferBarrier(cmdBuffer, buffer, &barrierInfo);
     palCmdTraceRays(cmdBuffer, sbt, 0, BUFFER_SIZE, BUFFER_SIZE, 1);
 
     // set a barrier to transition to transfer read so we can read from it after shader has
     // written to it
-    oldUsageState = newUsageState;
-    newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
-    palCmdBufferBarrier(cmdBuffer, buffer, oldUsageState, newUsageState);
+    barrierInfo.oldState = PAL_USAGE_STATE_SHADER_WRITE;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+    barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
+    palCmdBufferBarrier(cmdBuffer, buffer, &barrierInfo);
 
     // now we copy from the GPU buffer into the staging buffer
     copyInfo.size = bufferBytes;
@@ -772,6 +774,7 @@ PalBool rayTracingTest()
     // submit the command buffer to the GPU
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
+    submitInfo.waitStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");

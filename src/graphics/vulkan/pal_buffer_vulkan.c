@@ -199,17 +199,6 @@ PalResult PAL_CALL createBufferVk(
     DeviceVk* vkDevice = (DeviceVk*)device;
     MemoryVk* memory = nullptr;
 
-    if (info->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-        }
-
-    } else if (info->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS)) {
-            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-        }
-    }
-
     buffer = palAllocate(s_Vk.allocator, sizeof(BufferVk), 0);
     if (!buffer) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -281,14 +270,12 @@ PalResult PAL_CALL createBufferVk(
         }
 
         memory->type = memoryType;
-        memory->reserved = PAL_BACKEND_KEY;
         buffer->isMemoryManaged = PAL_TRUE;
     }
 
     buffer->memory = memory;
     buffer->usages = info->usages;
     buffer->device = vkDevice;
-    buffer->reserved = PAL_BACKEND_KEY;
     *outBuffer = (PalBuffer*)buffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -331,18 +318,19 @@ void PAL_CALL getBufferMemoryRequirementsVk(
     }
 }
 
-uint64_t PAL_CALL computeInstanceBufferRequirementsVk(uint32_t instanceCount)
+void PAL_CALL computeInstanceStagingSizeVk(
+    PalDevice* device,
+    uint32_t instanceCount,
+    uint64_t* outSize)
 {
-    return sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
+    *outSize = sizeof(VkAccelerationStructureInstanceKHR) * instanceCount;
 }
 
-PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
+void PAL_CALL computeImageStagingRequirementsVk(
     PalDevice* device,
     PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo,
-    uint32_t* outBufferRowLength,
-    uint32_t* outBufferImageHeight,
-    uint64_t* outSize)
+    const PalBufferImageCopyInfo* copyInfo,
+    PalImageStagingRequirements* requirements)
 {
     uint32_t imageFormatSize = getFormatSize(imageFormat);
     uint32_t length = 0;
@@ -351,17 +339,16 @@ PalResult PAL_CALL computeImageCopyStagingBufferRequirementsVk(
     height = copyInfo->bufferImageHeight ? copyInfo->bufferImageHeight : copyInfo->imageHeight;
     uint32_t rowPitch = length * imageFormatSize;
 
-    *outBufferRowLength = length;
-    *outBufferImageHeight = height;
-    *outSize = (uint64_t)rowPitch * length * copyInfo->imageDepth;
-    return PAL_RESULT_SUCCESS;
+    requirements->bufferRowLength = length;
+    requirements->bufferImageHeight = height;
+    requirements->bufferSize = (uint64_t)rowPitch * length * copyInfo->imageDepth;
 }
 
-PalResult PAL_CALL writeToInstanceBufferVk(
+void PAL_CALL writeInstanceStagingVk(
     PalDevice* device,
-    void* ptr,
+    uint32_t instanceCount,
     PalAccelerationStructureInstance* instances,
-    uint32_t instanceCount)
+    void* ptr)
 {
     VkAccelerationStructureInstanceKHR* data = ptr;
     for (int i = 0; i < instanceCount; i++) {
@@ -376,15 +363,14 @@ PalResult PAL_CALL writeToInstanceBufferVk(
         dst->flags = instanceFlagsToVk(src->flags);
         memcpy(dst->transform.matrix, src->transform, sizeof(float) * 12);
     }
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL writeToImageCopyStagingBufferVk(
+void PAL_CALL writeImageStagingVk(
     PalDevice* device,
-    void* ptr,
-    void* srcData,
     PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo)
+    PalBufferImageCopyInfo* copyInfo,
+    void* srcData,
+    void* ptr)
 {
     uint32_t imageFormatSize = getFormatSize(imageFormat);
     uint32_t dstRowPitch = copyInfo->bufferRowLength * imageFormatSize;
@@ -405,8 +391,6 @@ PalResult PAL_CALL writeToImageCopyStagingBufferVk(
                 srcRowPitch);
         }
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL bindBufferMemoryVk(
@@ -445,11 +429,7 @@ PalResult PAL_CALL mapBufferVk(
     VkResult result;
     BufferVk* vkBuffer = (BufferVk*)buffer;
     DeviceVk* device = vkBuffer->device;
-
-    if (vkBuffer->memory->type == PAL_MEMORY_TYPE_GPU_ONLY) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
-    }
-
+    
     result = s_Vk.mapMemory(device->handle, vkBuffer->memory->handle, offset, size, 0, outPtr);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);

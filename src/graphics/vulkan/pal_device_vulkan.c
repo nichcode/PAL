@@ -722,7 +722,6 @@ PalResult PAL_CALL createDeviceVk(
     device->phyQueueIndex = 0;
     device->queueFamilyCount = queueFamilyCount;
     device->phyQueueCount = phyQueueCount;
-    device->features = features;
 
     // get queues
     for (int i = 0; i < queueFamilyCount; i++) {
@@ -800,7 +799,7 @@ PalResult PAL_CALL createDeviceVk(
     palFree(s_Vk.allocator, queueFamilyProps);
     palFree(s_Vk.allocator, queueCreateInfos);
 
-    device->reserved = PAL_BACKEND_KEY;
+    device->features = features;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
 }
@@ -861,46 +860,34 @@ PalResult PAL_CALL allocateMemoryVk(
         return makeResultVk(result);
     }
 
+    memory->device = vkDevice;
     memory->type = type;
-    memory->reserved = PAL_BACKEND_KEY;
     *outMemory = (PalMemory*)memory;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL freeMemoryVk(
-    PalDevice* device,
-    PalMemory* memory)
+void PAL_CALL freeMemoryVk(PalMemory* memory)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
     MemoryVk* vkMemory = (MemoryVk*)memory;
-    s_Vk.freeMemory(vkDevice->handle, vkMemory->handle, &s_Vk.vkAllocator);
+    s_Vk.freeMemory(vkMemory->device->handle, vkMemory->handle, &s_Vk.vkAllocator);
     palFree(s_Vk.allocator, vkMemory);
 }
 
-PalResult PAL_CALL querySamplerAnisotropyCapabilitiesVk(
+void PAL_CALL querySamplerAnisotropyCapabilitiesVk(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceProperties props = {0};
     s_Vk.getPhysicalDeviceProperties(vkDevice->phyDevice, &props);
     caps->maxAnisotropy = props.limits.maxSamplerAnisotropy;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryMultiViewCapabilitiesVk(
+void PAL_CALL queryMultiViewCapabilitiesVk(
     PalDevice* device,
     PalMultiViewCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceMultiviewPropertiesKHR props = {0};
     VkPhysicalDeviceProperties2 properties2 = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR;
@@ -912,34 +899,23 @@ PalResult PAL_CALL queryMultiViewCapabilitiesVk(
     if (caps->maxViewCount == 0) {
         caps->maxViewCount = 1;
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryMultiViewportCapabilitiesVk(
+void PAL_CALL queryMultiViewportCapabilitiesVk(
     PalDevice* device,
     PalMultiViewportCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceProperties props = {0};
     s_Vk.getPhysicalDeviceProperties(vkDevice->phyDevice, &props);
     caps->maxCount = props.limits.maxViewports;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
+void PAL_CALL queryDepthStencilCapabilitiesVk(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceDepthStencilResolvePropertiesKHR props = {0};
@@ -983,19 +959,13 @@ PalResult PAL_CALL queryDepthStencilCapabilitiesVk(
     if (props.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT_KHR) {
         caps->supportedStencilResolveModes |= (1u << PAL_RESOLVE_MODE_MAX);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryFragmentShadingRateCapabilitiesVk(
+void PAL_CALL queryFragmentShadingRateCapabilitiesVk(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR props = {0};
@@ -1028,19 +998,13 @@ PalResult PAL_CALL queryFragmentShadingRateCapabilitiesVk(
     size = props.maxFragmentShadingRateAttachmentTexelSize;
     caps->maxTexelWidth = size.width;
     caps->maxTexelHeight = size.height;
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryMeshShaderCapabilitiesVk(
+void PAL_CALL queryMeshShaderCapabilitiesVk(
     PalDevice* device,
     PalMeshShaderCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceMeshShaderPropertiesEXT props = {0};
@@ -1060,19 +1024,13 @@ PalResult PAL_CALL queryMeshShaderCapabilitiesVk(
     caps->maxWorkGroupCount[0] = props.maxMeshWorkGroupCount[0];
     caps->maxWorkGroupCount[1] = props.maxMeshWorkGroupCount[1];
     caps->maxWorkGroupCount[2] = props.maxMeshWorkGroupCount[2];
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryRayTracingCapabilitiesVk(
+void PAL_CALL queryRayTracingCapabilitiesVk(
     PalDevice* device,
     PalRayTracingCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR props = {0};
@@ -1091,19 +1049,13 @@ PalResult PAL_CALL queryRayTracingCapabilitiesVk(
 
     caps->maxPayloadSize = 64; // safe
     caps->maxDispatchInvocations = props.maxRayDispatchInvocationCount;
-
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
+void PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     PalDevice* device,
     PalDescriptorIndexingCapabilities* caps)
 {
     DeviceVk* vkDevice = (DeviceVk*)device;
-    if (!(vkDevice->features & PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING)) {
-        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-    }
-
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
     desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
 
@@ -1164,8 +1116,6 @@ PalResult PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     uint32_t tmp2 = accProps.maxDescriptorSetUpdateAfterBindAccelerationStructures;
     caps->maxPerStageAccelerationStructure = tmp;
     caps->maxPerSetAccelerationStructure = tmp2;
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL createQueueVk(
@@ -1245,7 +1195,6 @@ PalResult PAL_CALL createQueueVk(
     queue->phyQueue = phyQueue;
     queue->usage = queueFlag;
     queue->device = vkDevice;
-    queue->reserved = PAL_BACKEND_KEY;
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
 }
@@ -1320,37 +1269,6 @@ PalResult PAL_CALL createShaderVk(
 
     for (int i = 0; i < info->entryCount; i++) {
         ShaderEntry* entry = &shader->entries[i];
-
-        // clang-format off
-        if (info->entries[i].stage == PAL_SHADER_STAGE_MESH || 
-            info->entries[i].stage == PAL_SHADER_STAGE_TASK) {
-            if (!(vkDevice->features & PAL_ADAPTER_FEATURE_MESH_SHADER)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-
-        } else if (info->entries[i].stage == PAL_SHADER_STAGE_GEOMETRY) {
-            if (!(vkDevice->features & PAL_ADAPTER_FEATURE_GEOMETRY_SHADER)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-
-        } else if (info->entries[i].stage == PAL_SHADER_STAGE_TESSELLATION_CONTROL || 
-                info->entries[i].stage == PAL_SHADER_STAGE_TESSELLATION_EVALUATION) {
-            if (!(vkDevice->features & PAL_ADAPTER_FEATURE_TESSELLATION_SHADER)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-
-        } else if (info->entries[i].stage == PAL_SHADER_STAGE_RAYGEN ||
-                info->entries[i].stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
-                info->entries[i].stage == PAL_SHADER_STAGE_ANY_HIT ||
-                info->entries[i].stage == PAL_SHADER_STAGE_MISS ||
-                info->entries[i].stage == PAL_SHADER_STAGE_INTERSECTION ||
-                info->entries[i].stage == PAL_SHADER_STAGE_CALLABLE) {
-            if (!(vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING)) {
-                return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-            }
-        }
-        // clang-format on
-
         strncpy(entry->entryName, info->entries[i].entryName, PAL_SHADER_ENTRY_NAME_SIZE);
         entry->entryName[PAL_SHADER_ENTRY_NAME_SIZE - 1] = '\0';
         entry->patchControlPoints = info->entries[i].patchControlPoints;
@@ -1370,7 +1288,6 @@ PalResult PAL_CALL createShaderVk(
 
     shader->device = vkDevice;
     shader->entryCount = info->entryCount;
-    shader->reserved = PAL_BACKEND_KEY;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
 }

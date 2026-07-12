@@ -34,7 +34,6 @@ PalResult PAL_CALL createCommandPoolVk(
     }
 
     pool->device = vkDevice;
-    pool->reserved = PAL_BACKEND_KEY;
     *outPool = (PalCommandPool*)pool;
     return PAL_RESULT_SUCCESS;
 }
@@ -73,6 +72,15 @@ PalResult PAL_CALL allocateCommandBufferVk(
         PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
+    // allocate memory for the linear allocator. We first start with 4KB
+    cmdBuffer->allocator.memory = (uint8_t*)palAllocate(s_Vk.allocator, 4096, 0);
+    if (!cmdBuffer->allocator.memory) {
+        PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    cmdBuffer->allocator.size = 4096;
+    cmdBuffer->allocator.offset = 0;
+
     VkCommandBufferAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandBufferCount = 1;
@@ -87,56 +95,54 @@ PalResult PAL_CALL allocateCommandBufferVk(
 
     result = s_Vk.allocateCommandBuffer(vkDevice->handle, &allocateInfo, &cmdBuffer->handle);
     if (result != VK_SUCCESS) {
+        palFree(s_Vk.allocator, (void*)cmdBuffer->allocator.memory);
         palFree(s_Vk.allocator, cmdBuffer);
         return makeResultVk(result);
     }
 
-    // create a gpu buffer if ray tracing is enabled
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        VkBufferCreateInfo bufCreateInfo = {0};
-        bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufCreateInfo.size = sizeof(VkTraceRaysIndirectCommandKHR);
-        bufCreateInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-        bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    // create tmp buffer
+    VkBufferCreateInfo bufCreateInfo = {0};
+    bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufCreateInfo.size = sizeof(VkTraceRaysIndirectCommandKHR);
+    bufCreateInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        result = s_Vk.createBuffer(
-            vkDevice->handle, 
-            &bufCreateInfo, 
-            &s_Vk.vkAllocator, 
-            &cmdBuffer->buffer);
+    result = s_Vk.createBuffer(
+        vkDevice->handle, 
+        &bufCreateInfo, 
+        &s_Vk.vkAllocator, 
+        &cmdBuffer->buffer);
 
-        if (result != VK_SUCCESS) {
-            return makeResultVk(result);
-        }
-
-        // allocate CPU upload memory and bind
-        VkMemoryRequirements memReq = {0};
-        s_Vk.getBufferMemoryRequirements(vkDevice->handle, cmdBuffer->buffer, &memReq);
-
-        VkMemoryAllocateInfo allocateInfo = {0};
-        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocateInfo.allocationSize = memReq.size;
-
-        uint32_t mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
-        uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
-        allocateInfo.memoryTypeIndex = memoryIndex;
-
-        result = s_Vk.allocateMemory(
-            vkDevice->handle,
-            &allocateInfo,
-            &s_Vk.vkAllocator,
-            &cmdBuffer->bufferMemory);
-
-        if (result != VK_SUCCESS) {
-            return makeResultVk(result);
-        }
-
-        s_Vk.bindBufferMemory(vkDevice->handle, cmdBuffer->buffer, cmdBuffer->bufferMemory, 0);
+    if (result != VK_SUCCESS) {
+        return makeResultVk(result);
     }
+
+    // allocate CPU upload memory and bind
+    VkMemoryRequirements memReq = {0};
+    s_Vk.getBufferMemoryRequirements(vkDevice->handle, cmdBuffer->buffer, &memReq);
+
+    VkMemoryAllocateInfo bufferAllocateInfo = {0};
+    bufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    bufferAllocateInfo.allocationSize = memReq.size;
+
+    uint32_t mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
+    uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+    bufferAllocateInfo.memoryTypeIndex = memoryIndex;
+
+    result = s_Vk.allocateMemory(
+        vkDevice->handle,
+        &bufferAllocateInfo,
+        &s_Vk.vkAllocator,
+        &cmdBuffer->bufferMemory);
+
+    if (result != VK_SUCCESS) {
+        return makeResultVk(result);
+    }
+
+    s_Vk.bindBufferMemory(vkDevice->handle, cmdBuffer->buffer, cmdBuffer->bufferMemory, 0);
 
     cmdBuffer->device = vkDevice;
     cmdBuffer->pool = vkPool;
-    cmdBuffer->reserved = PAL_BACKEND_KEY;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -150,11 +156,10 @@ void PAL_CALL freeCommandBufferVk(PalCommandBuffer* cmdBuffer)
         1,
         &vkCmdBuffer->handle);
 
-    if (vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_RAY_TRACING) {
-        s_Vk.destroyBuffer(vkCmdBuffer->device->handle, vkCmdBuffer->buffer, &s_Vk.vkAllocator);
-        s_Vk.freeMemory(vkCmdBuffer->device->handle, vkCmdBuffer->bufferMemory, &s_Vk.vkAllocator);
-    }
+    s_Vk.destroyBuffer(vkCmdBuffer->device->handle, vkCmdBuffer->buffer, &s_Vk.vkAllocator);
+    s_Vk.freeMemory(vkCmdBuffer->device->handle, vkCmdBuffer->bufferMemory, &s_Vk.vkAllocator);
 
+    palFree(s_Vk.allocator, (void*)vkCmdBuffer->allocator.memory);
     palFree(s_Vk.allocator, vkCmdBuffer);
 }
 
@@ -207,17 +212,14 @@ PalResult PAL_CALL submitCommandBufferVk(
     VkSemaphoreSubmitInfoKHR waitSubmitInfo = {0};
     waitSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR;
     waitSubmitInfo.semaphore = waitSemaphoreHandle;
-    waitSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
+    waitSubmitInfo.stageMask = pipelineStagesToVk(info->waitStages);
+    waitSubmitInfo.value = info->waitValue;
 
     VkSemaphoreSubmitInfoKHR signalSubmitInfo = {0};
     signalSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR;
     signalSubmitInfo.semaphore = signalSemaphoreHandle;
-    signalSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
-
-    if (vkCmdBuffer->device->features & PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE) {
-        waitSubmitInfo.value = info->waitValue;
-        signalSubmitInfo.value = info->signalValue;
-    }
+    signalSubmitInfo.stageMask = pipelineStagesToVk(info->signalStages);
+    signalSubmitInfo.value = info->signalValue;
 
     VkSubmitInfo2KHR submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR;

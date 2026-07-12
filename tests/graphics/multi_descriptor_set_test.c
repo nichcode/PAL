@@ -426,13 +426,12 @@ PalBool multiDescriptorSetTest()
     palFree(nullptr, workGroupInfos);
 
     // set a barrier so we only read from the buffer after the shader has written to it
-    PalUsageState oldUsageState = PAL_USAGE_STATE_SHADER_WRITE;
-    PalUsageState newUsageState = PAL_USAGE_STATE_TRANSFER_READ;
+    PalBarrierInfo barrierInfo = {0};
+    barrierInfo.oldState = PAL_USAGE_STATE_SHADER_WRITE;
+    barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
 
     for (int i = 0; i < 3; i++) {
-        palCmdBufferBarrier(cmdBuffer, buffers[i], oldUsageState, newUsageState);
-
-        // now we copy from the GPU buffer into the staging buffer
+        palCmdBufferBarrier(cmdBuffer, buffers[i], &barrierInfo);
         PalBufferCopyInfo copyInfo = {0};
         copyInfo.size = bufferBytes;
         palCmdCopyBuffer(cmdBuffer, stagingBuffers[i], buffers[i], &copyInfo);
@@ -448,6 +447,8 @@ PalBool multiDescriptorSetTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
+    submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
+    
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");

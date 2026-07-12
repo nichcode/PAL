@@ -402,9 +402,10 @@ PalBool triangleTest()
     copyInfo.size = sizeof(vertices);
     palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &copyInfo);
 
-    PalUsageState oldUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-    PalUsageState newUsageState = PAL_USAGE_STATE_VERTEX_READ;
-    palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, oldUsageState, newUsageState);
+    PalBarrierInfo barrierInfo = {0};
+    barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &barrierInfo);
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
@@ -415,6 +416,8 @@ PalBool triangleTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffers[0];
     submitInfo.fence = tmpFence;
+    submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
+
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
@@ -648,8 +651,8 @@ PalBool triangleTest()
         }
 
         // change the state of the image view to make it renderable
-        PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
-        PalUsageState newUsageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+        barrierInfo.newState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 
         PalImageSubresourceRange imageRange = {0};
         imageRange.layerArrayCount = 1;
@@ -658,12 +661,7 @@ PalBool triangleTest()
         imageRange.startMipLevel = 0;
 
         PalImage* image = palGetSwapchainImage(swapchain, imageIndex);
-        palCmdImageBarrier(
-            cmdBuffers[currentFrame],
-            image,
-            &imageRange,
-            oldUsageState,
-            newUsageState);
+        palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
 
         PalClearValue clearValue;
         clearValue.color[0] = 0.2f;
@@ -681,6 +679,10 @@ PalBool triangleTest()
         renderingInfo.viewCount = 1;
         renderingInfo.colorAttachentCount = 1;
         renderingInfo.colorAttachments = &colorAttachment;
+        renderingInfo.arrayLayerCount = 1;
+        renderingInfo.viewCount = 1;
+        renderingInfo.renderArea.width = WINDOW_WIDTH;
+        renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
         palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
         palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
@@ -693,14 +695,11 @@ PalBool triangleTest()
         palCmdEndRendering(cmdBuffers[currentFrame]);
 
         // change the state of the image view to make it presentable
-        oldUsageState = newUsageState;
-        newUsageState = PAL_USAGE_STATE_PRESENT;
-        palCmdImageBarrier(
-            cmdBuffers[currentFrame],
-            image,
-            &imageRange,
-            oldUsageState,
-            newUsageState);
+        barrierInfo.oldState = barrierInfo.newState;
+        barrierInfo.srcStages = barrierInfo.dstStages;
+        barrierInfo.newState = PAL_USAGE_STATE_PRESENT;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_NONE;
+        palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
@@ -714,6 +713,7 @@ PalBool triangleTest()
         submitInfo.fence = inFlightFences[currentFrame];
         submitInfo.waitSemaphore = imageAvailableSemaphores[currentFrame];
         submitInfo.signalSemaphore = renderFinishedSemaphores[imageIndex];
+        submitInfo.waitStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {

@@ -11,6 +11,7 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal/pal_graphics.h"
 #include <vulkan/vulkan_core.h>
+#include "graphics/pal_linear_allocator.h"
 
 typedef struct _XDisplay Display;
 typedef unsigned long Window;
@@ -116,22 +117,16 @@ typedef struct {
 } AddressRegion;
 
 typedef struct {
-    VkPipelineStageFlags2 stage;
-    VkAccessFlags2 access;
-    VkImageLayout layout;
-} Barrier;
-
-typedef struct {
     void* reserved;
     VkPhysicalDevice handle;
 } AdapterVk;
 
 typedef struct {
     void* reserved;
-    PalAdapterFeatures features;
     int32_t phyQueueCount;
     int32_t phyQueueIndex;
     int32_t queueFamilyCount;
+    PalAdapterFeatures features;
     uint32_t memoryClassMask[3];
     VkPhysicalDevice phyDevice;
     VkDevice handle;
@@ -201,6 +196,7 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    DeviceVk* device;
     PalMemoryType type;
     VkDeviceMemory handle;
 } MemoryVk;
@@ -260,6 +256,7 @@ typedef struct {
     VkBuffer buffer;
     VkDeviceMemory bufferMemory;
     VkCommandBuffer handle;
+    PalLinearAllocator allocator;
 } CommandBufferVk;
 
 typedef struct {
@@ -330,7 +327,6 @@ typedef struct {
 typedef struct {
     void* reserved;
     VkPipelineBindPoint bindPoint;
-    VkPipelineStageFlags2 stages;
     DeviceVk* device;
     VkPipeline handle;
     VkPipelineLayout layout;
@@ -339,6 +335,7 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    void* stagingPtr;
     PalBool isDirty;
     uint32_t stagingBufferSize;
     uint32_t handleSize;
@@ -487,6 +484,8 @@ void fillBuildInfoVk(
     VkAccelerationStructureGeometryKHR* geometries,
     VkAccelerationStructureBuildGeometryInfoKHR* outBuildInfo,
     void* outData);
+
+VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages);
 
 #endif // PAL_HAS_VULKAN_BACKEND
 #endif // _PAL_VULKAN_H

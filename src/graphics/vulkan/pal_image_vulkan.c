@@ -232,7 +232,6 @@ PalResult PAL_CALL createImageVk(
         }
 
         memory->type = memoryType;
-        memory->reserved = PAL_BACKEND_KEY;
         image->isMemoryManaged = PAL_TRUE;
     }
 
@@ -249,7 +248,6 @@ PalResult PAL_CALL createImageVk(
     image->info.belongsToSwapchain = PAL_FALSE;
 
     image->memory = memory;
-    image->reserved = PAL_BACKEND_KEY;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
 }
@@ -270,22 +268,21 @@ void PAL_CALL destroyImageVk(PalImage* image)
     palFree(s_Vk.allocator, vkImage);
 }
 
-PalResult PAL_CALL getImageInfoVk(
+void PAL_CALL getImageInfoVk(
     PalImage* image,
     PalImageInfo* info)
 {
     ImageVk* vkImage = (ImageVk*)image;
     *info = vkImage->info;
-    return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getImageMemoryRequirementsVk(
+void PAL_CALL getImageMemoryRequirementsVk(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
     ImageVk* vkImage = (ImageVk*)image;
     if (vkImage->info.belongsToSwapchain) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return;
     }
 
     DeviceVk* device = vkImage->device;
@@ -299,8 +296,6 @@ PalResult PAL_CALL getImageMemoryRequirementsVk(
     if ((memReq.memoryTypeBits & device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY]) != 0) {
         requirements->supportedMemoryTypes |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
     }
-
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL bindImageMemoryVk(
@@ -334,12 +329,6 @@ PalResult PAL_CALL createImageViewVk(
     DeviceVk* vkDevice = (DeviceVk*)device;
     ImageVk* vkImage = (ImageVk*)image;
 
-    if (info->type == PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-        if (!(vkDevice->features & PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY)) {
-            return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
-        }
-    }
-
     imageView = palAllocate(s_Vk.allocator, sizeof(ImageViewVk), 0);
     if (!imageView) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -371,7 +360,6 @@ PalResult PAL_CALL createImageViewVk(
     imageView->device = vkDevice;
     imageView->image = vkImage;
     imageView->layerCount = createInfo.subresourceRange.layerCount;
-    imageView->reserved = PAL_BACKEND_KEY;
     *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
 }
@@ -429,7 +417,6 @@ PalResult PAL_CALL createSamplerVk(
     }
 
     sampler->device = vkDevice;
-    sampler->reserved = PAL_BACKEND_KEY;
     *outSampler = (PalSampler*)sampler;
     return PAL_RESULT_SUCCESS;
 }

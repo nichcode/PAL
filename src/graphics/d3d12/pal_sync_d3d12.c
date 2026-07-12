@@ -214,10 +214,13 @@ PalResult PAL_CALL signalSemaphoreD3D12(
     return PAL_RESULT_SUCCESS;
 }
 
-uint64_t PAL_CALL getSemaphoreValueD3D12(PalSemaphore* semaphore)
+PalResult PAL_CALL getSemaphoreValueD3D12(
+    PalSemaphore* semaphore, 
+    uint64_t* value)
 {
     SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    return d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle);
+    *value = d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle);
+    return PAL_RESULT_SUCCESS;
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

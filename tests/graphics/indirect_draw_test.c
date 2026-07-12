@@ -472,8 +472,9 @@ PalBool indirectDrawTest()
         return PAL_FALSE;
     }
 
-    PalUsageState oldUsageState = PAL_USAGE_STATE_TRANSFER_WRITE;
-    PalUsageState newUsageState = PAL_USAGE_STATE_INDIRECT_READ;
+    PalBarrierInfo barrierInfo = {0};
+    barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
 
     // copy to indirect buffer
     PalBufferCopyInfo indirectCopyInfo = {0};
@@ -482,24 +483,22 @@ PalBool indirectDrawTest()
     indirectCopyInfo.srcOffset = indirectOffset;
 
     palCmdCopyBuffer(cmdBuffers[0], indirectBuffer, stagingBuffer, &indirectCopyInfo);
-    palCmdBufferBarrier(cmdBuffers[0], indirectBuffer, oldUsageState, newUsageState);
+    palCmdBufferBarrier(cmdBuffers[0], indirectBuffer, &barrierInfo);
 
-    newUsageState = PAL_USAGE_STATE_VERTEX_READ;
     PalBufferCopyInfo vertexCopyInfo = {0};
     vertexCopyInfo.dstOffset = 0;
     vertexCopyInfo.size = sizeof(vertices);
     vertexCopyInfo.srcOffset = vertexOffset;
     palCmdCopyBuffer(cmdBuffers[0], vertexBuffer, stagingBuffer, &vertexCopyInfo);
-    palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, oldUsageState, newUsageState);
+    palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &barrierInfo);
 
     // copy to index buffer
-    newUsageState = PAL_USAGE_STATE_INDEX_READ;
     PalBufferCopyInfo indexCopyInfo = {0};
     indexCopyInfo.dstOffset = 0;
     indexCopyInfo.size = sizeof(indices);
     indexCopyInfo.srcOffset = indexOffset;
     palCmdCopyBuffer(cmdBuffers[0], indexBuffer, stagingBuffer, &indexCopyInfo);
-    palCmdBufferBarrier(cmdBuffers[0], indexBuffer, oldUsageState, newUsageState);
+    palCmdBufferBarrier(cmdBuffers[0], indexBuffer, &barrierInfo);
 
     result = palCmdEnd(cmdBuffers[0]);
     if (result != PAL_RESULT_SUCCESS) {
@@ -510,6 +509,8 @@ PalBool indirectDrawTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffers[0];
     submitInfo.fence = fence;
+    submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
+
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
@@ -743,8 +744,10 @@ PalBool indirectDrawTest()
         }
 
         // change the state of the image view to make it renderable
-        PalUsageState oldUsageState = PAL_USAGE_STATE_UNDEFINED;
-        PalUsageState newUsageState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+        barrierInfo.oldState = PAL_USAGE_STATE_UNDEFINED;
+        barrierInfo.srcStages = PAL_PIPELINE_STAGE_NONE;
+        barrierInfo.newState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 
         PalImageSubresourceRange imageRange = {0};
         imageRange.layerArrayCount = 1;
@@ -753,12 +756,7 @@ PalBool indirectDrawTest()
         imageRange.startMipLevel = 0;
 
         PalImage* image = palGetSwapchainImage(swapchain, imageIndex);
-        palCmdImageBarrier(
-            cmdBuffers[currentFrame],
-            image,
-            &imageRange,
-            oldUsageState,
-            newUsageState);
+        palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
 
         PalClearValue clearValue;
         clearValue.color[0] = 0.2f;
@@ -776,6 +774,10 @@ PalBool indirectDrawTest()
         renderingInfo.viewCount = 1;
         renderingInfo.colorAttachentCount = 1;
         renderingInfo.colorAttachments = &colorAttachment;
+        renderingInfo.arrayLayerCount = 1;
+        renderingInfo.viewCount = 1;
+        renderingInfo.renderArea.width = WINDOW_WIDTH;
+        renderingInfo.renderArea.height = WINDOW_HEIGHT;
 
         palCmdBeginRendering(cmdBuffers[currentFrame], &renderingInfo);
         palCmdBindPipeline(cmdBuffers[currentFrame], pipeline);
@@ -789,14 +791,11 @@ PalBool indirectDrawTest()
         palCmdEndRendering(cmdBuffers[currentFrame]);
 
         // change the state of the image view to make it presentable
-        oldUsageState = newUsageState;
-        newUsageState = PAL_USAGE_STATE_PRESENT;
-        palCmdImageBarrier(
-            cmdBuffers[currentFrame],
-            image,
-            &imageRange,
-            oldUsageState,
-            newUsageState);
+        barrierInfo.oldState = barrierInfo.newState;
+        barrierInfo.srcStages = barrierInfo.dstStages;
+        barrierInfo.newState = PAL_USAGE_STATE_PRESENT;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_NONE;
+        palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
             
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
@@ -810,6 +809,7 @@ PalBool indirectDrawTest()
         submitInfo.fence = inFlightFences[currentFrame];
         submitInfo.waitSemaphore = imageAvailableSemaphores[currentFrame];
         submitInfo.signalSemaphore = renderFinishedSemaphores[imageIndex];
+        submitInfo.waitStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 
         result = palSubmitCommandBuffer(queue, &submitInfo);
         if (result != PAL_RESULT_SUCCESS) {

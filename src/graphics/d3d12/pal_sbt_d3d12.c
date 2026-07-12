@@ -345,6 +345,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
 void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
 {
+    // TODO: unmap staging buffer before destroying
     ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
     d3d12Sbt->buffer->lpVtbl->Release(d3d12Sbt->buffer);
     d3d12Sbt->stagingBuffer->lpVtbl->Release(d3d12Sbt->stagingBuffer);
