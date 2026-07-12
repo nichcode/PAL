@@ -90,7 +90,10 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         flagsCreateInfo.bindingCount = count;
         flagsCreateInfo.pBindingFlags = bindingFlags;
         createInfo.pNext = &flagsCreateInfo;
-        createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+        if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
+            createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        }
     }
 
     result = s_Vk.createDescriptorSetLayout(
@@ -135,7 +138,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
     VkDescriptorPoolCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 
-    if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
+    if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
         createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
     }
 

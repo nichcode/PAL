@@ -538,7 +538,9 @@ PalBool descriptorIndexingTest()
 
     PalBarrierInfo barrierInfo = {0};
     barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
     palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &barrierInfo);
 
     // set a barrier on the image to transition it into transfer dst state
@@ -549,12 +551,23 @@ PalBool descriptorIndexingTest()
     textureRange.layerArrayCount = 1;
 
     for (int i = 0; i < 4; i++) {
+        barrierInfo.oldState = PAL_USAGE_STATE_UNDEFINED;
+        barrierInfo.srcStages = PAL_PIPELINE_STAGE_NONE;
+        barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_WRITE;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
         palCmdImageBarrier(cmdBuffers[0], textures[i], &textureRange, &barrierInfo);
+
         palCmdCopyBufferToImage(
             cmdBuffers[0], 
             textures[i], 
             imageStagingBuffers[i], 
             &bufferImageCopyInfo);
+
+        // transition the image to shader read state
+        barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+        barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
+        barrierInfo.newState = PAL_USAGE_STATE_SHADER_READ;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_FRAGMENT_SHADER;
         palCmdImageBarrier(cmdBuffers[0], textures[i], &textureRange, &barrierInfo);
     }
 
@@ -694,7 +707,7 @@ PalBool descriptorIndexingTest()
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
 
-    // we only need the partially bound feature if supported.
+    // we only need the partially bound feature if supported. We dont use the other features
     if (descriptorIndexingCaps.flags & PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND) {
         descriptorSetLayoutcreateInfo.flags |= PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND;
     }
@@ -721,6 +734,7 @@ PalBool descriptorIndexingTest()
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
     descriptorPoolCreateInfo.bindingSizeCount = 2;
     descriptorPoolCreateInfo.bindingSizes = storageBufferBindingsizes;
+    descriptorPoolCreateInfo.flags = descriptorSetLayoutcreateInfo.flags;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
     if (result != PAL_RESULT_SUCCESS) {
@@ -1009,7 +1023,8 @@ PalBool descriptorIndexingTest()
         }
 
         // change the state of the image view to make it renderable
-        PalBarrierInfo barrierInfo = {0};
+        barrierInfo.oldState = PAL_USAGE_STATE_UNDEFINED;
+        barrierInfo.srcStages = PAL_PIPELINE_STAGE_NONE;
         barrierInfo.newState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
         barrierInfo.dstStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 
@@ -1120,6 +1135,7 @@ PalBool descriptorIndexingTest()
     for (int i = 0; i < 4; i++) {
         palDestroyImageView(textureViews[i]);
         palDestroyImage(textures[i]);
+        palDestroyBuffer(imageStagingBuffers[i]);
     }
 
     palDestroyBuffer(vertexBuffer);

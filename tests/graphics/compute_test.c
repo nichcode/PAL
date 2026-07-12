@@ -371,6 +371,7 @@ PalBool computeTest()
     // set a barrier so we only read from the buffer after the shader has written to it
     PalBarrierInfo barrierInfo = {0};
     barrierInfo.oldState = PAL_USAGE_STATE_SHADER_WRITE;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_COMPUTE_SHADER;
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
     barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
     palCmdBufferBarrier(cmdBuffer, buffer, &barrierInfo);

@@ -520,13 +520,17 @@ PalBool textureTest()
 
     PalBarrierInfo barrierInfo = {0};
     barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
     palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &barrierInfo);
 
     // copy image staging buffer to the checkerboard image
     // first the image must be in the correct layout
     barrierInfo.oldState = PAL_USAGE_STATE_UNDEFINED;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_NONE;
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
 
     // set a barrier on the image to transition it into transfer dst state
     PalImageSubresourceRange checkerboardRange = {0};
@@ -542,8 +546,11 @@ PalBool textureTest()
         imageStagingBuffer, 
         &bufferImageCopyInfo);
 
+    // transition the image to shader read state
     barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
-    barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
+    barrierInfo.newState = PAL_USAGE_STATE_SHADER_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_FRAGMENT_SHADER;
     palCmdImageBarrier(cmdBuffers[0], checkerboard, &checkerboardRange, &barrierInfo);
 
     result = palCmdEnd(cmdBuffers[0]);
@@ -555,7 +562,7 @@ PalBool textureTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffers[0];
     submitInfo.fence = fence;
-    submitInfo.waitStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
+    submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
 
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
@@ -923,6 +930,7 @@ PalBool textureTest()
 
         // change the state of the image view to make it renderable
         barrierInfo.oldState = PAL_USAGE_STATE_UNDEFINED;
+        barrierInfo.srcStages = PAL_PIPELINE_STAGE_NONE;
         barrierInfo.newState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
         barrierInfo.dstStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 

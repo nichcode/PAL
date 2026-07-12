@@ -404,7 +404,9 @@ PalBool triangleTest()
 
     PalBarrierInfo barrierInfo = {0};
     barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
     palCmdBufferBarrier(cmdBuffers[0], vertexBuffer, &barrierInfo);
 
     result = palCmdEnd(cmdBuffers[0]);
@@ -651,6 +653,8 @@ PalBool triangleTest()
         }
 
         // change the state of the image view to make it renderable
+        barrierInfo.oldState = PAL_USAGE_STATE_UNDEFINED;
+        barrierInfo.dstStages = PAL_PIPELINE_STAGE_NONE;
         barrierInfo.newState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
         barrierInfo.dstStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
 

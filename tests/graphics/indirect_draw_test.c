@@ -474,7 +474,9 @@ PalBool indirectDrawTest()
 
     PalBarrierInfo barrierInfo = {0};
     barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
+    barrierInfo.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
 
     // copy to indirect buffer
     PalBufferCopyInfo indirectCopyInfo = {0};
