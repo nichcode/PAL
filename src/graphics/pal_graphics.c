@@ -116,7 +116,6 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         // command pool and command buffer
         !vtable1->createCommandPool                             ||
         !vtable1->destroyCommandPool                            ||
-        !vtable1->resetCommandPool                              ||
         !vtable1->allocateCommandBuffer                         ||
         !vtable1->freeCommandBuffer                             ||
         !vtable1->submitCommandBuffer                           ||
@@ -271,7 +270,6 @@ static void populateVtableVersion1(
     // command pool and command buffer
     vtable->createCommandPool = vtable1->createCommandPool;
     vtable->destroyCommandPool = vtable1->destroyCommandPool;
-    vtable->resetCommandPool = vtable1->resetCommandPool;
     vtable->allocateCommandBuffer = vtable1->allocateCommandBuffer;
     vtable->freeCommandBuffer = vtable1->freeCommandBuffer;
     vtable->submitCommandBuffer = vtable1->submitCommandBuffer;
@@ -392,16 +390,15 @@ PalResult PAL_CALL palInitGraphics(
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    // TODO: uncomment
-    // result = initGraphicsVk(debugger, allocator);
-    // if (result != PAL_RESULT_SUCCESS) {
-    //     return result;
-    // }
+    result = initGraphicsVk(debugger, allocator);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
 
-    // attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    // attachedBackend->base = s_VkBackend;
-    // attachedBackend->startIndex = 0;
-    // attachedBackend->count = 0;
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base = s_VkBackend;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
@@ -443,7 +440,7 @@ void PAL_CALL palShutdownGraphics()
 #ifdef _WIN32
     // vulkan
 #if PAL_HAS_VULKAN_BACKEND
-    //TODO: shutdownGraphicsVk();
+    shutdownGraphicsVk();
 #endif // PAL_HAS_VULKAN_BACKEND
 
     // D3D12
@@ -1118,11 +1115,6 @@ PalResult PAL_CALL palCreateCommandPool(
 void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 {
     pool->backend->destroyCommandPool(pool);
-}
-
-PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool)
-{
-    return pool->backend->resetCommandPool(pool);
 }
 
 PalResult PAL_CALL palAllocateCommandBuffer(

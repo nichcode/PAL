@@ -399,7 +399,6 @@ typedef struct {
     PFN_vkDestroySemaphore destroySemaphore;
     PFN_vkBeginCommandBuffer cmdBegin;
     PFN_vkEndCommandBuffer cmdEnd;
-    PFN_vkResetCommandPool resetCommandPool;
     PFN_vkResetCommandBuffer resetCommandBuffer;
     PFN_vkCmdExecuteCommands cmdExecuteCommandBuffer;
     PFN_vkCmdCopyBuffer cmdCopyBuffer;

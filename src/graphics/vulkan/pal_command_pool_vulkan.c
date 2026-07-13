@@ -45,17 +45,6 @@ void PAL_CALL destroyCommandPoolVk(PalCommandPool* pool)
     palFree(s_Vk.allocator, vkPool);
 }
 
-PalResult PAL_CALL resetCommandPoolVk(PalCommandPool* pool)
-{
-    CommandPoolVk* vkCmdPool = (CommandPoolVk*)pool;
-    VkResult result = s_Vk.resetCommandPool(vkCmdPool->device->handle, vkCmdPool->handle, 0);
-    if (result != VK_SUCCESS) {
-        return makeResultVk(result);
-    }
-
-    return PAL_RESULT_SUCCESS;
-}
-
 PalResult PAL_CALL allocateCommandBufferVk(
     PalDevice* device,
     PalCommandPool* pool,

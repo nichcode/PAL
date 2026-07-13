@@ -1202,10 +1202,6 @@ PalResult PAL_CALL initGraphicsVk(
         s_Vk.handle,
         "vkEndCommandBuffer");
 
-    s_Vk.resetCommandPool = (PFN_vkResetCommandPool)loadProc(
-        s_Vk.handle,
-        "vkResetCommandPool");
-
     s_Vk.resetCommandBuffer = (PFN_vkResetCommandBuffer)loadProc(
         s_Vk.handle,
         "vkResetCommandBuffer");

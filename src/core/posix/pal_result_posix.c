@@ -20,8 +20,10 @@ void PAL_CALL palFormatResult(
 {
     char tmpBuffer[256];
     uint32_t nativeCode = palGetResultNativeCode(result);
-    strerror_r(nativeCode, tmpBuffer, 256);
-    formatResultMsg(result, buffer, tmpBuffer);
+    if (nativeCode != 0) {
+        strerror_r(nativeCode, tmpBuffer, 256);
+        formatResultMsg(result, buffer, tmpBuffer);
+    }
 }
 
 #endif // _PAL_HAS_POSIX

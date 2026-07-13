@@ -30,6 +30,7 @@ PalResult PAL_CALL createFenceD3D12(
         (void**)&fence->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         palFree(s_D3D12.allocator, fence);
         return makeResultD3D12(result);
     }
@@ -139,6 +140,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
         (void**)&semaphore->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         palFree(s_D3D12.allocator, semaphore);
         return makeResultD3D12(result);
     }

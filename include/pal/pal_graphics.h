@@ -3269,13 +3269,6 @@ typedef struct {
     void(PAL_CALL* destroyCommandPool)(PalCommandPool* pool);
 
     /**
-     * Backend implementation of ::palResetCommandPool.
-     *
-     * Must obey the rules and semantics documented in palResetCommandPool().
-     */
-    PalResult(PAL_CALL* resetCommandPool)(PalCommandPool* pool);
-
-    /**
      * Backend implementation of ::palAllocateCommandBuffer.
      *
      * Must obey the rules and semantics documented in palAllocateCommandBuffer().

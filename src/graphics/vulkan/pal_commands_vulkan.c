@@ -395,10 +395,6 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
         sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count, 
         0);
 
-    if (!tmpRangeInfos || !rangeInfos || !geometries) {
-        return;
-    }
-
     memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->count);
     memset(rangeInfos, 0, sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count);
     fillBuildInfoVk(PAL_FALSE, info, geometries, &buildInfo, rangeInfos);
@@ -430,10 +426,6 @@ void PAL_CALL cmdBeginRenderingVk(
         &vkCmdBuffer->allocator, 
         sizeof(VkRenderingAttachmentInfoKHR) * info->colorAttachentCount, 
         0);
-
-    if (!colorAttachments) {
-        return;
-    }
 
     VkRenderingAttachmentInfoKHR* attachment = nullptr;
     PalAttachmentDesc* desc = nullptr;

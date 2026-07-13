@@ -13,33 +13,37 @@
 static uint32_t getSupportedMemoryTypes(PalBufferUsages usages)
 {
     uint32_t masks = 0;
-    masks |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
-    masks |= (1u << PAL_MEMORY_TYPE_CPU_UPLOAD);
-    masks |= (1u << PAL_MEMORY_TYPE_CPU_READBACK);
+    uint32_t gpuBit = (1u << PAL_MEMORY_TYPE_GPU_ONLY);
+    uint32_t uploadBit = (1u << PAL_MEMORY_TYPE_CPU_UPLOAD);
+    uint32_t readBackBit = (1u << PAL_MEMORY_TYPE_CPU_READBACK);
+
+    masks |= gpuBit;
+    masks |= uploadBit;
+    masks |= readBackBit;
 
     if (usages & PAL_BUFFER_USAGE_STORAGE) {
-        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
-        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+        masks &= ~uploadBit;
+        masks &= ~readBackBit;
     }
 
     if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
-        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
-        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+        masks &= ~uploadBit;
+        masks &= ~readBackBit;
     }
 
     if (usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
-        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
-        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+        masks &= ~uploadBit;
+        masks &= ~readBackBit;
     }
 
     if (usages & PAL_BUFFER_USAGE_TRANSFER_DST) {
-        masks |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
-        masks &= ~PAL_MEMORY_TYPE_CPU_UPLOAD;
+        masks |= (1u << gpuBit);
+        masks &= ~uploadBit;
     }
 
     if (usages & PAL_BUFFER_USAGE_TRANSFER_SRC) {
-        masks |= (1u << PAL_MEMORY_TYPE_GPU_ONLY);
-        masks &= ~PAL_MEMORY_TYPE_CPU_READBACK;
+        masks |= (1u << gpuBit);
+        masks &= ~readBackBit;
     }
 
     return masks;
@@ -125,12 +129,14 @@ PalResult PAL_CALL createBufferD3D12(
             (void**)&buffer->handle);
 
         if (FAILED(result)) {
+            pollMessagesD3D12(d3d12Device);
             return makeResultD3D12(result);
         }
 
         buffer->isMemoryManaged = PAL_TRUE;
     }
 
+    buffer->device = d3d12Device;
     buffer->usages = info->usages;
     buffer->size = info->size;
     *outBuffer = (PalBuffer*)buffer;
@@ -151,7 +157,7 @@ void PAL_CALL getBufferMemoryRequirementsD3D12(
     PalMemoryRequirements* requirements)
 {
     BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    ID3D12Device5* device = d3d12Buffer->device;
+    ID3D12Device5* device = d3d12Buffer->device->handle;
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
@@ -250,7 +256,7 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
 {
     HRESULT result;
     BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    ID3D12Device5* device = d3d12Buffer->device;
+    DeviceD3D12* device = d3d12Buffer->device;
     MemoryD3D12* d3d12Memory = (MemoryD3D12*)memory;
     if (d3d12Buffer->isMemoryManaged) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
@@ -276,8 +282,8 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
         state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     }
 
-    result = device->lpVtbl->CreatePlacedResource(
-        device,
+    result = device->handle->lpVtbl->CreatePlacedResource(
+        device->handle,
         d3d12Memory->handle,
         offset,
         &d3d12Buffer->desc,
@@ -287,6 +293,7 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
         (void**)&d3d12Buffer->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(device);
         return makeResultD3D12(result);
     }
 

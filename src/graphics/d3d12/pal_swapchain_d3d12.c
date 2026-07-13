@@ -236,6 +236,7 @@ PalResult PAL_CALL createSwapchainD3D12(
         &swapchain1);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -286,6 +287,7 @@ PalResult PAL_CALL createSwapchainD3D12(
     swapchain->windowWidth = windowRect.right - windowRect.left;
     swapchain->windowWidth = windowRect.bottom - windowRect.top;
 
+    swapchain->device = d3d12Device;
     swapchain->queue = d3d12Queue->handle;
     swapchain->imageCount = info->imageCount;
     *outSwapchain = (PalSwapchain*)swapchain;
@@ -294,21 +296,21 @@ PalResult PAL_CALL createSwapchainD3D12(
 
 void PAL_CALL destroySwapchainD3D12(PalSwapchain* swapchain)
 {
-    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
-    d3dSwapchain->handle->lpVtbl->Release(d3dSwapchain->handle);
-    palFree(s_D3D12.allocator, d3dSwapchain->images);
-    palFree(s_D3D12.allocator, d3dSwapchain);
+    SwapchainD3D12* d3d12Swapchain = (SwapchainD3D12*)swapchain;
+    d3d12Swapchain->handle->lpVtbl->Release(d3d12Swapchain->handle);
+    palFree(s_D3D12.allocator, d3d12Swapchain->images);
+    palFree(s_D3D12.allocator, d3d12Swapchain);
 }
 
 PalImage* PAL_CALL getSwapchainImageD3D12(
     PalSwapchain* swapchain,
     uint32_t index)
 {
-    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
-    if (index > d3dSwapchain->imageCount) {
+    SwapchainD3D12* d3d12Swapchain = (SwapchainD3D12*)swapchain;
+    if (index > d3d12Swapchain->imageCount) {
         return nullptr;
     }
-    return (PalImage*)&d3dSwapchain->images[index];
+    return (PalImage*)&d3d12Swapchain->images[index];
 }
 
 PalResult PAL_CALL getNextSwapchainImageD3D12(
@@ -318,15 +320,16 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
 {
     HRESULT result;
     uint32_t index = 0;
-    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
-    ID3D12CommandQueue* queue = d3dSwapchain->queue;
+    SwapchainD3D12* d3d12Swapchain = (SwapchainD3D12*)swapchain;
+    ID3D12CommandQueue* queue = d3d12Swapchain->queue;
 
-    index = d3dSwapchain->handle->lpVtbl->GetCurrentBackBufferIndex(d3dSwapchain->handle);
+    index = d3d12Swapchain->handle->lpVtbl->GetCurrentBackBufferIndex(d3d12Swapchain->handle);
     if (info->fence) {
         FenceD3D12* fence = (FenceD3D12*)info->fence;
         fence->value++;
         result = queue->lpVtbl->Signal(queue, fence->handle, fence->value);
         if (FAILED(result)) {
+            pollMessagesD3D12(d3d12Swapchain->device);
             return makeResultD3D12(result);
         }
     }
@@ -350,8 +353,8 @@ PalResult PAL_CALL presentSwapchainD3D12(
     PalSemaphore* waitSemaphore)
 {
     HRESULT result;
-    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
-    ID3D12CommandQueue* queue = d3dSwapchain->queue;
+    SwapchainD3D12* d3d12Swapchain = (SwapchainD3D12*)swapchain;
+    ID3D12CommandQueue* queue = d3d12Swapchain->queue;
 
     if (waitSemaphore) {
         SemaphoreD3D12* semaphore = (SemaphoreD3D12*)waitSemaphore;
@@ -367,19 +370,24 @@ PalResult PAL_CALL presentSwapchainD3D12(
         }
     }
 
-    result = d3dSwapchain->handle->lpVtbl->Present(
-        d3dSwapchain->handle,
-        d3dSwapchain->syncInterval,
-        d3dSwapchain->presentFlags);
+    // poll pending messages
+    pollMessagesD3D12(d3d12Swapchain->device);
 
+    result = d3d12Swapchain->handle->lpVtbl->Present(
+        d3d12Swapchain->handle,
+        d3d12Swapchain->syncInterval,
+        d3d12Swapchain->presentFlags);
+
+    pollMessagesD3D12(d3d12Swapchain->device);
     if (FAILED(result)) {
         if (result == DXGI_ERROR_DEVICE_REMOVED || result == DXGI_ERROR_DEVICE_RESET) {
+            pollMessagesD3D12(d3d12Swapchain->device);
             return makeResultD3D12(result);
         }
 
         // check if swapchain needs to be resize
         RECT windowRect;
-        PalBool ret = GetClientRect((HWND)d3dSwapchain->surface->handle, &windowRect);
+        PalBool ret = GetClientRect((HWND)d3d12Swapchain->surface->handle, &windowRect);
         uint32_t w = windowRect.right - windowRect.left;
         uint32_t h = windowRect.bottom - windowRect.top;
         if (!ret) {
@@ -389,7 +397,7 @@ PalResult PAL_CALL presentSwapchainD3D12(
                 GetLastError());
         }
 
-        if (w != d3dSwapchain->windowWidth || h != d3dSwapchain->windowHeight) {
+        if (w != d3d12Swapchain->windowWidth || h != d3d12Swapchain->windowHeight) {
             return PAL_RESULT_CODE_OUT_OF_DATE;
         }
 
@@ -405,29 +413,30 @@ PalResult PAL_CALL resizeSwapchainD3D12(
     uint32_t newHeight)
 {
     HRESULT result;
-    SwapchainD3D12* d3dSwapchain = (SwapchainD3D12*)swapchain;
-    result = d3dSwapchain->handle->lpVtbl->ResizeBuffers(
-        d3dSwapchain->handle,
-        d3dSwapchain->imageCount,
+    SwapchainD3D12* d3d12Swapchain = (SwapchainD3D12*)swapchain;
+    result = d3d12Swapchain->handle->lpVtbl->ResizeBuffers(
+        d3d12Swapchain->handle,
+        d3d12Swapchain->imageCount,
         newWidth,
         newHeight,
-        d3dSwapchain->format,
-        d3dSwapchain->flags);
+        d3d12Swapchain->format,
+        d3d12Swapchain->flags);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Swapchain->device);
         return makeResultD3D12(result);
     }
 
     // fill all images with the creation info
-    for (int i = 0; i < d3dSwapchain->imageCount; i++) {
+    for (int i = 0; i < d3d12Swapchain->imageCount; i++) {
         ID3D12Resource* tmp = nullptr;
-        d3dSwapchain->handle->lpVtbl->GetBuffer(
-            d3dSwapchain->handle,
+        d3d12Swapchain->handle->lpVtbl->GetBuffer(
+            d3d12Swapchain->handle,
             i,
             &IID_Resource,
             (void**)&tmp);
 
-        ImageD3D12* image = &d3dSwapchain->images[i];
+        ImageD3D12* image = &d3d12Swapchain->images[i];
         image->handle = tmp;
         image->info.height = newHeight;
         image->info.width = newWidth;
@@ -435,7 +444,7 @@ PalResult PAL_CALL resizeSwapchainD3D12(
 
     // get and cache window size for swapchain out of date error
     RECT windowRect;
-    SurfaceD3D12* surface = d3dSwapchain->surface;
+    SurfaceD3D12* surface = d3d12Swapchain->surface;
     if (!GetClientRect((HWND)surface->handle, &windowRect)) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
@@ -443,8 +452,8 @@ PalResult PAL_CALL resizeSwapchainD3D12(
             GetLastError());
     }
 
-    d3dSwapchain->windowWidth = windowRect.right - windowRect.left;
-    d3dSwapchain->windowWidth = windowRect.bottom - windowRect.top;
+    d3d12Swapchain->windowWidth = windowRect.right - windowRect.left;
+    d3d12Swapchain->windowWidth = windowRect.bottom - windowRect.top;
     return PAL_RESULT_SUCCESS;
 }
 

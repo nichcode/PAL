@@ -158,6 +158,7 @@ PalResult PAL_CALL cmdBeginD3D12(
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     result = d3d12CmdBuffer->allocator->lpVtbl->Reset(d3d12CmdBuffer->allocator);
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
@@ -167,9 +168,11 @@ PalResult PAL_CALL cmdBeginD3D12(
         nullptr);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
+    d3d12CmdBuffer->linearAllocator.offset = 0;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -178,6 +181,7 @@ PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer* cmdBuffer)
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     HRESULT result = d3d12CmdBuffer->handle->lpVtbl->Close(d3d12CmdBuffer->handle);
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
@@ -271,19 +275,14 @@ void PAL_CALL cmdBuildAccelerationStructureD3D12(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
-    // TODO: use a temp or arena buffer
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
         D3D12_RAYTRACING_GEOMETRY_DESC* geometries = nullptr;
-        geometries = palAllocate(
-            s_D3D12.allocator,
-            sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count,
+        geometries = palLinearAlloc(
+            &d3d12CmdBuffer->linearAllocator, 
+            sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count, 
             0);
-
-        if (!geometries) {
-            return PAL_RESULT_CODE_OUT_OF_MEMORY;
-        }
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
         fillBuildInfoD3D12(PAL_FALSE, info, geometries, &buildInfo);
@@ -292,8 +291,6 @@ void PAL_CALL cmdBuildAccelerationStructureD3D12(
             &buildInfo,
             0,
             nullptr);
-
-        palFree(s_D3D12.allocator, geometries);
 
     } else {
         fillBuildInfoD3D12(PAL_FALSE, info, nullptr, &buildInfo);
@@ -769,10 +766,14 @@ void PAL_CALL cmdBindVertexBuffersD3D12(
     PalBuffer** buffers,
     uint64_t* offsets)
 {
-    // TODO: use a temp or arena buffer
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     PipelineD3D12* pipeline = d3d12CmdBuffer->pipeline;
     D3D12_VERTEX_BUFFER_VIEW* views = nullptr;
+    views = palLinearAlloc(
+        &d3d12CmdBuffer->linearAllocator, 
+        sizeof(D3D12_VERTEX_BUFFER_VIEW) * count, 
+        0);
+
     for (int i = 0; i < count; i++) {
         BufferD3D12* tmp = (BufferD3D12*)buffers[i];
         views[i].BufferLocation = tmp->handle->lpVtbl->GetGPUVirtualAddress(tmp->handle);
@@ -943,21 +944,20 @@ void PAL_CALL cmdImageBarrierD3D12(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info)
 {
-    // TODO: use a temp or arena buffer
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
     D3D12_RESOURCE_STATES old, new;
     D3D12_RESOURCE_BARRIER barrier = {0};
 
-    old = barrierToD3D12(oldUsageState);
-    new = barrierToD3D12(newUsageState);
+    old = barrierToD3D12(info->oldState);
+    new = barrierToD3D12(info->newState);
 
     // read/write barrier without transition
     if (old == new && old == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         barrier.UAV.pResource = d3d12Image->handle;
         d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
-        return PAL_RESULT_SUCCESS;
+        return;
     }
 
     uint32_t planeCount = 1; // for color or depth
@@ -997,10 +997,10 @@ void PAL_CALL cmdImageBarrierD3D12(
         return;
     }
 
-    barriers = palAllocate(s_D3D12.allocator, sizeof(D3D12_RESOURCE_BARRIER) * barrierCount, 0);
-    if (!barriers) {
-        return;
-    }
+    barriers = palLinearAlloc(
+        &d3d12CmdBuffer->linearAllocator, 
+        sizeof(D3D12_RESOURCE_BARRIER) * barrierCount, 
+        0);
 
     uint32_t count = 0;
     for (uint32_t plane = 0; plane < planeCount; plane++) {
@@ -1019,7 +1019,6 @@ void PAL_CALL cmdImageBarrierD3D12(
     }
 
     d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, barrierCount, barriers);
-    palFree(s_D3D12.allocator, barriers);
 }
 
 void PAL_CALL cmdBufferBarrierD3D12(
@@ -1034,8 +1033,8 @@ void PAL_CALL cmdBufferBarrierD3D12(
         return;
     }
 
-    old = barrierToD3D12(oldUsageState);
-    new = barrierToD3D12(newUsageState);
+    old = barrierToD3D12(info->oldState);
+    new = barrierToD3D12(info->newState);
 
     D3D12_RESOURCE_BARRIER barrier = {0};
     if (old == new && D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {

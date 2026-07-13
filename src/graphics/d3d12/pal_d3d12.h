@@ -14,6 +14,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <d3d12sdklayers.h>
+#include "graphics/pal_linear_allocator.h"
 
 #define MAX_RTV 1024
 #define MAX_DSV 512
@@ -151,8 +152,8 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    void* scratchBuffer;
     uint32_t shaderModel;
-    DWORD debugCookie;
     PalBool canFenceReset;
     IDXGIAdapter4* adapter;
     ID3D12CommandSignature* meshSignature;
@@ -160,7 +161,7 @@ typedef struct {
     ID3D12CommandSignature* drawSignature;
     ID3D12CommandSignature* dispatchSignature;
     ID3D12CommandSignature* raySignature;
-    ID3D12InfoQueue1* infoQueue;
+    ID3D12InfoQueue* infoQueue;
     ID3D12CommandQueue* queue;
     ID3D12Device5* handle;
     RTVHeapAllocator rtvAllocator;
@@ -191,7 +192,7 @@ typedef struct {
 typedef struct {
     void* reserved;
     PalBool isMemoryManaged;
-    ID3D12Device5* device;
+    DeviceD3D12* device;
     ID3D12Resource* handle;
     PalImageInfo info;
     D3D12_RESOURCE_DESC desc;
@@ -220,10 +221,11 @@ typedef struct {
     uint32_t windowHeight;
     uint32_t flags;
     DXGI_FORMAT format;
-    DXGI_FEATURE presentFlags;
+    UINT presentFlags;
     SurfaceD3D12* surface;
     ImageD3D12* images;
     ID3D12CommandQueue* queue;
+    DeviceD3D12* device;
     IDXGISwapChain3* handle;
 } SwapchainD3D12;
 
@@ -245,27 +247,20 @@ typedef struct {
 
 typedef struct {
     void* reserved;
+    D3D12_COMMAND_LIST_TYPE type;
+} CommandPoolD3D12;
+
+typedef struct {
+    void* reserved;
     PalBool primary;
-    void* pool; // CommandPool
     ID3D12Resource* stagingBuffer;
     ID3D12Resource* buffer;
     ID3D12CommandAllocator* allocator;
+    PalLinearAllocator linearAllocator;
     void* pipeline;
     DeviceD3D12* device;
     ID3D12GraphicsCommandList6* handle;
 } CommandBufferD3D12;
-
-typedef struct {
-    PalBool used;
-    CommandBufferD3D12* cmdBuffer;
-} CommandBufferData;
-
-typedef struct {
-    void* reserved;
-    uint32_t size;
-    D3D12_COMMAND_LIST_TYPE type;
-    CommandBufferData* cmdBuffersData;
-} CommandPoolD3D12;
 
 typedef struct {
     void* reserved;
@@ -274,7 +269,7 @@ typedef struct {
     PalBufferUsages usages;
     uint64_t size;
     ID3D12Resource* handle;
-    ID3D12Device5* device;
+    DeviceD3D12* device;
     D3D12_RESOURCE_DESC desc;
 } BufferD3D12;
 
@@ -409,13 +404,15 @@ uint64_t getDescriptorHandleD3D12(
     uint32_t size,
     uint64_t baseOffset);
 
+void pollMessagesD3D12(DeviceD3D12* device);
+
 // IIDs
 extern IID IID_Device;
 extern IID IID_Adapter;
 extern IID IID_Factory;
 extern IID IID_DebugController;
 extern IID IID_DebugController1;
-extern IID IID_InfoQueue1;
+extern IID IID_InfoQueue;
 extern IID IID_Heap;
 extern IID IID_Queue;
 extern IID IID_Swapchain;

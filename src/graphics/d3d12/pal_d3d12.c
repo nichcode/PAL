@@ -14,7 +14,7 @@ IID IID_Adapter = {0x3c8d99d1, 0x4fbf, 0x4181, 0xa8,0x2c, 0xaf,0x66,0xbf,0x7b,0x
 IID IID_Factory = {0xc1b6694f, 0xff09, 0x44a9, 0xb0,0x3c, 0x77,0x90,0x0a,0x0a,0x1d,0x17};
 IID IID_DebugController = {0x344488b7, 0x6846, 0x474b, 0xb9,0x89, 0xf0,0x27,0x44,0x82,0x45,0xe0};
 IID IID_DebugController1 = {0xaffaa4ca, 0x63fe, 0x4d8e, 0xb8,0xad, 0x15,0x90,0x00,0xaf,0x43,0x04};
-IID IID_InfoQueue1 = {0x2852dd88, 0xb484, 0x4c0c, 0xb6,0xb1, 0x67,0x16,0x85,0x00,0xe6,0x00};
+IID IID_InfoQueue = {0x0742a90b, 0xc387, 0x483f, 0xb9,0x46, 0x30,0xa7,0xe4,0xe6,0x14,0x58};
 IID IID_Heap = {0x6b3b2502, 0x6e51, 0x45b3, 0x90,0xee, 0x98,0x84,0x26,0x5e,0x8d,0xf3};
 IID IID_Queue = {0x0ec870a6, 0x5d7e, 0x4c22, 0x8c,0xfc, 0x5b,0xaa,0xe0,0x76,0x16,0xed};
 IID IID_Swapchain = {0x94d99bdb, 0xf1f8, 0x4ab0, 0xb2,0x36, 0x7d,0xa0,0x17,0x0e,0xda,0xb1};
@@ -991,6 +991,67 @@ void getDescriptorTierLimitsD3D12(
     }
 }
 
+void pollMessagesD3D12(DeviceD3D12* device)
+{
+    ID3D12InfoQueue* queue = device->infoQueue;
+    if (!queue) {
+        return;
+    }
+
+    UINT64 messageCount = queue->lpVtbl->GetNumStoredMessages(queue);
+    for (int i = 0; i < messageCount; i++) {
+        SIZE_T size = 16384;
+        uint8_t* buffer = device->scratchBuffer;
+        queue->lpVtbl->GetMessage(queue, i, (D3D12_MESSAGE*)buffer, &size);
+
+        const char* message = ((D3D12_MESSAGE*)buffer)->pDescription;
+        D3D12_MESSAGE_CATEGORY category = ((D3D12_MESSAGE*)buffer)->Category;
+        D3D12_MESSAGE_SEVERITY severity = ((D3D12_MESSAGE*)buffer)->Severity;
+
+        PalDebugMessageSeverity msgSeverity = 0;
+        PalDebugMessageType msgType = 0;
+        switch (category) {
+            case D3D12_MESSAGE_CATEGORY_APPLICATION_DEFINED:
+            case D3D12_MESSAGE_CATEGORY_MISCELLANEOUS:
+            case D3D12_MESSAGE_CATEGORY_COMPILATION: {
+                msgType = PAL_DEBUG_MESSAGE_TYPE_GENERAL;
+                break;
+            }
+
+            case D3D12_MESSAGE_CATEGORY_INITIALIZATION:
+            case D3D12_MESSAGE_CATEGORY_SHADER:
+            case D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION:
+            case D3D12_MESSAGE_CATEGORY_EXECUTION:
+            case D3D12_MESSAGE_CATEGORY_STATE_GETTING:
+            case D3D12_MESSAGE_CATEGORY_STATE_SETTING: {
+                msgType = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
+                break;
+            }
+        }
+
+        switch (severity) {
+            case D3D12_MESSAGE_SEVERITY_INFO: {
+                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
+                break;
+            }
+
+            case D3D12_MESSAGE_SEVERITY_WARNING: {
+                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
+                break;
+            }
+
+            case D3D12_MESSAGE_SEVERITY_ERROR:
+            case D3D12_MESSAGE_SEVERITY_CORRUPTION: {
+                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
+                break;
+            }
+        }
+
+        s_D3D12.debugCallback(s_D3D12.debugUserData, msgSeverity, msgType, message);
+    }
+    queue->lpVtbl->ClearStoredMessages(queue);
+}
+
 PalResult PAL_CALL initGraphicsD3D12(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
@@ -1024,40 +1085,45 @@ PalResult PAL_CALL initGraphicsD3D12(
             "D3D12GetDebugInterface");
 
         if (s_D3D12.getDebugInterface) {
-            HRESULT hr;
             ID3D12Debug* debugController = nullptr;
             ID3D12Debug1* debugController1 = nullptr;
-
-            hr = s_D3D12.getDebugInterface(&IID_DebugController, (void**)&debugController);
+            HRESULT hr = s_D3D12.getDebugInterface(&IID_DebugController, (void**)&debugController);
             if (SUCCEEDED(hr)) {
                 debugController->lpVtbl->EnableDebugLayer(debugController);
+                hr = debugController->lpVtbl->QueryInterface(
+                    debugController, 
+                    &IID_DebugController1, 
+                    (void**)&debugController1);
+
+                if (SUCCEEDED(hr)) {
+                    debugController1->lpVtbl->SetEnableSynchronizedCommandQueueValidation(
+                        debugController1, 
+                        TRUE);
+
+                    debugController1->lpVtbl->SetEnableGPUBasedValidation(
+                        debugController1, 
+                        TRUE);
+
+                    debugController1->lpVtbl->Release(debugController1);
+                }
+                
                 debugController->lpVtbl->Release(debugController);
             }
 
-            hr = s_D3D12.getDebugInterface(&IID_DebugController1, (void**)&debugController1);
-            if (SUCCEEDED(hr)) {
-                debugController1->lpVtbl->SetEnableGPUBasedValidation(
-                    debugController1,
-                    TRUE);
-
-                debugController1->lpVtbl->Release(debugController1);
-
+            if (debugController) {
                 // message types
-                if (!debugger->denyGeneral) {
+                if (!debugger->denyGeneral)
                     s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_APPLICATION_DEFINED;
-                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_INITIALIZATION;
-                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
-                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION;
-                }
-
-                if (!debugger->denyPerformance) {
-                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_CREATION;
-                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_EXECUTION;
-                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
-                }
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_MISCELLANEOUS;
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_COMPILATION;
 
                 if (!debugger->denyValidation) {
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_INITIALIZATION;
                     s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_SHADER;
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION;
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_EXECUTION;
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_GETTING;
+                    s_D3D12.categories[s_D3D12.categoryCount++] = D3D12_MESSAGE_CATEGORY_STATE_SETTING;
                 }
 
                 // message severities
@@ -1069,9 +1135,10 @@ PalResult PAL_CALL initGraphicsD3D12(
                     s_D3D12.severities[s_D3D12.severityCount++] = D3D12_MESSAGE_SEVERITY_ERROR;
                     s_D3D12.severities[s_D3D12.severityCount++] = D3D12_MESSAGE_SEVERITY_CORRUPTION;
                 }
+
+                s_D3D12.debugLayer = PAL_TRUE;
+                s_D3D12.debugCallback = debugger->callback;
             }
-            s_D3D12.debugLayer = PAL_TRUE;
-            s_D3D12.debugCallback = debugger->callback;
         }
     }
     // clang-format on

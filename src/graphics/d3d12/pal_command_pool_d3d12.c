@@ -8,46 +8,6 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
-static CommandBufferData* getFreeCmdBufferData(CommandPoolD3D12* pool)
-{
-    for (int i = 0; i < pool->size; i++) {
-        if (!pool->cmdBuffersData[i].used) {
-            pool->cmdBuffersData[i].used = PAL_TRUE;
-            return &pool->cmdBuffersData[i];
-        }
-    }
-
-    // resize the data array
-    CommandBufferData* data = nullptr;
-    int count = pool->size * 2; // double the size
-    int freeIndex = pool->size + 1;
-
-    data = palAllocate(s_D3D12.allocator, sizeof(CommandBufferData) * count, 0);
-    if (data) {
-        memcpy(data, pool->cmdBuffersData, pool->size * sizeof(CommandBufferData));
-
-        palFree(s_D3D12.allocator, pool->cmdBuffersData);
-        pool->cmdBuffersData = data;
-        pool->size = count;
-
-        pool->cmdBuffersData[freeIndex].used = PAL_TRUE;
-        return &pool->cmdBuffersData[freeIndex];
-    }
-    return nullptr;
-}
-
-static CommandBufferData* findCmdBufferData(
-    CommandPoolD3D12* pool,
-    CommandBufferD3D12* cmdBuffer)
-{
-    for (int i = 0; i < pool->size; i++) {
-        if (pool->cmdBuffersData[i].used && pool->cmdBuffersData[i].cmdBuffer == cmdBuffer) {
-            return &pool->cmdBuffersData[i];
-        }
-    }
-    return nullptr;
-}
-
 PalResult PAL_CALL createCommandPoolD3D12(
     PalDevice* device,
     PalQueue* queue,
@@ -62,18 +22,6 @@ PalResult PAL_CALL createCommandPoolD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    pool->size = 8; // initial size
-    pool->cmdBuffersData = nullptr;
-    pool->cmdBuffersData = palAllocate(
-        s_D3D12.allocator, 
-        sizeof(CommandBufferData) * pool->size, 
-        0);
-
-    if (!pool->cmdBuffersData) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
-    }
-
-    memset(pool->cmdBuffersData, 0, sizeof(CommandBufferData) * pool->size);
     switch (d3d12Queue->type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             pool->type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -98,35 +46,7 @@ PalResult PAL_CALL createCommandPoolD3D12(
 void PAL_CALL destroyCommandPoolD3D12(PalCommandPool* pool)
 {
     CommandPoolD3D12* cmdPool = (CommandPoolD3D12*)pool;
-    for (int i = 0; i < cmdPool->size; i++) {
-        if (!cmdPool->cmdBuffersData[i].used) {
-            continue;
-        }
-        CommandBufferD3D12* cmdBuffer = cmdPool->cmdBuffersData[i].cmdBuffer;
-        cmdBuffer->handle->lpVtbl->Release(cmdBuffer->handle);
-        cmdBuffer->allocator->lpVtbl->Release(cmdBuffer->allocator);
-    }
-
-    palFree(s_D3D12.allocator, cmdPool->cmdBuffersData);
     palFree(s_D3D12.allocator, cmdPool);
-}
-
-PalResult PAL_CALL resetCommandPoolD3D12(PalCommandPool* pool)
-{
-    CommandPoolD3D12* cmdPool = (CommandPoolD3D12*)pool;
-    for (int i = 0; i < cmdPool->size; i++) {
-        if (!cmdPool->cmdBuffersData[i].used) {
-            continue;
-        }
-
-        HRESULT ret;
-        CommandBufferD3D12* cmdBuffer = cmdPool->cmdBuffersData[i].cmdBuffer;
-        ret = cmdBuffer->handle->lpVtbl->Reset(cmdBuffer->handle, cmdBuffer->allocator, nullptr);
-        if (FAILED(ret)) {
-            return makeResultD3D12(ret);
-        }
-    }
-    return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL allocateCommandBufferD3D12(
@@ -148,12 +68,14 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
     memset(cmdBuffer, 0, sizeof(CommandBufferD3D12));
     cmdBuffer->primary = PAL_TRUE;
 
-    // add it to the command pool list
-    CommandBufferData* cmdData = getFreeCmdBufferData(cmdPool);
-    if (!cmdData) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    // allocate memory for the linear allocator. We first start with 4KB
+    cmdBuffer->linearAllocator.memory = (uint8_t*)palAllocate(s_D3D12.allocator, 4096, 0);
+    if (!cmdBuffer->linearAllocator.memory) {
+        PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
+    cmdBuffer->linearAllocator.size = 4096;
+    cmdBuffer->linearAllocator.offset = 0;
     D3D12_COMMAND_LIST_TYPE cmdBufferType = cmdPool->type;
     if (type == PAL_COMMAND_BUFFER_TYPE_SECONDARY) {
         cmdBufferType = D3D12_COMMAND_LIST_TYPE_BUNDLE;
@@ -168,6 +90,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->allocator);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -183,6 +106,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdList);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -212,6 +136,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->buffer);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -228,6 +153,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->stagingBuffer);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -237,15 +163,14 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
     cmdList->lpVtbl->Release(cmdList);
     cmdBuffer->handle->lpVtbl->Close(cmdBuffer->handle);
-    cmdData->cmdBuffer = cmdBuffer;
 
     cmdBuffer->device = d3d12Device;
-    cmdBuffer->pool = cmdPool;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
@@ -253,18 +178,13 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
 void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
 {
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    CommandPoolD3D12* pool = d3d12CmdBuffer->pool;
-    CommandBufferData* data = findCmdBufferData(pool, d3d12CmdBuffer);
-    if (data) {
-        d3d12CmdBuffer->handle->lpVtbl->Release(d3d12CmdBuffer->handle);
-        d3d12CmdBuffer->allocator->lpVtbl->Release(d3d12CmdBuffer->allocator);
-        d3d12CmdBuffer->buffer->lpVtbl->Release(d3d12CmdBuffer->buffer);
-        d3d12CmdBuffer->stagingBuffer->lpVtbl->Release(d3d12CmdBuffer->stagingBuffer);
+    d3d12CmdBuffer->handle->lpVtbl->Release(d3d12CmdBuffer->handle);
+    d3d12CmdBuffer->allocator->lpVtbl->Release(d3d12CmdBuffer->allocator);
+    d3d12CmdBuffer->buffer->lpVtbl->Release(d3d12CmdBuffer->buffer);
+    d3d12CmdBuffer->stagingBuffer->lpVtbl->Release(d3d12CmdBuffer->stagingBuffer);
 
-        palFree(s_D3D12.allocator, cmdBuffer);
-        data->cmdBuffer = nullptr;
-        data->used = PAL_FALSE;
-    }
+    palFree(s_D3D12.allocator, (void*)d3d12CmdBuffer->linearAllocator.memory);
+    palFree(s_D3D12.allocator, d3d12CmdBuffer);
 }
 
 PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
@@ -287,6 +207,7 @@ PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
 
     result = d3d12CmdBuffer->handle->lpVtbl->Close(d3d12CmdBuffer->handle);
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12CmdBuffer->device);
         return makeResultD3D12(result);
     }
 
@@ -303,6 +224,9 @@ PalResult PAL_CALL submitCommandBufferD3D12(
     ID3D12CommandQueue* queueHandle = d3d12Queue->handle;
     CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)info->cmdBuffer;
 
+    // poll pending messages
+    pollMessagesD3D12(d3d12CmdBuffer->device);
+
     // wait semaphore
     if (info->waitSemaphore) {
         SemaphoreD3D12* semaphore = (SemaphoreD3D12*)info->waitSemaphore;
@@ -313,12 +237,12 @@ PalResult PAL_CALL submitCommandBufferD3D12(
             }
 
         } else {
-            queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, semaphore->value);
+            ret = queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, semaphore->value);
             if (FAILED(ret)) {
                 return makeResultD3D12(ret);
             }
 
-            semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
+            ret = semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
             if (FAILED(ret)) {
                 return makeResultD3D12(ret);
             }
@@ -329,6 +253,8 @@ PalResult PAL_CALL submitCommandBufferD3D12(
 
     ID3D12CommandList* cmdLists[1] = { (ID3D12CommandList*)d3d12CmdBuffer->handle };
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
+    pollMessagesD3D12(d3d12CmdBuffer->device);
+
     d3d12Queue->fenceValue++;
     ret = queueHandle->lpVtbl->Signal(queueHandle, d3d12Queue->fence, d3d12Queue->fenceValue);
     if (FAILED(ret)) {
@@ -351,6 +277,7 @@ PalResult PAL_CALL submitCommandBufferD3D12(
             if (FAILED(ret)) {
                 return makeResultD3D12(ret);
             }
+
         } else {
             semaphore->value = 1;
             ret = queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, semaphore->value);

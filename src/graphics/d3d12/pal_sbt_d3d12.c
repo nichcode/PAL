@@ -71,6 +71,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     ID3D12StateObjectProperties* props = NULL;
     result = handle->lpVtbl->QueryInterface(handle, &IID_StateObjectProps, (void**)&props);
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -170,6 +171,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         (void**)&sbt->buffer);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -186,6 +188,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         (void**)&sbt->stagingBuffer);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -232,6 +235,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     void* ptr = nullptr;
     result = sbt->stagingBuffer->lpVtbl->Map(sbt->stagingBuffer, 0, nullptr, &ptr);
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -345,9 +349,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
 void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
 {
-    // TODO: unmap staging buffer before destroying
     ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
     d3d12Sbt->buffer->lpVtbl->Release(d3d12Sbt->buffer);
+    d3d12Sbt->stagingBuffer->lpVtbl->Unmap(d3d12Sbt->stagingBuffer, 0, nullptr);
     d3d12Sbt->stagingBuffer->lpVtbl->Release(d3d12Sbt->stagingBuffer);
     palFree(s_D3D12.allocator, d3d12Sbt);
 }

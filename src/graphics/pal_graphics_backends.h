@@ -72,7 +72,6 @@ typedef struct {
     PalResult (PAL_CALL *getSemaphoreValue)(PalSemaphore*, uint64_t*);
     PalResult (PAL_CALL *createCommandPool)(PalDevice*, PalQueue*, PalCommandPool**);
     void (PAL_CALL *destroyCommandPool)(PalCommandPool*);
-    PalResult (PAL_CALL *resetCommandPool)(PalCommandPool*);
     PalResult (PAL_CALL *allocateCommandBuffer)(PalDevice*, PalCommandPool*, PalCommandBufferType, PalCommandBuffer**);
     void (PAL_CALL *freeCommandBuffer)(PalCommandBuffer*);
     PalResult (PAL_CALL *resetCommandBuffer)(PalCommandBuffer*);
@@ -222,7 +221,6 @@ PalResult PAL_CALL signalSemaphoreVk(PalSemaphore*, PalQueue*, uint64_t);
 PalResult PAL_CALL getSemaphoreValueVk(PalSemaphore*, uint64_t*);
 PalResult PAL_CALL createCommandPoolVk(PalDevice*, PalQueue*, PalCommandPool**);
 void PAL_CALL destroyCommandPoolVk(PalCommandPool*);
-PalResult PAL_CALL resetCommandPoolVk(PalCommandPool*);
 PalResult PAL_CALL allocateCommandBufferVk(PalDevice*, PalCommandPool*, PalCommandBufferType, PalCommandBuffer**);
 void PAL_CALL freeCommandBufferVk(PalCommandBuffer*);
 PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer*);
@@ -360,7 +358,6 @@ static PalGraphicsVtable s_VkBackend = {
     .getSemaphoreValue = getSemaphoreValueVk,
     .createCommandPool = createCommandPoolVk,
     .destroyCommandPool = destroyCommandPoolVk,
-    .resetCommandPool = resetCommandPoolVk,
     .allocateCommandBuffer = allocateCommandBufferVk,
     .freeCommandBuffer = freeCommandBufferVk,
     .resetCommandBuffer = resetCommandBufferVk,
@@ -455,7 +452,7 @@ PalResult PAL_CALL createDeviceD3D12(PalAdapter*, PalAdapterFeatures, PalDevice*
 void PAL_CALL destroyDeviceD3D12(PalDevice*);
 PalResult PAL_CALL waitDeviceD3D12(PalDevice*);
 PalResult PAL_CALL allocateMemoryD3D12(PalDevice*, PalMemoryType, uint64_t, uint64_t, PalMemory**);
-void PAL_CALL freeMemoryD3D12(PalDevice*, PalMemory*);
+void PAL_CALL freeMemoryD3D12(PalMemory*);
 void PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(PalDevice*, PalSamplerAnisotropyCapabilities*);
 void PAL_CALL queryMultiViewCapabilitiesD3D12(PalDevice*, PalMultiViewCapabilities*);
 void PAL_CALL queryMultiViewportCapabilitiesD3D12(PalDevice*, PalMultiViewportCapabilities*);
@@ -507,14 +504,13 @@ PalResult PAL_CALL signalSemaphoreD3D12(PalSemaphore*, PalQueue*, uint64_t);
 PalResult PAL_CALL getSemaphoreValueD3D12(PalSemaphore*, uint64_t*);
 PalResult PAL_CALL createCommandPoolD3D12(PalDevice*, PalQueue*, PalCommandPool**);
 void PAL_CALL destroyCommandPoolD3D12(PalCommandPool*);
-PalResult PAL_CALL resetCommandPoolD3D12(PalCommandPool*);
 PalResult PAL_CALL allocateCommandBufferD3D12(PalDevice*, PalCommandPool*, PalCommandBufferType, PalCommandBuffer**);
 void PAL_CALL freeCommandBufferD3D12(PalCommandBuffer*);
 PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer*);
 PalResult PAL_CALL submitCommandBufferD3D12(PalQueue*, PalCommandBufferSubmitInfo*);
 
-void PAL_CALL cmdBeginD3D12(PalCommandBuffer*, PalRenderingLayoutInfo*);
-void PAL_CALL cmdEndD3D12(PalCommandBuffer*);
+PalResult PAL_CALL cmdBeginD3D12(PalCommandBuffer*, PalRenderingLayoutInfo*);
+PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer*);
 void PAL_CALL cmdExecuteCommandBufferD3D12(PalCommandBuffer*, PalCommandBuffer*);
 void PAL_CALL cmdSetFragmentShadingRateD3D12(PalCommandBuffer*, PalFragmentShadingRateState*);
 void PAL_CALL cmdDrawMeshTasksD3D12(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
@@ -638,7 +634,6 @@ static PalGraphicsVtable s_D3D12Backend = {
     .getSemaphoreValue = getSemaphoreValueD3D12,
     .createCommandPool = createCommandPoolD3D12,
     .destroyCommandPool = destroyCommandPoolD3D12,
-    .resetCommandPool = resetCommandPoolD3D12,
     .allocateCommandBuffer = allocateCommandBufferD3D12,
     .freeCommandBuffer = freeCommandBufferD3D12,
     .resetCommandBuffer = resetCommandBufferD3D12,

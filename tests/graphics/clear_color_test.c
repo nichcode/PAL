@@ -443,7 +443,7 @@ PalBool clearColorTest()
         barrierInfo.srcStages = barrierInfo.dstStages;
         barrierInfo.newState = PAL_USAGE_STATE_PRESENT;
         barrierInfo.dstStages = PAL_PIPELINE_STAGE_NONE;
-        palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
+        // palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
 
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {

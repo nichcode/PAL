@@ -545,6 +545,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     ID3DBlob* blob = nullptr;
     HRESULT result = s_D3D12.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -557,6 +558,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         (void**)&layout->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -1025,6 +1027,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         &pipeline->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -1072,6 +1075,7 @@ PalResult PAL_CALL createComputePipelineD3D12(
         &pipeline->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 
@@ -1364,6 +1368,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         ID3DBlob* blob = nullptr;
         result = s_D3D12.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
         if (FAILED(result)) {
+            pollMessagesD3D12(d3d12Device);
             return makeResultD3D12(result);
         }
 
@@ -1376,6 +1381,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
             (void**)&pipeline->localRootSignature);
 
         if (FAILED(result)) {
+            pollMessagesD3D12(d3d12Device);
             return makeResultD3D12(result);
         }
 
@@ -1406,6 +1412,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         &pipeline->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Device);
         return makeResultD3D12(result);
     }
 

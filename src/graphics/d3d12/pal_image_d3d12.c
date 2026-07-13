@@ -182,6 +182,7 @@ PalResult PAL_CALL createImageD3D12(
             (void**)&image->handle);
 
         if (FAILED(result)) {
+            pollMessagesD3D12(d3d12Device);
             return makeResultD3D12(result);
         }
 
@@ -199,7 +200,7 @@ PalResult PAL_CALL createImageD3D12(
     image->info.sampleCount = info->sampleCount;
     image->info.width = info->width;
 
-    image->device = d3d12Device->handle;
+    image->device = d3d12Device;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
 }
@@ -226,7 +227,7 @@ void PAL_CALL getImageMemoryRequirementsD3D12(
     PalMemoryRequirements* requirements)
 {
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
-    ID3D12Device5* device = d3d12Image->device;
+    ID3D12Device5* device = d3d12Image->device->handle;
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
@@ -249,7 +250,7 @@ PalResult PAL_CALL bindImageMemoryD3D12(
 {
     HRESULT result;
     ImageD3D12* d3d12Image = (ImageD3D12*)image;
-    ID3D12Device5* device = d3d12Image->device;
+    ID3D12Device5* device = d3d12Image->device->handle;
     if (d3d12Image->info.belongsToSwapchain) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
@@ -270,6 +271,7 @@ PalResult PAL_CALL bindImageMemoryD3D12(
         (void**)&d3d12Image->handle);
 
     if (FAILED(result)) {
+        pollMessagesD3D12(d3d12Image->device);
         return makeResultD3D12(result);
     }
 
