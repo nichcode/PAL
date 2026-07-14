@@ -12,6 +12,7 @@ project "pal-abi-dump"
         "system_abi_dump.c",
         "video_abi_dump.c",
         "opengl_abi_dump.c",
+        "graphics_abi_dump.c",
         "abi_dump_main.c"
     }
 

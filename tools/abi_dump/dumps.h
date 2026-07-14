@@ -26,5 +26,6 @@ void threadABIDump(PalBool verbose);
 void systemABIDump(PalBool verbose);
 void videoABIDump(PalBool verbose);
 void openglABIDump(PalBool verbose);
+void graphicsABIDump(PalBool verbose);
 
 #endif // _DUMPS_H

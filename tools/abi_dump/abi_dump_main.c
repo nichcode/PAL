@@ -101,6 +101,10 @@ int main(int argc, char** argv)
         openglABIDump(verbose);
     }
 
+    if (dumpGraphics) {
+        graphicsABIDump(verbose);
+    }
+
     if (dumpVersion) {
         palLog(nullptr, "PAL ABI dump %s", VERSION);
     }

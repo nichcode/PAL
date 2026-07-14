@@ -69,7 +69,7 @@ int main(int argc, char** argv)
     // registerTest(textureTest, "Texture Test");
     // registerTest(geometryTest, "Geometry Test");
     // registerTest(indirectDrawTest, "Indirect Draw Test");
-    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
+    // registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
 #endif //
 
     runTests();

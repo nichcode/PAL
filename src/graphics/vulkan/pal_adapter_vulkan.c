@@ -163,6 +163,7 @@ void PAL_CALL getAdapterInfoVk(
     info->shaderFormats = PAL_SHADER_FORMAT_SPIRV;
     info->deviceId = props.deviceID;
     info->vendorId = props.vendorID;
+    info->driverVersion = props.driverVersion;
     strcpy(info->name, props.deviceName);
     strcpy(info->backendName, "PAL");
 

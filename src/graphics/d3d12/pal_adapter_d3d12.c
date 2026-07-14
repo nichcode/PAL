@@ -152,6 +152,8 @@ void PAL_CALL getAdapterInfoD3D12(
     info->sharedMemory = desc.SharedSystemMemory;
     strcpy(info->backendName, "PAL");
 
+    // TODO: add driver version
+
     WideCharToMultiByte(
         CP_UTF8,
         0,
