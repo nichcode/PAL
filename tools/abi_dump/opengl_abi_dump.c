@@ -23,7 +23,7 @@ static void infoDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalGLInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalGLInfo);
+    uint32_t yAlign = ALIGNOF(PalGLInfo);
     uint32_t yOffset1 = offsetof(PalGLInfo, extensions);
     uint32_t yOffset2 = offsetof(PalGLInfo, major);
     uint32_t yOffset3 = offsetof(PalGLInfo, minor);
@@ -93,7 +93,7 @@ static void configDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalGLFBConfig);
-    uint32_t yAlign = PAL_ALIGNOF(PalGLFBConfig);
+    uint32_t yAlign = ALIGNOF(PalGLFBConfig);
     uint32_t yOffset1 = offsetof(PalGLFBConfig, doubleBuffer);
     uint32_t yOffset2 = offsetof(PalGLFBConfig, stereo);
     uint32_t yOffset3 = offsetof(PalGLFBConfig, sRGB);
@@ -163,7 +163,7 @@ static void windowDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalGLWindow);
-    uint32_t yAlign = PAL_ALIGNOF(PalGLWindow);
+    uint32_t yAlign = ALIGNOF(PalGLWindow);
     uint32_t yOffset1 = offsetof(PalGLWindow, instance);
     uint32_t yOffset2 = offsetof(PalGLWindow, window);
     uint32_t yPadding = (yAlign - (ySize % yAlign)) % yAlign;
@@ -215,7 +215,7 @@ static void contextDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalGLContextCreateInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalGLContextCreateInfo);
+    uint32_t yAlign = ALIGNOF(PalGLContextCreateInfo);
     uint32_t yOffset1 = offsetof(PalGLContextCreateInfo, window);
     uint32_t yOffset2 = offsetof(PalGLContextCreateInfo, fbConfig);
     uint32_t yOffset3 = offsetof(PalGLContextCreateInfo, shareContext);

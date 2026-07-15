@@ -21,7 +21,7 @@ static void platformDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalPlatformInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalPlatformInfo);
+    uint32_t yAlign = ALIGNOF(PalPlatformInfo);
     uint32_t yOffset1 = offsetof(PalPlatformInfo, type);
     uint32_t yOffset2 = offsetof(PalPlatformInfo, apiType);
     uint32_t yOffset3 = offsetof(PalPlatformInfo, totalMemory);
@@ -83,7 +83,7 @@ static void cpuDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalCPUInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalCPUInfo);
+    uint32_t yAlign = ALIGNOF(PalCPUInfo);
     uint32_t yOffset1 = offsetof(PalCPUInfo, features);
     uint32_t yOffset2 = offsetof(PalCPUInfo, architecture);
     uint32_t yOffset3 = offsetof(PalCPUInfo, numCores);

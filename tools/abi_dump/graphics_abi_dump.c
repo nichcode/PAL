@@ -25,7 +25,7 @@ static void adapterInfoDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalAdapterInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalAdapterInfo);
+    uint32_t yAlign = ALIGNOF(PalAdapterInfo);
     uint32_t yOffset1 = offsetof(PalAdapterInfo, vram);
     uint32_t yOffset2 = offsetof(PalAdapterInfo, sharedMemory);
     uint32_t yOffset3 = offsetof(PalAdapterInfo, vendorId);
@@ -95,7 +95,7 @@ static void imageCapDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalImageCapabilities);
-    uint32_t yAlign = PAL_ALIGNOF(PalImageCapabilities);
+    uint32_t yAlign = ALIGNOF(PalImageCapabilities);
     uint32_t yOffset1 = offsetof(PalImageCapabilities, maxWidth);
     uint32_t yOffset2 = offsetof(PalImageCapabilities, maxHeight);
     uint32_t yOffset3 = offsetof(PalImageCapabilities, maxDepth);
@@ -158,7 +158,7 @@ static void resourceCapDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalResourceCapabilities);
-    uint32_t yAlign = PAL_ALIGNOF(PalResourceCapabilities);
+    uint32_t yAlign = ALIGNOF(PalResourceCapabilities);
     uint32_t yOffset1 = offsetof(PalResourceCapabilities, maxPerStageSampledImages);
     uint32_t yOffset2 = offsetof(PalResourceCapabilities, maxPerSetSampledImages);
     uint32_t yOffset3 = offsetof(PalResourceCapabilities, maxPerStageStorageImages);
@@ -235,7 +235,7 @@ static void computeCapDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalComputeCapabilities);
-    uint32_t yAlign = PAL_ALIGNOF(PalComputeCapabilities);
+    uint32_t yAlign = ALIGNOF(PalComputeCapabilities);
     uint32_t yOffset1 = offsetof(PalComputeCapabilities, maxWorkGroupInvocations);
     uint32_t yOffset2 = offsetof(PalComputeCapabilities, maxWorkGroupCount);
     uint32_t yOffset3 = offsetof(PalComputeCapabilities, maxWorkGroupSize);
@@ -283,7 +283,7 @@ static void viewportCapDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalViewportCapabilities);
-    uint32_t yAlign = PAL_ALIGNOF(PalViewportCapabilities);
+    uint32_t yAlign = ALIGNOF(PalViewportCapabilities);
     uint32_t yOffset1 = offsetof(PalViewportCapabilities, maxWidth);
     uint32_t yOffset2 = offsetof(PalViewportCapabilities, maxHeight);
     uint32_t yOffset3 = offsetof(PalViewportCapabilities, minBoundsRange);

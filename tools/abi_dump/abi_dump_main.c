@@ -30,6 +30,7 @@ int main(int argc, char** argv)
     PalBool dumpVersion = PAL_FALSE;
     PalBool dumpHelp = PAL_FALSE;
     PalBool verbose = PAL_FALSE;
+    PalBool status = PAL_FALSE;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--all") == 0) {
@@ -78,31 +79,52 @@ int main(int argc, char** argv)
     }
 
     if (dumpCore) {
-        coreABIDump(verbose);
+        status = coreABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
     if (dumpEvent) {
-        eventABIDump(verbose);
+        // status = eventABIDump(verbose);
+        // if (status == PAL_FALSE) {
+        //     return -1;
+        // }
     }
 
     if (dumpThread) {
-        threadABIDump(verbose);
+        // status = threadABIDump(verbose);
+        // if (status == PAL_FALSE) {
+        //     return -1;
+        // }
     }
 
     if (dumpSystem) {
-        systemABIDump(verbose);
+        // status = systemABIDump(verbose);
+        // if (status == PAL_FALSE) {
+        //     return -1;
+        // }
     }
 
     if (dumpVideo) {
-        videoABIDump(verbose);
+        // status = videoABIDump(verbose);
+        // if (status == PAL_FALSE) {
+        //     return -1;
+        // }
     }
 
     if (dumpOpengl) {
-        openglABIDump(verbose);
+        // status = openglABIDump(verbose);
+        // if (status == PAL_FALSE) {
+        //     return -1;
+        // }
     }
 
     if (dumpGraphics) {
-        graphicsABIDump(verbose);
+        // status = graphicsABIDump(verbose);
+        // if (status == PAL_FALSE) {
+        //     return -1;
+        // }
     }
 
     if (dumpVersion) {

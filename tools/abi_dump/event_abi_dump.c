@@ -19,7 +19,7 @@ static void eventDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEvent);
-    uint32_t yAlign = PAL_ALIGNOF(PalEvent);
+    uint32_t yAlign = ALIGNOF(PalEvent);
     uint32_t yOffset1 = offsetof(PalEvent, data);
     uint32_t yOffset2 = offsetof(PalEvent, data2);
     uint32_t yOffset3 = offsetof(PalEvent, userId);
@@ -69,7 +69,7 @@ static void eventQueueDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEventQueue);
-    uint32_t yAlign = PAL_ALIGNOF(PalEventQueue);
+    uint32_t yAlign = ALIGNOF(PalEventQueue);
     uint32_t yOffset1 = offsetof(PalEventQueue, push);
     uint32_t yOffset2 = offsetof(PalEventQueue, poll);
     uint32_t yOffset3 = offsetof(PalEventQueue, userData);
@@ -117,7 +117,7 @@ static void eventCreateInfoDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalEventDriverCreateInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalEventDriverCreateInfo);
+    uint32_t yAlign = ALIGNOF(PalEventDriverCreateInfo);
     uint32_t yOffset1 = offsetof(PalEventDriverCreateInfo, allocator);
     uint32_t yOffset2 = offsetof(PalEventDriverCreateInfo, queue);
     uint32_t yOffset3 = offsetof(PalEventDriverCreateInfo, callback);

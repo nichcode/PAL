@@ -24,7 +24,7 @@ void threadABIDump(PalBool verbose)
     uint32_t xOffset4 = 24;
 
     uint32_t ySize = sizeof(PalThreadCreateInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalThreadCreateInfo);
+    uint32_t yAlign = ALIGNOF(PalThreadCreateInfo);
     uint32_t yOffset1 = offsetof(PalThreadCreateInfo, stackSize);
     uint32_t yOffset2 = offsetof(PalThreadCreateInfo, allocator);
     uint32_t yOffset3 = offsetof(PalThreadCreateInfo, entry);

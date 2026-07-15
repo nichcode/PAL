@@ -24,7 +24,7 @@ static void monitorDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalMonitorInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalMonitorInfo);
+    uint32_t yAlign = ALIGNOF(PalMonitorInfo);
     uint32_t yOffset1 = offsetof(PalMonitorInfo, x);
     uint32_t yOffset2 = offsetof(PalMonitorInfo, y);
     uint32_t yOffset3 = offsetof(PalMonitorInfo, width);
@@ -90,7 +90,7 @@ static void monitorModeDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalMonitorMode);
-    uint32_t yAlign = PAL_ALIGNOF(PalMonitorMode);
+    uint32_t yAlign = ALIGNOF(PalMonitorMode);
     uint32_t yOffset1 = offsetof(PalMonitorMode, bpp);
     uint32_t yOffset2 = offsetof(PalMonitorMode, refreshRate);
     uint32_t yOffset3 = offsetof(PalMonitorMode, width);
@@ -140,7 +140,7 @@ static void flashDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalFlashInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalFlashInfo);
+    uint32_t yAlign = ALIGNOF(PalFlashInfo);
     uint32_t yOffset1 = offsetof(PalFlashInfo, flags);
     uint32_t yOffset2 = offsetof(PalFlashInfo, interval);
     uint32_t yOffset3 = offsetof(PalFlashInfo, count);
@@ -187,7 +187,7 @@ static void iconDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalIconCreateInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalIconCreateInfo);
+    uint32_t yAlign = ALIGNOF(PalIconCreateInfo);
     uint32_t yOffset1 = offsetof(PalIconCreateInfo, pixels);
     uint32_t yOffset2 = offsetof(PalIconCreateInfo, width);
     uint32_t yOffset3 = offsetof(PalIconCreateInfo, height);
@@ -236,7 +236,7 @@ static void cursorDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalCursorCreateInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalCursorCreateInfo);
+    uint32_t yAlign = ALIGNOF(PalCursorCreateInfo);
     uint32_t yOffset1 = offsetof(PalCursorCreateInfo, pixels);
     uint32_t yOffset2 = offsetof(PalCursorCreateInfo, width);
     uint32_t yOffset3 = offsetof(PalCursorCreateInfo, height);
@@ -291,7 +291,7 @@ static void windowInfoDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalWindowHandleInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalWindowHandleInfo);
+    uint32_t yAlign = ALIGNOF(PalWindowHandleInfo);
     uint32_t yOffset1 = offsetof(PalWindowHandleInfo, nativeInstance);
     uint32_t yOffset2 = offsetof(PalWindowHandleInfo, nativeWindow);
     uint32_t yOffset3 = offsetof(PalWindowHandleInfo, nativeHandle1);
@@ -353,7 +353,7 @@ static void windowDump(PalBool verbose)
     uint32_t xPadding = 0;
 
     uint32_t ySize = sizeof(PalWindowCreateInfo);
-    uint32_t yAlign = PAL_ALIGNOF(PalWindowCreateInfo);
+    uint32_t yAlign = ALIGNOF(PalWindowCreateInfo);
     uint32_t yOffset1 = offsetof(PalWindowCreateInfo, title);
     uint32_t yOffset2 = offsetof(PalWindowCreateInfo, monitor);
     uint32_t yOffset3 = offsetof(PalWindowCreateInfo, appName);
