@@ -73,7 +73,6 @@ static PalBool checkABI(
     }
 
     fieldSize += 2; // add 6 spaces
-    palLog(nullptr, "%llu", fieldSize);
     uint32_t seperatorSize = fieldSize + expectedSize + actualSize + 4; // add 4 spaces
     for (int i = 0; i < seperatorSize; i++) {
         seperator[i] = '=';
@@ -82,7 +81,9 @@ static PalBool checkABI(
 
     palLog(nullptr, "Struct: %s", info->name);
     if (verbose) {
+        palLog(nullptr, "Field Format: %s", "(Offset, Size)");
         palLog(nullptr, seperator);
+        
         palLog(
             nullptr, 
             "%-*s %-*s %-*s", 
@@ -92,6 +93,7 @@ static PalBool checkABI(
             "Expected", 
             actualSize, 
             "Actual");
+
         palLog(nullptr, seperator);
     }
 
@@ -114,7 +116,10 @@ static PalBool checkABI(
                 field->actual.size);
         }
     }
-    palLog(nullptr, seperator);
+    if (verbose) {
+        palLog(nullptr, seperator);
+    }
+
     palLog(nullptr, "Status: %s", result);
     palLog(nullptr, "");
 
@@ -127,8 +132,8 @@ static PalBool checkABI(
 #define STRUCT(type) ((StructBase){ALIGNOF(type), sizeof(type), PADDING(type)})
 
 PalBool coreABIDump(PalBool verbose);
-// PalBool eventABIDump(PalBool verbose);
-// PalBool threadABIDump(PalBool verbose);
+PalBool eventABIDump(PalBool verbose);
+PalBool threadABIDump(PalBool verbose);
 // PalBool systemABIDump(PalBool verbose);
 // PalBool videoABIDump(PalBool verbose);
 // PalBool openglABIDump(PalBool verbose);

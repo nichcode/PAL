@@ -7,8 +7,8 @@ project "pal-abi-dump"
 
     files {
         "core_abi_dump.c",
-        -- "event_abi_dump.c",
-        -- "thread_abi_dump.c",
+        "event_abi_dump.c",
+        "thread_abi_dump.c",
         -- "system_abi_dump.c",
         -- "video_abi_dump.c",
         -- "opengl_abi_dump.c",

@@ -86,17 +86,17 @@ int main(int argc, char** argv)
     }
 
     if (dumpEvent) {
-        // status = eventABIDump(verbose);
-        // if (status == PAL_FALSE) {
-        //     return -1;
-        // }
+        status = eventABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
     if (dumpThread) {
-        // status = threadABIDump(verbose);
-        // if (status == PAL_FALSE) {
-        //     return -1;
-        // }
+        status = threadABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
     if (dumpSystem) {
