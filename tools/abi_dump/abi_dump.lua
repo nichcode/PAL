@@ -10,8 +10,8 @@ project "abi-dump"
         "event_abi_dump.c",
         "thread_abi_dump.c",
         "system_abi_dump.c",
-        -- "video_abi_dump.c",
-        -- "opengl_abi_dump.c",
+        "video_abi_dump.c",
+        "opengl_abi_dump.c",
         -- "graphics_abi_dump.c",
         "abi_dump_main.c"
     }

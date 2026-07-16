@@ -51,8 +51,8 @@ static PalBool checkABI(
 {
     // find the size of the field column
     uint32_t fieldSize = 0;
-    const uint32_t expectedSize = 12;
-    const uint32_t actualSize = 6;
+    const uint32_t expectedSize = 14;
+    const uint32_t actualSize = 8;
     char seperator[256];
     PalBool passed = PAL_TRUE;
     const char* result = s_PassedString;
@@ -83,7 +83,14 @@ static PalBool checkABI(
 
     palLog(nullptr, "Struct: %s", info->name);
     if (verbose) {
-        palLog(nullptr, "Field Format: %s", "(Offset, Size)");
+        palLog(nullptr, "");
+        palLog(nullptr, "Struct format: Property: (Expected, Actual)");
+        palLog(nullptr, "Field format: (Offset, Size)");
+        palLog(nullptr, "");
+
+        palLog(nullptr, "Size:      (%03u, %03u)", info->expected.size, info->actual.size);
+        palLog(nullptr, "Alignment: (%u, %u)", info->expected.alignof, info->actual.alignof);
+        palLog(nullptr, "Padding:   (%02u, %02u)", info->expected.padding, info->actual.padding);
         palLog(nullptr, seperator);
         
         palLog(
@@ -112,7 +119,7 @@ static PalBool checkABI(
 
         if (verbose) {
             palLog(nullptr, 
-                "%-*s (%03u, %02u)    (%03u, %02u)", 
+                "%-*s (%03u, %03u)    (%03u, %03u)", 
                 fieldSize,
                 field->name,
                 field->expected.offset,
@@ -140,8 +147,8 @@ PalBool coreABIDump(PalBool verbose);
 PalBool eventABIDump(PalBool verbose);
 PalBool threadABIDump(PalBool verbose);
 PalBool systemABIDump(PalBool verbose);
-// PalBool videoABIDump(PalBool verbose);
-// PalBool openglABIDump(PalBool verbose);
+PalBool videoABIDump(PalBool verbose);
+PalBool openglABIDump(PalBool verbose);
 // PalBool graphicsABIDump(PalBool verbose);
 
 #endif // _DUMPS_H

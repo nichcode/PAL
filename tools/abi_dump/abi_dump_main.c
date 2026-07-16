@@ -100,17 +100,17 @@ int main(int argc, char** argv)
     }
 
     if (dumpFlags & DUMP_FLAG_VIDEO) {
-        // status = videoABIDump(verbose);
-        // if (status == PAL_FALSE) {
-        //     return -1;
-        // }
+        status = videoABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
     if (dumpFlags & DUMP_FLAG_OPENGL) {
-        // status = openglABIDump(verbose);
-        // if (status == PAL_FALSE) {
-        //     return -1;
-        // }
+        status = openglABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
     if (dumpFlags & DUMP_FLAG_GRAPHICS) {
