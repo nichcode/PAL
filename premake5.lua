@@ -172,26 +172,49 @@ local function generateTasksJson()
     end
 end
 
-local function writeLaunchConfiguration(file, isDebug)
+local function writeLaunchConfiguration(file, app, isDebug)
     local name = ""
     local preLaunchTask = ""
     local dir = ""
+    local cwd = ""
 
     if isDebug then
         name = "launch debug"
         preLaunchTask = "build debug"
         dir = "Debug"
-
     else
         name = "launch release"
         preLaunchTask = "build release"
         dir = "Release"
     end
 
-    if os.target() == "windows" then
-        program = "tests.exe"
+    if app == "tests" then
+        cwd = "tests"
+        if isDebug then
+            name = "launch tests debug"
+        else
+            name = "launch tests release"
+        end
+
+        if os.target() == "windows" then
+            program = "tests.exe"
+        else
+            program = "tests"
+        end
+
     else
-        program = "tests"
+        cwd = "tools/abi_dump"
+        if isDebug then
+            name = "launch abi-dump debug"
+        else
+            name = "launch abi-dump release"
+        end
+
+        if os.target() == "windows" then
+            program = "abi-dump.exe"
+        else
+            program = "abi-dump"
+        end
     end
 
     file:write("        {\n")
@@ -199,7 +222,7 @@ local function writeLaunchConfiguration(file, isDebug)
     file:write('            "type": "cppdbg",\n')
     file:write('            "request": "launch",\n')
     file:write('            "stopAtEntry": false,\n')
-    file:write('            "cwd": "${workspaceFolder}/tests",\n')
+    file:write(string.format('            "cwd": "${workspaceFolder}/%s",\n', cwd))
 
     file:write('            "environment": [],\n')
     file:write('            "externalConsole": false,\n')
@@ -236,11 +259,19 @@ local function generateLaunchJson()
         file:write('{\n')
         file:write('    "configurations": [\n')
 
-        writeLaunchConfiguration(file, true)
+        writeLaunchConfiguration(file, "tests", true)
         file:write("        },\n")
         file:write('\n')
 
-        writeLaunchConfiguration(file, false)
+        writeLaunchConfiguration(file, "tests", false)
+        file:write("        },\n")
+        file:write('\n')
+
+        writeLaunchConfiguration(file, "abi-dump", true)
+        file:write("        },\n")
+        file:write('\n')
+
+        writeLaunchConfiguration(file, "abi-dump", false)
         file:write("        }\n")
 
         file:write("    ],\n")
@@ -277,7 +308,7 @@ workspace(workspaceName)
     if PAL_BUILD_TEST_APPLICATION then
         startproject("tests")
     else
-        startproject("pal-abi-dump")
+        startproject("abi-dump")
     end
 
     if PAL_BUILD_STATIC_LIBRARY then

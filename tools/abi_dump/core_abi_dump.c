@@ -21,6 +21,17 @@ PalBool coreABIDump(PalBool verbose)
         { "build", {8, 4}, FIELD(PalVersion, build) }
     };
 
+    FieldInfo allocatorFields[] = {
+        { "allocate", {0, 8}, FIELD(PalAllocator, allocate) },
+        { "free", {8, 8}, FIELD(PalAllocator, free) },
+        { "userData", {16, 8}, FIELD(PalAllocator, userData) }
+    };
+
+    FieldInfo loggerFields[] = {
+        { "callback", {0, 8}, FIELD(PalLogger, callback) },
+        { "userData", {8, 8}, FIELD(PalLogger, userData) }
+    };
+
     StructInfo versionInfo = {0};
     versionInfo.name = "PalVersion";
     versionInfo.fields = versionFields;
@@ -29,17 +40,6 @@ PalBool coreABIDump(PalBool verbose)
     versionInfo.expected.size = 12;
     versionInfo.expected.padding = 0;
     versionInfo.actual = STRUCT(PalVersion);
-
-    PalBool status = checkABI(&versionInfo, verbose);
-    if (status == PAL_FALSE) {
-        return status;
-    }
-
-    FieldInfo allocatorFields[] = {
-        { "allocate", {0, 8}, FIELD(PalAllocator, allocate) },
-        { "free", {8, 8}, FIELD(PalAllocator, free) },
-        { "userData", {16, 8}, FIELD(PalAllocator, userData) }
-    };
 
     StructInfo allocatorInfo = {0};
     allocatorInfo.name = "PalAllocator";
@@ -50,16 +50,6 @@ PalBool coreABIDump(PalBool verbose)
     allocatorInfo.expected.padding = 0;
     allocatorInfo.actual = STRUCT(PalAllocator);
 
-    status = checkABI(&allocatorInfo, verbose);
-    if (status == PAL_FALSE) {
-        return status;
-    }
-
-    FieldInfo loggerFields[] = {
-        { "callback", {0, 8}, FIELD(PalLogger, callback) },
-        { "userData", {8, 8}, FIELD(PalLogger, userData) }
-    };
-
     StructInfo loggerInfo = {0};
     loggerInfo.name = "PalLogger";
     loggerInfo.fields = loggerFields;
@@ -69,10 +59,15 @@ PalBool coreABIDump(PalBool verbose)
     loggerInfo.expected.padding = 0;
     loggerInfo.actual = STRUCT(PalLogger);
 
-    status = checkABI(&loggerInfo, verbose);
+    PalBool status = checkABI(&versionInfo, verbose);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return PAL_TRUE;
+    status = checkABI(&allocatorInfo, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&loggerInfo, verbose);
 }

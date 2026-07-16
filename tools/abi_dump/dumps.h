@@ -57,12 +57,14 @@ static PalBool checkABI(
     PalBool passed = PAL_TRUE;
     const char* result = s_PassedString;
 
-    if (info->expected.size != info->actual.size &&
-        info->expected.alignof != info->actual.alignof &&
+    // clang-format off
+    if (info->expected.size != info->actual.size       ||
+        info->expected.alignof != info->actual.alignof ||
         info->expected.padding != info->actual.padding) {
         passed = PAL_FALSE;
         result = s_FailedString;
     }
+    // clang-format on
 
     for (uint32_t i = 0; i < info->fieldCount; i++) {
         FieldInfo* field = &info->fields[i];
@@ -99,15 +101,18 @@ static PalBool checkABI(
 
     for (uint32_t i = 0; i < info->fieldCount; i++) {
         FieldInfo* field = &info->fields[i];
-        if (field->expected.offset != field->actual.offset && 
+
+        // clang-format off
+        if (field->expected.offset != field->actual.offset ||
             field->expected.size != field->actual.size) {
             passed = PAL_FALSE;
             result = s_FailedString;
         }
+        // clang-format on
 
         if (verbose) {
             palLog(nullptr, 
-                "%-*s (%03zu, %02zu)    (%03zu, %02zu)", 
+                "%-*s (%03u, %02u)    (%03u, %02u)", 
                 fieldSize,
                 field->name,
                 field->expected.offset,
@@ -128,13 +133,13 @@ static PalBool checkABI(
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #define FIELD(type, field) ((FieldBase){offsetof(type, field), sizeof(((type*)0)->field)})
-#define PADDING(type) (ALIGNOF(type) - sizeof(type) % ALIGNOF(type))
+#define PADDING(type) (((ALIGNOF(type) - sizeof(type)) % ALIGNOF(type)))
 #define STRUCT(type) ((StructBase){ALIGNOF(type), sizeof(type), PADDING(type)})
 
 PalBool coreABIDump(PalBool verbose);
 PalBool eventABIDump(PalBool verbose);
 PalBool threadABIDump(PalBool verbose);
-// PalBool systemABIDump(PalBool verbose);
+PalBool systemABIDump(PalBool verbose);
 // PalBool videoABIDump(PalBool verbose);
 // PalBool openglABIDump(PalBool verbose);
 // PalBool graphicsABIDump(PalBool verbose);

@@ -10,128 +10,121 @@
 #define VERSION "1.0"
 
 #ifdef _WIN32
-#define EXE_NAME "pal-abi-dump.exe"
+#define EXE_NAME "abi-dump.exe"
 #else
-#define EXE_NAME "pal-abi-dump"
+#define EXE_NAME "abi-dump"
 #endif // _WIN32
+
+#define DUMP_FLAG_CORE (1u << 0)
+#define DUMP_FLAG_EVENT (1u << 1)
+#define DUMP_FLAG_THREAD (1u << 2)
+#define DUMP_FLAG_OPENGL (1u << 3)
+#define DUMP_FLAG_GRAPHICS (1u << 4)
+#define DUMP_FLAG_SYSTEM (1u << 5)
+#define DUMP_FLAG_VIDEO (1u << 6)
+#define DUMP_FLAG_VERSION (1u << 7)
+#define DUMP_FLAG_HELP (1u << 8)
+#define DUMP_FLAG_ALL 0x7F
 
 // clang-format off
 int main(int argc, char** argv)
 {
     // clang-format on
-    PalBool dumpAll = PAL_FALSE;
-    PalBool dumpCore = PAL_FALSE;
-    PalBool dumpEvent = PAL_FALSE;
-    PalBool dumpThread = PAL_FALSE;
-    PalBool dumpOpengl = PAL_FALSE;
-    PalBool dumpGraphics = PAL_FALSE;
-    PalBool dumpSystem = PAL_FALSE;
-    PalBool dumpVideo = PAL_FALSE;
-    PalBool dumpVersion = PAL_FALSE;
-    PalBool dumpHelp = PAL_FALSE;
     PalBool verbose = PAL_FALSE;
     PalBool status = PAL_FALSE;
+    uint32_t dumpFlags = 0;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--all") == 0) {
-            dumpAll = PAL_TRUE;
-
-        } else if (strcmp(argv[i], "--core") == 0) {
-            dumpCore = PAL_TRUE;
+        if (strcmp(argv[i], "--core") == 0) {
+            dumpFlags |= DUMP_FLAG_CORE;
 
         } else if (strcmp(argv[i], "--event") == 0) {
-            dumpEvent = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_EVENT;
 
         } else if (strcmp(argv[i], "--graphics") == 0) {
-            dumpGraphics = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_GRAPHICS;
 
         } else if (strcmp(argv[i], "--opengl") == 0) {
-            dumpOpengl = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_OPENGL;
 
         } else if (strcmp(argv[i], "--system") == 0) {
-            dumpSystem = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_SYSTEM;
 
         } else if (strcmp(argv[i], "--thread") == 0) {
-            dumpThread = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_THREAD;
 
         } else if (strcmp(argv[i], "--video") == 0) {
-            dumpVideo = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_VIDEO;
 
         } else if (strcmp(argv[i], "--version") == 0) {
-            dumpVersion = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_VERSION;
 
         } else if (strcmp(argv[i], "--help") == 0) {
-            dumpHelp = PAL_TRUE;
+            dumpFlags |= DUMP_FLAG_HELP;
 
         } else if (strcmp(argv[i], "--verbose") == 0) {
             verbose = PAL_TRUE;
         }
     }
 
-    if (dumpAll) {
-        dumpCore = PAL_TRUE;
-        dumpEvent = PAL_TRUE;
-        dumpThread = PAL_TRUE;
-        dumpOpengl = PAL_TRUE;
-        dumpGraphics = PAL_TRUE;
-        dumpSystem = PAL_TRUE;
-        dumpVideo = PAL_TRUE;
+    if (dumpFlags == 0) {
+        dumpFlags |= DUMP_FLAG_ALL;
     }
 
-    if (dumpCore) {
+    if (dumpFlags & DUMP_FLAG_CORE) {
         status = coreABIDump(verbose);
         if (status == PAL_FALSE) {
             return -1;
         }
     }
 
-    if (dumpEvent) {
+    if (dumpFlags & DUMP_FLAG_EVENT) {
         status = eventABIDump(verbose);
         if (status == PAL_FALSE) {
             return -1;
         }
     }
 
-    if (dumpThread) {
+    if (dumpFlags & DUMP_FLAG_THREAD) {
         status = threadABIDump(verbose);
         if (status == PAL_FALSE) {
             return -1;
         }
     }
 
-    if (dumpSystem) {
-        // status = systemABIDump(verbose);
-        // if (status == PAL_FALSE) {
-        //     return -1;
-        // }
+    if (dumpFlags & DUMP_FLAG_SYSTEM) {
+        status = systemABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
-    if (dumpVideo) {
+    if (dumpFlags & DUMP_FLAG_VIDEO) {
         // status = videoABIDump(verbose);
         // if (status == PAL_FALSE) {
         //     return -1;
         // }
     }
 
-    if (dumpOpengl) {
+    if (dumpFlags & DUMP_FLAG_OPENGL) {
         // status = openglABIDump(verbose);
         // if (status == PAL_FALSE) {
         //     return -1;
         // }
     }
 
-    if (dumpGraphics) {
+    if (dumpFlags & DUMP_FLAG_GRAPHICS) {
         // status = graphicsABIDump(verbose);
         // if (status == PAL_FALSE) {
         //     return -1;
         // }
     }
 
-    if (dumpVersion) {
+    if (dumpFlags & DUMP_FLAG_VERSION) {
         palLog(nullptr, "PAL ABI dump %s", VERSION);
     }
 
-    if (dumpHelp) {
+    if (dumpFlags & DUMP_FLAG_HELP) {
         palLog(nullptr, "USAGE: %s [options]", EXE_NAME);
         palLog(nullptr, "Options:");
         palLog(nullptr, "  --help          Display available options");
