@@ -8,13 +8,15 @@
 #include "dumps.h"
 #include "pal/pal_thread.h"
 
-PalBool threadABIDump(PalBool verbose)
+PalBool threadABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Thread ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Thread ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
     FieldInfo threadCreateInfoFields[] = {
         { "stackSize", {0, 8}, FIELD(PalThreadCreateInfo, stackSize) },
@@ -32,5 +34,5 @@ PalBool threadABIDump(PalBool verbose)
     threadCreateInfo.expected.padding = 0;
     threadCreateInfo.actual = STRUCT(PalThreadCreateInfo);
 
-    return checkABI(&threadCreateInfo, verbose);
+    return checkABI(&threadCreateInfo, flags);
 }

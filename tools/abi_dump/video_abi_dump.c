@@ -8,13 +8,15 @@
 #include "dumps.h"
 #include "pal/pal_video.h"
 
-PalBool videoABIDump(PalBool verbose)
+PalBool videoABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Video ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Video ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
     FieldInfo monitorInfoFields[] = {
         { "x", {0, 4}, FIELD(PalMonitorInfo, x) },
@@ -141,35 +143,35 @@ PalBool videoABIDump(PalBool verbose)
     windowCreateInfo.expected.padding = 0;
     windowCreateInfo.actual = STRUCT(PalWindowCreateInfo);
 
-    PalBool status = checkABI(&monitorInfo, verbose);
+    PalBool status = checkABI(&monitorInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&monitorMode, verbose);
+    status = checkABI(&monitorMode, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&flashInfo, verbose);
+    status = checkABI(&flashInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&iconCreateInfo, verbose);
+    status = checkABI(&iconCreateInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&cursorCreateInfo, verbose);
+    status = checkABI(&cursorCreateInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&windowHandleInfo, verbose);
+    status = checkABI(&windowHandleInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&windowCreateInfo, verbose);
+    return checkABI(&windowCreateInfo, flags);
 }

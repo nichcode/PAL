@@ -8,7 +8,7 @@
 #include "dumps.h"
 #include "pal/pal_graphics.h"
 
-static PalBool adapterDump(PalBool verbose)
+static PalBool adapterDump(uint32_t flags)
 {
     // clang-format off
     FieldInfo adapterInfoFields[] = {
@@ -148,40 +148,40 @@ static PalBool adapterDump(PalBool verbose)
     formatInfo.expected.padding = 0;
     formatInfo.actual = STRUCT(PalFormatInfo);
 
-    PalBool status = checkABI(&adapterInfo, verbose);
+    PalBool status = checkABI(&adapterInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&imageCap, verbose);
+    status = checkABI(&imageCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&resourceCap, verbose);
+    status = checkABI(&resourceCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&computeCap, verbose);
+    status = checkABI(&computeCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&viewportCap, verbose);
+    status = checkABI(&viewportCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&adapterCap, verbose);
+    status = checkABI(&adapterCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&formatInfo, verbose);
+    return checkABI(&formatInfo, flags);
 }
 
-static PalBool deviceDump(PalBool verbose)
+static PalBool deviceDump(uint32_t flags)
 {
     // clang-format off
     FieldInfo samplerAnisotropyCapFields[] = {
@@ -320,58 +320,60 @@ static PalBool deviceDump(PalBool verbose)
     descriptorIndexingCap.expected.padding = 0;
     descriptorIndexingCap.actual = STRUCT(PalDescriptorIndexingCapabilities);
 
-    PalBool status = checkABI(&samplerAnisotropyCap, verbose);
+    PalBool status = checkABI(&samplerAnisotropyCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&multiViewCap, verbose);
+    status = checkABI(&multiViewCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&multiViewportCap, verbose);
+    status = checkABI(&multiViewportCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&depthStencilCap, verbose);
+    status = checkABI(&depthStencilCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&fragmentShadingRateCap, verbose);
+    status = checkABI(&fragmentShadingRateCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&meshCap, verbose);
+    status = checkABI(&meshCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&rayTracingCap, verbose);
+    status = checkABI(&rayTracingCap, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&descriptorIndexingCap, verbose);
+    return checkABI(&descriptorIndexingCap, flags);
 }
 
-PalBool graphicsABIDump(PalBool verbose)
+PalBool graphicsABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Graphics ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Graphics ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
-    PalBool status = adapterDump(verbose);
+    PalBool status = adapterDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = deviceDump(verbose);
+    status = deviceDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }

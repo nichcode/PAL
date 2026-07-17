@@ -8,13 +8,15 @@
 #include "dumps.h"
 #include "pal/pal_system.h"
 
-PalBool systemABIDump(PalBool verbose)
+PalBool systemABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "System ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "System ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
     FieldInfo platformInfoFields[] = {
         { "type", {0, 4}, FIELD(PalPlatformInfo, type) },
@@ -55,10 +57,10 @@ PalBool systemABIDump(PalBool verbose)
     cpuInfo.expected.padding = 0;
     cpuInfo.actual = STRUCT(PalCPUInfo);
 
-    PalBool status = checkABI(&platformInfo, verbose);
+    PalBool status = checkABI(&platformInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&cpuInfo, verbose);
+    return checkABI(&cpuInfo, flags);
 }

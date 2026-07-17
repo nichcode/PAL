@@ -20,6 +20,22 @@ static const char* s_PassedString = "PASSED";
 #define ALIGNOF(type) __alignof__(type)
 #endif // _MSC_VER
 
+#define DUMP_FLAG_CORE (1u << 0)
+#define DUMP_FLAG_EVENT (1u << 1)
+#define DUMP_FLAG_THREAD (1u << 2)
+#define DUMP_FLAG_OPENGL (1u << 3)
+#define DUMP_FLAG_GRAPHICS (1u << 4)
+#define DUMP_FLAG_SYSTEM (1u << 5)
+#define DUMP_FLAG_VIDEO (1u << 6)
+#define DUMP_FLAG_VERSION (1u << 7)
+#define DUMP_FLAG_HELP (1u << 8)
+#define DUMP_FLAG_VERBOSE (1u << 9)
+#define DUMP_FLAG_QUICK (1u << 10)
+#define DUMP_FLAG_ALL 0x7F
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#define PADDING(type) (((ALIGNOF(type) - sizeof(type)) % ALIGNOF(type)))
+
 typedef struct {
     uint32_t offset;
     uint32_t size;
@@ -45,9 +61,12 @@ typedef struct {
     StructBase actual;
 } StructInfo;
 
+#define FIELD(type, field) ((FieldBase){offsetof(type, field), sizeof(((type*)0)->field)})
+#define STRUCT(type) ((StructBase){ALIGNOF(type), sizeof(type), PADDING(type)})
+
 static PalBool checkABI(
     const StructInfo* info,
-    PalBool verbose)
+    uint32_t flags)
 {
     // find the size of the field column
     uint32_t fieldSize = 0;
@@ -81,8 +100,11 @@ static PalBool checkABI(
     }
     seperator[seperatorSize] = '\0';
 
-    palLog(nullptr, "Struct: %s", info->name);
-    if (verbose) {
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "Struct: %s", info->name);
+    }
+
+    if (flags & DUMP_FLAG_VERBOSE) {
         palLog(nullptr, "");
         palLog(nullptr, "Struct format: Property: (Expected, Actual)");
         palLog(nullptr, "Field format: (Offset, Size)");
@@ -117,7 +139,7 @@ static PalBool checkABI(
         }
         // clang-format on
 
-        if (verbose) {
+        if (flags & DUMP_FLAG_VERBOSE) {
             palLog(nullptr, 
                 "%-*s (%03u, %03u)    (%03u, %03u)", 
                 fieldSize,
@@ -128,27 +150,24 @@ static PalBool checkABI(
                 field->actual.size);
         }
     }
-    if (verbose) {
+    if (flags & DUMP_FLAG_VERBOSE) {
         palLog(nullptr, seperator);
     }
 
-    palLog(nullptr, "Status: %s", result);
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "Status: %s", result);
+        palLog(nullptr, "");
+    }
 
     return passed;
 }
 
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-#define FIELD(type, field) ((FieldBase){offsetof(type, field), sizeof(((type*)0)->field)})
-#define PADDING(type) (((ALIGNOF(type) - sizeof(type)) % ALIGNOF(type)))
-#define STRUCT(type) ((StructBase){ALIGNOF(type), sizeof(type), PADDING(type)})
-
-PalBool coreABIDump(PalBool verbose);
-PalBool eventABIDump(PalBool verbose);
-PalBool threadABIDump(PalBool verbose);
-PalBool systemABIDump(PalBool verbose);
-PalBool videoABIDump(PalBool verbose);
-PalBool openglABIDump(PalBool verbose);
-PalBool graphicsABIDump(PalBool verbose);
+PalBool coreABIDump(uint32_t flags);
+PalBool eventABIDump(uint32_t flags);
+PalBool threadABIDump(uint32_t flags);
+PalBool systemABIDump(uint32_t flags);
+PalBool videoABIDump(uint32_t flags);
+PalBool openglABIDump(uint32_t flags);
+PalBool graphicsABIDump(uint32_t flags);
 
 #endif // _DUMPS_H

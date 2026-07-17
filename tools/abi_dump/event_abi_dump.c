@@ -8,13 +8,15 @@
 #include "dumps.h"
 #include "pal/pal_event.h"
 
-PalBool eventABIDump(PalBool verbose)
+PalBool eventABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Event ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Event ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
     FieldInfo eventFields[] = {
         { "data", {0, 8}, FIELD(PalEvent, data) },
@@ -63,15 +65,15 @@ PalBool eventABIDump(PalBool verbose)
     eventDriverCreateInfo.expected.padding = 0;
     eventDriverCreateInfo.actual = STRUCT(PalEventDriverCreateInfo);
 
-    PalBool status = checkABI(&eventInfo, verbose);
+    PalBool status = checkABI(&eventInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&eventQueueInfo, verbose);
+    status = checkABI(&eventQueueInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&eventDriverCreateInfo, verbose);
+    return checkABI(&eventDriverCreateInfo, flags);
 }

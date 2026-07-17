@@ -7,13 +7,15 @@
 
 #include "dumps.h"
 
-PalBool coreABIDump(PalBool verbose)
+PalBool coreABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Core ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Core ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
     FieldInfo versionFields[] = {
         { "major", {0, 4}, FIELD(PalVersion, major) },
@@ -59,15 +61,15 @@ PalBool coreABIDump(PalBool verbose)
     loggerInfo.expected.padding = 0;
     loggerInfo.actual = STRUCT(PalLogger);
 
-    PalBool status = checkABI(&versionInfo, verbose);
+    PalBool status = checkABI(&versionInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&allocatorInfo, verbose);
+    status = checkABI(&allocatorInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&loggerInfo, verbose);
+    return checkABI(&loggerInfo, flags);
 }

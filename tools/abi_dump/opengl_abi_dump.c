@@ -8,13 +8,15 @@
 #include "dumps.h"
 #include "pal/pal_opengl.h"
 
-PalBool openglABIDump(PalBool verbose)
+PalBool openglABIDump(uint32_t flags)
 {
-    palLog(nullptr, "");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "Opengl ABI Dump");
-    palLog(nullptr, "===========================================");
-    palLog(nullptr, "");
+    if (!(flags & DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Opengl ABI Dump");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
     FieldInfo glInfoFields[] = {
         { "extensions", {0, 8}, FIELD(PalGLInfo, extensions) },
@@ -96,20 +98,20 @@ PalBool openglABIDump(PalBool verbose)
     contextCreateInfo.expected.padding = 0;
     contextCreateInfo.actual = STRUCT(PalGLContextCreateInfo);
 
-    PalBool status = checkABI(&glInfo, verbose);
+    PalBool status = checkABI(&glInfo, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&fbConfig, verbose);
+    status = checkABI(&fbConfig, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    status = checkABI(&window, verbose);
+    status = checkABI(&window, flags);
     if (status == PAL_FALSE) {
         return status;
     }
 
-    return checkABI(&contextCreateInfo, verbose);
+    return checkABI(&contextCreateInfo, flags);
 }
