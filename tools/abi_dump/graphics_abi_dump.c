@@ -246,6 +246,14 @@ static PalBool deviceDump(uint32_t flags)
         { "maxPerStageAccelerationStructure", {44, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageAccelerationStructure) },
         { "maxPerSetAccelerationStructure", {48, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetAccelerationStructure) }
     };
+
+    FieldInfo memoryRequirementFields[] = {
+        { "size", {0, 8}, FIELD(PalMemoryRequirements, size) },
+        { "alignment", {8, 8}, FIELD(PalMemoryRequirements, alignment) },
+        { "memoryMask", {16, 8}, FIELD(PalMemoryRequirements, memoryMask) },
+        { "supportedMemoryTypes", {24, 4}, FIELD(PalMemoryRequirements, supportedMemoryTypes) },
+        { "reserved", {28, 4}, FIELD(PalMemoryRequirements, reserved) }
+    };
     // clang-format on
 
     StructInfo samplerAnisotropyCap = {0};
@@ -320,6 +328,15 @@ static PalBool deviceDump(uint32_t flags)
     descriptorIndexingCap.expected.padding = 0;
     descriptorIndexingCap.actual = STRUCT(PalDescriptorIndexingCapabilities);
 
+    StructInfo memoryRequirement = {0};
+    memoryRequirement.name = "PalMemoryRequirements";
+    memoryRequirement.fields = memoryRequirementFields;
+    memoryRequirement.fieldCount = ARRAY_SIZE(memoryRequirementFields);
+    memoryRequirement.expected.alignof = 8;
+    memoryRequirement.expected.size = 32;
+    memoryRequirement.expected.padding = 0;
+    memoryRequirement.actual = STRUCT(PalMemoryRequirements);
+
     PalBool status = checkABI(&samplerAnisotropyCap, flags);
     if (status == PAL_FALSE) {
         return status;
@@ -355,7 +372,86 @@ static PalBool deviceDump(uint32_t flags)
         return status;
     }
 
-    return checkABI(&descriptorIndexingCap, flags);
+    status = checkABI(&descriptorIndexingCap, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&memoryRequirement, flags);
+}
+
+static PalBool swapchainDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo surfaceCapFields[] = {
+        { "supportedPresentModes", {0, 4}, FIELD(PalSurfaceCapabilities, supportedPresentModes) },
+        { "supportedCompositeAlphas", {4, 4}, FIELD(PalSurfaceCapabilities, supportedCompositeAlphas) },
+        { "supportedFormats", {8, 4}, FIELD(PalSurfaceCapabilities, supportedFormats) },
+        { "minImageCount", {12, 4}, FIELD(PalSurfaceCapabilities, minImageCount) },
+        { "maxImageCount", {16, 4}, FIELD(PalSurfaceCapabilities, maxImageCount) },
+        { "minImageWidth", {20, 4}, FIELD(PalSurfaceCapabilities, minImageWidth) },
+        { "minImageHeight", {24, 4}, FIELD(PalSurfaceCapabilities, minImageHeight) },
+        { "maxImageWidth", {28, 4}, FIELD(PalSurfaceCapabilities, maxImageWidth) },
+        { "maxImageHeight", {32, 4}, FIELD(PalSurfaceCapabilities, maxImageHeight) },
+        { "maxImageArrayLayers", {36, 4}, FIELD(PalSurfaceCapabilities, maxImageArrayLayers) }
+    };
+
+    FieldInfo swapchainNextImageInfoFields[] = {
+        { "timeout", {0, 8}, FIELD(PalSwapchainNextImageInfo, timeout) },
+        { "signalSemaphore", {8, 8}, FIELD(PalSwapchainNextImageInfo, signalSemaphore) },
+        { "fence", {16, 8}, FIELD(PalSwapchainNextImageInfo, fence) }
+    };
+
+    FieldInfo swapchainCreateInfoFields[] = {
+        { "clipped", {0, 4}, FIELD(PalSwapchainCreateInfo, clipped) },
+        { "width", {4, 4}, FIELD(PalSwapchainCreateInfo, width) },
+        { "height", {8, 4}, FIELD(PalSwapchainCreateInfo, height) },
+        { "imageCount", {12, 4}, FIELD(PalSwapchainCreateInfo, imageCount) },
+        { "imageArrayLayerCount", {16, 4}, FIELD(PalSwapchainCreateInfo, imageArrayLayerCount) },
+        { "presentMode", {20, 4}, FIELD(PalSwapchainCreateInfo, presentMode) },
+        { "compositeAlpha", {24, 4}, FIELD(PalSwapchainCreateInfo, compositeAlpha) },
+        { "format", {28, 4}, FIELD(PalSwapchainCreateInfo, format) }
+    };
+    // clang-format on
+
+    StructInfo surfaceCap = {0};
+    surfaceCap.name = "PalSurfaceCapabilities";
+    surfaceCap.fields = surfaceCapFields;
+    surfaceCap.fieldCount = ARRAY_SIZE(surfaceCapFields);
+    surfaceCap.expected.alignof = 4;
+    surfaceCap.expected.size = 40;
+    surfaceCap.expected.padding = 0;
+    surfaceCap.actual = STRUCT(PalSurfaceCapabilities);
+
+    StructInfo swapchainNextImageInfo = {0};
+    swapchainNextImageInfo.name = "PalSwapchainNextImageInfo";
+    swapchainNextImageInfo.fields = swapchainNextImageInfoFields;
+    swapchainNextImageInfo.fieldCount = ARRAY_SIZE(swapchainNextImageInfoFields);
+    swapchainNextImageInfo.expected.alignof = 8;
+    swapchainNextImageInfo.expected.size = 24;
+    swapchainNextImageInfo.expected.padding = 0;
+    swapchainNextImageInfo.actual = STRUCT(PalSwapchainNextImageInfo);
+
+    StructInfo swapchainCreateInfo = {0};
+    swapchainCreateInfo.name = "PalSwapchainCreateInfo";
+    swapchainCreateInfo.fields = swapchainCreateInfoFields;
+    swapchainCreateInfo.fieldCount = ARRAY_SIZE(swapchainCreateInfoFields);
+    swapchainCreateInfo.expected.alignof = 4;
+    swapchainCreateInfo.expected.size = 32;
+    swapchainCreateInfo.expected.padding = 0;
+    swapchainCreateInfo.actual = STRUCT(PalSwapchainCreateInfo);
+
+    PalBool status = checkABI(&surfaceCap, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&swapchainNextImageInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&swapchainCreateInfo, flags);
 }
 
 PalBool graphicsABIDump(uint32_t flags)
@@ -374,6 +470,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = deviceDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = swapchainDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }

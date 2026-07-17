@@ -1816,8 +1816,9 @@ typedef struct {
 typedef struct {
     uint64_t size;                 /**< Required size in bytes.*/
     uint64_t alignment;            /**< Required alignment in bytes.*/
+    uint64_t memoryMask;           /**< Memory masks used in allocations. Must not be changed.*/
     uint32_t supportedMemoryTypes; /**< Masks of supported memory types.*/
-    uint32_t memoryMask;           /**< Memory masks used in allocations. Must not be changed.*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalMemoryRequirements;
 
 /**
