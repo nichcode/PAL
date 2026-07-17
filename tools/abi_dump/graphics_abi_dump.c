@@ -645,6 +645,68 @@ static PalBool imageDump(uint32_t flags)
     return checkABI(&samplerCreateInfo, flags);
 }
 
+static PalBool bufferDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo stagingRequirementFields[] = {
+        { "bufferSize", {0, 8}, FIELD(PalImageStagingRequirements, bufferSize) },
+        { "bufferRowLength", {8, 4}, FIELD(PalImageStagingRequirements, bufferRowLength) },
+        { "bufferImageHeight", {12, 4}, FIELD(PalImageStagingRequirements, bufferImageHeight) }
+    };
+
+    FieldInfo bufferCopyInfoFields[] = {
+        { "size", {0, 8}, FIELD(PalBufferCopyInfo, size) },
+        { "dstOffset", {8, 8}, FIELD(PalBufferCopyInfo, dstOffset) },
+        { "srcOffset", {16, 8}, FIELD(PalBufferCopyInfo, srcOffset) }
+    };
+
+    FieldInfo bufferCreateInfoFields[] = {
+        { "size", {0, 8}, FIELD(PalBufferCreateInfo, size) },
+        { "usages", {8, 4}, FIELD(PalBufferCreateInfo, usages) },
+        { "memoryUsage", {12, 4}, FIELD(PalBufferCreateInfo, memoryUsage) }
+    };
+    // clang-format on
+
+    StructInfo stagingRequirement = {0};
+    stagingRequirement.name = "PalImageStagingRequirements";
+    stagingRequirement.fields = stagingRequirementFields;
+    stagingRequirement.fieldCount = ARRAY_SIZE(stagingRequirementFields);
+    stagingRequirement.expected.alignof = 8;
+    stagingRequirement.expected.size = 16;
+    stagingRequirement.expected.padding = 0;
+    stagingRequirement.actual = STRUCT(PalImageStagingRequirements);
+
+    StructInfo bufferCopyInfo = {0};
+    bufferCopyInfo.name = "PalBufferCopyInfo";
+    bufferCopyInfo.fields = bufferCopyInfoFields;
+    bufferCopyInfo.fieldCount = ARRAY_SIZE(bufferCopyInfoFields);
+    bufferCopyInfo.expected.alignof = 8;
+    bufferCopyInfo.expected.size = 24;
+    bufferCopyInfo.expected.padding = 0;
+    bufferCopyInfo.actual = STRUCT(PalBufferCopyInfo);
+
+    StructInfo bufferCreateInfo = {0};
+    bufferCreateInfo.name = "PalBufferCreateInfo";
+    bufferCreateInfo.fields = bufferCreateInfoFields;
+    bufferCreateInfo.fieldCount = ARRAY_SIZE(bufferCreateInfoFields);
+    bufferCreateInfo.expected.alignof = 8;
+    bufferCreateInfo.expected.size = 16;
+    bufferCreateInfo.expected.padding = 0;
+    bufferCreateInfo.actual = STRUCT(PalBufferCreateInfo);
+
+    PalBool status = checkABI(&stagingRequirement, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&bufferCopyInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&bufferCreateInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -671,6 +733,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = imageDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = bufferDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
