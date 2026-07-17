@@ -454,6 +454,197 @@ static PalBool swapchainDump(uint32_t flags)
     return checkABI(&swapchainCreateInfo, flags);
 }
 
+static PalBool imageDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo imageInfoFields[] = {
+        { "usages", {0, 4}, FIELD(PalImageInfo, usages) },
+        { "width", {4, 4}, FIELD(PalImageInfo, width) },
+        { "height", {8, 4}, FIELD(PalImageInfo, height) },
+        { "depth", {12, 4}, FIELD(PalImageInfo, depth) },
+        { "arrayLayerCount", {16, 4}, FIELD(PalImageInfo, arrayLayerCount) },
+        { "mipLevelCount", {20, 4}, FIELD(PalImageInfo, mipLevelCount) },
+        { "sampleCount", {24, 4}, FIELD(PalImageInfo, sampleCount) },
+        { "type", {28, 4}, FIELD(PalImageInfo, type) },
+        { "format", {32, 4}, FIELD(PalImageInfo, format) },
+        { "belongsToSwapchain", {36, 4}, FIELD(PalImageInfo, belongsToSwapchain) }
+    };
+
+    FieldInfo imageSubresourceRangeFields[] = {
+        { "aspect", {0, 4}, FIELD(PalImageSubresourceRange, aspect) },
+        { "startMipLevel", {4, 4}, FIELD(PalImageSubresourceRange, startMipLevel) },
+        { "mipLevelCount", {8, 4}, FIELD(PalImageSubresourceRange, mipLevelCount) },
+        { "startArrayLayer", {12, 4}, FIELD(PalImageSubresourceRange, startArrayLayer) },
+        { "layerArrayCount", {16, 4}, FIELD(PalImageSubresourceRange, layerArrayCount) }
+    };
+
+    FieldInfo bufferImageCopyInfoFields[] = {
+        { "bufferOffset", {0, 8}, FIELD(PalBufferImageCopyInfo, bufferOffset) },
+        { "imageAspect", {8, 4}, FIELD(PalBufferImageCopyInfo, imageAspect) },
+        { "bufferRowLength", {12, 4}, FIELD(PalBufferImageCopyInfo, bufferRowLength) },
+        { "bufferImageHeight", {16, 4}, FIELD(PalBufferImageCopyInfo, bufferImageHeight) },
+        { "ImageMipLevel", {20, 4}, FIELD(PalBufferImageCopyInfo, ImageMipLevel) },
+        { "ImageStartArrayLayer", {24, 4}, FIELD(PalBufferImageCopyInfo, ImageStartArrayLayer) },
+        { "ImageArrayLayerCount", {28, 4}, FIELD(PalBufferImageCopyInfo, ImageArrayLayerCount) },
+        { "imageOffsetX", {32, 4}, FIELD(PalBufferImageCopyInfo, imageOffsetX) },
+        { "imageOffsetY", {36, 4}, FIELD(PalBufferImageCopyInfo, imageOffsetY) },
+        { "imageOffsetZ", {40, 4}, FIELD(PalBufferImageCopyInfo, imageOffsetZ) },
+        { "imageWidth", {44, 4}, FIELD(PalBufferImageCopyInfo, imageWidth) },
+        { "imageHeight", {48, 4}, FIELD(PalBufferImageCopyInfo, imageHeight) },
+        { "imageDepth", {52, 4}, FIELD(PalBufferImageCopyInfo, imageDepth) }
+    };
+
+    FieldInfo imageCopyInfoFields[] = {
+        { "aspect", {0, 4}, FIELD(PalImageCopyInfo, aspect) },
+        { "dstMipLevel", {4, 4}, FIELD(PalImageCopyInfo, dstMipLevel) },
+        { "srcMipLevel", {8, 4}, FIELD(PalImageCopyInfo, srcMipLevel) },
+        { "dstStartArrayLayer", {12, 4}, FIELD(PalImageCopyInfo, dstStartArrayLayer) },
+        { "srcStartArrayLayer", {16, 4}, FIELD(PalImageCopyInfo, srcStartArrayLayer) },
+        { "arrayLayerCount", {20, 4}, FIELD(PalImageCopyInfo, arrayLayerCount) },
+        { "dstOffsetX", {24, 4}, FIELD(PalImageCopyInfo, dstOffsetX) },
+        { "srcOffsetX", {28, 4}, FIELD(PalImageCopyInfo, srcOffsetX) },
+        { "dstOffsetY", {32, 4}, FIELD(PalImageCopyInfo, dstOffsetY) },
+        { "srcOffsetY", {36, 4}, FIELD(PalImageCopyInfo, srcOffsetY) },
+        { "dstOffsetZ", {40, 4}, FIELD(PalImageCopyInfo, dstOffsetZ) },
+        { "srcOffsetZ", {44, 4}, FIELD(PalImageCopyInfo, srcOffsetZ) },
+        { "width", {48, 4}, FIELD(PalImageCopyInfo, width) },
+        { "height", {52, 4}, FIELD(PalImageCopyInfo, height) },
+        { "depth", {56, 4}, FIELD(PalImageCopyInfo, depth) }
+    };
+
+    FieldInfo imageCreateInfoFields[] = {
+        { "usages", {0, 4}, FIELD(PalImageCreateInfo, usages) },
+        { "width", {4, 4}, FIELD(PalImageCreateInfo, width) },
+        { "height", {8, 4}, FIELD(PalImageCreateInfo, height) },
+        { "depth", {12, 4}, FIELD(PalImageCreateInfo, depth) },
+        { "arrayLayerCount", {16, 4}, FIELD(PalImageCreateInfo, arrayLayerCount) },
+        { "mipLevelCount", {20, 4}, FIELD(PalImageCreateInfo, mipLevelCount) },
+        { "sampleCount", {24, 4}, FIELD(PalImageCreateInfo, sampleCount) },
+        { "type", {28, 4}, FIELD(PalImageCreateInfo, type) },
+        { "format", {32, 4}, FIELD(PalImageCreateInfo, format) },
+        { "memoryUsage", {36, 4}, FIELD(PalImageCreateInfo, memoryUsage) }
+    };
+
+    FieldInfo imageViewCreateInfoFields[] = {
+        { "format", {0, 4}, FIELD(PalImageViewCreateInfo, format) },
+        { "type", {4, 4}, FIELD(PalImageViewCreateInfo, type) },
+        { "subresourceRange", {8, 20}, FIELD(PalImageViewCreateInfo, subresourceRange) }
+    };
+
+    FieldInfo samplerCreateInfoFields[] = {
+        { "enableCompare", {0, 4}, FIELD(PalSamplerCreateInfo, enableCompare) },
+        { "enableAnisotropy", {4, 4}, FIELD(PalSamplerCreateInfo, enableAnisotropy) },
+        { "mipLodBias", {8, 4}, FIELD(PalSamplerCreateInfo, mipLodBias) },
+        { "minLod", {12, 4}, FIELD(PalSamplerCreateInfo, minLod) },
+        { "maxLod", {16, 4}, FIELD(PalSamplerCreateInfo, maxLod) },
+        { "maxAnisotropy", {20, 4}, FIELD(PalSamplerCreateInfo, maxAnisotropy) },
+        { "minFilterMode", {24, 4}, FIELD(PalSamplerCreateInfo, minFilterMode) },
+        { "magFilterMode", {28, 4}, FIELD(PalSamplerCreateInfo, magFilterMode) },
+        { "mipmapMode", {32, 4}, FIELD(PalSamplerCreateInfo, mipmapMode) },
+        { "addressModeU", {36, 4}, FIELD(PalSamplerCreateInfo, addressModeU) },
+        { "addressModeV", {40, 4}, FIELD(PalSamplerCreateInfo, addressModeV) },
+        { "addressModeW", {44, 4}, FIELD(PalSamplerCreateInfo, addressModeW) },
+        { "compareOp", {48, 4}, FIELD(PalSamplerCreateInfo, compareOp) },
+        { "borderColor", {52, 4}, FIELD(PalSamplerCreateInfo, borderColor) },
+    };
+    // clang-format on
+
+    StructInfo imageInfo = {0};
+    imageInfo.name = "PalImageInfo";
+    imageInfo.fields = imageInfoFields;
+    imageInfo.fieldCount = ARRAY_SIZE(imageInfoFields);
+    imageInfo.expected.alignof = 4;
+    imageInfo.expected.size = 40;
+    imageInfo.expected.padding = 0;
+    imageInfo.actual = STRUCT(PalImageInfo);
+
+    StructInfo imageSubresourceRange = {0};
+    imageSubresourceRange.name = "PalImageSubresourceRange";
+    imageSubresourceRange.fields = imageSubresourceRangeFields;
+    imageSubresourceRange.fieldCount = ARRAY_SIZE(imageSubresourceRangeFields);
+    imageSubresourceRange.expected.alignof = 4;
+    imageSubresourceRange.expected.size = 20;
+    imageSubresourceRange.expected.padding = 0;
+    imageSubresourceRange.actual = STRUCT(PalImageSubresourceRange);
+
+    StructInfo bufferImageCopyInfo = {0};
+    bufferImageCopyInfo.name = "PalBufferImageCopyInfo";
+    bufferImageCopyInfo.fields = bufferImageCopyInfoFields;
+    bufferImageCopyInfo.fieldCount = ARRAY_SIZE(bufferImageCopyInfoFields);
+    bufferImageCopyInfo.expected.alignof = 8;
+    bufferImageCopyInfo.expected.size = 56;
+    bufferImageCopyInfo.expected.padding = 0;
+    bufferImageCopyInfo.actual = STRUCT(PalBufferImageCopyInfo);
+
+    StructInfo imageCopyInfo = {0};
+    imageCopyInfo.name = "PalImageCopyInfo";
+    imageCopyInfo.fields = imageCopyInfoFields;
+    imageCopyInfo.fieldCount = ARRAY_SIZE(imageCopyInfoFields);
+    imageCopyInfo.expected.alignof = 4;
+    imageCopyInfo.expected.size = 60;
+    imageCopyInfo.expected.padding = 0;
+    imageCopyInfo.actual = STRUCT(PalImageCopyInfo);
+
+    StructInfo imageCreateInfo = {0};
+    imageCreateInfo.name = "PalImageCreateInfo";
+    imageCreateInfo.fields = imageCreateInfoFields;
+    imageCreateInfo.fieldCount = ARRAY_SIZE(imageCreateInfoFields);
+    imageCreateInfo.expected.alignof = 4;
+    imageCreateInfo.expected.size = 40;
+    imageCreateInfo.expected.padding = 0;
+    imageCreateInfo.actual = STRUCT(PalImageCreateInfo);
+
+    StructInfo imageViewCreateInfo = {0};
+    imageViewCreateInfo.name = "PalImageViewCreateInfo";
+    imageViewCreateInfo.fields = imageViewCreateInfoFields;
+    imageViewCreateInfo.fieldCount = ARRAY_SIZE(imageViewCreateInfoFields);
+    imageViewCreateInfo.expected.alignof = 4;
+    imageViewCreateInfo.expected.size = 28;
+    imageViewCreateInfo.expected.padding = 0;
+    imageViewCreateInfo.actual = STRUCT(PalImageViewCreateInfo);
+
+    StructInfo samplerCreateInfo = {0};
+    samplerCreateInfo.name = "PalSamplerCreateInfo";
+    samplerCreateInfo.fields = samplerCreateInfoFields;
+    samplerCreateInfo.fieldCount = ARRAY_SIZE(samplerCreateInfoFields);
+    samplerCreateInfo.expected.alignof = 4;
+    samplerCreateInfo.expected.size = 56;
+    samplerCreateInfo.expected.padding = 0;
+    samplerCreateInfo.actual = STRUCT(PalSamplerCreateInfo);
+
+    PalBool status = checkABI(&imageInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&imageSubresourceRange, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&bufferImageCopyInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&imageCopyInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&imageCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&imageViewCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&samplerCreateInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -475,6 +666,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = swapchainDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = imageDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
