@@ -10,6 +10,7 @@
 
 static PalBool adapterDump(PalBool verbose)
 {
+    // clang-format off
     FieldInfo adapterInfoFields[] = {
         { "vram", {0, 8}, FIELD(PalAdapterInfo, vram) },
         { "sharedMemory", {8, 8}, FIELD(PalAdapterInfo, sharedMemory) },
@@ -31,7 +32,6 @@ static PalBool adapterDump(PalBool verbose)
         { "maxMipLevels", {16, 4}, FIELD(PalImageCapabilities, maxMipLevels) }
     };
 
-    // clang-format off
     FieldInfo resourceCapFields[] = {
         { "maxPerStageSampledImages", {0, 4}, FIELD(PalResourceCapabilities, maxPerStageSampledImages) },
         { "maxPerSetSampledImages", {4, 4}, FIELD(PalResourceCapabilities, maxPerSetSampledImages) },
@@ -53,8 +53,7 @@ static PalBool adapterDump(PalBool verbose)
         { "maxWorkGroupCount", {4, 12}, FIELD(PalComputeCapabilities, maxWorkGroupCount) },
         { "maxWorkGroupSize", {16, 12}, FIELD(PalComputeCapabilities, maxWorkGroupSize) }
     };
-    // clang-format on
-
+    
     FieldInfo viewportCapFields[] = {
         { "maxWidth", {0, 4}, FIELD(PalViewportCapabilities, maxWidth) },
         { "maxHeight", {4, 4}, FIELD(PalViewportCapabilities, maxHeight) },
@@ -78,6 +77,13 @@ static PalBool adapterDump(PalBool verbose)
         { "resourceCaps", {76, 52}, FIELD(PalAdapterCapabilities, resourceCaps) },
         { "computeCaps", {128, 28}, FIELD(PalAdapterCapabilities, computeCaps) }
     };
+
+    FieldInfo formatInfoFields[] = {
+        { "usages", {0, 4}, FIELD(PalFormatInfo, usages) },
+        { "format", {4, 4}, FIELD(PalFormatInfo, format) },
+        { "sampleCount", {8, 4}, FIELD(PalFormatInfo, sampleCount) }
+    };
+    // clang-format on
 
     StructInfo adapterInfo = {0};
     adapterInfo.name = "PalAdapterInfo";
@@ -133,6 +139,15 @@ static PalBool adapterDump(PalBool verbose)
     adapterCap.expected.padding = 0;
     adapterCap.actual = STRUCT(PalAdapterCapabilities);
 
+    StructInfo formatInfo = {0};
+    formatInfo.name = "PalFormatInfo";
+    formatInfo.fields = formatInfoFields;
+    formatInfo.fieldCount = ARRAY_SIZE(formatInfoFields);
+    formatInfo.expected.alignof = 4;
+    formatInfo.expected.size = 12;
+    formatInfo.expected.padding = 0;
+    formatInfo.actual = STRUCT(PalFormatInfo);
+
     PalBool status = checkABI(&adapterInfo, verbose);
     if (status == PAL_FALSE) {
         return status;
@@ -158,7 +173,189 @@ static PalBool adapterDump(PalBool verbose)
         return status;
     }
 
-    return checkABI(&adapterCap, verbose);
+    status = checkABI(&adapterCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&formatInfo, verbose);
+}
+
+static PalBool deviceDump(PalBool verbose)
+{
+    // clang-format off
+    FieldInfo samplerAnisotropyCapFields[] = {
+        { "maxAnisotropy", {0, 4}, FIELD(PalSamplerAnisotropyCapabilities, maxAnisotropy) }
+    };
+
+    FieldInfo multiViewCapFields[] = {
+        { "maxViewCount", {0, 4}, FIELD(PalMultiViewCapabilities, maxViewCount) }
+    };
+
+    FieldInfo multiViewportCapFields[] = {
+        { "maxCount", {0, 4}, FIELD(PalMultiViewportCapabilities, maxCount) }
+    };
+
+    FieldInfo depthStencilCapFields[] = {
+        { "supportedDepthResolveModes", {0, 4}, FIELD(PalDepthStencilCapabilities, supportedDepthResolveModes) },
+        { "supportedStencilResolveModes", {4, 4}, FIELD(PalDepthStencilCapabilities, supportedStencilResolveModes) },
+        { "supportsIndependentResolve", {8, 4}, FIELD(PalDepthStencilCapabilities, supportsIndependentResolve) },
+        { "supportsIndependentResolveNone", {12, 4}, FIELD(PalDepthStencilCapabilities, supportsIndependentResolveNone) }
+    };
+
+    FieldInfo fragmentShadingRateCapFields[] = {
+        { "supportedShadingRates", {0, 4}, FIELD(PalFragmentShadingRateCapabilities, supportedShadingRates) },
+        { "supportedCombinerOps", {4, 4}, FIELD(PalFragmentShadingRateCapabilities, supportedCombinerOps) },
+        { "minTexelWidth", {8, 4}, FIELD(PalFragmentShadingRateCapabilities, minTexelWidth) },
+        { "minTexelHeight", {12, 4}, FIELD(PalFragmentShadingRateCapabilities, minTexelHeight) },
+        { "maxTexelWidth", {16, 4}, FIELD(PalFragmentShadingRateCapabilities, maxTexelWidth) },
+        { "maxTexelHeight", {20, 4}, FIELD(PalFragmentShadingRateCapabilities, maxTexelHeight) }
+    };
+
+    FieldInfo meshCapFields[] = {
+        { "maxOutputPrimitives", {0, 4}, FIELD(PalMeshShaderCapabilities, maxOutputPrimitives) },
+        { "maxOutputVertices", {4, 4}, FIELD(PalMeshShaderCapabilities, maxOutputVertices) },
+        { "maxWorkGroupInvocations", {8, 4}, FIELD(PalMeshShaderCapabilities, maxWorkGroupInvocations) },
+        { "maxTaskWorkGroupInvocations", {12, 4}, FIELD(PalMeshShaderCapabilities, maxTaskWorkGroupInvocations) },
+        { "maxWorkGroupCount", {16, 12}, FIELD(PalMeshShaderCapabilities, maxWorkGroupCount) },
+        { "maxTaskWorkGroupCount", {28, 12}, FIELD(PalMeshShaderCapabilities, maxTaskWorkGroupCount) }
+    };
+
+    FieldInfo rayTracingCapFields[] = {
+        { "maxRecursionDepth", {0, 4}, FIELD(PalRayTracingCapabilities, maxRecursionDepth) },
+        { "maxHitAttributeSize", {4, 4}, FIELD(PalRayTracingCapabilities, maxHitAttributeSize) },
+        { "maxInstanceCount", {8, 4}, FIELD(PalRayTracingCapabilities, maxInstanceCount) },
+        { "maxPrimitiveCount", {12, 4}, FIELD(PalRayTracingCapabilities, maxPrimitiveCount) },
+        { "maxGeometryCount", {16, 4}, FIELD(PalRayTracingCapabilities, maxGeometryCount) },
+        { "maxPayloadSize", {20, 4}, FIELD(PalRayTracingCapabilities, maxPayloadSize) },
+        { "maxDispatchInvocations", {24, 4}, FIELD(PalRayTracingCapabilities, maxDispatchInvocations) }
+    };
+
+    FieldInfo descriptorIndexingCapFields[] = {
+        { "flags", {0, 4}, FIELD(PalDescriptorIndexingCapabilities, flags) },
+        { "maxPerStageSampledImages", {4, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageSampledImages) },
+        { "maxPerSetSampledImages", {8, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetSampledImages) },
+        { "maxPerStageStorageImages", {12, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageStorageImages) },
+        { "maxPerSetStorageImages", {16, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetStorageImages) },
+        { "maxPerStageSamplers", {20, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageSamplers) },
+        { "maxPerSetSamplers", {24, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetSamplers) },
+        { "maxPerStageStorageBuffers", {28, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageStorageBuffers) },
+        { "maxPerSetStorageBuffers", {32, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetStorageBuffers) },
+        { "maxPerStageUniformBuffers", {36, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageUniformBuffers) },
+        { "maxPerSetUniformBuffers", {40, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetUniformBuffers) },
+        { "maxPerStageAccelerationStructure", {44, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerStageAccelerationStructure) },
+        { "maxPerSetAccelerationStructure", {48, 4}, FIELD(PalDescriptorIndexingCapabilities, maxPerSetAccelerationStructure) }
+    };
+    // clang-format on
+
+    StructInfo samplerAnisotropyCap = {0};
+    samplerAnisotropyCap.name = "PalSamplerAnisotropyCapabilities";
+    samplerAnisotropyCap.fields = samplerAnisotropyCapFields;
+    samplerAnisotropyCap.fieldCount = ARRAY_SIZE(samplerAnisotropyCapFields);
+    samplerAnisotropyCap.expected.alignof = 4;
+    samplerAnisotropyCap.expected.size = 4;
+    samplerAnisotropyCap.expected.padding = 0;
+    samplerAnisotropyCap.actual = STRUCT(PalSamplerAnisotropyCapabilities);
+
+    StructInfo multiViewCap = {0};
+    multiViewCap.name = "PalMultiViewCapabilities";
+    multiViewCap.fields = multiViewCapFields;
+    multiViewCap.fieldCount = ARRAY_SIZE(multiViewCapFields);
+    multiViewCap.expected.alignof = 4;
+    multiViewCap.expected.size = 4;
+    multiViewCap.expected.padding = 0;
+    multiViewCap.actual = STRUCT(PalMultiViewCapabilities);
+
+    StructInfo multiViewportCap = {0};
+    multiViewportCap.name = "PalMultiViewportCapabilities";
+    multiViewportCap.fields = multiViewportCapFields;
+    multiViewportCap.fieldCount = ARRAY_SIZE(multiViewportCapFields);
+    multiViewportCap.expected.alignof = 4;
+    multiViewportCap.expected.size = 4;
+    multiViewportCap.expected.padding = 0;
+    multiViewportCap.actual = STRUCT(PalMultiViewportCapabilities);
+
+    StructInfo depthStencilCap = {0};
+    depthStencilCap.name = "PalDepthStencilCapabilities";
+    depthStencilCap.fields = depthStencilCapFields;
+    depthStencilCap.fieldCount = ARRAY_SIZE(depthStencilCapFields);
+    depthStencilCap.expected.alignof = 4;
+    depthStencilCap.expected.size = 16;
+    depthStencilCap.expected.padding = 0;
+    depthStencilCap.actual = STRUCT(PalDepthStencilCapabilities);
+
+    StructInfo fragmentShadingRateCap = {0};
+    fragmentShadingRateCap.name = "PalFragmentShadingRateCapabilities";
+    fragmentShadingRateCap.fields = fragmentShadingRateCapFields;
+    fragmentShadingRateCap.fieldCount = ARRAY_SIZE(fragmentShadingRateCapFields);
+    fragmentShadingRateCap.expected.alignof = 4;
+    fragmentShadingRateCap.expected.size = 24;
+    fragmentShadingRateCap.expected.padding = 0;
+    fragmentShadingRateCap.actual = STRUCT(PalFragmentShadingRateCapabilities);
+
+    StructInfo meshCap = {0};
+    meshCap.name = "PalMeshShaderCapabilities";
+    meshCap.fields = meshCapFields;
+    meshCap.fieldCount = ARRAY_SIZE(meshCapFields);
+    meshCap.expected.alignof = 4;
+    meshCap.expected.size = 40;
+    meshCap.expected.padding = 0;
+    meshCap.actual = STRUCT(PalMeshShaderCapabilities);
+
+    StructInfo rayTracingCap = {0};
+    rayTracingCap.name = "PalRayTracingCapabilities";
+    rayTracingCap.fields = rayTracingCapFields;
+    rayTracingCap.fieldCount = ARRAY_SIZE(rayTracingCapFields);
+    rayTracingCap.expected.alignof = 4;
+    rayTracingCap.expected.size = 28;
+    rayTracingCap.expected.padding = 0;
+    rayTracingCap.actual = STRUCT(PalRayTracingCapabilities);
+
+    StructInfo descriptorIndexingCap = {0};
+    descriptorIndexingCap.name = "PalDescriptorIndexingCapabilities";
+    descriptorIndexingCap.fields = descriptorIndexingCapFields;
+    descriptorIndexingCap.fieldCount = ARRAY_SIZE(descriptorIndexingCapFields);
+    descriptorIndexingCap.expected.alignof = 4;
+    descriptorIndexingCap.expected.size = 52;
+    descriptorIndexingCap.expected.padding = 0;
+    descriptorIndexingCap.actual = STRUCT(PalDescriptorIndexingCapabilities);
+
+    PalBool status = checkABI(&samplerAnisotropyCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&multiViewCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&multiViewportCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&depthStencilCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&fragmentShadingRateCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&meshCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&rayTracingCap, verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&descriptorIndexingCap, verbose);
 }
 
 PalBool graphicsABIDump(PalBool verbose)
@@ -170,6 +367,11 @@ PalBool graphicsABIDump(PalBool verbose)
     palLog(nullptr, "");
 
     PalBool status = adapterDump(verbose);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = deviceDump(verbose);
     if (status == PAL_FALSE) {
         return status;
     }
