@@ -447,8 +447,6 @@
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE (1U << 2)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1U << 3)
 
-#define ePAL_ACCELERATION_STRUCTURE_CREATE_FLAG_NONE 0
-
 #define PAL_GEOMETRY_TYPE_TRIANGLE 0
 #define PAL_GEOMETRY_TYPE_AABBS 1
 #define PAL_GEOMETRY_TYPE_COUNT 2
@@ -1235,18 +1233,6 @@ typedef uint32_t PalFragmentShadingRateCombinerOp;
  * @since 2.0
  */
 typedef uint32_t PalAccelerationStructureType;
-
-/**
- * @typedef PalAccelerationStructureCreateFlags
- * @brief Acceleration structure create flags. Multiple hints can be OR'ed together using
- * bitwise OR operator (`|`).
- *
- * All acceleration structure create flags follow the format
- * `PAL_ACCELERATION_STRUCTURE_CREATE_FLAG_**` for consistency and API use.
- *
- * @since 2.0
- */
-typedef uint32_t PalAccelerationStructureCreateFlags;
 
 /**
  * @typedef PalAccelerationStructureBuildMode
@@ -2586,7 +2572,7 @@ typedef struct {
     uint64_t offset;                   /**< Size in bytes.*/
     uint64_t size;                     /**< Offset in bytes.*/
     PalAccelerationStructureType type; /**< (eg. `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`).*/
-    PalAccelerationStructureCreateFlags createFlags; /**< Set to 0 for default.*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalAccelerationStructureCreateInfo;
 
 /**

@@ -707,6 +707,163 @@ static PalBool bufferDump(uint32_t flags)
     return checkABI(&bufferCreateInfo, flags);
 }
 
+static PalBool accelerationStructureDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo accelerationStructureInstanceFields[] = {
+        { "blas", {0, 8}, FIELD(PalAccelerationStructureInstance, blas) },
+        { "flags", {8, 4}, FIELD(PalAccelerationStructureInstance, flags) },
+        { "mask", {12, 4}, FIELD(PalAccelerationStructureInstance, mask) },
+        { "instanceId", {16, 4}, FIELD(PalAccelerationStructureInstance, instanceId) },
+        { "hitGroupOffset", {20, 4}, FIELD(PalAccelerationStructureInstance, hitGroupOffset) },
+        { "transform", {24, 48}, FIELD(PalAccelerationStructureInstance, transform) }
+    };
+
+    FieldInfo accelerationStructureBuildSizeFields[] = {
+        { "accelerationStructureSize", {0, 8}, FIELD(PalAccelerationStructureBuildSize, accelerationStructureSize) },
+        { "scratchBufferSize", {8, 8}, FIELD(PalAccelerationStructureBuildSize, scratchBufferSize) },
+        { "updateScratchBufferSize", {16, 8}, FIELD(PalAccelerationStructureBuildSize, updateScratchBufferSize) }
+    };
+
+    FieldInfo geometryDataTriangleFields[] = {
+        { "vertexBufferAddress", {0, 8}, FIELD(PalGeometryDataTriangle, vertexBufferAddress) },
+        { "indexBufferAddress", {8, 8}, FIELD(PalGeometryDataTriangle, indexBufferAddress) },
+        { "transformBufferAddress", {16, 8}, FIELD(PalGeometryDataTriangle, transformBufferAddress) },
+        { "vertexType", {24, 4}, FIELD(PalGeometryDataTriangle, vertexType) },
+        { "indexType", {28, 4}, FIELD(PalGeometryDataTriangle, indexType) },
+        { "vertexCount", {32, 4}, FIELD(PalGeometryDataTriangle, vertexCount) },
+        { "vertexStride", {36, 4}, FIELD(PalGeometryDataTriangle, vertexStride) }
+    };
+
+    FieldInfo geometryDataAABBSFields[] = {
+        { "bufferAddress", {0, 8}, FIELD(PalGeometryDataAABBS, bufferAddress) },
+        { "stride", {8, 8}, FIELD(PalGeometryDataAABBS, stride) }
+    };
+
+    FieldInfo geometryFields[] = {
+        { "data", {0, 8}, FIELD(PalGeometry, data) },
+        { "primitiveCount", {8, 8}, FIELD(PalGeometry, primitiveCount) },
+        { "flags", {16, 4}, FIELD(PalGeometry, flags) },
+        { "type", {20, 4}, FIELD(PalGeometry, type) },
+    };
+
+    FieldInfo accelerationStructureBuildInfoFields[] = {
+        { "dst", {0, 8}, FIELD(PalAccelerationStructureBuildInfo, dst) },
+        { "src", {8, 8}, FIELD(PalAccelerationStructureBuildInfo, src) },
+        { "geometries", {16, 8}, FIELD(PalAccelerationStructureBuildInfo, geometries) },
+        { "scratchBufferAddress", {24, 8}, FIELD(PalAccelerationStructureBuildInfo, scratchBufferAddress) },
+        { "instanceBufferAddress", {32, 8}, FIELD(PalAccelerationStructureBuildInfo, instanceBufferAddress) },
+        { "buildHints", {40, 4}, FIELD(PalAccelerationStructureBuildInfo, buildHints) },
+        { "type", {44, 4}, FIELD(PalAccelerationStructureBuildInfo, type) },
+        { "buildMode", {48, 4}, FIELD(PalAccelerationStructureBuildInfo, buildMode) },
+        { "count", {52, 4}, FIELD(PalAccelerationStructureBuildInfo, count) },
+    };
+
+    FieldInfo accelerationStructureCreateInfoFields[] = {
+        { "buffer", {0, 8}, FIELD(PalAccelerationStructureCreateInfo, buffer) },
+        { "offset", {8, 8}, FIELD(PalAccelerationStructureCreateInfo, offset) },
+        { "size", {16, 8}, FIELD(PalAccelerationStructureCreateInfo, size) },
+        { "type", {24, 4}, FIELD(PalAccelerationStructureCreateInfo, type) },
+        { "reserved", {28, 4}, FIELD(PalAccelerationStructureCreateInfo, reserved) }
+    };
+    // clang-format on
+
+    StructInfo accelerationStructureInstance = {0};
+    accelerationStructureInstance.name = "PalAccelerationStructureInstance";
+    accelerationStructureInstance.fields = accelerationStructureInstanceFields;
+    accelerationStructureInstance.fieldCount = ARRAY_SIZE(accelerationStructureInstanceFields);
+    accelerationStructureInstance.expected.alignof = 8;
+    accelerationStructureInstance.expected.size = 72;
+    accelerationStructureInstance.expected.padding = 0;
+    accelerationStructureInstance.actual = STRUCT(PalAccelerationStructureInstance);
+
+    StructInfo accelerationStructureBuildSize = {0};
+    accelerationStructureBuildSize.name = "PalAccelerationStructureBuildSize";
+    accelerationStructureBuildSize.fields = accelerationStructureBuildSizeFields;
+    accelerationStructureBuildSize.fieldCount = ARRAY_SIZE(accelerationStructureBuildSizeFields);
+    accelerationStructureBuildSize.expected.alignof = 8;
+    accelerationStructureBuildSize.expected.size = 24;
+    accelerationStructureBuildSize.expected.padding = 0;
+    accelerationStructureBuildSize.actual = STRUCT(PalAccelerationStructureBuildSize);
+
+    StructInfo geometryDataTriangle = {0};
+    geometryDataTriangle.name = "PalGeometryDataTriangle";
+    geometryDataTriangle.fields = geometryDataTriangleFields;
+    geometryDataTriangle.fieldCount = ARRAY_SIZE(geometryDataTriangleFields);
+    geometryDataTriangle.expected.alignof = 8;
+    geometryDataTriangle.expected.size = 40;
+    geometryDataTriangle.expected.padding = 0;
+    geometryDataTriangle.actual = STRUCT(PalGeometryDataTriangle);
+
+    StructInfo geometryDataAABBS = {0};
+    geometryDataAABBS.name = "PalGeometryDataAABBS";
+    geometryDataAABBS.fields = geometryDataAABBSFields;
+    geometryDataAABBS.fieldCount = ARRAY_SIZE(geometryDataAABBSFields);
+    geometryDataAABBS.expected.alignof = 8;
+    geometryDataAABBS.expected.size = 16;
+    geometryDataAABBS.expected.padding = 0;
+    geometryDataAABBS.actual = STRUCT(PalGeometryDataAABBS);
+
+    StructInfo geometry = {0};
+    geometry.name = "PalGeometry";
+    geometry.fields = geometryFields;
+    geometry.fieldCount = ARRAY_SIZE(geometryFields);
+    geometry.expected.alignof = 8;
+    geometry.expected.size = 24;
+    geometry.expected.padding = 0;
+    geometry.actual = STRUCT(PalGeometry);
+
+    StructInfo accelerationStructureBuildInfo = {0};
+    accelerationStructureBuildInfo.name = "PalAccelerationStructureBuildInfo";
+    accelerationStructureBuildInfo.fields = accelerationStructureBuildInfoFields;
+    accelerationStructureBuildInfo.fieldCount = ARRAY_SIZE(accelerationStructureBuildInfoFields);
+    accelerationStructureBuildInfo.expected.alignof = 8;
+    accelerationStructureBuildInfo.expected.size = 56;
+    accelerationStructureBuildInfo.expected.padding = 0;
+    accelerationStructureBuildInfo.actual = STRUCT(PalAccelerationStructureBuildInfo);
+
+    StructInfo accelerationStructureCreateInfo = {0};
+    accelerationStructureCreateInfo.name = "PalAccelerationStructureCreateInfo";
+    accelerationStructureCreateInfo.fields = accelerationStructureCreateInfoFields;
+    accelerationStructureCreateInfo.fieldCount = ARRAY_SIZE(accelerationStructureCreateInfoFields);
+    accelerationStructureCreateInfo.expected.alignof = 8;
+    accelerationStructureCreateInfo.expected.size = 32;
+    accelerationStructureCreateInfo.expected.padding = 0;
+    accelerationStructureCreateInfo.actual = STRUCT(PalAccelerationStructureCreateInfo);
+
+    PalBool status = checkABI(&accelerationStructureInstance, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&accelerationStructureBuildSize, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&geometryDataTriangle, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&geometryDataAABBS, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&geometry, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&accelerationStructureBuildInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&accelerationStructureCreateInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -738,6 +895,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = bufferDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = accelerationStructureDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
