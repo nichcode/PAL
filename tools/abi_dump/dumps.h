@@ -149,6 +149,6 @@ PalBool threadABIDump(PalBool verbose);
 PalBool systemABIDump(PalBool verbose);
 PalBool videoABIDump(PalBool verbose);
 PalBool openglABIDump(PalBool verbose);
-// PalBool graphicsABIDump(PalBool verbose);
+PalBool graphicsABIDump(PalBool verbose);
 
 #endif // _DUMPS_H

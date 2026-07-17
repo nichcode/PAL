@@ -114,10 +114,10 @@ int main(int argc, char** argv)
     }
 
     if (dumpFlags & DUMP_FLAG_GRAPHICS) {
-        // status = graphicsABIDump(verbose);
-        // if (status == PAL_FALSE) {
-        //     return -1;
-        // }
+        status = graphicsABIDump(verbose);
+        if (status == PAL_FALSE) {
+            return -1;
+        }
     }
 
     if (dumpFlags & DUMP_FLAG_VERSION) {

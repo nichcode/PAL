@@ -1562,9 +1562,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint32_t maxComputeQueues;            /**< Max compute queues that can b created.*/
-    uint32_t maxGraphicsQueues;           /**< Max graphics queues that can b created.*/
-    uint32_t maxCopyQueues;               /**< Max copy queues that can b created.*/
+    uint32_t maxComputeQueues;            /**< Max compute queues that can be created.*/
+    uint32_t maxGraphicsQueues;           /**< Max graphics queues that can be created.*/
+    uint32_t maxCopyQueues;               /**< Max copy queues that can be created.*/
     uint32_t maxColorAttachments;         /**< Max number of simultaneous color attachments.*/
     uint32_t maxUniformBufferSize;        /**< Max uniform buffer size in bytes.*/
     uint32_t maxStorageBufferSize;        /**< Max storage buffer size in bytes.*/
