@@ -864,6 +864,328 @@ static PalBool accelerationStructureDump(uint32_t flags)
     return checkABI(&accelerationStructureCreateInfo, flags);
 }
 
+static PalBool pipelineDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo vertexAttributeFields[] = {
+        { "semanticID", {0, 4}, FIELD(PalVertexAttribute, semanticID) },
+        { "type", {4, 4}, FIELD(PalVertexAttribute, type) }
+    };
+
+    FieldInfo vertexLayoutFields[] = {
+        { "attributes", {0, 8}, FIELD(PalVertexLayout, attributes) },
+        { "attributeCount", {8, 4}, FIELD(PalVertexLayout, attributeCount) },
+        { "type", {12, 4}, FIELD(PalVertexLayout, type) },
+        { "binding", {16, 4}, FIELD(PalVertexLayout, binding) },
+        { "reserved", {20, 4}, FIELD(PalVertexLayout, reserved) }
+    };
+
+    FieldInfo rasterizerStateFields[] = {
+        { "enableDepthClamp", {0, 4}, FIELD(PalRasterizerState, enableDepthClamp) },
+        { "enableDepthBias", {4, 4}, FIELD(PalRasterizerState, enableDepthBias) },
+        { "depthBiasConstant", {8, 4}, FIELD(PalRasterizerState, depthBiasConstant) },
+        { "depthBiasSlope", {12, 4}, FIELD(PalRasterizerState, depthBiasSlope) },
+        { "depthBiasClamp", {16, 4}, FIELD(PalRasterizerState, depthBiasClamp) },
+        { "polygonMode", {20, 4}, FIELD(PalRasterizerState, polygonMode) },
+        { "cullMode", {24, 4}, FIELD(PalRasterizerState, cullMode) },
+        { "frontFace", {28, 4}, FIELD(PalRasterizerState, frontFace) }
+    };
+
+    FieldInfo multisampleStateFields[] = {
+        { "sampleMask", {0, 8}, FIELD(PalMultisampleState, sampleMask) },
+        { "enableSampleShading", {8, 4}, FIELD(PalMultisampleState, enableSampleShading) },
+        { "enableAlphaToCoverage", {12, 4}, FIELD(PalMultisampleState, enableAlphaToCoverage) },
+        { "sampleCount", {16, 4}, FIELD(PalMultisampleState, sampleCount) },
+        { "minSampleShading", {20, 4}, FIELD(PalMultisampleState, minSampleShading) }
+    };
+
+    FieldInfo stencilOpStateFields[] = {
+        { "failOp", {0, 4}, FIELD(PalStencilOpState, failOp) },
+        { "passOp", {4, 4}, FIELD(PalStencilOpState, passOp) },
+        { "depthFailOp", {8, 4}, FIELD(PalStencilOpState, depthFailOp) },
+        { "compareOp", {12, 4}, FIELD(PalStencilOpState, compareOp) }
+    };
+
+    FieldInfo depthStencilStateFields[] = {
+        { "enableDepthTest", {0, 4}, FIELD(PalDepthStencilState, enableDepthTest) },
+        { "enableDepthWrite", {4, 4}, FIELD(PalDepthStencilState, enableDepthWrite) },
+        { "enableStencilTest", {8, 4}, FIELD(PalDepthStencilState, enableStencilTest) },
+        { "compareOp", {12, 4}, FIELD(PalDepthStencilState, compareOp) },
+        { "frontStencilOpState", {16, 16}, FIELD(PalDepthStencilState, frontStencilOpState) },
+        { "backStencilOpState", {32, 16}, FIELD(PalDepthStencilState, backStencilOpState) },
+    };
+
+    FieldInfo colorBlendAttachmentFields[] = {
+        { "enableBlend", {0, 4}, FIELD(PalColorBlendAttachment, enableBlend) },
+        { "colorWriteMask", {4, 4}, FIELD(PalColorBlendAttachment, colorWriteMask) },
+        { "dstColorBlendFactor", {8, 4}, FIELD(PalColorBlendAttachment, dstColorBlendFactor) },
+        { "srcColorBlendFactor", {12, 4}, FIELD(PalColorBlendAttachment, srcColorBlendFactor) },
+        { "colorBlendOp", {16, 4}, FIELD(PalColorBlendAttachment, colorBlendOp) },
+        { "dstAlphaBlendFactor", {20, 4}, FIELD(PalColorBlendAttachment, dstAlphaBlendFactor) },
+        { "srcAlphaBlendFactor", {24, 4}, FIELD(PalColorBlendAttachment, srcAlphaBlendFactor) },
+        { "alphaBlendOp", {28, 4}, FIELD(PalColorBlendAttachment, alphaBlendOp) }
+    };
+
+    FieldInfo fragmentShadingRateStateFields[] = {
+        { "rate", {0, 4}, FIELD(PalFragmentShadingRateState, rate) },
+        { "combinerOps", {4, 8}, FIELD(PalFragmentShadingRateState, combinerOps) }
+    };
+
+    FieldInfo pushConstantInfoFields[] = {
+        { "offset", {0, 4}, FIELD(PalPushConstantInfo, offset) },
+        { "size", {4, 4}, FIELD(PalPushConstantInfo, size) }
+    };
+
+    FieldInfo pipelineLayoutCreateInfoFields[] = {
+        { "descriptorSetLayouts", {0, 8}, FIELD(PalPipelineLayoutCreateInfo, descriptorSetLayouts) },
+        { "pushConstantInfo", {8, 8}, FIELD(PalPipelineLayoutCreateInfo, pushConstantInfo) },
+        { "descriptorSetLayoutCount", {16, 4}, FIELD(PalPipelineLayoutCreateInfo, descriptorSetLayoutCount) },
+        { "usePushConstant", {20, 4}, FIELD(PalPipelineLayoutCreateInfo, usePushConstant) }
+    };
+
+    FieldInfo graphicsPipelineCreateInfoFields[] = {
+        { "pipelineLayout", {0, 8}, FIELD(PalGraphicsPipelineCreateInfo, pipelineLayout) },
+        { "shaders", {8, 8}, FIELD(PalGraphicsPipelineCreateInfo, shaders) },
+        { "vertexLayouts", {16, 8}, FIELD(PalGraphicsPipelineCreateInfo, vertexLayouts) },
+        { "colorBlendAttachments", {24, 8}, FIELD(PalGraphicsPipelineCreateInfo, colorBlendAttachments) },
+        { "rasterizerState", {32, 8}, FIELD(PalGraphicsPipelineCreateInfo, rasterizerState) },
+        { "multisampleState", {40, 8}, FIELD(PalGraphicsPipelineCreateInfo, multisampleState) },
+        { "depthStencilState", {48, 8}, FIELD(PalGraphicsPipelineCreateInfo, depthStencilState) },
+        { "fragmentShadingRateState", {56, 8}, FIELD(PalGraphicsPipelineCreateInfo, fragmentShadingRateState) },
+        { "renderingLayout", {64, 8}, FIELD(PalGraphicsPipelineCreateInfo, renderingLayout) },
+        { "primitiveRestartEnable", {72, 4}, FIELD(PalGraphicsPipelineCreateInfo, primitiveRestartEnable) },
+        { "vertexLayoutCount", {76, 4}, FIELD(PalGraphicsPipelineCreateInfo, vertexLayoutCount) },
+        { "colorBlendAttachmentCount", {80, 4}, FIELD(PalGraphicsPipelineCreateInfo, colorBlendAttachmentCount) },
+        { "shaderCount", {84, 4}, FIELD(PalGraphicsPipelineCreateInfo, shaderCount) },
+        { "indexType", {88, 4}, FIELD(PalGraphicsPipelineCreateInfo, indexType) },
+        { "topology", {92, 4}, FIELD(PalGraphicsPipelineCreateInfo, topology) }
+    };
+
+    FieldInfo computePipelineCreateInfoFields[] = {
+        { "pipelineLayout", {0, 8}, FIELD(PalComputePipelineCreateInfo, pipelineLayout) },
+        { "computeShader", {8, 8}, FIELD(PalComputePipelineCreateInfo, computeShader) }
+    };
+
+    FieldInfo rayTracingShaderGroupCreateInfoFields[] = {
+        { "type", {0, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, type) },
+        { "anyHitShaderIndex", {4, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, anyHitShaderIndex) },
+        { "anyHitShaderEntryIndex", {8, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, anyHitShaderEntryIndex) },
+        { "closestHitShaderIndex", {12, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, closestHitShaderIndex) },
+        { "closestHitShaderEntryIndex", {16, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, closestHitShaderEntryIndex) },
+        { "generalShaderIndex", {20, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, generalShaderIndex) },
+        { "generalShaderEntryIndex", {24, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, generalShaderEntryIndex) },
+        { "intersectionShaderIndex", {28, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, intersectionShaderIndex) },
+        { "intersectionShaderEntryIndex", {32, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, intersectionShaderEntryIndex) },
+        { "maxDataSize", {36, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, maxDataSize) }
+    };
+
+    FieldInfo rayTracingPipelineCreateInfoFields[] = {
+        { "pipelineLayout", {0, 8}, FIELD(PalRayTracingPipelineCreateInfo, pipelineLayout) },
+        { "shaderGroups", {8, 8}, FIELD(PalRayTracingPipelineCreateInfo, shaderGroups) },
+        { "shaders", {16, 8}, FIELD(PalRayTracingPipelineCreateInfo, shaders) },
+        { "shaderGroupCount", {24, 4}, FIELD(PalRayTracingPipelineCreateInfo, shaderGroupCount) },
+        { "shaderCount", {28, 4}, FIELD(PalRayTracingPipelineCreateInfo, shaderCount) },
+        { "maxRecursionDepth", {32, 4}, FIELD(PalRayTracingPipelineCreateInfo, maxRecursionDepth) },
+        { "maxAttributeSize", {36, 4}, FIELD(PalRayTracingPipelineCreateInfo, maxAttributeSize) },
+        { "maxPayloadSize", {40, 4}, FIELD(PalRayTracingPipelineCreateInfo, maxPayloadSize) },
+        { "reserved", {44, 4}, FIELD(PalRayTracingPipelineCreateInfo, reserved) }
+    };
+    // clang-format on
+
+    StructInfo vertexAttribute = {0};
+    vertexAttribute.name = "PalVertexAttribute";
+    vertexAttribute.fields = vertexAttributeFields;
+    vertexAttribute.fieldCount = ARRAY_SIZE(vertexAttributeFields);
+    vertexAttribute.expected.alignof = 4;
+    vertexAttribute.expected.size = 8;
+    vertexAttribute.expected.padding = 0;
+    vertexAttribute.actual = STRUCT(PalVertexAttribute);
+
+    StructInfo vertexLayout = {0};
+    vertexLayout.name = "PalVertexLayout";
+    vertexLayout.fields = vertexLayoutFields;
+    vertexLayout.fieldCount = ARRAY_SIZE(vertexLayoutFields);
+    vertexLayout.expected.alignof = 8;
+    vertexLayout.expected.size = 24;
+    vertexLayout.expected.padding = 0;
+    vertexLayout.actual = STRUCT(PalVertexLayout);
+
+    StructInfo rasterizerState = {0};
+    rasterizerState.name = "PalRasterizerState";
+    rasterizerState.fields = rasterizerStateFields;
+    rasterizerState.fieldCount = ARRAY_SIZE(rasterizerStateFields);
+    rasterizerState.expected.alignof = 4;
+    rasterizerState.expected.size = 32;
+    rasterizerState.expected.padding = 0;
+    rasterizerState.actual = STRUCT(PalRasterizerState);
+
+    StructInfo multisampleState = {0};
+    multisampleState.name = "PalMultisampleState";
+    multisampleState.fields = multisampleStateFields;
+    multisampleState.fieldCount = ARRAY_SIZE(multisampleStateFields);
+    multisampleState.expected.alignof = 8;
+    multisampleState.expected.size = 24;
+    multisampleState.expected.padding = 0;
+    multisampleState.actual = STRUCT(PalMultisampleState);
+
+    StructInfo stencilOpState = {0};
+    stencilOpState.name = "PalStencilOpState";
+    stencilOpState.fields = stencilOpStateFields;
+    stencilOpState.fieldCount = ARRAY_SIZE(stencilOpStateFields);
+    stencilOpState.expected.alignof = 4;
+    stencilOpState.expected.size = 16;
+    stencilOpState.expected.padding = 0;
+    stencilOpState.actual = STRUCT(PalStencilOpState);
+
+    StructInfo depthStencilState = {0};
+    depthStencilState.name = "PalDepthStencilState";
+    depthStencilState.fields = depthStencilStateFields;
+    depthStencilState.fieldCount = ARRAY_SIZE(depthStencilStateFields);
+    depthStencilState.expected.alignof = 4;
+    depthStencilState.expected.size = 48;
+    depthStencilState.expected.padding = 0;
+    depthStencilState.actual = STRUCT(PalDepthStencilState);
+
+    StructInfo colorBlendAttachment = {0};
+    colorBlendAttachment.name = "PalColorBlendAttachment";
+    colorBlendAttachment.fields = colorBlendAttachmentFields;
+    colorBlendAttachment.fieldCount = ARRAY_SIZE(colorBlendAttachmentFields);
+    colorBlendAttachment.expected.alignof = 4;
+    colorBlendAttachment.expected.size = 32;
+    colorBlendAttachment.expected.padding = 0;
+    colorBlendAttachment.actual = STRUCT(PalColorBlendAttachment);
+
+    StructInfo fragmentShadingRateState = {0};
+    fragmentShadingRateState.name = "PalFragmentShadingRateState";
+    fragmentShadingRateState.fields = fragmentShadingRateStateFields;
+    fragmentShadingRateState.fieldCount = ARRAY_SIZE(fragmentShadingRateStateFields);
+    fragmentShadingRateState.expected.alignof = 4;
+    fragmentShadingRateState.expected.size = 12;
+    fragmentShadingRateState.expected.padding = 0;
+    fragmentShadingRateState.actual = STRUCT(PalFragmentShadingRateState);
+
+    StructInfo pushConstantInfo = {0};
+    pushConstantInfo.name = "PalPushConstantInfo";
+    pushConstantInfo.fields = pushConstantInfoFields;
+    pushConstantInfo.fieldCount = ARRAY_SIZE(pushConstantInfoFields);
+    pushConstantInfo.expected.alignof = 4;
+    pushConstantInfo.expected.size = 8;
+    pushConstantInfo.expected.padding = 0;
+    pushConstantInfo.actual = STRUCT(PalPushConstantInfo);
+
+    StructInfo pipelineLayoutCreateInfo = {0};
+    pipelineLayoutCreateInfo.name = "PalPipelineLayoutCreateInfo";
+    pipelineLayoutCreateInfo.fields = pipelineLayoutCreateInfoFields;
+    pipelineLayoutCreateInfo.fieldCount = ARRAY_SIZE(pipelineLayoutCreateInfoFields);
+    pipelineLayoutCreateInfo.expected.alignof = 8;
+    pipelineLayoutCreateInfo.expected.size = 24;
+    pipelineLayoutCreateInfo.expected.padding = 0;
+    pipelineLayoutCreateInfo.actual = STRUCT(PalPipelineLayoutCreateInfo);
+
+    StructInfo graphicsPipelineCreateInfo = {0};
+    graphicsPipelineCreateInfo.name = "PalGraphicsPipelineCreateInfo";
+    graphicsPipelineCreateInfo.fields = graphicsPipelineCreateInfoFields;
+    graphicsPipelineCreateInfo.fieldCount = ARRAY_SIZE(graphicsPipelineCreateInfoFields);
+    graphicsPipelineCreateInfo.expected.alignof = 8;
+    graphicsPipelineCreateInfo.expected.size = 96;
+    graphicsPipelineCreateInfo.expected.padding = 0;
+    graphicsPipelineCreateInfo.actual = STRUCT(PalGraphicsPipelineCreateInfo);
+
+    StructInfo computePipelineCreateInfo = {0};
+    computePipelineCreateInfo.name = "PalComputePipelineCreateInfo";
+    computePipelineCreateInfo.fields = computePipelineCreateInfoFields;
+    computePipelineCreateInfo.fieldCount = ARRAY_SIZE(computePipelineCreateInfoFields);
+    computePipelineCreateInfo.expected.alignof = 8;
+    computePipelineCreateInfo.expected.size = 16;
+    computePipelineCreateInfo.expected.padding = 0;
+    computePipelineCreateInfo.actual = STRUCT(PalComputePipelineCreateInfo);
+
+    StructInfo rayTracingShaderGroupCreateInfo = {0};
+    rayTracingShaderGroupCreateInfo.name = "PalRayTracingShaderGroupCreateInfo";
+    rayTracingShaderGroupCreateInfo.fields = rayTracingShaderGroupCreateInfoFields;
+    rayTracingShaderGroupCreateInfo.fieldCount = ARRAY_SIZE(rayTracingShaderGroupCreateInfoFields);
+    rayTracingShaderGroupCreateInfo.expected.alignof = 4;
+    rayTracingShaderGroupCreateInfo.expected.size = 40;
+    rayTracingShaderGroupCreateInfo.expected.padding = 0;
+    rayTracingShaderGroupCreateInfo.actual = STRUCT(PalRayTracingShaderGroupCreateInfo);
+
+    StructInfo rayTracingPipelineCreateInfo = {0};
+    rayTracingPipelineCreateInfo.name = "PalRayTracingPipelineCreateInfo";
+    rayTracingPipelineCreateInfo.fields = rayTracingPipelineCreateInfoFields;
+    rayTracingPipelineCreateInfo.fieldCount = ARRAY_SIZE(rayTracingPipelineCreateInfoFields);
+    rayTracingPipelineCreateInfo.expected.alignof = 8;
+    rayTracingPipelineCreateInfo.expected.size = 48;
+    rayTracingPipelineCreateInfo.expected.padding = 0;
+    rayTracingPipelineCreateInfo.actual = STRUCT(PalRayTracingPipelineCreateInfo);
+
+    PalBool status = checkABI(&vertexAttribute, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&vertexLayout, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&rasterizerState, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&multisampleState, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&stencilOpState, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&depthStencilState, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&colorBlendAttachment, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&fragmentShadingRateState, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&pushConstantInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&pipelineLayoutCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&graphicsPipelineCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&computePipelineCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&rayTracingShaderGroupCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&rayTracingPipelineCreateInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -900,6 +1222,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = accelerationStructureDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = pipelineDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }

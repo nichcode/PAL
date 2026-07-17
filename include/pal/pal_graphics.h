@@ -1994,9 +1994,10 @@ typedef struct {
  */
 typedef struct {
     PalVertexAttribute* attributes; /**< Vertex attributes.*/
-    uint64_t attributeCount;        /**< Number of vertex attributes.*/
+    uint32_t attributeCount;        /**< Number of vertex attributes.*/
     PalVertexLayoutType type;       /**< (eg. `PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX`).*/
     uint32_t binding;               /**< Vertex buffer binding slot.*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalVertexLayout;
 
 /**
@@ -2046,7 +2047,7 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t sampleMask;           /**< Set to `nullptr` to use default.*/
+    uint64_t sampleMask;           /**< Set to 0 to use default.*/
     PalBool enableSampleShading;   /**< `PAL_TRUE` to enable sample shading.*/
     PalBool enableAlphaToCoverage; /**< `PAL_TRUE` to enable alpha to coverage.*/
     PalSampleCount sampleCount;    /**< (eg. `PAL_SAMPLE_COUNT_4`).*/
@@ -2097,13 +2098,13 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalColorMask colorWriteMask;        /**< (eg. `PAL_COLOR_MASK_RED` | `PAL_COLOR_MASK_RED`).*/
     PalBool enableBlend;                /**< `PAL_TRUE` to enable blending.*/
-    PalBlendFactor srcColorBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_SRC_ALPHA`).*/
+    PalColorMask colorWriteMask;        /**< (eg. `PAL_COLOR_MASK_RED` | `PAL_COLOR_MASK_RED`).*/
     PalBlendFactor dstColorBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA`).*/
+    PalBlendFactor srcColorBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_SRC_ALPHA`).*/
     PalBlendOp colorBlendOp;            /**< (eg. `PAL_BLEND_OP_ADD`).*/
-    PalBlendFactor srcAlphaBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_SRC_COLOR`).*/
     PalBlendFactor dstAlphaBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_ONE_MINUS_DST_COLOR`).*/
+    PalBlendFactor srcAlphaBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_SRC_COLOR`).*/
     PalBlendOp alphaBlendOp;            /**< (eg. `PAL_BLEND_OP_SUBTRACT`).*/
 } PalColorBlendAttachment;
 
@@ -2642,7 +2643,7 @@ typedef struct {
     uint32_t colorBlendAttachmentCount; /**< Number of color attachments.*/
     uint32_t shaderCount;               /**< Number of shaders.*/
     PalIndexType indexType; /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
-    PalPrimitiveTopology topology;
+    PalPrimitiveTopology topology; /**< (eg. `PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST`).*/
 } PalGraphicsPipelineCreateInfo;
 
 /**
@@ -2693,11 +2694,12 @@ typedef struct {
     PalPipelineLayout* pipelineLayout;                /**< Pipeline layout.*/
     PalRayTracingShaderGroupCreateInfo* shaderGroups; /**< Shader groups.*/
     PalShader** shaders;                              /**< Shaders.*/
-    uint64_t shaderGroupCount;                        /**< Number of shader groups.*/
+    uint32_t shaderGroupCount;                        /**< Number of shader groups.*/
     uint32_t shaderCount;                             /**< Number of shaders.*/
     uint32_t maxRecursionDepth;                       /**< Max number of ray recursion.*/
     uint32_t maxAttributeSize;                        /**< Max attributes size in bytes.*/
     uint32_t maxPayloadSize;                          /**< Max payload size in bytes.*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalRayTracingPipelineCreateInfo;
 
 /**
