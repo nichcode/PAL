@@ -254,6 +254,19 @@ static PalBool deviceDump(uint32_t flags)
         { "supportedMemoryTypes", {24, 4}, FIELD(PalMemoryRequirements, supportedMemoryTypes) },
         { "reserved", {28, 4}, FIELD(PalMemoryRequirements, reserved) }
     };
+
+    FieldInfo shaderEntryInfoFields[] = {
+        { "entryName", {0, 8}, FIELD(PalShaderEntryInfo, entryName) },
+        { "stage", {8, 4}, FIELD(PalShaderEntryInfo, stage) },
+        { "patchControlPoints", {12, 4}, FIELD(PalShaderEntryInfo, patchControlPoints) }
+    };
+
+    FieldInfo shaderCreateInfoFields[] = {
+        { "bytecode", {0, 8}, FIELD(PalShaderCreateInfo, bytecode) },
+        { "entries", {8, 8}, FIELD(PalShaderCreateInfo, entries) },
+        { "bytecodeSize", {16, 4}, FIELD(PalShaderCreateInfo, bytecodeSize) },
+        { "entryCount", {20, 4}, FIELD(PalShaderCreateInfo, entryCount) }
+    };
     // clang-format on
 
     StructInfo samplerAnisotropyCap = {0};
@@ -337,6 +350,24 @@ static PalBool deviceDump(uint32_t flags)
     memoryRequirement.expected.padding = 0;
     memoryRequirement.actual = STRUCT(PalMemoryRequirements);
 
+    StructInfo shaderEntryInfo = {0};
+    shaderEntryInfo.name = "PalShaderEntryInfo";
+    shaderEntryInfo.fields = shaderEntryInfoFields;
+    shaderEntryInfo.fieldCount = ARRAY_SIZE(shaderEntryInfoFields);
+    shaderEntryInfo.expected.alignof = 8;
+    shaderEntryInfo.expected.size = 16;
+    shaderEntryInfo.expected.padding = 0;
+    shaderEntryInfo.actual = STRUCT(PalShaderEntryInfo);
+
+    StructInfo shaderCreateInfo = {0};
+    shaderCreateInfo.name = "PalShaderCreateInfo";
+    shaderCreateInfo.fields = shaderCreateInfoFields;
+    shaderCreateInfo.fieldCount = ARRAY_SIZE(shaderCreateInfoFields);
+    shaderCreateInfo.expected.alignof = 8;
+    shaderCreateInfo.expected.size = 24;
+    shaderCreateInfo.expected.padding = 0;
+    shaderCreateInfo.actual = STRUCT(PalShaderCreateInfo);
+
     PalBool status = checkABI(&samplerAnisotropyCap, flags);
     if (status == PAL_FALSE) {
         return status;
@@ -377,7 +408,17 @@ static PalBool deviceDump(uint32_t flags)
         return status;
     }
 
-    return checkABI(&memoryRequirement, flags);
+    status = checkABI(&memoryRequirement, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&shaderEntryInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&shaderCreateInfo, flags);
 }
 
 static PalBool swapchainDump(uint32_t flags)
@@ -665,6 +706,27 @@ static PalBool bufferDump(uint32_t flags)
         { "usages", {8, 4}, FIELD(PalBufferCreateInfo, usages) },
         { "memoryUsage", {12, 4}, FIELD(PalBufferCreateInfo, memoryUsage) }
     };
+
+    FieldInfo drawIndirectDataFields[] = {
+        { "vertexCount", {0, 4}, FIELD(PalDrawIndirectData, vertexCount) },
+        { "instanceCount", {4, 4}, FIELD(PalDrawIndirectData, instanceCount) },
+        { "firstVertex", {8, 4}, FIELD(PalDrawIndirectData, firstVertex) },
+        { "firstInstance", {12, 4}, FIELD(PalDrawIndirectData, firstInstance) }
+    };
+
+    FieldInfo drawIndexedIndirectDataFields[] = {
+        { "indexCount", {0, 4}, FIELD(PalDrawIndexedIndirectData, indexCount) },
+        { "instanceCount", {4, 4}, FIELD(PalDrawIndexedIndirectData, instanceCount) },
+        { "firstIndex", {8, 4}, FIELD(PalDrawIndexedIndirectData, firstIndex) },
+        { "vertexOffset", {12, 4}, FIELD(PalDrawIndexedIndirectData, vertexOffset) },
+        { "firstInstance", {16, 4}, FIELD(PalDrawIndexedIndirectData, firstInstance) }
+    };
+
+    FieldInfo dispatchIndirectDataFields[] = {
+        { "groupCountXOrWidth", {0, 4}, FIELD(PalDispatchIndirectData, groupCountXOrWidth) },
+        { "groupCountXOrHeight", {4, 4}, FIELD(PalDispatchIndirectData, groupCountXOrHeight) },
+        { "groupCountXOrDepth", {8, 4}, FIELD(PalDispatchIndirectData, groupCountXOrDepth) }
+    };
     // clang-format on
 
     StructInfo stagingRequirement = {0};
@@ -694,6 +756,33 @@ static PalBool bufferDump(uint32_t flags)
     bufferCreateInfo.expected.padding = 0;
     bufferCreateInfo.actual = STRUCT(PalBufferCreateInfo);
 
+    StructInfo drawIndirectData = {0};
+    drawIndirectData.name = "PalDrawIndirectData";
+    drawIndirectData.fields = drawIndirectDataFields;
+    drawIndirectData.fieldCount = ARRAY_SIZE(drawIndirectDataFields);
+    drawIndirectData.expected.alignof = 4;
+    drawIndirectData.expected.size = 16;
+    drawIndirectData.expected.padding = 0;
+    drawIndirectData.actual = STRUCT(PalDrawIndirectData);
+
+    StructInfo drawIndexedIndirectData = {0};
+    drawIndexedIndirectData.name = "PalDrawIndexedIndirectData";
+    drawIndexedIndirectData.fields = drawIndexedIndirectDataFields;
+    drawIndexedIndirectData.fieldCount = ARRAY_SIZE(drawIndexedIndirectDataFields);
+    drawIndexedIndirectData.expected.alignof = 4;
+    drawIndexedIndirectData.expected.size = 20;
+    drawIndexedIndirectData.expected.padding = 0;
+    drawIndexedIndirectData.actual = STRUCT(PalDrawIndexedIndirectData);
+
+    StructInfo dispatchIndirectData = {0};
+    dispatchIndirectData.name = "PalDispatchIndirectData";
+    dispatchIndirectData.fields = dispatchIndirectDataFields;
+    dispatchIndirectData.fieldCount = ARRAY_SIZE(dispatchIndirectDataFields);
+    dispatchIndirectData.expected.alignof = 4;
+    dispatchIndirectData.expected.size = 12;
+    dispatchIndirectData.expected.padding = 0;
+    dispatchIndirectData.actual = STRUCT(PalDispatchIndirectData);
+
     PalBool status = checkABI(&stagingRequirement, flags);
     if (status == PAL_FALSE) {
         return status;
@@ -704,7 +793,22 @@ static PalBool bufferDump(uint32_t flags)
         return status;
     }
 
-    return checkABI(&bufferCreateInfo, flags);
+    status = checkABI(&bufferCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&drawIndirectData, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&drawIndexedIndirectData, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&dispatchIndirectData, flags);
 }
 
 static PalBool accelerationStructureDump(uint32_t flags)
@@ -1412,6 +1516,33 @@ static PalBool sbtDump(uint32_t flags)
     return checkABI(&shaderBindingTableCreateInfo, flags);
 }
 
+static PalBool commandPoolDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo commandBufferSubmitInfoFields[] = {
+        { "waitValue", {0, 8}, FIELD(PalCommandBufferSubmitInfo, waitValue) },
+        { "signalValue", {8, 8}, FIELD(PalCommandBufferSubmitInfo, signalValue) },
+        { "cmdBuffer", {16, 8}, FIELD(PalCommandBufferSubmitInfo, cmdBuffer) },
+        { "waitSemaphore", {24, 8}, FIELD(PalCommandBufferSubmitInfo, waitSemaphore) },
+        { "signalSemaphore", {32, 8}, FIELD(PalCommandBufferSubmitInfo, signalSemaphore) },
+        { "fence", {40, 8}, FIELD(PalCommandBufferSubmitInfo, fence) },
+        { "waitStages", {48, 4}, FIELD(PalCommandBufferSubmitInfo, waitStages) },
+        { "signalStages", {52, 4}, FIELD(PalCommandBufferSubmitInfo, signalStages) }
+    };
+    // clang-format on
+
+    StructInfo commandBufferSubmitInfo = {0};
+    commandBufferSubmitInfo.name = "PalCommandBufferSubmitInfo";
+    commandBufferSubmitInfo.fields = commandBufferSubmitInfoFields;
+    commandBufferSubmitInfo.fieldCount = ARRAY_SIZE(commandBufferSubmitInfoFields);
+    commandBufferSubmitInfo.expected.alignof = 8;
+    commandBufferSubmitInfo.expected.size = 56;
+    commandBufferSubmitInfo.expected.padding = 0;
+    commandBufferSubmitInfo.actual = STRUCT(PalCommandBufferSubmitInfo);
+
+    return checkABI(&commandBufferSubmitInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -1463,6 +1594,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = sbtDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = commandPoolDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
