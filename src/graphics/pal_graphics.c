@@ -118,12 +118,12 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         !vtable1->destroyCommandPool                            ||
         !vtable1->allocateCommandBuffer                         ||
         !vtable1->freeCommandBuffer                             ||
+        !vtable1->resetCommandBuffer                            ||
         !vtable1->submitCommandBuffer                           ||
 
         // command recording
         !vtable1->cmdBegin                                      ||
         !vtable1->cmdEnd                                        ||
-        !vtable1->resetCommandBuffer                            ||
         !vtable1->cmdExecuteCommandBuffer                       ||
         !vtable1->cmdBeginRendering                             ||
         !vtable1->cmdEndRendering                               ||
@@ -148,9 +148,7 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         !vtable1->createBuffer                                  ||
         !vtable1->destroyBuffer                                 ||
         !vtable1->getBufferMemoryRequirements                   ||
-        !vtable1->computeInstanceStagingSize                    ||
         !vtable1->computeImageStagingRequirements               ||
-        !vtable1->writeInstanceStaging                          ||
         !vtable1->writeImageStaging                             ||
         !vtable1->bindBufferMemory                              ||
         !vtable1->mapBuffer                                     ||
@@ -172,7 +170,6 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         // pipeline
         !vtable1->createGraphicsPipeline                        ||
         !vtable1->createComputePipeline                         ||
-        !vtable1->createRayTracingPipeline                      ||
         !vtable1->destroyPipeline) {
         return PAL_FALSE;
     }

@@ -562,8 +562,6 @@
 
 /**
  * Required implementations:
- * - palUnpackUint32()
- * - palUnpackPointer()
  * - enumerateAdapters
  * - getAdapterInfo
  * - getAdapterCapabilities
@@ -603,9 +601,9 @@
  * - allocateCommandBuffer
  * - freeCommandBuffer
  * - submitCommandBuffer
+ * - resetCommandBuffer
  * - cmdBegin
  * - cmdEnd
- * - resetCommandBuffer
  * - cmdExecuteCommandBuffer
  * - cmdBeginRendering
  * - cmdEndRendering
@@ -628,9 +626,7 @@
  * - createBuffer
  * - destroyBuffer
  * - getBufferMemoryRequirements
- * - computeInstanceStagingSize
  * - computeImageStagingRequirements
- * - writeInstanceStaging
  * - writeImageStaging
  * - bindBufferMemory
  * - mapBuffer
@@ -646,7 +642,6 @@
  * - destroyPipelineLayout
  * - createGraphicsPipeline
  * - createComputePipeline
- * - createRayTracingPipeline
  * - destroyPipeline
  */
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
@@ -6500,8 +6495,13 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
 /**
  * @brief Compute size for an acceleration structure instance buffer.
  *
- * The graphics system must be initialized before this call. This does not allocate memory
- * for the buffer. This function must is required for all acceleration structure instance buffers.
+ * The graphics system must be initialized before this call. 
+ * 
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
+ * Otherwise behavior is undefined.
+ * 
+ * This does not allocate memory for the buffer. This function must is required for all 
+ * acceleration structure instance buffers.
  *
  * @param[in] device The device to use.
  * @param[in] instanceCount Number of instances the instance buffer will hold.
@@ -6548,6 +6548,9 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  * @brief Write data to an instance staging buffer.
  *
  * The graphics system must be initialized before this call.
+ * 
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
+ * Otherwise behavior is undefined.
  *
  * @param[in] device The device to use.
  * @param[in] instanceCount Number of instances.
