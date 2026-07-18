@@ -1439,7 +1439,7 @@ typedef uint32_t PalPipelineStages;
  *
  * @since 2.0
  */
-typedef uint64_t PalGraphicsBackendVtableVersion;
+typedef uint32_t PalGraphicsBackendVtableVersion;
 
 /**
  * @typedef PalDebugCallback
@@ -2600,9 +2600,10 @@ typedef struct {
  */
 typedef struct {
     PalDescriptorPoolBindingSize* bindingSizes; /**< Binding sizes.*/
-    uint64_t bindingSizeCount;                  /**< Number of bindings sizes.*/
+    uint32_t bindingSizeCount;                  /**< Number of bindings sizes.*/
     uint32_t maxDescriptorSets; /**< Maximum number of descriptor sets that can be allocated.*/
     PalDescriptorIndexingFlags flags; /**< See `PalDescriptorIndexingFlags`.*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalDescriptorPoolCreateInfo;
 
 /**
@@ -2713,7 +2714,8 @@ typedef struct {
 typedef struct {
     PalShaderBindingTableRecordInfo* records; /**< Shader binding table records.*/
     PalPipeline* rayTracingPipeline;          /**< Ray tracing pipeline.*/
-    uint64_t recordCount;                     /**< Number of shader binding table records.*/
+    uint32_t recordCount;                     /**< Number of shader binding table records.*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalShaderBindingTableCreateInfo;
 
 /**
@@ -2727,6 +2729,7 @@ typedef struct {
 typedef struct {
     const void* vtable;                      /**< Pointer to the backend vtable.*/
     PalGraphicsBackendVtableVersion version; /**< (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`).*/
+    uint32_t reserved; /**< Must be set to 0.*/
 } PalGraphicsBackendInfo;
 
 /**

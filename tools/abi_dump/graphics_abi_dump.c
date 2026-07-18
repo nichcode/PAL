@@ -1186,6 +1186,189 @@ static PalBool pipelineDump(uint32_t flags)
     return checkABI(&rayTracingPipelineCreateInfo, flags);
 }
 
+static PalBool descriptorDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo descriptorSetLayoutBindingFields[] = {
+        { "descriptorCount", {0, 4}, FIELD(PalDescriptorSetLayoutBinding, descriptorCount) },
+        { "descriptorType", {4, 4}, FIELD(PalDescriptorSetLayoutBinding, descriptorType) }
+    };
+
+    FieldInfo descriptorPoolBindingSizeFields[] = {
+        { "bindingCount", {0, 4}, FIELD(PalDescriptorPoolBindingSize, bindingCount) },
+        { "descriptorType", {4, 4}, FIELD(PalDescriptorPoolBindingSize, descriptorType) }
+    };
+
+    FieldInfo descriptorBufferInfoFields[] = {
+        { "buffer", {0, 8}, FIELD(PalDescriptorBufferInfo, buffer) },
+        { "offset", {8, 8}, FIELD(PalDescriptorBufferInfo, offset) },
+        { "size", {16, 8}, FIELD(PalDescriptorBufferInfo, size) },
+        { "stride", {24, 8}, FIELD(PalDescriptorBufferInfo, stride) }
+    };
+
+    FieldInfo descriptorImageViewInfoFields[] = {
+        { "imageView", {0, 8}, FIELD(PalDescriptorImageViewInfo, imageView) }
+    };
+
+    FieldInfo descriptorSamplerInfoFields[] = {
+        { "sampler", {0, 8}, FIELD(PalDescriptorSamplerInfo, sampler) }
+    };
+
+    FieldInfo descriptorTLASInfoFields[] = {
+        { "tlas", {0, 8}, FIELD(PalDescriptorTLASInfo, tlas) }
+    };
+
+    FieldInfo descriptorSetWriteInfoFields[] = {
+        { "descriptorSet", {0, 8}, FIELD(PalDescriptorSetWriteInfo, descriptorSet) },
+        { "bufferInfos", {8, 8}, FIELD(PalDescriptorSetWriteInfo, bufferInfos) },
+        { "imageViewInfos", {16, 8}, FIELD(PalDescriptorSetWriteInfo, imageViewInfos) },
+        { "samplerInfos", {24, 8}, FIELD(PalDescriptorSetWriteInfo, samplerInfos) },
+        { "tlasInfos", {32, 8}, FIELD(PalDescriptorSetWriteInfo, tlasInfos) },
+        { "descriptorType", {40, 4}, FIELD(PalDescriptorSetWriteInfo, descriptorType) },
+        { "layoutBindingIndex", {44, 4}, FIELD(PalDescriptorSetWriteInfo, layoutBindingIndex) },
+        { "arrayElement", {48, 4}, FIELD(PalDescriptorSetWriteInfo, arrayElement) },
+        { "descriptorCount", {52, 4}, FIELD(PalDescriptorSetWriteInfo, descriptorCount) }
+    };
+
+    FieldInfo descriptorSetLayoutCreateInfoFields[] = {
+        { "bindings", {0, 8}, FIELD(PalDescriptorSetLayoutCreateInfo, bindings) },
+        { "flags", {8, 4}, FIELD(PalDescriptorSetLayoutCreateInfo, flags) },
+        { "bindingCount", {12, 4}, FIELD(PalDescriptorSetLayoutCreateInfo, bindingCount) }
+    };
+
+    FieldInfo descriptorPoolCreateInfoFields[] = {
+        { "bindingSizes", {0, 8}, FIELD(PalDescriptorPoolCreateInfo, bindingSizes) },
+        { "bindingSizeCount", {8, 4}, FIELD(PalDescriptorPoolCreateInfo, bindingSizeCount) },
+        { "maxDescriptorSets", {12, 4}, FIELD(PalDescriptorPoolCreateInfo, maxDescriptorSets) },
+        { "flags", {16, 4}, FIELD(PalDescriptorPoolCreateInfo, flags) },
+        { "reserved", {20, 4}, FIELD(PalDescriptorPoolCreateInfo, reserved) }
+    };
+    // clang-format on
+
+    StructInfo descriptorSetLayoutBinding = {0};
+    descriptorSetLayoutBinding.name = "PalDescriptorSetLayoutBinding";
+    descriptorSetLayoutBinding.fields = descriptorSetLayoutBindingFields;
+    descriptorSetLayoutBinding.fieldCount = ARRAY_SIZE(descriptorSetLayoutBindingFields);
+    descriptorSetLayoutBinding.expected.alignof = 4;
+    descriptorSetLayoutBinding.expected.size = 8;
+    descriptorSetLayoutBinding.expected.padding = 0;
+    descriptorSetLayoutBinding.actual = STRUCT(PalDescriptorSetLayoutBinding);
+
+    StructInfo descriptorPoolBindingSize = {0};
+    descriptorPoolBindingSize.name = "PalDescriptorPoolBindingSize";
+    descriptorPoolBindingSize.fields = descriptorPoolBindingSizeFields;
+    descriptorPoolBindingSize.fieldCount = ARRAY_SIZE(descriptorPoolBindingSizeFields);
+    descriptorPoolBindingSize.expected.alignof = 4;
+    descriptorPoolBindingSize.expected.size = 8;
+    descriptorPoolBindingSize.expected.padding = 0;
+    descriptorPoolBindingSize.actual = STRUCT(PalDescriptorPoolBindingSize);
+
+    StructInfo descriptorBufferInfo = {0};
+    descriptorBufferInfo.name = "PalDescriptorBufferInfo";
+    descriptorBufferInfo.fields = descriptorBufferInfoFields;
+    descriptorBufferInfo.fieldCount = ARRAY_SIZE(descriptorBufferInfoFields);
+    descriptorBufferInfo.expected.alignof = 8;
+    descriptorBufferInfo.expected.size = 32;
+    descriptorBufferInfo.expected.padding = 0;
+    descriptorBufferInfo.actual = STRUCT(PalDescriptorBufferInfo);
+
+    StructInfo descriptorImageViewInfo = {0};
+    descriptorImageViewInfo.name = "PalDescriptorImageViewInfo";
+    descriptorImageViewInfo.fields = descriptorImageViewInfoFields;
+    descriptorImageViewInfo.fieldCount = ARRAY_SIZE(descriptorImageViewInfoFields);
+    descriptorImageViewInfo.expected.alignof = 8;
+    descriptorImageViewInfo.expected.size = 8;
+    descriptorImageViewInfo.expected.padding = 0;
+    descriptorImageViewInfo.actual = STRUCT(PalDescriptorImageViewInfo);
+
+    StructInfo descriptorSamplerInfo = {0};
+    descriptorSamplerInfo.name = "PalDescriptorSamplerInfo";
+    descriptorSamplerInfo.fields = descriptorSamplerInfoFields;
+    descriptorSamplerInfo.fieldCount = ARRAY_SIZE(descriptorSamplerInfoFields);
+    descriptorSamplerInfo.expected.alignof = 8;
+    descriptorSamplerInfo.expected.size = 8;
+    descriptorSamplerInfo.expected.padding = 0;
+    descriptorSamplerInfo.actual = STRUCT(PalDescriptorSamplerInfo);
+
+    StructInfo descriptorTLASInfo = {0};
+    descriptorTLASInfo.name = "PalDescriptorTLASInfo";
+    descriptorTLASInfo.fields = descriptorSamplerInfoFields;
+    descriptorTLASInfo.fieldCount = ARRAY_SIZE(descriptorSamplerInfoFields);
+    descriptorTLASInfo.expected.alignof = 8;
+    descriptorTLASInfo.expected.size = 8;
+    descriptorTLASInfo.expected.padding = 0;
+    descriptorTLASInfo.actual = STRUCT(PalDescriptorTLASInfo);
+
+    StructInfo descriptorSetWriteInfo = {0};
+    descriptorSetWriteInfo.name = "PalDescriptorSetWriteInfo";
+    descriptorSetWriteInfo.fields = descriptorSetWriteInfoFields;
+    descriptorSetWriteInfo.fieldCount = ARRAY_SIZE(descriptorSetWriteInfoFields);
+    descriptorSetWriteInfo.expected.alignof = 8;
+    descriptorSetWriteInfo.expected.size = 56;
+    descriptorSetWriteInfo.expected.padding = 0;
+    descriptorSetWriteInfo.actual = STRUCT(PalDescriptorSetWriteInfo);
+
+    StructInfo descriptorSetLayoutCreateInfo = {0};
+    descriptorSetLayoutCreateInfo.name = "PalDescriptorSetLayoutCreateInfo";
+    descriptorSetLayoutCreateInfo.fields = descriptorSetLayoutCreateInfoFields;
+    descriptorSetLayoutCreateInfo.fieldCount = ARRAY_SIZE(descriptorSetLayoutCreateInfoFields);
+    descriptorSetLayoutCreateInfo.expected.alignof = 8;
+    descriptorSetLayoutCreateInfo.expected.size = 16;
+    descriptorSetLayoutCreateInfo.expected.padding = 0;
+    descriptorSetLayoutCreateInfo.actual = STRUCT(PalDescriptorSetLayoutCreateInfo);
+
+    StructInfo descriptorPoolCreateInfo = {0};
+    descriptorPoolCreateInfo.name = "PalDescriptorPoolCreateInfo";
+    descriptorPoolCreateInfo.fields = descriptorPoolCreateInfoFields;
+    descriptorPoolCreateInfo.fieldCount = ARRAY_SIZE(descriptorPoolCreateInfoFields);
+    descriptorPoolCreateInfo.expected.alignof = 8;
+    descriptorPoolCreateInfo.expected.size = 24;
+    descriptorPoolCreateInfo.expected.padding = 0;
+    descriptorPoolCreateInfo.actual = STRUCT(PalDescriptorPoolCreateInfo);
+
+    PalBool status = checkABI(&descriptorSetLayoutBinding, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorPoolBindingSize, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorBufferInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorImageViewInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorSamplerInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorTLASInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorSetWriteInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&descriptorSetLayoutCreateInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&descriptorPoolCreateInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -1227,6 +1410,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = pipelineDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = descriptorDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
