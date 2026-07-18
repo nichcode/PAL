@@ -1553,7 +1553,54 @@ PalBool graphicsABIDump(uint32_t flags)
         palLog(nullptr, "");
     }
 
-    PalBool status = adapterDump(flags);
+    // clang-format off
+    FieldInfo graphicsDebuggerFields[] = {
+        { "userData", {0, 8}, FIELD(PalGraphicsDebugger, userData) },
+        { "callback", {8, 8}, FIELD(PalGraphicsDebugger, callback) },
+        { "denyGeneral", {16, 4}, FIELD(PalGraphicsDebugger, denyGeneral) },
+        { "denyValidation", {20, 4}, FIELD(PalGraphicsDebugger, denyValidation) },
+        { "denyPerformance", {24, 4}, FIELD(PalGraphicsDebugger, denyPerformance) },
+        { "denyInfoSeverity", {28, 4}, FIELD(PalGraphicsDebugger, denyInfoSeverity) },
+        { "denyWarningSeverity", {32, 4}, FIELD(PalGraphicsDebugger, denyWarningSeverity) },
+        { "denyErrorSeverity", {36, 4}, FIELD(PalGraphicsDebugger, denyErrorSeverity) }
+    };
+
+    FieldInfo graphicsBackendInfoFields[] = {
+        { "vtable", {0, 8}, FIELD(PalGraphicsBackendInfo, vtable) },
+        { "version", {8, 4}, FIELD(PalGraphicsBackendInfo, version) },
+        { "reserved", {12, 4}, FIELD(PalGraphicsBackendInfo, reserved) }
+    };
+    // clang-format on
+
+    StructInfo graphicsDebugger = {0};
+    graphicsDebugger.name = "PalGraphicsDebugger";
+    graphicsDebugger.fields = graphicsDebuggerFields;
+    graphicsDebugger.fieldCount = ARRAY_SIZE(graphicsDebuggerFields);
+    graphicsDebugger.expected.alignof = 8;
+    graphicsDebugger.expected.size = 40;
+    graphicsDebugger.expected.padding = 0;
+    graphicsDebugger.actual = STRUCT(PalGraphicsDebugger);
+
+    StructInfo graphicsBackendInfo = {0};
+    graphicsBackendInfo.name = "PalGraphicsBackendInfo";
+    graphicsBackendInfo.fields = graphicsBackendInfoFields;
+    graphicsBackendInfo.fieldCount = ARRAY_SIZE(graphicsBackendInfoFields);
+    graphicsBackendInfo.expected.alignof = 8;
+    graphicsBackendInfo.expected.size = 16;
+    graphicsBackendInfo.expected.padding = 0;
+    graphicsBackendInfo.actual = STRUCT(PalGraphicsBackendInfo);
+
+    PalBool status = checkABI(&graphicsDebugger, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&graphicsBackendInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = adapterDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
