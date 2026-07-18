@@ -1369,6 +1369,49 @@ static PalBool descriptorDump(uint32_t flags)
     return checkABI(&descriptorPoolCreateInfo, flags);
 }
 
+static PalBool sbtDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo shaderBindingTableRecordInfoFields[] = {
+        { "localData", {0, 8}, FIELD(PalShaderBindingTableRecordInfo, localData) },
+        { "groupIndex", {8, 4}, FIELD(PalShaderBindingTableRecordInfo, groupIndex) },
+        { "localDataSize", {12, 4}, FIELD(PalShaderBindingTableRecordInfo, localDataSize) }
+    };
+
+    FieldInfo shaderBindingTableCreateInfoFields[] = {
+        { "records", {0, 8}, FIELD(PalShaderBindingTableCreateInfo, records) },
+        { "rayTracingPipeline", {8, 8}, FIELD(PalShaderBindingTableCreateInfo, rayTracingPipeline) },
+        { "recordCount", {16, 4}, FIELD(PalShaderBindingTableCreateInfo, recordCount) },
+        { "reserved", {20, 4}, FIELD(PalShaderBindingTableCreateInfo, reserved) }
+    };
+    // clang-format on
+
+    StructInfo shaderBindingTableRecordInfo = {0};
+    shaderBindingTableRecordInfo.name = "PalShaderBindingTableRecordInfo";
+    shaderBindingTableRecordInfo.fields = shaderBindingTableRecordInfoFields;
+    shaderBindingTableRecordInfo.fieldCount = ARRAY_SIZE(shaderBindingTableRecordInfoFields);
+    shaderBindingTableRecordInfo.expected.alignof = 8;
+    shaderBindingTableRecordInfo.expected.size = 16;
+    shaderBindingTableRecordInfo.expected.padding = 0;
+    shaderBindingTableRecordInfo.actual = STRUCT(PalShaderBindingTableRecordInfo);
+
+    StructInfo shaderBindingTableCreateInfo = {0};
+    shaderBindingTableCreateInfo.name = "PalShaderBindingTableCreateInfo";
+    shaderBindingTableCreateInfo.fields = shaderBindingTableCreateInfoFields;
+    shaderBindingTableCreateInfo.fieldCount = ARRAY_SIZE(shaderBindingTableCreateInfoFields);
+    shaderBindingTableCreateInfo.expected.alignof = 8;
+    shaderBindingTableCreateInfo.expected.size = 24;
+    shaderBindingTableCreateInfo.expected.padding = 0;
+    shaderBindingTableCreateInfo.actual = STRUCT(PalShaderBindingTableCreateInfo);
+
+    PalBool status = checkABI(&shaderBindingTableRecordInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&shaderBindingTableCreateInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -1415,6 +1458,11 @@ PalBool graphicsABIDump(uint32_t flags)
     }
 
     status = descriptorDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = sbtDump(flags);
     if (status == PAL_FALSE) {
         return status;
     }
