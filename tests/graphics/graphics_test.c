@@ -83,15 +83,15 @@ PalBool graphicsTest()
             palFree(nullptr, adapters);
             return PAL_FALSE;
         }
-        
-        uint32_t vramMb = (uint32_t)info.vram / (1024 * 1024);
-        uint32_t sharedMemMb = (uint32_t)info.sharedMemory /(1024 * 1024);
+
+        uint64_t vramMib = (uint64_t)info.vram / (1024 * 1024);
+        uint64_t sharedMemMib = (uint64_t)info.sharedMemory /(1024 * 1024);
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);
         palLog(nullptr, " Driver Version: %llu", info.driverVersion);
-        palLog(nullptr, " Vram %u MB", vramMb);
-        palLog(nullptr, " Shared Memory %u MB", sharedMemMb);
+        palLog(nullptr, " Vram %llu MIB", vramMib);
+        palLog(nullptr, " Shared Memory %llu MIB", sharedMemMib);
         palLog(nullptr, " Device Id: %u", info.deviceId);
         palLog(nullptr, " Vendor Id: %u", info.vendorId);
 
