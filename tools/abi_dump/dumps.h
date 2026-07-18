@@ -27,10 +27,8 @@ static const char* s_PassedString = "PASSED";
 #define DUMP_FLAG_GRAPHICS (1u << 4)
 #define DUMP_FLAG_SYSTEM (1u << 5)
 #define DUMP_FLAG_VIDEO (1u << 6)
-#define DUMP_FLAG_VERSION (1u << 7)
-#define DUMP_FLAG_HELP (1u << 8)
-#define DUMP_FLAG_VERBOSE (1u << 9)
-#define DUMP_FLAG_QUICK (1u << 10)
+#define DUMP_FLAG_VERBOSE (1u << 7)
+#define DUMP_FLAG_QUICK (1u << 8)
 #define DUMP_FLAG_ALL 0x7F
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))

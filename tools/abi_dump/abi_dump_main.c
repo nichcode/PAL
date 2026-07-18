@@ -8,6 +8,7 @@
 #include "dumps.h"
 
 #define VERSION "1.0"
+#define LOG_NAME "PAL ABI Dump"
 
 #ifdef _WIN32
 #define EXE_NAME "abi-dump.exe"
@@ -24,7 +25,7 @@ static int logDumpStatus(PalBool status)
         ret = 0;
     }
 
-    palLog(nullptr, "PAL ABI Dump Status: %s", str);
+    palLog(nullptr, "%s %s: %s", LOG_NAME, "Status", str);
     return ret;
 }
 
@@ -33,6 +34,8 @@ int main(int argc, char** argv)
 {
     // clang-format on
     PalBool status = PAL_FALSE;
+    PalBool dumpVersion = PAL_FALSE;
+    PalBool dumpHelp = PAL_FALSE;
     uint32_t flags = 0;
     uint32_t passed = 0;
     uint32_t dumps = 0;
@@ -60,10 +63,10 @@ int main(int argc, char** argv)
             dumps |= DUMP_FLAG_VIDEO;
 
         } else if (strcmp(argv[i], "--version") == 0) {
-            dumps |= DUMP_FLAG_VERSION;
+            dumpVersion = PAL_TRUE;
 
         } else if (strcmp(argv[i], "--help") == 0) {
-            dumps |= DUMP_FLAG_HELP;
+            dumpHelp = PAL_TRUE;
 
         } else if (strcmp(argv[i], "--verbose") == 0) {
             flags &= ~DUMP_FLAG_QUICK;
@@ -75,7 +78,7 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps == 0) {
+    if (dumps == 0 && dumpHelp == PAL_FALSE && dumpVersion == PAL_FALSE) {
         dumps |= DUMP_FLAG_ALL;
     }
 
@@ -170,18 +173,17 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & DUMP_FLAG_VERSION) {
-        palLog(nullptr, "PAL ABI dump %s", VERSION);
+    if (dumpVersion) {
+        palLog(nullptr, "%s %s", LOG_NAME, VERSION);
     }
 
-    if (dumps & DUMP_FLAG_HELP) {
+    if (dumpHelp) {
         palLog(nullptr, "USAGE: %s [options]", EXE_NAME);
         palLog(nullptr, "Options:");
         palLog(nullptr, "  --help          Display available options");
         palLog(nullptr, "  --version       Display version");
         palLog(nullptr, "  --verbose       Display Detailed ABI dump information");
         palLog(nullptr, "  --quick         Display only the final ABI status");
-        palLog(nullptr, "  --all           Check ABI for all PAL structs");
         palLog(nullptr, "  --core          Check ABI for core PAL structs");
         palLog(nullptr, "  --event         Check ABI for event PAL structs");
         palLog(nullptr, "  --graphics      Check ABI for graphics PAL structs");
@@ -192,6 +194,10 @@ int main(int argc, char** argv)
     }
 
     if (flags & DUMP_FLAG_QUICK) {
+        if (dumps == 0) {
+            return 0;
+        }
+
         // check if all dumps that were executed passed
         if (dumps == passed) {
             return logDumpStatus(PAL_TRUE);

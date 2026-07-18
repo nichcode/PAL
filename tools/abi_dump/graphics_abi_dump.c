@@ -1543,6 +1543,209 @@ static PalBool commandPoolDump(uint32_t flags)
     return checkABI(&commandBufferSubmitInfo, flags);
 }
 
+static PalBool commandsDump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo clearValueFields[] = {
+        { "color", {0, 16}, FIELD(PalClearValue, color) },
+        { "depth", {16, 4}, FIELD(PalClearValue, depth) },
+        { "stencil", {20, 4}, FIELD(PalClearValue, stencil) }
+    };
+
+    FieldInfo attachmentDescFields[] = {
+        { "imageView", {0, 8}, FIELD(PalAttachmentDesc, imageView) },
+        { "resolveImageView", {8, 8}, FIELD(PalAttachmentDesc, resolveImageView) },
+        { "loadOp", {16, 4}, FIELD(PalAttachmentDesc, loadOp) },
+        { "storeOp", {20, 4}, FIELD(PalAttachmentDesc, storeOp) },
+        { "stencilLoadOp", {24, 4}, FIELD(PalAttachmentDesc, stencilLoadOp) },
+        { "stencilStoreOp", {28, 4}, FIELD(PalAttachmentDesc, stencilStoreOp) },
+        { "resolveMode", {32, 4}, FIELD(PalAttachmentDesc, resolveMode) },
+        { "stencilResolveMode", {36, 4}, FIELD(PalAttachmentDesc, stencilResolveMode) },
+        { "clearValue", {40, 24}, FIELD(PalAttachmentDesc, clearValue) },
+    };
+
+    FieldInfo viewportFields[] = {
+        { "x", {0, 4}, FIELD(PalViewport, x) },
+        { "y", {4, 4}, FIELD(PalViewport, y) },
+        { "width", {8, 4}, FIELD(PalViewport, width) },
+        { "height", {12, 4}, FIELD(PalViewport, height) },
+        { "minDepth", {16, 4}, FIELD(PalViewport, minDepth) },
+        { "maxDepth", {20, 4}, FIELD(PalViewport, maxDepth) }
+    };
+
+    FieldInfo rect2DFields[] = {
+        { "x", {0, 4}, FIELD(PalRect2D, x) },
+        { "y", {4, 4}, FIELD(PalRect2D, y) },
+        { "width", {8, 4}, FIELD(PalRect2D, width) },
+        { "height", {12, 4}, FIELD(PalRect2D, height) },
+    };
+
+    FieldInfo renderingInfoFields[] = {
+        { "colorAttachments", {0, 8}, FIELD(PalRenderingInfo, colorAttachments) },
+        { "depthStencilAttachment", {8, 8}, FIELD(PalRenderingInfo, depthStencilAttachment) },
+        { "fragmentShadingRateImageView", {16, 8}, FIELD(PalRenderingInfo, fragmentShadingRateImageView) },
+        { "renderArea", {24, 16}, FIELD(PalRenderingInfo, renderArea) },
+        { "flags", {40, 4}, FIELD(PalRenderingInfo, flags) },
+        { "fragmentShadingRateTexelWidth", {44, 4}, FIELD(PalRenderingInfo, fragmentShadingRateTexelWidth) },
+        { "fragmentShadingRateTexelHeight", {48, 4}, FIELD(PalRenderingInfo, fragmentShadingRateTexelHeight) },
+        { "viewCount", {52, 4}, FIELD(PalRenderingInfo, viewCount) },
+        { "arrayLayerCount", {56, 4}, FIELD(PalRenderingInfo, arrayLayerCount) },
+        { "colorAttachentCount", {60, 4}, FIELD(PalRenderingInfo, colorAttachentCount) }
+    };
+
+    FieldInfo renderingLayoutInfoFields[] = {
+        { "colorAttachmentsFormat", {0, 8}, FIELD(PalRenderingLayoutInfo, colorAttachmentsFormat) },
+        { "colorAttachentCount", {8, 4}, FIELD(PalRenderingLayoutInfo, colorAttachentCount) },
+        { "viewCount", {12, 4}, FIELD(PalRenderingLayoutInfo, viewCount) },
+        { "sampleCount", {16, 4}, FIELD(PalRenderingLayoutInfo, sampleCount) },
+        { "flags", {20, 4}, FIELD(PalRenderingLayoutInfo, flags) },
+        { "depthStencilAttachmentFormat", {24, 4}, FIELD(PalRenderingLayoutInfo, depthStencilAttachmentFormat) },
+        { "fragmentShadingRateAttachmentFormat", {28, 4}, FIELD(PalRenderingLayoutInfo, fragmentShadingRateAttachmentFormat) }
+    };
+
+    FieldInfo workGroupBuildDataFields[] = {
+        { "workCount", {0, 12}, FIELD(PalWorkGroupBuildData, workCount) },
+        { "workGroupSize", {12, 12}, FIELD(PalWorkGroupBuildData, workGroupSize) },
+        { "workGroupCount", {24, 12}, FIELD(PalWorkGroupBuildData, workGroupCount) }
+    };
+
+    FieldInfo workGroupInfoFields[] = {
+        { "workGroupBase", {0, 12}, FIELD(PalWorkGroupInfo, workGroupBase) },
+        { "workGroupCount", {12, 12}, FIELD(PalWorkGroupInfo, workGroupCount) }
+    };
+
+    FieldInfo barrierInfoFields[] = {
+        { "oldState", {0, 4}, FIELD(PalBarrierInfo, oldState) },
+        { "newState", {4, 4}, FIELD(PalBarrierInfo, newState) },
+        { "srcStages", {8, 4}, FIELD(PalBarrierInfo, srcStages) },
+        { "dstStages", {12, 4}, FIELD(PalBarrierInfo, dstStages) }
+    };
+    // clang-format on
+
+    StructInfo clearValue = {0};
+    clearValue.name = "PalClearValue";
+    clearValue.fields = clearValueFields;
+    clearValue.fieldCount = ARRAY_SIZE(clearValueFields);
+    clearValue.expected.alignof = 4;
+    clearValue.expected.size = 24;
+    clearValue.expected.padding = 0;
+    clearValue.actual = STRUCT(PalClearValue);
+
+    StructInfo attachmentDesc = {0};
+    attachmentDesc.name = "PalAttachmentDesc";
+    attachmentDesc.fields = attachmentDescFields;
+    attachmentDesc.fieldCount = ARRAY_SIZE(attachmentDescFields);
+    attachmentDesc.expected.alignof = 8;
+    attachmentDesc.expected.size = 64;
+    attachmentDesc.expected.padding = 0;
+    attachmentDesc.actual = STRUCT(PalAttachmentDesc);
+
+    StructInfo viewport = {0};
+    viewport.name = "PalViewport";
+    viewport.fields = viewportFields;
+    viewport.fieldCount = ARRAY_SIZE(viewportFields);
+    viewport.expected.alignof = 4;
+    viewport.expected.size = 24;
+    viewport.expected.padding = 0;
+    viewport.actual = STRUCT(PalViewport);
+
+    StructInfo rect2D = {0};
+    rect2D.name = "PalRect2D";
+    rect2D.fields = rect2DFields;
+    rect2D.fieldCount = ARRAY_SIZE(rect2DFields);
+    rect2D.expected.alignof = 4;
+    rect2D.expected.size = 16;
+    rect2D.expected.padding = 0;
+    rect2D.actual = STRUCT(PalRect2D);
+
+    StructInfo renderingInfo = {0};
+    renderingInfo.name = "PalRenderingInfo";
+    renderingInfo.fields = renderingInfoFields;
+    renderingInfo.fieldCount = ARRAY_SIZE(renderingInfoFields);
+    renderingInfo.expected.alignof = 8;
+    renderingInfo.expected.size = 64;
+    renderingInfo.expected.padding = 0;
+    renderingInfo.actual = STRUCT(PalRenderingInfo);
+
+    StructInfo renderingLayoutInfo = {0};
+    renderingLayoutInfo.name = "PalRenderingLayoutInfo";
+    renderingLayoutInfo.fields = renderingLayoutInfoFields;
+    renderingLayoutInfo.fieldCount = ARRAY_SIZE(renderingLayoutInfoFields);
+    renderingLayoutInfo.expected.alignof = 8;
+    renderingLayoutInfo.expected.size = 32;
+    renderingLayoutInfo.expected.padding = 0;
+    renderingLayoutInfo.actual = STRUCT(PalRenderingLayoutInfo);
+
+    StructInfo workGroupBuildData = {0};
+    workGroupBuildData.name = "PalWorkGroupBuildData";
+    workGroupBuildData.fields = workGroupBuildDataFields;
+    workGroupBuildData.fieldCount = ARRAY_SIZE(workGroupBuildDataFields);
+    workGroupBuildData.expected.alignof = 4;
+    workGroupBuildData.expected.size = 36;
+    workGroupBuildData.expected.padding = 0;
+    workGroupBuildData.actual = STRUCT(PalWorkGroupBuildData);
+
+    StructInfo workGroupInfo = {0};
+    workGroupInfo.name = "PalWorkGroupInfo";
+    workGroupInfo.fields = workGroupInfoFields;
+    workGroupInfo.fieldCount = ARRAY_SIZE(workGroupInfoFields);
+    workGroupInfo.expected.alignof = 4;
+    workGroupInfo.expected.size = 24;
+    workGroupInfo.expected.padding = 0;
+    workGroupInfo.actual = STRUCT(PalWorkGroupInfo);
+
+    StructInfo barrierInfo = {0};
+    barrierInfo.name = "PalBarrierInfo";
+    barrierInfo.fields = barrierInfoFields;
+    barrierInfo.fieldCount = ARRAY_SIZE(barrierInfoFields);
+    barrierInfo.expected.alignof = 4;
+    barrierInfo.expected.size = 16;
+    barrierInfo.expected.padding = 0;
+    barrierInfo.actual = STRUCT(PalBarrierInfo);
+
+    PalBool status = checkABI(&clearValue, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&attachmentDesc, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&viewport, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&rect2D, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&renderingInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&renderingLayoutInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&workGroupBuildData, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = checkABI(&workGroupInfo, flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return checkABI(&barrierInfo, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -1650,5 +1853,5 @@ PalBool graphicsABIDump(uint32_t flags)
         return status;
     }
 
-    return PAL_TRUE;
+    return commandsDump(flags);
 }
