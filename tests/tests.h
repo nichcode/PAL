@@ -91,6 +91,7 @@ PalBool graphicsTest();
 PalBool computeTest();
 PalBool rayTracingTest();
 PalBool multiDescriptorSetTest();
+PalBool customBackendTest();
 
 // graphics and video
 PalBool clearColorTest();

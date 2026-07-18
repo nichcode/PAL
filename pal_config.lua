@@ -3,7 +3,7 @@
 PAL_BUILD_STATIC_LIBRARY = false
 
 -- build PAL tests as a single application
-PAL_BUILD_TEST_APPLICATION = false
+PAL_BUILD_TEST_APPLICATION = true
 
 -- build PAL abi dump
 PAL_BUILD_ABI_DUMP = true
@@ -21,4 +21,4 @@ PAL_BUILD_VIDEO_MODULE = false
 PAL_BUILD_OPENGL_MODULE = false
 
 -- build graphics module
-PAL_BUILD_GRAPHICS_MODULE = false
+PAL_BUILD_GRAPHICS_MODULE = true

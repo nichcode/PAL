@@ -146,13 +146,22 @@ void PAL_CALL getAdapterInfoD3D12(
         info->shaderFormats |= PAL_SHADER_FORMAT_DXIL;
     }
 
+    LARGE_INTEGER driverVersion = {0};
+    info->driverVersion = 0;
+    result = d3d12Adapter->handle->lpVtbl->CheckInterfaceSupport(
+        d3d12Adapter->handle, 
+        &IID_Adapter,
+        &driverVersion);
+
+    if (SUCCEEDED(result)) {
+        info->driverVersion = (uint64_t)driverVersion.QuadPart;
+    }
+
     info->vendorId = desc.VendorId;
-    info->deviceId= desc.DeviceId;
+    info->deviceId = desc.DeviceId;
     info->apiType = PAL_ADAPTER_API_TYPE_D3D12;
     info->sharedMemory = desc.SharedSystemMemory;
     strcpy(info->backendName, "PAL");
-
-    // TODO: add driver version
 
     WideCharToMultiByte(
         CP_UTF8,

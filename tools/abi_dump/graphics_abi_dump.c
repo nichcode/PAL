@@ -14,14 +14,15 @@ static PalBool adapterDump(uint32_t flags)
     FieldInfo adapterInfoFields[] = {
         { "vram", {0, 8}, FIELD(PalAdapterInfo, vram) },
         { "sharedMemory", {8, 8}, FIELD(PalAdapterInfo, sharedMemory) },
-        { "vendorId", {16, 4}, FIELD(PalAdapterInfo, vendorId) },
-        { "deviceId", {20, 4}, FIELD(PalAdapterInfo, deviceId) },
-        { "driverVersion", {24, 4}, FIELD(PalAdapterInfo, driverVersion) },
-        { "shaderFormats", {28, 4}, FIELD(PalAdapterInfo, shaderFormats) },
-        { "type", {32, 4}, FIELD(PalAdapterInfo, type) },
-        { "apiType", {36, 4}, FIELD(PalAdapterInfo, apiType) },
-        { "name", {40, 128}, FIELD(PalAdapterInfo, name) },
-        { "backendName", {168, 32}, FIELD(PalAdapterInfo, backendName) }
+        { "driverVersion", {16, 8}, FIELD(PalAdapterInfo, driverVersion) },
+        { "vendorId", {24, 4}, FIELD(PalAdapterInfo, vendorId) },
+        { "deviceId", {28, 4}, FIELD(PalAdapterInfo, deviceId) },
+        { "shaderFormats", {32, 4}, FIELD(PalAdapterInfo, shaderFormats) },
+        { "type", {36, 4}, FIELD(PalAdapterInfo, type) },
+        { "apiType", {40, 4}, FIELD(PalAdapterInfo, apiType) },
+        { "name", {44, 128}, FIELD(PalAdapterInfo, name) },
+        { "backendName", {172, 32}, FIELD(PalAdapterInfo, backendName) },
+        { "reserved", {204, 4}, FIELD(PalAdapterInfo, reserved) }
     };
 
     FieldInfo imageCapFields[] = {
@@ -90,7 +91,7 @@ static PalBool adapterDump(uint32_t flags)
     adapterInfo.fields = adapterInfoFields;
     adapterInfo.fieldCount = ARRAY_SIZE(adapterInfoFields);
     adapterInfo.expected.alignof = 8;
-    adapterInfo.expected.size = 200;
+    adapterInfo.expected.size = 208;
     adapterInfo.expected.padding = 0;
     adapterInfo.actual = STRUCT(PalAdapterInfo);
 

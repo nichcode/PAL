@@ -560,6 +560,95 @@
 #define PAL_PIPELINE_STAGE_INDIRECT_INPUT (1U << 18)
 #define PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD (1U << 19)
 
+/**
+ * Required implementations:
+ * - palUnpackUint32()
+ * - palUnpackPointer()
+ * - enumerateAdapters
+ * - getAdapterInfo
+ * - getAdapterCapabilities
+ * - getAdapterFeatures
+ * - getHighestSupportedShaderTarget
+ * - createDevice
+ * - destroyDevice
+ * - allocateMemory
+ * - freeMemory
+ * - createQueue
+ * - destroyQueue
+ * - waitQueue
+ * - canQueuePresent
+ * - enumerateFormats
+ * - isFormatSupported
+ * - queryFormatImageUsages
+ * - queryFormatSampleCount
+ * - createImage
+ * - destroyImage
+ * - getImageInfo
+ * - getImageMemoryRequirements
+ * - bindImageMemory
+ * - createImageView
+ * - destroyImageView
+ * - createSampler
+ * - destroySampler
+ * - createShader
+ * - destroyShader
+ * - createFence
+ * - destroyFence
+ * - waitFence
+ * - isFenceSignaled
+ * - createSemaphore
+ * - destroySemaphore
+ * - createCommandPool
+ * - destroyCommandPool
+ * - allocateCommandBuffer
+ * - freeCommandBuffer
+ * - submitCommandBuffer
+ * - cmdBegin
+ * - cmdEnd
+ * - resetCommandBuffer
+ * - cmdExecuteCommandBuffer
+ * - cmdBeginRendering
+ * - cmdEndRendering
+ * - cmdCopyBuffer
+ * - cmdCopyBufferToImage
+ * - cmdCopyImage
+ * - cmdCopyImageToBuffer
+ * - cmdBindPipeline
+ * - cmdSetViewport
+ * - cmdSetScissors
+ * - cmdBindVertexBuffers
+ * - cmdBindIndexBuffer
+ * - cmdDraw
+ * - cmdDrawIndexed
+ * - cmdImageBarrier
+ * - cmdBufferBarrier
+ * - cmdDispatch
+ * - cmdBindDescriptorSet
+ * - cmdPushConstants
+ * - createBuffer
+ * - destroyBuffer
+ * - getBufferMemoryRequirements
+ * - computeInstanceStagingSize
+ * - computeImageStagingRequirements
+ * - writeInstanceStaging
+ * - writeImageStaging
+ * - bindBufferMemory
+ * - mapBuffer
+ * - unmapBuffer
+ * - createDescriptorSetLayout
+ * - destroyDescriptorSetLayout
+ * - createDescriptorPool
+ * - destroyDescriptorPool
+ * - resetDescriptorPool
+ * - allocateDescriptorSet
+ * - updateDescriptorSet
+ * - createPipelineLayout
+ * - destroyPipelineLayout
+ * - createGraphicsPipeline
+ * - createComputePipeline
+ * - createRayTracingPipeline
+ * - destroyPipeline
+ */
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
 
 /**
@@ -1470,14 +1559,15 @@ typedef void(PAL_CALL* PalDebugCallback)(
 typedef struct {
     uint64_t vram;                                   /**< Total video memory in bytes*/
     uint64_t sharedMemory;                           /**< Total shared memory in bytes*/
+    uint64_t driverVersion;                          /**< Adapter version.*/
     uint32_t vendorId;                               /**< Adapter vendor id.*/
     uint32_t deviceId;                               /**< Adapter device id.*/
-    uint32_t driverVersion;                          /**< Adapter version.*/
     PalShaderFormats shaderFormats;                  /**< (eg. `PAL_SHADER_FORMAT_SPIRV`)*/
     PalAdapterType type;                             /**< (eg. `PAL_ADAPTER_TYPE_DISCRETE`).*/
     PalAdapterApiType apiType;                       /**< (eg. `PAL_ADAPTER_API_TYPE_VULKAN`).*/
     char name[PAL_ADAPTER_NAME_SIZE];                /**< Adapter name.*/
     char backendName[PAL_ADAPTER_BACKEND_NAME_SIZE]; /**< Adapter backend name.*/
+    uint32_t reserved; /**< 0 for now.*/
 } PalAdapterInfo;
 
 /**
@@ -2720,9 +2810,16 @@ typedef struct {
 
 /**
  * @struct PalGraphicsBackendRegistrationInfo
- * @brief Registration info of a graphics backend.
+ * @brief Custom graphics backend information.
  *
  * Uninitialized fields may result in undefined behavior.
+ * 
+ * All backend handle implementation (eg. struct CustomBuffer) must reserve its first field as
+ * a `void*`. This will be used by the graphics layer.
+ * 
+ * Each backend Vtable version (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`) has required functions
+ * that must be present implemented. This will be validated at initialization. See version constant
+ * for the required functions. Optional functions have their own requirements.
  *
  * @since 2.0
  */
@@ -2737,9 +2834,6 @@ typedef struct {
  * @brief Version 1 dispatch table for PAL graphics system backends.
  *
  * Uninitialized fields may result in undefined behavior.
- *
- * All backend handle implementation (eg. struct CustomBuffer) must reserve its first field as
- * a `void*`. This will be used by the graphics layer.
  *
  * @since 2.0
  */

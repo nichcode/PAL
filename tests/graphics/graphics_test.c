@@ -89,11 +89,11 @@ PalBool graphicsTest()
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);
-        palLog(nullptr, " Vendor Id: %u", info.vendorId);
-        palLog(nullptr, " Device Id: %u", info.deviceId);
-        palLog(nullptr, " Driver Version: %u", info.driverVersion);
+        palLog(nullptr, " Driver Version: %llu", info.driverVersion);
         palLog(nullptr, " Vram %u MB", vramMb);
         palLog(nullptr, " Shared Memory %u MB", sharedMemMb);
+        palLog(nullptr, " Device Id: %u", info.deviceId);
+        palLog(nullptr, " Vendor Id: %u", info.vendorId);
 
         const char* typeString;
         switch (info.type) {
