@@ -57,7 +57,7 @@ PalResult PAL_CALL createBufferD3D12(
     HRESULT result;
     BufferD3D12* buffer = nullptr;
     DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    
+
     buffer = palAllocate(s_D3D12.allocator, sizeof(BufferD3D12), 0);
     if (!buffer) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -119,9 +119,9 @@ PalResult PAL_CALL createBufferD3D12(
         }
 
         result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-            d3d12Device->handle, 
-            &heapProps, 
-            0, 
+            d3d12Device->handle,
+            &heapProps,
+            0,
             &buffer->desc,
             state,
             nullptr,
@@ -161,12 +161,8 @@ void PAL_CALL getBufferMemoryRequirementsD3D12(
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
-    allocationInfo = *device->lpVtbl->GetResourceAllocationInfo(
-        device,
-        &__ret,
-        0,
-        1,
-        &d3d12Buffer->desc);
+    allocationInfo =
+        *device->lpVtbl->GetResourceAllocationInfo(device, &__ret, 0, 1, &d3d12Buffer->desc);
 
     requirements->supportedMemoryTypes = getSupportedMemoryTypes(d3d12Buffer->usages);
     requirements->alignment = allocationInfo.Alignment;

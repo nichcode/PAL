@@ -132,7 +132,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         &bufferDesc,
         D3D12_RESOURCE_STATE_COMMON,
         nullptr,
-        &IID_Resource, 
+        &IID_Resource,
         (void**)&cmdBuffer->buffer);
 
     if (FAILED(result)) {
@@ -149,7 +149,7 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         &bufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        &IID_Resource, 
+        &IID_Resource,
         (void**)&cmdBuffer->stagingBuffer);
 
     if (FAILED(result)) {
@@ -157,10 +157,8 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         return makeResultD3D12(result);
     }
 
-    result = cmdList->lpVtbl->QueryInterface(
-        cmdList,
-        &IID_CommandList6,
-        (void**)&cmdBuffer->handle);
+    result =
+        cmdList->lpVtbl->QueryInterface(cmdList, &IID_CommandList6, (void**)&cmdBuffer->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
@@ -251,7 +249,7 @@ PalResult PAL_CALL submitCommandBufferD3D12(
         }
     }
 
-    ID3D12CommandList* cmdLists[1] = { (ID3D12CommandList*)d3d12CmdBuffer->handle };
+    ID3D12CommandList* cmdLists[1] = {(ID3D12CommandList*)d3d12CmdBuffer->handle};
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
     pollMessagesD3D12(d3d12CmdBuffer->device);
 

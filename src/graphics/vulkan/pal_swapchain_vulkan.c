@@ -395,8 +395,8 @@ PalResult PAL_CALL getNextSwapchainImageVk(
 }
 
 PalResult PAL_CALL presentSwapchainVk(
-    PalSwapchain* swapchain, 
-    uint32_t imageIndex, 
+    PalSwapchain* swapchain,
+    uint32_t imageIndex,
     PalSemaphore* waitSemaphore)
 {
     SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;

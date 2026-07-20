@@ -72,19 +72,23 @@
 #define PAL_ADAPTER_TYPE_CPU 4
 #define PAL_ADAPTER_TYPE_COUNT 5
 
-#define PAL_ADAPTER_API_TYPE_VULKAN 0
-#define PAL_ADAPTER_API_TYPE_D3D12 1
-#define PAL_ADAPTER_API_TYPE_METAL 2
-#define PAL_ADAPTER_API_TYPE_CUSTOM 3
-#define PAL_ADAPTER_API_TYPE_COUNT 4
+#define PAL_ADAPTER_API_TYPE_UNKNOWN 0
+#define PAL_ADAPTER_API_TYPE_VULKAN 1
+#define PAL_ADAPTER_API_TYPE_D3D12 2
+#define PAL_ADAPTER_API_TYPE_METAL 3
+#define PAL_ADAPTER_API_TYPE_D3D11 4
+#define PAL_ADAPTER_API_TYPE_D3D9 5
+#define PAL_ADAPTER_API_TYPE_OPENGL 6
+#define PAL_ADAPTER_API_TYPE_OPENGLES 7
+#define PAL_ADAPTER_API_TYPE_WEBGPU 8
+#define PAL_ADAPTER_API_TYPE_COUNT 9
 
 #define PAL_QUEUE_TYPE_GRAPHICS 0
 #define PAL_QUEUE_TYPE_COMPUTE 1
 #define PAL_QUEUE_TYPE_COPY 2
 #define PAL_QUEUE_TYPE_COUNT 3
 
-/** V-Sync.*/
-#define PAL_PRESENT_MODE_FIFO 0
+#define PAL_PRESENT_MODE_FIFO 0 /**< V-Sync.*/
 #define PAL_PRESENT_MODE_IMMEDIATE 1
 #define PAL_PRESENT_MODE_MAILBOX 2
 #define PAL_PRESENT_MODE_COUNT 3
@@ -185,11 +189,15 @@
 #define PAL_IMAGE_USAGE_STORAGE (1U << 4)
 #define PAL_IMAGE_USAGE_SAMPLED (1U << 5)
 
+#define PAL_SHADER_FORMAT_UNKNOWN 0
 #define PAL_SHADER_FORMAT_SPIRV (1U << 0)
 #define PAL_SHADER_FORMAT_DXIL (1U << 1)
 #define PAL_SHADER_FORMAT_DXBC (1U << 2)
-#define PAL_SHADER_FORMAT_MSL (1U << 3)
-#define PAL_SHADER_FORMAT_CUSTOM (1U << 4)
+#define PAL_SHADER_FORMAT_METALLIB (1U << 3)
+#define PAL_SHADER_FORMAT_MSL (1U << 4)
+#define PAL_SHADER_FORMAT_GLSL (1U << 5)
+#define PAL_SHADER_FORMAT_HLSL (1U << 6)
+#define PAL_SHADER_FORMAT_WGSL (1U << 7)
 
 #define PAL_LOAD_OP_LOAD 0
 #define PAL_LOAD_OP_CLEAR 1
@@ -311,34 +319,34 @@
 #define PAL_STENCIL_FACE_FLAG_BOTH (PAL_STENCIL_FACE_FLAG_FRONT | PAL_STENCIL_FACE_FLAG_BACK)
 
 #define PAL_VERTEX_TYPE_UNDEFINED 0
-#define PAL_VERTEX_TYPE_INT32 1          
-#define PAL_VERTEX_TYPE_INT32_2 2        
-#define PAL_VERTEX_TYPE_INT32_3 3        
-#define PAL_VERTEX_TYPE_INT32_4 4        
-#define PAL_VERTEX_TYPE_UINT32 5         
-#define PAL_VERTEX_TYPE_UINT32_2 6       
-#define PAL_VERTEX_TYPE_UINT32_3 7       
-#define PAL_VERTEX_TYPE_UINT32_4 8       
-#define PAL_VERTEX_TYPE_INT8_2 9         
-#define PAL_VERTEX_TYPE_INT8_4 10        
-#define PAL_VERTEX_TYPE_UINT8_2 11       
-#define PAL_VERTEX_TYPE_UINT8_4 12       
-#define PAL_VERTEX_TYPE_INT8_2NORM 13    
-#define PAL_VERTEX_TYPE_INT8_4NORM 14    
-#define PAL_VERTEX_TYPE_UINT8_2NORM 15   
-#define PAL_VERTEX_TYPE_UINT8_4NORM 16   
-#define PAL_VERTEX_TYPE_INT16_2 17       
-#define PAL_VERTEX_TYPE_INT16_4 18       
-#define PAL_VERTEX_TYPE_UINT16_2 19      
-#define PAL_VERTEX_TYPE_UINT16_4 20      
-#define PAL_VERTEX_TYPE_INT16_2NORM 21   
-#define PAL_VERTEX_TYPE_INT16_4NORM 22   
-#define PAL_VERTEX_TYPE_UINT16_2NORM 23  
-#define PAL_VERTEX_TYPE_UINT16_4NORM 24  
-#define PAL_VERTEX_TYPE_FLOAT 25         
-#define PAL_VERTEX_TYPE_FLOAT2 26        
-#define PAL_VERTEX_TYPE_FLOAT3 27        
-#define PAL_VERTEX_TYPE_FLOAT4 28        
+#define PAL_VERTEX_TYPE_INT32 1
+#define PAL_VERTEX_TYPE_INT32_2 2
+#define PAL_VERTEX_TYPE_INT32_3 3
+#define PAL_VERTEX_TYPE_INT32_4 4
+#define PAL_VERTEX_TYPE_UINT32 5
+#define PAL_VERTEX_TYPE_UINT32_2 6
+#define PAL_VERTEX_TYPE_UINT32_3 7
+#define PAL_VERTEX_TYPE_UINT32_4 8
+#define PAL_VERTEX_TYPE_INT8_2 9
+#define PAL_VERTEX_TYPE_INT8_4 10
+#define PAL_VERTEX_TYPE_UINT8_2 11
+#define PAL_VERTEX_TYPE_UINT8_4 12
+#define PAL_VERTEX_TYPE_INT8_2NORM 13
+#define PAL_VERTEX_TYPE_INT8_4NORM 14
+#define PAL_VERTEX_TYPE_UINT8_2NORM 15
+#define PAL_VERTEX_TYPE_UINT8_4NORM 16
+#define PAL_VERTEX_TYPE_INT16_2 17
+#define PAL_VERTEX_TYPE_INT16_4 18
+#define PAL_VERTEX_TYPE_UINT16_2 19
+#define PAL_VERTEX_TYPE_UINT16_4 20
+#define PAL_VERTEX_TYPE_INT16_2NORM 21
+#define PAL_VERTEX_TYPE_INT16_4NORM 22
+#define PAL_VERTEX_TYPE_UINT16_2NORM 23
+#define PAL_VERTEX_TYPE_UINT16_4NORM 24
+#define PAL_VERTEX_TYPE_FLOAT 25
+#define PAL_VERTEX_TYPE_FLOAT2 26
+#define PAL_VERTEX_TYPE_FLOAT3 27
+#define PAL_VERTEX_TYPE_FLOAT4 28
 #define PAL_VERTEX_TYPE_HALF_FLOAT16_2 29
 #define PAL_VERTEX_TYPE_HALF_FLOAT16_4 30
 #define PAL_VERTEX_TYPE_COUNT 31
@@ -1429,17 +1437,17 @@ typedef uint32_t PalRayTracingShaderGroupType;
 /**
  * @typedef PalDescriptorIndexingFlags
  * @brief Descriptor indexing subfeature flags.
- * 
- * These flags show the capabilities of the descriptor indexing feature. Each flag determines 
+ *
+ * These flags show the capabilities of the descriptor indexing feature. Each flag determines
  * the operations that are allowed.
- * 
- * `PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND`: Descriptors in a descriptor set can be updated 
+ *
+ * `PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND`: Descriptors in a descriptor set can be updated
  * after the descriptor set been bound in a command buffer.
- * 
+ *
  * `PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND`: Unused descriptors can be left uninitialized if
  * a shader never accesses them.
- * 
- * `PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING`: Different threads can access different 
+ *
+ * `PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING`: Different threads can access different
  * descriptors.
  *
  * All descriptor indexing flags follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_**`
@@ -1452,18 +1460,18 @@ typedef uint32_t PalDescriptorIndexingFlags;
 /**
  * @typedef PalBufferMemoryUsage
  * @brief Buffer memory usages.
- * 
+ *
  * `PAL_BUFFER_MEMORY_USAGE_MANUAL`: PAL does not allocate memory for the buffer. Users are required
- * to get the required size and allocate memory for the buffer after the buffer has been created. 
+ * to get the required size and allocate memory for the buffer after the buffer has been created.
  * The lifetime of the memory is the responsibility of the user.
- * 
+ *
  * `PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY`: PAL allocates gpu only memory and manages the memory
  * for the user. This is ideal if a custom allocator will not be used by the user.
- * 
- * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD`: PAL allocates cpu upload memory and manages the 
+ *
+ * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD`: PAL allocates cpu upload memory and manages the
  * memory for the user. This is ideal if a custom allocator will not be used by the user.
- * 
- * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK`: PAL allocates cpu readback memory and manages the 
+ *
+ * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK`: PAL allocates cpu readback memory and manages the
  * memory for the user. This is ideal if a custom allocator will not be used by the user.
  *
  * All buffer memory usages follow the format `PAL_BUFFER_MEMORY_USAGE_**`
@@ -1476,11 +1484,11 @@ typedef uint32_t PalBufferMemoryUsage;
 /**
  * @typedef PalImageMemoryUsage
  * @brief Image memory usages.
- * 
+ *
  * `PAL_IMAGE_MEMORY_USAGE_MANUAL`: PAL does not allocate memory for the image. Users are required
- * to get the required size and allocate memory for the image after the image has been created. 
+ * to get the required size and allocate memory for the image after the image has been created.
  * The lifetime of the memory is the responsibility of the user.
- * 
+ *
  * `PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY`: PAL allocates gpu only memory and manages the memory
  * for the user. This is ideal if a custom allocator will not be used by the user.
  *
@@ -1494,7 +1502,7 @@ typedef uint32_t PalImageMemoryUsage;
 /**
  * @typedef PalRenderingFlags
  * @brief Rendering flags.
- * 
+ *
  * All rendering flags follow the format `PAL_RENDERING_FLAG_**`
  * for consistency and API use.
  *
@@ -1506,7 +1514,7 @@ typedef uint32_t PalRenderingFlags;
  * @typedef PalPipelineStages
  * @brief Pipeline stages. Multiple pipeline usages can be OR'ed together using bitwise
  * OR operator (`|`).
- * 
+ *
  * All pipeline stages follow the format `PAL_PIPELINE_STAGE_**`
  * for consistency and API use.
  *
@@ -1529,7 +1537,8 @@ typedef uint32_t PalGraphicsBackendVtableVersion;
  * @typedef PalDebugCallback
  * @brief Function pointer type used for debug callbacks.
  *
- * @param userData Optional pointer to user data passed from ::PalGraphicsDebugger. Can be `nullptr`.
+ * @param userData Optional pointer to user data passed from ::PalGraphicsDebugger. Can be
+ * `nullptr`.
  * @param severity Severity of the message. (`PAL_DEBUG_MESSAGE_SEVERITY_INFO`,
  * `PAL_DEBUG_MESSAGE_SEVERITY_WARNING` and `PAL_DEBUG_MESSAGE_SEVERITY_ERROR`).
  * @param type Type of the message. (`PAL_DEBUG_MESSAGE_TYPE_GENERAL`,
@@ -1562,7 +1571,7 @@ typedef struct {
     PalAdapterApiType apiType;                       /**< (eg. `PAL_ADAPTER_API_TYPE_VULKAN`).*/
     char name[PAL_ADAPTER_NAME_SIZE];                /**< Adapter name.*/
     char backendName[PAL_ADAPTER_BACKEND_NAME_SIZE]; /**< Adapter backend name.*/
-    uint32_t reserved; /**< 0 for now.*/
+    uint32_t reserved;                               /**< 0 for now.*/
 } PalAdapterInfo;
 
 /**
@@ -1803,15 +1812,15 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalImageUsages usages;       /**< (eg. `PAL_IMAGE_USAGE_COLOR`).*/
-    uint32_t width;              /**< Width of the image in pixels.*/
-    uint32_t height;             /**< Height of the image in pixels.*/
-    uint32_t depth;              /**< Depth of the image in pixels.*/
-    uint32_t arrayLayerCount;    /**< Number of array layers.*/
-    uint32_t mipLevelCount;      /**< Number of mipmap levels.*/
-    PalSampleCount sampleCount;  /**< (eg. `PAL_SAMPLE_COUNT_8`).*/
-    PalImageType type;           /**< (eg. `PAL_IMAGE_TYPE_2D`).*/
-    PalFormat format;            /**< (eg. `PAL_FORMAT_R8G8B8A8_UNORM`).*/
+    PalImageUsages usages;      /**< (eg. `PAL_IMAGE_USAGE_COLOR`).*/
+    uint32_t width;             /**< Width of the image in pixels.*/
+    uint32_t height;            /**< Height of the image in pixels.*/
+    uint32_t depth;             /**< Depth of the image in pixels.*/
+    uint32_t arrayLayerCount;   /**< Number of array layers.*/
+    uint32_t mipLevelCount;     /**< Number of mipmap levels.*/
+    PalSampleCount sampleCount; /**< (eg. `PAL_SAMPLE_COUNT_8`).*/
+    PalImageType type;          /**< (eg. `PAL_IMAGE_TYPE_2D`).*/
+    PalFormat format;           /**< (eg. `PAL_FORMAT_R8G8B8A8_UNORM`).*/
     PalBool belongsToSwapchain; /**< If `PAL_TRUE`, the image belongs to a swapchain.*/
 } PalImageInfo;
 
@@ -1889,7 +1898,7 @@ typedef struct {
     uint64_t alignment;            /**< Required alignment in bytes.*/
     uint64_t memoryMask;           /**< Memory masks used in allocations. Must not be changed.*/
     uint32_t supportedMemoryTypes; /**< Masks of supported memory types.*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;             /**< Must be set to 0.*/
 } PalMemoryRequirements;
 
 /**
@@ -1901,13 +1910,13 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    uint64_t waitValue;            /**< Timeline semaphore value to wait on.*/
-    uint64_t signalValue;          /**< Timeline semaphore value to signal.*/
-    PalCommandBuffer* cmdBuffer;   /**< Command buffer to submit.*/
-    PalSemaphore* waitSemaphore;   /**< Wait semaphore.*/
-    PalSemaphore* signalSemaphore; /**< Signal semaphore.*/
-    PalFence* fence;               /**< Fence to signal.*/
-    PalPipelineStages waitStages;  /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
+    uint64_t waitValue;             /**< Timeline semaphore value to wait on.*/
+    uint64_t signalValue;           /**< Timeline semaphore value to signal.*/
+    PalCommandBuffer* cmdBuffer;    /**< Command buffer to submit.*/
+    PalSemaphore* waitSemaphore;    /**< Wait semaphore.*/
+    PalSemaphore* signalSemaphore;  /**< Signal semaphore.*/
+    PalFence* fence;                /**< Fence to signal.*/
+    PalPipelineStages waitStages;   /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
     PalPipelineStages signalStages; /**< (eg. `PAL_PIPELINE_STAGE_NONE`).*/
 } PalCommandBufferSubmitInfo;
 
@@ -1934,16 +1943,16 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalAttachmentDesc* colorAttachments;              /**< Color attachments.*/
+    PalAttachmentDesc* colorAttachments;        /**< Color attachments.*/
     PalAttachmentDesc* depthStencilAttachment;  /**< Depth/Stencil attachment.*/
-    PalImageView* fragmentShadingRateImageView;           /**< Fragment shading rate image view.*/
-    PalRect2D renderArea; /**< Rendering area of the attachments.*/
-    PalRenderingFlags flags; /**< (eg. `PAL_RENDERING_FLAG_NONE`).*/
+    PalImageView* fragmentShadingRateImageView; /**< Fragment shading rate image view.*/
+    PalRect2D renderArea;                       /**< Rendering area of the attachments.*/
+    PalRenderingFlags flags;                    /**< (eg. `PAL_RENDERING_FLAG_NONE`).*/
     uint32_t fragmentShadingRateTexelWidth;     /**< Texel width for fragment shading rate.*/
     uint32_t fragmentShadingRateTexelHeight;    /**< Texel height for fragment shading rate.*/
-    uint32_t viewCount;                               /**< View count. Set to 1 for default.*/
+    uint32_t viewCount;                         /**< View count. Set to 1 for default.*/
     uint32_t arrayLayerCount;                   /**< Number of array layers for rendering.*/
-    uint32_t colorAttachentCount;                     /**< Number of color attachments.*/
+    uint32_t colorAttachentCount;               /**< Number of color attachments.*/
 } PalRenderingInfo;
 
 /**
@@ -1994,14 +2003,14 @@ typedef struct {
 /**
  * @struct PalImageStagingRequirements
  * @brief Requirements for an image staging buffer.
- * 
+ *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 2.0
  */
 typedef struct {
-    uint64_t bufferSize; /**< Required buffer size.*/
-    uint32_t bufferRowLength; /**< Required buffer row length.*/
+    uint64_t bufferSize;        /**< Required buffer size.*/
+    uint32_t bufferRowLength;   /**< Required buffer row length.*/
     uint32_t bufferImageHeight; /**< Required buffer image height.*/
 } PalImageStagingRequirements;
 
@@ -2082,7 +2091,7 @@ typedef struct {
     uint32_t attributeCount;        /**< Number of vertex attributes.*/
     PalVertexLayoutType type;       /**< (eg. `PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX`).*/
     uint32_t binding;               /**< Vertex buffer binding slot.*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;              /**< Must be set to 0.*/
 } PalVertexLayout;
 
 /**
@@ -2408,8 +2417,8 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalUsageState oldState; /**< (eg. `PAL_USAGE_STATE_COLOR_ATTACHMENT`).*/
-    PalUsageState newState; /**< (eg. `PAL_USAGE_STATE_PRESENT`).*/
+    PalUsageState oldState;      /**< (eg. `PAL_USAGE_STATE_COLOR_ATTACHMENT`).*/
+    PalUsageState newState;      /**< (eg. `PAL_USAGE_STATE_PRESENT`).*/
     PalPipelineStages srcStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
     PalPipelineStages dstStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_OUTPUT`).*/
 } PalBarrierInfo;
@@ -2625,9 +2634,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    void* bytecode;              /**< Pointer to the shader bytecode.*/
+    void* code;                  /**< Pointer to the shader code.*/
     PalShaderEntryInfo* entries; /**< Shader entries.*/
-    uint32_t bytecodeSize;       /**< Size of `bytecode` in bytes.*/
+    uint32_t codeSize;           /**< Size of `code` in bytes.*/
     uint32_t entryCount;         /**< Number of shader entries.*/
 } PalShaderCreateInfo;
 
@@ -2658,7 +2667,7 @@ typedef struct {
     uint64_t offset;                   /**< Size in bytes.*/
     uint64_t size;                     /**< Offset in bytes.*/
     PalAccelerationStructureType type; /**< (eg. `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`).*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;                 /**< Must be set to 0.*/
 } PalAccelerationStructureCreateInfo;
 
 /**
@@ -2670,9 +2679,9 @@ typedef struct {
  * @since 2.0
  */
 typedef struct {
-    PalDescriptorSetLayoutBinding* bindings;            /**< Bindings.*/
-    PalDescriptorIndexingFlags flags; /**< See `PalDescriptorIndexingFlags`.*/
-    uint32_t bindingCount;                              /**< Number of bindings.*/
+    PalDescriptorSetLayoutBinding* bindings; /**< Bindings.*/
+    PalDescriptorIndexingFlags flags;        /**< See `PalDescriptorIndexingFlags`.*/
+    uint32_t bindingCount;                   /**< Number of bindings.*/
 } PalDescriptorSetLayoutCreateInfo;
 
 /**
@@ -2688,7 +2697,7 @@ typedef struct {
     uint32_t bindingSizeCount;                  /**< Number of bindings sizes.*/
     uint32_t maxDescriptorSets; /**< Maximum number of descriptor sets that can be allocated.*/
     PalDescriptorIndexingFlags flags; /**< See `PalDescriptorIndexingFlags`.*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;                /**< Must be set to 0.*/
 } PalDescriptorPoolCreateInfo;
 
 /**
@@ -2728,7 +2737,7 @@ typedef struct {
     uint32_t vertexLayoutCount;     /**< Number of vertex layouts.*/
     uint32_t colorBlendAttachmentCount; /**< Number of color attachments.*/
     uint32_t shaderCount;               /**< Number of shaders.*/
-    PalIndexType indexType; /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
+    PalIndexType indexType;        /**< Will be used if `primitiveRestartEnable` is `PAL_TRUE`.*/
     PalPrimitiveTopology topology; /**< (eg. `PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST`).*/
 } PalGraphicsPipelineCreateInfo;
 
@@ -2785,7 +2794,7 @@ typedef struct {
     uint32_t maxRecursionDepth;                       /**< Max number of ray recursion.*/
     uint32_t maxAttributeSize;                        /**< Max attributes size in bytes.*/
     uint32_t maxPayloadSize;                          /**< Max payload size in bytes.*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;                                /**< Must be set to 0.*/
 } PalRayTracingPipelineCreateInfo;
 
 /**
@@ -2800,7 +2809,7 @@ typedef struct {
     PalShaderBindingTableRecordInfo* records; /**< Shader binding table records.*/
     PalPipeline* rayTracingPipeline;          /**< Ray tracing pipeline.*/
     uint32_t recordCount;                     /**< Number of shader binding table records.*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;                        /**< Must be set to 0.*/
 } PalShaderBindingTableCreateInfo;
 
 /**
@@ -2808,10 +2817,10 @@ typedef struct {
  * @brief Custom graphics backend information.
  *
  * Uninitialized fields may result in undefined behavior.
- * 
+ *
  * All backend handle implementation (eg. struct CustomBuffer) must reserve its first field as
  * a `void*`. This will be used by the graphics layer.
- * 
+ *
  * Each backend Vtable version (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`) has required functions
  * that must be present implemented. This will be validated at initialization. See version constant
  * for the required functions. Optional functions have their own requirements.
@@ -2821,7 +2830,7 @@ typedef struct {
 typedef struct {
     const void* vtable;                      /**< Pointer to the backend vtable.*/
     PalGraphicsBackendVtableVersion version; /**< (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`).*/
-    uint32_t reserved; /**< Must be set to 0.*/
+    uint32_t reserved;                       /**< Must be set to 0.*/
 } PalGraphicsBackendInfo;
 
 /**
@@ -3329,7 +3338,7 @@ typedef struct {
      * Must obey the rules and semantics documented in palGetSemaphoreValue().
      */
     PalResult(PAL_CALL* getSemaphoreValue)(
-        PalSemaphore* semaphore, 
+        PalSemaphore* semaphore,
         uint64_t* value);
 
     /**
@@ -3865,7 +3874,7 @@ typedef struct {
      */
     void(PAL_CALL* computeInstanceStagingSize)(
         PalDevice* device,
-        uint32_t instanceCount, 
+        uint32_t instanceCount,
         uint64_t* outSize);
 
     /**
@@ -4085,7 +4094,7 @@ typedef struct {
  * @brief Initialize the graphics system.
  *
  * The debugger, allocator and custom backends will not not copied, therefore the pointers must
- * remain valid until the graphics system is shutdown. Set the debugger to `nullptr` to disable 
+ * remain valid until the graphics system is shutdown. Set the debugger to `nullptr` to disable
  * debugging and validation layers.
  *
  * If `debugger` is not `nullptr` and there is no debug layers, this function will not fail but
@@ -4750,7 +4759,7 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  * `PAL_IMAGE_VIEW_TYPE_2D_ARRAY`.
  *
  * `PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY` must be supported and enabled by the device
- * used to create the image view if `PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY` will be used. 
+ * used to create the image view if `PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY` will be used.
  * Otherwise behavior is undefined.
  *
  * @param[in] device Device that creates the image view.
@@ -5278,7 +5287,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * @sa palSignalSemaphore
  */
 PAL_API PalResult PAL_CALL palGetSemaphoreValue(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     uint64_t* value);
 
 /**
@@ -5307,7 +5316,7 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  * @brief Destroy a command pool.
  *
  * The graphics system must be initialized before this call.
- * All command buffers allocated from the pool must be freed before this call, 
+ * All command buffers allocated from the pool must be freed before this call,
  * otherwise undefined behavior.
  *
  * @param[in] pool Command pool to destroy.
@@ -5755,7 +5764,7 @@ PAL_API void PAL_CALL palCmdSetScissors(
  * @param[in] count Number of vertex buffers to bind.
  * @param[in] buffers Pointer to an array of vertex buffers.
  * @param[in] offsets Pointer to an array of offsets in bytes into each vertex buffer.
- * 
+ *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
  * @note A pipeline must be bound before this call.
@@ -6288,7 +6297,7 @@ PAL_API void PAL_CALL palCmdSetFrontFace(
  * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY` must be supported and enabled by the device.
-* Otherwise behavior is undefined.
+ * Otherwise behavior is undefined.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] topology Topology to set.
@@ -6307,7 +6316,7 @@ PAL_API void PAL_CALL palCmdSetPrimitiveTopology(
  * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE` must be supported and enabled by the device.
-* Otherwise behavior is undefined.
+ * Otherwise behavior is undefined.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] enable True to enable.
@@ -6377,7 +6386,7 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  * @param[in] info Pointer to a PalAccelerationStructureCreateInfo struct that specifies parameters
  * @param[out] outAs Pointer to a PalAccelerationStructure to recieve the created acceleration
  * structure.
- * 
+ *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
@@ -6495,12 +6504,12 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
 /**
  * @brief Compute size for an acceleration structure instance buffer.
  *
- * The graphics system must be initialized before this call. 
- * 
+ * The graphics system must be initialized before this call.
+ *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
- * 
- * This does not allocate memory for the buffer. This function must is required for all 
+ *
+ * This does not allocate memory for the buffer. This function must is required for all
  * acceleration structure instance buffers.
  *
  * @param[in] device The device to use.
@@ -6514,7 +6523,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  */
 PAL_API void PAL_CALL palComputeInstanceStagingSize(
     PalDevice* device,
-    uint32_t instanceCount, 
+    uint32_t instanceCount,
     uint64_t* outSize);
 
 /**
@@ -6522,10 +6531,10 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  *
  * The graphics system must be initialized before this call. This does not allocate memory
  * for the buffer. This function is required for all image copy staging buffers.
- * 
- * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight` 
+ *
+ * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight`
  * are hints. The driver might used it defaults if the requested is not supported. After this call,
- * set those values to the required ones from `requirements`. 
+ * set those values to the required ones from `requirements`.
  * If the driver supports the proivded, the values will be the same.
  *
  * @param[in] device The device to use.
@@ -6548,7 +6557,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  * @brief Write data to an instance staging buffer.
  *
  * The graphics system must be initialized before this call.
- * 
+ *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -6941,7 +6950,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  * @brief Destroy a pipeline.
  *
  * The graphics system must be initialized before this call.
- * 
+ *
  * @param[in] pipeline Pipeline to destroy.
  *
  * Thread safety: Thread safe if the device used to create the pipeline is
@@ -7057,14 +7066,14 @@ PAL_API void PAL_CALL palBuildWorkGroupInfo(
 
 /**
  * @brief Check if a constant is supported in a mask.
- * 
+ *
  * This function is used to check all masks in `supported_**` format in most of the capabilities
- * query structs. 
- * 
+ * query structs.
+ *
  * Example:
- * 
- * To check if `PAL_PRESENT_MODE_IMMEDIATE` is supported after querying `PalSurfaceCapabilities` 
- * capabilities of a surface, PalSurfaceCapabilities::supportedPresentModes should be the `mask` 
+ *
+ * To check if `PAL_PRESENT_MODE_IMMEDIATE` is supported after querying `PalSurfaceCapabilities`
+ * capabilities of a surface, PalSurfaceCapabilities::supportedPresentModes should be the `mask`
  * parameter and `PAL_PRESENT_MODE_IMMEDIATE` as the value parameter.
  *
  * @param[in] mask The supported mask.

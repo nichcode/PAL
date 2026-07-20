@@ -75,7 +75,7 @@ PalBool cursorTest()
         logResult(result, "Failed to create window cursor");
         return PAL_FALSE;
     }
-    
+
     // fill the create info struct
     PalWindowCreateInfo createInfo = {0};
     createInfo.monitor = nullptr; // use default monitor

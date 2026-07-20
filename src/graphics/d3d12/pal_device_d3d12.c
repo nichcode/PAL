@@ -9,7 +9,9 @@
 #include "pal_d3d12.h"
 
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter*);
-uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(PalAdapter*, PalShaderFormats);
+uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
+    PalAdapter*,
+    PalShaderFormats);
 
 static void convertToWcharD3D12(
     const char* src,
@@ -60,10 +62,7 @@ PalResult PAL_CALL createDeviceD3D12(
         return makeResultD3D12(result);
     }
 
-    result = tmpDevice->lpVtbl->QueryInterface(
-        tmpDevice,
-        &IID_Device5,
-        (void**)&device->handle);
+    result = tmpDevice->lpVtbl->QueryInterface(tmpDevice, &IID_Device5, (void**)&device->handle);
 
     tmpDevice->lpVtbl->Release(tmpDevice);
     if (s_D3D12.debugLayer) {
@@ -79,19 +78,18 @@ PalResult PAL_CALL createDeviceD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
 
-            D3D12_MESSAGE_ID denyIDs[] = { 
+            D3D12_MESSAGE_ID denyIDs[] = {
                 D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
-                D3D12_MESSAGE_ID_LIVE_OBJECT_SUMMARY
-            };
+                D3D12_MESSAGE_ID_LIVE_OBJECT_SUMMARY};
 
             device->infoQueue->lpVtbl->SetBreakOnSeverity(
-                device->infoQueue, 
-                D3D12_MESSAGE_SEVERITY_ERROR, 
+                device->infoQueue,
+                D3D12_MESSAGE_SEVERITY_ERROR,
                 TRUE);
 
             device->infoQueue->lpVtbl->SetBreakOnSeverity(
-                device->infoQueue, 
-                D3D12_MESSAGE_SEVERITY_CORRUPTION, 
+                device->infoQueue,
+                D3D12_MESSAGE_SEVERITY_CORRUPTION,
                 TRUE);
 
             D3D12_INFO_QUEUE_FILTER filter = {0};
@@ -109,11 +107,8 @@ PalResult PAL_CALL createDeviceD3D12(
     D3D12_COMMAND_QUEUE_DESC desc = {0};
     desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-    result = device->handle->lpVtbl->CreateCommandQueue(
-        device->handle,
-        &desc,
-        &IID_Queue,
-        (void**)&device->queue);
+    result = device->handle->lpVtbl
+                 ->CreateCommandQueue(device->handle, &desc, &IID_Queue, (void**)&device->queue);
 
     if (FAILED(result)) {
         return makeResultD3D12(result);
@@ -254,14 +249,12 @@ PalResult PAL_CALL createDeviceD3D12(
     D3D12_CPU_DESCRIPTOR_HANDLE __ret, dst;
     dst = *device->rtvAllocator.heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(
         device->rtvAllocator.heap,
-        &__ret
-    );
+        &__ret);
     device->rtvAllocator.baseOffset = dst.ptr;
 
     dst = *device->dsvAllocator.heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(
         device->dsvAllocator.heap,
-        &__ret
-    );
+        &__ret);
     device->dsvAllocator.baseOffset = dst.ptr;
 
     // API enforced limits
@@ -372,11 +365,8 @@ PalResult PAL_CALL allocateMemoryD3D12(
         desc.Properties.Type = D3D12_HEAP_TYPE_UPLOAD;
     }
 
-    result = d3d12Device->handle->lpVtbl->CreateHeap(
-        d3d12Device->handle,
-        &desc,
-        &IID_Heap,
-        (void**)&memory->handle);
+    result = d3d12Device->handle->lpVtbl
+                 ->CreateHeap(d3d12Device->handle, &desc, &IID_Heap, (void**)&memory->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
@@ -464,7 +454,7 @@ void PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
     caps->supportedCombinerOps |= (1u << PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX);
     caps->supportedCombinerOps |= (1u << PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL);
 
-    caps->minTexelWidth = 1; // safe default
+    caps->minTexelWidth = 1;  // safe default
     caps->minTexelHeight = 1; // safe default
     caps->maxTexelWidth = options.ShadingRateImageTileSize;
     caps->maxTexelHeight = options.ShadingRateImageTileSize;
@@ -570,12 +560,8 @@ PalResult PAL_CALL createQueueD3D12(
     }
 
     // create fence used for queue wait
-    result = d3d12Device->handle->lpVtbl->CreateFence(
-        d3d12Device->handle,
-        0,
-        0,
-        &IID_Fence,
-        (void**)&queue->fence);
+    result = d3d12Device->handle->lpVtbl
+                 ->CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, (void**)&queue->fence);
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, queue);
@@ -587,7 +573,7 @@ PalResult PAL_CALL createQueueD3D12(
     if (!queue->fenceEvent) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -642,7 +628,7 @@ PalResult PAL_CALL createShaderD3D12(
     void* bytecode = nullptr;
 
     shader = palAllocate(s_D3D12.allocator, sizeof(ShaderD3D12), 0);
-    bytecode = palAllocate(s_D3D12.allocator, info->bytecodeSize, 0);
+    bytecode = palAllocate(s_D3D12.allocator, info->codeSize, 0);
     if (!shader || !bytecode) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
@@ -657,12 +643,12 @@ PalResult PAL_CALL createShaderD3D12(
         ShaderEntry* entry = &shader->entries[i];
         convertToWcharD3D12(info->entries[i].entryName, entry->entryName);
         entry->patchControlPoints = info->entries[i].patchControlPoints;
-        entry->stage = info->entries[i].stage; 
+        entry->stage = info->entries[i].stage;
     }
 
-    memcpy(bytecode, info->bytecode, info->bytecodeSize);
+    memcpy(bytecode, info->code, info->codeSize);
     shader->byteCode.pShaderBytecode = bytecode;
-    shader->byteCode.BytecodeLength = info->bytecodeSize;
+    shader->byteCode.BytecodeLength = info->codeSize;
 
     shader->entryCount = info->entryCount;
     *outShader = (PalShader*)shader;

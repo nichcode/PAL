@@ -184,8 +184,8 @@ void PAL_CALL palSetSwapInterval(int32_t interval)
 const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance)
 {
 #if _PAL_HAS_EGL
-        return eglGetSupportedGLAPIs(instance);
+    return eglGetSupportedGLAPIs(instance);
 #elif defined(_WIN32)
-        return wglGetSupportedGLAPIs(instance);
+    return wglGetSupportedGLAPIs(instance);
 #endif // _PAL_HAS_EGL
 }

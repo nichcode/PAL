@@ -36,8 +36,8 @@ PalResult wglInitGL(
     // denied
     if (!RegisterClassExW(&wc)) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -58,8 +58,8 @@ PalResult wglInitGL(
 
     if (!s_Wgl.window) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -67,8 +67,8 @@ PalResult wglInitGL(
     s_Wgl.opengl = LoadLibraryA("opengl32.dll");
     if (!s_Gdi.handle || !s_Wgl.opengl) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -148,8 +148,8 @@ PalResult wglInitGL(
 
     if (!s_Wgl.makeCurrent(s_Wgl.hdc, s_Wgl.context)) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -315,8 +315,8 @@ PalResult wglEnumerateGLFBConfigs(
         // get framebuffer config with extensions
         if (!s_Wgl.getPixelFormatAttribivARB(s_Wgl.hdc, 0, 0, 1, &configAttrib, &nativeCount)) {
             return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_WIN32,
                 GetLastError());
         }
 

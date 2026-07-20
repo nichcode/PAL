@@ -127,11 +127,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
     // create staging buffer
     bufCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     sbt->stagingBufferSize = bufferSize;
-    result = s_Vk.createBuffer(
-        vkDevice->handle, 
-        &bufCreateInfo, 
-        &s_Vk.vkAllocator, 
-        &sbt->stagingBuffer);
+    result =
+        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->stagingBuffer);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -154,11 +151,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
     allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     allocateInfo.pNext = &allocateFlagsInfo;
 
-    result = s_Vk.allocateMemory(
-        vkDevice->handle,
-        &allocateInfo,
-        &s_Vk.vkAllocator,
-        &sbt->bufferMemory);
+    result =
+        s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &sbt->bufferMemory);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -241,7 +235,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
             memcpy(dstPtr + groupHandleSize, record->localData, record->localDataSize);
         }
     }
-    
+
     offset += sbtInfo->missCount;
     srcPtr += (groupHandleSize * sbtInfo->missCount);
 
@@ -256,7 +250,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
             memcpy(dstPtr + groupHandleSize, record->localData, record->localDataSize);
         }
     }
-    
+
     offset += sbtInfo->hitCount;
     srcPtr += (groupHandleSize * sbtInfo->hitCount);
 
@@ -282,7 +276,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // raygen
     sbt->raygen.region.deviceAddress = sbt->baseAddress;
-    sbt->raygen.offset = 0; // always
+    sbt->raygen.offset = 0;     // always
     sbt->raygen.startIndex = 0; // always
     sbt->raygen.region.size = raygenRegionSize;
     sbt->raygen.region.stride = raygenStride;
@@ -332,7 +326,7 @@ void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt)
 }
 
 void PAL_CALL updateShaderBindingTableVk(
-    PalShaderBindingTable* sbt, 
+    PalShaderBindingTable* sbt,
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {

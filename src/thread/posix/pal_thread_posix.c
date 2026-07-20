@@ -12,9 +12,9 @@
 
 #if _PAL_HAS_POSIX
 #include "pal_thread_posix.h"
+#include <sched.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#include <sched.h>
 
 #define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
@@ -104,7 +104,7 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
     features |= PAL_THREAD_FEATURE_AFFINITY;
     features |= PAL_THREAD_FEATURE_NAME;
 #endif // __linux__
-    
+
     return features;
 }
 
@@ -190,8 +190,8 @@ PalResult PAL_CALL palSetThreadPriority(
             int ret = pthread_setschedparam(_thread, SCHED_FIFO, &param);
             if (ret == EPERM) {
                 return palMakeResult(
-                    PAL_RESULT_CODE_INVALID_OPERATION, 
-                    PAL_RESULT_SOURCE_POSIX, 
+                    PAL_RESULT_CODE_INVALID_OPERATION,
+                    PAL_RESULT_SOURCE_POSIX,
                     errno);
             }
         }
@@ -241,7 +241,7 @@ PalResult PAL_CALL palSetThreadName(
         return palMakeResult(PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 #endif // __linux__
-    
+
     return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
 }
 

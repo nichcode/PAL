@@ -89,18 +89,18 @@ typedef uint32_t PalBool;
 /**
  * @typedef PalResult
  * @brief Value returned by most PAL functions.
- * 
- * `PalResult` constains the PAL result code (eg. `PAL_RESULT_CODE_INVALID_HANDLE`), the native 
- * source (eg. `PAL_RESULT_SOURCE_POSIX`) and the native code itself. 
+ *
+ * `PalResult` constains the PAL result code (eg. `PAL_RESULT_CODE_INVALID_HANDLE`), the native
+ * source (eg. `PAL_RESULT_SOURCE_POSIX`) and the native code itself.
  * The native code and the source are optional and both can be zero if not provided.
- * 
+ *
  * Only `PAL_RESULT_SUCCESS` is guarantee to be checked directly with the result value.
  * To check specific result codes for fast path error handling,
  * Call `palGetResultCode(result)` to get the PAL result code from the result value.
- * 
- * Call `palGetResultSource(result)` and `palGetResultNativeCode(result)` to get the native 
+ *
+ * Call `palGetResultSource(result)` and `palGetResultNativeCode(result)` to get the native
  * source and native code. The native source shows where the native code was retrieved from.
- * Example: `PAL_RESULT_SOURCE_WIN32` means the native code was retrieved from win32 
+ * Example: `PAL_RESULT_SOURCE_WIN32` means the native code was retrieved from win32
  * (`GetLastError()`).
  *
  * @since 1.0
@@ -110,9 +110,9 @@ typedef uint64_t PalResult;
 /**
  * @typedef PalResultCode
  * @brief Result codes that are extracted from `PalResult`.
- * 
+ *
  * `palGetResultCode(result)` to get the result code from a result value.
- * 
+ *
  * All result codes follow the format `PAL_RESULT_CODE_**` for consistency and API use.
  *
  * @since 2.0
@@ -122,9 +122,9 @@ typedef uint16_t PalResultCode;
 /**
  * @typedef PalResultSource
  * @brief Result sources that are extracted from `PalResult`.
- * 
+ *
  * `palGetResultSource(result)` to get the result source from a result value.
- * 
+ *
  * All result sources follow the format `PAL_RESULT_SOURCE_**` for consistency and API use.
  *
  * @since 2.0

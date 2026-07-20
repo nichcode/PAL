@@ -14,7 +14,7 @@ typedef struct {
 } BarrierInfo;
 
 static void commitShaderbindingTableUpdate(
-    CommandBufferVk* cmdBuffer, 
+    CommandBufferVk* cmdBuffer,
     ShaderBindingTableVk* sbt)
 {
     if (!sbt->isDirty) {
@@ -242,8 +242,8 @@ PalResult PAL_CALL cmdBeginVk(
     if (!vkCmdBuffer->primary) {
         // secondary command buffer
         colorAttachments = palLinearAlloc(
-            &vkCmdBuffer->allocator, 
-            sizeof(VkFormat) * info->colorAttachentCount, 
+            &vkCmdBuffer->allocator,
+            sizeof(VkFormat) * info->colorAttachentCount,
             0);
 
         if (!colorAttachments) {
@@ -338,12 +338,7 @@ void PAL_CALL cmdDrawMeshTasksIndirectVk(
     BufferVk* vkBuffer = (BufferVk*)buffer;
 
     uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    device->cmdDrawMeshTaskIndirect(
-        vkCmdBuffer->handle, 
-        vkBuffer->handle,
-        0, 
-        drawCount,
-        stride);
+    device->cmdDrawMeshTaskIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, drawCount, stride);
 }
 
 void PAL_CALL cmdDrawMeshTasksIndirectCountVk(
@@ -374,25 +369,22 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-    
+
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
     const VkAccelerationStructureBuildRangeInfoKHR** tmpRangeInfos = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
-    tmpRangeInfos = palLinearAlloc(
-        &vkCmdBuffer->allocator, 
-        sizeof(void*) * info->count, 
-        0);
+    tmpRangeInfos = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(void*) * info->count, 0);
 
     geometries = palLinearAlloc(
-        &vkCmdBuffer->allocator, 
-        sizeof(VkAccelerationStructureGeometryKHR) * info->count, 
+        &vkCmdBuffer->allocator,
+        sizeof(VkAccelerationStructureGeometryKHR) * info->count,
         0);
 
     rangeInfos = palLinearAlloc(
-        &vkCmdBuffer->allocator, 
-        sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count, 
+        &vkCmdBuffer->allocator,
+        sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count,
         0);
 
     memset(geometries, 0, sizeof(VkAccelerationStructureGeometryKHR) * info->count);
@@ -403,11 +395,8 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
         tmpRangeInfos[i] = &rangeInfos[i];
     }
 
-    vkCmdBuffer->device->cmdBuildAccelerationStructures(
-        vkCmdBuffer->handle,
-        1, 
-        &buildInfo, 
-        tmpRangeInfos);
+    vkCmdBuffer->device
+        ->cmdBuildAccelerationStructures(vkCmdBuffer->handle, 1, &buildInfo, tmpRangeInfos);
 }
 
 void PAL_CALL cmdBeginRenderingVk(
@@ -420,11 +409,11 @@ void PAL_CALL cmdBeginRenderingVk(
 
     VkRenderingAttachmentInfoKHR depthAttachment = {0};
     VkRenderingAttachmentInfoKHR stencilAttachment = {0};
-    
+
     VkRenderingAttachmentInfoKHR* colorAttachments = nullptr;
     colorAttachments = palLinearAlloc(
-        &vkCmdBuffer->allocator, 
-        sizeof(VkRenderingAttachmentInfoKHR) * info->colorAttachentCount, 
+        &vkCmdBuffer->allocator,
+        sizeof(VkRenderingAttachmentInfoKHR) * info->colorAttachentCount,
         0);
 
     VkRenderingAttachmentInfoKHR* attachment = nullptr;
@@ -504,7 +493,7 @@ void PAL_CALL cmdBeginRenderingVk(
 
         attachment->clearValue.depthStencil.depth = desc->clearValue.depth;
         stencilAttachment.clearValue.depthStencil.stencil = desc->clearValue.stencil;
-        
+
         attachment->imageView = imageView->handle;
         stencilAttachment.imageView = imageView->handle;
         if (resolveImageView) {
@@ -638,10 +627,10 @@ void PAL_CALL cmdCopyBufferToImageVk(
     copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
     copyRegion.imageSubresource.layerCount = copyInfo->ImageArrayLayerCount;
     copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
-    
+
     s_Vk.cmdCopyBufferToImage(
-        vkCmdBuffer->handle, 
-        src->handle, 
+        vkCmdBuffer->handle,
+        src->handle,
         dst->handle,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
@@ -680,17 +669,17 @@ void PAL_CALL cmdCopyImageVk(
     copyRegion.srcSubresource.baseArrayLayer = copyInfo->srcStartArrayLayer;
     copyRegion.srcSubresource.layerCount = copyInfo->arrayLayerCount;
     copyRegion.srcSubresource.mipLevel = copyInfo->srcMipLevel;
-    
+
     s_Vk.cmdCopyImage(
-        vkCmdBuffer->handle, 
-        srcImage->handle, 
+        vkCmdBuffer->handle,
+        srcImage->handle,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         dstImage->handle,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &copyRegion);
 }
-   
+
 void PAL_CALL cmdCopyImageToBufferVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* dstBuffer,
@@ -718,11 +707,11 @@ void PAL_CALL cmdCopyImageToBufferVk(
     copyRegion.imageSubresource.baseArrayLayer = copyInfo->ImageStartArrayLayer;
     copyRegion.imageSubresource.layerCount = copyInfo->ImageArrayLayerCount;
     copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
-    
+
     s_Vk.cmdCopyImageToBuffer(
-        vkCmdBuffer->handle, 
+        vkCmdBuffer->handle,
         src->handle,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         dst->handle,
         1,
         &copyRegion);
@@ -1019,7 +1008,7 @@ void PAL_CALL cmdDispatchBaseVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-   
+
     device->cmdDispatchBase(
         vkCmdBuffer->handle,
         baseGroupX,
@@ -1102,7 +1091,7 @@ void PAL_CALL cmdTraceRaysIndirectVk(
     barrier.buffer = vkCmdBuffer->buffer;
     barrier.offset = 0;
     barrier.size = VK_WHOLE_SIZE;
-    
+
     VkDependencyInfo dependencyInfo = {0};
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.bufferMemoryBarrierCount = 1;
@@ -1152,13 +1141,13 @@ void PAL_CALL cmdPushConstantsVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     PipelineVk* pipeline = vkCmdBuffer->pipeline;
-    
+
     s_Vk.cmdPushConstants(
-        vkCmdBuffer->handle, 
-        pipeline->layout, 
+        vkCmdBuffer->handle,
+        pipeline->layout,
         vkCmdBuffer->device->shaderStages,
-        offset, 
-        size, 
+        offset,
+        size,
         value);
 }
 
@@ -1180,7 +1169,7 @@ void PAL_CALL cmdSetCullModeVk(
         case PAL_CULL_MODE_NONE:
             vkCullMode = VK_CULL_MODE_NONE;
     }
-    
+
     device->cmdSetCullMode(vkCmdBuffer->handle, vkCullMode);
 }
 
@@ -1209,7 +1198,7 @@ void PAL_CALL cmdSetPrimitiveTopologyVk(
 {
     CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
     DeviceVk* device = vkCmdBuffer->device;
-  
+
     VkPrimitiveTopology vkTopology = 0;
     switch (topology) {
         case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
@@ -1282,14 +1271,8 @@ void PAL_CALL cmdSetStencilOpVk(
     VkStencilOp vkPassOp = stencilOpToVk(passOp);
     VkStencilOp vkDepthFailOp = stencilOpToVk(depthFailOp);
     VkCompareOp vkCompareOp = compareOpToVk(compareOp);
-    
-    device->cmdSetStencilOp(
-        vkCmdBuffer->handle, 
-        faceFlags, 
-        failOp, 
-        passOp, 
-        depthFailOp, 
-        compareOp);
+
+    device->cmdSetStencilOp(vkCmdBuffer->handle, faceFlags, failOp, passOp, depthFailOp, compareOp);
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

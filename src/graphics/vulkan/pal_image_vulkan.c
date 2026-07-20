@@ -103,11 +103,9 @@ static VkSamplerAddressMode addressModeToVk(PalSamplerAddressMode mode)
 
         case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
             return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-
         }
         case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-
         }
         case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
@@ -177,12 +175,12 @@ PalResult PAL_CALL createImageVk(
     createInfo.extent.height = info->height;
     createInfo.extent.depth = info->depth;
 
-    createInfo.arrayLayers = info->arrayLayerCount; 
+    createInfo.arrayLayers = info->arrayLayerCount;
     createInfo.mipLevels = info->mipLevelCount;
     createInfo.format = formatToVk(info->format);
     createInfo.samples = samplesToVk(info->sampleCount);
     createInfo.usage = imageUsageToVk(info->usages);
-    
+
     createInfo.imageType = VK_IMAGE_TYPE_2D;
     if (info->type == PAL_IMAGE_TYPE_3D) {
         createInfo.imageType = VK_IMAGE_TYPE_3D;
@@ -217,9 +215,9 @@ PalResult PAL_CALL createImageVk(
 
         allocateInfo.memoryTypeIndex = memoryIndex;
         result = s_Vk.allocateMemory(
-            vkDevice->handle, 
-            &allocateInfo, 
-            &s_Vk.vkAllocator, 
+            vkDevice->handle,
+            &allocateInfo,
+            &s_Vk.vkAllocator,
             &memory->handle);
 
         if (result != VK_SUCCESS) {
@@ -346,11 +344,8 @@ PalResult PAL_CALL createImageViewVk(
     createInfo.subresourceRange.levelCount = info->subresourceRange.mipLevelCount;
     createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
 
-    result = s_Vk.createImageView(
-        vkDevice->handle,
-        &createInfo,
-        &s_Vk.vkAllocator,
-        &imageView->handle);
+    result =
+        s_Vk.createImageView(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &imageView->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, imageView);
@@ -384,7 +379,7 @@ PalResult PAL_CALL createSamplerVk(
     if (!sampler) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
-    
+
     VkSamplerCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     createInfo.anisotropyEnable = info->enableAnisotropy;
@@ -405,11 +400,7 @@ PalResult PAL_CALL createSamplerVk(
     createInfo.addressModeW = addressModeToVk(info->addressModeW);
     createInfo.borderColor = borderColorToVk(info->borderColor);
 
-    result = s_Vk.createSampler(
-        vkDevice->handle,
-        &createInfo,
-        &s_Vk.vkAllocator,
-        &sampler->handle);
+    result = s_Vk.createSampler(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &sampler->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, sampler);

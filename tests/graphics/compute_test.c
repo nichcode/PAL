@@ -136,11 +136,7 @@ PalBool computeTest()
         return PAL_FALSE;
     }
 
-    result = palAllocateCommandBuffer(
-        device,
-        cmdPool,
-        PAL_COMMAND_BUFFER_TYPE_PRIMARY,
-        &cmdBuffer);
+    result = palAllocateCommandBuffer(device, cmdPool, PAL_COMMAND_BUFFER_TYPE_PRIMARY, &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
@@ -178,8 +174,8 @@ PalBool computeTest()
     computeEntry.entryName = "main";
     computeEntry.stage = PAL_SHADER_STAGE_COMPUTE;
 
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.code = bytecode;
+    shaderCreateInfo.codeSize = bytecodeSize;
     shaderCreateInfo.entries = &computeEntry;
     shaderCreateInfo.entryCount = 1;
 
@@ -221,10 +217,8 @@ PalBool computeTest()
     descriptorSetLayoutcreateInfo.bindingCount = 1;
     descriptorSetLayoutcreateInfo.bindings = &descriptorBinding;
 
-    result = palCreateDescriptorSetLayout(
-        device,
-        &descriptorSetLayoutcreateInfo,
-        &descriptorSetLayout);
+    result =
+        palCreateDescriptorSetLayout(device, &descriptorSetLayoutcreateInfo, &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create descriptor set layout");
@@ -238,7 +232,7 @@ PalBool computeTest()
 
     PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
-    descriptorPoolCreateInfo.bindingSizeCount = 1; // one binding type
+    descriptorPoolCreateInfo.bindingSizeCount = 1;  // one binding type
     descriptorPoolCreateInfo.bindingSizes = &storageBufferBindingsize;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
@@ -337,7 +331,7 @@ PalBool computeTest()
 
     buildData.workGroupSize[0] = 16; // must match shader (local_size on glsl)
     buildData.workGroupSize[1] = 16; // must match shader (local_size on glsl)
-    buildData.workGroupSize[2] = 1; // must match shader (local_size on glsl)
+    buildData.workGroupSize[2] = 1;  // must match shader (local_size on glsl)
 
     // device limits
     buildData.workGroupCount[0] = caps.computeCaps.maxWorkGroupCount[0];
@@ -347,7 +341,7 @@ PalBool computeTest()
     uint32_t workGroupInfoCount = 0;
     PalWorkGroupInfo* workGroupInfos = nullptr;
     palBuildWorkGroupInfo(&buildData, &workGroupInfoCount, nullptr);
-   
+
     workGroupInfos = palAllocate(nullptr, sizeof(PalWorkGroupInfo) * workGroupInfoCount, 0);
     if (!workGroupInfos) {
         palLog(nullptr, "Failed to allocate memory");
@@ -392,7 +386,7 @@ PalBool computeTest()
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
     submitInfo.waitStages = PAL_PIPELINE_STAGE_COMPUTE_SHADER;
-    
+
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
@@ -425,9 +419,9 @@ PalBool computeTest()
             int index = row * BUFFER_SIZE + x;
             uint8_t rgb[3];
 
-            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
-            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;
-            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255: 0;
+            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
+            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
+            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
             fwrite(rgb, 1, 3, file);
         }
     }

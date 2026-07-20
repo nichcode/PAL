@@ -17,7 +17,7 @@ PalResult PAL_CALL createAccelerationstructureVk(
     AccelerationStructureVk* as = nullptr;
     DeviceVk* vkDevice = (DeviceVk*)device;
     BufferVk* buffer = (BufferVk*)info->buffer;
-    
+
     as = palAllocate(s_Vk.allocator, sizeof(AccelerationStructureVk), 0);
     if (!as) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -86,7 +86,7 @@ void PAL_CALL getAccelerationStructureBuildSizeVk(
     memset(geometries, 0, geometriesSize);
     memset(maxPrimities, 0, sizeof(uint32_t) * info->count);
     fillBuildInfoVk(PAL_TRUE, info, geometries, &buildInfo, maxPrimities);
-    
+
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
     vkDevice->getAccelerationBuildsize(

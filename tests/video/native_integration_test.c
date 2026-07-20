@@ -387,7 +387,7 @@ PalBool nativeIntegrationTest()
     if (features & PAL_VIDEO_FEATURE_WINDOW_SET_TITLE) {
         palSetWindowTitle(window, "Hello from PAL API");
     }
-    
+
     palLog(nullptr, "Getting window title with native API");
     getWindowTitle(&windowInfo);
     palLog(nullptr, "Window title: %s", s_TitleBuffer);

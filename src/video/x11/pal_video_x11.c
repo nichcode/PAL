@@ -8,8 +8,8 @@
 #if PAL_HAS_X11_BACKEND == 1
 #include "pal_x11.h"
 #include <dlfcn.h>
-#include <math.h>
 #include <errno.h>
+#include <math.h>
 
 #define NULL_BUTTON_SERIAL 0xffffffffU
 
@@ -502,10 +502,7 @@ MonitorData* xGetFreeMonitorData()
     int freeIndex = s_X11.maxMonitorData + 1;
     data = palAllocate(s_X11.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_X11.monitorData,
-            s_X11.maxMonitorData * sizeof(MonitorData));
+        memcpy(data, s_X11.monitorData, s_X11.maxMonitorData * sizeof(MonitorData));
 
         palFree(s_X11.allocator, s_X11.monitorData);
         s_X11.monitorData = data;
@@ -520,8 +517,7 @@ MonitorData* xGetFreeMonitorData()
 MonitorData* xFindMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_X11.maxMonitorData; ++i) {
-        if (s_X11.monitorData[i].used &&
-            s_X11.monitorData[i].monitor == monitor) {
+        if (s_X11.monitorData[i].used && s_X11.monitorData[i].monitor == monitor) {
             return &s_X11.monitorData[i];
         }
     }
@@ -531,8 +527,7 @@ MonitorData* xFindMonitorData(PalMonitor* monitor)
 void xFreeMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_X11.maxMonitorData; ++i) {
-        if (s_X11.monitorData[i].used &&
-            s_X11.monitorData[i].monitor == monitor) {
+        if (s_X11.monitorData[i].used && s_X11.monitorData[i].monitor == monitor) {
             s_X11.monitorData[i].used = PAL_FALSE;
         }
     }
@@ -555,10 +550,7 @@ WindowData* xGetFreeWindowData()
     int freeIndex = s_X11.maxWindowData + 1;
     data = palAllocate(s_X11.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_X11.windowData,
-            s_X11.maxWindowData * sizeof(WindowData));
+        memcpy(data, s_X11.windowData, s_X11.maxWindowData * sizeof(WindowData));
 
         palFree(s_X11.allocator, s_X11.windowData);
         s_X11.windowData = data;
@@ -573,8 +565,7 @@ WindowData* xGetFreeWindowData()
 WindowData* xFindWindowData(PalWindow* window)
 {
     for (int i = 0; i < s_X11.maxWindowData; ++i) {
-        if (s_X11.windowData[i].used &&
-            s_X11.windowData[i].window == window) {
+        if (s_X11.windowData[i].used && s_X11.windowData[i].window == window) {
             return &s_X11.windowData[i];
         }
     }
@@ -582,18 +573,15 @@ WindowData* xFindWindowData(PalWindow* window)
 }
 
 PalResult xInitVideo(
-    const PalAllocator* allocator, 
-    PalEventDriver* eventDriver, 
+    const PalAllocator* allocator,
+    PalEventDriver* eventDriver,
     void* preferredInstance)
 {
     // load X11 dependencies
     s_X11.handle = dlopen("libX11.so", RTLD_LAZY);
     s_X11.libCursor = dlopen("libXcursor.so", RTLD_LAZY);
     if (!s_X11.handle || !s_X11.libCursor) {
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_POSIX, 
-            errno);
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, errno);
     }
 
     s_X11.xrandr = dlopen("libXrandr.so.2", RTLD_LAZY);
@@ -905,7 +893,7 @@ PalResult xInitVideo(
     s_X11.maxMonitorData = 16; // initial size
     s_X11.maxWindowData = 32;  // initial size
     s_X11.windowData = palAllocate(s_X11.allocator, sizeof(WindowData) * s_X11.maxWindowData, 0);
-    s_X11.monitorData = palAllocate(s_X11.allocator,sizeof(MonitorData) * s_X11.maxMonitorData, 0);
+    s_X11.monitorData = palAllocate(s_X11.allocator, sizeof(MonitorData) * s_X11.maxMonitorData, 0);
     if (!s_X11.monitorData || !s_X11.windowData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
@@ -971,7 +959,7 @@ PalResult xInitVideo(
     // disable auto key repeats
     int supported;
     s_X11.setDetectableAutoRepeat(s_X11.display, True, &supported);
-    
+
     // create an input method
     s_X11.setLocaleModifiers("");
     s_X11.im = s_X11.openIM(s_X11.display, nullptr, nullptr, nullptr);
@@ -1005,7 +993,7 @@ void xShutdownVideo()
     if (s_X11.glxHandle) {
         dlclose(s_X11.glxHandle);
     }
-    
+
     memset(&s_X11, 0, sizeof(X11));
     memset(&s_X11Atoms, 0, sizeof(X11Atoms));
 }

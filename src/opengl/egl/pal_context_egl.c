@@ -124,8 +124,8 @@ PalResult eglCreateGLContext(
     EGLint numConfigs = 0;
     if (!s_Egl.getConfigs(s_Egl.display, nullptr, 0, &numConfigs)) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_EGL, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_EGL,
             s_Egl.getError());
     }
 
@@ -306,8 +306,8 @@ PalResult eglMakeContextCurrent(
 
             } else {
                 return palMakeResult(
-                    PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                    PAL_RESULT_SOURCE_EGL, 
+                    PAL_RESULT_CODE_PLATFORM_FAILURE,
+                    PAL_RESULT_SOURCE_EGL,
                     error);
             }
         }

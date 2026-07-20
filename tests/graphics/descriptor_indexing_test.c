@@ -1,7 +1,7 @@
 
 #include "pal/pal_graphics.h"
-#include "pal/pal_video.h"
 #include "pal/pal_system.h"
+#include "pal/pal_video.h"
 #include "tests.h"
 
 #define WINDOW_WIDTH 640
@@ -67,7 +67,7 @@ PalBool descriptorIndexingTest()
     PalSemaphore* imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
     PalSemaphore** renderFinishedSemaphores; // count of swapchain images
-    PalFence** inFlightImages; // count of swapchain images
+    PalFence** inFlightImages;               // count of swapchain images
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
@@ -123,7 +123,7 @@ PalBool descriptorIndexingTest()
     PalWindowHandleInfo winHandle = {0};
     palGetWindowHandleInfo(window, &winHandle);
 
-    // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
+    // using pal_system.h will be easy to know the underlying windowing API or use typedefs.
     // We will use the pal_system module.
     PalPlatformInfo platformInfo = {0};
     palGetPlatformInfo(&platformInfo);
@@ -245,12 +245,12 @@ PalBool descriptorIndexingTest()
 
     // create surface
     result = palCreateSurface(
-        device, 
-        winHandle.nativeWindow, 
-        winHandle.nativeInstance, 
-        windowInstanceType, 
+        device,
+        winHandle.nativeWindow,
+        winHandle.nativeInstance,
+        windowInstanceType,
         &surface);
-        
+
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create surface");
         return PAL_FALSE;
@@ -268,7 +268,7 @@ PalBool descriptorIndexingTest()
         if (!palCanQueuePresent(queue, surface)) {
             palDestroyQueue(queue);
             queue = nullptr;
-        }  else {
+        } else {
             // found a queue
             foundQueue = PAL_TRUE;
             break;
@@ -451,7 +451,7 @@ PalBool descriptorIndexingTest()
     imageCreateInfo.arrayLayerCount = 1;
     imageCreateInfo.depth = 1;
     imageCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
-    imageCreateInfo.mipLevelCount = 1; // simple
+    imageCreateInfo.mipLevelCount = 1;                // simple
     imageCreateInfo.sampleCount = PAL_SAMPLE_COUNT_1; // simple
     imageCreateInfo.type = PAL_IMAGE_TYPE_2D;
     imageCreateInfo.usages = PAL_IMAGE_USAGE_TRANSFER_DST | PAL_IMAGE_USAGE_SAMPLED;
@@ -476,7 +476,7 @@ PalBool descriptorIndexingTest()
 
     PalImageStagingRequirements stagingReq = {0};
     palComputeImageStagingRequirements(
-        device, 
+        device,
         imageCreateInfo.format,
         &bufferImageCopyInfo,
         &stagingReq);
@@ -490,7 +490,7 @@ PalBool descriptorIndexingTest()
     createFlatTexture(textureDatas[0], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 0, 0);
     createFlatTexture(textureDatas[1], TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, 255, 0);
     createFlatTexture(textureDatas[2], TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, 0, 255);
-    createFlatTexture(textureDatas[3], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 255, 0);    
+    createFlatTexture(textureDatas[3], TEXTURE_WIDTH, TEXTURE_HEIGHT, 255, 255, 0);
 
     PalBufferCreateInfo imageStagingBufferCreateInfo = {0};
     imageStagingBufferCreateInfo.size = stagingReq.bufferSize;
@@ -518,7 +518,7 @@ PalBool descriptorIndexingTest()
             &bufferImageCopyInfo,
             textureDatas[i],
             data);
-            
+
         palUnmapBuffer(imageStagingBuffers[i]);
     }
 
@@ -558,9 +558,9 @@ PalBool descriptorIndexingTest()
         palCmdImageBarrier(cmdBuffers[0], textures[i], &textureRange, &barrierInfo);
 
         palCmdCopyBufferToImage(
-            cmdBuffers[0], 
-            textures[i], 
-            imageStagingBuffers[i], 
+            cmdBuffers[0],
+            textures[i],
+            imageStagingBuffers[i],
             &bufferImageCopyInfo);
 
         // transition the image to shader read state
@@ -597,9 +597,9 @@ PalBool descriptorIndexingTest()
 
     for (int i = 0; i < 4; i++) {
         result = palCreateImageView(
-            device, 
-            textures[i], 
-            &checkerboardImageViewCreateInfo, 
+            device,
+            textures[i],
+            &checkerboardImageViewCreateInfo,
             &textureViews[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -622,10 +622,7 @@ PalBool descriptorIndexingTest()
     samplerCreateInfo.minFilterMode = PAL_FILTER_MODE_LINEAR;
     samplerCreateInfo.maxAnisotropy = 1.0f;
 
-    result = palCreateSampler(
-        device, 
-        &samplerCreateInfo,
-        &sampler);
+    result = palCreateSampler(device, &samplerCreateInfo, &sampler);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create sampler");
@@ -680,8 +677,8 @@ PalBool descriptorIndexingTest()
 
         readFile(sources[i], bytecode, &bytecodeSize);
 
-        shaderCreateInfo.bytecode = bytecode;
-        shaderCreateInfo.bytecodeSize = bytecodeSize;
+        shaderCreateInfo.code = bytecode;
+        shaderCreateInfo.codeSize = bytecodeSize;
         shaderCreateInfo.entries = &entries[i];
         shaderCreateInfo.entryCount = 1;
 
@@ -699,7 +696,7 @@ PalBool descriptorIndexingTest()
     PalDescriptorSetLayoutBinding descriptorBindings[2];
     descriptorBindings[0].descriptorCount = 100;
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    
+
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
 
@@ -712,10 +709,8 @@ PalBool descriptorIndexingTest()
         descriptorSetLayoutcreateInfo.flags |= PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND;
     }
 
-    result = palCreateDescriptorSetLayout(
-        device,
-        &descriptorSetLayoutcreateInfo,
-        &descriptorSetLayout);
+    result =
+        palCreateDescriptorSetLayout(device, &descriptorSetLayoutcreateInfo, &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create descriptor set layout");
@@ -764,7 +759,7 @@ PalBool descriptorIndexingTest()
         writeInfo.arrayElement = 0;
         writeInfo.samplerInfos = nullptr;
         writeInfo.imageViewInfos = nullptr;
-        writeInfo.tlasInfos =  nullptr;
+        writeInfo.tlasInfos = nullptr;
         writeInfo.bufferInfos = nullptr;
 
         result = palUpdateDescriptorSet(device, 1, &writeInfo);
@@ -790,7 +785,7 @@ PalBool descriptorIndexingTest()
         writeInfo.arrayElement = 0;
         writeInfo.samplerInfos = nullptr;
         writeInfo.imageViewInfos = imageViewInfos;
-        writeInfo.tlasInfos =  nullptr;
+        writeInfo.tlasInfos = nullptr;
         writeInfo.bufferInfos = nullptr;
 
         result = palUpdateDescriptorSet(device, 1, &writeInfo);
@@ -800,9 +795,8 @@ PalBool descriptorIndexingTest()
         }
     }
 
-
     // we only write 4 descriptors
-    uint32_t arrElements[] = { ARRAY_ELEMENT_0, ARRAY_ELEMENT_1, ARRAY_ELEMENT_2, ARRAY_ELEMENT_3 };
+    uint32_t arrElements[] = {ARRAY_ELEMENT_0, ARRAY_ELEMENT_1, ARRAY_ELEMENT_2, ARRAY_ELEMENT_3};
 
     PalDescriptorImageViewInfo descriptorImageInfos[4];
     descriptorImageInfos[0].imageView = textureViews[0];
@@ -823,7 +817,7 @@ PalBool descriptorIndexingTest()
 
     writeInfos[0].arrayElement = 0;
     writeInfos[0].imageViewInfos = nullptr;
-    writeInfos[0].tlasInfos =  nullptr;
+    writeInfos[0].tlasInfos = nullptr;
     writeInfos[0].bufferInfos = nullptr;
 
     // textures
@@ -837,7 +831,7 @@ PalBool descriptorIndexingTest()
         writeInfos[i + 1].arrayElement = arrElements[i];
         writeInfos[i + 1].bufferInfos = nullptr;
         writeInfos[i + 1].samplerInfos = nullptr;
-        writeInfos[i + 1].tlasInfos =  nullptr;
+        writeInfos[i + 1].tlasInfos = nullptr;
     }
 
     result = palUpdateDescriptorSet(device, 5, writeInfos);
@@ -1064,7 +1058,7 @@ PalBool descriptorIndexingTest()
         palCmdBindDescriptorSet(cmdBuffers[currentFrame], 0, descriptorSet);
         palCmdSetViewport(cmdBuffers[currentFrame], 1, &viewport);
         palCmdSetScissors(cmdBuffers[currentFrame], 1, &scissor);
-       
+
         uint64_t offset[] = {0};
         palCmdBindVertexBuffers(cmdBuffers[currentFrame], 0, 1, &vertexBuffer, offset);
         palCmdDraw(cmdBuffers[currentFrame], 6, 1, 0, 0);
@@ -1125,7 +1119,7 @@ PalBool descriptorIndexingTest()
 
     for (int i = 0; i < imageCount; i++) {
         palDestroySemaphore(renderFinishedSemaphores[i]);
-        palDestroyImageView(imageViews[i]);   
+        palDestroyImageView(imageViews[i]);
     }
 
     palDestroyDescriptorPool(descriptorPool);

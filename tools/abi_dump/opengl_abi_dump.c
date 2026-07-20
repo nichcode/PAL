@@ -19,48 +19,44 @@ PalBool openglABIDump(uint32_t flags)
     }
 
     FieldInfo glInfoFields[] = {
-        { "extensions", {0, 8}, FIELD(PalGLInfo, extensions) },
-        { "major", {8, 4}, FIELD(PalGLInfo, major) },
-        { "minor", {12, 4}, FIELD(PalGLInfo, minor) },
-        { "backend", {16, 4}, FIELD(PalGLInfo, backend) },
-        { "api", {20, 4}, FIELD(PalGLInfo, api) },
-        { "vendor", {24, 32}, FIELD(PalGLInfo, vendor) },
-        { "graphicsCard", {56, 64}, FIELD(PalGLInfo, graphicsCard) },
-        { "version", {120, 64}, FIELD(PalGLInfo, version) }
-    };
+        {"extensions", {0, 8}, FIELD(PalGLInfo, extensions)},
+        {"major", {8, 4}, FIELD(PalGLInfo, major)},
+        {"minor", {12, 4}, FIELD(PalGLInfo, minor)},
+        {"backend", {16, 4}, FIELD(PalGLInfo, backend)},
+        {"api", {20, 4}, FIELD(PalGLInfo, api)},
+        {"vendor", {24, 32}, FIELD(PalGLInfo, vendor)},
+        {"graphicsCard", {56, 64}, FIELD(PalGLInfo, graphicsCard)},
+        {"version", {120, 64}, FIELD(PalGLInfo, version)}};
 
     FieldInfo fbConfigFields[] = {
-        { "doubleBuffer", {0, 4}, FIELD(PalGLFBConfig, doubleBuffer) },
-        { "stereo", {4, 4}, FIELD(PalGLFBConfig, stereo) },
-        { "sRGB", {8, 4}, FIELD(PalGLFBConfig, sRGB) },
-        { "index", {12, 2}, FIELD(PalGLFBConfig, index) },
-        { "redBits", {14, 2}, FIELD(PalGLFBConfig, redBits) },
-        { "greenBits", {16, 2}, FIELD(PalGLFBConfig, greenBits) },
-        { "blueBits", {18, 2}, FIELD(PalGLFBConfig, blueBits) },
-        { "alphaBits", {20, 2}, FIELD(PalGLFBConfig, alphaBits) },
-        { "depthBits", {22, 2}, FIELD(PalGLFBConfig, depthBits) },
-        { "stencilBits", {24, 2}, FIELD(PalGLFBConfig, stencilBits) },
-        { "samples", {26, 2}, FIELD(PalGLFBConfig, samples) }
-    };
+        {"doubleBuffer", {0, 4}, FIELD(PalGLFBConfig, doubleBuffer)},
+        {"stereo", {4, 4}, FIELD(PalGLFBConfig, stereo)},
+        {"sRGB", {8, 4}, FIELD(PalGLFBConfig, sRGB)},
+        {"index", {12, 2}, FIELD(PalGLFBConfig, index)},
+        {"redBits", {14, 2}, FIELD(PalGLFBConfig, redBits)},
+        {"greenBits", {16, 2}, FIELD(PalGLFBConfig, greenBits)},
+        {"blueBits", {18, 2}, FIELD(PalGLFBConfig, blueBits)},
+        {"alphaBits", {20, 2}, FIELD(PalGLFBConfig, alphaBits)},
+        {"depthBits", {22, 2}, FIELD(PalGLFBConfig, depthBits)},
+        {"stencilBits", {24, 2}, FIELD(PalGLFBConfig, stencilBits)},
+        {"samples", {26, 2}, FIELD(PalGLFBConfig, samples)}};
 
     FieldInfo windowFields[] = {
-        { "instance", {0, 8}, FIELD(PalGLWindow, instance) },
-        { "window", {8, 8}, FIELD(PalGLWindow, window) }
-    };
+        {"instance", {0, 8}, FIELD(PalGLWindow, instance)},
+        {"window", {8, 8}, FIELD(PalGLWindow, window)}};
 
     FieldInfo contextCreateInfoFields[] = {
-        { "window", {0, 8}, FIELD(PalGLContextCreateInfo, window) },
-        { "fbConfig", {8, 8}, FIELD(PalGLContextCreateInfo, fbConfig) },
-        { "shareContext", {16, 8}, FIELD(PalGLContextCreateInfo, shareContext) },
-        { "profile", {24, 4}, FIELD(PalGLContextCreateInfo, profile) },
-        { "reset", {28, 4}, FIELD(PalGLContextCreateInfo, reset) },
-        { "release", {32, 4}, FIELD(PalGLContextCreateInfo, release) },
-        { "forward", {36, 4}, FIELD(PalGLContextCreateInfo, forward) },
-        { "noError", {40, 4}, FIELD(PalGLContextCreateInfo, noError) },
-        { "debug", {44, 4}, FIELD(PalGLContextCreateInfo, debug) },
-        { "major", {48, 4}, FIELD(PalGLContextCreateInfo, major) },
-        { "minor", {52, 4}, FIELD(PalGLContextCreateInfo, minor) }
-    };
+        {"window", {0, 8}, FIELD(PalGLContextCreateInfo, window)},
+        {"fbConfig", {8, 8}, FIELD(PalGLContextCreateInfo, fbConfig)},
+        {"shareContext", {16, 8}, FIELD(PalGLContextCreateInfo, shareContext)},
+        {"profile", {24, 4}, FIELD(PalGLContextCreateInfo, profile)},
+        {"reset", {28, 4}, FIELD(PalGLContextCreateInfo, reset)},
+        {"release", {32, 4}, FIELD(PalGLContextCreateInfo, release)},
+        {"forward", {36, 4}, FIELD(PalGLContextCreateInfo, forward)},
+        {"noError", {40, 4}, FIELD(PalGLContextCreateInfo, noError)},
+        {"debug", {44, 4}, FIELD(PalGLContextCreateInfo, debug)},
+        {"major", {48, 4}, FIELD(PalGLContextCreateInfo, major)},
+        {"minor", {52, 4}, FIELD(PalGLContextCreateInfo, minor)}};
 
     StructInfo glInfo = {0};
     glInfo.name = "PalGLInfo";

@@ -61,17 +61,14 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         D3D_FEATURE_LEVEL_12_1,
         D3D_FEATURE_LEVEL_12_0,
         D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0
-    };
+        D3D_FEATURE_LEVEL_11_0};
 
     if (s_D3D12.adapters) {
         palFree(s_D3D12.allocator, s_D3D12.adapters);
     }
 
-    while (SUCCEEDED(s_D3D12.factory->lpVtbl->EnumAdapters(
-        s_D3D12.factory, 
-        adapterCount, 
-        &adapter))) {
+    while (
+        SUCCEEDED(s_D3D12.factory->lpVtbl->EnumAdapters(s_D3D12.factory, adapterCount, &adapter))) {
         if (outAdapters) {
             IDXGIAdapter4* tmp = nullptr;
             if (SUCCEEDED(adapter->lpVtbl->QueryInterface(adapter, &IID_Adapter, (void**)&tmp))) {
@@ -81,11 +78,8 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
             // create a temp device for every adapter to use as an instance to check features.
             ID3D12Device* device = nullptr;
             for (int i = 0; i < 5; i++) {
-                HRESULT result = s_D3D12.createDevice(
-                    (IUnknown*)tmp,
-                    levels[i],
-                    &IID_Device,
-                    (void**)&device);
+                HRESULT result =
+                    s_D3D12.createDevice((IUnknown*)tmp, levels[i], &IID_Device, (void**)&device);
 
                 if (SUCCEEDED(result)) {
                     deviceLevels[adapterCount] = levels[i];
@@ -136,9 +130,9 @@ void PAL_CALL getAdapterInfoD3D12(
     d3d12Adapter->handle->lpVtbl->GetDesc3(d3d12Adapter->handle, &desc);
 
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_SHADER_MODEL, 
-        &shaderModel, 
+        device,
+        D3D12_FEATURE_SHADER_MODEL,
+        &shaderModel,
         sizeof(shaderModel));
 
     info->shaderFormats = PAL_SHADER_FORMAT_DXBC;
@@ -149,7 +143,7 @@ void PAL_CALL getAdapterInfoD3D12(
     LARGE_INTEGER driverVersion = {0};
     info->driverVersion = 0;
     result = d3d12Adapter->handle->lpVtbl->CheckInterfaceSupport(
-        d3d12Adapter->handle, 
+        d3d12Adapter->handle,
         &IID_Adapter,
         &driverVersion);
 
@@ -173,11 +167,7 @@ void PAL_CALL getAdapterInfoD3D12(
         nullptr,
         nullptr);
 
-    device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_ARCHITECTURE1, 
-        &arch, 
-        sizeof(arch));
+    device->lpVtbl->CheckFeatureSupport(device, D3D12_FEATURE_ARCHITECTURE1, &arch, sizeof(arch));
 
     if (arch.UMA == PAL_TRUE) {
         info->type = PAL_ADAPTER_TYPE_INTEGRATED;
@@ -208,16 +198,16 @@ void PAL_CALL getAdapterCapabilitiesD3D12(
     PalResourceCapabilities* resourceCaps = &caps->resourceCaps;
     PalComputeCapabilities* computeCaps = &caps->computeCaps;
 
-    caps->maxComputeQueues = 2; // safe default
+    caps->maxComputeQueues = 2;  // safe default
     caps->maxGraphicsQueues = 2; // safe default
-    caps->maxCopyQueues = 2; // safe default
+    caps->maxCopyQueues = 2;     // safe default
 
     caps->maxColorAttachments = D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT;
     caps->maxUniformBufferSize = D3D12_REQ_IMMEDIATE_CONSTANT_BUFFER_ELEMENT_COUNT * 16;
     caps->maxStorageBufferSize = 2147483648; // 2 GIB
     caps->maxPushConstantSize = 256;
 
-    caps->maxVertexLayouts = 32; // safe
+    caps->maxVertexLayouts = 32;    // safe
     caps->maxVertexAttributes = 32; // safe
     caps->maxTessellationPatchPoint = 32;
 
@@ -278,40 +268,40 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
 
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_D3D12_OPTIONS, 
-        &options, 
+        device,
+        D3D12_FEATURE_D3D12_OPTIONS,
+        &options,
         sizeof(options));
 
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_D3D12_OPTIONS3, 
-        &options3, 
+        device,
+        D3D12_FEATURE_D3D12_OPTIONS3,
+        &options3,
         sizeof(options3));
 
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_D3D12_OPTIONS5, 
-        &options5, 
+        device,
+        D3D12_FEATURE_D3D12_OPTIONS5,
+        &options5,
         sizeof(options5));
 
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_D3D12_OPTIONS6, 
-        &options6, 
+        device,
+        D3D12_FEATURE_D3D12_OPTIONS6,
+        &options6,
         sizeof(options6));
 
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_D3D12_OPTIONS7, 
-        &options7, 
+        device,
+        D3D12_FEATURE_D3D12_OPTIONS7,
+        &options7,
         sizeof(options7));
 
     shaderModel.HighestShaderModel = D3D_SHADER_MODEL_5_1;
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_SHADER_MODEL, 
-        &shaderModel, 
+        device,
+        D3D12_FEATURE_SHADER_MODEL,
+        &shaderModel,
         sizeof(shaderModel));
 
     if (shaderModel.HighestShaderModel >= D3D_SHADER_MODEL_5_1 && result == S_OK) {
@@ -393,7 +383,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
 }
 
 uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
-    PalAdapter* adapter, 
+    PalAdapter* adapter,
     PalShaderFormats shaderFormat)
 {
     if (shaderFormat != PAL_SHADER_FORMAT_DXIL && shaderFormat != PAL_SHADER_FORMAT_DXBC) {
@@ -426,9 +416,9 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
     for (int i = 0; i < 11; i++) {
         shaderModel.HighestShaderModel = models[i];
         result = d3d12Adapter->tmpDevice->lpVtbl->CheckFeatureSupport(
-            d3d12Adapter->tmpDevice, 
-            D3D12_FEATURE_SHADER_MODEL, 
-            &shaderModel, 
+            d3d12Adapter->tmpDevice,
+            D3D12_FEATURE_SHADER_MODEL,
+            &shaderModel,
             sizeof(shaderModel));
 
         if (shaderModel.HighestShaderModel >= models[i] && result == S_OK) {
@@ -492,12 +482,9 @@ void PAL_CALL enumerateFormatsD3D12(
         }
 
         support.Format = fmt;
-        device->lpVtbl->CheckFeatureSupport(
-            device, 
-            D3D12_FEATURE_FORMAT_SUPPORT, 
-            &support, 
-            sizeof(support));
-            
+        device->lpVtbl
+            ->CheckFeatureSupport(device, D3D12_FEATURE_FORMAT_SUPPORT, &support, sizeof(support));
+
         if (support.Support1 == 0 && support.Support2 == 0) {
             // format not supported
             continue;
@@ -533,11 +520,8 @@ PalBool PAL_CALL isFormatSupportedD3D12(
     }
 
     support.Format = fmt;
-    device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_FORMAT_SUPPORT, 
-        &support, 
-        sizeof(support));
+    device->lpVtbl
+        ->CheckFeatureSupport(device, D3D12_FEATURE_FORMAT_SUPPORT, &support, sizeof(support));
 
     if (support.Support1 == 0 && support.Support2 == 0) {
         return PAL_FALSE;
@@ -562,9 +546,9 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
 
     support.Format = fmt;
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_FORMAT_SUPPORT, 
-        &support, 
+        device,
+        D3D12_FEATURE_FORMAT_SUPPORT,
+        &support,
         sizeof(support));
 
     if (FAILED(result)) {
@@ -601,9 +585,9 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
 
     support.Format = fmt;
     result = device->lpVtbl->CheckFeatureSupport(
-        device, 
-        D3D12_FEATURE_FORMAT_SUPPORT, 
-        &support, 
+        device,
+        D3D12_FEATURE_FORMAT_SUPPORT,
+        &support,
         sizeof(support));
 
     if (FAILED(result)) {
@@ -624,9 +608,9 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
     for (int i = 0; i < 6; i++) {
         samples.SampleCount = sampleCounts[i];
         result = device->lpVtbl->CheckFeatureSupport(
-            device, 
-            D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, 
-            &samples, 
+            device,
+            D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+            &samples,
             sizeof(samples));
 
         if (SUCCEEDED(result) && samples.NumQualityLevels > 0) {

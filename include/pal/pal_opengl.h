@@ -216,9 +216,8 @@ typedef struct {
  * The allocator will not not copied, therefore the pointer must remain valid
  * until the opengl system is shutdown.
  *
- * `instance` must not be `nullptr` and will not be freed by the opengl system. It must be valid until
- * palShutdownGL() is called.
- * `Linux`: This is the Display associated with the connection.
+ * `instance` must not be `nullptr` and will not be freed by the opengl system. It must be valid
+ * until palShutdownGL() is called. `Linux`: This is the Display associated with the connection.
  * `Windows`: This is the HINSTANCE of the process.
  *
  * @param[in] api The api to use. (eg. `PAL_GL_API_OPENGL`).

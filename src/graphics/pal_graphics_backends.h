@@ -1140,15 +1140,6 @@ void PAL_CALL cmdDispatchD3D12(
     uint32_t groupCountY,
     uint32_t groupCountZ);
 
-void PAL_CALL cmdDispatchBaseD3D12(
-    PalCommandBuffer* cmdBuffer,
-    uint32_t baseGroupX,
-    uint32_t baseGroupY,
-    uint32_t baseGroupZ,
-    uint32_t groupCountX,
-    uint32_t groupCountY,
-    uint32_t groupCountZ);
-
 void PAL_CALL cmdDispatchIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer);
@@ -1177,34 +1168,6 @@ void PAL_CALL cmdPushConstantsD3D12(
     uint32_t offset,
     uint32_t size,
     const void* value);
-
-void PAL_CALL cmdSetCullModeD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalCullMode cullMode);
-
-void PAL_CALL cmdSetFrontFaceD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalFrontFace frontFace);
-
-void PAL_CALL cmdSetPrimitiveTopologyD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalPrimitiveTopology topology);
-
-void PAL_CALL cmdSetDepthTestEnableD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBool enable);
-
-void PAL_CALL cmdSetDepthWriteEnableD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalBool enable);
-
-void PAL_CALL cmdSetStencilOpD3D12(
-    PalCommandBuffer* cmdBuffer,
-    PalStencilFaceFlags faceMask,
-    PalStencilOp failOp,
-    PalStencilOp passOp,
-    PalStencilOp depthFailOp,
-    PalCompareOp compareOp);
 
 PalResult PAL_CALL createAccelerationstructureD3D12(
     PalDevice* device,
@@ -1422,18 +1385,18 @@ static PalGraphicsBackendVtable1 s_D3D12Backend1 = {
     .cmdImageBarrier = cmdImageBarrierD3D12,
     .cmdBufferBarrier = cmdBufferBarrierD3D12,
     .cmdDispatch = cmdDispatchD3D12,
-    .cmdDispatchBase = cmdDispatchBaseD3D12,
+    .cmdDispatchBase = nullptr,
     .cmdDispatchIndirect = cmdDispatchIndirectD3D12,
     .cmdTraceRays = cmdTraceRaysD3D12,
     .cmdTraceRaysIndirect = cmdTraceRaysIndirectD3D12,
     .cmdBindDescriptorSet = cmdBindDescriptorSetD3D12,
     .cmdPushConstants = cmdPushConstantsD3D12,
-    .cmdSetCullMode = cmdSetCullModeD3D12,
-    .cmdSetFrontFace = cmdSetFrontFaceD3D12,
-    .cmdSetPrimitiveTopology = cmdSetPrimitiveTopologyD3D12,
-    .cmdSetDepthTestEnable = cmdSetDepthTestEnableD3D12,
-    .cmdSetDepthWriteEnable = cmdSetDepthWriteEnableD3D12,
-    .cmdSetStencilOp = cmdSetStencilOpD3D12,
+    .cmdSetCullMode = nullptr,
+    .cmdSetFrontFace = nullptr,
+    .cmdSetPrimitiveTopology = nullptr,
+    .cmdSetDepthTestEnable = nullptr,
+    .cmdSetDepthWriteEnable = nullptr,
+    .cmdSetStencilOp = nullptr,
     .createAccelerationstructure = createAccelerationstructureD3D12,
     .destroyAccelerationstructure = destroyAccelerationstructureD3D12,
     .getAccelerationStructureBuildSize = getAccelerationStructureBuildSizeD3D12,

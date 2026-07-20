@@ -25,8 +25,8 @@
 #include <windows.h>
 
 void PAL_CALL palFormatResult(
-    PalResult result, 
-    uint64_t bufferSize, 
+    PalResult result,
+    uint64_t bufferSize,
     char* buffer)
 {
     char tmpBuffer[256];

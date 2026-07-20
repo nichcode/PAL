@@ -9,8 +9,8 @@
 
 #if _PAL_HAS_POSIX
 #include "core/pal_format.h"
-#include <string.h>
 #include <pthread.h>
+#include <string.h>
 
 #define MSG_SIZE 4096
 

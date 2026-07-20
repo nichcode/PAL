@@ -764,7 +764,8 @@ PalResult win32InitVideo(
     void* preferredInstance)
 {
     s_Win32.maxWindowData = 32;
-    s_Win32.windowData = palAllocate(s_Win32.allocator, sizeof(WindowData) * s_Win32.maxWindowData, 0);
+    s_Win32.windowData =
+        palAllocate(s_Win32.allocator, sizeof(WindowData) * s_Win32.maxWindowData, 0);
 
     // user provided instance
     if (preferredInstance) {
@@ -789,8 +790,8 @@ PalResult win32InitVideo(
 
     if (!RegisterClassExW(&wc)) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -811,8 +812,8 @@ PalResult win32InitVideo(
 
     if (!s_Win32.hiddenWindow) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -827,8 +828,8 @@ PalResult win32InitVideo(
     rid.usUsagePage = 0x01;
     if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 

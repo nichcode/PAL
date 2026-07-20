@@ -13,9 +13,11 @@ static TestEntry s_Test[MAX_TESTS];
 static const char* s_FailedString = "FAILED";
 static const char* s_PassedString = "PASSED";
 
-void registerTest(TestFn func, const char* name)
+void registerTest(
+    TestFn func,
+    const char* name)
 {
-    TestEntry entry = { func, name };
+    TestEntry entry = {func, name};
     s_Test[s_Count++] = entry;
 }
 

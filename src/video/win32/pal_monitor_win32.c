@@ -80,16 +80,10 @@ static inline PalResult setMonitorMode(
     if (!GetMonitorInfoW((HMONITOR)monitor, (MONITORINFO*)&mi)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
 
@@ -116,8 +110,8 @@ static inline PalResult setMonitorMode(
 
     } else {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_HANDLE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 }
@@ -337,7 +331,7 @@ PalResult win32SetMonitorOrientation(
     } else {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 }

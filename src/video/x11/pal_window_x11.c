@@ -7,10 +7,10 @@
 
 #if PAL_HAS_X11_BACKEND == 1
 #include "pal_x11.h"
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
 #include <errno.h>
+#include <math.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 static int xErrorHandler(
     Display*,
@@ -82,7 +82,9 @@ static XVisualInfo* eglXBackend(int fbConfigIndex)
     return visualInfo;
 }
 
-void xGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
+void xGetMonitorInfo(
+    PalMonitor*,
+    PalMonitorInfo*);
 
 PalResult xCreateWindow(
     const PalWindowCreateInfo* info,
@@ -117,7 +119,7 @@ PalResult xCreateWindow(
 
         } else if (backend == PAL_FBCONFIG_BACKEND_GLX) {
             visualInfo = glxBackend(info->fbConfigIndex);
-            
+
         } else {
             return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
@@ -451,7 +453,7 @@ PalResult xCreateWindow(
     data->skipConfigure = PAL_TRUE;
     data->skipState = PAL_TRUE;
     data->isAttached = PAL_FALSE; // PAL_TRUE for attached windows
-    data->dpi = dpi;          // the current window monitor
+    data->dpi = dpi;              // the current window monitor
     data->window = TO_PAL_HANDLE(PalWindow, window);
     s_X11.saveContext(s_X11.display, window, s_X11.dataID, (XPointer)data);
 
@@ -740,7 +742,7 @@ PalWindow* xGetFocusWindow()
 }
 
 void xGetWindowHandleInfo(
-    PalWindow* window, 
+    PalWindow* window,
     PalWindowHandleInfo* info)
 {
     info->nativeInstance = (void*)s_X11.display;

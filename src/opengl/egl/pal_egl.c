@@ -8,8 +8,8 @@
 #include "pal_platform.h"
 
 #if _PAL_HAS_EGL
-#include "pal_egl.h"
 #include "opengl/pal_opengl_shared.h"
+#include "pal_egl.h"
 #include <dlfcn.h>
 #include <errno.h>
 #include <stdio.h>
@@ -23,10 +23,7 @@ PalResult PAL_CALL eglInitGL(
     const PalAllocator* allocator)
 {
     s_Egl.maxContextData = 16; // initial size
-    s_Egl.contextData = palAllocate(
-        s_Egl.allocator, 
-        sizeof(ContextData) * s_Egl.maxContextData, 
-        0);
+    s_Egl.contextData = palAllocate(s_Egl.allocator, sizeof(ContextData) * s_Egl.maxContextData, 0);
 
     if (!s_Egl.maxContextData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -165,7 +162,7 @@ PalResult PAL_CALL eglInitGL(
     }
 
     EGLSurface surface = EGL_NO_SURFACE;
-    EGLint pBufferAttribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+    EGLint pBufferAttribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
     surface = s_Egl.createPbufferSurface(tmpDisplay, config, pBufferAttribs);
     if (surface == EGL_NO_SURFACE) {
         error = s_Egl.getError();
@@ -187,7 +184,7 @@ PalResult PAL_CALL eglInitGL(
         context = s_Egl.createContext(tmpDisplay, config, EGL_NO_CONTEXT, contextAttrib);
 
     } else {
-        EGLint contextAttrib[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
+        EGLint contextAttrib[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
         context = s_Egl.createContext(tmpDisplay, config, EGL_NO_CONTEXT, contextAttrib);
     }
 

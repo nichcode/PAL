@@ -96,8 +96,8 @@ PalResult win32CreateWindow(
         monitor = (PalMonitor*)MonitorFromPoint((POINT){0, 0}, MONITOR_DEFAULTTOPRIMARY);
         if (!monitor) {
             return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_WIN32,
                 GetLastError());
         }
     }
@@ -142,8 +142,8 @@ PalResult win32CreateWindow(
 
     if (!handle) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -170,8 +170,8 @@ PalResult win32CreateWindow(
                 sizeof(PIXELFORMATDESCRIPTOR),
                 &pfd)) {
             return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT,
+                PAL_RESULT_SOURCE_WIN32,
                 GetLastError());
         }
 
@@ -432,7 +432,7 @@ PalWindow* win32GetFocusWindow()
 }
 
 void win32GetWindowHandleInfo(
-    PalWindow* window, 
+    PalWindow* window,
     PalWindowHandleInfo* info)
 {
     info->nativeInstance = (void*)s_Win32.instance;
@@ -446,7 +446,7 @@ void win32SetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
-    SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);   
+    SetLayeredWindowAttributes((HWND)window, 0, (BYTE)(opacity * 255), LWA_ALPHA);
 }
 
 void win32SetWindowStyle(
@@ -523,14 +523,7 @@ void win32SetWindowPos(
     int32_t x,
     int32_t y)
 {
-    SetWindowPos(
-        (HWND)window, 
-        nullptr, 
-        x, 
-        y, 
-        0, 
-        0, 
-        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
+    SetWindowPos((HWND)window, nullptr, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
 }
 
 void win32SetWindowSize(
@@ -545,7 +538,7 @@ void win32SetWindowSize(
         0,
         width,
         height,
-        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER);   
+        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER);
 }
 
 void win32SetFocusWindow(PalWindow* window)
@@ -586,8 +579,8 @@ PalResult win32DetachWindow(
     data = (WindowData*)GetPropW((HWND)window, PAL_VIDEO_PROP);
     if (!data) {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_HANDLE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 

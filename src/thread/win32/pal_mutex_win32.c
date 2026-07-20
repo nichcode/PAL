@@ -25,8 +25,8 @@ PalResult PAL_CALL palCreateMutex(
     PalMutex* mutex = palAllocate(allocator, sizeof(PalMutex), 0);
     if (!mutex) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 

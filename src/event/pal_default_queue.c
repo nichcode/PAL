@@ -61,7 +61,7 @@ PalEventQueue* createDefaultEventQueue(const PalAllocator* allocator)
 }
 
 void destroyDefaultEventQueue(
-    const PalAllocator* allocator, 
+    const PalAllocator* allocator,
     PalEventQueue* queue)
 {
     palFree(allocator, queue->userData);

@@ -96,11 +96,8 @@ PalResult PAL_CALL allocateCommandBufferVk(
     bufCreateInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    result = s_Vk.createBuffer(
-        vkDevice->handle, 
-        &bufCreateInfo, 
-        &s_Vk.vkAllocator, 
-        &cmdBuffer->buffer);
+    result =
+        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &cmdBuffer->buffer);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -159,7 +156,7 @@ PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer)
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
-    
+
     return PAL_RESULT_SUCCESS;
 }
 

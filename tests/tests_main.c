@@ -56,11 +56,11 @@ int main(int argc, char** argv)
 #endif
 
 #if PAL_HAS_GRAPHICS_MODULE == 1
-    // registerTest(graphicsTest, "Graphics Test");
+    registerTest(graphicsTest, "Graphics Test");
     // registerTest(computeTest, "Compute Test");
     // registerTest(rayTracingTest, "Ray Tracing Test");
     // registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
-    registerTest(customBackendTest, "Custom Backend Test");
+    // registerTest(customBackendTest, "Custom Backend Test");
 #endif // PAL_HAS_GRAPHICS_MODULE
 
 #if PAL_HAS_GRAPHICS_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1 && PAL_HAS_SYSTEM_MODULE == 1

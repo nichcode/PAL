@@ -65,7 +65,7 @@ PalBool openglMultiContextTest()
         logResult(result, "Failed to initialize opengl");
         return PAL_FALSE;
     }
-    
+
     // enumerate supported opengl framebuffer configs
     int32_t fbCount = 0;
     result = palEnumerateGLFBConfigs(&fbCount, nullptr);
@@ -149,7 +149,7 @@ PalBool openglMultiContextTest()
     // because we are using both pal_video and pal_opengl
     createInfo.fbConfigBackend = PAL_FBCONFIG_BACKEND_PAL_OPENGL;
     createInfo.fbConfigIndex = closest->index;
-    
+
     // create the window with the create info struct
     PalWindow* window = nullptr;
     result = palCreateWindow(&createInfo, &window);
@@ -186,11 +186,11 @@ PalBool openglMultiContextTest()
 
     // fill the context create info with the closest FBConfig
     PalGLContextCreateInfo contextCreateInfo = {0};
-    contextCreateInfo.debug = PAL_TRUE;        // debug context
+    contextCreateInfo.debug = PAL_TRUE;    // debug context
     contextCreateInfo.fbConfig = closest;  // we use the closest to what we want
     contextCreateInfo.major = info->major; // context major
     contextCreateInfo.minor = info->minor; // context minor
-    contextCreateInfo.noError = PAL_FALSE;     // check PAL_GL_EXTENSION_NO_ERROR
+    contextCreateInfo.noError = PAL_FALSE; // check PAL_GL_EXTENSION_NO_ERROR
 
     // check PAL_GL_EXTENSION_FLUSH_CONTROL
     contextCreateInfo.release = PAL_GL_RELEASE_BEHAVIOR_NONE;

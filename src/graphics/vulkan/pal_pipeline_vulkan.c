@@ -144,7 +144,7 @@ PalResult PAL_CALL createPipelineLayoutVk(
     PipelineLayoutVk* layout = nullptr;
     VkPushConstantRange pushConstantRange = {0};
     VkDescriptorSetLayout* descriptorLayouts = nullptr;
-    
+
     layout = palAllocate(s_Vk.allocator, sizeof(PipelineLayoutVk), 0);
     if (!layout) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -152,8 +152,8 @@ PalResult PAL_CALL createPipelineLayoutVk(
 
     if (info->descriptorSetLayoutCount) {
         descriptorLayouts = palAllocate(
-            s_Vk.allocator, 
-            sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount, 
+            s_Vk.allocator,
+            sizeof(VkDescriptorSetLayout) * info->descriptorSetLayoutCount,
             0);
 
         if (!descriptorLayouts) {
@@ -272,10 +272,8 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     }
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(PipelineVk), 0);
-    shaderStages = palAllocate(
-        s_Vk.allocator, 
-        sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 
-        0);
+    shaderStages =
+        palAllocate(s_Vk.allocator, sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 0);
 
     if (!pipeline || !shaderStages) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -609,10 +607,8 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     VkFormat* colorAttachments = nullptr;
     PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
 
-    colorAttachments = palAllocate(
-        s_Vk.allocator, 
-        sizeof(VkFormat) * renderingLayout->colorAttachentCount, 
-        0);
+    colorAttachments =
+        palAllocate(s_Vk.allocator, sizeof(VkFormat) * renderingLayout->colorAttachentCount, 0);
 
     if (!colorAttachments) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -722,7 +718,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     DeviceVk* vkDevice = (DeviceVk*)device;
     PipelineLayoutVk* layout = (PipelineLayoutVk*)info->pipelineLayout;
     PipelineVk* pipeline = nullptr;
-    VkPipelineShaderStageCreateInfo* shaderStages = nullptr; 
+    VkPipelineShaderStageCreateInfo* shaderStages = nullptr;
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
 
     if (info->maxPayloadSize > vkDevice->limits.maxPayloadSize) {
@@ -741,14 +737,12 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
     pipeline = palAllocate(s_Vk.allocator, sizeof(PipelineVk), 0);
     groups = palAllocate(
-        s_Vk.allocator, 
-        sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount, 
+        s_Vk.allocator,
+        sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount,
         0);
 
-    shaderStages = palAllocate(
-        s_Vk.allocator, 
-        sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 
-        0);
+    shaderStages =
+        palAllocate(s_Vk.allocator, sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 0);
 
     if (!pipeline || !groups || !shaderStages) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -835,7 +829,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
                 group->closestHitShader = VK_SHADER_UNUSED_KHR;
             }
 
-            if (tmp->intersectionShaderIndex!= PAL_UNUSED_SHADER_INDEX) {
+            if (tmp->intersectionShaderIndex != PAL_UNUSED_SHADER_INDEX) {
                 group->intersectionShader = tmp->intersectionShaderEntryIndex;
 
             } else {

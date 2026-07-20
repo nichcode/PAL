@@ -1,7 +1,7 @@
 
 #include "pal/pal_graphics.h"
-#include "pal/pal_video.h"
 #include "pal/pal_system.h"
+#include "pal/pal_video.h"
 #include "tests.h"
 
 #define WINDOW_WIDTH 640
@@ -35,7 +35,7 @@ PalBool triangleTest()
     PalSemaphore* imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
     PalSemaphore** renderFinishedSemaphores; // count of swapchain images
-    PalFence** inFlightImages; // count of swapchain images
+    PalFence** inFlightImages;               // count of swapchain images
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
@@ -83,7 +83,7 @@ PalBool triangleTest()
     PalWindowHandleInfo winHandle = {0};
     palGetWindowHandleInfo(window, &winHandle);
 
-    // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
+    // using pal_system.h will be easy to know the underlying windowing API or use typedefs.
     // We will use the pal_system module.
     PalPlatformInfo platformInfo = {0};
     palGetPlatformInfo(&platformInfo);
@@ -190,10 +190,10 @@ PalBool triangleTest()
 
     // create surface
     result = palCreateSurface(
-        device, 
-        winHandle.nativeWindow, 
-        winHandle.nativeInstance, 
-        windowInstanceType, 
+        device,
+        winHandle.nativeWindow,
+        winHandle.nativeInstance,
+        windowInstanceType,
         &surface);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -213,7 +213,7 @@ PalBool triangleTest()
         if (!palCanQueuePresent(queue, surface)) {
             palDestroyQueue(queue);
             queue = nullptr;
-        }  else {
+        } else {
             // found a queue
             foundQueue = PAL_TRUE;
             break;
@@ -474,8 +474,8 @@ PalBool triangleTest()
 
         readFile(sources[i], bytecode, &bytecodeSize);
 
-        shaderCreateInfo.bytecode = bytecode;
-        shaderCreateInfo.bytecodeSize = bytecodeSize;
+        shaderCreateInfo.code = bytecode;
+        shaderCreateInfo.codeSize = bytecodeSize;
         shaderCreateInfo.entries = &entries[i];
         shaderCreateInfo.entryCount = 1;
 
@@ -752,7 +752,7 @@ PalBool triangleTest()
 
     for (int i = 0; i < imageCount; i++) {
         palDestroySemaphore(renderFinishedSemaphores[i]);
-        palDestroyImageView(imageViews[i]);   
+        palDestroyImageView(imageViews[i]);
     }
 
     palDestroyBuffer(vertexBuffer);
@@ -762,7 +762,7 @@ PalBool triangleTest()
     palDestroyQueue(queue);
     palDestroyDevice(device);
     palShutdownGraphics();
-    
+
     palFree(nullptr, imageViews);
     palFree(nullptr, renderFinishedSemaphores);
     palFree(nullptr, inFlightImages);

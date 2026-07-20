@@ -1,6 +1,6 @@
 
-#include "tests.h"
 #include "pal/pal_system.h"
+#include "tests.h"
 
 static inline const char* platformToString(PalPlatformType type)
 {
@@ -45,7 +45,7 @@ PalBool platformTest()
 
     // get the platform info. Users must cache this
     palGetPlatformInfo(&platformInfo);
-    
+
     palLog(nullptr, "Platform: %s", platformToString(platformInfo.type));
     palLog(nullptr, " Name: %s", platformInfo.name);
     palLog(nullptr, " API: %s", platformApiToString(platformInfo.apiType));

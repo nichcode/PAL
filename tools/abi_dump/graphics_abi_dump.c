@@ -263,9 +263,9 @@ static PalBool deviceDump(uint32_t flags)
     };
 
     FieldInfo shaderCreateInfoFields[] = {
-        { "bytecode", {0, 8}, FIELD(PalShaderCreateInfo, bytecode) },
+        { "bcode", {0, 8}, FIELD(PalShaderCreateInfo, code) },
         { "entries", {8, 8}, FIELD(PalShaderCreateInfo, entries) },
-        { "bytecodeSize", {16, 4}, FIELD(PalShaderCreateInfo, bytecodeSize) },
+        { "codeSize", {16, 4}, FIELD(PalShaderCreateInfo, codeSize) },
         { "entryCount", {20, 4}, FIELD(PalShaderCreateInfo, entryCount) }
     };
     // clang-format on

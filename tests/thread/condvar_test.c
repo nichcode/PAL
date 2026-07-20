@@ -1,6 +1,6 @@
 
-#include "tests.h"
 #include "pal/pal_thread.h"
+#include "tests.h"
 
 #define THREAD_COUNT 4
 

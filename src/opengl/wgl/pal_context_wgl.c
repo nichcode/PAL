@@ -43,7 +43,7 @@ PalResult wglCreateGLContext(
         }
     }
 
-    // check version 
+    // check version
     // clang-format off
     PalBool valid = info->major < s_Wgl.info.major ||
                     (info->major == s_Wgl.info.major && info->minor <= s_Wgl.info.minor);
@@ -56,17 +56,16 @@ PalResult wglCreateGLContext(
     HDC hdc = GetDC((HWND)info->window->window);
     if (!hdc) {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
-
     }
 
     // check if the provided pixel format is the same as the window
     if (s_Gdi.getPixelFormat(hdc) != info->fbConfig->index) {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -152,14 +151,14 @@ PalResult wglCreateGLContext(
             DWORD error = GetLastError();
             if (error == ERROR_INVALID_PROFILE_ARB) {
                 return palMakeResult(
-                    PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                    PAL_RESULT_SOURCE_WIN32, 
+                    PAL_RESULT_CODE_INVALID_ARGUMENT,
+                    PAL_RESULT_SOURCE_WIN32,
                     error);
 
             } else {
                 return palMakeResult(
-                    PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                    PAL_RESULT_SOURCE_WIN32, 
+                    PAL_RESULT_CODE_PLATFORM_FAILURE,
+                    PAL_RESULT_SOURCE_WIN32,
                     error);
             }
         }
@@ -169,8 +168,8 @@ PalResult wglCreateGLContext(
         context = s_Wgl.createContext(hdc);
         if (!context) {
             return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_WIN32,
                 GetLastError());
         }
 
@@ -180,8 +179,8 @@ PalResult wglCreateGLContext(
                 s_Wgl.deleteContext(context);
                 ReleaseDC((HWND)info->window->window, hdc);
                 return palMakeResult(
-                    PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                    PAL_RESULT_SOURCE_WIN32, 
+                    PAL_RESULT_CODE_PLATFORM_FAILURE,
+                    PAL_RESULT_SOURCE_WIN32,
                     GetLastError());
             }
         }
@@ -206,8 +205,8 @@ PalResult wglMakeContextCurrent(
         HDC hdc = GetDC((HWND)glWindow->window);
         if (!hdc) {
             return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_INVALID_ARGUMENT,
+                PAL_RESULT_SOURCE_WIN32,
                 GetLastError());
         }
 
@@ -215,14 +214,14 @@ PalResult wglMakeContextCurrent(
             DWORD error = GetLastError();
             if (error == ERROR_INVALID_HANDLE) {
                 return palMakeResult(
-                    PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                    PAL_RESULT_SOURCE_WIN32, 
+                    PAL_RESULT_CODE_INVALID_ARGUMENT,
+                    PAL_RESULT_SOURCE_WIN32,
                     error);
 
             } else {
                 return palMakeResult(
-                    PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                    PAL_RESULT_SOURCE_WIN32, 
+                    PAL_RESULT_CODE_PLATFORM_FAILURE,
+                    PAL_RESULT_SOURCE_WIN32,
                     error);
             }
         }
@@ -243,24 +242,18 @@ PalResult wglSwapBuffers(
     HDC hdc = GetDC((HWND)glWindow->window);
     if (!hdc) {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
     if (!s_Gdi.swapBuffers(hdc)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_PIXEL_FORMAT) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
 

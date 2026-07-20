@@ -9,8 +9,8 @@
 #include "pal/pal_system.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sysinfo.h>
 #include <sys/statvfs.h>
+#include <sys/sysinfo.h>
 
 void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {

@@ -8,8 +8,8 @@
 #if PAL_HAS_WAYLAND_BACKEND == 1
 #include "pal_wayland.h"
 #include "pal_wayland_protocols.h"
-#include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
 
 EGLConfig eglWlBackend(const int fbConfigIndex)
 {
@@ -164,8 +164,8 @@ PalResult wlCreateWindow(
         data->eglWindow = s_Wl.eglWindowCreate(surface, data->w, data->h);
         if (!data->eglWindow) {
             return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_EGL, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_EGL,
                 s_VideoEgl.getError());
         }
 
@@ -266,7 +266,7 @@ PalBool wlIsWindowVisible(PalWindow* window)
 }
 
 void wlGetWindowHandleInfo(
-    PalWindow* window, 
+    PalWindow* window,
     PalWindowHandleInfo* info)
 {
     WindowData* data = wlFindWindowData(window);

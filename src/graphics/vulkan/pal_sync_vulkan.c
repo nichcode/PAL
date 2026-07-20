@@ -117,15 +117,12 @@ PalResult PAL_CALL createSemaphoreVk(
     semaphore->isTimeline = PAL_FALSE;
     if (enableTimeline) {
         next = &timelineCreateInfo;
-        semaphore->isTimeline = PAL_TRUE;   
+        semaphore->isTimeline = PAL_TRUE;
     }
 
     createInfo.pNext = next;
-    result = s_Vk.createSemaphore(
-        vkDevice->handle,
-        &createInfo,
-        &s_Vk.vkAllocator,
-        &semaphore->handle);
+    result =
+        s_Vk.createSemaphore(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &semaphore->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, semaphore);
@@ -170,10 +167,7 @@ PalResult PAL_CALL waitSemaphoreVk(
     waitInfo.pSemaphores = &vkSemaphore->handle;
     waitInfo.pValues = &value;
 
-    result = vkSemaphore->device->waitSemaphore(
-        vkSemaphore->device->handle, 
-        &waitInfo, 
-        timeInNano);
+    result = vkSemaphore->device->waitSemaphore(vkSemaphore->device->handle, &waitInfo, timeInNano);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -206,7 +200,9 @@ PalResult PAL_CALL signalSemaphoreVk(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult PAL_CALL getSemaphoreValueVk(PalSemaphore* semaphore, uint64_t* value)
+PalResult PAL_CALL getSemaphoreValueVk(
+    PalSemaphore* semaphore,
+    uint64_t* value)
 {
     SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
     VkResult result = vkSemaphore->device->getSemaphoreValue(

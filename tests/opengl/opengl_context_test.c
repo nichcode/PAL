@@ -17,7 +17,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask); // use GL typedefs
 PalBool openglContextTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
-    
+
     // fill the event driver create info
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     eventDriverCreateInfo.allocator = nullptr; // default allocator
@@ -65,7 +65,7 @@ PalBool openglContextTest()
         logResult(result, "Failed to initialize opengl");
         return PAL_FALSE;
     }
-    
+
     // enumerate supported opengl framebuffer configs
     int32_t fbCount = 0;
     result = palEnumerateGLFBConfigs(&fbCount, nullptr);
@@ -167,7 +167,7 @@ PalBool openglContextTest()
     // If pal video system will not be used, there is no need to initialize it
     PalWindowHandleInfo winHandle = {0};
     palGetWindowHandleInfo(window, &winHandle);
-    
+
     // PalGLWindow is just a struct to hold native handles
     PalGLWindow glWindow = {0};
     glWindow.instance = winHandle.nativeInstance;
@@ -186,11 +186,11 @@ PalBool openglContextTest()
 
     // fill the context create info with the closest FBConfig
     PalGLContextCreateInfo contextCreateInfo = {0};
-    contextCreateInfo.debug = PAL_TRUE;        // debug context
+    contextCreateInfo.debug = PAL_TRUE;    // debug context
     contextCreateInfo.fbConfig = closest;  // we use the closest to what we want
     contextCreateInfo.major = info->major; // context major
     contextCreateInfo.minor = info->minor; // context minor
-    contextCreateInfo.noError = PAL_FALSE;     // check PAL_GL_EXTENSION_NO_ERROR
+    contextCreateInfo.noError = PAL_FALSE; // check PAL_GL_EXTENSION_NO_ERROR
 
     // check PAL_GL_EXTENSION_FLUSH_CONTROL
     contextCreateInfo.release = PAL_GL_RELEASE_BEHAVIOR_NONE;

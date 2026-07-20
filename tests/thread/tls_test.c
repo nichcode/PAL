@@ -1,6 +1,6 @@
 
-#include "tests.h"
 #include "pal/pal_thread.h"
+#include "tests.h"
 
 // data every thread will have its own copy of
 typedef struct {

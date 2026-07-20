@@ -1,7 +1,7 @@
 
 #include "pal/pal_graphics.h"
-#include "pal/pal_video.h"
 #include "pal/pal_system.h"
+#include "pal/pal_video.h"
 #include "tests.h"
 
 #define WINDOW_WIDTH 640
@@ -42,7 +42,7 @@ PalBool indirectDrawTest()
     PalSemaphore* imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
     PalSemaphore** renderFinishedSemaphores; // count of swapchain images
-    PalFence** inFlightImages; // count of swapchain images
+    PalFence** inFlightImages;               // count of swapchain images
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
@@ -92,7 +92,7 @@ PalBool indirectDrawTest()
     PalWindowHandleInfo winHandle = {0};
     palGetWindowHandleInfo(window, &winHandle);
 
-    // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
+    // using pal_system.h will be easy to know the underlying windowing API or use typedefs.
     // We will use the pal_system module.
     PalPlatformInfo platformInfo = {0};
     palGetPlatformInfo(&platformInfo);
@@ -206,12 +206,12 @@ PalBool indirectDrawTest()
 
     // create surface
     result = palCreateSurface(
-        device, 
-        winHandle.nativeWindow, 
-        winHandle.nativeInstance, 
-        windowInstanceType, 
+        device,
+        winHandle.nativeWindow,
+        winHandle.nativeInstance,
+        windowInstanceType,
         &surface);
-        
+
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create surface");
         return PAL_FALSE;
@@ -229,7 +229,7 @@ PalBool indirectDrawTest()
         if (!palCanQueuePresent(queue, surface)) {
             palDestroyQueue(queue);
             queue = nullptr;
-        }  else {
+        } else {
             // found a queue
             foundQueue = PAL_TRUE;
             break;
@@ -367,7 +367,7 @@ PalBool indirectDrawTest()
     };
     // clang-format on
 
-    uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
+    uint32_t indices[6] = {0, 1, 2, 2, 3, 0};
 
     // vertex buffer
     PalBufferCreateInfo bufferCreateInfo = {0};
@@ -567,8 +567,8 @@ PalBool indirectDrawTest()
 
         readFile(sources[i], bytecode, &bytecodeSize);
 
-        shaderCreateInfo.bytecode = bytecode;
-        shaderCreateInfo.bytecodeSize = bytecodeSize;
+        shaderCreateInfo.code = bytecode;
+        shaderCreateInfo.codeSize = bytecodeSize;
         shaderCreateInfo.entries = &entries[i];
         shaderCreateInfo.entryCount = 1;
 
@@ -580,7 +580,7 @@ PalBool indirectDrawTest()
 
         palFree(nullptr, bytecode);
     }
-    
+
     // create pipeline layout
     PalPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
     result = palCreatePipelineLayout(device, &pipelineLayoutCreateInfo, &pipelineLayout);
@@ -798,7 +798,7 @@ PalBool indirectDrawTest()
         barrierInfo.newState = PAL_USAGE_STATE_PRESENT;
         barrierInfo.dstStages = PAL_PIPELINE_STAGE_NONE;
         palCmdImageBarrier(cmdBuffers[currentFrame], image, &imageRange, &barrierInfo);
-            
+
         result = palCmdEnd(cmdBuffers[currentFrame]);
         if (result != PAL_RESULT_SUCCESS) {
             logResult(result, "Failed to end command buffer");
@@ -846,7 +846,7 @@ PalBool indirectDrawTest()
 
     for (int i = 0; i < imageCount; i++) {
         palDestroySemaphore(renderFinishedSemaphores[i]);
-        palDestroyImageView(imageViews[i]);   
+        palDestroyImageView(imageViews[i]);
     }
 
     palDestroyBuffer(indirectBuffer);

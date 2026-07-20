@@ -19,26 +19,24 @@ PalBool systemABIDump(uint32_t flags)
     }
 
     FieldInfo platformInfoFields[] = {
-        { "type", {0, 4}, FIELD(PalPlatformInfo, type) },
-        { "apiType", {4, 4}, FIELD(PalPlatformInfo, apiType) },
-        { "totalMemory", {8, 4}, FIELD(PalPlatformInfo, totalMemory) },
-        { "totalRAM", {12, 4}, FIELD(PalPlatformInfo, totalRAM) },
-        { "version", {16, 12}, FIELD(PalPlatformInfo, version) },
-        { "name", {28, 32}, FIELD(PalPlatformInfo, name) }
-    };
+        {"type", {0, 4}, FIELD(PalPlatformInfo, type)},
+        {"apiType", {4, 4}, FIELD(PalPlatformInfo, apiType)},
+        {"totalMemory", {8, 4}, FIELD(PalPlatformInfo, totalMemory)},
+        {"totalRAM", {12, 4}, FIELD(PalPlatformInfo, totalRAM)},
+        {"version", {16, 12}, FIELD(PalPlatformInfo, version)},
+        {"name", {28, 32}, FIELD(PalPlatformInfo, name)}};
 
     FieldInfo cpuInfoFields[] = {
-        { "features", {0, 8}, FIELD(PalCPUInfo, features) },
-        { "architecture", {8, 4}, FIELD(PalCPUInfo, architecture) },
-        { "numCores", {12, 4}, FIELD(PalCPUInfo, numCores) },
-        { "cacheL1", {16, 4}, FIELD(PalCPUInfo, cacheL1) },
-        { "cacheL2", {20, 4}, FIELD(PalCPUInfo, cacheL2) },
-        { "cacheL3", {24, 4}, FIELD(PalCPUInfo, cacheL3) },
-        { "numLogicalProcessors", {28, 4}, FIELD(PalCPUInfo, numLogicalProcessors) },
-        { "vendor", {32, 16}, FIELD(PalCPUInfo, vendor) },
-        { "model", {48, 64}, FIELD(PalCPUInfo, model) }
-    };
-  
+        {"features", {0, 8}, FIELD(PalCPUInfo, features)},
+        {"architecture", {8, 4}, FIELD(PalCPUInfo, architecture)},
+        {"numCores", {12, 4}, FIELD(PalCPUInfo, numCores)},
+        {"cacheL1", {16, 4}, FIELD(PalCPUInfo, cacheL1)},
+        {"cacheL2", {20, 4}, FIELD(PalCPUInfo, cacheL2)},
+        {"cacheL3", {24, 4}, FIELD(PalCPUInfo, cacheL3)},
+        {"numLogicalProcessors", {28, 4}, FIELD(PalCPUInfo, numLogicalProcessors)},
+        {"vendor", {32, 16}, FIELD(PalCPUInfo, vendor)},
+        {"model", {48, 64}, FIELD(PalCPUInfo, model)}};
+
     StructInfo platformInfo = {0};
     platformInfo.name = "PalPlatformInfo";
     platformInfo.fields = platformInfoFields;

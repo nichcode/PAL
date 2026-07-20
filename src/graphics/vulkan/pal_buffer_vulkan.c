@@ -255,9 +255,9 @@ PalResult PAL_CALL createBufferVk(
         }
 
         result = s_Vk.allocateMemory(
-            vkDevice->handle, 
-            &allocateInfo, 
-            &s_Vk.vkAllocator, 
+            vkDevice->handle,
+            &allocateInfo,
+            &s_Vk.vkAllocator,
             &memory->handle);
 
         if (result != VK_SUCCESS) {
@@ -406,11 +406,8 @@ PalResult PAL_CALL bindBufferMemoryVk(
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    result = s_Vk.bindBufferMemory(
-        vkBuffer->device->handle, 
-        vkBuffer->handle, 
-        vkMemory->handle, 
-        offset);
+    result =
+        s_Vk.bindBufferMemory(vkBuffer->device->handle, vkBuffer->handle, vkMemory->handle, offset);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -429,7 +426,7 @@ PalResult PAL_CALL mapBufferVk(
     VkResult result;
     BufferVk* vkBuffer = (BufferVk*)buffer;
     DeviceVk* device = vkBuffer->device;
-    
+
     result = s_Vk.mapMemory(device->handle, vkBuffer->memory->handle, offset, size, 0, outPtr);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);

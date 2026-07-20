@@ -19,23 +19,21 @@ PalBool eventABIDump(uint32_t flags)
     }
 
     FieldInfo eventFields[] = {
-        { "data", {0, 8}, FIELD(PalEvent, data) },
-        { "data2", {8, 8}, FIELD(PalEvent, data2) },
-        { "userId", {16, 4}, FIELD(PalEvent, userId) },
-        { "type", {20, 4}, FIELD(PalEvent, type) }
-    };
+        {"data", {0, 8}, FIELD(PalEvent, data)},
+        {"data2", {8, 8}, FIELD(PalEvent, data2)},
+        {"userId", {16, 4}, FIELD(PalEvent, userId)},
+        {"type", {20, 4}, FIELD(PalEvent, type)}};
 
     FieldInfo eventQueueFields[] = {
-        { "push", {0, 8}, FIELD(PalEventQueue, push) },
-        { "poll", {8, 8}, FIELD(PalEventQueue, poll) },
-        { "userData", {16, 8}, FIELD(PalEventQueue, userData) }
-    };
+        {"push", {0, 8}, FIELD(PalEventQueue, push)},
+        {"poll", {8, 8}, FIELD(PalEventQueue, poll)},
+        {"userData", {16, 8}, FIELD(PalEventQueue, userData)}};
 
     FieldInfo eventDriverCreateInfoFields[] = {
-        { "allocator", {0, 8}, FIELD(PalEventDriverCreateInfo, allocator) },
-        { "queue", {8, 8}, FIELD(PalEventDriverCreateInfo, queue) },
-        { "callback", {16, 8}, FIELD(PalEventDriverCreateInfo, callback) },
-        { "userData", {24, 8}, FIELD(PalEventDriverCreateInfo, userData) },
+        {"allocator", {0, 8}, FIELD(PalEventDriverCreateInfo, allocator)},
+        {"queue", {8, 8}, FIELD(PalEventDriverCreateInfo, queue)},
+        {"callback", {16, 8}, FIELD(PalEventDriverCreateInfo, callback)},
+        {"userData", {24, 8}, FIELD(PalEventDriverCreateInfo, userData)},
     };
 
     StructInfo eventInfo = {0};

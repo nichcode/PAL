@@ -22,12 +22,8 @@ PalResult PAL_CALL createFenceD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    result = d3d12Device->handle->lpVtbl->CreateFence(
-        d3d12Device->handle, 
-        0, 
-        0, 
-        &IID_Fence,
-        (void**)&fence->handle);
+    result = d3d12Device->handle->lpVtbl
+                 ->CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, (void**)&fence->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
@@ -40,7 +36,7 @@ PalResult PAL_CALL createFenceD3D12(
     if (!fence->event) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -74,10 +70,7 @@ PalResult PAL_CALL waitFenceD3D12(
     HANDLE event = d3d12Fence->event;
 
     if (d3d12Fence->handle->lpVtbl->GetCompletedValue(d3d12Fence->handle) < value) {
-        result = d3d12Fence->handle->lpVtbl->SetEventOnCompletion(
-            d3d12Fence->handle, 
-            value, 
-            event);
+        result = d3d12Fence->handle->lpVtbl->SetEventOnCompletion(d3d12Fence->handle, value, event);
 
         if (FAILED(result)) {
             return makeResultD3D12(result);
@@ -132,12 +125,8 @@ PalResult PAL_CALL createSemaphoreD3D12(
         semaphore->isTimeline = PAL_TRUE;
     }
 
-    result = d3d12Device->handle->lpVtbl->CreateFence(
-        d3d12Device->handle, 
-        0, 
-        0, 
-        &IID_Fence, 
-        (void**)&semaphore->handle);
+    result = d3d12Device->handle->lpVtbl
+                 ->CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, (void**)&semaphore->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(d3d12Device);
@@ -150,7 +139,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
     if (!semaphore->event) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -180,8 +169,8 @@ PalResult PAL_CALL waitSemaphoreD3D12(
     HANDLE event = d3d12Semaphore->event;
     if (d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle) < value) {
         result = d3d12Semaphore->handle->lpVtbl->SetEventOnCompletion(
-            d3d12Semaphore->handle, 
-            value, 
+            d3d12Semaphore->handle,
+            value,
             event);
 
         if (FAILED(result)) {
@@ -217,7 +206,7 @@ PalResult PAL_CALL signalSemaphoreD3D12(
 }
 
 PalResult PAL_CALL getSemaphoreValueD3D12(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     uint64_t* value)
 {
     SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;

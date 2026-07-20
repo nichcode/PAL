@@ -13,7 +13,7 @@
 #define MAX_BACKENDS (PAL_MAX_CUSTOM_BACKENDS + 2)
 #define PAL_HANDLE(name)                                                                           \
     struct name {                                                                                  \
-        PalGraphicsVtable backend;                                                          \
+        PalGraphicsVtable backend;                                                                 \
     };
 
 PAL_HANDLE(PalAdapter)
@@ -206,7 +206,18 @@ PalResult PAL_CALL palInitGraphics(
     PalResult result;
     BackendData* attachedBackend = nullptr;
 #ifdef _WIN32
-    // vulkan
+#if PAL_HAS_D3D12_BACKEND
+    result = initGraphicsD3D12(debugger, allocator);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
+    attachedBackend->base.vtbl1 = &s_D3D12Backend1;
+    attachedBackend->startIndex = 0;
+    attachedBackend->count = 0;
+#endif // PAL_HAS_D3D12_BACKEND
+
 #if PAL_HAS_VULKAN_BACKEND
     result = initGraphicsVk(debugger, allocator);
     if (result != PAL_RESULT_SUCCESS) {
@@ -218,19 +229,6 @@ PalResult PAL_CALL palInitGraphics(
     attachedBackend->startIndex = 0;
     attachedBackend->count = 0;
 #endif // PAL_HAS_VULKAN_BACKEND
-
-    // D3D12
-#if PAL_HAS_D3D12_BACKEND
-    result = initGraphicsD3D12(debugger, allocator);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-
-    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base.vtbl1 = &s_D3D12Backend;
-    attachedBackend->startIndex = 0;
-    attachedBackend->count = 0;
-#endif // PAL_HAS_D3D12_BACKEND
 
 #elif defined(__linux__)
     // vulkan
@@ -263,15 +261,13 @@ PalResult PAL_CALL palInitGraphics(
 void PAL_CALL palShutdownGraphics()
 {
 #ifdef _WIN32
-    // vulkan
-#if PAL_HAS_VULKAN_BACKEND
-    shutdownGraphicsVk();
-#endif // PAL_HAS_VULKAN_BACKEND
-
-    // D3D12
 #if PAL_HAS_D3D12_BACKEND
     shutdownGraphicsD3D12();
 #endif // PAL_HAS_D3D12_BACKEND
+
+#if PAL_HAS_VULKAN_BACKEND
+    shutdownGraphicsVk();
+#endif // PAL_HAS_VULKAN_BACKEND
 
 #elif defined(__linux__)
     // vulkan
@@ -690,7 +686,8 @@ PalResult PAL_CALL palCreateSurface(
 
     PalSurface* surface = nullptr;
     PalResult ret;
-    ret = device->backend.vtbl1->createSurface(device, window, windowInstance, instanceType, &surface);
+    ret = device->backend.vtbl1
+              ->createSurface(device, window, windowInstance, instanceType, &surface);
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
@@ -906,7 +903,7 @@ PalResult PAL_CALL palSignalSemaphore(
 }
 
 PalResult PAL_CALL palGetSemaphoreValue(
-    PalSemaphore* semaphore, 
+    PalSemaphore* semaphore,
     uint64_t* value)
 {
     return semaphore->backend.vtbl1->getSemaphoreValue(semaphore, value);
@@ -1034,11 +1031,8 @@ void PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawMeshTasksIndirectCount(
-        cmdBuffer, 
-        buffer, 
-        countBuffer, 
-        maxDrawCount);
+    cmdBuffer->backend.vtbl1
+        ->cmdDrawMeshTasksIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
 void PAL_CALL palCmdBuildAccelerationStructure(
@@ -1145,7 +1139,8 @@ void PAL_CALL palCmdDraw(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
-    cmdBuffer->backend.vtbl1->cmdDraw(cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+    cmdBuffer->backend.vtbl1
+        ->cmdDraw(cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void PAL_CALL palCmdDrawIndirect(
@@ -1196,7 +1191,8 @@ void PAL_CALL palCmdDrawIndexedIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawIndexedIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
+    cmdBuffer->backend.vtbl1
+        ->cmdDrawIndexedIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
 void PAL_CALL palCmdAccelerationStructureBarrier(
@@ -1339,13 +1335,8 @@ void PAL_CALL palCmdSetStencilOp(
     PalStencilOp depthFailOp,
     PalCompareOp compareOp)
 {
-    cmdBuffer->backend.vtbl1->cmdSetStencilOp(
-        cmdBuffer, 
-        faceMask, 
-        failOp, 
-        passOp, 
-        depthFailOp, 
-        compareOp);
+    cmdBuffer->backend.vtbl1
+        ->cmdSetStencilOp(cmdBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
 // ==================================================
@@ -1425,7 +1416,7 @@ void PAL_CALL palGetBufferMemoryRequirements(
 
 void PAL_CALL palComputeInstanceStagingSize(
     PalDevice* device,
-    uint32_t instanceCount, 
+    uint32_t instanceCount,
     uint64_t* outSize)
 {
     device->backend.vtbl1->computeInstanceStagingSize(device, instanceCount, outSize);
@@ -1437,11 +1428,8 @@ void PAL_CALL palComputeImageStagingRequirements(
     const PalBufferImageCopyInfo* copyInfo,
     PalImageStagingRequirements* requirements)
 {
-    device->backend.vtbl1->computeImageStagingRequirements(
-        device,
-        imageFormat,
-        copyInfo,
-        requirements);
+    device->backend.vtbl1
+        ->computeImageStagingRequirements(device, imageFormat, copyInfo, requirements);
 }
 
 void PAL_CALL palWriteInstanceStaging(

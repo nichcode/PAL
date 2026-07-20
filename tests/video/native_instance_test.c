@@ -309,7 +309,7 @@ void closeInstance(void* instance)
 PalBool nativeInstanceTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
-    
+
     // fill the event driver create info
     PalEventDriverCreateInfo eventDriverCreateInfo = {0};
     eventDriverCreateInfo.allocator = nullptr; // default allocator

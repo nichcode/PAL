@@ -15,12 +15,12 @@ static PalAdapterCapabilities s_Cap;
 static void initBackend()
 {
     s_Adapter.reserved = nullptr;
-    s_Info.apiType = PAL_ADAPTER_API_TYPE_CUSTOM;
+    s_Info.apiType = PAL_ADAPTER_API_TYPE_VULKAN;
     strcpy(s_Info.backendName, "Custom");
     s_Info.deviceId = 1666;
     s_Info.driverVersion = 1;
     strcpy(s_Info.name, "GXR 7060");
-    s_Info.shaderFormats = PAL_SHADER_FORMAT_CUSTOM;
+    s_Info.shaderFormats = PAL_SHADER_FORMAT_SPIRV | PAL_SHADER_FORMAT_GLSL;
     s_Info.sharedMemory = (uint64_t)(1024 * 1024 * 1024) * (uint64_t)2;
     s_Info.type = PAL_ADAPTER_TYPE_DISCRETE;
     s_Info.vendorId = 20037;
@@ -51,7 +51,7 @@ static void initBackend()
     s_Cap.maxUniformBufferSize = 65536;
     s_Cap.maxVertexAttributes = 14;
     s_Cap.maxVertexLayouts = 4;
-    
+
     s_Cap.resourceCaps.maxBoundSets = 2;
     s_Cap.resourceCaps.maxPerSetAccelerationStructure = 2;
     s_Cap.resourceCaps.maxPerSetSampledImages = 512;
@@ -121,7 +121,6 @@ static PalResult PAL_CALL createDevice(
 
 static void PAL_CALL destroyDevice(PalDevice* device)
 {
-    
 }
 
 static PalResult PAL_CALL allocateMemory(
@@ -136,14 +135,12 @@ static PalResult PAL_CALL allocateMemory(
 
 static void PAL_CALL freeMemory(PalMemory* memory)
 {
-    
 }
 
 static void PAL_CALL querySamplerAnisotropyCapabilities(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps)
 {
-    
 }
 
 static PalResult PAL_CALL createQueue(
@@ -156,7 +153,6 @@ static PalResult PAL_CALL createQueue(
 
 static void PAL_CALL destroyQueue(PalQueue* queue)
 {
-    
 }
 
 static PalBool PAL_CALL canQueuePresent(
@@ -176,7 +172,6 @@ static void PAL_CALL enumerateFormats(
     uint32_t* count,
     PalFormatInfo* outFormats)
 {
-
 }
 
 static PalBool PAL_CALL isFormatSupported(
@@ -210,21 +205,18 @@ static PalResult PAL_CALL createImage(
 
 static void PAL_CALL destroyImage(PalImage* image)
 {
-    
 }
 
 static void PAL_CALL getImageInfo(
     PalImage* image,
     PalImageInfo* info)
 {
-    
 }
 
 static void PAL_CALL getImageMemoryRequirements(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
-    
 }
 
 static PalResult PAL_CALL bindImageMemory(
@@ -246,7 +238,6 @@ static PalResult PAL_CALL createImageView(
 
 static void PAL_CALL destroyImageView(PalImageView* imageView)
 {
-
 }
 
 static PalResult PAL_CALL createSampler(
@@ -259,7 +250,6 @@ static PalResult PAL_CALL createSampler(
 
 static void PAL_CALL destroySampler(PalSampler* sampler)
 {
-
 }
 
 static PalResult PAL_CALL createShader(
@@ -272,7 +262,6 @@ static PalResult PAL_CALL createShader(
 
 static void PAL_CALL destroyShader(PalShader* shader)
 {
-
 }
 
 static PalResult PAL_CALL createFence(
@@ -285,7 +274,6 @@ static PalResult PAL_CALL createFence(
 
 static void PAL_CALL destroyFence(PalFence* fence)
 {
-
 }
 
 static PalResult PAL_CALL waitFence(
@@ -315,7 +303,6 @@ static PalResult PAL_CALL createSemaphore(
 
 static void PAL_CALL destroySemaphore(PalSemaphore* semaphore)
 {
-
 }
 
 static PalResult PAL_CALL createCommandPool(
@@ -328,7 +315,6 @@ static PalResult PAL_CALL createCommandPool(
 
 static void PAL_CALL destroyCommandPool(PalCommandPool* pool)
 {
-
 }
 
 static PalResult PAL_CALL allocateCommandBuffer(
@@ -342,7 +328,6 @@ static PalResult PAL_CALL allocateCommandBuffer(
 
 static void PAL_CALL freeCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
-
 }
 
 static PalResult PAL_CALL resetCommandBuffer(PalCommandBuffer* cmdBuffer)
@@ -373,14 +358,12 @@ static void PAL_CALL cmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
-
 }
 
 static void PAL_CALL cmdSetFragmentShadingRate(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state)
 {
-
 }
 
 static void PAL_CALL cmdDrawMeshTasks(
@@ -389,7 +372,6 @@ static void PAL_CALL cmdDrawMeshTasks(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-
 }
 
 static void PAL_CALL cmdDrawMeshTasksIndirect(
@@ -397,7 +379,6 @@ static void PAL_CALL cmdDrawMeshTasksIndirect(
     PalBuffer* buffer,
     uint32_t drawCount)
 {
-
 }
 
 static void PAL_CALL cmdDrawMeshTasksIndirectCount(
@@ -406,26 +387,22 @@ static void PAL_CALL cmdDrawMeshTasksIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    
 }
 
 static void PAL_CALL cmdBuildAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
-
 }
 
 static void PAL_CALL cmdBeginRendering(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info)
 {
-
 }
 
 static void PAL_CALL cmdEndRendering(PalCommandBuffer* cmdBuffer)
 {
-
 }
 
 static void PAL_CALL cmdCopyBuffer(
@@ -434,7 +411,6 @@ static void PAL_CALL cmdCopyBuffer(
     PalBuffer* src,
     PalBufferCopyInfo* copyInfo)
 {
-
 }
 
 static void PAL_CALL cmdCopyBufferToImage(
@@ -443,7 +419,6 @@ static void PAL_CALL cmdCopyBufferToImage(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-
 }
 
 static void PAL_CALL cmdCopyImage(
@@ -452,7 +427,6 @@ static void PAL_CALL cmdCopyImage(
     PalImage* src,
     PalImageCopyInfo* copyInfo)
 {
-
 }
 
 static void PAL_CALL cmdCopyImageToBuffer(
@@ -461,14 +435,12 @@ static void PAL_CALL cmdCopyImageToBuffer(
     PalImage* srcImage,
     PalBufferImageCopyInfo* copyInfo)
 {
-
 }
 
 static void PAL_CALL cmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline)
 {
-
 }
 
 static void PAL_CALL cmdSetViewport(
@@ -476,7 +448,6 @@ static void PAL_CALL cmdSetViewport(
     uint32_t count,
     PalViewport* viewports)
 {
-
 }
 
 static void PAL_CALL cmdSetScissors(
@@ -484,7 +455,6 @@ static void PAL_CALL cmdSetScissors(
     uint32_t count,
     PalRect2D* scissors)
 {
-
 }
 
 static void PAL_CALL cmdBindVertexBuffers(
@@ -494,7 +464,6 @@ static void PAL_CALL cmdBindVertexBuffers(
     PalBuffer** buffers,
     uint64_t* offsets)
 {
-
 }
 
 static void PAL_CALL cmdBindIndexBuffer(
@@ -503,7 +472,6 @@ static void PAL_CALL cmdBindIndexBuffer(
     uint64_t offset,
     PalIndexType type)
 {
-
 }
 
 static void PAL_CALL cmdDraw(
@@ -513,7 +481,6 @@ static void PAL_CALL cmdDraw(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
-
 }
 
 static void PAL_CALL cmdDrawIndexed(
@@ -524,7 +491,6 @@ static void PAL_CALL cmdDrawIndexed(
     int32_t vertexOffset,
     uint32_t firstInstance)
 {
-
 }
 
 static void PAL_CALL cmdImageBarrier(
@@ -533,7 +499,6 @@ static void PAL_CALL cmdImageBarrier(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info)
 {
-
 }
 
 static void PAL_CALL cmdBufferBarrier(
@@ -541,7 +506,6 @@ static void PAL_CALL cmdBufferBarrier(
     PalBuffer* buffer,
     PalBarrierInfo* info)
 {
-
 }
 
 static void PAL_CALL cmdDispatch(
@@ -550,7 +514,6 @@ static void PAL_CALL cmdDispatch(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-
 }
 
 static void PAL_CALL cmdBindDescriptorSet(
@@ -558,7 +521,6 @@ static void PAL_CALL cmdBindDescriptorSet(
     uint32_t setIndex,
     PalDescriptorSet* set)
 {
-
 }
 
 static void PAL_CALL cmdPushConstants(
@@ -567,7 +529,6 @@ static void PAL_CALL cmdPushConstants(
     uint32_t size,
     const void* value)
 {
-
 }
 
 static PalResult PAL_CALL createBuffer(
@@ -580,14 +541,12 @@ static PalResult PAL_CALL createBuffer(
 
 static void PAL_CALL destroyBuffer(PalBuffer* buffer)
 {
-
 }
 
 static void PAL_CALL getBufferMemoryRequirements(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements)
 {
-
 }
 
 static void PAL_CALL computeImageStagingRequirements(
@@ -596,7 +555,6 @@ static void PAL_CALL computeImageStagingRequirements(
     const PalBufferImageCopyInfo* copyInfo,
     PalImageStagingRequirements* requirements)
 {
-
 }
 
 static void PAL_CALL writeImageStaging(
@@ -606,7 +564,6 @@ static void PAL_CALL writeImageStaging(
     void* srcData,
     void* ptr)
 {
-
 }
 
 static PalResult PAL_CALL bindBufferMemory(
@@ -628,7 +585,6 @@ static PalResult PAL_CALL mapBuffer(
 
 static void PAL_CALL unmapBuffer(PalBuffer* buffer)
 {
-
 }
 
 static PalResult PAL_CALL createDescriptorSetLayout(
@@ -641,7 +597,6 @@ static PalResult PAL_CALL createDescriptorSetLayout(
 
 static void PAL_CALL destroyDescriptorSetLayout(PalDescriptorSetLayout* layout)
 {
-
 }
 
 static PalResult PAL_CALL createDescriptorPool(
@@ -654,7 +609,6 @@ static PalResult PAL_CALL createDescriptorPool(
 
 static void PAL_CALL destroyDescriptorPool(PalDescriptorPool* pool)
 {
-
 }
 
 static PalResult PAL_CALL resetDescriptorPool(PalDescriptorPool* pool)
@@ -689,7 +643,6 @@ static PalResult PAL_CALL createPipelineLayout(
 
 static void PAL_CALL destroyPipelineLayout(PalPipelineLayout* layout)
 {
-
 }
 
 static PalResult PAL_CALL createGraphicsPipeline(
@@ -710,84 +663,52 @@ static PalResult PAL_CALL createComputePipeline(
 
 static void PAL_CALL destroyPipeline(PalPipeline* pipeline)
 {
-
 }
 
 PalBool customBackendTest()
 {
     // build the vtable
     PalGraphicsBackendVtable1 vtable = {0};
-    vtable.enumerateAdapters = enumerateAdapters,
-    vtable.getAdapterInfo = getAdapterInfo,
+    vtable.enumerateAdapters = enumerateAdapters, vtable.getAdapterInfo = getAdapterInfo,
     vtable.getAdapterCapabilities = getAdapterCapabilities,
     vtable.getAdapterFeatures = getAdapterFeatures,
     vtable.getHighestSupportedShaderTarget = getHighestSupportedShaderTarget,
-    vtable.createDevice = createDevice,
-    vtable.destroyDevice = destroyDevice,
-    vtable.allocateMemory = allocateMemory,
-    vtable.freeMemory = freeMemory,
+    vtable.createDevice = createDevice, vtable.destroyDevice = destroyDevice,
+    vtable.allocateMemory = allocateMemory, vtable.freeMemory = freeMemory,
     vtable.querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilities,
-    vtable.createQueue = createQueue,
-    vtable.destroyQueue = destroyQueue,
-    vtable.waitQueue = waitQueue,
-    vtable.canQueuePresent = canQueuePresent,
-    vtable.enumerateFormats = enumerateFormats,
-    vtable.isFormatSupported = isFormatSupported,
+    vtable.createQueue = createQueue, vtable.destroyQueue = destroyQueue,
+    vtable.waitQueue = waitQueue, vtable.canQueuePresent = canQueuePresent,
+    vtable.enumerateFormats = enumerateFormats, vtable.isFormatSupported = isFormatSupported,
     vtable.queryFormatImageUsages = queryFormatImageUsages,
-    vtable.queryFormatSampleCount = queryFormatSampleCount,
-    vtable.createImage = createImage,
-    vtable.destroyImage = destroyImage,
-    vtable.getImageInfo = getImageInfo,
+    vtable.queryFormatSampleCount = queryFormatSampleCount, vtable.createImage = createImage,
+    vtable.destroyImage = destroyImage, vtable.getImageInfo = getImageInfo,
     vtable.getImageMemoryRequirements = getImageMemoryRequirements,
-    vtable.bindImageMemory = bindImageMemory,
-    vtable.createImageView = createImageView,
-    vtable.destroyImageView = destroyImageView,
-    vtable.createSampler = createSampler,
-    vtable.destroySampler = destroySampler,
-    vtable.createShader = createShader,
-    vtable.destroyShader = destroyShader,
-    vtable.createFence = createFence,
-    vtable.destroyFence = destroyFence,
-    vtable.waitFence = waitFence,
-    vtable.resetFence = resetFence,
-    vtable.isFenceSignaled = isFenceSignaled,
-    vtable.createSemaphore = createSemaphore,
-    vtable.destroySemaphore = destroySemaphore,
-    vtable.createCommandPool = createCommandPool,
-    vtable.destroyCommandPool = destroyCommandPool,
+    vtable.bindImageMemory = bindImageMemory, vtable.createImageView = createImageView,
+    vtable.destroyImageView = destroyImageView, vtable.createSampler = createSampler,
+    vtable.destroySampler = destroySampler, vtable.createShader = createShader,
+    vtable.destroyShader = destroyShader, vtable.createFence = createFence,
+    vtable.destroyFence = destroyFence, vtable.waitFence = waitFence,
+    vtable.resetFence = resetFence, vtable.isFenceSignaled = isFenceSignaled,
+    vtable.createSemaphore = createSemaphore, vtable.destroySemaphore = destroySemaphore,
+    vtable.createCommandPool = createCommandPool, vtable.destroyCommandPool = destroyCommandPool,
     vtable.allocateCommandBuffer = allocateCommandBuffer,
-    vtable.freeCommandBuffer = freeCommandBuffer,
-    vtable.resetCommandBuffer = resetCommandBuffer,
-    vtable.submitCommandBuffer = submitCommandBuffer,
-    vtable.cmdBegin = cmdBegin,
-    vtable.cmdEnd = cmdEnd,
-    vtable.cmdExecuteCommandBuffer = cmdExecuteCommandBuffer,
-    vtable.cmdBeginRendering = cmdBeginRendering,
-    vtable.cmdEndRendering = cmdEndRendering,
-    vtable.cmdCopyBuffer = cmdCopyBuffer,
-    vtable.cmdCopyBufferToImage = cmdCopyBufferToImage,
-    vtable.cmdCopyImage = cmdCopyImage,
-    vtable.cmdCopyImageToBuffer = cmdCopyImageToBuffer,
-    vtable.cmdBindPipeline = cmdBindPipeline,
-    vtable.cmdSetViewport = cmdSetViewport,
-    vtable.cmdSetScissors = cmdSetScissors,
-    vtable.cmdBindVertexBuffers = cmdBindVertexBuffers,
-    vtable.cmdBindIndexBuffer = cmdBindIndexBuffer,
-    vtable.cmdDraw = cmdDraw,
-    vtable.cmdDrawIndexed = cmdDrawIndexed,
-    vtable.cmdImageBarrier = cmdImageBarrier,
-    vtable.cmdBufferBarrier = cmdBufferBarrier,
-    vtable.cmdDispatch = cmdDispatch,
-    vtable.cmdBindDescriptorSet = cmdBindDescriptorSet,
-    vtable.cmdPushConstants = cmdPushConstants,
-    vtable.createBuffer = createBuffer,
-    vtable.destroyBuffer = destroyBuffer,
+    vtable.freeCommandBuffer = freeCommandBuffer, vtable.resetCommandBuffer = resetCommandBuffer,
+    vtable.submitCommandBuffer = submitCommandBuffer, vtable.cmdBegin = cmdBegin,
+    vtable.cmdEnd = cmdEnd, vtable.cmdExecuteCommandBuffer = cmdExecuteCommandBuffer,
+    vtable.cmdBeginRendering = cmdBeginRendering, vtable.cmdEndRendering = cmdEndRendering,
+    vtable.cmdCopyBuffer = cmdCopyBuffer, vtable.cmdCopyBufferToImage = cmdCopyBufferToImage,
+    vtable.cmdCopyImage = cmdCopyImage, vtable.cmdCopyImageToBuffer = cmdCopyImageToBuffer,
+    vtable.cmdBindPipeline = cmdBindPipeline, vtable.cmdSetViewport = cmdSetViewport,
+    vtable.cmdSetScissors = cmdSetScissors, vtable.cmdBindVertexBuffers = cmdBindVertexBuffers,
+    vtable.cmdBindIndexBuffer = cmdBindIndexBuffer, vtable.cmdDraw = cmdDraw,
+    vtable.cmdDrawIndexed = cmdDrawIndexed, vtable.cmdImageBarrier = cmdImageBarrier,
+    vtable.cmdBufferBarrier = cmdBufferBarrier, vtable.cmdDispatch = cmdDispatch,
+    vtable.cmdBindDescriptorSet = cmdBindDescriptorSet, vtable.cmdPushConstants = cmdPushConstants,
+    vtable.createBuffer = createBuffer, vtable.destroyBuffer = destroyBuffer,
     vtable.getBufferMemoryRequirements = getBufferMemoryRequirements,
     vtable.computeImageStagingRequirements = computeImageStagingRequirements,
-    vtable.writeImageStaging = writeImageStaging,
-    vtable.bindBufferMemory = bindBufferMemory,
-    vtable.mapBuffer = mapBuffer,
-    vtable.unmapBuffer = unmapBuffer,
+    vtable.writeImageStaging = writeImageStaging, vtable.bindBufferMemory = bindBufferMemory,
+    vtable.mapBuffer = mapBuffer, vtable.unmapBuffer = unmapBuffer,
     vtable.createDescriptorSetLayout = createDescriptorSetLayout,
     vtable.destroyDescriptorSetLayout = destroyDescriptorSetLayout,
     vtable.createDescriptorPool = createDescriptorPool,
@@ -798,8 +719,7 @@ PalBool customBackendTest()
     vtable.createPipelineLayout = createPipelineLayout,
     vtable.destroyPipelineLayout = destroyPipelineLayout,
     vtable.createGraphicsPipeline = createGraphicsPipeline,
-    vtable.createComputePipeline = createComputePipeline,
-    vtable.destroyPipeline = destroyPipeline;
+    vtable.createComputePipeline = createComputePipeline, vtable.destroyPipeline = destroyPipeline;
 
     PalGraphicsBackendInfo backendInfo = {0};
     backendInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1;
@@ -852,9 +772,9 @@ PalBool customBackendTest()
         PalAdapterCapabilities caps;
         palGetAdapterCapabilities(adapter, &caps);
         PalAdapterFeatures features = palGetAdapterFeatures(adapter);
-        
+
         uint64_t vramMib = (uint64_t)info.vram / (1024 * 1024);
-        uint64_t sharedMemMib = (uint64_t)info.sharedMemory /(1024 * 1024);
+        uint64_t sharedMemMib = (uint64_t)info.sharedMemory / (1024 * 1024);
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);
@@ -904,11 +824,6 @@ PalBool customBackendTest()
                 apiTypeString = "Metal";
                 break;
             }
-
-            case PAL_ADAPTER_API_TYPE_CUSTOM: {
-                apiTypeString = "Custom";
-                break;
-            }
         }
         palLog(nullptr, " API Type: %s", apiTypeString);
 
@@ -944,7 +859,7 @@ PalBool customBackendTest()
         palLog(nullptr, "");
         palLog(nullptr, "  Resource Capabilities:");
         PalResourceCapabilities* resourceCaps = &caps.resourceCaps;
-       
+
         // clang-format off
         palLog(nullptr, "   Max per stage sampled images: %u", resourceCaps->maxPerStageSampledImages);
         palLog(nullptr, "   Max per set sampled images: %u", resourceCaps->maxPerSetSampledImages);
@@ -992,8 +907,8 @@ PalBool customBackendTest()
             palLog(nullptr, "  DXIL");
         }
 
-        if (info.shaderFormats & PAL_SHADER_FORMAT_CUSTOM) {
-            palLog(nullptr, "  Custom");
+        if (info.shaderFormats & PAL_SHADER_FORMAT_GLSL) {
+            palLog(nullptr, "  GLSL");
         }
 
         // features

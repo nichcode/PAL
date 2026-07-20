@@ -21,7 +21,7 @@
 #elif defined(__GNUC__) || defined(__clang__)
 #define ALIGN_STREAM __attribute__((aligned(PTR_SIZE)))
 #else
- #define ALIGN_STREAM
+#define ALIGN_STREAM
 #endif // _MSC_VER
 
 typedef ALIGN_STREAM struct {
@@ -89,7 +89,7 @@ typedef ALIGN_STREAM struct {
     D3D12_VIEW_INSTANCING_DESC desc;
 } ViewInstancingStream;
 
-typedef struct  {
+typedef struct {
     RootSignatureStream layout;
     InputLayoutStream inputLayout;
     TopologyStream topology;
@@ -366,7 +366,7 @@ static const char* semanticIDToStringD3D12(PalVertexSemanticID id)
     switch (id) {
         case PAL_VERTEX_SEMANTIC_ID_POSITION:
             return "POSITION";
-        
+
         case PAL_VERTEX_SEMANTIC_ID_COLOR:
             return "COLOR";
 
@@ -627,7 +627,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     totalSize += sizeof(RootSignatureStream);
     rootSignatureStream->type = D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE;
     rootSignatureStream->root = layout->handle;
-    
+
     // shaders
     for (int i = 0; i < info->shaderCount; i++) {
         ShaderD3D12* tmp = (ShaderD3D12*)info->shaders[i];
@@ -699,10 +699,8 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
             return PAL_RESULT_CODE_OUT_OF_MEMORY;
         }
 
-        elementDescs = palAllocate(
-            s_D3D12.allocator,
-            sizeof(D3D12_INPUT_ELEMENT_DESC) * vertexCount,
-            0);
+        elementDescs =
+            palAllocate(s_D3D12.allocator, sizeof(D3D12_INPUT_ELEMENT_DESC) * vertexCount, 0);
 
         if (!elementDescs) {
             palFree(s_D3D12.allocator, elementDescs);
@@ -977,7 +975,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         PalFragmentShadingRateState* state = info->fragmentShadingRateState;
         pipeline->shadingRate = shadingRateToD3D12(state->rate);
         for (int i = 0; i < 2; i++) {
-            pipeline->combinerOps[i]  = combinerOpsToD3D12(state->combinerOps[i]);
+            pipeline->combinerOps[i] = combinerOpsToD3D12(state->combinerOps[i]);
         }
     }
 
@@ -1108,7 +1106,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (info->maxRecursionDepth> d3d12Device->limits.maxRecursionDepth) {
+    if (info->maxRecursionDepth > d3d12Device->limits.maxRecursionDepth) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -1172,8 +1170,8 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     localRootSize = max(localRootSize, sbtInfo.hitDataSize);
     localRootSize = max(localRootSize, sbtInfo.callableDataSize);
 
-    // // D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE 
-    // // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG 
+    // // D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE
+    // // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG
     // // D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG
     subObjectCount += info->shaderCount + 3;
 
@@ -1196,25 +1194,15 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    libraryDescs = palAllocate(
-        s_D3D12.allocator, 
-        sizeof(D3D12_DXIL_LIBRARY_DESC) * info->shaderCount, 
-        0);
+    libraryDescs =
+        palAllocate(s_D3D12.allocator, sizeof(D3D12_DXIL_LIBRARY_DESC) * info->shaderCount, 0);
 
-    exportDescs = palAllocate(
-        s_D3D12.allocator, 
-        sizeof(D3D12_EXPORT_DESC) * exportCount, 
-        0);
+    exportDescs = palAllocate(s_D3D12.allocator, sizeof(D3D12_EXPORT_DESC) * exportCount, 0);
 
-    pipeline->shaderExports = palAllocate(
-        s_D3D12.allocator, 
-        sizeof(ShaderExport) * pipeline->shaderExportCount, 
-        0);
+    pipeline->shaderExports =
+        palAllocate(s_D3D12.allocator, sizeof(ShaderExport) * pipeline->shaderExportCount, 0);
 
-    localExports = palAllocate(
-        s_D3D12.allocator, 
-        sizeof(wchar_t*) * localExportCount, 
-        0);
+    localExports = palAllocate(s_D3D12.allocator, sizeof(wchar_t*) * localExportCount, 0);
 
     if (!libraryDescs || !exportDescs || !pipeline->shaderExports || !localExports) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;

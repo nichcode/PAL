@@ -1,7 +1,7 @@
 
 #include "pal/pal_graphics.h"
-#include "pal/pal_video.h"
 #include "pal/pal_system.h"
+#include "pal/pal_video.h"
 #include "tests.h"
 
 #define WINDOW_WIDTH 640
@@ -65,7 +65,7 @@ PalBool textureTest()
     PalSemaphore* imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
     PalFence* inFlightFences[MAX_FRAMES_IN_FLIGHT];
     PalSemaphore** renderFinishedSemaphores; // count of swapchain images
-    PalFence** inFlightImages; // count of swapchain images
+    PalFence** inFlightImages;               // count of swapchain images
 
     PalPipelineLayout* pipelineLayout = nullptr;
     PalPipeline* pipeline = nullptr;
@@ -117,7 +117,7 @@ PalBool textureTest()
     PalWindowHandleInfo winHandle = {0};
     palGetWindowHandleInfo(window, &winHandle);
 
-    // using pal_system.h will be easy to know the underlying windowing API or use typedefs. 
+    // using pal_system.h will be easy to know the underlying windowing API or use typedefs.
     // We will use the pal_system module.
     PalPlatformInfo platformInfo = {0};
     palGetPlatformInfo(&platformInfo);
@@ -182,7 +182,7 @@ PalBool textureTest()
 
         // We want an adapter that supports spirv 1.0 or dxil 6.0
         palGetAdapterInfo(adapter, &adapterInfo);
-       
+
         // we prefer spirv first if an adapter supports multiple shader formats
         uint32_t target = 0;
         if (adapterInfo.shaderFormats & PAL_SHADER_FORMAT_SPIRV) {
@@ -224,12 +224,12 @@ PalBool textureTest()
 
     // create surface
     result = palCreateSurface(
-        device, 
-        winHandle.nativeWindow, 
-        winHandle.nativeInstance, 
-        windowInstanceType, 
+        device,
+        winHandle.nativeWindow,
+        winHandle.nativeInstance,
+        windowInstanceType,
         &surface);
-        
+
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create surface");
         return PAL_FALSE;
@@ -247,7 +247,7 @@ PalBool textureTest()
         if (!palCanQueuePresent(queue, surface)) {
             palDestroyQueue(queue);
             queue = nullptr;
-        }  else {
+        } else {
             // found a queue
             foundQueue = PAL_TRUE;
             break;
@@ -425,7 +425,7 @@ PalBool textureTest()
         return PAL_FALSE;
     }
 
-    // we dont want to load the texture from disk so we will create a 
+    // we dont want to load the texture from disk so we will create a
     // checkerboard texture and use that rather
     uint32_t texture[TEXTURE_WIDTH * TEXTURE_HEIGHT];
     memset(texture, 0, TEXTURE_WIDTH * TEXTURE_HEIGHT);
@@ -437,7 +437,7 @@ PalBool textureTest()
     imageCreateInfo.arrayLayerCount = 1;
     imageCreateInfo.depth = 1;
     imageCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
-    imageCreateInfo.mipLevelCount = 1; // simple
+    imageCreateInfo.mipLevelCount = 1;                // simple
     imageCreateInfo.sampleCount = PAL_SAMPLE_COUNT_1; // simple
     imageCreateInfo.type = PAL_IMAGE_TYPE_2D;
     imageCreateInfo.usages = PAL_IMAGE_USAGE_TRANSFER_DST | PAL_IMAGE_USAGE_SAMPLED;
@@ -460,7 +460,7 @@ PalBool textureTest()
 
     PalImageStagingRequirements stagingReq = {0};
     palComputeImageStagingRequirements(
-        device, 
+        device,
         imageCreateInfo.format,
         &bufferImageCopyInfo,
         &stagingReq);
@@ -484,23 +484,14 @@ PalBool textureTest()
 
     // copy data
     void* data = nullptr;
-    result = palMapBuffer(
-        imageStagingBuffer,
-        0, 
-        imageStagingBufferCreateInfo.size, 
-        &data);
+    result = palMapBuffer(imageStagingBuffer, 0, imageStagingBufferCreateInfo.size, &data);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to map buffer");
         return PAL_FALSE;
     }
 
-    palWriteImageStaging(
-        device,
-        imageCreateInfo.format,
-        &bufferImageCopyInfo,
-        texture,
-        data);
+    palWriteImageStaging(device, imageCreateInfo.format, &bufferImageCopyInfo, texture, data);
 
     palUnmapBuffer(imageStagingBuffer);
 
@@ -540,11 +531,7 @@ PalBool textureTest()
     checkerboardRange.layerArrayCount = 1;
 
     palCmdImageBarrier(cmdBuffers[0], checkerboard, &checkerboardRange, &barrierInfo);
-    palCmdCopyBufferToImage(
-        cmdBuffers[0], 
-        checkerboard, 
-        imageStagingBuffer, 
-        &bufferImageCopyInfo);
+    palCmdCopyBufferToImage(cmdBuffers[0], checkerboard, imageStagingBuffer, &bufferImageCopyInfo);
 
     // transition the image to shader read state
     barrierInfo.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
@@ -579,9 +566,9 @@ PalBool textureTest()
     checkerboardImageViewCreateInfo.format = PAL_FORMAT_R8G8B8A8_UNORM;
 
     result = palCreateImageView(
-        device, 
-        checkerboard, 
-        &checkerboardImageViewCreateInfo, 
+        device,
+        checkerboard,
+        &checkerboardImageViewCreateInfo,
         &checkerboardImageView);
 
     if (result != PAL_RESULT_SUCCESS) {
@@ -603,10 +590,7 @@ PalBool textureTest()
     samplerCreateInfo.minFilterMode = PAL_FILTER_MODE_LINEAR;
     samplerCreateInfo.maxAnisotropy = 1.0f;
 
-    result = palCreateSampler(
-        device, 
-        &samplerCreateInfo,
-        &sampler);
+    result = palCreateSampler(device, &samplerCreateInfo, &sampler);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create sampler");
@@ -661,8 +645,8 @@ PalBool textureTest()
 
         readFile(sources[i], bytecode, &bytecodeSize);
 
-        shaderCreateInfo.bytecode = bytecode;
-        shaderCreateInfo.bytecodeSize = bytecodeSize;
+        shaderCreateInfo.code = bytecode;
+        shaderCreateInfo.codeSize = bytecodeSize;
         shaderCreateInfo.entries = &entries[i];
         shaderCreateInfo.entryCount = 1;
 
@@ -679,7 +663,7 @@ PalBool textureTest()
     PalDescriptorSetLayoutBinding descriptorBindings[2];
     descriptorBindings[0].descriptorCount = 1; // not an array
     descriptorBindings[0].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    
+
     descriptorBindings[1].descriptorCount = 1; // not an array
     descriptorBindings[1].descriptorType = PAL_DESCRIPTOR_TYPE_SAMPLER;
 
@@ -687,10 +671,8 @@ PalBool textureTest()
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
 
-    result = palCreateDescriptorSetLayout(
-        device,
-        &descriptorSetLayoutcreateInfo,
-        &descriptorSetLayout);
+    result =
+        palCreateDescriptorSetLayout(device, &descriptorSetLayoutcreateInfo, &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create descriptor set layout");
@@ -741,7 +723,7 @@ PalBool textureTest()
     writeInfos[0].arrayElement = 0;
     writeInfos[0].bufferInfos = nullptr;
     writeInfos[0].samplerInfos = nullptr;
-    writeInfos[0].tlasInfos =  nullptr;
+    writeInfos[0].tlasInfos = nullptr;
 
     writeInfos[1].layoutBindingIndex = 1;
     writeInfos[1].samplerInfos = &descriptorSamplerInfo;
@@ -751,7 +733,7 @@ PalBool textureTest()
 
     writeInfos[1].arrayElement = 0;
     writeInfos[1].imageViewInfos = nullptr;
-    writeInfos[1].tlasInfos =  nullptr;
+    writeInfos[1].tlasInfos = nullptr;
     writeInfos[1].bufferInfos = nullptr;
 
     result = palUpdateDescriptorSet(device, 2, writeInfos);
@@ -974,7 +956,7 @@ PalBool textureTest()
         palCmdBindVertexBuffers(cmdBuffers[currentFrame], 0, 1, &vertexBuffer, offset);
         palCmdDraw(cmdBuffers[currentFrame], 6, 1, 0, 0);
         palCmdEndRendering(cmdBuffers[currentFrame]);
-      
+
         // change the state of the image view to make it presentable
         barrierInfo.oldState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
         barrierInfo.srcStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
@@ -1029,7 +1011,7 @@ PalBool textureTest()
 
     for (int i = 0; i < imageCount; i++) {
         palDestroySemaphore(renderFinishedSemaphores[i]);
-        palDestroyImageView(imageViews[i]);   
+        palDestroyImageView(imageViews[i]);
     }
 
     palDestroyDescriptorPool(descriptorPool);

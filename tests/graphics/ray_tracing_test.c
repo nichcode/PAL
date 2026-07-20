@@ -107,7 +107,7 @@ PalBool rayTracingTest()
             adapter = nullptr;
             continue;
         }
-        
+
         // We want an adapter that supports spirv 1.4 or dxil 6.3
         palGetAdapterInfo(adapter, &adapterInfo);
 
@@ -159,11 +159,7 @@ PalBool rayTracingTest()
         return PAL_FALSE;
     }
 
-    result = palAllocateCommandBuffer(
-        device,
-        cmdPool,
-        PAL_COMMAND_BUFFER_TYPE_PRIMARY,
-        &cmdBuffer);
+    result = palAllocateCommandBuffer(device, cmdPool, PAL_COMMAND_BUFFER_TYPE_PRIMARY, &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
@@ -210,8 +206,8 @@ PalBool rayTracingTest()
 
     readFile(source, bytecode, &bytecodeSize);
 
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.code = bytecode;
+    shaderCreateInfo.codeSize = bytecodeSize;
     shaderCreateInfo.entries = entries;
     shaderCreateInfo.entryCount = 3;
 
@@ -246,10 +242,7 @@ PalBool rayTracingTest()
     }
 
     // create a vertex buffer to store the vertices in
-    float vertices[] = {
-        0.0f, 1.0f,
-        1.0f, -1.0f,
-       -1.0f, -1.0f};
+    float vertices[] = {0.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f};
 
     bufferCreateInfo.size = sizeof(vertices);
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT;
@@ -327,11 +320,7 @@ PalBool rayTracingTest()
     asInstance.mask = 0xFF;
     asInstance.hitGroupOffset = 0; // we only have 1 hitGroup
 
-    float transform[12] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f
-    };
+    float transform[12] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
     memcpy(asInstance.transform, transform, sizeof(float) * 12);
 
     uint64_t instanceBufferSize = 0;
@@ -350,11 +339,7 @@ PalBool rayTracingTest()
 
     // copy instance struct to the buffer
     data = nullptr;
-    result = palMapBuffer(
-        instanceBuffer,
-        0,
-        instanceBufferSize,
-        &data);
+    result = palMapBuffer(instanceBuffer, 0, instanceBufferSize, &data);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to map buffer");
@@ -377,7 +362,7 @@ PalBool rayTracingTest()
     // get the build sizes for tlas
     uint32_t blasScratchSize = buildSizes.scratchBufferSize;
     palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
-   
+
     // create the tlas buffer and tlas
     bufferCreateInfo.size = buildSizes.accelerationStructureSize;
     bufferCreateInfo.usages = PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE;
@@ -424,10 +409,8 @@ PalBool rayTracingTest()
     descriptorSetLayoutcreateInfo.bindingCount = 2;
     descriptorSetLayoutcreateInfo.bindings = descriptorBindings;
 
-    result = palCreateDescriptorSetLayout(
-        device,
-        &descriptorSetLayoutcreateInfo,
-        &descriptorSetLayout);
+    result =
+        palCreateDescriptorSetLayout(device, &descriptorSetLayoutcreateInfo, &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create descriptor set layout");
@@ -444,7 +427,7 @@ PalBool rayTracingTest()
 
     PalDescriptorPoolCreateInfo descriptorPoolCreateInfo = {0};
     descriptorPoolCreateInfo.maxDescriptorSets = 1; // only one set
-    descriptorPoolCreateInfo.bindingSizeCount = 2; // two binding type
+    descriptorPoolCreateInfo.bindingSizeCount = 2;  // two binding type
     descriptorPoolCreateInfo.bindingSizes = bindingSizes;
 
     result = palCreateDescriptorPool(device, &descriptorPoolCreateInfo, &descriptorPool);
@@ -547,7 +530,7 @@ PalBool rayTracingTest()
     pipelineCreateInfo.shaderCount = 1;
     pipelineCreateInfo.shaderGroupCount = 3;
     pipelineCreateInfo.shaderGroups = shaderGroupCreateInfos;
-    pipelineCreateInfo.shaders = &rayTracingShader; 
+    pipelineCreateInfo.shaders = &rayTracingShader;
 
     result = palCreateRayTracingPipeline(device, &pipelineCreateInfo, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
@@ -563,7 +546,7 @@ PalBool rayTracingTest()
     missLocalData.color[0] = 0.0f;
     missLocalData.color[1] = 0.0f;
     missLocalData.color[2] = 0.0f;
-    
+
     LocalData closestLocalData; // green color for miss
     closestLocalData.color[0] = 0.0f;
     closestLocalData.color[1] = 1.0f;
@@ -613,7 +596,7 @@ PalBool rayTracingTest()
 
     palCmdBindPipeline(cmdBuffer, pipeline);
     palCmdBindDescriptorSet(cmdBuffer, 0, descriptorSet);
-   
+
     // build the blas and tlas infos
     PalDeviceAddress scratchBufferAddress = palGetBufferDeviceAddress(scratchBuffer);
     blasBuildInfo.dst = blas;
@@ -646,7 +629,7 @@ PalBool rayTracingTest()
     barrierInfo.srcStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
     barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
     palCmdBufferBarrier(cmdBuffer, buffer, &barrierInfo);
-    
+
     // now we copy from the GPU buffer into the staging buffer
     PalBufferCopyInfo copyInfo = {0};
     copyInfo.size = bufferBytes;
@@ -663,7 +646,7 @@ PalBool rayTracingTest()
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
     submitInfo.waitStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
-    
+
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
@@ -696,9 +679,9 @@ PalBool rayTracingTest()
             int index = row * BUFFER_SIZE + x;
             uint8_t rgb[3];
 
-            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
-            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;
-            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255: 0;
+            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
+            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
+            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
             fwrite(rgb, 1, 3, file);
         }
     }
@@ -706,7 +689,7 @@ PalBool rayTracingTest()
     // update sbt and trace again
     // since we still have the record array we used to create the pipeline
     // we just change the underlying data and update the record
-    
+
     // change miss from black to white
     missLocalData.color[0] = 1.0f;
     missLocalData.color[1] = 1.0f;
@@ -798,9 +781,9 @@ PalBool rayTracingTest()
             int index = row * BUFFER_SIZE + x;
             uint8_t rgb[3];
 
-            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
-            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;
-            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255: 0;
+            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
+            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
+            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
             fwrite(rgb, 1, 3, file);
         }
     }

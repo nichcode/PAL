@@ -1,6 +1,6 @@
 
-#include "tests.h"
 #include "pal/pal_thread.h"
+#include "tests.h"
 
 #define MAX_COUNTER 10000
 #define THREAD_COUNT 2

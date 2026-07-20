@@ -9,7 +9,7 @@
 #include "pal_vulkan.h"
 
 static void fillDescriptorIndexingFeatures(
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT* feature, 
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT* feature,
     VkPhysicalDevice phyDevice)
 {
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
@@ -38,7 +38,7 @@ static void fillDescriptorIndexingFeatures(
 }
 
 static void loadFeatureProcs(
-    PalAdapterFeatures features, 
+    PalAdapterFeatures features,
     DeviceVk* device)
 {
     // clang-format off
@@ -354,7 +354,6 @@ static void loadFeatureProcs(
     }
 
     // clang-format on
-
 }
 
 static VkShaderStageFlags shaderStageToVK(PalShaderStage stage)
@@ -764,7 +763,7 @@ PalResult PAL_CALL createDeviceVk(
     // HACK: most CPU drivers dont have a vram so we set the vram to system memory
     if (device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] == 0) {
         device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] =
-        device->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD];
+            device->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD];
     }
 
     // cache shader stages
@@ -850,11 +849,8 @@ PalResult PAL_CALL allocateMemoryVk(
         allocateInfo.pNext = &allocateFlagsInfo;
     }
 
-    result = s_Vk.allocateMemory(
-        vkDevice->handle, 
-        &allocateInfo, 
-        &s_Vk.vkAllocator, 
-        &memory->handle);
+    result =
+        s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory->handle);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -925,7 +921,7 @@ void PAL_CALL queryDepthStencilCapabilitiesVk(
 
     caps->supportsIndependentResolve = props.independentResolve;
     caps->supportsIndependentResolveNone = props.independentResolveNone;
-    
+
     // depth
     if (props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT_KHR) {
         caps->supportedDepthResolveModes |= (1u << PAL_RESOLVE_MODE_AVERAGE);
@@ -1070,7 +1066,7 @@ void PAL_CALL queryDescriptorIndexingCapabilitiesVk(
 
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accProps = {0};
     accProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
-    
+
     features.pNext = &desc;
     props.pNext = &accProps;
     properties2.pNext = &props;
@@ -1235,9 +1231,9 @@ PalBool PAL_CALL canQueuePresentVk(
 
     VkBool32 supported = PAL_FALSE;
     result = s_Vk.checkSurfaceSupport(
-        phyQueue->phyDevice, 
-        phyQueue->familyIndex, 
-        vkSurface->handle, 
+        phyQueue->phyDevice,
+        phyQueue->familyIndex,
+        vkSurface->handle,
         &supported);
 
     if (result == VK_SUCCESS && supported) {
@@ -1272,13 +1268,13 @@ PalResult PAL_CALL createShaderVk(
         strncpy(entry->entryName, info->entries[i].entryName, PAL_SHADER_ENTRY_NAME_SIZE);
         entry->entryName[PAL_SHADER_ENTRY_NAME_SIZE - 1] = '\0';
         entry->patchControlPoints = info->entries[i].patchControlPoints;
-        entry->stage = shaderStageToVK(info->entries[i].stage); 
+        entry->stage = shaderStageToVK(info->entries[i].stage);
     }
 
     VkShaderModuleCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = info->bytecodeSize;
-    createInfo.pCode = (const uint32_t*)info->bytecode;
+    createInfo.codeSize = info->codeSize;
+    createInfo.pCode = (const uint32_t*)info->code;
 
     result = s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
     if (result != VK_SUCCESS) {

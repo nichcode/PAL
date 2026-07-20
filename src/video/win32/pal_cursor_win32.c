@@ -44,8 +44,8 @@ PalResult win32CreateCursor(
     if (!bitmap) {
         ReleaseDC(nullptr, hdc);
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
     ReleaseDC(nullptr, hdc);
@@ -85,8 +85,8 @@ PalResult win32CreateCursor(
     if (!cursor) {
         s_Win32.deleteObject(bitmap);
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -129,8 +129,8 @@ PalResult win32CreateCursorFrom(
 
     if (!cursor) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 

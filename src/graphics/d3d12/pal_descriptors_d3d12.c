@@ -185,10 +185,8 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
     }
 
     memset(pool, 0, sizeof(DescriptorPoolD3D12));
-    pool->sets = palAllocate(
-        s_D3D12.allocator, 
-        sizeof(DescriptorSetD3D12) * info->maxDescriptorSets, 
-        0);
+    pool->sets =
+        palAllocate(s_D3D12.allocator, sizeof(DescriptorSetD3D12) * info->maxDescriptorSets, 0);
 
     if (!pool->sets) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -251,14 +249,11 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         // get base CPU and GPU base pointer
-        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
-            heap->handle,
-            &__ret);
+        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(heap->handle, &__ret);
         heap->cpuBase = handle.ptr;
 
-        gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
-            heap->handle,
-            &__gpuRet);
+        gpuHandle =
+            *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(heap->handle, &__gpuRet);
         heap->gpuBase = gpuHandle.ptr;
 
         pool->hasResourceHeap = PAL_TRUE;
@@ -292,14 +287,11 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
         // get base CPU and GPU base pointer
-        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
-            heap->handle,
-            &__ret);
+        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(heap->handle, &__ret);
         heap->cpuBase = handle.ptr;
 
-        gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
-            heap->handle,
-            &__gpuRet);
+        gpuHandle =
+            *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(heap->handle, &__gpuRet);
         heap->gpuBase = gpuHandle.ptr;
 
         pool->hasSamplerHeap = PAL_TRUE;
@@ -475,7 +467,10 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
                 if (info->samplerInfos) {
                     SamplerD3D12* sampler = (SamplerD3D12*)info->samplerInfos[j].sampler;
-                    d3d12Device->handle->lpVtbl->CreateSampler(d3d12Device->handle, &sampler->desc, dst);
+                    d3d12Device->handle->lpVtbl->CreateSampler(
+                        d3d12Device->handle,
+                        &sampler->desc,
+                        dst);
 
                 } else {
                     D3D12_SAMPLER_DESC desc = {0};
@@ -501,16 +496,13 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.RaytracingAccelerationStructure.Location = tlas->address;
                 }
 
-                d3d12Device->handle->lpVtbl->CreateShaderResourceView(
-                    d3d12Device->handle,
-                    nullptr,
-                    &desc,
-                    dst);
+                d3d12Device->handle->lpVtbl
+                    ->CreateShaderResourceView(d3d12Device->handle, nullptr, &desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
                 desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            
+
                 PalImageSubresourceRange range = {0};
                 PalImageViewType type;
                 ID3D12Resource* handle = nullptr;
@@ -531,11 +523,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 }
 
                 fillSubresourceD3D12(DESC_TYPE_SRV, type, &range, &desc);
-                d3d12Device->handle->lpVtbl->CreateShaderResourceView(
-                    d3d12Device->handle,
-                    handle,
-                    &desc,
-                    dst);
+                d3d12Device->handle->lpVtbl
+                    ->CreateShaderResourceView(d3d12Device->handle, handle, &desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
@@ -559,12 +548,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 }
 
                 fillSubresourceD3D12(DESC_TYPE_UAV, type, &range, &desc);
-                d3d12Device->handle->lpVtbl->CreateUnorderedAccessView(
-                    d3d12Device->handle,
-                    handle,
-                    nullptr,
-                    &desc,
-                    dst);
+                d3d12Device->handle->lpVtbl
+                    ->CreateUnorderedAccessView(d3d12Device->handle, handle, nullptr, &desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {0};
@@ -605,14 +590,10 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     handle = buffer->handle;
                     desc.Buffer.FirstElement = bufferInfo->offset / stride;
                     desc.Buffer.NumElements = bufferInfo->size / stride;
-                }            
+                }
 
-                d3d12Device->handle->lpVtbl->CreateUnorderedAccessView(
-                    d3d12Device->handle,
-                    handle,
-                    nullptr,
-                    &desc,
-                    dst);
+                d3d12Device->handle->lpVtbl
+                    ->CreateUnorderedAccessView(d3d12Device->handle, handle, nullptr, &desc, dst);
             }
         }
     }

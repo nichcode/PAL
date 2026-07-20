@@ -249,7 +249,7 @@ PalResult PAL_CALL createSwapchainD3D12(
             DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
     } else {
         swapchain->handle->lpVtbl->SetColorSpace1(
-            swapchain->handle, 
+            swapchain->handle,
             DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
     }
 
@@ -270,7 +270,7 @@ PalResult PAL_CALL createSwapchainD3D12(
         image->handle = tmp;
 
         image->info.belongsToSwapchain = PAL_TRUE;
-        image->info.depth = 1; // always 1
+        image->info.depth = 1;           // always 1
         image->info.arrayLayerCount = 1; // always 1
         image->info.format = imageFormat;
         image->info.usages = PAL_IMAGE_USAGE_COLOR_ATTACHEMENT;
@@ -349,7 +349,7 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
 
 PalResult PAL_CALL presentSwapchainD3D12(
     PalSwapchain* swapchain,
-    uint32_t imageIndex, 
+    uint32_t imageIndex,
     PalSemaphore* waitSemaphore)
 {
     HRESULT result;
@@ -392,8 +392,8 @@ PalResult PAL_CALL presentSwapchainD3D12(
         uint32_t h = windowRect.bottom - windowRect.top;
         if (!ret) {
             return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_WIN32,
                 GetLastError());
         }
 
@@ -430,11 +430,8 @@ PalResult PAL_CALL resizeSwapchainD3D12(
     // fill all images with the creation info
     for (int i = 0; i < d3d12Swapchain->imageCount; i++) {
         ID3D12Resource* tmp = nullptr;
-        d3d12Swapchain->handle->lpVtbl->GetBuffer(
-            d3d12Swapchain->handle,
-            i,
-            &IID_Resource,
-            (void**)&tmp);
+        d3d12Swapchain->handle->lpVtbl
+            ->GetBuffer(d3d12Swapchain->handle, i, &IID_Resource, (void**)&tmp);
 
         ImageD3D12* image = &d3d12Swapchain->images[i];
         image->handle = tmp;
@@ -447,8 +444,8 @@ PalResult PAL_CALL resizeSwapchainD3D12(
     SurfaceD3D12* surface = d3d12Swapchain->surface;
     if (!GetClientRect((HWND)surface->handle, &windowRect)) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 

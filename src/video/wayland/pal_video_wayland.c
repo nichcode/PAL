@@ -12,9 +12,9 @@
 #include "pal_wayland_protocols.h"
 #include "video/pal_video_egl.h"
 #include <dlfcn.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
 
 typedef struct {
     PalBool pendingScroll;
@@ -318,10 +318,7 @@ MonitorData* wlGetFreeMonitorData()
     int freeIndex = s_Wl.maxMonitorData + 1;
     data = palAllocate(s_Wl.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_Wl.monitorData,
-            s_Wl.maxMonitorData * sizeof(MonitorData));
+        memcpy(data, s_Wl.monitorData, s_Wl.maxMonitorData * sizeof(MonitorData));
 
         palFree(s_Wl.allocator, s_Wl.monitorData);
         s_Wl.monitorData = data;
@@ -336,8 +333,7 @@ MonitorData* wlGetFreeMonitorData()
 MonitorData* wlFindMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Wl.maxMonitorData; ++i) {
-        if (s_Wl.monitorData[i].used &&
-            s_Wl.monitorData[i].monitor == monitor) {
+        if (s_Wl.monitorData[i].used && s_Wl.monitorData[i].monitor == monitor) {
             return &s_Wl.monitorData[i];
         }
     }
@@ -347,8 +343,7 @@ MonitorData* wlFindMonitorData(PalMonitor* monitor)
 void wlFreeMonitorData(PalMonitor* monitor)
 {
     for (int i = 0; i < s_Wl.maxMonitorData; ++i) {
-        if (s_Wl.monitorData[i].used &&
-            s_Wl.monitorData[i].monitor == monitor) {
+        if (s_Wl.monitorData[i].used && s_Wl.monitorData[i].monitor == monitor) {
             s_Wl.monitorData[i].used = PAL_FALSE;
         }
     }
@@ -371,10 +366,7 @@ WindowData* wlGetFreeWindowData()
     int freeIndex = s_Wl.maxWindowData + 1;
     data = palAllocate(s_Wl.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(
-            data,
-            s_Wl.windowData,
-            s_Wl.maxWindowData * sizeof(WindowData));
+        memcpy(data, s_Wl.windowData, s_Wl.maxWindowData * sizeof(WindowData));
 
         palFree(s_Wl.allocator, s_Wl.windowData);
         s_Wl.windowData = data;
@@ -389,8 +381,7 @@ WindowData* wlGetFreeWindowData()
 WindowData* wlFindWindowData(PalWindow* window)
 {
     for (int i = 0; i < s_Wl.maxWindowData; ++i) {
-        if (s_Wl.windowData[i].used &&
-            s_Wl.windowData[i].window == window) {
+        if (s_Wl.windowData[i].used && s_Wl.windowData[i].window == window) {
             return &s_Wl.windowData[i];
         }
     }
@@ -622,11 +613,11 @@ static void surfaceHandleEnter(
     if (data->dpi == 0) {
         // this is triggered when the window is created
         // we cache the DPI and skip the event
-        data->dpi = monitorData->dpi;        
+        data->dpi = monitorData->dpi;
         return;
     }
 
-    // the code below should be skipped if users are not 
+    // the code below should be skipped if users are not
     // interested in DPI changed events
     PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
     PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
@@ -709,12 +700,7 @@ static void pointerHandleEnter(
     if (data->cursor) {
         // our window
         WaylandCursor* cursor = data->cursor;
-        wlPointerSetCursor(
-            pointer, 
-            serial, 
-            cursor->surface,
-            cursor->hotspotX, 
-            cursor->hotspotY);
+        wlPointerSetCursor(pointer, serial, cursor->surface, cursor->hotspotX, cursor->hotspotY);
     }
 
     // cache the surface the pointer is currently on
@@ -793,7 +779,7 @@ static void pointerHandleButton(
         // cannot recieve events without a focused surface
         return;
     }
-    
+
     PalBool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
     PalMouseButton _button = 0;
     PalEventType type = PAL_EVENT_TYPE_MOUSE_BUTTONUP;
@@ -853,7 +839,7 @@ static void pointerHandleAxis(
         s_Mouse.tmpScrollY += delta;
         s_Mouse.accumScrollY += delta;
     }
-    
+
     s_Mouse.pendingScroll = PAL_TRUE;
 }
 
@@ -871,7 +857,7 @@ static void pointerHandleAxisDiscrete(
         s_Mouse.tmpScrollY += discrete;
         s_Mouse.accumScrollY += discrete;
     }
-    
+
     s_Mouse.pendingScroll = PAL_TRUE;
 }
 
@@ -921,16 +907,14 @@ static void pointerHandleAxisSource(
     struct wl_pointer* pointer,
     uint32_t axis_source)
 {
-
 }
 
 static void pointerHandleAxisStop(
     void* userData,
     struct wl_pointer* pointer,
     uint32_t time,
-	uint32_t axis)
+    uint32_t axis)
 {
-    
 }
 
 // ==================================================
@@ -1042,7 +1026,7 @@ static void keyboardHandleKey(
         scancode = PAL_SCANCODE_UP;
     } else if (key == 102) {
         scancode = PAL_SCANCODE_HOME;
-    
+
     } else {
         scancode = s_Keyboard.scancodes[key];
     }
@@ -1151,14 +1135,7 @@ static void keyboardHandleModifiers(
     uint32_t group)
 {
     if (s_Wl.state) {
-        s_Wl.xkbStateUpdateMask(
-            s_Wl.state,
-            mods_depressed,
-            mods_latched,
-            mods_locked,
-            group,
-            0,
-            0);
+        s_Wl.xkbStateUpdateMask(s_Wl.state, mods_depressed, mods_latched, mods_locked, group, 0, 0);
     }
 }
 
@@ -1187,7 +1164,6 @@ static void seatHandleName(
     struct wl_seat* seat,
     const char* name)
 {
-    
 }
 
 // ==================================================
@@ -1214,12 +1190,7 @@ static void xdgSurfaceHandleConfigure(
     if (!winData->skipConfigure) {
         if (winData->pushConfigureEvent) {
             if (winData->eglWindow) {
-                s_Wl.eglWindowResize(
-                    winData->eglWindow,
-                    winData->w,
-                    winData->h,
-                    0,
-                    0);
+                s_Wl.eglWindowResize(winData->eglWindow, winData->w, winData->h, 0, 0);
 
             } else {
                 // create a new buffer with the new size
@@ -1397,8 +1368,8 @@ void zxdgDecorationHandleConfigure(
 }
 
 PalResult wlInitVideo(
-    const PalAllocator* allocator, 
-    PalEventDriver* eventDriver, 
+    const PalAllocator* allocator,
+    PalEventDriver* eventDriver,
     void* preferredInstance)
 {
     // load wayland libray
@@ -1567,7 +1538,7 @@ PalResult wlInitVideo(
     s_Wl.maxMonitorData = 16; // initial size
     s_Wl.maxWindowData = 32;  // initial size
     s_Wl.windowData = palAllocate(s_Wl.allocator, sizeof(WindowData) * s_Wl.maxWindowData, 0);
-    s_Wl.monitorData = palAllocate(s_Wl.allocator,sizeof(MonitorData) * s_Wl.maxMonitorData,0);
+    s_Wl.monitorData = palAllocate(s_Wl.allocator, sizeof(MonitorData) * s_Wl.maxMonitorData, 0);
     if (!s_Wl.monitorData || !s_Wl.windowData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
@@ -1778,25 +1749,17 @@ void* wlGetInstance()
 
 struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
-    .global_remove = globalRemove
-};
+    .global_remove = globalRemove};
 
-struct wl_output_listener s_OutputListener = {
-    .geometry = outputGeometry,
-    .mode = outputMode,
-    .done = outputDone,
-    .scale = outputScale};
+struct wl_output_listener s_OutputListener =
+    {.geometry = outputGeometry, .mode = outputMode, .done = outputDone, .scale = outputScale};
 
-struct wl_output_listener s_DefaultModeListener = {
-    .geometry = outputGeometry,
-    .mode = outputMode,
-    .done = outputDone,
-    .scale = outputScale};
+struct wl_output_listener s_DefaultModeListener =
+    {.geometry = outputGeometry, .mode = outputMode, .done = outputDone, .scale = outputScale};
 
 struct wl_surface_listener s_SurfaceListener = {
     .enter = surfaceHandleEnter,
-    .leave = surfaceHandleLeave
-};
+    .leave = surfaceHandleLeave};
 
 struct wl_pointer_listener s_PointerListener = {
     .enter = pointerHandleEnter,
@@ -1807,8 +1770,7 @@ struct wl_pointer_listener s_PointerListener = {
     .axis_discrete = pointerHandleAxisDiscrete,
     .frame = pointerHandleFrame,
     .axis_source = pointerHandleAxisSource,
-    .axis_stop = pointerHandleAxisStop
-};
+    .axis_stop = pointerHandleAxisStop};
 
 struct wl_keyboard_listener s_KeyboardListener = {
     .enter = keyboardHandleEnter,
@@ -1816,31 +1778,23 @@ struct wl_keyboard_listener s_KeyboardListener = {
     .keymap = keyboardHandleRemap,
     .key = keyboardHandleKey,
     .repeat_info = keyboardHandleRepeatInfo,
-    .modifiers = keyboardHandleModifiers
-};
+    .modifiers = keyboardHandleModifiers};
 
 struct zxdg_toplevel_decoration_v1_listener s_DecorationListener = {
-    .configure = zxdgDecorationHandleConfigure
-};
+    .configure = zxdgDecorationHandleConfigure};
 
 struct wl_seat_listener s_SeatListener = {
     .capabilities = seatHandleCapabilities,
-    .name = seatHandleName
-};
+    .name = seatHandleName};
 
-struct xdg_wm_base_listener s_WmBaseListener = {
-    .ping = wmBaseHandlePing
-};
+struct xdg_wm_base_listener s_WmBaseListener = {.ping = wmBaseHandlePing};
 
-struct xdg_surface_listener s_XdgSurfaceListener = {
-    .configure = xdgSurfaceHandleConfigure
-};
+struct xdg_surface_listener s_XdgSurfaceListener = {.configure = xdgSurfaceHandleConfigure};
 
 struct xdg_toplevel_listener s_XdgToplevelListener = {
     .configure = xdgToplevelHandleConfigure,
     .close = xdgToplevelHandleClose,
     .configure_bounds = nullptr,
-    .wm_capabilities = nullptr
-};
+    .wm_capabilities = nullptr};
 
 #endif // PAL_HAS_WAYLAND_BACKEND

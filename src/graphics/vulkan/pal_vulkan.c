@@ -666,7 +666,7 @@ void fillBuildInfoVk(
 
             if (getBuildSize) {
                 maxPrimitives[i] = info->count;
-                
+
             } else {
                 range->primitiveCount = info->count;
                 range->firstVertex = 0;     // PAL does not allow setting this
@@ -686,7 +686,7 @@ void fillBuildInfoVk(
 
             if (getBuildSize) {
                 maxPrimitives[i] = info->geometries[i].primitiveCount;
-                
+
             } else {
                 range->primitiveCount = info->geometries[i].primitiveCount;
                 range->firstVertex = 0;     // PAL does not allow setting this
@@ -870,8 +870,8 @@ VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages)
 }
 
 static void* alignedRealloc(
-    void* memory, 
-    uint64_t size, 
+    void* memory,
+    uint64_t size,
     uint64_t alignment)
 {
 #if defined(_MSC_VER) || defined(__MINGW32__)
@@ -935,7 +935,7 @@ static void* loadLibrary(const char* name)
 {
 #ifdef _WIN32
     return LoadLibraryA(name);
-#elif defined (__linux__)
+#elif defined(__linux__)
     return dlopen(name, RTLD_LAZY);
 #endif
 }
@@ -944,16 +944,18 @@ static void freeLibrary(void* lib)
 {
 #ifdef _WIN32
     FreeLibrary(lib);
-#elif defined (__linux__)
+#elif defined(__linux__)
     dlclose(lib);
 #endif
 }
 
-static void* loadProc(void* lib, const char* name)
+static void* loadProc(
+    void* lib,
+    const char* name)
 {
 #ifdef _WIN32
     return GetProcAddress(lib, name);
-#elif defined (__linux__)
+#elif defined(__linux__)
     return dlsym(lib, name);
 #endif
 }
@@ -962,7 +964,7 @@ static uint32_t getNativeCode()
 {
 #ifdef _WIN32
     return GetLastError();
-#elif defined (__linux__)
+#elif defined(__linux__)
     return errno;
 #endif
 }

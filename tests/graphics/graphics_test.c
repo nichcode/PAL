@@ -85,7 +85,7 @@ PalBool graphicsTest()
         }
 
         uint64_t vramMib = (uint64_t)info.vram / (1024 * 1024);
-        uint64_t sharedMemMib = (uint64_t)info.sharedMemory /(1024 * 1024);
+        uint64_t sharedMemMib = (uint64_t)info.sharedMemory / (1024 * 1024);
 
         palLog(nullptr, "GPU Name: %s", info.name);
         palLog(nullptr, " Backend Name: %s", info.backendName);
@@ -119,6 +119,7 @@ PalBool graphicsTest()
         }
         palLog(nullptr, " Type: %s", typeString);
 
+        // we check for types that are core to PAL since we are not adding any custom backends
         const char* apiTypeString;
         switch (info.apiType) {
             case PAL_ADAPTER_API_TYPE_D3D12: {
@@ -170,7 +171,7 @@ PalBool graphicsTest()
         palLog(nullptr, "");
         palLog(nullptr, "  Resource Capabilities:");
         PalResourceCapabilities* resourceCaps = &caps.resourceCaps;
-       
+
         // clang-format off
         palLog(nullptr, "   Max per stage sampled images: %u", resourceCaps->maxPerStageSampledImages);
         palLog(nullptr, "   Max per set sampled images: %u", resourceCaps->maxPerSetSampledImages);
@@ -329,7 +330,6 @@ PalBool graphicsTest()
 
             if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_4X2)) {
                 palLog(nullptr, "    4 X 2");
-
             }
 
             if (palIsSupported(tmp.supportedShadingRates, PAL_FRAGMENT_SHADING_RATE_4X4)) {

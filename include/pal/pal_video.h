@@ -507,8 +507,8 @@ typedef struct {
  */
 typedef struct {
     PalFlashFlags flags; /**< (eg. `PAL_FLASH_FLAG_CAPTION`).*/
-    uint32_t interval;  /**< In milliseconds. Set to 0 for default.*/
-    uint32_t count;     /**< Set to 0 to flash until focused or cancelled.*/
+    uint32_t interval;   /**< In milliseconds. Set to 0 for default.*/
+    uint32_t count;      /**< Set to 0 to flash until focused or cancelled.*/
 } PalFlashInfo;
 
 /**

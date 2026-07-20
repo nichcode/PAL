@@ -1,6 +1,6 @@
 
-#include "tests.h"
 #include "pal/pal_system.h"
+#include "tests.h"
 #include <string.h> // for strcat
 
 static inline const char* cpuArchToString(PalCpuArch arch)

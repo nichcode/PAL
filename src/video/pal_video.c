@@ -86,20 +86,20 @@ PalResult PAL_CALL palInitVideo(
 
     if (x11) {
 #if PAL_HAS_X11_BACKEND == 1
-    PalResult result = xInitVideo(allocator, eventDriver, preferredInstance);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-    s_Backend = &s_XBackend;
+        PalResult result = xInitVideo(allocator, eventDriver, preferredInstance);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+        s_Backend = &s_XBackend;
 #endif // PAL_HAS_X11_BACKEND
 
     } else if (wayland) {
 #if PAL_HAS_WAYLAND_BACKEND == 1
-    PalResult result = wlInitVideo(allocator, eventDriver, preferredInstance);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-    s_Backend = &s_wlBackend;
+        PalResult result = wlInitVideo(allocator, eventDriver, preferredInstance);
+        if (result != PAL_RESULT_SUCCESS) {
+            return result;
+        }
+        s_Backend = &s_wlBackend;
 #endif // PAL_HAS_WAYLAND_BACKEND
     }
 
@@ -322,7 +322,7 @@ PalWindow* PAL_CALL palGetFocusWindow()
 }
 
 void PAL_CALL palGetWindowHandleInfo(
-    PalWindow* window, 
+    PalWindow* window,
     PalWindowHandleInfo* info)
 {
     s_Backend->getWindowHandleInfo(window, info);

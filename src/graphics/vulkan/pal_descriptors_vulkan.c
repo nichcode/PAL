@@ -117,10 +117,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
 void PAL_CALL destroyDescriptorSetLayoutVk(PalDescriptorSetLayout* layout)
 {
     DescriptorSetLayoutVk* vkLayout = (DescriptorSetLayoutVk*)layout;
-    s_Vk.destroyDescriptorSetLayout(
-        vkLayout->device->handle,
-        vkLayout->handle,
-        &s_Vk.vkAllocator);
+    s_Vk.destroyDescriptorSetLayout(vkLayout->device->handle, vkLayout->handle, &s_Vk.vkAllocator);
 
     palFree(s_Vk.allocator, layout);
 }
@@ -158,11 +155,8 @@ PalResult PAL_CALL createDescriptorPoolVk(
     createInfo.poolSizeCount = bindingSizeCount;
     createInfo.pPoolSizes = poolSizes;
 
-    result = s_Vk.createDescriptorPool(
-        vkDevice->handle,
-        &createInfo,
-        &s_Vk.vkAllocator,
-        &pool->handle);
+    result =
+        s_Vk.createDescriptorPool(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &pool->handle);
 
     palFree(s_Vk.allocator, poolSizes);
     if (result != VK_SUCCESS) {
@@ -272,7 +266,6 @@ PalResult PAL_CALL updateDescriptorSetVk(
         memset(bufferInfos, 0, sizeof(VkDescriptorBufferInfo) * bufferCount);
     }
 
-    
     if (imageCount) {
         imageInfos = palAllocate(s_Vk.allocator, sizeof(VkDescriptorImageInfo) * imageCount, 0);
         if (!imageInfos) {
@@ -283,7 +276,8 @@ PalResult PAL_CALL updateDescriptorSetVk(
     }
 
     if (tlasCount) {
-        uint32_t tlasInfoSize = sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasInfoCount;
+        uint32_t tlasInfoSize =
+            sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasInfoCount;
         tlasInfos = palAllocate(s_Vk.allocator, tlasInfoSize, 0);
         tlas = palAllocate(s_Vk.allocator, sizeof(VkAccelerationStructureKHR) * count, 0);
         if (!tlasInfos || !tlas) {
@@ -343,7 +337,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
                         SamplerVk* vkSampler = (SamplerVk*)tmp->sampler;
                         imageInfo->sampler = vkSampler->handle;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    }    
+                    }
 
                 } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                     if (info->imageViewInfos) {
@@ -378,7 +372,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
             tlasInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
             tlasInfo->accelerationStructureCount = info->descriptorCount;
             tlasInfo->pAccelerationStructures = &tlas[tlasCount];
-            
+
             write->pNext = &tlasInfos[tlasInfoCount++];
             tlasCount += write->descriptorCount;
 

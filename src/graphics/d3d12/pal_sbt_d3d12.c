@@ -86,13 +86,13 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
         if (index < sbtInfo->raygenCount) {
             // raygen group
-            if (record->localDataSize > sbtInfo->raygenDataSize)  {
+            if (record->localDataSize > sbtInfo->raygenDataSize) {
                 return PAL_RESULT_CODE_INVALID_ARGUMENT;
             }
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
             // miss group
-            if (record->localDataSize > sbtInfo->missDataSize)  {
+            if (record->localDataSize > sbtInfo->missDataSize) {
                 return PAL_RESULT_CODE_INVALID_ARGUMENT;
             }
 
@@ -161,9 +161,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
     result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-        d3d12Device->handle, 
-        &heapProps, 
-        0, 
+        d3d12Device->handle,
+        &heapProps,
+        0,
         &bufferDesc,
         D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr,
@@ -178,9 +178,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     // create staging buffer
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
     result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-        d3d12Device->handle, 
-        &heapProps, 
-        0, 
+        d3d12Device->handle,
+        &heapProps,
+        0,
         &bufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
@@ -204,8 +204,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
         // skip any hit, closest hit, intersection shaders without isHitGroup PalBool
         PalBool isHitGroup = PAL_FALSE;
-        if (stage == PAL_SHADER_STAGE_ANY_HIT ||
-            stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
+        if (stage == PAL_SHADER_STAGE_ANY_HIT || stage == PAL_SHADER_STAGE_CLOSEST_HIT ||
             stage == PAL_SHADER_STAGE_INTERSECTION) {
             if (tmp->isHitGroup) {
                 isHitGroup = PAL_TRUE;
@@ -296,14 +295,14 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     // raygen
     if (sbtInfo->raygenCount) {
         sbt->raygen.region.StartAddress = sbt->baseAddress;
-        sbt->raygen.offset = 0; // always
+        sbt->raygen.offset = 0;     // always
         sbt->raygen.startIndex = 0; // always
         sbt->raygen.region.SizeInBytes = raygenRegionSize;
         sbt->raygen.region.StrideInBytes = raygenStride;
 
         palFree(s_D3D12.allocator, raygenHandles);
     }
-    
+
     // miss
     if (sbtInfo->missCount) {
         sbt->miss.offset = missOffset;
@@ -357,7 +356,7 @@ void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
 }
 
 void PAL_CALL updateShaderBindingTableD3D12(
-    PalShaderBindingTable* sbt, 
+    PalShaderBindingTable* sbt,
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
@@ -371,7 +370,7 @@ void PAL_CALL updateShaderBindingTableD3D12(
 
     for (int i = 0; i < count; i++) {
         PalShaderBindingTableRecordInfo* info = &infos[i];
-       
+
         // find the group the record belongs to
         uint32_t index = info->groupIndex;
         if (index < sbtInfo->raygenCount) {

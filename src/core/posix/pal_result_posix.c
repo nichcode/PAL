@@ -14,7 +14,7 @@
 #include <string.h>
 
 void PAL_CALL palFormatResult(
-    PalResult result, 
+    PalResult result,
     uint64_t bufferSize,
     char* buffer)
 {

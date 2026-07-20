@@ -59,28 +59,16 @@ PalResult PAL_CALL palCreateThread(
         // error
         DWORD error = GetLastError();
         if (error == ERROR_NOT_ENOUGH_MEMORY) {
-            return palMakeResult(
-                PAL_RESULT_CODE_OUT_OF_MEMORY, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_OUT_OF_MEMORY, PAL_RESULT_SOURCE_WIN32, error);
 
         } else if (error == ERROR_INVALID_PARAMETER) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, error);
 
         } else if (error == ERROR_ACCESS_DENIED) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_OPERATION, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
 
@@ -104,8 +92,8 @@ PalResult PAL_CALL palJoinThread(
 
     } else if (wait == WAIT_FAILED) {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_HANDLE,
+            PAL_RESULT_SOURCE_WIN32,
             GetLastError());
     }
 
@@ -230,22 +218,13 @@ PalResult PAL_CALL palSetThreadPriority(
     if (!SetThreadPriority((HANDLE)thread, _priority)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_WIN32, error);
 
         } else if (error == ERROR_ACCESS_DENIED) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_OPERATION, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
 
@@ -259,16 +238,10 @@ PalResult PAL_CALL palSetThreadAffinity(
     if (!SetThreadAffinityMask((HANDLE)thread, mask)) {
         DWORD error = GetLastError();
         if (error == ERROR_INVALID_HANDLE || error == ERROR_INVALID_PARAMETER) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_ARGUMENT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
 
@@ -292,28 +265,16 @@ PalResult PAL_CALL palSetThreadName(
 
     } else {
         if (hr == E_INVALIDARG) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                hr);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_WIN32, hr);
 
         } else if (hr == E_OUTOFMEMORY) {
-            return palMakeResult(
-                PAL_RESULT_CODE_OUT_OF_MEMORY, 
-                PAL_RESULT_SOURCE_WIN32, 
-                hr);
+            return palMakeResult(PAL_RESULT_CODE_OUT_OF_MEMORY, PAL_RESULT_SOURCE_WIN32, hr);
 
         } else if (hr == E_ACCESSDENIED) {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WIN32, 
-                hr);
+            return palMakeResult(PAL_RESULT_CODE_INVALID_OPERATION, PAL_RESULT_SOURCE_WIN32, hr);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                hr);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, hr);
         }
     }
 }

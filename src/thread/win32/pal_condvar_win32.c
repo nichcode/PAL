@@ -46,16 +46,10 @@ PalResult PAL_CALL palWaitCondVar(
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
-            return palMakeResult(
-                PAL_RESULT_CODE_TIMEOUT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_TIMEOUT, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
     return PAL_RESULT_SUCCESS;
@@ -70,16 +64,10 @@ PalResult PAL_CALL palWaitCondVarTimeout(
     if (!ret) {
         DWORD error = GetLastError();
         if (error == ERROR_TIMEOUT) {
-            return palMakeResult(
-                PAL_RESULT_CODE_TIMEOUT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_TIMEOUT, PAL_RESULT_SOURCE_WIN32, error);
 
         } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
     return PAL_RESULT_SUCCESS;

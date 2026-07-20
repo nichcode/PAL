@@ -72,11 +72,9 @@ static D3D12_TEXTURE_ADDRESS_MODE addressModeToD3D12(PalSamplerAddressMode mode)
 
         case PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: {
             return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
-
         }
         case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: {
             return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-
         }
         case PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: {
             return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
@@ -85,7 +83,9 @@ static D3D12_TEXTURE_ADDRESS_MODE addressModeToD3D12(PalSamplerAddressMode mode)
     return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 }
 
-static void borderColorToD3D12(PalBorderColor color, float outColor[4])
+static void borderColorToD3D12(
+    PalBorderColor color,
+    float outColor[4])
 {
     switch (color) {
         case PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
@@ -172,9 +172,9 @@ PalResult PAL_CALL createImageD3D12(
         heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 
         result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-            d3d12Device->handle, 
-            &heapProps, 
-            0, 
+            d3d12Device->handle,
+            &heapProps,
+            0,
             &image->desc,
             D3D12_RESOURCE_STATE_COMMON,
             nullptr,
@@ -231,12 +231,8 @@ void PAL_CALL getImageMemoryRequirementsD3D12(
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
-    allocationInfo = *device->lpVtbl->GetResourceAllocationInfo(
-        device,
-        &__ret,
-        0,
-        1,
-        &d3d12Image->desc);
+    allocationInfo =
+        *device->lpVtbl->GetResourceAllocationInfo(device, &__ret, 0, 1, &d3d12Image->desc);
 
     requirements->supportedMemoryTypes = (1u << PAL_MEMORY_TYPE_GPU_ONLY);
     requirements->alignment = allocationInfo.Alignment;
@@ -311,11 +307,8 @@ PalResult PAL_CALL createImageViewD3D12(
         desc.Format = imageView->format;
         fillSubresourceD3D12(DESC_TYPE_RTV, info->type, &info->subresourceRange, &desc);
         imageView->heapIndex = index;
-        d3d12Device->handle->lpVtbl->CreateRenderTargetView(
-            d3d12Device->handle,
-            d3d12Image->handle,
-            &desc,
-            dst);
+        d3d12Device->handle->lpVtbl
+            ->CreateRenderTargetView(d3d12Device->handle, d3d12Image->handle, &desc, dst);
 
     } else if (info->subresourceRange.aspect != PAL_IMAGE_ASPECT_COLOR && hasDSV) {
         DSVHeapAllocator* allocator = &d3d12Device->dsvAllocator;
@@ -329,11 +322,8 @@ PalResult PAL_CALL createImageViewD3D12(
         desc.Format = imageView->format;
         fillSubresourceD3D12(DESC_TYPE_DSV, info->type, &info->subresourceRange, &desc);
         imageView->heapIndex = index;
-        d3d12Device->handle->lpVtbl->CreateDepthStencilView(
-            d3d12Device->handle,
-            d3d12Image->handle,
-            &desc,
-            dst);
+        d3d12Device->handle->lpVtbl
+            ->CreateDepthStencilView(d3d12Device->handle, d3d12Image->handle, &desc, dst);
     }
 
     imageView->range = info->subresourceRange;
@@ -402,10 +392,8 @@ PalResult PAL_CALL createSamplerD3D12(
     sampler->desc.AddressV = addressModeToD3D12(info->addressModeV);
     sampler->desc.AddressW = addressModeToD3D12(info->addressModeW);
 
-    sampler->desc.Filter = filterToD3D12(
-        info->minFilterMode,
-        info->magFilterMode,
-        info->mipmapMode);
+    sampler->desc.Filter =
+        filterToD3D12(info->minFilterMode, info->magFilterMode, info->mipmapMode);
 
     *outSampler = (PalSampler*)sampler;
     return PAL_RESULT_SUCCESS;

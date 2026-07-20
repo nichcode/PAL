@@ -683,7 +683,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
 }
 
 uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
-    PalAdapter* adapter, 
+    PalAdapter* adapter,
     PalShaderFormats shaderFormat)
 {
     if (shaderFormat != PAL_SHADER_FORMAT_SPIRV) {
@@ -694,7 +694,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
     VkPhysicalDeviceProperties props = {0};
     s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &props);
 
-     if (props.apiVersion >= VK_API_VERSION_1_3) {
+    if (props.apiVersion >= VK_API_VERSION_1_3) {
         return PAL_MAKE_SHADER_TARGET(1, 6);
 
     } else if (props.apiVersion >= VK_API_VERSION_1_2) {
@@ -702,7 +702,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
 
     } else if (props.apiVersion >= VK_API_VERSION_1_1) {
         return PAL_MAKE_SHADER_TARGET(1, 4);
-        
+
     } else if (props.apiVersion >= VK_API_VERSION_1_0) {
         return PAL_MAKE_SHADER_TARGET(1, 2);
     }
@@ -801,8 +801,8 @@ PalSampleCount PAL_CALL queryFormatSampleCountVk(
 
     result = s_Vk.getPhysicalDeviceImageFormatProperties(
         vkAdapter->handle,
-        fmt, 
-        VK_IMAGE_TYPE_2D, 
+        fmt,
+        VK_IMAGE_TYPE_2D,
         VK_IMAGE_TILING_OPTIMAL,
         vkImageUsage,
         0,

@@ -152,11 +152,7 @@ PalBool multiDescriptorSetTest()
         return PAL_FALSE;
     }
 
-    result = palAllocateCommandBuffer(
-        device,
-        cmdPool,
-        PAL_COMMAND_BUFFER_TYPE_PRIMARY,
-        &cmdBuffer);
+    result = palAllocateCommandBuffer(device, cmdPool, PAL_COMMAND_BUFFER_TYPE_PRIMARY, &cmdBuffer);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
@@ -194,8 +190,8 @@ PalBool multiDescriptorSetTest()
     computeEntry.entryName = "main";
     computeEntry.stage = PAL_SHADER_STAGE_COMPUTE;
 
-    shaderCreateInfo.bytecode = bytecode;
-    shaderCreateInfo.bytecodeSize = bytecodeSize;
+    shaderCreateInfo.code = bytecode;
+    shaderCreateInfo.codeSize = bytecodeSize;
     shaderCreateInfo.entries = &computeEntry;
     shaderCreateInfo.entryCount = 1;
 
@@ -239,10 +235,8 @@ PalBool multiDescriptorSetTest()
     descriptorSetLayoutcreateInfo.bindingCount = 1;
     descriptorSetLayoutcreateInfo.bindings = &descriptorBinding;
 
-    result = palCreateDescriptorSetLayout(
-        device,
-        &descriptorSetLayoutcreateInfo,
-        &descriptorSetLayout);
+    result =
+        palCreateDescriptorSetLayout(device, &descriptorSetLayoutcreateInfo, &descriptorSetLayout);
 
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create descriptor set layout");
@@ -268,9 +262,9 @@ PalBool multiDescriptorSetTest()
     // allocate the sets from the descriptor pool
     for (int i = 0; i < 3; i++) {
         result = palAllocateDescriptorSet(
-            device, 
-            descriptorPool, 
-            descriptorSetLayout, 
+            device,
+            descriptorPool,
+            descriptorSetLayout,
             &descriptorSets[i]);
 
         if (result != PAL_RESULT_SUCCESS) {
@@ -288,7 +282,7 @@ PalBool multiDescriptorSetTest()
         descriptorBufferInfos[i].stride = 16; // sizeof(vec4) or float4.
     }
 
-    PalDescriptorSetWriteInfo writeInfos[3];    
+    PalDescriptorSetWriteInfo writeInfos[3];
     for (int i = 0; i < 3; i++) {
         writeInfos[i].layoutBindingIndex = 0; // single descriptor binding
         writeInfos[i].bufferInfos = &descriptorBufferInfos[i];
@@ -394,7 +388,7 @@ PalBool multiDescriptorSetTest()
 
     buildData.workGroupSize[0] = 16; // must match shader (local_size on glsl)
     buildData.workGroupSize[1] = 16; // must match shader (local_size on glsl)
-    buildData.workGroupSize[2] = 1; // must match shader (local_size on glsl)
+    buildData.workGroupSize[2] = 1;  // must match shader (local_size on glsl)
 
     // device limits
     buildData.workGroupCount[0] = caps.computeCaps.maxWorkGroupCount[0];
@@ -450,7 +444,7 @@ PalBool multiDescriptorSetTest()
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
     submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
-    
+
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
@@ -489,9 +483,9 @@ PalBool multiDescriptorSetTest()
                 int index = row * BUFFER_SIZE + x;
                 uint8_t rgb[3];
 
-                rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255: 0;
-                rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255: 0;
-                rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255: 0;
+                rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
+                rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
+                rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
                 fwrite(rgb, 1, 3, file);
             }
         }
